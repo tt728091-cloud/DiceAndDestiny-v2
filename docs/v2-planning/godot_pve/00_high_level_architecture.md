@@ -476,6 +476,27 @@ This folder shape is intentionally hybrid:
 - local client adapter stays separate from the battle engine authority
 - tests have a first-class home
 
+Current repository path:
+
+```text
+dice-and-destiny-client/
+  app/
+    boot/
+    screens/
+  local_client/
+    battle_gateway/
+    command_builder/
+    view_state/
+  features/
+  engine/
+  content/
+  presentation/
+  save/
+  tests/
+```
+
+The current spike scripts still live in `dice-and-destiny-client/scripts/` until production stories move them into the new folders.
+
 ## Recommended PvE Combat Loop
 
 The PvE combat loop should preserve the simultaneous PvP-style segment model.

@@ -50,6 +50,22 @@ dice-and-destiny-server/
     testdriver/
 ```
 
+Current Godot client layout:
+
+```text
+dice-and-destiny-client/
+  app/
+  local_client/
+  features/
+  engine/
+  content/
+  presentation/
+  save/
+  tests/
+```
+
+The current spike scripts remain in `dice-and-destiny-client/scripts/` until production stories move them into the new layout.
+
 ## Required Tools
 
 - Godot 4.6 or compatible 4.x version available as `godot`
