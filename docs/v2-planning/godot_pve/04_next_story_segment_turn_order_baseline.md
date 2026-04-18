@@ -113,16 +113,18 @@ defensive
 damage_resolution
 ```
 
-Default flow:
+Segment order:
 
 ```text
-ongoing_effects -> income -> offensive -> defensive -> damage_resolution -> ongoing_effects
+ongoing_effects -> income -> offensive -> defensive -> damage_resolution
 ```
 
 Round behavior:
 
 ```text
-round increments when damage_resolution advances back to ongoing_effects
+after damage_resolution, the current turn is complete
+the next turn starts again at ongoing_effects
+round increments when the next turn starts
 ```
 
 If a better segment name or order appears necessary, stop and review before changing the vocabulary.
@@ -209,8 +211,9 @@ Tests should prove:
 - initial segment is deterministic
 - segment order is deterministic
 - advancing from each segment returns the expected next segment
-- advancing from `damage_resolution` wraps to `ongoing_effects`
-- round increments only when the cycle wraps
+- advancing from `damage_resolution` completes the current turn
+- the next turn starts at `ongoing_effects`
+- round increments only when the next turn starts
 - invalid/unknown segments are rejected or handled explicitly
 
 These tests should not depend on Godot, C++, JSON, or UI.
