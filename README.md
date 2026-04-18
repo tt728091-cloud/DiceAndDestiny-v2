@@ -134,7 +134,13 @@ docs/v2-planning/godot_pve/03_story_testing_policy.md
 The handoff for the first real gameplay story is:
 
 ```text
-docs/v2-planning/godot_pve/04_next_story_roll_dice_baseline.md
+docs/v2-planning/godot_pve/04_next_story_segment_turn_order_baseline.md
+```
+
+The dice-roll handoff is preserved as a future story:
+
+```text
+docs/v2-planning/godot_pve/05_future_story_roll_dice_baseline.md
 ```
 
 ## C++ Bridge Rule

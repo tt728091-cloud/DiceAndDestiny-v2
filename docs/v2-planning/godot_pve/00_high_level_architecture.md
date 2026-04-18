@@ -706,7 +706,7 @@ The first PvE milestone should be a battle-only milestone, not a run-progression
 The immediate next story handoff is:
 
 ```text
-docs/v2-planning/godot_pve/04_next_story_roll_dice_baseline.md
+docs/v2-planning/godot_pve/04_next_story_segment_turn_order_baseline.md
 ```
 
 Recommended first milestone:

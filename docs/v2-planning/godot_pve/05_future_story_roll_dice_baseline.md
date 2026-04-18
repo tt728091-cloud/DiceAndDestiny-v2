@@ -1,8 +1,8 @@
-# Next Story Baseline: Real Dice Roll
+# Future Story Baseline: Real Dice Roll
 
 ## Purpose
 
-This document is the handoff for the first real gameplay story after the Godot/Go authority spike.
+This document is the handoff for a future dice-roll gameplay story after the segment turn-order baseline exists.
 
 The spike proved:
 
@@ -15,7 +15,7 @@ Godot
 -> result JSON back to Godot
 ```
 
-The next story should keep that architecture and replace the hard-coded dice result with tested dice behavior in Go.
+The dice story should keep that architecture and replace the hard-coded dice result with tested dice behavior in Go.
 
 ## Current Baseline
 
@@ -43,7 +43,7 @@ The current Go authority returns hard-coded symbolic dice values:
 sword, shield, focus
 ```
 
-That is acceptable for the spike, but the next story should introduce real dice behavior behind the authority boundary.
+That is acceptable for the spike, but a future dice story should introduce real dice behavior behind the authority boundary.
 
 ## Hard Rules
 
@@ -63,12 +63,12 @@ Godot presentation/client code may build commands and render results. It must no
 
 Go owns authority behavior.
 
-## Recommended First Story
+## Recommended Dice Story
 
 Story:
 
 ```text
-Implement deterministic dice rolling in Go for the roll_dice command.
+Implement deterministic dice rolling in Go for the `roll_dice` command.
 ```
 
 Initial scope:
