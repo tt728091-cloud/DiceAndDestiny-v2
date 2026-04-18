@@ -182,6 +182,25 @@ go-authority/
       enemy/
 ```
 
+Current repository path:
+
+```text
+dice-and-destiny-server/
+  internal/
+    battle/
+      authority.go
+      authority_test.go
+      command/
+      event/
+      snapshot/
+      state/
+      dice/
+      ability/
+      card/
+      segment/
+      enemy/
+```
+
 Rules:
 
 - no Godot imports
@@ -198,6 +217,16 @@ Example path:
 
 ```text
 go-authority/
+  adapters/
+    gdextension/
+    httpserver/
+    testdriver/
+```
+
+Current repository path:
+
+```text
+dice-and-destiny-server/
   adapters/
     gdextension/
     httpserver/

@@ -27,6 +27,29 @@ docs/
   V2 planning, Godot/Go architecture, testing policy, and development rules
 ```
 
+Current Go authority layout:
+
+```text
+dice-and-destiny-server/
+  internal/
+    battle/
+      authority.go
+      authority_test.go
+      command/
+      event/
+      snapshot/
+      state/
+      dice/
+      ability/
+      card/
+      segment/
+      enemy/
+  adapters/
+    gdextension/
+    httpserver/
+    testdriver/
+```
+
 ## Required Tools
 
 - Godot 4.6 or compatible 4.x version available as `godot`
