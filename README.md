@@ -131,6 +131,12 @@ See:
 docs/v2-planning/godot_pve/03_story_testing_policy.md
 ```
 
+The handoff for the first real gameplay story is:
+
+```text
+docs/v2-planning/godot_pve/04_next_story_roll_dice_baseline.md
+```
+
 ## C++ Bridge Rule
 
 The C++ GDExtension bridge must remain a thin JSON transport layer.

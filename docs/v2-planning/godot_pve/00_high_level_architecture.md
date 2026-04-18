@@ -703,6 +703,12 @@ Use where practical:
 
 The first PvE milestone should be a battle-only milestone, not a run-progression milestone.
 
+The immediate next story handoff is:
+
+```text
+docs/v2-planning/godot_pve/04_next_story_roll_dice_baseline.md
+```
+
 Recommended first milestone:
 
 - boot a battle screen directly from a fixed encounter
