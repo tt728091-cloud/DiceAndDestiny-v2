@@ -2,6 +2,8 @@ package battle
 
 import (
 	"encoding/json"
+
+	"diceanddestiny/server/internal/battle/segment"
 )
 
 type command struct {
@@ -69,7 +71,7 @@ func HandleCommand(commandJSON string) string {
 		},
 		Snapshot: &snapshot{
 			BattleID: cmd.BattleID,
-			Segment:  cmd.Payload.Pool,
+			Segment:  segment.Offensive.String(),
 			Round:    1,
 		},
 	})
