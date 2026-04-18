@@ -1,0 +1,29 @@
+#!/usr/bin/env python
+
+import os
+
+env = SConscript("../../third_party/godot-cpp/SConstruct")
+
+env.Append(CPPPATH=["include"])
+
+sources = Glob("src/*.cpp")
+
+output_dir = os.path.join("..", "..", "build", "gdextension")
+
+if env["platform"] == "macos":
+    library = env.SharedLibrary(
+        os.path.join(
+            output_dir,
+            "libbattle_authority.{}.{}.framework".format(env["platform"], env["target"]),
+            "libbattle_authority.{}.{}".format(env["platform"], env["target"]),
+        ),
+        source=sources,
+    )
+else:
+    library = env.SharedLibrary(
+        os.path.join(output_dir, "libbattle_authority{}{}".format(env["suffix"], env["SHLIBSUFFIX"])),
+        source=sources,
+    )
+
+env.NoCache(library)
+Default(library)

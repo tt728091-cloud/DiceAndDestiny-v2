@@ -1,0 +1,8 @@
+.venv/
+build/
+adapters/gdextension/.sconsign.dblite
+adapters/gdextension/src/*.os
+third_party/godot-cpp/bin/
+third_party/godot-cpp/gen/
+third_party/godot-cpp/**/*.o
+third_party/godot-cpp/**/__pycache__/

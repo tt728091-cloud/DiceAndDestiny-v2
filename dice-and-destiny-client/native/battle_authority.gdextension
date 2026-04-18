@@ -1,0 +1,9 @@
+[configuration]
+
+entry_symbol = "battle_authority_library_init"
+compatibility_minimum = "4.3"
+reloadable = true
+
+[libraries]
+
+macos.debug = "res://native/libbattle_authority.macos.template_debug.framework"

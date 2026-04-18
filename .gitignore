@@ -1,0 +1,21 @@
+# macOS
+.DS_Store
+
+# Godot local/editor cache
+dice-and-destiny-client/.godot/
+dice-and-destiny-client/android/
+
+# Native build outputs copied into the Godot project.
+# Rebuild with: dice-and-destiny-server/scripts/build_native.sh
+dice-and-destiny-client/native/libbattle_go_authority.dylib
+dice-and-destiny-client/native/libbattle_authority.*.framework/
+
+# Server/native build outputs
+dice-and-destiny-server/.venv/
+dice-and-destiny-server/build/
+dice-and-destiny-server/adapters/gdextension/extension_api.json
+dice-and-destiny-server/adapters/gdextension/.sconsign.dblite
+dice-and-destiny-server/adapters/gdextension/src/*.os
+
+# Build helper clones godot-cpp here when missing.
+dice-and-destiny-server/third_party/godot-cpp/
