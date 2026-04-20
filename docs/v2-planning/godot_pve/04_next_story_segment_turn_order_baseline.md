@@ -54,6 +54,14 @@ The current Go authority only supports a spike `roll_dice` command and returns a
 
 The segment story should make segment order a real Go domain concept instead of a hard-coded string.
 
+The follow-up engine/flow design is documented in:
+
+```text
+docs/v2-planning/godot_pve/06_battle_engine_segment_flow_design.md
+```
+
+That document defines how the segment manager should remain focused on loop position while the future engine/flow layer hooks segment behavior such as income card draw, offensive dice rolling, and damage resolution into the battle loop.
+
 ## Hard Rules
 
 Testing is priority 1.
@@ -71,6 +79,8 @@ Do not modify C++ bridge code for gameplay changes. If C++ changes appear necess
 Godot presentation/client code may build commands and render results. It must not validate authoritative gameplay or mutate battle state directly.
 
 Go owns authority behavior.
+
+The Go authority boundary should not grow gameplay action logic. The current spike `roll_dice` handling is temporary proof-of-transport behavior. Real command meaning should move into engine/flow and domain packages so `authority.go` remains a JSON command/result boundary.
 
 ## Recommended First Story
 

@@ -137,6 +137,12 @@ The handoff for the first real gameplay story is:
 docs/v2-planning/godot_pve/04_next_story_segment_turn_order_baseline.md
 ```
 
+The follow-up battle engine/segment-flow design is:
+
+```text
+docs/v2-planning/godot_pve/06_battle_engine_segment_flow_design.md
+```
+
 The dice-roll handoff is preserved as a future story:
 
 ```text
