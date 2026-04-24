@@ -1,16 +1,70 @@
 package engine_test
 
 import (
+	"encoding/json"
 	"errors"
 	"reflect"
 	"strconv"
 	"strings"
 	"testing"
 
+	"diceanddestiny/server/internal/battle/command"
 	"diceanddestiny/server/internal/battle/engine"
 	"diceanddestiny/server/internal/battle/segment"
 	"diceanddestiny/server/internal/battle/state"
 )
+
+func TestHandleCommandAdvanceSegmentReturnsEventAndSnapshot(t *testing.T) {
+	eng := engine.NewEngine()
+
+	got := eng.HandleCommand(command.Command{
+		BattleID: "battle-1",
+		ActorID:  "system",
+		Type:     command.TypeAdvanceSegment,
+		Payload:  json.RawMessage(`{}`),
+	})
+
+	want := engine.Result{
+		Accepted: true,
+		Events: []engine.Event{
+			{
+				Type:  "segment_advanced",
+				From:  "ongoing_effects",
+				To:    "income",
+				Round: 1,
+			},
+		},
+		Snapshot: &engine.Snapshot{
+			BattleID: "battle-1",
+			Segment:  "income",
+			Round:    1,
+		},
+	}
+
+	if !reflect.DeepEqual(got, want) {
+		t.Fatalf("HandleCommand() = %#v, want %#v", got, want)
+	}
+}
+
+func TestHandleCommandRejectsUnsupportedCommandType(t *testing.T) {
+	eng := engine.NewEngine()
+
+	got := eng.HandleCommand(command.Command{
+		BattleID: "battle-1",
+		ActorID:  "system",
+		Type:     command.Type("mystery_command"),
+		Payload:  json.RawMessage(`{}`),
+	})
+
+	want := engine.Result{
+		Accepted: false,
+		Error:    "unsupported command type",
+	}
+
+	if !reflect.DeepEqual(got, want) {
+		t.Fatalf("HandleCommand() = %#v, want %#v", got, want)
+	}
+}
 
 func TestAdvanceSegmentRunsFlowHooksAndUpdatesBattleSegment(t *testing.T) {
 	battle, err := state.NewBattle("battle-1")
