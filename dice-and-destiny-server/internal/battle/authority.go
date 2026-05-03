@@ -18,6 +18,8 @@ func HandleCommand(commandJSON string) string {
 }
 
 func handleCommand(commandJSON string, handler commandHandler) string {
+	// Authority owns transport concerns: parse JSON, delegate the typed command,
+	// then serialize the engine result. Gameplay meaning stays below this layer.
 	cmd, err := command.ParseJSON(commandJSON)
 	if err != nil {
 		return marshalResult(parseErrorResult(err))

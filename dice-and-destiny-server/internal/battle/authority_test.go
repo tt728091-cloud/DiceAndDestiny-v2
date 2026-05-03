@@ -7,6 +7,9 @@ import (
 
 	"diceanddestiny/server/internal/battle/command"
 	"diceanddestiny/server/internal/battle/engine"
+	"diceanddestiny/server/internal/battle/event"
+	"diceanddestiny/server/internal/battle/segment"
+	"diceanddestiny/server/internal/battle/snapshot"
 )
 
 func TestHandleCommandRejectsInvalidJSON(t *testing.T) {
@@ -50,9 +53,9 @@ func TestHandleCommandPassesStructurallyValidEnvelopeToEngine(t *testing.T) {
 	handler := &recordingHandler{
 		result: engine.Result{
 			Accepted: true,
-			Snapshot: &engine.Snapshot{
+			Snapshot: &snapshot.Battle{
 				BattleID: "battle-1",
-				Segment:  "income",
+				Segment:  segment.Income,
 				Round:    1,
 			},
 		},
@@ -102,26 +105,33 @@ func TestHandleCommandRejectsUnsupportedCommandTypeFromEngine(t *testing.T) {
 }
 
 func TestHandleCommandAdvanceSegmentReturnsEventAndSnapshot(t *testing.T) {
-	got := decodeAuthorityResult(t, HandleCommand(`{
+	gotJSON := HandleCommand(`{
 		"battle_id": "battle-1",
 		"actor_id": "system",
 		"type": "advance_segment",
 		"payload": {}
-	}`))
+	}`)
+
+	wantJSON := `{"accepted":true,"events":[{"type":"segment_advanced","from":"ongoing_effects","to":"income","round":1}],"snapshot":{"battle_id":"battle-1","segment":"income","round":1}}`
+	if gotJSON != wantJSON {
+		t.Fatalf("HandleCommand() JSON = %s, want %s", gotJSON, wantJSON)
+	}
+
+	got := decodeAuthorityResult(t, gotJSON)
 
 	want := engine.Result{
 		Accepted: true,
-		Events: []engine.Event{
+		Events: []event.Event{
 			{
-				Type:  "segment_advanced",
-				From:  "ongoing_effects",
-				To:    "income",
+				Type:  event.TypeSegmentAdvanced,
+				From:  segment.OngoingEffects,
+				To:    segment.Income,
 				Round: 1,
 			},
 		},
-		Snapshot: &engine.Snapshot{
+		Snapshot: &snapshot.Battle{
 			BattleID: "battle-1",
-			Segment:  "income",
+			Segment:  segment.Income,
 			Round:    1,
 		},
 	}

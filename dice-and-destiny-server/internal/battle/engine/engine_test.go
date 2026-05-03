@@ -10,7 +10,9 @@ import (
 
 	"diceanddestiny/server/internal/battle/command"
 	"diceanddestiny/server/internal/battle/engine"
+	"diceanddestiny/server/internal/battle/event"
 	"diceanddestiny/server/internal/battle/segment"
+	"diceanddestiny/server/internal/battle/snapshot"
 	"diceanddestiny/server/internal/battle/state"
 )
 
@@ -26,17 +28,17 @@ func TestHandleCommandAdvanceSegmentReturnsEventAndSnapshot(t *testing.T) {
 
 	want := engine.Result{
 		Accepted: true,
-		Events: []engine.Event{
+		Events: []event.Event{
 			{
-				Type:  "segment_advanced",
-				From:  "ongoing_effects",
-				To:    "income",
+				Type:  event.TypeSegmentAdvanced,
+				From:  segment.OngoingEffects,
+				To:    segment.Income,
 				Round: 1,
 			},
 		},
-		Snapshot: &engine.Snapshot{
+		Snapshot: &snapshot.Battle{
 			BattleID: "battle-1",
-			Segment:  "income",
+			Segment:  segment.Income,
 			Round:    1,
 		},
 	}
