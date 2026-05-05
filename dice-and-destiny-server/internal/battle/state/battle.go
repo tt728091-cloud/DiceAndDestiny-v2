@@ -17,8 +17,10 @@ type ActorState struct {
 }
 
 type CardZones struct {
-	Deck []string
-	Hand []string
+	Deck    []string
+	Hand    []string
+	Discard []string
+	Removed []string
 }
 
 type BattleSetup struct {
@@ -54,7 +56,10 @@ func NewBattleFromSetup(id string, setup BattleSetup) (Battle, error) {
 
 		actors[actor.ID] = ActorState{
 			Cards: CardZones{
-				Deck: append([]string(nil), actor.Deck...),
+				Deck:    append([]string(nil), actor.Deck...),
+				Hand:    nil,
+				Discard: nil,
+				Removed: nil,
 			},
 		}
 	}

@@ -155,8 +155,10 @@ func TestDefaultEngineDrawsCardWhenEnteringIncome(t *testing.T) {
 	}
 
 	wantZones := state.CardZones{
-		Deck: []string{"card-2", "card-3"},
-		Hand: []string{"card-1"},
+		Deck:    []string{"card-2", "card-3"},
+		Hand:    []string{"card-1"},
+		Discard: nil,
+		Removed: nil,
 	}
 	if !reflect.DeepEqual(battle.Actors["player"].Cards, wantZones) {
 		t.Fatalf("player card zones = %#v, want %#v", battle.Actors["player"].Cards, wantZones)
@@ -188,8 +190,10 @@ func TestDefaultEngineDrawsCardFromConfiguredSetupActorWhenEnteringIncome(t *tes
 	}
 
 	wantZones := state.CardZones{
-		Deck: []string{"guard"},
-		Hand: []string{"strike"},
+		Deck:    []string{"guard"},
+		Hand:    []string{"strike"},
+		Discard: nil,
+		Removed: nil,
 	}
 	if !reflect.DeepEqual(battle.Actors["player"].Cards, wantZones) {
 		t.Fatalf("player card zones = %#v, want %#v", battle.Actors["player"].Cards, wantZones)

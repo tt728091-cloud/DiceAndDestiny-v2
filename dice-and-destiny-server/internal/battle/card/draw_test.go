@@ -18,8 +18,10 @@ func TestDrawCardsMovesCardsFromDeckToHand(t *testing.T) {
 		Actors: map[string]state.ActorState{
 			"player": {
 				Cards: state.CardZones{
-					Deck: []string{"strike", "guard", "focus"},
-					Hand: []string{"starter"},
+					Deck:    []string{"strike", "guard", "focus"},
+					Hand:    []string{"starter"},
+					Discard: []string{"spent"},
+					Removed: []string{"lost"},
 				},
 			},
 		},
@@ -38,8 +40,10 @@ func TestDrawCardsMovesCardsFromDeckToHand(t *testing.T) {
 	}
 
 	wantZones := state.CardZones{
-		Deck: []string{"focus"},
-		Hand: []string{"starter", "strike", "guard"},
+		Deck:    []string{"focus"},
+		Hand:    []string{"starter", "strike", "guard"},
+		Discard: []string{"spent"},
+		Removed: []string{"lost"},
 	}
 	if !reflect.DeepEqual(battle.Actors["player"].Cards, wantZones) {
 		t.Fatalf("card zones = %#v, want %#v", battle.Actors["player"].Cards, wantZones)
@@ -77,12 +81,66 @@ func TestDrawCardsUsesDeterministicDeckOrder(t *testing.T) {
 	}
 }
 
+func TestDrawCardsLeavesDiscardUnchanged(t *testing.T) {
+	battle := state.Battle{
+		ID:      "battle-1",
+		Segment: segment.NewManager().InitialState(),
+		Actors: map[string]state.ActorState{
+			"player": {
+				Cards: state.CardZones{
+					Deck:    []string{"strike", "guard"},
+					Discard: []string{"spent-1", "spent-2"},
+				},
+			},
+		},
+	}
+
+	if _, err := card.DrawCards(&battle, "player", 1); err != nil {
+		t.Fatalf("DrawCards() returned error: %v", err)
+	}
+
+	wantDiscard := []string{"spent-1", "spent-2"}
+	if !reflect.DeepEqual(battle.Actors["player"].Cards.Discard, wantDiscard) {
+		t.Fatalf("discard = %#v, want %#v", battle.Actors["player"].Cards.Discard, wantDiscard)
+	}
+}
+
+func TestDrawCardsLeavesRemovedUnchanged(t *testing.T) {
+	battle := state.Battle{
+		ID:      "battle-1",
+		Segment: segment.NewManager().InitialState(),
+		Actors: map[string]state.ActorState{
+			"player": {
+				Cards: state.CardZones{
+					Deck:    []string{"strike", "guard"},
+					Removed: []string{"lost-1", "lost-2"},
+				},
+			},
+		},
+	}
+
+	if _, err := card.DrawCards(&battle, "player", 1); err != nil {
+		t.Fatalf("DrawCards() returned error: %v", err)
+	}
+
+	wantRemoved := []string{"lost-1", "lost-2"}
+	if !reflect.DeepEqual(battle.Actors["player"].Cards.Removed, wantRemoved) {
+		t.Fatalf("removed = %#v, want %#v", battle.Actors["player"].Cards.Removed, wantRemoved)
+	}
+}
+
 func TestDrawCardsEmptyDeckReturnsExplicitDeckEmptyEvent(t *testing.T) {
 	battle := state.Battle{
 		ID:      "battle-1",
 		Segment: segment.NewManager().InitialState(),
 		Actors: map[string]state.ActorState{
-			"player": {},
+			"player": {
+				Cards: state.CardZones{
+					Hand:    []string{"starter"},
+					Discard: []string{"spent"},
+					Removed: []string{"lost"},
+				},
+			},
 		},
 	}
 
@@ -98,8 +156,14 @@ func TestDrawCardsEmptyDeckReturnsExplicitDeckEmptyEvent(t *testing.T) {
 		t.Fatalf("DrawCards() events = %#v, want %#v", got, want)
 	}
 
-	if len(battle.Actors["player"].Cards.Deck) != 0 || len(battle.Actors["player"].Cards.Hand) != 0 {
-		t.Fatalf("empty deck draw changed zones: %#v", battle.Actors["player"].Cards)
+	wantZones := state.CardZones{
+		Deck:    nil,
+		Hand:    []string{"starter"},
+		Discard: []string{"spent"},
+		Removed: []string{"lost"},
+	}
+	if !reflect.DeepEqual(battle.Actors["player"].Cards, wantZones) {
+		t.Fatalf("empty deck draw zones = %#v, want %#v", battle.Actors["player"].Cards, wantZones)
 	}
 }
 

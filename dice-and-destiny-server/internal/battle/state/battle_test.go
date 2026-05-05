@@ -32,7 +32,10 @@ func TestNewBattleInitializesMinimalState(t *testing.T) {
 	}
 
 	wantPlayerCards := state.CardZones{
-		Deck: []string{"card-1", "card-2", "card-3"},
+		Deck:    []string{"card-1", "card-2", "card-3"},
+		Hand:    nil,
+		Discard: nil,
+		Removed: nil,
 	}
 	if !reflect.DeepEqual(battle.Actors["player"].Cards, wantPlayerCards) {
 		t.Fatalf("player cards = %#v, want %#v", battle.Actors["player"].Cards, wantPlayerCards)
@@ -57,7 +60,10 @@ func TestNewBattleFromSetupInitializesActorCardState(t *testing.T) {
 	}
 
 	want := state.CardZones{
-		Deck: []string{"strike", "guard"},
+		Deck:    []string{"strike", "guard"},
+		Hand:    nil,
+		Discard: nil,
+		Removed: nil,
 	}
 	if !reflect.DeepEqual(battle.Actors["player"].Cards, want) {
 		t.Fatalf("player cards = %#v, want %#v", battle.Actors["player"].Cards, want)
