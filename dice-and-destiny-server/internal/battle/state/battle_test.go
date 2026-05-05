@@ -1,6 +1,7 @@
 package state_test
 
 import (
+	"reflect"
 	"testing"
 
 	"diceanddestiny/server/internal/battle/segment"
@@ -28,6 +29,13 @@ func TestNewBattleInitializesMinimalState(t *testing.T) {
 
 	if battle.Segment.Round != 1 {
 		t.Fatalf("battle segment round = %d, want 1", battle.Segment.Round)
+	}
+
+	wantPlayerCards := state.CardZones{
+		Deck: []string{"card-1", "card-2", "card-3"},
+	}
+	if !reflect.DeepEqual(battle.Cards["player"], wantPlayerCards) {
+		t.Fatalf("player cards = %#v, want %#v", battle.Cards["player"], wantPlayerCards)
 	}
 }
 

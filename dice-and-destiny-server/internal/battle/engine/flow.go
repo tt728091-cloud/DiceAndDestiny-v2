@@ -1,6 +1,7 @@
 package engine
 
 import (
+	"diceanddestiny/server/internal/battle/event"
 	"diceanddestiny/server/internal/battle/segment"
 	"diceanddestiny/server/internal/battle/state"
 )
@@ -17,6 +18,7 @@ const (
 )
 
 type FlowResult struct {
+	Events   []event.Event
 	Decision FlowDecision
 }
 

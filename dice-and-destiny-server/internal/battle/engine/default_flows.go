@@ -1,6 +1,14 @@
 package engine
 
-import "diceanddestiny/server/internal/battle/segment"
+import (
+	"diceanddestiny/server/internal/battle/card"
+	"diceanddestiny/server/internal/battle/segment"
+)
+
+const (
+	incomeDrawActorID = "player"
+	incomeDrawCount   = 1
+)
 
 type OngoingEffectsFlow struct{}
 
@@ -27,7 +35,15 @@ func (IncomeFlow) ID() segment.Segment {
 }
 
 func (IncomeFlow) OnEnter(ctx *Context) (FlowResult, error) {
-	return readyResult(), nil
+	events, err := card.DrawCards(ctx.Battle, incomeDrawActorID, incomeDrawCount)
+	if err != nil {
+		return FlowResult{}, err
+	}
+
+	return FlowResult{
+		Events:   events,
+		Decision: ReadyToAdvance,
+	}, nil
 }
 
 func (IncomeFlow) CanAdvance(ctx *Context) (FlowDecision, error) {

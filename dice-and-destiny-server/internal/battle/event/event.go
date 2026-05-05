@@ -8,17 +8,21 @@ type Type string
 const (
 	TypeSegmentAdvanced Type = "segment_advanced"
 	TypeSegmentEntered  Type = "segment_entered"
+	TypeCardsDrawn      Type = "cards_drawn"
 )
 
 // Event describes an authority-approved battle fact that already happened.
 // Keep UI intent and transport details out of this package.
 type Event struct {
 	Type          Type            `json:"type"`
+	ActorID       string          `json:"actor_id,omitempty"`
 	From          segment.Segment `json:"from,omitempty"`
 	To            segment.Segment `json:"to,omitempty"`
 	Segment       segment.Segment `json:"segment,omitempty"`
 	Round         int             `json:"round,omitempty"`
 	CompletedTurn bool            `json:"completed_turn,omitempty"`
+	Cards         []string        `json:"cards,omitempty"`
+	DeckEmpty     bool            `json:"deck_empty,omitempty"`
 }
 
 // NewSegmentAdvanced converts segment progression data into the public event
@@ -39,5 +43,14 @@ func NewSegmentEntered(state segment.State) Event {
 		Type:    TypeSegmentEntered,
 		Segment: state.Current,
 		Round:   state.Round,
+	}
+}
+
+func NewCardsDrawn(actorID string, cards []string, deckEmpty bool) Event {
+	return Event{
+		Type:      TypeCardsDrawn,
+		ActorID:   actorID,
+		Cards:     append([]string(nil), cards...),
+		DeckEmpty: deckEmpty,
 	}
 }

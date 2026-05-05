@@ -39,13 +39,16 @@ func (e Engine) handleAdvanceSegment(cmd command.Command) Result {
 		return rejected(err.Error())
 	}
 
+	events := make([]event.Event, 0, len(advanced.Exit.Events)+1+len(advanced.Enter.Events))
+	events = append(events, advanced.Exit.Events...)
+	events = append(events, event.NewSegmentAdvanced(advanced.Advance))
+	events = append(events, advanced.Enter.Events...)
+
 	return Result{
 		Accepted: true,
 		// Events describe what changed; snapshots describe state after the change.
 		// The shared packages own those shapes so authority only serializes them.
-		Events: []event.Event{
-			event.NewSegmentAdvanced(advanced.Advance),
-		},
+		Events:   events,
 		Snapshot: battleSnapshot(&battle),
 	}
 }

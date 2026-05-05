@@ -35,6 +35,7 @@ func TestHandleCommandAdvanceSegmentReturnsEventAndSnapshot(t *testing.T) {
 				To:    segment.Income,
 				Round: 1,
 			},
+			event.NewCardsDrawn("player", []string{"card-1"}, false),
 		},
 		Snapshot: &snapshot.Battle{
 			BattleID: "battle-1",
@@ -133,12 +134,44 @@ func TestDefaultEngineResolvesIncomeFlow(t *testing.T) {
 	}
 }
 
+func TestDefaultEngineDrawsCardWhenEnteringIncome(t *testing.T) {
+	battle, err := state.NewBattle("battle-1")
+	if err != nil {
+		t.Fatalf("NewBattle() returned error: %v", err)
+	}
+
+	eng := engine.NewEngine()
+
+	got, err := eng.AdvanceSegment(&battle)
+	if err != nil {
+		t.Fatalf("AdvanceSegment() returned error: %v", err)
+	}
+
+	wantEvents := []event.Event{
+		event.NewCardsDrawn("player", []string{"card-1"}, false),
+	}
+	if !reflect.DeepEqual(got.Enter.Events, wantEvents) {
+		t.Fatalf("enter events = %#v, want %#v", got.Enter.Events, wantEvents)
+	}
+
+	wantZones := state.CardZones{
+		Deck: []string{"card-2", "card-3"},
+		Hand: []string{"card-1"},
+	}
+	if !reflect.DeepEqual(battle.Cards["player"], wantZones) {
+		t.Fatalf("player card zones = %#v, want %#v", battle.Cards["player"], wantZones)
+	}
+}
+
 func TestAdvanceSegmentUsesSegmentManagerForRoundWrap(t *testing.T) {
 	battle := state.Battle{
 		ID: "battle-1",
 		Segment: segment.State{
 			Current: segment.DamageResolution,
 			Round:   1,
+		},
+		Cards: map[string]state.CardZones{
+			"player": {},
 		},
 	}
 

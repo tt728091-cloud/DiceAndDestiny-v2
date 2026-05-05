@@ -29,7 +29,7 @@ func TestNewSegmentAdvancedIncludesProgressionFields(t *testing.T) {
 		Round:         2,
 		CompletedTurn: true,
 	}
-	if got != want {
+	if !reflect.DeepEqual(got, want) {
 		t.Fatalf("NewSegmentAdvanced() = %#v, want %#v", got, want)
 	}
 }
@@ -62,8 +62,35 @@ func TestNewSegmentEnteredIncludesCurrentSegmentFields(t *testing.T) {
 		Segment: segment.Income,
 		Round:   1,
 	}
-	if got != want {
+	if !reflect.DeepEqual(got, want) {
 		t.Fatalf("NewSegmentEntered() = %#v, want %#v", got, want)
+	}
+}
+
+func TestNewCardsDrawnIncludesActorAndCards(t *testing.T) {
+	cards := []string{"card-1", "card-2"}
+	got := event.NewCardsDrawn("player", cards, false)
+	cards[0] = "mutated"
+
+	want := event.Event{
+		Type:    event.TypeCardsDrawn,
+		ActorID: "player",
+		Cards:   []string{"card-1", "card-2"},
+	}
+	if !reflect.DeepEqual(got, want) {
+		t.Fatalf("NewCardsDrawn() = %#v, want %#v", got, want)
+	}
+}
+
+func TestCardsDrawnJSONShape(t *testing.T) {
+	got, err := json.Marshal(event.NewCardsDrawn("player", []string{"card-1"}, true))
+	if err != nil {
+		t.Fatalf("Marshal() returned error: %v", err)
+	}
+
+	want := `{"type":"cards_drawn","actor_id":"player","cards":["card-1"],"deck_empty":true}`
+	if string(got) != want {
+		t.Fatalf("event JSON = %s, want %s", got, want)
 	}
 }
 

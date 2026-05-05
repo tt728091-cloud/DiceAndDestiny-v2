@@ -112,7 +112,7 @@ func TestHandleCommandAdvanceSegmentReturnsEventAndSnapshot(t *testing.T) {
 		"payload": {}
 	}`)
 
-	wantJSON := `{"accepted":true,"events":[{"type":"segment_advanced","from":"ongoing_effects","to":"income","round":1}],"snapshot":{"battle_id":"battle-1","segment":"income","round":1}}`
+	wantJSON := `{"accepted":true,"events":[{"type":"segment_advanced","from":"ongoing_effects","to":"income","round":1},{"type":"cards_drawn","actor_id":"player","cards":["card-1"]}],"snapshot":{"battle_id":"battle-1","segment":"income","round":1}}`
 	if gotJSON != wantJSON {
 		t.Fatalf("HandleCommand() JSON = %s, want %s", gotJSON, wantJSON)
 	}
@@ -128,6 +128,7 @@ func TestHandleCommandAdvanceSegmentReturnsEventAndSnapshot(t *testing.T) {
 				To:    segment.Income,
 				Round: 1,
 			},
+			event.NewCardsDrawn("player", []string{"card-1"}, false),
 		},
 		Snapshot: &snapshot.Battle{
 			BattleID: "battle-1",

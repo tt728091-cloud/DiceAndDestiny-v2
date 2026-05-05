@@ -9,6 +9,12 @@ import (
 type Battle struct {
 	ID      string
 	Segment segment.State
+	Cards   map[string]CardZones
+}
+
+type CardZones struct {
+	Deck []string
+	Hand []string
 }
 
 func NewBattle(id string) (Battle, error) {
@@ -19,5 +25,10 @@ func NewBattle(id string) (Battle, error) {
 	return Battle{
 		ID:      id,
 		Segment: segment.NewManager().InitialState(),
+		Cards: map[string]CardZones{
+			"player": {
+				Deck: []string{"card-1", "card-2", "card-3"},
+			},
+		},
 	}, nil
 }
