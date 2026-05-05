@@ -9,7 +9,11 @@ import (
 type Battle struct {
 	ID      string
 	Segment segment.State
-	Cards   map[string]CardZones
+	Actors  map[string]ActorState
+}
+
+type ActorState struct {
+	Cards CardZones
 }
 
 type CardZones struct {
@@ -17,18 +21,47 @@ type CardZones struct {
 	Hand []string
 }
 
+type BattleSetup struct {
+	Actors []ActorSetup
+}
+
+type ActorSetup struct {
+	ID   string
+	Deck []string
+}
+
 func NewBattle(id string) (Battle, error) {
+	return NewBattleFromSetup(id, BattleSetup{
+		Actors: []ActorSetup{
+			{
+				ID:   "player",
+				Deck: []string{"card-1", "card-2", "card-3"},
+			},
+		},
+	})
+}
+
+func NewBattleFromSetup(id string, setup BattleSetup) (Battle, error) {
 	if id == "" {
 		return Battle{}, errors.New("battle id is required")
+	}
+
+	actors := make(map[string]ActorState, len(setup.Actors))
+	for _, actor := range setup.Actors {
+		if actor.ID == "" {
+			return Battle{}, errors.New("actor id is required")
+		}
+
+		actors[actor.ID] = ActorState{
+			Cards: CardZones{
+				Deck: append([]string(nil), actor.Deck...),
+			},
+		}
 	}
 
 	return Battle{
 		ID:      id,
 		Segment: segment.NewManager().InitialState(),
-		Cards: map[string]CardZones{
-			"player": {
-				Deck: []string{"card-1", "card-2", "card-3"},
-			},
-		},
+		Actors:  actors,
 	}, nil
 }

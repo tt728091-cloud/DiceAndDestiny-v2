@@ -15,10 +15,12 @@ func TestDrawCardsMovesCardsFromDeckToHand(t *testing.T) {
 	battle := state.Battle{
 		ID:      "battle-1",
 		Segment: segment.NewManager().InitialState(),
-		Cards: map[string]state.CardZones{
+		Actors: map[string]state.ActorState{
 			"player": {
-				Deck: []string{"strike", "guard", "focus"},
-				Hand: []string{"starter"},
+				Cards: state.CardZones{
+					Deck: []string{"strike", "guard", "focus"},
+					Hand: []string{"starter"},
+				},
 			},
 		},
 	}
@@ -39,8 +41,8 @@ func TestDrawCardsMovesCardsFromDeckToHand(t *testing.T) {
 		Deck: []string{"focus"},
 		Hand: []string{"starter", "strike", "guard"},
 	}
-	if !reflect.DeepEqual(battle.Cards["player"], wantZones) {
-		t.Fatalf("card zones = %#v, want %#v", battle.Cards["player"], wantZones)
+	if !reflect.DeepEqual(battle.Actors["player"].Cards, wantZones) {
+		t.Fatalf("card zones = %#v, want %#v", battle.Actors["player"].Cards, wantZones)
 	}
 }
 
@@ -48,9 +50,11 @@ func TestDrawCardsUsesDeterministicDeckOrder(t *testing.T) {
 	battle := state.Battle{
 		ID:      "battle-1",
 		Segment: segment.NewManager().InitialState(),
-		Cards: map[string]state.CardZones{
+		Actors: map[string]state.ActorState{
 			"player": {
-				Deck: []string{"first", "second", "third"},
+				Cards: state.CardZones{
+					Deck: []string{"first", "second", "third"},
+				},
 			},
 		},
 	}
@@ -63,13 +67,13 @@ func TestDrawCardsUsesDeterministicDeckOrder(t *testing.T) {
 	}
 
 	wantHand := []string{"first", "second"}
-	if !reflect.DeepEqual(battle.Cards["player"].Hand, wantHand) {
-		t.Fatalf("hand = %#v, want %#v", battle.Cards["player"].Hand, wantHand)
+	if !reflect.DeepEqual(battle.Actors["player"].Cards.Hand, wantHand) {
+		t.Fatalf("hand = %#v, want %#v", battle.Actors["player"].Cards.Hand, wantHand)
 	}
 
 	wantDeck := []string{"third"}
-	if !reflect.DeepEqual(battle.Cards["player"].Deck, wantDeck) {
-		t.Fatalf("deck = %#v, want %#v", battle.Cards["player"].Deck, wantDeck)
+	if !reflect.DeepEqual(battle.Actors["player"].Cards.Deck, wantDeck) {
+		t.Fatalf("deck = %#v, want %#v", battle.Actors["player"].Cards.Deck, wantDeck)
 	}
 }
 
@@ -77,7 +81,7 @@ func TestDrawCardsEmptyDeckReturnsExplicitDeckEmptyEvent(t *testing.T) {
 	battle := state.Battle{
 		ID:      "battle-1",
 		Segment: segment.NewManager().InitialState(),
-		Cards: map[string]state.CardZones{
+		Actors: map[string]state.ActorState{
 			"player": {},
 		},
 	}
@@ -94,8 +98,8 @@ func TestDrawCardsEmptyDeckReturnsExplicitDeckEmptyEvent(t *testing.T) {
 		t.Fatalf("DrawCards() events = %#v, want %#v", got, want)
 	}
 
-	if len(battle.Cards["player"].Deck) != 0 || len(battle.Cards["player"].Hand) != 0 {
-		t.Fatalf("empty deck draw changed zones: %#v", battle.Cards["player"])
+	if len(battle.Actors["player"].Cards.Deck) != 0 || len(battle.Actors["player"].Cards.Hand) != 0 {
+		t.Fatalf("empty deck draw changed zones: %#v", battle.Actors["player"].Cards)
 	}
 }
 
@@ -103,7 +107,7 @@ func TestDrawCardsRejectsMissingActorCardState(t *testing.T) {
 	battle := state.Battle{
 		ID:      "battle-1",
 		Segment: segment.NewManager().InitialState(),
-		Cards:   map[string]state.CardZones{},
+		Actors:  map[string]state.ActorState{},
 	}
 
 	_, err := card.DrawCards(&battle, "player", 1)

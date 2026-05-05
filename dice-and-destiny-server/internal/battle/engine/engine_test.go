@@ -158,8 +158,41 @@ func TestDefaultEngineDrawsCardWhenEnteringIncome(t *testing.T) {
 		Deck: []string{"card-2", "card-3"},
 		Hand: []string{"card-1"},
 	}
-	if !reflect.DeepEqual(battle.Cards["player"], wantZones) {
-		t.Fatalf("player card zones = %#v, want %#v", battle.Cards["player"], wantZones)
+	if !reflect.DeepEqual(battle.Actors["player"].Cards, wantZones) {
+		t.Fatalf("player card zones = %#v, want %#v", battle.Actors["player"].Cards, wantZones)
+	}
+}
+
+func TestDefaultEngineDrawsCardFromConfiguredSetupActorWhenEnteringIncome(t *testing.T) {
+	battle, err := state.NewBattleFromSetup("battle-1", state.BattleSetup{
+		Actors: []state.ActorSetup{
+			{ID: "player", Deck: []string{"strike", "guard"}},
+		},
+	})
+	if err != nil {
+		t.Fatalf("NewBattleFromSetup() returned error: %v", err)
+	}
+
+	eng := engine.NewEngine()
+
+	got, err := eng.AdvanceSegment(&battle)
+	if err != nil {
+		t.Fatalf("AdvanceSegment() returned error: %v", err)
+	}
+
+	wantEvents := []event.Event{
+		event.NewCardsDrawn("player", []string{"strike"}, false),
+	}
+	if !reflect.DeepEqual(got.Enter.Events, wantEvents) {
+		t.Fatalf("enter events = %#v, want %#v", got.Enter.Events, wantEvents)
+	}
+
+	wantZones := state.CardZones{
+		Deck: []string{"guard"},
+		Hand: []string{"strike"},
+	}
+	if !reflect.DeepEqual(battle.Actors["player"].Cards, wantZones) {
+		t.Fatalf("player card zones = %#v, want %#v", battle.Actors["player"].Cards, wantZones)
 	}
 }
 
@@ -170,7 +203,7 @@ func TestAdvanceSegmentUsesSegmentManagerForRoundWrap(t *testing.T) {
 			Current: segment.DamageResolution,
 			Round:   1,
 		},
-		Cards: map[string]state.CardZones{
+		Actors: map[string]state.ActorState{
 			"player": {},
 		},
 	}

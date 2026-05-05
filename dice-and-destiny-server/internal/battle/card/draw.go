@@ -23,11 +23,12 @@ func DrawCards(battle *state.Battle, actorID string, count int) ([]event.Event, 
 		return nil, fmt.Errorf("%w: count must be non-negative", ErrInvalidDraw)
 	}
 
-	zones, ok := battle.Cards[actorID]
+	actor, ok := battle.Actors[actorID]
 	if !ok {
 		return nil, fmt.Errorf("%w: %q", ErrMissingCardState, actorID)
 	}
 
+	zones := actor.Cards
 	drawCount := count
 	if drawCount > len(zones.Deck) {
 		drawCount = len(zones.Deck)
@@ -36,7 +37,8 @@ func DrawCards(battle *state.Battle, actorID string, count int) ([]event.Event, 
 	drawn := append([]string(nil), zones.Deck[:drawCount]...)
 	zones.Deck = append([]string(nil), zones.Deck[drawCount:]...)
 	zones.Hand = append(zones.Hand, drawn...)
-	battle.Cards[actorID] = zones
+	actor.Cards = zones
+	battle.Actors[actorID] = actor
 
 	return []event.Event{
 		event.NewCardsDrawn(actorID, drawn, drawCount < count),
