@@ -52,7 +52,13 @@ func TestNewBattleRejectsEmptyBattleID(t *testing.T) {
 func TestNewBattleFromSetupInitializesActorCardState(t *testing.T) {
 	battle, err := state.NewBattleFromSetup("battle-1", state.BattleSetup{
 		Actors: []state.ActorSetup{
-			{ID: "player", Deck: []string{"strike", "guard"}},
+			{
+				ID:      "player",
+				Deck:    []string{"strike", "guard"},
+				Hand:    []string{"opener"},
+				Discard: []string{"spent"},
+				Removed: []string{"lost"},
+			},
 		},
 	})
 	if err != nil {
@@ -61,20 +67,29 @@ func TestNewBattleFromSetupInitializesActorCardState(t *testing.T) {
 
 	want := state.CardZones{
 		Deck:    []string{"strike", "guard"},
-		Hand:    nil,
-		Discard: nil,
-		Removed: nil,
+		Hand:    []string{"opener"},
+		Discard: []string{"spent"},
+		Removed: []string{"lost"},
 	}
 	if !reflect.DeepEqual(battle.Actors["player"].Cards, want) {
 		t.Fatalf("player cards = %#v, want %#v", battle.Actors["player"].Cards, want)
 	}
 }
 
-func TestNewBattleFromSetupCopiesDeckInput(t *testing.T) {
+func TestNewBattleFromSetupCopiesCardZoneInputs(t *testing.T) {
 	deck := []string{"strike", "guard"}
+	hand := []string{"opener"}
+	discard := []string{"spent"}
+	removed := []string{"lost"}
 	battle, err := state.NewBattleFromSetup("battle-1", state.BattleSetup{
 		Actors: []state.ActorSetup{
-			{ID: "player", Deck: deck},
+			{
+				ID:      "player",
+				Deck:    deck,
+				Hand:    hand,
+				Discard: discard,
+				Removed: removed,
+			},
 		},
 	})
 	if err != nil {
@@ -82,10 +97,18 @@ func TestNewBattleFromSetupCopiesDeckInput(t *testing.T) {
 	}
 
 	deck[0] = "mutated"
+	hand[0] = "mutated"
+	discard[0] = "mutated"
+	removed[0] = "mutated"
 
-	wantDeck := []string{"strike", "guard"}
-	if !reflect.DeepEqual(battle.Actors["player"].Cards.Deck, wantDeck) {
-		t.Fatalf("player deck = %#v, want %#v", battle.Actors["player"].Cards.Deck, wantDeck)
+	want := state.CardZones{
+		Deck:    []string{"strike", "guard"},
+		Hand:    []string{"opener"},
+		Discard: []string{"spent"},
+		Removed: []string{"lost"},
+	}
+	if !reflect.DeepEqual(battle.Actors["player"].Cards, want) {
+		t.Fatalf("player cards = %#v, want %#v", battle.Actors["player"].Cards, want)
 	}
 }
 
