@@ -94,6 +94,31 @@ func TestCardsDrawnJSONShape(t *testing.T) {
 	}
 }
 
+func TestNewDiscardReshuffledIncludesActorAndCount(t *testing.T) {
+	got := event.NewDiscardReshuffled("player", 4)
+
+	want := event.Event{
+		Type:    event.TypeDiscardReshuffled,
+		ActorID: "player",
+		Count:   4,
+	}
+	if !reflect.DeepEqual(got, want) {
+		t.Fatalf("NewDiscardReshuffled() = %#v, want %#v", got, want)
+	}
+}
+
+func TestDiscardReshuffledJSONShape(t *testing.T) {
+	got, err := json.Marshal(event.NewDiscardReshuffled("player", 4))
+	if err != nil {
+		t.Fatalf("Marshal() returned error: %v", err)
+	}
+
+	want := `{"type":"discard_reshuffled","actor_id":"player","count":4}`
+	if string(got) != want {
+		t.Fatalf("event JSON = %s, want %s", got, want)
+	}
+}
+
 func TestEventProductionCodeDoesNotImportPresentationPackages(t *testing.T) {
 	assertProductionImportsAllowed(t, []string{
 		"dice-and-destiny-client",
