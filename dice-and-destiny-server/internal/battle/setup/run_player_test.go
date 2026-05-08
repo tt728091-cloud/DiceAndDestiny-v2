@@ -6,6 +6,7 @@ import (
 	"strings"
 	"testing"
 
+	"diceanddestiny/server/internal/battle/card"
 	"diceanddestiny/server/internal/battle/engine"
 	"diceanddestiny/server/internal/battle/event"
 	"diceanddestiny/server/internal/battle/segment"
@@ -77,6 +78,88 @@ func TestBattleSetupFromRunPlayerCopiesInputZoneSlices(t *testing.T) {
 	}
 	if !reflect.DeepEqual(gotActor, wantActor) {
 		t.Fatalf("actor setup = %#v, want %#v", gotActor, wantActor)
+	}
+}
+
+func TestBattleSetupFromRunPlayerShufflesDeckWhenRequested(t *testing.T) {
+	source := &fakeShuffleSource{indexes: []int{1, 0, 1}}
+
+	got, err := setup.BattleSetupFromRunPlayer(setup.RunPlayerState{
+		ActorID: "player",
+		Cards: setup.RunCardZones{
+			Deck:    []string{"strike", "guard", "focus", "bash"},
+			Hand:    []string{"opener"},
+			Discard: []string{"spent"},
+			Removed: []string{"lost"},
+		},
+	}, setup.WithDeckShuffleSource(source))
+	if err != nil {
+		t.Fatalf("BattleSetupFromRunPlayer() returned error: %v", err)
+	}
+
+	want := state.ActorSetup{
+		ID:      "player",
+		Deck:    []string{"focus", "bash", "strike", "guard"},
+		Hand:    []string{"opener"},
+		Discard: []string{"spent"},
+		Removed: []string{"lost"},
+	}
+	if !reflect.DeepEqual(got.Actors[0], want) {
+		t.Fatalf("actor setup = %#v, want %#v", got.Actors[0], want)
+	}
+}
+
+func TestBattleSetupFromRunPlayerShuffledDeckFeedsIncomeDrawOrder(t *testing.T) {
+	battleSetup, err := setup.BattleSetupFromRunPlayer(setup.RunPlayerState{
+		ActorID: "player",
+		Cards: setup.RunCardZones{
+			Deck: []string{"strike", "guard", "focus", "bash"},
+		},
+	}, setup.WithDeckShuffleSource(&fakeShuffleSource{indexes: []int{1, 0, 1}}))
+	if err != nil {
+		t.Fatalf("BattleSetupFromRunPlayer() returned error: %v", err)
+	}
+
+	battle, err := state.NewBattleFromSetup("battle-1", battleSetup)
+	if err != nil {
+		t.Fatalf("NewBattleFromSetup() returned error: %v", err)
+	}
+
+	eng := engine.NewEngine()
+	got, err := eng.AdvanceSegment(&battle)
+	if err != nil {
+		t.Fatalf("AdvanceSegment() returned error: %v", err)
+	}
+
+	wantEvents := []event.Event{
+		event.NewCardsDrawn("player", []string{"focus"}, false),
+	}
+	if !reflect.DeepEqual(got.Enter.Events, wantEvents) {
+		t.Fatalf("enter events = %#v, want %#v", got.Enter.Events, wantEvents)
+	}
+
+	wantZones := state.CardZones{
+		Deck: []string{"bash", "strike", "guard"},
+		Hand: []string{"focus"},
+	}
+	if !reflect.DeepEqual(battle.Actors["player"].Cards, wantZones) {
+		t.Fatalf("player cards = %#v, want %#v", battle.Actors["player"].Cards, wantZones)
+	}
+}
+
+func TestBattleSetupFromRunPlayerRejectsRequestedShuffleWithoutSource(t *testing.T) {
+	got, err := setup.BattleSetupFromRunPlayer(setup.RunPlayerState{
+		ActorID: "player",
+		Cards: setup.RunCardZones{
+			Deck: []string{"strike", "guard"},
+		},
+	}, setup.WithDeckShuffleSource(nil))
+	if err == nil {
+		t.Fatalf("BattleSetupFromRunPlayer() succeeded with setup %#v", got)
+	}
+
+	if !errors.Is(err, card.ErrInvalidShuffle) {
+		t.Fatalf("BattleSetupFromRunPlayer() error = %v, want ErrInvalidShuffle", err)
 	}
 }
 
@@ -188,4 +271,14 @@ func TestBattleSetupFromRunPlayerSupportsIncomeDraw(t *testing.T) {
 	if !reflect.DeepEqual(battle.Actors["player"].Cards, wantZones) {
 		t.Fatalf("player cards = %#v, want %#v", battle.Actors["player"].Cards, wantZones)
 	}
+}
+
+type fakeShuffleSource struct {
+	indexes []int
+}
+
+func (s *fakeShuffleSource) Intn(n int) int {
+	next := s.indexes[0]
+	s.indexes = s.indexes[1:]
+	return next
 }

@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 
+	"diceanddestiny/server/internal/battle/card"
 	"diceanddestiny/server/internal/battle/state"
 )
 
@@ -21,7 +22,21 @@ type RunCardZones struct {
 	Removed []string
 }
 
-func BattleSetupFromRunPlayer(player RunPlayerState) (state.BattleSetup, error) {
+type BattleSetupOption func(*battleSetupOptions)
+
+type battleSetupOptions struct {
+	shuffleDeck       bool
+	deckShuffleSource card.ShuffleSource
+}
+
+func WithDeckShuffleSource(source card.ShuffleSource) BattleSetupOption {
+	return func(options *battleSetupOptions) {
+		options.shuffleDeck = true
+		options.deckShuffleSource = source
+	}
+}
+
+func BattleSetupFromRunPlayer(player RunPlayerState, opts ...BattleSetupOption) (state.BattleSetup, error) {
 	switch {
 	case player.ActorID == "":
 		return state.BattleSetup{}, fmt.Errorf("%w: actor id is required", ErrInvalidRunPlayerState)
@@ -29,11 +44,26 @@ func BattleSetupFromRunPlayer(player RunPlayerState) (state.BattleSetup, error) 
 		return state.BattleSetup{}, fmt.Errorf("%w: deck is required", ErrInvalidRunPlayerState)
 	}
 
+	options := battleSetupOptions{}
+	for _, opt := range opts {
+		if opt == nil {
+			continue
+		}
+		opt(&options)
+	}
+
+	deck := copyStrings(player.Cards.Deck)
+	if options.shuffleDeck {
+		if err := card.ShuffleDeck(deck, options.deckShuffleSource); err != nil {
+			return state.BattleSetup{}, err
+		}
+	}
+
 	return state.BattleSetup{
 		Actors: []state.ActorSetup{
 			{
 				ID:      player.ActorID,
-				Deck:    copyStrings(player.Cards.Deck),
+				Deck:    deck,
 				Hand:    copyStrings(player.Cards.Hand),
 				Discard: copyStrings(player.Cards.Discard),
 				Removed: copyStrings(player.Cards.Removed),
