@@ -1,4 +1,4 @@
-package segment
+package engine
 
 import (
 	"go/parser"
@@ -9,21 +9,10 @@ import (
 	"testing"
 )
 
-func TestSegmentProductionCodeDoesNotImportGameplayOrPresentationPackages(t *testing.T) {
+func TestEngineProductionCodeDoesNotImportIncomeRuleDependencies(t *testing.T) {
 	forbiddenImportFragments := []string{
 		"internal/battle/card",
-		"internal/battle/dice",
-		"internal/battle/damage",
-		"internal/battle/engine",
-		"internal/battle/enemy",
-		"internal/battle/income",
 		"internal/battle/resource",
-		"internal/battle/state",
-		"dice-and-destiny-client",
-		"gdextension",
-		"godot",
-		"/ui",
-		"ui/",
 	}
 
 	files, err := filepath.Glob("*.go")
@@ -50,7 +39,7 @@ func TestSegmentProductionCodeDoesNotImportGameplayOrPresentationPackages(t *tes
 			lowerImportPath := strings.ToLower(importPath)
 			for _, forbidden := range forbiddenImportFragments {
 				if strings.Contains(lowerImportPath, forbidden) {
-					t.Fatalf("segment production file %s imports forbidden package %q", file, importPath)
+					t.Fatalf("engine production file %s imports income rule dependency %q", file, importPath)
 				}
 			}
 		}

@@ -30,7 +30,37 @@ func TestFromBattleIncludesBattleIDCurrentSegmentAndRound(t *testing.T) {
 		Segment:  segment.Income,
 		Round:    3,
 	}
-	if got != want {
+	if !reflect.DeepEqual(got, want) {
+		t.Fatalf("FromBattle() = %#v, want %#v", got, want)
+	}
+}
+
+func TestFromBattleIncludesActorEnergyPoints(t *testing.T) {
+	battle := state.Battle{
+		ID: "battle-1",
+		Segment: segment.State{
+			Current: segment.Income,
+			Round:   3,
+		},
+		Actors: map[string]state.ActorState{
+			"player": {
+				EnergyPoints: 2,
+			},
+		},
+	}
+
+	got := snapshot.FromBattle(battle)
+	want := snapshot.Battle{
+		BattleID: "battle-1",
+		Segment:  segment.Income,
+		Round:    3,
+		Actors: map[string]snapshot.Actor{
+			"player": {
+				EnergyPoints: 2,
+			},
+		},
+	}
+	if !reflect.DeepEqual(got, want) {
 		t.Fatalf("FromBattle() = %#v, want %#v", got, want)
 	}
 }
@@ -40,12 +70,17 @@ func TestBattleSnapshotJSONShape(t *testing.T) {
 		BattleID: "battle-1",
 		Segment:  segment.Income,
 		Round:    1,
+		Actors: map[string]snapshot.Actor{
+			"player": {
+				EnergyPoints: 2,
+			},
+		},
 	})
 	if err != nil {
 		t.Fatalf("Marshal() returned error: %v", err)
 	}
 
-	want := `{"battle_id":"battle-1","segment":"income","round":1}`
+	want := `{"battle_id":"battle-1","segment":"income","round":1,"actors":{"player":{"energy_points":2}}}`
 	if string(got) != want {
 		t.Fatalf("snapshot JSON = %s, want %s", got, want)
 	}
@@ -56,6 +91,11 @@ func TestBattleSnapshotRoundTripsThroughJSON(t *testing.T) {
 		BattleID: "battle-1",
 		Segment:  segment.Defensive,
 		Round:    2,
+		Actors: map[string]snapshot.Actor{
+			"player": {
+				EnergyPoints: 2,
+			},
+		},
 	}
 
 	payload, err := json.Marshal(want)

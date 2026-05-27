@@ -11,6 +11,7 @@ import (
 	"diceanddestiny/server/internal/battle/command"
 	"diceanddestiny/server/internal/battle/engine"
 	"diceanddestiny/server/internal/battle/event"
+	"diceanddestiny/server/internal/battle/income"
 	"diceanddestiny/server/internal/battle/segment"
 	"diceanddestiny/server/internal/battle/snapshot"
 	"diceanddestiny/server/internal/battle/state"
@@ -41,6 +42,11 @@ func TestHandleCommandAdvanceSegmentReturnsEventAndSnapshot(t *testing.T) {
 			BattleID: "battle-1",
 			Segment:  segment.Income,
 			Round:    1,
+			Actors: map[string]snapshot.Actor{
+				"player": {
+					EnergyPoints: 0,
+				},
+			},
 		},
 	}
 
@@ -197,6 +203,166 @@ func TestDefaultEngineDrawsCardFromConfiguredSetupActorWhenEnteringIncome(t *tes
 	}
 	if !reflect.DeepEqual(battle.Actors["player"].Cards, wantZones) {
 		t.Fatalf("player card zones = %#v, want %#v", battle.Actors["player"].Cards, wantZones)
+	}
+}
+
+func TestIncomeFlowConfiguredDrawRewardDrawsCards(t *testing.T) {
+	battle, err := state.NewBattleFromSetup("battle-1", state.BattleSetup{
+		Actors: []state.ActorSetup{
+			{ID: "player", Deck: []string{"strike", "guard"}},
+		},
+	})
+	if err != nil {
+		t.Fatalf("NewBattleFromSetup() returned error: %v", err)
+	}
+
+	flow, err := engine.NewIncomeFlow(income.Reward{
+		ActorID:   "player",
+		DrawCards: 1,
+	})
+	if err != nil {
+		t.Fatalf("NewIncomeFlow() returned error: %v", err)
+	}
+
+	got, err := flow.OnEnter(&engine.Context{Battle: &battle})
+	if err != nil {
+		t.Fatalf("OnEnter() returned error: %v", err)
+	}
+
+	wantEvents := []event.Event{
+		event.NewCardsDrawn("player", []string{"strike"}, false),
+	}
+	if !reflect.DeepEqual(got.Events, wantEvents) {
+		t.Fatalf("enter events = %#v, want %#v", got.Events, wantEvents)
+	}
+
+	wantZones := state.CardZones{
+		Deck: []string{"guard"},
+		Hand: []string{"strike"},
+	}
+	if !reflect.DeepEqual(battle.Actors["player"].Cards, wantZones) {
+		t.Fatalf("player card zones = %#v, want %#v", battle.Actors["player"].Cards, wantZones)
+	}
+}
+
+func TestIncomeFlowDrawZeroRewardDoesNotDrawCards(t *testing.T) {
+	battle, err := state.NewBattleFromSetup("battle-1", state.BattleSetup{
+		Actors: []state.ActorSetup{
+			{ID: "player", Deck: []string{"strike", "guard"}},
+		},
+	})
+	if err != nil {
+		t.Fatalf("NewBattleFromSetup() returned error: %v", err)
+	}
+
+	flow, err := engine.NewIncomeFlow(income.Reward{
+		ActorID:   "player",
+		DrawCards: 0,
+	})
+	if err != nil {
+		t.Fatalf("NewIncomeFlow() returned error: %v", err)
+	}
+
+	got, err := flow.OnEnter(&engine.Context{Battle: &battle})
+	if err != nil {
+		t.Fatalf("OnEnter() returned error: %v", err)
+	}
+
+	if got.Decision != engine.ReadyToAdvance {
+		t.Fatalf("decision = %q, want %q", got.Decision, engine.ReadyToAdvance)
+	}
+	if len(got.Events) != 0 {
+		t.Fatalf("enter events = %#v, want none", got.Events)
+	}
+
+	wantZones := state.CardZones{
+		Deck: []string{"strike", "guard"},
+	}
+	if !reflect.DeepEqual(battle.Actors["player"].Cards, wantZones) {
+		t.Fatalf("player card zones = %#v, want %#v", battle.Actors["player"].Cards, wantZones)
+	}
+}
+
+func TestIncomeFlowEnergyOnlyRewardAddsEnergyPoints(t *testing.T) {
+	battle, err := state.NewBattleFromSetup("battle-1", state.BattleSetup{
+		Actors: []state.ActorSetup{
+			{ID: "player", Deck: []string{"strike", "guard"}},
+		},
+	})
+	if err != nil {
+		t.Fatalf("NewBattleFromSetup() returned error: %v", err)
+	}
+
+	flow, err := engine.NewIncomeFlow(income.Reward{
+		ActorID:      "player",
+		EnergyPoints: 2,
+	})
+	if err != nil {
+		t.Fatalf("NewIncomeFlow() returned error: %v", err)
+	}
+
+	got, err := flow.OnEnter(&engine.Context{Battle: &battle})
+	if err != nil {
+		t.Fatalf("OnEnter() returned error: %v", err)
+	}
+
+	wantEvents := []event.Event{
+		event.NewEnergyPointsGained("player", 2),
+	}
+	if !reflect.DeepEqual(got.Events, wantEvents) {
+		t.Fatalf("enter events = %#v, want %#v", got.Events, wantEvents)
+	}
+
+	if battle.Actors["player"].EnergyPoints != 2 {
+		t.Fatalf("energy points = %d, want 2", battle.Actors["player"].EnergyPoints)
+	}
+
+	wantZones := state.CardZones{
+		Deck: []string{"strike", "guard"},
+	}
+	if !reflect.DeepEqual(battle.Actors["player"].Cards, wantZones) {
+		t.Fatalf("player card zones = %#v, want %#v", battle.Actors["player"].Cards, wantZones)
+	}
+}
+
+func TestNewIncomeFlowRejectsInvalidRewardConfig(t *testing.T) {
+	tests := []struct {
+		name   string
+		reward income.Reward
+		want   string
+	}{
+		{
+			name:   "missing actor",
+			reward: income.Reward{DrawCards: 1},
+			want:   "actor id is required",
+		},
+		{
+			name:   "negative draw",
+			reward: income.Reward{ActorID: "player", DrawCards: -1},
+			want:   "draw cards must be non-negative",
+		},
+		{
+			name:   "negative energy",
+			reward: income.Reward{ActorID: "player", EnergyPoints: -1},
+			want:   "energy points must be non-negative",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			_, err := engine.NewIncomeFlow(tt.reward)
+			if err == nil {
+				t.Fatal("NewIncomeFlow() succeeded with invalid reward")
+			}
+
+			if !errors.Is(err, income.ErrInvalidReward) {
+				t.Fatalf("NewIncomeFlow() error = %v, want ErrInvalidReward", err)
+			}
+
+			if !strings.Contains(err.Error(), tt.want) {
+				t.Fatalf("NewIncomeFlow() error = %q, want %q", err.Error(), tt.want)
+			}
+		})
 	}
 }
 

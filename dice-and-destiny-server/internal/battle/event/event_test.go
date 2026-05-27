@@ -119,6 +119,31 @@ func TestDiscardReshuffledJSONShape(t *testing.T) {
 	}
 }
 
+func TestNewEnergyPointsGainedIncludesActorAndPoints(t *testing.T) {
+	got := event.NewEnergyPointsGained("player", 2)
+
+	want := event.Event{
+		Type:         event.TypeEnergyPointsGained,
+		ActorID:      "player",
+		EnergyPoints: 2,
+	}
+	if !reflect.DeepEqual(got, want) {
+		t.Fatalf("NewEnergyPointsGained() = %#v, want %#v", got, want)
+	}
+}
+
+func TestEnergyPointsGainedJSONShape(t *testing.T) {
+	got, err := json.Marshal(event.NewEnergyPointsGained("player", 2))
+	if err != nil {
+		t.Fatalf("Marshal() returned error: %v", err)
+	}
+
+	want := `{"type":"energy_points_gained","actor_id":"player","energy_points":2}`
+	if string(got) != want {
+		t.Fatalf("event JSON = %s, want %s", got, want)
+	}
+}
+
 func TestEventProductionCodeDoesNotImportPresentationPackages(t *testing.T) {
 	assertProductionImportsAllowed(t, []string{
 		"dice-and-destiny-client",

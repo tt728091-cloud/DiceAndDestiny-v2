@@ -13,7 +13,8 @@ type Battle struct {
 }
 
 type ActorState struct {
-	Cards CardZones
+	Cards        CardZones
+	EnergyPoints int
 }
 
 type CardZones struct {

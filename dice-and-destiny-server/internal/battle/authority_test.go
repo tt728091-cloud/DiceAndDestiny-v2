@@ -112,7 +112,7 @@ func TestHandleCommandAdvanceSegmentReturnsEventAndSnapshot(t *testing.T) {
 		"payload": {}
 	}`)
 
-	wantJSON := `{"accepted":true,"events":[{"type":"segment_advanced","from":"ongoing_effects","to":"income","round":1},{"type":"cards_drawn","actor_id":"player","cards":["card-1"]}],"snapshot":{"battle_id":"battle-1","segment":"income","round":1}}`
+	wantJSON := `{"accepted":true,"events":[{"type":"segment_advanced","from":"ongoing_effects","to":"income","round":1},{"type":"cards_drawn","actor_id":"player","cards":["card-1"]}],"snapshot":{"battle_id":"battle-1","segment":"income","round":1,"actors":{"player":{"energy_points":0}}}}`
 	if gotJSON != wantJSON {
 		t.Fatalf("HandleCommand() JSON = %s, want %s", gotJSON, wantJSON)
 	}
@@ -134,6 +134,11 @@ func TestHandleCommandAdvanceSegmentReturnsEventAndSnapshot(t *testing.T) {
 			BattleID: "battle-1",
 			Segment:  segment.Income,
 			Round:    1,
+			Actors: map[string]snapshot.Actor{
+				"player": {
+					EnergyPoints: 0,
+				},
+			},
 		},
 	}
 

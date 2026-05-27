@@ -6,10 +6,11 @@ import "diceanddestiny/server/internal/battle/segment"
 type Type string
 
 const (
-	TypeSegmentAdvanced   Type = "segment_advanced"
-	TypeSegmentEntered    Type = "segment_entered"
-	TypeCardsDrawn        Type = "cards_drawn"
-	TypeDiscardReshuffled Type = "discard_reshuffled"
+	TypeSegmentAdvanced    Type = "segment_advanced"
+	TypeSegmentEntered     Type = "segment_entered"
+	TypeCardsDrawn         Type = "cards_drawn"
+	TypeDiscardReshuffled  Type = "discard_reshuffled"
+	TypeEnergyPointsGained Type = "energy_points_gained"
 )
 
 // Event describes an authority-approved battle fact that already happened.
@@ -25,6 +26,7 @@ type Event struct {
 	Cards         []string        `json:"cards,omitempty"`
 	DeckEmpty     bool            `json:"deck_empty,omitempty"`
 	Count         int             `json:"count,omitempty"`
+	EnergyPoints  int             `json:"energy_points,omitempty"`
 }
 
 // NewSegmentAdvanced converts segment progression data into the public event
@@ -62,5 +64,13 @@ func NewDiscardReshuffled(actorID string, count int) Event {
 		Type:    TypeDiscardReshuffled,
 		ActorID: actorID,
 		Count:   count,
+	}
+}
+
+func NewEnergyPointsGained(actorID string, points int) Event {
+	return Event{
+		Type:         TypeEnergyPointsGained,
+		ActorID:      actorID,
+		EnergyPoints: points,
 	}
 }
