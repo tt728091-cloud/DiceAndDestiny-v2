@@ -36,7 +36,11 @@ func TestHandleCommandAdvanceSegmentReturnsEventAndSnapshot(t *testing.T) {
 				To:    segment.Income,
 				Round: 1,
 			},
-			event.NewCardsDrawn("player", []string{"card-1"}, false),
+			{
+				Type:    event.TypeCardsDrawn,
+				ActorID: "player",
+				Count:   1,
+			},
 		},
 		Snapshot: &snapshot.Battle{
 			BattleID: "battle-1",
@@ -45,6 +49,54 @@ func TestHandleCommandAdvanceSegmentReturnsEventAndSnapshot(t *testing.T) {
 			Actors: map[string]snapshot.Actor{
 				"player": {
 					EnergyPoints: 0,
+					HandCount:    1,
+					DeckCount:    2,
+					DiscardCount: 0,
+					RemovedCount: 0,
+				},
+			},
+		},
+	}
+
+	if !reflect.DeepEqual(got, want) {
+		t.Fatalf("HandleCommand() = %#v, want %#v", got, want)
+	}
+}
+
+func TestHandleCommandAdvanceSegmentShowsViewerOwnDrawAndHand(t *testing.T) {
+	eng := engine.NewEngine()
+
+	got := eng.HandleCommand(command.Command{
+		BattleID: "battle-1",
+		ActorID:  "player",
+		Type:     command.TypeAdvanceSegment,
+		Payload:  json.RawMessage(`{}`),
+	})
+
+	want := engine.Result{
+		Accepted: true,
+		Events: []event.Event{
+			{
+				Type:  event.TypeSegmentAdvanced,
+				From:  segment.OngoingEffects,
+				To:    segment.Income,
+				Round: 1,
+			},
+			event.NewCardsDrawn("player", []string{"card-1"}, false),
+		},
+		Snapshot: &snapshot.Battle{
+			BattleID:      "battle-1",
+			Segment:       segment.Income,
+			Round:         1,
+			ViewerActorID: "player",
+			Actors: map[string]snapshot.Actor{
+				"player": {
+					EnergyPoints: 0,
+					Hand:         []string{"card-1"},
+					HandCount:    1,
+					DeckCount:    2,
+					DiscardCount: 0,
+					RemovedCount: 0,
 				},
 			},
 		},

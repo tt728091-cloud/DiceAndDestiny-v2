@@ -48,19 +48,29 @@ func (e Engine) handleAdvanceSegment(cmd command.Command) Result {
 		Accepted: true,
 		// Events describe what changed; snapshots describe state after the change.
 		// The shared packages own those shapes so authority only serializes them.
-		Events:   events,
-		Snapshot: battleSnapshot(&battle),
+		Events:   event.ForViewer(events, cmd.ActorID),
+		Snapshot: battleSnapshotForViewer(&battle, cmd.ActorID),
 	}
 }
 
-func battleSnapshot(battle *state.Battle) *snapshot.Battle {
+func battleSnapshotForViewer(battle *state.Battle, viewerActorID string) *snapshot.Battle {
 	if battle == nil {
 		return nil
 	}
 
 	// Copy mutable authoritative state into the read-only client/network shape.
-	snap := snapshot.FromBattle(*battle)
+	snap := snapshot.FromBattleForViewer(*battle, viewerActorIDForBattle(battle, viewerActorID))
 	return &snap
+}
+
+func viewerActorIDForBattle(battle *state.Battle, viewerActorID string) string {
+	if battle == nil {
+		return ""
+	}
+	if _, ok := battle.Actors[viewerActorID]; ok {
+		return viewerActorID
+	}
+	return ""
 }
 
 func rejected(message string) Result {

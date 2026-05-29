@@ -74,3 +74,26 @@ func NewEnergyPointsGained(actorID string, points int) Event {
 		EnergyPoints: points,
 	}
 }
+
+// ForViewer returns a viewer-safe copy of battle events.
+// Raw events remain authoritative facts; this helper hides card IDs that are
+// not visible to the requested viewer.
+func ForViewer(events []Event, viewerActorID string) []Event {
+	filtered := make([]Event, len(events))
+	for i, event := range events {
+		filtered[i] = eventForViewer(event, viewerActorID)
+	}
+	return filtered
+}
+
+func eventForViewer(source Event, viewerActorID string) Event {
+	filtered := source
+	filtered.Cards = append([]string(nil), source.Cards...)
+
+	if source.Type == TypeCardsDrawn && source.ActorID != viewerActorID {
+		filtered.Count = len(source.Cards)
+		filtered.Cards = nil
+	}
+
+	return filtered
+}

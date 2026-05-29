@@ -94,6 +94,68 @@ func TestCardsDrawnJSONShape(t *testing.T) {
 	}
 }
 
+func TestCardsDrawnForViewerKeepsOwnDrawnCardIDs(t *testing.T) {
+	events := []event.Event{
+		event.NewCardsDrawn("player-1", []string{"strike", "guard"}, false),
+	}
+
+	got := event.ForViewer(events, "player-1")
+	want := []event.Event{
+		event.NewCardsDrawn("player-1", []string{"strike", "guard"}, false),
+	}
+	if !reflect.DeepEqual(got, want) {
+		t.Fatalf("ForViewer() = %#v, want %#v", got, want)
+	}
+}
+
+func TestCardsDrawnForViewerHidesOpponentDrawnCardIDs(t *testing.T) {
+	events := []event.Event{
+		event.NewCardsDrawn("player-2", []string{"curse", "hex"}, false),
+	}
+
+	got := event.ForViewer(events, "player-1")
+	want := []event.Event{
+		{
+			Type:    event.TypeCardsDrawn,
+			ActorID: "player-2",
+			Count:   2,
+		},
+	}
+	if !reflect.DeepEqual(got, want) {
+		t.Fatalf("ForViewer() = %#v, want %#v", got, want)
+	}
+}
+
+func TestCardsDrawnForViewerCopiesOwnDrawnCardIDs(t *testing.T) {
+	events := []event.Event{
+		event.NewCardsDrawn("player-1", []string{"strike", "guard"}, false),
+	}
+
+	got := event.ForViewer(events, "player-1")
+	got[0].Cards[0] = "mutated"
+
+	wantCards := []string{"strike", "guard"}
+	if !reflect.DeepEqual(events[0].Cards, wantCards) {
+		t.Fatalf("source event cards after filtered mutation = %#v, want %#v", events[0].Cards, wantCards)
+	}
+}
+
+func TestCardsDrawnForViewerOpponentJSONShape(t *testing.T) {
+	gotEvents := event.ForViewer([]event.Event{
+		event.NewCardsDrawn("player-2", []string{"curse", "hex"}, true),
+	}, "player-1")
+
+	got, err := json.Marshal(gotEvents[0])
+	if err != nil {
+		t.Fatalf("Marshal() returned error: %v", err)
+	}
+
+	want := `{"type":"cards_drawn","actor_id":"player-2","deck_empty":true,"count":2}`
+	if string(got) != want {
+		t.Fatalf("event JSON = %s, want %s", got, want)
+	}
+}
+
 func TestNewDiscardReshuffledIncludesActorAndCount(t *testing.T) {
 	got := event.NewDiscardReshuffled("player", 4)
 

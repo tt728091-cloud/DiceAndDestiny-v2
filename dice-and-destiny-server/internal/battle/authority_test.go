@@ -112,7 +112,7 @@ func TestHandleCommandAdvanceSegmentReturnsEventAndSnapshot(t *testing.T) {
 		"payload": {}
 	}`)
 
-	wantJSON := `{"accepted":true,"events":[{"type":"segment_advanced","from":"ongoing_effects","to":"income","round":1},{"type":"cards_drawn","actor_id":"player","cards":["card-1"]}],"snapshot":{"battle_id":"battle-1","segment":"income","round":1,"actors":{"player":{"energy_points":0}}}}`
+	wantJSON := `{"accepted":true,"events":[{"type":"segment_advanced","from":"ongoing_effects","to":"income","round":1},{"type":"cards_drawn","actor_id":"player","count":1}],"snapshot":{"battle_id":"battle-1","segment":"income","round":1,"actors":{"player":{"energy_points":0,"hand_count":1,"deck_count":2,"discard_count":0,"removed_count":0}}}}`
 	if gotJSON != wantJSON {
 		t.Fatalf("HandleCommand() JSON = %s, want %s", gotJSON, wantJSON)
 	}
@@ -128,7 +128,11 @@ func TestHandleCommandAdvanceSegmentReturnsEventAndSnapshot(t *testing.T) {
 				To:    segment.Income,
 				Round: 1,
 			},
-			event.NewCardsDrawn("player", []string{"card-1"}, false),
+			{
+				Type:    event.TypeCardsDrawn,
+				ActorID: "player",
+				Count:   1,
+			},
 		},
 		Snapshot: &snapshot.Battle{
 			BattleID: "battle-1",
@@ -137,6 +141,10 @@ func TestHandleCommandAdvanceSegmentReturnsEventAndSnapshot(t *testing.T) {
 			Actors: map[string]snapshot.Actor{
 				"player": {
 					EnergyPoints: 0,
+					HandCount:    1,
+					DeckCount:    2,
+					DiscardCount: 0,
+					RemovedCount: 0,
 				},
 			},
 		},

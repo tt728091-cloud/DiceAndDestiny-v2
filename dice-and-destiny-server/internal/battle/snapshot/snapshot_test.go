@@ -45,6 +45,12 @@ func TestFromBattleIncludesActorEnergyPoints(t *testing.T) {
 		Actors: map[string]state.ActorState{
 			"player": {
 				EnergyPoints: 2,
+				Cards: state.CardZones{
+					Deck:    []string{"draw-next", "draw-later"},
+					Hand:    []string{"strike"},
+					Discard: []string{"spent"},
+					Removed: []string{"lost"},
+				},
 			},
 		},
 	}
@@ -57,6 +63,10 @@ func TestFromBattleIncludesActorEnergyPoints(t *testing.T) {
 		Actors: map[string]snapshot.Actor{
 			"player": {
 				EnergyPoints: 2,
+				HandCount:    1,
+				DeckCount:    2,
+				DiscardCount: 1,
+				RemovedCount: 1,
 			},
 		},
 	}
@@ -65,22 +75,72 @@ func TestFromBattleIncludesActorEnergyPoints(t *testing.T) {
 	}
 }
 
-func TestBattleSnapshotJSONShape(t *testing.T) {
-	got, err := json.Marshal(snapshot.Battle{
-		BattleID: "battle-1",
-		Segment:  segment.Income,
-		Round:    1,
+func TestFromBattleForViewerIncludesOwnHandCardIDs(t *testing.T) {
+	battle := battleWithCardVisibilityState()
+
+	got := snapshot.FromBattleForViewer(battle, "player-1")
+	want := snapshot.Battle{
+		BattleID:      "battle-1",
+		Segment:       segment.Income,
+		Round:         1,
+		ViewerActorID: "player-1",
 		Actors: map[string]snapshot.Actor{
-			"player": {
+			"player-1": {
 				EnergyPoints: 2,
+				Hand:         []string{"strike", "guard"},
+				HandCount:    2,
+				DeckCount:    1,
+				DiscardCount: 1,
+				RemovedCount: 1,
+			},
+			"player-2": {
+				EnergyPoints: 1,
+				HandCount:    2,
+				DeckCount:    1,
+				DiscardCount: 1,
+				RemovedCount: 1,
 			},
 		},
-	})
+	}
+	if !reflect.DeepEqual(got, want) {
+		t.Fatalf("FromBattleForViewer() = %#v, want %#v", got, want)
+	}
+}
+
+func TestFromBattleForViewerHidesOpponentHandCardIDs(t *testing.T) {
+	battle := battleWithCardVisibilityState()
+
+	got := snapshot.FromBattleForViewer(battle, "player-1")
+	opponent := got.Actors["player-2"]
+
+	if len(opponent.Hand) != 0 {
+		t.Fatalf("opponent hand = %#v, want hidden card IDs", opponent.Hand)
+	}
+	if opponent.HandCount != 2 {
+		t.Fatalf("opponent hand count = %d, want 2", opponent.HandCount)
+	}
+}
+
+func TestFromBattleForViewerCopiesVisibleHandCardIDs(t *testing.T) {
+	battle := battleWithCardVisibilityState()
+
+	got := snapshot.FromBattleForViewer(battle, "player-1")
+	viewer := got.Actors["player-1"]
+	viewer.Hand[0] = "mutated"
+
+	wantHand := []string{"strike", "guard"}
+	if !reflect.DeepEqual(battle.Actors["player-1"].Cards.Hand, wantHand) {
+		t.Fatalf("battle hand after snapshot mutation = %#v, want %#v", battle.Actors["player-1"].Cards.Hand, wantHand)
+	}
+}
+
+func TestBattleSnapshotJSONShape(t *testing.T) {
+	got, err := json.Marshal(snapshot.FromBattleForViewer(battleWithCardVisibilityState(), "player-1"))
 	if err != nil {
 		t.Fatalf("Marshal() returned error: %v", err)
 	}
 
-	want := `{"battle_id":"battle-1","segment":"income","round":1,"actors":{"player":{"energy_points":2}}}`
+	want := `{"battle_id":"battle-1","segment":"income","round":1,"viewer_actor_id":"player-1","actors":{"player-1":{"energy_points":2,"hand":["strike","guard"],"hand_count":2,"deck_count":1,"discard_count":1,"removed_count":1},"player-2":{"energy_points":1,"hand_count":2,"deck_count":1,"discard_count":1,"removed_count":1}}}`
 	if string(got) != want {
 		t.Fatalf("snapshot JSON = %s, want %s", got, want)
 	}
@@ -88,12 +148,18 @@ func TestBattleSnapshotJSONShape(t *testing.T) {
 
 func TestBattleSnapshotRoundTripsThroughJSON(t *testing.T) {
 	want := snapshot.Battle{
-		BattleID: "battle-1",
-		Segment:  segment.Defensive,
-		Round:    2,
+		BattleID:      "battle-1",
+		Segment:       segment.Defensive,
+		Round:         2,
+		ViewerActorID: "player",
 		Actors: map[string]snapshot.Actor{
 			"player": {
 				EnergyPoints: 2,
+				Hand:         []string{"strike"},
+				HandCount:    1,
+				DeckCount:    2,
+				DiscardCount: 3,
+				RemovedCount: 4,
 			},
 		},
 	}
@@ -110,6 +176,36 @@ func TestBattleSnapshotRoundTripsThroughJSON(t *testing.T) {
 
 	if !reflect.DeepEqual(got, want) {
 		t.Fatalf("round-tripped snapshot = %#v, want %#v", got, want)
+	}
+}
+
+func battleWithCardVisibilityState() state.Battle {
+	return state.Battle{
+		ID: "battle-1",
+		Segment: segment.State{
+			Current: segment.Income,
+			Round:   1,
+		},
+		Actors: map[string]state.ActorState{
+			"player-1": {
+				EnergyPoints: 2,
+				Cards: state.CardZones{
+					Deck:    []string{"focus"},
+					Hand:    []string{"strike", "guard"},
+					Discard: []string{"spent"},
+					Removed: []string{"lost"},
+				},
+			},
+			"player-2": {
+				EnergyPoints: 1,
+				Cards: state.CardZones{
+					Deck:    []string{"counter"},
+					Hand:    []string{"curse", "hex"},
+					Discard: []string{"spent-2"},
+					Removed: []string{"lost-2"},
+				},
+			},
+		},
 	}
 }
 
