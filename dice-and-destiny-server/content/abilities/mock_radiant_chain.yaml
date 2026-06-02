@@ -1,0 +1,13 @@
+schema_version: 1
+id: Mock Radiant Chain
+name: Mock Radiant Chain
+type: offensive
+phase_restrictions:
+  - offensive
+dice_requirement:
+  kind: large_straight
+cost:
+  energy_points: 0
+requires_target: true
+effects:
+  - type: noop

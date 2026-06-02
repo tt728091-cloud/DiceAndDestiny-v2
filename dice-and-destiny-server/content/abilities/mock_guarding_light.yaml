@@ -1,0 +1,13 @@
+schema_version: 1
+id: Mock Guarding Light
+name: Mock Guarding Light
+type: defensive
+phase_restrictions:
+  - defensive
+dice_requirement:
+  kind: none
+cost:
+  energy_points: 0
+requires_target: false
+effects:
+  - type: noop

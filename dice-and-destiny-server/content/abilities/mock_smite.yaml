@@ -1,0 +1,13 @@
+schema_version: 1
+id: Mock Smite
+name: Mock Smite
+type: offensive
+phase_restrictions:
+  - offensive
+dice_requirement:
+  kind: small_straight
+cost:
+  energy_points: 0
+requires_target: true
+effects:
+  - type: noop

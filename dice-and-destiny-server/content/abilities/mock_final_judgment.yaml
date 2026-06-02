@@ -1,0 +1,13 @@
+schema_version: 1
+id: Mock Final Judgment
+name: Mock Final Judgment
+type: offensive
+phase_restrictions:
+  - offensive
+dice_requirement:
+  kind: five_sixes
+cost:
+  energy_points: 0
+requires_target: true
+effects:
+  - type: noop

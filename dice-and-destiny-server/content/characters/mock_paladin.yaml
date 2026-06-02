@@ -1,0 +1,35 @@
+schema_version: 1
+actor_id: player
+
+character:
+  id: Mock Paladin
+  name: Mock Paladin
+  class: paladin
+
+resources:
+  starting_hand_size: 4
+  max_hand_size: 7
+  starting_energy_points: 2
+  max_energy_points: 10
+
+health:
+  model: card_zones
+  max_health: 20
+
+decklist:
+  - card_id: Mock Strike
+    count: 8
+  - card_id: Mock Guard
+    count: 6
+  - card_id: Mock Focus
+    count: 6
+
+dice_loadout:
+  - dice_id: Standard D6
+    count: 5
+
+abilities:
+  - Mock Smite
+  - Mock Radiant Chain
+  - Mock Final Judgment
+  - Mock Guarding Light

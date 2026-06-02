@@ -1,0 +1,24 @@
+schema_version: 1
+id: Standard D6
+name: Standard D6
+die_type: d6
+side_count: 6
+faces:
+  - face: 1
+    value: 1
+    symbols: []
+  - face: 2
+    value: 2
+    symbols: []
+  - face: 3
+    value: 3
+    symbols: []
+  - face: 4
+    value: 4
+    symbols: []
+  - face: 5
+    value: 5
+    symbols: []
+  - face: 6
+    value: 6
+    symbols: []
