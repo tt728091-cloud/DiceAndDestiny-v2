@@ -1,4 +1,4 @@
-# Story 14: Godot Headless Engine Contract
+# Story 4: Godot Headless Engine Contract
 
 ## Purpose
 

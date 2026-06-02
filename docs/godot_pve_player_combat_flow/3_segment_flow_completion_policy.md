@@ -1,4 +1,4 @@
-# Story 13: Segment Flow Completion Policy
+# Story 3: Segment Flow Completion Policy
 
 ## Purpose
 

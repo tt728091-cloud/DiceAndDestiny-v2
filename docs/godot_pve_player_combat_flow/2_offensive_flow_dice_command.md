@@ -1,4 +1,4 @@
-# Story 12: Offensive Flow Dice Command
+# Story 2: Offensive Flow Dice Command
 
 ## Purpose
 
