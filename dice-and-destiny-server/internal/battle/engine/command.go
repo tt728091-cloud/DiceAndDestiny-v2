@@ -19,7 +19,11 @@ func (e Engine) HandleCommand(cmd command.Command) Result {
 	case command.TypeAdvanceSegment:
 		return e.handleAdvanceSegment(cmd)
 	default:
-		return rejected("unsupported command type")
+		battle, err := state.NewBattle(cmd.BattleID)
+		if err != nil {
+			return rejected(err.Error())
+		}
+		return e.HandleBattleCommand(&battle, cmd)
 	}
 }
 
@@ -50,6 +54,33 @@ func (e Engine) handleAdvanceSegment(cmd command.Command) Result {
 		// The shared packages own those shapes so authority only serializes them.
 		Events:   event.ForViewer(events, cmd.ActorID),
 		Snapshot: battleSnapshotForViewer(&battle, cmd.ActorID),
+	}
+}
+
+func (e Engine) HandleBattleCommand(battle *state.Battle, cmd command.Command) Result {
+	if battle == nil {
+		return rejected("battle is nil")
+	}
+
+	flow, err := e.FlowFor(battle.Segment.Current)
+	if err != nil {
+		return rejected(err.Error())
+	}
+
+	handler, ok := flow.(CommandHandlingFlow)
+	if !ok {
+		return rejected("unsupported command type")
+	}
+
+	result, err := handler.HandleCommand(&Context{Battle: battle}, cmd)
+	if err != nil {
+		return rejected(err.Error())
+	}
+
+	return Result{
+		Accepted: true,
+		Events:   event.ForViewer(result.Events, cmd.ActorID),
+		Snapshot: battleSnapshotForViewer(battle, cmd.ActorID),
 	}
 }
 

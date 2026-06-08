@@ -11,6 +11,7 @@ type Type string
 
 const (
 	TypeAdvanceSegment Type = "advance_segment"
+	TypeRollDice       Type = "roll_dice"
 )
 
 var (
@@ -26,13 +27,21 @@ type Command struct {
 }
 
 type envelope struct {
-	BattleID string          `json:"battle_id"`
-	ActorID  string          `json:"actor_id"`
-	Type     Type            `json:"type"`
-	Payload  json.RawMessage `json:"payload"`
+	BattleID      string          `json:"battle_id"`
+	ActorID       string          `json:"actor_id"`
+	Type          Type            `json:"type"`
+	Action        Type            `json:"action"`
+	Payload       json.RawMessage `json:"payload"`
+	RequestID     string          `json:"request_id,omitempty"`
+	RerollIndices []int           `json:"reroll_indices,omitempty"`
 }
 
 type AdvanceSegmentPayload struct{}
+
+type RollDicePayload struct {
+	RequestID     string `json:"request_id,omitempty"`
+	RerollIndices []int  `json:"reroll_indices,omitempty"`
+}
 
 func ParseJSON(commandJSON string) (Command, error) {
 	var env envelope
@@ -45,6 +54,19 @@ func ParseJSON(commandJSON string) (Command, error) {
 		ActorID:  env.ActorID,
 		Type:     env.Type,
 		Payload:  env.Payload,
+	}
+	if cmd.Type == "" {
+		cmd.Type = env.Action
+	}
+	if len(cmd.Payload) == 0 && cmd.Type == TypeRollDice {
+		payload, err := json.Marshal(RollDicePayload{
+			RequestID:     env.RequestID,
+			RerollIndices: env.RerollIndices,
+		})
+		if err != nil {
+			return Command{}, fmt.Errorf("%w: roll_dice payload could not be built", ErrInvalidEnvelope)
+		}
+		cmd.Payload = payload
 	}
 
 	if err := cmd.ValidateEnvelope(); err != nil {

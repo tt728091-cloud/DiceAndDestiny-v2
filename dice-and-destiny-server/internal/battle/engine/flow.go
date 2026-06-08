@@ -1,6 +1,7 @@
 package engine
 
 import (
+	"diceanddestiny/server/internal/battle/command"
 	"diceanddestiny/server/internal/battle/event"
 	"diceanddestiny/server/internal/battle/segment"
 	"diceanddestiny/server/internal/battle/state"
@@ -28,6 +29,11 @@ type SegmentFlow interface {
 	OnEnter(ctx *Context) (FlowResult, error)
 	CanAdvance(ctx *Context) (FlowDecision, error)
 	OnExit(ctx *Context) (FlowResult, error)
+}
+
+type CommandHandlingFlow interface {
+	SegmentFlow
+	HandleCommand(ctx *Context, cmd command.Command) (FlowResult, error)
 }
 
 func readyResult() FlowResult {

@@ -8,7 +8,7 @@ import (
 	"diceanddestiny/server/internal/battle/state"
 )
 
-func TestNewBattleInitializesMinimalState(t *testing.T) {
+func TestNewBattleInitializesEmptyBattleState(t *testing.T) {
 	battle, err := state.NewBattle("battle-1")
 	if err != nil {
 		t.Fatalf("NewBattle() returned error: %v", err)
@@ -31,14 +31,11 @@ func TestNewBattleInitializesMinimalState(t *testing.T) {
 		t.Fatalf("battle segment round = %d, want 1", battle.Segment.Round)
 	}
 
-	wantPlayerCards := state.CardZones{
-		Deck:    []string{"card-1", "card-2", "card-3"},
-		Hand:    nil,
-		Discard: nil,
-		Removed: nil,
+	if len(battle.Actors) != 0 {
+		t.Fatalf("actors = %#v, want no hardcoded actors", battle.Actors)
 	}
-	if !reflect.DeepEqual(battle.Actors["player"].Cards, wantPlayerCards) {
-		t.Fatalf("player cards = %#v, want %#v", battle.Actors["player"].Cards, wantPlayerCards)
+	if len(battle.DiceDefinitions) != 0 {
+		t.Fatalf("dice definitions = %#v, want no hardcoded definitions", battle.DiceDefinitions)
 	}
 }
 

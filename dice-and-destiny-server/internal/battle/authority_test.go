@@ -7,7 +7,6 @@ import (
 
 	"diceanddestiny/server/internal/battle/command"
 	"diceanddestiny/server/internal/battle/engine"
-	"diceanddestiny/server/internal/battle/event"
 	"diceanddestiny/server/internal/battle/segment"
 	"diceanddestiny/server/internal/battle/snapshot"
 )
@@ -104,7 +103,7 @@ func TestHandleCommandRejectsUnsupportedCommandTypeFromEngine(t *testing.T) {
 	}
 }
 
-func TestHandleCommandAdvanceSegmentReturnsEventAndSnapshot(t *testing.T) {
+func TestHandleCommandAdvanceSegmentRejectsWithoutPreparedBattleSetup(t *testing.T) {
 	gotJSON := HandleCommand(`{
 		"battle_id": "battle-1",
 		"actor_id": "system",
@@ -112,7 +111,7 @@ func TestHandleCommandAdvanceSegmentReturnsEventAndSnapshot(t *testing.T) {
 		"payload": {}
 	}`)
 
-	wantJSON := `{"accepted":true,"events":[{"type":"segment_advanced","from":"ongoing_effects","to":"income","round":1},{"type":"cards_drawn","actor_id":"player","count":1}],"snapshot":{"battle_id":"battle-1","segment":"income","round":1,"actors":{"player":{"energy_points":0,"hand_count":1,"deck_count":2,"discard_count":0,"removed_count":0}}}}`
+	wantJSON := `{"accepted":false,"error":"enter \"income\" flow: missing actor card state: \"player\""}`
 	if gotJSON != wantJSON {
 		t.Fatalf("HandleCommand() JSON = %s, want %s", gotJSON, wantJSON)
 	}
@@ -120,36 +119,27 @@ func TestHandleCommandAdvanceSegmentReturnsEventAndSnapshot(t *testing.T) {
 	got := decodeAuthorityResult(t, gotJSON)
 
 	want := engine.Result{
-		Accepted: true,
-		Events: []event.Event{
-			{
-				Type:  event.TypeSegmentAdvanced,
-				From:  segment.OngoingEffects,
-				To:    segment.Income,
-				Round: 1,
-			},
-			{
-				Type:    event.TypeCardsDrawn,
-				ActorID: "player",
-				Count:   1,
-			},
-		},
-		Snapshot: &snapshot.Battle{
-			BattleID: "battle-1",
-			Segment:  segment.Income,
-			Round:    1,
-			Actors: map[string]snapshot.Actor{
-				"player": {
-					EnergyPoints: 0,
-					HandCount:    1,
-					DeckCount:    2,
-					DiscardCount: 0,
-					RemovedCount: 0,
-				},
-			},
-		},
+		Accepted: false,
+		Error:    `enter "income" flow: missing actor card state: "player"`,
 	}
 
+	if !reflect.DeepEqual(got, want) {
+		t.Fatalf("HandleCommand() mismatch\n got: %#v\nwant: %#v", got, want)
+	}
+}
+
+func TestHandleCommandRollDiceWithoutActiveBattleStateIsRejectedByEngine(t *testing.T) {
+	got := decodeAuthorityResult(t, HandleCommand(`{
+		"battle_id": "battle-1",
+		"actor_id": "player",
+		"type": "roll_dice",
+		"payload": {}
+	}`))
+
+	want := engine.Result{
+		Accepted: false,
+		Error:    "unsupported command type",
+	}
 	if !reflect.DeepEqual(got, want) {
 		t.Fatalf("HandleCommand() mismatch\n got: %#v\nwant: %#v", got, want)
 	}

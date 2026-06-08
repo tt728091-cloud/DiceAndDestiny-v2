@@ -3,7 +3,9 @@ package engine_test
 import (
 	"encoding/json"
 	"errors"
+	"path/filepath"
 	"reflect"
+	"runtime"
 	"strconv"
 	"strings"
 	"testing"
@@ -13,11 +15,12 @@ import (
 	"diceanddestiny/server/internal/battle/event"
 	"diceanddestiny/server/internal/battle/income"
 	"diceanddestiny/server/internal/battle/segment"
-	"diceanddestiny/server/internal/battle/snapshot"
+	battlesetup "diceanddestiny/server/internal/battle/setup"
 	"diceanddestiny/server/internal/battle/state"
+	"diceanddestiny/server/internal/content"
 )
 
-func TestHandleCommandAdvanceSegmentReturnsEventAndSnapshot(t *testing.T) {
+func TestHandleCommandAdvanceSegmentRejectsWithoutPreparedBattleSetup(t *testing.T) {
 	eng := engine.NewEngine()
 
 	got := eng.HandleCommand(command.Command{
@@ -28,34 +31,8 @@ func TestHandleCommandAdvanceSegmentReturnsEventAndSnapshot(t *testing.T) {
 	})
 
 	want := engine.Result{
-		Accepted: true,
-		Events: []event.Event{
-			{
-				Type:  event.TypeSegmentAdvanced,
-				From:  segment.OngoingEffects,
-				To:    segment.Income,
-				Round: 1,
-			},
-			{
-				Type:    event.TypeCardsDrawn,
-				ActorID: "player",
-				Count:   1,
-			},
-		},
-		Snapshot: &snapshot.Battle{
-			BattleID: "battle-1",
-			Segment:  segment.Income,
-			Round:    1,
-			Actors: map[string]snapshot.Actor{
-				"player": {
-					EnergyPoints: 0,
-					HandCount:    1,
-					DeckCount:    2,
-					DiscardCount: 0,
-					RemovedCount: 0,
-				},
-			},
-		},
+		Accepted: false,
+		Error:    `enter "income" flow: missing actor card state: "player"`,
 	}
 
 	if !reflect.DeepEqual(got, want) {
@@ -63,7 +40,7 @@ func TestHandleCommandAdvanceSegmentReturnsEventAndSnapshot(t *testing.T) {
 	}
 }
 
-func TestHandleCommandAdvanceSegmentShowsViewerOwnDrawAndHand(t *testing.T) {
+func TestHandleCommandAdvanceSegmentDoesNotInventViewerActorState(t *testing.T) {
 	eng := engine.NewEngine()
 
 	got := eng.HandleCommand(command.Command{
@@ -74,32 +51,8 @@ func TestHandleCommandAdvanceSegmentShowsViewerOwnDrawAndHand(t *testing.T) {
 	})
 
 	want := engine.Result{
-		Accepted: true,
-		Events: []event.Event{
-			{
-				Type:  event.TypeSegmentAdvanced,
-				From:  segment.OngoingEffects,
-				To:    segment.Income,
-				Round: 1,
-			},
-			event.NewCardsDrawn("player", []string{"card-1"}, false),
-		},
-		Snapshot: &snapshot.Battle{
-			BattleID:      "battle-1",
-			Segment:       segment.Income,
-			Round:         1,
-			ViewerActorID: "player",
-			Actors: map[string]snapshot.Actor{
-				"player": {
-					EnergyPoints: 0,
-					Hand:         []string{"card-1"},
-					HandCount:    1,
-					DeckCount:    2,
-					DiscardCount: 0,
-					RemovedCount: 0,
-				},
-			},
-		},
+		Accepted: false,
+		Error:    `enter "income" flow: missing actor card state: "player"`,
 	}
 
 	if !reflect.DeepEqual(got, want) {
@@ -124,6 +77,114 @@ func TestHandleCommandRejectsUnsupportedCommandType(t *testing.T) {
 
 	if !reflect.DeepEqual(got, want) {
 		t.Fatalf("HandleCommand() = %#v, want %#v", got, want)
+	}
+}
+
+func TestRollDiceAcceptedForActiveOffensiveRollRequest(t *testing.T) {
+	battle := battleWithEngineRollRequest(t, segment.Offensive, state.RollPoolOffensive, "offensive", 3)
+	eng := engine.NewEngine()
+
+	got := eng.HandleBattleCommand(
+		&battle,
+		rollDiceCommand("player", "roll-player-test"),
+	)
+
+	if !got.Accepted {
+		t.Fatalf("HandleBattleCommand() rejected active offensive request: %#v", got)
+	}
+	if len(got.Events) != 1 || got.Events[0].Type != event.TypeDiceRolled {
+		t.Fatalf("events = %#v, want dice_rolled", got.Events)
+	}
+	if got.Events[0].Pool != state.RollPoolOffensive {
+		t.Fatalf("pool = %q, want offensive", got.Events[0].Pool)
+	}
+	if got.Snapshot == nil || got.Snapshot.Actors["player"].Dice == nil {
+		t.Fatalf("snapshot = %#v, want current dice roll", got.Snapshot)
+	}
+}
+
+func TestRollDiceAcceptedForNonOffensivePendingRequestOutsideOffensive(t *testing.T) {
+	battle := battleWithEngineRollRequest(t, segment.Defensive, state.RollPoolDefensive, "guarding-light", 1)
+	eng := engine.NewEngine()
+
+	got := eng.HandleBattleCommand(
+		&battle,
+		rollDiceCommand("player", "roll-player-test"),
+	)
+
+	if !got.Accepted {
+		t.Fatalf("HandleBattleCommand() rejected non-offensive pending request: %#v", got)
+	}
+	if got.Events[0].Segment != segment.Defensive || got.Events[0].Pool != state.RollPoolDefensive {
+		t.Fatalf("event = %#v, want defensive request details", got.Events[0])
+	}
+}
+
+func TestRollDiceRejectsActorWithNoActiveRollRequest(t *testing.T) {
+	battle := battleWithEngineRollRequest(t, segment.Offensive, state.RollPoolOffensive, "offensive", 3)
+	battle.RollRequests = map[string]state.RollRequest{}
+	eng := engine.NewEngine()
+
+	got := eng.HandleBattleCommand(
+		&battle,
+		rollDiceCommand("player", ""),
+	)
+
+	if got.Accepted {
+		t.Fatalf("HandleBattleCommand() accepted without active request: %#v", got)
+	}
+	if !strings.Contains(got.Error, "no active roll request") {
+		t.Fatalf("error = %q, want no active request context", got.Error)
+	}
+}
+
+func TestRollDiceRejectsRequestOwnedByAnotherActor(t *testing.T) {
+	battle := battleWithEngineRollRequest(t, segment.Offensive, state.RollPoolOffensive, "offensive", 3)
+	battle.RollRequests["roll-player-test"] = state.RollRequest{
+		ID:          "roll-player-test",
+		ActorID:     "enemy",
+		Segment:     segment.Offensive,
+		Pool:        state.RollPoolOffensive,
+		SourceType:  state.RollSourceSegment,
+		SourceID:    "offensive",
+		DiceLoadout: []state.DiceLoadoutEntry{{DiceID: "Standard D6", Count: 1}},
+		MaxRolls:    3,
+	}
+	eng := engine.NewEngine()
+
+	got := eng.HandleBattleCommand(
+		&battle,
+		rollDiceCommand("player", "roll-player-test"),
+	)
+
+	if got.Accepted {
+		t.Fatalf("HandleBattleCommand() accepted another actor's request: %#v", got)
+	}
+	if !strings.Contains(got.Error, "belongs to actor") {
+		t.Fatalf("error = %q, want ownership context", got.Error)
+	}
+}
+
+func TestRollDiceRejectsWhenMaxRollsAreExhausted(t *testing.T) {
+	battle := battleWithEngineRollRequest(t, segment.Offensive, state.RollPoolOffensive, "offensive", 1)
+	eng := engine.NewEngine()
+
+	if got := eng.HandleBattleCommand(
+		&battle,
+		rollDiceCommand("player", "roll-player-test"),
+	); !got.Accepted {
+		t.Fatalf("first HandleBattleCommand() rejected: %#v", got)
+	}
+
+	got := eng.HandleBattleCommand(
+		&battle,
+		rollDiceCommand("player", "roll-player-test"),
+	)
+	if got.Accepted {
+		t.Fatalf("second HandleBattleCommand() accepted after max rolls exhausted: %#v", got)
+	}
+	if !strings.Contains(got.Error, "max rolls exhausted") {
+		t.Fatalf("error = %q, want max rolls context", got.Error)
 	}
 }
 
@@ -193,10 +254,7 @@ func TestDefaultEngineResolvesIncomeFlow(t *testing.T) {
 }
 
 func TestDefaultEngineDrawsCardWhenEnteringIncome(t *testing.T) {
-	battle, err := state.NewBattle("battle-1")
-	if err != nil {
-		t.Fatalf("NewBattle() returned error: %v", err)
-	}
+	battle := repositoryMockPaladinBattle(t)
 
 	eng := engine.NewEngine()
 
@@ -206,15 +264,21 @@ func TestDefaultEngineDrawsCardWhenEnteringIncome(t *testing.T) {
 	}
 
 	wantEvents := []event.Event{
-		event.NewCardsDrawn("player", []string{"card-1"}, false),
+		event.NewCardsDrawn("player", []string{"Mock Strike"}, false),
 	}
 	if !reflect.DeepEqual(got.Enter.Events, wantEvents) {
 		t.Fatalf("enter events = %#v, want %#v", got.Enter.Events, wantEvents)
 	}
 
 	wantZones := state.CardZones{
-		Deck:    []string{"card-2", "card-3"},
-		Hand:    []string{"card-1"},
+		Deck: append(
+			append(
+				append([]string{}, repeatedCard("Mock Strike", 7)...),
+				repeatedCard("Mock Guard", 6)...,
+			),
+			repeatedCard("Mock Focus", 6)...,
+		),
+		Hand:    []string{"Mock Strike"},
 		Discard: nil,
 		Removed: nil,
 	}
@@ -255,6 +319,33 @@ func TestDefaultEngineDrawsCardFromConfiguredSetupActorWhenEnteringIncome(t *tes
 	}
 	if !reflect.DeepEqual(battle.Actors["player"].Cards, wantZones) {
 		t.Fatalf("player card zones = %#v, want %#v", battle.Actors["player"].Cards, wantZones)
+	}
+}
+
+func TestDefaultEngineCreatesOffensiveRollRequestWhenEnteringOffensive(t *testing.T) {
+	battle := repositoryMockPaladinBattle(t)
+	battle.Segment = segment.State{Current: segment.Income, Round: 1}
+	eng := engine.NewEngine()
+
+	got, err := eng.AdvanceSegment(&battle)
+	if err != nil {
+		t.Fatalf("AdvanceSegment() returned error: %v", err)
+	}
+
+	if got.Enter.Decision != engine.WaitForCommand {
+		t.Fatalf("offensive enter decision = %q, want wait_for_command", got.Enter.Decision)
+	}
+
+	wantID := "roll-player-offensive-1"
+	request, ok := battle.RollRequests[wantID]
+	if !ok {
+		t.Fatalf("roll request %q was not created; requests = %#v", wantID, battle.RollRequests)
+	}
+	if request.ActorID != "player" || request.Pool != state.RollPoolOffensive || request.MaxRolls != 3 {
+		t.Fatalf("roll request = %#v, want default player offensive request", request)
+	}
+	if !reflect.DeepEqual(request.DiceLoadout, []state.DiceLoadoutEntry{{DiceID: "Standard D6", Count: 5}}) {
+		t.Fatalf("dice loadout = %#v, want Standard D6 x5", request.DiceLoadout)
 	}
 }
 
@@ -516,6 +607,88 @@ func TestAdvanceSegmentRejectsInvalidSegmentState(t *testing.T) {
 				t.Fatalf("AdvanceSegment() error = %v, want ErrInvalidSegmentState", err)
 			}
 		})
+	}
+}
+
+func battleWithEngineRollRequest(
+	t *testing.T,
+	requestSegment segment.Segment,
+	pool state.RollPool,
+	sourceID string,
+	maxRolls int,
+) state.Battle {
+	t.Helper()
+
+	battle := repositoryMockPaladinBattle(t)
+	battle.Segment = segment.State{Current: requestSegment, Round: 1}
+	battle.RollRequests["roll-player-test"] = state.RollRequest{
+		ID:          "roll-player-test",
+		ActorID:     "player",
+		Segment:     requestSegment,
+		Pool:        pool,
+		SourceType:  state.RollSourceSegment,
+		SourceID:    sourceID,
+		DiceLoadout: append([]state.DiceLoadoutEntry(nil), battle.Actors["player"].DiceLoadout...),
+		MaxRolls:    maxRolls,
+	}
+	return battle
+}
+
+func repositoryMockPaladinBattle(t *testing.T) state.Battle {
+	t.Helper()
+
+	contentRoot := filepath.Join(serverRoot(t), "content")
+	library, err := content.LoadContentLibrary(contentRoot)
+	if err != nil {
+		t.Fatalf("LoadContentLibrary() returned error: %v", err)
+	}
+	sheet, err := content.LoadCharacterCombatSheetWithLibrary(
+		filepath.Join(contentRoot, "characters", "mock_paladin.yaml"),
+		library,
+	)
+	if err != nil {
+		t.Fatalf("LoadCharacterCombatSheetWithLibrary() returned error: %v", err)
+	}
+	battleSetup, err := battlesetup.BattleSetupFromCharacterCombatSheet(sheet, library)
+	if err != nil {
+		t.Fatalf("BattleSetupFromCharacterCombatSheet() returned error: %v", err)
+	}
+	battle, err := state.NewBattleFromSetup("battle-1", battleSetup)
+	if err != nil {
+		t.Fatalf("NewBattleFromSetup() returned error: %v", err)
+	}
+	return battle
+}
+
+func repeatedCard(cardID string, count int) []string {
+	cards := make([]string, count)
+	for i := range cards {
+		cards[i] = cardID
+	}
+	return cards
+}
+
+func serverRoot(t *testing.T) string {
+	t.Helper()
+
+	_, currentFile, _, ok := runtime.Caller(0)
+	if !ok {
+		t.Fatal("runtime.Caller() failed")
+	}
+	return filepath.Clean(filepath.Join(filepath.Dir(currentFile), "..", "..", ".."))
+}
+
+func rollDiceCommand(actorID string, requestID string) command.Command {
+	payload, err := json.Marshal(command.RollDicePayload{RequestID: requestID})
+	if err != nil {
+		panic(err)
+	}
+
+	return command.Command{
+		BattleID: "battle-1",
+		ActorID:  actorID,
+		Type:     command.TypeRollDice,
+		Payload:  payload,
 	}
 }
 

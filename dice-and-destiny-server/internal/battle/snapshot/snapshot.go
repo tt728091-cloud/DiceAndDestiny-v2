@@ -16,12 +16,29 @@ type Battle struct {
 }
 
 type Actor struct {
-	EnergyPoints int      `json:"energy_points"`
-	Hand         []string `json:"hand,omitempty"`
-	HandCount    int      `json:"hand_count"`
-	DeckCount    int      `json:"deck_count"`
-	DiscardCount int      `json:"discard_count"`
-	RemovedCount int      `json:"removed_count"`
+	EnergyPoints int            `json:"energy_points"`
+	Hand         []string       `json:"hand,omitempty"`
+	HandCount    int            `json:"hand_count"`
+	DeckCount    int            `json:"deck_count"`
+	DiscardCount int            `json:"discard_count"`
+	RemovedCount int            `json:"removed_count"`
+	Dice         *DiceRollState `json:"dice,omitempty"`
+}
+
+type DiceRollState struct {
+	RequestID      string               `json:"request_id"`
+	Segment        segment.Segment      `json:"segment"`
+	Pool           state.RollPool       `json:"pool"`
+	SourceType     state.RollSourceType `json:"source_type"`
+	SourceID       string               `json:"source_id"`
+	Dice           []state.RolledDie    `json:"dice"`
+	KeptIndices    []int                `json:"kept_indices,omitempty"`
+	RollsUsed      int                  `json:"rolls_used"`
+	MaxRolls       int                  `json:"max_rolls"`
+	RollsRemaining int                  `json:"rolls_remaining"`
+	Combinations   []string             `json:"combinations,omitempty"`
+	SymbolCounts   map[string]int       `json:"symbol_counts,omitempty"`
+	Complete       bool                 `json:"complete,omitempty"`
 }
 
 // FromBattle copies authoritative battle state into the public snapshot shape.
@@ -44,6 +61,9 @@ func FromBattleForViewer(battle state.Battle, viewerActorID string) Battle {
 			DiscardCount: len(cards.Discard),
 			RemovedCount: len(cards.Removed),
 		}
+		if actor.Dice.CurrentRoll != nil {
+			snapshotActor.Dice = diceRollStateSnapshot(actor.Dice.CurrentRoll)
+		}
 		if id == viewerActorID {
 			snapshotActor.Hand = append([]string(nil), cards.Hand...)
 		}
@@ -60,4 +80,53 @@ func FromBattleForViewer(battle state.Battle, viewerActorID string) Battle {
 		ViewerActorID: viewerActorID,
 		Actors:        actors,
 	}
+}
+
+func diceRollStateSnapshot(roll *state.RollState) *DiceRollState {
+	if roll == nil {
+		return nil
+	}
+
+	return &DiceRollState{
+		RequestID:      roll.RequestID,
+		Segment:        roll.Segment,
+		Pool:           roll.Pool,
+		SourceType:     roll.SourceType,
+		SourceID:       roll.SourceID,
+		Dice:           copyRolledDice(roll.Dice),
+		KeptIndices:    append([]int(nil), roll.KeptIndices...),
+		RollsUsed:      roll.RollsUsed,
+		MaxRolls:       roll.MaxRolls,
+		RollsRemaining: roll.MaxRolls - roll.RollsUsed,
+		Combinations:   append([]string(nil), roll.Combinations...),
+		SymbolCounts:   copySymbolCounts(roll.SymbolCounts),
+		Complete:       roll.Complete,
+	}
+}
+
+func copyRolledDice(values []state.RolledDie) []state.RolledDie {
+	copied := make([]state.RolledDie, len(values))
+	for i, value := range values {
+		copied[i] = value
+		copied[i].Symbols = copyStrings(value.Symbols)
+	}
+	return copied
+}
+
+func copyStrings(values []string) []string {
+	if values == nil {
+		return nil
+	}
+	return append([]string{}, values...)
+}
+
+func copySymbolCounts(values map[string]int) map[string]int {
+	if values == nil {
+		return nil
+	}
+	copied := make(map[string]int, len(values))
+	for key, value := range values {
+		copied[key] = value
+	}
+	return copied
 }

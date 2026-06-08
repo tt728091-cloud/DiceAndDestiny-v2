@@ -20,42 +20,6 @@ func (OngoingEffectsFlow) OnExit(ctx *Context) (FlowResult, error) {
 	return readyResult(), nil
 }
 
-type OffensiveFlow struct{}
-
-func (OffensiveFlow) ID() segment.Segment {
-	return segment.Offensive
-}
-
-func (OffensiveFlow) OnEnter(ctx *Context) (FlowResult, error) {
-	return readyResult(), nil
-}
-
-func (OffensiveFlow) CanAdvance(ctx *Context) (FlowDecision, error) {
-	return ReadyToAdvance, nil
-}
-
-func (OffensiveFlow) OnExit(ctx *Context) (FlowResult, error) {
-	return readyResult(), nil
-}
-
-type DefensiveFlow struct{}
-
-func (DefensiveFlow) ID() segment.Segment {
-	return segment.Defensive
-}
-
-func (DefensiveFlow) OnEnter(ctx *Context) (FlowResult, error) {
-	return readyResult(), nil
-}
-
-func (DefensiveFlow) CanAdvance(ctx *Context) (FlowDecision, error) {
-	return ReadyToAdvance, nil
-}
-
-func (DefensiveFlow) OnExit(ctx *Context) (FlowResult, error) {
-	return readyResult(), nil
-}
-
 type DamageResolutionFlow struct{}
 
 func (DamageResolutionFlow) ID() segment.Segment {
