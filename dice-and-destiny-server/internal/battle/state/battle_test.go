@@ -1,6 +1,7 @@
 package state_test
 
 import (
+	"diceanddestiny/server/internal/battle/command"
 	"reflect"
 	"testing"
 
@@ -39,6 +40,89 @@ func TestNewBattleInitializesEmptyBattleState(t *testing.T) {
 	}
 	if len(battle.DiceDefinitions) != 0 {
 		t.Fatalf("dice definitions = %#v, want no hardcoded definitions", battle.DiceDefinitions)
+	}
+}
+
+func TestBattleCloneDeepCopiesResolutionAndInteractionState(t *testing.T) {
+	battle, err := state.NewBattleFromSetup("battle-resolution", state.BattleSetup{
+		Actors: []state.ActorSetup{{ID: "player"}},
+	})
+	if err != nil {
+		t.Fatalf("NewBattleFromSetup() returned error: %v", err)
+	}
+	value := 4
+	battle.ActiveResolutionID = "resolution-1"
+	battle.Resolutions["resolution-1"] = state.ResolutionState{
+		ID:             "resolution-1",
+		ActiveWindowID: "window-1",
+		Batch: state.ProposalBatch{
+			ID: "batch-1",
+			Proposals: []state.Proposal{{
+				ID: "proposal-1",
+				Data: state.ProposalData{
+					Selection: &state.SelectionData{OptionIDs: []string{"option-1"}},
+				},
+			}},
+		},
+		Windows: map[string]state.InteractionWindow{
+			"window-1": {
+				ID:              "window-1",
+				EligibleActors:  []string{"player"},
+				RequiredActors:  []string{"player"},
+				AllowedCommands: []command.Type{command.TypeCommitInteraction},
+				ActorProgress: map[string]state.InteractionActorStatus{
+					"player": state.InteractionActorCommitted,
+				},
+				Commitments: map[string]state.InteractionCommitment{
+					"player": {
+						ID:      "commitment-1",
+						ActorID: "player",
+						Data: state.InteractionCommitmentData{
+							CardIDs: []string{"secret-card"},
+							Value:   &value,
+						},
+					},
+				},
+			},
+		},
+		ReactionPolicy: &state.ReactionWindowPolicy{
+			EligibleActors:  []string{"player"},
+			RequiredActors:  []string{"player"},
+			AllowedCommands: []command.Type{command.TypePass},
+		},
+		SuspendedPendingInput: map[string]state.PendingInput{
+			"player": {
+				AllowedCommands: []command.Type{command.TypeCommitInteraction},
+			},
+		},
+	}
+
+	cloned := battle.Clone()
+	resolution := cloned.Resolutions["resolution-1"]
+	resolution.Batch.Proposals[0].Data.Selection.OptionIDs[0] = "mutated"
+	window := resolution.Windows["window-1"]
+	window.EligibleActors[0] = "mutated"
+	window.AllowedCommands[0] = command.TypePass
+	commitment := window.Commitments["player"]
+	commitment.Data.CardIDs[0] = "mutated"
+	*commitment.Data.Value = 99
+	window.Commitments["player"] = commitment
+	resolution.Windows["window-1"] = window
+	resolution.ReactionPolicy.EligibleActors[0] = "mutated"
+	pending := resolution.SuspendedPendingInput["player"]
+	pending.AllowedCommands[0] = command.TypePass
+	resolution.SuspendedPendingInput["player"] = pending
+	cloned.Resolutions["resolution-1"] = resolution
+
+	original := battle.Resolutions["resolution-1"]
+	if original.Batch.Proposals[0].Data.Selection.OptionIDs[0] != "option-1" ||
+		original.Windows["window-1"].EligibleActors[0] != "player" ||
+		original.Windows["window-1"].AllowedCommands[0] != command.TypeCommitInteraction ||
+		original.Windows["window-1"].Commitments["player"].Data.CardIDs[0] != "secret-card" ||
+		*original.Windows["window-1"].Commitments["player"].Data.Value != 4 ||
+		original.ReactionPolicy.EligibleActors[0] != "player" ||
+		original.SuspendedPendingInput["player"].AllowedCommands[0] != command.TypeCommitInteraction {
+		t.Fatalf("clone mutation leaked into original resolution: %#v", original)
 	}
 }
 

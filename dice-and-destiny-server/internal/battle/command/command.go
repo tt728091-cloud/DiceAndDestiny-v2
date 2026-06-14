@@ -10,9 +10,11 @@ import (
 type Type string
 
 const (
-	TypeStartBattle    Type = "start_battle"
-	TypeAdvanceSegment Type = "advance_segment"
-	TypeRollDice       Type = "roll_dice"
+	TypeStartBattle       Type = "start_battle"
+	TypeAdvanceSegment    Type = "advance_segment"
+	TypeRollDice          Type = "roll_dice"
+	TypeCommitInteraction Type = "commit_interaction"
+	TypePass              Type = "pass"
 )
 
 var (
@@ -54,6 +56,32 @@ type RollDicePayload struct {
 	RequestID      string `json:"request_id,omitempty"`
 	PendingInputID string `json:"pending_input_id,omitempty"`
 	RerollIndices  []int  `json:"reroll_indices,omitempty"`
+}
+
+type InteractionCheckpoint struct {
+	WindowID      string `json:"window_id"`
+	Stage         string `json:"stage"`
+	Iteration     int    `json:"iteration"`
+	ReactionRound int    `json:"reaction_round"`
+}
+
+type InteractionCommitmentData struct {
+	ProposalIDs []string `json:"proposal_ids,omitempty"`
+	CardIDs     []string `json:"card_ids,omitempty"`
+	TargetIDs   []string `json:"target_ids,omitempty"`
+	ChoiceID    string   `json:"choice_id,omitempty"`
+	Value       *int     `json:"value,omitempty"`
+}
+
+type CommitInteractionPayload struct {
+	PendingInputID string                    `json:"pending_input_id"`
+	Checkpoint     InteractionCheckpoint     `json:"checkpoint"`
+	Commitment     InteractionCommitmentData `json:"commitment"`
+}
+
+type PassPayload struct {
+	PendingInputID string                `json:"pending_input_id"`
+	Checkpoint     InteractionCheckpoint `json:"checkpoint"`
 }
 
 func ParseJSON(commandJSON string) (Command, error) {

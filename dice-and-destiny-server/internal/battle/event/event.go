@@ -1,6 +1,8 @@
 package event
 
 import (
+	"sort"
+
 	"diceanddestiny/server/internal/battle/segment"
 	"diceanddestiny/server/internal/battle/state"
 )
@@ -9,41 +11,133 @@ import (
 type Type string
 
 const (
-	TypeSegmentAdvanced    Type = "segment_advanced"
-	TypeSegmentEntered     Type = "segment_entered"
-	TypeCardsDrawn         Type = "cards_drawn"
-	TypeDiscardReshuffled  Type = "discard_reshuffled"
-	TypeEnergyPointsGained Type = "energy_points_gained"
-	TypeRollRequested      Type = "roll_requested"
-	TypeDiceRolled         Type = "dice_rolled"
+	TypeSegmentAdvanced         Type = "segment_advanced"
+	TypeSegmentEntered          Type = "segment_entered"
+	TypeCardsDrawn              Type = "cards_drawn"
+	TypeDiscardReshuffled       Type = "discard_reshuffled"
+	TypeEnergyPointsGained      Type = "energy_points_gained"
+	TypeRollRequested           Type = "roll_requested"
+	TypeDiceRolled              Type = "dice_rolled"
+	TypeInteractionCommitted    Type = "interaction_committed"
+	TypeInteractionRevealed     Type = "interaction_revealed"
+	TypeInteractionWindowOpened Type = "interaction_window_opened"
+	TypeProposalBatchRevealed   Type = "proposal_batch_revealed"
+	TypeProposalBatchCommitted  Type = "proposal_batch_committed"
+	TypeResolutionCompleted     Type = "resolution_completed"
 )
 
 // Event describes an authority-approved battle fact that already happened.
 // Keep UI intent and transport details out of this package.
 type Event struct {
-	Type           Type                 `json:"type"`
-	ActorID        string               `json:"actor_id,omitempty"`
-	From           segment.Segment      `json:"from,omitempty"`
-	To             segment.Segment      `json:"to,omitempty"`
-	Segment        segment.Segment      `json:"segment,omitempty"`
-	Round          int                  `json:"round,omitempty"`
-	CompletedTurn  bool                 `json:"completed_turn,omitempty"`
-	Cards          []string             `json:"cards,omitempty"`
-	DeckEmpty      bool                 `json:"deck_empty,omitempty"`
-	Count          int                  `json:"count,omitempty"`
-	EnergyPoints   int                  `json:"energy_points,omitempty"`
-	RequestID      string               `json:"request_id,omitempty"`
-	PendingInputID string               `json:"pending_input_id,omitempty"`
-	Pool           state.RollPool       `json:"pool,omitempty"`
-	SourceType     state.RollSourceType `json:"source_type,omitempty"`
-	SourceID       string               `json:"source_id,omitempty"`
-	Dice           []state.RolledDie    `json:"dice,omitempty"`
-	RolledIndices  []int                `json:"rolled_indices,omitempty"`
-	RollsUsed      int                  `json:"rolls_used,omitempty"`
-	MaxRolls       int                  `json:"max_rolls,omitempty"`
-	RollsRemaining *int                 `json:"rolls_remaining,omitempty"`
-	Combinations   []string             `json:"combinations,omitempty"`
-	SymbolCounts   map[string]int       `json:"symbol_counts,omitempty"`
+	Type           Type                          `json:"type"`
+	ActorID        string                        `json:"actor_id,omitempty"`
+	From           segment.Segment               `json:"from,omitempty"`
+	To             segment.Segment               `json:"to,omitempty"`
+	Segment        segment.Segment               `json:"segment,omitempty"`
+	Round          int                           `json:"round,omitempty"`
+	CompletedTurn  bool                          `json:"completed_turn,omitempty"`
+	Cards          []string                      `json:"cards,omitempty"`
+	DeckEmpty      bool                          `json:"deck_empty,omitempty"`
+	Count          int                           `json:"count,omitempty"`
+	EnergyPoints   int                           `json:"energy_points,omitempty"`
+	RequestID      string                        `json:"request_id,omitempty"`
+	PendingInputID string                        `json:"pending_input_id,omitempty"`
+	Pool           state.RollPool                `json:"pool,omitempty"`
+	SourceType     state.RollSourceType          `json:"source_type,omitempty"`
+	SourceID       string                        `json:"source_id,omitempty"`
+	Dice           []state.RolledDie             `json:"dice,omitempty"`
+	RolledIndices  []int                         `json:"rolled_indices,omitempty"`
+	RollsUsed      int                           `json:"rolls_used,omitempty"`
+	MaxRolls       int                           `json:"max_rolls,omitempty"`
+	RollsRemaining *int                          `json:"rolls_remaining,omitempty"`
+	Combinations   []string                      `json:"combinations,omitempty"`
+	SymbolCounts   map[string]int                `json:"symbol_counts,omitempty"`
+	ResolutionID   string                        `json:"resolution_id,omitempty"`
+	WindowID       string                        `json:"window_id,omitempty"`
+	Purpose        state.InteractionPurpose      `json:"purpose,omitempty"`
+	ReactionRound  int                           `json:"reaction_round,omitempty"`
+	ChainDepth     int                           `json:"chain_depth,omitempty"`
+	Commitment     *state.InteractionCommitment  `json:"commitment,omitempty"`
+	Commitments    []state.InteractionCommitment `json:"commitments,omitempty"`
+	ProposalBatch  *state.ProposalBatch          `json:"proposal_batch,omitempty"`
+	PrivateActorID string                        `json:"-"`
+}
+
+func NewInteractionCommitted(
+	resolutionID string,
+	window state.InteractionWindow,
+	commitment state.InteractionCommitment,
+	privateActorID string,
+) Event {
+	copied := copyInteractionCommitment(commitment)
+	return Event{
+		Type:           TypeInteractionCommitted,
+		ActorID:        commitment.ActorID,
+		ResolutionID:   resolutionID,
+		WindowID:       window.ID,
+		Purpose:        window.Purpose,
+		ReactionRound:  window.ReactionRound,
+		ChainDepth:     window.ChainDepth,
+		Commitment:     &copied,
+		PrivateActorID: privateActorID,
+	}
+}
+
+func NewInteractionRevealed(resolutionID string, window state.InteractionWindow) Event {
+	commitments := make([]state.InteractionCommitment, 0, len(window.Commitments))
+	actorIDs := make([]string, 0, len(window.Commitments))
+	for actorID := range window.Commitments {
+		actorIDs = append(actorIDs, actorID)
+	}
+	sort.Strings(actorIDs)
+	for _, actorID := range actorIDs {
+		commitments = append(commitments, copyInteractionCommitment(window.Commitments[actorID]))
+	}
+	return Event{
+		Type:          TypeInteractionRevealed,
+		ResolutionID:  resolutionID,
+		WindowID:      window.ID,
+		Purpose:       window.Purpose,
+		ReactionRound: window.ReactionRound,
+		ChainDepth:    window.ChainDepth,
+		Commitments:   commitments,
+	}
+}
+
+func NewInteractionWindowOpened(resolutionID string, window state.InteractionWindow) Event {
+	return Event{
+		Type:          TypeInteractionWindowOpened,
+		ResolutionID:  resolutionID,
+		WindowID:      window.ID,
+		Purpose:       window.Purpose,
+		ReactionRound: window.ReactionRound,
+		ChainDepth:    window.ChainDepth,
+	}
+}
+
+func NewProposalBatchCommitted(resolution state.ResolutionState) Event {
+	batch := copyProposalBatch(resolution.Batch)
+	return Event{
+		Type:          TypeProposalBatchCommitted,
+		ResolutionID:  resolution.ID,
+		ProposalBatch: &batch,
+	}
+}
+
+func NewProposalBatchRevealed(resolution state.ResolutionState) Event {
+	batch := copyProposalBatch(resolution.Batch)
+	return Event{
+		Type:          TypeProposalBatchRevealed,
+		ResolutionID:  resolution.ID,
+		ProposalBatch: &batch,
+	}
+}
+
+func NewResolutionCompleted(resolution state.ResolutionState) Event {
+	return Event{
+		Type:         TypeResolutionCompleted,
+		ResolutionID: resolution.ID,
+	}
 }
 
 // NewSegmentAdvanced converts segment progression data into the public event
@@ -156,6 +250,9 @@ func eventForViewer(source Event, viewerActorID string) Event {
 	filtered.RolledIndices = append([]int(nil), source.RolledIndices...)
 	filtered.Combinations = append([]string(nil), source.Combinations...)
 	filtered.SymbolCounts = copySymbolCounts(source.SymbolCounts)
+	filtered.Commitment = copyInteractionCommitmentPointer(source.Commitment)
+	filtered.Commitments = copyInteractionCommitments(source.Commitments)
+	filtered.ProposalBatch = copyProposalBatchPointer(source.ProposalBatch)
 
 	if source.Type == TypeCardsDrawn && source.ActorID != viewerActorID {
 		filtered.Count = len(source.Cards)
@@ -178,8 +275,80 @@ func eventForViewer(source Event, viewerActorID string) Event {
 		filtered.Combinations = nil
 		filtered.SymbolCounts = nil
 	}
+	if source.PrivateActorID != "" && source.PrivateActorID != viewerActorID {
+		filtered.Commitment = nil
+	}
+	filtered.PrivateActorID = ""
 
 	return filtered
+}
+
+func copyInteractionCommitmentPointer(
+	value *state.InteractionCommitment,
+) *state.InteractionCommitment {
+	if value == nil {
+		return nil
+	}
+	copied := copyInteractionCommitment(*value)
+	return &copied
+}
+
+func copyInteractionCommitments(
+	values []state.InteractionCommitment,
+) []state.InteractionCommitment {
+	if values == nil {
+		return nil
+	}
+	copied := make([]state.InteractionCommitment, len(values))
+	for i, value := range values {
+		copied[i] = copyInteractionCommitment(value)
+	}
+	return copied
+}
+
+func copyInteractionCommitment(
+	value state.InteractionCommitment,
+) state.InteractionCommitment {
+	copied := value
+	copied.Data.ProposalIDs = copyStrings(value.Data.ProposalIDs)
+	copied.Data.CardIDs = copyStrings(value.Data.CardIDs)
+	copied.Data.TargetIDs = copyStrings(value.Data.TargetIDs)
+	if value.Data.Value != nil {
+		amount := *value.Data.Value
+		copied.Data.Value = &amount
+	}
+	return copied
+}
+
+func copyProposalBatchPointer(value *state.ProposalBatch) *state.ProposalBatch {
+	if value == nil {
+		return nil
+	}
+	copied := copyProposalBatch(*value)
+	return &copied
+}
+
+func copyProposalBatch(value state.ProposalBatch) state.ProposalBatch {
+	copied := value
+	copied.Proposals = make([]state.Proposal, len(value.Proposals))
+	for i, proposal := range value.Proposals {
+		copied.Proposals[i] = proposal
+		if proposal.Data.Amount != nil {
+			amount := *proposal.Data.Amount
+			copied.Proposals[i].Data.Amount = &amount
+		}
+		if proposal.Data.Selection != nil {
+			selection := *proposal.Data.Selection
+			selection.OptionIDs = copyStrings(proposal.Data.Selection.OptionIDs)
+			copied.Proposals[i].Data.Selection = &selection
+		}
+		if proposal.Data.Roll != nil {
+			roll := *proposal.Data.Roll
+			roll.Dice = copyRolledDice(proposal.Data.Roll.Dice)
+			copied.Proposals[i].Data.Roll = &roll
+		}
+	}
+	return copied
 }
 
 func copyRolledDice(values []state.RolledDie) []state.RolledDie {

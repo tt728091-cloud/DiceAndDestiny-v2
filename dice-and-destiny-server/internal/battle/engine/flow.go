@@ -9,6 +9,7 @@ import (
 
 type Context struct {
 	Battle *state.Battle
+	Phase  state.FlowPhase
 }
 
 type ProgressStatus string

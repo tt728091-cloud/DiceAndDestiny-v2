@@ -13,6 +13,7 @@ type Battle struct {
 	Round         int              `json:"round"`
 	ViewerActorID string           `json:"viewer_actor_id,omitempty"`
 	Flow          *SegmentFlow     `json:"flow,omitempty"`
+	Resolution    *Resolution      `json:"resolution,omitempty"`
 	Actors        map[string]Actor `json:"actors,omitempty"`
 }
 
@@ -51,6 +52,7 @@ type SegmentFlow struct {
 	Segment      segment.Segment          `json:"segment"`
 	Round        int                      `json:"round"`
 	Entered      bool                     `json:"entered"`
+	ExitStarted  bool                     `json:"exit_started,omitempty"`
 	Stage        string                   `json:"stage,omitempty"`
 	Iteration    int                      `json:"iteration"`
 	Actors       map[string]ActorProgress `json:"actors,omitempty"`
@@ -66,12 +68,41 @@ type PendingInput struct {
 	ID              string          `json:"id"`
 	ActorID         string          `json:"actor_id"`
 	Segment         segment.Segment `json:"segment"`
+	Phase           state.FlowPhase `json:"phase,omitempty"`
 	Stage           string          `json:"stage"`
 	Iteration       int             `json:"iteration"`
+	WindowID        string          `json:"window_id,omitempty"`
+	ReactionRound   int             `json:"reaction_round,omitempty"`
 	InputType       string          `json:"input_type"`
 	SourceType      string          `json:"source_type,omitempty"`
 	SourceID        string          `json:"source_id,omitempty"`
 	AllowedCommands []string        `json:"allowed_commands"`
+}
+
+type Resolution struct {
+	ID           string                     `json:"id"`
+	Origin       state.ResolutionCheckpoint `json:"origin"`
+	Stage        state.ResolutionStage      `json:"stage"`
+	Batch        *state.ProposalBatch       `json:"batch,omitempty"`
+	ActiveWindow *InteractionWindow         `json:"active_window,omitempty"`
+}
+
+type InteractionWindow struct {
+	ID                  string                                  `json:"id"`
+	Opened              bool                                    `json:"opened"`
+	Purpose             state.InteractionPurpose                `json:"purpose"`
+	Source              state.SourceReference                   `json:"source"`
+	EligibleActors      []string                                `json:"eligible_actors"`
+	RequiredActors      []string                                `json:"required_actors"`
+	ActorProgress       map[string]state.InteractionActorStatus `json:"actor_progress"`
+	AllowedCommands     []string                                `json:"allowed_commands"`
+	HiddenCommitments   bool                                    `json:"hidden_commitments"`
+	RevealStatus        state.RevealStatus                      `json:"reveal_status"`
+	PassAllowed         bool                                    `json:"pass_allowed"`
+	Commitments         map[string]state.InteractionCommitment  `json:"commitments,omitempty"`
+	ReactionRound       int                                     `json:"reaction_round"`
+	ChainDepth          int                                     `json:"chain_depth"`
+	SuspendedCheckpoint state.ResolutionCheckpoint              `json:"suspended_checkpoint"`
 }
 
 type DiceRollState struct {
@@ -152,6 +183,7 @@ func FromBattleForViewer(battle state.Battle, viewerActorID string) Battle {
 		Round:         battle.Segment.Round,
 		ViewerActorID: viewerActorID,
 		Flow:          flowSnapshot(battle, viewerActorID),
+		Resolution:    resolutionSnapshot(battle, viewerActorID),
 		Actors:        actors,
 	}
 }
@@ -215,6 +247,7 @@ func flowSnapshot(battle state.Battle, viewerActorID string) *SegmentFlow {
 		Segment:      battle.Flow.Segment,
 		Round:        battle.Flow.Round,
 		Entered:      battle.Flow.Entered,
+		ExitStarted:  battle.Flow.ExitStarted,
 		Stage:        battle.Flow.Stage,
 		Iteration:    battle.Flow.Iteration,
 		Actors:       actors,
@@ -231,13 +264,119 @@ func pendingInputSnapshot(pending state.PendingInput) PendingInput {
 		ID:              pending.ID,
 		ActorID:         pending.ActorID,
 		Segment:         pending.Segment,
+		Phase:           pending.Phase,
 		Stage:           pending.Stage,
 		Iteration:       pending.Iteration,
+		WindowID:        pending.WindowID,
+		ReactionRound:   pending.ReactionRound,
 		InputType:       pending.InputType,
 		SourceType:      pending.SourceType,
 		SourceID:        pending.SourceID,
 		AllowedCommands: allowed,
 	}
+}
+
+func resolutionSnapshot(battle state.Battle, viewerActorID string) *Resolution {
+	if battle.ActiveResolutionID == "" {
+		return nil
+	}
+	resolution, ok := battle.Resolutions[battle.ActiveResolutionID]
+	if !ok {
+		return nil
+	}
+	snapshot := &Resolution{
+		ID:     resolution.ID,
+		Origin: resolution.Origin,
+		Stage:  resolution.Stage,
+	}
+	if resolution.Batch.Revealed {
+		batch := copyProposalBatch(resolution.Batch)
+		snapshot.Batch = &batch
+	}
+	if window, ok := resolution.Windows[resolution.ActiveWindowID]; ok {
+		snapshot.ActiveWindow = interactionWindowSnapshot(window, viewerActorID)
+	}
+	return snapshot
+}
+
+func interactionWindowSnapshot(
+	window state.InteractionWindow,
+	viewerActorID string,
+) *InteractionWindow {
+	allowed := make([]string, len(window.AllowedCommands))
+	for i, commandType := range window.AllowedCommands {
+		allowed[i] = string(commandType)
+	}
+	progress := make(map[string]state.InteractionActorStatus, len(window.ActorProgress))
+	for actorID, status := range window.ActorProgress {
+		progress[actorID] = status
+	}
+	commitments := make(map[string]state.InteractionCommitment)
+	for actorID, commitment := range window.Commitments {
+		if window.HiddenCommitments &&
+			window.RevealStatus != state.RevealStatusRevealed &&
+			actorID != viewerActorID {
+			continue
+		}
+		commitments[actorID] = copyInteractionCommitment(commitment)
+	}
+	if len(commitments) == 0 {
+		commitments = nil
+	}
+	return &InteractionWindow{
+		ID:                  window.ID,
+		Opened:              window.Opened,
+		Purpose:             window.Purpose,
+		Source:              window.Source,
+		EligibleActors:      copyStrings(window.EligibleActors),
+		RequiredActors:      copyStrings(window.RequiredActors),
+		ActorProgress:       progress,
+		AllowedCommands:     allowed,
+		HiddenCommitments:   window.HiddenCommitments,
+		RevealStatus:        window.RevealStatus,
+		PassAllowed:         window.PassAllowed,
+		Commitments:         commitments,
+		ReactionRound:       window.ReactionRound,
+		ChainDepth:          window.ChainDepth,
+		SuspendedCheckpoint: window.SuspendedCheckpoint,
+	}
+}
+
+func copyInteractionCommitment(
+	commitment state.InteractionCommitment,
+) state.InteractionCommitment {
+	copied := commitment
+	copied.Data.ProposalIDs = copyStrings(commitment.Data.ProposalIDs)
+	copied.Data.CardIDs = copyStrings(commitment.Data.CardIDs)
+	copied.Data.TargetIDs = copyStrings(commitment.Data.TargetIDs)
+	if commitment.Data.Value != nil {
+		value := *commitment.Data.Value
+		copied.Data.Value = &value
+	}
+	return copied
+}
+
+func copyProposalBatch(batch state.ProposalBatch) state.ProposalBatch {
+	copied := batch
+	copied.Proposals = make([]state.Proposal, len(batch.Proposals))
+	for i, proposal := range batch.Proposals {
+		copied.Proposals[i] = proposal
+		if proposal.Data.Amount != nil {
+			amount := *proposal.Data.Amount
+			copied.Proposals[i].Data.Amount = &amount
+		}
+		if proposal.Data.Selection != nil {
+			selection := *proposal.Data.Selection
+			selection.OptionIDs = copyStrings(proposal.Data.Selection.OptionIDs)
+			copied.Proposals[i].Data.Selection = &selection
+		}
+		if proposal.Data.Roll != nil {
+			roll := *proposal.Data.Roll
+			roll.Dice = copyRolledDice(proposal.Data.Roll.Dice)
+			copied.Proposals[i].Data.Roll = &roll
+		}
+	}
+	return copied
 }
 
 func diceVisibleToViewer(battle state.Battle, actorID string, viewerActorID string) bool {

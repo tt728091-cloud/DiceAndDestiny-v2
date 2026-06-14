@@ -10,22 +10,34 @@ import (
 )
 
 const DefaultMaxAutomaticSteps = 1000
+const DefaultMaxReactionChainDepth = 16
+const DefaultMaxReactionRounds = 32
 
 var (
-	ErrMissingSegmentFlow    = errors.New("missing segment flow")
-	ErrInvalidSegmentState   = errors.New("invalid segment state")
-	ErrInvalidProgressStatus = errors.New("invalid progress status")
-	ErrAutomaticStepLimit    = errors.New("automatic progression step limit exceeded")
+	ErrMissingSegmentFlow      = errors.New("missing segment flow")
+	ErrInvalidSegmentState     = errors.New("invalid segment state")
+	ErrInvalidProgressStatus   = errors.New("invalid progress status")
+	ErrAutomaticStepLimit      = errors.New("automatic progression step limit exceeded")
+	ErrReactionChainDepthLimit = errors.New("reaction chain depth limit exceeded")
+	ErrReactionRoundLimit      = errors.New("reaction round limit exceeded")
 )
 
 type Config struct {
-	MaxAutomaticSteps int
+	MaxAutomaticSteps     int
+	MaxReactionChainDepth int
+	MaxReactionRounds     int
+	ProposalRules         []ProposalRule
+	InteractionAI         InteractionAI
 }
 
 type Engine struct {
-	manager           segment.Manager
-	flows             map[segment.Segment]SegmentFlow
-	maxAutomaticSteps int
+	manager               segment.Manager
+	flows                 map[segment.Segment]SegmentFlow
+	maxAutomaticSteps     int
+	maxReactionChainDepth int
+	maxReactionRounds     int
+	proposalRules         map[state.ProposalOperation]ProposalRule
+	interactionAI         InteractionAI
 }
 
 type ProgressionResult struct {
@@ -69,11 +81,47 @@ func NewEngineWithConfig(config Config, flows ...SegmentFlow) (Engine, error) {
 	if maxSteps < 1 {
 		return Engine{}, errors.New("max automatic steps must be positive")
 	}
+	maxDepth := config.MaxReactionChainDepth
+	if maxDepth == 0 {
+		maxDepth = DefaultMaxReactionChainDepth
+	}
+	if maxDepth < 1 {
+		return Engine{}, errors.New("max reaction chain depth must be positive")
+	}
+	maxRounds := config.MaxReactionRounds
+	if maxRounds == 0 {
+		maxRounds = DefaultMaxReactionRounds
+	}
+	if maxRounds < 1 {
+		return Engine{}, errors.New("max reaction rounds must be positive")
+	}
+	rules := make(map[state.ProposalOperation]ProposalRule, len(config.ProposalRules))
+	for _, rule := range config.ProposalRules {
+		if rule == nil {
+			return Engine{}, errors.New("proposal rule is required")
+		}
+		operation := rule.Operation()
+		if operation == "" {
+			return Engine{}, errors.New("proposal rule operation is required")
+		}
+		if _, exists := rules[operation]; exists {
+			return Engine{}, fmt.Errorf("duplicate proposal rule %q", operation)
+		}
+		rules[operation] = rule
+	}
+	interactionAI := config.InteractionAI
+	if interactionAI == nil {
+		interactionAI = DefaultInteractionAI{}
+	}
 
 	return Engine{
-		manager:           segment.NewManager(),
-		flows:             registered,
-		maxAutomaticSteps: maxSteps,
+		manager:               segment.NewManager(),
+		flows:                 registered,
+		maxAutomaticSteps:     maxSteps,
+		maxReactionChainDepth: maxDepth,
+		maxReactionRounds:     maxRounds,
+		proposalRules:         rules,
+		interactionAI:         interactionAI,
 	}, nil
 }
 
@@ -124,7 +172,12 @@ func (e Engine) ProgressUntilInput(battle *state.Battle) (ProgressionResult, err
 			return ProgressionResult{}, err
 		}
 
-		result, err := progressFlow(flow, battle)
+		var result ProgressResult
+		if battle.ActiveResolutionID != "" {
+			result, err = e.progressResolution(battle)
+		} else {
+			result, err = progressFlow(flow, battle)
+		}
 		if err != nil {
 			return ProgressionResult{}, fmt.Errorf("progress %q flow: %w", battle.Segment.Current, err)
 		}
@@ -164,7 +217,7 @@ func (e Engine) ProgressUntilInput(battle *state.Battle) (ProgressionResult, err
 
 func enterFlow(flow SegmentFlow, battle *state.Battle) ([]event.Event, error) {
 	working := battle.Clone()
-	events, err := flow.OnEnter(&Context{Battle: &working})
+	events, err := flow.OnEnter(&Context{Battle: &working, Phase: state.FlowPhaseOnEnter})
 	if err != nil {
 		return nil, err
 	}
@@ -181,7 +234,7 @@ func enterFlow(flow SegmentFlow, battle *state.Battle) ([]event.Event, error) {
 
 func progressFlow(flow SegmentFlow, battle *state.Battle) (ProgressResult, error) {
 	working := battle.Clone()
-	result, err := flow.Progress(&Context{Battle: &working})
+	result, err := flow.Progress(&Context{Battle: &working, Phase: state.FlowPhaseInProgress})
 	if err != nil {
 		return ProgressResult{}, err
 	}
@@ -218,11 +271,24 @@ func (e Engine) completeAndAdvance(flow SegmentFlow, battle *state.Battle) ([]ev
 		return nil, err
 	}
 
-	working := battle.Clone()
-	exitEvents, err := flow.OnExit(&Context{Battle: &working})
-	if err != nil {
-		return nil, fmt.Errorf("exit %q flow: %w", battle.Segment.Current, err)
+	var exitEvents []event.Event
+	if !battle.Flow.ExitStarted {
+		working := battle.Clone()
+		exitEvents, err = flow.OnExit(&Context{Battle: &working, Phase: state.FlowPhaseOnExit})
+		if err != nil {
+			return nil, fmt.Errorf("exit %q flow: %w", battle.Segment.Current, err)
+		}
+		working.Flow.ExitStarted = true
+		if err := validateBattleFlowState(&working); err != nil {
+			return nil, err
+		}
+		if working.ActiveResolutionID != "" {
+			*battle = working
+			return exitEvents, nil
+		}
+		*battle = working
 	}
+	working := battle.Clone()
 	working.Segment = next
 	working.Flow = state.NewSegmentFlowState(next)
 	*battle = working
@@ -270,6 +336,12 @@ func validateBattleFlowState(battle *state.Battle) error {
 	}
 	if battle.Flow.PendingInput == nil {
 		battle.Flow.PendingInput = make(map[string]state.PendingInput)
+	}
+	if battle.Resolutions == nil {
+		battle.Resolutions = make(map[string]state.ResolutionState)
+	}
+	if err := validateActiveResolution(battle); err != nil {
+		return err
 	}
 	return nil
 }
@@ -330,6 +402,17 @@ func validateWaitingState(battle *state.Battle) error {
 			pending.Stage != battle.Flow.Stage ||
 			pending.Iteration != battle.Flow.Iteration {
 			return fmt.Errorf("pending input %q does not match current flow checkpoint", pending.ID)
+		}
+		if pending.WindowID != "" {
+			resolution, window, err := activeWindow(battle)
+			if err != nil {
+				return err
+			}
+			if pending.WindowID != window.ID ||
+				pending.Phase != resolution.Origin.Phase ||
+				pending.ReactionRound != window.ReactionRound {
+				return fmt.Errorf("pending input %q does not match current interaction window", pending.ID)
+			}
 		}
 		if len(pending.AllowedCommands) == 0 {
 			return fmt.Errorf("pending input %q has no allowed commands", pending.ID)

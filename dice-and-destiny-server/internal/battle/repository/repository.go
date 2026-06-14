@@ -88,8 +88,65 @@ func cloneEvents(events []event.Event) []event.Event {
 		cloned[i].RollsRemaining = cloneInt(source.RollsRemaining)
 		cloned[i].Combinations = append([]string(nil), source.Combinations...)
 		cloned[i].SymbolCounts = cloneIntMap(source.SymbolCounts)
+		cloned[i].Commitment = cloneInteractionCommitment(source.Commitment)
+		cloned[i].Commitments = cloneInteractionCommitments(source.Commitments)
+		cloned[i].ProposalBatch = cloneProposalBatch(source.ProposalBatch)
 	}
 	return cloned
+}
+
+func cloneInteractionCommitment(
+	value *state.InteractionCommitment,
+) *state.InteractionCommitment {
+	if value == nil {
+		return nil
+	}
+	cloned := *value
+	cloned.Data.ProposalIDs = append([]string(nil), value.Data.ProposalIDs...)
+	cloned.Data.CardIDs = append([]string(nil), value.Data.CardIDs...)
+	cloned.Data.TargetIDs = append([]string(nil), value.Data.TargetIDs...)
+	cloned.Data.Value = cloneInt(value.Data.Value)
+	return &cloned
+}
+
+func cloneInteractionCommitments(
+	values []state.InteractionCommitment,
+) []state.InteractionCommitment {
+	if values == nil {
+		return nil
+	}
+	cloned := make([]state.InteractionCommitment, len(values))
+	for i := range values {
+		value := cloneInteractionCommitment(&values[i])
+		cloned[i] = *value
+	}
+	return cloned
+}
+
+func cloneProposalBatch(value *state.ProposalBatch) *state.ProposalBatch {
+	if value == nil {
+		return nil
+	}
+	cloned := *value
+	cloned.Proposals = make([]state.Proposal, len(value.Proposals))
+	for i, proposal := range value.Proposals {
+		cloned.Proposals[i] = proposal
+		if proposal.Data.Amount != nil {
+			amount := *proposal.Data.Amount
+			cloned.Proposals[i].Data.Amount = &amount
+		}
+		if proposal.Data.Selection != nil {
+			selection := *proposal.Data.Selection
+			selection.OptionIDs = append([]string(nil), proposal.Data.Selection.OptionIDs...)
+			cloned.Proposals[i].Data.Selection = &selection
+		}
+		if proposal.Data.Roll != nil {
+			roll := *proposal.Data.Roll
+			roll.Dice = cloneRolledDice(proposal.Data.Roll.Dice)
+			cloned.Proposals[i].Data.Roll = &roll
+		}
+	}
+	return &cloned
 }
 
 func cloneRolledDice(values []state.RolledDie) []state.RolledDie {

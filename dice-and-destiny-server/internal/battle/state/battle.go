@@ -8,14 +8,16 @@ import (
 )
 
 type Battle struct {
-	ID              string
-	Status          BattleStatus
-	Segment         segment.State
-	Flow            SegmentFlowState
-	Actors          map[string]ActorState
-	DiceDefinitions map[string]DiceDefinition
-	RollRequests    map[string]RollRequest
-	Commitments     map[string]OffensiveCommitment
+	ID                 string
+	Status             BattleStatus
+	Segment            segment.State
+	Flow               SegmentFlowState
+	ActiveResolutionID string
+	Resolutions        map[string]ResolutionState
+	Actors             map[string]ActorState
+	DiceDefinitions    map[string]DiceDefinition
+	RollRequests       map[string]RollRequest
+	Commitments        map[string]OffensiveCommitment
 }
 
 type ActorState struct {
@@ -117,6 +119,7 @@ type SegmentFlowState struct {
 	Segment      segment.Segment
 	Round        int
 	Entered      bool
+	ExitStarted  bool
 	Stage        string
 	Iteration    int
 	Actors       map[string]ActorFlowState
@@ -133,8 +136,11 @@ type PendingInput struct {
 	ID              string
 	ActorID         string
 	Segment         segment.Segment
+	Phase           FlowPhase
 	Stage           string
 	Iteration       int
+	WindowID        string
+	ReactionRound   int
 	InputType       string
 	SourceType      string
 	SourceID        string
@@ -317,6 +323,7 @@ func NewBattleFromSetup(id string, setup BattleSetup) (Battle, error) {
 		Status:          BattleActive,
 		Segment:         initial,
 		Flow:            NewSegmentFlowState(initial),
+		Resolutions:     make(map[string]ResolutionState),
 		Actors:          actors,
 		DiceDefinitions: copyDiceDefinitions(setup.DiceDefinitions),
 		RollRequests:    make(map[string]RollRequest),
@@ -363,6 +370,7 @@ func IsValidActorProgressStatus(status ActorProgressStatus) bool {
 func (battle Battle) Clone() Battle {
 	cloned := battle
 	cloned.Actors = cloneActors(battle.Actors)
+	cloned.Resolutions = cloneResolutions(battle.Resolutions)
 	cloned.DiceDefinitions = copyDiceDefinitionMap(battle.DiceDefinitions)
 	cloned.RollRequests = cloneRollRequests(battle.RollRequests)
 	cloned.Commitments = cloneCommitments(battle.Commitments)
@@ -452,11 +460,7 @@ func cloneFlowState(flow SegmentFlowState) SegmentFlowState {
 		}
 	}
 	if flow.PendingInput != nil {
-		cloned.PendingInput = make(map[string]PendingInput, len(flow.PendingInput))
-		for id, pending := range flow.PendingInput {
-			pending.AllowedCommands = append([]command.Type(nil), pending.AllowedCommands...)
-			cloned.PendingInput[id] = pending
-		}
+		cloned.PendingInput = clonePendingInputs(flow.PendingInput)
 	}
 	return cloned
 }
