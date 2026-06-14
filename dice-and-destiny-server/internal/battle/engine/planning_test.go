@@ -9,6 +9,7 @@ import (
 	"diceanddestiny/server/internal/battle/command"
 	"diceanddestiny/server/internal/battle/engine"
 	"diceanddestiny/server/internal/battle/event"
+	"diceanddestiny/server/internal/battle/operation"
 	"diceanddestiny/server/internal/battle/repository"
 	"diceanddestiny/server/internal/battle/segment"
 	"diceanddestiny/server/internal/battle/snapshot"
@@ -469,6 +470,20 @@ func sharedPlanningBattle(t *testing.T) state.Battle {
 			},
 		},
 		DiceDefinitions: []state.DiceDefinition{symbolD6()},
+		Content: state.ContentCatalog{
+			Cards: map[string]state.RuntimeContentDefinition{
+				"Card A":     {ID: "Card A", Segments: []segment.Segment{segment.Offensive, segment.Defensive}, Operations: []operation.Plan{{ID: "card-a-noop", Type: operation.TypeNoop}}},
+				"Card B":     {ID: "Card B", Segments: []segment.Segment{segment.Offensive, segment.Defensive}, Operations: []operation.Plan{{ID: "card-b-noop", Type: operation.TypeNoop}}},
+				"Enemy Card": {ID: "Enemy Card", Segments: []segment.Segment{segment.Offensive, segment.Defensive}, Operations: []operation.Plan{{ID: "enemy-card-noop", Type: operation.TypeNoop}}},
+			},
+			Abilities: map[string]state.RuntimeContentDefinition{
+				"Hero Strike":      {ID: "Hero Strike", Segments: []segment.Segment{segment.Offensive}, DiceRequirement: "none", RequiresTarget: true, Operations: []operation.Plan{{ID: "hero-strike-noop", Type: operation.TypeNoop}}},
+				"Hero Guard":       {ID: "Hero Guard", Segments: []segment.Segment{segment.Defensive}, DiceRequirement: "none", Operations: []operation.Plan{{ID: "hero-guard-noop", Type: operation.TypeNoop}}},
+				"Enemy Strike":     {ID: "Enemy Strike", Segments: []segment.Segment{segment.Offensive}, DiceRequirement: "none", RequiresTarget: true, Operations: []operation.Plan{{ID: "enemy-strike-noop", Type: operation.TypeNoop}}},
+				"Enemy Guard":      {ID: "Enemy Guard", Segments: []segment.Segment{segment.Defensive}, DiceRequirement: "none", Operations: []operation.Plan{{ID: "enemy-guard-noop", Type: operation.TypeNoop}}},
+				"Spectator Strike": {ID: "Spectator Strike", Segments: []segment.Segment{segment.Offensive}, DiceRequirement: "none", RequiresTarget: true, Operations: []operation.Plan{{ID: "spectator-strike-noop", Type: operation.TypeNoop}}},
+			},
+		},
 	})
 	if err != nil {
 		t.Fatalf("NewBattleFromSetup() returned error: %v", err)

@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 	"sort"
 
+	"diceanddestiny/server/internal/battle/operation"
 	"diceanddestiny/server/internal/battle/segment"
 	"gopkg.in/yaml.v3"
 )
@@ -21,28 +22,31 @@ type ContentLibrary struct {
 	Cards     map[string]CardContent
 	Abilities map[string]AbilityContent
 	Dice      map[string]DiceContent
+	Statuses  map[string]StatusContent
 }
 
 type CardContent struct {
-	SchemaVersion     int             `yaml:"schema_version"`
-	ID                string          `yaml:"id"`
-	Name              string          `yaml:"name"`
-	Type              string          `yaml:"type"`
-	Cost              ResourceCost    `yaml:"cost"`
-	PhaseRestrictions []string        `yaml:"phase_restrictions"`
-	Effects           []ContentEffect `yaml:"effects"`
+	SchemaVersion     int                    `yaml:"schema_version"`
+	ID                string                 `yaml:"id"`
+	Name              string                 `yaml:"name"`
+	Type              string                 `yaml:"type"`
+	Cost              ResourceCost           `yaml:"cost"`
+	PhaseRestrictions []string               `yaml:"phase_restrictions"`
+	Effects           []operation.Definition `yaml:"effects"`
+	Operations        []operation.Plan       `yaml:"-"`
 }
 
 type AbilityContent struct {
-	SchemaVersion     int             `yaml:"schema_version"`
-	ID                string          `yaml:"id"`
-	Name              string          `yaml:"name"`
-	Type              string          `yaml:"type"`
-	PhaseRestrictions []string        `yaml:"phase_restrictions"`
-	DiceRequirement   DiceRequirement `yaml:"dice_requirement"`
-	Cost              ResourceCost    `yaml:"cost"`
-	RequiresTarget    bool            `yaml:"requires_target"`
-	Effects           []ContentEffect `yaml:"effects"`
+	SchemaVersion     int                    `yaml:"schema_version"`
+	ID                string                 `yaml:"id"`
+	Name              string                 `yaml:"name"`
+	Type              string                 `yaml:"type"`
+	PhaseRestrictions []string               `yaml:"phase_restrictions"`
+	DiceRequirement   DiceRequirement        `yaml:"dice_requirement"`
+	Cost              ResourceCost           `yaml:"cost"`
+	RequiresTarget    bool                   `yaml:"requires_target"`
+	Effects           []operation.Definition `yaml:"effects"`
+	Operations        []operation.Plan       `yaml:"-"`
 }
 
 type DiceContent struct {
@@ -58,9 +62,7 @@ type ResourceCost struct {
 	EnergyPoints int `yaml:"energy_points"`
 }
 
-type ContentEffect struct {
-	Type string `yaml:"type"`
-}
+type ContentEffect = operation.Definition
 
 type DiceRequirement struct {
 	Kind string `yaml:"kind"`
@@ -151,6 +153,10 @@ type characterHealthFile struct {
 }
 
 func LoadContentLibrary(root string) (ContentLibrary, error) {
+	return LoadContentLibraryWithRegistry(root, operation.DefaultRegistry())
+}
+
+func LoadContentLibraryWithRegistry(root string, registry *operation.Registry) (ContentLibrary, error) {
 	cards, err := loadCards(filepath.Join(root, "cards"))
 	if err != nil {
 		return ContentLibrary{}, err
@@ -166,10 +172,60 @@ func LoadContentLibrary(root string) (ContentLibrary, error) {
 		return ContentLibrary{}, err
 	}
 
+	statuses, err := loadStatuses(filepath.Join(root, "statuses"))
+	if err != nil {
+		return ContentLibrary{}, err
+	}
+
+	for id, card := range cards {
+		card.Operations, err = registry.Compile("cards."+id, card.Effects)
+		if err != nil {
+			return ContentLibrary{}, fmt.Errorf("%w: card %q: %v", ErrInvalidContent, id, err)
+		}
+		cards[id] = card
+	}
+	for id, ability := range abilities {
+		ability.Operations, err = registry.Compile("abilities."+id, ability.Effects)
+		if err != nil {
+			return ContentLibrary{}, fmt.Errorf("%w: ability %q: %v", ErrInvalidContent, id, err)
+		}
+		abilities[id] = ability
+	}
+	for id, status := range statuses {
+		for i := range status.Triggers {
+			status.Triggers[i].Operations, err = registry.Compile(
+				fmt.Sprintf("statuses.%s.triggers[%d]", id, i),
+				status.Triggers[i].Resolution,
+			)
+			if err != nil {
+				return ContentLibrary{}, fmt.Errorf("%w: status %q: %v", ErrInvalidContent, id, err)
+			}
+		}
+		statuses[id] = status
+	}
+	for id, card := range cards {
+		if err := validateOperationReferences(card.Operations, statuses); err != nil {
+			return ContentLibrary{}, fmt.Errorf("%w: card %q: %v", ErrInvalidContent, id, err)
+		}
+	}
+	for id, ability := range abilities {
+		if err := validateOperationReferences(ability.Operations, statuses); err != nil {
+			return ContentLibrary{}, fmt.Errorf("%w: ability %q: %v", ErrInvalidContent, id, err)
+		}
+	}
+	for id, status := range statuses {
+		for _, trigger := range status.Triggers {
+			if err := validateOperationReferences(trigger.Operations, statuses); err != nil {
+				return ContentLibrary{}, fmt.Errorf("%w: status %q trigger %q: %v", ErrInvalidContent, id, trigger.ID, err)
+			}
+		}
+	}
+
 	return ContentLibrary{
 		Cards:     cards,
 		Abilities: abilities,
 		Dice:      dice,
+		Statuses:  statuses,
 	}, nil
 }
 
@@ -235,6 +291,15 @@ func loadCards(dir string) (map[string]CardContent, error) {
 		if err := validateNamedContent("card", card.SchemaVersion, card.ID, card.Name, card.PhaseRestrictions); err != nil {
 			return nil, err
 		}
+		if card.Cost.EnergyPoints < 0 {
+			return nil, fmt.Errorf("%w: card %q energy cost must be non-negative", ErrInvalidContent, card.ID)
+		}
+		if card.Type == "" {
+			return nil, fmt.Errorf("%w: card %q type is required", ErrInvalidContent, card.ID)
+		}
+		if len(card.Effects) == 0 {
+			return nil, fmt.Errorf("%w: card %q effects are required", ErrInvalidContent, card.ID)
+		}
 		if _, exists := items[card.ID]; exists {
 			return nil, fmt.Errorf("%w: duplicate card id %q", ErrInvalidContent, card.ID)
 		}
@@ -258,6 +323,25 @@ func loadAbilities(dir string) (map[string]AbilityContent, error) {
 		}
 		if err := validateNamedContent("ability", ability.SchemaVersion, ability.ID, ability.Name, ability.PhaseRestrictions); err != nil {
 			return nil, err
+		}
+		if ability.Cost.EnergyPoints < 0 {
+			return nil, fmt.Errorf("%w: ability %q energy cost must be non-negative", ErrInvalidContent, ability.ID)
+		}
+		if ability.Type != "offensive" && ability.Type != "defensive" {
+			return nil, fmt.Errorf("%w: ability %q type must be offensive or defensive", ErrInvalidContent, ability.ID)
+		}
+		switch ability.DiceRequirement.Kind {
+		case "none", "small_straight", "large_straight", "five_sixes":
+		default:
+			return nil, fmt.Errorf(
+				"%w: ability %q unknown dice requirement %q",
+				ErrInvalidContent,
+				ability.ID,
+				ability.DiceRequirement.Kind,
+			)
+		}
+		if len(ability.Effects) == 0 {
+			return nil, fmt.Errorf("%w: ability %q effects are required", ErrInvalidContent, ability.ID)
 		}
 		if _, exists := items[ability.ID]; exists {
 			return nil, fmt.Errorf("%w: duplicate ability id %q", ErrInvalidContent, ability.ID)
@@ -339,8 +423,6 @@ func validateNamedContent(kind string, schemaVersion int, id, name string, phase
 		return fmt.Errorf("%w: %s id is required", ErrInvalidContent, kind)
 	case name == "":
 		return fmt.Errorf("%w: %s %q name is required", ErrInvalidContent, kind, id)
-	case id != name:
-		return fmt.Errorf("%w: %s id %q must match unique display name %q", ErrInvalidContent, kind, id, name)
 	}
 
 	for _, value := range phaseRestrictions {
@@ -507,6 +589,29 @@ func copyDiceLoadout(values []DiceLoadoutEntry) []DiceLoadoutEntry {
 
 func copyStrings(values []string) []string {
 	return append([]string(nil), values...)
+}
+
+func validateOperationReferences(
+	plans []operation.Plan,
+	statuses map[string]StatusContent,
+) error {
+	for _, plan := range plans {
+		if (plan.Type == operation.TypeApplyStatus || plan.Type == operation.TypeRemoveStatusStack) &&
+			plan.StatusID != "" {
+			if _, ok := statuses[plan.StatusID]; !ok {
+				return fmt.Errorf("operation %q references unknown status %q", plan.ID, plan.StatusID)
+			}
+		}
+		if err := validateOperationReferences(plan.Operations, statuses); err != nil {
+			return err
+		}
+		for _, outcome := range plan.Outcomes {
+			if err := validateOperationReferences(outcome.Operations, statuses); err != nil {
+				return err
+			}
+		}
+	}
+	return nil
 }
 
 func copyStatuses(values []StartingStatus) []StartingStatus {

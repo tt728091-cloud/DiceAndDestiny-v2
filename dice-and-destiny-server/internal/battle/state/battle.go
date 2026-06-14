@@ -4,6 +4,7 @@ import (
 	"errors"
 
 	"diceanddestiny/server/internal/battle/command"
+	"diceanddestiny/server/internal/battle/operation"
 	"diceanddestiny/server/internal/battle/segment"
 )
 
@@ -20,6 +21,37 @@ type Battle struct {
 	Commitments        map[string]OffensiveCommitment
 	OffensiveProposals []PlanningProposal
 	DefensiveProposals []PlanningProposal
+	Content            ContentCatalog
+}
+
+type ContentCatalog struct {
+	Cards     map[string]RuntimeContentDefinition
+	Abilities map[string]RuntimeContentDefinition
+	Statuses  map[string]RuntimeStatusDefinition
+}
+
+type RuntimeContentDefinition struct {
+	ID              string
+	Segments        []segment.Segment
+	EnergyCost      int
+	RequiresTarget  bool
+	DiceRequirement string
+	Operations      []operation.Plan
+}
+
+type RuntimeStatusDefinition struct {
+	ID                  string
+	StackLimit          int
+	StackOverflowPolicy string
+	Triggers            []RuntimeStatusTrigger
+}
+
+type RuntimeStatusTrigger struct {
+	ID         string
+	Segment    segment.Segment
+	Phase      FlowPhase
+	Priority   int
+	Operations []operation.Plan
 }
 
 type ActorState struct {
@@ -173,6 +205,7 @@ type CardZones struct {
 type BattleSetup struct {
 	Actors          []ActorSetup
 	DiceDefinitions []DiceDefinition
+	Content         ContentCatalog
 }
 
 type ActorSetup struct {
@@ -331,6 +364,7 @@ func NewBattleFromSetup(id string, setup BattleSetup) (Battle, error) {
 		DiceDefinitions: copyDiceDefinitions(setup.DiceDefinitions),
 		RollRequests:    make(map[string]RollRequest),
 		Commitments:     make(map[string]OffensiveCommitment),
+		Content:         cloneContentCatalog(setup.Content),
 	}, nil
 }
 
@@ -379,6 +413,7 @@ func (battle Battle) Clone() Battle {
 	cloned.Commitments = cloneCommitments(battle.Commitments)
 	cloned.OffensiveProposals = clonePlanningProposals(battle.OffensiveProposals)
 	cloned.DefensiveProposals = clonePlanningProposals(battle.DefensiveProposals)
+	cloned.Content = cloneContentCatalog(battle.Content)
 	cloned.Flow = cloneFlowState(battle.Flow)
 	return cloned
 }
@@ -466,6 +501,43 @@ func cloneFlowState(flow SegmentFlowState) SegmentFlowState {
 	}
 	if flow.PendingInput != nil {
 		cloned.PendingInput = clonePendingInputs(flow.PendingInput)
+	}
+	return cloned
+}
+
+func cloneContentCatalog(catalog ContentCatalog) ContentCatalog {
+	cloned := ContentCatalog{
+		Cards:     make(map[string]RuntimeContentDefinition, len(catalog.Cards)),
+		Abilities: make(map[string]RuntimeContentDefinition, len(catalog.Abilities)),
+		Statuses:  make(map[string]RuntimeStatusDefinition, len(catalog.Statuses)),
+	}
+	for id, definition := range catalog.Cards {
+		definition.Segments = append([]segment.Segment(nil), definition.Segments...)
+		definition.Operations = operation.ClonePlans(definition.Operations)
+		cloned.Cards[id] = definition
+	}
+	for id, definition := range catalog.Abilities {
+		definition.Segments = append([]segment.Segment(nil), definition.Segments...)
+		definition.Operations = operation.ClonePlans(definition.Operations)
+		cloned.Abilities[id] = definition
+	}
+	for id, definition := range catalog.Statuses {
+		if definition.Triggers != nil {
+			definition.Triggers = append([]RuntimeStatusTrigger(nil), definition.Triggers...)
+			for i := range definition.Triggers {
+				definition.Triggers[i].Operations = operation.ClonePlans(definition.Triggers[i].Operations)
+			}
+		}
+		cloned.Statuses[id] = definition
+	}
+	if catalog.Cards == nil {
+		cloned.Cards = nil
+	}
+	if catalog.Abilities == nil {
+		cloned.Abilities = nil
+	}
+	if catalog.Statuses == nil {
+		cloned.Statuses = nil
 	}
 	return cloned
 }

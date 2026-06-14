@@ -4,11 +4,11 @@ import (
 	"errors"
 	"fmt"
 	"sort"
-	"strings"
 
 	"diceanddestiny/server/internal/battle/command"
 	"diceanddestiny/server/internal/battle/dice"
 	"diceanddestiny/server/internal/battle/event"
+	"diceanddestiny/server/internal/battle/operation"
 	"diceanddestiny/server/internal/battle/segment"
 	"diceanddestiny/server/internal/battle/state"
 )
@@ -282,7 +282,10 @@ func autoPlanActor(
 		plan = syncPlanningDice(battle, plan)
 	}
 	for _, abilityID := range actor.AbilityIDs {
-		if abilityAllowedForPlanning(planning.Segment, abilityID) {
+		definition := battle.Content.Abilities[abilityID]
+		if abilityAllowedForPlanning(battle, planning.Segment, abilityID) &&
+			diceRequirementMet(definition.DiceRequirement, plan.FinalDice) &&
+			definition.EnergyCost <= actor.Resources.EnergyPoints {
 			plan.SelectedAbility = abilityID
 			break
 		}
@@ -422,6 +425,15 @@ func (e Engine) handlePlanningCommand(
 		if len(payload.CardIDs) == 0 {
 			return nil, errors.New("at least one card id is required")
 		}
+		for _, cardID := range payload.CardIDs {
+			definition, ok := battle.Content.Cards[cardID]
+			if !ok {
+				return nil, fmt.Errorf("card %q has no loaded content definition", cardID)
+			}
+			if !segmentAllowed(definition.Segments, resolution.Planning.Segment) {
+				return nil, fmt.Errorf("card %q is not allowed for %s planning", cardID, resolution.Planning.Segment)
+			}
+		}
 		combined := append(append([]string(nil), plan.CommittedCards...), payload.CardIDs...)
 		if err := validateCommittedCards(actor.Cards.Hand, combined); err != nil {
 			return nil, err
@@ -433,7 +445,7 @@ func (e Engine) handlePlanningCommand(
 			return nil, errors.New("invalid planning_select_ability payload")
 		}
 		if !containsString(actor.AbilityIDs, payload.AbilityID) ||
-			!abilityAllowedForPlanning(resolution.Planning.Segment, payload.AbilityID) {
+			!abilityAllowedForPlanning(battle, resolution.Planning.Segment, payload.AbilityID) {
 			return nil, fmt.Errorf("ability %q is not allowed for %s planning", payload.AbilityID, resolution.Planning.Segment)
 		}
 		plan.SelectedAbility = payload.AbilityID
@@ -457,6 +469,9 @@ func (e Engine) handlePlanningCommand(
 	case command.TypePlanningLockIn:
 		if !plan.Passed && plan.SelectedAbility == "" && len(plan.CommittedCards) == 0 {
 			return nil, errors.New("planning lock-in requires an ability, committed card, or pass")
+		}
+		if err := validateFinalPlanningSelection(battle, actor, plan, resolution.Planning.Segment); err != nil {
+			return nil, err
 		}
 		plan.LockedIn = true
 	default:
@@ -540,6 +555,16 @@ func (e Engine) revalidatePlanning(
 
 	planning.Finalized = true
 	for actorID, plan := range planning.Actors {
+		if plan.Participation != state.ActorNotParticipating {
+			if err := validateFinalPlanningSelection(
+				ctx.Battle,
+				ctx.Battle.Actors[actorID],
+				plan,
+				planning.Segment,
+			); err != nil {
+				return ProgressResult{}, fmt.Errorf("validate %s planning for actor %q: %w", planning.Segment, actorID, err)
+			}
+		}
 		if plan.RollRequestID == "" {
 			continue
 		}
@@ -552,7 +577,10 @@ func (e Engine) revalidatePlanning(
 			ctx.Battle.Actors[actorID] = actor
 		}
 	}
-	finalized := finalizedPlanningProposals(planning)
+	finalized, err := finalizedPlanningProposals(ctx.Battle, planning)
+	if err != nil {
+		return ProgressResult{}, err
+	}
 	if planning.Segment == segment.Offensive {
 		ctx.Battle.OffensiveProposals = finalized
 	} else {
@@ -755,7 +783,7 @@ func ensurePlanningPendingInput(
 	window state.InteractionWindow,
 	plan state.PlanningActorState,
 ) {
-	allowed := allowedPlanningCommands(battle.Actors[plan.ActorID], plan, resolution.Planning.Segment)
+	allowed := allowedPlanningCommands(battle, battle.Actors[plan.ActorID], plan, resolution.Planning.Segment)
 	battle.Flow.Actors[plan.ActorID] = state.ActorFlowState{
 		Status:     state.ActorNeedsInput,
 		ReasonCode: string(resolution.Planning.Segment) + "_planning",
@@ -777,6 +805,7 @@ func ensurePlanningPendingInput(
 }
 
 func allowedPlanningCommands(
+	battle *state.Battle,
 	actor state.ActorState,
 	plan state.PlanningActorState,
 	planningSegment segment.Segment,
@@ -793,11 +822,11 @@ func allowedPlanningCommands(
 	if len(plan.FinalDice) > 0 {
 		allowed = append(allowed, command.TypePlanningKeep)
 	}
-	if len(actor.Cards.Hand) > len(plan.CommittedCards) {
+	if hasAllowedPlanningCard(battle, actor, plan, planningSegment) {
 		allowed = append(allowed, command.TypePlanningCards)
 	}
 	for _, abilityID := range actor.AbilityIDs {
-		if abilityAllowedForPlanning(planningSegment, abilityID) {
+		if abilityAllowedForPlanning(battle, planningSegment, abilityID) {
 			allowed = append(allowed, command.TypePlanningAbility)
 			break
 		}
@@ -900,7 +929,10 @@ func planningProposalBatch(
 	}
 }
 
-func finalizedPlanningProposals(planning *state.PlanningState) []state.PlanningProposal {
+func finalizedPlanningProposals(
+	battle *state.Battle,
+	planning *state.PlanningState,
+) ([]state.PlanningProposal, error) {
 	actorIDs := make([]string, 0, len(planning.Actors))
 	for actorID, plan := range planning.Actors {
 		if plan.Participation != state.ActorNotParticipating {
@@ -911,6 +943,10 @@ func finalizedPlanningProposals(planning *state.PlanningState) []state.PlanningP
 	proposals := make([]state.PlanningProposal, 0, len(actorIDs))
 	for _, actorID := range actorIDs {
 		plan := planning.Actors[actorID]
+		operations, err := finalizedContentOperations(battle, plan)
+		if err != nil {
+			return nil, err
+		}
 		commitment := planningCommitmentData(plan, planning.Cycle)
 		commitment.Segment = planning.Segment
 		proposals = append(proposals, state.PlanningProposal{
@@ -919,9 +955,10 @@ func finalizedPlanningProposals(planning *state.PlanningState) []state.PlanningP
 			Segment:    planning.Segment,
 			Commitment: commitment,
 			Defensible: planning.Segment == segment.Offensive && !plan.Passed && len(plan.SelectedTargets) > 0,
+			Operations: operations,
 		})
 	}
-	return proposals
+	return proposals, nil
 }
 
 func planningReactionPolicy(
@@ -1040,15 +1077,157 @@ func validatePlanningTargets(eligible []string, selected []string) error {
 	return nil
 }
 
-// Phase 4 temporarily classifies mock ability IDs by name. Phase 5 replaces
-// this adapter with typed YAML ability definitions and operation validation.
-func abilityAllowedForPlanning(planningSegment segment.Segment, abilityID string) bool {
-	lower := strings.ToLower(abilityID)
-	defensive := strings.Contains(lower, "guard") || strings.Contains(lower, "defen")
-	if planningSegment == segment.Defensive {
-		return defensive
+func abilityAllowedForPlanning(
+	battle *state.Battle,
+	planningSegment segment.Segment,
+	abilityID string,
+) bool {
+	definition, ok := battle.Content.Abilities[abilityID]
+	if !ok {
+		return false
 	}
-	return !defensive
+	return segmentAllowed(definition.Segments, planningSegment)
+}
+
+func hasAllowedPlanningCard(
+	battle *state.Battle,
+	actor state.ActorState,
+	plan state.PlanningActorState,
+	planningSegment segment.Segment,
+) bool {
+	available := make(map[string]int)
+	for _, cardID := range actor.Cards.Hand {
+		available[cardID]++
+	}
+	for _, cardID := range plan.CommittedCards {
+		available[cardID]--
+	}
+	for cardID, count := range available {
+		definition, ok := battle.Content.Cards[cardID]
+		if count > 0 && ok && segmentAllowed(definition.Segments, planningSegment) {
+			return true
+		}
+	}
+	return false
+}
+
+func segmentAllowed(restrictions []segment.Segment, current segment.Segment) bool {
+	if len(restrictions) == 0 {
+		return true
+	}
+	for _, restriction := range restrictions {
+		if restriction == current {
+			return true
+		}
+	}
+	return false
+}
+
+func validateFinalPlanningSelection(
+	battle *state.Battle,
+	actor state.ActorState,
+	plan state.PlanningActorState,
+	planningSegment segment.Segment,
+) error {
+	if plan.Passed {
+		return nil
+	}
+	totalCost := 0
+	requiresTarget := false
+	if plan.SelectedAbility != "" {
+		definition, ok := battle.Content.Abilities[plan.SelectedAbility]
+		if !ok {
+			return fmt.Errorf("ability %q has no loaded content definition", plan.SelectedAbility)
+		}
+		if !segmentAllowed(definition.Segments, planningSegment) {
+			return fmt.Errorf("ability %q is not allowed for %s planning", plan.SelectedAbility, planningSegment)
+		}
+		if !diceRequirementMet(definition.DiceRequirement, plan.FinalDice) {
+			return fmt.Errorf("ability %q dice requirement %q is not met", plan.SelectedAbility, definition.DiceRequirement)
+		}
+		totalCost += definition.EnergyCost
+		requiresTarget = requiresTarget || definition.RequiresTarget
+	}
+	for _, cardID := range plan.CommittedCards {
+		definition, ok := battle.Content.Cards[cardID]
+		if !ok {
+			return fmt.Errorf("card %q has no loaded content definition", cardID)
+		}
+		if !segmentAllowed(definition.Segments, planningSegment) {
+			return fmt.Errorf("card %q is not allowed for %s planning", cardID, planningSegment)
+		}
+		totalCost += definition.EnergyCost
+		requiresTarget = requiresTarget || definition.RequiresTarget
+	}
+	if totalCost > actor.Resources.EnergyPoints {
+		return fmt.Errorf("planning selection costs %d energy points; actor has %d", totalCost, actor.Resources.EnergyPoints)
+	}
+	if requiresTarget && len(plan.SelectedTargets) == 0 {
+		return errors.New("planning selection requires a target")
+	}
+	return nil
+}
+
+func diceRequirementMet(requirement string, values []state.RolledDie) bool {
+	switch requirement {
+	case "", "none":
+		return true
+	case "small_straight", "large_straight":
+		return containsString(dice.Combinations(values), requirement)
+	case "five_sixes":
+		count := 0
+		for _, die := range values {
+			if die.Face == 6 {
+				count++
+			}
+		}
+		return count >= 5
+	default:
+		return false
+	}
+}
+
+func finalizedContentOperations(
+	battle *state.Battle,
+	plan state.PlanningActorState,
+) ([]state.FinalizedOperationProposal, error) {
+	var proposals []state.FinalizedOperationProposal
+	appendContent := func(contentType, contentID string, occurrence int, definition state.RuntimeContentDefinition) {
+		for operationIndex, operationPlan := range definition.Operations {
+			proposals = append(proposals, state.FinalizedOperationProposal{
+				ID: fmt.Sprintf(
+					"final-%s-%s-%s-%d-%d",
+					plan.ActorID,
+					contentType,
+					contentID,
+					occurrence,
+					operationIndex,
+				),
+				ContentType:     contentType,
+				ContentID:       contentID,
+				Operation:       operation.ClonePlans([]operation.Plan{operationPlan})[0],
+				SourceActorID:   plan.ActorID,
+				SelectedTargets: append([]string(nil), plan.SelectedTargets...),
+			})
+		}
+	}
+	if plan.SelectedAbility != "" {
+		definition, ok := battle.Content.Abilities[plan.SelectedAbility]
+		if !ok {
+			return nil, fmt.Errorf("ability %q has no loaded content definition", plan.SelectedAbility)
+		}
+		appendContent("ability", plan.SelectedAbility, 0, definition)
+	}
+	occurrences := make(map[string]int)
+	for _, cardID := range plan.CommittedCards {
+		definition, ok := battle.Content.Cards[cardID]
+		if !ok {
+			return nil, fmt.Errorf("card %q has no loaded content definition", cardID)
+		}
+		appendContent("card", cardID, occurrences[cardID], definition)
+		occurrences[cardID]++
+	}
+	return proposals, nil
 }
 
 func containsString(values []string, target string) bool {

@@ -1,0 +1,38 @@
+schema_version: 1
+id: advanced_poison
+name: Advanced Poison
+stack_limit: 3
+stack_overflow_policy: reject_additional_stacks
+triggers:
+  - id: advanced_poison_on_enter
+    segment: ongoing_effects
+    phase: on_enter
+    priority: 0
+    resolution:
+      - id: advanced_poison_rolls
+        type: roll_dice
+        target: self
+        one_per_status_stack: true
+        side_count: 6
+        operations:
+          - id: advanced_poison_outcomes
+            type: evaluate_roll_outcome
+            outcomes:
+              - id: advanced_poison_damage
+                faces: [1, 2, 3, 4, 5]
+                operations:
+                  - id: advanced_poison_damage_two
+                    type: deal_damage
+                    source: source_actor
+                    target: self
+                    amount: 2
+                    reaction:
+                      eligible: true
+                      policy: standard
+              - id: advanced_poison_remove_stack
+                faces: [6]
+                operations:
+                  - id: advanced_poison_remove_one_stack
+                    type: remove_status_stack
+                    target: selected_status
+                    stack_count: 1

@@ -1,0 +1,38 @@
+schema_version: 1
+id: poison
+name: Poison
+stack_limit: 3
+stack_overflow_policy: reject_additional_stacks
+triggers:
+  - id: poison_on_enter
+    segment: ongoing_effects
+    phase: on_enter
+    priority: 0
+    resolution:
+      - id: poison_rolls
+        type: roll_dice
+        target: self
+        one_per_status_stack: true
+        side_count: 6
+        operations:
+          - id: poison_outcomes
+            type: evaluate_roll_outcome
+            outcomes:
+              - id: poison_damage
+                faces: [1, 2, 3, 4]
+                operations:
+                  - id: poison_damage_one
+                    type: deal_damage
+                    source: source_actor
+                    target: self
+                    amount: 1
+                    reaction:
+                      eligible: true
+                      policy: standard
+              - id: poison_remove_stack
+                faces: [5, 6]
+                operations:
+                  - id: poison_remove_one_stack
+                    type: remove_status_stack
+                    target: selected_status
+                    stack_count: 1

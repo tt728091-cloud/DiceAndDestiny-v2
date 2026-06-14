@@ -6,6 +6,8 @@ import (
 	"reflect"
 	"strings"
 
+	"diceanddestiny/server/internal/battle/operation"
+	"diceanddestiny/server/internal/battle/segment"
 	"diceanddestiny/server/internal/battle/setup"
 	"diceanddestiny/server/internal/battle/state"
 	"diceanddestiny/server/internal/content"
@@ -37,6 +39,7 @@ func (assembler *FileParticipantAssembler) AssembleParticipants(
 	}
 
 	combined := state.BattleSetup{}
+	combined.Content = runtimeContentCatalog(library)
 	for _, participant := range participants {
 		var participantSetup state.BattleSetup
 		switch participant.Controller {
@@ -104,6 +107,20 @@ func (assembler *FileParticipantAssembler) loadEnemy(
 			participant.DefinitionID,
 		)
 	}
+	for _, status := range definition.Statuses {
+		statusDefinition, ok := library.Statuses[status.DefinitionID]
+		if !ok {
+			return state.BattleSetup{}, fmt.Errorf("enemy referenced status %q was not found", status.DefinitionID)
+		}
+		if status.Stacks > statusDefinition.StackLimit {
+			return state.BattleSetup{}, fmt.Errorf(
+				"enemy status %q stacks %d exceed stack limit %d",
+				status.DefinitionID,
+				status.Stacks,
+				statusDefinition.StackLimit,
+			)
+		}
+	}
 	return setup.BattleSetupFromEnemyDefinition(participant.InstanceID, definition, library)
 }
 
@@ -145,6 +162,20 @@ func validateRunPlayerReferences(player setup.RunPlayerState, library content.Co
 	for _, entry := range player.DiceLoadout {
 		if _, ok := library.Dice[entry.DiceID]; !ok {
 			return fmt.Errorf("run player referenced dice %q was not found", entry.DiceID)
+		}
+	}
+	for _, status := range player.Statuses {
+		definition, ok := library.Statuses[status.DefinitionID]
+		if !ok {
+			return fmt.Errorf("run player referenced status %q was not found", status.DefinitionID)
+		}
+		if status.Stacks > definition.StackLimit {
+			return fmt.Errorf(
+				"run player status %q stacks %d exceed stack limit %d",
+				status.DefinitionID,
+				status.Stacks,
+				definition.StackLimit,
+			)
 		}
 	}
 	return nil
@@ -200,4 +231,75 @@ func mergeBattleSetup(target *state.BattleSetup, source state.BattleSetup) error
 		existing[definition.ID] = definition
 	}
 	return nil
+}
+
+func runtimeContentCatalog(library content.ContentLibrary) state.ContentCatalog {
+	catalog := state.ContentCatalog{
+		Cards:     make(map[string]state.RuntimeContentDefinition, len(library.Cards)),
+		Abilities: make(map[string]state.RuntimeContentDefinition, len(library.Abilities)),
+		Statuses:  make(map[string]state.RuntimeStatusDefinition, len(library.Statuses)),
+	}
+	for id, card := range library.Cards {
+		catalog.Cards[id] = state.RuntimeContentDefinition{
+			ID:             id,
+			Segments:       contentSegments(card.PhaseRestrictions),
+			EnergyCost:     card.Cost.EnergyPoints,
+			RequiresTarget: operationsRequireSelectedTarget(card.Operations),
+			Operations:     operation.ClonePlans(card.Operations),
+		}
+	}
+	for id, ability := range library.Abilities {
+		catalog.Abilities[id] = state.RuntimeContentDefinition{
+			ID:              id,
+			Segments:        contentSegments(ability.PhaseRestrictions),
+			EnergyCost:      ability.Cost.EnergyPoints,
+			RequiresTarget:  ability.RequiresTarget,
+			DiceRequirement: ability.DiceRequirement.Kind,
+			Operations:      operation.ClonePlans(ability.Operations),
+		}
+	}
+	for id, status := range library.Statuses {
+		definition := state.RuntimeStatusDefinition{
+			ID:                  id,
+			StackLimit:          status.StackLimit,
+			StackOverflowPolicy: status.StackOverflowPolicy,
+			Triggers:            make([]state.RuntimeStatusTrigger, len(status.Triggers)),
+		}
+		for i, trigger := range status.Triggers {
+			definition.Triggers[i] = state.RuntimeStatusTrigger{
+				ID:         trigger.ID,
+				Segment:    segment.Segment(trigger.Segment),
+				Phase:      state.FlowPhase(trigger.Phase),
+				Priority:   trigger.Priority,
+				Operations: operation.ClonePlans(trigger.Operations),
+			}
+		}
+		catalog.Statuses[id] = definition
+	}
+	return catalog
+}
+
+func operationsRequireSelectedTarget(values []operation.Plan) bool {
+	for _, plan := range values {
+		if plan.Target == operation.TargetSelectedTargets {
+			return true
+		}
+		if operationsRequireSelectedTarget(plan.Operations) {
+			return true
+		}
+		for _, outcome := range plan.Outcomes {
+			if operationsRequireSelectedTarget(outcome.Operations) {
+				return true
+			}
+		}
+	}
+	return false
+}
+
+func contentSegments(values []string) []segment.Segment {
+	segments := make([]segment.Segment, len(values))
+	for i, value := range values {
+		segments[i] = segment.Segment(value)
+	}
+	return segments
 }

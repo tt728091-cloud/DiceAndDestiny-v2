@@ -2,6 +2,7 @@ package state
 
 import (
 	"diceanddestiny/server/internal/battle/command"
+	"diceanddestiny/server/internal/battle/operation"
 	"diceanddestiny/server/internal/battle/segment"
 )
 
@@ -92,11 +93,21 @@ type PlanningCommitmentData struct {
 }
 
 type PlanningProposal struct {
-	ID         string                 `json:"id"`
-	ActorID    string                 `json:"actor_id"`
-	Segment    segment.Segment        `json:"segment"`
-	Commitment PlanningCommitmentData `json:"commitment"`
-	Defensible bool                   `json:"defensible,omitempty"`
+	ID         string                       `json:"id"`
+	ActorID    string                       `json:"actor_id"`
+	Segment    segment.Segment              `json:"segment"`
+	Commitment PlanningCommitmentData       `json:"commitment"`
+	Defensible bool                         `json:"defensible,omitempty"`
+	Operations []FinalizedOperationProposal `json:"operations,omitempty"`
+}
+
+type FinalizedOperationProposal struct {
+	ID              string         `json:"id"`
+	ContentType     string         `json:"content_type"`
+	ContentID       string         `json:"content_id"`
+	Operation       operation.Plan `json:"operation"`
+	SourceActorID   string         `json:"source_actor_id"`
+	SelectedTargets []string       `json:"selected_targets,omitempty"`
 }
 
 type ProposalBatch struct {
@@ -418,6 +429,13 @@ func clonePlanningProposals(values []PlanningProposal) []PlanningProposal {
 	for i, value := range values {
 		cloned[i] = value
 		cloned[i].Commitment = clonePlanningCommitmentData(value.Commitment)
+		if value.Operations != nil {
+			cloned[i].Operations = append([]FinalizedOperationProposal(nil), value.Operations...)
+			for j := range value.Operations {
+				cloned[i].Operations[j].Operation = operation.ClonePlans([]operation.Plan{value.Operations[j].Operation})[0]
+				cloned[i].Operations[j].SelectedTargets = copyStrings(value.Operations[j].SelectedTargets)
+			}
+		}
 	}
 	return cloned
 }

@@ -1,0 +1,13 @@
+schema_version: 1
+id: injury
+name: Injury
+stack_limit: 10
+stack_overflow_policy: reject_additional_stacks
+triggers:
+  - id: injury_placeholder
+    segment: ongoing_effects
+    phase: in_progress
+    priority: 0
+    resolution:
+      - id: injury_noop
+        type: noop
