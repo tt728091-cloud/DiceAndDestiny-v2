@@ -119,6 +119,7 @@ func TestBattleSetupFromRunPlayerShuffledDeckFeedsIncomeDrawOrder(t *testing.T) 
 	if err != nil {
 		t.Fatalf("BattleSetupFromRunPlayer() returned error: %v", err)
 	}
+	addTestDice(&battleSetup)
 
 	battle, err := state.NewBattleFromSetup("battle-1", battleSetup)
 	if err != nil {
@@ -126,16 +127,13 @@ func TestBattleSetupFromRunPlayerShuffledDeckFeedsIncomeDrawOrder(t *testing.T) 
 	}
 
 	eng := engine.NewEngine()
-	got, err := eng.AdvanceSegment(&battle)
+	got, err := eng.ProgressUntilInput(&battle)
 	if err != nil {
-		t.Fatalf("AdvanceSegment() returned error: %v", err)
+		t.Fatalf("ProgressUntilInput() returned error: %v", err)
 	}
 
-	wantEvents := []event.Event{
-		event.NewCardsDrawn("player", []string{"focus"}, false),
-	}
-	if !reflect.DeepEqual(got.Enter.Events, wantEvents) {
-		t.Fatalf("enter events = %#v, want %#v", got.Enter.Events, wantEvents)
+	if !containsEvent(got.Events, event.NewCardsDrawn("player", []string{"focus"}, false)) {
+		t.Fatalf("events = %#v, want focus cards_drawn", got.Events)
 	}
 
 	wantZones := state.CardZones{
@@ -208,6 +206,7 @@ func TestBattleSetupFromRunPlayerCanCreateBattle(t *testing.T) {
 	if err != nil {
 		t.Fatalf("BattleSetupFromRunPlayer() returned error: %v", err)
 	}
+	addTestDice(&battleSetup)
 
 	battle, err := state.NewBattleFromSetup("battle-1", battleSetup)
 	if err != nil {
@@ -238,6 +237,7 @@ func TestBattleSetupFromRunPlayerSupportsIncomeDraw(t *testing.T) {
 	if err != nil {
 		t.Fatalf("BattleSetupFromRunPlayer() returned error: %v", err)
 	}
+	addTestDice(&battleSetup)
 
 	battle, err := state.NewBattleFromSetup("battle-1", battleSetup)
 	if err != nil {
@@ -245,19 +245,16 @@ func TestBattleSetupFromRunPlayerSupportsIncomeDraw(t *testing.T) {
 	}
 
 	eng := engine.NewEngine()
-	got, err := eng.AdvanceSegment(&battle)
+	got, err := eng.ProgressUntilInput(&battle)
 	if err != nil {
-		t.Fatalf("AdvanceSegment() returned error: %v", err)
+		t.Fatalf("ProgressUntilInput() returned error: %v", err)
 	}
 
-	wantEvents := []event.Event{
-		event.NewCardsDrawn("player", []string{"strike"}, false),
-	}
-	if !reflect.DeepEqual(got.Enter.Events, wantEvents) {
-		t.Fatalf("enter events = %#v, want %#v", got.Enter.Events, wantEvents)
+	if !containsEvent(got.Events, event.NewCardsDrawn("player", []string{"strike"}, false)) {
+		t.Fatalf("events = %#v, want strike cards_drawn", got.Events)
 	}
 
-	wantSegment := segment.State{Current: segment.Income, Round: 1}
+	wantSegment := segment.State{Current: segment.Offensive, Round: 1}
 	if battle.Segment != wantSegment {
 		t.Fatalf("battle segment = %#v, want %#v", battle.Segment, wantSegment)
 	}
@@ -271,6 +268,28 @@ func TestBattleSetupFromRunPlayerSupportsIncomeDraw(t *testing.T) {
 	if !reflect.DeepEqual(battle.Actors["player"].Cards, wantZones) {
 		t.Fatalf("player cards = %#v, want %#v", battle.Actors["player"].Cards, wantZones)
 	}
+}
+
+func addTestDice(battleSetup *state.BattleSetup) {
+	battleSetup.Actors[0].DiceLoadout = []state.DiceLoadoutEntry{{DiceID: "Test D6", Count: 1}}
+	battleSetup.DiceDefinitions = []state.DiceDefinition{
+		{
+			ID:        "Test D6",
+			Name:      "Test D6",
+			DieType:   "d6",
+			SideCount: 1,
+			Faces:     []state.DiceFace{{Face: 1, Value: 1, Symbols: []string{}}},
+		},
+	}
+}
+
+func containsEvent(events []event.Event, want event.Event) bool {
+	for _, got := range events {
+		if reflect.DeepEqual(got, want) {
+			return true
+		}
+	}
+	return false
 }
 
 type fakeShuffleSource struct {

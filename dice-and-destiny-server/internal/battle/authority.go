@@ -3,18 +3,69 @@ package battle
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 
 	"diceanddestiny/server/internal/battle/command"
 	"diceanddestiny/server/internal/battle/engine"
+	"diceanddestiny/server/internal/battle/repository"
+	"diceanddestiny/server/internal/battle/state"
 )
 
 type commandHandler interface {
 	HandleCommand(cmd command.Command) engine.Result
 }
 
+type Participant struct {
+	InstanceID   string
+	DefinitionID string
+	Controller   state.ControllerType
+}
+
+type ParticipantAssembler interface {
+	AssembleParticipants(participants []Participant) (state.BattleSetup, error)
+}
+
+type ParticipantAssemblerFunc func(participants []Participant) (state.BattleSetup, error)
+
+func (fn ParticipantAssemblerFunc) AssembleParticipants(
+	participants []Participant,
+) (state.BattleSetup, error) {
+	return fn(participants)
+}
+
+type Authority struct {
+	engine    engine.Engine
+	repo      repository.Repository
+	assembler ParticipantAssembler
+}
+
+var defaultAuthority = NewAuthority(
+	engine.NewEngine(),
+	repository.NewInMemory(),
+	ParticipantAssemblerFunc(func([]Participant) (state.BattleSetup, error) {
+		return state.BattleSetup{}, errors.New("participant assembler is not configured")
+	}),
+)
+
+func NewAuthority(
+	battleEngine engine.Engine,
+	repo repository.Repository,
+	assembler ParticipantAssembler,
+) *Authority {
+	return &Authority{
+		engine:    battleEngine,
+		repo:      repo,
+		assembler: assembler,
+	}
+}
+
 // HandleCommand is the portable battle authority JSON boundary.
 func HandleCommand(commandJSON string) string {
-	return handleCommand(commandJSON, engine.NewEngine())
+	return defaultAuthority.HandleCommandJSON(commandJSON)
+}
+
+func (authority *Authority) HandleCommandJSON(commandJSON string) string {
+	return handleCommand(commandJSON, authority)
 }
 
 func handleCommand(commandJSON string, handler commandHandler) string {
@@ -26,6 +77,147 @@ func handleCommand(commandJSON string, handler commandHandler) string {
 	}
 
 	return marshalResult(handler.HandleCommand(cmd))
+}
+
+func (authority *Authority) HandleCommand(cmd command.Command) engine.Result {
+	if authority == nil || authority.repo == nil || authority.assembler == nil {
+		return authorityRejected("battle authority is not configured")
+	}
+	if cmd.Type == command.TypeStartBattle {
+		return authority.startBattle(cmd)
+	}
+
+	checkpoint, err := authority.repo.Load(cmd.BattleID)
+	if err != nil {
+		if errors.Is(err, repository.ErrBattleNotFound) {
+			return authorityRejected("battle not found")
+		}
+		return authorityRejected(fmt.Sprintf("load battle: %v", err))
+	}
+
+	progressed, err := authority.engine.ApplyBattleCommand(&checkpoint.Battle, cmd)
+	if err != nil {
+		return authorityRejected(err.Error())
+	}
+	checkpoint.Events = append(checkpoint.Events, progressed.Events...)
+	if err := authority.repo.Save(checkpoint); err != nil {
+		return authorityRejected(fmt.Sprintf("save battle: %v", err))
+	}
+	return authority.engine.ResultForViewer(&checkpoint.Battle, cmd.ActorID, progressed)
+}
+
+func (authority *Authority) startBattle(cmd command.Command) engine.Result {
+	var payload command.StartBattlePayload
+	if err := command.DecodePayload(cmd, &payload); err != nil {
+		return authorityRejected("invalid start_battle payload")
+	}
+
+	participants, err := validateStartBattle(cmd, payload)
+	if err != nil {
+		return authorityRejected(err.Error())
+	}
+	battleSetup, err := authority.assembler.AssembleParticipants(participants)
+	if err != nil {
+		return authorityRejected(fmt.Sprintf("assemble battle participants: %v", err))
+	}
+	if err := applyParticipantDescriptors(&battleSetup, participants); err != nil {
+		return authorityRejected(err.Error())
+	}
+
+	battleState, err := state.NewBattleFromSetup(cmd.BattleID, battleSetup)
+	if err != nil {
+		return authorityRejected(err.Error())
+	}
+	progressed, err := authority.engine.ProgressUntilInput(&battleState)
+	if err != nil {
+		return authorityRejected(err.Error())
+	}
+
+	checkpoint := repository.Checkpoint{
+		Battle: battleState,
+		Events: progressed.Events,
+	}
+	if err := authority.repo.Create(checkpoint); err != nil {
+		if errors.Is(err, repository.ErrBattleExists) {
+			return authorityRejected("battle already exists")
+		}
+		return authorityRejected(fmt.Sprintf("create battle: %v", err))
+	}
+	return authority.engine.ResultForViewer(&battleState, cmd.ActorID, progressed)
+}
+
+func validateStartBattle(
+	cmd command.Command,
+	payload command.StartBattlePayload,
+) ([]Participant, error) {
+	if payload.Player.InstanceID == "" {
+		return nil, errors.New("player instance_id is required")
+	}
+	if payload.Player.DefinitionID == "" {
+		return nil, errors.New("player definition_id is required")
+	}
+	if cmd.ActorID != payload.Player.InstanceID {
+		return nil, errors.New("start_battle actor_id must match player instance_id")
+	}
+	if len(payload.Enemies) == 0 {
+		return nil, errors.New("at least one enemy is required")
+	}
+
+	participants := make([]Participant, 0, 1+len(payload.Enemies))
+	participants = append(participants, Participant{
+		InstanceID:   payload.Player.InstanceID,
+		DefinitionID: payload.Player.DefinitionID,
+		Controller:   state.ControllerHuman,
+	})
+	seen := map[string]struct{}{payload.Player.InstanceID: {}}
+	for _, enemy := range payload.Enemies {
+		if enemy.InstanceID == "" {
+			return nil, errors.New("enemy instance_id is required")
+		}
+		if enemy.DefinitionID == "" {
+			return nil, errors.New("enemy definition_id is required")
+		}
+		if _, exists := seen[enemy.InstanceID]; exists {
+			return nil, fmt.Errorf("duplicate participant instance_id %q", enemy.InstanceID)
+		}
+		seen[enemy.InstanceID] = struct{}{}
+		participants = append(participants, Participant{
+			InstanceID:   enemy.InstanceID,
+			DefinitionID: enemy.DefinitionID,
+			Controller:   state.ControllerAI,
+		})
+	}
+	return participants, nil
+}
+
+func applyParticipantDescriptors(
+	battleSetup *state.BattleSetup,
+	participants []Participant,
+) error {
+	if battleSetup == nil {
+		return errors.New("participant assembler returned nil setup")
+	}
+	byID := make(map[string]Participant, len(participants))
+	for _, participant := range participants {
+		byID[participant.InstanceID] = participant
+	}
+	if len(battleSetup.Actors) != len(participants) {
+		return errors.New("participant assembler returned the wrong actor count")
+	}
+	for i := range battleSetup.Actors {
+		actor := &battleSetup.Actors[i]
+		participant, ok := byID[actor.ID]
+		if !ok {
+			return fmt.Errorf("participant assembler returned unexpected actor %q", actor.ID)
+		}
+		actor.DefinitionID = participant.DefinitionID
+		actor.ControllerType = participant.Controller
+		delete(byID, actor.ID)
+	}
+	if len(byID) != 0 {
+		return errors.New("participant assembler omitted a requested actor")
+	}
+	return nil
 }
 
 func parseErrorResult(err error) engine.Result {
@@ -49,4 +241,11 @@ func marshalResult(r engine.Result) string {
 		return `{"accepted":false,"error":"result serialization failed"}`
 	}
 	return string(payload)
+}
+
+func authorityRejected(message string) engine.Result {
+	return engine.Result{
+		Accepted: false,
+		Error:    message,
+	}
 }

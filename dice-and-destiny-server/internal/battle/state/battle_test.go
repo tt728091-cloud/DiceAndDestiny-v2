@@ -17,6 +17,9 @@ func TestNewBattleInitializesEmptyBattleState(t *testing.T) {
 	if battle.ID != "battle-1" {
 		t.Fatalf("battle ID = %q, want %q", battle.ID, "battle-1")
 	}
+	if battle.Status != state.BattleActive {
+		t.Fatalf("battle status = %q, want active", battle.Status)
+	}
 
 	wantSegment := segment.NewManager().InitialState()
 	if battle.Segment != wantSegment {
@@ -36,6 +39,38 @@ func TestNewBattleInitializesEmptyBattleState(t *testing.T) {
 	}
 	if len(battle.DiceDefinitions) != 0 {
 		t.Fatalf("dice definitions = %#v, want no hardcoded definitions", battle.DiceDefinitions)
+	}
+}
+
+func TestNewBattleFromSetupPersistsDefinitionAndController(t *testing.T) {
+	battle, err := state.NewBattleFromSetup("battle-1", state.BattleSetup{
+		Actors: []state.ActorSetup{
+			{
+				ID:             "goblin-1",
+				DefinitionID:   "goblin",
+				ControllerType: state.ControllerAI,
+			},
+		},
+	})
+	if err != nil {
+		t.Fatalf("NewBattleFromSetup() returned error: %v", err)
+	}
+
+	actor := battle.Actors["goblin-1"]
+	if actor.DefinitionID != "goblin" || actor.Controller != state.ControllerAI {
+		t.Fatalf("actor = %#v, want goblin AI", actor)
+	}
+}
+
+func TestNewBattleFromSetupRejectsDuplicateActorID(t *testing.T) {
+	battle, err := state.NewBattleFromSetup("battle-1", state.BattleSetup{
+		Actors: []state.ActorSetup{
+			{ID: "goblin-1"},
+			{ID: "goblin-1"},
+		},
+	})
+	if err == nil {
+		t.Fatalf("NewBattleFromSetup() succeeded with battle %#v", battle)
 	}
 }
 

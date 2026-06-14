@@ -11,31 +11,28 @@ type Context struct {
 	Battle *state.Battle
 }
 
-type FlowDecision string
+type ProgressStatus string
 
 const (
-	WaitForCommand FlowDecision = "wait_for_command"
-	ReadyToAdvance FlowDecision = "ready_to_advance"
+	ProgressContinue        ProgressStatus = "continue"
+	ProgressWaitingForInput ProgressStatus = "waiting_for_input"
+	ProgressSegmentComplete ProgressStatus = "segment_complete"
+	ProgressBattleComplete  ProgressStatus = "battle_complete"
 )
 
-type FlowResult struct {
-	Events   []event.Event
-	Decision FlowDecision
+type ProgressResult struct {
+	Status ProgressStatus
+	Events []event.Event
 }
 
 type SegmentFlow interface {
-	// ID ties a behavior object to the stable segment data owned by the segment package.
 	ID() segment.Segment
-	OnEnter(ctx *Context) (FlowResult, error)
-	CanAdvance(ctx *Context) (FlowDecision, error)
-	OnExit(ctx *Context) (FlowResult, error)
+	OnEnter(ctx *Context) ([]event.Event, error)
+	Progress(ctx *Context) (ProgressResult, error)
+	HandleCommand(ctx *Context, cmd command.Command) ([]event.Event, error)
+	OnExit(ctx *Context) ([]event.Event, error)
 }
 
-type CommandHandlingFlow interface {
-	SegmentFlow
-	HandleCommand(ctx *Context, cmd command.Command) (FlowResult, error)
-}
-
-func readyResult() FlowResult {
-	return FlowResult{Decision: ReadyToAdvance}
+func progress(status ProgressStatus, events ...event.Event) ProgressResult {
+	return ProgressResult{Status: status, Events: events}
 }

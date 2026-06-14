@@ -3,22 +3,97 @@ package state
 import (
 	"errors"
 
+	"diceanddestiny/server/internal/battle/command"
 	"diceanddestiny/server/internal/battle/segment"
 )
 
 type Battle struct {
 	ID              string
+	Status          BattleStatus
 	Segment         segment.State
+	Flow            SegmentFlowState
 	Actors          map[string]ActorState
 	DiceDefinitions map[string]DiceDefinition
 	RollRequests    map[string]RollRequest
+	Commitments     map[string]OffensiveCommitment
 }
 
 type ActorState struct {
+	DefinitionID string
+	Controller   ControllerType
 	Cards        CardZones
 	DiceLoadout  []DiceLoadoutEntry
 	Dice         DiceState
 	EnergyPoints int
+}
+
+type BattleStatus string
+
+const (
+	BattleActive  BattleStatus = "active"
+	BattleVictory BattleStatus = "victory"
+	BattleDefeat  BattleStatus = "defeat"
+	BattleDraw    BattleStatus = "draw"
+	BattleEscaped BattleStatus = "escaped"
+)
+
+type ControllerType string
+
+const (
+	ControllerHuman  ControllerType = "human"
+	ControllerAI     ControllerType = "ai"
+	ControllerSystem ControllerType = "system"
+)
+
+type ActorProgressStatus string
+
+const (
+	ActorResolvingAutomatic ActorProgressStatus = "resolving_automatic"
+	ActorNeedsInput         ActorProgressStatus = "needs_input"
+	ActorLockedIn           ActorProgressStatus = "locked_in"
+	ActorResolved           ActorProgressStatus = "resolved"
+	ActorNotParticipating   ActorProgressStatus = "not_participating"
+)
+
+type SegmentFlowState struct {
+	Segment      segment.Segment
+	Round        int
+	Entered      bool
+	Stage        string
+	Iteration    int
+	Actors       map[string]ActorFlowState
+	PendingInput map[string]PendingInput
+}
+
+type ActorFlowState struct {
+	Status       ActorProgressStatus
+	ReasonCode   string
+	CommitmentID string
+}
+
+type PendingInput struct {
+	ID              string
+	ActorID         string
+	Segment         segment.Segment
+	Stage           string
+	Iteration       int
+	InputType       string
+	SourceType      string
+	SourceID        string
+	AllowedCommands []command.Type
+}
+
+// OffensiveCommitment is authoritative private planning state. Story 3 only
+// persists it; reveal and reaction mechanics are intentionally deferred.
+type OffensiveCommitment struct {
+	ID              string
+	ActorID         string
+	FinalDice       []RolledDie
+	RollsUsed       int
+	SelectedAbility string
+	SelectedCards   []string
+	SelectedTargets []string
+	RollHistory     [][]RolledDie
 }
 
 type CardZones struct {
@@ -34,12 +109,14 @@ type BattleSetup struct {
 }
 
 type ActorSetup struct {
-	ID          string
-	Deck        []string
-	Hand        []string
-	Discard     []string
-	Removed     []string
-	DiceLoadout []DiceLoadoutEntry
+	ID             string
+	DefinitionID   string
+	ControllerType ControllerType
+	Deck           []string
+	Hand           []string
+	Discard        []string
+	Removed        []string
+	DiceLoadout    []DiceLoadoutEntry
 }
 
 type DiceDefinition struct {
@@ -135,9 +212,21 @@ func NewBattleFromSetup(id string, setup BattleSetup) (Battle, error) {
 		if actor.ID == "" {
 			return Battle{}, errors.New("actor id is required")
 		}
+		if _, exists := actors[actor.ID]; exists {
+			return Battle{}, errors.New("duplicate actor id")
+		}
+		controller := actor.ControllerType
+		if controller == "" {
+			controller = ControllerHuman
+		}
+		if !IsValidControllerType(controller) {
+			return Battle{}, errors.New("invalid actor controller type")
+		}
 
 		actors[actor.ID] = ActorState{
-			DiceLoadout: copyDiceLoadout(actor.DiceLoadout),
+			DefinitionID: actor.DefinitionID,
+			Controller:   controller,
+			DiceLoadout:  copyDiceLoadout(actor.DiceLoadout),
 			Cards: CardZones{
 				Deck:    append([]string(nil), actor.Deck...),
 				Hand:    append([]string(nil), actor.Hand...),
@@ -147,13 +236,173 @@ func NewBattleFromSetup(id string, setup BattleSetup) (Battle, error) {
 		}
 	}
 
+	initial := segment.NewManager().InitialState()
 	return Battle{
 		ID:              id,
-		Segment:         segment.NewManager().InitialState(),
+		Status:          BattleActive,
+		Segment:         initial,
+		Flow:            NewSegmentFlowState(initial),
 		Actors:          actors,
 		DiceDefinitions: copyDiceDefinitions(setup.DiceDefinitions),
 		RollRequests:    make(map[string]RollRequest),
+		Commitments:     make(map[string]OffensiveCommitment),
 	}, nil
+}
+
+func IsTerminalBattleStatus(status BattleStatus) bool {
+	switch status {
+	case BattleVictory, BattleDefeat, BattleDraw, BattleEscaped:
+		return true
+	default:
+		return false
+	}
+}
+
+func NewSegmentFlowState(current segment.State) SegmentFlowState {
+	return SegmentFlowState{
+		Segment:      current.Current,
+		Round:        current.Round,
+		Actors:       make(map[string]ActorFlowState),
+		PendingInput: make(map[string]PendingInput),
+	}
+}
+
+func IsValidControllerType(controller ControllerType) bool {
+	switch controller {
+	case ControllerHuman, ControllerAI, ControllerSystem:
+		return true
+	default:
+		return false
+	}
+}
+
+func IsValidActorProgressStatus(status ActorProgressStatus) bool {
+	switch status {
+	case ActorResolvingAutomatic, ActorNeedsInput, ActorLockedIn, ActorResolved, ActorNotParticipating:
+		return true
+	default:
+		return false
+	}
+}
+
+func (battle Battle) Clone() Battle {
+	cloned := battle
+	cloned.Actors = cloneActors(battle.Actors)
+	cloned.DiceDefinitions = copyDiceDefinitionMap(battle.DiceDefinitions)
+	cloned.RollRequests = cloneRollRequests(battle.RollRequests)
+	cloned.Commitments = cloneCommitments(battle.Commitments)
+	cloned.Flow = cloneFlowState(battle.Flow)
+	return cloned
+}
+
+func cloneActors(values map[string]ActorState) map[string]ActorState {
+	if values == nil {
+		return nil
+	}
+	copied := make(map[string]ActorState, len(values))
+	for id, actor := range values {
+		actor.Cards = CardZones{
+			Deck:    copyStrings(actor.Cards.Deck),
+			Hand:    copyStrings(actor.Cards.Hand),
+			Discard: copyStrings(actor.Cards.Discard),
+			Removed: copyStrings(actor.Cards.Removed),
+		}
+		actor.DiceLoadout = copyDiceLoadout(actor.DiceLoadout)
+		if actor.Dice.CurrentRoll != nil {
+			roll := *actor.Dice.CurrentRoll
+			roll.Dice = copyRolledDice(actor.Dice.CurrentRoll.Dice)
+			roll.KeptIndices = append([]int(nil), actor.Dice.CurrentRoll.KeptIndices...)
+			roll.Combinations = copyStrings(actor.Dice.CurrentRoll.Combinations)
+			roll.SymbolCounts = copyIntMap(actor.Dice.CurrentRoll.SymbolCounts)
+			actor.Dice.CurrentRoll = &roll
+		}
+		copied[id] = actor
+	}
+	return copied
+}
+
+func copyDiceDefinitionMap(values map[string]DiceDefinition) map[string]DiceDefinition {
+	if values == nil {
+		return nil
+	}
+	definitions := make([]DiceDefinition, 0, len(values))
+	for _, definition := range values {
+		definitions = append(definitions, definition)
+	}
+	return copyDiceDefinitions(definitions)
+}
+
+func cloneRollRequests(values map[string]RollRequest) map[string]RollRequest {
+	if values == nil {
+		return nil
+	}
+	copied := make(map[string]RollRequest, len(values))
+	for id, request := range values {
+		request.DiceLoadout = copyDiceLoadout(request.DiceLoadout)
+		copied[id] = request
+	}
+	return copied
+}
+
+func cloneCommitments(values map[string]OffensiveCommitment) map[string]OffensiveCommitment {
+	if values == nil {
+		return nil
+	}
+	copied := make(map[string]OffensiveCommitment, len(values))
+	for id, commitment := range values {
+		commitment.FinalDice = copyRolledDice(commitment.FinalDice)
+		commitment.SelectedCards = copyStrings(commitment.SelectedCards)
+		commitment.SelectedTargets = copyStrings(commitment.SelectedTargets)
+		if commitment.RollHistory != nil {
+			commitment.RollHistory = make([][]RolledDie, len(commitment.RollHistory))
+			for i, roll := range values[id].RollHistory {
+				commitment.RollHistory[i] = copyRolledDice(roll)
+			}
+		}
+		copied[id] = commitment
+	}
+	return copied
+}
+
+func cloneFlowState(flow SegmentFlowState) SegmentFlowState {
+	cloned := flow
+	if flow.Actors != nil {
+		cloned.Actors = make(map[string]ActorFlowState, len(flow.Actors))
+		for id, actor := range flow.Actors {
+			cloned.Actors[id] = actor
+		}
+	}
+	if flow.PendingInput != nil {
+		cloned.PendingInput = make(map[string]PendingInput, len(flow.PendingInput))
+		for id, pending := range flow.PendingInput {
+			pending.AllowedCommands = append([]command.Type(nil), pending.AllowedCommands...)
+			cloned.PendingInput[id] = pending
+		}
+	}
+	return cloned
+}
+
+func copyRolledDice(values []RolledDie) []RolledDie {
+	if values == nil {
+		return nil
+	}
+	copied := make([]RolledDie, len(values))
+	for i, value := range values {
+		copied[i] = value
+		copied[i].Symbols = copyStrings(value.Symbols)
+	}
+	return copied
+}
+
+func copyIntMap(values map[string]int) map[string]int {
+	if values == nil {
+		return nil
+	}
+	copied := make(map[string]int, len(values))
+	for key, value := range values {
+		copied[key] = value
+	}
+	return copied
 }
 
 func copyDiceLoadout(values []DiceLoadoutEntry) []DiceLoadoutEntry {

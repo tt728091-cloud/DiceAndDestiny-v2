@@ -10,6 +10,7 @@ import (
 type Type string
 
 const (
+	TypeStartBattle    Type = "start_battle"
 	TypeAdvanceSegment Type = "advance_segment"
 	TypeRollDice       Type = "roll_dice"
 )
@@ -27,20 +28,32 @@ type Command struct {
 }
 
 type envelope struct {
-	BattleID      string          `json:"battle_id"`
-	ActorID       string          `json:"actor_id"`
-	Type          Type            `json:"type"`
-	Action        Type            `json:"action"`
-	Payload       json.RawMessage `json:"payload"`
-	RequestID     string          `json:"request_id,omitempty"`
-	RerollIndices []int           `json:"reroll_indices,omitempty"`
+	BattleID       string          `json:"battle_id"`
+	ActorID        string          `json:"actor_id"`
+	Type           Type            `json:"type"`
+	Action         Type            `json:"action"`
+	Payload        json.RawMessage `json:"payload"`
+	RequestID      string          `json:"request_id,omitempty"`
+	PendingInputID string          `json:"pending_input_id,omitempty"`
+	RerollIndices  []int           `json:"reroll_indices,omitempty"`
 }
 
 type AdvanceSegmentPayload struct{}
 
+type ParticipantDescriptor struct {
+	InstanceID   string `json:"instance_id"`
+	DefinitionID string `json:"definition_id"`
+}
+
+type StartBattlePayload struct {
+	Player  ParticipantDescriptor   `json:"player"`
+	Enemies []ParticipantDescriptor `json:"enemies"`
+}
+
 type RollDicePayload struct {
-	RequestID     string `json:"request_id,omitempty"`
-	RerollIndices []int  `json:"reroll_indices,omitempty"`
+	RequestID      string `json:"request_id,omitempty"`
+	PendingInputID string `json:"pending_input_id,omitempty"`
+	RerollIndices  []int  `json:"reroll_indices,omitempty"`
 }
 
 func ParseJSON(commandJSON string) (Command, error) {
@@ -60,8 +73,9 @@ func ParseJSON(commandJSON string) (Command, error) {
 	}
 	if len(cmd.Payload) == 0 && cmd.Type == TypeRollDice {
 		payload, err := json.Marshal(RollDicePayload{
-			RequestID:     env.RequestID,
-			RerollIndices: env.RerollIndices,
+			RequestID:      env.RequestID,
+			PendingInputID: env.PendingInputID,
+			RerollIndices:  env.RerollIndices,
 		})
 		if err != nil {
 			return Command{}, fmt.Errorf("%w: roll_dice payload could not be built", ErrInvalidEnvelope)

@@ -14,6 +14,7 @@ const (
 	TypeCardsDrawn         Type = "cards_drawn"
 	TypeDiscardReshuffled  Type = "discard_reshuffled"
 	TypeEnergyPointsGained Type = "energy_points_gained"
+	TypeRollRequested      Type = "roll_requested"
 	TypeDiceRolled         Type = "dice_rolled"
 )
 
@@ -32,6 +33,7 @@ type Event struct {
 	Count          int                  `json:"count,omitempty"`
 	EnergyPoints   int                  `json:"energy_points,omitempty"`
 	RequestID      string               `json:"request_id,omitempty"`
+	PendingInputID string               `json:"pending_input_id,omitempty"`
 	Pool           state.RollPool       `json:"pool,omitempty"`
 	SourceType     state.RollSourceType `json:"source_type,omitempty"`
 	SourceID       string               `json:"source_id,omitempty"`
@@ -87,6 +89,16 @@ func NewEnergyPointsGained(actorID string, points int) Event {
 		Type:         TypeEnergyPointsGained,
 		ActorID:      actorID,
 		EnergyPoints: points,
+	}
+}
+
+func NewRollRequested(actorID string, segmentID segment.Segment, requestID string, pendingInputID string) Event {
+	return Event{
+		Type:           TypeRollRequested,
+		ActorID:        actorID,
+		Segment:        segmentID,
+		RequestID:      requestID,
+		PendingInputID: pendingInputID,
 	}
 }
 
@@ -148,6 +160,23 @@ func eventForViewer(source Event, viewerActorID string) Event {
 	if source.Type == TypeCardsDrawn && source.ActorID != viewerActorID {
 		filtered.Count = len(source.Cards)
 		filtered.Cards = nil
+	}
+	if source.Type == TypeRollRequested && source.ActorID != viewerActorID {
+		filtered.RequestID = ""
+		filtered.PendingInputID = ""
+	}
+	if source.Type == TypeDiceRolled && source.ActorID != viewerActorID {
+		filtered.RequestID = ""
+		filtered.Pool = ""
+		filtered.SourceType = ""
+		filtered.SourceID = ""
+		filtered.Dice = nil
+		filtered.RolledIndices = nil
+		filtered.RollsUsed = 0
+		filtered.MaxRolls = 0
+		filtered.RollsRemaining = nil
+		filtered.Combinations = nil
+		filtered.SymbolCounts = nil
 	}
 
 	return filtered

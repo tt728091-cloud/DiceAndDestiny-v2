@@ -12,17 +12,47 @@ type Battle struct {
 	Segment       segment.Segment  `json:"segment"`
 	Round         int              `json:"round"`
 	ViewerActorID string           `json:"viewer_actor_id,omitempty"`
+	Flow          *SegmentFlow     `json:"flow,omitempty"`
 	Actors        map[string]Actor `json:"actors,omitempty"`
 }
 
 type Actor struct {
-	EnergyPoints int            `json:"energy_points"`
-	Hand         []string       `json:"hand,omitempty"`
-	HandCount    int            `json:"hand_count"`
-	DeckCount    int            `json:"deck_count"`
-	DiscardCount int            `json:"discard_count"`
-	RemovedCount int            `json:"removed_count"`
-	Dice         *DiceRollState `json:"dice,omitempty"`
+	DefinitionID string               `json:"definition_id,omitempty"`
+	Controller   state.ControllerType `json:"controller,omitempty"`
+	EnergyPoints int                  `json:"energy_points"`
+	Hand         []string             `json:"hand,omitempty"`
+	HandCount    int                  `json:"hand_count"`
+	DeckCount    int                  `json:"deck_count"`
+	DiscardCount int                  `json:"discard_count"`
+	RemovedCount int                  `json:"removed_count"`
+	Dice         *DiceRollState       `json:"dice,omitempty"`
+}
+
+type SegmentFlow struct {
+	Segment      segment.Segment          `json:"segment"`
+	Round        int                      `json:"round"`
+	Entered      bool                     `json:"entered"`
+	Stage        string                   `json:"stage,omitempty"`
+	Iteration    int                      `json:"iteration"`
+	Actors       map[string]ActorProgress `json:"actors,omitempty"`
+	PendingInput map[string]PendingInput  `json:"pending_input,omitempty"`
+}
+
+type ActorProgress struct {
+	Status     state.ActorProgressStatus `json:"status"`
+	ReasonCode string                    `json:"reason_code,omitempty"`
+}
+
+type PendingInput struct {
+	ID              string          `json:"id"`
+	ActorID         string          `json:"actor_id"`
+	Segment         segment.Segment `json:"segment"`
+	Stage           string          `json:"stage"`
+	Iteration       int             `json:"iteration"`
+	InputType       string          `json:"input_type"`
+	SourceType      string          `json:"source_type,omitempty"`
+	SourceID        string          `json:"source_id,omitempty"`
+	AllowedCommands []string        `json:"allowed_commands"`
 }
 
 type DiceRollState struct {
@@ -55,13 +85,15 @@ func FromBattleForViewer(battle state.Battle, viewerActorID string) Battle {
 	for id, actor := range battle.Actors {
 		cards := actor.Cards
 		snapshotActor := Actor{
+			DefinitionID: actor.DefinitionID,
+			Controller:   actor.Controller,
 			EnergyPoints: actor.EnergyPoints,
 			HandCount:    len(cards.Hand),
 			DeckCount:    len(cards.Deck),
 			DiscardCount: len(cards.Discard),
 			RemovedCount: len(cards.Removed),
 		}
-		if actor.Dice.CurrentRoll != nil {
+		if actor.Dice.CurrentRoll != nil && diceVisibleToViewer(battle, id, viewerActorID) {
 			snapshotActor.Dice = diceRollStateSnapshot(actor.Dice.CurrentRoll)
 		}
 		if id == viewerActorID {
@@ -78,8 +110,69 @@ func FromBattleForViewer(battle state.Battle, viewerActorID string) Battle {
 		Segment:       battle.Segment.Current,
 		Round:         battle.Segment.Round,
 		ViewerActorID: viewerActorID,
+		Flow:          flowSnapshot(battle, viewerActorID),
 		Actors:        actors,
 	}
+}
+
+func PendingInputForViewer(battle state.Battle, viewerActorID string) map[string]PendingInput {
+	pending, ok := battle.Flow.PendingInput[viewerActorID]
+	if !ok {
+		return nil
+	}
+	return map[string]PendingInput{
+		viewerActorID: pendingInputSnapshot(pending),
+	}
+}
+
+func flowSnapshot(battle state.Battle, viewerActorID string) *SegmentFlow {
+	if battle.Flow.Segment == "" {
+		return nil
+	}
+	actors := make(map[string]ActorProgress, len(battle.Flow.Actors))
+	for actorID, actor := range battle.Flow.Actors {
+		actors[actorID] = ActorProgress{
+			Status:     actor.Status,
+			ReasonCode: actor.ReasonCode,
+		}
+	}
+	if len(actors) == 0 {
+		actors = nil
+	}
+	return &SegmentFlow{
+		Segment:      battle.Flow.Segment,
+		Round:        battle.Flow.Round,
+		Entered:      battle.Flow.Entered,
+		Stage:        battle.Flow.Stage,
+		Iteration:    battle.Flow.Iteration,
+		Actors:       actors,
+		PendingInput: PendingInputForViewer(battle, viewerActorID),
+	}
+}
+
+func pendingInputSnapshot(pending state.PendingInput) PendingInput {
+	allowed := make([]string, len(pending.AllowedCommands))
+	for i, commandType := range pending.AllowedCommands {
+		allowed[i] = string(commandType)
+	}
+	return PendingInput{
+		ID:              pending.ID,
+		ActorID:         pending.ActorID,
+		Segment:         pending.Segment,
+		Stage:           pending.Stage,
+		Iteration:       pending.Iteration,
+		InputType:       pending.InputType,
+		SourceType:      pending.SourceType,
+		SourceID:        pending.SourceID,
+		AllowedCommands: allowed,
+	}
+}
+
+func diceVisibleToViewer(battle state.Battle, actorID string, viewerActorID string) bool {
+	if actorID == viewerActorID {
+		return true
+	}
+	return battle.Flow.Segment != segment.Offensive || battle.Flow.Stage == "reveal"
 }
 
 func diceRollStateSnapshot(roll *state.RollState) *DiceRollState {

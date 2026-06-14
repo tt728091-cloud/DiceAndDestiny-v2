@@ -1,6 +1,8 @@
 package engine
 
 import (
+	"errors"
+
 	"diceanddestiny/server/internal/battle/command"
 	"diceanddestiny/server/internal/battle/event"
 	"diceanddestiny/server/internal/battle/snapshot"
@@ -8,88 +10,95 @@ import (
 )
 
 type Result struct {
-	Accepted bool             `json:"accepted"`
-	Events   []event.Event    `json:"events,omitempty"`
-	Snapshot *snapshot.Battle `json:"snapshot,omitempty"`
-	Error    string           `json:"error,omitempty"`
+	Accepted     bool                             `json:"accepted"`
+	Status       ProgressStatus                   `json:"status,omitempty"`
+	BattleResult state.BattleStatus               `json:"battle_result,omitempty"`
+	Events       []event.Event                    `json:"events,omitempty"`
+	PendingInput map[string]snapshot.PendingInput `json:"pending_input,omitempty"`
+	Snapshot     *snapshot.Battle                 `json:"snapshot,omitempty"`
+	Error        string                           `json:"error,omitempty"`
 }
 
 func (e Engine) HandleCommand(cmd command.Command) Result {
-	switch cmd.Type {
-	case command.TypeAdvanceSegment:
-		return e.handleAdvanceSegment(cmd)
-	default:
-		battle, err := state.NewBattle(cmd.BattleID)
-		if err != nil {
-			return rejected(err.Error())
-		}
-		return e.HandleBattleCommand(&battle, cmd)
-	}
+	return rejected("battle repository is required")
 }
 
-func (e Engine) handleAdvanceSegment(cmd command.Command) Result {
-	var payload command.AdvanceSegmentPayload
-	if err := command.DecodePayload(cmd, &payload); err != nil {
-		return rejected("invalid advance_segment payload")
-	}
-
-	battle, err := state.NewBattle(cmd.BattleID)
+func (e Engine) AdvanceUntilInput(battle *state.Battle, viewerActorID string) Result {
+	progressed, err := e.ProgressUntilInput(battle)
 	if err != nil {
 		return rejected(err.Error())
 	}
-
-	advanced, err := e.AdvanceSegment(&battle)
-	if err != nil {
-		return rejected(err.Error())
-	}
-
-	events := make([]event.Event, 0, len(advanced.Exit.Events)+1+len(advanced.Enter.Events))
-	events = append(events, advanced.Exit.Events...)
-	events = append(events, event.NewSegmentAdvanced(advanced.Advance))
-	events = append(events, advanced.Enter.Events...)
-
-	return Result{
-		Accepted: true,
-		// Events describe what changed; snapshots describe state after the change.
-		// The shared packages own those shapes so authority only serializes them.
-		Events:   event.ForViewer(events, cmd.ActorID),
-		Snapshot: battleSnapshotForViewer(&battle, cmd.ActorID),
-	}
+	return e.ResultForViewer(battle, viewerActorID, progressed)
 }
 
 func (e Engine) HandleBattleCommand(battle *state.Battle, cmd command.Command) Result {
+	progressed, err := e.ApplyBattleCommand(battle, cmd)
+	if err != nil {
+		return rejected(err.Error())
+	}
+	return e.ResultForViewer(battle, cmd.ActorID, progressed)
+}
+
+func (e Engine) ApplyBattleCommand(battle *state.Battle, cmd command.Command) (ProgressionResult, error) {
 	if battle == nil {
-		return rejected("battle is nil")
+		return ProgressionResult{}, errors.New("battle is nil")
+	}
+	if cmd.BattleID != battle.ID {
+		return ProgressionResult{}, errors.New("command battle does not match current battle")
+	}
+	if state.IsTerminalBattleStatus(battle.Status) {
+		return ProgressionResult{}, errors.New("battle is complete")
 	}
 
 	flow, err := e.FlowFor(battle.Segment.Current)
 	if err != nil {
-		return rejected(err.Error())
+		return ProgressionResult{}, err
 	}
 
-	handler, ok := flow.(CommandHandlingFlow)
-	if !ok {
-		return rejected("unsupported command type")
-	}
-
-	result, err := handler.HandleCommand(&Context{Battle: battle}, cmd)
+	working := battle.Clone()
+	commandEvents, err := flow.HandleCommand(&Context{Battle: &working}, cmd)
 	if err != nil {
-		return rejected(err.Error())
+		return ProgressionResult{}, err
 	}
 
-	return Result{
-		Accepted: true,
-		Events:   event.ForViewer(result.Events, cmd.ActorID),
-		Snapshot: battleSnapshotForViewer(battle, cmd.ActorID),
+	progressed, err := e.ProgressUntilInput(&working)
+	if err != nil {
+		return ProgressionResult{}, err
 	}
+	*battle = working
+
+	events := append([]event.Event(nil), commandEvents...)
+	events = append(events, progressed.Events...)
+	return ProgressionResult{
+		Status: progressed.Status,
+		Events: events,
+	}, nil
+}
+
+func (e Engine) ResultForViewer(
+	battle *state.Battle,
+	viewerActorID string,
+	progressed ProgressionResult,
+) Result {
+	viewerActorID = viewerActorIDForBattle(battle, viewerActorID)
+	result := Result{
+		Accepted:     true,
+		Status:       progressed.Status,
+		Events:       event.ForViewer(progressed.Events, viewerActorID),
+		PendingInput: snapshot.PendingInputForViewer(*battle, viewerActorID),
+		Snapshot:     battleSnapshotForViewer(battle, viewerActorID),
+	}
+	if state.IsTerminalBattleStatus(battle.Status) {
+		result.Status = ProgressBattleComplete
+		result.BattleResult = battle.Status
+	}
+	return result
 }
 
 func battleSnapshotForViewer(battle *state.Battle, viewerActorID string) *snapshot.Battle {
 	if battle == nil {
 		return nil
 	}
-
-	// Copy mutable authoritative state into the read-only client/network shape.
 	snap := snapshot.FromBattleForViewer(*battle, viewerActorIDForBattle(battle, viewerActorID))
 	return &snap
 }
@@ -102,6 +111,10 @@ func viewerActorIDForBattle(battle *state.Battle, viewerActorID string) string {
 		return viewerActorID
 	}
 	return ""
+}
+
+func unsupportedCommand() error {
+	return errors.New("unsupported command type")
 }
 
 func rejected(message string) Result {

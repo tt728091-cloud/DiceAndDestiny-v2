@@ -6,7 +6,7 @@ func DefaultFlows() []SegmentFlow {
 	return []SegmentFlow{
 		OngoingEffectsFlow{},
 		mustIncomeFlow(DefaultIncomeRewards()...),
-		OffensiveFlow{},
+		defaultOffensiveFlow(),
 		DefensiveFlow{},
 		DamageResolutionFlow{},
 	}
