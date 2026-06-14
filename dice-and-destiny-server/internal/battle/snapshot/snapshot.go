@@ -8,13 +8,15 @@ import (
 // Battle is the read-only view returned after events have been applied.
 // It is safe for presentation or future network clients to render from.
 type Battle struct {
-	BattleID      string           `json:"battle_id"`
-	Segment       segment.Segment  `json:"segment"`
-	Round         int              `json:"round"`
-	ViewerActorID string           `json:"viewer_actor_id,omitempty"`
-	Flow          *SegmentFlow     `json:"flow,omitempty"`
-	Resolution    *Resolution      `json:"resolution,omitempty"`
-	Actors        map[string]Actor `json:"actors,omitempty"`
+	BattleID           string                   `json:"battle_id"`
+	Segment            segment.Segment          `json:"segment"`
+	Round              int                      `json:"round"`
+	ViewerActorID      string                   `json:"viewer_actor_id,omitempty"`
+	Flow               *SegmentFlow             `json:"flow,omitempty"`
+	Resolution         *Resolution              `json:"resolution,omitempty"`
+	Actors             map[string]Actor         `json:"actors,omitempty"`
+	OffensiveProposals []state.PlanningProposal `json:"offensive_proposals,omitempty"`
+	DefensiveProposals []state.PlanningProposal `json:"defensive_proposals,omitempty"`
 }
 
 type Actor struct {
@@ -73,6 +75,7 @@ type PendingInput struct {
 	Iteration       int             `json:"iteration"`
 	WindowID        string          `json:"window_id,omitempty"`
 	ReactionRound   int             `json:"reaction_round,omitempty"`
+	PlanningCycle   int             `json:"planning_cycle,omitempty"`
 	InputType       string          `json:"input_type"`
 	SourceType      string          `json:"source_type,omitempty"`
 	SourceID        string          `json:"source_id,omitempty"`
@@ -85,6 +88,22 @@ type Resolution struct {
 	Stage        state.ResolutionStage      `json:"stage"`
 	Batch        *state.ProposalBatch       `json:"batch,omitempty"`
 	ActiveWindow *InteractionWindow         `json:"active_window,omitempty"`
+	Planning     *Planning                  `json:"planning,omitempty"`
+}
+
+type Planning struct {
+	Segment segment.Segment          `json:"segment"`
+	Cycle   int                      `json:"cycle"`
+	Actors  map[string]PlanningActor `json:"actors"`
+}
+
+type PlanningActor struct {
+	Participation     state.ActorProgressStatus     `json:"participation"`
+	ReasonCode        string                        `json:"reason_code,omitempty"`
+	LockedIn          bool                          `json:"locked_in"`
+	Current           *state.PlanningCommitmentData `json:"current,omitempty"`
+	Revealed          *state.PlanningCommitmentData `json:"revealed,omitempty"`
+	EligibleTargetIDs []string                      `json:"eligible_target_ids,omitempty"`
 }
 
 type InteractionWindow struct {
@@ -178,13 +197,15 @@ func FromBattleForViewer(battle state.Battle, viewerActorID string) Battle {
 	}
 
 	return Battle{
-		BattleID:      battle.ID,
-		Segment:       battle.Segment.Current,
-		Round:         battle.Segment.Round,
-		ViewerActorID: viewerActorID,
-		Flow:          flowSnapshot(battle, viewerActorID),
-		Resolution:    resolutionSnapshot(battle, viewerActorID),
-		Actors:        actors,
+		BattleID:           battle.ID,
+		Segment:            battle.Segment.Current,
+		Round:              battle.Segment.Round,
+		ViewerActorID:      viewerActorID,
+		Flow:               flowSnapshot(battle, viewerActorID),
+		Resolution:         resolutionSnapshot(battle, viewerActorID),
+		Actors:             actors,
+		OffensiveProposals: planningProposalsForViewer(battle.OffensiveProposals, viewerActorID),
+		DefensiveProposals: planningProposalsForViewer(battle.DefensiveProposals, viewerActorID),
 	}
 }
 
@@ -269,6 +290,7 @@ func pendingInputSnapshot(pending state.PendingInput) PendingInput {
 		Iteration:       pending.Iteration,
 		WindowID:        pending.WindowID,
 		ReactionRound:   pending.ReactionRound,
+		PlanningCycle:   pending.PlanningCycle,
 		InputType:       pending.InputType,
 		SourceType:      pending.SourceType,
 		SourceID:        pending.SourceID,
@@ -296,7 +318,47 @@ func resolutionSnapshot(battle state.Battle, viewerActorID string) *Resolution {
 	if window, ok := resolution.Windows[resolution.ActiveWindowID]; ok {
 		snapshot.ActiveWindow = interactionWindowSnapshot(window, viewerActorID)
 	}
+	if resolution.Planning != nil {
+		snapshot.Planning = planningSnapshot(*resolution.Planning, viewerActorID)
+	}
 	return snapshot
+}
+
+func planningSnapshot(planning state.PlanningState, viewerActorID string) *Planning {
+	actors := make(map[string]PlanningActor, len(planning.Actors))
+	for actorID, actor := range planning.Actors {
+		view := PlanningActor{
+			Participation: actor.Participation,
+			ReasonCode:    actor.ReasonCode,
+			LockedIn:      actor.LockedIn,
+		}
+		if actor.RevealedCommitment != nil {
+			revealed := copyPlanningCommitment(*actor.RevealedCommitment)
+			if actorID != viewerActorID {
+				revealed.KeptIndices = nil
+			}
+			view.Revealed = &revealed
+		}
+		if actorID == viewerActorID {
+			current := state.PlanningCommitmentData{
+				Segment:         planning.Segment,
+				Cycle:           planning.Cycle,
+				FinalDice:       copyRolledDice(actor.FinalDice),
+				KeptIndices:     append([]int(nil), actor.KeptIndices...),
+				RollsUsed:       actor.RollsUsed,
+				MaxRolls:        actor.MaxRolls,
+				SelectedAbility: actor.SelectedAbility,
+				CommittedCards:  copyStrings(actor.CommittedCards),
+				SelectedTargets: copyStrings(actor.SelectedTargets),
+				Passed:          actor.Passed,
+				LockedIn:        actor.LockedIn,
+			}
+			view.Current = &current
+			view.EligibleTargetIDs = copyStrings(actor.EligibleTargetIDs)
+		}
+		actors[actorID] = view
+	}
+	return &Planning{Segment: planning.Segment, Cycle: planning.Cycle, Actors: actors}
 }
 
 func interactionWindowSnapshot(
@@ -353,6 +415,14 @@ func copyInteractionCommitment(
 		value := *commitment.Data.Value
 		copied.Data.Value = &value
 	}
+	if commitment.Data.Planning != nil {
+		planning := copyPlanningCommitment(*commitment.Data.Planning)
+		copied.Data.Planning = &planning
+	}
+	copied.Data.PlanningAdjustments = append(
+		[]state.PlanningAdjustment(nil),
+		commitment.Data.PlanningAdjustments...,
+	)
 	return copied
 }
 
@@ -375,6 +445,36 @@ func copyProposalBatch(batch state.ProposalBatch) state.ProposalBatch {
 			roll.Dice = copyRolledDice(proposal.Data.Roll.Dice)
 			copied.Proposals[i].Data.Roll = &roll
 		}
+		if proposal.Data.Planning != nil {
+			planning := copyPlanningCommitment(*proposal.Data.Planning)
+			copied.Proposals[i].Data.Planning = &planning
+		}
+	}
+	return copied
+}
+
+func copyPlanningCommitment(value state.PlanningCommitmentData) state.PlanningCommitmentData {
+	value.FinalDice = copyRolledDice(value.FinalDice)
+	value.KeptIndices = append([]int(nil), value.KeptIndices...)
+	value.CommittedCards = copyStrings(value.CommittedCards)
+	value.SelectedTargets = copyStrings(value.SelectedTargets)
+	return value
+}
+
+func planningProposalsForViewer(
+	values []state.PlanningProposal,
+	viewerActorID string,
+) []state.PlanningProposal {
+	if values == nil {
+		return nil
+	}
+	copied := make([]state.PlanningProposal, len(values))
+	for i, value := range values {
+		copied[i] = value
+		copied[i].Commitment = copyPlanningCommitment(value.Commitment)
+		if value.ActorID != viewerActorID {
+			copied[i].Commitment.KeptIndices = nil
+		}
 	}
 	return copied
 }
@@ -383,7 +483,7 @@ func diceVisibleToViewer(battle state.Battle, actorID string, viewerActorID stri
 	if actorID == viewerActorID {
 		return true
 	}
-	return battle.Flow.Segment != segment.Offensive || battle.Flow.Stage == "reveal"
+	return battle.Flow.Segment != segment.Offensive && battle.Flow.Segment != segment.Defensive
 }
 
 func diceRollStateSnapshot(roll *state.RollState) *DiceRollState {

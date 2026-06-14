@@ -41,6 +41,62 @@ type ResolutionState struct {
 	ReactionPolicy        *ReactionWindowPolicy
 	SuspendedActors       map[string]ActorFlowState
 	SuspendedPendingInput map[string]PendingInput
+	Planning              *PlanningState
+}
+
+type PlanningState struct {
+	Segment                  segment.Segment               `json:"segment"`
+	Cycle                    int                           `json:"cycle"`
+	DefaultMaxRolls          int                           `json:"default_max_rolls"`
+	Actors                   map[string]PlanningActorState `json:"actors"`
+	ChangedActorIDs          []string                      `json:"changed_actor_ids"`
+	AppliedReactionWindowIDs map[string]bool               `json:"applied_reaction_window_ids,omitempty"`
+	Finalized                bool                          `json:"finalized"`
+}
+
+type PlanningActorState struct {
+	ActorID            string                  `json:"actor_id"`
+	Participation      ActorProgressStatus     `json:"participation"`
+	ReasonCode         string                  `json:"reason_code,omitempty"`
+	RollRequestID      string                  `json:"roll_request_id,omitempty"`
+	FinalDice          []RolledDie             `json:"final_dice,omitempty"`
+	KeptIndices        []int                   `json:"kept_indices,omitempty"`
+	RollsUsed          int                     `json:"rolls_used"`
+	MaxRolls           int                     `json:"max_rolls"`
+	SelectedAbility    string                  `json:"selected_ability,omitempty"`
+	CommittedCards     []string                `json:"committed_cards,omitempty"`
+	SelectedTargets    []string                `json:"selected_targets,omitempty"`
+	EligibleTargetIDs  []string                `json:"eligible_target_ids,omitempty"`
+	Passed             bool                    `json:"passed"`
+	LockedIn           bool                    `json:"locked_in"`
+	ActionSequence     int                     `json:"action_sequence"`
+	Revision           int                     `json:"revision"`
+	RevealedRevision   int                     `json:"revealed_revision"`
+	RevealedCommitment *PlanningCommitmentData `json:"revealed_commitment,omitempty"`
+	PaidCostIDs        []string                `json:"paid_cost_ids,omitempty"`
+	ResolvedCardIDs    []string                `json:"resolved_card_ids,omitempty"`
+}
+
+type PlanningCommitmentData struct {
+	Segment         segment.Segment `json:"segment"`
+	Cycle           int             `json:"cycle"`
+	FinalDice       []RolledDie     `json:"final_dice,omitempty"`
+	KeptIndices     []int           `json:"kept_indices,omitempty"`
+	RollsUsed       int             `json:"rolls_used"`
+	MaxRolls        int             `json:"max_rolls"`
+	SelectedAbility string          `json:"selected_ability,omitempty"`
+	CommittedCards  []string        `json:"committed_cards,omitempty"`
+	SelectedTargets []string        `json:"selected_targets,omitempty"`
+	Passed          bool            `json:"passed"`
+	LockedIn        bool            `json:"locked_in"`
+}
+
+type PlanningProposal struct {
+	ID         string                 `json:"id"`
+	ActorID    string                 `json:"actor_id"`
+	Segment    segment.Segment        `json:"segment"`
+	Commitment PlanningCommitmentData `json:"commitment"`
+	Defensible bool                   `json:"defensible,omitempty"`
 }
 
 type ProposalBatch struct {
@@ -56,6 +112,7 @@ type ProposalOperation string
 const (
 	ProposalOperationAdjustValue  ProposalOperation = "adjust_value"
 	ProposalOperationRecordChoice ProposalOperation = "record_choice"
+	ProposalOperationPlanning     ProposalOperation = "planning_proposal"
 )
 
 type Proposal struct {
@@ -80,9 +137,10 @@ type TargetReference struct {
 }
 
 type ProposalData struct {
-	Amount    *AmountData    `json:"amount,omitempty"`
-	Selection *SelectionData `json:"selection,omitempty"`
-	Roll      *RollData      `json:"roll,omitempty"`
+	Amount    *AmountData             `json:"amount,omitempty"`
+	Selection *SelectionData          `json:"selection,omitempty"`
+	Roll      *RollData               `json:"roll,omitempty"`
+	Planning  *PlanningCommitmentData `json:"planning,omitempty"`
 }
 
 type AmountData struct {
@@ -151,11 +209,32 @@ type InteractionCommitment struct {
 }
 
 type InteractionCommitmentData struct {
-	ProposalIDs []string `json:"proposal_ids,omitempty"`
-	CardIDs     []string `json:"card_ids,omitempty"`
-	TargetIDs   []string `json:"target_ids,omitempty"`
-	ChoiceID    string   `json:"choice_id,omitempty"`
-	Value       *int     `json:"value,omitempty"`
+	ProposalIDs         []string                `json:"proposal_ids,omitempty"`
+	CardIDs             []string                `json:"card_ids,omitempty"`
+	TargetIDs           []string                `json:"target_ids,omitempty"`
+	ChoiceID            string                  `json:"choice_id,omitempty"`
+	Value               *int                    `json:"value,omitempty"`
+	Planning            *PlanningCommitmentData `json:"planning,omitempty"`
+	PlanningAdjustments []PlanningAdjustment    `json:"planning_adjustments,omitempty"`
+}
+
+type PlanningAdjustmentType string
+
+const (
+	PlanningAdjustmentSetDieFace       PlanningAdjustmentType = "set_die_face"
+	PlanningAdjustmentIncreaseMaxRolls PlanningAdjustmentType = "increase_max_rolls"
+	PlanningAdjustmentClearAbility     PlanningAdjustmentType = "clear_ability"
+	PlanningAdjustmentRemoveTarget     PlanningAdjustmentType = "remove_target"
+	PlanningAdjustmentReopenActor      PlanningAdjustmentType = "reopen_actor"
+)
+
+type PlanningAdjustment struct {
+	Type     PlanningAdjustmentType `json:"type"`
+	ActorID  string                 `json:"actor_id"`
+	DieIndex int                    `json:"die_index,omitempty"`
+	Face     int                    `json:"face,omitempty"`
+	Amount   int                    `json:"amount,omitempty"`
+	TargetID string                 `json:"target_id,omitempty"`
 }
 
 type ReactionWindowPolicy struct {
@@ -178,6 +257,7 @@ func cloneResolutions(values map[string]ResolutionState) map[string]ResolutionSt
 		resolution.ReactionPolicy = cloneReactionPolicy(resolution.ReactionPolicy)
 		resolution.SuspendedActors = cloneActorFlowStates(resolution.SuspendedActors)
 		resolution.SuspendedPendingInput = clonePendingInputs(resolution.SuspendedPendingInput)
+		resolution.Planning = clonePlanningState(resolution.Planning)
 		cloned[id] = resolution
 	}
 	return cloned
@@ -208,6 +288,10 @@ func cloneProposalData(data ProposalData) ProposalData {
 		value := *data.Roll
 		value.Dice = copyRolledDice(data.Roll.Dice)
 		cloned.Roll = &value
+	}
+	if data.Planning != nil {
+		value := clonePlanningCommitmentData(*data.Planning)
+		cloned.Planning = &value
 	}
 	return cloned
 }
@@ -281,6 +365,59 @@ func cloneCommitmentData(data InteractionCommitmentData) InteractionCommitmentDa
 	if data.Value != nil {
 		value := *data.Value
 		cloned.Value = &value
+	}
+	if data.Planning != nil {
+		value := clonePlanningCommitmentData(*data.Planning)
+		cloned.Planning = &value
+	}
+	cloned.PlanningAdjustments = append([]PlanningAdjustment(nil), data.PlanningAdjustments...)
+	return cloned
+}
+
+func clonePlanningState(value *PlanningState) *PlanningState {
+	if value == nil {
+		return nil
+	}
+	cloned := *value
+	cloned.ChangedActorIDs = copyStrings(value.ChangedActorIDs)
+	cloned.Actors = make(map[string]PlanningActorState, len(value.Actors))
+	for actorID, actor := range value.Actors {
+		actor.FinalDice = copyRolledDice(actor.FinalDice)
+		actor.KeptIndices = append([]int(nil), actor.KeptIndices...)
+		actor.CommittedCards = copyStrings(actor.CommittedCards)
+		actor.SelectedTargets = copyStrings(actor.SelectedTargets)
+		actor.EligibleTargetIDs = copyStrings(actor.EligibleTargetIDs)
+		actor.PaidCostIDs = copyStrings(actor.PaidCostIDs)
+		actor.ResolvedCardIDs = copyStrings(actor.ResolvedCardIDs)
+		if actor.RevealedCommitment != nil {
+			revealed := clonePlanningCommitmentData(*actor.RevealedCommitment)
+			actor.RevealedCommitment = &revealed
+		}
+		cloned.Actors[actorID] = actor
+	}
+	cloned.AppliedReactionWindowIDs = make(map[string]bool, len(value.AppliedReactionWindowIDs))
+	for windowID, applied := range value.AppliedReactionWindowIDs {
+		cloned.AppliedReactionWindowIDs[windowID] = applied
+	}
+	return &cloned
+}
+
+func clonePlanningCommitmentData(value PlanningCommitmentData) PlanningCommitmentData {
+	value.FinalDice = copyRolledDice(value.FinalDice)
+	value.KeptIndices = append([]int(nil), value.KeptIndices...)
+	value.CommittedCards = copyStrings(value.CommittedCards)
+	value.SelectedTargets = copyStrings(value.SelectedTargets)
+	return value
+}
+
+func clonePlanningProposals(values []PlanningProposal) []PlanningProposal {
+	if values == nil {
+		return nil
+	}
+	cloned := make([]PlanningProposal, len(values))
+	for i, value := range values {
+		cloned[i] = value
+		cloned[i].Commitment = clonePlanningCommitmentData(value.Commitment)
 	}
 	return cloned
 }

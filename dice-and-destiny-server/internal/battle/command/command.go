@@ -15,6 +15,14 @@ const (
 	TypeRollDice          Type = "roll_dice"
 	TypeCommitInteraction Type = "commit_interaction"
 	TypePass              Type = "pass"
+	TypePlanningRoll      Type = "planning_roll"
+	TypePlanningKeep      Type = "planning_keep"
+	TypePlanningReroll    Type = "planning_reroll"
+	TypePlanningCards     Type = "planning_commit_cards"
+	TypePlanningAbility   Type = "planning_select_ability"
+	TypePlanningTargets   Type = "planning_select_targets"
+	TypePlanningPass      Type = "planning_pass"
+	TypePlanningLockIn    Type = "planning_lock_in"
 )
 
 var (
@@ -63,14 +71,78 @@ type InteractionCheckpoint struct {
 	Stage         string `json:"stage"`
 	Iteration     int    `json:"iteration"`
 	ReactionRound int    `json:"reaction_round"`
+	PlanningCycle int    `json:"planning_cycle,omitempty"`
+}
+
+type PlanningCheckpoint struct {
+	WindowID      string `json:"window_id"`
+	Segment       string `json:"segment"`
+	Stage         string `json:"stage"`
+	Iteration     int    `json:"iteration"`
+	PlanningCycle int    `json:"planning_cycle"`
+}
+
+type PlanningRollPayload struct {
+	PendingInputID string             `json:"pending_input_id"`
+	Checkpoint     PlanningCheckpoint `json:"checkpoint"`
+}
+
+type PlanningKeepPayload struct {
+	PendingInputID string             `json:"pending_input_id"`
+	Checkpoint     PlanningCheckpoint `json:"checkpoint"`
+	KeptIndices    []int              `json:"kept_indices"`
+}
+
+type PlanningRerollPayload struct {
+	PendingInputID string             `json:"pending_input_id"`
+	Checkpoint     PlanningCheckpoint `json:"checkpoint"`
+	RerollIndices  []int              `json:"reroll_indices"`
+}
+
+type PlanningCardsPayload struct {
+	PendingInputID string             `json:"pending_input_id"`
+	Checkpoint     PlanningCheckpoint `json:"checkpoint"`
+	CardIDs        []string           `json:"card_ids"`
+}
+
+type PlanningAbilityPayload struct {
+	PendingInputID string             `json:"pending_input_id"`
+	Checkpoint     PlanningCheckpoint `json:"checkpoint"`
+	AbilityID      string             `json:"ability_id"`
+}
+
+type PlanningTargetsPayload struct {
+	PendingInputID string             `json:"pending_input_id"`
+	Checkpoint     PlanningCheckpoint `json:"checkpoint"`
+	TargetIDs      []string           `json:"target_ids"`
+}
+
+type PlanningPassPayload struct {
+	PendingInputID string             `json:"pending_input_id"`
+	Checkpoint     PlanningCheckpoint `json:"checkpoint"`
+}
+
+type PlanningLockInPayload struct {
+	PendingInputID string             `json:"pending_input_id"`
+	Checkpoint     PlanningCheckpoint `json:"checkpoint"`
 }
 
 type InteractionCommitmentData struct {
-	ProposalIDs []string `json:"proposal_ids,omitempty"`
-	CardIDs     []string `json:"card_ids,omitempty"`
-	TargetIDs   []string `json:"target_ids,omitempty"`
-	ChoiceID    string   `json:"choice_id,omitempty"`
-	Value       *int     `json:"value,omitempty"`
+	ProposalIDs         []string             `json:"proposal_ids,omitempty"`
+	CardIDs             []string             `json:"card_ids,omitempty"`
+	TargetIDs           []string             `json:"target_ids,omitempty"`
+	ChoiceID            string               `json:"choice_id,omitempty"`
+	Value               *int                 `json:"value,omitempty"`
+	PlanningAdjustments []PlanningAdjustment `json:"planning_adjustments,omitempty"`
+}
+
+type PlanningAdjustment struct {
+	Type     string `json:"type"`
+	ActorID  string `json:"actor_id"`
+	DieIndex int    `json:"die_index,omitempty"`
+	Face     int    `json:"face,omitempty"`
+	Amount   int    `json:"amount,omitempty"`
+	TargetID string `json:"target_id,omitempty"`
 }
 
 type CommitInteractionPayload struct {

@@ -172,6 +172,14 @@ func (e Engine) progressResolution(battle *state.Battle) (ProgressResult, error)
 		}
 	}
 	ctx := &Context{Battle: &working, Phase: resolution.Origin.Phase}
+	if resolution.Planning != nil {
+		result, err := e.progressPlanningResolution(ctx, resolution, window)
+		if err != nil {
+			return ProgressResult{}, err
+		}
+		*battle = working
+		return result, nil
+	}
 
 	switch window.RevealStatus {
 	case state.RevealStatusCollecting:
@@ -350,6 +358,18 @@ func (e Engine) openReactionWindow(
 	resolution.Windows[window.ID] = window
 	battle.Flow.Actors = make(map[string]state.ActorFlowState)
 	battle.Flow.PendingInput = make(map[string]state.PendingInput)
+	if resolution.Planning != nil {
+		for actorID, plan := range resolution.Planning.Actors {
+			status := state.ActorLockedIn
+			if plan.Participation == state.ActorNotParticipating {
+				status = state.ActorNotParticipating
+			}
+			battle.Flow.Actors[actorID] = state.ActorFlowState{
+				Status:     status,
+				ReasonCode: string(resolution.Planning.Segment) + "_planning_reaction",
+			}
+		}
+	}
 	battle.Resolutions[resolution.ID] = *resolution
 	return nil
 }
@@ -605,11 +625,12 @@ func (e Engine) handleInteractionCommand(
 		pendingInputID = payload.PendingInputID
 		checkpoint = payload.Checkpoint
 		commitment.Data = state.InteractionCommitmentData{
-			ProposalIDs: append([]string(nil), payload.Commitment.ProposalIDs...),
-			CardIDs:     append([]string(nil), payload.Commitment.CardIDs...),
-			TargetIDs:   append([]string(nil), payload.Commitment.TargetIDs...),
-			ChoiceID:    payload.Commitment.ChoiceID,
-			Value:       copyIntPointer(payload.Commitment.Value),
+			ProposalIDs:         append([]string(nil), payload.Commitment.ProposalIDs...),
+			CardIDs:             append([]string(nil), payload.Commitment.CardIDs...),
+			TargetIDs:           append([]string(nil), payload.Commitment.TargetIDs...),
+			ChoiceID:            payload.Commitment.ChoiceID,
+			Value:               copyIntPointer(payload.Commitment.Value),
+			PlanningAdjustments: copyPlanningAdjustments(payload.Commitment.PlanningAdjustments),
 		}
 	case command.TypePass:
 		var payload command.PassPayload
@@ -695,6 +716,9 @@ func validateProposalBatch(batch state.ProposalBatch) error {
 		if proposal.Data.Roll != nil {
 			payloads++
 		}
+		if proposal.Data.Planning != nil {
+			payloads++
+		}
 		if payloads != 1 {
 			return fmt.Errorf("proposal %q requires exactly one typed payload", proposal.ID)
 		}
@@ -776,6 +800,24 @@ func copyIntPointer(value *int) *int {
 	}
 	cloned := *value
 	return &cloned
+}
+
+func copyPlanningAdjustments(values []command.PlanningAdjustment) []state.PlanningAdjustment {
+	if values == nil {
+		return nil
+	}
+	copied := make([]state.PlanningAdjustment, len(values))
+	for i, value := range values {
+		copied[i] = state.PlanningAdjustment{
+			Type:     state.PlanningAdjustmentType(value.Type),
+			ActorID:  value.ActorID,
+			DieIndex: value.DieIndex,
+			Face:     value.Face,
+			Amount:   value.Amount,
+			TargetID: value.TargetID,
+		}
+	}
+	return copied
 }
 
 func sortedRequiredActors(window state.InteractionWindow) []string {

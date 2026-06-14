@@ -278,6 +278,23 @@ func eventForViewer(source Event, viewerActorID string) Event {
 	if source.PrivateActorID != "" && source.PrivateActorID != viewerActorID {
 		filtered.Commitment = nil
 	}
+	if source.Type == TypeInteractionRevealed {
+		for i := range filtered.Commitments {
+			if filtered.Commitments[i].ActorID != viewerActorID &&
+				filtered.Commitments[i].Data.Planning != nil {
+				filtered.Commitments[i].Data.Planning.KeptIndices = nil
+			}
+		}
+	}
+	if filtered.ProposalBatch != nil {
+		for i := range filtered.ProposalBatch.Proposals {
+			planning := filtered.ProposalBatch.Proposals[i].Data.Planning
+			if planning != nil &&
+				filtered.ProposalBatch.Proposals[i].Source.ActorID != viewerActorID {
+				planning.KeptIndices = nil
+			}
+		}
+	}
 	filtered.PrivateActorID = ""
 
 	return filtered
@@ -317,6 +334,14 @@ func copyInteractionCommitment(
 		amount := *value.Data.Value
 		copied.Data.Value = &amount
 	}
+	if value.Data.Planning != nil {
+		planning := copyPlanningCommitment(*value.Data.Planning)
+		copied.Data.Planning = &planning
+	}
+	copied.Data.PlanningAdjustments = append(
+		[]state.PlanningAdjustment(nil),
+		value.Data.PlanningAdjustments...,
+	)
 	return copied
 }
 
@@ -347,8 +372,20 @@ func copyProposalBatch(value state.ProposalBatch) state.ProposalBatch {
 			roll.Dice = copyRolledDice(proposal.Data.Roll.Dice)
 			copied.Proposals[i].Data.Roll = &roll
 		}
+		if proposal.Data.Planning != nil {
+			planning := copyPlanningCommitment(*proposal.Data.Planning)
+			copied.Proposals[i].Data.Planning = &planning
+		}
 	}
 	return copied
+}
+
+func copyPlanningCommitment(value state.PlanningCommitmentData) state.PlanningCommitmentData {
+	value.FinalDice = copyRolledDice(value.FinalDice)
+	value.KeptIndices = append([]int(nil), value.KeptIndices...)
+	value.CommittedCards = copyStrings(value.CommittedCards)
+	value.SelectedTargets = copyStrings(value.SelectedTargets)
+	return value
 }
 
 func copyRolledDice(values []state.RolledDie) []state.RolledDie {

@@ -58,7 +58,15 @@ func (e Engine) ApplyBattleCommand(battle *state.Battle, cmd command.Command) (P
 	working := battle.Clone()
 	var commandEvents []event.Event
 	if working.ActiveResolutionID != "" {
-		commandEvents, err = e.handleInteractionCommand(&working, cmd)
+		resolution, window, activeErr := activeWindow(&working)
+		if activeErr != nil {
+			return ProgressionResult{}, activeErr
+		}
+		if resolution.Planning != nil && window.Purpose == state.InteractionPurposePlanning {
+			commandEvents, err = e.handlePlanningCommand(&working, cmd)
+		} else {
+			commandEvents, err = e.handleInteractionCommand(&working, cmd)
+		}
 	} else {
 		commandEvents, err = flow.HandleCommand(&Context{Battle: &working, Phase: state.FlowPhaseInProgress}, cmd)
 	}

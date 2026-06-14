@@ -95,6 +95,23 @@ func TestBattleCloneDeepCopiesResolutionAndInteractionState(t *testing.T) {
 				AllowedCommands: []command.Type{command.TypeCommitInteraction},
 			},
 		},
+		Planning: &state.PlanningState{
+			Segment:         segment.Offensive,
+			ChangedActorIDs: []string{"player"},
+			Actors: map[string]state.PlanningActorState{
+				"player": {
+					ActorID:           "player",
+					FinalDice:         []state.RolledDie{{Symbols: []string{"Sword"}}},
+					CommittedCards:    []string{"secret-card"},
+					SelectedTargets:   []string{"enemy"},
+					EligibleTargetIDs: []string{"enemy"},
+					RevealedCommitment: &state.PlanningCommitmentData{
+						CommittedCards: []string{"secret-card"},
+					},
+				},
+			},
+			AppliedReactionWindowIDs: map[string]bool{"reaction-1": true},
+		},
 	}
 
 	cloned := battle.Clone()
@@ -112,6 +129,13 @@ func TestBattleCloneDeepCopiesResolutionAndInteractionState(t *testing.T) {
 	pending := resolution.SuspendedPendingInput["player"]
 	pending.AllowedCommands[0] = command.TypePass
 	resolution.SuspendedPendingInput["player"] = pending
+	resolution.Planning.ChangedActorIDs[0] = "mutated"
+	planningActor := resolution.Planning.Actors["player"]
+	planningActor.FinalDice[0].Symbols[0] = "mutated"
+	planningActor.CommittedCards[0] = "mutated"
+	planningActor.RevealedCommitment.CommittedCards[0] = "mutated"
+	resolution.Planning.Actors["player"] = planningActor
+	resolution.Planning.AppliedReactionWindowIDs["reaction-1"] = false
 	cloned.Resolutions["resolution-1"] = resolution
 
 	original := battle.Resolutions["resolution-1"]
@@ -121,7 +145,12 @@ func TestBattleCloneDeepCopiesResolutionAndInteractionState(t *testing.T) {
 		original.Windows["window-1"].Commitments["player"].Data.CardIDs[0] != "secret-card" ||
 		*original.Windows["window-1"].Commitments["player"].Data.Value != 4 ||
 		original.ReactionPolicy.EligibleActors[0] != "player" ||
-		original.SuspendedPendingInput["player"].AllowedCommands[0] != command.TypeCommitInteraction {
+		original.SuspendedPendingInput["player"].AllowedCommands[0] != command.TypeCommitInteraction ||
+		original.Planning.ChangedActorIDs[0] != "player" ||
+		original.Planning.Actors["player"].FinalDice[0].Symbols[0] != "Sword" ||
+		original.Planning.Actors["player"].CommittedCards[0] != "secret-card" ||
+		original.Planning.Actors["player"].RevealedCommitment.CommittedCards[0] != "secret-card" ||
+		!original.Planning.AppliedReactionWindowIDs["reaction-1"] {
 		t.Fatalf("clone mutation leaked into original resolution: %#v", original)
 	}
 }

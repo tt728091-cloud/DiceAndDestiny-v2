@@ -18,6 +18,8 @@ type Battle struct {
 	DiceDefinitions    map[string]DiceDefinition
 	RollRequests       map[string]RollRequest
 	Commitments        map[string]OffensiveCommitment
+	OffensiveProposals []PlanningProposal
+	DefensiveProposals []PlanningProposal
 }
 
 type ActorState struct {
@@ -141,6 +143,7 @@ type PendingInput struct {
 	Iteration       int
 	WindowID        string
 	ReactionRound   int
+	PlanningCycle   int
 	InputType       string
 	SourceType      string
 	SourceID        string
@@ -374,6 +377,8 @@ func (battle Battle) Clone() Battle {
 	cloned.DiceDefinitions = copyDiceDefinitionMap(battle.DiceDefinitions)
 	cloned.RollRequests = cloneRollRequests(battle.RollRequests)
 	cloned.Commitments = cloneCommitments(battle.Commitments)
+	cloned.OffensiveProposals = clonePlanningProposals(battle.OffensiveProposals)
+	cloned.DefensiveProposals = clonePlanningProposals(battle.DefensiveProposals)
 	cloned.Flow = cloneFlowState(battle.Flow)
 	return cloned
 }

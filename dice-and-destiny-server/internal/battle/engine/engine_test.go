@@ -37,6 +37,8 @@ func TestProgressUntilInputRunsMinimumRealPathInOrderAndExactlyOnce(t *testing.T
 		event.TypeSegmentAdvanced,
 		event.TypeSegmentEntered,
 		event.TypeRollRequested,
+		event.TypeInteractionWindowOpened,
+		event.TypeInteractionCommitted,
 	}
 	if gotTypes := eventTypes(got.Events); !reflect.DeepEqual(gotTypes, wantTypes) {
 		t.Fatalf("event types = %#v, want %#v", gotTypes, wantTypes)

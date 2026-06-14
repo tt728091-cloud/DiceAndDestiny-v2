@@ -1,42 +1,46 @@
 package engine
 
 import (
-	"fmt"
-
 	"diceanddestiny/server/internal/battle/command"
-	"diceanddestiny/server/internal/battle/dice"
 	"diceanddestiny/server/internal/battle/event"
 	"diceanddestiny/server/internal/battle/segment"
 )
 
-type DefensiveFlow struct{}
+type DefensiveFlow struct {
+	shared SharedPlanningFlow
+}
+
+func newDefensiveFlow() DefensiveFlow {
+	shared, err := NewSharedPlanningFlow(segment.Defensive, nil)
+	if err != nil {
+		panic(err)
+	}
+	return DefensiveFlow{shared: shared}
+}
 
 func (DefensiveFlow) ID() segment.Segment {
 	return segment.Defensive
 }
 
-func (DefensiveFlow) OnEnter(ctx *Context) ([]event.Event, error) {
-	initializeAutomaticActors(ctx.Battle)
-	return nil, nil
-}
-
-func (DefensiveFlow) Progress(ctx *Context) (ProgressResult, error) {
-	resolveAutomaticActors(ctx.Battle)
-	return progress(ProgressSegmentComplete), nil
-}
-
-func (DefensiveFlow) OnExit(ctx *Context) ([]event.Event, error) {
-	return nil, nil
-}
-
-func (DefensiveFlow) HandleCommand(ctx *Context, cmd command.Command) ([]event.Event, error) {
-	if cmd.Type != command.TypeRollDice {
-		return nil, unsupportedCommand()
+func (flow DefensiveFlow) configured() SharedPlanningFlow {
+	if flow.shared.segmentID == "" {
+		return newDefensiveFlow().shared
 	}
+	return flow.shared
+}
 
-	var payload command.RollDicePayload
-	if err := command.DecodePayload(cmd, &payload); err != nil {
-		return nil, fmt.Errorf("invalid roll_dice payload")
-	}
-	return dice.Roll(ctx.Battle, payload.RequestID, cmd.ActorID, payload.RerollIndices)
+func (flow DefensiveFlow) OnEnter(ctx *Context) ([]event.Event, error) {
+	return flow.configured().OnEnter(ctx)
+}
+
+func (flow DefensiveFlow) Progress(ctx *Context) (ProgressResult, error) {
+	return flow.configured().Progress(ctx)
+}
+
+func (flow DefensiveFlow) HandleCommand(ctx *Context, cmd command.Command) ([]event.Event, error) {
+	return flow.configured().HandleCommand(ctx, cmd)
+}
+
+func (flow DefensiveFlow) OnExit(ctx *Context) ([]event.Event, error) {
+	return flow.configured().OnExit(ctx)
 }

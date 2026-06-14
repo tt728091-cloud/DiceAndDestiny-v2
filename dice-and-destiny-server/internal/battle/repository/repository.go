@@ -106,6 +106,14 @@ func cloneInteractionCommitment(
 	cloned.Data.CardIDs = append([]string(nil), value.Data.CardIDs...)
 	cloned.Data.TargetIDs = append([]string(nil), value.Data.TargetIDs...)
 	cloned.Data.Value = cloneInt(value.Data.Value)
+	if value.Data.Planning != nil {
+		planning := clonePlanningCommitment(*value.Data.Planning)
+		cloned.Data.Planning = &planning
+	}
+	cloned.Data.PlanningAdjustments = append(
+		[]state.PlanningAdjustment(nil),
+		value.Data.PlanningAdjustments...,
+	)
 	return &cloned
 }
 
@@ -145,8 +153,20 @@ func cloneProposalBatch(value *state.ProposalBatch) *state.ProposalBatch {
 			roll.Dice = cloneRolledDice(proposal.Data.Roll.Dice)
 			cloned.Proposals[i].Data.Roll = &roll
 		}
+		if proposal.Data.Planning != nil {
+			planning := clonePlanningCommitment(*proposal.Data.Planning)
+			cloned.Proposals[i].Data.Planning = &planning
+		}
 	}
 	return &cloned
+}
+
+func clonePlanningCommitment(value state.PlanningCommitmentData) state.PlanningCommitmentData {
+	value.FinalDice = cloneRolledDice(value.FinalDice)
+	value.KeptIndices = append([]int(nil), value.KeptIndices...)
+	value.CommittedCards = append([]string(nil), value.CommittedCards...)
+	value.SelectedTargets = append([]string(nil), value.SelectedTargets...)
+	return value
 }
 
 func cloneRolledDice(values []state.RolledDie) []state.RolledDie {
