@@ -4,6 +4,9 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"os"
+	"path/filepath"
+	"runtime"
 
 	"diceanddestiny/server/internal/battle/command"
 	"diceanddestiny/server/internal/battle/engine"
@@ -39,13 +42,34 @@ type Authority struct {
 	assembler ParticipantAssembler
 }
 
-var defaultAuthority = NewAuthority(
-	engine.NewEngine(),
-	repository.NewInMemory(),
-	ParticipantAssemblerFunc(func([]Participant) (state.BattleSetup, error) {
-		return state.BattleSetup{}, errors.New("participant assembler is not configured")
-	}),
-)
+var defaultAuthority = newDefaultAuthority()
+
+func newDefaultAuthority() *Authority {
+	_, sourceFile, _, ok := runtime.Caller(0)
+	if !ok {
+		return NewAuthority(
+			engine.NewEngine(),
+			repository.NewInMemory(),
+			ParticipantAssemblerFunc(func([]Participant) (state.BattleSetup, error) {
+				return state.BattleSetup{}, errors.New("could not locate server content")
+			}),
+		)
+	}
+	serverRoot := filepath.Clean(filepath.Join(filepath.Dir(sourceFile), "..", ".."))
+	contentRoot := os.Getenv("DICE_AND_DESTINY_CONTENT_ROOT")
+	if contentRoot == "" {
+		contentRoot = filepath.Join(serverRoot, "content")
+	}
+	runStateRoot := os.Getenv("DICE_AND_DESTINY_RUN_STATE_ROOT")
+	if runStateRoot == "" {
+		runStateRoot = filepath.Join(serverRoot, "save", "run_players")
+	}
+	return NewAuthority(
+		engine.NewEngine(),
+		repository.NewInMemory(),
+		NewFileParticipantAssembler(contentRoot, runStateRoot),
+	)
+}
 
 func NewAuthority(
 	battleEngine engine.Engine,

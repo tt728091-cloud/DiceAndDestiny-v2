@@ -75,6 +75,11 @@ abilities:
 			{DiceID: "Standard D6", Count: 5},
 		},
 		AbilityIDs: []string{"Mock Smite", "Mock Guarding Light"},
+		RollPreferences: content.RollPreferences{
+			StatusEffects: "automatic",
+			Offensive:     "manual",
+			Defensive:     "manual",
+		},
 	}
 	if !reflect.DeepEqual(got, want) {
 		t.Fatalf("LoadCharacterCombatSheet() = %#v, want %#v", got, want)

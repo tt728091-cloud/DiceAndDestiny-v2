@@ -94,6 +94,9 @@ func TestApplyRewardsDrawsCardsAndAddsEnergyPoints(t *testing.T) {
 	}
 
 	wantActor := state.ActorState{
+		Resources: state.ResourceState{
+			EnergyPoints: 2,
+		},
 		Cards: state.CardZones{
 			Deck: []string{"guard"},
 			Hand: []string{"strike"},

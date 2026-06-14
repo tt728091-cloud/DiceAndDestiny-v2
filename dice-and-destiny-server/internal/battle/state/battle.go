@@ -21,10 +21,68 @@ type Battle struct {
 type ActorState struct {
 	DefinitionID string
 	Controller   ControllerType
-	Cards        CardZones
-	DiceLoadout  []DiceLoadoutEntry
-	Dice         DiceState
-	EnergyPoints int
+	Character    CharacterMetadata
+	Resources    ResourceState
+	// EnergyPoints is a compatibility alias kept synchronized with
+	// Resources.EnergyPoints while older engine helpers migrate.
+	EnergyPoints    int
+	Health          HealthMetadata
+	Decklist        []DecklistEntry
+	Cards           CardZones
+	DiceLoadout     []DiceLoadoutEntry
+	Dice            DiceState
+	AbilityIDs      []string
+	Statuses        []StatusState
+	Tokens          []TokenState
+	RollPreferences RollPreferences
+}
+
+type CharacterMetadata struct {
+	ID    string `json:"id"`
+	Name  string `json:"name"`
+	Class string `json:"class"`
+}
+
+type ResourceState struct {
+	StartingHandSize     int
+	MaxHandSize          int
+	StartingEnergyPoints int
+	MaxEnergyPoints      int
+	EnergyPoints         int
+}
+
+type HealthMetadata struct {
+	Model     string
+	MaxHealth int
+}
+
+type DecklistEntry struct {
+	CardID string `json:"card_id"`
+	Count  int    `json:"count"`
+}
+
+type StatusState struct {
+	InstanceID   string `json:"instance_id"`
+	DefinitionID string `json:"definition_id"`
+	Stacks       int    `json:"stacks"`
+}
+
+type TokenState struct {
+	ID    string `json:"id"`
+	Value int    `json:"value"`
+}
+
+type RollMode string
+
+const (
+	RollModeAutomatic RollMode = "automatic"
+	RollModeManual    RollMode = "manual"
+)
+
+type RollPreferences struct {
+	StatusEffects RollMode `json:"status_effects"`
+	Offensive     RollMode `json:"offensive"`
+	Defensive     RollMode `json:"defensive"`
 }
 
 type BattleStatus string
@@ -109,14 +167,22 @@ type BattleSetup struct {
 }
 
 type ActorSetup struct {
-	ID             string
-	DefinitionID   string
-	ControllerType ControllerType
-	Deck           []string
-	Hand           []string
-	Discard        []string
-	Removed        []string
-	DiceLoadout    []DiceLoadoutEntry
+	ID              string
+	DefinitionID    string
+	ControllerType  ControllerType
+	Character       CharacterMetadata
+	Resources       ResourceState
+	Health          HealthMetadata
+	Decklist        []DecklistEntry
+	Deck            []string
+	Hand            []string
+	Discard         []string
+	Removed         []string
+	DiceLoadout     []DiceLoadoutEntry
+	AbilityIDs      []string
+	Statuses        []StatusState
+	Tokens          []TokenState
+	RollPreferences RollPreferences
 }
 
 type DiceDefinition struct {
@@ -134,8 +200,8 @@ type DiceFace struct {
 }
 
 type DiceLoadoutEntry struct {
-	DiceID string
-	Count  int
+	DiceID string `json:"dice_id"`
+	Count  int    `json:"count"`
 }
 
 type DiceState struct {
@@ -224,9 +290,18 @@ func NewBattleFromSetup(id string, setup BattleSetup) (Battle, error) {
 		}
 
 		actors[actor.ID] = ActorState{
-			DefinitionID: actor.DefinitionID,
-			Controller:   controller,
-			DiceLoadout:  copyDiceLoadout(actor.DiceLoadout),
+			DefinitionID:    actor.DefinitionID,
+			Controller:      controller,
+			Character:       actor.Character,
+			Resources:       actor.Resources,
+			EnergyPoints:    actor.Resources.EnergyPoints,
+			Health:          actor.Health,
+			Decklist:        copyDecklist(actor.Decklist),
+			DiceLoadout:     copyDiceLoadout(actor.DiceLoadout),
+			AbilityIDs:      copyStrings(actor.AbilityIDs),
+			Statuses:        copyStatuses(actor.Statuses),
+			Tokens:          copyTokens(actor.Tokens),
+			RollPreferences: actor.RollPreferences,
 			Cards: CardZones{
 				Deck:    append([]string(nil), actor.Deck...),
 				Hand:    append([]string(nil), actor.Hand...),
@@ -308,6 +383,10 @@ func cloneActors(values map[string]ActorState) map[string]ActorState {
 			Removed: copyStrings(actor.Cards.Removed),
 		}
 		actor.DiceLoadout = copyDiceLoadout(actor.DiceLoadout)
+		actor.Decklist = copyDecklist(actor.Decklist)
+		actor.AbilityIDs = copyStrings(actor.AbilityIDs)
+		actor.Statuses = copyStatuses(actor.Statuses)
+		actor.Tokens = copyTokens(actor.Tokens)
 		if actor.Dice.CurrentRoll != nil {
 			roll := *actor.Dice.CurrentRoll
 			roll.Dice = copyRolledDice(actor.Dice.CurrentRoll.Dice)
@@ -407,6 +486,18 @@ func copyIntMap(values map[string]int) map[string]int {
 
 func copyDiceLoadout(values []DiceLoadoutEntry) []DiceLoadoutEntry {
 	return append([]DiceLoadoutEntry(nil), values...)
+}
+
+func copyDecklist(values []DecklistEntry) []DecklistEntry {
+	return append([]DecklistEntry(nil), values...)
+}
+
+func copyStatuses(values []StatusState) []StatusState {
+	return append([]StatusState(nil), values...)
+}
+
+func copyTokens(values []TokenState) []TokenState {
+	return append([]TokenState(nil), values...)
 }
 
 func copyDiceDefinitions(values []DiceDefinition) map[string]DiceDefinition {

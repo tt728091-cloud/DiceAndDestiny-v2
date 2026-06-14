@@ -17,15 +17,34 @@ type Battle struct {
 }
 
 type Actor struct {
-	DefinitionID string               `json:"definition_id,omitempty"`
-	Controller   state.ControllerType `json:"controller,omitempty"`
-	EnergyPoints int                  `json:"energy_points"`
-	Hand         []string             `json:"hand,omitempty"`
-	HandCount    int                  `json:"hand_count"`
-	DeckCount    int                  `json:"deck_count"`
-	DiscardCount int                  `json:"discard_count"`
-	RemovedCount int                  `json:"removed_count"`
-	Dice         *DiceRollState       `json:"dice,omitempty"`
+	DefinitionID    string                   `json:"definition_id,omitempty"`
+	Controller      state.ControllerType     `json:"controller,omitempty"`
+	Character       *CharacterMetadata       `json:"character,omitempty"`
+	EnergyPoints    int                      `json:"energy_points"`
+	MaxEnergyPoints int                      `json:"max_energy_points,omitempty"`
+	MaxHandSize     int                      `json:"max_hand_size,omitempty"`
+	MaxHealth       int                      `json:"max_health,omitempty"`
+	CurrentHealth   int                      `json:"current_health,omitempty"`
+	Decklist        []state.DecklistEntry    `json:"decklist,omitempty"`
+	Hand            []string                 `json:"hand,omitempty"`
+	HandCount       int                      `json:"hand_count"`
+	DeckCount       int                      `json:"deck_count"`
+	DiscardCount    int                      `json:"discard_count"`
+	RemovedCount    int                      `json:"removed_count"`
+	DiceLoadout     []state.DiceLoadoutEntry `json:"dice_loadout,omitempty"`
+	DiceCount       int                      `json:"dice_count,omitempty"`
+	AbilityIDs      []string                 `json:"abilities,omitempty"`
+	AbilityCount    int                      `json:"ability_count,omitempty"`
+	Statuses        []state.StatusState      `json:"statuses,omitempty"`
+	Tokens          []state.TokenState       `json:"tokens,omitempty"`
+	RollPreferences *state.RollPreferences   `json:"roll_preferences,omitempty"`
+	Dice            *DiceRollState           `json:"dice,omitempty"`
+}
+
+type CharacterMetadata struct {
+	ID    string `json:"id"`
+	Name  string `json:"name"`
+	Class string `json:"class"`
 }
 
 type SegmentFlow struct {
@@ -84,20 +103,42 @@ func FromBattleForViewer(battle state.Battle, viewerActorID string) Battle {
 	actors := make(map[string]Actor, len(battle.Actors))
 	for id, actor := range battle.Actors {
 		cards := actor.Cards
+		energyPoints := actor.Resources.EnergyPoints
+		if energyPoints == 0 && actor.EnergyPoints != 0 {
+			energyPoints = actor.EnergyPoints
+		}
 		snapshotActor := Actor{
-			DefinitionID: actor.DefinitionID,
-			Controller:   actor.Controller,
-			EnergyPoints: actor.EnergyPoints,
-			HandCount:    len(cards.Hand),
-			DeckCount:    len(cards.Deck),
-			DiscardCount: len(cards.Discard),
-			RemovedCount: len(cards.Removed),
+			DefinitionID:    actor.DefinitionID,
+			Controller:      actor.Controller,
+			Character:       characterSnapshot(actor.Character),
+			EnergyPoints:    energyPoints,
+			MaxEnergyPoints: actor.Resources.MaxEnergyPoints,
+			MaxHandSize:     actor.Resources.MaxHandSize,
+			MaxHealth:       actor.Health.MaxHealth,
+			HandCount:       len(cards.Hand),
+			DeckCount:       len(cards.Deck),
+			DiscardCount:    len(cards.Discard),
+			RemovedCount:    len(cards.Removed),
+			DiceCount:       diceCount(actor.DiceLoadout),
+			AbilityCount:    len(actor.AbilityIDs),
+			Statuses:        copyStatuses(actor.Statuses),
+			Tokens:          copyTokens(actor.Tokens),
+		}
+		if actor.Health.Model != "" || actor.Health.MaxHealth != 0 {
+			snapshotActor.CurrentHealth = len(cards.Deck) + len(cards.Hand) + len(cards.Discard)
 		}
 		if actor.Dice.CurrentRoll != nil && diceVisibleToViewer(battle, id, viewerActorID) {
 			snapshotActor.Dice = diceRollStateSnapshot(actor.Dice.CurrentRoll)
 		}
 		if id == viewerActorID {
 			snapshotActor.Hand = append([]string(nil), cards.Hand...)
+			snapshotActor.Decklist = copyDecklist(actor.Decklist)
+			snapshotActor.DiceLoadout = copyDiceLoadout(actor.DiceLoadout)
+			snapshotActor.AbilityIDs = copyStrings(actor.AbilityIDs)
+			if actor.RollPreferences != (state.RollPreferences{}) {
+				preferences := actor.RollPreferences
+				snapshotActor.RollPreferences = &preferences
+			}
 		}
 		actors[id] = snapshotActor
 	}
@@ -113,6 +154,37 @@ func FromBattleForViewer(battle state.Battle, viewerActorID string) Battle {
 		Flow:          flowSnapshot(battle, viewerActorID),
 		Actors:        actors,
 	}
+}
+
+func characterSnapshot(value state.CharacterMetadata) *CharacterMetadata {
+	if value == (state.CharacterMetadata{}) {
+		return nil
+	}
+	return &CharacterMetadata{ID: value.ID, Name: value.Name, Class: value.Class}
+}
+
+func diceCount(loadout []state.DiceLoadoutEntry) int {
+	total := 0
+	for _, entry := range loadout {
+		total += entry.Count
+	}
+	return total
+}
+
+func copyDecklist(values []state.DecklistEntry) []state.DecklistEntry {
+	return append([]state.DecklistEntry(nil), values...)
+}
+
+func copyDiceLoadout(values []state.DiceLoadoutEntry) []state.DiceLoadoutEntry {
+	return append([]state.DiceLoadoutEntry(nil), values...)
+}
+
+func copyStatuses(values []state.StatusState) []state.StatusState {
+	return append([]state.StatusState(nil), values...)
+}
+
+func copyTokens(values []state.TokenState) []state.TokenState {
+	return append([]state.TokenState(nil), values...)
 }
 
 func PendingInputForViewer(battle state.Battle, viewerActorID string) map[string]PendingInput {

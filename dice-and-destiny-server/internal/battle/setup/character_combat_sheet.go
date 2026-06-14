@@ -31,13 +31,70 @@ func BattleSetupFromCharacterCombatSheet(
 	return state.BattleSetup{
 		Actors: []state.ActorSetup{
 			{
-				ID:          sheet.ActorID,
-				Deck:        deck,
-				DiceLoadout: diceLoadout,
+				ID: sheet.ActorID,
+				Character: state.CharacterMetadata{
+					ID:    sheet.Character.ID,
+					Name:  sheet.Character.Name,
+					Class: sheet.Character.Class,
+				},
+				Resources: state.ResourceState{
+					StartingHandSize:     sheet.Resources.StartingHandSize,
+					MaxHandSize:          sheet.Resources.MaxHandSize,
+					StartingEnergyPoints: sheet.Resources.StartingEnergyPoints,
+					MaxEnergyPoints:      sheet.Resources.MaxEnergyPoints,
+					EnergyPoints:         sheet.Resources.StartingEnergyPoints,
+				},
+				Health: state.HealthMetadata{
+					Model:     sheet.Health.Model,
+					MaxHealth: sheet.Health.MaxHealth,
+				},
+				Decklist:        convertDecklist(sheet.Decklist),
+				Deck:            deck,
+				DiceLoadout:     diceLoadout,
+				AbilityIDs:      copyStringsPreservingEmpty(sheet.AbilityIDs),
+				Statuses:        convertStatuses(sheet.Statuses),
+				Tokens:          convertTokens(sheet.Tokens),
+				RollPreferences: convertRollPreferences(sheet.RollPreferences),
 			},
 		},
 		DiceDefinitions: diceDefinitions,
 	}, nil
+}
+
+func convertDecklist(values []content.DecklistEntry) []state.DecklistEntry {
+	converted := make([]state.DecklistEntry, len(values))
+	for i, value := range values {
+		converted[i] = state.DecklistEntry{CardID: value.CardID, Count: value.Count}
+	}
+	return converted
+}
+
+func convertStatuses(values []content.StartingStatus) []state.StatusState {
+	converted := make([]state.StatusState, len(values))
+	for i, value := range values {
+		converted[i] = state.StatusState{
+			InstanceID:   value.InstanceID,
+			DefinitionID: value.DefinitionID,
+			Stacks:       value.Stacks,
+		}
+	}
+	return converted
+}
+
+func convertTokens(values []content.StartingToken) []state.TokenState {
+	converted := make([]state.TokenState, len(values))
+	for i, value := range values {
+		converted[i] = state.TokenState{ID: value.ID, Value: value.Value}
+	}
+	return converted
+}
+
+func convertRollPreferences(value content.RollPreferences) state.RollPreferences {
+	return state.RollPreferences{
+		StatusEffects: state.RollMode(value.StatusEffects),
+		Offensive:     state.RollMode(value.Offensive),
+		Defensive:     state.RollMode(value.Defensive),
+	}
 }
 
 func expandDecklist(

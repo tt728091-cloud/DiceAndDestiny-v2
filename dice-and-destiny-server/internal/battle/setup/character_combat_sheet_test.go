@@ -44,6 +44,23 @@ func TestBattleSetupFromCharacterCombatSheetUsesRepositoryYAMLContent(t *testing
 	if !reflect.DeepEqual(actor.DiceLoadout, wantLoadout) {
 		t.Fatalf("dice loadout = %#v, want %#v", actor.DiceLoadout, wantLoadout)
 	}
+	if actor.Character.ID != "Mock Paladin" || actor.Character.Class != "paladin" {
+		t.Fatalf("character metadata = %#v, want Mock Paladin", actor.Character)
+	}
+	if actor.Resources.EnergyPoints != 2 || actor.Resources.MaxEnergyPoints != 10 ||
+		actor.Resources.StartingHandSize != 4 || actor.Resources.MaxHandSize != 7 {
+		t.Fatalf("resources = %#v, want authored player resources", actor.Resources)
+	}
+	if actor.Health.Model != "card_zones" || actor.Health.MaxHealth != 20 {
+		t.Fatalf("health metadata = %#v, want card_zones max 20", actor.Health)
+	}
+	if len(actor.Decklist) != 3 || len(actor.AbilityIDs) != 4 {
+		t.Fatalf("decklist/abilities = %#v / %#v, want complete loadout", actor.Decklist, actor.AbilityIDs)
+	}
+	if actor.RollPreferences.StatusEffects != state.RollModeAutomatic ||
+		actor.RollPreferences.Offensive != state.RollModeManual {
+		t.Fatalf("roll preferences = %#v, want authored defaults", actor.RollPreferences)
+	}
 
 	if len(got.DiceDefinitions) != 1 {
 		t.Fatalf("dice definition count = %d, want 1", len(got.DiceDefinitions))

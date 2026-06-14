@@ -31,7 +31,12 @@ func TestBattleSetupFromRunPlayerPreservesActorAndCardZones(t *testing.T) {
 	want := state.BattleSetup{
 		Actors: []state.ActorSetup{
 			{
-				ID:      "player",
+				ID: "player",
+				Decklist: []state.DecklistEntry{
+					{CardID: "strike", Count: 1}, {CardID: "guard", Count: 1},
+					{CardID: "opener", Count: 1}, {CardID: "spent", Count: 1},
+					{CardID: "lost", Count: 1},
+				},
 				Deck:    []string{"strike", "guard"},
 				Hand:    []string{"opener"},
 				Discard: []string{"spent"},
@@ -70,7 +75,12 @@ func TestBattleSetupFromRunPlayerCopiesInputZoneSlices(t *testing.T) {
 
 	gotActor := got.Actors[0]
 	wantActor := state.ActorSetup{
-		ID:      "player",
+		ID: "player",
+		Decklist: []state.DecklistEntry{
+			{CardID: "strike", Count: 1}, {CardID: "guard", Count: 1},
+			{CardID: "opener", Count: 1}, {CardID: "spent", Count: 1},
+			{CardID: "lost", Count: 1},
+		},
 		Deck:    []string{"strike", "guard"},
 		Hand:    []string{"opener"},
 		Discard: []string{"spent"},
@@ -98,7 +108,13 @@ func TestBattleSetupFromRunPlayerShufflesDeckWhenRequested(t *testing.T) {
 	}
 
 	want := state.ActorSetup{
-		ID:      "player",
+		ID: "player",
+		Decklist: []state.DecklistEntry{
+			{CardID: "strike", Count: 1}, {CardID: "guard", Count: 1},
+			{CardID: "focus", Count: 1}, {CardID: "bash", Count: 1},
+			{CardID: "opener", Count: 1}, {CardID: "spent", Count: 1},
+			{CardID: "lost", Count: 1},
+		},
 		Deck:    []string{"focus", "bash", "strike", "guard"},
 		Hand:    []string{"opener"},
 		Discard: []string{"spent"},
@@ -176,7 +192,7 @@ func TestBattleSetupFromRunPlayerRejectsMissingActorID(t *testing.T) {
 	}
 }
 
-func TestBattleSetupFromRunPlayerRejectsEmptyDeck(t *testing.T) {
+func TestBattleSetupFromRunPlayerRejectsNoRemainingHealthCards(t *testing.T) {
 	got, err := setup.BattleSetupFromRunPlayer(setup.RunPlayerState{
 		ActorID: "player",
 	})
@@ -188,8 +204,24 @@ func TestBattleSetupFromRunPlayerRejectsEmptyDeck(t *testing.T) {
 		t.Fatalf("BattleSetupFromRunPlayer() error = %v, want ErrInvalidRunPlayerState", err)
 	}
 
-	if !strings.Contains(err.Error(), "deck is required") {
-		t.Fatalf("BattleSetupFromRunPlayer() error = %q, want explicit deck requirement", err.Error())
+	if !strings.Contains(err.Error(), "at least one health card") {
+		t.Fatalf("BattleSetupFromRunPlayer() error = %q, want health-card requirement", err.Error())
+	}
+}
+
+func TestBattleSetupFromRunPlayerAllowsEmptyDeckWhenHealthCardsRemain(t *testing.T) {
+	got, err := setup.BattleSetupFromRunPlayer(setup.RunPlayerState{
+		ActorID: "player",
+		Cards: setup.RunCardZones{
+			Hand:    []string{"opener"},
+			Discard: []string{"spent"},
+		},
+	})
+	if err != nil {
+		t.Fatalf("BattleSetupFromRunPlayer() returned error: %v", err)
+	}
+	if len(got.Actors[0].Deck) != 0 || len(got.Actors[0].Hand) != 1 || len(got.Actors[0].Discard) != 1 {
+		t.Fatalf("actor zones = %#v, want living actor with empty draw deck", got.Actors[0])
 	}
 }
 

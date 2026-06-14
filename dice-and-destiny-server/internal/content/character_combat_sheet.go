@@ -73,14 +73,17 @@ type DiceFace struct {
 }
 
 type CharacterCombatSheet struct {
-	SchemaVersion int                `yaml:"schema_version"`
-	ActorID       string             `yaml:"actor_id"`
-	Character     CharacterMetadata  `yaml:"character"`
-	Resources     StartingResources  `yaml:"resources"`
-	Health        CharacterHealth    `yaml:"health"`
-	Decklist      []DecklistEntry    `yaml:"decklist"`
-	DiceLoadout   []DiceLoadoutEntry `yaml:"dice_loadout"`
-	AbilityIDs    []string           `yaml:"abilities"`
+	SchemaVersion   int                `yaml:"schema_version"`
+	ActorID         string             `yaml:"actor_id"`
+	Character       CharacterMetadata  `yaml:"character"`
+	Resources       StartingResources  `yaml:"resources"`
+	Health          CharacterHealth    `yaml:"health"`
+	Decklist        []DecklistEntry    `yaml:"decklist"`
+	DiceLoadout     []DiceLoadoutEntry `yaml:"dice_loadout"`
+	AbilityIDs      []string           `yaml:"abilities"`
+	Statuses        []StartingStatus   `yaml:"statuses"`
+	Tokens          []StartingToken    `yaml:"tokens"`
+	RollPreferences RollPreferences    `yaml:"roll_preferences"`
 }
 
 type CharacterMetadata struct {
@@ -111,15 +114,35 @@ type DiceLoadoutEntry struct {
 	Count  int    `yaml:"count"`
 }
 
+type StartingStatus struct {
+	InstanceID   string `yaml:"instance_id" json:"instance_id"`
+	DefinitionID string `yaml:"definition_id" json:"definition_id"`
+	Stacks       int    `yaml:"stacks" json:"stacks"`
+}
+
+type StartingToken struct {
+	ID    string `yaml:"id" json:"id"`
+	Value int    `yaml:"value" json:"value"`
+}
+
+type RollPreferences struct {
+	StatusEffects string `yaml:"status_effects" json:"status_effects"`
+	Offensive     string `yaml:"offensive" json:"offensive"`
+	Defensive     string `yaml:"defensive" json:"defensive"`
+}
+
 type characterCombatSheetFile struct {
-	SchemaVersion int                  `yaml:"schema_version"`
-	ActorID       string               `yaml:"actor_id"`
-	Character     CharacterMetadata    `yaml:"character"`
-	Resources     StartingResources    `yaml:"resources"`
-	Health        *characterHealthFile `yaml:"health"`
-	Decklist      []DecklistEntry      `yaml:"decklist"`
-	DiceLoadout   []DiceLoadoutEntry   `yaml:"dice_loadout"`
-	AbilityIDs    []string             `yaml:"abilities"`
+	SchemaVersion   int                  `yaml:"schema_version"`
+	ActorID         string               `yaml:"actor_id"`
+	Character       CharacterMetadata    `yaml:"character"`
+	Resources       StartingResources    `yaml:"resources"`
+	Health          *characterHealthFile `yaml:"health"`
+	Decklist        []DecklistEntry      `yaml:"decklist"`
+	DiceLoadout     []DiceLoadoutEntry   `yaml:"dice_loadout"`
+	AbilityIDs      []string             `yaml:"abilities"`
+	Statuses        []StartingStatus     `yaml:"statuses"`
+	Tokens          []StartingToken      `yaml:"tokens"`
+	RollPreferences RollPreferences      `yaml:"roll_preferences"`
 }
 
 type characterHealthFile struct {
@@ -188,9 +211,12 @@ func buildCharacterCombatSheet(file characterCombatSheetFile, library ContentLib
 			Model:     file.Health.Model,
 			MaxHealth: maxHealth,
 		},
-		Decklist:    copyDecklist(file.Decklist),
-		DiceLoadout: copyDiceLoadout(file.DiceLoadout),
-		AbilityIDs:  copyStrings(file.AbilityIDs),
+		Decklist:        copyDecklist(file.Decklist),
+		DiceLoadout:     copyDiceLoadout(file.DiceLoadout),
+		AbilityIDs:      copyStrings(file.AbilityIDs),
+		Statuses:        copyStatuses(file.Statuses),
+		Tokens:          copyTokens(file.Tokens),
+		RollPreferences: normalizedRollPreferences(file.RollPreferences),
 	}, nil
 }
 
@@ -381,6 +407,9 @@ func validateCharacterCombatSheetFile(file characterCombatSheetFile, library Con
 	if err := validateAbilityIDs(file.AbilityIDs, library.Abilities); err != nil {
 		return err
 	}
+	if err := validateStartingState(file.Statuses, file.Tokens, file.RollPreferences); err != nil {
+		return err
+	}
 
 	return nil
 }
@@ -478,4 +507,66 @@ func copyDiceLoadout(values []DiceLoadoutEntry) []DiceLoadoutEntry {
 
 func copyStrings(values []string) []string {
 	return append([]string(nil), values...)
+}
+
+func copyStatuses(values []StartingStatus) []StartingStatus {
+	return append([]StartingStatus(nil), values...)
+}
+
+func copyTokens(values []StartingToken) []StartingToken {
+	return append([]StartingToken(nil), values...)
+}
+
+func normalizedRollPreferences(value RollPreferences) RollPreferences {
+	if value.StatusEffects == "" {
+		value.StatusEffects = "automatic"
+	}
+	if value.Offensive == "" {
+		value.Offensive = "manual"
+	}
+	if value.Defensive == "" {
+		value.Defensive = "manual"
+	}
+	return value
+}
+
+func validateStartingState(statuses []StartingStatus, tokens []StartingToken, preferences RollPreferences) error {
+	statusIDs := make(map[string]struct{}, len(statuses))
+	for _, status := range statuses {
+		switch {
+		case status.InstanceID == "":
+			return fmt.Errorf("%w: status instance_id is required", ErrInvalidContent)
+		case status.DefinitionID == "":
+			return fmt.Errorf("%w: status definition_id is required", ErrInvalidContent)
+		case status.Stacks <= 0:
+			return fmt.Errorf("%w: status %q stacks must be positive", ErrInvalidContent, status.InstanceID)
+		}
+		if _, exists := statusIDs[status.InstanceID]; exists {
+			return fmt.Errorf("%w: duplicate status instance_id %q", ErrInvalidContent, status.InstanceID)
+		}
+		statusIDs[status.InstanceID] = struct{}{}
+	}
+
+	tokenIDs := make(map[string]struct{}, len(tokens))
+	for _, token := range tokens {
+		if token.ID == "" {
+			return fmt.Errorf("%w: token id is required", ErrInvalidContent)
+		}
+		if _, exists := tokenIDs[token.ID]; exists {
+			return fmt.Errorf("%w: duplicate token id %q", ErrInvalidContent, token.ID)
+		}
+		tokenIDs[token.ID] = struct{}{}
+	}
+
+	normalized := normalizedRollPreferences(preferences)
+	for name, mode := range map[string]string{
+		"status_effects": normalized.StatusEffects,
+		"offensive":      normalized.Offensive,
+		"defensive":      normalized.Defensive,
+	} {
+		if mode != "automatic" && mode != "manual" {
+			return fmt.Errorf("%w: roll_preferences.%s must be automatic or manual", ErrInvalidContent, name)
+		}
+	}
+	return nil
 }

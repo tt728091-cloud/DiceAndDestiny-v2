@@ -165,3 +165,47 @@ func TestNewBattleFromSetupRejectsEmptyBattleID(t *testing.T) {
 		t.Fatalf("NewBattleFromSetup() succeeded with battle %#v", battle)
 	}
 }
+
+func TestNewBattleFromSetupCopiesCompleteActorCombatState(t *testing.T) {
+	setupActor := state.ActorSetup{
+		ID:        "player",
+		Character: state.CharacterMetadata{ID: "hero", Name: "Hero", Class: "paladin"},
+		Resources: state.ResourceState{MaxEnergyPoints: 10, EnergyPoints: 3},
+		Health:    state.HealthMetadata{Model: "card_zones", MaxHealth: 2},
+		Decklist:  []state.DecklistEntry{{CardID: "strike", Count: 2}},
+		Deck:      []string{"strike"},
+		Hand:      []string{"strike"},
+		DiceLoadout: []state.DiceLoadoutEntry{
+			{DiceID: "d6", Count: 2},
+		},
+		AbilityIDs: []string{"smite"},
+		Statuses: []state.StatusState{
+			{InstanceID: "injury-1", DefinitionID: "injury", Stacks: 1},
+		},
+		Tokens:          []state.TokenState{{ID: "blessing", Value: 2}},
+		RollPreferences: state.RollPreferences{StatusEffects: state.RollModeAutomatic},
+	}
+	battle, err := state.NewBattleFromSetup("battle-full", state.BattleSetup{
+		Actors: []state.ActorSetup{setupActor},
+	})
+	if err != nil {
+		t.Fatalf("NewBattleFromSetup() returned error: %v", err)
+	}
+
+	setupActor.Decklist[0].Count = 99
+	setupActor.Deck[0] = "mutated"
+	setupActor.DiceLoadout[0].Count = 99
+	setupActor.AbilityIDs[0] = "mutated"
+	setupActor.Statuses[0].Stacks = 99
+	setupActor.Tokens[0].Value = 99
+
+	actor := battle.Actors["player"]
+	if actor.Decklist[0].Count != 2 || actor.Cards.Deck[0] != "strike" ||
+		actor.DiceLoadout[0].Count != 2 || actor.AbilityIDs[0] != "smite" ||
+		actor.Statuses[0].Stacks != 1 || actor.Tokens[0].Value != 2 {
+		t.Fatalf("battle actor aliased setup input: %#v", actor)
+	}
+	if actor.EnergyPoints != 3 || actor.Resources.EnergyPoints != 3 {
+		t.Fatalf("energy state = %#v / %d, want synchronized value 3", actor.Resources, actor.EnergyPoints)
+	}
+}

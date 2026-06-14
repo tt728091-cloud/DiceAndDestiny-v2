@@ -33,3 +33,11 @@ abilities:
   - Mock Radiant Chain
   - Mock Final Judgment
   - Mock Guarding Light
+
+statuses: []
+tokens: []
+
+roll_preferences:
+  status_effects: automatic
+  offensive: manual
+  defensive: manual

@@ -1,0 +1,43 @@
+schema_version: 1
+id: mock_goblin
+name: Mock Goblin
+class: goblin
+
+resources:
+  starting_hand_size: 0
+  max_hand_size: 5
+  starting_energy_points: 1
+  max_energy_points: 5
+
+health:
+  model: card_zones
+  max_health: 6
+
+decklist:
+  - card_id: Mock Strike
+    count: 3
+  - card_id: Mock Guard
+    count: 2
+  - card_id: Mock Focus
+    count: 1
+
+dice_loadout:
+  - dice_id: Standard D6
+    count: 2
+
+abilities:
+  - Mock Smite
+
+statuses:
+  - instance_id: mock_goblin_poison
+    definition_id: poison
+    stacks: 1
+
+tokens:
+  - id: rage
+    value: 1
+
+roll_preferences:
+  status_effects: automatic
+  offensive: automatic
+  defensive: automatic
