@@ -134,6 +134,14 @@ type InteractionCommitmentData struct {
 	ChoiceID            string               `json:"choice_id,omitempty"`
 	Value               *int                 `json:"value,omitempty"`
 	PlanningAdjustments []PlanningAdjustment `json:"planning_adjustments,omitempty"`
+	DamageReactions     []DamageReaction     `json:"damage_reactions,omitempty"`
+}
+
+type DamageReaction struct {
+	Type              string `json:"type"`
+	ProposalID        string `json:"proposal_id"`
+	Amount            int    `json:"amount,omitempty"`
+	ReplacementCardID string `json:"replacement_card_id,omitempty"`
 }
 
 type PlanningAdjustment struct {

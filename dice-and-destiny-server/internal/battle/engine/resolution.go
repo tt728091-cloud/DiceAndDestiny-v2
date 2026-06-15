@@ -281,10 +281,16 @@ func (e Engine) advanceRevealedWindow(
 		return progress(ProgressContinue, event.NewProposalBatchRevealed(resolution)), nil
 	}
 	if window.Purpose == state.InteractionPurposeReaction && windowHasNonPassCommitment(window) {
+		if resolution.DamageResolutionID != "" {
+			return e.advanceDamageReactionWindow(ctx, resolution, window)
+		}
 		if err := e.openReactionWindow(ctx.Battle, &resolution, window.ReactionRound+1, window.ChainDepth+1); err != nil {
 			return ProgressResult{}, err
 		}
 		return progress(ProgressContinue), nil
+	}
+	if window.Purpose == state.InteractionPurposeReaction && resolution.DamageResolutionID != "" {
+		return e.advanceDamageReactionWindow(ctx, resolution, window)
 	}
 
 	resolution.Stage = state.ResolutionCommitting
@@ -631,6 +637,7 @@ func (e Engine) handleInteractionCommand(
 			ChoiceID:            payload.Commitment.ChoiceID,
 			Value:               copyIntPointer(payload.Commitment.Value),
 			PlanningAdjustments: copyPlanningAdjustments(payload.Commitment.PlanningAdjustments),
+			DamageReactions:     copyDamageReactions(payload.Commitment.DamageReactions),
 		}
 	case command.TypePass:
 		var payload command.PassPayload
@@ -815,6 +822,22 @@ func copyPlanningAdjustments(values []command.PlanningAdjustment) []state.Planni
 			Face:     value.Face,
 			Amount:   value.Amount,
 			TargetID: value.TargetID,
+		}
+	}
+	return copied
+}
+
+func copyDamageReactions(values []command.DamageReaction) []state.DamageReaction {
+	if values == nil {
+		return nil
+	}
+	copied := make([]state.DamageReaction, len(values))
+	for i, value := range values {
+		copied[i] = state.DamageReaction{
+			Type:              state.DamageReactionType(value.Type),
+			ProposalID:        value.ProposalID,
+			Amount:            value.Amount,
+			ReplacementCardID: value.ReplacementCardID,
 		}
 	}
 	return copied

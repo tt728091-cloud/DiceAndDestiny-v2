@@ -43,6 +43,7 @@ type ResolutionState struct {
 	SuspendedActors       map[string]ActorFlowState
 	SuspendedPendingInput map[string]PendingInput
 	Planning              *PlanningState
+	DamageResolutionID    string
 }
 
 type PlanningState struct {
@@ -227,6 +228,7 @@ type InteractionCommitmentData struct {
 	Value               *int                    `json:"value,omitempty"`
 	Planning            *PlanningCommitmentData `json:"planning,omitempty"`
 	PlanningAdjustments []PlanningAdjustment    `json:"planning_adjustments,omitempty"`
+	DamageReactions     []DamageReaction        `json:"damage_reactions,omitempty"`
 }
 
 type PlanningAdjustmentType string
@@ -382,6 +384,7 @@ func cloneCommitmentData(data InteractionCommitmentData) InteractionCommitmentDa
 		cloned.Planning = &value
 	}
 	cloned.PlanningAdjustments = append([]PlanningAdjustment(nil), data.PlanningAdjustments...)
+	cloned.DamageReactions = append([]DamageReaction(nil), data.DamageReactions...)
 	return cloned
 }
 

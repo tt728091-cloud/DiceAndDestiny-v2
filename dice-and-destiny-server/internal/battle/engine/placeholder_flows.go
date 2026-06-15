@@ -33,30 +33,6 @@ func (OngoingEffectsFlow) OnExit(ctx *Context) ([]event.Event, error) {
 	return nil, nil
 }
 
-type DamageResolutionFlow struct{}
-
-func (DamageResolutionFlow) ID() segment.Segment {
-	return segment.DamageResolution
-}
-
-func (DamageResolutionFlow) OnEnter(ctx *Context) ([]event.Event, error) {
-	initializeAutomaticActors(ctx.Battle)
-	return nil, nil
-}
-
-func (DamageResolutionFlow) Progress(ctx *Context) (ProgressResult, error) {
-	resolveAutomaticActors(ctx.Battle)
-	return progress(ProgressSegmentComplete), nil
-}
-
-func (DamageResolutionFlow) HandleCommand(ctx *Context, cmd command.Command) ([]event.Event, error) {
-	return nil, unsupportedCommand()
-}
-
-func (DamageResolutionFlow) OnExit(ctx *Context) ([]event.Event, error) {
-	return nil, nil
-}
-
 func initializeAutomaticActors(battle *state.Battle) {
 	battle.Flow.Stage = automaticStage
 	battle.Flow.Iteration = 1

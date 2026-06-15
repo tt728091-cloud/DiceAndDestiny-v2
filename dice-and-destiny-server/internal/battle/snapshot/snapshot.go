@@ -14,6 +14,7 @@ type Battle struct {
 	ViewerActorID      string                   `json:"viewer_actor_id,omitempty"`
 	Flow               *SegmentFlow             `json:"flow,omitempty"`
 	Resolution         *Resolution              `json:"resolution,omitempty"`
+	Damage             *DamageResolution        `json:"damage,omitempty"`
 	Actors             map[string]Actor         `json:"actors,omitempty"`
 	OffensiveProposals []state.PlanningProposal `json:"offensive_proposals,omitempty"`
 	DefensiveProposals []state.PlanningProposal `json:"defensive_proposals,omitempty"`
@@ -28,6 +29,7 @@ type Actor struct {
 	MaxHandSize     int                      `json:"max_hand_size,omitempty"`
 	MaxHealth       int                      `json:"max_health,omitempty"`
 	CurrentHealth   int                      `json:"current_health,omitempty"`
+	HealthCardCount *int                     `json:"health_card_count,omitempty"`
 	Decklist        []state.DecklistEntry    `json:"decklist,omitempty"`
 	Hand            []string                 `json:"hand,omitempty"`
 	HandCount       int                      `json:"hand_count"`
@@ -42,6 +44,7 @@ type Actor struct {
 	Tokens          []state.TokenState       `json:"tokens,omitempty"`
 	RollPreferences *state.RollPreferences   `json:"roll_preferences,omitempty"`
 	Dice            *DiceRollState           `json:"dice,omitempty"`
+	DefeatState     state.ActorDefeatState   `json:"defeat_state,omitempty"`
 }
 
 type CharacterMetadata struct {
@@ -89,6 +92,15 @@ type Resolution struct {
 	Batch        *state.ProposalBatch       `json:"batch,omitempty"`
 	ActiveWindow *InteractionWindow         `json:"active_window,omitempty"`
 	Planning     *Planning                  `json:"planning,omitempty"`
+}
+
+type DamageResolution struct {
+	ID                  string                            `json:"id"`
+	Stage               state.DamageResolutionStage       `json:"stage"`
+	Revision            int                               `json:"revision"`
+	PendingTotals       []state.AccumulatedDamageProposal `json:"pending_totals,omitempty"`
+	RevealedCards       []state.ProposedCardRemoval       `json:"revealed_cards,omitempty"`
+	ActiveInteractionID string                            `json:"active_interaction_window_id,omitempty"`
 }
 
 type Planning struct {
@@ -173,9 +185,12 @@ func FromBattleForViewer(battle state.Battle, viewerActorID string) Battle {
 			AbilityCount:    len(actor.AbilityIDs),
 			Statuses:        copyStatuses(actor.Statuses),
 			Tokens:          copyTokens(actor.Tokens),
+			DefeatState:     actor.DefeatState,
 		}
 		if actor.Health.Model != "" || actor.Health.MaxHealth != 0 {
-			snapshotActor.CurrentHealth = len(cards.Deck) + len(cards.Hand) + len(cards.Discard)
+			currentHealth := actor.CurrentHealth()
+			snapshotActor.CurrentHealth = currentHealth
+			snapshotActor.HealthCardCount = &currentHealth
 		}
 		if actor.Dice.CurrentRoll != nil && diceVisibleToViewer(battle, id, viewerActorID) {
 			snapshotActor.Dice = diceRollStateSnapshot(actor.Dice.CurrentRoll)
@@ -203,10 +218,46 @@ func FromBattleForViewer(battle state.Battle, viewerActorID string) Battle {
 		ViewerActorID:      viewerActorID,
 		Flow:               flowSnapshot(battle, viewerActorID),
 		Resolution:         resolutionSnapshot(battle, viewerActorID),
+		Damage:             damageSnapshot(battle),
 		Actors:             actors,
 		OffensiveProposals: planningProposalsForViewer(battle.OffensiveProposals, viewerActorID),
 		DefensiveProposals: planningProposalsForViewer(battle.DefensiveProposals, viewerActorID),
 	}
+}
+
+func damageSnapshot(battle state.Battle) *DamageResolution {
+	if battle.DamageResolution == nil {
+		return nil
+	}
+	damage := battle.DamageResolution
+	snapshot := &DamageResolution{
+		ID:       damage.ID,
+		Stage:    damage.Stage,
+		Revision: damage.Revision,
+	}
+	snapshot.PendingTotals = append(
+		[]state.AccumulatedDamageProposal(nil),
+		damage.AccumulatedProposals...,
+	)
+	for i := range snapshot.PendingTotals {
+		snapshot.PendingTotals[i].SourceProposalIDs = copyStrings(
+			damage.AccumulatedProposals[i].SourceProposalIDs,
+		)
+	}
+	for _, card := range damage.CardProposals {
+		if !card.Accepted || !card.Revealed {
+			continue
+		}
+		card.DamageProposalIDs = copyStrings(card.DamageProposalIDs)
+		card.SourceActorIDs = copyStrings(card.SourceActorIDs)
+		snapshot.RevealedCards = append(snapshot.RevealedCards, card)
+	}
+	if battle.ActiveResolutionID == damage.ReactionResolutionID {
+		if resolution, ok := battle.Resolutions[battle.ActiveResolutionID]; ok {
+			snapshot.ActiveInteractionID = resolution.ActiveWindowID
+		}
+	}
+	return snapshot
 }
 
 func characterSnapshot(value state.CharacterMetadata) *CharacterMetadata {
@@ -422,6 +473,10 @@ func copyInteractionCommitment(
 	copied.Data.PlanningAdjustments = append(
 		[]state.PlanningAdjustment(nil),
 		commitment.Data.PlanningAdjustments...,
+	)
+	copied.Data.DamageReactions = append(
+		[]state.DamageReaction(nil),
+		commitment.Data.DamageReactions...,
 	)
 	return copied
 }

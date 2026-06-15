@@ -21,6 +21,8 @@ type Battle struct {
 	Commitments        map[string]OffensiveCommitment
 	OffensiveProposals []PlanningProposal
 	DefensiveProposals []PlanningProposal
+	DamageResolution   *DamageResolutionState
+	PendingOperations  []FinalizedOperationProposal
 	Content            ContentCatalog
 }
 
@@ -71,6 +73,7 @@ type ActorState struct {
 	Statuses        []StatusState
 	Tokens          []TokenState
 	RollPreferences RollPreferences
+	DefeatState     ActorDefeatState
 }
 
 type CharacterMetadata struct {
@@ -413,6 +416,11 @@ func (battle Battle) Clone() Battle {
 	cloned.Commitments = cloneCommitments(battle.Commitments)
 	cloned.OffensiveProposals = clonePlanningProposals(battle.OffensiveProposals)
 	cloned.DefensiveProposals = clonePlanningProposals(battle.DefensiveProposals)
+	cloned.DamageResolution = cloneDamageResolution(battle.DamageResolution)
+	cloned.PendingOperations = append([]FinalizedOperationProposal(nil), battle.PendingOperations...)
+	for i := range cloned.PendingOperations {
+		cloned.PendingOperations[i] = cloneFinalizedOperation(battle.PendingOperations[i])
+	}
 	cloned.Content = cloneContentCatalog(battle.Content)
 	cloned.Flow = cloneFlowState(battle.Flow)
 	return cloned

@@ -91,6 +91,20 @@ func cloneEvents(events []event.Event) []event.Event {
 		cloned[i].Commitment = cloneInteractionCommitment(source.Commitment)
 		cloned[i].Commitments = cloneInteractionCommitments(source.Commitments)
 		cloned[i].ProposalBatch = cloneProposalBatch(source.ProposalBatch)
+		cloned[i].DamageCards = cloneDamageCards(source.DamageCards)
+	}
+	return cloned
+}
+
+func cloneDamageCards(values []state.ProposedCardRemoval) []state.ProposedCardRemoval {
+	if values == nil {
+		return nil
+	}
+	cloned := make([]state.ProposedCardRemoval, len(values))
+	for i, value := range values {
+		cloned[i] = value
+		cloned[i].DamageProposalIDs = append([]string(nil), value.DamageProposalIDs...)
+		cloned[i].SourceActorIDs = append([]string(nil), value.SourceActorIDs...)
 	}
 	return cloned
 }
@@ -113,6 +127,10 @@ func cloneInteractionCommitment(
 	cloned.Data.PlanningAdjustments = append(
 		[]state.PlanningAdjustment(nil),
 		value.Data.PlanningAdjustments...,
+	)
+	cloned.Data.DamageReactions = append(
+		[]state.DamageReaction(nil),
+		value.Data.DamageReactions...,
 	)
 	return &cloned
 }

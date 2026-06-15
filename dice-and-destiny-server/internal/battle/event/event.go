@@ -24,6 +24,11 @@ const (
 	TypeProposalBatchRevealed   Type = "proposal_batch_revealed"
 	TypeProposalBatchCommitted  Type = "proposal_batch_committed"
 	TypeResolutionCompleted     Type = "resolution_completed"
+	TypeDamageProposed          Type = "damage_proposed"
+	TypeDamageCardsRevealed     Type = "damage_cards_revealed"
+	TypeDamageModified          Type = "damage_prevented_or_modified"
+	TypeDamageCommitted         Type = "damage_committed"
+	TypeCardsPermanentlyRemoved Type = "cards_permanently_removed"
 )
 
 // Event describes an authority-approved battle fact that already happened.
@@ -60,7 +65,69 @@ type Event struct {
 	Commitment     *state.InteractionCommitment  `json:"commitment,omitempty"`
 	Commitments    []state.InteractionCommitment `json:"commitments,omitempty"`
 	ProposalBatch  *state.ProposalBatch          `json:"proposal_batch,omitempty"`
+	ProposalID     string                        `json:"proposal_id,omitempty"`
+	TargetActorID  string                        `json:"target_actor_id,omitempty"`
+	Amount         int                           `json:"amount,omitempty"`
+	OriginalZone   string                        `json:"original_zone,omitempty"`
+	DamageCards    []state.ProposedCardRemoval   `json:"damage_cards,omitempty"`
 	PrivateActorID string                        `json:"-"`
+}
+
+func NewDamageProposed(proposal state.DamageSourceProposal) Event {
+	return Event{
+		Type:          TypeDamageProposed,
+		ActorID:       proposal.SourceActorID,
+		SourceType:    state.RollSourceType(proposal.SourceContentType),
+		SourceID:      proposal.SourceContentID,
+		ProposalID:    proposal.ID,
+		TargetActorID: proposal.TargetActorID,
+		Amount:        proposal.BaseAmount,
+	}
+}
+
+func NewDamageCardsRevealed(targetActorID string, cards []state.ProposedCardRemoval) Event {
+	return Event{
+		Type:          TypeDamageCardsRevealed,
+		TargetActorID: targetActorID,
+		DamageCards:   copyDamageCards(cards),
+	}
+}
+
+func NewDamageModified(proposalID, targetActorID string, amount int) Event {
+	return Event{
+		Type:          TypeDamageModified,
+		ProposalID:    proposalID,
+		TargetActorID: targetActorID,
+		Amount:        amount,
+	}
+}
+
+func NewDamageCommitted(
+	proposalID string,
+	sourceActorID string,
+	sourceID string,
+	targetActorID string,
+	amount int,
+) Event {
+	return Event{
+		Type:          TypeDamageCommitted,
+		ActorID:       sourceActorID,
+		SourceID:      sourceID,
+		ProposalID:    proposalID,
+		TargetActorID: targetActorID,
+		Amount:        amount,
+	}
+}
+
+func NewCardPermanentlyRemoved(proposal state.ProposedCardRemoval) Event {
+	return Event{
+		Type:          TypeCardsPermanentlyRemoved,
+		ProposalID:    proposal.ID,
+		TargetActorID: proposal.TargetActorID,
+		Cards:         []string{proposal.CardID},
+		OriginalZone:  string(proposal.OriginalZone),
+		DamageCards:   []state.ProposedCardRemoval{copyDamageCard(proposal)},
+	}
 }
 
 func NewInteractionCommitted(
@@ -253,6 +320,7 @@ func eventForViewer(source Event, viewerActorID string) Event {
 	filtered.Commitment = copyInteractionCommitmentPointer(source.Commitment)
 	filtered.Commitments = copyInteractionCommitments(source.Commitments)
 	filtered.ProposalBatch = copyProposalBatchPointer(source.ProposalBatch)
+	filtered.DamageCards = copyDamageCards(source.DamageCards)
 
 	if source.Type == TypeCardsDrawn && source.ActorID != viewerActorID {
 		filtered.Count = len(source.Cards)
@@ -342,6 +410,10 @@ func copyInteractionCommitment(
 		[]state.PlanningAdjustment(nil),
 		value.Data.PlanningAdjustments...,
 	)
+	copied.Data.DamageReactions = append(
+		[]state.DamageReaction(nil),
+		value.Data.DamageReactions...,
+	)
 	return copied
 }
 
@@ -405,6 +477,23 @@ func copyStrings(values []string) []string {
 		return nil
 	}
 	return append([]string{}, values...)
+}
+
+func copyDamageCards(values []state.ProposedCardRemoval) []state.ProposedCardRemoval {
+	if values == nil {
+		return nil
+	}
+	copied := make([]state.ProposedCardRemoval, len(values))
+	for i, value := range values {
+		copied[i] = copyDamageCard(value)
+	}
+	return copied
+}
+
+func copyDamageCard(value state.ProposedCardRemoval) state.ProposedCardRemoval {
+	value.DamageProposalIDs = copyStrings(value.DamageProposalIDs)
+	value.SourceActorIDs = copyStrings(value.SourceActorIDs)
+	return value
 }
 
 func copySymbolCounts(values map[string]int) map[string]int {
