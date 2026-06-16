@@ -13,6 +13,8 @@ dice-and-destiny-client/native/libbattle_authority.*.framework/
 # Server/native build outputs
 dice-and-destiny-server/.venv/
 dice-and-destiny-server/build/
+dice-and-destiny-server/save/battles/
+dice-and-destiny-server/save/scenarios/
 dice-and-destiny-server/adapters/gdextension/extension_api.json
 dice-and-destiny-server/adapters/gdextension/.sconsign.dblite
 dice-and-destiny-server/adapters/gdextension/src/*.os

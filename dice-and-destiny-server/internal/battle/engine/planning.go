@@ -228,7 +228,7 @@ func (e Engine) collectPlanningWindow(
 		case state.ControllerHuman:
 			ensurePlanningPendingInput(ctx.Battle, resolution, window, plan)
 		case state.ControllerAI, state.ControllerSystem:
-			events, err := autoPlanActor(ctx.Battle, planning, actorID)
+			events, err := autoPlanActor(ctx, planning, actorID)
 			if err != nil {
 				return ProgressResult{}, err
 			}
@@ -266,15 +266,22 @@ func (e Engine) collectPlanningWindow(
 }
 
 func autoPlanActor(
-	battle *state.Battle,
+	ctx *Context,
 	planning *state.PlanningState,
 	actorID string,
 ) ([]event.Event, error) {
+	battle := ctx.Battle
 	plan := planning.Actors[actorID]
 	var events []event.Event
 	actor := battle.Actors[actorID]
 	if len(actor.DiceLoadout) > 0 && plan.RollsUsed < plan.MaxRolls {
-		rolled, err := dice.Roll(battle, plan.RollRequestID, actorID, nil)
+		rolled, err := dice.Roll(
+			battle,
+			plan.RollRequestID,
+			actorID,
+			nil,
+			dice.WithRandomSource(ctx.DiceRandom),
+		)
 		if err != nil {
 			return nil, err
 		}
@@ -383,7 +390,13 @@ func (e Engine) handlePlanningCommand(
 		if err := command.DecodePayload(cmd, &payload); err != nil {
 			return nil, errors.New("invalid roll_dice payload")
 		}
-		events, err = dice.Roll(battle, plan.RollRequestID, cmd.ActorID, payload.RerollIndices)
+		events, err = dice.Roll(
+			battle,
+			plan.RollRequestID,
+			cmd.ActorID,
+			payload.RerollIndices,
+			dice.WithRandomSource(e.diceRandomSource(battle)),
+		)
 		if err != nil {
 			return nil, err
 		}
@@ -392,7 +405,13 @@ func (e Engine) handlePlanningCommand(
 		if len(actor.DiceLoadout) == 0 {
 			return nil, errors.New("actor has no planning dice")
 		}
-		events, err = dice.Roll(battle, plan.RollRequestID, cmd.ActorID, nil)
+		events, err = dice.Roll(
+			battle,
+			plan.RollRequestID,
+			cmd.ActorID,
+			nil,
+			dice.WithRandomSource(e.diceRandomSource(battle)),
+		)
 		if err != nil {
 			return nil, err
 		}
@@ -412,7 +431,13 @@ func (e Engine) handlePlanningCommand(
 		if err := command.DecodePayload(cmd, &payload); err != nil {
 			return nil, errors.New("invalid planning_reroll payload")
 		}
-		events, err = dice.Roll(battle, plan.RollRequestID, cmd.ActorID, payload.RerollIndices)
+		events, err = dice.Roll(
+			battle,
+			plan.RollRequestID,
+			cmd.ActorID,
+			payload.RerollIndices,
+			dice.WithRandomSource(e.diceRandomSource(battle)),
+		)
 		if err != nil {
 			return nil, err
 		}

@@ -92,7 +92,11 @@ func TestInMemoryRejectsDuplicateCreateAndMissingLoadOrSave(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Load() returned error: %v", err)
 	}
-	if !reflect.DeepEqual(reloaded, repository.Checkpoint{Battle: battle}) {
+	expected, err := repository.NewCheckpoint(battle)
+	if err != nil {
+		t.Fatalf("NewCheckpoint() returned error: %v", err)
+	}
+	if !reflect.DeepEqual(reloaded, expected) {
 		t.Fatalf("checkpoint changed after rejected operations: %#v", reloaded)
 	}
 }

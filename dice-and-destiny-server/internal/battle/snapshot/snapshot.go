@@ -9,6 +9,7 @@ import (
 // It is safe for presentation or future network clients to render from.
 type Battle struct {
 	BattleID           string                   `json:"battle_id"`
+	Status             state.BattleStatus       `json:"status,omitempty"`
 	Segment            segment.Segment          `json:"segment"`
 	Round              int                      `json:"round"`
 	ViewerActorID      string                   `json:"viewer_actor_id,omitempty"`
@@ -18,6 +19,7 @@ type Battle struct {
 	Actors             map[string]Actor         `json:"actors,omitempty"`
 	OffensiveProposals []state.PlanningProposal `json:"offensive_proposals,omitempty"`
 	DefensiveProposals []state.PlanningProposal `json:"defensive_proposals,omitempty"`
+	Origin             *state.BattleOrigin      `json:"origin,omitempty"`
 }
 
 type Actor struct {
@@ -213,6 +215,7 @@ func FromBattleForViewer(battle state.Battle, viewerActorID string) Battle {
 
 	return Battle{
 		BattleID:           battle.ID,
+		Status:             battle.Status,
 		Segment:            battle.Segment.Current,
 		Round:              battle.Segment.Round,
 		ViewerActorID:      viewerActorID,
@@ -222,7 +225,16 @@ func FromBattleForViewer(battle state.Battle, viewerActorID string) Battle {
 		Actors:             actors,
 		OffensiveProposals: planningProposalsForViewer(battle.OffensiveProposals, viewerActorID),
 		DefensiveProposals: planningProposalsForViewer(battle.DefensiveProposals, viewerActorID),
+		Origin:             originSnapshot(battle.Origin),
 	}
+}
+
+func originSnapshot(origin state.BattleOrigin) *state.BattleOrigin {
+	if origin.Kind != state.BattleOriginScenario {
+		return nil
+	}
+	copied := origin
+	return &copied
 }
 
 func damageSnapshot(battle state.Battle) *DamageResolution {

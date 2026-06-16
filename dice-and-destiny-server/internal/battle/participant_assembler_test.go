@@ -82,6 +82,13 @@ func TestFileParticipantAssemblerIntegratesCompleteSetupWithDurableLifecycle(t *
 }
 
 func TestDefaultExportedAuthorityUsesProductionParticipantAssembler(t *testing.T) {
+	t.Setenv("DICE_AND_DESTINY_BATTLE_STATE_ROOT", t.TempDir())
+	previous := defaultAuthority
+	defaultAuthority = newDefaultAuthority()
+	t.Cleanup(func() {
+		defaultAuthority = previous
+	})
+
 	result := decodeAuthorityResult(t, HandleCommand(`{
 		"battle_id": "phase-2-default-authority",
 		"actor_id": "player",

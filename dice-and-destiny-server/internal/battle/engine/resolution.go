@@ -171,7 +171,7 @@ func (e Engine) progressResolution(battle *state.Battle) (ProgressResult, error)
 			)
 		}
 	}
-	ctx := &Context{Battle: &working, Phase: resolution.Origin.Phase}
+	ctx := e.context(&working, resolution.Origin.Phase)
 	if resolution.Planning != nil {
 		result, err := e.progressPlanningResolution(ctx, resolution, window)
 		if err != nil {

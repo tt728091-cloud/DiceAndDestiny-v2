@@ -7,9 +7,11 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
+	"strings"
 
 	"diceanddestiny/server/internal/battle/command"
 	"diceanddestiny/server/internal/battle/engine"
+	"diceanddestiny/server/internal/battle/participant"
 	"diceanddestiny/server/internal/battle/repository"
 	"diceanddestiny/server/internal/battle/state"
 )
@@ -18,23 +20,9 @@ type commandHandler interface {
 	HandleCommand(cmd command.Command) engine.Result
 }
 
-type Participant struct {
-	InstanceID   string
-	DefinitionID string
-	Controller   state.ControllerType
-}
-
-type ParticipantAssembler interface {
-	AssembleParticipants(participants []Participant) (state.BattleSetup, error)
-}
-
-type ParticipantAssemblerFunc func(participants []Participant) (state.BattleSetup, error)
-
-func (fn ParticipantAssemblerFunc) AssembleParticipants(
-	participants []Participant,
-) (state.BattleSetup, error) {
-	return fn(participants)
-}
+type Participant = participant.Participant
+type ParticipantAssembler = participant.Assembler
+type ParticipantAssemblerFunc = participant.AssemblerFunc
 
 type Authority struct {
 	engine    engine.Engine
@@ -49,7 +37,7 @@ func newDefaultAuthority() *Authority {
 	if !ok {
 		return NewAuthority(
 			engine.NewEngine(),
-			repository.NewInMemory(),
+			repository.NewDisk(filepath.Join(os.TempDir(), "dice-and-destiny", "battles")),
 			ParticipantAssemblerFunc(func([]Participant) (state.BattleSetup, error) {
 				return state.BattleSetup{}, errors.New("could not locate server content")
 			}),
@@ -64,9 +52,20 @@ func newDefaultAuthority() *Authority {
 	if runStateRoot == "" {
 		runStateRoot = filepath.Join(serverRoot, "save", "run_players")
 	}
+	battleStateRoot := os.Getenv("DICE_AND_DESTINY_BATTLE_STATE_ROOT")
+	if battleStateRoot == "" {
+		battleStateRoot = filepath.Join(serverRoot, "save", "battles")
+	}
+	scenarioStateRoot := os.Getenv("DICE_AND_DESTINY_SCENARIO_STATE_ROOT")
+	if scenarioStateRoot == "" {
+		scenarioStateRoot = filepath.Join(serverRoot, "save", "scenarios")
+	}
 	return NewAuthority(
 		engine.NewEngine(),
-		repository.NewInMemory(),
+		repository.Router{
+			Normal:   repository.NewDisk(battleStateRoot),
+			Scenario: repository.NewDisk(scenarioStateRoot),
+		},
 		NewFileParticipantAssembler(contentRoot, runStateRoot),
 	)
 }
@@ -85,7 +84,7 @@ func NewAuthority(
 
 // HandleCommand is the portable battle authority JSON boundary.
 func HandleCommand(commandJSON string) string {
-	return defaultAuthority.HandleCommandJSON(commandJSON)
+	return newDefaultScenarioAuthority(defaultAuthority).HandleCommandJSON(commandJSON)
 }
 
 func (authority *Authority) HandleCommandJSON(commandJSON string) string {
@@ -118,12 +117,19 @@ func (authority *Authority) HandleCommand(cmd command.Command) engine.Result {
 		}
 		return authorityRejected(fmt.Sprintf("load battle: %v", err))
 	}
+	if cmd.Type == command.TypeOpenBattle {
+		return authority.engine.OpenResult(&checkpoint.Battle, cmd.ActorID)
+	}
 
 	progressed, err := authority.engine.ApplyBattleCommand(&checkpoint.Battle, cmd)
 	if err != nil {
 		return authorityRejected(err.Error())
 	}
-	checkpoint.Events = append(checkpoint.Events, progressed.Events...)
+	assigned, err := repository.AppendEvents(&checkpoint, progressed.Events)
+	if err != nil {
+		return authorityRejected(fmt.Sprintf("sequence battle events: %v", err))
+	}
+	progressed.Events = assigned
 	if err := authority.repo.Save(checkpoint); err != nil {
 		return authorityRejected(fmt.Sprintf("save battle: %v", err))
 	}
@@ -157,10 +163,15 @@ func (authority *Authority) startBattle(cmd command.Command) engine.Result {
 		return authorityRejected(err.Error())
 	}
 
-	checkpoint := repository.Checkpoint{
-		Battle: battleState,
-		Events: progressed.Events,
+	checkpoint, err := repository.NewCheckpoint(battleState)
+	if err != nil {
+		return authorityRejected(fmt.Sprintf("create battle checkpoint: %v", err))
 	}
+	assigned, err := repository.AppendEvents(&checkpoint, progressed.Events)
+	if err != nil {
+		return authorityRejected(fmt.Sprintf("sequence battle events: %v", err))
+	}
+	progressed.Events = assigned
 	if err := authority.repo.Create(checkpoint); err != nil {
 		if errors.Is(err, repository.ErrBattleExists) {
 			return authorityRejected("battle already exists")
@@ -174,6 +185,9 @@ func validateStartBattle(
 	cmd command.Command,
 	payload command.StartBattlePayload,
 ) ([]Participant, error) {
+	if strings.HasPrefix(cmd.BattleID, "scenario-") {
+		return nil, errors.New("start_battle cannot use the reserved scenario battle namespace")
+	}
 	if payload.Player.InstanceID == "" {
 		return nil, errors.New("player instance_id is required")
 	}
@@ -192,6 +206,7 @@ func validateStartBattle(
 		InstanceID:   payload.Player.InstanceID,
 		DefinitionID: payload.Player.DefinitionID,
 		Controller:   state.ControllerHuman,
+		Source:       participant.SourceRunPlayer,
 	})
 	seen := map[string]struct{}{payload.Player.InstanceID: {}}
 	for _, enemy := range payload.Enemies {
@@ -209,6 +224,7 @@ func validateStartBattle(
 			InstanceID:   enemy.InstanceID,
 			DefinitionID: enemy.DefinitionID,
 			Controller:   state.ControllerAI,
+			Source:       participant.SourceEnemyDefinition,
 		})
 	}
 	return participants, nil

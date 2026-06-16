@@ -17,6 +17,7 @@ if [[ ! -f "${GODOT_CPP_DIR}/SConstruct" ]]; then
 fi
 
 go build \
+  -tags scenario_tools \
   -buildmode=c-shared \
   -o "${BUILD_DIR}/libbattle_go_authority.dylib" \
   "${ROOT_DIR}/adapters/gdextension/go_export"

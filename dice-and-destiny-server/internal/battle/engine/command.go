@@ -17,6 +17,15 @@ type Result struct {
 	PendingInput map[string]snapshot.PendingInput `json:"pending_input,omitempty"`
 	Snapshot     *snapshot.Battle                 `json:"snapshot,omitempty"`
 	Error        string                           `json:"error,omitempty"`
+	Data         any                              `json:"data,omitempty"`
+}
+
+func (e Engine) OpenResult(battle *state.Battle, viewerActorID string) Result {
+	status := ProgressWaitingForInput
+	if battle != nil && state.IsTerminalBattleStatus(battle.Status) {
+		status = ProgressBattleComplete
+	}
+	return e.ResultForViewer(battle, viewerActorID, ProgressionResult{Status: status})
 }
 
 func (e Engine) HandleCommand(cmd command.Command) Result {
@@ -68,7 +77,7 @@ func (e Engine) ApplyBattleCommand(battle *state.Battle, cmd command.Command) (P
 			commandEvents, err = e.handleInteractionCommand(&working, cmd)
 		}
 	} else {
-		commandEvents, err = flow.HandleCommand(&Context{Battle: &working, Phase: state.FlowPhaseInProgress}, cmd)
+		commandEvents, err = flow.HandleCommand(e.context(&working, state.FlowPhaseInProgress), cmd)
 	}
 	if err != nil {
 		return ProgressionResult{}, err

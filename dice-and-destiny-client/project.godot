@@ -13,7 +13,11 @@ config_version=5
 config/name="Dice-and-Destiny"
 config/features=PackedStringArray("4.6", "Forward Plus")
 config/icon="res://icon.svg"
-run/main_scene="res://scenes/battle_spike.tscn"
+run/main_scene="res://app/screens/scenarios/scenario_launcher.tscn"
+
+[dice_and_destiny]
+
+development/enable_scenarios=true
 
 [physics]
 

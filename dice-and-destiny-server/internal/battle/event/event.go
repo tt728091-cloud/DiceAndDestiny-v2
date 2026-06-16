@@ -10,6 +10,8 @@ import (
 // Type is the stable event name clients can key presentation or logs from.
 type Type string
 
+const SchemaVersion = 1
+
 const (
 	TypeSegmentAdvanced         Type = "segment_advanced"
 	TypeSegmentEntered          Type = "segment_entered"
@@ -29,11 +31,16 @@ const (
 	TypeDamageModified          Type = "damage_prevented_or_modified"
 	TypeDamageCommitted         Type = "damage_committed"
 	TypeCardsPermanentlyRemoved Type = "cards_permanently_removed"
+	TypeBattleCompleted         Type = "battle_completed"
 )
 
 // Event describes an authority-approved battle fact that already happened.
 // Keep UI intent and transport details out of this package.
 type Event struct {
+	ID             string                        `json:"event_id,omitempty"`
+	BattleID       string                        `json:"battle_id,omitempty"`
+	SchemaVersion  int                           `json:"schema_version,omitempty"`
+	Sequence       uint64                        `json:"sequence,omitempty"`
 	Type           Type                          `json:"type"`
 	ActorID        string                        `json:"actor_id,omitempty"`
 	From           segment.Segment               `json:"from,omitempty"`
@@ -70,7 +77,15 @@ type Event struct {
 	Amount         int                           `json:"amount,omitempty"`
 	OriginalZone   string                        `json:"original_zone,omitempty"`
 	DamageCards    []state.ProposedCardRemoval   `json:"damage_cards,omitempty"`
-	PrivateActorID string                        `json:"-"`
+	BattleResult   state.BattleStatus            `json:"battle_result,omitempty"`
+	PrivateActorID string                        `json:"private_actor_id,omitempty"`
+}
+
+func NewBattleCompleted(result state.BattleStatus) Event {
+	return Event{
+		Type:         TypeBattleCompleted,
+		BattleResult: result,
+	}
 }
 
 func NewDamageProposed(proposal state.DamageSourceProposal) Event {

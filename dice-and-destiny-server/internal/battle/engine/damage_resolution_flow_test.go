@@ -2,6 +2,7 @@ package engine_test
 
 import (
 	"encoding/json"
+	"errors"
 	"reflect"
 	"testing"
 
@@ -141,6 +142,80 @@ func TestProductionDamageResolutionFlowPersistsReactsRecalculatesAndCommits(t *t
 	if countEvents(committed.Events, event.TypeDamageCommitted) != 2 ||
 		countEvents(committed.Events, event.TypeCardsPermanentlyRemoved) != 3 {
 		t.Fatalf("commit events = %#v", committed.Events)
+	}
+}
+
+func TestDamageReactionCheckpointSurvivesDiskRepositoryAndEngineRestart(t *testing.T) {
+	battle := damageFlowBattle(t)
+	firstEngine, err := engine.NewEngineWithFlows(
+		engine.DamageResolutionFlow{RandomSource: dice.NewSequenceRandomSource(0)},
+		&waitAfterDamageFlow{},
+	)
+	if err != nil {
+		t.Fatalf("NewEngineWithFlows(first) returned error: %v", err)
+	}
+	started, err := firstEngine.ProgressUntilInput(&battle)
+	if err != nil {
+		t.Fatalf("ProgressUntilInput() returned error: %v", err)
+	}
+	if battle.DamageResolution == nil || battle.ActiveResolutionID == "" {
+		t.Fatalf("damage checkpoint is not waiting in a reaction: %#v", battle)
+	}
+
+	root := t.TempDir()
+	repo := repository.NewDisk(root)
+	checkpoint, err := repository.NewCheckpoint(battle)
+	if err != nil {
+		t.Fatalf("NewCheckpoint() returned error: %v", err)
+	}
+	if _, err := repository.AppendEvents(&checkpoint, started.Events); err != nil {
+		t.Fatalf("AppendEvents() returned error: %v", err)
+	}
+	if err := repo.Create(checkpoint); err != nil {
+		t.Fatalf("Create() returned error: %v", err)
+	}
+
+	restartedRepo := repository.NewDisk(root)
+	reloaded, err := restartedRepo.Load(battle.ID)
+	if err != nil {
+		t.Fatalf("restarted Load() returned error: %v", err)
+	}
+	if !reflect.DeepEqual(reloaded, checkpoint) {
+		t.Fatal("damage checkpoint changed across disk repository reconstruction")
+	}
+
+	secondEngine, err := engine.NewEngineWithFlows(
+		engine.DamageResolutionFlow{RandomSource: failingDamageRandom{}},
+		&waitAfterDamageFlow{},
+	)
+	if err != nil {
+		t.Fatalf("NewEngineWithFlows(second) returned error: %v", err)
+	}
+	pending := reloaded.Battle.Flow.PendingInput["player"]
+	progressed, err := applyInteraction(
+		t,
+		secondEngine,
+		&reloaded.Battle,
+		command.TypePass,
+		command.PassPayload{
+			PendingInputID: pending.ID,
+			Checkpoint:     interactionCheckpoint(pending),
+		},
+	)
+	if err != nil {
+		t.Fatalf("pass after restart returned error: %v", err)
+	}
+	assigned, err := repository.AppendEvents(&reloaded, progressed.Events)
+	if err != nil {
+		t.Fatalf("AppendEvents(after restart) returned error: %v", err)
+	}
+	progressed.Events = assigned
+	if err := restartedRepo.Save(reloaded); err != nil {
+		t.Fatalf("Save(after restart) returned error: %v", err)
+	}
+	if reloaded.Battle.DamageResolution != nil ||
+		reloaded.Battle.Actors["player"].CurrentHealth() != 2 {
+		t.Fatalf("damage did not commit after restart: %#v", reloaded.Battle)
 	}
 }
 
@@ -328,4 +403,10 @@ func activeDamageCards(battle state.Battle) int {
 		}
 	}
 	return count
+}
+
+type failingDamageRandom struct{}
+
+func (failingDamageRandom) Intn(int) (int, error) {
+	return 0, errors.New("damage result was rerolled after restart")
 }

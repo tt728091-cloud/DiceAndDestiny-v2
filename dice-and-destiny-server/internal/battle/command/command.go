@@ -23,6 +23,10 @@ const (
 	TypePlanningTargets   Type = "planning_select_targets"
 	TypePlanningPass      Type = "planning_pass"
 	TypePlanningLockIn    Type = "planning_lock_in"
+	TypeListScenarios     Type = "list_scenarios"
+	TypeValidateScenario  Type = "validate_scenario"
+	TypeStartScenario     Type = "start_scenario"
+	TypeOpenBattle        Type = "open_battle"
 )
 
 var (
@@ -59,6 +63,8 @@ type StartBattlePayload struct {
 	Player  ParticipantDescriptor   `json:"player"`
 	Enemies []ParticipantDescriptor `json:"enemies"`
 }
+
+type OpenBattlePayload struct{}
 
 type RollDicePayload struct {
 	RequestID      string `json:"request_id,omitempty"`

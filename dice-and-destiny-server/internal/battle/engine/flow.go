@@ -3,13 +3,16 @@ package engine
 import (
 	"diceanddestiny/server/internal/battle/command"
 	"diceanddestiny/server/internal/battle/event"
+	battlerandom "diceanddestiny/server/internal/battle/random"
 	"diceanddestiny/server/internal/battle/segment"
 	"diceanddestiny/server/internal/battle/state"
 )
 
 type Context struct {
-	Battle *state.Battle
-	Phase  state.FlowPhase
+	Battle       *state.Battle
+	Phase        state.FlowPhase
+	DiceRandom   battlerandom.Source
+	DamageRandom battlerandom.Source
 }
 
 type ProgressStatus string

@@ -57,7 +57,11 @@ func (flow DamageResolutionFlow) Progress(ctx *Context) (ProgressResult, error) 
 		resolution.Stage = state.DamageStageSelectCards
 		return progress(ProgressContinue), nil
 	case state.DamageStageSelectCards:
-		if _, err := damage.ReconcileCards(ctx.Battle, resolution, flow.randomSource()); err != nil {
+		randomSource := ctx.DamageRandom
+		if flow.RandomSource != nil {
+			randomSource = flow.RandomSource
+		}
+		if _, err := damage.ReconcileCards(ctx.Battle, resolution, randomSource); err != nil {
 			return ProgressResult{}, err
 		}
 		resolution.Stage = state.DamageStageReveal
@@ -222,7 +226,15 @@ func (e Engine) advanceDamageReactionWindow(
 		if err != nil {
 			return ProgressResult{}, err
 		}
-		if _, err := damage.ReconcileCards(ctx.Battle, damageState, flow.randomSource()); err != nil {
+		randomSource := e.damageRandomSource(ctx.Battle)
+		if flow.RandomSource != nil {
+			randomSource = flow.RandomSource
+		}
+		if _, err := damage.ReconcileCards(
+			ctx.Battle,
+			damageState,
+			randomSource,
+		); err != nil {
 			return ProgressResult{}, err
 		}
 		events = append(events, damageCardRevealEvents(damage.RevealCards(damageState))...)

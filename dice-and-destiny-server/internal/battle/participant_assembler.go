@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"diceanddestiny/server/internal/battle/operation"
+	"diceanddestiny/server/internal/battle/participant"
 	"diceanddestiny/server/internal/battle/segment"
 	"diceanddestiny/server/internal/battle/setup"
 	"diceanddestiny/server/internal/battle/state"
@@ -27,7 +28,7 @@ func NewFileParticipantAssembler(contentRoot, runStateRoot string) *FileParticip
 }
 
 func (assembler *FileParticipantAssembler) AssembleParticipants(
-	participants []Participant,
+	participants []participant.Participant,
 ) (state.BattleSetup, error) {
 	if assembler == nil || assembler.ContentRoot == "" || assembler.RunStateRoot == "" {
 		return state.BattleSetup{}, fmt.Errorf("file participant assembler is not configured")
@@ -40,15 +41,37 @@ func (assembler *FileParticipantAssembler) AssembleParticipants(
 
 	combined := state.BattleSetup{}
 	combined.Content = runtimeContentCatalog(library)
-	for _, participant := range participants {
+	for _, requested := range participants {
 		var participantSetup state.BattleSetup
-		switch participant.Controller {
-		case state.ControllerHuman:
-			participantSetup, err = assembler.loadPlayer(participant, library)
-		case state.ControllerAI:
-			participantSetup, err = assembler.loadEnemy(participant, library)
+		source := requested.Source
+		if source == "" {
+			if requested.Controller == state.ControllerHuman {
+				source = participant.SourceRunPlayer
+			} else if requested.Controller == state.ControllerAI {
+				source = participant.SourceEnemyDefinition
+			}
+		}
+		switch source {
+		case participant.SourceRunPlayer:
+			if requested.Controller != state.ControllerHuman {
+				err = fmt.Errorf("run_player source requires human controller")
+				break
+			}
+			participantSetup, err = assembler.loadPlayer(requested, library)
+		case participant.SourceCharacterDefinition:
+			if requested.Controller != state.ControllerHuman {
+				err = fmt.Errorf("character_definition source requires human controller")
+				break
+			}
+			participantSetup, err = assembler.loadCharacter(requested, library)
+		case participant.SourceEnemyDefinition:
+			if requested.Controller != state.ControllerAI {
+				err = fmt.Errorf("enemy_definition source requires AI controller")
+				break
+			}
+			participantSetup, err = assembler.loadEnemy(requested, library)
 		default:
-			err = fmt.Errorf("unsupported participant controller %q", participant.Controller)
+			err = fmt.Errorf("unsupported participant source %q", source)
 		}
 		if err != nil {
 			return state.BattleSetup{}, err
@@ -61,7 +84,7 @@ func (assembler *FileParticipantAssembler) AssembleParticipants(
 }
 
 func (assembler *FileParticipantAssembler) loadPlayer(
-	participant Participant,
+	participant participant.Participant,
 	library content.ContentLibrary,
 ) (state.BattleSetup, error) {
 	path, err := definitionPath(assembler.RunStateRoot, participant.DefinitionID, ".json")
@@ -84,8 +107,28 @@ func (assembler *FileParticipantAssembler) loadPlayer(
 	return setup.BattleSetupFromRunPlayer(player, setup.WithDiceDefinitions(definitions))
 }
 
+func (assembler *FileParticipantAssembler) loadCharacter(
+	participant participant.Participant,
+	library content.ContentLibrary,
+) (state.BattleSetup, error) {
+	path, err := definitionPath(
+		filepath.Join(assembler.ContentRoot, "characters"),
+		participant.DefinitionID,
+		".yaml",
+	)
+	if err != nil {
+		return state.BattleSetup{}, err
+	}
+	sheet, err := content.LoadCharacterCombatSheetWithLibrary(path, library)
+	if err != nil {
+		return state.BattleSetup{}, err
+	}
+	sheet.ActorID = participant.InstanceID
+	return setup.BattleSetupFromCharacterCombatSheet(sheet, library)
+}
+
 func (assembler *FileParticipantAssembler) loadEnemy(
-	participant Participant,
+	participant participant.Participant,
 	library content.ContentLibrary,
 ) (state.BattleSetup, error) {
 	path, err := definitionPath(

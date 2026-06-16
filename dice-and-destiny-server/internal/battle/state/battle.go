@@ -11,6 +11,7 @@ import (
 type Battle struct {
 	ID                 string
 	Status             BattleStatus
+	EscapeRequested    bool
 	Segment            segment.State
 	Flow               SegmentFlowState
 	ActiveResolutionID string
@@ -24,7 +25,36 @@ type Battle struct {
 	DamageResolution   *DamageResolutionState
 	PendingOperations  []FinalizedOperationProposal
 	Content            ContentCatalog
+	Origin             BattleOrigin
+	Random             RandomState
 }
+
+type BattleOrigin struct {
+	Kind                string `json:"kind"`
+	ScenarioID          string `json:"scenario_id,omitempty"`
+	ScenarioSchema      int    `json:"scenario_schema,omitempty"`
+	ScenarioFingerprint string `json:"scenario_fingerprint,omitempty"`
+	CreatedBy           string `json:"created_by,omitempty"`
+}
+
+const (
+	BattleOriginNormal   = "normal"
+	BattleOriginScenario = "scenario"
+)
+
+type RandomState struct {
+	Mode      string `json:"mode"`
+	Algorithm string `json:"algorithm"`
+	Seed      uint64 `json:"seed,omitempty"`
+	Cursor    uint64 `json:"cursor"`
+}
+
+const (
+	RandomModeNormal       = "normal"
+	RandomModeReproducible = "reproducible"
+	RandomAlgorithmCrypto  = "crypto"
+	RandomAlgorithmSHA256  = "sha256-counter-v1"
+)
 
 type ContentCatalog struct {
 	Cards     map[string]RuntimeContentDefinition
@@ -101,14 +131,14 @@ type DecklistEntry struct {
 }
 
 type StatusState struct {
-	InstanceID   string `json:"instance_id"`
-	DefinitionID string `json:"definition_id"`
-	Stacks       int    `json:"stacks"`
+	InstanceID   string `json:"instance_id" yaml:"instance_id"`
+	DefinitionID string `json:"definition_id" yaml:"definition_id"`
+	Stacks       int    `json:"stacks" yaml:"stacks"`
 }
 
 type TokenState struct {
-	ID    string `json:"id"`
-	Value int    `json:"value"`
+	ID    string `json:"id" yaml:"id"`
+	Value int    `json:"value" yaml:"value"`
 }
 
 type RollMode string
@@ -199,10 +229,10 @@ type OffensiveCommitment struct {
 }
 
 type CardZones struct {
-	Deck    []string
-	Hand    []string
-	Discard []string
-	Removed []string
+	Deck    []string `json:"deck" yaml:"deck"`
+	Hand    []string `json:"hand" yaml:"hand"`
+	Discard []string `json:"discard" yaml:"discard"`
+	Removed []string `json:"removed" yaml:"removed"`
 }
 
 type BattleSetup struct {
@@ -368,6 +398,8 @@ func NewBattleFromSetup(id string, setup BattleSetup) (Battle, error) {
 		RollRequests:    make(map[string]RollRequest),
 		Commitments:     make(map[string]OffensiveCommitment),
 		Content:         cloneContentCatalog(setup.Content),
+		Origin:          BattleOrigin{Kind: BattleOriginNormal},
+		Random:          RandomState{Mode: RandomModeNormal, Algorithm: RandomAlgorithmCrypto},
 	}, nil
 }
 

@@ -1,0 +1,57 @@
+schema_version: 1
+metadata:
+  id: round-2-poisoned-player
+  name: Round 2 Poisoned Player
+  description: Damaged human player with two Poison stacks before ongoing effects OnEnter.
+
+player:
+  instance_id: player
+  definition_id: mock_paladin
+  controller: human
+  source: character_definition
+
+enemies:
+  - instance_id: goblin-1
+    definition_id: mock_goblin
+    controller: ai
+    source: enemy_definition
+
+entry:
+  round: 2
+  segment: ongoing_effects
+
+actors:
+  player:
+    card_zones:
+      deck:
+        - Mock Strike
+        - Mock Strike
+        - Mock Strike
+        - Mock Strike
+        - Mock Strike
+        - Mock Strike
+        - Mock Guard
+        - Mock Guard
+        - Mock Guard
+        - Mock Guard
+        - Mock Guard
+        - Mock Focus
+        - Mock Focus
+        - Mock Focus
+        - Mock Focus
+        - Mock Focus
+      hand: []
+      discard: []
+      removed:
+        - Mock Strike
+        - Mock Strike
+        - Mock Guard
+        - Mock Focus
+    statuses:
+      - instance_id: player-poison
+        definition_id: poison
+        stacks: 2
+
+random:
+  mode: reproducible
+  seed: 20260615

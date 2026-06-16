@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"diceanddestiny/server/internal/battle/event"
+	battlerandom "diceanddestiny/server/internal/battle/random"
 	"diceanddestiny/server/internal/battle/segment"
 	"diceanddestiny/server/internal/battle/state"
 )
@@ -28,6 +29,8 @@ type Config struct {
 	MaxReactionRounds     int
 	ProposalRules         []ProposalRule
 	InteractionAI         InteractionAI
+	DiceRandom            battlerandom.Source
+	DamageRandom          battlerandom.Source
 }
 
 type Engine struct {
@@ -38,6 +41,8 @@ type Engine struct {
 	maxReactionRounds     int
 	proposalRules         map[state.ProposalOperation]ProposalRule
 	interactionAI         InteractionAI
+	diceRandom            battlerandom.Source
+	damageRandom          battlerandom.Source
 }
 
 type ProgressionResult struct {
@@ -122,7 +127,17 @@ func NewEngineWithConfig(config Config, flows ...SegmentFlow) (Engine, error) {
 		maxReactionRounds:     maxRounds,
 		proposalRules:         rules,
 		interactionAI:         interactionAI,
+		diceRandom:            config.DiceRandom,
+		damageRandom:          config.DamageRandom,
 	}, nil
+}
+
+func (e Engine) diceRandomSource(battle *state.Battle) battlerandom.Source {
+	return battlerandom.BattleSource{Battle: battle, Fallback: e.diceRandom}
+}
+
+func (e Engine) damageRandomSource(battle *state.Battle) battlerandom.Source {
+	return battlerandom.BattleSource{Battle: battle, Fallback: e.damageRandom}
 }
 
 func (e Engine) FlowFor(id segment.Segment) (SegmentFlow, error) {
@@ -160,7 +175,7 @@ func (e Engine) ProgressUntilInput(battle *state.Battle) (ProgressionResult, err
 		}
 
 		if !battle.Flow.Entered {
-			entryEvents, err := enterFlow(flow, battle)
+			entryEvents, err := e.enterFlow(flow, battle)
 			if err != nil {
 				return ProgressionResult{}, fmt.Errorf("enter %q flow: %w", battle.Segment.Current, err)
 			}
@@ -176,7 +191,7 @@ func (e Engine) ProgressUntilInput(battle *state.Battle) (ProgressionResult, err
 		if battle.ActiveResolutionID != "" {
 			result, err = e.progressResolution(battle)
 		} else {
-			result, err = progressFlow(flow, battle)
+			result, err = e.progressFlow(flow, battle)
 		}
 		if err != nil {
 			return ProgressionResult{}, fmt.Errorf("progress %q flow: %w", battle.Segment.Current, err)
@@ -215,9 +230,9 @@ func (e Engine) ProgressUntilInput(battle *state.Battle) (ProgressionResult, err
 	}
 }
 
-func enterFlow(flow SegmentFlow, battle *state.Battle) ([]event.Event, error) {
+func (e Engine) enterFlow(flow SegmentFlow, battle *state.Battle) ([]event.Event, error) {
 	working := battle.Clone()
-	events, err := flow.OnEnter(&Context{Battle: &working, Phase: state.FlowPhaseOnEnter})
+	events, err := flow.OnEnter(e.context(&working, state.FlowPhaseOnEnter))
 	if err != nil {
 		return nil, err
 	}
@@ -232,9 +247,9 @@ func enterFlow(flow SegmentFlow, battle *state.Battle) ([]event.Event, error) {
 	return events, nil
 }
 
-func progressFlow(flow SegmentFlow, battle *state.Battle) (ProgressResult, error) {
+func (e Engine) progressFlow(flow SegmentFlow, battle *state.Battle) (ProgressResult, error) {
 	working := battle.Clone()
-	result, err := flow.Progress(&Context{Battle: &working, Phase: state.FlowPhaseInProgress})
+	result, err := flow.Progress(e.context(&working, state.FlowPhaseInProgress))
 	if err != nil {
 		return ProgressResult{}, err
 	}
@@ -263,18 +278,11 @@ func progressFlow(flow SegmentFlow, battle *state.Battle) (ProgressResult, error
 }
 
 func (e Engine) completeAndAdvance(flow SegmentFlow, battle *state.Battle) ([]event.Event, error) {
-	next, advance, err := e.manager.Advance(battle.Segment)
-	if err != nil {
-		return nil, fmt.Errorf("%w: %v", ErrInvalidSegmentState, err)
-	}
-	if _, err := e.FlowFor(next.Current); err != nil {
-		return nil, err
-	}
-
 	var exitEvents []event.Event
+	var err error
 	if !battle.Flow.ExitStarted {
 		working := battle.Clone()
-		exitEvents, err = flow.OnExit(&Context{Battle: &working, Phase: state.FlowPhaseOnExit})
+		exitEvents, err = flow.OnExit(e.context(&working, state.FlowPhaseOnExit))
 		if err != nil {
 			return nil, fmt.Errorf("exit %q flow: %w", battle.Segment.Current, err)
 		}
@@ -289,13 +297,95 @@ func (e Engine) completeAndAdvance(flow SegmentFlow, battle *state.Battle) ([]ev
 		*battle = working
 	}
 	working := battle.Clone()
+	completionEvents, err := evaluateBattleCompletion(&working)
+	if err != nil {
+		return nil, err
+	}
+	*battle = working
+	events := append([]event.Event(nil), exitEvents...)
+	events = append(events, completionEvents...)
+	if state.IsTerminalBattleStatus(battle.Status) {
+		return events, nil
+	}
+
+	next, advance, err := e.manager.Advance(battle.Segment)
+	if err != nil {
+		return nil, fmt.Errorf("%w: %v", ErrInvalidSegmentState, err)
+	}
+	if _, err := e.FlowFor(next.Current); err != nil {
+		return nil, err
+	}
+	working = battle.Clone()
 	working.Segment = next
 	working.Flow = state.NewSegmentFlowState(next)
 	*battle = working
 
-	events := append([]event.Event(nil), exitEvents...)
 	events = append(events, event.NewSegmentAdvanced(advance))
 	return events, nil
+}
+
+func (e Engine) context(battle *state.Battle, phase state.FlowPhase) *Context {
+	return &Context{
+		Battle:       battle,
+		Phase:        phase,
+		DiceRandom:   e.diceRandomSource(battle),
+		DamageRandom: e.damageRandomSource(battle),
+	}
+}
+
+func evaluateBattleCompletion(battle *state.Battle) ([]event.Event, error) {
+	if battle == nil {
+		return nil, errors.New("battle is required")
+	}
+	if battle.ActiveResolutionID != "" {
+		return nil, errors.New("cannot evaluate battle completion with an active resolution")
+	}
+	if state.IsTerminalBattleStatus(battle.Status) {
+		return nil, nil
+	}
+
+	humanCount := 0
+	playerDefeated := false
+	enemyCount := 0
+	enemiesDefeated := 0
+	for actorID, actor := range battle.Actors {
+		if actor.DefeatState == state.ActorPendingDefeat {
+			actor.DefeatState = state.ActorDefeated
+			battle.Actors[actorID] = actor
+		}
+		switch actor.Controller {
+		case state.ControllerHuman:
+			humanCount++
+			if actor.DefeatState == state.ActorDefeated {
+				playerDefeated = true
+			}
+		case state.ControllerAI:
+			enemyCount++
+			if actor.DefeatState == state.ActorDefeated {
+				enemiesDefeated++
+			}
+		}
+	}
+	if battle.EscapeRequested {
+		battle.Status = state.BattleEscaped
+		return []event.Event{event.NewBattleCompleted(battle.Status)}, nil
+	}
+	if humanCount != 1 {
+		return nil, fmt.Errorf("battle completion requires exactly one human player, got %d", humanCount)
+	}
+
+	allEnemiesDefeated := enemyCount > 0 && enemiesDefeated == enemyCount
+	switch {
+	case playerDefeated && allEnemiesDefeated:
+		battle.Status = state.BattleDraw
+	case playerDefeated && enemiesDefeated < enemyCount:
+		battle.Status = state.BattleDefeat
+	case !playerDefeated && allEnemiesDefeated:
+		battle.Status = state.BattleVictory
+	default:
+		return nil, nil
+	}
+	return []event.Event{event.NewBattleCompleted(battle.Status)}, nil
 }
 
 func (e Engine) takeAutomaticStep(steps *int, battle *state.Battle) error {
