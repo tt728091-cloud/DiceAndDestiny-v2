@@ -1,0 +1,21 @@
+schema_version: 1
+id: blade_warden
+name: Blade Warden
+class: fighter
+controller_defaults: {type: human}
+resources: {starting_hand_size: 4, starting_energy: 2, hand_limit: 6}
+income: {cards: 1, energy: 1}
+decklist:
+  - {card_id: tip_it, count: 3}
+  - {card_id: loaded_die, count: 3}
+  - {card_id: antidote, count: 2}
+  - {card_id: sharpen_blade, count: 2}
+  - {card_id: emergency_ward, count: 4}
+  - {card_id: battle_focus, count: 6}
+dice_loadout: [{dice_id: standard_d6, count: 5}]
+ability_board:
+  offensive: [sword_cut, shield_bash, golden_edge, perfect_form]
+  defensive: [basic_defense, protect]
+starting_statuses: []
+starting_tokens: []
+roll_preferences: {status_effects: automatic, offensive: manual, ability_effects: manual}

@@ -1,0 +1,22 @@
+schema_version: 1
+id: blind
+name: Blind
+activation_mode: automatic
+polarity: negative
+stacking: {stack_limit: 1, overflow_policy: reject_additional_stacks}
+lifecycle: {persistent: false, consume_on_trigger_checkpoint: true, consume_on_play: false, remove_after_resolution: true, remove_on_duration_zero: false}
+triggers:
+  - id: blind_after_revalidation
+    segment: offensive
+    phase: exit
+    stage: after_offensive_revalidation
+    priority: 0
+    operations:
+      - type: roll_dice
+        target: self
+        dice_id: standard_d6
+        dice_count: 1
+        reaction_window: {opens: true, pass_required: true}
+        outcomes:
+          - {faces: [1, 2], operations: [{type: cancel_source, target: selected_offensive_ability}]}
+          - {faces: [3, 4, 5, 6], operations: [{type: noop}]}

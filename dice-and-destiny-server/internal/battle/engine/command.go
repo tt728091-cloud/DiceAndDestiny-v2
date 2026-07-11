@@ -58,6 +58,19 @@ func (e Engine) ApplyBattleCommand(battle *state.Battle, cmd command.Command) (P
 	if state.IsTerminalBattleStatus(battle.Status) {
 		return ProgressionResult{}, errors.New("battle is complete")
 	}
+	if battle.Settled != nil {
+		working := battle.Clone()
+		commandEvents, err := e.handleSettledCommand(&working, cmd)
+		if err != nil {
+			return ProgressionResult{}, err
+		}
+		progressed, err := e.progressSettled(&working)
+		if err != nil {
+			return ProgressionResult{}, err
+		}
+		*battle = working
+		return ProgressionResult{Status: progressed.Status, Events: append(commandEvents, progressed.Events...)}, nil
+	}
 
 	flow, err := e.FlowFor(battle.Segment.Current)
 	if err != nil {

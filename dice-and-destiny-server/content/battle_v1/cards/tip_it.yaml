@@ -1,0 +1,10 @@
+schema_version: 1
+id: tip_it
+name: Tip It
+type: reaction
+presentation: {rules_text: Change one revealed face-6 die to face 5., art_key: card_tip_it}
+cost: {energy: 1}
+play: {source_zones: [hand], destination: discard, playable_during: [{segment: offensive, phase: main, window_purpose: reaction}]}
+targeting: {selector: selected_die, minimum: 1, maximum: 1}
+reaction_window: {opens: false}
+operations: [{type: modify_die, target: selected_die, modification: set_face, face: 5}]

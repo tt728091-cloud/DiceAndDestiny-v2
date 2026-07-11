@@ -1,6 +1,7 @@
 package battle
 
 import (
+	"encoding/json"
 	"fmt"
 	"path/filepath"
 	"reflect"
@@ -32,6 +33,23 @@ func (assembler *FileParticipantAssembler) AssembleParticipants(
 ) (state.BattleSetup, error) {
 	if assembler == nil || assembler.ContentRoot == "" || assembler.RunStateRoot == "" {
 		return state.BattleSetup{}, fmt.Errorf("file participant assembler is not configured")
+	}
+	settledRoot := filepath.Join(assembler.ContentRoot, "battle_v1")
+	if content.BattleLibraryExists(settledRoot) {
+		library, settledErr := content.LoadBattleLibrary(settledRoot)
+		if settledErr != nil {
+			return state.BattleSetup{}, settledErr
+		}
+		allSettled := true
+		for _, requested := range participants {
+			if _, ok := library.Combatants[requested.DefinitionID]; !ok {
+				allSettled = false
+				break
+			}
+		}
+		if allSettled {
+			return assembleSettledParticipants(participants, library)
+		}
 	}
 
 	library, err := content.LoadContentLibrary(assembler.ContentRoot)
@@ -81,6 +99,79 @@ func (assembler *FileParticipantAssembler) AssembleParticipants(
 		}
 	}
 	return combined, nil
+}
+
+func assembleSettledParticipants(participants []participant.Participant, library content.BattleLibrary) (state.BattleSetup, error) {
+	catalog, err := json.Marshal(library)
+	if err != nil {
+		return state.BattleSetup{}, fmt.Errorf("marshal settled content catalog: %w", err)
+	}
+	setupResult := state.BattleSetup{SettledCatalog: catalog, SettledActors: make(map[string]state.SettledActorRuntime)}
+	seenDice := map[string]bool{}
+	for _, requested := range participants {
+		definition := library.Combatants[requested.DefinitionID]
+		wantController := state.ControllerHuman
+		if definition.ControllerDefaults.Type == "ai" {
+			wantController = state.ControllerAI
+		}
+		if requested.Controller != wantController {
+			return state.BattleSetup{}, fmt.Errorf("combatant %q controller must be %s", definition.ID, wantController)
+		}
+		deck, instances := instantiateSettledDeck(requested.InstanceID, definition.Decklist)
+		statuses := make([]state.StatusState, len(definition.StartingStatuses))
+		for i, status := range definition.StartingStatuses {
+			instanceID := status.InstanceID
+			if instanceID == "" {
+				instanceID = fmt.Sprintf("%s-status-%s-%02d", requested.InstanceID, status.DefinitionID, i+1)
+			}
+			statuses[i] = state.StatusState{InstanceID: instanceID, DefinitionID: status.DefinitionID, Stacks: status.Stacks}
+		}
+		abilities := append(append([]string(nil), definition.AbilityBoard.Offensive...), definition.AbilityBoard.Defensive...)
+		setupResult.Actors = append(setupResult.Actors, state.ActorSetup{ID: requested.InstanceID, DefinitionID: definition.ID, ControllerType: wantController, Character: state.CharacterMetadata{ID: definition.ID, Name: definition.Name, Class: definition.Class}, Resources: state.ResourceState{StartingHandSize: definition.Resources.StartingHandSize, MaxHandSize: definition.Resources.HandLimit, StartingEnergyPoints: definition.Resources.StartingEnergy, EnergyPoints: definition.Resources.StartingEnergy}, Health: state.HealthMetadata{Model: "card_zones", MaxHealth: len(deck)}, Decklist: convertSettledDecklist(definition.Decklist), Deck: deck, DiceLoadout: convertSettledDiceLoadout(definition.DiceLoadout), AbilityIDs: abilities, Statuses: statuses, RollPreferences: state.RollPreferences{StatusEffects: state.RollMode(definition.RollPreferences.StatusEffects), Offensive: state.RollMode(definition.RollPreferences.Offensive)}})
+		setupResult.SettledActors[requested.InstanceID] = state.SettledActorRuntime{IncomeCards: definition.Income.Cards, IncomeEnergy: definition.Income.Energy, HandLimit: definition.Resources.HandLimit, OffensiveAbilityIDs: append([]string(nil), definition.AbilityBoard.Offensive...), DefensiveAbilityIDs: append([]string(nil), definition.AbilityBoard.Defensive...), CardInstances: instances, MaxRolls: 3, UsedAbilities: map[string]int{}}
+		for _, entry := range definition.DiceLoadout {
+			if seenDice[entry.DiceID] {
+				continue
+			}
+			seenDice[entry.DiceID] = true
+			die := library.Dice[entry.DiceID]
+			faces := make([]state.DiceFace, len(die.Faces))
+			for i, face := range die.Faces {
+				faces[i] = state.DiceFace{Face: face.Number, Value: face.Number, Symbols: []string{face.Symbol}}
+			}
+			setupResult.DiceDefinitions = append(setupResult.DiceDefinitions, state.DiceDefinition{ID: die.ID, Name: die.Name, DieType: die.DieType, SideCount: die.SideCount, Faces: faces})
+		}
+	}
+	return setupResult, nil
+}
+
+func instantiateSettledDeck(actorID string, decklist []content.DecklistEntry) ([]string, map[string]state.CardInstance) {
+	var deck []string
+	instances := map[string]state.CardInstance{}
+	sequence := 1
+	for _, entry := range decklist {
+		for i := 0; i < entry.Count; i++ {
+			id := fmt.Sprintf("%s-card-%03d", actorID, sequence)
+			sequence++
+			deck = append(deck, id)
+			instances[id] = state.CardInstance{InstanceID: id, DefinitionID: entry.CardID}
+		}
+	}
+	return deck, instances
+}
+func convertSettledDecklist(values []content.DecklistEntry) []state.DecklistEntry {
+	result := make([]state.DecklistEntry, len(values))
+	for i, value := range values {
+		result[i] = state.DecklistEntry{CardID: value.CardID, Count: value.Count}
+	}
+	return result
+}
+func convertSettledDiceLoadout(values []content.DiceLoadoutEntry) []state.DiceLoadoutEntry {
+	result := make([]state.DiceLoadoutEntry, len(values))
+	for i, value := range values {
+		result[i] = state.DiceLoadoutEntry{DiceID: value.DiceID, Count: value.Count}
+	}
+	return result
 }
 
 func (assembler *FileParticipantAssembler) loadPlayer(

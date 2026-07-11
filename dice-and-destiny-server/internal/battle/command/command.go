@@ -109,12 +109,17 @@ type PlanningCardsPayload struct {
 	PendingInputID string             `json:"pending_input_id"`
 	Checkpoint     PlanningCheckpoint `json:"checkpoint"`
 	CardIDs        []string           `json:"card_ids"`
+	TargetIDs      []string           `json:"target_ids,omitempty"`
+	AbilityID      string             `json:"ability_id,omitempty"`
+	StatusID       string             `json:"status_id,omitempty"`
+	DieIndex       int                `json:"die_index,omitempty"`
 }
 
 type PlanningAbilityPayload struct {
 	PendingInputID string             `json:"pending_input_id"`
 	Checkpoint     PlanningCheckpoint `json:"checkpoint"`
 	AbilityID      string             `json:"ability_id"`
+	TargetIDs      []string           `json:"target_ids,omitempty"`
 }
 
 type PlanningTargetsPayload struct {

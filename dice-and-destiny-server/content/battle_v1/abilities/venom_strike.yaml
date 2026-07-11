@@ -1,0 +1,12 @@
+schema_version: 1
+id: venom_strike
+name: Venom Strike
+type: offensive
+cost: {energy: 0}
+usage: {maximum_per_segment: 1}
+targeting: {selector: one_enemy, minimum: 1, maximum: 1}
+qualification:
+  activation_tiers:
+    - id: base
+      requirements: {all: [{type: symbol_count, symbol_id: sword, minimum: 2}, {type: symbol_count, symbol_id: gold_coin, minimum: 1}]}
+      operations: [{type: deal_damage, target: selected_targets, amount: 3}, {type: apply_status, target: selected_targets, status_id: poison, stack_count: 2}]

@@ -1,0 +1,23 @@
+schema_version: 1
+id: poison
+name: Poison
+activation_mode: automatic
+polarity: negative
+stacking: {stack_limit: 3, overflow_policy: reject_additional_stacks}
+lifecycle: {persistent: true, consume_on_trigger_checkpoint: false, consume_on_play: false, remove_after_resolution: false, remove_on_duration_zero: false}
+triggers:
+  - id: poison_on_enter
+    segment: ongoing_effects
+    phase: entry
+    stage: collect_statuses
+    priority: 0
+    operations:
+      - id: poison_rolls
+        type: roll_dice
+        target: self
+        dice_id: standard_d6
+        one_per_status_stack: true
+        reaction_window: {opens: true, pass_required: true}
+        outcomes:
+          - {id: poison_damage, faces: [1, 2, 3, 4], operations: [{type: deal_damage, target: self, amount: 1}]}
+          - {id: poison_recovery, faces: [5, 6], operations: [{type: remove_status_stack, target: self, status_id: poison, stack_count: 1}]}

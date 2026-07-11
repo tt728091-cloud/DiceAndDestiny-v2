@@ -32,6 +32,11 @@ const (
 	TypeDamageCommitted         Type = "damage_committed"
 	TypeCardsPermanentlyRemoved Type = "cards_permanently_removed"
 	TypeBattleCompleted         Type = "battle_completed"
+	TypeCardPlayed              Type = "card_played"
+	TypeAbilitySelected         Type = "ability_selected"
+	TypeStatusChanged           Type = "status_changed"
+	TypeEnemyPlanned            Type = "enemy_planned"
+	TypeDefenseSelected         Type = "defense_selected"
 )
 
 // Event describes an authority-approved battle fact that already happened.
@@ -79,6 +84,7 @@ type Event struct {
 	DamageCards    []state.ProposedCardRemoval   `json:"damage_cards,omitempty"`
 	BattleResult   state.BattleStatus            `json:"battle_result,omitempty"`
 	PrivateActorID string                        `json:"private_actor_id,omitempty"`
+	Data           map[string]any                `json:"data,omitempty"`
 }
 
 func NewBattleCompleted(result state.BattleStatus) Event {

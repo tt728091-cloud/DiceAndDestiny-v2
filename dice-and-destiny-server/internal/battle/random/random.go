@@ -5,6 +5,7 @@ import (
 	"crypto/sha256"
 	"encoding/binary"
 	"errors"
+	"fmt"
 	"math/big"
 
 	"diceanddestiny/server/internal/battle/state"
@@ -12,6 +13,59 @@ import (
 
 type Source interface {
 	Intn(maxExclusive int) (int, error)
+}
+
+// NamedSource isolates unrelated random domains so inserting a status roll does
+// not silently perturb card draws or AI planning.
+type NamedSource interface {
+	IntnNamed(stream string, maxExclusive int) (int, error)
+}
+
+type NamedFallback struct{ Source Source }
+
+func (source NamedFallback) IntnNamed(_ string, maxExclusive int) (int, error) {
+	if source.Source == nil {
+		return cryptoIntn(maxExclusive)
+	}
+	return source.Source.Intn(maxExclusive)
+}
+
+type ScriptedValue struct {
+	Stream string
+	Bound  int
+	Value  int
+}
+
+// Scripted is a deterministic test dependency. It fails on the first wrong
+// category, bound, value, or exhausted call and can prove complete consumption.
+type Scripted struct {
+	Values []ScriptedValue
+	Cursor int
+}
+
+func (source *Scripted) IntnNamed(stream string, maxExclusive int) (int, error) {
+	if source == nil || source.Cursor >= len(source.Values) {
+		return 0, fmt.Errorf("scripted random exhausted at %q bound %d", stream, maxExclusive)
+	}
+	want := source.Values[source.Cursor]
+	if want.Stream != stream || want.Bound != maxExclusive {
+		return 0, fmt.Errorf("scripted random call %d = %q/%d, want %q/%d", source.Cursor, stream, maxExclusive, want.Stream, want.Bound)
+	}
+	if want.Value < 0 || want.Value >= maxExclusive {
+		return 0, fmt.Errorf("scripted random value %d out of range [0,%d)", want.Value, maxExclusive)
+	}
+	source.Cursor++
+	return want.Value, nil
+}
+
+func (source *Scripted) AssertExhausted() error {
+	if source == nil {
+		return errors.New("scripted random source is nil")
+	}
+	if source.Cursor != len(source.Values) {
+		return fmt.Errorf("scripted random consumed %d of %d values", source.Cursor, len(source.Values))
+	}
+	return nil
 }
 
 type BattleSource struct {

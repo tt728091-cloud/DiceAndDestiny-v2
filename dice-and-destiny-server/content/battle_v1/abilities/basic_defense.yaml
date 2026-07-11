@@ -1,0 +1,11 @@
+schema_version: 1
+id: basic_defense
+name: Basic Defense
+type: defensive
+cost: {energy: 0}
+usage: {maximum_per_segment: 1}
+selection: {requires_incoming_proposal: true, allowed_proposal_types: [damage_source], target_count: 1}
+resolution:
+  roll: {dice_id: standard_d6, dice_count: 1}
+  reaction_window: {opens: true, pass_required: true}
+  operations: [{type: prevent_damage, target: selected_proposal, amount: rolled_face}]

@@ -76,6 +76,7 @@ type ProposedCardRemoval struct {
 	ID                       string             `json:"id"`
 	TargetActorID            string             `json:"target_actor_id"`
 	CardID                   string             `json:"card_id"`
+	CardDefinitionID         string             `json:"card_definition_id,omitempty"`
 	OriginalZone             operation.CardZone `json:"original_zone"`
 	DamageProposalIDs        []string           `json:"damage_proposal_ids,omitempty"`
 	SourceActorIDs           []string           `json:"source_actor_ids,omitempty"`

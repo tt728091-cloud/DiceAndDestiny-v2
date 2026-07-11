@@ -31,6 +31,7 @@ type Config struct {
 	InteractionAI         InteractionAI
 	DiceRandom            battlerandom.Source
 	DamageRandom          battlerandom.Source
+	NamedRandom           battlerandom.NamedSource
 }
 
 type Engine struct {
@@ -43,6 +44,7 @@ type Engine struct {
 	interactionAI         InteractionAI
 	diceRandom            battlerandom.Source
 	damageRandom          battlerandom.Source
+	namedRandom           battlerandom.NamedSource
 }
 
 type ProgressionResult struct {
@@ -129,6 +131,7 @@ func NewEngineWithConfig(config Config, flows ...SegmentFlow) (Engine, error) {
 		interactionAI:         interactionAI,
 		diceRandom:            config.DiceRandom,
 		damageRandom:          config.DamageRandom,
+		namedRandom:           config.NamedRandom,
 	}, nil
 }
 
@@ -154,6 +157,9 @@ func (e Engine) FlowFor(id segment.Segment) (SegmentFlow, error) {
 func (e Engine) ProgressUntilInput(battle *state.Battle) (ProgressionResult, error) {
 	if battle == nil {
 		return ProgressionResult{}, fmt.Errorf("%w: battle is nil", ErrInvalidSegmentState)
+	}
+	if battle.Settled != nil {
+		return e.progressSettled(battle)
 	}
 	if err := validateBattleFlowState(battle); err != nil {
 		return ProgressionResult{}, err

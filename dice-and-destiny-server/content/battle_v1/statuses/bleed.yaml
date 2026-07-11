@@ -1,0 +1,16 @@
+schema_version: 1
+id: bleed
+name: Bleed
+activation_mode: automatic
+polarity: negative
+stacking: {stack_limit: 3, overflow_policy: reject_additional_stacks}
+lifecycle: {persistent: true, consume_on_trigger_checkpoint: false, consume_on_play: false, remove_after_resolution: false, remove_on_duration_zero: false}
+triggers:
+  - id: bleed_on_enter
+    segment: ongoing_effects
+    phase: entry
+    stage: collect_statuses
+    priority: 0
+    operations:
+      - {id: bleed_damage, type: deal_damage, target: self, amount: 1, repeat: one_per_status_stack}
+      - {id: bleed_decay, type: remove_status_stack, target: self, status_id: bleed, stack_count: 1}

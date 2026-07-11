@@ -27,6 +27,8 @@ type Battle struct {
 	Content            ContentCatalog
 	Origin             BattleOrigin
 	Random             RandomState
+	SettledCatalog     []byte
+	Settled            *SettledRuntime
 }
 
 type BattleOrigin struct {
@@ -239,6 +241,8 @@ type BattleSetup struct {
 	Actors          []ActorSetup
 	DiceDefinitions []DiceDefinition
 	Content         ContentCatalog
+	SettledCatalog  []byte
+	SettledActors   map[string]SettledActorRuntime
 }
 
 type ActorSetup struct {
@@ -398,8 +402,10 @@ func NewBattleFromSetup(id string, setup BattleSetup) (Battle, error) {
 		RollRequests:    make(map[string]RollRequest),
 		Commitments:     make(map[string]OffensiveCommitment),
 		Content:         cloneContentCatalog(setup.Content),
+		SettledCatalog:  append([]byte(nil), setup.SettledCatalog...),
 		Origin:          BattleOrigin{Kind: BattleOriginNormal},
 		Random:          RandomState{Mode: RandomModeNormal, Algorithm: RandomAlgorithmCrypto},
+		Settled:         settledRuntimeFromSetup(setup),
 	}, nil
 }
 
@@ -454,6 +460,8 @@ func (battle Battle) Clone() Battle {
 		cloned.PendingOperations[i] = cloneFinalizedOperation(battle.PendingOperations[i])
 	}
 	cloned.Content = cloneContentCatalog(battle.Content)
+	cloned.SettledCatalog = append([]byte(nil), battle.SettledCatalog...)
+	cloned.Settled = cloneSettledRuntime(battle.Settled)
 	cloned.Flow = cloneFlowState(battle.Flow)
 	return cloned
 }
