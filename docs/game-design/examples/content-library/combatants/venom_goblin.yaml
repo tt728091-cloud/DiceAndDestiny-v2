@@ -1,0 +1,119 @@
+schema_version: 1
+id: venom_goblin
+name: Venom Goblin
+class: goblin
+controller_defaults:
+  type: ai
+resources:
+  starting_hand_size: 2
+  starting_energy: 1
+  hand_limit: 6
+income:
+  cards: 1
+  energy: 1
+decklist:
+  - card_id: tip_it
+    count: 2
+  - card_id: loaded_die
+    count: 2
+  - card_id: emergency_ward
+    count: 3
+  - card_id: battle_focus
+    count: 5
+dice_loadout:
+  - dice_id: standard_d6
+    count: 5
+ability_board:
+  offensive:
+    - jagged_slash
+    - venom_strike
+    - crushing_advance
+    - greedy_blow
+  defensive:
+    - basic_defense
+    - protect
+starting_statuses: []
+starting_tokens: []
+roll_preferences:
+  status_effects: automatic
+  offensive: automatic
+  ability_effects: automatic
+ai:
+  reveal_profiles:
+    jagged_slash: [1, 2, 3, 4, 5]
+    venom_strike: [1, 2, 4, 5, 6]
+    crushing_advance: [1, 2, 4, 5, 5]
+    greedy_blow: [1, 4, 4, 6, 6]
+  offensive_planning:
+    charts:
+      1_roll:
+        abilities:
+          - ability_id: jagged_slash
+            activation_ranges:
+              first_roll: [1, 5]
+          - ability_id: venom_strike
+            activation_ranges:
+              first_roll: [16, 18]
+          - ability_id: crushing_advance
+            activation_ranges:
+              first_roll: [31, 34]
+          - ability_id: greedy_blow
+            activation_ranges:
+              first_roll: [50, 55]
+        no_ability_ranges:
+          - [6, 15]
+          - [19, 30]
+          - [35, 49]
+          - [56, 100]
+      2_rolls:
+        abilities:
+          - ability_id: jagged_slash
+            activation_ranges:
+              first_roll: [1, 5]
+              second_roll: [6, 10]
+          - ability_id: venom_strike
+            activation_ranges:
+              first_roll: [16, 18]
+              second_roll: [19, 23]
+          - ability_id: crushing_advance
+            activation_ranges:
+              first_roll: [31, 34]
+              second_roll: [35, 40]
+          - ability_id: greedy_blow
+            activation_ranges:
+              first_roll: [50, 55]
+              second_roll: [56, 64]
+        no_ability_ranges:
+          - [11, 15]
+          - [24, 30]
+          - [41, 49]
+          - [65, 100]
+      3_rolls:
+        abilities:
+          - ability_id: jagged_slash
+            activation_ranges:
+              first_roll: [1, 5]
+              second_roll: [6, 10]
+              third_roll: [11, 15]
+          - ability_id: venom_strike
+            activation_ranges:
+              first_roll: [16, 18]
+              second_roll: [19, 23]
+              third_roll: [24, 30]
+          - ability_id: crushing_advance
+            activation_ranges:
+              first_roll: [31, 34]
+              second_roll: [35, 40]
+              third_roll: [41, 49]
+          - ability_id: greedy_blow
+            activation_ranges:
+              first_roll: [50, 55]
+              second_roll: [56, 64]
+              third_roll: [65, 77]
+        no_ability_ranges:
+          - [78, 100]
+  defensive_selection:
+    controller: basic
+    preference_order:
+      - protect
+      - basic_defense

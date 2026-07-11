@@ -1,0 +1,28 @@
+schema_version: 1
+id: antidote
+name: Antidote
+type: status_response
+presentation:
+  rules_text: Remove one selected negative status from yourself.
+  art_key: card_antidote
+cost:
+  energy: 1
+play:
+  source_zones: [hand]
+  destination: discard
+  playable_during:
+    - segment: ongoing_effects
+      phase: main
+      window_purpose: reaction
+    - segment: defensive
+      phase: main
+      window_purpose: reaction
+targeting:
+  selector: one_negative_status_on_self
+  minimum: 1
+  maximum: 1
+reaction_window:
+  opens: false
+operations:
+  - type: remove_status
+    target: selected_status

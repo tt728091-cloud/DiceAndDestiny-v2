@@ -1,0 +1,26 @@
+schema_version: 1
+id: entangle
+name: Entangle
+activation_mode: automatic
+polarity: negative
+stacking:
+  stack_limit: 1
+  overflow_policy: reject_additional_stacks
+lifecycle:
+  persistent: false
+  consume_on_trigger_checkpoint: true
+  consume_on_play: false
+  remove_after_resolution: true
+  remove_on_duration_zero: false
+triggers:
+  - id: entangle_on_offensive_entry
+    segment: offensive
+    phase: entry
+    stage: before_planning
+    priority: 0
+    reaction_window:
+      opens: false
+    operations:
+      - type: adjust_max_rolls
+        target: self
+        amount: -1

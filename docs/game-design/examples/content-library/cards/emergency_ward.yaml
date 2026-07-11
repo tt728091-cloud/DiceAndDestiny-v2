@@ -1,0 +1,26 @@
+schema_version: 1
+id: emergency_ward
+name: Emergency Ward
+type: damage_response
+presentation:
+  rules_text: Prevent 3 damage from one revealed source.
+  art_key: card_emergency_ward
+cost:
+  energy: 1
+play:
+  source_zones: [hand]
+  destination: discard
+  playable_during:
+    - segment: damage_resolution
+      phase: main
+      window_purpose: reaction
+targeting:
+  selector: one_incoming_damage_source
+  minimum: 1
+  maximum: 1
+reaction_window:
+  opens: false
+operations:
+  - type: prevent_damage
+    target: selected_proposal
+    amount: 3

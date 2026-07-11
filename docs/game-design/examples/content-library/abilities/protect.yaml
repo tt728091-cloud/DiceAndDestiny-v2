@@ -1,0 +1,21 @@
+schema_version: 1
+id: protect
+name: Protect
+type: defensive
+cost:
+  energy: 1
+usage:
+  maximum_per_segment: 1
+selection:
+  requires_incoming_proposal: true
+  allowed_proposal_types: [damage_source]
+  target_count: 1
+resolution:
+  reaction_window:
+    opens: false
+  operations:
+    - type: scale_damage
+      target: selected_proposal
+      numerator: 1
+      denominator: 2
+      rounding: down

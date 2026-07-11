@@ -1,0 +1,31 @@
+schema_version: 1
+id: golden_edge
+name: Golden Edge
+type: offensive
+cost:
+  energy: 0
+usage:
+  maximum_per_segment: 1
+targeting:
+  selector: one_enemy
+  minimum: 1
+  maximum: 1
+qualification:
+  activation_tiers:
+    - id: golden_edge_base
+      requirements:
+        all:
+          - type: symbol_count
+            symbol_id: sword
+            minimum: 2
+          - type: symbol_count
+            symbol_id: gold_coin
+            minimum: 1
+      operations:
+        - type: deal_damage
+          target: selected_targets
+          amount: 5
+        - type: gain_resource
+          target: self
+          resource: energy
+          amount: 1

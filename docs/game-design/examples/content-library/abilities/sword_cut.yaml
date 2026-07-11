@@ -1,0 +1,55 @@
+schema_version: 1
+id: sword_cut
+name: Sword Cut
+type: offensive
+cost:
+  energy: 0
+usage:
+  maximum_per_segment: 1
+targeting:
+  selector: one_enemy
+  minimum: 1
+  maximum: 1
+qualification:
+  activation_tiers:
+    - id: three_swords
+      requirements:
+        all:
+          - type: symbol_count
+            symbol_id: sword
+            exact: 3
+      operations:
+        - type: deal_damage
+          target: selected_targets
+          amount: 5
+    - id: four_swords
+      requirements:
+        all:
+          - type: symbol_count
+            symbol_id: sword
+            exact: 4
+      operations:
+        - type: deal_damage
+          target: selected_targets
+          amount: 6
+    - id: five_swords
+      requirements:
+        all:
+          - type: symbol_count
+            symbol_id: sword
+            exact: 5
+      operations:
+        - type: deal_damage
+          target: selected_targets
+          amount: 7
+  conditional_bonuses:
+    - id: three_of_a_kind_bleed
+      requirements:
+        all:
+          - type: number_pattern
+            pattern: three_of_a_kind
+      operations:
+        - type: apply_status
+          target: selected_targets
+          status_id: bleed
+          stack_count: 1

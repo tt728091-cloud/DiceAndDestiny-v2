@@ -1,0 +1,38 @@
+schema_version: 1
+id: sharpen_blade
+name: Sharpen Blade
+type: ability_upgrade
+presentation:
+  rules_text: For this battle, the selected Offensive ability applies Bleed when its final dice contain a pair.
+  art_key: card_sharpen_blade
+cost:
+  energy: 1
+play:
+  source_zones: [hand]
+  destination: discard
+  playable_during:
+    - segment: offensive
+      phase: main
+      window_purpose: planning
+targeting:
+  selector: one_owned_offensive_ability
+  minimum: 1
+  maximum: 1
+reaction_window:
+  opens: false
+operations:
+  - type: apply_ability_modifier
+    target: selected_ability
+    duration: battle
+    modifier:
+      add_conditional_bonus:
+        id: sharpened_pair_bleed
+        requirements:
+          all:
+            - type: number_pattern
+              pattern: exact_pair
+        operations:
+          - type: apply_status
+            target: selected_targets
+            status_id: bleed
+            stack_count: 1

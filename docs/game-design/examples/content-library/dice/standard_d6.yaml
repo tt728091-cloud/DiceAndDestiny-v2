@@ -1,0 +1,18 @@
+schema_version: 1
+id: standard_d6
+name: Standard D6
+die_type: d6
+side_count: 6
+faces:
+  - number: 1
+    symbol: sword
+  - number: 2
+    symbol: sword
+  - number: 3
+    symbol: sword
+  - number: 4
+    symbol: shield
+  - number: 5
+    symbol: shield
+  - number: 6
+    symbol: gold_coin

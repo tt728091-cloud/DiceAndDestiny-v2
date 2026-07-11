@@ -1,0 +1,44 @@
+schema_version: 1
+id: jagged_slash
+name: Jagged Slash
+type: offensive
+cost:
+  energy: 0
+usage:
+  maximum_per_segment: 1
+targeting:
+  selector: one_enemy
+  minimum: 1
+  maximum: 1
+qualification:
+  activation_tiers:
+    - id: three_swords
+      requirements:
+        all:
+          - type: symbol_count
+            symbol_id: sword
+            exact: 3
+      operations:
+        - type: deal_damage
+          target: selected_targets
+          amount: 4
+    - id: four_swords
+      requirements:
+        all:
+          - type: symbol_count
+            symbol_id: sword
+            exact: 4
+      operations:
+        - type: deal_damage
+          target: selected_targets
+          amount: 5
+    - id: five_swords
+      requirements:
+        all:
+          - type: symbol_count
+            symbol_id: sword
+            exact: 5
+      operations:
+        - type: deal_damage
+          target: selected_targets
+          amount: 6
