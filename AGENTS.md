@@ -29,6 +29,42 @@ python3 dice-and-destiny-client/devtools/inspect_game.py health
 
 Normal development state belongs beneath `dice-and-destiny-client/.godot/runtime/` and must remain uncommitted. Scripted Godot tests receive temporary state that the launcher removes when the process exits.
 
+## Developer history, snapshots, and fresh battles
+
+- Developer history and snapshot tooling are runtime opt-ins. Set both flags before starting Godot; setting them after the process starts does not enable the native authority features.
+- Pass the flags to `./scripts/godot.sh`. Never replace the launcher with a raw `godot --path ...` invocation.
+- The persistent active-battle pointer for a normal workspace run is `dice-and-destiny-client/.godot/runtime/workspace/client/user/active_battle.json`.
+- To start a fresh battle, delete only that active-battle pointer. This intentionally preserves developer snapshots, history timelines, and prior server battle records.
+- Do not use a broad `find ... -name active_battle.json -delete` beneath `.godot/runtime/`; it can modify disposable state owned by concurrently running script tests in the same worktree.
+- Do not delete the workspace `server/snapshots` or `server/history` directories unless the user explicitly requests destructive removal of saved developer diagnostics.
+
+Run with developer history and snapshots:
+
+```bash
+DICE_AND_DESTINY_ENABLE_HISTORY=1 \
+DICE_AND_DESTINY_ENABLE_SNAPSHOTS=1 \
+./scripts/godot.sh
+```
+
+Start a fresh battle while preserving saved snapshots and history:
+
+```bash
+rm -f dice-and-destiny-client/.godot/runtime/workspace/client/user/active_battle.json
+
+DICE_AND_DESTINY_ENABLE_HISTORY=1 \
+DICE_AND_DESTINY_ENABLE_SNAPSHOTS=1 \
+./scripts/godot.sh
+```
+
+Run the same developer configuration with the debug inspector:
+
+```bash
+DICE_AND_DESTINY_ENABLE_HISTORY=1 \
+DICE_AND_DESTINY_ENABLE_SNAPSHOTS=1 \
+DICE_AND_DESTINY_INSPECTOR=1 \
+./scripts/godot.sh
+```
+
 ## Native builds
 
 - Build native Go/C++ artifacts with `dice-and-destiny-server/scripts/build_native.sh`.
