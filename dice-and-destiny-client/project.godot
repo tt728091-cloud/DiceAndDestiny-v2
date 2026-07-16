@@ -24,6 +24,7 @@ GameInspector="*res://devtools/game_inspector.gd"
 development/enable_scenarios=true
 development/enable_snapshots=true
 development/enable_history=true
+presentation/income_animation_seconds=2.0
 
 [display]
 

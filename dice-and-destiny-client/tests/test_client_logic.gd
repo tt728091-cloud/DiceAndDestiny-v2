@@ -87,7 +87,7 @@ func _test_director_and_fake() -> void:
 		seen.append(director.peek().sequence)
 		if director.peek().get("type") == "income_summary":
 			var income_actors: Dictionary = director.peek().event.data.actors
-			if income_actors.blade.cards != ["card-1"] or income_actors.blade.energy_points != 3 or income_actors.goblin.card_count != 1 or income_actors.goblin.energy_points != 2: failures.append("income summary omitted an actor result: %s" % income_actors)
+			if income_actors.blade.cards != ["card-1"] or income_actors.blade.energy_points != 3 or income_actors.blade.energy_gain != 1 or income_actors.goblin.card_count != 1 or income_actors.goblin.energy_points != 2 or income_actors.goblin.energy_gain != 1: failures.append("income summary omitted an actor result: %s" % income_actors)
 		director.advance()
 	if seen != [2]: failures.append("income presentation retained a redundant segment pause: %s" % seen)
 	director.queue_result(with_events, 5)
