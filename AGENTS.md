@@ -6,7 +6,7 @@
 - Never invoke this project with a raw `godot --path ...` command. Doing so bypasses per-workspace logs and per-process test-state isolation.
 - Do not add fixed inspector ports, shared `/tmp` paths, or shared Godot `user://` development-save paths.
 - Do not point `DICE_AND_DESTINY_*_ROOT` variables at another checkout. The launcher assigns roots for the current worktree automatically.
-- A new worktree needs no manual setup. The launcher builds missing native artifacts and performs the initial Godot import automatically.
+- A new worktree needs no manual setup. The launcher builds missing or stale native artifacts and performs the initial Godot import automatically.
 
 Standard commands:
 

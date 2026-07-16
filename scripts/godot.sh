@@ -11,10 +11,7 @@ GODOT_BIN="${GODOT_BIN:-godot}"
 
 mkdir -p "${WORKSPACE_STATE_ROOT}" "${LOG_ROOT}" "${WORKSPACE_RUNTIME_ROOT}/runs"
 
-if [[ ! -f "${CLIENT_ROOT}/native/libbattle_go_authority.dylib" ]] || \
-   [[ ! -d "${CLIENT_ROOT}/native/libbattle_authority.macos.template_debug.framework" ]]; then
-  "${SERVER_ROOT}/scripts/build_native.sh"
-fi
+"${SERVER_ROOT}/scripts/build_native.sh" --if-needed
 
 # A brand-new worktree has no Godot global-class cache yet. Import it once
 # under a workspace-local lock so the first direct game/test run is as reliable

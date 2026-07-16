@@ -94,6 +94,12 @@ dice-and-destiny-client/native/libbattle_authority.macos.template_debug.framewor
 
 These files are generated locally and intentionally not committed.
 
+Normal launches check a workspace-local fingerprint of the Go/C++ sources,
+native build configuration, tool versions, generated extension API, and
+`godot-cpp` revision. `scripts/godot.sh` rebuilds missing or stale native
+artifacts automatically. Calling `build_native.sh` directly remains a forced
+rebuild; pass `--if-needed` to use the same fingerprint check as the launcher.
+
 ## Run Tests
 
 Run Go tests:
