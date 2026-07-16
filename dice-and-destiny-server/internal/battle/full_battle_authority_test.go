@@ -9,10 +9,12 @@ import (
 	"diceanddestiny/server/internal/battle/command"
 	"diceanddestiny/server/internal/battle/engine"
 	"diceanddestiny/server/internal/battle/event"
+	"diceanddestiny/server/internal/battle/participant"
 	battlerandom "diceanddestiny/server/internal/battle/random"
 	"diceanddestiny/server/internal/battle/repository"
 	"diceanddestiny/server/internal/battle/snapshot"
 	"diceanddestiny/server/internal/battle/state"
+	"diceanddestiny/server/internal/content"
 )
 
 func TestAuthorityRunsBladeWardenVsVenomGoblinFullBattle(t *testing.T) {
@@ -50,7 +52,33 @@ func TestAuthorityRunsBladeWardenVsVenomGoblinFullBattle(t *testing.T) {
 		{Stream: "ai_defense", Bound: 2, Value: 0}, {Stream: "defense_dice", Bound: 6, Value: 0}, {Stream: "damage_selection", Bound: 1, Value: 0}, {Stream: "ai_damage_response", Bound: 2, Value: 0},
 	}}
 	root := participantTestServerRoot(t)
-	assembler := NewFileParticipantAssembler(filepath.Join(root, "content"), filepath.Join(root, "save", "run_players"))
+	base := NewFileParticipantAssembler(filepath.Join(root, "content"), filepath.Join(root, "save", "run_players"))
+	assembler := ParticipantAssemblerFunc(func(participants []participant.Participant) (state.BattleSetup, error) {
+		setup, err := base.AssembleParticipants(participants)
+		if err != nil {
+			return state.BattleSetup{}, err
+		}
+		var library content.BattleLibrary
+		if err := json.Unmarshal(setup.SettledCatalog, &library); err != nil {
+			return state.BattleSetup{}, err
+		}
+		// This long-form scenario predates the temporary forced-Venom test
+		// weighting. Preserve its varied round-by-round AI script locally so it
+		// can continue covering defense, fallback, damage, and victory flows.
+		combatant := library.Combatants["venom_goblin"]
+		combatant.AI.OffensivePlanning.Charts["3_rolls"] = content.D100Chart{
+			Abilities: []content.D100AbilityEntry{
+				{AbilityID: "jagged_slash", ActivationRanges: content.AbilityActivationRanges{FirstRoll: &content.D100Range{Start: 1, End: 10}, SecondRoll: &content.D100Range{Start: 11, End: 15}, ThirdRoll: &content.D100Range{Start: 95, End: 100}}},
+				{AbilityID: "venom_strike", ActivationRanges: content.AbilityActivationRanges{FirstRoll: &content.D100Range{Start: 16, End: 20}, SecondRoll: &content.D100Range{Start: 21, End: 25}, ThirdRoll: &content.D100Range{Start: 26, End: 30}}},
+				{AbilityID: "crushing_advance", ActivationRanges: content.AbilityActivationRanges{FirstRoll: &content.D100Range{Start: 31, End: 36}, SecondRoll: &content.D100Range{Start: 37, End: 42}, ThirdRoll: &content.D100Range{Start: 43, End: 49}}},
+				{AbilityID: "greedy_blow", ActivationRanges: content.AbilityActivationRanges{FirstRoll: &content.D100Range{Start: 50, End: 59}, SecondRoll: &content.D100Range{Start: 60, End: 74}, ThirdRoll: &content.D100Range{Start: 75, End: 89}}},
+			},
+			NoAbilityRanges: []content.D100Range{{Start: 90, End: 94}},
+		}
+		library.Combatants["venom_goblin"] = combatant
+		setup.SettledCatalog, err = json.Marshal(library)
+		return setup, err
+	})
 	repo := repository.NewInMemory()
 	battleEngine, err := engine.NewEngineWithConfig(engine.Config{NamedRandom: script}, engine.DefaultFlows()...)
 	if err != nil {

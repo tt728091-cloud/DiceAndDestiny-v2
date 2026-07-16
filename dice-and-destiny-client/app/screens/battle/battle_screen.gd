@@ -165,6 +165,7 @@ func _build_center() -> void:
 	elif _view.segment == "damage_resolution" or "damage" in _view.stage: _build_damage()
 	elif _view.segment == "ongoing_effects": _build_effects()
 	elif _view.segment == "income": _build_income()
+	_build_card_target_choices()
 	_build_hand()
 	var pass_row := HBoxContainer.new(); pass_row.alignment = BoxContainer.ALIGNMENT_CENTER; _center.add_child(pass_row)
 	var planning_pass_label := "Pass Defense" if _view.segment == "defensive" else "Pass Planning"
@@ -405,6 +406,28 @@ func _build_hand(income_drawn_ids: Array = []) -> void:
 		var need := maxi(0, _view.actor("blade").get("hand_count", 0) - _view.actor("blade").get("max_hand_size", 6))
 		var commit := Button.new(); commit.text = "Discard selected cards (%d/%d)" % [_hand_limit_selection.size(), need]; commit.disabled = _hand_limit_selection.size() != need or _submitting or _history_review; commit.pressed.connect(func(): _send(BattleCommandBuilder.commit_interaction(_view.battle_id, "blade", _pending(), _hand_limit_selection))); _center.add_child(commit); _inspect(commit, "battle.hand_limit.commit", "Commit the selected hand-limit discards")
 
+func _build_card_target_choices() -> void:
+	if _selected_card_selector() != "one_negative_status_on_self": return
+	var card_definition := _view.content_definition("cards", str(_selected_card.get("definition_id", "")))
+	var card_name := str(card_definition.get("name", "Selected card"))
+	var panel := VBoxContainer.new(); panel.alignment = BoxContainer.ALIGNMENT_CENTER; panel.add_theme_constant_override("separation", 6); _center.add_child(panel)
+	var heading := Label.new(); heading.text = "CHOOSE A STATUS FOR %s" % card_name.to_upper(); heading.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER; heading.add_theme_font_size_override("font_size", 19); heading.add_theme_color_override("font_color", Color("f0bc58")); panel.add_child(heading)
+	var instruction := Label.new(); instruction.text = "Select one negative status to remove."; instruction.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER; panel.add_child(instruction)
+	var row := HBoxContainer.new(); row.alignment = BoxContainer.ALIGNMENT_CENTER; row.add_theme_constant_override("separation", 10); panel.add_child(row)
+	var found := false
+	for status_value in _as_array(_view.actor("blade").get("statuses", [])):
+		var status: Dictionary = _as_dictionary(status_value)
+		var status_id := str(status.get("definition_id", status.get("id", "")))
+		if status_id.is_empty() or str(_view.content_definition("statuses", status_id).get("polarity", "")) != "negative": continue
+		found = true
+		var status_data := BattlePresentationCatalog.status(status_id)
+		var button := Button.new(); button.text = "Remove %s %s ×%d" % [status_data.glyph, status_data.name, int(status.get("stacks", 1))]
+		button.disabled = _submitting or _history_review; button.tooltip_text = "Play %s to remove all %s stacks from Blade Warden." % [card_name, status_data.name]
+		button.pressed.connect(_play_selected_status_card.bind(status_id)); row.add_child(button)
+		_inspect(button, "battle.status_target.%s" % status_id, button.tooltip_text)
+	if not found:
+		var unavailable := Label.new(); unavailable.text = "No negative status is currently available."; unavailable.add_theme_color_override("font_color", Color("ff8a78")); row.add_child(unavailable)
+
 func _build_ability_row(caption: String, abilities: Array, actor_id: String) -> void:
 	var label := Label.new(); label.text = caption; _center.add_child(label)
 	var row := HBoxContainer.new(); row.alignment = BoxContainer.ALIGNMENT_CENTER; _center.add_child(row)
@@ -584,10 +607,7 @@ func _on_card_pressed(card: BattleCard) -> void:
 		"one_owned_combat_die":
 			if _selected_indices.size() == 1: _send(BattleCommandBuilder.planning_commit_cards(_view.battle_id, "blade", _pending(), [card.instance_id], [], "", "", int(_selected_indices[0])))
 			else: _show_error("Select exactly one rolled player die, then choose this card again.")
-		"one_negative_status_on_self":
-			var status_id := _first_negative_status()
-			if status_id.is_empty(): _show_error("No negative self status is available.")
-			else: _send(BattleCommandBuilder.commit_interaction(_view.battle_id, "blade", _pending(), [card.instance_id], [], [], status_id))
+		"one_negative_status_on_self": _render()
 		"one_incoming_damage_source":
 			if _selected_source.is_empty(): _show_error("Select an incoming damage source, then choose this card again.")
 			else: _send(BattleCommandBuilder.commit_interaction(_view.battle_id, "blade", _pending(), [card.instance_id], [_selected_source]))
@@ -599,6 +619,10 @@ func _play_tip_it(index: int) -> void:
 
 func _play_blind_tip() -> void:
 	_send(BattleCommandBuilder.commit_interaction(_view.battle_id, "blade", _pending(), [_selected_card.instance_id], [], [], "", [{"type": "set_die_face", "actor_id": "blade", "die_index": 0, "face": _selected_card_set_face()}]))
+
+func _play_selected_status_card(status_id: String) -> void:
+	if _selected_card.is_empty() or status_id.is_empty(): return
+	_send(BattleCommandBuilder.commit_interaction(_view.battle_id, "blade", _pending(), [_selected_card.instance_id], [], [], status_id))
 
 func _reroll_unkept(history_confirmed: bool = false) -> void:
 	if _submitting or _history_review: return
@@ -1147,13 +1171,6 @@ func _selected_card_set_face() -> int:
 	for operation in _as_array(definition.get("operations", [])):
 		if operation is Dictionary and str(operation.get("type", "")) == "modify_die": return int(operation.get("face", 0))
 	return 0
-
-func _first_negative_status() -> String:
-	for status in _as_array(_view.actor("blade").get("statuses", [])):
-		if status is Dictionary:
-			var status_id := str(status.get("definition_id", ""))
-			if str(_view.content_definition("statuses", status_id).get("polarity", "")) == "negative": return status_id
-	return ""
 
 func _pending() -> Dictionary: return _view.viewer_pending()
 func _segment_name(id: String) -> String:
