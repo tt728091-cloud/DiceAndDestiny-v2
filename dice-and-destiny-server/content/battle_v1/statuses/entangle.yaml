@@ -1,6 +1,7 @@
 schema_version: 1
 id: entangle
 name: Entangle
+presentation: {rules_text: "Your next Offensive segment has one fewer maximum roll, then remove Entangle.", art_key: status_entangle, glyph: "⌁"}
 activation_mode: automatic
 polarity: negative
 stacking: {stack_limit: 1, overflow_policy: reject_additional_stacks}

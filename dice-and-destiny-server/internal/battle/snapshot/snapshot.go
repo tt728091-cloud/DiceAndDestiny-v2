@@ -1,8 +1,11 @@
 package snapshot
 
 import (
+	"encoding/json"
+
 	"diceanddestiny/server/internal/battle/segment"
 	"diceanddestiny/server/internal/battle/state"
+	"diceanddestiny/server/internal/content"
 )
 
 // Battle is the read-only view returned after events have been applied.
@@ -25,6 +28,19 @@ type Battle struct {
 	SettledSources     []state.SettledDamageSource     `json:"damage_sources,omitempty"`
 	SettledDefenses    map[string]state.SettledDefense `json:"defense_selections,omitempty"`
 	SettledDamage      *state.SettledDamageBatch       `json:"settled_damage,omitempty"`
+	ContentCatalog     *ContentCatalog                 `json:"content_catalog,omitempty"`
+}
+
+// ContentCatalog publishes the same pinned immutable definitions used by the
+// authority. It intentionally omits combatant AI policy and other hidden setup
+// data while giving clients enough information to render and submit generic
+// content without ID-specific code.
+type ContentCatalog struct {
+	Symbols   map[string]content.SymbolDefinition        `json:"symbols"`
+	Dice      map[string]content.BattleDieDefinition     `json:"dice"`
+	Cards     map[string]content.BattleCardDefinition    `json:"cards"`
+	Abilities map[string]content.BattleAbilityDefinition `json:"abilities"`
+	Statuses  map[string]content.BattleStatusDefinition  `json:"statuses"`
 }
 
 type Actor struct {
@@ -258,6 +274,7 @@ func FromBattleForViewer(battle state.Battle, viewerActorID string) Battle {
 		Resolution:         resolutionSnapshot(battle, viewerActorID),
 		Damage:             damageSnapshot(battle),
 		Actors:             actors,
+		ContentCatalog:     settledContentCatalog(battle),
 		OffensiveProposals: planningProposalsForViewer(battle.OffensiveProposals, viewerActorID),
 		DefensiveProposals: planningProposalsForViewer(battle.DefensiveProposals, viewerActorID),
 		Origin:             originSnapshot(battle.Origin),
@@ -280,6 +297,17 @@ func FromBattleForViewer(battle state.Battle, viewerActorID string) Battle {
 		}
 	}
 	return result
+}
+
+func settledContentCatalog(battle state.Battle) *ContentCatalog {
+	if battle.Settled == nil || len(battle.SettledCatalog) == 0 {
+		return nil
+	}
+	var library content.BattleLibrary
+	if err := json.Unmarshal(battle.SettledCatalog, &library); err != nil {
+		return nil
+	}
+	return &ContentCatalog{Symbols: library.Symbols, Dice: library.Dice, Cards: library.Cards, Abilities: library.Abilities, Statuses: library.Statuses}
 }
 
 func originSnapshot(origin state.BattleOrigin) *state.BattleOrigin {

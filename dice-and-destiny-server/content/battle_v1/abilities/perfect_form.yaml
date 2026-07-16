@@ -2,6 +2,7 @@ schema_version: 1
 id: perfect_form
 name: Perfect Form
 type: offensive
+presentation: {rules_text: "Deal 8 damage.", art_key: ability_perfect_form}
 cost: {energy: 0}
 usage: {maximum_per_segment: 1}
 targeting: {selector: one_enemy, minimum: 1, maximum: 1}

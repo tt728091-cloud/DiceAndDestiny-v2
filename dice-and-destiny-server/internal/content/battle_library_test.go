@@ -12,7 +12,7 @@ func TestRepositoryBattleLibraryLoadsAndValidatesAllReferences(t *testing.T) {
 	if err != nil {
 		t.Fatalf("LoadBattleLibrary() error = %v", err)
 	}
-	if len(library.Symbols) != 3 || len(library.Dice) != 1 || len(library.Cards) != 6 || len(library.Abilities) != 10 || len(library.Statuses) != 4 || len(library.Combatants) != 2 {
+	if len(library.Symbols) != 3 || len(library.Dice) != 1 || len(library.Cards) != 7 || len(library.Abilities) != 11 || len(library.Statuses) != 5 || len(library.Combatants) != 2 {
 		t.Fatalf("unexpected catalog composition: symbols=%d dice=%d cards=%d abilities=%d statuses=%d combatants=%d", len(library.Symbols), len(library.Dice), len(library.Cards), len(library.Abilities), len(library.Statuses), len(library.Combatants))
 	}
 	die := library.Dice["standard_d6"]

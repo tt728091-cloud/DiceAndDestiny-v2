@@ -130,11 +130,14 @@ if [[ ! -f "${GODOT_CPP_DIR}/SConstruct" ]]; then
   git clone --depth 1 https://github.com/godotengine/godot-cpp.git "${GODOT_CPP_DIR}"
 fi
 
-go build \
-  -tags "scenario_tools snapshot_tools history_tools" \
-  -buildmode=c-shared \
-  -o "${BUILD_DIR}/libbattle_go_authority.dylib" \
-  "${ROOT_DIR}/adapters/gdextension/go_export"
+(
+  cd "${ROOT_DIR}"
+  go build \
+    -tags "scenario_tools snapshot_tools history_tools" \
+    -buildmode=c-shared \
+    -o "${BUILD_DIR}/libbattle_go_authority.dylib" \
+    ./adapters/gdextension/go_export
+)
 
 cp "${BUILD_DIR}/libbattle_go_authority.dylib" "${CLIENT_NATIVE_DIR}/"
 

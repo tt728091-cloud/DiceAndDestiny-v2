@@ -163,7 +163,7 @@ func _build_offensive() -> void:
 	var reveal := HBoxContainer.new(); reveal.alignment = BoxContainer.ALIGNMENT_CENTER; _center.add_child(reveal)
 	_add_selected_detail(reveal, "blade"); _add_selected_detail(reveal, "goblin")
 	_build_ability_row("BLADE WARDEN ABILITIES", _view.actor("blade").get("offensive_abilities", []), "blade")
-	if not _selected_card.is_empty() and _selected_card.definition_id == "tip_it":
+	if _selected_card_selector() == "selected_die":
 		if _view.stage == "offensive_reaction": _build_enemy_die_targets()
 		elif _view.stage == "blind_reaction":
 			var tip := Button.new(); tip.text = "Tip Blind die to face 5"; tip.disabled = _history_review; tip.pressed.connect(_play_blind_tip); _center.add_child(tip); _inspect(tip, "battle.tip_target.blind", "Use Tip It on the current blind-roll die")
@@ -194,15 +194,15 @@ func _build_defense_reveal_mat() -> void:
 			var unchanged := Label.new(); unchanged.text = "%s: %d → %d pending" % [attack.name, base, base]; unchanged.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER; panel.add_child(unchanged); continue
 		var face := int(roll.get("face", selection.get("rolled_face", 0))); var ability_id := str(selection.get("ability_id", roll.get("ability_id", ""))); var ability := BattlePresentationCatalog.ability(ability_id)
 		if face > 0:
-			var die := Button.new(); die.disabled = true; die.custom_minimum_size = Vector2(120, 105); die.text = "%s\n%d" % [BattlePresentationCatalog.symbol_for_face(face), face]; die.tooltip_text = "%s defensive die: face %d, %s. Reserved for future reaction-card targeting." % [actor.text, face, BattlePresentationCatalog.symbol_name(face)]; die.add_theme_font_size_override("font_size", 26); panel.add_child(die); _inspect(die, "battle.defense_die.%s" % actor_id, die.tooltip_text)
+			var die_data := _as_dictionary(roll.get("die", {})); var die_id := str(die_data.get("die_id", "standard_d6"))
+			var die := Button.new(); die.disabled = true; die.custom_minimum_size = Vector2(120, 105); die.text = "%s\n%d" % [BattlePresentationCatalog.symbol_for_die_face(die_id, face), face]; die.tooltip_text = "%s defensive die: face %d, %s. Reserved for future reaction-card targeting." % [actor.text, face, BattlePresentationCatalog.symbol_name_for_die_face(die_id, face)]; die.add_theme_font_size_override("font_size", 26); panel.add_child(die); _inspect(die, "battle.defense_die.%s" % actor_id, die.tooltip_text)
 		else:
 			var no_die := Label.new(); no_die.text = "NO DIE ROLL"; no_die.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER; no_die.add_theme_font_size_override("font_size", 18); no_die.add_theme_color_override("font_color", Color("b8bfca")); panel.add_child(no_die)
-		var chosen := Label.new(); chosen.text = "%s · %d block" % [ability.name, face] if ability_id == "basic_defense" else ability.name; chosen.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER; panel.add_child(chosen)
+		var preview := _defense_preview(ability_id, base, face)
+		var chosen := Label.new(); chosen.text = "%s · %d block" % [ability.name, int(preview.get("prevented", 0))] if bool(preview.get("rolled", false)) else ability.name; chosen.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER; panel.add_child(chosen)
 		var effect := Label.new(); effect.text = str(ability.get("text", "Defense selected")); effect.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER; effect.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART; effect.custom_minimum_size.x = 300; panel.add_child(effect)
-		var pending := base
-		if ability_id == "basic_defense": pending = maxi(0, base - face)
-		elif ability_id == "protect": pending = floori(float(base) / 2.0)
-		var outcome := Label.new(); outcome.text = "%s: %d − %d = %d pending" % [attack.name, base, face, pending] if ability_id == "basic_defense" else "%s: %d → %d pending" % [attack.name, base, pending]; outcome.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER; panel.add_child(outcome)
+		var pending := int(preview.get("pending", base)); var prevented := int(preview.get("prevented", 0))
+		var outcome := Label.new(); outcome.text = "%s: %d − %d = %d pending" % [attack.name, base, prevented, pending] if bool(preview.get("rolled", false)) else "%s: %d → %d pending" % [attack.name, base, pending]; outcome.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER; panel.add_child(outcome)
 
 func _build_damage() -> void:
 	if _view.segment == "ongoing_effects":
@@ -215,8 +215,8 @@ func _build_damage() -> void:
 		var scroll := ScrollContainer.new(); scroll.custom_minimum_size.y = 120; scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_AUTO; _center.add_child(scroll)
 		var row := HBoxContainer.new(); scroll.add_child(row)
 		for removal in removals:
-			if str(removal.get("target_actor_id", "")) != target: continue
-			var card := BattleCard.new(); row.add_child(card); card.configure(str(removal.get("card_id", "")), str(removal.get("card_definition_id", "unknown")), false, not bool(removal.get("released", false))); card.tooltip_text += " · Original zone: %s · Damage source: %s" % [str(removal.get("original_zone", "unknown")), ", ".join(removal.get("damage_proposal_ids", []))]; _inspect(card, "battle.damage_card.%s" % str(removal.get("card_id", "")), card.tooltip_text)
+			if str(removal.get("target_actor_id", "")) != target or not bool(removal.get("accepted", false)) or bool(removal.get("released", false)): continue
+			var card := BattleCard.new(); row.add_child(card); card.configure(str(removal.get("card_id", "")), str(removal.get("card_definition_id", "unknown")), false, true); card.tooltip_text += " · Original zone: %s · Damage source: %s" % [str(removal.get("original_zone", "unknown")), ", ".join(removal.get("damage_proposal_ids", []))]; _inspect(card, "battle.damage_card.%s" % str(removal.get("card_id", "")), card.tooltip_text)
 	var overage: Dictionary = _as_dictionary(_view.settled_damage.get("overage", {}))
 	if not overage.is_empty():
 		var label := Label.new(); label.text = "Overage: Player %d · Enemy %d" % [int(overage.get("blade", 0)), int(overage.get("goblin", 0))]; label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER; _center.add_child(label)
@@ -253,12 +253,12 @@ func _build_effects() -> void:
 	for event in _view.events:
 		var data: Dictionary = _as_dictionary(event.get("data", {}))
 		for roll in data.get("rolls", []):
-			rolls.append("%s %d" % [BattlePresentationCatalog.status(str(roll.get("status_id", "poison"))).name, int(roll.get("die", {}).get("face", 0))])
+			rolls.append("%s %d" % [BattlePresentationCatalog.status(str(roll.get("source_content_id", roll.get("status_id", "")))).name, int(roll.get("die", {}).get("face", 0))])
 		if event.get("type") == "dice_rolled" and not str(data.get("status_id", "")).is_empty():
 			rolls.append("%s %d" % [BattlePresentationCatalog.status(str(data.status_id)).name, int(data.get("face", 0))])
 	if not rolls.is_empty():
 		var roll_label := Label.new(); roll_label.text = "Effect dice: %s" % ", ".join(rolls); roll_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER; panel.add_child(roll_label)
-	if not _selected_card.is_empty() and _selected_card.definition_id == "tip_it" and _view.stage == "blind_reaction":
+	if _selected_card_selector() == "selected_die" and _view.stage == "blind_reaction":
 		var tip := Button.new(); tip.text = "Tip Blind die to face 5"; tip.pressed.connect(_play_blind_tip); panel.add_child(tip); _inspect(tip, "battle.tip_target.blind", "Use Tip It on the current blind-roll die")
 
 func _build_income() -> void:
@@ -289,7 +289,7 @@ func _build_ability_row(caption: String, abilities: Array, actor_id: String) -> 
 		var tile := BattleAbilityTile.new(); row.add_child(tile)
 		var defense_ready := _view.segment == "defensive" and not _selected_source.is_empty()
 		var can_select := actor_id == "blade" and _view.allowed("planning_select_ability") and (str(ability_id) in qualified or defense_ready) and not _submitting and not _history_review
-		if not _selected_card.is_empty() and _selected_card.definition_id == "sharpen_blade": can_select = actor_id == "blade" and _view.stage == "planning" and not _history_review
+		if _selected_card_selector() == "one_owned_offensive_ability": can_select = actor_id == "blade" and _view.stage == "planning" and not _history_review
 		tile.configure(str(ability_id), str(ability_id) in qualified, selected == str(ability_id), can_select)
 		tile.pressed.connect(_on_ability_pressed.bind(str(ability_id)))
 		_inspect(tile, "battle.ability.%s.%s" % [actor_id, str(ability_id)], tile.tooltip_text)
@@ -413,7 +413,7 @@ func _add_action(parent: Container, text: String, command: String, callback: Cal
 
 func _on_ability_pressed(ability_id: String) -> void:
 	if _history_review: return
-	if not _selected_card.is_empty() and _selected_card.definition_id == "sharpen_blade":
+	if _selected_card_selector() == "one_owned_offensive_ability":
 		_send(BattleCommandBuilder.planning_commit_cards(_view.battle_id, "blade", _pending(), [_selected_card.instance_id], [], ability_id)); return
 	var targets := [_selected_source] if _view.segment == "defensive" and not _selected_source.is_empty() else ["goblin"] if _view.segment == "offensive" else []
 	if targets.is_empty(): _show_error("Select an incoming source first."); return
@@ -426,26 +426,33 @@ func _on_card_pressed(card: BattleCard) -> void:
 		else: _hand_limit_selection.append(card.instance_id)
 		_render(); return
 	_selected_card = {"instance_id": card.instance_id, "definition_id": card.definition_id}
-	match card.definition_id:
-		"battle_focus": _send(BattleCommandBuilder.planning_commit_cards(_view.battle_id, "blade", _pending(), [card.instance_id], ["blade"]))
-		"loaded_die":
+	var selector := _selected_card_selector()
+	var planning := _view.allowed("planning_commit_cards")
+	match selector:
+		"self":
+			if planning: _send(BattleCommandBuilder.planning_commit_cards(_view.battle_id, "blade", _pending(), [card.instance_id], ["blade"]))
+			else: _send(BattleCommandBuilder.commit_interaction(_view.battle_id, "blade", _pending(), [card.instance_id], [], ["blade"]))
+		"one_enemy":
+			if planning: _send(BattleCommandBuilder.planning_commit_cards(_view.battle_id, "blade", _pending(), [card.instance_id], ["goblin"]))
+			else: _send(BattleCommandBuilder.commit_interaction(_view.battle_id, "blade", _pending(), [card.instance_id], [], ["goblin"]))
+		"one_owned_combat_die":
 			if _selected_indices.size() == 1: _send(BattleCommandBuilder.planning_commit_cards(_view.battle_id, "blade", _pending(), [card.instance_id], [], "", "", int(_selected_indices[0])))
-			else: _show_error("Select exactly one rolled player die, then choose Loaded Die again.")
-		"antidote":
-			var statuses: Array = _as_array(_view.actor("blade").get("statuses", []))
-			if statuses.is_empty(): _show_error("No negative self status is available.")
-			else: _send(BattleCommandBuilder.commit_interaction(_view.battle_id, "blade", _pending(), [card.instance_id], [], [], str(statuses[0].get("definition_id", ""))))
-		"emergency_ward":
-			if _selected_source.is_empty(): _show_error("Select an incoming damage source, then choose Emergency Ward again.")
+			else: _show_error("Select exactly one rolled player die, then choose this card again.")
+		"one_negative_status_on_self":
+			var status_id := _first_negative_status()
+			if status_id.is_empty(): _show_error("No negative self status is available.")
+			else: _send(BattleCommandBuilder.commit_interaction(_view.battle_id, "blade", _pending(), [card.instance_id], [], [], status_id))
+		"one_incoming_damage_source":
+			if _selected_source.is_empty(): _show_error("Select an incoming damage source, then choose this card again.")
 			else: _send(BattleCommandBuilder.commit_interaction(_view.battle_id, "blade", _pending(), [card.instance_id], [_selected_source]))
-		"tip_it": _render()
-		"sharpen_blade": _render()
+		"selected_die", "one_owned_offensive_ability": _render()
+		_: _show_error("This card uses an unsupported target selector: %s" % selector)
 
 func _play_tip_it(index: int) -> void:
-	_send(BattleCommandBuilder.commit_interaction(_view.battle_id, "blade", _pending(), [_selected_card.instance_id], [], [], "", [{"type": "set_die_face", "actor_id": "goblin", "die_index": index, "face": 5}]))
+	_send(BattleCommandBuilder.commit_interaction(_view.battle_id, "blade", _pending(), [_selected_card.instance_id], [], [], "", [{"type": "set_die_face", "actor_id": "goblin", "die_index": index, "face": _selected_card_set_face()}]))
 
 func _play_blind_tip() -> void:
-	_send(BattleCommandBuilder.commit_interaction(_view.battle_id, "blade", _pending(), [_selected_card.instance_id], [], [], "", [{"type": "set_die_face", "actor_id": "blade", "die_index": 0, "face": 5}]))
+	_send(BattleCommandBuilder.commit_interaction(_view.battle_id, "blade", _pending(), [_selected_card.instance_id], [], [], "", [{"type": "set_die_face", "actor_id": "blade", "die_index": 0, "face": _selected_card_set_face()}]))
 
 func _reroll_unkept(history_confirmed: bool = false) -> void:
 	if _submitting or _history_review: return
@@ -941,16 +948,66 @@ func _save_active() -> void:
 	active_store.save_active(_view.battle_id, viewer_actor_id, _director.last_sequence(), loaded_snapshot_name, history_context)
 
 func _card_legal(definition: String) -> bool:
-	if _submitting or _history_review: return false
-	if _view.allowed("planning_commit_cards"):
-		if definition == "loaded_die": return not _view.rolled_dice("blade").is_empty()
-		return definition in ["battle_focus", "sharpen_blade"]
-	if not _view.allowed("commit_interaction"): return false
-	if _view.stage == "offensive_reaction": return definition == "tip_it"
-	if _view.stage == "status_roll_reaction": return definition == "antidote"
-	if _view.stage == "blind_reaction": return definition == "tip_it"
-	if _view.segment == "damage_resolution" and "damage" in _view.stage: return definition == "emergency_ward"
+	return not _submitting and not _history_review and _view.card_playable_now(definition)
+
+func _defense_preview(ability_id: String, base: int, rolled_face: int) -> Dictionary:
+	var ability := _view.content_definition("abilities", ability_id)
+	var resolution := _as_dictionary(ability.get("resolution", {}))
+	var pending := base
+	var prevented := 0
+	for operation in _resolved_operations(_as_array(resolution.get("operations", [])), rolled_face):
+		if not operation is Dictionary: continue
+		match str(operation.get("type", "")):
+			"prevent_damage":
+				var amount := _configured_amount(operation.get("amount", 0), rolled_face)
+				prevented += amount; pending = maxi(0, pending - amount)
+			"scale_damage":
+				var denominator := maxi(1, int(operation.get("denominator", 1)))
+				pending = floori(float(pending * int(operation.get("numerator", 1))) / float(denominator))
+	return {"pending": pending, "prevented": prevented, "rolled": _contains_roll_operation(_as_array(resolution.get("operations", [])))}
+
+func _contains_roll_operation(operations: Array) -> bool:
+	for operation in operations:
+		if operation is Dictionary and str(operation.get("type", "")) == "roll_dice": return true
 	return false
+
+func _resolved_operations(operations: Array, rolled_face: int) -> Array:
+	var result: Array = []
+	for operation in operations:
+		if not operation is Dictionary: continue
+		if str(operation.get("type", "")) != "roll_dice":
+			result.append(operation); continue
+		for outcome in _as_array(operation.get("outcomes", [])):
+			if outcome is Dictionary and _outcome_contains_face(outcome, rolled_face):
+				result.append_array(_resolved_operations(_as_array(outcome.get("operations", [])), rolled_face))
+	return result
+
+func _outcome_contains_face(outcome: Dictionary, rolled_face: int) -> bool:
+	for configured_face in _as_array(outcome.get("faces", [])):
+		if int(configured_face) == rolled_face: return true
+	return false
+
+func _configured_amount(value, rolled_face: int) -> int:
+	return rolled_face if value is String and value == "rolled_face" else int(value)
+
+func _selected_card_selector() -> String:
+	if _selected_card.is_empty(): return ""
+	var definition := _view.content_definition("cards", str(_selected_card.get("definition_id", "")))
+	return str(_as_dictionary(definition.get("targeting", {})).get("selector", ""))
+
+func _selected_card_set_face() -> int:
+	if _selected_card.is_empty(): return 0
+	var definition := _view.content_definition("cards", str(_selected_card.get("definition_id", "")))
+	for operation in _as_array(definition.get("operations", [])):
+		if operation is Dictionary and str(operation.get("type", "")) == "modify_die": return int(operation.get("face", 0))
+	return 0
+
+func _first_negative_status() -> String:
+	for status in _as_array(_view.actor("blade").get("statuses", [])):
+		if status is Dictionary:
+			var status_id := str(status.get("definition_id", ""))
+			if str(_view.content_definition("statuses", status_id).get("polarity", "")) == "negative": return status_id
+	return ""
 
 func _pending() -> Dictionary: return _view.viewer_pending()
 func _segment_name(id: String) -> String:

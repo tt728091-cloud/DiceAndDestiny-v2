@@ -19,6 +19,25 @@ func _run() -> void:
 		for button in buttons: texts.append(button.text)
 		if "Roll 5 Dice" not in texts or "Keep Selected" in texts or "Reroll Unkept" in texts: _fail("initial planning exposed controls that are invalid before the first roll: %s" % texts); return
 		screen.queue_free(); await process_frame
+	# A card unknown to the client source is rendered, enabled, and routed only
+	# from the authority-provided catalog selector/timing data.
+	var yaml_fake := FakeBattleAuthority.new(); var yaml_fixture := _fixture(); var yaml_next := _fixture()
+	yaml_fixture.pending_input.blade.allowed_commands = ["planning_commit_cards", "planning_pass"]
+	yaml_fixture.snapshot.actors.blade.hand = ["yaml-card-1"]; yaml_fixture.snapshot.actors.blade.hand_count = 1
+	yaml_fixture.snapshot.actors.blade.card_instances = {"yaml-card-1": {"instance_id": "yaml-card-1", "definition_id": "alchemists_gamble"}}
+	yaml_next.pending_input.blade.id = "yaml-next"; yaml_fake.enqueue(yaml_next)
+	var yaml_screen = packed.instantiate(); yaml_screen.initial_result = yaml_fixture; yaml_screen.gateway = BattleGateway.new(yaml_fake); yaml_screen.active_store = ActiveBattleStore.new(WorkspacePaths.persistent_file("verify_yaml_card_active.json")); root.add_child(yaml_screen)
+	await process_frame; await process_frame
+	var yaml_button: Button = null
+	for button in yaml_screen.find_children("*", "Button", true, false):
+		if button.text.begins_with("Alchemist's Gamble"): yaml_button = button
+	if yaml_button == null or yaml_button.disabled: _fail("authority-defined YAML-only card was not rendered as playable"); return
+	yaml_button.pressed.emit(); await process_frame; await process_frame
+	if yaml_fake.commands.size() != 1: _fail("YAML-only card did not submit exactly one command: %s" % yaml_fake.commands); return
+	var yaml_command: Dictionary = JSON.parse_string(yaml_fake.commands[0])
+	if yaml_command.get("type") != "planning_commit_cards" or yaml_command.get("payload", {}).get("target_ids", []) != ["goblin"]:
+		_fail("YAML-only one_enemy selector was not routed generically: %s" % yaml_fake.commands[0]); return
+	yaml_screen.active_store.clear(); yaml_screen.queue_free(); await process_frame
 	var fake := FakeBattleAuthority.new()
 	fake.enqueue(_rolled_fixture("p2", 1, []))
 	fake.enqueue(_rolled_fixture("p3", 2, [0, 2]))
@@ -112,18 +131,33 @@ func _run() -> void:
 		if "Sword Cut" in button.text or "Venom Strike" in button.text: leaked_stale_attack = true
 	if not saw_status_context or not saw_status_card or not saw_player_poison or not saw_enemy_bleed or not saw_poison_damage or not saw_bleed_damage or leaked_stale_attack: _fail("status damage board omitted current totals or rendered stale offensive sources"); return
 	status_damage.queue_free(); await process_frame
+	var prevented_damage = packed.instantiate(); var prevented_fixture := _fixture()
+	prevented_fixture.snapshot.segment = "damage_resolution"; prevented_fixture.snapshot.stage = "damage_reaction"
+	prevented_fixture.pending_input.blade.segment = "damage_resolution"; prevented_fixture.pending_input.blade.stage = "damage_reaction"; prevented_fixture.pending_input.blade.allowed_commands = ["pass"]
+	prevented_fixture.snapshot.settled_damage = {"sources": [{"id": "partial-source", "source_content_id": "sword_cut", "target_actor_id": "goblin", "base_amount": 5, "reaction_prevention": 3, "final_amount": 2}, {"id": "full-source", "source_content_id": "greedy_blow", "target_actor_id": "blade", "base_amount": 3, "reaction_prevention": 3, "final_amount": 0}], "removals": []}
+	for index in 5:
+		prevented_fixture.snapshot.settled_damage.removals.append({"card_id": "goblin-removal-%d" % index, "card_definition_id": "battle_focus", "target_actor_id": "goblin", "original_zone": "deck", "accepted": index < 2, "released": index >= 2})
+	for index in 3:
+		prevented_fixture.snapshot.settled_damage.removals.append({"card_id": "blade-removal-%d" % index, "card_definition_id": "battle_focus", "target_actor_id": "blade", "original_zone": "deck", "accepted": false, "released": true})
+	prevented_damage.initial_result = prevented_fixture; root.add_child(prevented_damage)
+	await process_frame; await process_frame
+	var visible_pending_cards: Array[String] = []
+	for button in prevented_damage.find_children("*", "Button", true, false):
+		if button.has_meta("inspection_id") and str(button.get_meta("inspection_id")).begins_with("battle.damage_card."): visible_pending_cards.append(str(button.get_meta("inspection_id")))
+	if visible_pending_cards != ["battle.damage_card.goblin-removal-0", "battle.damage_card.goblin-removal-1"]: _fail("prevented damage did not reduce the visible pending-removal piles from 5 to 2 and 3 to 0: %s" % [visible_pending_cards]); return
+	prevented_damage.queue_free(); await process_frame
 	var defense_reveal = packed.instantiate(); var defense_fixture := _fixture()
 	defense_fixture.snapshot.segment = "defensive"; defense_fixture.snapshot.stage = "defense_reaction"
 	defense_fixture.pending_input.blade.segment = "defensive"; defense_fixture.pending_input.blade.stage = "defense_reaction"; defense_fixture.pending_input.blade.allowed_commands = ["pass"]
-	defense_fixture.snapshot.damage_sources = [{"id": "source-player", "source_content_id": "golden_edge", "target_actor_id": "goblin", "base_amount": 5, "final_amount": 0}, {"id": "source-enemy", "source_content_id": "jagged_slash", "target_actor_id": "blade", "base_amount": 4, "final_amount": 0}]
-	defense_fixture.snapshot.defense_selections = {"blade": {"actor_id": "blade", "ability_id": "basic_defense", "source_id": "source-enemy", "rolled_face": 6}, "goblin": {"actor_id": "goblin", "ability_id": "protect", "source_id": "source-player"}}
-	defense_fixture.events = [{"sequence": 1, "type": "dice_rolled", "actor_id": "blade", "segment": "defensive", "pool": "defensive", "source_id": "basic_defense", "dice": [{"face": 6}]}]
+	defense_fixture.snapshot.damage_sources = [{"id": "source-player", "source_content_id": "golden_edge", "target_actor_id": "goblin", "base_amount": 5, "final_amount": 0}, {"id": "source-enemy", "source_content_id": "greedy_blow", "target_actor_id": "blade", "base_amount": 7, "final_amount": 0}]
+	defense_fixture.snapshot.defense_selections = {"blade": {"actor_id": "blade", "ability_id": "basic_defense", "source_id": "source-enemy", "rolled_face": 5}, "goblin": {"actor_id": "goblin", "ability_id": "protect", "source_id": "source-player"}}
+	defense_fixture.events = [{"sequence": 1, "type": "dice_rolled", "actor_id": "blade", "segment": "defensive", "pool": "defensive", "source_id": "basic_defense", "dice": [{"face": 5}]}]
 	defense_reveal.initial_result = defense_fixture; root.add_child(defense_reveal)
 	await process_frame; await process_frame
 	var saw_reveal := false; var saw_player_math := false; var saw_enemy_protect := false; var saw_enemy_math := false
 	for label in defense_reveal.find_children("*", "Label", true, false):
 		if label.text == "DEFENSE REVEAL": saw_reveal = true
-		if "Jagged Slash: 4 − 6 = 0 pending" in label.text: saw_player_math = true
+		if "Greedy Blow: 7 − 5 = 2 pending" in label.text: saw_player_math = true
 		if label.text == "Protect": saw_enemy_protect = true
 		if "Golden Edge: 5 → 2 pending" in label.text: saw_enemy_math = true
 	var die_ids: Array[String] = []
@@ -286,7 +320,43 @@ func _run() -> void:
 	print("BATTLE SCENE: reusable components and 1920x1080 / 1280x720 layouts passed"); quit(0)
 
 func _fixture() -> Dictionary:
-	return {"accepted": true, "events": [], "pending_input": {"blade": {"id": "p", "window_id": "w", "segment": "offensive", "stage": "planning", "iteration": 1, "planning_cycle": 1, "allowed_commands": ["planning_roll", "planning_pass"]}}, "snapshot": {"battle_id": "fixture-scene", "status": "active", "viewer_actor_id": "blade", "round": 1, "segment": "offensive", "stage": "planning", "actors": {"blade": {"definition_id": "blade_warden", "hand": [], "card_instances": {}, "current_health": 20, "max_health": 20, "deck_count": 16, "hand_count": 4, "offensive_abilities": ["sword_cut", "shield_bash", "golden_edge", "perfect_form"], "defensive_abilities": ["basic_defense", "protect"]}, "goblin": {"definition_id": "venom_goblin", "current_health": 12, "max_health": 12, "deck_count": 10, "hand_count": 2, "offensive_abilities": ["jagged_slash", "venom_strike", "crushing_advance", "greedy_blow"], "defensive_abilities": ["basic_defense", "protect"]}}}}
+	var result := {"accepted": true, "events": [], "pending_input": {"blade": {"id": "p", "window_id": "w", "segment": "offensive", "stage": "planning", "iteration": 1, "planning_cycle": 1, "input_type": "planning", "allowed_commands": ["planning_roll", "planning_pass"]}}, "snapshot": {"battle_id": "fixture-scene", "status": "active", "viewer_actor_id": "blade", "round": 1, "segment": "offensive", "stage": "planning", "actors": {"blade": {"definition_id": "blade_warden", "hand": [], "card_instances": {}, "current_health": 20, "max_health": 20, "deck_count": 16, "hand_count": 4, "offensive_abilities": ["sword_cut", "shield_bash", "golden_edge", "perfect_form"], "defensive_abilities": ["basic_defense", "protect"]}, "goblin": {"definition_id": "venom_goblin", "current_health": 12, "max_health": 12, "deck_count": 10, "hand_count": 2, "offensive_abilities": ["jagged_slash", "venom_strike", "crushing_advance", "greedy_blow"], "defensive_abilities": ["basic_defense", "protect"]}}}}
+	result.snapshot.content_catalog = _catalog_fixture()
+	return result
+
+func _catalog_fixture() -> Dictionary:
+	var abilities := {}
+	for id in ["sword_cut", "shield_bash", "golden_edge", "perfect_form", "jagged_slash", "venom_strike", "crushing_advance", "greedy_blow", "basic_defense", "protect"]:
+		abilities[id] = {"id": id, "name": str(id).replace("_", " ").capitalize(), "presentation": {"rules_text": "Configured by authority"}}
+	# Native JSON catalogs can expose numeric arrays as floats. The client must
+	# normalize them before matching a rolled integer face.
+	abilities.basic_defense.resolution = {"operations": [{"type": "roll_dice", "outcomes": [{"faces": [1.0, 2.0, 3.0, 4.0, 5.0, 6.0], "operations": [{"type": "prevent_damage", "amount": "rolled_face"}]}]}]}
+	abilities.protect.resolution = {"operations": [{"type": "scale_damage", "numerator": 1, "denominator": 2}]}
+	var cards := {
+		"battle_focus": _card_fixture("Battle Focus", 0, "offensive", "planning", "self"),
+		"loaded_die": _card_fixture("Loaded Die", 1, "offensive", "planning", "one_owned_combat_die", [{"type": "modify_die", "face": 6}]),
+		"sharpen_blade": _card_fixture("Sharpen Blade", 1, "offensive", "planning", "one_owned_offensive_ability"),
+		"tip_it": _card_fixture("Tip It", 1, "offensive", "reaction", "selected_die", [{"type": "modify_die", "face": 5}]),
+		"antidote": _card_fixture("Antidote", 1, "ongoing_effects", "reaction", "one_negative_status_on_self"),
+		"emergency_ward": _card_fixture("Emergency Ward", 1, "damage_resolution", "reaction", "one_incoming_damage_source"),
+		"alchemists_gamble": _card_fixture("Alchemist's Gamble", 1, "offensive", "planning", "one_enemy"),
+	}
+	return {
+		"cards": cards,
+		"abilities": abilities,
+		"statuses": {
+			"poison": {"name": "Poison", "polarity": "negative", "presentation": {"rules_text": "Roll per stack", "glyph": "☠"}},
+			"bleed": {"name": "Bleed", "polarity": "negative", "presentation": {"rules_text": "Damage per stack", "glyph": "◆"}},
+			"entangle": {"name": "Entangle", "polarity": "negative", "presentation": {"rules_text": "Fewer rolls", "glyph": "⌁"}},
+			"blind": {"name": "Blind", "polarity": "negative", "presentation": {"rules_text": "May cancel ability", "glyph": "◉"}},
+			"volatile_poison": {"name": "Volatile Poison", "polarity": "negative", "presentation": {"rules_text": "A YAML-only status", "glyph": "✹"}},
+		},
+		"symbols": {"sword": {"name": "Sword", "glyph": "⚔"}, "shield": {"name": "Shield", "glyph": "◆"}, "gold_coin": {"name": "Gold Coin", "glyph": "●"}},
+		"dice": {"standard_d6": {"faces": [{"number": 1, "symbol": "sword"}, {"number": 2, "symbol": "sword"}, {"number": 3, "symbol": "sword"}, {"number": 4, "symbol": "shield"}, {"number": 5, "symbol": "shield"}, {"number": 6, "symbol": "gold_coin"}]}},
+	}
+
+func _card_fixture(name: String, cost: int, segment: String, purpose: String, selector: String, operations: Array = []) -> Dictionary:
+	return {"name": name, "cost": {"energy": cost}, "presentation": {"rules_text": "Configured by authority"}, "play": {"playable_during": [{"segment": segment, "phase": "main", "window_purpose": purpose}]}, "targeting": {"selector": selector, "minimum": 1, "maximum": 1}, "operations": operations}
 
 func _rolled_fixture(pending_id: String, rolls: int, kept: Array) -> Dictionary:
 	var result := _fixture()

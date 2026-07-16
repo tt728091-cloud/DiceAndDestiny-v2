@@ -122,10 +122,17 @@ type SettledTriggerBatch struct {
 }
 
 type SettledEffectRoll struct {
-	ActorID          string    `json:"actor_id"`
-	StatusInstanceID string    `json:"status_instance_id"`
-	StatusID         string    `json:"status_id"`
-	Die              RolledDie `json:"die"`
+	ActorID           string `json:"actor_id"`
+	SourceContentType string `json:"source_content_type"`
+	SourceContentID   string `json:"source_content_id"`
+	StatusInstanceID  string `json:"status_instance_id,omitempty"`
+	// StatusID is retained in snapshots for backwards compatibility. New
+	// consumers should use SourceContentID for every activation source.
+	StatusID       string    `json:"status_id,omitempty"`
+	TriggerID      string    `json:"trigger_id,omitempty"`
+	OperationID    string    `json:"operation_id,omitempty"`
+	OperationIndex int       `json:"operation_index"`
+	Die            RolledDie `json:"die"`
 }
 
 type SettledStatusRemoval struct {
@@ -137,6 +144,7 @@ type SettledStatusRemoval struct {
 type SettledBlindResolution struct {
 	ActorID  string
 	StatusID string
+	DieID    string
 	Face     int
 }
 

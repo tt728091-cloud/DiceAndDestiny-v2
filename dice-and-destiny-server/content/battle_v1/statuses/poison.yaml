@@ -1,6 +1,7 @@
 schema_version: 1
 id: poison
 name: Poison
+presentation: {rules_text: "At Ongoing Effects, roll once per stack. Faces 1-4 deal 1 damage; faces 5-6 remove one stack.", art_key: status_poison, glyph: "☠"}
 activation_mode: automatic
 polarity: negative
 stacking: {stack_limit: 3, overflow_policy: reject_additional_stacks}

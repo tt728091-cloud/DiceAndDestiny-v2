@@ -2,6 +2,7 @@ schema_version: 1
 id: greedy_blow
 name: Greedy Blow
 type: offensive
+presentation: {rules_text: "Deal 7 damage.", art_key: ability_greedy_blow}
 cost: {energy: 0}
 usage: {maximum_per_segment: 1}
 targeting: {selector: one_enemy, minimum: 1, maximum: 1}

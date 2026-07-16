@@ -22,8 +22,9 @@ func display(dice: Array, kept: Array = [], interactive: bool = false, caption: 
 		var button := _buttons[index]
 		if index < dice.size():
 			var face := int(dice[index].get("face", dice[index].get("number", 0)))
-			button.text = "%s\n%d" % [BattlePresentationCatalog.symbol_for_face(face), face]
-			button.tooltip_text = "Die %d: face %d, %s%s" % [index + 1, face, BattlePresentationCatalog.symbol_name(face), " (kept)" if index in selected else ""]
+			var die_id := str(dice[index].get("die_id", "standard_d6"))
+			button.text = "%s\n%d" % [BattlePresentationCatalog.symbol_for_die_face(die_id, face), face]
+			button.tooltip_text = "Die %d: face %d, %s%s" % [index + 1, face, BattlePresentationCatalog.symbol_name_for_die_face(die_id, face), " (kept)" if index in selected else ""]
 		else: button.text = "—"; button.tooltip_text = "Ready die %d" % (index + 1)
 		button.disabled = not interactive or index >= dice.size()
 		button.button_pressed = index in selected

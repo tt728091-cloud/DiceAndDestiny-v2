@@ -1,50 +1,109 @@
 class_name BattlePresentationCatalog
 extends RefCounted
 
-const CARDS := {
-	"tip_it": {"name": "Tip It", "cost": 1, "text": "Change one revealed enemy face 6 to face 5.", "accent": "violet", "art": "res://assets/battle/cards/tip_it.png"},
-	"loaded_die": {"name": "Loaded Die", "cost": 1, "text": "Change one owned combat die to face 6.", "accent": "gold", "art": "res://assets/battle/cards/loaded_die.png"},
-	"antidote": {"name": "Antidote", "cost": 1, "text": "Remove one negative status from yourself.", "accent": "green", "art": "res://assets/battle/cards/antidote.png"},
-	"sharpen_blade": {"name": "Sharpen Blade", "cost": 1, "text": "Give an Offensive ability a matching-pair Bleed bonus. Three-of-a-kind also counts.", "accent": "red", "art": "res://assets/battle/cards/sharpen_blade.png"},
-	"emergency_ward": {"name": "Emergency Ward", "cost": 1, "text": "Prevent 3 damage from one revealed source.", "accent": "blue", "art": "res://assets/battle/cards/emergency_ward.png"},
-	"battle_focus": {"name": "Battle Focus", "cost": 0, "text": "Draw 1 card, then gain 1 energy.", "accent": "cyan", "art": "res://assets/battle/cards/battle_focus.png"},
-}
+# The authority publishes the exact catalog pinned into the battle. Keeping it
+# here lets existing presentation controls stay small while removing every
+# card/ability/status ID switch from the client.
+static var _catalog: Dictionary = {}
 
-const ABILITIES := {
-	"sword_cut": {"name": "Sword Cut", "recipe": "3 / 4 / 5 Swords", "text": "Deal 5 / 6 / 7 damage. Three-of-a-kind applies Bleed."},
-	"shield_bash": {"name": "Shield Bash", "recipe": "2 Swords + 2 Shields", "text": "Deal 4 damage and apply Entangle."},
-	"golden_edge": {"name": "Golden Edge", "recipe": "2 Swords + 1 Gold", "text": "Deal 5 damage and gain 1 energy."},
-	"perfect_form": {"name": "Perfect Form", "recipe": "Faces 1, 2, 3, 4, 5", "text": "Deal 8 damage."},
-	"jagged_slash": {"name": "Jagged Slash", "recipe": "3 / 4 / 5 Swords", "text": "Deal 4 / 5 / 6 damage."},
-	"venom_strike": {"name": "Venom Strike", "recipe": "2 Swords + 1 Gold", "text": "Deal 3 damage and apply 2 Poison."},
-	"crushing_advance": {"name": "Crushing Advance", "recipe": "2 Swords + 2 Shields", "text": "Deal 5 damage."},
-	"greedy_blow": {"name": "Greedy Blow", "recipe": "2 Gold", "text": "Deal 7 damage."},
-	"basic_defense": {"name": "Basic Defense", "recipe": "Select 1 source; roll 1D6", "text": "Prevent damage equal to the defense die."},
-	"protect": {"name": "Protect", "recipe": "1 Energy; select 1 source", "text": "Halve that source's damage, rounded down."},
-}
+static func configure(catalog: Dictionary) -> void:
+	_catalog = catalog.duplicate(true)
 
-const STATUSES := {
-	"poison": {"name": "Poison", "text": "Roll per stack: 1-4 damage, 5-6 removes a stack.", "glyph": "☠"},
-	"bleed": {"name": "Bleed", "text": "Deals 1 damage per stack during Effects, then loses a stack.", "glyph": "◆"},
-	"entangle": {"name": "Entangle", "text": "Reduces the next Offensive maximum rolls by one.", "glyph": "⌁"},
-	"blind": {"name": "Blind", "text": "An exit roll can cancel the selected Offensive ability.", "glyph": "◉"},
-}
+static func definition(kind: String, id: String) -> Dictionary:
+	var values = _catalog.get(kind, {})
+	if values is Dictionary:
+		var value = values.get(id, {})
+		if value is Dictionary: return value
+	return {}
 
 static func card(id: String) -> Dictionary:
-	return CARDS.get(id, {"name": id.replace("_", " ").capitalize(), "cost": 0, "text": "", "art": ""})
+	var value := definition("cards", id)
+	var presentation := _dictionary(value.get("presentation", {}))
+	return {
+		"name": str(value.get("name", _title(id))),
+		"cost": int(_dictionary(value.get("cost", {})).get("energy", 0)),
+		"text": str(presentation.get("rules_text", "")),
+		"art": "res://assets/battle/cards/%s.png" % id,
+		"targeting": _dictionary(value.get("targeting", {})),
+		"play": _dictionary(value.get("play", {})),
+		"operations": _array(value.get("operations", [])),
+	}
 
 static func ability(id: String) -> Dictionary:
-	return ABILITIES.get(id, {"name": id.replace("_", " ").capitalize(), "recipe": "", "text": ""})
+	var value := definition("abilities", id)
+	var presentation := _dictionary(value.get("presentation", {}))
+	return {
+		"name": str(value.get("name", _title(id))),
+		"recipe": _ability_recipe(value),
+		"text": str(presentation.get("rules_text", "")),
+		"targeting": _dictionary(value.get("targeting", {})),
+	}
 
 static func status(id: String) -> Dictionary:
-	return STATUSES.get(id, {"name": id.replace("_", " ").capitalize(), "text": "", "glyph": "•"})
+	var value := definition("statuses", id)
+	var presentation := _dictionary(value.get("presentation", {}))
+	return {
+		"name": str(value.get("name", _title(id))),
+		"text": str(presentation.get("rules_text", "")),
+		"glyph": str(presentation.get("glyph", "•")),
+		"polarity": str(value.get("polarity", "")),
+	}
 
+static func symbol_for_die_face(die_id: String, face: int) -> String:
+	var die := definition("dice", die_id)
+	for entry in _array(die.get("faces", [])):
+		if entry is Dictionary and int(entry.get("number", 0)) == face:
+			var symbol := definition("symbols", str(entry.get("symbol", "")))
+			return str(symbol.get("glyph", "•"))
+	return "•"
+
+static func symbol_name_for_die_face(die_id: String, face: int) -> String:
+	var die := definition("dice", die_id)
+	for entry in _array(die.get("faces", [])):
+		if entry is Dictionary and int(entry.get("number", 0)) == face:
+			var symbol := definition("symbols", str(entry.get("symbol", "")))
+			return str(symbol.get("name", _title(str(entry.get("symbol", "symbol")))))
+	return "Unknown symbol"
+
+# Compatibility for presentation call sites that do not yet carry a die ID.
 static func symbol_for_face(face: int) -> String:
-	if face <= 3: return "⚔"
-	if face <= 5: return "◆"
-	return "●"
+	return symbol_for_die_face("standard_d6", face)
 
 static func symbol_name(face: int) -> String:
-	if face <= 3: return "Sword"
-	if face <= 5: return "Shield"
-	return "Gold Coin"
+	return symbol_name_for_die_face("standard_d6", face)
+
+static func _ability_recipe(value: Dictionary) -> String:
+	var qualification := _dictionary(value.get("qualification", {}))
+	var tiers := _array(qualification.get("activation_tiers", []))
+	if not tiers.is_empty():
+		var labels: Array[String] = []
+		for tier in tiers:
+			if not tier is Dictionary: continue
+			var requirements := _dictionary(tier.get("requirements", {}))
+			var parts: Array[String] = []
+			for requirement in _array(requirements.get("all", [])):
+				if requirement is Dictionary: parts.append(_requirement_text(requirement))
+			labels.append(" + ".join(parts))
+		return " / ".join(labels)
+	var selection := _dictionary(value.get("selection", {}))
+	if not selection.is_empty():
+		return "Select %d source%s" % [int(selection.get("target_count", 1)), "s" if int(selection.get("target_count", 1)) != 1 else ""]
+	return ""
+
+static func _requirement_text(requirement: Dictionary) -> String:
+	match str(requirement.get("type", "")):
+		"symbol_count":
+			var count := int(requirement.get("exact", requirement.get("minimum", 0)))
+			return "%d %s" % [count, definition("symbols", str(requirement.get("symbol_id", ""))).get("name", _title(str(requirement.get("symbol_id", ""))))]
+		"number_pattern": return str(requirement.get("pattern", "")).replace("_", " ").capitalize()
+		"exact_faces": return "Faces %s" % str(requirement.get("faces", []))
+	return "Requirement"
+
+static func _title(id: String) -> String:
+	return id.replace("_", " ").capitalize()
+
+static func _array(value) -> Array:
+	return value if value is Array else []
+
+static func _dictionary(value) -> Dictionary:
+	return value if value is Dictionary else {}

@@ -1,6 +1,7 @@
 schema_version: 1
 id: blind
 name: Blind
+presentation: {rules_text: "After Offensive revalidation, roll one die. On 1-2 cancel your selected ability; otherwise do nothing. Then remove Blind.", art_key: status_blind, glyph: "◉"}
 activation_mode: automatic
 polarity: negative
 stacking: {stack_limit: 1, overflow_policy: reject_additional_stacks}

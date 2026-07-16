@@ -153,7 +153,7 @@ func TestBlindConsumesWithoutAbilityAndCompletesReactableRollWithAbility(t *test
 		runtime.SelectedAbilityID = "sword_cut"
 		battle.Settled.Actors["player"] = runtime
 		battle.Settled.OffensiveSources = []state.SettledDamageSource{{ID: "source", SourceActorID: "player"}}
-		script := &battlerandom.Scripted{Values: []battlerandom.ScriptedValue{{Stream: "status_effect_dice", Bound: 6, Value: 0}}}
+		script := &battlerandom.Scripted{Values: []battlerandom.ScriptedValue{{Stream: "effect_dice", Bound: 6, Value: 0}}}
 		eng, err := NewEngineWithConfig(Config{NamedRandom: script}, DefaultFlows()...)
 		if err != nil {
 			t.Fatal(err)

@@ -30,7 +30,7 @@ func TestAuthorityRunsBladeWardenVsVenomGoblinFullBattle(t *testing.T) {
 		// Round 1 exact damage-card reveals and enemy pass.
 		{Stream: "damage_selection", Bound: 15, Value: 2}, {Stream: "damage_selection", Bound: 9, Value: 0}, {Stream: "damage_selection", Bound: 8, Value: 2}, {Stream: "damage_selection", Bound: 7, Value: 3}, {Stream: "ai_damage_response", Bound: 2, Value: 0},
 		// Automatic Round 2 Poison dice after Round 1 damage acknowledgment.
-		{Stream: "status_effect_dice", Bound: 6, Value: 1}, {Stream: "status_effect_dice", Bound: 6, Value: 5},
+		{Stream: "effect_dice", Bound: 6, Value: 1}, {Stream: "effect_dice", Bound: 6, Value: 5},
 		// Round 2 Ongoing child damage, Income, AI plan, and player dice.
 		{Stream: "damage_selection", Bound: 14, Value: 9}, {Stream: "damage_selection", Bound: 6, Value: 1},
 		{Stream: "card_draw", Bound: 13, Value: 2}, {Stream: "card_draw", Bound: 5, Value: 2}, {Stream: "ai_d100", Bound: 100, Value: 51},
