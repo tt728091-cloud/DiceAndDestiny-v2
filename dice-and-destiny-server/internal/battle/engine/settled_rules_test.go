@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"diceanddestiny/server/internal/battle/command"
+	"diceanddestiny/server/internal/battle/event"
 	battlerandom "diceanddestiny/server/internal/battle/random"
 	"diceanddestiny/server/internal/battle/segment"
 	"diceanddestiny/server/internal/battle/state"
@@ -178,6 +179,76 @@ func TestBlindConsumesWithoutAbilityAndCompletesReactableRollWithAbility(t *test
 			t.Fatal(err)
 		}
 	})
+}
+
+func TestOngoingEffectRollWaitsForPlayerAndKeepsEnemyRollHiddenUntilReveal(t *testing.T) {
+	library := settledTestLibrary(t)
+	battle := settledStatusBattle(t, library, "poison", 2)
+	battle.Segment.Current = segment.OngoingEffects
+	battle.Settled.Initialized = true
+	enemy := battle.Actors["enemy"]
+	enemy.Statuses = []state.StatusState{{InstanceID: "enemy-poison", DefinitionID: "poison", Stacks: 1}}
+	battle.Actors["enemy"] = enemy
+	script := &battlerandom.Scripted{Values: []battlerandom.ScriptedValue{
+		{Stream: "status_effect_dice", Bound: 6, Value: 5}, // Enemy rolls automatically.
+		{Stream: "status_effect_dice", Bound: 6, Value: 1}, // Player clicks once to roll its batch.
+		{Stream: "status_effect_dice", Bound: 6, Value: 3},
+	}}
+	eng, err := NewEngineWithConfig(Config{NamedRandom: script}, DefaultFlows()...)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	result, err := eng.progressSettled(&battle)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if result.Status != ProgressWaitingForInput || battle.Settled.Stage != stageOngoingRoll {
+		t.Fatalf("ongoing effect stage=%q status=%q, want player roll checkpoint", battle.Settled.Stage, result.Status)
+	}
+	if batch := battle.Settled.TriggerBatch; len(batch.Rolls) != 3 || batch.Rolls[0].ActorID != "enemy" || batch.Rolls[0].Die.Face != 6 || batch.Rolls[1].Die.Face != 0 || batch.Rolls[2].Die.Face != 0 {
+		t.Fatalf("pre-reveal effect rolls=%#v, want automatic enemy face and blank player dice", batch.Rolls)
+	}
+	pending := battle.Flow.PendingInput["player"]
+	payload, err := json.Marshal(command.RollDicePayload{PendingInputID: pending.ID, RerollIndices: []int{0}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	cmd := command.Command{BattleID: battle.ID, ActorID: "player", Type: command.TypeRollDice, Payload: payload}
+	events, err := eng.handleSettledCommand(&battle, cmd)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if battle.Settled.Stage != stageOngoingRoll || battle.Settled.Window == nil || len(events) != 1 || events[0].Data["hidden"] != true {
+		t.Fatalf("first effect die did not remain secret while another was pending: stage=%q window=%#v events=%#v", battle.Settled.Stage, battle.Settled.Window, events)
+	}
+	rolls := battle.Settled.TriggerBatch.Rolls
+	if rolls[1].Die.Face != 2 || !rolls[1].Resolved || rolls[2].Die.Face != 0 || rolls[2].Resolved {
+		t.Fatalf("first player effect roll=%#v, want one resolved and one pending", rolls[1:])
+	}
+	pending = battle.Flow.PendingInput["player"]
+	payload, err = json.Marshal(command.RollDicePayload{PendingInputID: pending.ID, RerollIndices: []int{1}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	cmd.Payload = payload
+	events, err = eng.handleSettledCommand(&battle, cmd)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if battle.Settled.Stage != stageOngoingReact || battle.Settled.Window == nil {
+		t.Fatalf("final effect roll did not open reveal/reaction: stage=%q window=%#v", battle.Settled.Stage, battle.Settled.Window)
+	}
+	rolls = battle.Settled.TriggerBatch.Rolls
+	if rolls[1].Die.Face != 2 || rolls[2].Die.Face != 4 {
+		t.Fatalf("player effect faces=%#v, want [2 4]", rolls[1:])
+	}
+	if len(events) != 2 || events[0].Type != event.TypeDiceRolled || events[1].Type != event.TypeInteractionWindowOpened {
+		t.Fatalf("effect reveal events=%#v", events)
+	}
+	if err := script.AssertExhausted(); err != nil {
+		t.Fatal(err)
+	}
 }
 
 func TestAIDamageResponsePassesWhenEmergencyWardIsUnavailable(t *testing.T) {

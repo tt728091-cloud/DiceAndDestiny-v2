@@ -30,7 +30,7 @@ func TestYAMLOnlyCardAbilityAndStatusComposeThroughAuthority(t *testing.T) {
 		{Stream: "damage_selection", Bound: 12, Value: 0}, {Stream: "damage_selection", Bound: 11, Value: 0},
 		{Stream: "damage_selection", Bound: 10, Value: 0}, {Stream: "damage_selection", Bound: 9, Value: 0}, {Stream: "damage_selection", Bound: 8, Value: 0},
 		{Stream: "ai_damage_response", Bound: 2, Value: 0},
-		{Stream: "effect_dice", Bound: 6, Value: 0}, // status deals 2 next round
+		{Stream: "status_effect_dice", Bound: 6, Value: 0}, // status deals 2 next round
 		{Stream: "damage_selection", Bound: 7, Value: 0}, {Stream: "damage_selection", Bound: 6, Value: 0},
 		{Stream: "ai_d100", Bound: 100, Value: 0},
 	}}

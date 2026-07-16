@@ -5,6 +5,7 @@ func _init() -> void:
 
 func _run() -> void:
 	root.size = Vector2i(1920, 1080)
+	ProjectSettings.set_setting("dice_and_destiny/presentation/income_animation_seconds", 0.2)
 	var gateway := BattleGateway.new()
 	var store := ActiveBattleStore.new(WorkspacePaths.persistent_file("verify_real_history_roll_endpoints_active.json")); store.clear()
 	var battle_id := "history-roll-endpoints-%d-%d" % [Time.get_unix_time_from_system(), Time.get_ticks_usec()]
@@ -14,10 +15,11 @@ func _run() -> void:
 	screen.initial_result = started; screen.gateway = gateway; screen.active_store = store; screen.last_presented_sequence = 0
 	root.add_child(screen); await process_frame; await process_frame
 
-	for step in 2:
-		var continue_button := _button(screen, "Continue Presentation")
-		if continue_button == null: _fail("startup presentation step %d was unavailable" % (step + 1)); return
-		continue_button.pressed.emit(); await process_frame; await process_frame
+	var continue_button := _button(screen, "Continue Presentation")
+	if continue_button == null: _fail("startup Effects presentation was unavailable"); return
+	continue_button.pressed.emit(); await process_frame; await process_frame
+	if _button(screen, "Continue Presentation") != null: _fail("automated Income presentation exposed a manual action"); return
+	await create_timer(0.25).timeout; await process_frame; await process_frame
 	var roll := _button(screen, "Roll 5 Dice")
 	if roll == null: _fail("initial offensive roll was unavailable"); return
 	roll.pressed.emit(); await process_frame; await process_frame

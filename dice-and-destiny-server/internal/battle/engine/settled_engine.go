@@ -17,6 +17,7 @@ import (
 
 const (
 	stageOngoingCollect = "collect_statuses"
+	stageOngoingRoll    = "status_roll"
 	stageOngoingReact   = "status_roll_reaction"
 	stageOngoingDamage  = "status_damage_reaction"
 	stageOffensivePlan  = "planning"
@@ -123,8 +124,12 @@ func (e Engine) progressSettledOngoing(battle *state.Battle, library content.Bat
 		if batch == nil {
 			return e.advanceSettledSegment(battle)
 		}
-		if batch.Reactable {
-			openSettledWindow(battle, "status-roll", stageOngoingReact, "reaction", []command.Type{command.TypeCommitInteraction, command.TypePass})
+		if hasPendingHumanEffectRoll(battle, batch) {
+			openSettledWindow(battle, "status-roll", stageOngoingRoll, "required_roll", []command.Type{command.TypeRollDice})
+			return []event.Event{settledEvent(event.TypeInteractionWindowOpened, battle, "", map[string]any{"batch_id": batch.ID})}, nil
+		}
+		if len(batch.Rolls) > 0 {
+			openStatusEffectReveal(battle, batch.Reactable)
 			return []event.Event{settledEvent(event.TypeInteractionWindowOpened, battle, "", map[string]any{"batch_id": batch.ID, "rolls": batch.Rolls})}, nil
 		}
 		return e.finalizeTriggerBatch(battle, library)
@@ -141,7 +146,7 @@ func (e Engine) collectStatusTriggerBatch(battle *state.Battle, library content.
 	for _, invocation := range matchingStatusInvocations(battle, library, segmentID, phase, stage) {
 		actorID, instance, definition, trigger := invocation.ActorID, invocation.Instance, invocation.Definition, invocation.Trigger
 		batch.StatusInstanceIDs = append(batch.StatusInstanceIDs, instance.InstanceID)
-		ctx := effectContext{SourceActorID: actorID, SourceContentID: definition.ID, SourceContentType: "status", TargetActorIDs: []string{actorID}, SelectedStatusID: definition.ID, StatusInstanceID: instance.InstanceID, TriggerID: trigger.ID, StatusStacks: instance.Stacks, DeferReactableRoll: true}
+		ctx := effectContext{SourceActorID: actorID, SourceContentID: definition.ID, SourceContentType: "status", TargetActorIDs: []string{actorID}, SelectedStatusID: definition.ID, StatusInstanceID: instance.InstanceID, TriggerID: trigger.ID, StatusStacks: instance.Stacks, DeferReactableRoll: true, DeferRollResolution: true, DeferHumanRoll: true, RollStream: "status_effect_dice"}
 		result, err := e.executeEffects(battle, library, ctx, trigger.Operations)
 		if err != nil {
 			return nil, err
@@ -208,6 +213,28 @@ func matchingStatusInvocations(battle *state.Battle, library content.BattleLibra
 		return result[i].Trigger.ID < result[j].Trigger.ID
 	})
 	return result
+}
+
+func hasPendingHumanEffectRoll(battle *state.Battle, batch *state.SettledTriggerBatch) bool {
+	human := humanActorID(battle)
+	for _, roll := range batch.Rolls {
+		if roll.ActorID == human && !roll.Resolved {
+			return true
+		}
+	}
+	return false
+}
+
+func openStatusEffectReveal(battle *state.Battle, reactable bool) {
+	allowed := []command.Type{command.TypePass}
+	if reactable {
+		allowed = append([]command.Type{command.TypeCommitInteraction}, allowed...)
+	}
+	purpose := "acknowledge"
+	if reactable {
+		purpose = "reaction"
+	}
+	openSettledWindow(battle, "status-roll", stageOngoingReact, purpose, allowed)
 }
 
 func (e Engine) finalizeTriggerBatch(battle *state.Battle, library content.BattleLibrary) ([]event.Event, error) {
@@ -814,6 +841,8 @@ func (e Engine) handleSettledCommand(battle *state.Battle, cmd command.Command) 
 		events, err = e.handleOffensiveReactionCommand(battle, library, cmd)
 	case stageOngoingReact:
 		events, err = e.handleStatusReactionCommand(battle, library, cmd)
+	case stageOngoingRoll:
+		events, err = e.handleStatusRollCommand(battle, library, cmd)
 	case stageOngoingDamage, stageDamageReact:
 		events, err = e.handleDamageReactionCommand(battle, library, cmd)
 	case stageDefenseSelect:
@@ -830,6 +859,71 @@ func (e Engine) handleSettledCommand(battle *state.Battle, cmd command.Command) 
 		err = fmt.Errorf("unsupported settled window stage %q", window.Stage)
 	}
 	return events, err
+}
+
+func (e Engine) handleStatusRollCommand(battle *state.Battle, library content.BattleLibrary, cmd command.Command) ([]event.Event, error) {
+	batch := battle.Settled.TriggerBatch
+	if batch == nil {
+		return nil, errors.New("status roll batch is missing")
+	}
+	var payload command.RollDicePayload
+	if err := command.DecodePayload(cmd, &payload); err != nil {
+		return nil, err
+	}
+	var candidates []int
+	for index := range batch.Rolls {
+		if batch.Rolls[index].ActorID == cmd.ActorID {
+			candidates = append(candidates, index)
+		}
+	}
+	selected := make(map[int]bool)
+	if len(payload.RerollIndices) == 0 {
+		for ordinal, batchIndex := range candidates {
+			if !batch.Rolls[batchIndex].Resolved {
+				selected[ordinal] = true
+			}
+		}
+	} else {
+		for _, ordinal := range payload.RerollIndices {
+			if ordinal < 0 || ordinal >= len(candidates) {
+				return nil, errors.New("status die index is out of range")
+			}
+			selected[ordinal] = true
+		}
+	}
+	var playerRolls []state.SettledEffectRoll
+	for ordinal, batchIndex := range candidates {
+		roll := &batch.Rolls[batchIndex]
+		if !selected[ordinal] || roll.Resolved {
+			continue
+		}
+		die, exists := library.Dice[roll.Die.DieID]
+		if !exists || die.SideCount <= 0 {
+			return nil, fmt.Errorf("status die %q was not found", roll.Die.DieID)
+		}
+		value, err := e.namedIntn(battle, "status_effect_dice", die.SideCount)
+		if err != nil {
+			return nil, err
+		}
+		face := die.Faces[value]
+		roll.Die.Face = face.Number
+		roll.Die.Value = face.Number
+		roll.Die.Symbols = []string{face.Symbol}
+		roll.Resolved = true
+		playerRolls = append(playerRolls, *roll)
+	}
+	if len(playerRolls) == 0 {
+		return nil, errors.New("no player status dice are pending")
+	}
+	closeSettledWindow(battle)
+	if hasPendingHumanEffectRoll(battle, batch) {
+		openSettledWindow(battle, "status-roll", stageOngoingRoll, "required_roll", []command.Type{command.TypeRollDice})
+		return []event.Event{settledEvent(event.TypeDiceRolled, battle, cmd.ActorID, map[string]any{"count": len(playerRolls), "hidden": true})}, nil
+	}
+	events := []event.Event{settledEvent(event.TypeDiceRolled, battle, cmd.ActorID, map[string]any{"rolls": playerRolls})}
+	openStatusEffectReveal(battle, batch.Reactable)
+	events = append(events, settledEvent(event.TypeInteractionWindowOpened, battle, "", map[string]any{"batch_id": batch.ID, "rolls": batch.Rolls}))
+	return events, nil
 }
 
 func (e Engine) handleOffensivePlanningCommand(battle *state.Battle, library content.BattleLibrary, cmd command.Command) ([]event.Event, error) {

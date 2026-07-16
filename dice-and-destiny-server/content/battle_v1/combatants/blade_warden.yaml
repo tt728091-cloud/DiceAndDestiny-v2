@@ -14,7 +14,7 @@ decklist:
   - {card_id: battle_focus, count: 6}
 dice_loadout: [{dice_id: standard_d6, count: 5}]
 ability_board:
-  offensive: [sword_cut, shield_bash, golden_edge, perfect_form]
+  offensive: [sword_cut, shield_bash, golden_edge, perfect_form, venom_strike]
   defensive: [basic_defense, protect]
 starting_statuses: []
 starting_tokens: []

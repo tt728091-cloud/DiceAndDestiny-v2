@@ -29,8 +29,8 @@ func TestAuthorityRunsBladeWardenVsVenomGoblinFullBattle(t *testing.T) {
 		{Stream: "ai_defense", Bound: 2, Value: 0}, {Stream: "defense_dice", Bound: 6, Value: 1}, {Stream: "defense_dice", Bound: 6, Value: 2},
 		// Round 1 exact damage-card reveals and enemy pass.
 		{Stream: "damage_selection", Bound: 15, Value: 2}, {Stream: "damage_selection", Bound: 9, Value: 0}, {Stream: "damage_selection", Bound: 8, Value: 2}, {Stream: "damage_selection", Bound: 7, Value: 3}, {Stream: "ai_damage_response", Bound: 2, Value: 0},
-		// Automatic Round 2 Poison dice after Round 1 damage acknowledgment.
-		{Stream: "effect_dice", Bound: 6, Value: 1}, {Stream: "effect_dice", Bound: 6, Value: 5},
+		// Round 2 Poison dice rolled by the player after Round 1 damage acknowledgment.
+		{Stream: "status_effect_dice", Bound: 6, Value: 1}, {Stream: "status_effect_dice", Bound: 6, Value: 5},
 		// Round 2 Ongoing child damage, Income, AI plan, and player dice.
 		{Stream: "damage_selection", Bound: 14, Value: 9}, {Stream: "damage_selection", Bound: 6, Value: 1},
 		{Stream: "card_draw", Bound: 13, Value: 2}, {Stream: "card_draw", Bound: 5, Value: 2}, {Stream: "ai_d100", Bound: 100, Value: 51},
@@ -86,20 +86,38 @@ func TestAuthorityRunsBladeWardenVsVenomGoblinFullBattle(t *testing.T) {
 	result = sendAbilityFull(t, authority, result, "basic_defense", []string{sourceID})
 	assertFullBattleWait(t, result, "defensive", 1, "defense_roll")
 	result = sendRollDiceFull(t, authority, result)
-	assertFullBattleWait(t, result, "defensive", 1, "defense_reaction")
 	assertDefenseRollEvent(t, result, "blade", 2)
+	assertFullBattleWait(t, result, "defensive", 1, "defense_reaction")
 	if len(result.Snapshot.SettledDefenses) != 2 || result.Snapshot.SettledDefenses["blade"].AbilityID != "basic_defense" || result.Snapshot.SettledDefenses["goblin"].AbilityID != "basic_defense" {
 		t.Fatalf("defense reveal snapshot=%#v, want both actor defenses", result.Snapshot.SettledDefenses)
+	}
+	if result.Snapshot.SettledDefenses["goblin"].RolledFace == 0 {
+		t.Fatalf("enemy defense reveal snapshot=%#v, want its automatic hidden roll result", result.Snapshot.SettledDefenses["goblin"])
 	}
 	result = sendPassFull(t, authority, result)
 	assertFullBattleWait(t, result, "damage_resolution", 1, "damage_reaction")
 	assertDamageDefinitions(t, result, []string{"loaded_die", "tip_it", "emergency_ward", "battle_focus"})
 	result = sendPassFull(t, authority, result)
-	assertFullBattleWait(t, result, "ongoing_effects", 2, "status_roll_reaction")
+	assertFullBattleWait(t, result, "ongoing_effects", 2, "status_roll")
 	assertZones(t, result, "blade", 14, 4, 1, 1, 2)
 	assertZones(t, result, "goblin", 6, 3, 0, 3, 2)
+	if len(result.Snapshot.SettledEffectRolls) != 2 || result.Snapshot.SettledEffectRolls[0].Die.Face != 0 || result.Snapshot.SettledEffectRolls[1].Die.Face != 0 {
+		t.Fatalf("pre-reveal Poison dice=%#v, want two blank player dice", result.Snapshot.SettledEffectRolls)
+	}
+	for _, battleEvent := range result.Events {
+		if battleEvent.Type == event.TypeInteractionWindowOpened {
+			if rolls, exposed := battleEvent.Data["rolls"]; exposed {
+				t.Fatalf("pre-reveal effect event exposed secret rolls: %#v", rolls)
+			}
+		}
+	}
+	result = sendRollDiceFull(t, authority, result)
+	assertFullBattleWait(t, result, "ongoing_effects", 2, "status_roll_reaction")
+	if len(result.Snapshot.SettledEffectRolls) != 2 || result.Snapshot.SettledEffectRolls[0].Die.Face != 2 || result.Snapshot.SettledEffectRolls[1].Die.Face != 6 {
+		t.Fatalf("revealed Poison dice=%#v, want faces 2 and 6", result.Snapshot.SettledEffectRolls)
+	}
 
-	// Round 2: Antidote responds after both Poison rolls were collected.
+	// Round 2: Antidote responds after both Poison rolls were revealed.
 	antidote := cardInHand(t, result.Snapshot.Actors["blade"], "antidote")
 	result = sendCommitFull(t, authority, result, []string{antidote}, nil, nil, "poison")
 	assertFullBattleWait(t, result, "ongoing_effects", 2, "status_roll_reaction")

@@ -133,6 +133,7 @@ type SettledEffectRoll struct {
 	OperationID    string    `json:"operation_id,omitempty"`
 	OperationIndex int       `json:"operation_index"`
 	Die            RolledDie `json:"die"`
+	Resolved       bool      `json:"resolved,omitempty"`
 }
 
 type SettledStatusRemoval struct {

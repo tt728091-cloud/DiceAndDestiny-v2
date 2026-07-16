@@ -53,7 +53,7 @@ func _test_active_store() -> void:
 	store.clear()
 
 func _test_view_states() -> void:
-	var stages := ["planning", "planning", "planning", "planning", "offensive_reaction", "defense_selection", "defense_roll", "defense_reaction", "status_roll_reaction", "income", "damage_reaction", "damage_reaction", "discard_to_hand_limit", "victory"]
+	var stages := ["planning", "planning", "planning", "planning", "offensive_reaction", "defense_selection", "defense_roll", "defense_reaction", "status_roll", "status_roll_reaction", "income", "damage_reaction", "damage_reaction", "discard_to_hand_limit", "victory"]
 	for stage in stages:
 		var view := BattleViewState.new(); var fixture := _fixture(stage)
 		if not view.apply_result(fixture): failures.append("view rejected fixture %s" % stage); continue
@@ -65,6 +65,9 @@ func _test_view_states() -> void:
 	defense_fixture.snapshot.defense_selections = {"blade": {"actor_id": "blade", "ability_id": "basic_defense", "source_id": "enemy-source", "rolled_face": 6}, "goblin": {"actor_id": "goblin", "ability_id": "protect", "source_id": "player-source"}}
 	defense_fixture.events = [{"type": "dice_rolled", "actor_id": "blade", "segment": "defensive", "pool": "defensive", "source_id": "basic_defense", "dice": [{"face": 6}]}]
 	if not defense_view.apply_result(defense_fixture) or defense_view.defense_rolls.get("blade", {}).get("face") != 6 or defense_view.defense_selections.get("goblin", {}).get("ability_id") != "protect": failures.append("all revealed defenses were not retained on the battle mat: rolls=%s selections=%s" % [defense_view.defense_rolls, defense_view.defense_selections])
+	var effect_view := BattleViewState.new(); var effect_fixture := _fixture("status_roll")
+	effect_fixture.snapshot.effect_rolls = [{"actor_id": "blade", "status_id": "poison", "die": {"die_id": "standard_d6", "face": 0}}]
+	if not effect_view.apply_result(effect_fixture) or effect_view.effect_rolls.size() != 1 or int(effect_view.effect_rolls[0].get("die", {}).get("face", -1)) != 0: failures.append("pending effect dice were not retained from the viewer-safe snapshot: %s" % effect_view.effect_rolls)
 	var reveal_view := BattleViewState.new(); var reveal_fixture := _fixture("offensive_reaction")
 	reveal_fixture.events = [{"type": "interaction_revealed", "segment": "offensive", "data": {"commitments": {"goblin": {"ability_id": "jagged_slash", "ai_d100": 7, "simulated_rolls": 1, "dice": [{"face": 1}, {"face": 2}, {"face": 3}, {"face": 4}, {"face": 5}], "outcome": {"base_damage": 4, "status_applications": [], "resource_gains": {}, "targets": ["blade"]}}}}}]
 	if not reveal_view.apply_result(reveal_fixture) or reveal_view.rolled_dice("goblin").size() != 5 or reveal_view.offensive_reveal("goblin").get("ai_d100") != 7 or reveal_view.offensive_reveal("goblin").get("outcome", {}).get("base_damage") != 4: failures.append("public enemy offensive outcome was not retained after reveal: %s" % reveal_view.offensive_reveals)
@@ -84,7 +87,7 @@ func _test_director_and_fake() -> void:
 		seen.append(director.peek().sequence)
 		if director.peek().get("type") == "income_summary":
 			var income_actors: Dictionary = director.peek().event.data.actors
-			if income_actors.blade.cards != ["card-1"] or income_actors.blade.energy_points != 3 or income_actors.goblin.card_count != 1 or income_actors.goblin.energy_points != 2: failures.append("income summary omitted an actor result: %s" % income_actors)
+			if income_actors.blade.cards != ["card-1"] or income_actors.blade.energy_points != 3 or income_actors.blade.energy_gain != 1 or income_actors.goblin.card_count != 1 or income_actors.goblin.energy_points != 2 or income_actors.goblin.energy_gain != 1: failures.append("income summary omitted an actor result: %s" % income_actors)
 		director.advance()
 	if seen != [2]: failures.append("income presentation retained a redundant segment pause: %s" % seen)
 	director.queue_result(with_events, 5)

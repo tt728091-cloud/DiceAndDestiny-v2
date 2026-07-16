@@ -11,20 +11,23 @@ import (
 // effectContext describes activation-specific inputs. Cards, abilities, and
 // statuses all feed the same operation language through this context.
 type effectContext struct {
-	SourceActorID      string
-	SourceContentID    string
-	SourceContentType  string
-	TargetActorIDs     []string
-	ProposalIDs        []string
-	SelectedAbilityID  string
-	SelectedStatusID   string
-	StatusInstanceID   string
-	TriggerID          string
-	StatusStacks       int
-	SelectedDieActorID string
-	SelectedDieIndex   int
-	RolledFace         int
-	DeferReactableRoll bool
+	SourceActorID       string
+	SourceContentID     string
+	SourceContentType   string
+	TargetActorIDs      []string
+	ProposalIDs         []string
+	SelectedAbilityID   string
+	SelectedStatusID    string
+	StatusInstanceID    string
+	TriggerID           string
+	StatusStacks        int
+	SelectedDieActorID  string
+	SelectedDieIndex    int
+	RolledFace          int
+	DeferReactableRoll  bool
+	DeferRollResolution bool
+	DeferHumanRoll      bool
+	RollStream          string
 }
 
 type effectResult struct {
@@ -261,24 +264,36 @@ func (e Engine) executeEffect(battle *state.Battle, library content.BattleLibrar
 		}
 		for _, rollActorID := range rollActors {
 			for rollIndex := 0; rollIndex < count; rollIndex++ {
-				value, err := e.namedIntn(battle, "effect_dice", die.SideCount)
-				if err != nil {
-					return result, err
-				}
-				face := die.Faces[value]
 				roll := state.SettledEffectRoll{
 					ActorID: rollActorID, SourceContentType: ctx.SourceContentType,
 					SourceContentID: ctx.SourceContentID, StatusInstanceID: ctx.StatusInstanceID,
 					TriggerID:   ctx.TriggerID,
 					OperationID: op.ID, OperationIndex: operationIndex,
-					Die: state.RolledDie{Index: rollIndex, DieID: die.ID, Face: face.Number, Value: face.Number, Symbols: []string{face.Symbol}},
+					Die: state.RolledDie{Index: rollIndex, DieID: die.ID},
 				}
-				result.Rolls = append(result.Rolls, roll)
 				if op.ReactionWindow != nil && op.ReactionWindow.Opens {
 					result.Reactable = true
-					if ctx.DeferReactableRoll {
-						continue
-					}
+				}
+				if ctx.DeferHumanRoll && battle.Actors[rollActorID].Controller == state.ControllerHuman {
+					result.Rolls = append(result.Rolls, roll)
+					continue
+				}
+				stream := ctx.RollStream
+				if stream == "" {
+					stream = "effect_dice"
+				}
+				value, err := e.namedIntn(battle, stream, die.SideCount)
+				if err != nil {
+					return result, err
+				}
+				face := die.Faces[value]
+				roll.Die.Face = face.Number
+				roll.Die.Value = face.Number
+				roll.Die.Symbols = []string{face.Symbol}
+				roll.Resolved = true
+				result.Rolls = append(result.Rolls, roll)
+				if ctx.DeferRollResolution || (result.Reactable && ctx.DeferReactableRoll) {
+					continue
 				}
 				childContext := ctx
 				childContext.RolledFace = face.Number
