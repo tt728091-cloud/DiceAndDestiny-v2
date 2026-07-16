@@ -1,0 +1,24 @@
+schema_version: 1
+id: fateful_strike
+name: Fateful Strike
+type: offensive
+presentation: {rules_text: "After qualifying, roll 1D6. On 1-4 deal 2 damage; on 5 apply Bleed; on 6 deal 5 damage.", art_key: ability_fateful_strike}
+cost: {energy: 0}
+usage: {maximum_per_segment: 1}
+targeting: {selector: one_enemy, minimum: 1, maximum: 1}
+qualification:
+  activation_tiers:
+    - id: fateful_pair
+      requirements: {all: [{type: number_pattern, pattern: pair_or_better}]}
+      operations:
+        - id: fateful_strike_roll
+          type: roll_dice
+          target: selected_targets
+          dice_id: standard_d6
+          dice_count: 1
+          reaction_window: {opens: false}
+          outcomes:
+            - {id: fateful_glance, faces: [1, 2, 3, 4], operations: [{type: deal_damage, target: selected_targets, amount: 2}]}
+            - {id: fateful_bleed, faces: [5], operations: [{type: apply_status, target: selected_targets, status_id: bleed, stack_count: 1}]}
+            - {id: fateful_critical, faces: [6], operations: [{type: deal_damage, target: selected_targets, amount: 5}]}
+  conditional_bonuses: []

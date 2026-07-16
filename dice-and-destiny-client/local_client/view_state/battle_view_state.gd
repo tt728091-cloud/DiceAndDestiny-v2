@@ -19,6 +19,7 @@ var defense_selections: Dictionary = {}
 var effect_rolls: Array = []
 var offensive_reveals: Dictionary = {}
 var raw_snapshot: Dictionary = {}
+var content_catalog: Dictionary = {}
 var max_rolls_by_actor := {"blade": 3, "goblin": 3}
 
 func apply_result(result: Dictionary) -> bool:
@@ -39,6 +40,8 @@ func apply_result(result: Dictionary) -> bool:
 		defense_rolls.clear(); defense_selections.clear()
 	if incoming_round != round_number: offensive_reveals.clear()
 	raw_snapshot = snapshot.duplicate(true)
+	content_catalog = snapshot.get("content_catalog", {}).duplicate(true)
+	BattlePresentationCatalog.configure(content_catalog)
 	battle_id = str(snapshot.get("battle_id", ""))
 	status = str(snapshot.get("status", ""))
 	battle_result = str(result.get("battle_result", status if status in ["victory", "defeat", "draw", "escaped"] else ""))
@@ -60,7 +63,7 @@ func apply_result(result: Dictionary) -> bool:
 			var selection: Dictionary = defense_selections[actor_id]
 			var face := int(selection.get("rolled_face", 0))
 			if face > 0:
-				defense_rolls[str(actor_id)] = {"actor_id": str(actor_id), "ability_id": str(selection.get("ability_id", "basic_defense")), "source_id": str(selection.get("source_id", "")), "face": face}
+				defense_rolls[str(actor_id)] = {"actor_id": str(actor_id), "ability_id": str(selection.get("ability_id", "")), "source_id": str(selection.get("source_id", "")), "face": face}
 	for battle_event in events:
 		if battle_event.get("type") == "dice_rolled" and int(battle_event.get("max_rolls", 0)) > 0:
 			max_rolls_by_actor[str(battle_event.get("actor_id", "blade"))] = int(battle_event.max_rolls)
@@ -68,7 +71,7 @@ func apply_result(result: Dictionary) -> bool:
 			var dice_value = battle_event.get("dice", [])
 			var dice: Array = dice_value if dice_value is Array else []
 			if not dice.is_empty():
-				defense_rolls[str(battle_event.get("actor_id", ""))] = {"actor_id": str(battle_event.get("actor_id", "")), "ability_id": str(battle_event.get("source_id", "basic_defense")), "face": int(dice[0].get("face", 0)), "die": dice[0].duplicate(true)}
+				defense_rolls[str(battle_event.get("actor_id", ""))] = {"actor_id": str(battle_event.get("actor_id", "")), "ability_id": str(battle_event.get("source_id", "")), "face": int(dice[0].get("face", 0)), "die": dice[0].duplicate(true)}
 		if battle_event.get("type") == "defense_selected":
 			var data_value = battle_event.get("data", {})
 			var data: Dictionary = data_value if data_value is Dictionary else {}
@@ -95,6 +98,28 @@ func viewer_pending() -> Dictionary:
 
 func allowed(command_type: String) -> bool:
 	return command_type in viewer_pending().get("allowed_commands", [])
+
+func content_definition(kind: String, definition_id: String) -> Dictionary:
+	var definitions = content_catalog.get(kind, {})
+	if definitions is Dictionary:
+		var value = definitions.get(definition_id, {})
+		if value is Dictionary: return value
+	return {}
+
+func card_playable_now(definition_id: String) -> bool:
+	var definition := content_definition("cards", definition_id)
+	if definition.is_empty(): return false
+	var pending := viewer_pending()
+	var purpose := str(pending.get("input_type", ""))
+	if purpose.ends_with("_response") or "reaction" in stage: purpose = "reaction"
+	var command := "planning_commit_cards" if purpose == "planning" else "commit_interaction"
+	if not allowed(command): return false
+	var play = definition.get("play", {})
+	if not play is Dictionary: return false
+	for timing in play.get("playable_during", []):
+		if timing is Dictionary and str(timing.get("segment", "")) == segment and str(timing.get("phase", "")) == "main" and str(timing.get("window_purpose", "")) == purpose:
+			return true
+	return false
 
 func actor(actor_id: String) -> Dictionary:
 	var value = actors.get(actor_id, {})

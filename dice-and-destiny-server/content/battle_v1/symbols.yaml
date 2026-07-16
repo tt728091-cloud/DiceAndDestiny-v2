@@ -1,5 +1,5 @@
 schema_version: 1
 symbols:
-  - {id: sword, name: Sword, presentation_key: symbol_sword}
-  - {id: shield, name: Shield, presentation_key: symbol_shield}
-  - {id: gold_coin, name: Gold Coin, presentation_key: symbol_gold_coin}
+  - {id: sword, name: Sword, presentation_key: symbol_sword, glyph: "⚔"}
+  - {id: shield, name: Shield, presentation_key: symbol_shield, glyph: "◆"}
+  - {id: gold_coin, name: Gold Coin, presentation_key: symbol_gold_coin, glyph: "●"}

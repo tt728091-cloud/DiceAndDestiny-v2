@@ -2,10 +2,18 @@ schema_version: 1
 id: basic_defense
 name: Basic Defense
 type: defensive
+presentation: {rules_text: "Roll 1D6 and prevent damage equal to the result.", art_key: ability_basic_defense}
 cost: {energy: 0}
 usage: {maximum_per_segment: 1}
 selection: {requires_incoming_proposal: true, allowed_proposal_types: [damage_source], target_count: 1}
 resolution:
-  roll: {dice_id: standard_d6, dice_count: 1}
   reaction_window: {opens: true, pass_required: true}
-  operations: [{type: prevent_damage, target: selected_proposal, amount: rolled_face}]
+  operations:
+    - id: basic_defense_roll
+      type: roll_dice
+      target: self
+      dice_id: standard_d6
+      dice_count: 1
+      reaction_window: {opens: true, pass_required: true}
+      outcomes:
+        - {faces: [1, 2, 3, 4, 5, 6], operations: [{type: prevent_damage, target: selected_proposal, amount: rolled_face}]}

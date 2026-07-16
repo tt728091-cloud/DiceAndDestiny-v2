@@ -6,6 +6,7 @@ import (
 	"path/filepath"
 	"regexp"
 	"sort"
+	"strings"
 
 	"gopkg.in/yaml.v3"
 )
@@ -26,6 +27,7 @@ type SymbolDefinition struct {
 	ID              string `yaml:"id" json:"id"`
 	Name            string `yaml:"name" json:"name"`
 	PresentationKey string `yaml:"presentation_key" json:"presentation_key"`
+	Glyph           string `yaml:"glyph" json:"glyph"`
 }
 
 type symbolCatalogFile struct {
@@ -54,6 +56,7 @@ type BattleCost struct {
 type Presentation struct {
 	RulesText string `yaml:"rules_text" json:"rules_text"`
 	ArtKey    string `yaml:"art_key" json:"art_key"`
+	Glyph     string `yaml:"glyph,omitempty" json:"glyph,omitempty"`
 }
 
 type ReactionWindowDefinition struct {
@@ -180,6 +183,7 @@ type BattleStatusDefinition struct {
 	SchemaVersion  int                       `yaml:"schema_version" json:"schema_version"`
 	ID             string                    `yaml:"id" json:"id"`
 	Name           string                    `yaml:"name" json:"name"`
+	Presentation   Presentation              `yaml:"presentation" json:"presentation"`
 	ActivationMode string                    `yaml:"activation_mode" json:"activation_mode"`
 	Polarity       string                    `yaml:"polarity" json:"polarity"`
 	Stacking       StatusStacking            `yaml:"stacking" json:"stacking"`
@@ -326,8 +330,8 @@ func LoadBattleLibrary(root string) (BattleLibrary, error) {
 		if err := validateStableNamed("symbol", symbol.ID, symbol.Name); err != nil {
 			return BattleLibrary{}, err
 		}
-		if symbol.PresentationKey == "" {
-			return BattleLibrary{}, fmt.Errorf("%w: symbol %q presentation_key is required", ErrInvalidContent, symbol.ID)
+		if symbol.PresentationKey == "" || symbol.Glyph == "" {
+			return BattleLibrary{}, fmt.Errorf("%w: symbol %q presentation_key and glyph are required", ErrInvalidContent, symbol.ID)
 		}
 		if _, ok := lib.Symbols[symbol.ID]; ok {
 			return BattleLibrary{}, fmt.Errorf("%w: duplicate symbol id %q", ErrInvalidContent, symbol.ID)
@@ -395,6 +399,7 @@ func battleItemID(item any) string {
 }
 
 func validateBattleLibrary(lib BattleLibrary) error {
+	contentNames := map[string]string{}
 	for id, die := range lib.Dice {
 		if die.SchemaVersion != 1 || id != die.ID {
 			return fmt.Errorf("%w: dice %q has invalid schema or id", ErrInvalidContent, id)
@@ -423,6 +428,12 @@ func validateBattleLibrary(lib BattleLibrary) error {
 		if err := validateStableNamed("status", id, status.Name); err != nil {
 			return err
 		}
+		if strings.TrimSpace(status.Presentation.RulesText) == "" {
+			return fmt.Errorf("%w: status %q presentation rules_text is required", ErrInvalidContent, id)
+		}
+		if err := reserveContentName(contentNames, "status", id, status.Name); err != nil {
+			return err
+		}
 		if status.Stacking.StackLimit < 1 || status.Stacking.OverflowPolicy != "reject_additional_stacks" {
 			return fmt.Errorf("%w: status %q has invalid stacking", ErrInvalidContent, id)
 		}
@@ -440,6 +451,9 @@ func validateBattleLibrary(lib BattleLibrary) error {
 				return fmt.Errorf("%w: status %q: %v", ErrInvalidContent, id, err)
 			}
 		}
+		if err := validateTargeting(status.Targeting); err != nil {
+			return fmt.Errorf("%w: status %q: %v", ErrInvalidContent, id, err)
+		}
 		if err := validateBattleOperations(status.Operations, lib); err != nil {
 			return err
 		}
@@ -451,6 +465,12 @@ func validateBattleLibrary(lib BattleLibrary) error {
 		if err := validateStableNamed("card", id, card.Name); err != nil {
 			return err
 		}
+		if strings.TrimSpace(card.Presentation.RulesText) == "" {
+			return fmt.Errorf("%w: card %q presentation rules_text is required", ErrInvalidContent, id)
+		}
+		if err := reserveContentName(contentNames, "card", id, card.Name); err != nil {
+			return err
+		}
 		if card.Cost.Energy < 0 || len(card.Play.SourceZones) == 0 || card.Play.Destination == "" || len(card.Play.PlayableDuring) == 0 {
 			return fmt.Errorf("%w: card %q has invalid cost or play rules", ErrInvalidContent, id)
 		}
@@ -458,6 +478,9 @@ func validateBattleLibrary(lib BattleLibrary) error {
 			if !validTiming(timing.Segment, timing.Phase) {
 				return fmt.Errorf("%w: card %q has invalid timing", ErrInvalidContent, id)
 			}
+		}
+		if err := validateTargeting(&card.Targeting); err != nil {
+			return fmt.Errorf("%w: card %q: %v", ErrInvalidContent, id, err)
 		}
 		if err := validateBattleOperations(card.Operations, lib); err != nil {
 			return fmt.Errorf("%w: card %q: %v", ErrInvalidContent, id, err)
@@ -469,6 +492,15 @@ func validateBattleLibrary(lib BattleLibrary) error {
 		}
 		if err := validateStableNamed("ability", id, ability.Name); err != nil {
 			return err
+		}
+		if strings.TrimSpace(ability.Presentation.RulesText) == "" {
+			return fmt.Errorf("%w: ability %q presentation rules_text is required", ErrInvalidContent, id)
+		}
+		if err := reserveContentName(contentNames, "ability", id, ability.Name); err != nil {
+			return err
+		}
+		if err := validateTargeting(ability.Targeting); err != nil {
+			return fmt.Errorf("%w: ability %q: %v", ErrInvalidContent, id, err)
 		}
 		if ability.Cost.Energy < 0 {
 			return fmt.Errorf("%w: ability %q cost must be non-negative", ErrInvalidContent, id)
@@ -567,6 +599,31 @@ func validateStableNamed(kind, id, name string) error {
 	}
 	return nil
 }
+func reserveContentName(names map[string]string, kind, id, name string) error {
+	key := strings.ToLower(strings.TrimSpace(name))
+	if previous, exists := names[key]; exists {
+		return fmt.Errorf("%w: %s %q name %q duplicates %s", ErrInvalidContent, kind, id, name, previous)
+	}
+	names[key] = kind + " " + id
+	return nil
+}
+func validateTargeting(targeting *TargetingDefinition) error {
+	if targeting == nil {
+		return nil
+	}
+	selectors := map[string]bool{
+		"self": true, "one_enemy": true, "one_owned_combat_die": true,
+		"selected_die": true, "one_negative_status_on_self": true,
+		"one_incoming_damage_source": true, "one_owned_offensive_ability": true,
+	}
+	if !selectors[targeting.Selector] {
+		return fmt.Errorf("unknown targeting selector %q", targeting.Selector)
+	}
+	if targeting.Minimum < 0 || targeting.Maximum < targeting.Minimum || targeting.Maximum < 1 {
+		return fmt.Errorf("selector %q has invalid minimum/maximum", targeting.Selector)
+	}
+	return nil
+}
 func validTiming(segment, phase string) bool {
 	switch segment {
 	case "ongoing_effects", "income", "offensive", "defensive", "damage_resolution":
@@ -617,6 +674,10 @@ func validateBattleOperations(ops []BattleOperation, lib BattleLibrary) error {
 				return fmt.Errorf("operation references unknown status %q", op.StatusID)
 			}
 		}
+		validTargets := map[string]bool{"": true, "self": true, "source_actor": true, "selected_targets": true, "target_actor": true, "selected_proposal": true, "selected_status": true, "selected_die": true, "selected_ability": true, "selected_offensive_ability": true}
+		if !validTargets[op.Target] {
+			return fmt.Errorf("operation %q has unknown target %q", op.Type, op.Target)
+		}
 		if op.DiceID != "" {
 			if _, ok := lib.Dice[op.DiceID]; !ok {
 				return fmt.Errorf("operation references unknown dice %q", op.DiceID)
@@ -624,6 +685,51 @@ func validateBattleOperations(ops []BattleOperation, lib BattleLibrary) error {
 		}
 		if op.Type == "apply_ability_modifier" && (op.Duration != "battle" || op.Modifier == nil || op.Modifier.AddConditionalBonus == nil) {
 			return fmt.Errorf("ability modifier must be a battle-duration conditional bonus")
+		}
+		switch op.Type {
+		case "deal_damage", "prevent_damage", "draw_cards":
+			if err := validateOperationAmount(op.Amount, false); err != nil {
+				return fmt.Errorf("%s: %v", op.Type, err)
+			}
+		case "gain_resource":
+			if op.Resource != "energy" {
+				return fmt.Errorf("gain_resource uses unsupported resource %q", op.Resource)
+			}
+			if err := validateOperationAmount(op.Amount, false); err != nil {
+				return fmt.Errorf("gain_resource: %v", err)
+			}
+		case "adjust_max_rolls":
+			if err := validateOperationAmount(op.Amount, true); err != nil {
+				return fmt.Errorf("adjust_max_rolls: %v", err)
+			}
+		case "apply_status":
+			if op.StatusID == "" || op.StackCount < 1 {
+				return fmt.Errorf("apply_status requires status_id and positive stack_count")
+			}
+		case "remove_status_stack":
+			if op.StackCount < 1 {
+				return fmt.Errorf("remove_status_stack requires positive stack_count")
+			}
+		case "modify_die":
+			if op.Modification != "set_face" || op.Face < 1 {
+				return fmt.Errorf("modify_die requires set_face and a positive face")
+			}
+		case "scale_damage":
+			if op.Numerator < 0 || op.Denominator < 1 || (op.Rounding != "" && op.Rounding != "floor" && op.Rounding != "down") {
+				return fmt.Errorf("scale_damage requires a non-negative fraction and floor rounding")
+			}
+		case "roll_dice":
+			die, ok := lib.Dice[op.DiceID]
+			if !ok {
+				return fmt.Errorf("roll_dice references unknown dice %q", op.DiceID)
+			}
+			if (op.DiceCount < 1) == !op.OnePerStatusStack {
+				return fmt.Errorf("roll_dice requires exactly one of positive dice_count or one_per_status_stack")
+			}
+			if len(op.Outcomes) == 0 {
+				return fmt.Errorf("roll_dice requires outcomes")
+			}
+			_ = die
 		}
 		if op.Modifier != nil && op.Modifier.AddConditionalBonus != nil {
 			if err := validateTier(*op.Modifier.AddConditionalBonus, lib); err != nil {
@@ -633,6 +739,9 @@ func validateBattleOperations(ops []BattleOperation, lib BattleLibrary) error {
 		covered := map[int]bool{}
 		for _, outcome := range op.Outcomes {
 			for _, face := range outcome.Faces {
+				if op.Type != "roll_dice" || face < 1 || face > lib.Dice[op.DiceID].SideCount {
+					return fmt.Errorf("operation outcome has invalid face %d", face)
+				}
 				if covered[face] {
 					return fmt.Errorf("operation outcomes overlap on face %d", face)
 				}
@@ -642,10 +751,36 @@ func validateBattleOperations(ops []BattleOperation, lib BattleLibrary) error {
 				return err
 			}
 		}
+		if op.Type == "roll_dice" && len(covered) != lib.Dice[op.DiceID].SideCount {
+			return fmt.Errorf("roll_dice outcomes must cover every face of %q", op.DiceID)
+		}
+	}
+	return nil
+}
+
+func validateOperationAmount(value any, allowNegative bool) error {
+	if text, ok := value.(string); ok {
+		if text == "rolled_face" {
+			return nil
+		}
+		return fmt.Errorf("unsupported amount %q", text)
+	}
+	integer, ok := value.(int)
+	if !ok {
+		return fmt.Errorf("amount must be an integer or rolled_face")
+	}
+	if (!allowNegative && integer < 1) || (allowNegative && integer == 0) {
+		return fmt.Errorf("amount has invalid value %d", integer)
 	}
 	return nil
 }
 func validateAI(ai CombatantAI, c CombatantDefinition, lib BattleLibrary) error {
+	var loadout []string
+	for _, entry := range c.DiceLoadout {
+		for n := 0; n < entry.Count; n++ {
+			loadout = append(loadout, entry.DiceID)
+		}
+	}
 	for aid, faces := range ai.RevealProfiles {
 		if _, ok := lib.Abilities[aid]; !ok {
 			return fmt.Errorf("reveal profile references unknown ability %q", aid)
@@ -653,9 +788,9 @@ func validateAI(ai CombatantAI, c CombatantDefinition, lib BattleLibrary) error 
 		if len(faces) != 5 {
 			return fmt.Errorf("reveal profile %q must contain five faces", aid)
 		}
-		for _, face := range faces {
-			if face < 1 || face > 6 {
-				return fmt.Errorf("reveal profile %q has invalid face", aid)
+		for index, face := range faces {
+			if index >= len(loadout) || face < 1 || face > lib.Dice[loadout[index]].SideCount {
+				return fmt.Errorf("reveal profile %q has invalid face %d for die %d", aid, face, index)
 			}
 		}
 	}

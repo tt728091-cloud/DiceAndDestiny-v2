@@ -1,6 +1,7 @@
 schema_version: 1
 id: bleed
 name: Bleed
+presentation: {rules_text: "At Ongoing Effects, take 1 damage per stack, then remove one stack.", art_key: status_bleed, glyph: "◆"}
 activation_mode: automatic
 polarity: negative
 stacking: {stack_limit: 3, overflow_policy: reject_additional_stacks}

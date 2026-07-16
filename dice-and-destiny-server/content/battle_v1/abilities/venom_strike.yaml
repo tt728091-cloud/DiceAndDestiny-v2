@@ -2,6 +2,7 @@ schema_version: 1
 id: venom_strike
 name: Venom Strike
 type: offensive
+presentation: {rules_text: "Deal 3 damage and apply 2 Poison.", art_key: ability_venom_strike}
 cost: {energy: 0}
 usage: {maximum_per_segment: 1}
 targeting: {selector: one_enemy, minimum: 1, maximum: 1}

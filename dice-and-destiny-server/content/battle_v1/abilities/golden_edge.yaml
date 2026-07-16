@@ -2,6 +2,7 @@ schema_version: 1
 id: golden_edge
 name: Golden Edge
 type: offensive
+presentation: {rules_text: "Deal 5 damage and gain 1 energy.", art_key: ability_golden_edge}
 cost: {energy: 0}
 usage: {maximum_per_segment: 1}
 targeting: {selector: one_enemy, minimum: 1, maximum: 1}
