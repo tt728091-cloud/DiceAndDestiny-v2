@@ -106,8 +106,29 @@ go test ./...
 Run the Godot headless integration test:
 
 ```bash
-godot --headless --path dice-and-destiny-client --script res://scripts/verify_battle_authority.gd
+./scripts/godot.sh --headless --script res://scripts/verify_battle_authority.gd
 ```
+
+## Collision-Free Workspace Runs
+
+Always launch this project through `scripts/godot.sh`, including headless tests and editor sessions:
+
+```bash
+./scripts/godot.sh
+./scripts/godot.sh --editor
+./scripts/godot.sh --headless --script res://tests/test_client_logic.gd
+```
+
+The launcher derives every path from its own checkout. On a new worktree it builds missing native artifacts and performs the initial Godot import automatically. Normal game and editor runs use stable workspace-local state beneath `dice-and-destiny-client/.godot/runtime/`. Scripted runs automatically receive disposable per-process client and server state. Logs use unique files, the debug inspector asks the OS for an available port, and all Go content/save roots are explicitly scoped to the current checkout.
+
+To run and inspect a game, no port or token setup is required:
+
+```bash
+DICE_AND_DESTINY_INSPECTOR=1 ./scripts/godot.sh
+python3 dice-and-destiny-client/devtools/inspect_game.py health
+```
+
+The inspector client discovers the running instance from this workspace. Do not use a raw `godot --path ...` command for development automation because it bypasses per-process test isolation and unique log allocation.
 
 Expected Godot output includes:
 

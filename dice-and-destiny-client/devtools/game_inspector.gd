@@ -1,6 +1,6 @@
 extends Node
 
-const DEFAULT_PORT := 7777
+const DEFAULT_PORT := 0
 const LOOPBACK := "127.0.0.1"
 
 var _server := TCPServer.new()
@@ -10,6 +10,7 @@ var _errors: Array = []
 var _enabled := false
 var _port := DEFAULT_PORT
 var _token := ""
+var _discovery_path := ""
 
 func _ready() -> void:
 	_enabled = OS.is_debug_build() and _requested()
@@ -25,7 +26,24 @@ func _ready() -> void:
 		push_error("[GameInspector] Could not listen on %s:%d: %s" % [LOOPBACK, _port, error_string(error)])
 		set_process(false)
 		return
+	_port = _server.get_local_port()
+	_write_discovery_record()
 	print("[GameInspector] READY http://%s:%d token=%s" % [LOOPBACK, _port, _token])
+
+func _write_discovery_record() -> void:
+	var directory := WorkspacePaths.runtime_dir("inspectors")
+	_discovery_path = directory.path_join("%d.json" % OS.get_process_id())
+	var file := FileAccess.open(_discovery_path, FileAccess.WRITE)
+	if file == null:
+		push_error("[GameInspector] Could not write discovery record: %s" % error_string(FileAccess.get_open_error()))
+		return
+	file.store_string(JSON.stringify({
+		"pid": OS.get_process_id(),
+		"port": _port,
+		"token": _token,
+		"project_root": ProjectSettings.globalize_path("res://"),
+		"started_unix": Time.get_unix_time_from_system(),
+	}))
 
 func _requested() -> bool:
 	if OS.get_environment("DICE_AND_DESTINY_INSPECTOR") == "1": return true
@@ -192,3 +210,5 @@ func _send(peer: StreamPeerTCP, status: int, body) -> void:
 
 func _exit_tree() -> void:
 	if _server.is_listening(): _server.stop()
+	if not _discovery_path.is_empty() and FileAccess.file_exists(_discovery_path):
+		DirAccess.remove_absolute(_discovery_path)

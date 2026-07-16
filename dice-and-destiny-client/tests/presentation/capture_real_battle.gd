@@ -22,7 +22,7 @@ func _run() -> void:
 func _capture(result: Dictionary, size: Vector2i, filename: String) -> void:
 	root.size = size
 	var screen = load("res://app/screens/battle/battle_screen.tscn").instantiate()
-	screen.initial_result = result; screen.gateway = gateway; screen.active_store = ActiveBattleStore.new("user://capture_active.json"); screen.last_presented_sequence = 999999
+	screen.initial_result = result; screen.gateway = gateway; screen.active_store = ActiveBattleStore.new(WorkspacePaths.persistent_file("capture_active.json")); screen.last_presented_sequence = 999999
 	root.add_child(screen); await process_frame; await process_frame; await process_frame
 	var image := root.get_texture().get_image()
 	if image == null: _fail("rendering backend did not provide an image for %s" % filename); return

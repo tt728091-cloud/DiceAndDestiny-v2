@@ -189,7 +189,7 @@ go test ./...
 Run the Godot headless integration test:
 
 ```bash
-godot --headless --path /Users/daddymere/games/Dice-and-Destiny-v2/dice-and-destiny-client --script res://scripts/verify_battle_authority.gd
+./scripts/godot.sh --headless --script res://scripts/verify_battle_authority.gd
 ```
 
 Rebuild native artifacts before the Godot integration test when Go export or C++ bridge code changes:

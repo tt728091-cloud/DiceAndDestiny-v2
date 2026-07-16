@@ -6,7 +6,7 @@ func _init() -> void:
 func _run() -> void:
 	root.size = Vector2i(1920, 1080)
 	var gateway := BattleGateway.new()
-	var store := ActiveBattleStore.new("user://verify_real_history_scene_active.json"); store.clear()
+	var store := ActiveBattleStore.new(WorkspacePaths.persistent_file("verify_real_history_scene_active.json")); store.clear()
 	var battle_id := "history-scene-%d-%d" % [Time.get_unix_time_from_system(), Time.get_ticks_usec()]
 	var started := gateway.start_battle(battle_id, "blade")
 	if not _accepted(started, "start battle"): return

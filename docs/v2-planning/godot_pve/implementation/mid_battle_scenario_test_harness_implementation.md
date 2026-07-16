@@ -142,11 +142,7 @@ cd dice-and-destiny-server
 
 cd ..
 DICE_AND_DESTINY_ENABLE_SCENARIOS=1 \
-DICE_AND_DESTINY_SCENARIO_ROOT="$PWD/dice-and-destiny-server/scenarios" \
-DICE_AND_DESTINY_SCENARIO_STATE_ROOT="$HOME/Library/Application Support/Godot/app_userdata/Dice-and-Destiny/scenario_headless_state" \
-DICE_AND_DESTINY_CONTENT_ROOT="$PWD/dice-and-destiny-server/content" \
-DICE_AND_DESTINY_RUN_STATE_ROOT="$PWD/dice-and-destiny-server/save/run_players" \
-godot --headless --path dice-and-destiny-client \
+./scripts/godot.sh --headless \
   --script res://tests/scenarios/verify_scenario_launcher.gd
 ```
 

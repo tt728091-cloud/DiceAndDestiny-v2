@@ -1,14 +1,18 @@
 class_name ActiveBattleStore
 extends RefCounted
 
-const SAVE_PATH := "user://active_battle.json"
+const SAVE_FILENAME := "active_battle.json"
 
 var _save_path: String
 
-func _init(save_path: String = SAVE_PATH) -> void:
-	_save_path = save_path
+func _init(save_path: String = "") -> void:
+	_save_path = WorkspacePaths.persistent_file(SAVE_FILENAME) if save_path.is_empty() else save_path
 
 func save_active(battle_id: String, actor_id: String, last_sequence: int = 0, snapshot_name: String = "", history_context: Dictionary = {}) -> Error:
+	var parent := ProjectSettings.globalize_path(_save_path).get_base_dir()
+	var directory_error := DirAccess.make_dir_recursive_absolute(parent)
+	if directory_error != OK:
+		return directory_error
 	var file := FileAccess.open(_save_path, FileAccess.WRITE)
 	if file == null:
 		return FileAccess.get_open_error()

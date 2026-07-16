@@ -287,7 +287,7 @@ go test ./...
 Run Godot headless integration:
 
 ```bash
-godot --headless --path dice-and-destiny-client --script res://scripts/verify_battle_authority.gd
+./scripts/godot.sh --headless --script res://scripts/verify_battle_authority.gd
 ```
 
 The story is not complete until the relevant tests pass after the final change.

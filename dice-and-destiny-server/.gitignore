@@ -1,4 +1,5 @@
 .venv/
+.build_native.lock
 build/
 adapters/gdextension/.sconsign.dblite
 adapters/gdextension/src/*.os

@@ -81,7 +81,7 @@ func _verify_real_ui(stage: String) -> bool:
 	var screen = load("res://app/screens/battle/battle_screen.tscn").instantiate()
 	screen.initial_result = result
 	screen.gateway = gateway
-	screen.active_store = ActiveBattleStore.new("user://playthrough_ui_active.json")
+	screen.active_store = ActiveBattleStore.new(WorkspacePaths.persistent_file("playthrough_ui_active.json"))
 	screen.last_presented_sequence = 999999
 	root.add_child(screen)
 	await process_frame

@@ -5,6 +5,10 @@
 dice-and-destiny-client/.godot/
 dice-and-destiny-client/android/
 
+# Workspace-local runtime state is created beneath the ignored Godot cache by
+# scripts/godot.sh. No user save, log, port-discovery, or test state is shared
+# between worktrees.
+
 # Native build outputs copied into the Godot project.
 # Rebuild with: dice-and-destiny-server/scripts/build_native.sh
 dice-and-destiny-client/native/libbattle_go_authority.dylib
@@ -12,6 +16,7 @@ dice-and-destiny-client/native/libbattle_authority.*.framework/
 
 # Server/native build outputs
 dice-and-destiny-server/.venv/
+dice-and-destiny-server/.build_native.lock
 dice-and-destiny-server/build/
 dice-and-destiny-server/save/battles/
 dice-and-destiny-server/save/scenarios/

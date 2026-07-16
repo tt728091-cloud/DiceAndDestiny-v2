@@ -9,6 +9,14 @@ GODOT_CPP_DIR="${ROOT_DIR}/third_party/godot-cpp"
 VENV_DIR="${ROOT_DIR}/.venv"
 JOBS="$(sysctl -n hw.ncpu 2>/dev/null || echo 4)"
 
+# SCons and the final framework publication use fixed workspace-local paths.
+# Serialize duplicate build requests in the same workspace while allowing
+# builds in other worktrees to proceed independently.
+if [[ "${DICE_AND_DESTINY_NATIVE_BUILD_LOCKED:-0}" != "1" ]] && command -v lockf >/dev/null 2>&1; then
+  export DICE_AND_DESTINY_NATIVE_BUILD_LOCKED=1
+  exec lockf -k "${ROOT_DIR}/.build_native.lock" "$0" "$@"
+fi
+
 mkdir -p "${BUILD_DIR}" "${CLIENT_NATIVE_DIR}"
 
 if [[ ! -f "${GODOT_CPP_DIR}/SConstruct" ]]; then

@@ -4,8 +4,10 @@ const GATEWAY_SCRIPT := preload("res://local_client/battle_gateway/battle_gatewa
 const STORE_SCRIPT := preload("res://local_client/battle_gateway/active_battle_store.gd")
 
 func _init() -> void:
-	var state_root := ProjectSettings.globalize_path("user://scenario_headless_state")
-	var active_path := "user://scenario_headless_active.json"
+	var state_root := OS.get_environment("DICE_AND_DESTINY_SCENARIO_STATE_ROOT")
+	if state_root.is_empty():
+		state_root = WorkspacePaths.runtime_dir("scenario_headless_state")
+	var active_path := WorkspacePaths.persistent_file("scenario_headless_active.json")
 	_remove_tree(state_root)
 	DirAccess.remove_absolute(ProjectSettings.globalize_path(active_path))
 

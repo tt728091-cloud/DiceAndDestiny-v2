@@ -64,7 +64,7 @@ cd dice-and-destiny-server
 Run Godot headless integration:
 
 ```bash
-godot --headless --path dice-and-destiny-client --script res://scripts/verify_battle_authority.gd
+./scripts/godot.sh --headless --script res://scripts/verify_battle_authority.gd
 ```
 
 The Godot test should prove:

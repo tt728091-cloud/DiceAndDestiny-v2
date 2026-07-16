@@ -25,7 +25,7 @@ func _run() -> void:
 	var reroll_screen = packed.instantiate()
 	reroll_screen.initial_result = _rolled_fixture("p1", 1, [])
 	reroll_screen.gateway = BattleGateway.new(fake)
-	reroll_screen.active_store = ActiveBattleStore.new("user://verify_toggle_keep_active.json")
+	reroll_screen.active_store = ActiveBattleStore.new(WorkspacePaths.persistent_file("verify_toggle_keep_active.json"))
 	root.add_child(reroll_screen)
 	await process_frame; await process_frame
 	if _has_button(reroll_screen, "Keep Selected") or not _has_button(reroll_screen, "Reroll Unkept"):
@@ -152,7 +152,7 @@ func _run() -> void:
 	snapshot_fake.enqueue({"accepted": true, "data": {"snapshots": [{"name": "round-2-effects", "round": 2, "segment": "ongoing_effects", "stage": "status_damage_reaction", "event_count": 42}]}})
 	var restarted_fixture := _fixture(); restarted_fixture.snapshot.battle_id = "battle-snapshot-copy-two"; restarted_fixture.data = {"loaded_snapshot": {"name": "round-2-effects", "event_count": 42}}
 	snapshot_fake.enqueue(restarted_fixture)
-	var snapshot_store := ActiveBattleStore.new("user://verify_dev_snapshot_active.json"); snapshot_store.clear()
+	var snapshot_store := ActiveBattleStore.new(WorkspacePaths.persistent_file("verify_dev_snapshot_active.json")); snapshot_store.clear()
 	var snapshot_screen = packed.instantiate(); snapshot_screen.initial_result = _fixture(); snapshot_screen.gateway = BattleGateway.new(snapshot_fake); snapshot_screen.active_store = snapshot_store; root.add_child(snapshot_screen)
 	await process_frame; await process_frame
 	var toggle := _button(snapshot_screen, "DEV SNAPSHOTS")
@@ -231,7 +231,7 @@ func _run() -> void:
 	var endpoint_point := {"id": "history-0000000000000004", "parent_point_id": replacement_point.id, "label": "Offensive Dice 1/3", "kind": "decision", "action_type": "", "round": 1, "segment": "offensive", "stage": "planning", "event_count": 3, "presented_sequence": 0}
 	var endpoint_timeline := {"branch": truncated_branch.merged({"head_point_id": endpoint_point.id}, true), "points": [history_point, replacement_point, endpoint_point]}
 	history_fake.enqueue({"accepted": true, "data": {"point": endpoint_point, "timeline": endpoint_timeline}})
-	var history_store := ActiveBattleStore.new("user://verify_dev_history_active.json"); history_store.clear()
+	var history_store := ActiveBattleStore.new(WorkspacePaths.persistent_file("verify_dev_history_active.json")); history_store.clear()
 	var history_screen = packed.instantiate(); history_screen.initial_result = _fixture(); history_screen.gateway = BattleGateway.new(history_fake); history_screen.active_store = history_store; root.add_child(history_screen)
 	await process_frame; await process_frame
 	var point_button: Button = null

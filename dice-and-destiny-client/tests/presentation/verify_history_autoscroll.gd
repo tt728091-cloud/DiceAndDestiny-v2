@@ -6,7 +6,7 @@ func _init() -> void:
 func _run() -> void:
 	root.size = Vector2i(1024, 720)
 	var gateway := BattleGateway.new()
-	var store := ActiveBattleStore.new("user://verify_history_autoscroll_active.json"); store.clear()
+	var store := ActiveBattleStore.new(WorkspacePaths.persistent_file("verify_history_autoscroll_active.json")); store.clear()
 	var battle_id := "history-autoscroll-%d-%d" % [Time.get_unix_time_from_system(), Time.get_ticks_usec()]
 	var started := gateway.start_battle(battle_id, "blade")
 	if not _accepted(started, "start history autoscroll battle"): return

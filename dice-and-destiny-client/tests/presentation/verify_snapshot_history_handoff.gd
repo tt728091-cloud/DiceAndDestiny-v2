@@ -24,7 +24,7 @@ func _run() -> void:
 	fake.enqueue(loaded)
 	fake.enqueue({"accepted": true, "data": {"timeline": restored_timeline}})
 
-	var store := ActiveBattleStore.new("user://verify_snapshot_history_handoff_active.json"); store.clear()
+	var store := ActiveBattleStore.new(WorkspacePaths.persistent_file("verify_snapshot_history_handoff_active.json")); store.clear()
 	var screen = load("res://app/screens/battle/battle_screen.tscn").instantiate()
 	screen.initial_result = _fixture("snapshot-history-source"); screen.gateway = BattleGateway.new(fake); screen.active_store = store
 	root.add_child(screen); await process_frame; await process_frame

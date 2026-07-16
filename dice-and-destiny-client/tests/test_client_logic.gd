@@ -43,7 +43,7 @@ func _test_builders() -> void:
 	_expect(BattleCommandBuilder.pass_command("b1", "blade", PENDING), "pass", {"pending_input_id": "pending-7", "checkpoint": _interaction_checkpoint()})
 
 func _test_active_store() -> void:
-	var path := "user://verify_snapshot_active_store.json"
+	var path := WorkspacePaths.persistent_file("verify_snapshot_active_store.json")
 	var store := ActiveBattleStore.new(path); store.clear()
 	var history_context := {"review": true, "point_id": "history-0000000000000001", "client_state": {"selected_indices": [1, 3]}}
 	if store.save_active("battle-copy", "blade", 42, "round-2-effects", history_context) != OK: failures.append("active snapshot battle pointer could not be saved"); return
