@@ -24,6 +24,7 @@ type Battle struct {
 	Stage              string                          `json:"stage,omitempty"`
 	SettledSources     []state.SettledDamageSource     `json:"damage_sources,omitempty"`
 	SettledDefenses    map[string]state.SettledDefense `json:"defense_selections,omitempty"`
+	SettledEffectRolls []state.SettledEffectRoll       `json:"effect_rolls,omitempty"`
 	SettledDamage      *state.SettledDamageBatch       `json:"settled_damage,omitempty"`
 }
 
@@ -271,12 +272,32 @@ func FromBattleForViewer(battle state.Battle, viewerActorID string) Battle {
 			for actorID, defense := range battle.Settled.DefenseSelections {
 				result.SettledDefenses[actorID] = defense
 			}
+		} else if battle.Segment.Current == segment.Defensive && battle.Settled.Stage == "defense_roll" {
+			if defense, exists := battle.Settled.DefenseSelections[viewerActorID]; exists {
+				result.SettledDefenses = map[string]state.SettledDefense{viewerActorID: defense}
+			}
 		}
 		if battle.Settled.PendingDamage != nil {
 			damage := *battle.Settled.PendingDamage
 			damage.Sources = append([]state.SettledDamageSource(nil), battle.Settled.PendingDamage.Sources...)
 			damage.Removals = append([]state.ProposedCardRemoval(nil), battle.Settled.PendingDamage.Removals...)
 			result.SettledDamage = &damage
+		}
+		if battle.Segment.Current == segment.OngoingEffects && battle.Settled.TriggerBatch != nil {
+			switch battle.Settled.Stage {
+			case "status_roll":
+				for _, roll := range battle.Settled.TriggerBatch.Rolls {
+					if roll.ActorID == viewerActorID {
+						hidden := roll
+						hidden.Die.Face = 0
+						hidden.Die.Value = 0
+						hidden.Die.Symbols = nil
+						result.SettledEffectRolls = append(result.SettledEffectRolls, hidden)
+					}
+				}
+			case "status_roll_reaction":
+				result.SettledEffectRolls = append([]state.SettledEffectRoll(nil), battle.Settled.TriggerBatch.Rolls...)
+			}
 		}
 	}
 	return result

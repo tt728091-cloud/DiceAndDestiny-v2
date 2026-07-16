@@ -16,6 +16,7 @@ var settled_damage: Dictionary = {}
 var events: Array = []
 var defense_rolls: Dictionary = {}
 var defense_selections: Dictionary = {}
+var effect_rolls: Array = []
 var offensive_reveals: Dictionary = {}
 var raw_snapshot: Dictionary = {}
 var max_rolls_by_actor := {"blade": 3, "goblin": 3}
@@ -50,6 +51,7 @@ func apply_result(result: Dictionary) -> bool:
 	origin = snapshot.get("origin", {}).duplicate(true)
 	damage_sources = snapshot.get("damage_sources", []).duplicate(true)
 	settled_damage = snapshot.get("settled_damage", {}).duplicate(true)
+	effect_rolls = snapshot.get("effect_rolls", []).duplicate(true)
 	events = result.get("events", []).duplicate(true)
 	var incoming_defenses = snapshot.get("defense_selections", {})
 	if incoming_defenses is Dictionary and not incoming_defenses.is_empty():

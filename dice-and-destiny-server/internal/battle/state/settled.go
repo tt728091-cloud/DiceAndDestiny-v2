@@ -126,6 +126,7 @@ type SettledEffectRoll struct {
 	StatusInstanceID string    `json:"status_instance_id"`
 	StatusID         string    `json:"status_id"`
 	Die              RolledDie `json:"die"`
+	Resolved         bool      `json:"resolved,omitempty"`
 }
 
 type SettledStatusRemoval struct {

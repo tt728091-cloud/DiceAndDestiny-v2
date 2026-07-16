@@ -146,6 +146,99 @@ func _run() -> void:
 		if "Sword Cut" in button.text or "Venom Strike" in button.text: leaked_stale_attack = true
 	if not saw_status_context or not saw_status_card or not saw_player_poison or not saw_enemy_bleed or not saw_poison_damage or not saw_bleed_damage or leaked_stale_attack: _fail("status damage board omitted current totals or rendered stale offensive sources"); return
 	status_damage.queue_free(); await process_frame
+	var defense_roll_fake := FakeBattleAuthority.new()
+	var defense_roll_result := _fixture()
+	defense_roll_result.snapshot.segment = "defensive"; defense_roll_result.snapshot.stage = "defense_reaction"
+	defense_roll_result.pending_input.blade.segment = "defensive"; defense_roll_result.pending_input.blade.stage = "defense_reaction"; defense_roll_result.pending_input.blade.allowed_commands = ["pass"]
+	defense_roll_result.snapshot.damage_sources = [{"id": "source-player", "source_content_id": "golden_edge", "target_actor_id": "goblin", "base_amount": 5, "final_amount": 0}, {"id": "source-enemy", "source_content_id": "jagged_slash", "target_actor_id": "blade", "base_amount": 4, "final_amount": 0}]
+	defense_roll_result.snapshot.defense_selections = {"blade": {"actor_id": "blade", "ability_id": "basic_defense", "source_id": "source-enemy", "rolled_face": 5}, "goblin": {"actor_id": "goblin", "ability_id": "basic_defense", "source_id": "source-player", "rolled_face": 3}}
+	defense_roll_result.events = [{"sequence": 1, "type": "dice_rolled", "actor_id": "blade", "segment": "defensive", "pool": "defensive", "source_id": "basic_defense", "dice": [{"face": 5}]}, {"sequence": 2, "type": "dice_rolled", "actor_id": "goblin", "segment": "defensive", "pool": "defensive", "source_id": "basic_defense", "dice": [{"face": 3}]}]
+	defense_roll_fake.enqueue(defense_roll_result)
+	var defense_roll = packed.instantiate(); var defense_roll_fixture := _fixture()
+	defense_roll_fixture.snapshot.segment = "defensive"; defense_roll_fixture.snapshot.stage = "defense_roll"
+	defense_roll_fixture.pending_input.blade.segment = "defensive"; defense_roll_fixture.pending_input.blade.stage = "defense_roll"; defense_roll_fixture.pending_input.blade.allowed_commands = ["roll_dice"]
+	defense_roll_fixture.snapshot.damage_sources = defense_roll_result.snapshot.damage_sources.duplicate(true)
+	defense_roll_fixture.snapshot.defense_selections = {"blade": {"actor_id": "blade", "ability_id": "basic_defense", "source_id": "source-enemy"}}
+	defense_roll_fixture.snapshot.actors.blade.selected_ability = "sword_cut"
+	defense_roll.initial_result = defense_roll_fixture; defense_roll.gateway = BattleGateway.new(defense_roll_fake); defense_roll.active_store = ActiveBattleStore.new(WorkspacePaths.persistent_file("verify_defense_die_active.json")); root.add_child(defense_roll)
+	await process_frame; await process_frame
+	var pending_die: Button = null; var saw_selected_defense := false; var leaked_roll_label := false; var leaked_enemy_before_reveal := false
+	for label in defense_roll.find_children("*", "Label", true, false):
+		if label.has_meta("inspection_id") and label.get_meta("inspection_id") == "battle.defense_selected.blade" and label.text.begins_with("Basic Defense"): saw_selected_defense = true
+	for button in defense_roll.find_children("*", "Button", true, false):
+		if button.text == "Roll Defense Die": leaked_roll_label = true
+		if button.has_meta("inspection_id") and button.get_meta("inspection_id") == "battle.defense_die.blade.pending": pending_die = button
+		if button.has_meta("inspection_id") and str(button.get_meta("inspection_id")).begins_with("battle.defense_die.goblin"): leaked_enemy_before_reveal = true
+	if not saw_selected_defense or pending_die == null or not pending_die.text.is_empty() or leaked_roll_label or leaked_enemy_before_reveal: _fail("pre-reveal defense UI did not expose only the player's blank die"); return
+	var pre_roll_die_position := pending_die.global_position
+	pending_die.pressed.emit(); await process_frame; await process_frame
+	if defense_roll_fake.commands.size() != 1 or JSON.parse_string(defense_roll_fake.commands[0]).get("type") != "roll_dice": _fail("blank defense die did not submit roll_dice: %s" % defense_roll_fake.commands); return
+	var player_rolled_die: Button = null; var enemy_rolled_die: Button = null; var leaked_enemy_pending_die := false
+	for button in defense_roll.find_children("*", "Button", true, false):
+		if button.has_meta("inspection_id") and button.get_meta("inspection_id") == "battle.defense_die.blade" and "5" in button.text: player_rolled_die = button
+		if button.has_meta("inspection_id") and button.get_meta("inspection_id") == "battle.defense_die.goblin" and "3" in button.text: enemy_rolled_die = button
+		if button.has_meta("inspection_id") and button.get_meta("inspection_id") == "battle.defense_die.goblin.pending": leaked_enemy_pending_die = true
+	if player_rolled_die == null or enemy_rolled_die == null or leaked_enemy_pending_die: _fail("defense reveal did not show both secret results without an enemy roll control"); return
+	if player_rolled_die.global_position.distance_to(pre_roll_die_position) > 1.0 or enemy_rolled_die.global_position.x <= player_rolled_die.global_position.x: _fail("defense dice moved during reveal instead of updating the fixed two-column mat"); return
+	pending_die = null; player_rolled_die = null; enemy_rolled_die = null
+	defense_roll.active_store.clear(); defense_roll.queue_free(); await process_frame
+	var effect_roll_fake := FakeBattleAuthority.new()
+	var effect_roll_result := _fixture()
+	effect_roll_result.snapshot.segment = "ongoing_effects"; effect_roll_result.snapshot.stage = "status_roll_reaction"
+	effect_roll_result.pending_input.blade.segment = "ongoing_effects"; effect_roll_result.pending_input.blade.stage = "status_roll_reaction"; effect_roll_result.pending_input.blade.allowed_commands = ["commit_interaction", "pass"]
+	effect_roll_result.snapshot.actors.blade.statuses = [{"instance_id": "poison-blade", "definition_id": "poison", "stacks": 2}]
+	effect_roll_result.snapshot.actors.goblin.statuses = [{"instance_id": "poison-goblin", "definition_id": "poison", "stacks": 1}]
+	effect_roll_result.snapshot.effect_rolls = [{"actor_id": "blade", "status_instance_id": "poison-blade", "status_id": "poison", "die": {"index": 0, "die_id": "standard_d6", "face": 2}}, {"actor_id": "blade", "status_instance_id": "poison-blade", "status_id": "poison", "die": {"index": 1, "die_id": "standard_d6", "face": 6}}, {"actor_id": "goblin", "status_instance_id": "poison-goblin", "status_id": "poison", "die": {"index": 0, "die_id": "standard_d6", "face": 4}}]
+	var effect_roll_hidden := _fixture()
+	effect_roll_hidden.snapshot.segment = "ongoing_effects"; effect_roll_hidden.snapshot.stage = "status_roll"
+	effect_roll_hidden.pending_input.blade.segment = "ongoing_effects"; effect_roll_hidden.pending_input.blade.stage = "status_roll"; effect_roll_hidden.pending_input.blade.allowed_commands = ["roll_dice"]
+	effect_roll_hidden.snapshot.actors.blade.statuses = effect_roll_result.snapshot.actors.blade.statuses.duplicate(true)
+	effect_roll_hidden.snapshot.actors.goblin.statuses = effect_roll_result.snapshot.actors.goblin.statuses.duplicate(true)
+	effect_roll_hidden.snapshot.effect_rolls = [{"actor_id": "blade", "status_instance_id": "poison-blade", "status_id": "poison", "resolved": true, "die": {"index": 0, "die_id": "standard_d6", "face": 0}}, {"actor_id": "blade", "status_instance_id": "poison-blade", "status_id": "poison", "die": {"index": 1, "die_id": "standard_d6", "face": 0}}]
+	effect_roll_fake.enqueue(effect_roll_hidden); effect_roll_fake.enqueue(effect_roll_result)
+	var effect_roll = packed.instantiate(); var effect_roll_fixture := _fixture()
+	effect_roll_fixture.snapshot.segment = "ongoing_effects"; effect_roll_fixture.snapshot.stage = "status_roll"
+	effect_roll_fixture.pending_input.blade.segment = "ongoing_effects"; effect_roll_fixture.pending_input.blade.stage = "status_roll"; effect_roll_fixture.pending_input.blade.allowed_commands = ["roll_dice"]
+	effect_roll_fixture.snapshot.actors.blade.statuses = effect_roll_result.snapshot.actors.blade.statuses.duplicate(true)
+	effect_roll_fixture.snapshot.actors.goblin.statuses = effect_roll_result.snapshot.actors.goblin.statuses.duplicate(true)
+	effect_roll_fixture.snapshot.effect_rolls = [{"actor_id": "blade", "status_instance_id": "poison-blade", "status_id": "poison", "die": {"index": 0, "die_id": "standard_d6", "face": 0}}, {"actor_id": "blade", "status_instance_id": "poison-blade", "status_id": "poison", "die": {"index": 1, "die_id": "standard_d6", "face": 0}}]
+	effect_roll.initial_result = effect_roll_fixture; effect_roll.gateway = BattleGateway.new(effect_roll_fake); effect_roll.active_store = ActiveBattleStore.new(WorkspacePaths.persistent_file("verify_effect_die_active.json")); root.add_child(effect_roll)
+	await process_frame; await process_frame
+	var pending_effect_dice: Array[Button] = []; var leaked_enemy_effect_die := false
+	for button in effect_roll.find_children("*", "Button", true, false):
+		if not button.has_meta("inspection_id"): continue
+		var id := str(button.get_meta("inspection_id"))
+		if id.begins_with("battle.effect_die.blade.pending."): pending_effect_dice.append(button)
+		if id.begins_with("battle.effect_die.goblin"): leaked_enemy_effect_die = true
+	if pending_effect_dice.size() != 2 or not pending_effect_dice[0].text.is_empty() or not pending_effect_dice[1].text.is_empty() or leaked_enemy_effect_die: _fail("pre-reveal effects UI did not expose only the player's blank Poison dice"); return
+	var pre_effect_positions := [pending_effect_dice[0].global_position, pending_effect_dice[1].global_position]
+	pending_effect_dice[0].pressed.emit(); await process_frame; await process_frame
+	var first_effect_command: Dictionary = JSON.parse_string(effect_roll_fake.commands[0]) if effect_roll_fake.commands.size() == 1 else {}
+	if first_effect_command.get("type") != "roll_dice" or _int_array(first_effect_command.get("payload", {}).get("reroll_indices", [])) != [0]: _fail("first blank effect die did not submit its own roll index: %s" % effect_roll_fake.commands); return
+	var hidden_effect_die: Button = null; var second_pending_effect_die: Button = null
+	for button in effect_roll.find_children("*", "Button", true, false):
+		if not button.has_meta("inspection_id"): continue
+		if button.get_meta("inspection_id") == "battle.effect_die.blade.hidden.0": hidden_effect_die = button
+		if button.get_meta("inspection_id") == "battle.effect_die.blade.pending.1": second_pending_effect_die = button
+	if hidden_effect_die == null or second_pending_effect_die == null or "HIDDEN" not in hidden_effect_die.text or hidden_effect_die.global_position.distance_to(pre_effect_positions[0]) > 1.0 or second_pending_effect_die.global_position.distance_to(pre_effect_positions[1]) > 1.0: _fail("first Poison die did not remain hidden and fixed while the second awaited its click"); return
+	second_pending_effect_die.pressed.emit(); await process_frame; await process_frame
+	var second_effect_command: Dictionary = JSON.parse_string(effect_roll_fake.commands[1]) if effect_roll_fake.commands.size() == 2 else {}
+	if second_effect_command.get("type") != "roll_dice" or _int_array(second_effect_command.get("payload", {}).get("reroll_indices", [])) != [1]: _fail("second blank effect die did not submit its own roll index: %s" % effect_roll_fake.commands); return
+	var revealed_player_effect_dice: Array[Button] = []; var revealed_enemy_effect_die: Button = null; var saw_damage_outcome := false; var saw_removal_outcome := false
+	for button in effect_roll.find_children("*", "Button", true, false):
+		if not button.has_meta("inspection_id"): continue
+		var id := str(button.get_meta("inspection_id"))
+		if id.begins_with("battle.effect_die.blade.") and not id.contains("pending"): revealed_player_effect_dice.append(button)
+		if id == "battle.effect_die.goblin.0": revealed_enemy_effect_die = button
+	for label in effect_roll.find_children("*", "Label", true, false):
+		if label.text == "Poison · 2\n1 damage pending": saw_damage_outcome = true
+		if label.text == "Poison · 6\nRemove 1 Poison stack": saw_removal_outcome = true
+	if revealed_player_effect_dice.size() != 2 or revealed_enemy_effect_die == null or not saw_damage_outcome or not saw_removal_outcome: _fail("effects reveal omitted player/enemy dice or Poison outcome text"); return
+	for index in 2:
+		if revealed_player_effect_dice[index].global_position.distance_to(pre_effect_positions[index]) > 1.0: _fail("player effect dice moved during reveal instead of filling in place"); return
+	if revealed_enemy_effect_die.global_position.x <= revealed_player_effect_dice[0].global_position.x: _fail("enemy effect result did not populate the reserved right column"); return
+	pending_effect_dice.clear(); revealed_player_effect_dice.clear(); revealed_enemy_effect_die = null
+	effect_roll.active_store.clear(); effect_roll.queue_free(); await process_frame
 	var defense_reveal = packed.instantiate(); var defense_fixture := _fixture()
 	defense_fixture.snapshot.segment = "defensive"; defense_fixture.snapshot.stage = "defense_reaction"
 	defense_fixture.pending_input.blade.segment = "defensive"; defense_fixture.pending_input.blade.stage = "defense_reaction"; defense_fixture.pending_input.blade.allowed_commands = ["pass"]
@@ -154,9 +247,8 @@ func _run() -> void:
 	defense_fixture.events = [{"sequence": 1, "type": "dice_rolled", "actor_id": "blade", "segment": "defensive", "pool": "defensive", "source_id": "basic_defense", "dice": [{"face": 6}]}]
 	defense_reveal.initial_result = defense_fixture; root.add_child(defense_reveal)
 	await process_frame; await process_frame
-	var saw_reveal := false; var saw_player_math := false; var saw_enemy_protect := false; var saw_enemy_math := false
+	var saw_player_math := false; var saw_enemy_protect := false; var saw_enemy_math := false
 	for label in defense_reveal.find_children("*", "Label", true, false):
-		if label.text == "DEFENSE REVEAL": saw_reveal = true
 		if "Jagged Slash: 4 − 6 = 0 pending" in label.text: saw_player_math = true
 		if label.text == "Protect": saw_enemy_protect = true
 		if "Golden Edge: 5 → 2 pending" in label.text: saw_enemy_math = true
@@ -164,7 +256,7 @@ func _run() -> void:
 	for button in defense_reveal.find_children("*", "Button", true, false):
 		if button.has_meta("inspection_id") and str(button.get_meta("inspection_id")).begins_with("battle.defense_die."): die_ids.append(str(button.get_meta("inspection_id")))
 		if button.text == "Continue Presentation": _fail("defense dice still created a presentation popup"); return
-	if not saw_reveal or not saw_player_math or not saw_enemy_protect or not saw_enemy_math: _fail("combined defense mat omitted the player roll or enemy Protect result"); return
+	if not saw_player_math or not saw_enemy_protect or not saw_enemy_math: _fail("combined defense mat omitted the player roll or enemy Protect result"); return
 	if die_ids != ["battle.defense_die.blade"]: _fail("non-rolling Protect created a die or player defense die was missing: %s" % die_ids); return
 	defense_reveal.queue_free(); await process_frame
 	var no_defense = packed.instantiate(); var no_defense_fixture: Dictionary = defense_fixture.duplicate(true)
