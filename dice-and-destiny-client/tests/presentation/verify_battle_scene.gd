@@ -38,6 +38,31 @@ func _run() -> void:
 	if yaml_command.get("type") != "planning_commit_cards" or yaml_command.get("payload", {}).get("target_ids", []) != ["goblin"]:
 		_fail("YAML-only one_enemy selector was not routed generically: %s" % yaml_fake.commands[0]); return
 	yaml_screen.active_store.clear(); yaml_screen.queue_free(); await process_frame
+	# Antidote must present every eligible status as an explicit choice instead of
+	# silently picking the first active status or asking for an invisible target.
+	var antidote_fake := FakeBattleAuthority.new(); var antidote_fixture := _fixture()
+	antidote_fixture.snapshot.segment = "ongoing_effects"; antidote_fixture.snapshot.stage = "status_roll_reaction"
+	antidote_fixture.pending_input.blade.segment = "ongoing_effects"; antidote_fixture.pending_input.blade.stage = "status_roll_reaction"; antidote_fixture.pending_input.blade.allowed_commands = ["commit_interaction", "pass"]
+	antidote_fixture.snapshot.actors.blade.energy_points = 2
+	antidote_fixture.snapshot.actors.blade.statuses = [{"instance_id": "poison-blade", "definition_id": "poison", "stacks": 2}, {"instance_id": "bleed-blade", "definition_id": "bleed", "stacks": 1}]
+	antidote_fixture.snapshot.actors.blade.hand = ["antidote-1"]; antidote_fixture.snapshot.actors.blade.hand_count = 1
+	antidote_fixture.snapshot.actors.blade.card_instances = {"antidote-1": {"instance_id": "antidote-1", "definition_id": "antidote"}}
+	antidote_fake.enqueue(_fixture())
+	var antidote_screen = packed.instantiate(); antidote_screen.initial_result = antidote_fixture; antidote_screen.gateway = BattleGateway.new(antidote_fake); antidote_screen.active_store = ActiveBattleStore.new(WorkspacePaths.persistent_file("verify_antidote_target_active.json")); root.add_child(antidote_screen)
+	await process_frame; await process_frame
+	var antidote_card: Button = null
+	for button in antidote_screen.find_children("*", "Button", true, false):
+		if button.text.begins_with("Antidote"): antidote_card = button
+	if antidote_card == null or antidote_card.disabled: _fail("Antidote was not playable during the status reaction"); return
+	antidote_card.pressed.emit(); await process_frame; await process_frame
+	var poison_target := _button(antidote_screen, "Remove ☠ Poison ×2"); var bleed_target := _button(antidote_screen, "Remove ◆ Bleed ×1")
+	if not antidote_fake.commands.is_empty() or poison_target == null or bleed_target == null: _fail("Antidote did not expose both negative statuses before submitting: %s" % antidote_fake.commands); return
+	bleed_target.pressed.emit(); await process_frame; await process_frame
+	if antidote_fake.commands.size() != 1: _fail("Antidote status selection did not submit exactly one command: %s" % antidote_fake.commands); return
+	var antidote_command: Dictionary = JSON.parse_string(antidote_fake.commands[0]); var antidote_commitment: Dictionary = antidote_command.get("payload", {}).get("commitment", {})
+	if antidote_command.get("type") != "commit_interaction" or antidote_commitment.get("card_ids", []) != ["antidote-1"] or antidote_commitment.get("choice_id") != "bleed":
+		_fail("Antidote submitted the wrong selected status: %s" % antidote_fake.commands[0]); return
+	antidote_screen.active_store.clear(); antidote_screen.queue_free(); await process_frame
 	var fake := FakeBattleAuthority.new()
 	fake.enqueue(_rolled_fixture("p2", 1, []))
 	fake.enqueue(_rolled_fixture("p3", 2, [0, 2]))
