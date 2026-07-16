@@ -118,7 +118,6 @@ func _build_player_column(parent: HBoxContainer) -> void:
 		_add_action(controls, "Roll 5 Dice", "planning_roll", func(): _send(BattleCommandBuilder.planning_roll(_view.battle_id, "blade", _pending())))
 	elif _view.rolls_used("blade") < _view.max_rolls("blade"):
 		_add_action(controls, "Reroll Unkept", "planning_reroll", func(): _reroll_unkept())
-	_add_action(controls, "Roll Defense Die", "roll_dice", func(): _send(BattleCommandBuilder.roll_dice(_view.battle_id, "blade", _pending())))
 
 func _build_enemy_column(parent: HBoxContainer) -> void:
 	var column := VBoxContainer.new(); column.custom_minimum_size.x = 300; parent.add_child(column)
@@ -169,40 +168,72 @@ func _build_offensive() -> void:
 			var tip := Button.new(); tip.text = "Tip Blind die to face 5"; tip.disabled = _history_review; tip.pressed.connect(_play_blind_tip); _center.add_child(tip); _inspect(tip, "battle.tip_target.blind", "Use Tip It on the current blind-roll die")
 
 func _build_defensive() -> void:
-	_build_defense_reveal_mat()
 	_build_sources("INCOMING SOURCES")
 	var abilities: Array = _as_array(_view.actor("blade").get("defensive_abilities", []))
 	_build_ability_row("DEFENSIVE ABILITIES", abilities, "blade")
-	_add_selected_detail(_center, "blade")
+	if _view.stage in ["defense_roll", "defense_reaction"]: _build_defense_mat()
 
-func _build_defense_reveal_mat() -> void:
-	if _view.stage != "defense_reaction" and _view.defense_rolls.is_empty() and _view.defense_selections.is_empty(): return
-	var title := Label.new(); title.text = "DEFENSE REVEAL"; title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER; title.add_theme_font_size_override("font_size", 24); _center.add_child(title)
-	var row := HBoxContainer.new(); row.alignment = BoxContainer.ALIGNMENT_CENTER; row.add_theme_constant_override("separation", 90); _center.add_child(row)
+func _build_defense_mat() -> void:
+	var revealed := _view.stage == "defense_reaction"
+	var row := HBoxContainer.new(); row.size_flags_horizontal = Control.SIZE_EXPAND_FILL; row.add_theme_constant_override("separation", 30); _center.add_child(row)
+	_inspect(row, "battle.defense_mat", "Fixed defense roll and reveal area")
 	for actor_id in ["blade", "goblin"]:
-		var panel := VBoxContainer.new(); panel.custom_minimum_size = Vector2(310, 185); panel.alignment = BoxContainer.ALIGNMENT_CENTER; row.add_child(panel)
-		_inspect(panel, "battle.defense_result.%s" % actor_id, "Revealed defense result for %s" % actor_id)
-		var actor := Label.new(); actor.text = "BLADE WARDEN" if actor_id == "blade" else "VENOM GOBLIN"; actor.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER; actor.add_theme_font_size_override("font_size", 18); panel.add_child(actor)
-		var source := _incoming_source_for_target(actor_id)
-		if source.is_empty():
-			var none_needed := Label.new(); none_needed.text = "No incoming attack\nNo defense needed"; none_needed.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER; none_needed.add_theme_color_override("font_color", Color("9299a5")); panel.add_child(none_needed); continue
-		var attack := BattlePresentationCatalog.ability(str(source.get("source_content_id", ""))); var base := int(source.get("base_amount", 0))
-		var selection: Dictionary = _as_dictionary(_view.defense_selections.get(actor_id, {})); var roll: Dictionary = _as_dictionary(_view.defense_rolls.get(actor_id, {}))
-		if selection.is_empty() and not roll.is_empty(): selection = roll
-		if selection.is_empty():
-			var no_defense := Label.new(); no_defense.text = "NO DEFENSE USED"; no_defense.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER; no_defense.add_theme_font_size_override("font_size", 20); no_defense.add_theme_color_override("font_color", Color("e5a07e")); panel.add_child(no_defense); _inspect(no_defense, "battle.defense_none.%s" % actor_id, "%s used no defense" % actor.text)
-			var unchanged := Label.new(); unchanged.text = "%s: %d → %d pending" % [attack.name, base, base]; unchanged.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER; panel.add_child(unchanged); continue
-		var face := int(roll.get("face", selection.get("rolled_face", 0))); var ability_id := str(selection.get("ability_id", roll.get("ability_id", ""))); var ability := BattlePresentationCatalog.ability(ability_id)
-		if face > 0:
-			var die := Button.new(); die.disabled = true; die.custom_minimum_size = Vector2(120, 105); die.text = "%s\n%d" % [BattlePresentationCatalog.symbol_for_face(face), face]; die.tooltip_text = "%s defensive die: face %d, %s. Reserved for future reaction-card targeting." % [actor.text, face, BattlePresentationCatalog.symbol_name(face)]; die.add_theme_font_size_override("font_size", 26); panel.add_child(die); _inspect(die, "battle.defense_die.%s" % actor_id, die.tooltip_text)
-		else:
-			var no_die := Label.new(); no_die.text = "NO DIE ROLL"; no_die.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER; no_die.add_theme_font_size_override("font_size", 18); no_die.add_theme_color_override("font_color", Color("b8bfca")); panel.add_child(no_die)
-		var chosen := Label.new(); chosen.text = "%s · %d block" % [ability.name, face] if ability_id == "basic_defense" else ability.name; chosen.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER; panel.add_child(chosen)
-		var effect := Label.new(); effect.text = str(ability.get("text", "Defense selected")); effect.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER; effect.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART; effect.custom_minimum_size.x = 300; panel.add_child(effect)
-		var pending := base
-		if ability_id == "basic_defense": pending = maxi(0, base - face)
-		elif ability_id == "protect": pending = floori(float(base) / 2.0)
-		var outcome := Label.new(); outcome.text = "%s: %d − %d = %d pending" % [attack.name, base, face, pending] if ability_id == "basic_defense" else "%s: %d → %d pending" % [attack.name, base, pending]; outcome.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER; panel.add_child(outcome)
+		var panel := VBoxContainer.new(); panel.size_flags_horizontal = Control.SIZE_EXPAND_FILL; panel.alignment = BoxContainer.ALIGNMENT_CENTER; row.add_child(panel)
+		if actor_id == "goblin" and not revealed:
+			_inspect(panel, "battle.defense_hidden.goblin", "Reserved space for the hidden enemy defense")
+			continue
+		_build_defense_panel(panel, actor_id, revealed)
+
+func _build_defense_panel(parent: VBoxContainer, actor_id: String, revealed: bool) -> void:
+	var actor_name := "BLADE WARDEN" if actor_id == "blade" else "VENOM GOBLIN"
+	var heading := Label.new(); heading.text = "%s DEFENSE" % actor_name; heading.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER; heading.add_theme_font_size_override("font_size", 18); parent.add_child(heading)
+	var source := _incoming_source_for_target(actor_id)
+	if source.is_empty():
+		var none_needed := Label.new(); none_needed.text = "No incoming attack\nNo defense needed"; none_needed.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER; none_needed.add_theme_color_override("font_color", Color("9299a5")); parent.add_child(none_needed); return
+	var attack := BattlePresentationCatalog.ability(str(source.get("source_content_id", ""))); var base := int(source.get("base_amount", 0))
+	var selection: Dictionary = _as_dictionary(_view.defense_selections.get(actor_id, {})); var roll: Dictionary = _as_dictionary(_view.defense_rolls.get(actor_id, {}))
+	if selection.is_empty() and not roll.is_empty(): selection = roll
+	if selection.is_empty():
+		if not revealed: return
+		var no_defense := Label.new(); no_defense.text = "NO DEFENSE USED"; no_defense.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER; no_defense.add_theme_font_size_override("font_size", 20); no_defense.add_theme_color_override("font_color", Color("e5a07e")); parent.add_child(no_defense); _inspect(no_defense, "battle.defense_none.%s" % actor_id, "%s used no defense" % actor_name.capitalize())
+		var unchanged := Label.new(); unchanged.text = "%s: %d → %d pending" % [attack.name, base, base]; unchanged.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER; parent.add_child(unchanged); return
+	var ability_id := str(selection.get("ability_id", ""))
+	if ability_id.is_empty(): return
+	var ability := BattlePresentationCatalog.ability(ability_id)
+	var detail := Label.new(); detail.custom_minimum_size = Vector2(250, 96); detail.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	detail.text = "%s\n%s\n%s" % [ability.name, ability.recipe, ability.text]
+	detail.text += "\nAgainst: %s" % attack.name
+	detail.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART; parent.add_child(detail); _inspect(detail, "battle.defense_selected.%s" % actor_id, detail.text)
+	var face := int(roll.get("face", selection.get("rolled_face", 0)))
+	var die := Button.new(); die.custom_minimum_size = Vector2(120, 105); die.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	_style_defense_die(die)
+	if face > 0:
+		die.text = "%s\n%d" % [BattlePresentationCatalog.symbol_for_face(face), face]
+		die.tooltip_text = "%s defensive die: face %d, %s." % [actor_name.capitalize(), face, BattlePresentationCatalog.symbol_name(face)]
+		die.disabled = true; die.add_theme_font_size_override("font_size", 26); parent.add_child(die); _inspect(die, "battle.defense_die.%s" % actor_id, die.tooltip_text)
+	elif revealed:
+		var no_die := Label.new(); no_die.custom_minimum_size = Vector2(120, 105); no_die.text = "NO DIE ROLL"; no_die.vertical_alignment = VERTICAL_ALIGNMENT_CENTER; no_die.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER; no_die.add_theme_font_size_override("font_size", 18); no_die.add_theme_color_override("font_color", Color("b8bfca")); parent.add_child(no_die)
+	else:
+		die.tooltip_text = "Click this blank player defense die to roll it."
+		die.disabled = _submitting or _director.has_beats() or _history_review
+		die.pressed.connect(func(): _send(BattleCommandBuilder.roll_dice(_view.battle_id, "blade", _pending())))
+		parent.add_child(die); _inspect(die, "battle.defense_die.blade.pending", die.tooltip_text)
+		var instruction := Label.new(); instruction.text = "Click the blank player die to roll"; instruction.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER; instruction.add_theme_color_override("font_color", Color("b8bfca")); parent.add_child(instruction)
+		return
+	if not revealed: return
+	var chosen := Label.new(); chosen.text = "%s · %d block" % [ability.name, face] if ability_id == "basic_defense" else ability.name; chosen.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER; parent.add_child(chosen)
+	var effect := Label.new(); effect.text = str(ability.get("text", "Defense selected")); effect.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER; effect.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART; effect.custom_minimum_size.x = 300; parent.add_child(effect)
+	var pending := base
+	if ability_id == "basic_defense": pending = maxi(0, base - face)
+	elif ability_id == "protect": pending = floori(float(base) / 2.0)
+	var outcome := Label.new(); outcome.text = "%s: %d − %d = %d pending" % [attack.name, base, face, pending] if ability_id == "basic_defense" else "%s: %d → %d pending" % [attack.name, base, pending]; outcome.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER; parent.add_child(outcome)
+	_inspect(parent, "battle.defense_result.%s" % actor_id, "Revealed defense result for %s" % actor_id)
+
+func _style_defense_die(die: Button) -> void:
+	var normal_style := StyleBoxFlat.new(); normal_style.bg_color = Color("111722f2"); normal_style.border_color = Color("77879aff"); normal_style.set_border_width_all(2); normal_style.set_corner_radius_all(12); normal_style.shadow_color = Color(0, 0, 0, 0.75); normal_style.shadow_size = 8
+	var hover_style := normal_style.duplicate(); hover_style.bg_color = Color("1b2431ff"); hover_style.border_color = Color("f0bc58ff")
+	var pressed_style := hover_style.duplicate(); pressed_style.bg_color = Color("0b1018ff")
+	die.add_theme_stylebox_override("normal", normal_style); die.add_theme_stylebox_override("hover", hover_style); die.add_theme_stylebox_override("pressed", pressed_style); die.add_theme_stylebox_override("disabled", normal_style.duplicate()); die.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
 
 func _build_damage() -> void:
 	if _view.segment == "ongoing_effects":
@@ -242,24 +273,80 @@ func _build_pending_statuses() -> void:
 			var pending := Label.new(); pending.custom_minimum_size = Vector2(260, 48); pending.text = "%s  %s %s ×%d" % [target_name, status_data.glyph, status_data.name, int(grouped[key])]; pending.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER; pending.add_theme_font_size_override("font_size", 18); pending.add_theme_color_override("font_color", Color("e5a07e")); pending.tooltip_text = "%s will receive %s ×%d when this damage batch is acknowledged." % [target_name.capitalize(), status_data.name, int(grouped[key])]; row.add_child(pending); _inspect(pending, "battle.pending_status.%s.%s" % [target_id, status_id], pending.tooltip_text)
 
 func _build_effects() -> void:
-	var panel := VBoxContainer.new(); panel.alignment = BoxContainer.ALIGNMENT_CENTER; _center.add_child(panel)
+	var panel := VBoxContainer.new(); panel.alignment = BoxContainer.ALIGNMENT_CENTER; panel.size_flags_horizontal = Control.SIZE_EXPAND_FILL; _center.add_child(panel)
 	var title := Label.new(); title.text = "☠ ONGOING EFFECTS"; title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER; title.add_theme_font_size_override("font_size", 28); panel.add_child(title)
 	var details: Array[String] = []
 	for id in ["blade", "goblin"]:
 		for status in _view.actor(id).get("statuses", []):
 			var definition := str(status.get("definition_id", "")); details.append("%s: %s ×%d — %s" % [id.capitalize(), BattlePresentationCatalog.status(definition).name, int(status.get("stacks", 1)), BattlePresentationCatalog.status(definition).text])
 	var body := Label.new(); body.text = "\n".join(details) if not details.is_empty() else "No active status work remains."; body.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART; body.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER; panel.add_child(body)
-	var rolls: Array[String] = []
-	for event in _view.events:
-		var data: Dictionary = _as_dictionary(event.get("data", {}))
-		for roll in data.get("rolls", []):
-			rolls.append("%s %d" % [BattlePresentationCatalog.status(str(roll.get("status_id", "poison"))).name, int(roll.get("die", {}).get("face", 0))])
-		if event.get("type") == "dice_rolled" and not str(data.get("status_id", "")).is_empty():
-			rolls.append("%s %d" % [BattlePresentationCatalog.status(str(data.status_id)).name, int(data.get("face", 0))])
-	if not rolls.is_empty():
-		var roll_label := Label.new(); roll_label.text = "Effect dice: %s" % ", ".join(rolls); roll_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER; panel.add_child(roll_label)
+	if _view.stage in ["status_roll", "status_roll_reaction"]:
+		_build_effects_mat(panel)
 	if not _selected_card.is_empty() and _selected_card.definition_id == "tip_it" and _view.stage == "blind_reaction":
 		var tip := Button.new(); tip.text = "Tip Blind die to face 5"; tip.pressed.connect(_play_blind_tip); panel.add_child(tip); _inspect(tip, "battle.tip_target.blind", "Use Tip It on the current blind-roll die")
+
+func _build_effects_mat(parent: VBoxContainer) -> void:
+	var revealed := _view.stage == "status_roll_reaction"
+	var row := HBoxContainer.new(); row.size_flags_horizontal = Control.SIZE_EXPAND_FILL; row.add_theme_constant_override("separation", 30); parent.add_child(row)
+	_inspect(row, "battle.effects_mat", "Fixed status-effect roll and reveal area")
+	for actor_id in ["blade", "goblin"]:
+		var actor_panel := VBoxContainer.new(); actor_panel.size_flags_horizontal = Control.SIZE_EXPAND_FILL; actor_panel.alignment = BoxContainer.ALIGNMENT_BEGIN; row.add_child(actor_panel)
+		if actor_id == "goblin" and not revealed:
+			_inspect(actor_panel, "battle.effects_hidden.goblin", "Reserved space for hidden enemy effect dice")
+			continue
+		_build_effects_panel(actor_panel, actor_id, revealed)
+
+func _build_effects_panel(parent: VBoxContainer, actor_id: String, revealed: bool) -> void:
+	var actor_name := "BLADE WARDEN" if actor_id == "blade" else "VENOM GOBLIN"
+	var heading := Label.new(); heading.text = "%s EFFECTS" % actor_name; heading.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER; heading.add_theme_font_size_override("font_size", 18); parent.add_child(heading)
+	var rolls: Array = []
+	for value in _view.effect_rolls:
+		var roll: Dictionary = _as_dictionary(value)
+		if str(roll.get("actor_id", "")) == actor_id: rolls.append(roll)
+	var detail := Label.new(); detail.custom_minimum_size = Vector2(300, 70); detail.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER; detail.vertical_alignment = VERTICAL_ALIGNMENT_CENTER; detail.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART; parent.add_child(detail)
+	if rolls.is_empty():
+		detail.text = "No effect dice required"
+		detail.add_theme_color_override("font_color", Color("9299a5"))
+		_inspect(detail, "battle.effects_none.%s" % actor_id, detail.text)
+		return
+	var grouped := {}
+	for value in rolls:
+		var roll: Dictionary = _as_dictionary(value); var status_id := str(roll.get("status_id", "poison")); grouped[status_id] = int(grouped.get(status_id, 0)) + 1
+	var descriptions: Array[String] = []
+	for status_id in grouped:
+		var status := BattlePresentationCatalog.status(str(status_id)); descriptions.append("%s ×%d\nRoll once per status stack" % [status.name, int(grouped[status_id])])
+	detail.text = "\n".join(descriptions); _inspect(detail, "battle.effects_selected.%s" % actor_id, detail.text)
+	var dice_row := HBoxContainer.new(); dice_row.custom_minimum_size.y = 105; dice_row.alignment = BoxContainer.ALIGNMENT_CENTER; dice_row.add_theme_constant_override("separation", 12); parent.add_child(dice_row)
+	for index in rolls.size():
+		var roll: Dictionary = _as_dictionary(rolls[index]); var die_data: Dictionary = _as_dictionary(roll.get("die", {})); var face := int(die_data.get("face", 0)); var secretly_rolled := bool(roll.get("resolved", false)) and face == 0
+		var die := Button.new(); die.custom_minimum_size = Vector2(96, 96); die.size_flags_horizontal = Control.SIZE_SHRINK_CENTER; _style_defense_die(die)
+		if face > 0:
+			die.text = "%s\n%d" % [BattlePresentationCatalog.symbol_for_face(face), face]; die.disabled = true; die.add_theme_font_size_override("font_size", 24)
+			die.tooltip_text = "%s %s die: face %d, %s." % [actor_name.capitalize(), BattlePresentationCatalog.status(str(roll.get("status_id", "poison"))).name, face, BattlePresentationCatalog.symbol_name(face)]
+			dice_row.add_child(die); _inspect(die, "battle.effect_die.%s.%d" % [actor_id, index], die.tooltip_text)
+		elif secretly_rolled:
+			die.text = "✓\nHIDDEN"; die.disabled = true; die.add_theme_font_size_override("font_size", 16); die.tooltip_text = "This effect die was rolled in secret. Its face will appear during the reveal."
+			dice_row.add_child(die); _inspect(die, "battle.effect_die.blade.hidden.%d" % index, die.tooltip_text)
+		else:
+			die.tooltip_text = "Click this blank player effect die to roll it in secret."
+			die.disabled = _submitting or _director.has_beats() or _history_review
+			die.pressed.connect(_roll_effect_die.bind(index))
+			dice_row.add_child(die); _inspect(die, "battle.effect_die.blade.pending.%d" % index, die.tooltip_text)
+	if not revealed:
+		var instruction := Label.new(); instruction.text = "Click each blank player die to roll it in secret"; instruction.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER; instruction.add_theme_color_override("font_color", Color("b8bfca")); parent.add_child(instruction)
+		return
+	for value in rolls:
+		var outcome := Label.new(); outcome.text = _effect_roll_outcome(_as_dictionary(value)); outcome.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER; outcome.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART; outcome.custom_minimum_size.x = 300; parent.add_child(outcome)
+
+func _effect_roll_outcome(roll: Dictionary) -> String:
+	var status_id := str(roll.get("status_id", "poison")); var status := BattlePresentationCatalog.status(status_id); var face := int(_as_dictionary(roll.get("die", {})).get("face", 0))
+	if status_id == "poison":
+		if face <= 4: return "%s · %d\n1 damage pending" % [status.name, face]
+		return "%s · %d\nRemove 1 Poison stack" % [status.name, face]
+	return "%s · %d\nEffect result revealed" % [status.name, face]
+
+func _roll_effect_die(index: int) -> void:
+	_send(BattleCommandBuilder.roll_dice(_view.battle_id, "blade", _pending(), [index]))
 
 func _build_income() -> void:
 	var label := Label.new(); label.text = "▣  DRAW  →  NEW CARD  →  HAND        ✦ +1 ENERGY"; label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER; label.add_theme_font_size_override("font_size", 28); _center.add_child(label)
@@ -285,6 +372,7 @@ func _build_ability_row(caption: String, abilities: Array, actor_id: String) -> 
 	var label := Label.new(); label.text = caption; _center.add_child(label)
 	var row := HBoxContainer.new(); row.alignment = BoxContainer.ALIGNMENT_CENTER; _center.add_child(row)
 	var actor := _view.actor(actor_id); var qualified: Array = _as_array(actor.get("qualified_abilities", [])); var selected := str(actor.get("selected_ability", ""))
+	if _view.segment == "defensive" and actor_id == "blade": selected = str(_view.defense_selections.get(actor_id, {}).get("ability_id", ""))
 	for ability_id in abilities:
 		var tile := BattleAbilityTile.new(); row.add_child(tile)
 		var defense_ready := _view.segment == "defensive" and not _selected_source.is_empty()
@@ -303,12 +391,14 @@ func _build_sources(caption: String) -> void:
 		sources = settled_sources
 		_build_damage_source_summary(sources)
 	var row := HBoxContainer.new(); row.alignment = BoxContainer.ALIGNMENT_CENTER; _center.add_child(row)
+	var selected_source := _selected_source
+	if _view.segment == "defensive" and selected_source.is_empty(): selected_source = str(_view.defense_selections.get("blade", {}).get("source_id", ""))
 	for source in sources:
 		if _view.segment == "defensive" and str(source.get("target_actor_id", "")) != "blade": continue
 		var button := Button.new(); var id := str(source.get("id", "")); var data := BattlePresentationCatalog.ability(str(source.get("source_content_id", "")))
 		var base := int(source.get("base_amount", 0)); var final := int(source.get("final_amount", 0)); var prevented := maxi(0, base - final) if using_settled_batch else int(source.get("prevention", 0)) + int(source.get("reaction_prevention", 0))
 		button.text = "%s → %s\nBase %d · Prevented %d · Final %d" % [data.name, str(source.get("target_actor_id", "")), base, prevented, final]
-		button.tooltip_text = "Damage source %s" % id; button.disabled = _submitting or _history_review; button.button_pressed = _selected_source == id; button.pressed.connect(func(): _selected_source = id; _render()); row.add_child(button)
+		button.tooltip_text = "Damage source %s" % id; button.disabled = _submitting or _history_review; button.button_pressed = selected_source == id; button.pressed.connect(func(): _selected_source = id; _render()); row.add_child(button)
 		_inspect(button, "battle.source.%s" % id, button.tooltip_text)
 
 func _build_damage_source_summary(sources: Array) -> void:
@@ -821,7 +911,7 @@ func _history_label_for_command(command_value) -> String:
 			if _view.stage == "discard_to_hand_limit": return "Discard to Hand Limit"
 			if not _selected_card.is_empty(): return "Play %s" % str(BattlePresentationCatalog.card(str(_selected_card.get("definition_id", ""))).get("name", "Card"))
 			return "Commit Cards"
-		"roll_dice": return "Roll Defense Die"
+		"roll_dice": return "Roll Effect Dice" if _view.segment == "ongoing_effects" else "Roll Defense Die"
 		"planning_pass": return "Pass Defense" if _view.segment == "defensive" else "Pass Planning"
 		"pass": return "Pass / Acknowledge"
 	return kind.replace("_", " ").capitalize()

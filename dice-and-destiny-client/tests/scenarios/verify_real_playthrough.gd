@@ -91,7 +91,6 @@ func _verify_real_ui(stage: String) -> bool:
 	var required := {
 		"planning_roll": "Roll 5 Dice",
 		"planning_reroll": "Reroll Unkept",
-		"roll_dice": "Roll Defense Die",
 		"pass": "Pass / Acknowledge",
 	}
 	if _has_button(screen, "Keep Selected", false):
@@ -110,6 +109,22 @@ func _verify_real_ui(stage: String) -> bool:
 			var summary := _button_summary(screen); screen.free(); _fail("real UI stage %s lacks enabled %s control; buttons=%s" % [stage, command_type, summary]); return false
 		if not should_show and _has_button(screen, required[command_type], true):
 			var summary := _button_summary(screen); screen.free(); _fail("real UI stage %s exposes invalid %s control; buttons=%s" % [stage, command_type, summary]); return false
+	var pending_defense_die := _button_with_inspection_id(screen, "battle.defense_die.blade.pending")
+	var enemy_pending_defense_die := _button_with_inspection_id(screen, "battle.defense_die.goblin.pending")
+	var pending_effect_dice := _buttons_with_inspection_prefix(screen, "battle.effect_die.blade.pending.")
+	var enemy_effect_dice := _buttons_with_inspection_prefix(screen, "battle.effect_die.goblin")
+	if "roll_dice" in allowed and stage == "defense_roll" and (pending_defense_die == null or pending_defense_die.disabled or not pending_defense_die.text.is_empty()):
+		var summary := _button_summary(screen); screen.free(); _fail("real UI stage %s lacks an enabled blank defense die; buttons=%s" % [stage, summary]); return false
+	if "roll_dice" in allowed and stage == "status_roll" and (pending_effect_dice.is_empty() or pending_effect_dice[0].disabled or not pending_effect_dice[0].text.is_empty()):
+		var summary := _button_summary(screen); screen.free(); _fail("real UI stage %s lacks enabled blank effect dice; buttons=%s" % [stage, summary]); return false
+	if enemy_pending_defense_die != null:
+		var summary := _button_summary(screen); screen.free(); _fail("real UI exposed a player-controlled enemy defense die; buttons=%s" % summary); return false
+	if stage == "status_roll" and not enemy_effect_dice.is_empty():
+		var summary := _button_summary(screen); screen.free(); _fail("real UI exposed player-controlled enemy effect dice; buttons=%s" % summary); return false
+	if "roll_dice" not in allowed and (pending_defense_die != null or not pending_effect_dice.is_empty()):
+		var summary := _button_summary(screen); screen.free(); _fail("real UI stage %s exposes an invalid blank die; buttons=%s" % [stage, summary]); return false
+	if _has_button(screen, "Roll Defense Die", false):
+		var summary := _button_summary(screen); screen.free(); _fail("real UI still exposes the removed Roll Defense Die action; buttons=%s" % summary); return false
 	if "planning_select_ability" in allowed:
 		var should_have_ability: bool = stage == "defense_selection" or not result.get("snapshot", {}).get("actors", {}).get("blade", {}).get("qualified_abilities", []).is_empty()
 		if stage == "defense_selection":
@@ -141,6 +156,17 @@ func _button_containing(node: Node, text_part: String) -> Button:
 	for child in _all_buttons(node):
 		if text_part in child.text: return child
 	return null
+
+func _button_with_inspection_id(node: Node, inspection_id: String) -> Button:
+	for child in _all_buttons(node):
+		if child.has_meta("inspection_id") and child.get_meta("inspection_id") == inspection_id: return child
+	return null
+
+func _buttons_with_inspection_prefix(node: Node, prefix: String) -> Array[Button]:
+	var result: Array[Button] = []
+	for child in _all_buttons(node):
+		if child.has_meta("inspection_id") and str(child.get_meta("inspection_id")).begins_with(prefix): result.append(child)
+	return result
 
 func _has_enabled_ability(node: Node) -> bool:
 	for child in _all_buttons(node):

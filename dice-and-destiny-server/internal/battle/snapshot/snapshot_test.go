@@ -179,6 +179,30 @@ func TestBattleSnapshotRoundTripsThroughJSON(t *testing.T) {
 	}
 }
 
+func TestOngoingEffectRollSnapshotHidesEnemyUntilReactionReveal(t *testing.T) {
+	battle := state.Battle{
+		ID:      "effects",
+		Segment: segment.State{Current: segment.OngoingEffects, Round: 2},
+		Settled: &state.SettledRuntime{
+			Stage: "status_roll",
+			TriggerBatch: &state.SettledTriggerBatch{Rolls: []state.SettledEffectRoll{
+				{ActorID: "player", StatusID: "poison", Die: state.RolledDie{DieID: "standard_d6", Face: 2, Value: 2, Symbols: []string{"cross"}}, Resolved: true},
+				{ActorID: "enemy", StatusID: "poison", Die: state.RolledDie{DieID: "standard_d6", Face: 6}, Resolved: true},
+			}},
+		},
+	}
+
+	preReveal := snapshot.FromBattleForViewer(battle, "player")
+	if len(preReveal.SettledEffectRolls) != 1 || preReveal.SettledEffectRolls[0].ActorID != "player" || preReveal.SettledEffectRolls[0].Die.Face != 0 || !preReveal.SettledEffectRolls[0].Resolved || len(preReveal.SettledEffectRolls[0].Die.Symbols) != 0 {
+		t.Fatalf("pre-reveal effect rolls=%#v, want only the player's resolved-but-hidden die", preReveal.SettledEffectRolls)
+	}
+	battle.Settled.Stage = "status_roll_reaction"
+	revealed := snapshot.FromBattleForViewer(battle, "player")
+	if len(revealed.SettledEffectRolls) != 2 || revealed.SettledEffectRolls[1].ActorID != "enemy" || revealed.SettledEffectRolls[1].Die.Face != 6 {
+		t.Fatalf("revealed effect rolls=%#v, want both actors' results", revealed.SettledEffectRolls)
+	}
+}
+
 func TestDefenseReactionSnapshotRevealsEverySelectedDefense(t *testing.T) {
 	battle := state.Battle{
 		ID:      "battle-defense",
@@ -200,6 +224,15 @@ func TestDefenseReactionSnapshotRevealsEverySelectedDefense(t *testing.T) {
 	battle.Settled.Stage = "defense_selection"
 	if hidden := snapshot.FromBattleForViewer(battle, "player").SettledDefenses; len(hidden) != 0 {
 		t.Fatalf("defenses leaked before reveal: %#v", hidden)
+	}
+
+	battle.Settled.Stage = "defense_roll"
+	rolling := snapshot.FromBattleForViewer(battle, "player").SettledDefenses
+	if len(rolling) != 1 || rolling["player"].AbilityID != "basic_defense" {
+		t.Fatalf("defense roll snapshot = %#v, want only the viewer's selected defense", rolling)
+	}
+	if _, leaked := rolling["enemy"]; leaked {
+		t.Fatalf("enemy defense leaked before reveal: %#v", rolling)
 	}
 }
 
