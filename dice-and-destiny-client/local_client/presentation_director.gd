@@ -79,6 +79,9 @@ func _queue_income_event(event: Dictionary, sequence: int) -> void:
 		actor["card_count"] = int(actor.get("card_count", 0)) + maxi(int(event.get("count", 0)), cards.size())
 	else:
 		actor["energy_points"] = int(event.get("energy_points", 0))
+		# Income currently grants one energy. Keeping the delta in the summary lets
+		# the presentation count from the prior value to the authoritative total.
+		actor["energy_gain"] = int(event.get("amount", 1))
 	actors[actor_id] = actor
 	data["actors"] = actors
 	summary["data"] = data
@@ -97,6 +100,17 @@ func has_beats() -> bool:
 
 func peek() -> Dictionary:
 	return _queue[0] if not _queue.is_empty() else {}
+
+func pending_income_actor(actor_id: String) -> Dictionary:
+	for beat_value in _queue:
+		var beat: Dictionary = beat_value
+		if beat.get("type") != "income_summary": continue
+		var event: Dictionary = beat.get("event", {})
+		var data: Dictionary = event.get("data", {})
+		var actors: Dictionary = data.get("actors", {})
+		var actor_value = actors.get(actor_id, {})
+		return actor_value if actor_value is Dictionary else {}
+	return {}
 
 func advance() -> Dictionary:
 	if _queue.is_empty(): return {}

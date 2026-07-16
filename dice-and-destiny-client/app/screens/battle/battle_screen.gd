@@ -1,6 +1,7 @@
 extends Control
 
 const SEGMENTS := [["ongoing_effects", "Effects"], ["income", "Income"], ["offensive", "Offensive"], ["defensive", "Defensive"], ["damage_resolution", "Damage"]]
+const INCOME_DURATION_SETTING := "dice_and_destiny/presentation/income_animation_seconds"
 
 var initial_result: Dictionary = {}
 var viewer_actor_id := "blade"
@@ -40,6 +41,9 @@ var _history_pending_divergence: Dictionary = {}
 var _history_scroll_value := 0
 var _history_follow_latest := true
 var _history_scroll_adjusting := false
+var _actor_profiles: Dictionary = {}
+var _income_drawn_cards: Array[BattleCard] = []
+var _income_animation_generation := 0
 
 func _ready() -> void:
 	add_to_group("inspectable_battle_screen")
@@ -56,6 +60,9 @@ func _ready() -> void:
 	_render()
 
 func _render() -> void:
+	_income_animation_generation += 1
+	_actor_profiles.clear()
+	_income_drawn_cards.clear()
 	if is_instance_valid(_root): _root.queue_free()
 	_root = Control.new(); _root.set_anchors_preset(Control.PRESET_FULL_RECT); add_child(_root)
 	var background := TextureRect.new(); background.set_anchors_preset(Control.PRESET_FULL_RECT); background.expand_mode = TextureRect.EXPAND_IGNORE_SIZE; background.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
@@ -99,7 +106,12 @@ func _build_header(parent: VBoxContainer) -> void:
 
 func _build_player_column(parent: HBoxContainer) -> void:
 	var column := VBoxContainer.new(); column.custom_minimum_size.x = 300; parent.add_child(column)
-	var profile := ActorProfile.new(); column.add_child(profile); profile.display("blade", _view.actor("blade"), true)
+	var profile := ActorProfile.new(); column.add_child(profile); profile.display("blade", _view.actor("blade"), true); _actor_profiles["blade"] = profile
+	var income := _income_actor_data("blade")
+	if not income.is_empty(): profile.prepare_income(income)
+	else:
+		var upcoming_income := _upcoming_income_actor_data("blade")
+		if not upcoming_income.is_empty(): profile.prepare_before_income(upcoming_income)
 	var dice := BattleDiceTray.new(); column.add_child(dice)
 	var rolled := _view.rolled_dice("blade"); var actor := _view.actor("blade")
 	var history: Array = actor.get("roll_history", [])
@@ -122,7 +134,12 @@ func _build_player_column(parent: HBoxContainer) -> void:
 
 func _build_enemy_column(parent: HBoxContainer) -> void:
 	var column := VBoxContainer.new(); column.custom_minimum_size.x = 300; parent.add_child(column)
-	var profile := ActorProfile.new(); column.add_child(profile); profile.display("goblin", _view.actor("goblin"), false)
+	var profile := ActorProfile.new(); column.add_child(profile); profile.display("goblin", _view.actor("goblin"), false); _actor_profiles["goblin"] = profile
+	var income := _income_actor_data("goblin")
+	if not income.is_empty(): profile.prepare_income(income)
+	else:
+		var upcoming_income := _upcoming_income_actor_data("goblin")
+		if not upcoming_income.is_empty(): profile.prepare_before_income(upcoming_income)
 	var enemy_dice := _view.rolled_dice("goblin"); var enemy_reveal := _view.offensive_reveal("goblin"); var enemy_caption := "ENEMY OFFENSIVE DICE"
 	if not enemy_dice.is_empty(): enemy_caption += " · Simulated rolls %d" % int(enemy_reveal.get("simulated_rolls", enemy_reveal.get("rolls_used", 0)))
 	var dice := BattleDiceTray.new(); column.add_child(dice); dice.display(enemy_dice, [], false, enemy_caption, "battle.die.goblin")
@@ -264,7 +281,7 @@ func _build_effects() -> void:
 func _build_income() -> void:
 	var label := Label.new(); label.text = "▣  DRAW  →  NEW CARD  →  HAND        ✦ +1 ENERGY"; label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER; label.add_theme_font_size_override("font_size", 28); _center.add_child(label)
 
-func _build_hand() -> void:
+func _build_hand(income_drawn_ids: Array = []) -> void:
 	var label := Label.new(); label.text = "YOUR HAND"; _center.add_child(label)
 	var scroll := ScrollContainer.new(); scroll.custom_minimum_size.y = 132; scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_AUTO; _center.add_child(scroll)
 	var row := HBoxContainer.new(); scroll.add_child(row)
@@ -276,6 +293,9 @@ func _build_hand() -> void:
 		card.toggle_mode = hand_limit
 		card.button_pressed = str(entry.instance_id) in _hand_limit_selection
 		card.pressed.connect(_on_card_pressed.bind(card))
+		if str(entry.instance_id) in income_drawn_ids:
+			card.prepare_income_draw()
+			_income_drawn_cards.append(card)
 		_inspect(card, "battle.card.%s" % str(entry.instance_id), card.tooltip_text)
 	if hand_limit:
 		var need := maxi(0, _view.actor("blade").get("hand_count", 0) - _view.actor("blade").get("max_hand_size", 6))
@@ -368,35 +388,54 @@ func _build_enemy_die_targets() -> void:
 		var button := Button.new(); button.text = "Tip enemy die %d: 6 → 5" % (i + 1); button.disabled = _history_review; button.pressed.connect(func(): _play_tip_it(i)); row.add_child(button); _inspect(button, "battle.tip_target.goblin.%d" % i, "Use Tip It on this revealed face-6 die")
 
 func _build_presentation_beat() -> void:
-	var beat := _director.peek(); var spacer := Control.new(); spacer.size_flags_vertical = Control.SIZE_EXPAND_FILL; _center.add_child(spacer)
+	var beat := _director.peek()
+	if beat.get("type") == "income_summary":
+		_build_income_presentation(beat)
+		return
+	var spacer := Control.new(); spacer.size_flags_vertical = Control.SIZE_EXPAND_FILL; _center.add_child(spacer)
 	var title := Label.new(); title.text = str(beat.get("title", "Battle Event")); title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER; title.add_theme_font_size_override("font_size", 38); _center.add_child(title)
 	var detail := Label.new(); detail.text = str(beat.get("detail", "")); detail.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER; detail.add_theme_font_size_override("font_size", 22); _center.add_child(detail)
 	if beat.get("type") == "cards_drawn":
 		var cards: Array = _as_array(beat.get("event", {}).get("cards", []))
 		if not cards.is_empty():
 			var instance_id := str(cards[0]); var definition_id := str(_view.actor("blade").get("card_instances", {}).get(instance_id, {}).get("definition_id", "unknown")); var card := BattleCard.new(); card.configure(instance_id, definition_id, false); card.custom_minimum_size = Vector2(250, 170); _center.add_child(card)
-	if beat.get("type") == "income_summary": _build_income_summary(beat)
 	var button := Button.new(); button.text = "Continue Presentation"; button.tooltip_text = "Continue the visual presentation only; this sends no gameplay command."; button.custom_minimum_size = Vector2(240, 54); button.pressed.connect(_advance_beat); _center.add_child(button); _inspect(button, "battle.presentation.continue", button.tooltip_text)
 	var spacer2 := Control.new(); spacer2.size_flags_vertical = Control.SIZE_EXPAND_FILL; _center.add_child(spacer2)
 
-func _build_income_summary(beat: Dictionary) -> void:
+func _build_income_presentation(_beat: Dictionary) -> void:
+	var spacer := Control.new(); spacer.size_flags_vertical = Control.SIZE_EXPAND_FILL; _center.add_child(spacer)
+	var drawn_ids: Array = _as_array(_income_actor_data("blade").get("cards", []))
+	_build_hand(drawn_ids)
+	var spacer2 := Control.new(); spacer2.size_flags_vertical = Control.SIZE_EXPAND_FILL; _center.add_child(spacer2)
+	_start_income_animation.call_deferred(_income_animation_generation)
+
+func _start_income_animation(generation: int) -> void:
+	if generation != _income_animation_generation or not is_inside_tree(): return
+	if not _director.has_beats() or _director.peek().get("type") != "income_summary": return
+	var duration := maxf(0.05, float(ProjectSettings.get_setting(INCOME_DURATION_SETTING, 2.0)))
+	for profile_value in _actor_profiles.values():
+		var profile: ActorProfile = profile_value
+		if is_instance_valid(profile): profile.animate_income(duration)
+	for card in _income_drawn_cards:
+		if is_instance_valid(card): card.animate_income_draw(duration)
+	var timer := Timer.new(); timer.one_shot = true; timer.wait_time = duration; _root.add_child(timer)
+	timer.timeout.connect(_finish_income_presentation.bind(generation)); timer.start()
+
+func _finish_income_presentation(generation: int) -> void:
+	if generation != _income_animation_generation or not is_inside_tree(): return
+	if _director.has_beats() and _director.peek().get("type") == "income_summary": _advance_beat()
+
+func _income_actor_data(actor_id: String) -> Dictionary:
+	if not _director.has_beats() or _director.peek().get("type") != "income_summary": return {}
+	var beat: Dictionary = _director.peek()
 	var event_data: Dictionary = _as_dictionary(beat.get("event", {}).get("data", {}))
-	var actors: Dictionary = _as_dictionary(event_data.get("actors", {}))
-	var row := HBoxContainer.new(); row.alignment = BoxContainer.ALIGNMENT_CENTER; row.add_theme_constant_override("separation", 70); _center.add_child(row)
-	for actor_id in ["blade", "goblin"]:
-		var panel := VBoxContainer.new(); panel.custom_minimum_size = Vector2(330, 180); panel.alignment = BoxContainer.ALIGNMENT_CENTER; row.add_child(panel)
-		var actor_income: Dictionary = _as_dictionary(actors.get(actor_id, {}))
-		var actor_name := "BLADE WARDEN" if actor_id == "blade" else "VENOM GOBLIN"
-		var heading := Label.new(); heading.text = actor_name; heading.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER; heading.add_theme_font_size_override("font_size", 20); panel.add_child(heading)
-		var card_count := int(actor_income.get("card_count", 0))
-		var cards: Array = _as_array(actor_income.get("cards", []))
-		if actor_id == "blade" and not cards.is_empty():
-			var instance_id := str(cards[0]); var definition_id := str(_view.actor("blade").get("card_instances", {}).get(instance_id, {}).get("definition_id", "unknown"))
-			var card := BattleCard.new(); card.configure(instance_id, definition_id, false); card.custom_minimum_size = Vector2(230, 120); panel.add_child(card)
-			var drawn := Label.new(); drawn.text = "Drew %s" % BattlePresentationCatalog.card(definition_id).name; drawn.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER; panel.add_child(drawn)
-		else:
-			var draw := Label.new(); draw.text = "%d hidden card%s drawn" % [card_count, "s" if card_count != 1 else ""] if actor_id == "goblin" else "No card drawn"; draw.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER; panel.add_child(draw)
-		var energy := Label.new(); energy.text = "Energy gained → %d total" % int(actor_income.get("energy_points", _view.actor(actor_id).get("energy_points", 0))); energy.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER; energy.add_theme_font_size_override("font_size", 18); panel.add_child(energy)
+	return _as_dictionary(_as_dictionary(event_data.get("actors", {})).get(actor_id, {}))
+
+func _upcoming_income_actor_data(actor_id: String) -> Dictionary:
+	if not _director.has_beats(): return {}
+	var beat: Dictionary = _director.peek()
+	if str(beat.get("presentation_segment", "")) != "ongoing_effects": return {}
+	return _director.pending_income_actor(actor_id)
 
 func _build_completion() -> void:
 	if not _history_review: active_store.clear()
@@ -512,7 +551,7 @@ func _advance_beat(history_confirmed: bool = false) -> void:
 	var completed_label := ""
 	if _history_tools_enabled() and not _history_review and _director.has_beats():
 		var beat: Dictionary = _director.peek()
-		var label := "Continue: %s" % _history_beat_label(beat)
+		var label := "%s: %s" % ["Automatic" if beat.get("type") == "income_summary" else "Continue", _history_beat_label(beat)]
 		completed_label = label
 		var action := _history_presentation_action(beat)
 		if _history_replay and not history_confirmed:
@@ -594,7 +633,7 @@ func _build_history_bar(parent: VBoxContainer) -> void:
 	_inspect(scroll, "battle.history.scroll", "Scrollable developer history points; follows the latest point until manually scrolled left")
 	var points := HBoxContainer.new(); points.add_theme_constant_override("separation", 4); scroll.add_child(points)
 	if _history_entries.is_empty():
-		var empty := Label.new(); empty.text = "History points appear before player actions and Continue Presentation."; empty.add_theme_color_override("font_color", Color("9299a5")); points.add_child(empty)
+		var empty := Label.new(); empty.text = "History points appear before player actions and presentation transitions."; empty.add_theme_color_override("font_color", Color("9299a5")); points.add_child(empty)
 	else:
 		for index in _history_entries.size():
 			var entry: Dictionary = _as_dictionary(_history_entries[index])

@@ -88,6 +88,40 @@ func _run() -> void:
 		elif button.text != "DEV SNAPSHOTS" and not button.disabled: _fail("gameplay control remained enabled during automatic presentation: %s" % button.text); return
 	if not found_continue: _fail("automatic presentation did not expose its continue control"); return
 	presenting.queue_free(); await process_frame
+	ProjectSettings.set_setting("dice_and_destiny/presentation/income_animation_seconds", 0.5)
+	var income_screen = packed.instantiate(); var income_fixture := _fixture()
+	income_fixture.snapshot.actors.blade.energy_points = 2; income_fixture.snapshot.actors.blade.deck_count = 15; income_fixture.snapshot.actors.blade.hand_count = 5; income_fixture.snapshot.actors.blade.hand = ["income-card"]; income_fixture.snapshot.actors.blade.card_instances = {"income-card": {"instance_id": "income-card", "definition_id": "loaded_die"}}
+	income_fixture.snapshot.actors.goblin.energy_points = 1; income_fixture.snapshot.actors.goblin.deck_count = 9; income_fixture.snapshot.actors.goblin.hand_count = 3
+	income_fixture.events = [
+		{"sequence": 1, "type": "segment_entered", "to": "ongoing_effects"},
+		{"sequence": 2, "type": "segment_entered", "to": "income"},
+		{"sequence": 3, "type": "cards_drawn", "actor_id": "blade", "cards": ["income-card"]},
+		{"sequence": 4, "type": "energy_points_gained", "actor_id": "blade", "energy_points": 2},
+		{"sequence": 5, "type": "cards_drawn", "actor_id": "goblin", "count": 1},
+		{"sequence": 6, "type": "energy_points_gained", "actor_id": "goblin", "energy_points": 1},
+	]
+	income_screen.initial_result = income_fixture; root.add_child(income_screen)
+	await process_frame; await process_frame
+	if _button(income_screen, "Continue Presentation") == null: _fail("pre-income Effects presentation was unavailable"); return
+	var pre_income_markers := 0; var effects_showed_pre_income_energy := false; var effects_showed_pre_income_hand := false
+	for effects_label in income_screen.find_children("*", "Label", true, false):
+		if effects_label.visible and str(effects_label.text).begins_with("▲ "): pre_income_markers += 1
+		if effects_label.text == "✦ Energy 1": effects_showed_pre_income_energy = true
+		if effects_label.text == "Hand 4": effects_showed_pre_income_hand = true
+	if pre_income_markers != 0 or not effects_showed_pre_income_energy or not effects_showed_pre_income_hand: _fail("Effects exposed post-income totals before the income animation"); return
+	_button(income_screen, "Continue Presentation").pressed.emit(); await process_frame; await process_frame
+	if _button(income_screen, "Continue Presentation") != null: _fail("income animation retained the manual Continue Presentation gate"); return
+	var visible_markers := 0; var saw_pre_income_energy := false; var saw_pre_income_hand := false
+	for income_label in income_screen.find_children("*", "Label", true, false):
+		if income_label.visible and str(income_label.text).begins_with("▲ "): visible_markers += 1
+		if income_label.text == "✦ Energy 1": saw_pre_income_energy = true
+		if income_label.text == "Hand 4": saw_pre_income_hand = true
+	var income_cards := income_screen.find_children("*", "BattleCard", true, false)
+	if visible_markers < 6 or not saw_pre_income_energy or not saw_pre_income_hand or income_cards.size() != 1: _fail("income board did not preview all resource ticks and the drawn hand card: markers=%d cards=%d" % [visible_markers, income_cards.size()]); return
+	await create_timer(0.55).timeout; await process_frame; await process_frame
+	if income_screen.inspection_state().get("presentation_active", true) or _button(income_screen, "Roll 5 Dice") == null: _fail("income presentation did not advance itself into offense"); return
+	ProjectSettings.set_setting("dice_and_destiny/presentation/income_animation_seconds", 2.0)
+	income_screen.queue_free(); await process_frame
 	var status_damage = packed.instantiate(); var status_fixture := _fixture()
 	status_fixture.snapshot.segment = "ongoing_effects"; status_fixture.snapshot.stage = "status_damage_reaction"
 	status_fixture.pending_input.blade.segment = "ongoing_effects"; status_fixture.pending_input.blade.stage = "status_damage_reaction"; status_fixture.pending_input.blade.allowed_commands = ["commit_interaction", "pass"]
