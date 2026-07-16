@@ -14,6 +14,7 @@ import (
 	"diceanddestiny/server/internal/battle/devhistory"
 	"diceanddestiny/server/internal/battle/devsnapshot"
 	"diceanddestiny/server/internal/battle/engine"
+	"diceanddestiny/server/internal/battle/event"
 	"diceanddestiny/server/internal/battle/repository"
 	"diceanddestiny/server/internal/battle/state"
 )
@@ -205,6 +206,14 @@ func (authority *SnapshotAuthority) loadSnapshot(cmd command.Command) engine.Res
 	if !opened.Accepted {
 		return opened
 	}
+	// open_battle intentionally returns no old events during normal resume. A
+	// snapshot load is different: the client needs the viewer-safe saved stream
+	// to rebuild any presentation beats after its bundled history cursor.
+	restoredCheckpoint, loadErr := authority.config.Repository.Load(battleID)
+	if loadErr != nil {
+		return authorityRejected(fmt.Sprintf("load restored snapshot events: %v", loadErr))
+	}
+	opened.Events = event.ForViewer(restoredCheckpoint.Events, cmd.ActorID)
 	data := map[string]any{
 		"loaded_snapshot":  record.Metadata,
 		"source_battle_id": record.Checkpoint.BattleID,

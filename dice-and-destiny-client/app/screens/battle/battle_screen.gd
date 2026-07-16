@@ -849,10 +849,10 @@ func _build_snapshot_panel() -> void:
 	var name_label := Label.new(); name_label.text = "Snapshot name (letters, numbers, . _ -)"; content.add_child(name_label)
 	var name_edit := LineEdit.new(); name_edit.text = _snapshot_name; name_edit.placeholder_text = "round-2-effects"; content.add_child(name_edit); _inspect(name_edit, "battle.dev_snapshots.name", "Name for the checkpoint snapshot")
 	var overwrite := CheckBox.new(); overwrite.text = "Replace an existing snapshot with this name"; overwrite.button_pressed = _snapshot_overwrite; overwrite.toggled.connect(func(value): _snapshot_overwrite = value); content.add_child(overwrite); _inspect(overwrite, "battle.dev_snapshots.overwrite", overwrite.text)
-	var capture := Button.new(); capture.text = "Capture Current Authority State"; capture.disabled = _submitting or _director.has_beats() or not _valid_snapshot_name(_snapshot_name); capture.pressed.connect(_capture_dev_snapshot); content.add_child(capture); _inspect(capture, "battle.dev_snapshots.capture", "Capture the current authoritative battle checkpoint")
-	name_edit.text_changed.connect(func(value): _snapshot_name = value.strip_edges(); capture.disabled = _submitting or _director.has_beats() or not _valid_snapshot_name(_snapshot_name))
+	var capture := Button.new(); capture.text = "Capture Current Authority State"; capture.disabled = _submitting or not _valid_snapshot_name(_snapshot_name); capture.pressed.connect(_capture_dev_snapshot); content.add_child(capture); _inspect(capture, "battle.dev_snapshots.capture", "Capture the current authoritative battle checkpoint and exact presentation cursor")
+	name_edit.text_changed.connect(func(value): _snapshot_name = value.strip_edges(); capture.disabled = _submitting or not _valid_snapshot_name(_snapshot_name))
 	if _director.has_beats():
-		var presentation_note := Label.new(); presentation_note.text = "Finish the current presentation before capturing."; presentation_note.add_theme_color_override("font_color", Color("e5a07e")); content.add_child(presentation_note)
+		var presentation_note := Label.new(); presentation_note.text = "The currently visible presentation will resume when this snapshot is loaded."; presentation_note.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART; presentation_note.add_theme_color_override("font_color", Color("9fd69f")); content.add_child(presentation_note)
 	var list_label := Label.new(); list_label.text = "SAVED SNAPSHOTS"; content.add_child(list_label)
 	var list := ItemList.new(); list.custom_minimum_size.y = 210; content.add_child(list); _inspect(list, "battle.dev_snapshots.list", "Saved developer snapshots")
 	for entry_value in _snapshot_entries:
@@ -861,10 +861,12 @@ func _build_snapshot_panel() -> void:
 		var title := "%s · R%d %s/%s · %d events%s" % [str(entry.get("name", "")), int(entry.get("round", 0)), str(entry.get("segment", "")).replace("_", " "), str(entry.get("stage", "")).replace("_", " "), int(entry.get("event_count", 0)), history_summary]
 		list.add_item(title)
 		if str(entry.get("name", "")) == _selected_snapshot_name: list.select(list.item_count - 1)
-	list.item_selected.connect(func(index):
-		if index >= 0 and index < _snapshot_entries.size(): _selected_snapshot_name = str(_snapshot_entries[index].get("name", ""))
-	)
 	var load := Button.new(); load.text = "Load Selected as New Battle"; load.disabled = _selected_snapshot_name.is_empty() or _submitting; load.pressed.connect(func(): _load_dev_snapshot(_selected_snapshot_name)); content.add_child(load); _inspect(load, "battle.dev_snapshots.load", "Clone the selected snapshot into a new active battle")
+	list.item_selected.connect(func(index):
+		if index >= 0 and index < _snapshot_entries.size():
+			_selected_snapshot_name = str(_snapshot_entries[index].get("name", ""))
+		load.disabled = _selected_snapshot_name.is_empty() or _submitting
+	)
 	var restart := Button.new(); restart.text = "Restart Loaded Snapshot" if not loaded_snapshot_name.is_empty() else "Restart Loaded Snapshot (none loaded)"; restart.disabled = loaded_snapshot_name.is_empty() or _submitting; restart.pressed.connect(func(): _load_dev_snapshot(loaded_snapshot_name)); content.add_child(restart); _inspect(restart, "battle.dev_snapshots.restart", "Create another fresh battle from the snapshot that launched this battle")
 	if not loaded_snapshot_name.is_empty():
 		var origin := Label.new(); origin.text = "Current battle came from: %s" % loaded_snapshot_name; content.add_child(origin)
@@ -886,6 +888,8 @@ func _refresh_snapshot_entries() -> bool:
 func _capture_dev_snapshot() -> void:
 	if not _valid_snapshot_name(_snapshot_name):
 		_snapshot_message = "Error: Use 1–64 letters, numbers, dots, underscores, or hyphens."; _render(); return
+	if not _checkpoint_snapshot_history():
+		_render(); return
 	var result := gateway.save_dev_snapshot(_view.battle_id, viewer_actor_id, _snapshot_name, _snapshot_overwrite)
 	if result.get("accepted") != true:
 		_snapshot_message = "Error: %s" % str(result.get("error", "Could not capture snapshot.")); _render(); return
@@ -893,6 +897,23 @@ func _capture_dev_snapshot() -> void:
 	var metadata: Dictionary = _as_dictionary(result.get("data", {}).get("snapshot", {}))
 	_snapshot_message = "Captured %s at Round %d · %s · %s with %d history point(s)." % [_snapshot_name, _view.round_number, _segment_name(_view.segment), _view.stage.replace("_", " "), int(metadata.get("history_point_count", 0))]
 	_refresh_snapshot_entries(); _render()
+
+func _checkpoint_snapshot_history() -> bool:
+	# Review/replay branches already carry an explicit cursor. Active battles need
+	# an actionless endpoint so a snapshot can restore the exact visible beat,
+	# including a presentation the player has not acknowledged yet.
+	if _history_review or _history_replay:
+		return true
+	var kind := "presentation" if _director.has_beats() else "decision"
+	var result := gateway.mark_dev_history(_view.battle_id, viewer_actor_id, _history_current_state_label(), kind, _director.last_sequence(), _history_client_state(), {})
+	if result.get("accepted") != true:
+		_snapshot_message = "Error: Could not checkpoint the visible battle state: %s" % str(result.get("error", "history checkpoint failed"))
+		return false
+	if _history_tools_enabled():
+		var timeline: Dictionary = _as_dictionary(result.get("data", {}).get("timeline", {}))
+		_history_entries = _as_array(timeline.get("points", []))
+		_history_branch = _as_dictionary(timeline.get("branch", {}))
+	return true
 
 func _load_dev_snapshot(snapshot_name: String) -> void:
 	if snapshot_name.is_empty() or _submitting: return

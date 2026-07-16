@@ -29,6 +29,9 @@ func TestSnapshotAuthorityDisabled(t *testing.T) {
 func TestSnapshotAuthorityCapturesListsLoadsAndRestartsIndependentBattles(t *testing.T) {
 	repo := repository.NewInMemory()
 	source := snapshotAuthorityCheckpoint(t, "battle-source")
+	if _, err := repository.AppendEvents(&source, []event.Event{{Type: event.TypeCardsDrawn, ActorID: "goblin", Cards: []string{"goblin-1"}}}); err != nil {
+		t.Fatal(err)
+	}
 	if err := repo.Create(source); err != nil {
 		t.Fatal(err)
 	}
@@ -99,8 +102,14 @@ func TestSnapshotAuthorityCapturesListsLoadsAndRestartsIndependentBattles(t *tes
 		BattleID: "battle-source", ActorID: "blade", Type: command.TypeLoadSnapshot,
 		Payload: json.RawMessage(`{"name":"round-2-effects"}`),
 	})
-	if !first.Accepted || first.Snapshot == nil || first.Snapshot.BattleID != "battle-snapshot-copy-one" || len(first.Events) != 0 {
+	if !first.Accepted || first.Snapshot == nil || first.Snapshot.BattleID != "battle-snapshot-copy-one" || len(first.Events) != len(source.Events) {
 		t.Fatalf("first load_dev_snapshot = %#v", first)
+	}
+	if first.Events[0].BattleID != "battle-snapshot-copy-one" || first.Events[0].ID == source.Events[0].ID {
+		t.Fatalf("loaded snapshot events were not independently re-keyed: %#v", first.Events)
+	}
+	if len(first.Events[1].Cards) != 0 || first.Events[1].Count != 1 {
+		t.Fatalf("loaded snapshot events exposed an enemy card identity: %#v", first.Events[1])
 	}
 	if first.Snapshot.Actors["goblin"].Hand != nil {
 		t.Fatal("loaded snapshot exposed the enemy hidden hand")

@@ -36,7 +36,7 @@ func _init() -> void:
 	var first := gateway.load_dev_snapshot(source_id, "blade", snapshot_name)
 	if not _accepted(first, "load snapshot as new battle"): return
 	var first_id := str(first.get("snapshot", {}).get("battle_id", ""))
-	if first_id.is_empty() or first_id == source_id or not first.get("events", []).is_empty():
+	if first_id.is_empty() or first_id == source_id or first.get("events", []).size() != int(captured_entry.get("event_count", 0)):
 		_fail("first load did not create a clean independent battle: %s" % JSON.stringify(first)); return
 	if not _same_state(captured_snapshot, first.get("snapshot", {})):
 		_fail("first loaded battle did not match captured viewer state"); return

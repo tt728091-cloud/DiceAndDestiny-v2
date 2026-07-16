@@ -144,7 +144,8 @@ func _run() -> void:
 	if not saw_no_enemy_defense or not saw_unchanged_attack: _fail("defense reveal did not explicitly show an undefended player attack"); return
 	no_defense.queue_free(); await process_frame
 	var snapshot_fake := FakeBattleAuthority.new()
-	snapshot_fake.enqueue({"accepted": true, "data": {"snapshots": []}})
+	snapshot_fake.enqueue({"accepted": true, "data": {"snapshots": [{"name": "existing-checkpoint", "round": 1, "segment": "defensive", "stage": "defense_reaction", "event_count": 12}]}})
+	snapshot_fake.enqueue({"accepted": true, "data": {"point": {"presented_sequence": 0}, "timeline": {"branch": {}, "points": []}}})
 	snapshot_fake.enqueue({"accepted": true, "data": {"snapshot": {"name": "round-2-effects"}}})
 	snapshot_fake.enqueue({"accepted": true, "data": {"snapshots": [{"name": "round-2-effects", "round": 2, "segment": "ongoing_effects", "stage": "status_damage_reaction", "event_count": 42}]}})
 	var loaded_fixture := _fixture(); loaded_fixture.snapshot.battle_id = "battle-snapshot-copy"; loaded_fixture.data = {"loaded_snapshot": {"name": "round-2-effects", "event_count": 42}}
@@ -153,7 +154,9 @@ func _run() -> void:
 	var restarted_fixture := _fixture(); restarted_fixture.snapshot.battle_id = "battle-snapshot-copy-two"; restarted_fixture.data = {"loaded_snapshot": {"name": "round-2-effects", "event_count": 42}}
 	snapshot_fake.enqueue(restarted_fixture)
 	var snapshot_store := ActiveBattleStore.new(WorkspacePaths.persistent_file("verify_dev_snapshot_active.json")); snapshot_store.clear()
-	var snapshot_screen = packed.instantiate(); snapshot_screen.initial_result = _fixture(); snapshot_screen.gateway = BattleGateway.new(snapshot_fake); snapshot_screen.active_store = snapshot_store; root.add_child(snapshot_screen)
+	var snapshot_capture_fixture := _fixture()
+	snapshot_capture_fixture.events = [{"sequence": 1, "type": "segment_entered", "to": "ongoing_effects"}]
+	var snapshot_screen = packed.instantiate(); snapshot_screen.initial_result = snapshot_capture_fixture; snapshot_screen.gateway = BattleGateway.new(snapshot_fake); snapshot_screen.active_store = snapshot_store; root.add_child(snapshot_screen)
 	await process_frame; await process_frame
 	var toggle := _button(snapshot_screen, "DEV SNAPSHOTS")
 	if toggle == null: _fail("debug build did not expose the gated developer snapshot controls"); return
@@ -164,21 +167,30 @@ func _run() -> void:
 	if snapshot_panel == null: _fail("snapshot dialog did not expose its styled panel surface"); return
 	var snapshot_panel_style := snapshot_panel.get_theme_stylebox("panel")
 	if not snapshot_panel_style is StyleBoxFlat or snapshot_panel_style.bg_color.a < 0.99: _fail("snapshot dialog surface is transparent and allows battle text to bleed through"); return
+	var initial_load := _button(snapshot_screen, "Load Selected as New Battle")
+	var snapshot_list: ItemList = null
+	for control in snapshot_screen.find_children("*", "ItemList", true, false):
+		if control.has_meta("inspection_id") and control.get_meta("inspection_id") == "battle.dev_snapshots.list": snapshot_list = control
+	if snapshot_list == null or initial_load == null or not initial_load.disabled: _fail("snapshot list did not begin with load disabled before a selection"); return
+	snapshot_list.select(0); snapshot_list.item_selected.emit(0); await process_frame
+	if initial_load.disabled: _fail("first snapshot selection did not immediately enable loading"); return
 	var name_edit: LineEdit = null
 	for control in snapshot_screen.find_children("*", "LineEdit", true, false):
 		if control.has_meta("inspection_id") and control.get_meta("inspection_id") == "battle.dev_snapshots.name": name_edit = control
 	if name_edit == null: _fail("snapshot panel did not expose a named capture field"); return
 	name_edit.text = "round-2-effects"; name_edit.text_changed.emit(name_edit.text); await process_frame
 	var capture := _button(snapshot_screen, "Capture Current Authority State")
-	if capture == null or capture.disabled: _fail("valid snapshot name did not enable capture"); return
+	if capture == null or capture.disabled: _fail("valid snapshot name did not enable capture during an active presentation"); return
 	capture.pressed.emit(); await process_frame; await process_frame
 	var load_snapshot := _button(snapshot_screen, "Load Selected as New Battle")
 	if load_snapshot == null or load_snapshot.disabled: _fail("captured snapshot was not selected for loading"); return
 	load_snapshot.pressed.emit(); await process_frame; await process_frame
-	if snapshot_fake.commands.size() != 4: _fail("snapshot UI submitted unexpected command sequence: %s" % snapshot_fake.commands); return
+	if snapshot_fake.commands.size() != 5: _fail("snapshot UI submitted unexpected command sequence: %s" % snapshot_fake.commands); return
 	var command_types: Array = []
 	for command_json in snapshot_fake.commands: command_types.append(JSON.parse_string(command_json).get("type"))
-	if command_types != ["list_dev_snapshots", "save_dev_snapshot", "list_dev_snapshots", "load_dev_snapshot"]: _fail("snapshot UI command order was wrong: %s" % command_types); return
+	if command_types != ["list_dev_snapshots", "mark_dev_history", "save_dev_snapshot", "list_dev_snapshots", "load_dev_snapshot"]: _fail("snapshot UI did not checkpoint the exact visible state before saving: %s" % command_types); return
+	var snapshot_checkpoint: Dictionary = JSON.parse_string(snapshot_fake.commands[1])
+	if snapshot_checkpoint.get("payload", {}).get("kind") != "presentation" or int(snapshot_checkpoint.get("payload", {}).get("presented_sequence", -1)) != 0: _fail("snapshot capture did not preserve the unacknowledged presentation cursor: %s" % snapshot_checkpoint); return
 	var active_snapshot := snapshot_store.load_active()
 	if active_snapshot.get("battle_id") != "battle-snapshot-copy" or active_snapshot.get("snapshot_name") != "round-2-effects" or int(active_snapshot.get("last_sequence", 0)) != 42: _fail("loaded snapshot was not installed as the active battle: %s" % active_snapshot); return
 	var loaded_screens: Array[Node] = get_nodes_in_group("inspectable_battle_screen")
@@ -188,7 +200,7 @@ func _run() -> void:
 	var restart_snapshot := _button(loaded_screen, "Restart Loaded Snapshot")
 	if restart_snapshot == null or restart_snapshot.disabled: _fail("loaded battle did not enable one-click snapshot restart"); return
 	restart_snapshot.pressed.emit(); await process_frame; await process_frame
-	if snapshot_fake.commands.size() != 6 or JSON.parse_string(snapshot_fake.commands[5]).get("type") != "load_dev_snapshot": _fail("snapshot restart did not issue a fresh load: %s" % snapshot_fake.commands); return
+	if snapshot_fake.commands.size() != 7 or JSON.parse_string(snapshot_fake.commands[6]).get("type") != "load_dev_snapshot": _fail("snapshot restart did not issue a fresh load: %s" % snapshot_fake.commands); return
 	active_snapshot = snapshot_store.load_active()
 	if active_snapshot.get("battle_id") != "battle-snapshot-copy-two" or active_snapshot.get("snapshot_name") != "round-2-effects": _fail("snapshot restart did not install the second independent battle: %s" % active_snapshot); return
 	loaded_screens = get_nodes_in_group("inspectable_battle_screen"); loaded_screen = loaded_screens[-1]
