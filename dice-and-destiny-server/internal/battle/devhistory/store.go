@@ -222,6 +222,17 @@ func (store Store) Export(battleID string) (*Bundle, error) {
 	if err != nil {
 		return nil, err
 	}
+	// Active branches no longer have a review/replay cursor. Older branches
+	// written before that invariant was enforced can retain a base or cursor
+	// which was later truncated out of the visible ancestry. Repair that stale
+	// metadata while exporting so an in-progress battle remains snapshotable.
+	if branch.Status == BranchActive && (branch.CursorPointID != "" || branch.BasePointID != "") {
+		branch.CursorPointID = ""
+		branch.BasePointID = ""
+		if err := store.writeAtomic(store.branchPath(branch.BattleID), branch); err != nil {
+			return nil, err
+		}
+	}
 	points, err := store.ancestryPointsUnlocked(branch.HeadPointID)
 	if err != nil {
 		return nil, err
@@ -477,6 +488,7 @@ func (store Store) CommitReview(battleID, mode string) (Branch, error) {
 	atTerminalState := point.Metadata.ID == branch.HeadPointID && point.Metadata.ActionKey == ""
 	if atTerminalState {
 		branch.CursorPointID = ""
+		branch.BasePointID = ""
 		branch.Status = BranchActive
 	} else if mode == "preserve" {
 		branch.Status = BranchReplay
@@ -484,6 +496,7 @@ func (store Store) CommitReview(battleID, mode string) (Branch, error) {
 		branch.DiscardedHeadPointID = branch.HeadPointID
 		branch.HeadPointID = point.Metadata.ParentPointID
 		branch.CursorPointID = ""
+		branch.BasePointID = ""
 		branch.Status = BranchActive
 	}
 	if err := store.writeAtomic(store.branchPath(branch.BattleID), branch); err != nil {
@@ -552,12 +565,14 @@ func (store Store) AdvanceReplay(battleID, expectedCursor string) (Branch, error
 			next := points[index+1]
 			if index+1 == len(points)-1 && next.Metadata.ActionKey == "" {
 				branch.CursorPointID = ""
+				branch.BasePointID = ""
 				branch.Status = BranchActive
 			} else {
 				branch.CursorPointID = next.Metadata.ID
 			}
 		} else {
 			branch.CursorPointID = ""
+			branch.BasePointID = ""
 			branch.Status = BranchActive
 		}
 		if err := store.writeAtomic(store.branchPath(branch.BattleID), branch); err != nil {
@@ -585,6 +600,7 @@ func (store Store) TruncateReplay(battleID string) (Branch, error) {
 	branch.DiscardedHeadPointID = branch.HeadPointID
 	branch.HeadPointID = current.Metadata.ParentPointID
 	branch.CursorPointID = ""
+	branch.BasePointID = ""
 	branch.Status = BranchActive
 	if err := store.writeAtomic(store.branchPath(branch.BattleID), branch); err != nil {
 		return Branch{}, err

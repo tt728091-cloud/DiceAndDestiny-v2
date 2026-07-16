@@ -243,6 +243,95 @@ func TestSnapshotAuthorityRestoresReviewHistoryAndItsLatestFuture(t *testing.T) 
 	}
 }
 
+func TestSnapshotAuthorityResavesLoadedBattleAfterHistoryReplacement(t *testing.T) {
+	repo := repository.NewInMemory()
+	source := snapshotAuthorityCheckpoint(t, "battle-snapshot-resave-source")
+	if err := repo.Create(source); err != nil {
+		t.Fatal(err)
+	}
+	historyStore := devhistory.Store{Root: t.TempDir()}
+	snapshotStore := devsnapshot.Store{Root: t.TempDir()}
+	core := NewAuthority(engine.NewEngine(), repo, &recordingAssembler{})
+	snapshots := NewSnapshotAuthority(SnapshotAuthorityConfig{
+		BuildEnabled: true, RuntimeEnabled: true, Gameplay: core, Repository: repo,
+		Store: snapshotStore, HistoryStore: historyStore,
+		IDGenerator: func(devsnapshot.Record) (string, error) { return "battle-snapshot-resave-loaded", nil },
+	})
+	history := NewHistoryAuthority(HistoryAuthorityConfig{
+		BuildEnabled: true, RuntimeEnabled: true, Gameplay: snapshots, Repository: repo, Store: historyStore,
+		IDGenerator: func(devhistory.Point) (string, error) { return "battle-snapshot-resave-review", nil },
+	})
+
+	marked := history.HandleCommand(command.Command{
+		BattleID: source.BattleID, ActorID: "blade", Type: command.TypeMarkHistory,
+		Payload: json.RawMessage(`{"label":"Roll 5 Dice","kind":"decision","presented_sequence":1,"action":{"type":"planning_roll"}}`),
+	})
+	if !marked.Accepted {
+		t.Fatalf("initial history mark = %#v", marked)
+	}
+	marked = history.HandleCommand(command.Command{
+		BattleID: source.BattleID, ActorID: "blade", Type: command.TypeMarkHistory,
+		Payload: json.RawMessage(`{"label":"Offensive Dice 1/3","kind":"decision","presented_sequence":1}`),
+	})
+	if !marked.Accepted {
+		t.Fatalf("history endpoint mark = %#v", marked)
+	}
+	saved := history.HandleCommand(command.Command{
+		BattleID: source.BattleID, ActorID: "blade", Type: command.TypeSaveSnapshot,
+		Payload: json.RawMessage(`{"name":"before-rewind"}`),
+	})
+	if !saved.Accepted {
+		t.Fatalf("initial snapshot save = %#v", saved)
+	}
+	loaded := history.HandleCommand(command.Command{
+		BattleID: source.BattleID, ActorID: "blade", Type: command.TypeLoadSnapshot,
+		Payload: json.RawMessage(`{"name":"before-rewind"}`),
+	})
+	if !loaded.Accepted || loaded.Snapshot == nil {
+		t.Fatalf("snapshot load = %#v", loaded)
+	}
+	loadedTimeline, err := historyStore.List(loaded.Snapshot.BattleID)
+	if err != nil || len(loadedTimeline.Points) != 2 {
+		t.Fatalf("loaded history timeline = %#v, %v", loadedTimeline, err)
+	}
+	review := history.HandleCommand(command.Command{
+		BattleID: loaded.Snapshot.BattleID, ActorID: "blade", Type: command.TypeJumpHistory,
+		Payload: json.RawMessage(`{"point_id":"` + loadedTimeline.Points[0].ID + `"}`),
+	})
+	if !review.Accepted || review.Snapshot == nil {
+		t.Fatalf("loaded history rewind = %#v", review)
+	}
+	replaced := history.HandleCommand(command.Command{
+		BattleID: review.Snapshot.BattleID, ActorID: "blade", Type: command.TypeCommitHistory,
+		Payload: json.RawMessage(`{"mode":"replace"}`),
+	})
+	if !replaced.Accepted {
+		t.Fatalf("loaded history replacement = %#v", replaced)
+	}
+	active, err := historyStore.Branch(review.Snapshot.BattleID)
+	if err != nil || active.Status != devhistory.BranchActive || active.CursorPointID != "" || active.BasePointID != "" {
+		t.Fatalf("replacement retained rewind-only cursor metadata: %#v, %v", active, err)
+	}
+	continued := history.HandleCommand(command.Command{
+		BattleID: review.Snapshot.BattleID, ActorID: "blade", Type: command.TypeMarkHistory,
+		Payload: json.RawMessage(`{"label":"Current after replacement","kind":"decision","presented_sequence":1}`),
+	})
+	if !continued.Accepted {
+		t.Fatalf("continued loaded history mark = %#v", continued)
+	}
+	resaved := history.HandleCommand(command.Command{
+		BattleID: review.Snapshot.BattleID, ActorID: "blade", Type: command.TypeSaveSnapshot,
+		Payload: json.RawMessage(`{"name":"after-rewind"}`),
+	})
+	if !resaved.Accepted {
+		t.Fatalf("resave after load and history replacement = %#v", resaved)
+	}
+	record, err := snapshotStore.Load("after-rewind")
+	if err != nil || record.History == nil || record.Metadata.HistoryPointCount != 1 {
+		t.Fatalf("resaved snapshot history = %#v, %v", record.Metadata, err)
+	}
+}
+
 func snapshotAuthorityCheckpoint(t *testing.T, battleID string) repository.Checkpoint {
 	t.Helper()
 	battle, err := state.NewBattleFromSetup(battleID, state.BattleSetup{Actors: []state.ActorSetup{

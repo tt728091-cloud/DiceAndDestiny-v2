@@ -24,6 +24,13 @@ go build \
 
 cp "${BUILD_DIR}/libbattle_go_authority.dylib" "${CLIENT_NATIVE_DIR}/"
 
+# Go's Darwin linker emits an ad-hoc signature, but copying the dylib can leave
+# macOS with a stale executable-page signature cache. Re-sign the exact client
+# artifact Godot will dlopen so hardened runtime validation remains reliable.
+if command -v codesign >/dev/null 2>&1; then
+  codesign --force --sign - "${CLIENT_NATIVE_DIR}/libbattle_go_authority.dylib"
+fi
+
 if [[ ! -x "${VENV_DIR}/bin/scons" ]]; then
   python3 -m venv "${VENV_DIR}"
   "${VENV_DIR}/bin/python" -m pip install --upgrade pip scons
@@ -48,3 +55,7 @@ fi
 
 rm -rf "${CLIENT_NATIVE_DIR}/libbattle_authority.macos.template_debug.framework"
 cp -R "${ROOT_DIR}/build/gdextension/libbattle_authority.macos.template_debug.framework" "${CLIENT_NATIVE_DIR}/"
+
+if command -v codesign >/dev/null 2>&1; then
+  codesign --force --deep --sign - "${CLIENT_NATIVE_DIR}/libbattle_authority.macos.template_debug.framework"
+fi

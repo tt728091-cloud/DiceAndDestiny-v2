@@ -97,7 +97,7 @@ func TestStoreReviewBranchesPreserveOrArchivePriorFuture(t *testing.T) {
 		t.Fatalf("replay cursor did not advance without dropping future: %#v, %v", advanced, err)
 	}
 	truncated, err := store.TruncateReplay(review.BattleID)
-	if err != nil || truncated.Status != BranchActive || truncated.HeadPointID != point.ID || truncated.DiscardedHeadPointID != second.ID {
+	if err != nil || truncated.Status != BranchActive || truncated.HeadPointID != point.ID || truncated.DiscardedHeadPointID != second.ID || truncated.BasePointID != "" || truncated.CursorPointID != "" {
 		t.Fatalf("confirmed divergence did not replace only current/future points: %#v, %v", truncated, err)
 	}
 	nestedReview, err := store.CreateReviewBranch(truncated, "battle-review-nested", point.ID)
@@ -167,7 +167,7 @@ func TestStoreRecordsCurrentEndpointAndEnrichesItWithTheNextAction(t *testing.T)
 		t.Fatal(err)
 	}
 	advanced, err := store.AdvanceReplay(replayReview.BattleID, current.ID)
-	if err != nil || advanced.Status != BranchActive || advanced.HeadPointID != endpoint.ID {
+	if err != nil || advanced.Status != BranchActive || advanced.HeadPointID != endpoint.ID || advanced.BasePointID != "" || advanced.CursorPointID != "" {
 		t.Fatalf("replay did not become active on the terminal result point: %#v, %v", advanced, err)
 	}
 
@@ -176,8 +176,45 @@ func TestStoreRecordsCurrentEndpointAndEnrichesItWithTheNextAction(t *testing.T)
 		t.Fatal(err)
 	}
 	terminal, err := store.CommitReview(terminalReview.BattleID, "preserve")
-	if err != nil || terminal.Status != BranchActive || terminal.HeadPointID != endpoint.ID {
+	if err != nil || terminal.Status != BranchActive || terminal.HeadPointID != endpoint.ID || terminal.BasePointID != "" || terminal.CursorPointID != "" {
 		t.Fatalf("resuming the terminal point incorrectly entered replay: %#v, %v", terminal, err)
+	}
+}
+
+func TestStoreExportRepairsLegacyActiveBranchCursorMetadata(t *testing.T) {
+	checkpoint := historyCheckpoint(t, "battle-history-stale-active")
+	store := Store{Root: t.TempDir(), IDGenerator: func() (string, error) {
+		return "history-0000000000000042", nil
+	}}
+	point, err := store.Mark(checkpoint, "blade", "Current state", KindDecision, 1, nil, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	branch, err := store.Branch(checkpoint.BattleID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	// This mirrors an active branch produced by the old replace path: the
+	// rewind-only IDs remain even though one is outside the live ancestry.
+	branch.CursorPointID = point.ID
+	branch.BasePointID = "history-ffffffffffffffff"
+	if err := store.writeAtomic(store.branchPath(branch.BattleID), branch); err != nil {
+		t.Fatal(err)
+	}
+
+	bundle, err := store.Export(checkpoint.BattleID)
+	if err != nil {
+		t.Fatalf("Export() rejected a repairable active branch: %v", err)
+	}
+	if bundle.Branch.CursorPointID != "" || bundle.Branch.BasePointID != "" {
+		t.Fatalf("Export() retained stale active cursor metadata: %#v", bundle.Branch)
+	}
+	if err := ValidateBundle(*bundle); err != nil {
+		t.Fatalf("repaired bundle is invalid: %v", err)
+	}
+	repaired, err := store.Branch(checkpoint.BattleID)
+	if err != nil || repaired.CursorPointID != "" || repaired.BasePointID != "" {
+		t.Fatalf("active branch repair was not persisted: %#v, %v", repaired, err)
 	}
 }
 
