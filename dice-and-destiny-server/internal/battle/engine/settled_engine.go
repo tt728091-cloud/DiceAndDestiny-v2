@@ -428,9 +428,28 @@ func (e Engine) selectAIDefenses(battle *state.Battle, library content.BattleLib
 		}
 		abilityID := legal[choice]
 		source := firstIncoming(battle, actorID)
+		if source == nil {
+			continue
+		}
 		ability := library.Abilities[abilityID]
 		if battle.Actors[actorID].Resources.EnergyPoints < ability.Cost.Energy {
-			return fmt.Errorf("AI cannot afford defense %q", abilityID)
+			var ordered []string
+			if definition, ok := library.Combatants[battle.Actors[actorID].DefinitionID]; ok && definition.AI != nil {
+				ordered = append(ordered, definition.AI.DefensiveSelection.PreferenceOrder...)
+			}
+			ordered = append(ordered, legal...)
+			affordable := ""
+			for _, candidate := range ordered {
+				if containsString(legal, candidate) && battle.Actors[actorID].Resources.EnergyPoints >= library.Abilities[candidate].Cost.Energy {
+					affordable = candidate
+					break
+				}
+			}
+			if affordable == "" {
+				continue
+			}
+			abilityID = affordable
+			ability = library.Abilities[abilityID]
 		}
 		spendEnergy(battle, actorID, ability.Cost.Energy)
 		battle.Settled.DefenseSelections[actorID] = state.SettledDefense{ActorID: actorID, AbilityID: abilityID, SourceID: source.ID}
@@ -473,12 +492,12 @@ func (e Engine) resolveDefenseRollsAndOpenReaction(battle *state.Battle, library
 			selection.RolledFace = die.Faces[value].Number
 			battle.Settled.DefenseSelections[actorID] = selection
 			events = append(events, event.Event{Type: event.TypeDiceRolled, ActorID: actorID, Segment: segment.Defensive, Pool: state.RollPoolDefensive, SourceType: state.RollSourceAbility, SourceID: selection.AbilityID, Dice: rolledFaces(library, die.ID, []int{selection.RolledFace})})
-			if ability.Resolution.ReactionWindow.Opens {
-				reactable = true
-			}
+		}
+		if ability.Resolution.Roll != nil && selection.RolledFace > 0 && ability.Resolution.ReactionWindow.Opens {
+			reactable = true
 		}
 	}
-	if reactable {
+	if reactable || len(battle.Settled.OffensiveSources) > 0 {
 		battle.Settled.Stage = stageDefenseReact
 		openSettledWindow(battle, "defense-react", stageDefenseReact, "reaction", []command.Type{command.TypeCommitInteraction, command.TypePass})
 		return events, nil
@@ -602,7 +621,10 @@ func (e Engine) autoAIDamageResponse(battle *state.Battle, library content.Battl
 		}
 		cardID := findCardDefinitionInZone(battle, actorID, "emergency_ward", operation.ZoneHand)
 		if cardID == "" {
-			return fmt.Errorf("scripted AI damage response requested without emergency_ward")
+			continue
+		}
+		if battle.Actors[actorID].Resources.EnergyPoints < library.Cards["emergency_ward"].Cost.Energy {
+			continue
 		}
 		source := firstBatchSourceForTarget(batch, actorID)
 		if source == nil {
@@ -875,12 +897,17 @@ func (e Engine) finalizeOffensivePlanning(battle *state.Battle, library content.
 	closeSettledWindow(battle)
 	battle.Settled.Stage = stageOffensiveReact
 	openSettledWindow(battle, "offensive-reaction", stageOffensiveReact, "reaction", []command.Type{command.TypeCommitInteraction, command.TypePass})
+	return []event.Event{offensiveRevealEvent(battle, library)}, nil
+}
+
+func offensiveRevealEvent(battle *state.Battle, library content.BattleLibrary) event.Event {
 	reveals := map[string]any{}
 	for _, actorID := range sortedSettledActorIDs(battle) {
 		r := battle.Settled.Actors[actorID]
-		reveals[actorID] = map[string]any{"dice": r.FinalDice, "roll_history": r.RollHistory, "rolls_used": r.RollsUsed, "max_rolls": r.MaxRolls, "ability_id": r.SelectedAbilityID, "tier_id": r.SelectedTierID, "targets": r.SelectedTargetIDs, "ai_d100": r.AID100, "simulated_rolls": r.AISimulatedRolls}
+		ops, _ := resolvedOffensiveOperations(battle, library, actorID)
+		reveals[actorID] = map[string]any{"dice": r.FinalDice, "roll_history": r.RollHistory, "rolls_used": r.RollsUsed, "max_rolls": r.MaxRolls, "ability_id": r.SelectedAbilityID, "tier_id": r.SelectedTierID, "targets": r.SelectedTargetIDs, "ai_d100": r.AID100, "simulated_rolls": r.AISimulatedRolls, "outcome": summarizeOffensiveOutcome(ops, r.SelectedTargetIDs)}
 	}
-	return []event.Event{settledEvent(event.TypeInteractionRevealed, battle, "", map[string]any{"commitments": reveals})}, nil
+	return settledEvent(event.TypeInteractionRevealed, battle, "", map[string]any{"commitments": reveals})
 }
 
 func (e Engine) handleOffensiveReactionCommand(battle *state.Battle, library content.BattleLibrary, cmd command.Command) ([]event.Event, error) {
@@ -928,7 +955,10 @@ func (e Engine) handleOffensiveReactionCommand(battle *state.Battle, library con
 	battle.Settled.Actors[adjust.ActorID] = runtime
 	openSettledWindow(battle, "offensive-reaction", stageOffensiveReact, "reaction", []command.Type{command.TypeCommitInteraction, command.TypePass})
 	battle.Settled.Window.ReactionRound = 2
-	return []event.Event{settledEvent(event.TypeCardPlayed, battle, cmd.ActorID, map[string]any{"card_instance_id": payload.Commitment.CardIDs[0], "actor_id": adjust.ActorID, "die_index": adjust.DieIndex, "face": adjust.Face, "old_ability": old, "new_ability": runtime.SelectedAbilityID, "valid_abilities": valid})}, nil
+	return []event.Event{
+		settledEvent(event.TypeCardPlayed, battle, cmd.ActorID, map[string]any{"card_instance_id": payload.Commitment.CardIDs[0], "actor_id": adjust.ActorID, "die_index": adjust.DieIndex, "face": adjust.Face, "old_ability": old, "new_ability": runtime.SelectedAbilityID, "valid_abilities": valid}),
+		offensiveRevealEvent(battle, library),
+	}, nil
 }
 
 func (e Engine) finalizeOffensiveSources(battle *state.Battle, library content.BattleLibrary) ([]event.Event, error) {
@@ -940,26 +970,9 @@ func (e Engine) finalizeOffensiveSources(battle *state.Battle, library content.B
 			continue
 		}
 		ability := library.Abilities[runtime.SelectedAbilityID]
-		tier, ok := qualifiedTier(ability, runtime.FinalDice)
+		ops, ok := resolvedOffensiveOperations(battle, library, actorID)
 		if !ok {
 			continue
-		}
-		ops := append([]content.BattleOperation(nil), tier.Operations...)
-		for _, bonus := range ability.Qualification.ConditionalBonuses {
-			if requirementsMet(bonus.Requirements, runtime.FinalDice) {
-				ops = append(ops, bonus.Operations...)
-			}
-		}
-		for _, modifier := range runtime.AbilityModifiers {
-			if modifier.AbilityID != ability.ID {
-				continue
-			}
-			card := library.Cards[runtime.CardInstances[modifier.SourceCardInstanceID].DefinitionID]
-			for _, op := range card.Operations {
-				if op.Modifier != nil && op.Modifier.AddConditionalBonus != nil && requirementsMet(op.Modifier.AddConditionalBonus.Requirements, runtime.FinalDice) {
-					ops = append(ops, op.Modifier.AddConditionalBonus.Operations...)
-				}
-			}
 		}
 		source := state.SettledDamageSource{ID: fmt.Sprintf("source-r%d-%s-%s", battle.Segment.Round, actorID, ability.ID), SourceActorID: actorID, SourceContentID: ability.ID, TargetActorID: first(runtime.SelectedTargetIDs)}
 		for _, op := range ops {
@@ -989,6 +1002,65 @@ func (e Engine) finalizeOffensiveSources(battle *state.Battle, library content.B
 	battle.Settled.Stage = "complete"
 	advanced, err := e.advanceSettledSegment(battle)
 	return append(events, advanced...), err
+}
+
+func resolvedOffensiveOperations(battle *state.Battle, library content.BattleLibrary, actorID string) ([]content.BattleOperation, bool) {
+	runtime := battle.Settled.Actors[actorID]
+	if runtime.SelectedAbilityID == "" {
+		return nil, false
+	}
+	ability, exists := library.Abilities[runtime.SelectedAbilityID]
+	if !exists {
+		return nil, false
+	}
+	tier, ok := qualifiedTier(ability, runtime.FinalDice)
+	if !ok {
+		return nil, false
+	}
+	ops := append([]content.BattleOperation(nil), tier.Operations...)
+	for _, bonus := range ability.Qualification.ConditionalBonuses {
+		if requirementsMet(bonus.Requirements, runtime.FinalDice) {
+			ops = append(ops, bonus.Operations...)
+		}
+	}
+	for _, modifier := range runtime.AbilityModifiers {
+		if modifier.AbilityID != ability.ID {
+			continue
+		}
+		instance, exists := runtime.CardInstances[modifier.SourceCardInstanceID]
+		if !exists {
+			continue
+		}
+		card, exists := library.Cards[instance.DefinitionID]
+		if !exists {
+			continue
+		}
+		for _, op := range card.Operations {
+			if op.Modifier != nil && op.Modifier.AddConditionalBonus != nil && requirementsMet(op.Modifier.AddConditionalBonus.Requirements, runtime.FinalDice) {
+				ops = append(ops, op.Modifier.AddConditionalBonus.Operations...)
+			}
+		}
+	}
+	return ops, true
+}
+
+func summarizeOffensiveOutcome(ops []content.BattleOperation, targets []string) map[string]any {
+	damage := 0
+	statusApplications := []state.SettledStatusApplication{}
+	resourceGains := map[string]int{}
+	for _, op := range ops {
+		switch op.Type {
+		case "deal_damage":
+			amount, _ := operationAmount(op, 0)
+			damage += amount
+		case "apply_status":
+			statusApplications = append(statusApplications, state.SettledStatusApplication{TargetActorID: first(targets), StatusID: op.StatusID, Stacks: max(1, op.StackCount)})
+		case "gain_resource":
+			amount, _ := operationAmount(op, 0)
+			resourceGains[op.Resource] += amount
+		}
+	}
+	return map[string]any{"base_damage": damage, "status_applications": statusApplications, "resource_gains": resourceGains, "targets": append([]string(nil), targets...)}
 }
 
 func (e Engine) resolveBlindCheckpoint(battle *state.Battle, library content.BattleLibrary) ([]event.Event, bool, error) {
@@ -1183,7 +1255,12 @@ func (e Engine) handleDefenseRollCommand(battle *state.Battle, library content.B
 	selection.RolledFace = die.Faces[value].Number
 	battle.Settled.DefenseSelections[human] = selection
 	closeSettledWindow(battle)
-	return e.resolveDefenseRollsAndOpenReaction(battle, library)
+	events := []event.Event{{Type: event.TypeDiceRolled, ActorID: human, Segment: segment.Defensive, Pool: state.RollPoolDefensive, SourceType: state.RollSourceAbility, SourceID: selection.AbilityID, Dice: rolledFaces(library, die.ID, []int{selection.RolledFace})}}
+	resolved, err := e.resolveDefenseRollsAndOpenReaction(battle, library)
+	if err != nil {
+		return nil, err
+	}
+	return append(events, resolved...), nil
 }
 
 func (e Engine) handleHandLimitCommand(battle *state.Battle, cmd command.Command) ([]event.Event, error) {
@@ -1486,6 +1563,12 @@ func requirementsMet(group content.RequirementGroup, dice []state.RolledDie) boo
 						found = true
 					}
 				}
+			case "pair_or_better":
+				for _, count := range counts {
+					if count >= 2 {
+						found = true
+					}
+				}
 			default:
 				return false
 			}
@@ -1631,6 +1714,9 @@ func gainEnergy(battle *state.Battle, actorID string, amount int) {
 func reconcileSettledDamage(batch *state.SettledDamageBatch, battle *state.Battle) {
 	if batch == nil {
 		return
+	}
+	if batch.Overage == nil {
+		batch.Overage = map[string]int{}
 	}
 	for i := range batch.Sources {
 		batch.Sources[i].FinalAmount = max(0, batch.Sources[i].BaseAmount-batch.Sources[i].Prevention)

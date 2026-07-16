@@ -179,6 +179,30 @@ func TestBattleSnapshotRoundTripsThroughJSON(t *testing.T) {
 	}
 }
 
+func TestDefenseReactionSnapshotRevealsEverySelectedDefense(t *testing.T) {
+	battle := state.Battle{
+		ID:      "battle-defense",
+		Segment: segment.State{Current: segment.Defensive, Round: 2},
+		Settled: &state.SettledRuntime{
+			Stage: "defense_reaction",
+			DefenseSelections: map[string]state.SettledDefense{
+				"player": {ActorID: "player", AbilityID: "basic_defense", SourceID: "enemy-attack", RolledFace: 4},
+				"enemy":  {ActorID: "enemy", AbilityID: "protect", SourceID: "player-attack"},
+			},
+		},
+	}
+
+	got := snapshot.FromBattleForViewer(battle, "player")
+	if len(got.SettledDefenses) != 2 || got.SettledDefenses["player"].RolledFace != 4 || got.SettledDefenses["enemy"].AbilityID != "protect" {
+		t.Fatalf("defense reaction snapshot = %#v, want both revealed defenses", got.SettledDefenses)
+	}
+
+	battle.Settled.Stage = "defense_selection"
+	if hidden := snapshot.FromBattleForViewer(battle, "player").SettledDefenses; len(hidden) != 0 {
+		t.Fatalf("defenses leaked before reveal: %#v", hidden)
+	}
+}
+
 func battleWithCardVisibilityState() state.Battle {
 	return state.Battle{
 		ID: "battle-1",

@@ -8,14 +8,18 @@ var _save_path: String
 func _init(save_path: String = SAVE_PATH) -> void:
 	_save_path = save_path
 
-func save_active(battle_id: String, actor_id: String) -> Error:
+func save_active(battle_id: String, actor_id: String, last_sequence: int = 0, snapshot_name: String = "", history_context: Dictionary = {}) -> Error:
 	var file := FileAccess.open(_save_path, FileAccess.WRITE)
 	if file == null:
 		return FileAccess.get_open_error()
-	file.store_string(JSON.stringify({
+	var record := {
 		"battle_id": battle_id,
 		"actor_id": actor_id,
-	}))
+		"last_sequence": last_sequence,
+	}
+	if not snapshot_name.is_empty(): record["snapshot_name"] = snapshot_name
+	if not history_context.is_empty(): record["history_context"] = history_context
+	file.store_string(JSON.stringify(record))
 	return OK
 
 func load_active() -> Dictionary:

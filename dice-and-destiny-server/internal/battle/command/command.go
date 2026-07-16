@@ -27,6 +27,16 @@ const (
 	TypeValidateScenario  Type = "validate_scenario"
 	TypeStartScenario     Type = "start_scenario"
 	TypeOpenBattle        Type = "open_battle"
+	TypeListSnapshots     Type = "list_dev_snapshots"
+	TypeSaveSnapshot      Type = "save_dev_snapshot"
+	TypeLoadSnapshot      Type = "load_dev_snapshot"
+	TypeListHistory       Type = "list_dev_history"
+	TypeMarkHistory       Type = "mark_dev_history"
+	TypeJumpHistory       Type = "jump_dev_history"
+	TypeCommitHistory     Type = "commit_dev_history"
+	TypeReturnHistory     Type = "return_dev_history_latest"
+	TypeReplayHistory     Type = "replay_dev_history_action"
+	TypeDivergeHistory    Type = "replace_dev_history_future"
 )
 
 var (
@@ -65,6 +75,35 @@ type StartBattlePayload struct {
 }
 
 type OpenBattlePayload struct{}
+
+type SaveSnapshotPayload struct {
+	Name      string `json:"name"`
+	Overwrite bool   `json:"overwrite,omitempty"`
+}
+
+type LoadSnapshotPayload struct {
+	Name string `json:"name"`
+}
+
+type MarkHistoryPayload struct {
+	Label             string         `json:"label"`
+	Kind              string         `json:"kind"`
+	PresentedSequence uint64         `json:"presented_sequence"`
+	ClientState       map[string]any `json:"client_state,omitempty"`
+	Action            map[string]any `json:"action,omitempty"`
+}
+
+type JumpHistoryPayload struct {
+	PointID string `json:"point_id"`
+}
+
+type CommitHistoryPayload struct {
+	Mode string `json:"mode"`
+}
+
+type ReplayHistoryPayload struct {
+	Action map[string]any `json:"action"`
+}
 
 type RollDicePayload struct {
 	RequestID      string `json:"request_id,omitempty"`

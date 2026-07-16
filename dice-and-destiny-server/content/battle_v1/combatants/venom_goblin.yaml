@@ -27,25 +27,25 @@ ai:
     charts:
       1_roll:
         abilities:
-          - {ability_id: jagged_slash, activation_ranges: {first_roll: [1, 5]}}
-          - {ability_id: venom_strike, activation_ranges: {first_roll: [16, 18]}}
-          - {ability_id: crushing_advance, activation_ranges: {first_roll: [31, 34]}}
-          - {ability_id: greedy_blow, activation_ranges: {first_roll: [50, 55]}}
-        no_ability_ranges: [[6, 15], [19, 30], [35, 49], [56, 100]]
+          - {ability_id: jagged_slash, activation_ranges: {first_roll: [1, 13]}}
+          - {ability_id: venom_strike, activation_ranges: {first_roll: [26, 38]}}
+          - {ability_id: crushing_advance, activation_ranges: {first_roll: [51, 63]}}
+          - {ability_id: greedy_blow, activation_ranges: {first_roll: [76, 86]}}
+        no_ability_ranges: [[14, 25], [39, 50], [64, 75], [87, 100]]
       2_rolls:
         abilities:
-          - {ability_id: jagged_slash, activation_ranges: {first_roll: [1, 5], second_roll: [6, 10]}}
-          - {ability_id: venom_strike, activation_ranges: {first_roll: [16, 18], second_roll: [19, 23]}}
-          - {ability_id: crushing_advance, activation_ranges: {first_roll: [31, 34], second_roll: [35, 40]}}
-          - {ability_id: greedy_blow, activation_ranges: {first_roll: [50, 55], second_roll: [56, 64]}}
-        no_ability_ranges: [[11, 15], [24, 30], [41, 49], [65, 100]]
+          - {ability_id: jagged_slash, activation_ranges: {first_roll: [1, 13], second_roll: [14, 21]}}
+          - {ability_id: venom_strike, activation_ranges: {first_roll: [26, 38], second_roll: [39, 46]}}
+          - {ability_id: crushing_advance, activation_ranges: {first_roll: [51, 63], second_roll: [64, 71]}}
+          - {ability_id: greedy_blow, activation_ranges: {first_roll: [76, 86], second_roll: [87, 92]}}
+        no_ability_ranges: [[22, 25], [47, 50], [72, 75], [93, 100]]
       3_rolls:
         abilities:
-          - {ability_id: jagged_slash, activation_ranges: {first_roll: [1, 5], second_roll: [6, 10], third_roll: [11, 15]}}
-          - {ability_id: venom_strike, activation_ranges: {first_roll: [16, 18], second_roll: [19, 23], third_roll: [24, 30]}}
-          - {ability_id: crushing_advance, activation_ranges: {first_roll: [31, 34], second_roll: [35, 40], third_roll: [41, 49]}}
-          - {ability_id: greedy_blow, activation_ranges: {first_roll: [50, 55], second_roll: [56, 64], third_roll: [65, 77]}}
-        no_ability_ranges: [[78, 100]]
+          - {ability_id: jagged_slash, activation_ranges: {first_roll: [1, 10], second_roll: [11, 15], third_roll: [95, 100]}}
+          - {ability_id: venom_strike, activation_ranges: {first_roll: [16, 20], second_roll: [21, 25], third_roll: [26, 30]}}
+          - {ability_id: crushing_advance, activation_ranges: {first_roll: [31, 36], second_roll: [37, 42], third_roll: [43, 49]}}
+          - {ability_id: greedy_blow, activation_ranges: {first_roll: [50, 59], second_roll: [60, 74], third_roll: [75, 89]}}
+        no_ability_ranges: [[90, 94]]
   defensive_selection:
     controller: basic
     preference_order: [protect, basic_defense]

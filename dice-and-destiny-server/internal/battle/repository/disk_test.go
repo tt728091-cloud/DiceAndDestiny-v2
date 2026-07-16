@@ -141,6 +141,32 @@ func TestDiskAtomicSaveFailurePreservesPreviousCheckpoint(t *testing.T) {
 	}
 }
 
+func TestCloneCheckpointRekeysIdentityAndPreservesAuthorityState(t *testing.T) {
+	source := diskTestCheckpoint(t, "snapshot-source")
+	source.Battle.Random.Cursor = 17
+	cloned, err := CloneCheckpoint(source, "snapshot-copy")
+	if err != nil {
+		t.Fatalf("CloneCheckpoint() returned error: %v", err)
+	}
+	if cloned.BattleID != "snapshot-copy" || cloned.Battle.ID != "snapshot-copy" {
+		t.Fatalf("cloned battle identity = %q / %q", cloned.BattleID, cloned.Battle.ID)
+	}
+	if cloned.Events[0].BattleID != "snapshot-copy" ||
+		cloned.Events[0].ID != eventID("snapshot-copy", 1) {
+		t.Fatalf("cloned event identity = %#v", cloned.Events[0])
+	}
+	if cloned.Battle.Random != source.Battle.Random ||
+		cloned.NextEventSequence != source.NextEventSequence ||
+		cloned.ContentPin != source.ContentPin {
+		t.Fatal("clone changed random state, sequencing, or content pin")
+	}
+	cloned.Battle.Actors["player"].Cards.Deck[0] = "mutated"
+	cloned.Events[0].Dice[0].Face = 1
+	if source.Battle.Actors["player"].Cards.Deck[0] == "mutated" || source.Events[0].Dice[0].Face == 1 {
+		t.Fatal("clone aliases source checkpoint state")
+	}
+}
+
 func diskTestCheckpoint(t *testing.T, battleID string) Checkpoint {
 	t.Helper()
 	battle, err := state.NewBattleFromSetup(battleID, state.BattleSetup{

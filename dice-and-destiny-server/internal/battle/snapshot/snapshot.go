@@ -8,22 +8,23 @@ import (
 // Battle is the read-only view returned after events have been applied.
 // It is safe for presentation or future network clients to render from.
 type Battle struct {
-	BattleID           string                      `json:"battle_id"`
-	Status             state.BattleStatus          `json:"status,omitempty"`
-	Segment            segment.Segment             `json:"segment"`
-	Round              int                         `json:"round"`
-	ViewerActorID      string                      `json:"viewer_actor_id,omitempty"`
-	Flow               *SegmentFlow                `json:"flow,omitempty"`
-	Resolution         *Resolution                 `json:"resolution,omitempty"`
-	Damage             *DamageResolution           `json:"damage,omitempty"`
-	Actors             map[string]Actor            `json:"actors,omitempty"`
-	OffensiveProposals []state.PlanningProposal    `json:"offensive_proposals,omitempty"`
-	DefensiveProposals []state.PlanningProposal    `json:"defensive_proposals,omitempty"`
-	Origin             *state.BattleOrigin         `json:"origin,omitempty"`
-	CompletedRounds    int                         `json:"completed_rounds,omitempty"`
-	Stage              string                      `json:"stage,omitempty"`
-	SettledSources     []state.SettledDamageSource `json:"damage_sources,omitempty"`
-	SettledDamage      *state.SettledDamageBatch   `json:"settled_damage,omitempty"`
+	BattleID           string                          `json:"battle_id"`
+	Status             state.BattleStatus              `json:"status,omitempty"`
+	Segment            segment.Segment                 `json:"segment"`
+	Round              int                             `json:"round"`
+	ViewerActorID      string                          `json:"viewer_actor_id,omitempty"`
+	Flow               *SegmentFlow                    `json:"flow,omitempty"`
+	Resolution         *Resolution                     `json:"resolution,omitempty"`
+	Damage             *DamageResolution               `json:"damage,omitempty"`
+	Actors             map[string]Actor                `json:"actors,omitempty"`
+	OffensiveProposals []state.PlanningProposal        `json:"offensive_proposals,omitempty"`
+	DefensiveProposals []state.PlanningProposal        `json:"defensive_proposals,omitempty"`
+	Origin             *state.BattleOrigin             `json:"origin,omitempty"`
+	CompletedRounds    int                             `json:"completed_rounds,omitempty"`
+	Stage              string                          `json:"stage,omitempty"`
+	SettledSources     []state.SettledDamageSource     `json:"damage_sources,omitempty"`
+	SettledDefenses    map[string]state.SettledDefense `json:"defense_selections,omitempty"`
+	SettledDamage      *state.SettledDamageBatch       `json:"settled_damage,omitempty"`
 }
 
 type Actor struct {
@@ -57,7 +58,9 @@ type Actor struct {
 	RollHistory        []state.RollBatch              `json:"roll_history,omitempty"`
 	QualifiedAbilities []string                       `json:"qualified_abilities,omitempty"`
 	SelectedAbility    string                         `json:"selected_ability,omitempty"`
+	SelectedTier       string                         `json:"selected_tier,omitempty"`
 	SelectedTargets    []string                       `json:"selected_targets,omitempty"`
+	OffensiveOutcome   map[string]any                 `json:"offensive_outcome,omitempty"`
 	AbilityModifiers   []state.RuntimeAbilityModifier `json:"ability_modifiers,omitempty"`
 }
 
@@ -263,6 +266,12 @@ func FromBattleForViewer(battle state.Battle, viewerActorID string) Battle {
 		result.CompletedRounds = battle.Settled.CompletedRounds
 		result.Stage = battle.Settled.Stage
 		result.SettledSources = append([]state.SettledDamageSource(nil), battle.Settled.OffensiveSources...)
+		if battle.Segment.Current == segment.Defensive && battle.Settled.Stage == "defense_reaction" {
+			result.SettledDefenses = make(map[string]state.SettledDefense, len(battle.Settled.DefenseSelections))
+			for actorID, defense := range battle.Settled.DefenseSelections {
+				result.SettledDefenses[actorID] = defense
+			}
+		}
 		if battle.Settled.PendingDamage != nil {
 			damage := *battle.Settled.PendingDamage
 			damage.Sources = append([]state.SettledDamageSource(nil), battle.Settled.PendingDamage.Sources...)

@@ -261,6 +261,30 @@ func ValidateBattleID(battleID string) error {
 	return validateBattleID(battleID)
 }
 
+// CloneCheckpoint re-keys a validated checkpoint as a new independent battle.
+// Gameplay state, random state, pending inputs, content pins, and event history
+// are preserved. Only authority-owned battle and event identity changes.
+func CloneCheckpoint(checkpoint Checkpoint, battleID string) (Checkpoint, error) {
+	if err := ValidateCheckpoint(checkpoint); err != nil {
+		return Checkpoint{}, err
+	}
+	if err := validateBattleID(battleID); err != nil {
+		return Checkpoint{}, err
+	}
+	cloned := cloneCheckpoint(checkpoint)
+	cloned.BattleID = battleID
+	cloned.Battle.ID = battleID
+	for i := range cloned.Events {
+		sequence := uint64(i + 1)
+		cloned.Events[i].BattleID = battleID
+		cloned.Events[i].ID = eventID(battleID, sequence)
+	}
+	if err := ValidateCheckpoint(cloned); err != nil {
+		return Checkpoint{}, err
+	}
+	return cloned, nil
+}
+
 type InMemory struct {
 	mu          sync.RWMutex
 	checkpoints map[string]Checkpoint

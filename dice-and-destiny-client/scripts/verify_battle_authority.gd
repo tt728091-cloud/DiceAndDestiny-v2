@@ -1,36 +1,23 @@
 extends SceneTree
 
-const AUTHORITY_SCRIPT := preload("res://scripts/go_gdextension_battle_authority.gd")
-
 func _init() -> void:
-	var authority: BattleAuthority = AUTHORITY_SCRIPT.new()
-	var command_json := JSON.stringify({
-		"battle_id": "battle-1",
-		"actor_id": "player",
-		"type": "roll_dice",
-		"payload": {
-			"pool": "offensive"
-		}
-	})
-
-	var result_json := authority.submit_command(command_json)
-	print(result_json)
-
-	var parsed = JSON.parse_string(result_json)
-	if not parsed is Dictionary:
-		push_error("Authority returned non-object JSON")
+	var gateway := BattleGateway.new()
+	var battle_id := "authority-smoke-%d-%d" % [Time.get_unix_time_from_system(), Time.get_ticks_usec()]
+	var started := gateway.start_battle(battle_id, "blade")
+	if started.get("accepted") != true:
+		push_error("Authority did not start battle: %s" % JSON.stringify(started))
 		quit(1)
 		return
-
-	if parsed.get("accepted") != true:
-		push_error("Authority did not accept command: %s" % result_json)
+	var pending: Dictionary = started.get("pending_input", {}).get("blade", {})
+	var rolled := gateway.submit(BattleCommandBuilder.planning_roll(battle_id, "blade", pending))
+	if rolled.get("accepted") != true:
+		push_error("Authority did not accept planning roll: %s" % JSON.stringify(rolled))
 		quit(1)
 		return
-
-	var events: Array = parsed.get("events", [])
-	if events.is_empty() or events[0].get("type") != "dice_rolled":
-		push_error("Authority did not return dice_rolled: %s" % result_json)
+	var history: Array = rolled.get("snapshot", {}).get("actors", {}).get("blade", {}).get("roll_history", [])
+	if history.is_empty() or history[-1].get("dice", []).size() != 5:
+		push_error("Authority did not return five combat dice: %s" % JSON.stringify(rolled))
 		quit(1)
 		return
-
+	print("BATTLE AUTHORITY: start and 5D6 planning roll passed (%s)" % battle_id)
 	quit(0)

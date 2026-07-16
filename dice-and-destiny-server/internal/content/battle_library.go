@@ -593,7 +593,7 @@ func validateTier(tier AbilityTier, lib BattleLibrary) error {
 				return fmt.Errorf("symbol_count needs a bound")
 			}
 		case "number_pattern":
-			if r.Pattern != "three_of_a_kind" && r.Pattern != "exact_pair" {
+			if r.Pattern != "three_of_a_kind" && r.Pattern != "exact_pair" && r.Pattern != "pair_or_better" {
 				return fmt.Errorf("unknown number pattern %q", r.Pattern)
 			}
 		case "exact_faces":

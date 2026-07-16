@@ -8,6 +8,7 @@ import (
 
 	"diceanddestiny/server/internal/battle/command"
 	"diceanddestiny/server/internal/battle/engine"
+	"diceanddestiny/server/internal/battle/event"
 	battlerandom "diceanddestiny/server/internal/battle/random"
 	"diceanddestiny/server/internal/battle/repository"
 	"diceanddestiny/server/internal/battle/snapshot"
@@ -37,13 +38,13 @@ func TestAuthorityRunsBladeWardenVsVenomGoblinFullBattle(t *testing.T) {
 		{Stream: "combat_dice", Bound: 6, Value: 0}, {Stream: "combat_dice", Bound: 6, Value: 2}, {Stream: "combat_dice", Bound: 6, Value: 0},
 		{Stream: "ai_defense", Bound: 2, Value: 1}, {Stream: "damage_selection", Bound: 4, Value: 0}, {Stream: "damage_selection", Bound: 3, Value: 1}, {Stream: "ai_damage_response", Bound: 2, Value: 1},
 		// Round 3 Bleed, Income, AI plan, combat and defenses.
-		{Stream: "damage_selection", Bound: 4, Value: 1}, {Stream: "card_draw", Bound: 12, Value: 5}, {Stream: "card_draw", Bound: 3, Value: 0}, {Stream: "ai_d100", Bound: 100, Value: 32},
+		{Stream: "damage_selection", Bound: 4, Value: 1}, {Stream: "damage_selection", Bound: 3, Value: 0}, {Stream: "card_draw", Bound: 12, Value: 5}, {Stream: "card_draw", Bound: 2, Value: 0}, {Stream: "ai_d100", Bound: 100, Value: 32},
 		{Stream: "combat_dice", Bound: 6, Value: 0}, {Stream: "combat_dice", Bound: 6, Value: 2}, {Stream: "combat_dice", Bound: 6, Value: 3}, {Stream: "combat_dice", Bound: 6, Value: 4}, {Stream: "combat_dice", Bound: 6, Value: 5},
 		{Stream: "combat_dice", Bound: 6, Value: 0}, {Stream: "combat_dice", Bound: 6, Value: 1}, {Stream: "combat_dice", Bound: 6, Value: 4}, {Stream: "combat_dice", Bound: 6, Value: 2},
-		{Stream: "ai_defense", Bound: 2, Value: 0}, {Stream: "defense_dice", Bound: 6, Value: 2}, {Stream: "defense_dice", Bound: 6, Value: 1},
-		{Stream: "damage_selection", Bound: 11, Value: 0}, {Stream: "damage_selection", Bound: 10, Value: 6}, {Stream: "damage_selection", Bound: 2, Value: 0}, {Stream: "damage_selection", Bound: 1, Value: 0}, {Stream: "damage_selection", Bound: 1, Value: 0}, {Stream: "damage_selection", Bound: 4, Value: 1}, {Stream: "damage_selection", Bound: 3, Value: 0}, {Stream: "ai_damage_response", Bound: 2, Value: 0},
+		{Stream: "ai_defense", Bound: 2, Value: 0}, {Stream: "defense_dice", Bound: 6, Value: 2}, {Stream: "defense_dice", Bound: 6, Value: 3},
+		{Stream: "damage_selection", Bound: 11, Value: 0}, {Stream: "damage_selection", Bound: 10, Value: 6}, {Stream: "damage_selection", Bound: 1, Value: 0}, {Stream: "damage_selection", Bound: 1, Value: 0}, {Stream: "damage_selection", Bound: 4, Value: 1}, {Stream: "ai_damage_response", Bound: 2, Value: 0},
 		// Round 4 Bleed, Income, AI miss, player dice, enemy defense, final overage.
-		{Stream: "damage_selection", Bound: 2, Value: 1}, {Stream: "card_draw", Bound: 9, Value: 6}, {Stream: "ai_d100", Bound: 100, Value: 89},
+		{Stream: "damage_selection", Bound: 3, Value: 1}, {Stream: "damage_selection", Bound: 2, Value: 1}, {Stream: "card_draw", Bound: 9, Value: 6}, {Stream: "ai_d100", Bound: 100, Value: 89},
 		{Stream: "combat_dice", Bound: 6, Value: 0}, {Stream: "combat_dice", Bound: 6, Value: 3}, {Stream: "combat_dice", Bound: 6, Value: 4}, {Stream: "combat_dice", Bound: 6, Value: 5}, {Stream: "combat_dice", Bound: 6, Value: 5},
 		{Stream: "combat_dice", Bound: 6, Value: 0}, {Stream: "combat_dice", Bound: 6, Value: 1}, {Stream: "combat_dice", Bound: 6, Value: 4}, {Stream: "combat_dice", Bound: 6, Value: 2},
 		{Stream: "ai_defense", Bound: 2, Value: 0}, {Stream: "defense_dice", Bound: 6, Value: 0}, {Stream: "damage_selection", Bound: 1, Value: 0}, {Stream: "ai_damage_response", Bound: 2, Value: 0},
@@ -86,6 +87,10 @@ func TestAuthorityRunsBladeWardenVsVenomGoblinFullBattle(t *testing.T) {
 	assertFullBattleWait(t, result, "defensive", 1, "defense_roll")
 	result = sendRollDiceFull(t, authority, result)
 	assertFullBattleWait(t, result, "defensive", 1, "defense_reaction")
+	assertDefenseRollEvent(t, result, "blade", 2)
+	if len(result.Snapshot.SettledDefenses) != 2 || result.Snapshot.SettledDefenses["blade"].AbilityID != "basic_defense" || result.Snapshot.SettledDefenses["goblin"].AbilityID != "basic_defense" {
+		t.Fatalf("defense reveal snapshot=%#v, want both actor defenses", result.Snapshot.SettledDefenses)
+	}
 	result = sendPassFull(t, authority, result)
 	assertFullBattleWait(t, result, "damage_resolution", 1, "damage_reaction")
 	assertDamageDefinitions(t, result, []string{"loaded_die", "tip_it", "emergency_ward", "battle_focus"})
@@ -119,6 +124,11 @@ func TestAuthorityRunsBladeWardenVsVenomGoblinFullBattle(t *testing.T) {
 		t.Fatalf("enemy fallback = %q, want no ability", result.Snapshot.Actors["goblin"].SelectedAbility)
 	}
 	result = sendPassFull(t, authority, result)
+	assertFullBattleWait(t, result, "defensive", 2, "defense_reaction")
+	if defense := result.Snapshot.SettledDefenses["goblin"]; defense.AbilityID != "protect" || defense.SourceID == "" {
+		t.Fatalf("round 2 enemy defense reveal=%#v, want Protect against the player attack", defense)
+	}
+	result = sendPassFull(t, authority, result)
 	assertFullBattleWait(t, result, "damage_resolution", 2, "damage_reaction")
 	// Emergency Ward has already paid and moved to discard before this human wait.
 	assertZones(t, result, "goblin", 4, 3, 1, 4, 1)
@@ -129,7 +139,12 @@ func TestAuthorityRunsBladeWardenVsVenomGoblinFullBattle(t *testing.T) {
 	}
 	result = sendPassFull(t, authority, result)
 	assertFullBattleWait(t, result, "ongoing_effects", 3, "status_damage_reaction")
-	assertDamageDefinitions(t, result, []string{"emergency_ward"})
+	// Both stacks dealt damage on Ongoing Effects entry, then Bleed's normal
+	// checkpoint decay removed one stack before opening this reaction window.
+	if statuses := result.Snapshot.Actors["goblin"].Statuses; len(statuses) != 1 || statuses[0].DefinitionID != "bleed" || statuses[0].Stacks != 1 {
+		t.Fatalf("post-trigger Bleed=%#v, want one stack after two-stack damage and one-stack decay", statuses)
+	}
+	assertDamageDefinitions(t, result, []string{"emergency_ward", "tip_it"})
 
 	// Round 3: five-Sword Sword Cut, paired bonus, two Basic Defenses, and
 	// deck/discard/hand damage selection in one revealed batch.
@@ -148,12 +163,12 @@ func TestAuthorityRunsBladeWardenVsVenomGoblinFullBattle(t *testing.T) {
 	result = sendRollDiceFull(t, authority, result)
 	result = sendPassFull(t, authority, result)
 	assertFullBattleWait(t, result, "damage_resolution", 3, "damage_reaction")
-	assertDamageDefinitions(t, result, []string{"tip_it", "battle_focus", "battle_focus", "battle_focus", "emergency_ward", "loaded_die", "battle_focus"})
+	assertDamageDefinitions(t, result, []string{"tip_it", "battle_focus", "battle_focus", "emergency_ward", "loaded_die"})
 	result = sendPassFull(t, authority, result)
 	assertFullBattleWait(t, result, "ongoing_effects", 4, "status_damage_reaction")
 	assertZones(t, result, "blade", 9, 4, 3, 4, 2)
-	assertZones(t, result, "goblin", 0, 2, 0, 10, 2)
-	assertDamageDefinitions(t, result, []string{"tip_it"})
+	assertZones(t, result, "goblin", 0, 3, 0, 9, 2)
+	assertDamageDefinitions(t, result, []string{"battle_focus", "battle_focus"})
 
 	// Round 4: the final card remains in hand through reveal, overage is four,
 	// and victory is declared only after Damage Resolution exits.
@@ -322,6 +337,18 @@ func assertFaces(t *testing.T, dice []state.RolledDie, want []int) {
 			t.Fatalf("dice faces=%#v want=%v", dice, want)
 		}
 	}
+}
+func assertDefenseRollEvent(t *testing.T, result engine.Result, actorID string, face int) {
+	t.Helper()
+	for _, battleEvent := range result.Events {
+		if battleEvent.Type == event.TypeDiceRolled && battleEvent.ActorID == actorID && battleEvent.Pool == state.RollPoolDefensive {
+			if len(battleEvent.Dice) != 1 || battleEvent.Dice[0].Face != face {
+				t.Fatalf("%s defensive roll event = %#v, want face %d", actorID, battleEvent, face)
+			}
+			return
+		}
+	}
+	t.Fatalf("missing %s defensive roll event in %#v", actorID, result.Events)
 }
 func assertDamageDefinitions(t *testing.T, r engine.Result, want []string) {
 	t.Helper()

@@ -116,12 +116,25 @@ func (e Engine) ResultForViewer(
 	progressed ProgressionResult,
 ) Result {
 	viewerActorID = viewerActorIDForBattle(battle, viewerActorID)
+	snap := battleSnapshotForViewer(battle, viewerActorID)
+	if snap != nil && battle.Settled != nil && battle.Segment.Current == "offensive" && battle.Settled.Stage == stageOffensiveReact {
+		if library, err := settledLibrary(battle); err == nil {
+			for _, actorID := range sortedSettledActorIDs(battle) {
+				runtime := battle.Settled.Actors[actorID]
+				actor := snap.Actors[actorID]
+				actor.SelectedTier = runtime.SelectedTierID
+				ops, _ := resolvedOffensiveOperations(battle, library, actorID)
+				actor.OffensiveOutcome = summarizeOffensiveOutcome(ops, runtime.SelectedTargetIDs)
+				snap.Actors[actorID] = actor
+			}
+		}
+	}
 	result := Result{
 		Accepted:     true,
 		Status:       progressed.Status,
 		Events:       event.ForViewer(progressed.Events, viewerActorID),
 		PendingInput: snapshot.PendingInputForViewer(*battle, viewerActorID),
-		Snapshot:     battleSnapshotForViewer(battle, viewerActorID),
+		Snapshot:     snap,
 	}
 	if state.IsTerminalBattleStatus(battle.Status) {
 		result.Status = ProgressBattleComplete

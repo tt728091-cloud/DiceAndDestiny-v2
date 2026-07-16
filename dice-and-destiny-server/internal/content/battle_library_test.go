@@ -47,10 +47,28 @@ func TestD100ChartsRejectGapsAndOverlaps(t *testing.T) {
 	}
 	combatant := library.Combatants["venom_goblin"]
 	chart := combatant.AI.OffensivePlanning.Charts["3_rolls"]
-	chart.NoAbilityRanges = []D100Range{{Start: 79, End: 100}}
+	chart.NoAbilityRanges = []D100Range{{Start: 91, End: 94}}
 	combatant.AI.OffensivePlanning.Charts["3_rolls"] = chart
 	library.Combatants[combatant.ID] = combatant
-	if err := validateBattleLibrary(library); err == nil || !strings.Contains(err.Error(), "cover 78") {
+	if err := validateBattleLibrary(library); err == nil || !strings.Contains(err.Error(), "cover 90") {
 		t.Fatalf("D100 gap error=%v", err)
+	}
+}
+
+func TestVenomGoblinOffensiveChartsStayAggressive(t *testing.T) {
+	library, err := LoadBattleLibrary(filepath.Join("..", "..", "content", "battle_v1"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	wantAttackChance := map[string]int{"1_roll": 50, "2_rolls": 80, "3_rolls": 95}
+	for chartID, want := range wantAttackChance {
+		chart := library.Combatants["venom_goblin"].AI.OffensivePlanning.Charts[chartID]
+		noAbility := 0
+		for _, r := range chart.NoAbilityRanges {
+			noAbility += r.End - r.Start + 1
+		}
+		if got := 100 - noAbility; got != want {
+			t.Errorf("venom goblin %s attack chance = %d%%, want %d%%", chartID, got, want)
+		}
 	}
 }

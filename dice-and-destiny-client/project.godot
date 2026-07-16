@@ -13,11 +13,25 @@ config_version=5
 config/name="Dice-and-Destiny"
 config/features=PackedStringArray("4.6", "Forward Plus")
 config/icon="res://icon.svg"
-run/main_scene="res://app/screens/scenarios/scenario_launcher.tscn"
+run/main_scene="res://app/boot/battle_bootstrap.tscn"
+
+[autoload]
+
+GameInspector="*res://devtools/game_inspector.gd"
 
 [dice_and_destiny]
 
 development/enable_scenarios=true
+development/enable_snapshots=true
+development/enable_history=true
+
+[display]
+
+window/size/viewport_width=1920
+window/size/viewport_height=1080
+window/size/window_width_override=1280
+window/size/window_height_override=720
+window/stretch/mode="canvas_items"
 
 [physics]
 

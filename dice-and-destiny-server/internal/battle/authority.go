@@ -84,7 +84,9 @@ func NewAuthority(
 
 // HandleCommand is the portable battle authority JSON boundary.
 func HandleCommand(commandJSON string) string {
-	return newDefaultScenarioAuthority(defaultAuthority).HandleCommandJSON(commandJSON)
+	scenarioAuthority := newDefaultScenarioAuthority(defaultAuthority)
+	snapshotAuthority := newDefaultSnapshotAuthority(scenarioAuthority, defaultAuthority)
+	return newDefaultHistoryAuthority(snapshotAuthority, defaultAuthority).HandleCommandJSON(commandJSON)
 }
 
 func (authority *Authority) HandleCommandJSON(commandJSON string) string {
