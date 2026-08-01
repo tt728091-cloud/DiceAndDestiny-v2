@@ -1,0 +1,783 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Dice and Destiny creature collection, combat, progression, and research design record.">
+  <title>Dice and Destiny — Creature System Working Design</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --void: #080906;
+      --charcoal: #10120e;
+      --soot: #171914;
+      --panel: #1c1d17;
+      --panel-raised: #24231b;
+      --leather: #2b2118;
+      --leather-deep: #1d1712;
+      --bone: #d8ccb0;
+      --bone-bright: #f0e7d1;
+      --bone-dim: #b7aa8d;
+      --smoke: #9e9b8d;
+      --moss: #7f8761;
+      --sage: #a6ad86;
+      --olive: #4c5438;
+      --oxblood: #602a2d;
+      --oxblood-bright: #914748;
+      --amber: #d3a14a;
+      --amber-bright: #f0c96f;
+      --metal: #77776b;
+      --line: rgba(205, 188, 145, .2);
+      --line-strong: rgba(220, 201, 154, .34);
+      --shadow-deep: 0 28px 90px rgba(0, 0, 0, .62);
+      --shadow-panel: 0 16px 42px rgba(0, 0, 0, .34), inset 0 1px rgba(255,255,255,.035);
+      --heading: Palatino, "Palatino Linotype", "Book Antiqua", Georgia, serif;
+      --body: Charter, "Bitstream Charter", Georgia, serif;
+      --ui: Optima, Candara, "Segoe UI", sans-serif;
+      --radius: 10px;
+    }
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; scrollbar-color: #5b5d45 #11130f; }
+    body {
+      min-height: 100vh;
+      margin: 0;
+      color: var(--bone);
+      background:
+        radial-gradient(circle at 14% 6%, rgba(93, 98, 62, .17), transparent 27rem),
+        radial-gradient(circle at 88% 22%, rgba(86, 45, 38, .11), transparent 32rem),
+        linear-gradient(180deg, #090a07 0, #11130e 36rem, #0b0c09 100%);
+      font-family: var(--body);
+      font-size: 17px;
+      line-height: 1.72;
+      text-rendering: optimizeLegibility;
+    }
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      z-index: -1;
+      pointer-events: none;
+      opacity: .24;
+      background-image:
+        repeating-linear-gradient(17deg, transparent 0 13px, rgba(226,207,159,.018) 14px 15px, transparent 16px 31px),
+        radial-gradient(circle at 20% 30%, rgba(255,255,255,.08) 0 .6px, transparent .8px),
+        radial-gradient(circle at 70% 60%, rgba(0,0,0,.72) 0 .8px, transparent 1px);
+      background-size: auto, 5px 5px, 7px 7px;
+      mix-blend-mode: soft-light;
+    }
+    ::selection { color: #17120c; background: var(--amber-bright); }
+    a { color: #d9b568; text-decoration-color: rgba(217,181,104,.46); text-underline-offset: 4px; text-decoration-thickness: 1px; }
+    a:hover { color: var(--amber-bright); text-decoration-color: currentColor; }
+    a:focus-visible, button:focus-visible, input:focus-visible, .table-scroll:focus-visible {
+      outline: 2px solid var(--amber-bright);
+      outline-offset: 3px;
+    }
+    .skip-link {
+      position: fixed;
+      left: 1rem;
+      top: -6rem;
+      z-index: 50;
+      padding: .7rem 1rem;
+      border: 1px solid var(--amber);
+      border-radius: 4px;
+      color: var(--void);
+      background: var(--amber-bright);
+      font: 800 .8rem var(--ui);
+    }
+    .skip-link:focus { top: 1rem; }
+    .progress { position: fixed; inset: 0 0 auto; z-index: 40; height: 3px; background: rgba(0,0,0,.55); }
+    .progress span {
+      display: block;
+      width: 0;
+      height: 100%;
+      background: linear-gradient(90deg, #777c54, var(--amber), #8f4b43);
+      box-shadow: 0 0 12px rgba(224,170,74,.7);
+    }
+    .masthead {
+      position: relative;
+      overflow: hidden;
+      min-height: 490px;
+      color: var(--bone-bright);
+      border-bottom: 1px solid #4d4633;
+      background:
+        radial-gradient(circle at 75% 48%, rgba(213,154,58,.16), transparent 9rem),
+        radial-gradient(ellipse at 20% 15%, rgba(104,114,72,.18), transparent 31rem),
+        linear-gradient(113deg, rgba(8,9,6,.98), rgba(24,26,19,.97) 58%, rgba(19,16,12,.99));
+      box-shadow: inset 0 -28px 50px rgba(0,0,0,.52);
+    }
+    .masthead::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      opacity: .4;
+      background:
+        linear-gradient(90deg, transparent 0 5%, rgba(202,186,143,.06) 5.1% 5.2%, transparent 5.3% 94.7%, rgba(202,186,143,.05) 94.8% 94.9%, transparent 95%),
+        repeating-radial-gradient(ellipse at 104% 112%, transparent 0 40px, rgba(147,153,101,.04) 42px 43px, transparent 45px 70px);
+      pointer-events: none;
+    }
+    .masthead::after {
+      content: "FIELD ARCHIVE  •  V-II";
+      position: absolute;
+      right: clamp(2rem, 10vw, 9rem);
+      top: 50%;
+      display: grid;
+      place-items: center;
+      width: clamp(10rem, 18vw, 14rem);
+      aspect-ratio: 1;
+      border: 1px solid rgba(210,190,141,.26);
+      border-radius: 46% 54% 49% 51% / 52% 44% 56% 48%;
+      color: rgba(229,210,164,.5);
+      background:
+        radial-gradient(circle, rgba(199,144,50,.12), transparent 53%),
+        repeating-radial-gradient(circle, transparent 0 34px, rgba(211,194,150,.09) 35px 36px, transparent 37px 48px);
+      box-shadow: inset 0 0 32px rgba(0,0,0,.65), 0 0 42px rgba(207,148,47,.07);
+      font: 700 .68rem var(--ui);
+      letter-spacing: .2em;
+      transform: translateY(-43%) rotate(-3deg);
+    }
+    .masthead__inner {
+      position: relative;
+      z-index: 1;
+      width: min(1240px, calc(100% - 2.5rem));
+      margin: auto;
+      padding: 6.6rem 19rem 5.4rem 0;
+    }
+    .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: .7rem;
+      margin: 0 0 1.1rem;
+      color: var(--sage);
+      font: 800 .72rem var(--ui);
+      letter-spacing: .19em;
+      text-transform: uppercase;
+    }
+    .eyebrow::before { content: "◆"; color: var(--amber); font-size: .58rem; text-shadow: 0 0 14px rgba(213,161,74,.55); }
+    h1 {
+      max-width: 890px;
+      margin: 0;
+      color: var(--bone-bright);
+      font: 700 clamp(3rem, 6.5vw, 5.8rem)/.95 var(--heading);
+      letter-spacing: -.045em;
+      text-wrap: balance;
+      text-shadow: 0 3px 26px rgba(0,0,0,.8);
+    }
+    .deck { max-width: 760px; margin: 1.7rem 0 0; color: #bdb59f; font-size: clamp(1.02rem, 1.9vw, 1.25rem); line-height: 1.62; }
+    .meta { display: flex; flex-wrap: wrap; gap: .55rem; margin-top: 2.2rem; }
+    .meta span {
+      padding: .38rem .68rem;
+      border: 1px solid rgba(190,177,137,.23);
+      border-radius: 3px;
+      color: #beb59e;
+      background: rgba(22,22,16,.7);
+      box-shadow: inset 0 0 12px rgba(0,0,0,.42);
+      font: 650 .72rem var(--ui);
+      letter-spacing: .035em;
+    }
+    .layout { display: grid; grid-template-columns: 288px minmax(0, 910px); gap: 2.4rem; width: min(1240px, calc(100% - 2.5rem)); margin: 0 auto; align-items: start; }
+    .side {
+      position: sticky;
+      top: 1.4rem;
+      max-height: calc(100vh - 2.8rem);
+      overflow: auto;
+      margin-top: 2.4rem;
+      padding: 1rem;
+      border: 1px solid #494535;
+      border-radius: 6px 10px 7px 9px;
+      color: var(--bone-dim);
+      background:
+        linear-gradient(90deg, transparent 8px, rgba(208,187,136,.12) 9px, transparent 10px calc(100% - 10px), rgba(208,187,136,.1) calc(100% - 9px), transparent calc(100% - 8px)),
+        linear-gradient(145deg, rgba(55,44,29,.92), rgba(25,23,17,.97));
+      box-shadow: var(--shadow-panel), inset 0 0 30px rgba(0,0,0,.42), 0 0 0 3px #11120e;
+      scrollbar-width: thin;
+    }
+    .side__title { margin: .2rem .45rem .85rem; color: #8f9275; font: 800 .66rem var(--ui); letter-spacing: .16em; text-transform: uppercase; }
+    .side__title::after { content: ""; display: block; height: 1px; margin-top: .7rem; background: linear-gradient(90deg, #6f674a, transparent); }
+    .side nav { display: grid; gap: .15rem; }
+    .side nav a {
+      display: grid;
+      grid-template-columns: 1.7rem 1fr;
+      gap: .4rem;
+      align-items: start;
+      padding: .48rem .55rem;
+      border: 1px solid transparent;
+      border-radius: 3px 6px 4px 5px;
+      color: #aaa48f;
+      font: 620 .76rem/1.35 var(--ui);
+      text-decoration: none;
+      transition: color .18s ease, background .18s ease, border-color .18s ease, transform .18s ease;
+    }
+    .side nav a:hover { color: var(--bone-bright); background: rgba(123,132,87,.12); transform: translateX(2px); }
+    .side nav a.active {
+      color: #efe5cb;
+      border-color: rgba(216,188,115,.32);
+      background: linear-gradient(90deg, rgba(116,122,76,.34), rgba(70,66,44,.16));
+      box-shadow: inset 3px 0 var(--amber), 0 0 16px rgba(210,155,57,.09);
+    }
+    .side nav span { color: #787966; font-variant-numeric: tabular-nums; }
+    .side nav a.active span { color: var(--amber); }
+    .side__actions { display: grid; grid-template-columns: 1fr 1fr; gap: .45rem; margin-top: 1rem; padding-top: 1rem; border-top: 1px solid #4b4634; }
+    button {
+      border: 1px solid #625b42;
+      border-radius: 3px 6px 4px 5px;
+      color: var(--bone);
+      background: linear-gradient(#323026, #24241c);
+      padding: .58rem .65rem;
+      font: 750 .73rem var(--ui);
+      letter-spacing: .025em;
+      cursor: pointer;
+      box-shadow: inset 0 1px rgba(255,255,255,.045), 0 4px 10px rgba(0,0,0,.2);
+      transition: color .16s ease, border-color .16s ease, transform .16s ease, box-shadow .16s ease;
+    }
+    button:hover { color: var(--amber-bright); border-color: #9c7b43; box-shadow: inset 0 1px rgba(255,255,255,.05), 0 0 15px rgba(210,155,57,.12); transform: translateY(-1px); }
+    button:disabled { opacity: .45; cursor: not-allowed; transform: none; box-shadow: none; }
+    #toc-toggle { display: none; }
+    main {
+      min-width: 0;
+      margin: 2.4rem 0 7rem;
+      overflow: hidden;
+      border: 1px solid #4b4939;
+      border-radius: 8px 13px 7px 11px;
+      color: #cec5ae;
+      background:
+        linear-gradient(90deg, rgba(255,255,255,.018), transparent 2%, transparent 98%, rgba(0,0,0,.2)),
+        radial-gradient(circle at 89% 2%, rgba(119,125,80,.08), transparent 22rem),
+        #181914;
+      box-shadow: var(--shadow-deep), inset 0 0 80px rgba(0,0,0,.23), 0 0 0 4px #0d0e0b;
+    }
+    .intro {
+      position: relative;
+      padding: 2rem 3.35rem 1.8rem;
+      border-bottom: 1px solid #454333;
+      color: #c7bea8;
+      background: linear-gradient(125deg, rgba(85,91,58,.18), rgba(35,34,25,.7));
+    }
+    .intro::before { content: "ARCHIVE STATUS"; display: block; margin-bottom: .45rem; color: var(--sage); font: 800 .64rem var(--ui); letter-spacing: .15em; }
+    .intro strong { color: var(--bone-bright); }
+    .intro p { margin: 0; font-size: .98rem; }
+    .design-section { position: relative; padding: 2.7rem 3.35rem 1.65rem; border-bottom: 1px solid #39392e; }
+    .design-section::after { content: "✦"; position: absolute; left: 50%; bottom: -.64rem; width: 2rem; color: #69694e; background: #181914; text-align: center; font-size: .62rem; transform: translateX(-50%); }
+    .design-section:last-of-type { padding-bottom: 3.7rem; border-bottom: 0; }
+    .design-section:last-of-type::after { display: none; }
+    h2 {
+      scroll-margin-top: 1rem;
+      margin: 0 0 1.35rem;
+      color: var(--bone-bright);
+      font: 700 clamp(2rem, 4.3vw, 3rem)/1.08 var(--heading);
+      letter-spacing: -.025em;
+      text-wrap: balance;
+    }
+    h2::after { content: ""; display: block; width: min(100%, 34rem); height: 1px; margin-top: .8rem; background: linear-gradient(90deg, var(--moss), rgba(128,133,92,.18), transparent); box-shadow: -1.5rem 0 var(--amber); }
+    h3 {
+      scroll-margin-top: 1rem;
+      margin: 2.45rem 0 .9rem;
+      color: var(--sage);
+      font: 700 1.3rem/1.28 var(--heading);
+      letter-spacing: .005em;
+    }
+    h3::before { content: "◇"; margin-right: .55rem; color: #8e7040; font-size: .75em; }
+    h4 { margin: .65rem 0 1rem; color: var(--bone-bright); font: 700 1.18rem/1.3 var(--heading); }
+    p { margin: .65rem 0 1rem; }
+    strong { color: #e7dcc1; }
+    em { color: #b4ae99; }
+    .content-list { margin: .65rem 0 1.5rem; padding-left: 1.5rem; }
+    .content-list li { margin: .48rem 0; padding-left: .3rem; }
+    .content-list li::marker { color: #9a8151; font-weight: bold; }
+    .callout {
+      position: relative;
+      margin: 1.35rem 0 1.7rem;
+      padding: 1.05rem 1.2rem 1.05rem 1.35rem;
+      border: 1px solid #4e573f;
+      border-left: 4px solid #7e8960;
+      border-radius: 3px 8px 4px 6px;
+      color: #d2cbb6;
+      background: linear-gradient(112deg, rgba(74,84,54,.38), rgba(33,37,27,.7));
+      box-shadow: inset 0 1px rgba(255,255,255,.035), 0 8px 22px rgba(0,0,0,.18);
+    }
+    .callout::after { content: "FIELD NOTE"; position: absolute; right: .8rem; top: .45rem; color: rgba(190,193,157,.34); font: 800 .56rem var(--ui); letter-spacing: .14em; }
+    .callout strong { color: #dce3bc; }
+    .callout.is-warning { border-color: #67373a; border-left-color: var(--oxblood-bright); color: #e0c9bd; background: linear-gradient(112deg, rgba(99,39,42,.62), rgba(44,25,24,.76)); }
+    .callout.is-warning::after { content: "WARNING"; color: rgba(236,174,157,.5); }
+    .callout.is-warning strong { color: #f0d7c9; }
+    .callout.is-decision { border-left-color: var(--amber); background: linear-gradient(112deg, rgba(97,79,42,.42), rgba(38,34,23,.72)); }
+    .callout.is-decision::after { content: "ESTABLISHED"; color: rgba(229,192,107,.42); }
+    .callout.is-research::after { content: "RESEARCH"; }
+    main > .callout { margin-left: 3.35rem; margin-right: 3.35rem; }
+    .table-scroll {
+      overflow-x: auto;
+      margin: 1.35rem 0 2.1rem;
+      border: 1px solid #484739;
+      border-radius: 4px 8px 5px 7px;
+      background: #12130f;
+      box-shadow: inset 0 0 24px rgba(0,0,0,.3), 0 10px 28px rgba(0,0,0,.2);
+      scrollbar-color: #65664c #171914;
+    }
+    table { width: 100%; min-width: 620px; border-collapse: collapse; color: #cbc3ad; font: .91rem/1.55 var(--body); }
+    th, td { padding: .82rem .9rem; border-right: 1px solid #37382e; border-bottom: 1px solid #393a30; text-align: left; vertical-align: top; }
+    th:last-child, td:last-child { border-right: 0; }
+    tr:last-child td { border-bottom: 0; }
+    th { color: #eee2c6; background: linear-gradient(#313126, #27271f); font: 750 .78rem/1.4 var(--ui); letter-spacing: .02em; }
+    tr:nth-child(even) td { background: rgba(106,111,75,.08); }
+    tr:hover td { background: rgba(152,132,84,.09); }
+    .reference-tools {
+      position: sticky;
+      top: 1rem;
+      z-index: 5;
+      margin: 1.5rem 0 2rem;
+      padding: 1rem;
+      border: 1px solid #5b5844;
+      border-radius: 5px 9px 5px 8px;
+      background: rgba(33,33,25,.95);
+      box-shadow: 0 12px 34px rgba(0,0,0,.38), inset 0 1px rgba(255,255,255,.035);
+      backdrop-filter: blur(14px);
+    }
+    .reference-tools label { display: block; margin-bottom: .5rem; color: var(--bone-bright); font: 800 .73rem var(--ui); letter-spacing: .06em; text-transform: uppercase; }
+    .search-row { display: grid; grid-template-columns: 1fr auto; gap: .75rem; align-items: center; }
+    input[type="search"] {
+      width: 100%;
+      border: 1px solid #615e49;
+      border-radius: 3px 7px 4px 6px;
+      color: var(--bone-bright);
+      background: #11120e;
+      padding: .78rem .9rem;
+      font: .9rem var(--ui);
+      caret-color: var(--amber-bright);
+    }
+    input[type="search"]::placeholder { color: #777568; }
+    input[type="search"]:focus { border-color: #a47d3e; box-shadow: 0 0 0 3px rgba(207,157,66,.12), 0 0 18px rgba(207,157,66,.08); outline: 0; }
+    #reference-count { color: var(--smoke); font: .76rem var(--ui); white-space: nowrap; }
+    .filter-row { display: flex; flex-wrap: wrap; gap: .45rem; margin-top: .78rem; }
+    .filter-row button { padding: .45rem .65rem; }
+    .filter-row button[aria-pressed="true"] { color: #21180c; border-color: var(--amber); background: linear-gradient(#e2b75f, #bd8833); box-shadow: 0 0 17px rgba(216,163,70,.18); }
+    .reference-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1rem; margin: 1rem 0 2.6rem; }
+    .reference-card {
+      display: flex;
+      flex-direction: column;
+      min-width: 0;
+      padding: 1.15rem;
+      border: 1px solid #494739;
+      border-radius: 4px 9px 5px 7px;
+      color: #c7c0aa;
+      background:
+        linear-gradient(145deg, rgba(64,60,43,.18), transparent 42%),
+        #202019;
+      box-shadow: var(--shadow-panel);
+      transition: border-color .2s ease, transform .2s ease, box-shadow .2s ease;
+    }
+    .reference-card:hover { border-color: #756848; transform: translateY(-2px); box-shadow: 0 18px 34px rgba(0,0,0,.34), 0 0 18px rgba(205,152,57,.06); }
+    .reference-card[hidden] { display: none; }
+    .reference-card__top { display: flex; justify-content: space-between; gap: .5rem; color: #888775; font: 800 .63rem var(--ui); letter-spacing: .09em; text-transform: uppercase; }
+    .external-mark { color: var(--amber); font-size: 1rem; text-shadow: 0 0 10px rgba(213,161,74,.35); }
+    .reference-card h4 a { color: #e2d5b7; text-decoration-color: #7d6a43; }
+    .reference-card h4 a:hover { color: var(--amber-bright); }
+    .reference-card dl { display: grid; gap: .9rem; margin: 0 0 1rem; }
+    .reference-card dl > div { padding-top: .75rem; border-top: 1px solid #3b3b31; }
+    .reference-card dt { margin-bottom: .2rem; color: #8e9275; font: 800 .63rem var(--ui); letter-spacing: .09em; text-transform: uppercase; }
+    .reference-card dd { margin: 0; color: #c0baa6; font-size: .89rem; line-height: 1.56; }
+    .reference-card .caution { margin: 0 -.35rem; padding: .75rem .35rem 0; border-top-color: #5e3a36; background: linear-gradient(180deg, rgba(98,40,41,.2), transparent); }
+    .reference-card .caution dt { color: #b7786d; }
+    .reference-url { display: block; margin-top: auto; overflow: hidden; color: #8e8978; font: .67rem ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; text-overflow: ellipsis; white-space: nowrap; }
+    .empty-state { display: none; margin: 1rem 3rem 2rem; padding: 1rem; border: 1px dashed #625c44; border-radius: 5px; color: #a7a18e; text-align: center; }
+    footer { width: min(1240px, calc(100% - 2.5rem)); margin: -4.5rem auto 2rem; color: #716f61; font: .76rem var(--ui); text-align: center; letter-spacing: .03em; }
+    @media (max-width: 1000px) {
+      .masthead__inner { padding-right: 13rem; }
+      .masthead::after { right: 2.5rem; width: 10rem; }
+      .layout { grid-template-columns: 250px minmax(0, 1fr); gap: 1.4rem; }
+      .intro, .design-section { padding-left: 2rem; padding-right: 2rem; }
+      main > .callout { margin-left: 2rem; margin-right: 2rem; }
+    }
+    @media (max-width: 820px) {
+      .masthead { min-height: 0; }
+      .masthead__inner { padding: 4.8rem 0 4rem; }
+      .masthead::after { right: -2.5rem; top: 26%; opacity: .55; }
+      h1 { max-width: calc(100% - 4rem); }
+      .deck { max-width: calc(100% - 3rem); }
+      .layout { display: block; width: min(100% - 1.4rem, 760px); }
+      .side { position: sticky; top: .65rem; z-index: 20; max-height: calc(100vh - 1.3rem); margin: .7rem 0 0; padding: .7rem; overflow: auto; }
+      .side__title { display: none; }
+      .side__actions { grid-template-columns: auto 1fr 1fr; margin: 0; padding: 0; border: 0; }
+      #toc-toggle { display: block; color: #21180c; border-color: var(--amber); background: linear-gradient(#e2b75f, #bd8833); }
+      .side nav { display: none; margin: .7rem 0 .2rem; padding-top: .7rem; border-top: 1px solid #4b4634; }
+      .side.open nav { display: grid; }
+      main { margin-top: .8rem; }
+      .reference-grid { grid-template-columns: 1fr; }
+      footer { margin-top: -4.5rem; }
+    }
+    @media (max-width: 580px) {
+      body { font-size: 16px; }
+      .masthead__inner { width: calc(100% - 1.5rem); padding: 4rem 0 3.3rem; }
+      .masthead::after { display: none; }
+      h1, .deck { max-width: 100%; }
+      h1 { font-size: clamp(2.65rem, 14vw, 4rem); }
+      .meta { gap: .4rem; }
+      .meta span { font-size: .65rem; }
+      .layout { width: calc(100% - .8rem); }
+      main { border-radius: 5px; }
+      .intro, .design-section { padding-left: 1.15rem; padding-right: 1.15rem; }
+      main > .callout { margin-left: 1.15rem; margin-right: 1.15rem; }
+      .design-section { padding-top: 2.15rem; }
+      h2 { font-size: 2rem; }
+      .callout { padding-top: 1.8rem; }
+      .reference-tools { position: static; }
+      .search-row { grid-template-columns: 1fr; }
+      .filter-row { flex-wrap: nowrap; overflow-x: auto; padding-bottom: .4rem; }
+      .filter-row button { flex: 0 0 auto; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      html { scroll-behavior: auto; }
+      *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
+    }
+    @media print {
+      :root { color-scheme: light; }
+      body { color: #211e18; background: white; font-size: 11pt; }
+      body::before, .progress, .side, .reference-tools, footer { display: none !important; }
+      .masthead { min-height: 0; color: #111; background: white; border-bottom: 2px solid #333; box-shadow: none; }
+      .masthead::before, .masthead::after { display: none; }
+      .masthead__inner { width: auto; padding: 1rem 0; }
+      h1, h2, h3, h4, strong, .deck, .eyebrow, .meta span { color: #211e18; text-shadow: none; }
+      .layout { display: block; width: auto; }
+      main { margin: 0; color: #211e18; border: 0; background: white; box-shadow: none; }
+      .design-section, .intro { padding: 1rem 0; border-color: #bbb; background: white; }
+      .design-section::after, h2::after, h3::before { display: none; }
+      .callout { color: #211e18; border-color: #777; background: #f1eee5; box-shadow: none; }
+      .table-scroll, .reference-card { border-color: #999; background: white; box-shadow: none; }
+      table, td, .reference-card, .reference-card dd { color: #211e18; }
+      th { color: #111; background: #ddd; }
+      tr:nth-child(even) td { background: #f4f2ec; }
+      .reference-grid { grid-template-columns: 1fr 1fr; }
+      .reference-card { break-inside: avoid; }
+      a, .reference-card h4 a { color: #211e18; }
+    }
+  </style>
+</head>
+<body>
+  <a class="skip-link" href="#content">Skip to design record</a>
+  <div class="progress" aria-hidden="true"><span></span></div>
+  <header class="masthead" id="top">
+    <div class="masthead__inner">
+      <p class="eyebrow">Dice and Destiny v2 · Working design record</p>
+      <h1>Creature Collection, Combat, and Progression</h1>
+      <p class="deck">Consolidated decisions, working directions, research notes, and a prototype plan for the battle-centered creature system.</p>
+      <div class="meta">
+        <span>Working draft</span><span>Prepared July 19, 2026</span><span>20 saved research sources</span><span>Local · standalone HTML</span>
+      </div>
+    </div>
+  </header>
+  <div class="layout">
+    <aside class="side" aria-label="Page navigation">
+      <p class="side__title">Contents</p>
+      <nav id="page-contents"><a href="#how-to-read-this-document"><span>01</span>How to read this document</a><a href="#1-product-north-star"><span>02</span>1. Product north star</a><a href="#2-existing-battle-foundation"><span>03</span>2. Existing battle foundation</a><a href="#3-creature-collection-and-team-model"><span>04</span>3. Creature collection and team model</a><a href="#4-independent-creature-combat-sheets"><span>05</span>4. Independent creature combat sheets</a><a href="#5-deck-as-health-implications"><span>06</span>5. Deck-as-health implications</a><a href="#6-attack-and-counter-defense-model"><span>07</span>6. Attack and counter-defense model</a><a href="#7-levels-evolution-and-backwards-progression"><span>08</span>7. Levels, evolution, and backwards progression</a><a href="#8-elements-dice-abilities-and-statuses"><span>09</span>8. Elements, dice, abilities, and statuses</a><a href="#9-lessons-from-pok-mon-red-blue"><span>10</span>9. Lessons from Pokémon Red/Blue</a><a href="#10-legal-and-originality-guardrails"><span>11</span>10. Legal and originality guardrails</a><a href="#11-prototype-and-validation-plan"><span>12</span>11. Prototype and validation plan</a><a href="#12-open-decision-register"><span>13</span>12. Open decision register</a><a href="#appendix-a-final-state-creature-worksheet"><span>14</span>Appendix A - Final-state creature worksheet</a><a href="#appendix-b-ability-pattern-worksheet"><span>15</span>Appendix B - Ability pattern worksheet</a><a href="#appendix-c-research-and-source-links"><span>16</span>Appendix C - Research and source links</a></nav>
+      <div class="side__actions"><button type="button" id="toc-toggle" aria-expanded="false" aria-controls="page-contents">Field index</button><button type="button" id="print-page">Print archive</button><button type="button" id="back-top">Top ↑</button></div>
+    </aside>
+    <main id="content">
+      <div class="intro"><p><strong>Status:</strong> This is a design discussion record, not a claim that every feature is implemented. Example values such as deck sizes and level caps remain hypotheses until playtesting supports them.</p></div>
+      <aside class="callout"><strong>Current design center: </strong>The player owns many creatures, selects an active team of four, and deploys one at a time. Each creature is a self-contained deck-as-health combatant with its own cards, dice, abilities, statuses, progression, and elemental identity.</aside><section class="design-section"><h2 id="how-to-read-this-document">How to read this document</h2><p>This document intentionally distinguishes settled foundations from provisional design ideas. Numbers such as a 46-card final deck or level 50 are useful working examples, not approved production limits.</p><div class="table-scroll" tabindex="0"><table><tr><th><strong>Label</strong></th><th><strong>Meaning</strong></th></tr><tr><td>DECIDED</td><td>A direction explicitly selected in the discussion or already established by the current battle design.</td></tr><tr><td>WORKING</td><td>The preferred current direction, suitable for prototyping but still subject to playtest results.</td></tr><tr><td>OPEN</td><td>A material choice that has not yet been resolved.</td></tr><tr><td>RESEARCH</td><td>A lesson taken from reference games or public mechanics research; not automatically a game requirement.</td></tr></table></div></section><section class="design-section"><h2 id="1-product-north-star">1. Product north star</h2><aside class="callout"><strong>WORKING: </strong>Dice and Destiny is becoming a battle-centered creature-collection game in which the player&#x27;s strategic expression comes from selecting, developing, and sequencing complete creature builds.</aside><h3 id="core-experience">Core experience</h3><ul class="content-list"><li>Battles remain the central gameplay event and the most deeply developed part of the game.</li><li>The player finds, defeats, recruits, and owns many creatures over time.</li><li>A lightweight route or event layer brings the player to battles, shops, discoveries, risks, and upgrade opportunities.</li><li>Cards, dice, abilities, statuses, elements, equipment, and switching create the tactical language of combat.</li><li>Progression should make the player feel that a powerful result was earned through preparation and synergy, not handed out as a flat numerical bonus.</li></ul><h3 id="run-level-engine-building">Run-level engine building</h3><p>The roguelike transcript discussed in this thread provides a useful design lens even if Dice and Destiny is not ultimately labeled a roguelike. It separates actions that advance the objective from actions that strengthen the engine used to advance it.</p><div class="table-scroll" tabindex="0"><table><tr><th><strong>Action class</strong></th><th><strong>Dice and Destiny examples</strong></th><th><strong>Design purpose</strong></th></tr><tr><td>Advance</td><td>Battle, boss, story encounter, milestone</td><td>Moves the run or story toward completion.</td></tr><tr><td>Build</td><td>Recruitment, shop, card upgrade, die modification, ability development</td><td>Improves the creature team and creates future combinations.</td></tr></table></div><p>The run should offer frequent build-upgrade moments, including a variable number of optional opportunities. Taking additional encounters, rerolling a shop, pursuing an elite fight, or remaining in an area longer should offer more chances to strengthen the team while increasing danger, resource cost, or time pressure.</p><h3 id="design-principles-imported-from-the-transcript">Design principles imported from the transcript</h3><ul class="content-list"><li>Enumerate the meaningful actions players can deliberately perform, then create multiple rewards that make different actions strategically valuable.</li><li>Favor synergy parts over universally optimal upgrades. An upgrade should be excellent in the right build rather than mandatory in every build.</li><li>Provide enough upgrade decisions that the final build feels authored by the player.</li><li>Give players controlled ways to spend resources to reduce bad randomness, adapt after bad luck, or deliberately accept more risk.</li><li>Keep early runs approachable while allowing expert players to extract more value through optional danger and efficient preparation.</li><li>Create variety at the beginning of a new run through different creatures, starting teams, traits, or initial strategic identities.</li></ul></section><section class="design-section"><h2 id="2-existing-battle-foundation">2. Existing battle foundation</h2><aside class="callout"><strong>DECIDED / IMPLEMENTED FOUNDATION: </strong>Damage is represented by permanent card removal during battle. Current health is the total number of cards remaining across deck, discard, and hand.</aside><p>The existing authority design already models reusable YAML definitions for cards, dice, statuses, abilities, and combatants. Definitions are immutable content; runtime instances carry mutable zones, rolls, stacks, ownership, and battle state.</p><div class="table-scroll" tabindex="0"><table><tr><th><strong>Foundation</strong></th><th><strong>Current meaning</strong></th></tr><tr><td>Deck-as-health</td><td>Current health equals deck + discard + hand. Removed cards represent damage or missing health.</td></tr><tr><td>Combat sheet</td><td>An actor references its decklist, dice loadout, abilities, starting resources, and statuses.</td></tr><tr><td>Cards</td><td>Drawn, played, discarded, removed, and potentially recovered through future healing rules.</td></tr><tr><td>Abilities</td><td>Actor actions separate from cards; offensive and defensive timing belongs to the ability definition.</td></tr><tr><td>Dice</td><td>Reusable die definitions with authored faces and symbols; the current default loadout is five D6.</td></tr><tr><td>Statuses</td><td>Reusable triggered or activated effects. Entangle already exists as a target design example.</td></tr></table></div><p>The creature system should extend this foundation instead of introducing a parallel health model or a second incompatible content architecture.</p></section><section class="design-section"><h2 id="3-creature-collection-and-team-model">3. Creature collection and team model</h2><h3 id="collection-and-active-team">Collection and active team</h3><aside class="callout"><strong>DECIDED: </strong>The player may own a large collection, chooses an active team of four, and normally controls one deployed creature at a time.</aside><ul class="content-list"><li>Inactive collection: creatures owned outside the current team.</li><li>Active team: four creatures selected before entering an encounter or run segment.</li><li>Deployed creature: the one creature whose deck, dice, resources, abilities, and statuses are currently active.</li><li>Bench: the other three active-team creatures, preserving their individual battle state until deployed.</li></ul><h3 id="creature-not-commander-is-the-combatant">Creature, not commander, is the combatant</h3><p>A separate player health bar is not currently needed. Each creature owns its own health through its own deck. If a creature is defeated, the player deploys another eligible team member. The battle is lost when the full active team can no longer continue.</p><h3 id="recruitment">Recruitment</h3><aside class="callout"><strong>WORKING: </strong>Defeating or resolving an encounter with a creature may create an opportunity to recruit that individual, but recruitment should be expressed through an original pact, bonding, rescue, negotiation, or post-battle dice/card procedure rather than a copied ball-throwing presentation.</aside><p>Recruitment should usually compete with another valuable reward. A post-encounter choice might offer the creature, immediate upgrade materials, knowledge of one of its techniques, reputation, or a riskier second-stage challenge. This prevents recruiting every creature from becoming an automatic decision.</p></section><section class="design-section"><h2 id="4-independent-creature-combat-sheets">4. Independent creature combat sheets</h2><aside class="callout"><strong>DECIDED: </strong>There is no persistent command deck mixed into every creature. Each creature owns a complete, internally coherent deck.</aside><p>The shared-deck concept was rejected because cards are simultaneously abilities and health. Mixing player command cards with creature cards would make health ownership ambiguous, dilute creature-specific synergies, and make switching difficult to reason about.</p><h3 id="proposed-creature-record">Proposed creature record</h3><div class="table-scroll" tabindex="0"><table><tr><th><strong>Component</strong></th><th><strong>Purpose</strong></th><th><strong>Current status</strong></th></tr><tr><td>Species and individual identity</td><td>Defines content lineage while allowing collectible individual variation.</td><td>WORKING</td></tr><tr><td>Level and evolution</td><td>Controls progression timing and major transformations.</td><td>WORKING</td></tr><tr><td>Element</td><td>Communicates matchup and mechanical identity.</td><td>WORKING</td></tr><tr><td>Independent deck</td><td>Provides actions, synergies, and maximum card-health.</td><td>DECIDED</td></tr><tr><td>Dice loadout</td><td>Controls qualification, reliability, resources, and triggered outcomes.</td><td>DECIDED foundation</td></tr><tr><td>Active and passive abilities</td><td>Express creature-defining actions and rules outside the draw deck.</td><td>DECIDED foundation</td></tr><tr><td>Guard/Ward profiles</td><td>Possible separate defenses for physical and special attacks.</td><td>OPEN</td></tr><tr><td>Traits</td><td>Creates individual variation within one species.</td><td>WORKING</td></tr></table></div><h3 id="team-synergy-without-deck-mixing">Team synergy without deck mixing</h3><p>Team composition can matter through the battlefield rather than by shuffling all four decks together.</p><ul class="content-list"><li>A creature applies a status that another creature exploits.</li><li>A recalled creature leaves Armor, weather, terrain, a hazard, or a healing field.</li><li>A creature has a tag-in, tag-out, or bench passive.</li><li>The incoming creature inherits, consumes, or transforms an existing effect.</li><li>A creature becomes stronger when an ally is defeated or when a particular element preceded it.</li></ul><h3 id="switching-state">Switching state</h3><aside class="callout"><strong>WORKING: </strong>When a creature leaves play, its remaining deck-health, discard, removed cards, resources, and persistent statuses remain attached to that creature.</aside><p>A simple prototype rule is that switching consumes the active creature&#x27;s turn, its current hand moves to its own discard pile, and the incoming creature draws from its own deck. This avoids storing four prepared perfect hands. The cost, status timing, and special switching abilities remain open for testing.</p></section><section class="design-section"><h2 id="5-deck-as-health-implications">5. Deck-as-health implications</h2><h3 id="health-ownership">Health ownership</h3><p>Only the active creature normally receives direct damage. Unblocked damage proposes and then removes occurrences from that creature&#x27;s own hand, deck, or discard according to the existing damage authority rules. Bench damage may exist later as an explicit special effect.</p><h3 id="deck-size-is-both-survivability-and-content">Deck size is both survivability and content</h3><p>Adding a card increases maximum health and adds a tactical option. Upgrading a card increases quality without increasing health. Those are meaningfully different level rewards and should not be assumed equal without testing.</p><aside class="callout"><strong>BALANCE WARNING: </strong>A larger deck can be healthier but less consistent. More cards dilute access to key engine pieces unless additions include useful duplicates, draw control, search, predictable opening cards, or broader redundant synergies.</aside><h3 id="working-scale-question">Working scale question</h3><p>A final 46-card deck and a Level 1 12-card deck are current thought experiments, not commitments. With a five-card draw, a 46-card first cycle lasts more than nine turns. That may be appropriate if damage steadily removes cards, but it must be tested against target battle length, reshuffle behavior, healing, and draw consistency.</p></section><section class="design-section"><h2 id="6-attack-and-counter-defense-model">6. Attack and counter-defense model</h2><aside class="callout"><strong>WORKING: </strong>Use the useful separation found in Pokémon - power, category, type, reliability, resource limit, and secondary effect - while resolving defense through Dice and Destiny counter rolls instead of an automatic defense divisor.</aside><h3 id="proposed-resolution-pipeline">Proposed resolution pipeline</h3><ol class="content-list"><li>The card or ability establishes potential attack power.</li><li>Attacker dice, symbols, resources, and bonuses determine incoming damage.</li><li>Attack category selects the applicable defensive response.</li><li>Elemental advantage or resistance modifies one agreed part of the interaction.</li><li>The defender rolls its counter dice or resolves a defensive ability.</li><li>Each successful save prevents one point of incoming damage.</li><li>Unblocked damage removes cards from the active creature through the authoritative damage flow.</li><li>Secondary statuses or follow-up effects resolve from explicit triggers.</li></ol><p>Defense rolls should replace the defense portion of a Pokémon-like formula, not follow an earlier Defense reduction. Otherwise Defense would be counted twice.</p><h3 id="defense-probability">Defense probability</h3><p>For ordinary D6 saves, the baseline expected prevention is:</p><aside class="callout"><strong>Formula: </strong>Expected blocks = number of dice × successful faces ÷ six.</aside><div class="table-scroll" tabindex="0"><table><tr><th><strong>Defense profile</strong></th><th><strong>Save chance</strong></th><th><strong>Expected blocks</strong></th><th><strong>Possible blocks</strong></th><th><strong>Play feel</strong></th></tr><tr><td>10D6, save on 4-6</td><td>50%</td><td>5</td><td>0-10</td><td>High capacity and greater variance; can theoretically stop everything.</td></tr><tr><td>6D6, save on 2-6</td><td>83.33%</td><td>5</td><td>0-6</td><td>Reliable but capped; against 10 damage at least 4 gets through.</td></tr></table></div><p>These profiles have the same average prevention but create different defensive personalities. The system can separately tune capacity, reliability, expected prevention, and variance.</p><h3 id="potential-attack-fields">Potential attack fields</h3><div class="table-scroll" tabindex="0"><table><tr><th><strong>Reference concept</strong></th><th><strong>Dice and Destiny interpretation</strong></th></tr><tr><td>Power</td><td>Incoming damage potential or attack-dice potential.</td></tr><tr><td>Accuracy</td><td>Prefer precision, defense pressure, or special miss risk; avoid stacking too many failure gates.</td></tr><tr><td>PP</td><td>Often redundant with card draw. Could become copies, Exhaust, charges, cooldown, or resource cost.</td></tr><tr><td>Physical / Special / Status</td><td>Possible Guard, Ward, or resistance channel.</td></tr><tr><td>Type</td><td>Element of the attack; compared with the target for advantage or resistance.</td></tr><tr><td>Same-type bonus</td><td>Possible affinity bonus when creature element matches attack element.</td></tr><tr><td>Secondary chance</td><td>Prefer explicit dice, net-damage, symbol, or threshold triggers where possible.</td></tr></table></div><h3 id="accuracy-caution">Accuracy caution</h3><p>If an action first rolls to hit, then rolls attack dice, then allows a defense counter roll, too many turns may accomplish nothing. The preferred initial experiment is for ordinary attacks to connect, attacker dice to establish strength, and defender dice to supply uncertainty. Complete miss chances can be reserved for unusually powerful attacks.</p><h3 id="elemental-modifier-caution">Elemental modifier caution</h3><p>Elemental advantage should modify one layer rather than increasing damage, reducing defense, and improving accuracy simultaneously. A first prototype could add or remove counter dice instead of using Pokémon&#x27;s large ×2 multipliers.</p></section><section class="design-section"><h2 id="7-levels-evolution-and-backwards-progression">7. Levels, evolution, and backwards progression</h2><aside class="callout"><strong>WORKING: </strong>Create and balance the creature&#x27;s complete end-game state first. Once the final engine is enjoyable, walk it backwards into evolution stages and a functional Level 1 core.</aside><h3 id="why-end-state-first-helps">Why end-state-first helps</h3><ul class="content-list"><li>It proves the creature has a distinctive and enjoyable completed identity.</li><li>It exposes whether the final deck size, dice, abilities, and statuses are manageable.</li><li>It lets designers classify every component as essential core, growth, upgrade, or evolution milestone.</li><li>It makes level progression a controlled reveal of a known system rather than improvising power indefinitely.</li></ul><h3 id="current-progression-arithmetic">Current progression arithmetic</h3><div class="table-scroll" tabindex="0"><table><tr><th><strong>Item</strong></th><th><strong>Working value</strong></th><th><strong>Meaning</strong></th></tr><tr><td>Level 1 deck</td><td>12 cards</td><td>Small but complete version of the species engine.</td></tr><tr><td>Final deck</td><td>46 cards</td><td>Full health and tactical vocabulary; must be validated in play.</td></tr><tr><td>Cards added</td><td>34</td><td>46 - 12; each addition also increases maximum card-health.</td></tr><tr><td>Card upgrades</td><td>15</td><td>One-for-one improvements that do not increase deck size.</td></tr><tr><td>Level transitions</td><td>49</td><td>Level 1 to Level 50 contains 49 advancement steps.</td></tr><tr><td>Total card events</td><td>49</td><td>34 additions + 15 upgrades, exactly one card event per advancement.</td></tr></table></div><p>This is an elegant schedule, but Level 50, 46 cards, and 15 upgrades remain hypotheses. Evolution, abilities, and dice improvements can be bundled as milestone rewards in addition to the normal card event.</p><h3 id="example-milestone-distribution">Example milestone distribution</h3><div class="table-scroll" tabindex="0"><table><tr><th><strong>Levels</strong></th><th><strong>Card events</strong></th><th><strong>Possible milestones</strong></th></tr><tr><td>1</td><td>12-card functional core</td><td>Basic passive and starting dice.</td></tr><tr><td>2-15</td><td>12 additions, 2 upgrades</td><td>Early die-face improvements and first complete combo.</td></tr><tr><td>16</td><td>1 upgrade</td><td>First evolution and ability improvement.</td></tr><tr><td>17-31</td><td>10 additions, 5 upgrades</td><td>Expanded elemental and status interactions.</td></tr><tr><td>32</td><td>1 upgrade</td><td>Final evolution and passive transformation.</td></tr><tr><td>33-50</td><td>12 additions, 6 upgrades</td><td>Final dice configuration and advanced engine pieces.</td></tr></table></div><h3 id="each-progression-layer-needs-one-job">Each progression layer needs one job</h3><div class="table-scroll" tabindex="0"><table><tr><th><strong>Layer</strong></th><th><strong>Primary job</strong></th></tr><tr><td>Card additions</td><td>Increase health and broaden tactics.</td></tr><tr><td>Card upgrades</td><td>Increase efficiency, power, or effect quality without adding health.</td></tr><tr><td>Dice development</td><td>Improve consistency, symbol access, qualification, or resource production.</td></tr><tr><td>Abilities</td><td>Deliver species-defining actions and milestone rules.</td></tr><tr><td>Element</td><td>Create matchup and mechanical identity.</td></tr><tr><td>Evolution</td><td>Produce the major qualitative transformation.</td></tr><tr><td>Level</td><td>Controls when all other changes become available.</td></tr></table></div><h3 id="minimum-viable-engine-at-level-1">Minimum viable engine at Level 1</h3><p>Walking backwards must preserve the central loop. A plant creature cannot wait until Level 20 to receive the payoff for Entangle if its early deck already applies Entangle. Its Level 1 deck should contain a small enabler, payoff, attack, defense, and dice/resource loop.</p></section><section class="design-section"><h2 id="8-elements-dice-abilities-and-statuses">8. Elements, dice, abilities, and statuses</h2><h3 id="elements">Elements</h3><aside class="callout"><strong>WORKING: </strong>Creatures should have levels and elemental identities. Begin with a small element set and one element per creature; delay dual elements until the single-element system is proven.</aside><p>Elements should organize mechanics already present rather than become a disconnected damage chart. A plant-aligned creature might use growth, recovery, poison, Entangle, and long-horizon value. A stone-aligned creature might favor shields and reliable prevention. Exact element names and matchups remain open.</p><h3 id="dice">Dice</h3><p>Dice progression should be milestone-based rather than automatic every level. Possible changes include adding a die, replacing a blank face, adding an elemental symbol, strengthening a symbol, unlocking a reroll, or allowing a stored result. Dice improvements primarily govern consistency and access, not raw health.</p><h3 id="abilities">Abilities</h3><p>Abilities are not cards in the current combat-sheet model. They can become stronger, gain additional status effects, or transform at evolution milestones. A basic vine action might later gain Entangle, consume Entangle for a payoff, or alter defensive dice without being shuffled into the deck.</p><h3 id="statuses">Statuses</h3><p>Statuses are a major source of creature and team identity. Existing target content already defines Entangle as reducing the victim&#x27;s maximum Offensive rolls at the next relevant trigger. Creature designs should compose generic status operations rather than branch on a specific creature or content ID.</p></section><section class="design-section"><h2 id="9-lessons-from-pok-mon-red-blue">9. Lessons from Pokémon Red/Blue</h2><aside class="callout"><strong>RESEARCH: </strong>Pokémon is a light structural reference, not a mathematical or expressive template to reproduce.</aside><h3 id="what-generation-i-actually-did">What Generation I actually did</h3><ul class="content-list"><li>Species had predetermined natural level-up learnsets.</li><li>Players still chose which four moves to retain and whether to spend single-use TMs or use HMs.</li><li>Moves did not normally level up themselves; damage increased because level and offensive stats increased, while stronger moves could be learned later.</li><li>Evolution was the largest visible transformation, changing species base stats, appearance, and sometimes typing or learnset behavior.</li><li>Generation I did not have the later passive Ability system.</li></ul><h3 id="move-anatomy">Move anatomy</h3><p>A move&#x27;s type is independent of the attacker&#x27;s type. A Psychic creature using an Ice move launches an Ice attack only. Matching the creature&#x27;s element may grant an affinity bonus; the target&#x27;s element determines advantage or resistance.</p><p>Power is not final damage. Pokémon combines move power with level, the relevant attacking and defensive stats, same-type bonus, type effectiveness, randomness, critical hits, and other modifiers. Dice and Destiny can preserve the separation of concerns while replacing the automatic defensive calculation with counter rolls.</p><h3 id="hp-research">HP research</h3><p>Generation I HP used species Base HP, level, an individual DV, and accumulated Stat Experience. Bulbasaur&#x27;s Base HP was 45, but its actual HP varied by individual and training. A level-100 Bulbasaur could reach hundreds of numerical HP because Pokémon&#x27;s damage scale was built around that range.</p><aside class="callout"><strong>Important: </strong>Pokémon&#x27;s 293-HP upper example does not imply a 293-card deck. Numerical health is meaningful only relative to the game&#x27;s attack scale. Dice and Destiny can represent equivalent battle duration with 12, 20, 46, or another number of cards if damage and prevention are calibrated to match.</aside><h3 id="ability-pattern-library">Ability-pattern library</h3><p>The useful research output is a library of abstract action patterns, not copied names or exact data. Examples include reliable low power plus debuff, powerful low-accuracy attack, multi-hit, drain, recoil, charge, counterattack, escalating repeated use, recovery, and status payoff.</p></section><section class="design-section"><h2 id="10-legal-and-originality-guardrails">10. Legal and originality guardrails</h2><p>This section records general design guidance, not legal advice.</p><h3 id="generally-reusable-ideas">Generally reusable ideas</h3><ul class="content-list"><li>Collecting creatures, selecting a smaller active team, deploying one at a time, leveling, evolution, elemental matchups, turn-based battles, cards, dice, and status effects are broad game concepts.</li><li>US copyright guidance says game ideas, systems, mathematical formulas, algorithms, and methods of play are not protected by copyright, although original artwork, writing, code, and other expression can be protected.</li></ul><h3 id="areas-requiring-originality-or-review">Areas requiring originality or review</h3><ul class="content-list"><li>Creature artwork, silhouettes, names, lore, animations, sounds, UI, terminology, world, and marketing should be independently created.</li><li>Do not copy Pokémon&#x27;s source code, move text, creature data, names, art, capture presentation, or overall commercial identity.</li><li>Patents are separate from copyright and can cover specific implementations. Recruitment, aimed capture objects, summoning, riding, or other mechanically specific systems should be reviewed before release if they resemble active patent claims.</li><li>Conduct trademark clearance for the game name and major branding before public launch.</li></ul><h3 id="palworld-clarification">Palworld clarification</h3><p>Nintendo and The Pokémon Company sued Pocketpair in Japan for alleged patent infringement, not a copyright claim that the creatures merely looked similar. As of this document date, the case had not produced a final public judgment. Pocketpair changed sphere-based summoning and glider-Pal behavior while continuing to contest infringement and validity.</p></section><section class="design-section"><h2 id="11-prototype-and-validation-plan">11. Prototype and validation plan</h2><aside class="callout"><strong>RECOMMENDATION: </strong>Do not author dozens of progression curves yet. First prove a small set of complete end-game creatures and the shared combat measurements.</aside><h3 id="phase-a-lock-the-measurement-system">Phase A - lock the measurement system</h3><ol class="content-list"><li>Define the target deck-health range and target battle duration.</li><li>Define how incoming damage is created from cards, abilities, and attacker dice.</li><li>Choose the first defensive model: current defensive abilities only, Guard/Ward profiles, or another explicit counter structure.</li><li>Build a probability calculator for damage, prevention, variance, and full-block outcomes.</li><li>Choose one elemental modifier and avoid counting advantage in multiple layers.</li></ol><h3 id="phase-b-build-final-state-creatures">Phase B - build final-state creatures</h3><ol class="content-list"><li>Create one plant/Entangle creature with a complete final deck, dice, abilities, and passive.</li><li>Create at least two contrasting final creatures, such as a reliable armored defender and a volatile aggressive creature.</li><li>Run standardized matchups repeatedly and measure draw consistency, damage, prevention, battle length, and dead turns.</li><li>Adjust final deck sizes and repeated card counts until each complete engine is coherent.</li></ol><h3 id="phase-c-walk-backwards">Phase C - walk backwards</h3><ol class="content-list"><li>Mark every final card as core, addition, upgrade, evolution-gated, or optional variant.</li><li>Construct a functional 12-card Level 1 engine.</li><li>Create milestone snapshots before filling every level: Level 1, first evolution, middle game, second evolution, and final level.</li><li>Test each snapshot against level-appropriate benchmarks.</li><li>Only then fill the exact per-level addition and upgrade schedule.</li></ol><h3 id="phase-d-connect-the-run-layer">Phase D - connect the run layer</h3><ol class="content-list"><li>Prototype recruitment as a post-encounter choice competing with another valuable reward.</li><li>Prototype a lightweight route containing battles, shops, risks, recovery, and optional build-upgrade opportunities.</li><li>Measure whether players can deliberately pursue a strategy, recover from poor offers, and choose between progress and preparation.</li></ol></section><section class="design-section"><h2 id="12-open-decision-register">12. Open decision register</h2><div class="table-scroll" tabindex="0"><table><tr><th><strong>Open decision</strong></th><th><strong>Why it matters</strong></th><th><strong>Recommended next evidence</strong></th></tr><tr><td>Final deck size</td><td>Controls health, consistency, battle duration, and content workload.</td><td>Test completed decks at 20, 32, and 46 cards.</td></tr><tr><td>Maximum level</td><td>Determines progression cadence and content volume.</td><td>Compare 35-level and 50-level milestone plans.</td></tr><tr><td>Damage scale</td><td>One damage currently removes one card, making large attack values potentially lethal.</td><td>Measure expected net damage per round against target deck size.</td></tr><tr><td>Defense representation</td><td>Defines physical/special identity and counter-roll transparency.</td><td>Prototype two equal-average profiles with different capacity and variance.</td></tr><tr><td>Switch cost</td><td>Prevents constant optimal swapping while preserving team tactics.</td><td>Test turn cost, command resource, and cooldown variants.</td></tr><tr><td>Hand behavior on switch</td><td>Affects setup banking, clarity, and UI state.</td><td>Compare discard-on-switch with preserved-hand variants.</td></tr><tr><td>Elements</td><td>Sets matchup complexity and creature identity.</td><td>Begin with four or five elements and modest modifiers.</td></tr><tr><td>Accuracy</td><td>Can create excessive non-events when combined with attack and defense rolls.</td><td>Default to connected attacks; reserve full misses for special cards.</td></tr><tr><td>Recruitment</td><td>Defines the emotional collection loop and legal/mechanical distinctiveness.</td><td>Prototype pact, rescue, and post-battle dice versions.</td></tr><tr><td>Persistent collection</td><td>Determines how creatures, damage, levels, and evolution persist across runs.</td><td>Define run-owned versus account-owned progression before content expansion.</td></tr><tr><td>Run structure</td><td>Connects battles to shops, risk, narrative, and engine-building opportunities.</td><td>Build one short route with optional danger and variable upgrade moments.</td></tr></table></div></section><section class="design-section"><h2 id="appendix-a-final-state-creature-worksheet">Appendix A - Final-state creature worksheet</h2><p>Use this worksheet before writing a level progression curve.</p><div class="table-scroll" tabindex="0"><table><tr><th><strong>Field</strong></th><th><strong>Questions to answer</strong></th></tr><tr><td>Identity statement</td><td>What should this creature make the player feel and deliberately do?</td></tr><tr><td>Element and role</td><td>What does its element communicate? What role does it fill?</td></tr><tr><td>Core loop</td><td>What action creates value, and what action converts that value into a payoff?</td></tr><tr><td>Final deck</td><td>How many cards, copies, engines, safety cards, and finishers?</td></tr><tr><td>Dice</td><td>What final dice and symbols make the engine reliable without making it automatic?</td></tr><tr><td>Abilities</td><td>What is always available outside the deck?</td></tr><tr><td>Defense</td><td>What is its prevention capacity, reliability, and weakness?</td></tr><tr><td>Statuses</td><td>What does it apply, resist, consume, or transform?</td></tr><tr><td>Team hooks</td><td>What can it leave behind, exploit, inherit, or trigger while benched?</td></tr><tr><td>Counterplay</td><td>How can opponents disrupt its engine?</td></tr><tr><td>Evolution</td><td>What rule changes, rather than merely gaining larger numbers?</td></tr><tr><td>Benchmarks</td><td>Expected battle length, damage per turn, prevention, and draw consistency?</td></tr></table></div></section><section class="design-section"><h2 id="appendix-b-ability-pattern-worksheet">Appendix B - Ability pattern worksheet</h2><div class="table-scroll" tabindex="0"><table><tr><th><strong>Field</strong></th><th><strong>Definition</strong></th></tr><tr><td>Original fantasy</td><td>The original name, action, animation, and narrative purpose.</td></tr><tr><td>Category</td><td>Offensive, defensive, status, switching, recovery, or utility.</td></tr><tr><td>Element</td><td>Attack element and affinity relationship.</td></tr><tr><td>Power</td><td>Potential incoming damage or other primary magnitude.</td></tr><tr><td>Qualification</td><td>Dice faces, symbols, card state, resource, or battlefield requirement.</td></tr><tr><td>Defense interaction</td><td>Which counter applies and whether capacity or reliability changes.</td></tr><tr><td>Frequency control</td><td>Copies, Exhaust, charges, cooldown, or resource cost.</td></tr><tr><td>Secondary trigger</td><td>Net damage, symbol, threshold, status presence, or explicit die result.</td></tr><tr><td>Secondary effect</td><td>Status, movement, switch, recovery, draw, resource, or rule change.</td></tr><tr><td>Counterplay</td><td>How the opponent anticipates, prevents, or exploits it.</td></tr></table></div></section><section class="design-section"><h2 id="appendix-c-research-and-source-links">Appendix C - Research and source links</h2><p>This library is organized by design task rather than by website. Use broad databases to discover patterns, generation-specific pages to verify historical behavior, and our own prototypes to decide what belongs in Dice and Destiny. Reference library updated July 19, 2026.</p><p><strong>REFERENCE RULE: </strong>Treat names, art, exact move text, numerical datasets, and formulas as research material rather than content to import. Extract abstract patterns, then author original creatures, terminology, effects, math, and presentation.</p><h3 id="roster-stats-learnsets-and-progression">Roster, stats, learnsets, and progression</h3><div class="reference-tools" aria-label="Reference filters">
+  <label for="reference-search">Search all saved links</label>
+  <div class="search-row">
+    <input id="reference-search" type="search" placeholder="Try “moves”, “legal”, “stats”, or “Palworld”…" autocomplete="off">
+    <span id="reference-count" aria-live="polite">20 sources</span>
+  </div>
+  <div class="filter-row" id="reference-filters" aria-label="Filter by research area"></div>
+</div><div class="reference-grid"><article class="reference-card" data-reference-card data-category="roster-stats-learnsets-and-progression" data-search="complete pokémon pokédex roster, stats, learnsets, and progression scan the full modern roster for type combinations, broad stat archetypes, and evolution patterns. this is an all-generation page with modern stats and forms, not a red/blue dataset. https://pokemondb.net/pokedex/all">
+  <div class="reference-card__top">
+    <span class="reference-card__category">Roster, stats, learnsets, and progression</span>
+    <span class="external-mark" aria-hidden="true">↗</span>
+  </div>
+  <h4><a href="https://pokemondb.net/pokedex/all" target="_blank" rel="noopener noreferrer"><u>Complete Pokémon Pokédex</u></a></h4>
+  <dl>
+    <div><dt>What we use it for</dt><dd>Scan the full modern roster for type combinations, broad stat archetypes, and evolution patterns.</dd></div>
+    <div class="caution"><dt>Important caution</dt><dd>This is an all-generation page with modern stats and forms, not a Red/Blue dataset.</dd></div>
+  </dl>
+  <a class="reference-url" href="https://pokemondb.net/pokedex/all" target="_blank" rel="noopener noreferrer">https://pokemondb.net/pokedex/all</a>
+</article><article class="reference-card" data-reference-card data-category="roster-stats-learnsets-and-progression" data-search="red/blue/yellow kanto pokédex roster, stats, learnsets, and progression confirm the original 151-creature roster and inspect the rby-era sprites and type identities. useful for roster context, not exact battle formulas or level-up data. https://pokemondb.net/pokedex/game/red-blue-yellow">
+  <div class="reference-card__top">
+    <span class="reference-card__category">Roster, stats, learnsets, and progression</span>
+    <span class="external-mark" aria-hidden="true">↗</span>
+  </div>
+  <h4><a href="https://pokemondb.net/pokedex/game/red-blue-yellow" target="_blank" rel="noopener noreferrer"><u>Red/Blue/Yellow Kanto Pokédex</u></a></h4>
+  <dl>
+    <div><dt>What we use it for</dt><dd>Confirm the original 151-creature roster and inspect the RBY-era sprites and type identities.</dd></div>
+    <div class="caution"><dt>Important caution</dt><dd>Useful for roster context, not exact battle formulas or level-up data.</dd></div>
+  </dl>
+  <a class="reference-url" href="https://pokemondb.net/pokedex/game/red-blue-yellow" target="_blank" rel="noopener noreferrer">https://pokemondb.net/pokedex/game/red-blue-yellow</a>
+</article><article class="reference-card" data-reference-card data-category="roster-stats-learnsets-and-progression" data-search="generation 1 pokémon stats roster, stats, learnsets, and progression compare roster-wide hp, offense, defense, speed, and total-stat archetypes. the presentation uses the modern split-stat schema and may reflect later revisions; confirm exact rby values separately. https://pokemondb.net/pokedex/stats/gen1">
+  <div class="reference-card__top">
+    <span class="reference-card__category">Roster, stats, learnsets, and progression</span>
+    <span class="external-mark" aria-hidden="true">↗</span>
+  </div>
+  <h4><a href="https://pokemondb.net/pokedex/stats/gen1" target="_blank" rel="noopener noreferrer"><u>Generation 1 Pokémon stats</u></a></h4>
+  <dl>
+    <div><dt>What we use it for</dt><dd>Compare roster-wide HP, offense, defense, speed, and total-stat archetypes.</dd></div>
+    <div class="caution"><dt>Important caution</dt><dd>The presentation uses the modern split-stat schema and may reflect later revisions; confirm exact RBY values separately.</dd></div>
+  </dl>
+  <a class="reference-url" href="https://pokemondb.net/pokedex/stats/gen1" target="_blank" rel="noopener noreferrer">https://pokemondb.net/pokedex/stats/gen1</a>
+</article><article class="reference-card" data-reference-card data-category="roster-stats-learnsets-and-progression" data-search="bulbasaur generation i learnset roster, stats, learnsets, and progression study one complete natural level-up schedule and distinguish it from tm/hm or other acquisition methods. individual move pages often default to modern values; use their generation history for rby facts. https://pokemondb.net/pokedex/bulbasaur/moves/1">
+  <div class="reference-card__top">
+    <span class="reference-card__category">Roster, stats, learnsets, and progression</span>
+    <span class="external-mark" aria-hidden="true">↗</span>
+  </div>
+  <h4><a href="https://pokemondb.net/pokedex/bulbasaur/moves/1" target="_blank" rel="noopener noreferrer"><u>Bulbasaur Generation I learnset</u></a></h4>
+  <dl>
+    <div><dt>What we use it for</dt><dd>Study one complete natural level-up schedule and distinguish it from TM/HM or other acquisition methods.</dd></div>
+    <div class="caution"><dt>Important caution</dt><dd>Individual move pages often default to modern values; use their generation history for RBY facts.</dd></div>
+  </dl>
+  <a class="reference-url" href="https://pokemondb.net/pokedex/bulbasaur/moves/1" target="_blank" rel="noopener noreferrer">https://pokemondb.net/pokedex/bulbasaur/moves/1</a>
+</article><article class="reference-card" data-reference-card data-category="roster-stats-learnsets-and-progression" data-search="generation i base-stat list roster, stats, learnsets, and progression cross-check generation-specific base-stat relationships and the original single special stat. dense secondary reference; note version quirks and avoid treating its numerical scale as our balance target. https://bulbapedia.bulbagarden.net/wiki/list_of_pok%c3%a9mon_by_base_stats_in_generation_i">
+  <div class="reference-card__top">
+    <span class="reference-card__category">Roster, stats, learnsets, and progression</span>
+    <span class="external-mark" aria-hidden="true">↗</span>
+  </div>
+  <h4><a href="https://bulbapedia.bulbagarden.net/wiki/List_of_Pok%C3%A9mon_by_base_stats_in_Generation_I" target="_blank" rel="noopener noreferrer"><u>Generation I base-stat list</u></a></h4>
+  <dl>
+    <div><dt>What we use it for</dt><dd>Cross-check generation-specific base-stat relationships and the original single Special stat.</dd></div>
+    <div class="caution"><dt>Important caution</dt><dd>Dense secondary reference; note version quirks and avoid treating its numerical scale as our balance target.</dd></div>
+  </dl>
+  <a class="reference-url" href="https://bulbapedia.bulbagarden.net/wiki/List_of_Pok%C3%A9mon_by_base_stats_in_Generation_I" target="_blank" rel="noopener noreferrer">https://bulbapedia.bulbagarden.net/wiki/List_of_Pok%C3%A9mon_by_base_stats_in_Generation_I</a>
+</article><article class="reference-card" data-reference-card data-category="roster-stats-learnsets-and-progression" data-search="pokéapi v2 documentation roster, stats, learnsets, and progression pull machine-readable species, moves, types, evolution chains, and version-group data for analysis tools. the api spans many eras. filter by generation and red-blue version group instead of assuming top-level values are rby values. https://pokeapi.co/docs/v2">
+  <div class="reference-card__top">
+    <span class="reference-card__category">Roster, stats, learnsets, and progression</span>
+    <span class="external-mark" aria-hidden="true">↗</span>
+  </div>
+  <h4><a href="https://pokeapi.co/docs/v2" target="_blank" rel="noopener noreferrer"><u>PokéAPI v2 documentation</u></a></h4>
+  <dl>
+    <div><dt>What we use it for</dt><dd>Pull machine-readable species, moves, types, evolution chains, and version-group data for analysis tools.</dd></div>
+    <div class="caution"><dt>Important caution</dt><dd>The API spans many eras. Filter by generation and red-blue version group instead of assuming top-level values are RBY values.</dd></div>
+  </dl>
+  <a class="reference-url" href="https://pokeapi.co/docs/v2" target="_blank" rel="noopener noreferrer">https://pokeapi.co/docs/v2</a>
+</article></div><h3 id="moves-categories-damage-and-elemental-relationships">Moves, categories, damage, and elemental relationships</h3><div class="reference-grid"><article class="reference-card" data-reference-card data-category="moves-categories-damage-and-elemental-relationships" data-search="moves introduced in generation i moves, categories, damage, and elemental relationships quickly inventory attack, status, multi-hit, recoil, drain, charge, counter, and control patterns introduced with the first games. the table can show modern power, pp, category, and effect text. it is not automatically the original red/blue move data. https://pokemondb.net/move/generation/1">
+  <div class="reference-card__top">
+    <span class="reference-card__category">Moves, categories, damage, and elemental relationships</span>
+    <span class="external-mark" aria-hidden="true">↗</span>
+  </div>
+  <h4><a href="https://pokemondb.net/move/generation/1" target="_blank" rel="noopener noreferrer"><u>Moves introduced in Generation I</u></a></h4>
+  <dl>
+    <div><dt>What we use it for</dt><dd>Quickly inventory attack, status, multi-hit, recoil, drain, charge, counter, and control patterns introduced with the first games.</dd></div>
+    <div class="caution"><dt>Important caution</dt><dd>The table can show modern power, PP, category, and effect text. It is not automatically the original Red/Blue move data.</dd></div>
+  </dl>
+  <a class="reference-url" href="https://pokemondb.net/move/generation/1" target="_blank" rel="noopener noreferrer">https://pokemondb.net/move/generation/1</a>
+</article><article class="reference-card" data-reference-card data-category="moves-categories-damage-and-elemental-relationships" data-search="strategywiki rby type-chart image moves, categories, damage, and elemental relationships keep a fast visual reference for generation i attack-type versus defender-type multipliers. an image is easy to misread and may not explain implementation bugs; cross-check the searchable chart below. https://strategywiki.org/wiki/file:rby_typechart.png">
+  <div class="reference-card__top">
+    <span class="reference-card__category">Moves, categories, damage, and elemental relationships</span>
+    <span class="external-mark" aria-hidden="true">↗</span>
+  </div>
+  <h4><a href="https://strategywiki.org/wiki/File:RBY_TypeChart.png" target="_blank" rel="noopener noreferrer"><u>StrategyWiki RBY type-chart image</u></a></h4>
+  <dl>
+    <div><dt>What we use it for</dt><dd>Keep a fast visual reference for Generation I attack-type versus defender-type multipliers.</dd></div>
+    <div class="caution"><dt>Important caution</dt><dd>An image is easy to misread and may not explain implementation bugs; cross-check the searchable chart below.</dd></div>
+  </dl>
+  <a class="reference-url" href="https://strategywiki.org/wiki/File:RBY_TypeChart.png" target="_blank" rel="noopener noreferrer">https://strategywiki.org/wiki/File:RBY_TypeChart.png</a>
+</article><article class="reference-card" data-reference-card data-category="moves-categories-damage-and-elemental-relationships" data-search="pokémondb old type charts moves, categories, damage, and elemental relationships use the searchable generation i matrix and compare it with later type-chart changes. historical game bugs and guidebook claims can differ; document which behavior we are studying. https://pokemondb.net/type/old">
+  <div class="reference-card__top">
+    <span class="reference-card__category">Moves, categories, damage, and elemental relationships</span>
+    <span class="external-mark" aria-hidden="true">↗</span>
+  </div>
+  <h4><a href="https://pokemondb.net/type/old" target="_blank" rel="noopener noreferrer"><u>PokémonDB old type charts</u></a></h4>
+  <dl>
+    <div><dt>What we use it for</dt><dd>Use the searchable Generation I matrix and compare it with later type-chart changes.</dd></div>
+    <div class="caution"><dt>Important caution</dt><dd>Historical game bugs and guidebook claims can differ; document which behavior we are studying.</dd></div>
+  </dl>
+  <a class="reference-url" href="https://pokemondb.net/type/old" target="_blank" rel="noopener noreferrer">https://pokemondb.net/type/old</a>
+</article><article class="reference-card" data-reference-card data-category="moves-categories-damage-and-elemental-relationships" data-search="bulbapedia damage calculations moves, categories, damage, and elemental relationships identify the separate inputs used by pokémon damage systems: level, power, stats, stab, effectiveness, randomness, and modifiers. the formula is generation-dependent and is research structure, not a formula for dice and destiny to copy. https://bulbapedia.bulbagarden.net/wiki/damage">
+  <div class="reference-card__top">
+    <span class="reference-card__category">Moves, categories, damage, and elemental relationships</span>
+    <span class="external-mark" aria-hidden="true">↗</span>
+  </div>
+  <h4><a href="https://bulbapedia.bulbagarden.net/wiki/Damage" target="_blank" rel="noopener noreferrer"><u>Bulbapedia damage calculations</u></a></h4>
+  <dl>
+    <div><dt>What we use it for</dt><dd>Identify the separate inputs used by Pokémon damage systems: level, power, stats, STAB, effectiveness, randomness, and modifiers.</dd></div>
+    <div class="caution"><dt>Important caution</dt><dd>The formula is generation-dependent and is research structure, not a formula for Dice and Destiny to copy.</dd></div>
+  </dl>
+  <a class="reference-url" href="https://bulbapedia.bulbagarden.net/wiki/Damage" target="_blank" rel="noopener noreferrer">https://bulbapedia.bulbagarden.net/wiki/Damage</a>
+</article><article class="reference-card" data-reference-card data-category="moves-categories-damage-and-elemental-relationships" data-search="aurora beam generation history moves, categories, damage, and elemental relationships use one concrete move to trace how power, type, category, pp, and secondary effects changed across generations. read the generation i subsection; the headline values may describe the current games. https://bulbapedia.bulbagarden.net/wiki/aurora_beam_(move)">
+  <div class="reference-card__top">
+    <span class="reference-card__category">Moves, categories, damage, and elemental relationships</span>
+    <span class="external-mark" aria-hidden="true">↗</span>
+  </div>
+  <h4><a href="https://bulbapedia.bulbagarden.net/wiki/Aurora_Beam_(move)" target="_blank" rel="noopener noreferrer"><u>Aurora Beam generation history</u></a></h4>
+  <dl>
+    <div><dt>What we use it for</dt><dd>Use one concrete move to trace how power, type, category, PP, and secondary effects changed across generations.</dd></div>
+    <div class="caution"><dt>Important caution</dt><dd>Read the Generation I subsection; the headline values may describe the current games.</dd></div>
+  </dl>
+  <a class="reference-url" href="https://bulbapedia.bulbagarden.net/wiki/Aurora_Beam_(move)" target="_blank" rel="noopener noreferrer">https://bulbapedia.bulbagarden.net/wiki/Aurora_Beam_(move)</a>
+</article></div><h3 id="competitive-behavior-and-balance-pattern-research">Competitive behavior and balance-pattern research</h3><div class="reference-grid"><article class="reference-card" data-reference-card data-category="competitive-behavior-and-balance-pattern-research" data-search="smogon red/blue move dex competitive behavior and balance-pattern research see how players value move patterns in actual competitive play rather than judging only by printed power. competitive rby priorities are not the same as a single-player campaign or our desired accessibility. https://www.smogon.com/dex/rb/moves/">
+  <div class="reference-card__top">
+    <span class="reference-card__category">Competitive behavior and balance-pattern research</span>
+    <span class="external-mark" aria-hidden="true">↗</span>
+  </div>
+  <h4><a href="https://www.smogon.com/dex/rb/moves/" target="_blank" rel="noopener noreferrer"><u>Smogon Red/Blue move dex</u></a></h4>
+  <dl>
+    <div><dt>What we use it for</dt><dd>See how players value move patterns in actual competitive play rather than judging only by printed power.</dd></div>
+    <div class="caution"><dt>Important caution</dt><dd>Competitive RBY priorities are not the same as a single-player campaign or our desired accessibility.</dd></div>
+  </dl>
+  <a class="reference-url" href="https://www.smogon.com/dex/rb/moves/" target="_blank" rel="noopener noreferrer">https://www.smogon.com/dex/rb/moves/</a>
+</article><article class="reference-card" data-reference-card data-category="competitive-behavior-and-balance-pattern-research" data-search="smogon red/blue competitive resources competitive behavior and balance-pattern research find guides on priority, quirks, team construction, and the emergent consequences of generation i rules. community analysis is interpretation, not an official specification; verify disputed mechanics elsewhere. https://www.smogon.com/resources/competitive/rb">
+  <div class="reference-card__top">
+    <span class="reference-card__category">Competitive behavior and balance-pattern research</span>
+    <span class="external-mark" aria-hidden="true">↗</span>
+  </div>
+  <h4><a href="https://www.smogon.com/resources/competitive/rb" target="_blank" rel="noopener noreferrer"><u>Smogon Red/Blue competitive resources</u></a></h4>
+  <dl>
+    <div><dt>What we use it for</dt><dd>Find guides on priority, quirks, team construction, and the emergent consequences of Generation I rules.</dd></div>
+    <div class="caution"><dt>Important caution</dt><dd>Community analysis is interpretation, not an official specification; verify disputed mechanics elsewhere.</dd></div>
+  </dl>
+  <a class="reference-url" href="https://www.smogon.com/resources/competitive/rb" target="_blank" rel="noopener noreferrer">https://www.smogon.com/resources/competitive/rb</a>
+</article><article class="reference-card" data-reference-card data-category="competitive-behavior-and-balance-pattern-research" data-search="smogon rby/gsc stat calculations competitive behavior and balance-pattern research understand how base stats, level, dvs, and stat experience generated final hp and combat stats. useful for scale analysis only. dice and destiny should use its own transparent progression and counter-roll math. https://www.smogon.com/ingame/guides/rby_gsc_stats">
+  <div class="reference-card__top">
+    <span class="reference-card__category">Competitive behavior and balance-pattern research</span>
+    <span class="external-mark" aria-hidden="true">↗</span>
+  </div>
+  <h4><a href="https://www.smogon.com/ingame/guides/rby_gsc_stats" target="_blank" rel="noopener noreferrer"><u>Smogon RBY/GSC stat calculations</u></a></h4>
+  <dl>
+    <div><dt>What we use it for</dt><dd>Understand how base stats, level, DVs, and Stat Experience generated final HP and combat stats.</dd></div>
+    <div class="caution"><dt>Important caution</dt><dd>Useful for scale analysis only. Dice and Destiny should use its own transparent progression and counter-roll math.</dd></div>
+  </dl>
+  <a class="reference-url" href="https://www.smogon.com/ingame/guides/rby_gsc_stats" target="_blank" rel="noopener noreferrer">https://www.smogon.com/ingame/guides/rby_gsc_stats</a>
+</article></div><h3 id="originality-patents-and-the-palworld-case">Originality, patents, and the Palworld case</h3><div class="reference-grid"><article class="reference-card" data-reference-card data-category="originality-patents-and-the-palworld-case" data-search="us copyright office - games originality, patents, and the palworld case distinguish protectable game expression from general game ideas and methods of play. general us guidance, not legal advice and not a substitute for reviewing specific assets or code. https://www.copyright.gov/register/tx-games.html">
+  <div class="reference-card__top">
+    <span class="reference-card__category">Originality, patents, and the Palworld case</span>
+    <span class="external-mark" aria-hidden="true">↗</span>
+  </div>
+  <h4><a href="https://www.copyright.gov/register/tx-games.html" target="_blank" rel="noopener noreferrer"><u>US Copyright Office - Games</u></a></h4>
+  <dl>
+    <div><dt>What we use it for</dt><dd>Distinguish protectable game expression from general game ideas and methods of play.</dd></div>
+    <div class="caution"><dt>Important caution</dt><dd>General US guidance, not legal advice and not a substitute for reviewing specific assets or code.</dd></div>
+  </dl>
+  <a class="reference-url" href="https://www.copyright.gov/register/tx-games.html" target="_blank" rel="noopener noreferrer">https://www.copyright.gov/register/tx-games.html</a>
+</article><article class="reference-card" data-reference-card data-category="originality-patents-and-the-palworld-case" data-search="us copyright office - circular 31 originality, patents, and the palworld case reference the treatment of ideas, methods, procedures, systems, formulas, and algorithms under copyright. copyright is only one area; trademarks, patents, contracts, and other jurisdictions remain separate. https://www.copyright.gov/circs/circ31.pdf">
+  <div class="reference-card__top">
+    <span class="reference-card__category">Originality, patents, and the Palworld case</span>
+    <span class="external-mark" aria-hidden="true">↗</span>
+  </div>
+  <h4><a href="https://www.copyright.gov/circs/circ31.pdf" target="_blank" rel="noopener noreferrer"><u>US Copyright Office - Circular 31</u></a></h4>
+  <dl>
+    <div><dt>What we use it for</dt><dd>Reference the treatment of ideas, methods, procedures, systems, formulas, and algorithms under copyright.</dd></div>
+    <div class="caution"><dt>Important caution</dt><dd>Copyright is only one area; trademarks, patents, contracts, and other jurisdictions remain separate.</dd></div>
+  </dl>
+  <a class="reference-url" href="https://www.copyright.gov/circs/circ31.pdf" target="_blank" rel="noopener noreferrer">https://www.copyright.gov/circs/circ31.pdf</a>
+</article><article class="reference-card" data-reference-card data-category="originality-patents-and-the-palworld-case" data-search="uspto patent basics and term originality, patents, and the palworld case understand why a broad game concept and a specific patented implementation require different reviews. patent scope depends on active claims, jurisdiction, dates, and implementation details; obtain counsel before release when needed. https://www.uspto.gov/ip-policy/patent-policy/patents">
+  <div class="reference-card__top">
+    <span class="reference-card__category">Originality, patents, and the Palworld case</span>
+    <span class="external-mark" aria-hidden="true">↗</span>
+  </div>
+  <h4><a href="https://www.uspto.gov/ip-policy/patent-policy/patents" target="_blank" rel="noopener noreferrer"><u>USPTO patent basics and term</u></a></h4>
+  <dl>
+    <div><dt>What we use it for</dt><dd>Understand why a broad game concept and a specific patented implementation require different reviews.</dd></div>
+    <div class="caution"><dt>Important caution</dt><dd>Patent scope depends on active claims, jurisdiction, dates, and implementation details; obtain counsel before release when needed.</dd></div>
+  </dl>
+  <a class="reference-url" href="https://www.uspto.gov/ip-policy/patent-policy/patents" target="_blank" rel="noopener noreferrer">https://www.uspto.gov/ip-policy/patent-policy/patents</a>
+</article><article class="reference-card" data-reference-card data-category="originality-patents-and-the-palworld-case" data-search="nintendo lawsuit announcement originality, patents, and the palworld case keep the plaintiff&#x27;s official announcement that the pocketpair case alleges patent infringement. the announcement is one party&#x27;s position and does not itself establish infringement or a final judgment. https://www.nintendo.co.jp/corporate/release/en/2024/240919.html">
+  <div class="reference-card__top">
+    <span class="reference-card__category">Originality, patents, and the Palworld case</span>
+    <span class="external-mark" aria-hidden="true">↗</span>
+  </div>
+  <h4><a href="https://www.nintendo.co.jp/corporate/release/en/2024/240919.html" target="_blank" rel="noopener noreferrer"><u>Nintendo lawsuit announcement</u></a></h4>
+  <dl>
+    <div><dt>What we use it for</dt><dd>Keep the plaintiff&#x27;s official announcement that the Pocketpair case alleges patent infringement.</dd></div>
+    <div class="caution"><dt>Important caution</dt><dd>The announcement is one party&#x27;s position and does not itself establish infringement or a final judgment.</dd></div>
+  </dl>
+  <a class="reference-url" href="https://www.nintendo.co.jp/corporate/release/en/2024/240919.html" target="_blank" rel="noopener noreferrer">https://www.nintendo.co.jp/corporate/release/en/2024/240919.html</a>
+</article><article class="reference-card" data-reference-card data-category="originality-patents-and-the-palworld-case" data-search="pocketpair patent-lawsuit report originality, patents, and the palworld case review pocketpair&#x27;s summary of the asserted japanese patents, requested injunction, and claimed damages. this is the defendant&#x27;s account of pending litigation, not a court decision. https://www.pocketpair.jp/en/news/report-on-patent-infringement-lawsuit/">
+  <div class="reference-card__top">
+    <span class="reference-card__category">Originality, patents, and the Palworld case</span>
+    <span class="external-mark" aria-hidden="true">↗</span>
+  </div>
+  <h4><a href="https://www.pocketpair.jp/en/news/report-on-patent-infringement-lawsuit/" target="_blank" rel="noopener noreferrer"><u>Pocketpair patent-lawsuit report</u></a></h4>
+  <dl>
+    <div><dt>What we use it for</dt><dd>Review Pocketpair&#x27;s summary of the asserted Japanese patents, requested injunction, and claimed damages.</dd></div>
+    <div class="caution"><dt>Important caution</dt><dd>This is the defendant&#x27;s account of pending litigation, not a court decision.</dd></div>
+  </dl>
+  <a class="reference-url" href="https://www.pocketpair.jp/en/news/report-on-patent-infringement-lawsuit/" target="_blank" rel="noopener noreferrer">https://www.pocketpair.jp/en/news/report-on-patent-infringement-lawsuit/</a>
+</article><article class="reference-card" data-reference-card data-category="originality-patents-and-the-palworld-case" data-search="pocketpair gameplay changes during litigation originality, patents, and the palworld case see which summoning and gliding behaviors pocketpair said it changed while the patent dispute continued. the page says litigation was ongoing when published; always check for newer court or company updates before making legal conclusions. https://www.pocketpair.jp/en/news/regarding-the-lawsuit-changes-to-palworld-and-the-future/">
+  <div class="reference-card__top">
+    <span class="reference-card__category">Originality, patents, and the Palworld case</span>
+    <span class="external-mark" aria-hidden="true">↗</span>
+  </div>
+  <h4><a href="https://www.pocketpair.jp/en/news/regarding-the-lawsuit-changes-to-palworld-and-the-future/" target="_blank" rel="noopener noreferrer"><u>Pocketpair gameplay changes during litigation</u></a></h4>
+  <dl>
+    <div><dt>What we use it for</dt><dd>See which summoning and gliding behaviors Pocketpair said it changed while the patent dispute continued.</dd></div>
+    <div class="caution"><dt>Important caution</dt><dd>The page says litigation was ongoing when published; always check for newer court or company updates before making legal conclusions.</dd></div>
+  </dl>
+  <a class="reference-url" href="https://www.pocketpair.jp/en/news/regarding-the-lawsuit-changes-to-palworld-and-the-future/" target="_blank" rel="noopener noreferrer">https://www.pocketpair.jp/en/news/regarding-the-lawsuit-changes-to-palworld-and-the-future/</a>
+</article></div><h3 id="document-maintenance-note">Document maintenance note</h3><p><em>This is a living design record. When a working direction becomes a decision, update its label and record the playtest evidence. When a prototype disproves an assumption, preserve the result in the decision register rather than silently deleting the learning.</em></p></section>
+      <p class="empty-state" id="empty-state">No saved sources match that search.</p>
+    </main>
+  </div>
+  <footer>Dice and Destiny v2 · Local design reference · External links require an internet connection.</footer>
+  <script>
+    (() => {
+      const progress = document.querySelector('.progress span');
+      const navLinks = [...document.querySelectorAll('.side nav a')];
+      const headings = navLinks.map(link => document.querySelector(link.getAttribute('href'))).filter(Boolean);
+      const updateScroll = () => {
+        const scrollable = document.documentElement.scrollHeight - innerHeight;
+        progress.style.width = `${scrollable > 0 ? (scrollY / scrollable) * 100 : 0}%`;
+        let current = headings[0];
+        headings.forEach(heading => { if (heading.getBoundingClientRect().top <= 110) current = heading; });
+        navLinks.forEach(link => link.classList.toggle('active', current && link.hash === `#${current.id}`));
+      };
+      addEventListener('scroll', updateScroll, { passive: true });
+      updateScroll();
+      const side = document.querySelector('.side');
+      const tocToggle = document.getElementById('toc-toggle');
+      tocToggle.addEventListener('click', () => {
+        const open = side.classList.toggle('open');
+        tocToggle.setAttribute('aria-expanded', String(open));
+        tocToggle.textContent = open ? 'Close index' : 'Field index';
+      });
+      navLinks.forEach(link => link.addEventListener('click', () => {
+        if (matchMedia('(max-width: 820px)').matches) {
+          side.classList.remove('open');
+          tocToggle.setAttribute('aria-expanded', 'false');
+          tocToggle.textContent = 'Field index';
+        }
+      }));
+      document.querySelectorAll('.callout').forEach(callout => {
+        const label = callout.textContent.trim().toUpperCase();
+        if (label.includes('WARNING') || label.startsWith('IMPORTANT')) callout.classList.add('is-warning');
+        else if (label.startsWith('DECIDED') || label.startsWith('RECOMMENDATION')) callout.classList.add('is-decision');
+        else if (label.startsWith('RESEARCH')) callout.classList.add('is-research');
+      });
+      document.getElementById('print-page').addEventListener('click', () => print());
+      document.getElementById('back-top').addEventListener('click', () => scrollTo({ top: 0, behavior: 'smooth' }));
+
+      const cards = [...document.querySelectorAll('[data-reference-card]')];
+      const search = document.getElementById('reference-search');
+      const count = document.getElementById('reference-count');
+      const filters = document.getElementById('reference-filters');
+      const empty = document.getElementById('empty-state');
+      if (!search || !filters) return;
+      const labels = new Map();
+      cards.forEach(card => labels.set(card.dataset.category, card.querySelector('.reference-card__category').textContent));
+      let selected = 'all';
+      const options = [['all', 'All sources'], ...labels.entries()];
+      options.forEach(([value, label]) => {
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.textContent = label;
+        button.dataset.filter = value;
+        button.setAttribute('aria-pressed', value === 'all' ? 'true' : 'false');
+        button.addEventListener('click', () => {
+          selected = value;
+          [...filters.children].forEach(item => item.setAttribute('aria-pressed', item === button ? 'true' : 'false'));
+          applyFilters();
+        });
+        filters.append(button);
+      });
+      function applyFilters() {
+        const query = search.value.trim().toLowerCase();
+        let visible = 0;
+        cards.forEach(card => {
+          const matchesText = !query || card.dataset.search.includes(query);
+          const matchesCategory = selected === 'all' || card.dataset.category === selected;
+          card.hidden = !(matchesText && matchesCategory);
+          if (!card.hidden) visible += 1;
+        });
+        count.textContent = `${visible} source${visible === 1 ? '' : 's'}`;
+        empty.style.display = visible ? 'none' : 'block';
+      }
+      search.addEventListener('input', applyFilters);
+      applyFilters();
+    })();
+  </script>
+</body>
+</html>

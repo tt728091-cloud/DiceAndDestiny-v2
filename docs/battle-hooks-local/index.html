@@ -1,0 +1,635 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="A local-only field guide to the Dice & Destiny battle engine hooks.">
+  <title>Dice & Destiny · Battle Hooks Field Guide</title>
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="styles.css">
+  <style>
+    .local-notice { position: absolute; z-index: 3; top: 1.4rem; right: clamp(1rem, 4vw, 4rem); padding: .42rem .7rem; color: #c8cfaa; border: 1px solid rgba(153,166,105,.38); background: rgba(28,34,22,.9); font: 800 .62rem var(--ui); letter-spacing: .11em; text-transform: uppercase; }
+    .local-notice::before { content: "●"; margin-right: .45rem; color: #9aac69; }
+    .hook-card[hidden] { display: none; }
+    @media (max-width: 760px) { .local-notice { top: 3.25rem; right: 1rem; } }
+  </style>
+</head>
+<body>
+  <div class="site-shell">
+    <a class="skip-link" href="#main">Skip to field guide</a>
+    <header class="masthead" id="top">
+      <div class="masthead-runes" aria-hidden="true">HOOK / SOURCE / WINDOW / CONSEQUENCE</div>
+      <div class="local-notice">Local-only archive</div>
+      <div class="masthead-inner">
+        <div class="eyebrow">Dice &amp; Destiny · Authority Field Archive</div>
+        <h1>Battle Hooks<br><em>Field Guide</em></h1>
+        <p class="hero-deck">A working atlas of every moment where rules can observe, interrupt, transform, or compound the battle—and the shared objects that turn isolated mechanics into extreme synergy.</p>
+        <div class="hero-actions">
+          <a class="primary-action" href="#catalogue">Open hook catalogue</a>
+          <a class="secondary-action" href="#curse-model">Study the cursed die</a>
+        </div>
+        <dl class="hero-ledger">
+          <div><dt>Segments mapped</dt><dd>05</dd></div>
+          <div><dt>Hooks catalogued</dt><dd>26</dd></div>
+          <div><dt>Core combat types</dt><dd>16</dd></div>
+        </dl>
+      </div>
+      <div class="seal" aria-hidden="true"><span>FIELD</span><strong>V·II</strong><span>ARCHIVE</span></div>
+    </header>
+
+    <div class="page-grid">
+      <aside class="archive-nav" aria-label="Field guide navigation">
+        <p class="archive-label">Archive index</p>
+        <nav>
+          <a href="#definition"><span>01</span> Hook doctrine</a>
+          <a href="#timeline"><span>02</span> Battle timeline</a>
+          <a href="#catalogue"><span>03</span> Hook catalogue</a>
+          <a href="#curse-model"><span>04</span> Persistent dice</a>
+          <a href="#reconstruction"><span>05</span> D100 reconstruction</a>
+          <a href="#synergies"><span>06</span> Synergy casebook</a>
+          <a href="#type-system"><span>07</span> Types &amp; Fortune</a>
+          <a href="#creature-foundations"><span>08</span> Creature foundations</a>
+          <a href="#architecture"><span>09</span> Engine doctrine</a>
+        </nav>
+        <div class="legend">
+          <p class="archive-label">Authority marks</p>
+          <div><span class="state-pill state-live">Data-driven</span><small>Usable from battle content today</small></div>
+          <div><span class="state-pill state-engine">Engine checkpoint</span><small>The moment exists, but its behavior is orchestrated in code</small></div>
+          <div><span class="state-pill state-foundation">Foundation</span><small>The generic authority models it, but settled combat does not fully expose it</small></div>
+          <div><span class="state-pill state-gap">Open hook</span><small>A high-value extension point to formalize</small></div>
+        </div>
+        <a class="back-top" href="#top">↑ Return to lantern</a>
+      </aside>
+
+      <main id="main">
+        <section class="section doctrine" id="definition">
+          <div class="section-heading"><span>Doctrine I</span><h2>What qualifies as a hook?</h2></div>
+          <div class="doctrine-grid">
+            <blockquote>“A stable authoritative checkpoint where content can observe a fact, propose an effect, modify an unresolved proposal, open an interaction window, or react after commitment.”</blockquote>
+            <div class="hook-anatomy">
+              <div><span>01</span><strong>Timing</strong></div><div><span>02</span><strong>Source</strong></div>
+              <div><span>03</span><strong>Subject</strong></div><div><span>04</span><strong>Proposal</strong></div>
+              <div><span>05</span><strong>Reaction</strong></div><div><span>06</span><strong>Revalidation</strong></div>
+              <div><span>07</span><strong>Cleanup</strong></div>
+            </div>
+          </div>
+          <div class="callout callout-moss"><strong>The synergy rule</strong><p>Put persistent state on a shared game object, then let unrelated systems interact with that same object through broad, precise hooks. For the cursed mummy, that object is the physical die instance.</p></div>
+        </section>
+
+        <section class="section" id="timeline">
+          <div class="section-heading"><span>Doctrine II</span><h2>The five-segment hook line</h2><p>Select a segment to inspect its authoritative sequence and highest-value opening.</p></div>
+          <div class="segment-tabs" id="segment-tabs" role="tablist" aria-label="Battle segments"></div>
+          <article class="segment-sheet" id="segment-panel" role="tabpanel"></article>
+        </section>
+
+        <section class="section" id="catalogue">
+          <div class="section-heading"><span>Archive III</span><h2>Hook catalogue</h2><p>Search the complete working inventory by mechanic, timing, example, or system.</p></div>
+          <div class="catalogue-tools">
+            <label class="search-field"><span>Search observations</span><input id="hook-search" type="search" placeholder="Try curse, damage, reveal, card…"></label>
+            <div class="filter-row" id="filter-row" aria-label="Filter hook maturity">
+              <button class="active" data-filter="all">All</button>
+              <button data-filter="live">Data-driven</button>
+              <button data-filter="engine">Engine checkpoint</button>
+              <button data-filter="foundation">Foundation</button>
+              <button data-filter="gap">Open hook</button>
+            </div>
+          </div>
+          <p class="result-count" id="result-count">Showing 26 of 26 recorded checkpoints</p>
+          <div class="hook-list" id="hook-list"></div>
+          <div class="empty-state" id="empty-state" hidden><strong>No observations found.</strong><p>Clear the search or inspect another authority mark.</p></div>
+        </section>
+
+        <section class="section" id="curse-model">
+          <div class="section-heading"><span>Specimen IV</span><h2>The persistent cursed die</h2><p>The overlay belongs to a physical die instance. It follows that die through every system that chooses to roll it.</p></div>
+          <div class="specimen-grid">
+            <div class="die-specimen">
+              <div class="specimen-label">Die instance · blade-die-03</div>
+              <div class="die-faces" aria-label="Six faces of a cursed die">
+                <span class="die is-cursed" aria-label="Die showing 1, cursed"><strong>1</strong><span class="curse-mark">⌁</span></span>
+                <span class="die"><strong>2</strong></span><span class="die"><strong>3</strong></span><span class="die"><strong>4</strong></span><span class="die"><strong>5</strong></span><span class="die"><strong>6</strong></span>
+              </div>
+              <div class="overlay-ledger"><div><span>Base face</span><b>1 · Sword</b></div><div><span>Runtime overlay</span><b>+ Curse</b></div><div><span>Final symbols</span><b>Sword · Curse</b></div></div>
+            </div>
+            <div class="resolver-flow">
+              <div><span>1</span><p>Base die face</p></div><div><span>2</span><p>Collect active overlays</p></div>
+              <div><span>3</span><p>Resolve replacements</p></div><div><span>4</span><p>Add / remove symbols</p></div>
+              <div><span>5</span><p>Emit die_rolled</p></div><div><span>6</span><p>Reveal &amp; react</p></div>
+              <div><span>7</span><p>Finalize &amp; evaluate</p></div>
+            </div>
+          </div>
+          <div class="roll-hooks">
+            <div><code>die_rolled</code><p>Every physical result, including discarded dice and rerolls. Strong Curse listens here.</p></div>
+            <div><code>die_kept</code><p>A die fills a requirement slot or becomes reserved. Temptation mechanics listen here.</p></div>
+            <div><code>die_face_modified</code><p>A reaction changes a revealed face. Unstable Curse can listen here.</p></div>
+            <div><code>roll_finalized</code><p>The accepted pool qualifies abilities. Weak Curse and final-symbol thresholds listen here.</p></div>
+          </div>
+          <div class="callout callout-blood"><strong>Do not mutate the pinned die definition</strong><p>A runtime overlay must affect only the chosen die instance. Global mutation would silently curse every actor using <code>standard_d6</code> and would break deterministic replay.</p></div>
+        </section>
+
+        <section class="section" id="reconstruction">
+          <div class="section-heading"><span>Procedure V</span><h2>D100 intent, truthful dice history</h2><p>The D100 selects the enemy’s authored success envelope. Constrained dice simulation reconstructs a legitimate history that reaches it on the specified roll.</p></div>
+          <div class="d100-layout">
+            <aside class="d100-order">
+              <div class="d100-number">87</div><span>Authority result</span><h3>Blade Cut</h3><p>Succeeds on roll three.</p>
+              <div class="requirement"><span>Final requirement</span><b>3 dice showing 1–3</b><b>2 dice showing 6</b></div>
+            </aside>
+            <div class="reconstruction-panel">
+              <div class="step-controls"><button id="previous-roll">← Previous</button><span id="roll-step-label">Roll 1 of 3</span><button id="next-roll">Next roll →</button></div>
+              <div class="current-roll"><span id="current-roll-label"></span><div id="current-roll-dice"></div><p id="current-roll-note"></p></div>
+              <div class="reconstructed-pool"><span>Kept requirement slots</span><div id="kept-pool"></div></div>
+              <div class="curse-meter"><span>Curse accumulated</span><div id="curse-points"></div><b id="curse-count"></b></div>
+            </div>
+          </div>
+          <div class="callout callout-moss"><strong>Conditional, not counterfeit</strong><p>The final roll samples only faces that complete the D100-selected outcome. For a fair D6 and remaining slot <code>{1, 2, 3}</code>, face 1 retains a real one-in-three chance to trigger Curse.</p></div>
+        </section>
+
+        <section class="section" id="synergies">
+          <div class="section-heading"><span>Casebook VI</span><h2>Synergy specimens</h2><p>Each specimen connects at least three independent systems through a shared object or authoritative event.</p></div>
+          <div class="synergy-grid" id="synergy-grid"></div>
+        </section>
+
+        <section class="section" id="type-system">
+          <div class="section-heading"><span>Taxonomy VII</span><h2>The sixteen combat types</h2><p>Types are mechanical affinities that shape matchups and hook behavior. Creature-family traits such as Mummy, Dragon, Fae, Spider, Aquatic, and Airborne remain separate and can be combined with one primary and one optional secondary type.</p></div>
+          <div class="type-grid" id="type-grid"></div>
+          <div class="callout callout-moss"><strong>Type before multiplier</strong><p>Each type should first own a recognizable status, operation family, and hook pattern. The effectiveness chart comes after those identities are stable.</p></div>
+
+          <div class="fortune-heading">
+            <div>
+              <span>Type XVI · Fortune</span>
+              <h2>The desired face</h2>
+              <p>Curse makes a player fear rolling a marked face. Fortune creates the opposite tension: a temporary beneficial symbol is attached to a physical die face, making the player want to roll—and perhaps reroll—that die.</p>
+            </div>
+            <div class="fortune-die">
+              <span class="die is-fortunate" aria-label="Die showing 4 with Fortune"><strong>4</strong><span class="fortune-mark" aria-hidden="true">✦</span></span>
+              <div><small>Blade die · face 4</small><b>Sword + Fortune</b></div>
+            </div>
+          </div>
+
+          <div class="fortune-model">
+            <article>
+              <span class="panel-kicker">Shared baseline</span>
+              <h3>Fortune generates Favor</h3>
+              <p>Whenever a qualifying Fortune symbol activates, gain one Favor. Fortune cards, creatures, relics, and abilities can spend Favor to manipulate dice, prevent damage, protect cards, cleanse statuses, or improve ability tiers.</p>
+              <div class="favor-spend">
+                <code>move a Boon</code><code>protect a card</code><code>cleanse a stack</code><code>increase a tier</code><code>prevent damage</code><code>preserve a die</code>
+              </div>
+            </article>
+            <div class="fortune-flow">
+              <div><span>1</span><p>Attach Boon to a physical die face</p></div>
+              <div><span>2</span><p>Resolve base symbols, Curse, and Fortune</p></div>
+              <div><span>3</span><p>Emit the configured activation hook</p></div>
+              <div><span>4</span><p>Gain Favor and resolve any rider</p></div>
+              <div><span>5</span><p>Spend a charge, move, grow, or expire</p></div>
+            </div>
+          </div>
+
+          <div class="boon-grid">
+            <article><span>01</span><h3>Wild Boon</h3><p>Fortune also counts as any symbol needed for ability qualification.</p></article>
+            <article><span>02</span><h3>Harvest Boon</h3><p>Activates only when the fortunate die is kept in a requirement slot.</p></article>
+            <article><span>03</span><h3>Strong Boon</h3><p>Activates on every physical roll, including discarded dice and rerolls.</p></article>
+            <article><span>04</span><h3>Growing Boon</h3><p>After activation, Fortune spreads to another face of that physical die.</p></article>
+            <article><span>05</span><h3>Traveling Boon</h3><p>Moves to another die, another face, or a die selected by an actor.</p></article>
+            <article><span>06</span><h3>Jackpot Boon</h3><p>Several Fortune symbols in one batch unlock a much larger threshold effect.</p></article>
+            <article><span>07</span><h3>Insurance Boon</h3><p>Provides a smaller consolation reward if it expires without activation.</p></article>
+            <article class="tainted-boon"><span>08</span><h3>Tainted Boon</h3><p>Fortune and Curse share the same face. The desired result activates both.</p></article>
+          </div>
+
+          <div class="fortune-hooks">
+            <div><code>die_rolled</code><p>Strong Boon rewards every physical result and makes voluntary rerolls exciting.</p></div>
+            <div><code>die_kept</code><p>Harvest Boon forces a choice between keeping Fortune and chasing qualification.</p></div>
+            <div><code>die_face_modified</code><p>Arcane effects may deliberately move a result onto a fortunate face.</p></div>
+            <div><code>roll_finalized</code><p>Weak Fortune rewards only symbols remaining in the accepted pool.</p></div>
+          </div>
+
+          <div class="section-heading fortune-pairing-heading"><span>Cross-affinity design</span><h2>How Fortune combines</h2><p>Fortune becomes a genuine type when every other affinity can manipulate, exploit, accelerate, preserve, steal, or corrupt its Boons.</p></div>
+          <div class="fortune-type-grid" id="fortune-type-grid"></div>
+
+          <div class="fortune-concepts">
+            <div>
+              <span class="panel-kicker">Creature concepts</span>
+              <ul>
+                <li><b>Luck Sprite · Fortune</b><p>Places one temporary Boon during Income; activation moves it to another die.</p></li>
+                <li><b>Gilded Scarab · Fortune/Swarm</b><p>Spreads weak Boons across dice and triggers Jackpot after three different activations.</p></li>
+                <li><b>Fate Weaver · Fortune/Arcane</b><p>Moves Boons and Curses between faces to create valuable but dangerous dice.</p></li>
+                <li><b>Fallen Seraph · Fortune/Shadow</b><p>Creates powerful Tainted Boons whose activations also generate Debt.</p></li>
+                <li><b>Shrine Golem · Fortune/Stone</b><p>Slowly builds durable Fortune symbols that convert Favor into armor.</p></li>
+                <li><b>Fortune Eater · Beast/Shadow</b><p>Hunts the most blessed die and consumes any Boon left unused at round end.</p></li>
+              </ul>
+            </div>
+            <aside>
+              <span>Critical tension</span>
+              <h3>Fortune + Curse</h3>
+              <p>Place both overlays on the same valuable face. The result may complete an ultimate, grant Favor, and advance Curse simultaneously. The player is not choosing between a good die and a bad die; they are choosing whether the reward is worth engaging with the danger.</p>
+            </aside>
+          </div>
+
+          <div class="priority-gaps fortune-safeguards">
+            <h3>Fortune safeguards</h3>
+            <div><span>01</span><p><b>Limited charges</b> prevent infinite Favor and reroll loops.</p></div>
+            <div><span>02</span><p><b>Consequence-chain limits</b> stop a Fortune-generated roll from retriggering the same Boon recursively.</p></div>
+            <div><span>03</span><p><b>Physical-roll provenance</b> keeps copied faces separate from actual rolls.</p></div>
+            <div><span>04</span><p><b>Post-batch consequences</b> resolve Favor and riders after the current dice batch finishes.</p></div>
+            <div><span>05</span><p><b>Shared overlay resolution</b> applies Fortune identically to player rolls, status dice, defenses, and enemy D100 reconstruction.</p></div>
+          </div>
+        </section>
+
+        <section class="section" id="creature-foundations">
+          <div class="section-heading"><span>Bestiary VIII</span><h2>Creature synergy foundations</h2><p>Each mechanic places persistent state on a shared game object or event stream so unrelated creature families can discover powerful interactions with it.</p></div>
+          <div class="foundation-rule">
+            <span class="panel-kicker">The design pattern</span>
+            <p><b>Attach state to something that travels.</b> Dice, card instances, damage sources, statuses, links, tags, counters, and recorded events naturally cross multiple battle segments. A creature mechanic becomes highly mixable when other creatures can push those same objects through more hooks.</p>
+          </div>
+          <div class="creature-grid" id="creature-grid"></div>
+          <div class="prototype-panel">
+            <div>
+              <span class="panel-kicker">Strongest prototype foundations</span>
+              <ol>
+                <li><b>Haunted card instances</b><small>Deck · hand · damage reveal · discard · removal</small></li>
+                <li><b>Web links between objects</b><small>Dice · cards · statuses · combatants · sources</small></li>
+                <li><b>Bargains and Debt</b><small>Immediate power · Income collection · alternative payment</small></li>
+                <li><b>Echoed events</b><small>Record · copy · replay · distinguish result from physical action</small></li>
+                <li><b>Encounter-wide Resonance</b><small>Shared meters that every creature family can feed or spend</small></li>
+              </ol>
+            </div>
+            <aside>
+              <span>Example mixed encounter</span>
+              <h3>Specter · Spider · Fae</h3>
+              <p>A Specter haunts a card. A Spider webs that card to a die. A Fae bargain improves the die but adds Debt whenever it is rolled. The haunt reacts to the webbed roll, prevention increases the Debt, and every trigger builds encounter Resonance.</p>
+            </aside>
+          </div>
+        </section>
+
+        <section class="section" id="architecture">
+          <div class="section-heading"><span>Doctrine IX</span><h2>Engine rules that preserve the magic</h2><p>Combinatorial interactions stay understandable when the authority makes their timing and provenance explicit.</p></div>
+          <div class="architecture-grid">
+            <div class="operation-panel"><span class="panel-kicker">Current shared operations</span><div>
+              <code>deal damage</code><code>prevent damage</code><code>scale damage</code><code>apply status</code><code>remove status</code><code>draw cards</code><code>gain energy</code><code>set die face</code><code>modify ability</code><code>adjust max rolls</code><code>cancel source</code><code>roll dice</code>
+            </div></div>
+            <ol class="safeguards">
+              <li><b>Record roll provenance.</b><p>Offensive, voluntary reroll, forced reroll, defense, status, card, copied result.</p></li>
+              <li><b>Separate event identities.</b><p>A copied face is not a physical roll; a face change is not a reroll.</p></li>
+              <li><b>Queue child consequences.</b><p>Triggered damage begins after its parent roll batch, never in the middle.</p></li>
+              <li><b>Limit repetitions.</b><p>Support once per die, roll batch, resolution, checkpoint, or round.</p></li>
+              <li><b>Persist overlays and history.</b><p>Saves, snapshots, AI reconstruction, and replay must agree.</p></li>
+            </ol>
+          </div>
+          <div class="priority-gaps">
+            <h3>Highest-priority structural work</h3>
+            <div><span>01</span><p><b>Universal checkpoint dispatcher</b> for statuses, passives, cards, tokens, actors, and encounter rules.</p></div>
+            <div><span>02</span><p><b>Persistent die instances and overlays</b> shared by player rolls, status rolls, defenses, and enemy reconstruction.</p></div>
+            <div><span>03</span><p><b>Converge settled and generic resolution</b> so every proposal can reveal, react, revalidate, and commit consistently.</p></div>
+            <div><span>04</span><p><b>Stable typed timing</b> using segment, phase, stage, and before/after position instead of scattered strings.</p></div>
+          </div>
+        </section>
+
+        <footer><div><span class="eyebrow">Dice &amp; Destiny</span><p>Battle Hooks Field Guide · local authority design record</p></div><a href="#top">Return to lantern ↑</a></footer>
+      </main>
+    </div>
+  </div>
+
+  <script>
+    const states = {
+      live: { label: "Data-driven" },
+      engine: { label: "Engine checkpoint" },
+      foundation: { label: "Foundation" },
+      gap: { label: "Open hook" }
+    };
+
+    const combatTypes = [
+      ["FL","Flame","Burn, escalation, consuming statuses, igniting revealed cards, and punishing delayed resolution.","Burn"],
+      ["TI","Tide","Cleansing, redirection, moving counters, replacing outcomes, and shifting statuses between targets.","Flow"],
+      ["ST","Storm","Energy manipulation, chained targets, additional rolls, repeated triggers, and unstable output.","Charge"],
+      ["FR","Frost","Locking dice and cards, reducing maximum rolls, delaying statuses, and preserving frozen state.","Freeze"],
+      ["SO","Stone","Armor, prevention, scaling, fortification, weight, Fracture, and resistance to manipulation.","Fortify"],
+      ["VE","Verdant","Growth, regeneration, stacking, Spores, transformation, and spreading persistent overlays.","Growth"],
+      ["VN","Venom","Poison, repeated status rolls, delayed consequences, infection, and stack conversion.","Poison"],
+      ["BL","Blood","Health-card manipulation, sacrifice, lifesteal, Bleed, Blood Marks, and power purchased with health.","Blood Mark"],
+      ["BE","Beast","Hunt, Scent, behavioral tracking, forced targets, repeated attacks, and exploiting predictable play.","Hunt"],
+      ["SW","Swarm","Numerous small sources, Web links, spreading effects, overwhelming reactions, and entity-count thresholds.","Web"],
+      ["CO","Construct","Persistent parts, programmed triggers, Corrosion, assembly, repair, and physical-object modification.","Corrosion"],
+      ["GR","Grave","Undead, haunted cards, corpses, removed health, resurrection, death triggers, and Graveyard use.","Haunt"],
+      ["AR","Arcane","Dice overlays, runtime tags, Echoes, copied events, time, mirrors, transformation, and revalidation.","Echo"],
+      ["SH","Shadow","Curse, Blind, Debt, hidden intent, dangerous bargains, corruption, and late cancellation.","Curse"],
+      ["RA","Radiant","Cleanse, wards, restoration, protection, exposing hidden effects, and removing corruption.","Ward"],
+      ["FO","Fortune","Temporary beneficial die symbols, Favor, Boons, Jackpot thresholds, and rewarding risky rerolls.","Boon"]
+    ];
+
+    const fortunePairings = [
+      ["Flame","Consume a Boon to ignite an attack, increase Burn, or produce a one-use explosive reward."],
+      ["Tide","Move Boons between dice and faces, return consumed Boons, or wash Fortune onto another object."],
+      ["Storm","Additional rolls create more opportunities to find Fortune; Boons can generate energy or chain effects."],
+      ["Frost","Freeze a fortunate result, preserve a Boon’s last charge, or lock a blessed die into the next roll."],
+      ["Stone","Convert Favor into armor or make a Boon durable but limited to one activation per round."],
+      ["Verdant","Grow Fortune onto adjacent faces, reproduce Boons, or increase their charges after surviving a round."],
+      ["Venom","Use a fortunate die for Poison rolls so one result can resolve Poison and activate a Boon together."],
+      ["Blood","Pay health to place or strengthen Boons; spend Favor to save Blood-Marked health cards."],
+      ["Beast","Mark the luckiest die as Scented and gain Hunt whenever its Fortune activates."],
+      ["Swarm","Spread many weak Boons across dice or Web two Boons so one activation moves or copies the other."],
+      ["Construct","Engineer exact placement, manufacture charges, and store unused Favor in persistent components."],
+      ["Grave","Recover removed cards, bless corpses, or transfer Fortune when a haunted object is destroyed."],
+      ["Arcane","Copy, relocate, transform, or deliberately modify a die onto a fortunate face."],
+      ["Shadow","Create Tainted Boons, attach Debt to Favor, steal Fortune, or turn expired Boons into Curse."],
+      ["Radiant","Purify Curse into Fortune and spend Favor on cleansing, wards, and protecting revealed health cards."]
+    ];
+
+    const hooks = [
+      ["H-01","Battle construction","battle","engine",["actors","deck","dice","statuses"],"Assemble combatants, starting resources, deck instances, dice loadouts, abilities, statuses, tokens, and AI policy before the first checkpoint.",["Encounter mutators","Starting curses","Relic loadouts"]],
+      ["H-02","Round & segment entry","battle","gap",["statuses","passives","environment"],"A universal entry dispatcher for statuses, passive abilities, tokens, combatant traits, and encounter rules.",["Escalating arena","Round-start blessing","Weather effects"]],
+      ["H-03","Status trigger collection","ongoing","live",["status","stacks","priority"],"Collect matching Ongoing Effects triggers, capture stack counts, and order them deterministically into one batch.",["Poison","Bleed","Volatile Poison"]],
+      ["H-04","Effect die rolled","ongoing","gap",["dice","status","overlays"],"Fire once for every physical status die result before it is kept, discarded, rerolled, or evaluated.",["Strong Curse","Exploding affliction dice","Reroll tension"]],
+      ["H-05","Status roll reveal","ongoing","live",["dice","reaction","status"],"Reveal final status dice and open a response window before face outcomes become consequences.",["Antidote","Tip a status die","Suppress one outcome"]],
+      ["H-06","Status damage reveal","ongoing","engine",["damage","cards","reaction"],"Reveal the cards threatened by accumulated status damage before permanent removal.",["Emergency Ward","Save a key card","Accept a sacrifice"]],
+      ["H-07","Income calculation","income","gap",["cards","energy","resources"],"Calculate, replace, increase, reduce, or redirect card and energy income before it commits.",["Grave Debt","Choose one of three cards","Steal energy"]],
+      ["H-08","Card drawn","income","gap",["cards","deck","triggers"],"React to the identity, tag, or count of newly drawn cards without hiding the event inside the draw helper.",["Trap card","Whenever you draw…","Draw replacement"]],
+      ["H-09","Offensive entry","offensive","live",["status","rolls","planning"],"Modify maximum rolls and participation before hidden planning begins.",["Entangle","Bonus first roll","Silence an ability family"]],
+      ["H-10","Combat die rolled","offensive","gap",["dice","curse","reroll"],"Observe every individual die result—including discarded dice and later rerolls—while preserving die-instance identity.",["Strong Curse","Dark Momentum","Mummy Wrapping"]],
+      ["H-11","Die kept or released","offensive","gap",["dice","planning","requirements"],"Respond when a die fills a requirement slot, is deliberately released, or becomes locked for a future roll.",["Keep Curse for power","Crumbling die","Reserved ability dice"]],
+      ["H-12","Final pool accepted","offensive","foundation",["dice","symbols","qualification"],"Evaluate final face and symbol overlays, count special symbols, then qualify tiers and conditional bonuses.",["Weak Curse","Blessing threshold","Exact-face mastery"]],
+      ["H-13","Ability qualification","offensive","live",["ability","symbols","patterns"],"Check symbol counts, exact faces, number patterns, tier requirements, and battle-duration conditional modifiers.",["Sword Cut","Perfect Form","Sharpen Blade"]],
+      ["H-14","Offensive reveal","offensive","engine",["ability","dice","targets"],"Reveal accepted dice, ability, tier, targets, and proposed outcome before final source construction.",["Read the enemy intent","Inspect target","Prepare reaction"]],
+      ["H-15","Offensive reaction","offensive","live",["cards","dice","revalidation"],"Manipulate a revealed die and automatically revalidate the selected ability against the new pool.",["Tip It","Invalidate an ultimate","AI fallback ability"]],
+      ["H-16","Offensive exit","offensive","engine",["status","cancel","source"],"Resolve late attack checks after revalidation but before Defense receives the finalized sources.",["Blind","Cancel complete source","Preserve spent costs"]],
+      ["H-17","Defense selection","defensive","live",["ability","cost","source"],"Choose a legal defensive ability, spend its cost, consume usage, and target one incoming source—or pass.",["Basic Defense","Protect","Source-specific guard"]],
+      ["H-18","Defense die rolled","defensive","gap",["dice","curse","reaction"],"Use a persistent owned die or an effect die, apply overlays, and trigger every-roll mechanics before prevention resolves.",["Crumbling Ward","Cursed shield die","Forced die selection"]],
+      ["H-19","Defense resolution","defensive","live",["damage","prevent","scale"],"Prevent or scale a finalized incoming source without yet removing health cards.",["Prevent rolled face","Halve one source","Countereffect"]],
+      ["H-20","Damage calculation","damage","engine",["damage","source","overage"],"Apply source prevention and scaling, retain attribution, calculate final totals, and preserve overage.",["Source resistance","Accumulated prevention","Overkill rules"]],
+      ["H-21","Health-card selection","damage","gap",["cards","health","random"],"Control the eligible zones, random weighting, player choice, protected cards, and replacement policy.",["Choose from hand","Protect a named card","Reveal extra candidates"]],
+      ["H-22","Damage-card reveal","damage","live",["cards","damage","reaction"],"Inspect exact threatened cards and source totals before permanent removal.",["Emergency Ward","Haunted card","Valuable sacrifice"]],
+      ["H-23","Damage reaction","damage","live",["cards","prevent","reconcile"],"Play a source-targeted response, recalculate damage, release saved cards, and update overage.",["Prevent three","Save one card","Multiple reaction rounds"]],
+      ["H-24","Damage commit","damage","engine",["cards","status","defeat"],"Remove accepted health cards, apply attached statuses, establish pending defeat, and discover child consequences.",["On removal","Poison delivery","Deathrattle"]],
+      ["H-25","Hand-limit choice","damage","engine",["cards","choice","cleanup"],"Choose discards down to the actor’s limit after all damage and immediate consequences finish.",["Discard trigger","Recover on cleanup","Hand-size relic"]],
+      ["H-26","Battle completion","battle","engine",["defeat","round","result"],"Finalize pending defeat and evaluate victory, defeat, draw, or escape only after the segment finishes.",["Mutual defeat","Last-chance save","Post-battle reward"]]
+    ];
+
+    const segments = [
+      ["ongoing","01","Ongoing Effects","Scheduled danger becomes visible.","Statuses collect from the same checkpoint, roll as a batch, reveal together, invite reactions, then create child consequence batches.",["Collect triggers","Roll persistent or effect dice","Reveal & react","Evaluate outcomes","Reveal status damage","Commit consequences"],["Poison","Bleed","Antidote"],"Every physical status roll should pass through persistent die overlays."],
+      ["income","02","Income","The next turn’s options are provisioned.","Cards and energy currently arrive automatically. A calculation proposal would allow replacement, theft, debt, draw choice, and on-gain mechanics.",["Calculate rewards","Apply modifiers","Resolve replacements","Draw cards","Gain resources","Exit triggers"],["Card draw","Energy gain"],"Expose before/after draw and resource threshold hooks."],
+      ["offensive","03","Offensive","Intent is rolled, chosen, revealed, and tested.","Persistent combat dice move through roll, keep, reroll, final qualification, reveal, reaction, revalidation, and late cancellation.",["Entry modifiers","Roll / keep / reroll","Qualify abilities","Select targets","Reveal & react","Revalidate","Blind checkpoint"],["Entangle","Loaded Die","Tip It","Blind"],"Fire per-die hooks on every roll, not only the accepted final pool."],
+      ["defensive","04","Defensive","A finalized threat can still be shaped.","Defenders target incoming sources, pay for defenses, resolve internal dice, react to revealed defense results, and attach prevention or scaling.",["Load incoming sources","Select defense","Pay & consume usage","Roll defense dice","Reveal & react","Finalize modifiers"],["Basic Defense","Protect"],"Let defenses select and roll persistent owned dice so Curse can travel here."],
+      ["damage","05","Damage Resolution","Consequences are known before they become permanent.","Sources calculate, health cards are selected and revealed, responses reconcile the batch, then cards and statuses commit together.",["Calculate sources","Select health cards","Reveal exact loss","React & recalculate","Commit","Immediate consequences","Hand limit"],["Emergency Ward","Card-as-health"],"Turn card identity, replacement, removal, and pending defeat into content hooks."]
+    ];
+
+    const synergies = [
+      ["Venom of the Tomb",["Curse","Poison","Persistent dice"],"Poison orders the target to roll the most cursed combat die. A face can resolve Poison and trigger Curse from the same physical result."],
+      ["The Temptation Die",["Curse","Qualification","Rerolls"],"A face carries Sword + Curse. Keeping it preserves qualification; rerolling risks triggering the curse again. The danger is attached to a genuinely useful result."],
+      ["Crumbling Ward",["Defense","Curse","Die choice"],"A defense rolls an owned die and prevents its face value. The best shield die is badly cursed, turning prevention into a deliberate risk calculation."],
+      ["Grasp of the Sarcophagus",["Curse","Lock","Future rolls"],"When Curse appears, lock that die. It must join the next roll and cannot be set aside until a cleanse or unlock effect releases it."],
+      ["Rotting Faces",["Curse","Overlay","Escalation"],"Each cursed result spreads Curse to the next face of that same physical die, creating a battle-long history the player must contain or exploit."],
+      ["Grave Debt",["Curse","Counters","Income"],"Every Curse result gains Debt. At Income, each three Debt drains energy—unless another build converts it into forbidden card power."],
+      ["Memories of the Dead",["Curse","Damage reveal","Deck identity"],"Curse damage reveals extra candidate health cards. The target chooses the loss, allowing sacrifice cards and on-reveal cards to matter."],
+      ["The Curse-Eater",["Curse","Dark Momentum","Buildcraft"],"A player archetype gains power when Curse appears and can spend that power to offset the consequence. The mummy becomes dangerous and exploitable at once."],
+      ["Twist Fate",["Forced reroll","Curse","Revalidation"],"The mummy forces a cursed revealed die to reroll. Curse can trigger again, the ability may collapse, and the roll’s provenance remains available to other effects."]
+    ];
+
+    const creatureIdeas = [
+      {
+        family: "Specters",
+        mechanic: "Haunted Cards",
+        object: "Persistent card overlays",
+        premise: "Haunt a physical card instance and follow it through deck, hand, discard, health reveal, removal, and reshuffle.",
+        hooks: ["card drawn","card played","card discarded","damage-card reveal","health-card removal"],
+        partners: ["Poison reveals haunted cards repeatedly","Thieves force haunted discards","Necromancers exploit haunted corpses"],
+        example: "When this haunted card is revealed as damage, create a Ghost. If its removal is prevented, increase its Haunt."
+      },
+      {
+        family: "Spiders",
+        mechanic: "Web Links",
+        object: "Relationships between objects",
+        premise: "Create a persistent link between two dice, cards, statuses, combatants, or damage sources. Events on one can pull on the other.",
+        hooks: ["object linked","die rerolled","status cleansed","damage prevented","card exhausted"],
+        partners: ["Curse forces linked dice into danger together","Poison transfers across linked statuses","Haunted cards endanger their linked objects"],
+        example: "Reroll one webbed die and its partner must reroll. Cleanse a webbed status and move one stack to its partner."
+      },
+      {
+        family: "Fae & Devils",
+        mechanic: "Bargains and Debt",
+        object: "Persistent obligation counters",
+        premise: "Grant immediate power, then attach a configurable future obligation collected by Income, card draw, energy gain, prevention, or successful abilities.",
+        hooks: ["choice offered","resource gained","income calculated","damage prevented","debt threshold"],
+        partners: ["Resource thieves make repayment harder","Curse can become an alternative payment","Vampires consume Blood Debt"],
+        example: "Gain another offensive roll, but the enemy chooses one of your dice for the next status roll."
+      },
+      {
+        family: "Mimics",
+        mechanic: "Echoed Events",
+        object: "Recorded authoritative events",
+        premise: "Record damage, prevention, status application, card draw, a die result, an ability, or a reaction and replay it at a later checkpoint.",
+        hooks: ["event recorded","segment entered","event echoed","source reconstructed","child consequence queued"],
+        partners: ["Echo Poison without repeating its original setup","Time creatures turn echoes into real repeated actions","Haunted cards react to repeated reveals"],
+        example: "Record the next status-damage event. At the next round opening, repeat its final damage without repeating its dice."
+      },
+      {
+        family: "Vampires",
+        mechanic: "Blood-Marked Health Cards",
+        object: "Card-instance scars",
+        premise: "Mark cards revealed as health. If prevention saves the card, its Blood Mark follows it back into circulation and changes later draws, plays, or discards.",
+        hooks: ["damage-card reveal","damage prevented","card returned","card played","card discarded"],
+        partners: ["Defense saves dangerous marked cards","Poison removes marked cards rapidly","Thieves force marked discards"],
+        example: "Playing a Blood-Marked defense heals the Vampire; discarding it causes Bleed."
+      },
+      {
+        family: "Time Horrors",
+        mechanic: "Action Countdowns",
+        object: "Hook-driven clocks",
+        premise: "Attach a clock to an object or encounter, but advance it through actual game events rather than generic turns.",
+        hooks: ["die rolled","card drawn","damage prevented","reaction closed","status resolved"],
+        partners: ["Poison accelerates roll clocks","Multi-attack enemies accelerate defense clocks","Card-draw creatures accelerate draw clocks"],
+        example: "After six physical dice are rolled, the Hourglass Horror immediately takes another action."
+      },
+      {
+        family: "Predators",
+        mechanic: "Scent and Behavioral Marks",
+        object: "Observed player habits",
+        premise: "Track frequently used dice, abilities, tags, defenses, protected cards, and repeated prevention, then hunt whatever behavior becomes predictable.",
+        hooks: ["die usage counted","ability selected","card protected","source prevented","behavior threshold"],
+        partners: ["Poison forces a Scented cursed die into use","Mimics copy the favorite ability","Thieves target repeatedly protected cards"],
+        example: "After a die is rolled three times in one round, mark it Scented. Every later roll of that die grants Hunt."
+      },
+      {
+        family: "Fungal Colonies",
+        mechanic: "Spreading Overlays",
+        object: "Contagious object state",
+        premise: "Spores attach to dice, cards, statuses, health cards, or abilities and spread when the infected object participates in an event.",
+        hooks: ["object used","die rolled","card drawn","status cleansed","damage-card revealed"],
+        partners: ["Curse and Spores coexist on die faces","Poison creates repeated spread windows","Webs control the direction of infection"],
+        example: "A spored die infects another die when rolled; a spored status spreads one stack when cleansed."
+      },
+      {
+        family: "Cultists",
+        mechanic: "Resonance",
+        object: "Encounter-wide shared meters",
+        premise: "Listen for symbols, tags, damage types, prevention, removed health cards, or repeated actions and convert them into a shared resource.",
+        hooks: ["symbol counted","status resolved","damage prevented","health removed","resonance threshold"],
+        partners: ["Mummies feed Dark Resonance","Poisoners feed Decay Resonance","Necromancers spend Death Resonance"],
+        example: "Every Curse symbol and Poison result adds Decay Resonance. At six, all ongoing effects resolve again."
+      },
+      {
+        family: "Necromancers",
+        mechanic: "Graveyard Ecology",
+        object: "Removed health cards as corpses",
+        premise: "Keep removed health cards relevant as persistent corpse objects that can be consumed, haunted, copied, returned, or converted into enemy abilities.",
+        hooks: ["health-card removed","corpse created","corpse consumed","tag copied","card returned"],
+        partners: ["Damage creatures create the corpse supply","Vampires exploit Blood-Marked corpses","Mimics copy the last dead ability"],
+        example: "Consume an Attack corpse to give the Necromancer’s next damage source that card’s tags."
+      },
+      {
+        family: "Oozes & Rust Monsters",
+        mechanic: "Corrosion",
+        object: "Wear on defensive objects",
+        premise: "Attach Corrosion to defensive abilities, dice, prevention cards, armor statuses, reactions, or resource engines whenever they successfully modify an outcome.",
+        hooks: ["defense resolved","damage prevented","reaction played","corrosion added","object broken"],
+        partners: ["Multi-attack enemies accelerate wear","Curse corrupts defensive dice","Webs spread Corrosion between protections"],
+        example: "Each use improves a shield’s prevention but adds Corrosion; at three Corrosion the shield breaks."
+      },
+      {
+        family: "Doppelgangers",
+        mechanic: "Stolen Tags",
+        object: "Runtime identity overlays",
+        premise: "Add, remove, or copy identity tags on cards, abilities, statuses, and sources so systems that normally cannot see one another become connected.",
+        hooks: ["tag added","tag removed","qualification checked","trigger collected","source finalized"],
+        partners: ["Add Poison so poison triggers discover a new status","Add Curse so mummy effects recognize an ability","Resonance counts the altered identity"],
+        example: "The next defense counts as an Attack and copies the tags of the last revealed health card."
+      },
+      {
+        family: "Sirens",
+        mechanic: "Temptation Marks",
+        object: "Danger-to-power conversions",
+        premise: "Make corrupted objects more valuable so the player voluntarily engages with Curse, Haunt, Corrosion, Poison, or Blood instead of simply avoiding them.",
+        hooks: ["overlay evaluated","ability qualified","card played","status present","risk accepted"],
+        partners: ["Cursed dice gain useful symbols","Haunted cards cost less","Corroded defenses prevent more damage"],
+        example: "The most cursed die gains a Wild symbol, turning repeated rolls into both the player’s best opportunity and greatest danger."
+      },
+      {
+        family: "Mirror Creatures",
+        mechanic: "Reflected Proposals",
+        object: "Uncommitted outcomes",
+        premise: "Copy, redirect, invert, or split effects after they are proposed but before they commit.",
+        hooks: ["source proposed","outcome revealed","reaction opened","proposal transformed","outcome committed"],
+        partners: ["Split damage creates more source hooks","Reflect Poison to create another status roll","Webs determine reflection destinations"],
+        example: "Convert prevented damage into a reflected source, or split one five-damage source into five one-damage sources."
+      }
+    ];
+
+    const reconstruction = [
+      ["First roll",[1,4,6,6,6],[0,2,3],1,"Keep one low face and only two sixes. The extra six exceeds requirement capacity."],
+      ["Second roll",[1,5],[0],2,"One more low face fills the second of three low-face slots."],
+      ["Final conditional roll",[1],[0],3,"The final slot accepts 1, 2, or 3. Face 1 lands, completing the profile and triggering Curse again."]
+    ];
+
+    let activeSegment = "offensive";
+    let activeFilter = "all";
+    let rollStep = 0;
+
+    function esc(value) {
+      return String(value).replace(/[&<>"']/g, function (char) {
+        return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[char];
+      });
+    }
+
+    function die(face, cursed, kept) {
+      return '<span class="die' + (cursed ? ' is-cursed' : '') + (kept ? ' is-kept' : '') + '" aria-label="Die showing ' + face + (cursed ? ', cursed' : '') + (kept ? ', kept' : '') + '"><strong>' + face + '</strong>' + (cursed ? '<span class="curse-mark" aria-hidden="true">⌁</span>' : '') + '</span>';
+    }
+
+    function renderSegments() {
+      document.getElementById("segment-tabs").innerHTML = segments.map(function (item) {
+        return '<button role="tab" data-segment="' + item[0] + '" aria-selected="' + (item[0] === activeSegment) + '"><span>' + item[1] + '</span>' + esc(item[2]) + '</button>';
+      }).join("");
+      const segment = segments.find(function (item) { return item[0] === activeSegment; });
+      document.getElementById("segment-panel").innerHTML =
+        '<div class="segment-title"><div><span>' + segment[1] + ' / Round sequence</span><h3>' + esc(segment[2]) + '</h3><p>' + esc(segment[3]) + '</p></div>' +
+        '<div class="live-specimens"><span>Live specimens</span>' + segment[6].map(function (item) { return '<b>' + esc(item) + '</b>'; }).join("") + '</div></div>' +
+        '<p class="segment-description">' + esc(segment[4]) + '</p>' +
+        '<ol class="step-line">' + segment[5].map(function (step, index) { return '<li><span>' + (index + 1) + '</span><b>' + esc(step) + '</b></li>'; }).join("") + '</ol>' +
+        '<div class="opening"><span>High-value opening</span><p>' + esc(segment[7]) + '</p></div>';
+      document.querySelectorAll("[data-segment]").forEach(function (button) {
+        button.addEventListener("click", function () { activeSegment = button.dataset.segment; renderSegments(); });
+      });
+    }
+
+    function renderHooks() {
+      document.getElementById("hook-list").innerHTML = hooks.map(function (hook) {
+        return '<article class="hook-card" data-state="' + hook[3] + '" data-search="' + esc([hook[1],hook[2],hook[5]].concat(hook[4],hook[6]).join(" ").toLowerCase()) + '">' +
+          '<div class="hook-index"><span>' + hook[0] + '</span><b>' + hook[2] + '</b></div>' +
+          '<div class="hook-copy"><div class="hook-title"><h3>' + esc(hook[1]) + '</h3><span class="state-pill state-' + hook[3] + '">' + states[hook[3]].label + '</span></div>' +
+          '<p>' + esc(hook[5]) + '</p><div class="tag-row">' + hook[4].map(function (tag) { return '<span>' + esc(tag) + '</span>'; }).join("") + '</div></div>' +
+          '<ul>' + hook[6].map(function (example) { return '<li>' + esc(example) + '</li>'; }).join("") + '</ul></article>';
+      }).join("");
+      applyHookFilters();
+    }
+
+    function applyHookFilters() {
+      const query = document.getElementById("hook-search").value.trim().toLowerCase();
+      let visible = 0;
+      document.querySelectorAll(".hook-card").forEach(function (card) {
+        const match = (activeFilter === "all" || card.dataset.state === activeFilter) && (!query || card.dataset.search.includes(query));
+        card.hidden = !match;
+        if (match) visible += 1;
+      });
+      document.getElementById("result-count").textContent = "Showing " + visible + " of " + hooks.length + " recorded checkpoints";
+      document.getElementById("empty-state").hidden = visible !== 0;
+    }
+
+    function renderReconstruction() {
+      const step = reconstruction[rollStep];
+      document.getElementById("roll-step-label").textContent = "Roll " + (rollStep + 1) + " of 3";
+      document.getElementById("previous-roll").disabled = rollStep === 0;
+      document.getElementById("next-roll").disabled = rollStep === 2;
+      document.getElementById("current-roll-label").textContent = step[0];
+      document.getElementById("current-roll-dice").innerHTML = step[1].map(function (face, index) { return die(face, face === 1, step[2].includes(index)); }).join("");
+      document.getElementById("current-roll-note").textContent = step[4];
+      const kept = reconstruction.slice(0, rollStep + 1).flatMap(function (item) { return item[1].filter(function (_, index) { return item[2].includes(index); }); });
+      document.getElementById("kept-pool").innerHTML = kept.map(function (face) { return die(face, face === 1, true); }).join("");
+      document.getElementById("curse-points").innerHTML = [1,2,3].map(function (point) { return '<i class="' + (point <= step[3] ? 'filled' : '') + '">⌁</i>'; }).join("");
+      document.getElementById("curse-count").textContent = step[3] + " / 3";
+    }
+
+    function renderSynergies() {
+      document.getElementById("synergy-grid").innerHTML = synergies.map(function (item, index) {
+        return '<details' + (index === 0 ? ' open' : '') + '><summary><span>' + String(index + 1).padStart(2,"0") + '</span><div><h3>' + esc(item[0]) + '</h3><p>' + item[1].map(esc).join(" · ") + '</p></div><b aria-hidden="true">+</b></summary>' +
+          '<div class="synergy-body"><p>' + esc(item[2]) + '</p><div>' + item[1].map(function (tag) { return '<span>' + esc(tag) + '</span>'; }).join("") + '</div></div></details>';
+      }).join("");
+    }
+
+    function renderTypeSystem() {
+      document.getElementById("type-grid").innerHTML = combatTypes.map(function (type, index) {
+        return '<article class="type-card type-' + type[0].toLowerCase() + '">' +
+          '<div><span>' + String(index + 1).padStart(2,"0") + '</span><b>' + type[0] + '</b></div>' +
+          '<h3>' + esc(type[1]) + '</h3><p>' + esc(type[2]) + '</p>' +
+          '<small>Signature mechanic</small><strong>' + esc(type[3]) + '</strong></article>';
+      }).join("");
+      document.getElementById("fortune-type-grid").innerHTML = fortunePairings.map(function (pairing) {
+        return '<article><span>' + esc(pairing[0]) + '</span><p>' + esc(pairing[1]) + '</p></article>';
+      }).join("");
+    }
+
+    function renderCreatureIdeas() {
+      document.getElementById("creature-grid").innerHTML = creatureIdeas.map(function (idea, index) {
+        return '<details' + (index === 0 ? ' open' : '') + '>' +
+          '<summary><span>' + String(index + 1).padStart(2,"0") + '</span><div><small>' + esc(idea.family) + '</small><h3>' + esc(idea.mechanic) + '</h3><p>' + esc(idea.object) + '</p></div><b aria-hidden="true">+</b></summary>' +
+          '<div class="creature-body"><p class="creature-premise">' + esc(idea.premise) + '</p>' +
+          '<div class="creature-columns"><div><span>Hooks touched</span><ul>' + idea.hooks.map(function (hook) { return '<li><code>' + esc(hook) + '</code></li>'; }).join("") + '</ul></div>' +
+          '<div><span>Mixing patterns</span><ul>' + idea.partners.map(function (partner) { return '<li>' + esc(partner) + '</li>'; }).join("") + '</ul></div></div>' +
+          '<blockquote>' + esc(idea.example) + '</blockquote></div></details>';
+      }).join("");
+    }
+
+    document.getElementById("hook-search").addEventListener("input", applyHookFilters);
+    document.querySelectorAll("[data-filter]").forEach(function (button) {
+      button.addEventListener("click", function () {
+        activeFilter = button.dataset.filter;
+        document.querySelectorAll("[data-filter]").forEach(function (item) { item.classList.toggle("active", item === button); });
+        applyHookFilters();
+      });
+    });
+    document.getElementById("previous-roll").addEventListener("click", function () { rollStep = Math.max(0, rollStep - 1); renderReconstruction(); });
+    document.getElementById("next-roll").addEventListener("click", function () { rollStep = Math.min(2, rollStep + 1); renderReconstruction(); });
+
+    renderSegments();
+    renderHooks();
+    renderReconstruction();
+    renderSynergies();
+    renderTypeSystem();
+    renderCreatureIdeas();
+  </script>
+</body>
+</html>

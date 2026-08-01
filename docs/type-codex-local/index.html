@@ -1,0 +1,453 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="The local-only Dice & Destiny combat type codex and Curse design template.">
+  <title>Dice & Destiny · Type Codex</title>
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="site-shell">
+    <a class="skip-link" href="#main">Skip to type codex</a>
+    <header class="masthead" id="top">
+      <div class="masthead-runes" aria-hidden="true">TYPE / IDENTITY / ENGINE / ABILITY / CARD</div>
+      <div class="local-notice">Local-only archive</div>
+      <div class="masthead-inner">
+        <div class="eyebrow">Dice &amp; Destiny · Bestiary Systems Archive</div>
+        <h1>Combat Type<br><em>Codex</em></h1>
+        <p class="hero-deck">Sixteen mechanical affinities, each designed to own a recognizable hook pattern. Curse is the first complete working template for the larger type archive.</p>
+        <div class="hero-actions">
+          <a class="primary-action" href="#curse">Open the Curse dossier</a>
+          <a class="secondary-action" href="#curse" data-open-subtab="engine">Study the Curse engine</a>
+        </div>
+        <dl class="hero-ledger">
+          <div><dt>Core types</dt><dd>16</dd></div>
+          <div><dt>Curse abilities</dt><dd>06</dd></div>
+          <div><dt>Draft Curse cards</dt><dd>24</dd></div>
+        </dl>
+      </div>
+      <div class="seal" aria-hidden="true"><span>TYPE</span><strong>XVI</strong><span>CODEX</span></div>
+    </header>
+
+    <div class="page-grid">
+      <aside class="archive-nav" aria-label="Combat type navigation">
+        <p class="archive-label">Type index</p>
+        <nav class="type-tabs" id="type-tabs" aria-label="Combat types" role="tablist">
+          <a href="#flame" data-type="flame" role="tab"><span>01</span>Flame</a>
+          <a href="#tide" data-type="tide" role="tab"><span>02</span>Tide</a>
+          <a href="#storm" data-type="storm" role="tab"><span>03</span>Storm</a>
+          <a href="#frost" data-type="frost" role="tab"><span>04</span>Frost</a>
+          <a href="#stone" data-type="stone" role="tab"><span>05</span>Stone</a>
+          <a href="#verdant" data-type="verdant" role="tab"><span>06</span>Verdant</a>
+          <a href="#venom" data-type="venom" role="tab"><span>07</span>Venom</a>
+          <a href="#blood" data-type="blood" role="tab"><span>08</span>Blood</a>
+          <a href="#beast" data-type="beast" role="tab"><span>09</span>Beast</a>
+          <a href="#swarm" data-type="swarm" role="tab"><span>10</span>Swarm</a>
+          <a href="#construct" data-type="construct" role="tab"><span>11</span>Construct</a>
+          <a href="#grave" data-type="grave" role="tab"><span>12</span>Grave</a>
+          <a href="#arcane" data-type="arcane" role="tab"><span>13</span>Arcane</a>
+          <a href="#curse" data-type="curse" role="tab"><span>14</span>Curse</a>
+          <a href="#radiant" data-type="radiant" role="tab"><span>15</span>Radiant</a>
+          <a href="#fortune" data-type="fortune" role="tab"><span>16</span>Fortune</a>
+        </nav>
+        <div class="legend">
+          <p class="archive-label">Dossier marks</p>
+          <div><span class="state-pill state-live">Working template</span><small>Full identity, engine, abilities, cards, and counterplay</small></div>
+          <div><span class="state-pill state-gap">Awaiting design</span><small>Identity recorded; complete mechanical dossier comes later</small></div>
+        </div>
+        <a class="back-top" href="#top">↑ Return to lantern</a>
+      </aside>
+
+      <main id="main">
+      <section class="section placeholder-panel" id="placeholder-panel" hidden>
+        <span class="section-label" id="placeholder-number">Type</span>
+        <h2 id="placeholder-name">Type name</h2>
+        <p class="lead" id="placeholder-description"></p>
+        <div class="empty-template">
+          <span>Template awaiting design</span>
+          <h3>This type has its identity, but not its full mechanical dossier yet.</h3>
+          <p>Future work will add a signature resource or status, application rules, six abilities, a 20–30 card pool, counters, type pairings, and engine safeguards.</p>
+          <div>
+            <code>overview</code><code>core engine</code><code>abilities</code><code>cards</code><code>counterplay</code>
+          </div>
+        </div>
+      </section>
+
+      <section class="section type-panel curse-panel" id="curse-panel">
+        <div class="type-heading">
+          <div>
+            <span class="section-label">Type XIV · Working template</span>
+            <h2>Curse</h2>
+            <p class="lead">Overwhelm physical dice with persistent negative face overlays, then use ordinary offense, defense, statuses, and forced rolls to make that corruption matter.</p>
+          </div>
+          <div class="curse-specimen" aria-label="Example die with three cursed faces">
+            <span class="die-face cursed">1<small>⌁</small></span>
+            <span class="die-face">2</span>
+            <span class="die-face cursed">3<small>⌁</small></span>
+            <span class="die-face">4</span>
+            <span class="die-face cursed">5<small>⌁</small></span>
+            <span class="die-face">6</span>
+          </div>
+        </div>
+
+        <nav class="subtabs" aria-label="Curse design sections" role="tablist">
+          <button data-subtab="overview" role="tab">Overview</button>
+          <button data-subtab="engine" role="tab">Curse engine</button>
+          <button data-subtab="resolution" role="tab">Count &amp; manifestations</button>
+          <button data-subtab="abilities" role="tab">Six abilities</button>
+          <button data-subtab="cards" role="tab">Card pool</button>
+          <button data-subtab="counterplay" role="tab">Counterplay</button>
+        </nav>
+
+        <div class="subpanel" data-subpanel="overview">
+          <div class="section-intro">
+            <span class="section-label">Identity doctrine</span>
+            <h3>Corruption that travels with the die</h3>
+            <p>Curse is persistent battle state attached to a physical die face. It does not disappear after activation and does not have default charges, weak or strong variants, or an automatic duration.</p>
+          </div>
+          <div class="pillar-grid">
+            <article><span>01</span><h4>Persistent faces</h4><p>A cursed face remains cursed for the battle until an explicit effect removes or moves it.</p></article>
+            <article><span>02</span><h4>Every physical roll</h4><p>Offense, rerolls, defense, Poison, cards, and application rolls all resolve face overlays.</p></article>
+            <article><span>03</span><h4>Uncapped status stacks</h4><p>Each trigger adds a Curse Count status stack to the afflicted combatant. The status has no stack limit and manifests during Ongoing Effects.</p></article>
+            <article><span>04</span><h4>Seed face 1, then deepen</h4><p>The first Curse always begins on face 1. Further corruption requires risky rolls and increasingly uncertain expansion.</p></article>
+            <article><span>05</span><h4>Random by default</h4><p>Ordinary applications do not let the Curse controller concentrate perfectly on one die.</p></article>
+            <article><span>06</span><h4>Shared hooks</h4><p>Curse becomes stronger when another type creates more rolls, subset selection, or die manipulation.</p></article>
+          </div>
+          <div class="doctrine-callout">
+            <strong>The core loop</strong>
+            <p>Seed face 1 on clean dice → physically roll cursed dice → accumulate uncapped Curse Count status stacks on the combatant → manifest during Ongoing Effects → expand faces or force more rolls → pressure resources and future decisions.</p>
+          </div>
+          <div class="rule-columns">
+            <div>
+              <span class="section-label">What counts</span>
+              <ul><li>Initial offensive rolls</li><li>Voluntary and forced rerolls</li><li>Defensive dice</li><li>Status rolls such as Poison</li><li>Card-created physical rolls</li><li>Lesser and Advanced Expand rolls</li></ul>
+            </div>
+            <div>
+              <span class="section-label">What does not count</span>
+              <ul><li>Copied die results</li><li>Replayed final outcomes</li><li>Face changes without a roll</li><li>Echoes unless they explicitly roll a die</li><li>Qualification checks that merely inspect dice</li></ul>
+            </div>
+          </div>
+        </div>
+
+        <div class="subpanel" data-subpanel="engine" hidden>
+          <div class="section-intro">
+            <span class="section-label">Application resolver</span>
+            <h3>Seed, Lesser Expand, Advanced Expand</h3>
+            <p>Every Curse application follows the least concentrated legal path unless a stronger effect explicitly overrides targeting or expansion quality.</p>
+          </div>
+          <div class="resolver-track">
+            <article>
+              <span>1</span><div><small>Clean dice remain</small><h4>Seed Curse</h4><p>Randomly select a clean die and place Curse directly on face 1. Baseline Seed does not roll the die. Face 1 is the default because lower-valued faces are generally less valuable, so the first infection begins as a lighter corruption.</p></div>
+            </article>
+            <article>
+              <span>2</span><div><small>Every die has Curse</small><h4>Lesser Expand</h4><p>Randomly select a cursed die with an uncursed face and roll it. Curse the result only if that face is currently clean. A cursed result adds one Curse Count status stack to the afflicted combatant but no new face.</p></div>
+            </article>
+            <article>
+              <span>3</span><div><small>Explicit advanced effect</small><h4>Advanced Expand</h4><p>Roll a cursed die, resolve its result, then choose one legal uncursed face adjacent to the result and curse it. A roll of 3 can target face 2 or face 4, never both. Advanced Expand adds at most one new cursed face.</p></div>
+            </article>
+            <article>
+              <span>4</span><div><small>Every face saturated</small><h4>Curse Surge</h4><p>Additional applications become forced physical rolls of random fully cursed dice, applying Curse Count status stacks instead of adding overlays.</p></div>
+            </article>
+          </div>
+          <div class="comparison-grid">
+            <article><span class="method-tag">Lesser Expand</span><h4>Die has Curse on face 1</h4><p><b>Roll 1:</b> add one Curse Count status stack, no expansion.</p><p><b>Roll 4:</b> curse face 4.</p><p><b>Maximum growth:</b> one face.</p></article>
+            <article><span class="method-tag advanced">Advanced Expand</span><h4>Die has Curse on faces 1 and 3</h4><p><b>Roll 3:</b> add one Curse Count status stack; choose face 2 or face 4 and curse that one face.</p><p><b>Roll 4:</b> face 3 is occupied, so face 5 is the only legal adjacent choice.</p><p><b>Maximum growth:</b> one chosen adjacent face.</p></article>
+          </div>
+          <div class="priority-box">
+            <span class="section-label">Seed-first priority</span>
+            <ol>
+              <li>For each granted application, recalculate legal dice.</li>
+              <li>If a clean die exists, randomly select one and Seed Curse directly onto its face 1.</li>
+              <li>Otherwise, randomly Lesser Expand an eligible cursed die.</li>
+              <li>Advanced Expand is never automatic; content must explicitly grant it. It provides adjacent-face targeting, not two-face growth.</li>
+              <li>Greater abilities may choose a die, override the default face-1 placement, choose between random candidates, or target the most/least cursed die.</li>
+            </ol>
+          </div>
+        </div>
+
+        <div class="subpanel" data-subpanel="resolution" hidden>
+          <div class="section-intro">
+            <span class="section-label">Ongoing Effects checkpoint</span>
+            <h3>Curse Count is an uncapped combatant status</h3>
+            <p>Every cursed physical result immediately applies one Curse Count status stack to the afflicted combatant. The status is attached to that combatant—not to the die that generated it—and its consequences wait until a dedicated Curse Resolution window during Ongoing Effects.</p>
+          </div>
+          <div class="status-banner"><strong>Status rule · No limit</strong><p>Most stackable statuses have a maximum stack limit. Curse Count is an explicit exception: it has no stack limit. Every valid application adds another status stack regardless of how many Curse Count stacks the afflicted combatant already has.</p></div>
+          <div class="timeline">
+            <div><span>01</span><b>Collect ongoing effects</b></div>
+            <div><span>02</span><b>Resolve Poison and other status rolls</b></div>
+            <div><span>03</span><b>Apply Curse Count status stacks from all overlays</b></div>
+            <div><span>04</span><b>Open Curse Resolution reactions</b></div>
+            <div><span>05</span><b>Spend or replace status stacks</b></div>
+            <div><span>06</span><b>Convert remaining groups</b></div>
+            <div><span>07</span><b>Reveal combined status damage</b></div>
+          </div>
+          <div class="default-rule">
+            <span>Default manifestation</span>
+            <h4>Every three remaining Curse Count status stacks produce one Curse damage.</h4>
+            <p>Remove three stacks from the status per damage and preserve any remainder on the afflicted combatant. Three stacks produce one damage; four produce one damage with one stack remaining; six produce two damage.</p>
+          </div>
+          <div class="manifestation-classes">
+            <article><h4>Spend</h4><p>Remove Curse Count status stacks before default damage to force rolls, Entomb dice, expand Curse, or empower the Curse creature.</p></article>
+            <article><h4>Replace</h4><p>Convert groups into another consequence—reduced rolls, weakened defense, delayed Income loss, or expansion—instead of damage.</p></article>
+            <article><h4>Observe</h4><p>Check the status stack total without removing it. Observer effects should be smaller because those same stacks can still become damage.</p></article>
+          </div>
+          <div class="manifestation-grid">
+            <article><span>01</span><h4>Spreading Hex</h4><p>Replace one Curse damage with a Lesser Expand attempt.</p></article>
+            <article><span>02</span><h4>Violent Bloom</h4><p>Spend a larger threshold to perform one Advanced Expand.</p></article>
+            <article><span>03</span><h4>Compelled Misfortune</h4><p>Remove Curse Count status stacks to physically roll the target’s most cursed die.</p></article>
+            <article><span>04</span><h4>Entombed Fate</h4><p>Remove Curse Count status stacks to bind a cursed die into future legal rolls.</p></article>
+            <article><span>05</span><h4>Withered Intent</h4><p>Replace damage with reduced maximum Offensive rolls next turn.</p></article>
+            <article><span>06</span><h4>Broken Guard</h4><p>Replace damage with weaker prevention or attacker-controlled defensive selection.</p></article>
+            <article><span>07</span><h4>Black Tax</h4><p>Prepare an Energy or card penalty for the next Income segment.</p></article>
+            <article><span>08</span><h4>Blind Fate</h4><p>Observe a high Curse Count status total and apply Blind to the next offensive ability.</p></article>
+            <article><span>09</span><h4>Curse Conduit</h4><p>Move Curse Count status stacks between combatants or consolidate them onto a linked target.</p></article>
+            <article><span>10</span><h4>Stored Calamity</h4><p>Delay conversion and preserve status stacks for a more dangerous future threshold.</p></article>
+            <article><span>11</span><h4>Curse Harvest</h4><p>Remove Curse Count status stacks to gain Energy, cards, healing, or upgraded abilities.</p></article>
+            <article><span>12</span><h4>Misfortune’s Choice</h4><p>Let the target choose between damage and a different long-term consequence.</p></article>
+          </div>
+        </div>
+
+        <div class="subpanel" data-subpanel="abilities" hidden>
+          <div class="section-intro">
+            <span class="section-label">Signature kit</span>
+            <h3>Four offensive and two defensive abilities</h3>
+            <p>Damage-focused abilities apply modest corruption; dedicated Curse abilities sacrifice immediate damage for rapid spreading, forced rolls, or future control.</p>
+          </div>
+          <div class="ability-grid">
+            <article class="ability-card">
+              <div><span>Offensive · I</span><b>Hybrid damage</b></div><h4>Hexbrand</h4>
+              <table><tr><th>3 Skulls</th><td>3 damage + 1 Curse application</td></tr><tr><th>4 Skulls</th><td>4 damage + 2 sequential applications</td></tr><tr><th>5 Skulls</th><td>5 damage + 3 sequential applications</td></tr></table>
+              <p>Each application uses Seed-first priority: clean dice receive Curse on face 1, then applications become random Lesser Expand once every die has Curse.</p>
+            </article>
+            <article class="ability-card">
+              <div><span>Offensive · II</span><b>Control</b></div><h4>Grasp of the Sarcophagus</h4>
+              <p>Entomb one cursed die. Until it physically rolls Curse, it must join every legal roll, cannot be kept on a clean result, and receives priority in subset rolls such as Poison or defense.</p>
+            </article>
+            <article class="ability-card">
+              <div><span>Offensive · III</span><b>Manifestation</b></div><h4>Funeral Rattle</h4>
+              <p>Force the target to physically roll selected cursed dice. Every Curse result applies one Curse Count status stack to that target; the final stack total may weaken defense, apply Blind, or feed the next Ongoing manifestation.</p>
+            </article>
+            <article class="ability-card">
+              <div><span>Offensive · IV</span><b>Pool saturation</b></div><h4>Eclipse of the Black Star</h4>
+              <p>Choose one face number and place Curse on that face of every clean target die. It does not force an immediate roll; it removes clean-die safety from future random offense, defense, card, and status selection.</p>
+            </article>
+            <article class="ability-card defensive">
+              <div><span>Defensive · I</span><b>Corruptive defense</b></div><h4>Hexward Rebuttal</h4>
+              <p>When attacked, apply one Seed-first Curse application to the attacker. A randomly selected clean die receives Curse on face 1 without a roll; if every die is already seeded, roll a random eligible die and Lesser Expand instead. Any existing Curse rolled during expansion applies a Curse Count status stack normally.</p>
+            </article>
+            <article class="ability-card defensive">
+              <div><span>Defensive · II</span><b>Retaliation</b></div><h4>Misfortune Repaid</h4>
+              <p>Reduce part of a finalized incoming source, then apply Curse pressure to a die that helped qualify it. Higher tiers may choose the die, Entomb it, or protect the new Curse from immediate cleansing.</p>
+            </article>
+          </div>
+          <div class="balance-lanes">
+            <article><span>Damage-focused</span><p>Normal damage with zero or one resistible Curse application.</p></article>
+            <article><span>Hybrid</span><p>Moderate damage with two or three randomly targeted applications.</p></article>
+            <article><span>Corruption-focused</span><p>Little damage with many applications, Advanced Expand, or targeting control.</p></article>
+            <article><span>Manifestation-focused</span><p>Little damage and little new Curse; cash in setup through Curse Count status stacks, forced rolls, and Entombment.</p></article>
+          </div>
+        </div>
+
+        <div class="subpanel" data-subpanel="cards" hidden>
+          <div class="section-intro">
+            <span class="section-label">Draft foundational pool</span>
+            <h3>Twenty-four standalone Curse cards</h3>
+            <p>Every card in the foundational pool must function with Curse alone. Pair-specific cards belong to a separate Fusion pool so they never become dead draws in single-type decks.</p>
+          </div>
+          <div class="card-groups">
+            <section>
+              <header><span>01</span><div><h4>Placement &amp; growth</h4><p>Seed clean dice and deepen established corruption.</p></div></header>
+              <div class="card-list">
+                <article><b>Mark the Number</b><small>Action</small><p>Grant one ordinary Curse application: randomly seed face 1 on a clean die, or use random Lesser Expand if every die is seeded.</p></article>
+                <article><b>Black Fingerprint</b><small>Damage reaction</small><p>After dealing 1–6 damage, curse the matching face on a clean die. Damage above six has no legal D6 face.</p></article>
+                <article><b>Shared Misfortune</b><small>Action</small><p>Place the same numbered Curse face on up to two clean dice; unused applications become Lesser Expand.</p></article>
+                <article><b>Widen the Crack</b><small>Advanced action</small><p>Perform Advanced Expand: roll one cursed die, then choose and curse one legal adjacent face. If both adjacent faces are legal, select either one; never curse both.</p></article>
+                <article><b>Rotten Numeral</b><small>Ritual</small><p>Choose one number and seed that face across multiple clean dice, explicitly overriding the normal face-1 placement.</p></article>
+                <article><b>Malediction’s Refusal</b><small>Cleanse reaction</small><p>When another effect attempts to cleanse a cursed die, roll it first; a cursed result cancels the cleanse.</p></article>
+              </div>
+            </section>
+            <section>
+              <header><span>02</span><div><h4>Roll pressure</h4><p>Turn existing overlays into additional physical risk.</p></div></header>
+              <div class="card-list">
+                <article><b>Unquiet Hands</b><small>Action</small><p>Force one cursed die to physically reroll, creating another opportunity to apply a Curse Count status stack.</p></article>
+                <article><b>No Safe Keep</b><small>Reaction</small><p>Release a kept cursed die, reroll it, and revalidate the selected ability.</p></article>
+                <article><b>Chosen Instrument</b><small>Ongoing</small><p>The next random subset roll must select the chosen cursed die first.</p></article>
+                <article><b>Call the Mark</b><small>Face reaction</small><p>Modify a revealed die onto one of its cursed faces. This is not a physical roll.</p></article>
+                <article><b>Tomb’s Choice</b><small>Action</small><p>The target chooses between physically rolling its most cursed die or accepting the card’s Curse Count status stacks.</p></article>
+                <article><b>Second Knell</b><small>Reaction</small><p>After Curse is rolled, reroll that die once; both physical results remain in history.</p></article>
+              </div>
+            </section>
+            <section>
+              <header><span>03</span><div><h4>Count status &amp; manifestations</h4><p>Alter what the afflicted combatant’s accumulated Curse Count status stacks become during Ongoing Effects.</p></div></header>
+              <div class="card-list">
+                <article><b>Three Knocks</b><small>Ongoing</small><p>Enhance the next three-stack Curse Count threshold with an additional consequence.</p></article>
+                <article><b>Grave Interest</b><small>Ongoing</small><p>Preserve unresolved Curse Count status stacks and prepare a future Income penalty.</p></article>
+                <article><b>Curse-Eater</b><small>Action</small><p>Remove Curse Count status stacks to increase an ability tier, draw, gain Energy, or heal.</p></article>
+                <article><b>Black Dividend</b><small>Ongoing</small><p>The first enemy Curse result each round provides a small resource.</p></article>
+                <article><b>Curse Bloom</b><small>Resolution reaction</small><p>After Curse damage manifests, perform a Lesser Expand attempt.</p></article>
+                <article><b>Ruin Made Flesh</b><small>Finisher</small><p>Remove Curse Count status stacks to increase damage, apply Blind, reduce rolls, or Entomb a die.</p></article>
+                <article><b>Black Tax</b><small>Replacement</small><p>Replace Curse damage with reduced card or Energy Income next round.</p></article>
+                <article><b>Stored Calamity</b><small>Ritual</small><p>Delay conversion and preserve Curse Count status stacks for a larger future threshold.</p></article>
+                <article><b>Misfortune’s Choice</b><small>Resolution choice</small><p>Offer damage or an alternate consequence such as expansion, resource loss, or Blind.</p></article>
+              </div>
+            </section>
+            <section>
+              <header><span>04</span><div><h4>Defense &amp; reactions</h4><p>Make attacking a Curse character progressively more dangerous.</p></div></header>
+              <div class="card-list">
+                <article><b>Spiteful Ward</b><small>Defensive reaction</small><p>Prevent part of a source and apply pressure to one qualifying attacker die.</p></article>
+                <article><b>Hexward Retort</b><small>Defensive reaction</small><p>Randomly seed face 1 on a clean attacker die. If every attacker die is seeded, roll a random eligible die and Lesser Expand.</p></article>
+                <article><b>Blind Omen</b><small>Reveal reaction</small><p>After an enemy ability finalizes, use its current Curse Count status stack total to prepare a late Blind check.</p></article>
+              </div>
+            </section>
+          </div>
+          <div class="fusion-box">
+            <span class="section-label">Separate Fusion pool</span>
+            <h4>Pair-specific cards do not consume foundational Curse slots.</h4>
+            <p>Tainted Gift, Venomous Omen, Widow’s Knot, Frozen Malediction, Hexplate, and Not Yet are held for Fortune/Curse, Venom/Curse, Swarm/Curse, Frost/Curse, Construct/Curse, and Grave/Curse pairing pools.</p>
+          </div>
+        </div>
+
+        <div class="subpanel" data-subpanel="counterplay" hidden>
+          <div class="section-intro">
+            <span class="section-label">Future resistance design</span>
+            <h3>Counterplay is intentionally external for now</h3>
+            <p>Curse currently has no universal built-in resistance, Resolve resource, or automatic cleansing action. Other types, cards, abilities, relics, or later system work may provide those tools.</p>
+          </div>
+          <div class="status-banner"><strong>Not a base rule</strong><p>The following Purge Roll is a preserved design idea for counter-Curse content. Characters cannot perform it automatically unless an effect grants it.</p></div>
+          <div class="purge-layout">
+            <article>
+              <span class="section-label">Candidate Purge Roll</span>
+              <h4>The corruption helps reveal itself</h4>
+              <ol>
+                <li>An ability or card grants a Purge Roll.</li>
+                <li>Choose one cursed physical die.</li>
+                <li>Physically roll that die and resolve its overlays.</li>
+                <li>If the rolled face is cursed, remove Curse from that face.</li>
+                <li>If the rolled face is clean, the purge does nothing.</li>
+              </ol>
+              <p>A lightly cursed die takes longer to purify because finding its single corrupted face is difficult. A heavily cursed die fights back more reliably because almost any result identifies removable corruption.</p>
+            </article>
+            <div class="chance-table">
+              <div><span>Cursed faces</span><b>Purge success</b></div>
+              <div><span>1</span><b>1 in 6</b></div><div><span>2</span><b>2 in 6</b></div>
+              <div><span>3</span><b>3 in 6</b></div><div><span>4</span><b>4 in 6</b></div>
+              <div><span>5</span><b>5 in 6</b></div><div><span>6</span><b>Guaranteed</b></div>
+            </div>
+          </div>
+          <div class="counter-grid">
+            <article><span>Radiant</span><p>Could grant repeated Purge Rolls, direct cleansing, or Curse-to-Fortune conversion.</p></article>
+            <article><span>Tide</span><p>Could move Curse between dice or reroll failed Purge attempts.</p></article>
+            <article><span>Fortune</span><p>Could spend Favor to improve selection or trigger both Fortune and cleansing from one face.</p></article>
+            <article><span>Stone</span><p>Could resist initial applications but have weaker restoration after Curse establishes itself.</p></article>
+            <article><span>Verdant</span><p>Could gain slow recurring Purge Rolls that lose to rapid saturation if ignored.</p></article>
+            <article><span>Construct</span><p>Could spend Energy or repair components to remove overlays from engineered dice.</p></article>
+          </div>
+          <div class="doctrine-callout blood">
+            <strong>Why no universal resistance yet?</strong>
+            <p>Leaving resistance outside the base Curse rules lets the Curse type push meaningful volume. Counterplay then becomes deckbuilding, type selection, card timing, and resource management rather than a free automatic reduction attached to every target.</p>
+          </div>
+        </div>
+      </section>
+        <footer>
+          <div><span class="eyebrow">Dice &amp; Destiny</span><p>Combat Type Codex · local working design record</p></div>
+          <a href="#top">Return to lantern ↑</a>
+        </footer>
+      </main>
+    </div>
+  </div>
+
+  <script>
+    const typeData = {
+      flame: ["01","Flame","Burn, escalating damage, consuming statuses, igniting revealed cards, and punishing delayed resolution."],
+      tide: ["02","Tide","Cleansing, redirection, moving counters, replacing outcomes, and shifting cards or statuses between targets."],
+      storm: ["03","Storm","Energy manipulation, chained targets, additional rolls, repeated triggers, and unstable high-output attacks."],
+      frost: ["04","Frost","Locking dice and cards, reducing maximum rolls, delaying statuses, and preventing objects from being reused."],
+      stone: ["05","Stone","Armor, prevention, damage scaling, fortification, weight, Fracture, and resistance to manipulation."],
+      verdant: ["06","Verdant","Growth, regeneration, stacking effects, Spores, transformation, and spreading persistent overlays."],
+      venom: ["07","Venom","Poison, repeated status rolls, delayed consequences, infection, and stack conversion."],
+      blood: ["08","Blood","Health-card manipulation, sacrifice, lifesteal, Bleed, Blood Marks, and exchanging health for power."],
+      beast: ["09","Beast","Hunt, Scent, behavioral tracking, forced targets, repeated attacks, and bonuses against predictable actions."],
+      swarm: ["10","Swarm","Numerous small sources, Web links, spreading effects, overwhelming reactions, and entity-count thresholds."],
+      construct: ["11","Construct","Persistent parts, programmed triggers, Corrosion, assembly, repair, and physical-object modification."],
+      grave: ["12","Grave","Undead creatures, haunted cards, corpses, removed health cards, resurrection, and death triggers."],
+      arcane: ["13","Arcane","Runtime tags, Echoes, copied events, time, mirrors, transformation, and revalidation."],
+      curse: ["14","Curse","Persistent negative die-face overlays, forced rolls, an uncapped Curse Count status, expansion, and deferred manifestations."],
+      radiant: ["15","Radiant","Cleanse, wards, restoration, protection, exposing hidden effects, and removing corruption."],
+      fortune: ["16","Fortune","Temporary beneficial die symbols, Favor, Boons, Jackpot thresholds, and rewarding risky rerolls."]
+    };
+
+    const typeTabs = Array.from(document.querySelectorAll("[data-type]"));
+    const cursePanel = document.getElementById("curse-panel");
+    const placeholderPanel = document.getElementById("placeholder-panel");
+    const subtabButtons = Array.from(document.querySelectorAll("[data-subtab]"));
+    const subpanels = Array.from(document.querySelectorAll("[data-subpanel]"));
+    let currentSubtab = "overview";
+
+    function validType(value) {
+      return Object.prototype.hasOwnProperty.call(typeData, value);
+    }
+
+    function showType(type) {
+      const selected = validType(type) ? type : "curse";
+      typeTabs.forEach(function (tab) {
+        const active = tab.dataset.type === selected;
+        tab.setAttribute("aria-selected", String(active));
+        tab.classList.toggle("active", active);
+      });
+      if (selected === "curse") {
+        cursePanel.hidden = false;
+        placeholderPanel.hidden = true;
+        showSubtab(currentSubtab);
+      } else {
+        const data = typeData[selected];
+        cursePanel.hidden = true;
+        placeholderPanel.hidden = false;
+        document.getElementById("placeholder-number").textContent = "Type " + data[0];
+        document.getElementById("placeholder-name").textContent = data[1];
+        document.getElementById("placeholder-description").textContent = data[2];
+      }
+    }
+
+    function showSubtab(name) {
+      currentSubtab = name;
+      subtabButtons.forEach(function (button) {
+        const active = button.dataset.subtab === name;
+        button.setAttribute("aria-selected", String(active));
+        button.classList.toggle("active", active);
+      });
+      subpanels.forEach(function (panel) {
+        panel.hidden = panel.dataset.subpanel !== name;
+      });
+    }
+
+    subtabButtons.forEach(function (button) {
+      button.addEventListener("click", function () {
+        showSubtab(button.dataset.subtab);
+        document.querySelector(".type-heading").scrollIntoView({behavior: "smooth", block: "start"});
+      });
+    });
+
+    document.querySelectorAll("[data-open-subtab]").forEach(function (link) {
+      link.addEventListener("click", function (event) {
+        event.preventDefault();
+        history.replaceState(null, "", "#curse");
+        showType("curse");
+        showSubtab(link.dataset.openSubtab);
+        document.querySelector(".type-heading").scrollIntoView({behavior: "smooth", block: "start"});
+      });
+    });
+
+    window.addEventListener("hashchange", function () {
+      showType(window.location.hash.slice(1));
+    });
+
+    const initialType = window.location.hash.slice(1);
+    if (!validType(initialType)) {
+      history.replaceState(null, "", "#curse");
+    }
+    showType(validType(initialType) ? initialType : "curse");
+  </script>
+</body>
+</html>
