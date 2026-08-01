@@ -11,6 +11,7 @@ import (
 type Battle struct {
 	ID                 string
 	Status             BattleStatus
+	WinnerActorID      string
 	EscapeRequested    bool
 	Segment            segment.State
 	Flow               SegmentFlowState
@@ -169,9 +170,10 @@ const (
 type ControllerType string
 
 const (
-	ControllerHuman  ControllerType = "human"
-	ControllerAI     ControllerType = "ai"
-	ControllerSystem ControllerType = "system"
+	ControllerHuman    ControllerType = "human"
+	ControllerExternal ControllerType = "external"
+	ControllerAI       ControllerType = "ai"
+	ControllerSystem   ControllerType = "system"
 )
 
 type ActorProgressStatus string
@@ -429,11 +431,17 @@ func NewSegmentFlowState(current segment.State) SegmentFlowState {
 
 func IsValidControllerType(controller ControllerType) bool {
 	switch controller {
-	case ControllerHuman, ControllerAI, ControllerSystem:
+	case ControllerHuman, ControllerExternal, ControllerAI, ControllerSystem:
 		return true
 	default:
 		return false
 	}
+}
+
+// IsExternalController reports whether decisions are supplied through the
+// authority boundary rather than selected automatically by the engine.
+func IsExternalController(controller ControllerType) bool {
+	return controller == ControllerHuman || controller == ControllerExternal
 }
 
 func IsValidActorProgressStatus(status ActorProgressStatus) bool {

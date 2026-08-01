@@ -3,6 +3,7 @@ package engine
 import (
 	"errors"
 	"fmt"
+	"sort"
 
 	"diceanddestiny/server/internal/battle/event"
 	battlerandom "diceanddestiny/server/internal/battle/random"
@@ -351,6 +352,7 @@ func evaluateBattleCompletion(battle *state.Battle) ([]event.Event, error) {
 	}
 
 	humanCount := 0
+	var externalIDs []string
 	playerDefeated := false
 	enemyCount := 0
 	enemiesDefeated := 0
@@ -370,6 +372,8 @@ func evaluateBattleCompletion(battle *state.Battle) ([]event.Event, error) {
 			if actor.DefeatState == state.ActorDefeated {
 				enemiesDefeated++
 			}
+		case state.ControllerExternal:
+			externalIDs = append(externalIDs, actorID)
 		}
 	}
 	if battle.EscapeRequested {
@@ -377,7 +381,26 @@ func evaluateBattleCompletion(battle *state.Battle) ([]event.Event, error) {
 		return []event.Event{event.NewBattleCompleted(battle.Status)}, nil
 	}
 	if humanCount != 1 {
-		return nil, fmt.Errorf("battle completion requires exactly one human player, got %d", humanCount)
+		if len(externalIDs) < 2 {
+			return nil, fmt.Errorf("battle completion requires exactly one human player or at least two external seats, got %d human and %d external", humanCount, len(externalIDs))
+		}
+		sort.Strings(externalIDs)
+		var alive []string
+		for _, actorID := range externalIDs {
+			if battle.Actors[actorID].DefeatState != state.ActorDefeated {
+				alive = append(alive, actorID)
+			}
+		}
+		switch len(alive) {
+		case 0:
+			battle.Status = state.BattleDraw
+		case 1:
+			battle.Status = state.BattleVictory
+			battle.WinnerActorID = alive[0]
+		default:
+			return nil, nil
+		}
+		return []event.Event{event.NewBattleCompleted(battle.Status)}, nil
 	}
 
 	allEnemiesDefeated := enemyCount > 0 && enemiesDefeated == enemyCount
@@ -471,8 +494,8 @@ func validateWaitingState(battle *state.Battle) error {
 			continue
 		}
 		actor, ok := battle.Actors[actorID]
-		if !ok || actor.Controller != state.ControllerHuman {
-			return fmt.Errorf("actor %q needs input but is not human-controlled", actorID)
+		if !ok || !state.IsExternalController(actor.Controller) {
+			return fmt.Errorf("actor %q needs input but is not externally controlled", actorID)
 		}
 		if _, ok := battle.Flow.PendingInput[actorID]; !ok {
 			return fmt.Errorf("actor %q needs input without pending input", actorID)
@@ -484,8 +507,8 @@ func validateWaitingState(battle *state.Battle) error {
 		if !ok {
 			return fmt.Errorf("pending input actor %q is not in battle", actorID)
 		}
-		if actor.Controller != state.ControllerHuman {
-			return fmt.Errorf("pending input actor %q is not human-controlled", actorID)
+		if !state.IsExternalController(actor.Controller) {
+			return fmt.Errorf("pending input actor %q is not externally controlled", actorID)
 		}
 		progress, ok := battle.Flow.Actors[actorID]
 		if !ok || progress.Status != state.ActorNeedsInput {

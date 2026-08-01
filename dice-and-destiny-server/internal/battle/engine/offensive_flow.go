@@ -103,7 +103,7 @@ func (flow SharedPlanningFlow) OnEnter(ctx *Context) ([]event.Event, error) {
 	window := resolution.Windows[resolution.ActiveWindowID]
 	var events []event.Event
 	for _, actorID := range window.RequiredActors {
-		if battle.Actors[actorID].Controller != state.ControllerHuman {
+		if !state.IsExternalController(battle.Actors[actorID].Controller) {
 			continue
 		}
 		plan := resolution.Planning.Actors[actorID]

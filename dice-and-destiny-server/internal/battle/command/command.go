@@ -45,10 +45,10 @@ var (
 )
 
 type Command struct {
-	BattleID string
-	ActorID  string
-	Type     Type
-	Payload  json.RawMessage
+	BattleID string          `json:"battle_id"`
+	ActorID  string          `json:"actor_id"`
+	Type     Type            `json:"type"`
+	Payload  json.RawMessage `json:"payload"`
 }
 
 type envelope struct {
@@ -72,6 +72,8 @@ type ParticipantDescriptor struct {
 type StartBattlePayload struct {
 	Player  ParticipantDescriptor   `json:"player"`
 	Enemies []ParticipantDescriptor `json:"enemies"`
+	Seats   []ParticipantDescriptor `json:"seats,omitempty"`
+	Seed    *uint64                 `json:"seed,omitempty"`
 }
 
 type OpenBattlePayload struct{}

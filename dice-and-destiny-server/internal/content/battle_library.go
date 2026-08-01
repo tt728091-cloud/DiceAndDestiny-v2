@@ -65,9 +65,10 @@ type ReactionWindowDefinition struct {
 }
 
 type TargetingDefinition struct {
-	Selector string `yaml:"selector" json:"selector"`
-	Minimum  int    `yaml:"minimum" json:"minimum"`
-	Maximum  int    `yaml:"maximum" json:"maximum"`
+	Selector     string `yaml:"selector" json:"selector"`
+	Minimum      int    `yaml:"minimum" json:"minimum"`
+	Maximum      int    `yaml:"maximum" json:"maximum"`
+	RequiredFace int    `yaml:"required_face,omitempty" json:"required_face,omitempty"`
 }
 
 type PlayTiming struct {
@@ -621,6 +622,12 @@ func validateTargeting(targeting *TargetingDefinition) error {
 	}
 	if targeting.Minimum < 0 || targeting.Maximum < targeting.Minimum || targeting.Maximum < 1 {
 		return fmt.Errorf("selector %q has invalid minimum/maximum", targeting.Selector)
+	}
+	if targeting.RequiredFace < 0 {
+		return fmt.Errorf("selector %q has invalid required face", targeting.Selector)
+	}
+	if targeting.RequiredFace > 0 && targeting.Selector != "selected_die" {
+		return fmt.Errorf("selector %q cannot require a die face", targeting.Selector)
 	}
 	return nil
 }

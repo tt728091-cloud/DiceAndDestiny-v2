@@ -274,7 +274,7 @@ func (e Engine) executeEffect(battle *state.Battle, library content.BattleLibrar
 				if op.ReactionWindow != nil && op.ReactionWindow.Opens {
 					result.Reactable = true
 				}
-				if ctx.DeferHumanRoll && battle.Actors[rollActorID].Controller == state.ControllerHuman {
+				if ctx.DeferHumanRoll && state.IsExternalController(battle.Actors[rollActorID].Controller) {
 					result.Rolls = append(result.Rolls, roll)
 					continue
 				}

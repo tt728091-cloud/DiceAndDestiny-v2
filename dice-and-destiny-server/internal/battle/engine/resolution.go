@@ -221,7 +221,7 @@ func (e Engine) collectWindow(
 		}
 		actor := ctx.Battle.Actors[actorID]
 		switch actor.Controller {
-		case state.ControllerHuman:
+		case state.ControllerHuman, state.ControllerExternal:
 			ensureWindowPendingInput(ctx.Battle, resolution, window, actorID)
 		case state.ControllerAI, state.ControllerSystem:
 			commitment, err := e.interactionAI.Commit(ctx, window, actorID)
@@ -607,8 +607,8 @@ func (e Engine) handleInteractionCommand(
 	if !ok {
 		return nil, fmt.Errorf("actor %q is not in battle", cmd.ActorID)
 	}
-	if actor.Controller != state.ControllerHuman {
-		return nil, fmt.Errorf("actor %q is not human-controlled", cmd.ActorID)
+	if !state.IsExternalController(actor.Controller) {
+		return nil, fmt.Errorf("actor %q is not human-controlled or external", cmd.ActorID)
 	}
 	pending, ok := battle.Flow.PendingInput[cmd.ActorID]
 	if !ok {

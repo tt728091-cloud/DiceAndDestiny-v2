@@ -11,12 +11,22 @@ type SettledRuntime struct {
 	Stage             string
 	Window            *SettledWindow
 	Actors            map[string]SettledActorRuntime
+	PlanningPublic    map[string]SettledPlanningPublicState
 	OffensiveSources  []SettledDamageSource
 	DefenseSelections map[string]SettledDefense
 	PendingDamage     *SettledDamageBatch
 	TriggerBatch      *SettledTriggerBatch
 	PendingBlind      *SettledBlindResolution
 	Sequence          int
+}
+
+type SettledPlanningPublicState struct {
+	EnergyPoints     int
+	HandCount        int
+	DeckCount        int
+	DiscardCount     int
+	RemovedCount     int
+	AbilityModifiers []RuntimeAbilityModifier
 }
 
 type SettledActorRuntime struct {
@@ -36,6 +46,7 @@ type SettledActorRuntime struct {
 	SelectedTierID      string
 	SelectedTargetIDs   []string
 	SelectedSourceID    string
+	PlanningCommitted   bool
 	AID100              int
 	AISimulatedRolls    int
 	AbilityModifiers    []RuntimeAbilityModifier
@@ -61,16 +72,19 @@ type RuntimeAbilityModifier struct {
 }
 
 type SettledWindow struct {
-	ID              string
-	PendingInputID  string
-	Purpose         string
-	Stage           string
-	ReactionRound   int
-	RequiredActorID string
-	AllowedCommands []command.Type
-	Passes          map[string]bool
-	ResponsePlayed  bool
-	SourceID        string
+	ID               string
+	PendingInputID   string
+	Purpose          string
+	Stage            string
+	ReactionRound    int
+	RequiredActorID  string
+	RequiredActorIDs []string
+	PriorityActorIDs []string
+	PriorityIndex    int
+	AllowedCommands  []command.Type
+	Passes           map[string]bool
+	ResponsePlayed   bool
+	SourceID         string
 }
 
 type SettledDamageSource struct {
@@ -172,6 +186,11 @@ func cloneSettledRuntime(value *SettledRuntime) *SettledRuntime {
 	for id, actor := range value.Actors {
 		cloned.Actors[id] = cloneSettledActor(actor)
 	}
+	cloned.PlanningPublic = make(map[string]SettledPlanningPublicState, len(value.PlanningPublic))
+	for actorID, public := range value.PlanningPublic {
+		public.AbilityModifiers = append([]RuntimeAbilityModifier(nil), public.AbilityModifiers...)
+		cloned.PlanningPublic[actorID] = public
+	}
 	cloned.OffensiveSources = append([]SettledDamageSource(nil), value.OffensiveSources...)
 	for i := range cloned.OffensiveSources {
 		cloned.OffensiveSources[i].StatusApplications = append([]SettledStatusApplication(nil), value.OffensiveSources[i].StatusApplications...)
@@ -183,6 +202,8 @@ func cloneSettledRuntime(value *SettledRuntime) *SettledRuntime {
 	if value.Window != nil {
 		window := *value.Window
 		window.AllowedCommands = append([]command.Type(nil), value.Window.AllowedCommands...)
+		window.RequiredActorIDs = copyStrings(value.Window.RequiredActorIDs)
+		window.PriorityActorIDs = copyStrings(value.Window.PriorityActorIDs)
 		window.Passes = copyBoolMap(value.Window.Passes)
 		cloned.Window = &window
 	}

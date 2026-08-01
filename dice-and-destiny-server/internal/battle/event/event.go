@@ -363,6 +363,7 @@ func eventForViewer(source Event, viewerActorID string) Event {
 		filtered.RollsRemaining = nil
 		filtered.Combinations = nil
 		filtered.SymbolCounts = nil
+		filtered.Data = nil
 	}
 	if source.PrivateActorID != "" && source.PrivateActorID != viewerActorID {
 		filtered.Commitment = nil

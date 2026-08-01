@@ -225,7 +225,7 @@ func (e Engine) collectPlanningWindow(
 		}
 		actor := ctx.Battle.Actors[actorID]
 		switch actor.Controller {
-		case state.ControllerHuman:
+		case state.ControllerHuman, state.ControllerExternal:
 			ensurePlanningPendingInput(ctx.Battle, resolution, window, plan)
 		case state.ControllerAI, state.ControllerSystem:
 			events, err := autoPlanActor(ctx, planning, actorID)
@@ -328,8 +328,8 @@ func (e Engine) handlePlanningCommand(
 	if !ok {
 		return nil, fmt.Errorf("actor %q is not in battle", cmd.ActorID)
 	}
-	if actor.Controller != state.ControllerHuman {
-		return nil, fmt.Errorf("actor %q is not human-controlled", cmd.ActorID)
+	if !state.IsExternalController(actor.Controller) {
+		return nil, fmt.Errorf("actor %q is not human-controlled or external", cmd.ActorID)
 	}
 	plan, ok := resolution.Planning.Actors[cmd.ActorID]
 	if !ok || plan.Participation == state.ActorNotParticipating {

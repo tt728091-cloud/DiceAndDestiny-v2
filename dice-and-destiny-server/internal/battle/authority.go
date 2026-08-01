@@ -160,6 +160,13 @@ func (authority *Authority) startBattle(cmd command.Command) engine.Result {
 	if err != nil {
 		return authorityRejected(err.Error())
 	}
+	if payload.Seed != nil {
+		battleState.Random = state.RandomState{
+			Mode:      state.RandomModeReproducible,
+			Algorithm: state.RandomAlgorithmSHA256,
+			Seed:      *payload.Seed,
+		}
+	}
 	progressed, err := authority.engine.ProgressUntilInput(&battleState)
 	if err != nil {
 		return authorityRejected(err.Error())
@@ -189,6 +196,38 @@ func validateStartBattle(
 ) ([]Participant, error) {
 	if strings.HasPrefix(cmd.BattleID, "scenario-") {
 		return nil, errors.New("start_battle cannot use the reserved scenario battle namespace")
+	}
+	if len(payload.Seats) > 0 {
+		if payload.Player.InstanceID != "" || payload.Player.DefinitionID != "" || len(payload.Enemies) != 0 {
+			return nil, errors.New("external seats cannot be combined with player or enemies")
+		}
+		if len(payload.Seats) != 2 {
+			return nil, errors.New("external battle requires exactly two seats")
+		}
+		participants := make([]Participant, 0, len(payload.Seats))
+		seen := make(map[string]struct{}, len(payload.Seats))
+		for _, seat := range payload.Seats {
+			if seat.InstanceID == "" {
+				return nil, errors.New("seat instance_id is required")
+			}
+			if seat.DefinitionID == "" {
+				return nil, errors.New("seat definition_id is required")
+			}
+			if _, exists := seen[seat.InstanceID]; exists {
+				return nil, fmt.Errorf("duplicate participant instance_id %q", seat.InstanceID)
+			}
+			seen[seat.InstanceID] = struct{}{}
+			participants = append(participants, Participant{
+				InstanceID:   seat.InstanceID,
+				DefinitionID: seat.DefinitionID,
+				Controller:   state.ControllerExternal,
+				Source:       participant.SourceCharacterDefinition,
+			})
+		}
+		if _, ok := seen[cmd.ActorID]; !ok {
+			return nil, errors.New("start_battle actor_id must match an external seat instance_id")
+		}
+		return participants, nil
 	}
 	if payload.Player.InstanceID == "" {
 		return nil, errors.New("player instance_id is required")

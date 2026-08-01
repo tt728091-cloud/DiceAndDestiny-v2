@@ -110,12 +110,16 @@ func assembleSettledParticipants(participants []participant.Participant, library
 	seenDice := map[string]bool{}
 	for _, requested := range participants {
 		definition := library.Combatants[requested.DefinitionID]
-		wantController := state.ControllerHuman
+		defaultController := state.ControllerHuman
 		if definition.ControllerDefaults.Type == "ai" {
-			wantController = state.ControllerAI
+			defaultController = state.ControllerAI
 		}
-		if requested.Controller != wantController {
-			return state.BattleSetup{}, fmt.Errorf("combatant %q controller must be %s", definition.ID, wantController)
+		controller := requested.Controller
+		if controller == "" {
+			controller = defaultController
+		}
+		if controller != state.ControllerExternal && controller != defaultController {
+			return state.BattleSetup{}, fmt.Errorf("combatant %q controller must be %s or external", definition.ID, defaultController)
 		}
 		deck, instances := instantiateSettledDeck(requested.InstanceID, definition.Decklist)
 		statuses := make([]state.StatusState, len(definition.StartingStatuses))
@@ -127,7 +131,7 @@ func assembleSettledParticipants(participants []participant.Participant, library
 			statuses[i] = state.StatusState{InstanceID: instanceID, DefinitionID: status.DefinitionID, Stacks: status.Stacks}
 		}
 		abilities := append(append([]string(nil), definition.AbilityBoard.Offensive...), definition.AbilityBoard.Defensive...)
-		setupResult.Actors = append(setupResult.Actors, state.ActorSetup{ID: requested.InstanceID, DefinitionID: definition.ID, ControllerType: wantController, Character: state.CharacterMetadata{ID: definition.ID, Name: definition.Name, Class: definition.Class}, Resources: state.ResourceState{StartingHandSize: definition.Resources.StartingHandSize, MaxHandSize: definition.Resources.HandLimit, StartingEnergyPoints: definition.Resources.StartingEnergy, EnergyPoints: definition.Resources.StartingEnergy}, Health: state.HealthMetadata{Model: "card_zones", MaxHealth: len(deck)}, Decklist: convertSettledDecklist(definition.Decklist), Deck: deck, DiceLoadout: convertSettledDiceLoadout(definition.DiceLoadout), AbilityIDs: abilities, Statuses: statuses, RollPreferences: state.RollPreferences{StatusEffects: state.RollMode(definition.RollPreferences.StatusEffects), Offensive: state.RollMode(definition.RollPreferences.Offensive)}})
+		setupResult.Actors = append(setupResult.Actors, state.ActorSetup{ID: requested.InstanceID, DefinitionID: definition.ID, ControllerType: controller, Character: state.CharacterMetadata{ID: definition.ID, Name: definition.Name, Class: definition.Class}, Resources: state.ResourceState{StartingHandSize: definition.Resources.StartingHandSize, MaxHandSize: definition.Resources.HandLimit, StartingEnergyPoints: definition.Resources.StartingEnergy, EnergyPoints: definition.Resources.StartingEnergy}, Health: state.HealthMetadata{Model: "card_zones", MaxHealth: len(deck)}, Decklist: convertSettledDecklist(definition.Decklist), Deck: deck, DiceLoadout: convertSettledDiceLoadout(definition.DiceLoadout), AbilityIDs: abilities, Statuses: statuses, RollPreferences: state.RollPreferences{StatusEffects: state.RollMode(definition.RollPreferences.StatusEffects), Offensive: state.RollMode(definition.RollPreferences.Offensive)}})
 		setupResult.SettledActors[requested.InstanceID] = state.SettledActorRuntime{IncomeCards: definition.Income.Cards, IncomeEnergy: definition.Income.Energy, HandLimit: definition.Resources.HandLimit, OffensiveAbilityIDs: append([]string(nil), definition.AbilityBoard.Offensive...), DefensiveAbilityIDs: append([]string(nil), definition.AbilityBoard.Defensive...), CardInstances: instances, MaxRolls: 3, UsedAbilities: map[string]int{}}
 		for _, entry := range definition.DiceLoadout {
 			if seenDice[entry.DiceID] {

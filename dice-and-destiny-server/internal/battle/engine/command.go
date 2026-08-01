@@ -15,6 +15,7 @@ type Result struct {
 	BattleResult state.BattleStatus               `json:"battle_result,omitempty"`
 	Events       []event.Event                    `json:"events,omitempty"`
 	PendingInput map[string]snapshot.PendingInput `json:"pending_input,omitempty"`
+	LegalActions []command.Command                `json:"legal_actions,omitempty"`
 	Snapshot     *snapshot.Battle                 `json:"snapshot,omitempty"`
 	Error        string                           `json:"error,omitempty"`
 	Data         any                              `json:"data,omitempty"`
@@ -134,6 +135,7 @@ func (e Engine) ResultForViewer(
 		Status:       progressed.Status,
 		Events:       event.ForViewer(progressed.Events, viewerActorID),
 		PendingInput: snapshot.PendingInputForViewer(*battle, viewerActorID),
+		LegalActions: e.LegalActions(battle, viewerActorID),
 		Snapshot:     snap,
 	}
 	if state.IsTerminalBattleStatus(battle.Status) {

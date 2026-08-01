@@ -124,8 +124,8 @@ func (e Engine) progressSettledOngoing(battle *state.Battle, library content.Bat
 		if batch == nil {
 			return e.advanceSettledSegment(battle)
 		}
-		if hasPendingHumanEffectRoll(battle, batch) {
-			openSettledWindow(battle, "status-roll", stageOngoingRoll, "required_roll", []command.Type{command.TypeRollDice})
+		if hasPendingExternalEffectRoll(battle, batch) {
+			openSettledWindowForActors(battle, "status-roll", stageOngoingRoll, "required_roll", []command.Type{command.TypeRollDice}, pendingEffectRollActorIDs(battle, batch), true)
 			return []event.Event{settledEvent(event.TypeInteractionWindowOpened, battle, "", map[string]any{"batch_id": batch.ID})}, nil
 		}
 		if len(batch.Rolls) > 0 {
@@ -215,10 +215,9 @@ func matchingStatusInvocations(battle *state.Battle, library content.BattleLibra
 	return result
 }
 
-func hasPendingHumanEffectRoll(battle *state.Battle, batch *state.SettledTriggerBatch) bool {
-	human := humanActorID(battle)
+func hasPendingExternalEffectRoll(battle *state.Battle, batch *state.SettledTriggerBatch) bool {
 	for _, roll := range batch.Rolls {
-		if roll.ActorID == human && !roll.Resolved {
+		if state.IsExternalController(battle.Actors[roll.ActorID].Controller) && !roll.Resolved {
 			return true
 		}
 	}
@@ -336,11 +335,19 @@ func (e Engine) progressSettledOffensive(battle *state.Battle, library content.B
 		battle.Settled.Stage = stageOffensivePlan
 		battle.Flow.Stage = stageOffensivePlan
 		battle.Settled.OffensiveSources = nil
+		battle.Settled.PlanningPublic = make(map[string]state.SettledPlanningPublicState, len(battle.Actors))
 		// Generic Offensive-entry triggers (Entangle) resolve before planning.
 		if err := e.applyOffensiveEntryTriggers(battle, library); err != nil {
 			return nil, err
 		}
 		for _, actorID := range sortedSettledActorIDs(battle) {
+			actor := battle.Actors[actorID]
+			battle.Settled.PlanningPublic[actorID] = state.SettledPlanningPublicState{
+				EnergyPoints: actor.Resources.EnergyPoints,
+				HandCount:    len(actor.Cards.Hand), DeckCount: len(actor.Cards.Deck),
+				DiscardCount: len(actor.Cards.Discard), RemovedCount: len(actor.Cards.Removed),
+				AbilityModifiers: append([]state.RuntimeAbilityModifier(nil), battle.Settled.Actors[actorID].AbilityModifiers...),
+			}
 			runtime := battle.Settled.Actors[actorID]
 			runtime.RollHistory = nil
 			runtime.FinalDice = nil
@@ -352,16 +359,24 @@ func (e Engine) progressSettledOffensive(battle *state.Battle, library content.B
 			runtime.SelectedTargetIDs = nil
 			runtime.MaxRolls = max(1, runtime.MaxRolls)
 			runtime.UsedAbilities = map[string]int{}
+			runtime.PlanningCommitted = false
 			battle.Settled.Actors[actorID] = runtime
 			if battle.Actors[actorID].Controller == state.ControllerAI {
 				if err := e.planSettledAI(battle, library, actorID); err != nil {
 					return nil, err
 				}
+				runtime = battle.Settled.Actors[actorID]
+				runtime.PlanningCommitted = true
+				battle.Settled.Actors[actorID] = runtime
 			}
 		}
-		player := humanActorID(battle)
-		openSettledWindow(battle, "offensive-planning", stageOffensivePlan, "planning", []command.Type{command.TypePlanningCards, command.TypePlanningRoll, command.TypePlanningKeep, command.TypePlanningReroll, command.TypePlanningAbility, command.TypePlanningTargets, command.TypePlanningPass})
-		return []event.Event{event.NewRollRequested(player, segment.Offensive, fmt.Sprintf("roll-r%d-%s", battle.Segment.Round, player), battle.Settled.Window.PendingInputID)}, nil
+		external := externalSettledActorIDs(battle)
+		openSettledWindowForActors(battle, "offensive-planning", stageOffensivePlan, "planning", []command.Type{command.TypePlanningCards, command.TypePlanningRoll, command.TypePlanningKeep, command.TypePlanningReroll, command.TypePlanningAbility, command.TypePlanningTargets, command.TypePlanningPass}, external, true)
+		events := make([]event.Event, 0, len(external))
+		for _, actorID := range external {
+			events = append(events, event.NewRollRequested(actorID, segment.Offensive, fmt.Sprintf("roll-r%d-%s", battle.Segment.Round, actorID), battle.Flow.PendingInput[actorID].ID))
+		}
+		return events, nil
 	}
 	return nil, fmt.Errorf("settled offensive stalled at %q", battle.Settled.Stage)
 }
@@ -443,9 +458,14 @@ func (e Engine) progressSettledDefensive(battle *state.Battle, library content.B
 		battle.Settled.Stage = stageDefenseSelect
 		battle.Flow.Stage = stageDefenseSelect
 		battle.Settled.DefenseSelections = map[string]state.SettledDefense{}
-		human := humanActorID(battle)
-		if hasIncoming(battle, human) {
-			openSettledWindow(battle, "defense-select", stageDefenseSelect, "defense_selection", []command.Type{command.TypePlanningAbility, command.TypePlanningPass})
+		var externalDefenders []string
+		for _, actorID := range externalSettledActorIDs(battle) {
+			if hasIncoming(battle, actorID) {
+				externalDefenders = append(externalDefenders, actorID)
+			}
+		}
+		if len(externalDefenders) > 0 {
+			openSettledWindowForActors(battle, "defense-select", stageDefenseSelect, "defense_selection", []command.Type{command.TypePlanningAbility, command.TypePlanningPass}, externalDefenders, false)
 			return nil, nil
 		}
 		if err := e.selectAIDefenses(battle, library); err != nil {
@@ -517,15 +537,17 @@ func (e Engine) afterDefenseSelections(battle *state.Battle, library content.Bat
 	if err := e.selectAIDefenses(battle, library); err != nil {
 		return nil, err
 	}
-	human := humanActorID(battle)
-	selection, hasHuman := battle.Settled.DefenseSelections[human]
-	if hasHuman {
-		ability := library.Abilities[selection.AbilityID]
-		if defenseRollOperation(ability) != nil {
-			battle.Settled.Stage = stageDefenseRoll
-			openSettledWindow(battle, "defense-roll", stageDefenseRoll, "required_roll", []command.Type{command.TypeRollDice})
-			return nil, nil
+	var rollers []string
+	for _, actorID := range externalSettledActorIDs(battle) {
+		selection, exists := battle.Settled.DefenseSelections[actorID]
+		if exists && defenseRollOperation(library.Abilities[selection.AbilityID]) != nil && selection.RolledFace == 0 {
+			rollers = append(rollers, actorID)
 		}
+	}
+	if len(rollers) > 0 {
+		battle.Settled.Stage = stageDefenseRoll
+		openSettledWindowForActors(battle, "defense-roll", stageDefenseRoll, "required_roll", []command.Type{command.TypeRollDice}, rollers, false)
+		return nil, nil
 	}
 	return e.resolveDefenseRollsAndOpenReaction(battle, library)
 }
@@ -755,13 +777,17 @@ func (e Engine) finishDamageBatch(battle *state.Battle, library content.BattleLi
 		advanced, err := e.advanceSettledSegment(battle)
 		return append(events, advanced...), err
 	}
+	var overLimit []string
 	for actorID, actor := range battle.Actors {
 		limit := battle.Settled.Actors[actorID].HandLimit
-		if len(actor.Cards.Hand) > limit && actor.Controller == state.ControllerHuman {
-			battle.Settled.Stage = stageHandLimit
-			openSettledWindow(battle, "hand-limit", stageHandLimit, "choose_card", []command.Type{command.TypeCommitInteraction})
-			return events, nil
+		if len(actor.Cards.Hand) > limit && state.IsExternalController(actor.Controller) {
+			overLimit = append(overLimit, actorID)
 		}
+	}
+	if len(overLimit) > 0 {
+		battle.Settled.Stage = stageHandLimit
+		openSettledWindowForActors(battle, "hand-limit", stageHandLimit, "choose_card", []command.Type{command.TypeCommitInteraction}, overLimit, false)
+		return events, nil
 	}
 	battle.Settled.PendingDamage = nil
 	battle.Settled.Stage = "complete"
@@ -820,15 +846,12 @@ func (e Engine) handleSettledCommand(battle *state.Battle, cmd command.Command) 
 	if window == nil {
 		return nil, errors.New("no pending human input")
 	}
-	if cmd.ActorID != window.RequiredActorID {
-		return nil, errors.New("actor does not own pending input")
-	}
 	if !containsCommand(window.AllowedCommands, cmd.Type) {
 		return nil, fmt.Errorf("command %q is not allowed", cmd.Type)
 	}
 	pending, ok := battle.Flow.PendingInput[cmd.ActorID]
 	if !ok {
-		return nil, errors.New("pending input is missing")
+		return nil, errors.New("actor does not own pending input")
 	}
 	if err := validateSettledPending(cmd, pending); err != nil {
 		return nil, err
@@ -915,11 +938,15 @@ func (e Engine) handleStatusRollCommand(battle *state.Battle, library content.Ba
 	if len(playerRolls) == 0 {
 		return nil, errors.New("no player status dice are pending")
 	}
-	closeSettledWindow(battle)
-	if hasPendingHumanEffectRoll(battle, batch) {
-		openSettledWindow(battle, "status-roll", stageOngoingRoll, "required_roll", []command.Type{command.TypeRollDice})
+	if hasPendingEffectRollForActor(batch, cmd.ActorID) {
+		rotateSettledPending(battle, cmd.ActorID)
 		return []event.Event{settledEvent(event.TypeDiceRolled, battle, cmd.ActorID, map[string]any{"count": len(playerRolls), "hidden": true})}, nil
 	}
+	closeSettledInputForActor(battle, cmd.ActorID, state.ActorLockedIn)
+	if hasPendingExternalEffectRoll(battle, batch) {
+		return []event.Event{settledEvent(event.TypeDiceRolled, battle, cmd.ActorID, map[string]any{"count": len(playerRolls), "hidden": true})}, nil
+	}
+	closeSettledWindow(battle)
 	events := []event.Event{settledEvent(event.TypeDiceRolled, battle, cmd.ActorID, map[string]any{"rolls": playerRolls})}
 	openStatusEffectReveal(battle, batch.Reactable)
 	events = append(events, settledEvent(event.TypeInteractionWindowOpened, battle, "", map[string]any{"batch_id": batch.ID, "rolls": batch.Rolls}))
@@ -941,7 +968,7 @@ func (e Engine) handleOffensivePlanningCommand(battle *state.Battle, library con
 		if err := e.playSettledCard(battle, library, actorID, payload.CardIDs[0], payload.TargetIDs, payload.AbilityID, payload.DieIndex, payload.StatusID); err != nil {
 			return nil, err
 		}
-		rotateSettledPending(battle)
+		rotateSettledPending(battle, actorID)
 		return []event.Event{settledEvent(event.TypeCardPlayed, battle, actorID, map[string]any{"card_instance_id": payload.CardIDs[0], "targets": payload.TargetIDs, "ability_id": payload.AbilityID})}, nil
 	case command.TypePlanningRoll:
 		if runtime.RollsUsed != 0 {
@@ -957,7 +984,7 @@ func (e Engine) handleOffensivePlanningCommand(battle *state.Battle, library con
 		runtime.RollHistory = append(runtime.RollHistory, state.RollBatch{Number: 1, RolledIndices: allDieIndices(len(dice)), Dice: cloneDice(dice)})
 		runtime.QualifiedAbilityIDs = qualifiedAbilities(library, runtime.OffensiveAbilityIDs, dice, runtime.AbilityModifiers)
 		battle.Settled.Actors[actorID] = runtime
-		rotateSettledPending(battle)
+		rotateSettledPending(battle, actorID)
 		return []event.Event{diceEvent(battle, actorID, runtime, allDieIndices(len(dice)))}, nil
 	case command.TypePlanningKeep:
 		var payload command.PlanningKeepPayload
@@ -972,7 +999,7 @@ func (e Engine) handleOffensivePlanningCommand(battle *state.Battle, library con
 		}
 		runtime.KeptIndices = append([]int(nil), payload.KeptIndices...)
 		battle.Settled.Actors[actorID] = runtime
-		rotateSettledPending(battle)
+		rotateSettledPending(battle, actorID)
 		return nil, nil
 	case command.TypePlanningReroll:
 		var payload command.PlanningRerollPayload
@@ -995,7 +1022,7 @@ func (e Engine) handleOffensivePlanningCommand(battle *state.Battle, library con
 		runtime.RollHistory = append(runtime.RollHistory, state.RollBatch{Number: runtime.RollsUsed, RolledIndices: append([]int(nil), payload.RerollIndices...), Dice: cloneDice(dice), KeptIndices: append([]int(nil), runtime.KeptIndices...)})
 		runtime.QualifiedAbilityIDs = qualifiedAbilities(library, runtime.OffensiveAbilityIDs, dice, runtime.AbilityModifiers)
 		battle.Settled.Actors[actorID] = runtime
-		rotateSettledPending(battle)
+		rotateSettledPending(battle, actorID)
 		return []event.Event{diceEvent(battle, actorID, runtime, payload.RerollIndices)}, nil
 	case command.TypePlanningAbility:
 		var payload command.PlanningAbilityPayload
@@ -1020,9 +1047,9 @@ func (e Engine) handleOffensivePlanningCommand(battle *state.Battle, library con
 		runtime.SelectedTargetIDs = append([]string(nil), payload.TargetIDs...)
 		battle.Settled.Actors[actorID] = runtime
 		if len(payload.TargetIDs) > 0 {
-			return e.finalizeOffensivePlanning(battle, library)
+			return e.finalizeOffensivePlanning(battle, library, actorID)
 		}
-		rotateSettledPending(battle)
+		rotateSettledPending(battle, actorID)
 		return []event.Event{settledEvent(event.TypeAbilitySelected, battle, actorID, map[string]any{"ability_id": payload.AbilityID, "qualified": runtime.QualifiedAbilityIDs})}, nil
 	case command.TypePlanningTargets:
 		var payload command.PlanningTargetsPayload
@@ -1037,18 +1064,27 @@ func (e Engine) handleOffensivePlanningCommand(battle *state.Battle, library con
 		}
 		runtime.SelectedTargetIDs = append([]string(nil), payload.TargetIDs...)
 		battle.Settled.Actors[actorID] = runtime
-		return e.finalizeOffensivePlanning(battle, library)
+		return e.finalizeOffensivePlanning(battle, library, actorID)
 	case command.TypePlanningPass:
 		runtime.SelectedAbilityID = ""
 		runtime.SelectedTargetIDs = nil
 		battle.Settled.Actors[actorID] = runtime
-		return e.finalizeOffensivePlanning(battle, library)
+		return e.finalizeOffensivePlanning(battle, library, actorID)
 	default:
 		return nil, unsupportedCommand()
 	}
 }
 
-func (e Engine) finalizeOffensivePlanning(battle *state.Battle, library content.BattleLibrary) ([]event.Event, error) {
+func (e Engine) finalizeOffensivePlanning(battle *state.Battle, library content.BattleLibrary, actorID string) ([]event.Event, error) {
+	runtime := battle.Settled.Actors[actorID]
+	runtime.PlanningCommitted = true
+	battle.Settled.Actors[actorID] = runtime
+	closeSettledInputForActor(battle, actorID, state.ActorLockedIn)
+	for _, requiredActorID := range battle.Settled.Window.RequiredActorIDs {
+		if !battle.Settled.Actors[requiredActorID].PlanningCommitted {
+			return nil, nil
+		}
+	}
 	closeSettledWindow(battle)
 	battle.Settled.Stage = stageOffensiveReact
 	openSettledWindow(battle, "offensive-reaction", stageOffensiveReact, "reaction", []command.Type{command.TypeCommitInteraction, command.TypePass})
@@ -1067,6 +1103,9 @@ func offensiveRevealEvent(battle *state.Battle, library content.BattleLibrary) e
 
 func (e Engine) handleOffensiveReactionCommand(battle *state.Battle, library content.BattleLibrary, cmd command.Command) ([]event.Event, error) {
 	if cmd.Type == command.TypePass {
+		if advanceSettledReactionPriority(battle, cmd.ActorID, false) {
+			return nil, nil
+		}
 		closeSettledWindow(battle)
 		return e.finalizeOffensiveSources(battle, library)
 	}
@@ -1103,8 +1142,7 @@ func (e Engine) handleOffensiveReactionCommand(battle *state.Battle, library con
 	}
 	runtime.QualifiedAbilityIDs = valid
 	battle.Settled.Actors[adjust.ActorID] = runtime
-	openSettledWindow(battle, "offensive-reaction", stageOffensiveReact, "reaction", []command.Type{command.TypeCommitInteraction, command.TypePass})
-	battle.Settled.Window.ReactionRound = 2
+	advanceSettledReactionPriority(battle, cmd.ActorID, true)
 	return []event.Event{
 		settledEvent(event.TypeCardPlayed, battle, cmd.ActorID, map[string]any{"card_instance_id": payload.Commitment.CardIDs[0], "actor_id": adjust.ActorID, "die_index": adjust.DieIndex, "face": adjust.Face, "old_ability": old, "new_ability": runtime.SelectedAbilityID, "valid_abilities": valid}),
 		offensiveRevealEvent(battle, library),
@@ -1276,12 +1314,14 @@ func (e Engine) handleBlindReactionCommand(battle *state.Battle, library content
 		if err := e.playSettledReactionCard(battle, library, cmd.ActorID, payload.Commitment); err != nil {
 			return nil, err
 		}
-		openSettledWindow(battle, "blind", stageBlindReact, "reaction", []command.Type{command.TypeCommitInteraction, command.TypePass})
-		battle.Settled.Window.ReactionRound++
+		advanceSettledReactionPriority(battle, cmd.ActorID, true)
 		return []event.Event{settledEvent(event.TypeCardPlayed, battle, cmd.ActorID, map[string]any{"card_instance_id": payload.Commitment.CardIDs[0], "blind_face": pending.Face})}, nil
 	}
 	if cmd.Type != command.TypePass {
 		return nil, unsupportedCommand()
+	}
+	if advanceSettledReactionPriority(battle, cmd.ActorID, false) {
+		return nil, nil
 	}
 	definition := library.Statuses[pending.StatusID]
 	for _, trigger := range definition.Triggers {
@@ -1358,6 +1398,9 @@ func (e Engine) playSettledReactionCard(battle *state.Battle, library content.Ba
 
 func (e Engine) handleDefenseReactionCommand(battle *state.Battle, library content.BattleLibrary, cmd command.Command) ([]event.Event, error) {
 	if cmd.Type == command.TypePass {
+		if advanceSettledReactionPriority(battle, cmd.ActorID, false) {
+			return nil, nil
+		}
 		closeSettledWindow(battle)
 		return e.finalizeDefenses(battle, library)
 	}
@@ -1368,13 +1411,15 @@ func (e Engine) handleDefenseReactionCommand(battle *state.Battle, library conte
 	if err := e.playSettledReactionCard(battle, library, cmd.ActorID, payload.Commitment); err != nil {
 		return nil, err
 	}
-	openSettledWindow(battle, "defense-react", stageDefenseReact, "reaction", []command.Type{command.TypeCommitInteraction, command.TypePass})
-	battle.Settled.Window.ReactionRound++
+	advanceSettledReactionPriority(battle, cmd.ActorID, true)
 	return []event.Event{settledEvent(event.TypeCardPlayed, battle, cmd.ActorID, map[string]any{"card_instance_id": payload.Commitment.CardIDs[0], "choice_id": payload.Commitment.ChoiceID})}, nil
 }
 
 func (e Engine) handleStatusReactionCommand(battle *state.Battle, library content.BattleLibrary, cmd command.Command) ([]event.Event, error) {
 	if cmd.Type == command.TypePass {
+		if advanceSettledReactionPriority(battle, cmd.ActorID, false) {
+			return nil, nil
+		}
 		closeSettledWindow(battle)
 		battle.Settled.Stage = stageOngoingCollect
 		return e.finalizeTriggerBatch(battle, library)
@@ -1389,13 +1434,15 @@ func (e Engine) handleStatusReactionCommand(battle *state.Battle, library conten
 	if err := e.playSettledReactionCard(battle, library, cmd.ActorID, payload.Commitment); err != nil {
 		return nil, err
 	}
-	openSettledWindow(battle, "status-roll", stageOngoingReact, "reaction", []command.Type{command.TypeCommitInteraction, command.TypePass})
-	battle.Settled.Window.ReactionRound++
+	advanceSettledReactionPriority(battle, cmd.ActorID, true)
 	return []event.Event{settledEvent(event.TypeCardPlayed, battle, cmd.ActorID, map[string]any{"card_instance_id": payload.Commitment.CardIDs[0], "choice_id": payload.Commitment.ChoiceID})}, nil
 }
 
 func (e Engine) handleDamageReactionCommand(battle *state.Battle, library content.BattleLibrary, cmd command.Command) ([]event.Event, error) {
 	if cmd.Type == command.TypePass {
+		if advanceSettledReactionPriority(battle, cmd.ActorID, false) {
+			return nil, nil
+		}
 		closeSettledWindow(battle)
 		return e.finishDamageBatch(battle, library)
 	}
@@ -1413,13 +1460,15 @@ func (e Engine) handleDamageReactionCommand(battle *state.Battle, library conten
 	if source == nil {
 		return nil, errors.New("damage source was not found")
 	}
-	openSettledWindow(battle, "damage", battle.Settled.Stage, "damage_response", []command.Type{command.TypeCommitInteraction, command.TypePass})
-	battle.Settled.Window.ReactionRound++
+	advanceSettledReactionPriority(battle, cmd.ActorID, true)
 	return []event.Event{settledEvent(event.TypeDamageModified, battle, cmd.ActorID, map[string]any{"source_id": source.ID, "prevention": source.ReactionPrevention})}, nil
 }
 
 func (e Engine) handleDefenseSelectionCommand(battle *state.Battle, library content.BattleLibrary, cmd command.Command) ([]event.Event, error) {
 	if cmd.Type == command.TypePlanningPass {
+		if advanceSettledSequentialChoice(battle, cmd.ActorID) {
+			return nil, nil
+		}
 		closeSettledWindow(battle)
 		return e.afterDefenseSelections(battle, library)
 	}
@@ -1446,6 +1495,9 @@ func (e Engine) handleDefenseSelectionCommand(battle *state.Battle, library cont
 	runtime.UsedAbilities[payload.AbilityID]++
 	battle.Settled.Actors[cmd.ActorID] = runtime
 	battle.Settled.DefenseSelections[cmd.ActorID] = state.SettledDefense{ActorID: cmd.ActorID, AbilityID: payload.AbilityID, SourceID: source.ID}
+	if advanceSettledSequentialChoice(battle, cmd.ActorID) {
+		return nil, nil
+	}
 	closeSettledWindow(battle)
 	return e.afterDefenseSelections(battle, library)
 }
@@ -1465,6 +1517,9 @@ func (e Engine) handleDefenseRollCommand(battle *state.Battle, library content.B
 	}
 	selection.RolledFace = die.Faces[value].Number
 	battle.Settled.DefenseSelections[human] = selection
+	if advanceSettledSequentialChoice(battle, cmd.ActorID) {
+		return []event.Event{{Type: event.TypeDiceRolled, ActorID: human, Segment: segment.Defensive, Pool: state.RollPoolDefensive, SourceType: state.RollSourceAbility, SourceID: selection.AbilityID, Dice: rolledFaces(library, die.ID, []int{selection.RolledFace})}}, nil
+	}
 	closeSettledWindow(battle)
 	events := []event.Event{{Type: event.TypeDiceRolled, ActorID: human, Segment: segment.Defensive, Pool: state.RollPoolDefensive, SourceType: state.RollSourceAbility, SourceID: selection.AbilityID, Dice: rolledFaces(library, die.ID, []int{selection.RolledFace})}}
 	resolved, err := e.resolveDefenseRollsAndOpenReaction(battle, library)
@@ -1491,6 +1546,9 @@ func (e Engine) handleHandLimitCommand(battle *state.Battle, cmd command.Command
 		moveCard(&actor.Cards, id, operation.ZoneHand, operation.ZoneDiscard)
 	}
 	battle.Actors[cmd.ActorID] = actor
+	if advanceSettledSequentialChoice(battle, cmd.ActorID) {
+		return nil, nil
+	}
 	closeSettledWindow(battle)
 	battle.Settled.PendingDamage = nil
 	battle.Settled.Stage = "complete"
@@ -1499,6 +1557,8 @@ func (e Engine) handleHandLimitCommand(battle *state.Battle, cmd command.Command
 
 func validateSettledPending(cmd command.Command, pending state.PendingInput) error {
 	var id string
+	var planning *command.PlanningCheckpoint
+	var interaction *command.InteractionCheckpoint
 	switch cmd.Type {
 	case command.TypePlanningRoll:
 		var p command.PlanningRollPayload
@@ -1506,42 +1566,49 @@ func validateSettledPending(cmd command.Command, pending state.PendingInput) err
 			return err
 		}
 		id = p.PendingInputID
+		planning = &p.Checkpoint
 	case command.TypePlanningKeep:
 		var p command.PlanningKeepPayload
 		if err := command.DecodePayload(cmd, &p); err != nil {
 			return err
 		}
 		id = p.PendingInputID
+		planning = &p.Checkpoint
 	case command.TypePlanningReroll:
 		var p command.PlanningRerollPayload
 		if err := command.DecodePayload(cmd, &p); err != nil {
 			return err
 		}
 		id = p.PendingInputID
+		planning = &p.Checkpoint
 	case command.TypePlanningCards:
 		var p command.PlanningCardsPayload
 		if err := command.DecodePayload(cmd, &p); err != nil {
 			return err
 		}
 		id = p.PendingInputID
+		planning = &p.Checkpoint
 	case command.TypePlanningAbility:
 		var p command.PlanningAbilityPayload
 		if err := command.DecodePayload(cmd, &p); err != nil {
 			return err
 		}
 		id = p.PendingInputID
+		planning = &p.Checkpoint
 	case command.TypePlanningTargets:
 		var p command.PlanningTargetsPayload
 		if err := command.DecodePayload(cmd, &p); err != nil {
 			return err
 		}
 		id = p.PendingInputID
+		planning = &p.Checkpoint
 	case command.TypePlanningPass:
 		var p command.PlanningPassPayload
 		if err := command.DecodePayload(cmd, &p); err != nil {
 			return err
 		}
 		id = p.PendingInputID
+		planning = &p.Checkpoint
 	case command.TypeRollDice:
 		var p command.RollDicePayload
 		if err := command.DecodePayload(cmd, &p); err != nil {
@@ -1554,38 +1621,64 @@ func validateSettledPending(cmd command.Command, pending state.PendingInput) err
 			return err
 		}
 		id = p.PendingInputID
+		interaction = &p.Checkpoint
 	case command.TypePass:
 		var p command.PassPayload
 		if err := command.DecodePayload(cmd, &p); err != nil {
 			return err
 		}
 		id = p.PendingInputID
+		interaction = &p.Checkpoint
 	}
 	if id != pending.ID {
 		return errors.New("stale pending input")
+	}
+	if planning != nil && (planning.WindowID != pending.WindowID || planning.Segment != string(pending.Segment) || planning.Stage != pending.Stage || planning.Iteration != pending.Iteration || planning.PlanningCycle != pending.PlanningCycle) {
+		return errors.New("stale planning checkpoint")
+	}
+	if interaction != nil && (interaction.WindowID != pending.WindowID || interaction.Stage != pending.Stage || interaction.Iteration != pending.Iteration || interaction.ReactionRound != pending.ReactionRound || interaction.PlanningCycle != pending.PlanningCycle) {
+		return errors.New("stale interaction checkpoint")
 	}
 	return nil
 }
 
 func openSettledWindow(battle *state.Battle, prefix, stage, purpose string, allowed []command.Type) {
+	openSettledWindowForActors(battle, prefix, stage, purpose, allowed, externalSettledActorIDs(battle), false)
+}
+
+func openSettledWindowForActors(battle *state.Battle, prefix, stage, purpose string, allowed []command.Type, actorIDs []string, simultaneous bool) {
 	runtime := battle.Settled
 	runtime.Sequence++
-	player := humanActorID(battle)
+	actorIDs = sortedUniqueActorIDs(actorIDs)
 	id := fmt.Sprintf("%s-r%d-%d", prefix, battle.Segment.Round, runtime.Sequence)
-	pendingID := "input-" + id
-	runtime.Window = &state.SettledWindow{ID: id, PendingInputID: pendingID, Purpose: purpose, Stage: stage, ReactionRound: 1, RequiredActorID: player, AllowedCommands: append([]command.Type(nil), allowed...), Passes: map[string]bool{}}
+	priority := reactionPriorityActorIDs(battle, actorIDs)
+	if simultaneous {
+		priority = append([]string(nil), actorIDs...)
+	}
+	runtime.Window = &state.SettledWindow{ID: id, Purpose: purpose, Stage: stage, ReactionRound: 1, RequiredActorIDs: append([]string(nil), actorIDs...), PriorityActorIDs: priority, AllowedCommands: append([]command.Type(nil), allowed...), Passes: map[string]bool{}}
 	runtime.Stage = stage
 	battle.Flow.Stage = stage
 	battle.Flow.Iteration++
 	battle.Flow.Actors = map[string]state.ActorFlowState{}
-	for actorID, actor := range battle.Actors {
+	for actorID := range battle.Actors {
 		status := state.ActorResolvingAutomatic
-		if actor.Controller == state.ControllerHuman {
+		if simultaneous && containsString(actorIDs, actorID) {
 			status = state.ActorNeedsInput
 		}
 		battle.Flow.Actors[actorID] = state.ActorFlowState{Status: status, ReasonCode: purpose}
 	}
-	battle.Flow.PendingInput = map[string]state.PendingInput{player: {ID: pendingID, ActorID: player, Segment: battle.Segment.Current, Phase: state.FlowPhaseInProgress, Stage: stage, Iteration: battle.Flow.Iteration, WindowID: id, ReactionRound: runtime.Window.ReactionRound, PlanningCycle: battle.Segment.Round, InputType: purpose, AllowedCommands: append([]command.Type(nil), allowed...)}}
+	battle.Flow.PendingInput = map[string]state.PendingInput{}
+	if simultaneous {
+		for _, actorID := range actorIDs {
+			addSettledPendingInput(battle, actorID)
+		}
+		runtime.Window.RequiredActorID = ""
+		runtime.Window.PendingInputID = ""
+		return
+	}
+	if len(priority) > 0 {
+		moveSettledWindowToActor(battle, priority[0])
+	}
 }
 func closeSettledWindow(battle *state.Battle) {
 	battle.Settled.Window = nil
@@ -1595,17 +1688,98 @@ func closeSettledWindow(battle *state.Battle) {
 		battle.Flow.Actors[actorID] = flow
 	}
 }
-func rotateSettledPending(battle *state.Battle) {
+
+func closeSettledInputForActor(battle *state.Battle, actorID string, status state.ActorProgressStatus) {
+	delete(battle.Flow.PendingInput, actorID)
+	flow := battle.Flow.Actors[actorID]
+	flow.Status = status
+	battle.Flow.Actors[actorID] = flow
+}
+
+func addSettledPendingInput(battle *state.Battle, actorID string) {
+	window := battle.Settled.Window
+	if window == nil || actorID == "" {
+		return
+	}
+	battle.Settled.Sequence++
+	pendingID := fmt.Sprintf("input-%s-%s-%d", window.ID, actorID, battle.Settled.Sequence)
+	window.RequiredActorID = actorID
+	window.PendingInputID = pendingID
+	battle.Flow.PendingInput[actorID] = state.PendingInput{ID: pendingID, ActorID: actorID, Segment: battle.Segment.Current, Phase: state.FlowPhaseInProgress, Stage: window.Stage, Iteration: battle.Flow.Iteration, WindowID: window.ID, ReactionRound: window.ReactionRound, PlanningCycle: battle.Segment.Round, InputType: window.Purpose, AllowedCommands: append([]command.Type(nil), window.AllowedCommands...)}
+	flow := battle.Flow.Actors[actorID]
+	flow.Status = state.ActorNeedsInput
+	flow.ReasonCode = window.Purpose
+	battle.Flow.Actors[actorID] = flow
+}
+
+func moveSettledWindowToActor(battle *state.Battle, actorID string) {
+	for pendingActorID := range battle.Flow.PendingInput {
+		delete(battle.Flow.PendingInput, pendingActorID)
+		flow := battle.Flow.Actors[pendingActorID]
+		flow.Status = state.ActorResolvingAutomatic
+		battle.Flow.Actors[pendingActorID] = flow
+	}
+	battle.Flow.Iteration++
+	addSettledPendingInput(battle, actorID)
+}
+
+// advanceSettledReactionPriority records a pass or response and moves the
+// deterministic priority cursor. It returns false after every eligible actor
+// has passed consecutively and the reaction round is complete.
+func advanceSettledReactionPriority(battle *state.Battle, actorID string, responsePlayed bool) bool {
+	window := battle.Settled.Window
+	if window == nil || len(window.PriorityActorIDs) == 0 {
+		return false
+	}
+	if responsePlayed {
+		window.Passes = map[string]bool{}
+		window.ResponsePlayed = true
+		window.ReactionRound++
+	} else {
+		window.Passes[actorID] = true
+	}
+	if len(window.Passes) == len(window.PriorityActorIDs) {
+		return false
+	}
+	start := indexString(window.PriorityActorIDs, actorID)
+	for offset := 1; offset <= len(window.PriorityActorIDs); offset++ {
+		nextIndex := (start + offset) % len(window.PriorityActorIDs)
+		next := window.PriorityActorIDs[nextIndex]
+		if !window.Passes[next] {
+			window.PriorityIndex = nextIndex
+			moveSettledWindowToActor(battle, next)
+			return true
+		}
+	}
+	return false
+}
+
+func advanceSettledSequentialChoice(battle *state.Battle, actorID string) bool {
+	window := battle.Settled.Window
+	if window == nil {
+		return false
+	}
+	window.Passes[actorID] = true
+	for _, next := range window.PriorityActorIDs {
+		if !window.Passes[next] {
+			moveSettledWindowToActor(battle, next)
+			return true
+		}
+	}
+	return false
+}
+func rotateSettledPending(battle *state.Battle, actorID string) {
 	window := battle.Settled.Window
 	if window == nil {
 		return
 	}
-	window.PendingInputID = fmt.Sprintf("input-%s-%d", window.ID, battle.Flow.Iteration+1)
-	battle.Flow.Iteration++
-	pending := battle.Flow.PendingInput[window.RequiredActorID]
-	pending.ID = window.PendingInputID
-	pending.Iteration = battle.Flow.Iteration
-	battle.Flow.PendingInput[window.RequiredActorID] = pending
+	battle.Settled.Sequence++
+	pending := battle.Flow.PendingInput[actorID]
+	pending.ID = fmt.Sprintf("input-%s-%s-%d", window.ID, actorID, battle.Settled.Sequence)
+	if actorID == window.RequiredActorID {
+		window.PendingInputID = pending.ID
+	}
+	battle.Flow.PendingInput[actorID] = pending
 }
 
 func (e Engine) rollCombatDice(battle *state.Battle, library content.BattleLibrary, actorID string, indices []int) ([]state.RolledDie, error) {
@@ -1724,11 +1898,22 @@ func validateCardTargets(battle *state.Battle, library content.BattleLibrary, ac
 		if dieIndex < 0 || len(targetIDs) != 1 {
 			return errors.New("card requires one revealed die")
 		}
-		if battle.Settled.Stage != stageBlindReact {
+		face := 0
+		if battle.Settled.Stage == stageBlindReact {
+			pending := battle.Settled.PendingBlind
+			if pending == nil || targetIDs[0] != pending.ActorID || dieIndex != 0 {
+				return errors.New("revealed Blind die target is invalid")
+			}
+			face = pending.Face
+		} else {
 			runtime, ok := battle.Settled.Actors[targetIDs[0]]
 			if !ok || dieIndex >= len(runtime.FinalDice) {
 				return errors.New("revealed die target is invalid")
 			}
+			face = runtime.FinalDice[dieIndex].Face
+		}
+		if !selectedDieFaceEligible(definition.Targeting, face) {
+			return fmt.Errorf("revealed die must show face %d", definition.Targeting.RequiredFace)
 		}
 	case "one_negative_status_on_self":
 		if statusID == "" || library.Statuses[statusID].Polarity != "negative" {
@@ -2169,11 +2354,61 @@ func sortedSettledActorIDs(battle *state.Battle) []string {
 	sort.Strings(ids)
 	return ids
 }
-func humanActorID(battle *state.Battle) string {
-	for _, id := range sortedSettledActorIDs(battle) {
-		if battle.Actors[id].Controller == state.ControllerHuman {
-			return id
+
+func externalSettledActorIDs(battle *state.Battle) []string {
+	var ids []string
+	for _, actorID := range sortedSettledActorIDs(battle) {
+		if state.IsExternalController(battle.Actors[actorID].Controller) {
+			ids = append(ids, actorID)
 		}
+	}
+	return ids
+}
+
+func sortedUniqueActorIDs(values []string) []string {
+	seen := map[string]bool{}
+	var result []string
+	for _, value := range values {
+		if value != "" && !seen[value] {
+			seen[value] = true
+			result = append(result, value)
+		}
+	}
+	sort.Strings(result)
+	return result
+}
+
+func reactionPriorityActorIDs(battle *state.Battle, actorIDs []string) []string {
+	ordered := sortedUniqueActorIDs(actorIDs)
+	if len(ordered) < 2 {
+		return ordered
+	}
+	offset := (battle.Segment.Round - 1) % len(ordered)
+	return append(append([]string(nil), ordered[offset:]...), ordered[:offset]...)
+}
+
+func pendingEffectRollActorIDs(battle *state.Battle, batch *state.SettledTriggerBatch) []string {
+	var result []string
+	for _, roll := range batch.Rolls {
+		if !roll.Resolved && state.IsExternalController(battle.Actors[roll.ActorID].Controller) {
+			result = append(result, roll.ActorID)
+		}
+	}
+	return sortedUniqueActorIDs(result)
+}
+
+func hasPendingEffectRollForActor(batch *state.SettledTriggerBatch, actorID string) bool {
+	for _, roll := range batch.Rolls {
+		if roll.ActorID == actorID && !roll.Resolved {
+			return true
+		}
+	}
+	return false
+}
+
+func humanActorID(battle *state.Battle) string {
+	for _, id := range externalSettledActorIDs(battle) {
+		return id
 	}
 	return ""
 }

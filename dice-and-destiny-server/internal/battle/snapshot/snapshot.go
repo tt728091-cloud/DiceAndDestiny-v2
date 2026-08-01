@@ -13,6 +13,7 @@ import (
 type Battle struct {
 	BattleID           string                          `json:"battle_id"`
 	Status             state.BattleStatus              `json:"status,omitempty"`
+	WinnerActorID      string                          `json:"winner_actor_id,omitempty"`
 	Segment            segment.Segment                 `json:"segment"`
 	Round              int                             `json:"round"`
 	ViewerActorID      string                          `json:"viewer_actor_id,omitempty"`
@@ -25,6 +26,8 @@ type Battle struct {
 	Origin             *state.BattleOrigin             `json:"origin,omitempty"`
 	CompletedRounds    int                             `json:"completed_rounds,omitempty"`
 	Stage              string                          `json:"stage,omitempty"`
+	PriorityActorID    string                          `json:"priority_actor_id,omitempty"`
+	ReactionPriority   []string                        `json:"reaction_priority,omitempty"`
 	SettledSources     []state.SettledDamageSource     `json:"damage_sources,omitempty"`
 	SettledDefenses    map[string]state.SettledDefense `json:"defense_selections,omitempty"`
 	SettledEffectRolls []state.SettledEffectRoll       `json:"effect_rolls,omitempty"`
@@ -244,6 +247,16 @@ func FromBattleForViewer(battle state.Battle, viewerActorID string) Battle {
 			snapshotActor.OffensiveAbilities = copyStrings(runtime.OffensiveAbilityIDs)
 			snapshotActor.DefensiveAbilities = copyStrings(runtime.DefensiveAbilityIDs)
 			snapshotActor.AbilityModifiers = append([]state.RuntimeAbilityModifier(nil), runtime.AbilityModifiers...)
+			if id != viewerActorID && battle.Settled.Stage == "planning" {
+				if public, ok := battle.Settled.PlanningPublic[id]; ok {
+					snapshotActor.EnergyPoints = public.EnergyPoints
+					snapshotActor.HandCount = public.HandCount
+					snapshotActor.DeckCount = public.DeckCount
+					snapshotActor.DiscardCount = public.DiscardCount
+					snapshotActor.RemovedCount = public.RemovedCount
+					snapshotActor.AbilityModifiers = append([]state.RuntimeAbilityModifier(nil), public.AbilityModifiers...)
+				}
+			}
 			if id == viewerActorID {
 				snapshotActor.CardInstances = make(map[string]state.CardInstance, len(runtime.CardInstances))
 				for instanceID, instance := range runtime.CardInstances {
@@ -268,6 +281,7 @@ func FromBattleForViewer(battle state.Battle, viewerActorID string) Battle {
 	result := Battle{
 		BattleID:           battle.ID,
 		Status:             battle.Status,
+		WinnerActorID:      battle.WinnerActorID,
 		Segment:            battle.Segment.Current,
 		Round:              battle.Segment.Round,
 		ViewerActorID:      viewerActorID,
@@ -283,6 +297,10 @@ func FromBattleForViewer(battle state.Battle, viewerActorID string) Battle {
 	if battle.Settled != nil {
 		result.CompletedRounds = battle.Settled.CompletedRounds
 		result.Stage = battle.Settled.Stage
+		if battle.Settled.Window != nil && battle.Settled.Window.RequiredActorID != "" {
+			result.PriorityActorID = battle.Settled.Window.RequiredActorID
+			result.ReactionPriority = copyStrings(battle.Settled.Window.PriorityActorIDs)
+		}
 		result.SettledSources = append([]state.SettledDamageSource(nil), battle.Settled.OffensiveSources...)
 		if battle.Segment.Current == segment.Defensive && battle.Settled.Stage == "defense_reaction" {
 			result.SettledDefenses = make(map[string]state.SettledDefense, len(battle.Settled.DefenseSelections))

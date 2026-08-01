@@ -134,6 +134,35 @@ func TestFromBattleForViewerCopiesVisibleHandCardIDs(t *testing.T) {
 	}
 }
 
+func TestSettledPlanningSnapshotUsesOpponentPublicBaseline(t *testing.T) {
+	battle := state.Battle{
+		ID:      "hidden-planning",
+		Segment: segment.State{Current: segment.Offensive, Round: 1},
+		Actors: map[string]state.ActorState{
+			"seat-a": {Controller: state.ControllerExternal, Resources: state.ResourceState{EnergyPoints: 3}, Cards: state.CardZones{Deck: []string{"d1"}, Hand: []string{"h1", "h2"}, Discard: []string{"x1"}}},
+			"seat-b": {Controller: state.ControllerExternal},
+		},
+		Settled: &state.SettledRuntime{
+			Stage: "planning",
+			Actors: map[string]state.SettledActorRuntime{
+				"seat-a": {AbilityModifiers: []state.RuntimeAbilityModifier{{SourceCardInstanceID: "hidden-card", AbilityID: "sword_cut", BonusID: "hidden-bonus"}}},
+				"seat-b": {},
+			},
+			PlanningPublic: map[string]state.SettledPlanningPublicState{
+				"seat-a": {EnergyPoints: 2, HandCount: 4, DeckCount: 16},
+			},
+		},
+	}
+	opponentView := snapshot.FromBattleForViewer(battle, "seat-b").Actors["seat-a"]
+	if opponentView.EnergyPoints != 2 || opponentView.HandCount != 4 || opponentView.DeckCount != 16 || len(opponentView.AbilityModifiers) != 0 {
+		t.Fatalf("opponent planning baseline leaked: %#v", opponentView)
+	}
+	ownerView := snapshot.FromBattleForViewer(battle, "seat-a").Actors["seat-a"]
+	if ownerView.EnergyPoints != 3 || ownerView.HandCount != 2 || len(ownerView.AbilityModifiers) != 1 {
+		t.Fatalf("owner planning view lost private state: %#v", ownerView)
+	}
+}
+
 func TestBattleSnapshotJSONShape(t *testing.T) {
 	got, err := json.Marshal(snapshot.FromBattleForViewer(battleWithCardVisibilityState(), "player-1"))
 	if err != nil {
