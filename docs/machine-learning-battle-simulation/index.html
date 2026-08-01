@@ -1,0 +1,803 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Dice and Destiny local two-controller battle and machine-learning mirror-match plan.">
+  <title>Dice &amp; Destiny — Battle Intelligence Plan</title>
+  <style>
+    :root {
+      --ink: #132033;
+      --muted: #667085;
+      --navy: #0b2545;
+      --blue: #2f76b7;
+      --blue-soft: #eaf3fb;
+      --amber: #e69d32;
+      --amber-soft: #fff5e5;
+      --mint: #e7f5ef;
+      --mint-ink: #166246;
+      --paper: #fbfaf7;
+      --panel: #ffffff;
+      --line: #dce3eb;
+      --shadow: 0 22px 55px rgba(11, 37, 69, 0.09);
+      --radius: 18px;
+    }
+
+    * { box-sizing: border-box; }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      margin: 0;
+      color: var(--ink);
+      background:
+        linear-gradient(rgba(47, 118, 183, 0.035) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(47, 118, 183, 0.035) 1px, transparent 1px),
+        var(--paper);
+      background-size: 28px 28px;
+      font-family: Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      line-height: 1.62;
+    }
+
+    a { color: var(--blue); text-underline-offset: 3px; }
+    a:hover { color: var(--navy); }
+    button, a { -webkit-tap-highlight-color: transparent; }
+
+    .topbar {
+      position: sticky;
+      top: 0;
+      z-index: 20;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 18px;
+      padding: 12px clamp(18px, 4vw, 54px);
+      color: white;
+      background: rgba(11, 37, 69, 0.96);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid rgba(255,255,255,.14);
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      min-width: max-content;
+      font-weight: 800;
+      letter-spacing: .02em;
+    }
+
+    .brand-mark {
+      display: grid;
+      place-items: center;
+      width: 32px;
+      height: 32px;
+      border-radius: 9px;
+      color: var(--navy);
+      background: var(--amber);
+      box-shadow: inset 0 0 0 2px rgba(255,255,255,.28);
+      font-family: Georgia, serif;
+      font-size: 17px;
+    }
+
+    .view-nav { display: flex; align-items: center; gap: 7px; flex-wrap: wrap; justify-content: flex-end; }
+
+    .view-nav button {
+      appearance: none;
+      border: 1px solid rgba(255,255,255,.2);
+      border-radius: 999px;
+      padding: 8px 13px;
+      color: rgba(255,255,255,.82);
+      background: transparent;
+      font: inherit;
+      font-size: 13px;
+      font-weight: 750;
+      cursor: pointer;
+    }
+
+    .view-nav button:hover,
+    .view-nav button:focus-visible { border-color: white; color: white; outline: none; }
+    .view-nav button[aria-selected="true"] { color: var(--navy); background: white; border-color: white; }
+
+    main { width: min(1180px, calc(100% - 36px)); margin: 0 auto; padding: 52px 0 86px; }
+
+    .hero {
+      position: relative;
+      overflow: hidden;
+      display: grid;
+      grid-template-columns: 1.45fr .75fr;
+      gap: 44px;
+      padding: clamp(30px, 5vw, 62px);
+      color: white;
+      background: var(--navy);
+      border-radius: 28px;
+      box-shadow: var(--shadow);
+    }
+
+    .hero::after {
+      content: "";
+      position: absolute;
+      right: -80px;
+      bottom: -110px;
+      width: 380px;
+      height: 380px;
+      border: 70px solid rgba(255,255,255,.055);
+      border-radius: 50%;
+    }
+
+    .eyebrow {
+      margin: 0 0 14px;
+      color: #a8d6ff;
+      font-size: 12px;
+      font-weight: 850;
+      letter-spacing: .16em;
+      text-transform: uppercase;
+    }
+
+    h1, h2, h3, h4 { margin-top: 0; line-height: 1.18; color: var(--navy); }
+    h1 { max-width: 750px; margin-bottom: 20px; color: white; font-family: Georgia, "Times New Roman", serif; font-size: clamp(40px, 6.2vw, 75px); font-weight: 600; letter-spacing: -.045em; }
+    h2 { margin-bottom: 13px; font-family: Georgia, "Times New Roman", serif; font-size: clamp(28px, 4vw, 42px); font-weight: 600; letter-spacing: -.025em; }
+    h3 { margin-bottom: 9px; font-size: 20px; }
+    h4 { margin-bottom: 7px; font-size: 15px; letter-spacing: .01em; }
+
+    .hero .lede { max-width: 720px; margin: 0; color: rgba(255,255,255,.78); font-size: clamp(17px, 2vw, 21px); }
+
+    .hero-meta {
+      position: relative;
+      z-index: 1;
+      align-self: end;
+      padding: 22px;
+      border: 1px solid rgba(255,255,255,.16);
+      border-radius: 18px;
+      background: rgba(255,255,255,.07);
+    }
+
+    .meta-row { display: flex; justify-content: space-between; gap: 16px; padding: 9px 0; border-bottom: 1px solid rgba(255,255,255,.12); }
+    .meta-row:last-child { border: 0; }
+    .meta-row span { color: rgba(255,255,255,.6); font-size: 12px; text-transform: uppercase; letter-spacing: .07em; }
+    .meta-row strong { text-align: right; font-size: 14px; }
+
+    .status-strip {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+      margin: 18px 0 48px;
+    }
+
+    .status-card {
+      padding: 18px 20px;
+      background: rgba(255,255,255,.92);
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      box-shadow: 0 8px 25px rgba(11,37,69,.04);
+    }
+
+    .status-card small { display: block; margin-bottom: 5px; color: var(--muted); font-size: 11px; font-weight: 850; letter-spacing: .1em; text-transform: uppercase; }
+    .status-card strong { color: var(--navy); }
+    .status-card.ready { border-left: 4px solid #35a875; }
+    .status-card.hold { border-left: 4px solid var(--amber); }
+
+    .view-panel[hidden] { display: none; }
+
+    .section {
+      margin-top: 24px;
+      padding: clamp(24px, 4vw, 44px);
+      background: rgba(255,255,255,.94);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      box-shadow: 0 14px 35px rgba(11,37,69,.045);
+    }
+
+    .section-kicker { margin: 0 0 9px; color: var(--blue); font-size: 12px; font-weight: 900; letter-spacing: .13em; text-transform: uppercase; }
+    .section-intro { max-width: 880px; margin: 0 0 28px; color: var(--muted); font-size: 17px; }
+
+    .phase-grid, .card-grid, .future-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+    .card-grid.three { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+
+    .phase-card, .info-card, .future-card {
+      position: relative;
+      padding: 24px;
+      border: 1px solid var(--line);
+      border-radius: 15px;
+      background: var(--panel);
+    }
+
+    .phase-card { padding-top: 64px; }
+    .phase-number { position: absolute; top: 20px; left: 22px; color: var(--blue); font-family: Georgia, serif; font-size: 30px; line-height: 1; }
+    .phase-card p, .info-card p, .future-card p { margin: 0; color: var(--muted); }
+    .future-card { border-top: 4px solid var(--amber); }
+
+    .tag-row { display: flex; flex-wrap: wrap; gap: 7px; margin-top: 18px; }
+    .tag { display: inline-flex; padding: 5px 9px; border-radius: 999px; color: var(--navy); background: var(--blue-soft); font-size: 12px; font-weight: 800; }
+    .tag.amber { background: var(--amber-soft); }
+    .tag.green { color: var(--mint-ink); background: var(--mint); }
+
+    .callout {
+      margin: 24px 0 0;
+      padding: 17px 20px;
+      color: #263850;
+      background: var(--blue-soft);
+      border-left: 4px solid var(--blue);
+      border-radius: 0 12px 12px 0;
+    }
+
+    .callout.amber { background: var(--amber-soft); border-left-color: var(--amber); }
+    .callout strong { color: var(--navy); }
+
+    .scope-table, .data-table { width: 100%; border-collapse: collapse; margin-top: 22px; font-size: 14px; }
+    .scope-table th, .scope-table td, .data-table th, .data-table td { padding: 14px 15px; text-align: left; vertical-align: top; border-bottom: 1px solid var(--line); }
+    .scope-table th, .data-table th { color: var(--navy); background: #f3f6f9; font-size: 12px; letter-spacing: .045em; text-transform: uppercase; }
+    .scope-table td:first-child, .data-table td:first-child { color: var(--navy); font-weight: 800; }
+    .scope-table tr:last-child td, .data-table tr:last-child td { border-bottom: 0; }
+
+    .timeline { position: relative; display: grid; gap: 0; margin-top: 20px; }
+    .timeline::before { content: ""; position: absolute; top: 10px; bottom: 10px; left: 18px; width: 2px; background: var(--line); }
+    .timeline-item { position: relative; display: grid; grid-template-columns: 38px 1fr; gap: 17px; padding: 0 0 23px; }
+    .timeline-item:last-child { padding-bottom: 0; }
+    .timeline-dot { z-index: 1; display: grid; place-items: center; width: 38px; height: 38px; color: white; background: var(--blue); border: 5px solid white; border-radius: 50%; box-shadow: 0 0 0 1px var(--line); font-weight: 850; font-size: 12px; }
+    .timeline-copy { padding-top: 5px; }
+    .timeline-copy p { margin: 2px 0 0; color: var(--muted); }
+
+    .checklist { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px 22px; margin: 22px 0 0; padding: 0; list-style: none; }
+    .checklist li { position: relative; padding: 10px 12px 10px 40px; background: #f7f9fb; border-radius: 10px; }
+    .checklist li::before { content: ""; position: absolute; left: 14px; top: 15px; width: 13px; height: 13px; border: 2px solid #8ca0b6; border-radius: 3px; background: white; }
+
+    .code-paths { display: grid; gap: 6px; margin-top: 18px; }
+    code, .code-paths a { font-family: "SFMono-Regular", Consolas, monospace; font-size: 12px; }
+    .code-paths a { display: block; overflow-wrap: anywhere; padding: 8px 11px; color: #3d526b; background: #f4f6f8; border-radius: 8px; text-decoration: none; }
+    .code-paths a:hover { color: var(--navy); background: var(--blue-soft); }
+
+    .metric {
+      display: grid;
+      grid-template-columns: 94px 1fr;
+      gap: 14px;
+      padding: 14px 0;
+      border-bottom: 1px solid var(--line);
+    }
+    .metric:last-child { border-bottom: 0; }
+    .metric strong { color: var(--blue); font-size: 13px; }
+    .metric p { margin: 0; color: var(--muted); }
+
+    .decision-list { counter-reset: decisions; display: grid; gap: 12px; margin: 20px 0 0; padding: 0; list-style: none; }
+    .decision-list li { counter-increment: decisions; position: relative; padding: 17px 18px 17px 54px; background: white; border: 1px solid var(--line); border-radius: 12px; }
+    .decision-list li::before { content: counter(decisions); position: absolute; left: 16px; top: 15px; display: grid; place-items: center; width: 25px; height: 25px; color: white; background: var(--navy); border-radius: 50%; font-size: 12px; font-weight: 900; }
+
+    .revisit { margin-top: 17px; padding-top: 15px; color: var(--muted); border-top: 1px dashed #cbd5df; font-size: 13px; }
+    .revisit strong { color: var(--amber); text-transform: uppercase; letter-spacing: .05em; }
+
+    .handoff-grid { display: grid; grid-template-columns: .8fr 1.2fr; gap: 18px; }
+    .handoff-panel { padding: 24px; border: 1px solid var(--line); border-radius: 15px; background: #f8fafc; }
+    .handoff-panel h3 { margin-bottom: 14px; }
+    .handoff-panel ul { margin: 0; padding-left: 20px; }
+    .handoff-panel li + li { margin-top: 8px; }
+
+    .prompt-box {
+      position: relative;
+      margin-top: 18px;
+      padding: 24px;
+      color: #eaf3fb;
+      background: #071a31;
+      border-radius: 15px;
+      box-shadow: inset 0 0 0 1px rgba(255,255,255,.1);
+    }
+    .prompt-box pre { margin: 0; padding-right: 95px; white-space: pre-wrap; font: 13px/1.65 "SFMono-Regular", Consolas, monospace; }
+    .copy-button { position: absolute; top: 16px; right: 16px; appearance: none; padding: 7px 11px; color: white; background: rgba(255,255,255,.11); border: 1px solid rgba(255,255,255,.25); border-radius: 8px; font: inherit; font-size: 12px; font-weight: 800; cursor: pointer; }
+    .copy-button:hover, .copy-button:focus-visible { background: rgba(255,255,255,.19); outline: none; }
+
+    .command-list { display: grid; gap: 8px; margin-top: 16px; }
+    .command-list code { display: block; padding: 11px 13px; overflow-x: auto; color: #dcecff; background: var(--navy); border-radius: 8px; }
+
+    .footer-note { margin-top: 42px; padding: 25px; text-align: center; color: var(--muted); font-size: 14px; }
+    .footer-note strong { color: var(--navy); }
+
+    .print-only { display: none; }
+
+    @media (max-width: 820px) {
+      .topbar { position: static; align-items: flex-start; flex-direction: column; }
+      .view-nav { justify-content: flex-start; }
+      main { width: min(100% - 24px, 1180px); padding-top: 18px; }
+      .hero { grid-template-columns: 1fr; gap: 26px; border-radius: 20px; }
+      .hero-meta { max-width: 520px; }
+      .status-strip, .phase-grid, .card-grid, .card-grid.three, .future-grid, .checklist, .handoff-grid { grid-template-columns: 1fr; }
+      .section { padding: 23px 18px; }
+      .table-wrap { overflow-x: auto; margin-inline: -18px; padding-inline: 18px; }
+      .scope-table, .data-table { min-width: 700px; }
+    }
+
+    @media print {
+      body { background: white; color: black; font-size: 10.5pt; }
+      .topbar { display: none; }
+      main { width: 100%; padding: 0; }
+      .hero { color: black; background: white; box-shadow: none; border: 2px solid #0b2545; break-after: page; }
+      .hero h1, .hero .lede, .hero-meta, .hero-meta span, .hero-meta strong { color: black; }
+      .hero::after { display: none; }
+      .status-strip { margin-bottom: 18px; }
+      .view-panel[hidden] { display: block; }
+      .section { box-shadow: none; break-inside: avoid; }
+      .future-card, .phase-card, .info-card, tr { break-inside: avoid; }
+      .print-only { display: block; }
+      a { color: black; text-decoration: none; }
+    }
+  </style>
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand"><span class="brand-mark">D</span> Dice &amp; Destiny Lab</div>
+    <nav class="view-nav" aria-label="Document views">
+      <button type="button" data-view="plan" aria-selected="true">Two-phase plan</button>
+      <button type="button" data-view="handoff" aria-selected="false">New-context handoff</button>
+      <button type="button" data-view="future" aria-selected="false">Future work</button>
+      <button type="button" data-view="decisions" aria-selected="false">Review decisions</button>
+      <button type="button" id="print-button" aria-selected="false">Print all</button>
+    </nav>
+  </header>
+
+  <main>
+    <section class="hero">
+      <div>
+        <p class="eyebrow">Battle intelligence roadmap · review draft</p>
+        <h1>Teach the battle engine to challenge itself.</h1>
+        <p class="lede">A deliberately narrow path from one local Blade Warden mirror match to repeatable machine-learning experiments—without building online multiplayer or creating new characters.</p>
+      </div>
+      <aside class="hero-meta" aria-label="Plan metadata">
+        <div class="meta-row"><span>Project</span><strong>Dice and Destiny v2</strong></div>
+        <div class="meta-row"><span>Combatant</span><strong>Blade Warden</strong></div>
+        <div class="meta-row"><span>Machine</span><strong>M3 Max is sufficient</strong></div>
+        <div class="meta-row"><span>Status</span><strong>Awaiting review</strong></div>
+      </aside>
+    </section>
+
+    <div class="status-strip" aria-label="Current project status">
+      <div class="status-card ready"><small>Documentation</small><strong>Ready for review</strong></div>
+      <div class="status-card hold"><small>Phase 1 branch</small><strong>Not created yet</strong></div>
+      <div class="status-card hold"><small>Game code</small><strong>No implementation changes</strong></div>
+    </div>
+
+    <div class="view-panel" data-panel="plan">
+      <section class="section">
+        <p class="section-kicker">Executive direction</p>
+        <h2>Two phases, one controlled experiment</h2>
+        <p class="section-intro">First make the Go battle authority support two equal local controllers. Then attach the smallest credible learning system to that exact interface. Engine correctness comes before model training.</p>
+        <div class="phase-grid">
+          <article class="phase-card">
+            <span class="phase-number">01</span>
+            <h3>Local two-controller battle</h3>
+            <p>Seat A and Seat B each control an existing Blade Warden through the full authoritative battle flow. A human driver, script, heuristic, or future model can occupy either seat.</p>
+            <div class="tag-row"><span class="tag green">Server-first</span><span class="tag">No networking</span><span class="tag">Existing content</span></div>
+          </article>
+          <article class="phase-card">
+            <span class="phase-number">02</span>
+            <h3>Machine-learning mirror pilot</h3>
+            <p>Two policy instances play Blade Warden mirror matches repeatedly. Results test learning, seat symmetry, rules integrity, and experiment reproducibility—not roster balance by themselves.</p>
+            <div class="tag-row"><span class="tag green">Small RL policy</span><span class="tag">Self-play</span><span class="tag">Measured results</span></div>
+          </article>
+        </div>
+        <div class="callout"><strong>Hard boundary:</strong> this is not online multiplayer. There are no lobbies, accounts, matchmaking, remote clients, hosting, or production PvP screens. Both controllers and the authority run on one development computer.</div>
+      </section>
+
+      <section class="section">
+        <p class="section-kicker">Scope control</p>
+        <h2>What the pilot is—and is not</h2>
+        <div class="table-wrap">
+          <table class="scope-table">
+            <thead><tr><th>Area</th><th>Included now</th><th>Excluded from these phases</th></tr></thead>
+            <tbody>
+              <tr><td>Battle topology</td><td>One existing combatant in Seat A versus one in Seat B</td><td>Teams, benches, switching, or recruitment</td></tr>
+              <tr><td>Control</td><td>Two local external controllers: human, script, heuristic, or learned</td><td>Network clients, remote sessions, or matchmaking</td></tr>
+              <tr><td>Content</td><td>Blade Warden mirror match using current YAML definitions</td><td>New creatures, redesigned cards, or balance changes</td></tr>
+              <tr><td>Rules</td><td>Real roll, keep, reroll, card, ability, target, defense, and reaction flow</td><td>D100 reveal shortcuts as the equal-seat balance oracle</td></tr>
+              <tr><td>Learning</td><td>First reproducible self-play pilot and evaluation report</td><td>Production-ready universal roster policy</td></tr>
+              <tr><td>Delivery</td><td>Approval, then a dedicated implementation branch</td><td>Implementation before owner review</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="callout amber"><strong>Name confirmed:</strong> the existing sword-oriented player combatant is <strong>Blade Warden</strong>, with content ID <code>blade_warden</code>. The Venom Goblin is not the mirror-match combatant.</div>
+      </section>
+
+      <section class="section">
+        <p class="section-kicker">Current foundation</p>
+        <h2>The repository is already unusually well positioned</h2>
+        <div class="card-grid three">
+          <article class="info-card"><h3>Portable authority</h3><p>Typed commands enter the Go authority and produce validated events, pending input, and viewer-safe snapshots.</p></article>
+          <article class="info-card"><h3>Deterministic randomness</h3><p>Named random streams and repeatable seeds support diagnosis, comparison, and reproducible evaluation.</p></article>
+          <article class="info-card"><h3>Viewer filtering</h3><p>Seat-specific snapshots already provide the basis for honest model observations and hidden-information tests.</p></article>
+          <article class="info-card"><h3>Automatic progression</h3><p>The engine advances through automatic rules until an actor genuinely needs to make a decision.</p></article>
+          <article class="info-card"><h3>Cloneable state</h3><p>Deep-cloned battle state makes branching tests and later search agents technically practical.</p></article>
+          <article class="info-card"><h3>Full-battle proof</h3><p>A deterministic Blade Warden versus Venom Goblin test already exercises the real authority path.</p></article>
+        </div>
+        <div class="callout"><strong>Current limitation:</strong> the settled engine is asymmetric. It discovers one human actor, opens input windows for that actor, and automatically resolves AI participants. The Venom Goblin D100 chart is a valid PvE controller, but not an equal-player balance standard.</div>
+        <h3 style="margin-top:28px">Implementation hotspots</h3>
+        <div class="code-paths">
+          <a href="../../dice-and-destiny-server/internal/battle/authority.go">dice-and-destiny-server/internal/battle/authority.go</a>
+          <a href="../../dice-and-destiny-server/internal/battle/engine/engine.go">dice-and-destiny-server/internal/battle/engine/engine.go</a>
+          <a href="../../dice-and-destiny-server/internal/battle/engine/settled_engine.go">dice-and-destiny-server/internal/battle/engine/settled_engine.go</a>
+          <a href="../../dice-and-destiny-server/internal/battle/participant_assembler.go">dice-and-destiny-server/internal/battle/participant_assembler.go</a>
+          <a href="../../dice-and-destiny-server/internal/battle/snapshot/snapshot.go">dice-and-destiny-server/internal/battle/snapshot/snapshot.go</a>
+          <a href="../../dice-and-destiny-server/internal/battle/random/random.go">dice-and-destiny-server/internal/battle/random/random.go</a>
+          <a href="../../dice-and-destiny-server/internal/battle/full_battle_authority_test.go">dice-and-destiny-server/internal/battle/full_battle_authority_test.go</a>
+        </div>
+      </section>
+
+      <section class="section">
+        <p class="section-kicker">Controller architecture</p>
+        <h2>Separate the creature from who makes its decisions</h2>
+        <p class="section-intro">A combatant definition owns cards, dice, health, resources, abilities, and statuses. A controller owns decision selection for a runtime seat. Every controller submits ordinary legal commands; only the authority changes battle state.</p>
+        <div class="table-wrap">
+          <table class="data-table">
+            <thead><tr><th>Controller</th><th>Role</th></tr></thead>
+            <tbody>
+              <tr><td>External</td><td>A local human driver, test script, or model receives observations and submits actions.</td></tr>
+              <tr><td>D100</td><td>Preserves current Venom Goblin PvE behavior as a baseline and fallback.</td></tr>
+              <tr><td>Random legal</td><td>Validates complete action enumeration and establishes the minimum-skill benchmark.</td></tr>
+              <tr><td>Heuristic</td><td>Provides a transparent and debuggable competence baseline before neural training.</td></tr>
+              <tr><td>Learned policy</td><td>Scores the legal actions exposed by the authority and returns one candidate index.</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="section">
+        <p class="section-kicker">Phase 1</p>
+        <h2>Build the local two-seat authority path</h2>
+        <p class="section-intro">Phase 1 proves that two peer controllers can complete a real Blade Warden mirror match on one computer. A focused server-level driver is more useful here than a polished Godot hot-seat screen because the immediate consumer is the learning environment.</p>
+        <div class="timeline">
+          <div class="timeline-item"><span class="timeline-dot">1</span><div class="timeline-copy"><h3>Decouple combatant and controller</h3><p>Assign an existing creature to an external seat independently of its authored default controller.</p></div></div>
+          <div class="timeline-item"><span class="timeline-dot">2</span><div class="timeline-copy"><h3>Create symmetric setup</h3><p>Seat A and Seat B are peers with separate Blade Warden instances, cards, dice, and private viewer identities.</p></div></div>
+          <div class="timeline-item"><span class="timeline-dot">3</span><div class="timeline-copy"><h3>Replace the single-human assumption</h3><p>Track pending input by actor or required-actor set, and stop automatic progression whenever either external seat must choose.</p></div></div>
+          <div class="timeline-item"><span class="timeline-dot">4</span><div class="timeline-copy"><h3>Protect hidden simultaneous planning</h3><p>Neither seat sees the opponent's hidden offensive commitment before both commitments are complete.</p></div></div>
+          <div class="timeline-item"><span class="timeline-dot">5</span><div class="timeline-copy"><h3>Define reaction priority</h3><p>Specify first opportunity, passing, round completion, and the measurement of possible seat advantage.</p></div></div>
+          <div class="timeline-item"><span class="timeline-dot">6</span><div class="timeline-copy"><h3>Enumerate complete legal actions</h3><p>Return submission-ready commands with current IDs, targets, dice subsets, card instances, and required payload fields.</p></div></div>
+          <div class="timeline-item"><span class="timeline-dot">7</span><div class="timeline-copy"><h3>Provide a local two-seat driver</h3><p>A CLI or focused local tool can inspect each viewer-safe state and submit a legal choice. No network service is needed.</p></div></div>
+          <div class="timeline-item"><span class="timeline-dot">8</span><div class="timeline-copy"><h3>Protect existing behavior</h3><p>Keep authority, recovery, snapshots, deterministic battles, the current D100 path, and Godot verification passing.</p></div></div>
+        </div>
+
+        <h3 style="margin-top:34px">Environment operations established in Phase 1</h3>
+        <div class="card-grid three">
+          <article class="info-card"><h4>Reset</h4><p>Create a seeded Blade Warden mirror battle from current content.</p></article>
+          <article class="info-card"><h4>Observe seat</h4><p>Return only information legally visible to the selected seat.</p></article>
+          <article class="info-card"><h4>List legal actions</h4><p>Return complete command candidates for the actor who owns input.</p></article>
+          <article class="info-card"><h4>Submit</h4><p>Validate and apply one candidate through the normal authority path.</p></article>
+          <article class="info-card"><h4>Advance</h4><p>Resolve automatic work until another decision or the terminal state.</p></article>
+          <article class="info-card"><h4>Record</h4><p>Capture seed, versions, actions, outcome, and replay identifiers.</p></article>
+        </div>
+
+        <h3 style="margin-top:34px">Phase 1 acceptance criteria</h3>
+        <ul class="checklist">
+          <li>Two distinct externally controlled Blade Wardens can start a battle.</li>
+          <li>Neither equal seat uses the D100 offensive shortcut.</li>
+          <li>Each seat receives an independent viewer-safe observation.</li>
+          <li>Hidden planning information remains hidden until reveal.</li>
+          <li>Every pending input exposes a complete legal action.</li>
+          <li>Stale, wrong-seat, and fabricated commands are rejected.</li>
+          <li>Reaction priority is explicit, deterministic, and tested.</li>
+          <li>A scripted mirror battle reaches a valid terminal result.</li>
+          <li>A developer can manually drive both seats without Godot.</li>
+          <li>Standard Go and Godot authority checks still pass.</li>
+        </ul>
+        <div class="callout amber"><strong>Branch gate:</strong> no branch has been created. After approval, the recommended Phase 1 branch is <code>codex/local-two-controller-battle</code>. Phase 1 should pass review before model-training code is introduced.</div>
+      </section>
+
+      <section class="section">
+        <p class="section-kicker">Phase 2</p>
+        <h2>Run the first machine-learning mirror pilot</h2>
+        <p class="section-intro">Use a small reinforcement-learning policy, not an LLM. Battle observations and actions are structured, so an LLM would add latency, packaging cost, and legal-action risk without a matching benefit. Maskable PPO is a sensible first algorithm only after random and heuristic validation.</p>
+        <div class="table-wrap">
+          <table class="data-table">
+            <thead><tr><th>Element</th><th>First-pilot decision</th></tr></thead>
+            <tbody>
+              <tr><td>Environment</td><td>A long-running local Go simulator using the real engine; no Godot process or subprocess launch per action.</td></tr>
+              <tr><td>Observation</td><td>Viewer-safe battle state plus necessary public history; no hidden-card or hidden-commitment leakage.</td></tr>
+              <tr><td>Action</td><td>An index into a padded list of complete legal command candidates, with invalid slots masked.</td></tr>
+              <tr><td>Reward</td><td>+1 victory, −1 defeat, 0 draw. Add shaping only after proving it preserves the intended objective.</td></tr>
+              <tr><td>Episode end</td><td>Authority-reported terminal status, plus a defined safety truncation for defective infinite episodes.</td></tr>
+              <tr><td>Randomness</td><td>Reproducible episode seeds with content, environment, and model versions recorded.</td></tr>
+              <tr><td>Parallelism</td><td>Multiple independent local environments, with worker count selected by measurement.</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h3 style="margin-top:32px">Build and training sequence</h3>
+        <ol class="decision-list">
+          <li><strong>Validate random legal play.</strong> Large batches finish without crashes, illegal commands, stale input, or nonterminating battles.</li>
+          <li><strong>Add a transparent heuristic.</strong> Establish a debuggable baseline stronger than random.</li>
+          <li><strong>Wrap vectorized environments.</strong> Batch observations, masks, rewards, terminal flags, and diagnostics.</li>
+          <li><strong>Train from several seeds.</strong> A single successful run is not reliable evidence.</li>
+          <li><strong>Evaluate out of sample.</strong> Hold back battle seeds and compare both seat assignments.</li>
+          <li><strong>Replay surprising battles.</strong> Record commands so diagnosis never depends on identical floating-point inference.</li>
+        </ol>
+
+        <h3 style="margin-top:32px">First experiment ladder</h3>
+        <div class="table-wrap">
+          <table class="data-table">
+            <thead><tr><th>Experiment</th><th>Purpose</th><th>Minimum output</th></tr></thead>
+            <tbody>
+              <tr><td>Random vs random</td><td>Environment and seat-symmetry smoke test</td><td>Completion, invalid actions, seat win rate, duration</td></tr>
+              <tr><td>Heuristic vs random</td><td>Verify that better decisions create measurable advantage</td><td>Win rate, confidence interval, representative replays</td></tr>
+              <tr><td>Policy vs random</td><td>Prove learning beyond chance</td><td>Held-out win rate across training seeds</td></tr>
+              <tr><td>Policy vs heuristic</td><td>Measure practical competence</td><td>Cross-play matrix and failure examples</td></tr>
+              <tr><td>Policy mirror</td><td>Detect seat advantage and policy instability</td><td>Seat-swapped results on matched seeds</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="callout"><strong>Hardware:</strong> the M3 Max is a good computer for this pilot. Start CPU-first because Go simulation throughput is the major workload. Test Apple's MPS backend only if neural-network updates become the measured bottleneck. No special hardware is required.</div>
+
+        <h3 style="margin-top:34px">Phase 2 acceptance criteria</h3>
+        <ul class="checklist">
+          <li>Two model policy instances can occupy the two local seats.</li>
+          <li>Invalid action rate is zero outside deliberate negative tests.</li>
+          <li>Training is reproducible from versions, configuration, and seed.</li>
+          <li>At least three training seeds produce checkpoints and curves.</li>
+          <li>Evaluation includes random, heuristic, mirror, and held-out tests.</li>
+          <li>Initial report uses at least 1,000 evaluation battles.</li>
+          <li>Ambiguous findings can be confirmed with 10,000 or adaptive games.</li>
+          <li>No balance claim relies on mirror convergence alone.</li>
+        </ul>
+      </section>
+
+      <section class="section">
+        <p class="section-kicker">Interpretation</p>
+        <h2>What the first results can honestly tell us</h2>
+        <p class="section-intro">An identical-policy Blade Warden mirror match is primarily a test of seat symmetry, controller strength, experiment stability, and rules integrity. A result near 50% does not establish roster balance because only one creature is present.</p>
+        <div class="card-grid">
+          <div>
+            <div class="metric"><strong>Win rate</strong><p>Detect Seat A/Seat B advantage and compare policy strength.</p></div>
+            <div class="metric"><strong>Draws</strong><p>Reveal stalemates, truncations, and missing terminal rules.</p></div>
+            <div class="metric"><strong>Duration</strong><p>Measure pace and identify policies that learn to delay.</p></div>
+            <div class="metric"><strong>Health margin</strong><p>Capture decisiveness, not just binary outcomes.</p></div>
+            <div class="metric"><strong>Damage</strong><p>Separate offensive output from prevention and recovery.</p></div>
+          </div>
+          <div>
+            <div class="metric"><strong>Action mix</strong><p>Expose dominant cards, abilities, rerolls, or passing.</p></div>
+            <div class="metric"><strong>Dead turns</strong><p>Find nonproductive behavior and possible reward problems.</p></div>
+            <div class="metric"><strong>Seed sensitivity</strong><p>Separate stable strategy from lucky training runs.</p></div>
+            <div class="metric"><strong>Latency</strong><p>Confirm simulation and inference remain practical.</p></div>
+            <div class="metric"><strong>Confidence</strong><p>Report uncertainty instead of treating win rate as exact.</p></div>
+          </div>
+        </div>
+        <div class="callout amber"><strong>Statistical guide:</strong> around 1,000 games gives a worst-case 95% sampling margin of roughly ±3.1 percentage points near a true 50% win rate. Around 10,000 games reduces it to roughly ±1 point.</div>
+      </section>
+
+      <section class="section">
+        <p class="section-kicker">Delivery gates</p>
+        <h2>How the work should advance</h2>
+        <ol class="decision-list">
+          <li><strong>Approve this plan.</strong> Confirm scope, Blade Warden mirror baseline, local driver form, and branch strategy.</li>
+          <li><strong>Create the Phase 1 branch.</strong> Use <code>codex/local-two-controller-battle</code> after approval.</li>
+          <li><strong>Refactor the engine.</strong> Deliver controller neutrality, two-seat input, hidden information, legal actions, and the local driver.</li>
+          <li><strong>Verify Phase 1.</strong> Run server tests and Godot authority verification through <code>./scripts/godot.sh</code>; review the scripted mirror battle.</li>
+          <li><strong>Freeze the environment contract.</strong> Stabilize observation and action schemas before training.</li>
+          <li><strong>Publish baseline results.</strong> Report random and heuristic play before neural training.</li>
+          <li><strong>Publish the learning pilot.</strong> Present multi-seed results and request direction before roster expansion.</li>
+        </ol>
+      </section>
+    </div>
+
+    <div class="view-panel" data-panel="handoff" hidden>
+      <section class="section">
+        <p class="section-kicker">Zero-context handoff</p>
+        <h2>Everything a fresh Codex context needs to begin Phase 1</h2>
+        <p class="section-intro">This is the operational handoff. The new context should read this page and the repository instructions, implement Phase 1 only, verify it, and stop for review before any machine-learning work begins.</p>
+        <div class="callout"><strong>Mission:</strong> make the existing Go battle authority support two equal, local, externally controlled seats in a Blade Warden versus Blade Warden battle. This is controller infrastructure for later model self-play—not online multiplayer and not new game content.</div>
+
+        <div class="handoff-grid" style="margin-top:20px">
+          <article class="handoff-panel">
+            <h3>Read first, in this order</h3>
+            <ol>
+              <li><a href="../../AGENTS.md">Repository AGENTS.md</a> for workspace and verification rules.</li>
+              <li>The <button type="button" data-jump-view="plan" style="all:unset;color:var(--blue);cursor:pointer;text-decoration:underline;text-underline-offset:3px">Two-phase plan</button> on this page, especially Phase 1.</li>
+              <li><a href="../../dice-and-destiny-server/internal/battle/README.md">Battle package README</a> and the linked implementation hotspots.</li>
+              <li>Current authority and engine tests before changing code.</li>
+            </ol>
+          </article>
+          <article class="handoff-panel">
+            <h3>Repository starting state</h3>
+            <ul>
+              <li>Begin on <code>main</code> after the planning snapshot commit.</li>
+              <li>Backup pointer: <code>codex/pre-phase-1-backup-2026-08-01</code>.</li>
+              <li>Do not stage, clean, move, or edit unrelated untracked design/site/concept-art folders.</li>
+              <li>Do not create or redesign creatures, cards, dice, abilities, statuses, or balance values.</li>
+              <li>Do not start Phase 2 training code during this task.</li>
+            </ul>
+          </article>
+        </div>
+      </section>
+
+      <section class="section">
+        <p class="section-kicker">Implementation order</p>
+        <h2>Work from engine contract to proof</h2>
+        <ol class="decision-list">
+          <li><strong>Audit the current asymmetry.</strong> Trace participant assembly, human-actor discovery, pending-input ownership, automatic AI resolution, viewer filtering, and the existing deterministic full-battle test. Report any material conflict with this plan before expanding scope.</li>
+          <li><strong>Introduce controller-neutral seat ownership.</strong> An existing combatant can use an external controller without changing its authored content definition or breaking the D100 controller.</li>
+          <li><strong>Support two peer external actors.</strong> Battle setup, pending input, and automatic progression must handle either seat—and any rule window that requires commitments from both.</li>
+          <li><strong>Preserve hidden information and define priority.</strong> Prevent commitment leakage, formalize reaction priority/pass behavior, and test both seat assignments.</li>
+          <li><strong>Enumerate submission-ready legal actions.</strong> Each candidate must contain the current IDs, targets, dice/card instances, checkpoints, and payload required for immediate authority submission.</li>
+          <li><strong>Add a local developer driver.</strong> A focused server-side CLI or test driver can observe and command both seats without networking or a Godot UI.</li>
+          <li><strong>Prove the complete mirror battle.</strong> Add deterministic tests in which two external Blade Wardens complete the normal rules path to victory, defeat, or draw.</li>
+          <li><strong>Verify and stop.</strong> Run the required Go and Godot checks, summarize changes and risks, and wait for owner review before Phase 2.</li>
+        </ol>
+      </section>
+
+      <section class="section">
+        <p class="section-kicker">Definition of done</p>
+        <h2>Phase 1 is complete only when all of this is true</h2>
+        <ul class="checklist">
+          <li>Two distinct Blade Warden instances can be assigned to two external seats.</li>
+          <li>Both seats use the full player decision flow and normal authority validation.</li>
+          <li>Neither seat uses the Venom Goblin D100 reveal shortcut.</li>
+          <li>Viewer-safe observations remain independent and hidden commitments do not leak.</li>
+          <li>Reaction priority and passing are explicit, deterministic, and tested.</li>
+          <li>Every pending decision exposes at least one complete legal command candidate.</li>
+          <li>Every freshly enumerated legal command is accepted when immediately submitted.</li>
+          <li>Stale, wrong-seat, and fabricated commands are rejected.</li>
+          <li>A developer can manually drive both local seats without a network service.</li>
+          <li>A deterministic Blade Warden mirror battle reaches a valid terminal result.</li>
+          <li>Existing D100 PvE behavior remains available and covered.</li>
+          <li>All relevant Go tests and the Godot authority verification pass.</li>
+        </ul>
+
+        <h3 style="margin-top:32px">Required verification commands</h3>
+        <div class="command-list">
+          <code>cd dice-and-destiny-server &amp;&amp; go test ./...</code>
+          <code>cd .. &amp;&amp; ./scripts/godot.sh --headless --script res://scripts/verify_battle_authority.gd</code>
+        </div>
+        <div class="callout amber"><strong>Godot rule:</strong> always run this project from the repository root through <code>./scripts/godot.sh</code>. Never use a raw <code>godot --path …</code> command. Build native Go/C++ artifacts only with <code>dice-and-destiny-server/scripts/build_native.sh</code>.</div>
+      </section>
+
+      <section class="section">
+        <p class="section-kicker">Copyable kickoff</p>
+        <h2>Prompt for the new context</h2>
+        <p class="section-intro">Start the fresh context in this repository, then paste the prompt below. The page provides the requirements; the repository remains the source of truth for implementation details.</p>
+        <div class="prompt-box">
+          <button class="copy-button" type="button" id="copy-prompt">Copy prompt</button>
+          <pre id="handoff-prompt">Implement Phase 1 of the Dice and Destiny battle-intelligence plan.
+
+First read AGENTS.md and docs/machine-learning-battle-simulation/index.html, including the “New-context handoff” and “Two-phase plan” views. Then inspect the current Go battle authority, settled engine, participant assembly, viewer snapshots, randomness, and existing full-battle tests before editing.
+
+Goal: support two equal local externally controlled seats in a Blade Warden versus Blade Warden battle, with complete legal-action enumeration, viewer-safe observations, hidden simultaneous planning, explicit reaction priority, a local two-seat developer driver, and deterministic end-to-end tests.
+
+Keep the existing Venom Goblin D100 controller working. Do not build networking, online multiplayer, new creatures/content, balance changes, a polished Godot hot-seat UI, or any Phase 2 machine-learning code. Preserve unrelated untracked files.
+
+Work on main. The pre-Phase-1 snapshot is preserved at codex/pre-phase-1-backup-2026-08-01. Run all relevant Go tests and the required Godot authority verification through ./scripts/godot.sh. When Phase 1 meets every acceptance criterion, stop and report for review before beginning Phase 2.</pre>
+        </div>
+      </section>
+    </div>
+
+    <div class="view-panel" data-panel="future" hidden>
+      <section class="section">
+        <p class="section-kicker">Deferred ideas</p>
+        <h2>Future balance lab &amp; production AI</h2>
+        <p class="section-intro">These directions are valuable, but none is required to complete the local two-controller battle or first Blade Warden learning pilot. Each item has a trigger for deliberate reconsideration.</p>
+        <div class="future-grid">
+          <article class="future-card"><h3>Universal roster policy</h3><p>Hundreds of separate creature models will not scale. A future policy should understand structured mechanics—cards, dice faces, costs, qualifications, statuses, health, resources, elements, and defenses—rather than memorize only creature IDs.</p><div class="revisit"><strong>Revisit when:</strong> at least three mechanically contrasting creatures exist and the pilot schemas are stable.</div></article>
+          <article class="future-card"><h3>Population self-play</h3><p>Two current models can develop shared blind spots. A stronger population mixes current policies, old checkpoints, heuristics, difficulty policies, search agents, and targeted best responses.</p><div class="revisit"><strong>Revisit when:</strong> the first policy reliably beats random and competes with the heuristic across seeds.</div></article>
+          <article class="future-card"><h3>Search &amp; expert distillation</h3><p>Cloneable battle state may support Monte Carlo search or MCTS as a development-time expert. Expensive search behavior could later be distilled into a small, fast policy for shipping.</p><div class="revisit"><strong>Revisit when:</strong> legal actions and cloned simulation branches reproduce authoritative results.</div></article>
+          <article class="future-card"><h3>Balance beyond mirrors</h3><p>Mirror matches test seat symmetry, not roster strength. Future evidence should combine cross-matchup matrices, policy-strength ladders, targeted best responses, pace metrics, and human playtests.</p><div class="revisit"><strong>Revisit when:</strong> at least three completed creatures and a stable expert policy pool exist.</div></article>
+          <article class="future-card"><h3>Adaptive statistical sampling</h3><p>A 300-creature roster creates 44,850 unordered pairings before levels, builds, seats, and policy strengths. Future evaluation should emphasize benchmark suites, ratings, uncertainty, and additional games near decision boundaries.</p><div class="revisit"><strong>Revisit when:</strong> evaluation expands beyond a small hand-curated matchup set.</div></article>
+          <article class="future-card"><h3>Production enemy AI</h3><p>A learned policy can eventually replace or complement D100. Ship a small candidate-scoring model, keep authority validation, record chosen commands for replays, pin every schema version, and retain D100 or heuristic fallback.</p><div class="revisit"><strong>Revisit when:</strong> learned play clearly exceeds the intended PvE baseline and is enjoyable for players.</div></article>
+          <article class="future-card"><h3>Difficulty &amp; personality</h3><p>The optimal bot is not automatically the most enjoyable. Difficulty can use different checkpoints, controlled action sampling, deliberate mistakes, restricted information, or bounded search. Personality can bias legal preferences.</p><div class="revisit"><strong>Revisit when:</strong> the policy is being judged as a player-facing opponent.</div></article>
+          <article class="future-card"><h3>Hardware &amp; cloud scaling</h3><p>The M3 Max is enough to begin. Cloud compute becomes useful for large sweeps, huge experience budgets, wide policy populations, or broad roster evaluation—not before local profiling proves a bottleneck.</p><div class="revisit"><strong>Revisit when:</strong> measured compute time, rather than correctness or experiment design, limits progress.</div></article>
+          <article class="future-card"><h3>Teams and evolving mechanics</h3><p>Teams, switching, benches, elements, progression, evolution, and new content operations enlarge observations and actions. Add them only after versioned environment contracts exist.</p><div class="revisit"><strong>Revisit when:</strong> each mechanic has settled deterministic server rules and focused authority tests.</div></article>
+          <article class="future-card"><h3>Actual network multiplayer</h3><p>Local controller neutrality is a useful foundation, but online PvP is a separate product: identity, sessions, transport, reconnects, timeouts, anti-cheat, compatibility, and player UX.</p><div class="revisit"><strong>Revisit when:</strong> there is an explicit player-facing online PvP goal independent of ML balance work.</div></article>
+        </div>
+      </section>
+
+      <section class="section">
+        <p class="section-kicker">Production inference</p>
+        <h2>How a trained bot could eventually ship</h2>
+        <div class="table-wrap">
+          <table class="data-table">
+            <thead><tr><th>Concern</th><th>Future approach</th></tr></thead>
+            <tbody>
+              <tr><td>Runtime cost</td><td>Use a small MLP or candidate-scoring network and infer only when the bot owns a decision.</td></tr>
+              <tr><td>Packaging</td><td>Export to ONNX or a compact custom format; consider pure-Go inference for a fixed small architecture.</td></tr>
+              <tr><td>Failure handling</td><td>Keep the D100 or heuristic controller as a deterministic fallback.</td></tr>
+              <tr><td>Versioning</td><td>Pin model, observation schema, action schema, engine revision, and content version.</td></tr>
+              <tr><td>Replay</td><td>Record the selected command instead of requiring identical cross-platform floating-point inference.</td></tr>
+              <tr><td>Low-end support</td><td>Benchmark CPU inference on the minimum target computer and enforce a decision timeout.</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="section">
+        <p class="section-kicker">Reference shelf</p>
+        <h2>Tools worth evaluating later</h2>
+        <div class="card-grid">
+          <article class="info-card"><h3>Environment conventions</h3><p><a href="https://gymnasium.farama.org/introduction/create_custom_env/">Gymnasium custom environments</a><br><a href="https://gymnasium.farama.org/api/vector/">Gymnasium vector environments</a><br><a href="https://pettingzoo.farama.org/tutorials/custom_environment/3-action-masking/">PettingZoo action masking</a></p></article>
+          <article class="info-card"><h3>Training</h3><p><a href="https://sb3-contrib.readthedocs.io/en/master/modules/ppo_mask.html">Stable Baselines3 Maskable PPO</a><br><a href="https://stable-baselines3.readthedocs.io/en/master/modules/ppo.html">Stable Baselines3 PPO</a></p></article>
+          <article class="info-card"><h3>Apple development</h3><p><a href="https://developer.apple.com/metal/pytorch/">PyTorch acceleration on Apple Silicon</a></p></article>
+          <article class="info-card"><h3>Production inference</h3><p><a href="https://onnxruntime.ai/docs/get-started/with-c.html">ONNX Runtime C API</a><br><a href="https://onnxruntime.ai/docs/performance/model-optimizations/quantization.html">ONNX Runtime quantization</a></p></article>
+        </div>
+      </section>
+    </div>
+
+    <div class="view-panel" data-panel="decisions" hidden>
+      <section class="section">
+        <p class="section-kicker">Owner review</p>
+        <h2>Five decisions unlock Phase 1</h2>
+        <p class="section-intro">These are the only decisions requested before implementation begins.</p>
+        <ul class="checklist">
+          <li>Approve Blade Warden versus Blade Warden for both the Phase 1 acceptance battle and Phase 2 learning matchup.</li>
+          <li>Approve a server-level local two-seat driver instead of a polished Godot hot-seat interface for Phase 1.</li>
+          <li>Approve keeping the Venom Goblin D100 controller as a separate PvE baseline and fallback.</li>
+          <li>Approve the branch name <code>codex/local-two-controller-battle</code>.</li>
+          <li>Approve Phase 1 completion and review as a gate before model-training implementation.</li>
+        </ul>
+        <div class="callout amber"><strong>Current state:</strong> the repository remains on <code>main</code>. No implementation branch has been created, and no game code has been changed.</div>
+      </section>
+
+      <section class="section">
+        <p class="section-kicker">Risk review</p>
+        <h2>Problems the plan addresses up front</h2>
+        <div class="table-wrap">
+          <table class="data-table">
+            <thead><tr><th>Risk</th><th>Mitigation</th></tr></thead>
+            <tbody>
+              <tr><td>Hidden-information leaks</td><td>Build observations through viewer-safe snapshots and add explicit negative tests.</td></tr>
+              <tr><td>Legal-action drift</td><td>Generate complete actions from authority state and immediately validate enumerated choices.</td></tr>
+              <tr><td>Self-play blind spots</td><td>Evaluate against random and heuristic opponents and retain multiple training seeds.</td></tr>
+              <tr><td>Reward hacking</td><td>Start with terminal win/loss reward and use secondary metrics only as diagnostics.</td></tr>
+              <tr><td>Seat advantage</td><td>Use matched seeds, swap seat assignments, and report reaction priority explicitly.</td></tr>
+              <tr><td>Transient IDs</td><td>Prefer stable mechanic features and version observation and action schemas.</td></tr>
+              <tr><td>Premature balancing</td><td>Do not change Blade Warden during the infrastructure pilot; measure first.</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="section">
+        <p class="section-kicker">Local sources</p>
+        <h2>Repository material behind the plan</h2>
+        <div class="code-paths">
+          <a href="../../AGENTS.md">AGENTS.md</a>
+          <a href="../../dice-and-destiny-server/internal/battle/README.md">dice-and-destiny-server/internal/battle/README.md</a>
+          <a href="../../dice-and-destiny-server/internal/battle/authority.go">dice-and-destiny-server/internal/battle/authority.go</a>
+          <a href="../../dice-and-destiny-server/internal/battle/engine/settled_engine.go">dice-and-destiny-server/internal/battle/engine/settled_engine.go</a>
+          <a href="../../dice-and-destiny-server/internal/battle/snapshot/snapshot.go">dice-and-destiny-server/internal/battle/snapshot/snapshot.go</a>
+          <a href="../../dice-and-destiny-server/internal/battle/random/random.go">dice-and-destiny-server/internal/battle/random/random.go</a>
+          <a href="../../dice-and-destiny-server/internal/battle/full_battle_authority_test.go">dice-and-destiny-server/internal/battle/full_battle_authority_test.go</a>
+        </div>
+      </section>
+    </div>
+
+    <p class="footer-note"><strong>Review draft · August 1, 2026.</strong><br>This page is a planning artifact. Phase 1 begins only after approval.</p>
+  </main>
+
+  <script>
+    const viewButtons = [...document.querySelectorAll('[data-view]')];
+    const panels = [...document.querySelectorAll('[data-panel]')];
+
+    function showView(name, updateHash = true) {
+      const validName = panels.some(panel => panel.dataset.panel === name) ? name : 'plan';
+      panels.forEach(panel => { panel.hidden = panel.dataset.panel !== validName; });
+      viewButtons.forEach(button => button.setAttribute('aria-selected', String(button.dataset.view === validName)));
+      if (updateHash) {
+        try { history.replaceState(null, '', `#${validName}`); }
+        catch { location.hash = validName; }
+      }
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    viewButtons.forEach(button => button.addEventListener('click', () => showView(button.dataset.view)));
+    document.querySelectorAll('[data-jump-view]').forEach(button => button.addEventListener('click', () => showView(button.dataset.jumpView)));
+    document.getElementById('print-button').addEventListener('click', () => window.print());
+    document.getElementById('copy-prompt').addEventListener('click', async event => {
+      const text = document.getElementById('handoff-prompt').innerText;
+      try {
+        await navigator.clipboard.writeText(text);
+        event.currentTarget.textContent = 'Copied';
+      } catch {
+        const selection = window.getSelection();
+        const range = document.createRange();
+        range.selectNodeContents(document.getElementById('handoff-prompt'));
+        selection.removeAllRanges();
+        selection.addRange(range);
+        event.currentTarget.textContent = 'Select & copy';
+      }
+      setTimeout(() => { event.currentTarget.textContent = 'Copy prompt'; }, 1800);
+    });
+    showView(location.hash.slice(1) || 'plan', false);
+  </script>
+</body>
+</html>
