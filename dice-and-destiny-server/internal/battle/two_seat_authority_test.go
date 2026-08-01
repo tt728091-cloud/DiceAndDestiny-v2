@@ -171,6 +171,13 @@ func TestAuthorityTipItEnumeratesAndAcceptsOnlyRevealedFaceSixDice(t *testing.T)
 	if got := checkpoint.Battle.Settled.Actors[adjustment.ActorID].FinalDice[adjustment.DieIndex].Face; got != 5 {
 		t.Fatalf("accepted Tip It target face = %d, want 5", got)
 	}
+	adjustedRuntime := checkpoint.Battle.Settled.Actors[adjustment.ActorID]
+	if adjustedRuntime.SelectedAbilityID != "" && len(adjustedRuntime.SelectedTargetIDs) == 0 {
+		t.Fatalf(
+			"Tip It fallback selected %q without an authority-owned target",
+			adjustedRuntime.SelectedAbilityID,
+		)
+	}
 }
 
 func TestAuthorityBlindTipItUsesOneCanonicalPendingDieTarget(t *testing.T) {

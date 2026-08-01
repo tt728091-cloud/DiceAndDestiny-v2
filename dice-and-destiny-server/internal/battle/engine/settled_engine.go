@@ -1139,6 +1139,20 @@ func (e Engine) handleOffensiveReactionCommand(battle *state.Battle, library con
 	if runtime.SelectedAbilityID != "" {
 		tier, _ := qualifiedTier(library.Abilities[runtime.SelectedAbilityID], runtime.FinalDice)
 		runtime.SelectedTierID = tier.ID
+		// A revealed die adjustment can qualify an ability for an actor who
+		// previously passed. The fallback selection above is authority-owned,
+		// so it must also provide the complete legal target selection instead
+		// of leaving a later, otherwise legal reaction pass in a dead state.
+		ability := library.Abilities[runtime.SelectedAbilityID]
+		if err := validateActorTargeting(battle, adjust.ActorID, ability.Targeting, runtime.SelectedTargetIDs); err != nil {
+			choices := actorTargetChoices(battle, adjust.ActorID, ability.Targeting)
+			if len(choices) == 0 {
+				return nil, fmt.Errorf("fallback ability %q has no legal targets", runtime.SelectedAbilityID)
+			}
+			runtime.SelectedTargetIDs = append([]string(nil), choices[0]...)
+		}
+	} else {
+		runtime.SelectedTargetIDs = nil
 	}
 	runtime.QualifiedAbilityIDs = valid
 	battle.Settled.Actors[adjust.ActorID] = runtime

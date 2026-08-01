@@ -192,6 +192,7 @@
     .section-intro { max-width: 880px; margin: 0 0 28px; color: var(--muted); font-size: 17px; }
 
     .phase-grid, .card-grid, .future-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+    .phase-grid.three { grid-template-columns: repeat(3, minmax(0, 1fr)); }
     .card-grid.three { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 
     .phase-card, .info-card, .future-card {
@@ -298,7 +299,7 @@
       main { width: min(100% - 24px, 1180px); padding-top: 18px; }
       .hero { grid-template-columns: 1fr; gap: 26px; border-radius: 20px; }
       .hero-meta { max-width: 520px; }
-      .status-strip, .phase-grid, .card-grid, .card-grid.three, .future-grid, .checklist, .handoff-grid { grid-template-columns: 1fr; }
+      .status-strip, .phase-grid, .phase-grid.three, .card-grid, .card-grid.three, .future-grid, .checklist, .handoff-grid { grid-template-columns: 1fr; }
       .section { padding: 23px 18px; }
       .table-wrap { overflow-x: auto; margin-inline: -18px; padding-inline: 18px; }
       .scope-table, .data-table { min-width: 700px; }
@@ -324,8 +325,9 @@
   <header class="topbar">
     <div class="brand"><span class="brand-mark">D</span> Dice &amp; Destiny Lab</div>
     <nav class="view-nav" aria-label="Document views">
-      <button type="button" data-view="plan" aria-selected="true">Two-phase plan</button>
+      <button type="button" data-view="plan" aria-selected="true">Three-phase plan</button>
       <button type="button" data-view="handoff" aria-selected="false">New-context handoff</button>
+      <button type="button" data-view="phase3" aria-selected="false">Phase 3 handoff</button>
       <button type="button" data-view="future" aria-selected="false">Future work</button>
       <button type="button" data-view="decisions" aria-selected="false">Review decisions</button>
       <button type="button" id="print-button" aria-selected="false">Print all</button>
@@ -335,30 +337,30 @@
   <main>
     <section class="hero">
       <div>
-        <p class="eyebrow">Battle intelligence roadmap · review draft</p>
+        <p class="eyebrow">Battle intelligence roadmap · accepted Phase 2 baseline</p>
         <h1>Teach the battle engine to challenge itself.</h1>
-        <p class="lede">A deliberately narrow path from one local Blade Warden mirror match to repeatable machine-learning experiments—without building online multiplayer or creating new characters.</p>
+        <p class="lede">A deliberately narrow path from one local Blade Warden mirror match, through repeatable machine-learning experiments, to a human playing against the trained model through the Godot UI.</p>
       </div>
       <aside class="hero-meta" aria-label="Plan metadata">
         <div class="meta-row"><span>Project</span><strong>Dice and Destiny v2</strong></div>
         <div class="meta-row"><span>Combatant</span><strong>Blade Warden</strong></div>
         <div class="meta-row"><span>Machine</span><strong>M3 Max is sufficient</strong></div>
-        <div class="meta-row"><span>Status</span><strong>Awaiting review</strong></div>
+        <div class="meta-row"><span>Status</span><strong>Phase 2 accepted · Phase 3 ready for approval</strong></div>
       </aside>
     </section>
 
     <div class="status-strip" aria-label="Current project status">
-      <div class="status-card ready"><small>Documentation</small><strong>Ready for review</strong></div>
-      <div class="status-card hold"><small>Phase 1 branch</small><strong>Not created yet</strong></div>
-      <div class="status-card hold"><small>Game code</small><strong>No implementation changes</strong></div>
+      <div class="status-card ready"><small>Phase 1</small><strong>Accepted and committed</strong></div>
+      <div class="status-card ready"><small>Phase 2</small><strong>Accepted and verified</strong></div>
+      <div class="status-card ready"><small>Phase 3</small><strong>UI plan and prompt documented</strong></div>
     </div>
 
     <div class="view-panel" data-panel="plan">
       <section class="section">
         <p class="section-kicker">Executive direction</p>
-        <h2>Two phases, one controlled experiment</h2>
-        <p class="section-intro">First make the Go battle authority support two equal local controllers. Then attach the smallest credible learning system to that exact interface. Engine correctness comes before model training.</p>
-        <div class="phase-grid">
+        <h2>Three phases, one controlled progression</h2>
+        <p class="section-intro">First make the Go battle authority support two equal local controllers. Then attach and validate a small learning system. Finally, connect an accepted frozen checkpoint to the graphical Godot player experience.</p>
+        <div class="phase-grid three">
           <article class="phase-card">
             <span class="phase-number">01</span>
             <h3>Local two-controller battle</h3>
@@ -370,6 +372,12 @@
             <h3>Machine-learning mirror pilot</h3>
             <p>Two policy instances play Blade Warden mirror matches repeatedly. Results test learning, seat symmetry, rules integrity, and experiment reproducibility—not roster balance by themselves.</p>
             <div class="tag-row"><span class="tag green">Small RL policy</span><span class="tag">Self-play</span><span class="tag">Measured results</span></div>
+          </article>
+          <article class="phase-card">
+            <span class="phase-number">03</span>
+            <h3>Player UI versus trained model</h3>
+            <p>A human controls one Blade Warden entirely through the graphical Godot battle UI while an accepted Phase 2 checkpoint controls the opposing Blade Warden programmatically.</p>
+            <div class="tag-row"><span class="tag green">Godot player UI</span><span class="tag">Frozen checkpoint</span><span class="tag">No player CLI</span></div>
           </article>
         </div>
         <div class="callout"><strong>Hard boundary:</strong> this is not online multiplayer. There are no lobbies, accounts, matchmaking, remote clients, hosting, or production PvP screens. Both controllers and the authority run on one development computer.</div>
@@ -474,7 +482,7 @@
           <li>A developer can manually drive both seats without Godot.</li>
           <li>Standard Go and Godot authority checks still pass.</li>
         </ul>
-        <div class="callout amber"><strong>Branch gate:</strong> no branch has been created. After approval, the recommended Phase 1 branch is <code>codex/local-two-controller-battle</code>. Phase 1 should pass review before model-training code is introduced.</div>
+        <div class="callout"><strong>Current state:</strong> Phase 1 was accepted and committed on <code>main</code> at <code>5d81e8f</code>. The pre-Phase-1 recovery branch remains <code>codex/pre-phase-1-backup-2026-08-01</code>.</div>
       </section>
 
       <section class="section">
@@ -533,6 +541,47 @@
           <li>Ambiguous findings can be confirmed with 10,000 or adaptive games.</li>
           <li>No balance claim relies on mirror convergence alone.</li>
         </ul>
+        <div class="callout"><strong>Accepted August 1, 2026:</strong> three independent Maskable PPO training seeds produced improving checkpoints; all held-out final policies beat random with their 95% confidence lower bounds above 50%; and one persistent model-versus-model process completed 1,000 battles with zero crashes, rejected actions, stale actions, wrong-seat actions, or truncations. Read the <a href="phase-2-report.md">Phase 2 completion report</a> for the exact architecture, results, artifacts, reproduction commands, and A–G acceptance table.</div>
+      </section>
+
+      <section class="section">
+        <p class="section-kicker">Phase 3</p>
+        <h2>Play against the trained model through the Godot UI</h2>
+        <p class="section-intro">After Phase 2 passes every acceptance criterion and identifies a competent frozen checkpoint, a human controls one Blade Warden through the normal graphical Godot battle experience while that learned policy controls the other Blade Warden through the programmatic authority interface.</p>
+
+        <div class="callout amber"><strong>Hard player-interface requirement:</strong> the human must start, play, finish, and request a rematch through graphical Godot controls. No human action, target, die choice, pass, or confirmation may be entered through a terminal, CLI, test driver, or raw command payload. The Phase 1 CLI remains useful only for automation and diagnostics.</div>
+
+        <div class="table-wrap">
+          <table class="data-table">
+            <thead><tr><th>Element</th><th>Phase 3 requirement</th></tr></thead>
+            <tbody>
+              <tr><td>Matchup</td><td>Human-controlled Blade Warden versus model-controlled Blade Warden under the real authoritative rules.</td></tr>
+              <tr><td>Human path</td><td>Godot displays the player's viewer-safe state and visible controls for every legal planning, roll, card, ability, target, defense, reaction, pass, status, and hand-limit decision.</td></tr>
+              <tr><td>Model path</td><td>The frozen policy receives only its own viewer-safe observation and current legal candidates, selects one candidate index, and submits it through the normal Go authority.</td></tr>
+              <tr><td>Checkpoint</td><td>Use a versioned Phase 2 checkpoint selected from held-out, seat-swapped evaluation evidence. Phase 3 never trains during player battles.</td></tr>
+              <tr><td>Runtime</td><td>Load the model once per session, run inference without freezing Godot, show an opponent-thinking state, and never launch a subprocess per decision.</td></tr>
+              <tr><td>Restart</td><td>The result and rematch/new-battle controls appear in Godot; neither the game nor the model runtime must be restarted.</td></tr>
+              <tr><td>Scope</td><td>Local graphical development play. A terminal may show diagnostics but is never the human player's battle interface.</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h3 style="margin-top:34px">Phase 3 acceptance criteria</h3>
+        <ul class="checklist">
+          <li>The player can select and start Blade Warden versus learned Blade Warden from a visible Godot menu or developer-mode UI.</li>
+          <li>The player completes the entire battle using only graphical Godot controls.</li>
+          <li>Every human input reachable in the matchup has a visible, understandable UI interaction.</li>
+          <li>The learned policy autonomously completes every input required from its seat.</li>
+          <li>The actual accepted checkpoint—not a mock, random policy, or heuristic substitute—makes every opponent decision.</li>
+          <li>The policy sees only its viewer-safe observation and current legal candidates.</li>
+          <li>Every model choice passes through normal authority validation with zero illegal, stale, fabricated, or wrong-seat commands.</li>
+          <li>Godot remains responsive during inference, and decision latency is measured and reported.</li>
+          <li>The result and rematch flow work entirely through the Godot UI without restarting the application or inference runtime.</li>
+          <li>An automated proxy-human test completes at least 100 battles against the frozen checkpoint across both seat assignments with zero crashes, state leaks, or unexplained truncations.</li>
+          <li>Owner acceptance includes at least three complete UI-played battles, one graphical rematch, and both human seat assignments.</li>
+          <li>Existing Phase 1, Phase 2, Go, native-integration, and Godot verification checks continue to pass.</li>
+          <li>Phase 3 is not complete if any player battle choice still requires terminal or CLI entry.</li>
+        </ul>
       </section>
 
       <section class="section">
@@ -562,22 +611,20 @@
         <p class="section-kicker">Delivery gates</p>
         <h2>How the work should advance</h2>
         <ol class="decision-list">
-          <li><strong>Approve this plan.</strong> Confirm scope, Blade Warden mirror baseline, local driver form, and branch strategy.</li>
-          <li><strong>Create the Phase 1 branch.</strong> Use <code>codex/local-two-controller-battle</code> after approval.</li>
-          <li><strong>Refactor the engine.</strong> Deliver controller neutrality, two-seat input, hidden information, legal actions, and the local driver.</li>
-          <li><strong>Verify Phase 1.</strong> Run server tests and Godot authority verification through <code>./scripts/godot.sh</code>; review the scripted mirror battle.</li>
-          <li><strong>Freeze the environment contract.</strong> Stabilize observation and action schemas before training.</li>
-          <li><strong>Publish baseline results.</strong> Report random and heuristic play before neural training.</li>
-          <li><strong>Publish the learning pilot.</strong> Present multi-seed results and request direction before roster expansion.</li>
+          <li><strong>Phase 1 accepted.</strong> Controller neutrality, two-seat input, hidden information, legal actions, and the local driver are committed on <code>main</code>.</li>
+          <li><strong>Phase 2 environment accepted.</strong> The real-authority reset/observe/step contract and versioned observation/action schemas are frozen for the pilot.</li>
+          <li><strong>Phase 2 learning accepted.</strong> Random and heuristic baselines, three training seeds, held-out evaluations, checkpoint cross-play, portable replays, and the 1,000-game soak passed review.</li>
+          <li><strong>Select the Phase 3 checkpoint.</strong> Approve one frozen policy from held-out Phase 2 evidence.</li>
+          <li><strong>Deliver the player UI integration.</strong> Connect Godot graphical play to the learned opponent, prove repeated battles and rematches, and complete owner UI acceptance.</li>
         </ol>
       </section>
     </div>
 
     <div class="view-panel" data-panel="handoff" hidden>
       <section class="section">
-        <p class="section-kicker">Zero-context handoff</p>
-        <h2>Everything a fresh Codex context needs to begin Phase 1</h2>
-        <p class="section-intro">This is the operational handoff. The new context should read this page and the repository instructions, implement Phase 1 only, verify it, and stop for review before any machine-learning work begins.</p>
+        <p class="section-kicker">Archived zero-context handoff</p>
+        <h2>The handoff that defined Phase 1</h2>
+        <p class="section-intro">Phase 1 is now accepted and committed. This handoff remains as implementation provenance and should not be rerun against the current repository.</p>
         <div class="callout"><strong>Mission:</strong> make the existing Go battle authority support two equal, local, externally controlled seats in a Blade Warden versus Blade Warden battle. This is controller infrastructure for later model self-play—not online multiplayer and not new game content.</div>
 
         <div class="handoff-grid" style="margin-top:20px">
@@ -585,7 +632,7 @@
             <h3>Read first, in this order</h3>
             <ol>
               <li><a href="../../AGENTS.md">Repository AGENTS.md</a> for workspace and verification rules.</li>
-              <li>The <button type="button" data-jump-view="plan" style="all:unset;color:var(--blue);cursor:pointer;text-decoration:underline;text-underline-offset:3px">Two-phase plan</button> on this page, especially Phase 1.</li>
+              <li>The <button type="button" data-jump-view="plan" style="all:unset;color:var(--blue);cursor:pointer;text-decoration:underline;text-underline-offset:3px">Three-phase plan</button> on this page, especially Phase 1.</li>
               <li><a href="../../dice-and-destiny-server/internal/battle/README.md">Battle package README</a> and the linked implementation hotspots.</li>
               <li>Current authority and engine tests before changing code.</li>
             </ol>
@@ -649,16 +696,110 @@
         <h2>Prompt for the new context</h2>
         <p class="section-intro">Start the fresh context in this repository, then paste the prompt below. The page provides the requirements; the repository remains the source of truth for implementation details.</p>
         <div class="prompt-box">
-          <button class="copy-button" type="button" id="copy-prompt">Copy prompt</button>
+          <button class="copy-button" type="button" data-copy-target="handoff-prompt">Copy prompt</button>
           <pre id="handoff-prompt">Implement Phase 1 of the Dice and Destiny battle-intelligence plan.
 
-First read AGENTS.md and docs/machine-learning-battle-simulation/index.html, including the “New-context handoff” and “Two-phase plan” views. Then inspect the current Go battle authority, settled engine, participant assembly, viewer snapshots, randomness, and existing full-battle tests before editing.
+First read AGENTS.md and docs/machine-learning-battle-simulation/index.html, including the “New-context handoff” and “Three-phase plan” views. Then inspect the current Go battle authority, settled engine, participant assembly, viewer snapshots, randomness, and existing full-battle tests before editing.
 
 Goal: support two equal local externally controlled seats in a Blade Warden versus Blade Warden battle, with complete legal-action enumeration, viewer-safe observations, hidden simultaneous planning, explicit reaction priority, a local two-seat developer driver, and deterministic end-to-end tests.
 
 Keep the existing Venom Goblin D100 controller working. Do not build networking, online multiplayer, new creatures/content, balance changes, a polished Godot hot-seat UI, or any Phase 2 machine-learning code. Preserve unrelated untracked files.
 
 Work on main. The pre-Phase-1 snapshot is preserved at codex/pre-phase-1-backup-2026-08-01. Run all relevant Go tests and the required Godot authority verification through ./scripts/godot.sh. When Phase 1 meets every acceptance criterion, stop and report for review before beginning Phase 2.</pre>
+        </div>
+      </section>
+    </div>
+
+    <div class="view-panel" data-panel="phase3" hidden>
+      <section class="section">
+        <p class="section-kicker">Phase 3 zero-context handoff</p>
+        <h2>Human in the Godot UI versus the trained model</h2>
+        <p class="section-intro">Use this handoff only after Phase 2 is reviewed and accepted. The human plays normally through the graphical Godot interface; the frozen model uses its programmatic controller behind the scenes. The terminal is not a player interface.</p>
+
+        <div class="handoff-grid">
+          <article class="handoff-panel">
+            <h3>Prerequisites</h3>
+            <ul>
+              <li>Phase 1 two-seat authority and legal-action behavior still pass.</li>
+              <li>Phase 2 trains, checkpoints, evaluates, and repeatedly runs two learned policies.</li>
+              <li>Held-out evidence identifies a competent frozen Blade Warden checkpoint.</li>
+              <li>Its observation, action, engine, content, and model versions are reproducible.</li>
+            </ul>
+          </article>
+          <article class="handoff-panel">
+            <h3>Controller boundary</h3>
+            <ul>
+              <li><strong>Human:</strong> sees and chooses everything in the graphical Godot UI.</li>
+              <li><strong>Model:</strong> reads structured viewer-safe data and selects legal candidates programmatically.</li>
+              <li><strong>Go authority:</strong> validates both sides and remains the only component allowed to change battle state.</li>
+              <li>The Phase 1 terminal driver may automate tests, but it cannot satisfy the player-experience requirement.</li>
+            </ul>
+          </article>
+        </div>
+        <div class="callout amber"><strong>Blocking rule:</strong> if no accepted Phase 2 checkpoint exists, stop and report the prerequisite. Do not substitute a random, heuristic, mocked, or unreviewed policy and call Phase 3 complete.</div>
+      </section>
+
+      <section class="section">
+        <p class="section-kicker">Copyable kickoff</p>
+        <h2>Prompt for the Phase 3 context</h2>
+        <p class="section-intro">Open a fresh Codex context in this repository after Phase 2 acceptance, then paste this entire prompt.</p>
+        <div class="prompt-box">
+          <button class="copy-button" type="button" data-copy-target="phase3-prompt">Copy prompt</button>
+          <pre id="phase3-prompt">Implement Phase 3 of the Dice and Destiny battle-intelligence roadmap: a human player versus the accepted trained model in a Blade Warden mirror match.
+
+Read AGENTS.md completely, then read docs/machine-learning-battle-simulation/index.html, especially the Phase 3 section in “Three-phase plan” and this “Phase 3 handoff.” Inspect the accepted Phase 1 authority implementation and tests, then inspect the complete Phase 2 implementation, report, configurations, checkpoints, schemas, inference path, and repeated-battle evidence. Preserve every unrelated working-tree change and untracked file.
+
+Prerequisite gate:
+Begin only if Phase 2 satisfies every documented acceptance criterion and held-out, seat-swapped evaluation identifies a competent frozen Blade Warden checkpoint. A training count such as 100,000 battles is not sufficient evidence by itself. Confirm the exact checkpoint, model architecture, observation schema, action schema, engine/content revisions, and inference dependencies. If the accepted checkpoint or reproducible frozen inference is missing, stop and report the blocker. Never use a mock, random controller, heuristic substitute, or unreviewed model and call Phase 3 complete.
+
+Mission and controller split:
+- The human controls one Blade Warden entirely through the graphical Godot player UI.
+- The accepted frozen policy autonomously controls the opposing Blade Warden through the structured programmatic controller used in Phase 2.
+- The Go authority validates commands from both sides and remains the only component that changes battle state.
+- This is inference only. Never train or update model weights during player battles.
+
+Hard UI requirement:
+The player must select/start the matchup, make every battle choice, see the final result, and request a rematch or new battle through visible Godot controls. No human action, target, die selection, keep/reroll, card, ability, defense, reaction, pass, hand-limit choice, status choice, or confirmation may be entered through a terminal, CLI, Phase 1 driver, test harness, raw JSON, or raw command payload. A terminal may show developer diagnostics only. If any reachable human decision lacks a graphical interaction, Phase 3 is incomplete.
+
+Required implementation:
+- Add a visible menu, developer-mode selection, or equivalent Godot UI control for starting human Blade Warden versus learned-policy Blade Warden while preserving existing game modes and the Venom Goblin D100 path.
+- Reuse the normal battle presentation wherever possible. Clearly identify the opponent as the learned policy and show a responsive opponent-thinking state.
+- Ensure the Godot UI covers every human pending-input type reachable in the matchup, including planning, keeps/rerolls, cards, abilities, targets, defense, reactions, passes, hand limits, status choices, results, and rematches.
+- Give the learned controller only its viewer-safe observation, complete current legal-command candidates, and action mask. It returns one candidate index, and that command must go through ordinary Go authority validation.
+- Load the frozen checkpoint once per application/session and reuse it. Never spawn a process or reload the model for each decision.
+- Keep inference off the Godot render loop, prevent duplicate player submissions while the opponent acts, enforce a measured timeout, and provide actionable error diagnostics.
+- Do not silently conceal model errors with fallback behavior in acceptance tests. If a runtime fallback exists, identify it visibly and in telemetry, and separately prove the accepted model handled every opponent decision in successful acceptance runs.
+- Show the authority-reported result and provide graphical rematch/new-battle controls without restarting Godot or the inference runtime.
+- Record checkpoint/schema/version identifiers, seed, seats, commands, result, inference latency, errors, timeouts, and fallback use for diagnosis.
+- Support both human seat assignments.
+
+Scope boundaries:
+Use the existing Blade Warden on both sides. Do not add or rebalance creatures, cards, abilities, dice, statuses, or rules. Do not build online multiplayer, accounts, lobbies, matchmaking, hosting, universal-roster support, difficulty modes, or final consumer packaging.
+
+Mandatory automated acceptance:
+- Add focused tests for checkpoint loading and compatibility, viewer-safe model input, legal candidates and masks, authority submission, timeout/error handling, UI-to-authority routing, result handling, rematch reset, and persistent model lifetime.
+- Use an automated proxy for the human controller to complete at least 100 consecutive battles against the actual accepted frozen checkpoint across both seat assignments.
+- Require zero crashes, illegal/stale/fabricated/wrong-seat model commands, unexplained truncations, hidden-information leaks, or state leakage between battles.
+- Assert that the actual accepted learned checkpoint made every model decision; a mock, random policy, or heuristic cannot satisfy this run.
+- Measure and report inference latency, battle duration, results, restarts, timeouts, errors, and fallback count.
+- Keep all relevant Phase 1 and Phase 2 checks passing.
+
+Mandatory player acceptance:
+- Make the graphical Godot mode runnable for owner review.
+- Provide a concise checklist for at least three complete owner-played UI battles, at least one graphical rematch without restarting, and both human seat assignments.
+- Verify that every player interaction occurred through Godot and that no terminal/CLI input was required during battle.
+- Phase 3 remains awaiting owner acceptance until those manual UI playthroughs are confirmed. Automated proxy play alone is not enough.
+
+Required verification includes:
+- cd dice-and-destiny-server &amp;&amp; go test ./...
+- From the repository root: ./scripts/godot.sh --headless --script res://scripts/verify_battle_authority.gd
+- The accepted Phase 2 frozen-policy inference/evaluation smoke checks.
+- The Phase 3 100-battle acceptance suite across both seats.
+- Focused Godot UI and integration checks for every changed path. Always invoke Godot through ./scripts/godot.sh and build native artifacts only with dice-and-destiny-server/scripts/build_native.sh.
+
+Work on a dedicated codex/ Phase 3 branch created from the reviewed Phase 2 baseline. Do not commit or push until the owner reviews the implementation unless explicitly asked.
+
+Do not declare Phase 3 complete unless every acceptance criterion in the HTML plan is satisfied. At handoff, report the exact checkpoint and versions, graphical start/play/rematch flow, complete human UI input coverage, inference architecture and latency, automated both-seat results, all failure counts, verification commands and outcomes, remaining risks, and the owner manual-UI checklist. If anything is unmet, state that Phase 3 is incomplete and name the remaining work.</pre>
         </div>
       </section>
     </div>
@@ -715,16 +856,18 @@ Work on main. The pre-Phase-1 snapshot is preserved at codex/pre-phase-1-backup-
     <div class="view-panel" data-panel="decisions" hidden>
       <section class="section">
         <p class="section-kicker">Owner review</p>
-        <h2>Five decisions unlock Phase 1</h2>
-        <p class="section-intro">These are the only decisions requested before implementation begins.</p>
+        <h2>Recorded roadmap decisions</h2>
+        <p class="section-intro">These decisions define the scope chosen for the first three phases.</p>
         <ul class="checklist">
           <li>Approve Blade Warden versus Blade Warden for both the Phase 1 acceptance battle and Phase 2 learning matchup.</li>
           <li>Approve a server-level local two-seat driver instead of a polished Godot hot-seat interface for Phase 1.</li>
           <li>Approve keeping the Venom Goblin D100 controller as a separate PvE baseline and fallback.</li>
           <li>Approve the branch name <code>codex/local-two-controller-battle</code>.</li>
-          <li>Approve Phase 1 completion and review as a gate before model-training implementation.</li>
+          <li>Phase 1 completion and review gates model-training implementation.</li>
+          <li>Phase 3 uses the graphical Godot UI for every human decision; terminal control is never an acceptable player experience.</li>
+          <li>Phase 3 begins only after an accepted frozen checkpoint is selected from Phase 2 evidence.</li>
         </ul>
-        <div class="callout amber"><strong>Current state:</strong> the repository remains on <code>main</code>. No implementation branch has been created, and no game code has been changed.</div>
+        <div class="callout amber"><strong>Next gate:</strong> preserve the accepted Phase 2 artifacts, select the frozen checkpoint, then create the dedicated Phase 3 implementation branch.</div>
       </section>
 
       <section class="section">
@@ -761,7 +904,7 @@ Work on main. The pre-Phase-1 snapshot is preserved at codex/pre-phase-1-backup-
       </section>
     </div>
 
-    <p class="footer-note"><strong>Review draft · August 1, 2026.</strong><br>This page is a planning artifact. Phase 1 begins only after approval.</p>
+    <p class="footer-note"><strong>Roadmap updated · August 1, 2026.</strong><br>Phase 2 is accepted. Phase 3 requires complete graphical Godot play and a separately approved frozen checkpoint.</p>
   </main>
 
   <script>
@@ -782,21 +925,21 @@ Work on main. The pre-Phase-1 snapshot is preserved at codex/pre-phase-1-backup-
     viewButtons.forEach(button => button.addEventListener('click', () => showView(button.dataset.view)));
     document.querySelectorAll('[data-jump-view]').forEach(button => button.addEventListener('click', () => showView(button.dataset.jumpView)));
     document.getElementById('print-button').addEventListener('click', () => window.print());
-    document.getElementById('copy-prompt').addEventListener('click', async event => {
-      const text = document.getElementById('handoff-prompt').innerText;
+    document.querySelectorAll('[data-copy-target]').forEach(button => button.addEventListener('click', async event => {
+      const prompt = document.getElementById(event.currentTarget.dataset.copyTarget);
       try {
-        await navigator.clipboard.writeText(text);
+        await navigator.clipboard.writeText(prompt.innerText);
         event.currentTarget.textContent = 'Copied';
       } catch {
         const selection = window.getSelection();
         const range = document.createRange();
-        range.selectNodeContents(document.getElementById('handoff-prompt'));
+        range.selectNodeContents(prompt);
         selection.removeAllRanges();
         selection.addRange(range);
         event.currentTarget.textContent = 'Select & copy';
       }
       setTimeout(() => { event.currentTarget.textContent = 'Copy prompt'; }, 1800);
-    });
+    }));
     showView(location.hash.slice(1) || 'plan', false);
   </script>
 </body>

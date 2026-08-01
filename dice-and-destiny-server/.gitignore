@@ -1,6 +1,11 @@
 .venv/
 .build_native.lock
 build/
+ml/runs/
+ml/.venv/
+ml/.pytest_cache/
+ml/.ruff_cache/
+ml/**/__pycache__/
 adapters/gdextension/.sconsign.dblite
 adapters/gdextension/src/*.os
 third_party/godot-cpp/bin/

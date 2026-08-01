@@ -1,0 +1,97 @@
+{
+  "acceptance": {
+    "checkpoint_a": "runs/phase2-training/seed-11/checkpoints/final.zip",
+    "checkpoint_b": "runs/phase2-training/seed-22/checkpoints/final.zip",
+    "matched_seeds": 500,
+    "seed_start": 9000000,
+    "seat_swap": true,
+    "total_battles": 1000
+  },
+  "algorithm": "MaskablePPO",
+  "content_version": "9eed6066ea8c95f8a60038647de935e88ed8d6e9cbc618229070a4d78945edc4",
+  "evaluation": {
+    "final_mirror": {
+      "episodes_per_assignment": 50,
+      "seed_start": 9400000,
+      "seat_swap": true
+    },
+    "final_vs_early": {
+      "episodes_per_assignment": 50,
+      "seed_start": 9300000,
+      "seat_swap": true
+    },
+    "final_vs_heuristic": {
+      "episodes_per_assignment": 50,
+      "seed_start": 9200000,
+      "seat_swap": true
+    },
+    "held_out_final_vs_random": [
+      {
+        "episodes_per_assignment": 50,
+        "seed_start": 9700000,
+        "training_seed": 11
+      },
+      {
+        "episodes_per_assignment": 50,
+        "seed_start": 9800000,
+        "training_seed": 22
+      },
+      {
+        "episodes_per_assignment": 50,
+        "seed_start": 9900000,
+        "training_seed": 33
+      }
+    ],
+    "seat_swap": true,
+    "updates_enabled": false
+  },
+  "hardware": {
+    "chip": "Apple M3 Max",
+    "cpu_cores": 16,
+    "memory_gb": 64,
+    "training_device": "cpu"
+  },
+  "model_architecture": "shared candidate scorer: context MLP [64,64], candidate MLP [64,64], score MLP [64,1], value MLP [128,128]",
+  "opponent_pool": [
+    "random",
+    "random",
+    "heuristic",
+    "heuristic",
+    "historical"
+  ],
+  "reproducibility_probe": {
+    "imitation_decisions": 1000,
+    "imitation_epochs": 3,
+    "seed": 104,
+    "timesteps": 512,
+    "workers": 1
+  },
+  "reward": "+1 victory, -1 defeat, 0 draw; no shaping",
+  "schemas": {
+    "action": "dice-and-destiny-action-candidates-v1",
+    "environment": "dice-and-destiny-ml-env-v1",
+    "observation": "dice-and-destiny-observation-v1"
+  },
+  "source_baseline_revision": "5d81e8f6de350a3bdcc3f4ccf42a3447443f83fe",
+  "training": {
+    "batch_size": 256,
+    "checkpoint_interval": 5000,
+    "device": "cpu",
+    "entropy_coefficient": 0.01,
+    "epochs_per_rollout": 8,
+    "gae_lambda": 0.95,
+    "gamma": 0.995,
+    "imitation_decisions": 5000,
+    "imitation_epochs": 5,
+    "learning_rate": 0.0003,
+    "max_episode_actions": 1200,
+    "requested_timesteps_per_seed": 20000,
+    "rollout_steps_per_worker": 256,
+    "seeds": [
+      11,
+      22,
+      33
+    ],
+    "workers": 4
+  }
+}
