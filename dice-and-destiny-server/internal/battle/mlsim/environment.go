@@ -194,31 +194,61 @@ func (e *Environment) LegalActions(seatID string) ([]command.Command, error) {
 // Step selects one of the exact commands returned by the authority. The
 // original command envelope is submitted unchanged through HandleCommand.
 func (e *Environment) Step(actionIndex int) (Transition, error) {
-	if e.current.Terminal || e.current.TruncationReason != "" {
-		return Transition{}, errors.New("episode is complete; reset before stepping")
-	}
 	if actionIndex < 0 || actionIndex >= len(e.legalActions) {
 		e.metrics.InvalidActionIDs++
 		return Transition{}, fmt.Errorf("action index %d outside legal range [0,%d)", actionIndex, len(e.legalActions))
 	}
+	actorID := e.legalActions[actionIndex].ActorID
+	transition, _, err := e.StepForViewer(actionIndex, actorID)
+	return transition, err
+}
+
+// StepForViewer submits the exact indexed authority command while returning
+// the applied command's events and snapshot filtered for viewerActorID. The
+// next transition remains the acting seat's viewer-safe model input.
+func (e *Environment) StepForViewer(actionIndex int, viewerActorID string) (Transition, engine.Result, error) {
+	if e.current.Terminal || e.current.TruncationReason != "" {
+		return Transition{}, engine.Result{}, errors.New("episode is complete; reset before stepping")
+	}
+	if actionIndex < 0 || actionIndex >= len(e.legalActions) {
+		e.metrics.InvalidActionIDs++
+		return Transition{}, engine.Result{}, fmt.Errorf("action index %d outside legal range [0,%d)", actionIndex, len(e.legalActions))
+	}
 	action := e.legalActions[actionIndex]
-	result := e.authority.HandleCommand(action)
+	result := e.authority.HandleCommandForViewer(action, viewerActorID)
 	if !result.Accepted {
 		e.metrics.AuthorityRejects++
-		return Transition{}, fmt.Errorf("implementation failure: authority rejected enumerated action %s: %s", action.Type, result.Error)
+		return Transition{}, result, fmt.Errorf("implementation failure: authority rejected enumerated action %s: %s", action.Type, result.Error)
 	}
 	e.replay.Actions = append(e.replay.Actions, ActionRecord{Index: actionIndex, ActorID: action.ActorID, Command: action})
 	e.metrics.Actions++
 	e.metrics.ActionFrequency[string(action.Type)]++
 	if e.metrics.Actions >= e.config.MaxActions && result.Status != engine.ProgressBattleComplete {
 		e.metrics.TruncationActor = action.ActorID
-		return e.finish(result, "action_limit"), nil
+		return e.finish(result, "action_limit"), result, nil
 	}
-	return e.selectNext(result, action.ActorID)
+	transition, err := e.selectNext(result, action.ActorID)
+	return transition, result, err
+}
+
+// StepCommandForViewer accepts only a command currently enumerated by the
+// authority and then submits that original candidate unchanged.
+func (e *Environment) StepCommandForViewer(action command.Command, viewerActorID string) (Transition, engine.Result, error) {
+	for index, candidate := range e.legalActions {
+		if commandsEqual(candidate, action) {
+			return e.StepForViewer(index, viewerActorID)
+		}
+	}
+	e.metrics.InvalidActionIDs++
+	return Transition{}, engine.Result{}, errors.New("command is not a current legal candidate")
 }
 
 func (e *Environment) Current() Transition {
 	return e.current
+}
+
+func (e *Environment) Metrics() EpisodeMetrics {
+	return e.metrics
 }
 
 func (e *Environment) Replay(record ReplayRecord) (Transition, error) {

@@ -105,6 +105,18 @@ func handleCommand(commandJSON string, handler commandHandler) string {
 }
 
 func (authority *Authority) HandleCommand(cmd command.Command) engine.Result {
+	return authority.handleCommandForViewer(cmd, cmd.ActorID)
+}
+
+// HandleCommandForViewer applies cmd through the ordinary authority boundary
+// while filtering the returned events and snapshot for resultViewerActorID.
+// The command actor still owns validation; choosing a different result viewer
+// cannot grant that viewer permission to act.
+func (authority *Authority) HandleCommandForViewer(cmd command.Command, resultViewerActorID string) engine.Result {
+	return authority.handleCommandForViewer(cmd, resultViewerActorID)
+}
+
+func (authority *Authority) handleCommandForViewer(cmd command.Command, resultViewerActorID string) engine.Result {
 	if authority == nil || authority.repo == nil || authority.assembler == nil {
 		return authorityRejected("battle authority is not configured")
 	}
@@ -135,7 +147,7 @@ func (authority *Authority) HandleCommand(cmd command.Command) engine.Result {
 	if err := authority.repo.Save(checkpoint); err != nil {
 		return authorityRejected(fmt.Sprintf("save battle: %v", err))
 	}
-	return authority.engine.ResultForViewer(&checkpoint.Battle, cmd.ActorID, progressed)
+	return authority.engine.ResultForViewer(&checkpoint.Battle, resultViewerActorID, progressed)
 }
 
 func (authority *Authority) startBattle(cmd command.Command) engine.Result {

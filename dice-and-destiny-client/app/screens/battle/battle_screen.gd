@@ -2,14 +2,19 @@ extends Control
 
 const SEGMENTS := [["ongoing_effects", "Effects"], ["income", "Income"], ["offensive", "Offensive"], ["defensive", "Defensive"], ["damage_resolution", "Damage"]]
 const INCOME_DURATION_SETTING := "dice_and_destiny/presentation/income_animation_seconds"
+const MODEL_TIMEOUT_MS := 2000
+const MIN_THINKING_DISPLAY_MS := 180
 
 var initial_result: Dictionary = {}
 var viewer_actor_id := "blade"
-var gateway: BattleGateway
+var gateway: Object
 var active_store: ActiveBattleStore
 var last_presented_sequence := 0
 var loaded_snapshot_name := ""
 var history_context: Dictionary = {}
+var learned_battle_mode := false
+var learned_human_seat := "seat-a"
+var learned_seed := 0
 
 var _view := BattleViewState.new()
 var _director := BattlePresentationDirector.new()
@@ -44,6 +49,12 @@ var _history_scroll_adjusting := false
 var _actor_profiles: Dictionary = {}
 var _income_drawn_cards: Array[BattleCard] = []
 var _income_animation_generation := 0
+var _model_thinking := false
+var _model_thread: Thread
+var _model_started_ms := 0
+var _model_timeout_warning := false
+var _model_error := false
+var _reaction_notice := ""
 
 func _ready() -> void:
 	add_to_group("inspectable_battle_screen")
@@ -53,11 +64,85 @@ func _ready() -> void:
 		_build_error_only(str(initial_result.get("error", "Battle snapshot is missing or unsafe.")))
 		return
 	_apply_history_context(history_context)
+	_director.configure_learned_battle(learned_battle_mode)
 	_director.queue_result(initial_result, last_presented_sequence)
 	if _history_tools_enabled():
 		_refresh_history()
 		_record_history_arrival()
 	_render()
+	if learned_battle_mode:
+		call_deferred("_schedule_model_if_needed", initial_result)
+
+func _process(_delta: float) -> void:
+	if _model_thread == null or not _model_thread.is_started():
+		return
+	var elapsed := Time.get_ticks_msec() - _model_started_ms
+	if _model_thread.is_alive():
+		if elapsed > MODEL_TIMEOUT_MS and not _model_timeout_warning:
+			_model_timeout_warning = true
+			_error_message = "Learned-policy inference exceeded %d ms. No fallback action will be submitted." % MODEL_TIMEOUT_MS
+			_render()
+		return
+	if elapsed < MIN_THINKING_DISPLAY_MS:
+		return
+	var result = _model_thread.wait_to_finish()
+	_model_thread = null
+	_model_thinking = false
+	_submitting = false
+	if not result is Dictionary:
+		_model_error = true
+		_show_error("The learned policy returned an invalid response.")
+		_render()
+		return
+	_apply_model_result(result)
+
+func _exit_tree() -> void:
+	if _model_thread != null and _model_thread.is_started():
+		_model_thread.wait_to_finish()
+		_model_thread = null
+
+func _schedule_model_if_needed(result: Dictionary) -> void:
+	if not learned_battle_mode or _view.is_complete() or _model_thinking or _model_error:
+		return
+	var metadata: Dictionary = result.get("learned_policy", {})
+	if metadata.get("model_turn") != true:
+		return
+	_model_thinking = true
+	_submitting = true
+	_model_timeout_warning = false
+	_model_started_ms = Time.get_ticks_msec()
+	_model_thread = Thread.new()
+	var start_error := _model_thread.start(func(): return gateway.advance_model())
+	if start_error != OK:
+		_model_thread = null
+		_model_thinking = false
+		_submitting = false
+		_model_error = true
+		_show_error("Could not start the learned-policy inference worker (error %d)." % start_error)
+	_render()
+
+func _apply_model_result(result: Dictionary) -> void:
+	if result.get("accepted") != true:
+		_model_error = true
+		_show_error(str(result.get("error", "The learned policy could not choose an action.")), result)
+		_render()
+		return
+	if not _view.apply_result(result):
+		_model_error = true
+		_show_error("The learned-policy result was not a safe human-viewer snapshot.", result)
+		_render()
+		return
+	_capture_offensive_reaction_notice(result)
+	_clear_reaction_notice_for_new_round()
+	_error_message = ""
+	_model_error = false
+	_selected_card.clear()
+	_selected_source = ""
+	_hand_limit_selection.clear()
+	_selected_indices.clear()
+	_director.queue_result(result, _director.last_sequence())
+	_render()
+	call_deferred("_schedule_model_if_needed", result)
 
 func _render() -> void:
 	_income_animation_generation += 1
@@ -100,6 +185,13 @@ func _build_header(parent: VBoxContainer) -> void:
 		var label := Label.new(); label.text = "  %s  " % pair[1]; label.add_theme_font_size_override("font_size", 18)
 		label.add_theme_color_override("font_color", Color("f0bc58") if display_segment == pair[0] else Color("87909c")); bar.add_child(label)
 	var round := Label.new(); round.text = "     ROUND %d · %s · %s" % [_view.round_number, _segment_name(display_segment).to_upper(), display_stage.replace("_", " ").to_upper()]; round.add_theme_color_override("font_color", Color("79d8ff")); bar.add_child(round)
+	if learned_battle_mode:
+		var policy_badge := Label.new()
+		policy_badge.text = "   LEARNED MIRROR · HUMAN %s   " % learned_human_seat.to_upper()
+		policy_badge.add_theme_color_override("font_color", Color("9de0ff"))
+		policy_badge.tooltip_text = "Frozen policy %s · no training or fallback" % str(_view.learned_policy.get("model_id", "unknown"))
+		bar.add_child(policy_badge)
+		_inspect(policy_badge, "battle.learned_policy.badge", policy_badge.tooltip_text)
 	if _snapshot_tools_enabled():
 		var snapshots := Button.new(); snapshots.text = "DEV SNAPSHOTS"; snapshots.pressed.connect(_toggle_snapshot_panel); bar.add_child(snapshots)
 		_inspect(snapshots, "battle.dev_snapshots.toggle", "Open the developer snapshot controls")
@@ -107,6 +199,8 @@ func _build_header(parent: VBoxContainer) -> void:
 func _build_player_column(parent: HBoxContainer) -> void:
 	var column := VBoxContainer.new(); column.custom_minimum_size.x = 300; parent.add_child(column)
 	var profile := ActorProfile.new(); column.add_child(profile); profile.display("blade", _view.actor("blade"), true); _actor_profiles["blade"] = profile
+	if learned_battle_mode:
+		profile.title.text = "Blade Warden · You (%s)" % learned_human_seat.to_upper()
 	var income := _income_actor_data("blade")
 	if not income.is_empty(): profile.prepare_income(income)
 	else:
@@ -134,22 +228,32 @@ func _build_player_column(parent: HBoxContainer) -> void:
 func _build_enemy_column(parent: HBoxContainer) -> void:
 	var column := VBoxContainer.new(); column.custom_minimum_size.x = 300; parent.add_child(column)
 	var profile := ActorProfile.new(); column.add_child(profile); profile.display("goblin", _view.actor("goblin"), false); _actor_profiles["goblin"] = profile
+	if learned_battle_mode:
+		profile.title.text = "Blade Warden · Learned Policy"
 	var income := _income_actor_data("goblin")
 	if not income.is_empty(): profile.prepare_income(income)
 	else:
 		var upcoming_income := _upcoming_income_actor_data("goblin")
 		if not upcoming_income.is_empty(): profile.prepare_before_income(upcoming_income)
-	var enemy_dice := _view.rolled_dice("goblin"); var enemy_reveal := _view.offensive_reveal("goblin"); var enemy_caption := "ENEMY OFFENSIVE DICE"
+	var enemy_dice := _view.rolled_dice("goblin"); var enemy_reveal := _view.offensive_reveal("goblin"); var enemy_caption := "LEARNED POLICY OFFENSIVE DICE" if learned_battle_mode else "ENEMY OFFENSIVE DICE"
 	if not enemy_dice.is_empty(): enemy_caption += " · Simulated rolls %d" % int(enemy_reveal.get("simulated_rolls", enemy_reveal.get("rolls_used", 0)))
 	var dice := BattleDiceTray.new(); column.add_child(dice); dice.display(enemy_dice, [], false, enemy_caption, "battle.die.goblin")
 	var log_title := Label.new(); log_title.text = "COMBAT LOG"; column.add_child(log_title)
 	_log = RichTextLabel.new(); _log.custom_minimum_size = Vector2(280, 230); _log.fit_content = false; column.add_child(_log)
 	var lines: Array[String] = []
+	if not _reaction_notice.is_empty(): lines.append("• %s" % _reaction_notice)
 	for event in _view.events.slice(maxi(0, _view.events.size() - 8)):
-		lines.append("• %s" % str(event.get("type", "event")).replace("_", " "))
+		var event_text := _combat_event_text(event)
+		if not event_text.is_empty() and event_text != _reaction_notice: lines.append("• %s" % event_text)
 	_log.text = "\n".join(lines) if not lines.is_empty() else "Battle ready."
 
 func _build_center() -> void:
+	if _model_thinking:
+		_build_model_thinking()
+		return
+	if _model_error:
+		_build_model_error_recovery()
+		return
 	if _director.has_beats():
 		if _history_review: _build_history_review_controls()
 		_build_presentation_beat()
@@ -172,7 +276,33 @@ func _build_center() -> void:
 	_add_action(pass_row, planning_pass_label, "planning_pass", func(): _send(BattleCommandBuilder.planning_pass(_view.battle_id, "blade", _pending())))
 	_add_action(pass_row, "Pass / Acknowledge", "pass", func(): _send(BattleCommandBuilder.pass_command(_view.battle_id, "blade", _pending())))
 
+func _build_model_thinking() -> void:
+	var spacer := Control.new(); spacer.size_flags_vertical = Control.SIZE_EXPAND_FILL; _center.add_child(spacer)
+	var title := Label.new(); title.text = "LEARNED BLADE WARDEN IS THINKING…"; title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER; title.add_theme_font_size_override("font_size", 26); title.add_theme_color_override("font_color", Color("9de0ff")); _center.add_child(title)
+	var detail := Label.new(); detail.text = "Frozen seed-11 final policy · authority actions are locked while the opponent decides"; detail.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER; detail.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART; _center.add_child(detail)
+	_inspect(title, "battle.learned_policy.thinking", detail.text)
+	var spacer2 := Control.new(); spacer2.size_flags_vertical = Control.SIZE_EXPAND_FILL; _center.add_child(spacer2)
+
+func _build_model_error_recovery() -> void:
+	var spacer := Control.new(); spacer.size_flags_vertical = Control.SIZE_EXPAND_FILL; _center.add_child(spacer)
+	var title := Label.new(); title.text = "LEARNED OPPONENT NEEDS ATTENTION"; title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER; title.add_theme_font_size_override("font_size", 26); title.add_theme_color_override("font_color", Color("ff8a78")); _center.add_child(title)
+	var detail := Label.new(); detail.text = "No fallback action was submitted. Retry the same authoritative decision or return to the mode menu."; detail.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER; detail.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART; _center.add_child(detail)
+	var actions := HBoxContainer.new(); actions.alignment = BoxContainer.ALIGNMENT_CENTER; _center.add_child(actions)
+	var retry := Button.new(); retry.text = "Retry Learned Decision"; retry.pressed.connect(_retry_model_decision); actions.add_child(retry); _inspect(retry, "battle.learned_policy.retry", "Retry inference for the unchanged current authority decision")
+	var leave := Button.new(); leave.text = "Return to Mode Menu"; leave.pressed.connect(_return_to_mode_menu); actions.add_child(leave); _inspect(leave, "battle.learned_policy.return_to_menu", "Leave this stopped learned battle without submitting a fallback")
+	var spacer2 := Control.new(); spacer2.size_flags_vertical = Control.SIZE_EXPAND_FILL; _center.add_child(spacer2)
+
+func _retry_model_decision() -> void:
+	if _model_thinking or not learned_battle_mode:
+		return
+	_model_error = false
+	_model_timeout_warning = false
+	_error_message = ""
+	_schedule_model_if_needed({"learned_policy": _view.learned_policy})
+	_render()
+
 func _build_offensive() -> void:
+	_build_reaction_notice()
 	_build_ability_row("ENEMY ABILITIES", _view.actor("goblin").get("offensive_abilities", []), "goblin")
 	var public_plan := _enemy_plan_text()
 	if not public_plan.is_empty():
@@ -186,6 +316,7 @@ func _build_offensive() -> void:
 			var tip := Button.new(); tip.text = "Tip Blind die to face 5"; tip.disabled = _history_review; tip.pressed.connect(_play_blind_tip); _center.add_child(tip); _inspect(tip, "battle.tip_target.blind", "Use Tip It on the current blind-roll die")
 
 func _build_defensive() -> void:
+	_build_reaction_notice()
 	_build_sources("INCOMING SOURCES")
 	var abilities: Array = _as_array(_view.actor("blade").get("defensive_abilities", []))
 	_build_ability_row("DEFENSIVE ABILITIES", abilities, "blade")
@@ -203,7 +334,7 @@ func _build_defense_mat() -> void:
 		_build_defense_panel(panel, actor_id, revealed)
 
 func _build_defense_panel(parent: VBoxContainer, actor_id: String, revealed: bool) -> void:
-	var actor_name := "BLADE WARDEN" if actor_id == "blade" else "VENOM GOBLIN"
+	var actor_name := _actor_display_name(actor_id).to_upper()
 	var heading := Label.new(); heading.text = "%s DEFENSE" % actor_name; heading.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER; heading.add_theme_font_size_override("font_size", 18); parent.add_child(heading)
 	var source := _incoming_source_for_target(actor_id)
 	if source.is_empty():
@@ -287,7 +418,7 @@ func _build_pending_statuses() -> void:
 		for key in grouped:
 			var parts := str(key).split("|", false, 1)
 			if parts.size() != 2 or parts[0] != target_id: continue
-			var status_id := str(parts[1]); var status_data := BattlePresentationCatalog.status(status_id); var target_name := "BLADE WARDEN" if target_id == "blade" else "VENOM GOBLIN"
+			var status_id := str(parts[1]); var status_data := BattlePresentationCatalog.status(status_id); var target_name := _actor_display_name(target_id).to_upper()
 			var pending := Label.new(); pending.custom_minimum_size = Vector2(260, 48); pending.text = "%s  %s %s ×%d" % [target_name, status_data.glyph, status_data.name, int(grouped[key])]; pending.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER; pending.add_theme_font_size_override("font_size", 18); pending.add_theme_color_override("font_color", Color("e5a07e")); pending.tooltip_text = "%s will receive %s ×%d when this damage batch is acknowledged." % [target_name.capitalize(), status_data.name, int(grouped[key])]; row.add_child(pending); _inspect(pending, "battle.pending_status.%s.%s" % [target_id, status_id], pending.tooltip_text)
 
 func _build_effects() -> void:
@@ -315,7 +446,7 @@ func _build_effects_mat(parent: VBoxContainer) -> void:
 		_build_effects_panel(actor_panel, actor_id, revealed)
 
 func _build_effects_panel(parent: VBoxContainer, actor_id: String, revealed: bool) -> void:
-	var actor_name := "BLADE WARDEN" if actor_id == "blade" else "VENOM GOBLIN"
+	var actor_name := _actor_display_name(actor_id).to_upper()
 	var heading := Label.new(); heading.text = "%s EFFECTS" % actor_name; heading.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER; heading.add_theme_font_size_override("font_size", 18); parent.add_child(heading)
 	var rolls: Array = []
 	for value in _view.effect_rolls:
@@ -457,7 +588,10 @@ func _build_sources(caption: String) -> void:
 		if _view.segment == "defensive" and str(source.get("target_actor_id", "")) != "blade": continue
 		var button := Button.new(); var id := str(source.get("id", "")); var data := BattlePresentationCatalog.ability(str(source.get("source_content_id", "")))
 		var base := int(source.get("base_amount", 0)); var final := int(source.get("final_amount", 0)); var prevented := maxi(0, base - final) if using_settled_batch else int(source.get("prevention", 0)) + int(source.get("reaction_prevention", 0))
-		button.text = "%s → %s\nBase %d · Prevented %d · Final %d" % [data.name, str(source.get("target_actor_id", "")), base, prevented, final]
+		if using_settled_batch:
+			button.text = "%s → %s\nBase %d · Prevented %d · Final %d" % [data.name, str(source.get("target_actor_id", "")), base, prevented, final]
+		else:
+			button.text = "%s → %s\nBase %d · Prevented %d · Pending %d" % [data.name, str(source.get("target_actor_id", "")), base, prevented, maxi(0, base - prevented)]
 		button.tooltip_text = "Damage source %s" % id; button.disabled = _submitting or _history_review; button.button_pressed = selected_source == id; button.pressed.connect(func(): _selected_source = id; _render()); row.add_child(button)
 		_inspect(button, "battle.source.%s" % id, button.tooltip_text)
 
@@ -475,7 +609,7 @@ func _build_damage_source_summary(sources: Array) -> void:
 		grouped[key] = accumulated
 	var row := HBoxContainer.new(); row.alignment = BoxContainer.ALIGNMENT_CENTER; row.add_theme_constant_override("separation", 30); _center.add_child(row)
 	for key in order:
-		var summary: Dictionary = grouped[key]; var base := int(summary.base); var final := int(summary.final); var content := BattlePresentationCatalog.ability(str(summary.content_id)); var target_name := "Blade Warden" if summary.target_id == "blade" else "Venom Goblin" if summary.target_id == "goblin" else str(summary.target_id).capitalize()
+		var summary: Dictionary = grouped[key]; var base := int(summary.base); var final := int(summary.final); var content := BattlePresentationCatalog.ability(str(summary.content_id)); var target_name := _actor_display_name(str(summary.target_id))
 		var result := Label.new(); result.custom_minimum_size = Vector2(280, 58); result.text = "%s → %s\n%d incoming · %d prevented · %d pending" % [content.name, target_name, base, maxi(0, base - final), final]; result.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER; result.add_theme_font_size_override("font_size", 17); row.add_child(result); _inspect(result, "battle.damage_summary.%s.%s" % [str(summary.content_id), str(summary.target_id)], result.text)
 
 func _add_selected_detail(parent: Container, actor_id: String) -> void:
@@ -506,7 +640,7 @@ func _offensive_outcome_text(ability_name: String, outcome: Dictionary, targets:
 		if amount > 0: lines.append("Gains: %d %s" % [amount, str(resource_id).replace("_", " ").capitalize()])
 	if damage == 0 and statuses.is_empty() and resources.is_empty(): lines.append("No offensive effect pending")
 	var target_names: Array[String] = []
-	for target_id in targets: target_names.append("Blade Warden" if str(target_id) == "blade" else "Venom Goblin" if str(target_id) == "goblin" else str(target_id).capitalize())
+	for target_id in targets: target_names.append(_actor_display_name(str(target_id)))
 	if not target_names.is_empty(): lines.append("Target: %s" % ", ".join(target_names))
 	return "\n".join(lines)
 
@@ -568,11 +702,18 @@ func _upcoming_income_actor_data(actor_id: String) -> Dictionary:
 	return _director.pending_income_actor(actor_id)
 
 func _build_completion() -> void:
-	if not _history_review: active_store.clear()
+	if not _history_review and not learned_battle_mode: active_store.clear()
 	var spacer := Control.new(); spacer.size_flags_vertical = Control.SIZE_EXPAND_FILL; _center.add_child(spacer)
 	var title := Label.new(); title.text = ("VICTORY" if _view.battle_result == "victory" else _view.battle_result.to_upper()); title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER; title.add_theme_font_size_override("font_size", 52); title.add_theme_color_override("font_color", Color("f5c963")); _center.add_child(title)
-	var final := Label.new(); final.text = "Blade %d/%d · Goblin %d/%d" % [int(_view.actor("blade").get("current_health", 0)), int(_view.actor("blade").get("max_health", 0)), int(_view.actor("goblin").get("current_health", 0)), int(_view.actor("goblin").get("max_health", 0))]; final.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER; _center.add_child(final)
-	var again := Button.new(); again.text = "Play Again"; again.disabled = _history_review; again.pressed.connect(_play_again); _center.add_child(again); _inspect(again, "battle.complete.play_again", "Start a new real-random battle")
+	var final := Label.new()
+	if learned_battle_mode:
+		final.text = "You %d/%d · Learned Policy %d/%d" % [int(_view.actor("blade").get("current_health", 0)), int(_view.actor("blade").get("max_health", 0)), int(_view.actor("goblin").get("current_health", 0)), int(_view.actor("goblin").get("max_health", 0))]
+	else:
+		final.text = "Blade %d/%d · Goblin %d/%d" % [int(_view.actor("blade").get("current_health", 0)), int(_view.actor("blade").get("max_health", 0)), int(_view.actor("goblin").get("current_health", 0)), int(_view.actor("goblin").get("max_health", 0))]
+	final.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER; _center.add_child(final)
+	var again := Button.new(); again.text = "Rematch · Same Seats" if learned_battle_mode else "Play Again"; again.disabled = _history_review; again.pressed.connect(_play_again); _center.add_child(again); _inspect(again, "battle.complete.play_again", "Reset this learned matchup without reloading the model" if learned_battle_mode else "Start a new real-random battle")
+	if learned_battle_mode:
+		var new_battle := Button.new(); new_battle.text = "New Battle · Change Seat or Mode"; new_battle.pressed.connect(_return_to_mode_menu); _center.add_child(new_battle); _inspect(new_battle, "battle.complete.new_battle", "Return to the graphical battle-mode menu")
 	var spacer2 := Control.new(); spacer2.size_flags_vertical = Control.SIZE_EXPAND_FILL; _center.add_child(spacer2)
 
 func _add_action(parent: Container, text: String, command: String, callback: Callable) -> void:
@@ -581,7 +722,7 @@ func _add_action(parent: Container, text: String, command: String, callback: Cal
 	_inspect(button, "battle.command.%s" % command, "Submit the authority command %s" % command)
 
 func _on_ability_pressed(ability_id: String) -> void:
-	if _history_review: return
+	if _history_review or _submitting: return
 	if _selected_card_selector() == "one_owned_offensive_ability":
 		_send(BattleCommandBuilder.planning_commit_cards(_view.battle_id, "blade", _pending(), [_selected_card.instance_id], [], ability_id)); return
 	var targets := [_selected_source] if _view.segment == "defensive" and not _selected_source.is_empty() else ["goblin"] if _view.segment == "offensive" else []
@@ -589,7 +730,7 @@ func _on_ability_pressed(ability_id: String) -> void:
 	_send(BattleCommandBuilder.planning_select_ability(_view.battle_id, "blade", _pending(), ability_id, targets))
 
 func _on_card_pressed(card: BattleCard) -> void:
-	if _history_review: return
+	if _history_review or _submitting: return
 	if _view.stage == "discard_to_hand_limit":
 		if card.instance_id in _hand_limit_selection: _hand_limit_selection.erase(card.instance_id)
 		else: _hand_limit_selection.append(card.instance_id)
@@ -638,14 +779,14 @@ func _reroll_unkept(history_confirmed: bool = false) -> void:
 	_record_history_point("Reroll Unkept Dice", "decision", action)
 	var keep_command := BattleCommandBuilder.planning_keep(_view.battle_id, "blade", _pending(), _selected_indices)
 	_submitting = true; _render()
-	var keep_result := gateway.submit(keep_command)
+	var keep_result: Dictionary = gateway.submit(keep_command)
 	if keep_result.get("accepted") != true:
 		_submitting = false; _show_error(str(keep_result.get("error", "Could not keep the selected dice.")), keep_result); _render(); return
 	if not _view.apply_result(keep_result):
 		_submitting = false; _show_error("The keep result was not a safe battle snapshot.", keep_result); _render(); return
 	_save_active()
 	var reroll_command := BattleCommandBuilder.planning_reroll(_view.battle_id, "blade", _pending(), indices)
-	var reroll_result := gateway.submit(reroll_command)
+	var reroll_result: Dictionary = gateway.submit(reroll_command)
 	_submitting = false
 	if reroll_result.get("accepted") != true:
 		_show_error(str(reroll_result.get("error", "Could not reroll the unkept dice.")), reroll_result); _render(); return
@@ -658,6 +799,7 @@ func _reroll_unkept(history_confirmed: bool = false) -> void:
 	_save_active()
 	_record_history_arrival("Reroll Unkept Dice")
 	_render()
+	if learned_battle_mode: call_deferred("_schedule_model_if_needed", reroll_result)
 
 func _send(command_json: String, history_confirmed: bool = false) -> void:
 	if _submitting or _history_review or command_json.is_empty(): return
@@ -670,12 +812,13 @@ func _send(command_json: String, history_confirmed: bool = false) -> void:
 		return
 	_record_history_point(label, "decision", action)
 	_submitting = true; _render()
-	var result := gateway.submit(command_json)
+	var result: Dictionary = gateway.submit(command_json)
 	_submitting = false
 	if result.get("accepted") != true:
 		_show_error(str(result.get("error", "Battle command rejected.")), result); _render(); return
 	if not _view.apply_result(result):
 		_show_error("Authority result was not a safe battle snapshot.", result); _render(); return
+	_clear_reaction_notice_for_new_round()
 	_error_message = ""
 	_selected_card.clear(); _selected_source = ""; _hand_limit_selection.clear()
 	if sent_type not in ["planning_keep", "planning_commit_cards"]: _selected_indices.clear()
@@ -684,6 +827,7 @@ func _send(command_json: String, history_confirmed: bool = false) -> void:
 	_save_active()
 	_record_history_arrival(label)
 	_render()
+	if learned_battle_mode: call_deferred("_schedule_model_if_needed", result)
 
 func _advance_beat(history_confirmed: bool = false) -> void:
 	var completed_label := ""
@@ -700,9 +844,45 @@ func _advance_beat(history_confirmed: bool = false) -> void:
 
 func _play_again() -> void:
 	if _history_review: return
+	if learned_battle_mode:
+		_start_learned_rematch()
+		return
 	active_store.clear(); get_tree().change_scene_to_file("res://app/boot/battle_bootstrap.tscn")
 
+func _start_learned_rematch() -> void:
+	if _submitting or _model_thinking: return
+	_submitting = true
+	_model_error = false
+	_error_message = ""
+	_render()
+	learned_seed = int(Time.get_unix_time_from_system() * 1000000.0) ^ Time.get_ticks_usec()
+	var battle_id := "learned-%d-%d-%d" % [Time.get_unix_time_from_system(), Time.get_ticks_usec(), OS.get_process_id()]
+	var result: Dictionary = gateway.start_battle(battle_id, learned_seed, true)
+	_submitting = false
+	if result.get("accepted") != true:
+		_show_error(str(result.get("error", "The learned rematch could not start.")), result)
+		_render()
+		return
+	_view = BattleViewState.new()
+	_director = BattlePresentationDirector.new()
+	_director.configure_learned_battle(true)
+	_selected_indices.clear(); _selected_card.clear(); _selected_source = ""; _hand_limit_selection.clear()
+	_reaction_notice = ""
+	_selection_roll_number = -1
+	if not _view.apply_result(result):
+		_show_error("The rematch did not return a safe human-viewer snapshot.", result)
+		_render()
+		return
+	_director.queue_result(result)
+	_render()
+	call_deferred("_schedule_model_if_needed", result)
+
+func _return_to_mode_menu() -> void:
+	if _submitting or _model_thinking: return
+	get_tree().change_scene_to_file("res://app/boot/battle_bootstrap.tscn")
+
 func _snapshot_tools_enabled() -> bool:
+	if learned_battle_mode: return false
 	return (
 		OS.is_debug_build()
 		and OS.get_environment("DICE_AND_DESTINY_ENABLE_SNAPSHOTS") == "1"
@@ -710,6 +890,7 @@ func _snapshot_tools_enabled() -> bool:
 	)
 
 func _history_tools_enabled() -> bool:
+	if learned_battle_mode: return false
 	return (
 		OS.is_debug_build()
 		and OS.get_environment("DICE_AND_DESTINY_ENABLE_HISTORY") == "1"
@@ -746,7 +927,7 @@ func _history_client_state() -> Dictionary:
 	}
 
 func _refresh_history() -> bool:
-	var result := gateway.list_dev_history(_view.battle_id, viewer_actor_id)
+	var result: Dictionary = gateway.list_dev_history(_view.battle_id, viewer_actor_id)
 	if result.get("accepted") != true:
 		_history_message = "History error: %s" % str(result.get("error", "Could not list history."))
 		return false
@@ -825,7 +1006,7 @@ func _build_history_review_controls() -> void:
 
 func _record_history_point(label: String, kind: String, action: Dictionary) -> bool:
 	if not _history_tools_enabled() or _history_review or _history_replay: return true
-	var result := gateway.mark_dev_history(_view.battle_id, viewer_actor_id, label, kind, _director.last_sequence(), _history_client_state(), action)
+	var result: Dictionary = gateway.mark_dev_history(_view.battle_id, viewer_actor_id, label, kind, _director.last_sequence(), _history_client_state(), action)
 	if result.get("accepted") != true:
 		_history_message = "History error: %s" % str(result.get("error", "Could not record history point."))
 		return false
@@ -858,7 +1039,7 @@ func _jump_history(point_id: String) -> void:
 	if point_id.is_empty() or _submitting: return
 	_history_follow_latest = false
 	_submitting = true
-	var result := gateway.jump_dev_history(_view.battle_id, viewer_actor_id, point_id)
+	var result: Dictionary = gateway.jump_dev_history(_view.battle_id, viewer_actor_id, point_id)
 	_submitting = false
 	if result.get("accepted") != true:
 		_history_message = "History error: %s" % str(result.get("error", "Could not open history point.")); _render(); return
@@ -870,7 +1051,7 @@ func _jump_history(point_id: String) -> void:
 func _commit_history(mode: String) -> void:
 	if not _history_review or _submitting: return
 	_submitting = true
-	var result := gateway.commit_dev_history(_view.battle_id, viewer_actor_id, mode)
+	var result: Dictionary = gateway.commit_dev_history(_view.battle_id, viewer_actor_id, mode)
 	_submitting = false
 	if result.get("accepted") != true:
 		_history_message = "History error: %s" % str(result.get("error", "Could not resume from history.")); _render(); return
@@ -880,7 +1061,7 @@ func _commit_history(mode: String) -> void:
 func _return_history_latest() -> void:
 	if not _history_review or _submitting: return
 	_submitting = true
-	var result := gateway.return_dev_history_latest(_view.battle_id, viewer_actor_id)
+	var result: Dictionary = gateway.return_dev_history_latest(_view.battle_id, viewer_actor_id)
 	_submitting = false
 	if result.get("accepted") != true:
 		_history_message = "History error: %s" % str(result.get("error", "Could not return to latest.")); _render(); return
@@ -890,7 +1071,7 @@ func _return_history_latest() -> void:
 func _try_replay_history_action(action: Dictionary, label: String, pending: Dictionary) -> void:
 	if _submitting: return
 	_submitting = true
-	var result := gateway.replay_dev_history_action(_view.battle_id, viewer_actor_id, action)
+	var result: Dictionary = gateway.replay_dev_history_action(_view.battle_id, viewer_actor_id, action)
 	_submitting = false
 	if result.get("accepted") == true:
 		var data: Dictionary = _as_dictionary(result.get("data", {}).get("history", {}))
@@ -925,7 +1106,7 @@ func _confirm_history_divergence() -> void:
 	if _history_pending_divergence.is_empty() or _submitting: return
 	var pending := _history_pending_divergence.duplicate(true)
 	_submitting = true
-	var result := gateway.replace_dev_history_future(_view.battle_id, viewer_actor_id)
+	var result: Dictionary = gateway.replace_dev_history_future(_view.battle_id, viewer_actor_id)
 	_submitting = false
 	if result.get("accepted") != true:
 		_show_error(str(result.get("error", "Could not replace future history.")), result); _render(); return
@@ -1051,7 +1232,7 @@ func _build_snapshot_panel() -> void:
 	var close := Button.new(); close.text = "Close"; close.pressed.connect(func(): _snapshot_panel_open = false; _render()); content.add_child(close); _inspect(close, "battle.dev_snapshots.close", "Close developer snapshot controls")
 
 func _refresh_snapshot_entries() -> bool:
-	var result := gateway.list_dev_snapshots(_view.battle_id, viewer_actor_id)
+	var result: Dictionary = gateway.list_dev_snapshots(_view.battle_id, viewer_actor_id)
 	if result.get("accepted") != true:
 		_snapshot_message = "Error: %s" % str(result.get("error", "Could not list snapshots.")); return false
 	_snapshot_entries = _as_array(result.get("data", {}).get("snapshots", []))
@@ -1067,7 +1248,7 @@ func _capture_dev_snapshot() -> void:
 		_snapshot_message = "Error: Use 1–64 letters, numbers, dots, underscores, or hyphens."; _render(); return
 	if not _checkpoint_snapshot_history():
 		_render(); return
-	var result := gateway.save_dev_snapshot(_view.battle_id, viewer_actor_id, _snapshot_name, _snapshot_overwrite)
+	var result: Dictionary = gateway.save_dev_snapshot(_view.battle_id, viewer_actor_id, _snapshot_name, _snapshot_overwrite)
 	if result.get("accepted") != true:
 		_snapshot_message = "Error: %s" % str(result.get("error", "Could not capture snapshot.")); _render(); return
 	_selected_snapshot_name = _snapshot_name
@@ -1082,7 +1263,7 @@ func _checkpoint_snapshot_history() -> bool:
 	if _history_review or _history_replay:
 		return true
 	var kind := "presentation" if _director.has_beats() else "decision"
-	var result := gateway.mark_dev_history(_view.battle_id, viewer_actor_id, _history_current_state_label(), kind, _director.last_sequence(), _history_client_state(), {})
+	var result: Dictionary = gateway.mark_dev_history(_view.battle_id, viewer_actor_id, _history_current_state_label(), kind, _director.last_sequence(), _history_client_state(), {})
 	if result.get("accepted") != true:
 		_snapshot_message = "Error: Could not checkpoint the visible battle state: %s" % str(result.get("error", "history checkpoint failed"))
 		return false
@@ -1095,7 +1276,7 @@ func _checkpoint_snapshot_history() -> bool:
 func _load_dev_snapshot(snapshot_name: String) -> void:
 	if snapshot_name.is_empty() or _submitting: return
 	_submitting = true
-	var result := gateway.load_dev_snapshot(_view.battle_id, viewer_actor_id, snapshot_name)
+	var result: Dictionary = gateway.load_dev_snapshot(_view.battle_id, viewer_actor_id, snapshot_name)
 	_submitting = false
 	if result.get("accepted") != true:
 		_snapshot_message = "Error: %s" % str(result.get("error", "Could not load snapshot.")); _render(); return
@@ -1115,6 +1296,7 @@ func _valid_snapshot_name(value: String) -> bool:
 	return expression.compile("^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$") == OK and expression.search(value) != null
 
 func _save_active() -> void:
+	if learned_battle_mode: return
 	active_store.save_active(_view.battle_id, viewer_actor_id, _director.last_sequence(), loaded_snapshot_name, history_context)
 
 func _card_legal(definition: String) -> bool:
@@ -1178,6 +1360,46 @@ func _segment_name(id: String) -> String:
 		if pair[0] == id: return pair[1]
 	return id.replace("_", " ").capitalize()
 
+func _actor_display_name(actor_id: String) -> String:
+	if actor_id == "blade": return "Blade Warden"
+	if actor_id == "goblin": return "Learned Blade Warden" if learned_battle_mode else "Venom Goblin"
+	return actor_id.replace("_", " ").capitalize()
+
+func _capture_offensive_reaction_notice(result: Dictionary) -> void:
+	for event_value in _as_array(result.get("events", [])):
+		var event: Dictionary = _as_dictionary(event_value)
+		if str(event.get("type", "")) != "card_played" or str(event.get("segment", "")) != "offensive": continue
+		var data: Dictionary = _as_dictionary(event.get("data", {}))
+		var old_ability := str(data.get("old_ability", "")); var new_ability := str(data.get("new_ability", ""))
+		if old_ability.is_empty() and new_ability.is_empty(): continue
+		var card_name := _card_display_name(str(data.get("card_definition_id", "")))
+		var actor_name := _actor_display_name(str(event.get("actor_id", "")))
+		var die_number := int(data.get("die_index", -1)) + 1; var face := int(data.get("face", 0))
+		var old_name := str(BattlePresentationCatalog.ability(old_ability).name) if not old_ability.is_empty() else "No attack"
+		var new_name := str(BattlePresentationCatalog.ability(new_ability).name) if not new_ability.is_empty() else "No attack"
+		var change := "%s → %s" % [old_name, new_name] if old_name != new_name else "the attack remains %s" % new_name
+		_reaction_notice = "%s played %s: die %d changed to face %d; %s." % [actor_name, card_name, die_number, face, change]
+
+func _build_reaction_notice() -> void:
+	if _reaction_notice.is_empty(): return
+	var notice := Label.new(); notice.text = _reaction_notice; notice.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER; notice.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART; notice.add_theme_font_size_override("font_size", 18); notice.add_theme_color_override("font_color", Color("ef9a55")); _center.add_child(notice)
+	_inspect(notice, "battle.offensive_reaction.notice", _reaction_notice)
+
+func _combat_event_text(event: Dictionary) -> String:
+	if str(event.get("type", "")) == "card_played" and str(event.get("segment", "")) == "offensive":
+		var data: Dictionary = _as_dictionary(event.get("data", {}))
+		var card_name := _card_display_name(str(data.get("card_definition_id", "")))
+		return "%s played %s" % [_actor_display_name(str(event.get("actor_id", ""))), card_name]
+	return str(event.get("type", "event")).replace("_", " ")
+
+func _card_display_name(card_definition_id: String) -> String:
+	if card_definition_id.is_empty(): return "a reaction card"
+	var name := str(BattlePresentationCatalog.card(card_definition_id).get("name", ""))
+	return name if not name.is_empty() else card_definition_id.replace("_", " ").capitalize()
+
+func _clear_reaction_notice_for_new_round() -> void:
+	if _view.segment == "offensive" and _view.stage == "planning": _reaction_notice = ""
+
 func _enemy_plan_text() -> String:
 	for event in _view.events:
 		var event_data: Dictionary = _as_dictionary(event.get("data", {}))
@@ -1188,6 +1410,7 @@ func _enemy_plan_text() -> String:
 	return ""
 
 func _prompt_text() -> String:
+	if _model_thinking: return "Learned Blade Warden is thinking…"
 	var pending := _pending()
 	if pending.is_empty(): return "The authority is resolving the battle…"
 	return str(pending.get("stage", "Action")).replace("_", " ").capitalize()
@@ -1228,6 +1451,14 @@ func inspection_state() -> Dictionary:
 		"battle_id": _view.battle_id,
 		"status": _view.status,
 		"battle_result": _view.battle_result,
+		"learned_battle_mode": learned_battle_mode,
+		"learned_human_seat": learned_human_seat,
+		"learned_seed": learned_seed,
+		"learned_policy": _view.learned_policy,
+		"model_thinking": _model_thinking,
+		"model_timeout_warning": _model_timeout_warning,
+		"model_error": _model_error,
+		"reaction_notice": _reaction_notice,
 		"round": _view.round_number,
 		"segment": _view.segment,
 		"stage": _view.stage,
@@ -1244,6 +1475,7 @@ func inspection_state() -> Dictionary:
 		"defense_rolls": _view.defense_rolls,
 		"defense_selections": _view.defense_selections,
 		"offensive_reveals": _view.offensive_reveals,
+		"rolled_dice": {"blade": _view.rolled_dice("blade"), "goblin": _view.rolled_dice("goblin")},
 		"hand_limit_selection": _hand_limit_selection,
 		"loaded_snapshot_name": loaded_snapshot_name,
 		"snapshot_panel_open": _snapshot_panel_open,

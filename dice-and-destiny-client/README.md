@@ -29,4 +29,11 @@ tests/         deterministic Godot tests, scenarios, presentation tests, and fix
 
 Godot presentation must not directly mutate authoritative battle state. It should send commands through the local client boundary and render returned events/snapshots.
 
+The main scene now presents a graphical mode menu. Choose **Classic Battle** for
+the existing Blade Warden versus Venom Goblin D100 path, or choose **Learned
+Mirror · Human Seat A/B** for the Phase 3 Blade Warden mirror. The learned
+opponent is the accepted frozen seed-11 policy; it is loaded once per application
+session, runs off the render loop, and is reused by the graphical rematch flow.
+No terminal input is used during a player battle.
+
 Launch the project from the repository root with `./scripts/godot.sh`. That launcher is the supported development boundary: it isolates saves, test repositories, logs, and inspector discovery for every worktree without per-workspace setup.

@@ -163,6 +163,15 @@ func TestAuthorityTipItEnumeratesAndAcceptsOnlyRevealedFaceSixDice(t *testing.T)
 	if !accepted.Accepted {
 		t.Fatalf("face-6 Tip It command was rejected: %#v", accepted)
 	}
+	playedDefinition := ""
+	for _, battleEvent := range accepted.Events {
+		if battleEvent.Type == "card_played" {
+			playedDefinition, _ = battleEvent.Data["card_definition_id"].(string)
+		}
+	}
+	if playedDefinition != "tip_it" {
+		t.Fatalf("public reaction card definition = %q, want tip_it in events %#v", playedDefinition, accepted.Events)
+	}
 	checkpoint, err = authority.repo.Load("tip-it-targets")
 	if err != nil {
 		t.Fatal(err)

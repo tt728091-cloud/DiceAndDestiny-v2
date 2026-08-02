@@ -7,6 +7,40 @@ policy instances, encodes viewer-safe authority results, selects an index from a
 masked candidate list, and returns that exact listed command to the real Go
 authority through one persistent local simulator process per environment.
 
+## Phase 3 frozen export
+
+Phase 3 uses the accepted seed-11 final checkpoint. The graphical runtime does
+not package Python, Torch, Stable-Baselines3, or an inference subprocess. A
+reviewed exporter writes only the deterministic candidate-scoring actor tensors
+and compatibility metadata to
+`../dice-and-destiny-client/models/learned/blade-warden-seed-11-final-v1.json`.
+The Go runtime validates the checkpoint/parameter hashes, Phase 1 engine
+revision, Phase 2 implementation revision, content hash, schema versions,
+dimensions, and tensor shapes before allowing a player battle.
+
+Reproduce the tracked export from `dice-and-destiny-server`:
+
+```bash
+./scripts/ml.sh export-policy \
+  --checkpoint runs/phase2-training/seed-11/checkpoints/final.zip \
+  --output ../dice-and-destiny-client/models/learned/blade-warden-seed-11-final-v1.json \
+  --model-id blade-warden-maskable-ppo-seed-11-final-v1 \
+  --content-version 9eed6066ea8c95f8a60038647de935e88ed8d6e9cbc618229070a4d78945edc4 \
+  --source-revision fff39759360ce89041940cec99410082af0671dd \
+  --training-engine-revision 5d81e8f6de350a3bdcc3f4ccf42a3447443f83fe
+```
+
+Run the Phase 3 both-seat acceptance proxy from the same directory:
+
+```bash
+go run ./cmd/phase3-acceptance --battles 100 --output ml/runs/phase3-acceptance
+```
+
+The acceptance runner records every human-proxy and learned-policy authority
+command, seeds, seats, results, per-decision inference latency, battle duration,
+and all required failure counters. Its output remains ignored with other run
+artifacts.
+
 Run every command from `dice-and-destiny-server` through `scripts/ml.sh`. The
 wrapper builds the local Go bridge once per invocation and uses the locked Python
 environment in `ml/.venv`. Godot is not started.

@@ -11,10 +11,12 @@ class NativeBattleAuthority : public Object {
 	GDCLASS(NativeBattleAuthority, Object)
 
 	using HandleCommandJSONFn = char *(*)(const char *);
+	using HandleLearnedBattleJSONFn = char *(*)(const char *);
 	using FreeCStringFn = void (*)(char *);
 
 	void *go_library_handle = nullptr;
 	HandleCommandJSONFn handle_command_json = nullptr;
+	HandleLearnedBattleJSONFn handle_learned_battle_json = nullptr;
 	FreeCStringFn free_c_string = nullptr;
 	String last_load_error;
 
@@ -28,6 +30,7 @@ public:
 	~NativeBattleAuthority();
 
 	String submit_command(const String &command_json);
+	String learned_battle_request(const String &request_json);
 };
 
 } // namespace godot

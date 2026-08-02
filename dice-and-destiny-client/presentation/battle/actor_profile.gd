@@ -71,7 +71,7 @@ func display(actor_id: String, actor: Dictionary, is_player: bool) -> void:
 		var id := str(entry.get("definition_id", entry.get("id", "status")))
 		status_text.append("%s %s ×%d" % [BattlePresentationCatalog.status(id).glyph, BattlePresentationCatalog.status(id).name, int(entry.get("stacks", 1))])
 	statuses.text = "No active statuses" if status_text.is_empty() else "\n".join(status_text)
-	var path := "res://assets/battle/portraits/blade_warden.png" if is_player else "res://assets/battle/portraits/venom_goblin.png"
+	var path := "res://assets/battle/portraits/blade_warden.png" if definition == "blade_warden" else "res://assets/battle/portraits/venom_goblin.png"
 	if ResourceLoader.exists(path): portrait.texture = load(path)
 	tooltip_text = "%s authoritative profile" % title.text
 

@@ -11,6 +11,10 @@ const MEANINGFUL := {
 
 var _queue: Array = []
 var _last_sequence := 0
+var learned_battle_mode := false
+
+func configure_learned_battle(enabled: bool) -> void:
+	learned_battle_mode = enabled
 
 func queue_result(result: Dictionary, already_presented_sequence: int = 0) -> void:
 	_last_sequence = maxi(_last_sequence, already_presented_sequence)
@@ -153,10 +157,10 @@ func _beat(event: Dictionary) -> Dictionary:
 		"cards_drawn":
 			title = "Card Drawn"
 			if str(event.get("actor_id", "")) == "blade" and not event.get("cards", []).is_empty(): detail = "Blade Warden drew %s" % str(event.cards[0])
-			else: detail = "Venom Goblin drew %d hidden card%s" % [maxi(1, int(event.get("count", 1))), "s" if int(event.get("count", 1)) != 1 else ""]
+			else: detail = "%s drew %d hidden card%s" % ["Learned Blade Warden" if learned_battle_mode else "Venom Goblin", maxi(1, int(event.get("count", 1))), "s" if int(event.get("count", 1)) != 1 else ""]
 		"energy_points_gained":
 			title = "Energy Gained"
-			var actor_name := "Blade Warden" if str(event.get("actor_id", "")) == "blade" else "Venom Goblin"
+			var actor_name := "Blade Warden" if str(event.get("actor_id", "")) == "blade" else "Learned Blade Warden" if learned_battle_mode else "Venom Goblin"
 			detail = "%s energy is now %d" % [actor_name, int(event.get("energy_points", 0))]
 		"income_summary":
 			title = "Income Results"

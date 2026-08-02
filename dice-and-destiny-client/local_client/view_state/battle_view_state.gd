@@ -20,6 +20,7 @@ var effect_rolls: Array = []
 var offensive_reveals: Dictionary = {}
 var raw_snapshot: Dictionary = {}
 var content_catalog: Dictionary = {}
+var learned_policy: Dictionary = {}
 var max_rolls_by_actor := {"blade": 3, "goblin": 3}
 
 func apply_result(result: Dictionary) -> bool:
@@ -41,6 +42,7 @@ func apply_result(result: Dictionary) -> bool:
 	if incoming_round != round_number: offensive_reveals.clear()
 	raw_snapshot = snapshot.duplicate(true)
 	content_catalog = snapshot.get("content_catalog", {}).duplicate(true)
+	learned_policy = result.get("learned_policy", {}).duplicate(true)
 	BattlePresentationCatalog.configure(content_catalog)
 	battle_id = str(snapshot.get("battle_id", ""))
 	status = str(snapshot.get("status", ""))
@@ -135,11 +137,14 @@ func hand_cards() -> Array:
 	return result
 
 func rolled_dice(actor_id: String) -> Array:
+	# A reaction can mutate the final revealed dice without adding another roll
+	# history entry. Prefer the latest authority reveal so the tray and selected
+	# ability always describe the same post-reaction state.
+	var reveal: Dictionary = offensive_reveal(actor_id)
+	var revealed_dice = reveal.get("dice", [])
+	if revealed_dice is Array and not revealed_dice.is_empty(): return revealed_dice
 	var history: Array = actor(actor_id).get("roll_history", [])
-	if history.is_empty():
-		var reveal: Dictionary = offensive_reveal(actor_id)
-		var revealed_dice = reveal.get("dice", [])
-		return revealed_dice if revealed_dice is Array else []
+	if history.is_empty(): return []
 	var dice = history[-1].get("dice", [])
 	return dice if dice is Array else []
 

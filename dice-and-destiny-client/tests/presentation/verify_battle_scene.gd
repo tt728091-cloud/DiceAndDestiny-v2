@@ -216,22 +216,27 @@ func _run() -> void:
 	var defense_roll = packed.instantiate(); var defense_roll_fixture := _fixture()
 	defense_roll_fixture.snapshot.segment = "defensive"; defense_roll_fixture.snapshot.stage = "defense_roll"
 	defense_roll_fixture.pending_input.blade.segment = "defensive"; defense_roll_fixture.pending_input.blade.stage = "defense_roll"; defense_roll_fixture.pending_input.blade.allowed_commands = ["roll_dice"]
+	defense_roll_fixture.pending_input.blade.erase("source_id")
 	defense_roll_fixture.snapshot.damage_sources = defense_roll_result.snapshot.damage_sources.duplicate(true)
 	defense_roll_fixture.snapshot.defense_selections = {"blade": {"actor_id": "blade", "ability_id": "basic_defense", "source_id": "source-enemy"}}
 	defense_roll_fixture.snapshot.actors.blade.selected_ability = "sword_cut"
 	defense_roll.initial_result = defense_roll_fixture; defense_roll.gateway = BattleGateway.new(defense_roll_fake); defense_roll.active_store = ActiveBattleStore.new(WorkspacePaths.persistent_file("verify_defense_die_active.json")); root.add_child(defense_roll)
 	await process_frame; await process_frame
-	var pending_die: Button = null; var saw_selected_defense := false; var leaked_roll_label := false; var leaked_enemy_before_reveal := false
+	var pending_die: Button = null; var saw_selected_defense := false; var leaked_roll_label := false; var leaked_enemy_before_reveal := false; var saw_pending_damage := false; var saw_false_final_zero := false
 	for label in defense_roll.find_children("*", "Label", true, false):
 		if label.has_meta("inspection_id") and label.get_meta("inspection_id") == "battle.defense_selected.blade" and label.text.begins_with("Basic Defense"): saw_selected_defense = true
 	for button in defense_roll.find_children("*", "Button", true, false):
+		if "Jagged Slash" in button.text and "Base 4 · Prevented 0 · Pending 4" in button.text: saw_pending_damage = true
+		if "Jagged Slash" in button.text and "Final 0" in button.text: saw_false_final_zero = true
 		if button.text == "Roll Defense Die": leaked_roll_label = true
 		if button.has_meta("inspection_id") and button.get_meta("inspection_id") == "battle.defense_die.blade.pending": pending_die = button
 		if button.has_meta("inspection_id") and str(button.get_meta("inspection_id")).begins_with("battle.defense_die.goblin"): leaked_enemy_before_reveal = true
 	if not saw_selected_defense or pending_die == null or not pending_die.text.is_empty() or leaked_roll_label or leaked_enemy_before_reveal: _fail("pre-reveal defense UI did not expose only the player's blank die"); return
+	if not saw_pending_damage or saw_false_final_zero: _fail("unresolved incoming damage was not labeled as pending: pending=%s false_final=%s" % [saw_pending_damage, saw_false_final_zero]); return
 	var pre_roll_die_position := pending_die.global_position
 	pending_die.pressed.emit(); await process_frame; await process_frame
-	if defense_roll_fake.commands.size() != 1 or JSON.parse_string(defense_roll_fake.commands[0]).get("type") != "roll_dice": _fail("blank defense die did not submit roll_dice: %s" % defense_roll_fake.commands); return
+	var defense_roll_command: Dictionary = JSON.parse_string(defense_roll_fake.commands[0]) if defense_roll_fake.commands.size() == 1 else {}
+	if defense_roll_command.get("type") != "roll_dice" or defense_roll_command.get("payload", {}) != {"pending_input_id": str(defense_roll_fixture.pending_input.blade.id)}: _fail("blank defense die did not submit the exact current roll_dice candidate: %s" % defense_roll_fake.commands); return
 	var player_rolled_die: Button = null; var enemy_rolled_die: Button = null; var leaked_enemy_pending_die := false
 	for button in defense_roll.find_children("*", "Button", true, false):
 		if button.has_meta("inspection_id") and button.get_meta("inspection_id") == "battle.defense_die.blade" and "5" in button.text: player_rolled_die = button

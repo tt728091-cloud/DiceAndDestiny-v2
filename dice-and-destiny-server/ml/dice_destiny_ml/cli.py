@@ -7,6 +7,7 @@ from pathlib import Path
 
 from .bridge import AuthorityBridge
 from .evaluation import evaluate
+from .export_policy import export_phase3_policy
 from .policies import HeuristicPolicy, select_with_policy
 from .reporting import generate_report_artifacts
 from .schema import SchemaEncoder
@@ -19,9 +20,18 @@ def main(argv: list[str] | None = None) -> int:
     args = parser.parse_args(argv)
     server_root = Path(__file__).resolve().parents[2]
     binary = Path(args.binary) if args.binary else server_root / "build" / "battle-ml-sim"
-    if not binary.exists():
+    if args.command != "export-policy" and not binary.exists():
         parser.error(f"simulator binary not found: {binary}; run scripts/ml.sh so it is built first")
-    if args.command == "smoke":
+    if args.command == "export-policy":
+        result = export_phase3_policy(
+            Path(args.checkpoint),
+            Path(args.output),
+            model_id=args.model_id,
+            content_version=args.content_version,
+            source_revision=args.source_revision,
+            training_engine_revision=args.training_engine_revision,
+        )
+    elif args.command == "smoke":
         result = smoke(binary, server_root, args.seed)
     elif args.command in {"evaluate", "benchmark", "acceptance"}:
         seeds = load_seeds(args)
@@ -113,6 +123,17 @@ def build_parser() -> argparse.ArgumentParser:
 
     smoke_parser = subparsers.add_parser("smoke", help="reset/observe/step/terminal/replay smoke test")
     smoke_parser.add_argument("--seed", type=int, default=20260801)
+
+    export_parser = subparsers.add_parser(
+        "export-policy",
+        help="export the accepted deterministic actor for the Phase 3 Go runtime",
+    )
+    export_parser.add_argument("--checkpoint", required=True)
+    export_parser.add_argument("--output", required=True)
+    export_parser.add_argument("--model-id", required=True)
+    export_parser.add_argument("--content-version", required=True)
+    export_parser.add_argument("--source-revision", required=True)
+    export_parser.add_argument("--training-engine-revision", required=True)
 
     for name, help_text in (
         ("evaluate", "evaluate any two independently instantiated policies"),

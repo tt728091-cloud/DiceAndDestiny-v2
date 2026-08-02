@@ -8,13 +8,30 @@ using namespace godot;
 
 void NativeBattleAuthority::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("submit_command", "command_json"), &NativeBattleAuthority::submit_command);
+	ClassDB::bind_method(D_METHOD("learned_battle_request", "request_json"), &NativeBattleAuthority::learned_battle_request);
 }
 
 NativeBattleAuthority::~NativeBattleAuthority() {
 	// Do not dlclose the Go runtime during the spike; unloading Go c-shared libraries can be unsafe.
 	go_library_handle = nullptr;
 	handle_command_json = nullptr;
+	handle_learned_battle_json = nullptr;
 	free_c_string = nullptr;
+}
+
+String NativeBattleAuthority::learned_battle_request(const String &request_json) {
+	if (!ensure_go_library_loaded()) {
+		return String("{\"accepted\":false,\"ok\":false,\"error\":\"") + last_load_error + String("\"}");
+	}
+
+	CharString request_utf8 = request_json.utf8();
+	char *result = handle_learned_battle_json(request_utf8.get_data());
+	if (result == nullptr) {
+		return "{\"accepted\":false,\"ok\":false,\"error\":\"Go learned battle runtime returned null\"}";
+	}
+	String result_json = String::utf8(result);
+	free_c_string(result);
+	return result_json;
 }
 
 String NativeBattleAuthority::submit_command(const String &command_json) {
@@ -34,7 +51,7 @@ String NativeBattleAuthority::submit_command(const String &command_json) {
 }
 
 bool NativeBattleAuthority::ensure_go_library_loaded() {
-	if (handle_command_json != nullptr && free_c_string != nullptr) {
+	if (handle_command_json != nullptr && handle_learned_battle_json != nullptr && free_c_string != nullptr) {
 		return true;
 	}
 
@@ -50,9 +67,10 @@ bool NativeBattleAuthority::ensure_go_library_loaded() {
 	}
 
 	handle_command_json = reinterpret_cast<HandleCommandJSONFn>(dlsym(go_library_handle, "HandleCommandJSON"));
+	handle_learned_battle_json = reinterpret_cast<HandleLearnedBattleJSONFn>(dlsym(go_library_handle, "HandleLearnedBattleJSON"));
 	free_c_string = reinterpret_cast<FreeCStringFn>(dlsym(go_library_handle, "FreeCString"));
 
-	if (handle_command_json == nullptr || free_c_string == nullptr) {
+	if (handle_command_json == nullptr || handle_learned_battle_json == nullptr || free_c_string == nullptr) {
 		const char *error = dlerror();
 		last_load_error = String("failed to bind Go authority symbols: ") + (error == nullptr ? "unknown error" : error);
 		return false;

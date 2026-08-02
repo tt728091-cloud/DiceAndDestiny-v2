@@ -1118,6 +1118,10 @@ func (e Engine) handleOffensiveReactionCommand(battle *state.Battle, library con
 	}
 	adjust := payload.Commitment.PlanningAdjustments[0]
 	old := battle.Settled.Actors[adjust.ActorID].SelectedAbilityID
+	cardDefinitionID := ""
+	if instance, exists := battle.Settled.Actors[cmd.ActorID].CardInstances[payload.Commitment.CardIDs[0]]; exists {
+		cardDefinitionID = instance.DefinitionID
+	}
 	if err := e.playSettledReactionCard(battle, library, cmd.ActorID, payload.Commitment); err != nil {
 		return nil, err
 	}
@@ -1158,7 +1162,7 @@ func (e Engine) handleOffensiveReactionCommand(battle *state.Battle, library con
 	battle.Settled.Actors[adjust.ActorID] = runtime
 	advanceSettledReactionPriority(battle, cmd.ActorID, true)
 	return []event.Event{
-		settledEvent(event.TypeCardPlayed, battle, cmd.ActorID, map[string]any{"card_instance_id": payload.Commitment.CardIDs[0], "actor_id": adjust.ActorID, "die_index": adjust.DieIndex, "face": adjust.Face, "old_ability": old, "new_ability": runtime.SelectedAbilityID, "valid_abilities": valid}),
+		settledEvent(event.TypeCardPlayed, battle, cmd.ActorID, map[string]any{"card_instance_id": payload.Commitment.CardIDs[0], "card_definition_id": cardDefinitionID, "actor_id": adjust.ActorID, "die_index": adjust.DieIndex, "face": adjust.Face, "old_ability": old, "new_ability": runtime.SelectedAbilityID, "valid_abilities": valid}),
 		offensiveRevealEvent(battle, library),
 	}, nil
 }

@@ -71,7 +71,9 @@ static func planning_pass(battle_id: String, actor_id: String, pending: Dictiona
 	return _planning(battle_id, actor_id, "planning_pass", pending)
 
 static func roll_dice(battle_id: String, actor_id: String, pending: Dictionary, reroll_indices: Array = []) -> String:
-	var payload := {"pending_input_id": str(pending.get("id", "")), "request_id": str(pending.get("source_id", ""))}
+	var payload := {"pending_input_id": str(pending.get("id", ""))}
+	var request_id := str(pending.get("source_id", ""))
+	if not request_id.is_empty(): payload["request_id"] = request_id
 	if not reroll_indices.is_empty(): payload["reroll_indices"] = _integer_indices(reroll_indices)
 	return _json(battle_id, actor_id, "roll_dice", payload)
 

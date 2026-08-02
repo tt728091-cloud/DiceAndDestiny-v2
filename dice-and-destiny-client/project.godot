@@ -18,6 +18,7 @@ run/main_scene="res://app/boot/battle_bootstrap.tscn"
 [autoload]
 
 GameInspector="*res://devtools/game_inspector.gd"
+LearnedBattleRuntime="*res://local_client/learned_battle/learned_battle_runtime.gd"
 
 [dice_and_destiny]
 
