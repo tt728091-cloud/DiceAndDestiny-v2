@@ -1,0 +1,728 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Zero-context implementation and operations handoff for training one Dice and Destiny policy to control either character in an arbitrary two-character matchup.">
+  <title>Arbitrary Character Model Training Handoff · Dice &amp; Destiny</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --ink: #eef4f6;
+      --muted: #a7b7bd;
+      --dim: #71858c;
+      --paper: #0d1619;
+      --panel: #142226;
+      --panel-2: #192b30;
+      --line: #294149;
+      --mint: #70d8b4;
+      --mint-dark: #1e8067;
+      --amber: #f0ba68;
+      --coral: #ef806f;
+      --blue: #85b9ef;
+      --shadow: 0 22px 60px rgba(0, 0, 0, .26);
+      --radius: 20px;
+      --mono: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+      --sans: Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      color: var(--ink);
+      background:
+        radial-gradient(circle at 8% 0%, rgba(112, 216, 180, .12), transparent 30rem),
+        radial-gradient(circle at 94% 17%, rgba(133, 185, 239, .09), transparent 28rem),
+        var(--paper);
+      font-family: var(--sans);
+      line-height: 1.62;
+      overflow-wrap: anywhere;
+    }
+
+    a { color: var(--blue); text-underline-offset: 3px; }
+    code, pre { font-family: var(--mono); }
+    code {
+      padding: .12em .35em;
+      border: 1px solid rgba(133, 185, 239, .15);
+      border-radius: 6px;
+      color: #cce4ff;
+      background: rgba(133, 185, 239, .08);
+      font-size: .9em;
+    }
+
+    .topbar {
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 18px;
+      padding: 13px max(18px, calc((100vw - 1180px) / 2));
+      border-bottom: 1px solid rgba(112, 216, 180, .16);
+      background: rgba(13, 22, 25, .91);
+      backdrop-filter: blur(14px);
+    }
+
+    .brand { display: flex; align-items: center; gap: 10px; font-weight: 760; letter-spacing: .01em; }
+    .brand-mark {
+      display: grid;
+      width: 30px;
+      height: 30px;
+      place-items: center;
+      border: 1px solid rgba(112, 216, 180, .45);
+      border-radius: 9px;
+      color: var(--mint);
+      background: rgba(112, 216, 180, .08);
+    }
+
+    .topnav { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 6px; }
+    .topnav a {
+      padding: 7px 9px;
+      border-radius: 8px;
+      color: var(--muted);
+      font-size: 13px;
+      text-decoration: none;
+    }
+    .topnav a:hover, .topnav a:focus-visible { color: var(--ink); background: rgba(255,255,255,.06); }
+
+    main { width: min(100% - 32px, 1180px); margin: 0 auto; padding: 42px 0 76px; }
+    .hero {
+      display: grid;
+      grid-template-columns: 1.45fr .75fr;
+      gap: 34px;
+      align-items: end;
+      padding: 46px;
+      border: 1px solid rgba(112, 216, 180, .25);
+      border-radius: 28px;
+      background: linear-gradient(135deg, rgba(25, 43, 48, .98), rgba(16, 30, 34, .98));
+      box-shadow: var(--shadow);
+    }
+
+    .eyebrow, .section-kicker {
+      margin: 0 0 11px;
+      color: var(--mint);
+      font-size: 12px;
+      font-weight: 800;
+      letter-spacing: .16em;
+      text-transform: uppercase;
+    }
+    h1 { max-width: 820px; margin: 0; font-size: clamp(38px, 5.4vw, 72px); line-height: 1.02; letter-spacing: -.045em; }
+    h2 { margin: 0 0 12px; font-size: clamp(27px, 3vw, 40px); line-height: 1.12; letter-spacing: -.025em; }
+    h3 { margin: 0 0 8px; font-size: 20px; line-height: 1.25; }
+    h4 { margin: 0 0 5px; font-size: 16px; }
+    .lede { max-width: 780px; margin: 21px 0 0; color: #c3d1d5; font-size: 18px; }
+    .hero-meta { display: grid; gap: 10px; }
+    .meta-row {
+      display: flex;
+      justify-content: space-between;
+      gap: 18px;
+      padding: 10px 0;
+      border-bottom: 1px solid var(--line);
+      color: var(--muted);
+      font-size: 13px;
+    }
+    .meta-row strong { color: var(--ink); text-align: right; }
+
+    .alert {
+      margin: 20px 0 0;
+      padding: 17px 20px;
+      border: 1px solid rgba(240, 186, 104, .36);
+      border-radius: 14px;
+      color: #f8dfb8;
+      background: rgba(240, 186, 104, .08);
+    }
+
+    .section {
+      margin-top: 24px;
+      padding: 34px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: rgba(20, 34, 38, .88);
+      box-shadow: 0 14px 36px rgba(0,0,0,.12);
+    }
+    .section-intro { max-width: 900px; margin: 0 0 24px; color: var(--muted); font-size: 17px; }
+    .section > :last-child { margin-bottom: 0; }
+
+    .grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+    .grid.three { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    .card {
+      padding: 21px;
+      border: 1px solid var(--line);
+      border-radius: 15px;
+      background: rgba(25, 43, 48, .76);
+    }
+    .card p { margin: 7px 0 0; color: var(--muted); }
+    .card .number { display: block; margin-bottom: 8px; color: var(--mint); font: 800 12px var(--mono); }
+
+    .role-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; margin-top: 18px; }
+    .role {
+      padding: 18px;
+      border-left: 4px solid var(--mint-dark);
+      border-radius: 10px;
+      background: rgba(112, 216, 180, .06);
+    }
+    .role strong { display: block; margin-bottom: 5px; color: var(--mint); }
+
+    .callout {
+      margin: 22px 0;
+      padding: 17px 20px;
+      border-left: 4px solid var(--mint);
+      border-radius: 10px;
+      background: rgba(112, 216, 180, .08);
+    }
+    .callout.danger { border-left-color: var(--coral); background: rgba(239, 128, 111, .08); }
+    .callout.amber { border-left-color: var(--amber); background: rgba(240, 186, 104, .08); }
+
+    .table-wrap { overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; min-width: 760px; }
+    th, td { padding: 13px 14px; border-bottom: 1px solid var(--line); text-align: left; vertical-align: top; }
+    th { color: var(--mint); font-size: 12px; letter-spacing: .08em; text-transform: uppercase; }
+    td { color: #cad5d8; }
+    td:first-child { color: var(--ink); font-weight: 700; }
+
+    .steps { margin: 18px 0 0; padding: 0; list-style: none; counter-reset: handoff-step; }
+    .steps > li {
+      position: relative;
+      margin: 0 0 12px;
+      padding: 17px 18px 17px 58px;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: rgba(13, 22, 25, .35);
+      counter-increment: handoff-step;
+    }
+    .steps > li::before {
+      content: counter(handoff-step, decimal-leading-zero);
+      position: absolute;
+      left: 17px;
+      top: 17px;
+      color: var(--mint);
+      font: 800 13px var(--mono);
+    }
+    .steps p { margin: 5px 0 0; color: var(--muted); }
+
+    ul.checklist { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 9px 18px; padding: 0; list-style: none; }
+    ul.checklist li { position: relative; padding: 9px 10px 9px 31px; border-bottom: 1px solid rgba(41,65,73,.6); }
+    ul.checklist li::before { content: "✓"; position: absolute; left: 5px; color: var(--mint); font-weight: 900; }
+
+    .code-block, .prompt-box {
+      position: relative;
+      overflow: hidden;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      background: #091114;
+    }
+    pre { overflow-x: auto; margin: 0; padding: 22px; color: #d6e4e7; font-size: 13px; line-height: 1.55; white-space: pre; }
+    .code-label { padding: 9px 14px; border-bottom: 1px solid var(--line); color: var(--dim); font: 700 11px var(--mono); letter-spacing: .08em; text-transform: uppercase; }
+    .copy-button {
+      position: absolute;
+      right: 11px;
+      top: 9px;
+      padding: 7px 10px;
+      border: 1px solid rgba(112,216,180,.35);
+      border-radius: 8px;
+      color: var(--mint);
+      background: #102126;
+      cursor: pointer;
+      font: 700 12px var(--sans);
+    }
+    .copy-button:hover, .copy-button:focus-visible { background: #19343b; }
+
+    .tag-row { display: flex; flex-wrap: wrap; gap: 7px; margin-top: 12px; }
+    .tag { padding: 4px 8px; border: 1px solid var(--line); border-radius: 999px; color: var(--muted); font-size: 11px; }
+    .tag.good { color: var(--mint); border-color: rgba(112,216,180,.34); }
+    .tag.warn { color: var(--amber); border-color: rgba(240,186,104,.34); }
+
+    footer { margin-top: 28px; color: var(--dim); text-align: center; font-size: 13px; }
+
+    @media (max-width: 880px) {
+      .topbar { align-items: flex-start; flex-direction: column; }
+      .topnav { justify-content: flex-start; }
+      .hero { grid-template-columns: 1fr; padding: 30px 24px; }
+      .grid, .grid.three, .role-grid, ul.checklist { grid-template-columns: 1fr; }
+      .section { padding: 25px 20px; }
+    }
+    @media print {
+      :root { color-scheme: light; }
+      body { color: #182427; background: white; }
+      .topbar, .copy-button { display: none; }
+      main { width: 100%; padding: 0; }
+      .hero, .section, .card { color: #182427; background: white; box-shadow: none; break-inside: avoid; }
+      .lede, .section-intro, .card p, .steps p, td { color: #3c4d52; }
+      code { color: #173f57; }
+    }
+  </style>
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand"><span class="brand-mark">D</span> Arbitrary Matchup Training Handoff</div>
+    <nav class="topnav" aria-label="Page sections">
+      <a href="#truth">Current truth</a>
+      <a href="#target">Target contract</a>
+      <a href="#changes">Required changes</a>
+      <a href="#runbook">Runbook</a>
+      <a href="#acceptance">Acceptance</a>
+      <a href="#prompt">Paste-ready prompt</a>
+    </nav>
+  </header>
+
+  <main>
+    <section class="hero">
+      <div>
+        <p class="eyebrow">Zero-context implementation + operations guide</p>
+        <h1>Train one policy to play either character.</h1>
+        <p class="lede">Use this page when two combatants—possibly both brand new and different from each other—are ready for real-authority machine learning. It tells a fresh Codex context what exists, what is still hardcoded, how to generalize it safely, how to train a shared policy for both character identities and both seats, and what evidence is required before accepting the new model set.</p>
+      </div>
+      <aside class="hero-meta" aria-label="Handoff metadata">
+        <div class="meta-row"><span>Repository</span><strong>Dice and Destiny v2</strong></div>
+        <div class="meta-row"><span>Prepared</span><strong>August 1, 2026</strong></div>
+        <div class="meta-row"><span>Phase 2 baseline</span><strong><code>fff3975</code></strong></div>
+        <div class="meta-row"><span>Phase 3 baseline</span><strong><code>346a4ca</code></strong></div>
+        <div class="meta-row"><span>Target</span><strong>One shared policy, two character identities</strong></div>
+      </aside>
+    </section>
+
+    <div class="alert"><strong>Do not skip the generalization step.</strong> The current ML reset still creates <code>blade_warden</code> in both seats, the observation schema does not explicitly encode combatant identity, and <code>HeuristicPolicy</code> is Blade-Warden-specific. Running today’s training command unchanged will silently train another Blade Warden mirror model, regardless of which new content files exist.</div>
+
+    <section class="section" id="truth">
+      <p class="section-kicker">Current repository truth</p>
+      <h2>What the accepted system does today</h2>
+      <p class="section-intro">Treat the repository as the source of truth. Commit IDs here are orientation points, not permission to ignore later changes. A future context must inspect the actual branch and working tree before editing.</p>
+
+      <div class="grid three">
+        <article class="card">
+          <span class="number">01 · AUTHORITY</span>
+          <h3>Rules stay in Go</h3>
+          <p>The model receives a viewer-safe snapshot and the authority’s complete legal-command candidates. It selects an index; the original command is validated and applied by the real Go authority.</p>
+        </article>
+        <article class="card">
+          <span class="number">02 · TRAINING</span>
+          <h3>Maskable PPO</h3>
+          <p>Four persistent environments feed a shared candidate-scoring policy. Gameplay is stepped sequentially through <code>DummyVecEnv</code>; only the learner changes, while opponents are random, heuristic, or frozen checkpoints.</p>
+        </article>
+        <article class="card">
+          <span class="number">03 · RUNTIME</span>
+          <h3>Frozen Go inference</h3>
+          <p>Phase 3 exports reviewed actor tensors to JSON and runs deterministic inference in Go. The accepted Blade Warden artifact remains a separate, version-locked baseline.</p>
+        </article>
+      </div>
+
+      <div class="table-wrap" style="margin-top:22px">
+        <table>
+          <thead><tr><th>Current component</th><th>Accepted behavior</th><th>Arbitrary-matchup limitation</th></tr></thead>
+          <tbody>
+            <tr><td>Go reset</td><td>Fresh in-memory authority, deterministic seed, persistent simulator process</td><td><code>environment.go</code> hardcodes <code>blade_warden</code> for Seat A and Seat B</td></tr>
+            <tr><td>Observation v1</td><td>4,224 float32 values; viewer-safe base state plus 128 × 32 candidate features</td><td>No explicit own/opponent combatant definition ID; assumes five D6-oriented dice features in several places</td></tr>
+            <tr><td>Action v1</td><td>128 deterministic padded candidates with invalid positions masked</td><td>Only ten known command types; candidate/card/die limits must be revalidated for both new characters</td></tr>
+            <tr><td>Heuristic v1</td><td>Transparent Blade Warden baseline and imitation teacher</td><td>Hardcoded Blade Warden ability/card preferences; not valid evidence for unknown characters</td></tr>
+            <tr><td>Training</td><td>One changing learner alternates seats against a reproducible opponent pool</td><td>Does not schedule or record character identity; demonstrations are Blade Warden mirrors</td></tr>
+            <tr><td>Evaluation</td><td>Same/different checkpoints, deterministic inference, matched seat swaps, replays and confidence intervals</td><td>Records policies and seats but not character-role cells because the matchup is fixed</td></tr>
+            <tr><td>Phase 3 export</td><td>Accepted Blade Warden checkpoint with strict schema/content/hash compatibility</td><td>Go schema and client model path are tied to the accepted v1 artifact; never overwrite it casually</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="callout"><strong>Read before work:</strong> <a href="../../AGENTS.md">AGENTS.md</a>, <a href="index.html">the battle-intelligence roadmap</a>, <a href="phase-2-report.md">Phase 2 report</a>, <a href="phase-3-report.md">Phase 3 report</a>, and <a href="../../dice-and-destiny-server/ml/README.md">the ML README</a>.</div>
+    </section>
+
+    <section class="section" id="target">
+      <p class="section-kicker">Target behavior</p>
+      <h2>“Can play either character” has four distinct roles</h2>
+      <p class="section-intro">Let Character X and Character Y be different combatant definition IDs. One shared checkpoint must learn all four role cells below. Training only X in Seat A and Y in Seat B is insufficient: it entangles character strength, seat effects, and learned behavior.</p>
+
+      <div class="role-grid">
+        <div class="role"><strong>Role A</strong>Shared learner controls Character X in Seat A; Character Y is the opponent in Seat B.</div>
+        <div class="role"><strong>Role B</strong>Shared learner controls Character X in Seat B; Character Y is the opponent in Seat A.</div>
+        <div class="role"><strong>Role C</strong>Shared learner controls Character Y in Seat A; Character X is the opponent in Seat B.</div>
+        <div class="role"><strong>Role D</strong>Shared learner controls Character Y in Seat B; Character X is the opponent in Seat A.</div>
+      </div>
+
+      <div class="callout amber"><strong>Required deliverable:</strong> a model set means at least three independently trained shared-policy seeds. Every final checkpoint must accept either character’s viewer-safe observation and legal candidates. Two specialized models—one that only plays X and another that only plays Y—do not satisfy this handoff unless the owner explicitly changes the goal.</div>
+
+      <h3 style="margin-top:28px">Balanced scheduling contract</h3>
+      <ul class="checklist">
+        <li>Character identity is sampled independently from seat identity.</li>
+        <li>All four learner role cells receive approximately equal episodes and decisions.</li>
+        <li>Held-out evaluation reports each role cell separately before aggregating.</li>
+        <li>Episode seeds are recorded and disjoint between training and evaluation.</li>
+        <li>A shared checkpoint can be loaded into two independent instances simultaneously.</li>
+        <li>Evaluation can also load two different shared checkpoints and swap assignments.</li>
+      </ul>
+    </section>
+
+    <section class="section" id="changes">
+      <p class="section-kicker">Implementation specification</p>
+      <h2>Generalize the pilot without moving rules out of the authority</h2>
+      <p class="section-intro">The future context should implement the smallest versioned extension that makes the matchup explicit end to end. Do not duplicate character rules in Python and do not infer a matchup from filenames or checkpoint names.</p>
+
+      <ol class="steps">
+        <li><strong>Add explicit combatant definitions to reset.</strong><p>Extend <code>mlsim.ResetRequest</code> with a seat-to-definition mapping (or two validated descriptors). Use those IDs in <code>StartBattlePayload.Seats</code>. Record them in replays and episode metrics. Preserve an explicit Blade Warden legacy default only if existing Phase 2/3 tests require it; new training commands must pass definitions deliberately.</p></li>
+        <li><strong>Carry matchup identity through the bridge.</strong><p>Update <code>cmd/battle-ml-sim/main.go</code>, <code>bridge.py</code>, smoke/replay paths, and protocol tests. A portable replay must contain enough definition/version data to reproduce the same matchup in a fresh simulator process.</p></li>
+        <li><strong>Create a balanced shared-policy scheduler.</strong><p>Add both character IDs and a shared-policy mode to <code>TrainingConfig</code> and <code>AuthorityGymEnv</code>. Schedule Roles A–D evenly. Record learner character, opponent character, learner seat, opponent policy, seed, and role cell for every episode.</p></li>
+        <li><strong>Make inference matchup-aware.</strong><p>Extend evaluation CLI/records so Seat A character and Seat B character are separately specified. Policy artifacts remain independent from seats. Same-checkpoint and different-checkpoint runs must work in both character orientations.</p></li>
+        <li><strong>Audit and version the observation.</strong><p>Add explicit own/opponent combatant definition encoding. Audit non-D6 dice, dice counts above five, faces above six, target counts, card instance-to-definition features, new statuses/resources, new command types, and candidate counts above 128. If any feature meaning or dimension changes, bump the observation/action schema and retrain from scratch.</p></li>
+        <li><strong>Replace the Blade-only teacher.</strong><p><code>HeuristicPolicy</code> and behavior-cloning demonstrations currently contain Blade Warden preferences. Implement transparent character-aware heuristics for both X and Y, or explicitly disable imitation and demonstrate a stable alternative. Balance demonstrations across Roles A–D. Never call the old heuristic a valid baseline for new characters without evidence.</p></li>
+        <li><strong>Keep training and evaluation separate.</strong><p>Training collects learner transitions and performs PPO updates. Evaluation loads frozen models and never constructs an optimizer. The opponent pool should include random, validated character-aware heuristics, and frozen historical shared checkpoints—not two exclusively changing learners.</p></li>
+        <li><strong>Update reports and compatibility metadata.</strong><p>Configs, summaries, replay records, plots, checkpoint metadata, and exports must name both content IDs, the four role cells, source/content/schema versions, and exact seed sets. Any production export needs corresponding Go encoder/runtime support and a new model ID/path; preserve the accepted Blade Warden v1 export.</p></li>
+      </ol>
+
+      <h3 style="margin-top:30px">Primary code map</h3>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>File</th><th>Expected responsibility</th></tr></thead>
+          <tbody>
+            <tr><td><code>internal/battle/mlsim/environment.go</code></td><td>Definition-aware reset, authority-only stepping, matchup metrics and replay identity</td></tr>
+            <tr><td><code>cmd/battle-ml-sim/main.go</code></td><td>Versioned local protocol for definition-aware reset/replay</td></tr>
+            <tr><td><code>ml/dice_destiny_ml/bridge.py</code></td><td>Python bridge fields and version checks</td></tr>
+            <tr><td><code>ml/dice_destiny_ml/gym_env.py</code></td><td>Balanced learner character/seat scheduling and opponent driving</td></tr>
+            <tr><td><code>ml/dice_destiny_ml/training.py</code></td><td>Matchup config, metadata, worker construction, checkpoints and diagnostics</td></tr>
+            <tr><td><code>ml/dice_destiny_ml/schema.py</code></td><td>Viewer-safe multi-character observation and candidate encoding</td></tr>
+            <tr><td><code>ml/dice_destiny_ml/policies.py</code></td><td>Random, character-aware heuristic, and frozen model inference</td></tr>
+            <tr><td><code>ml/dice_destiny_ml/imitation.py</code></td><td>Balanced demonstrations for both characters, if imitation remains enabled</td></tr>
+            <tr><td><code>ml/dice_destiny_ml/evaluation.py</code></td><td>Character/seat/checkpoint cell records and confidence summaries</td></tr>
+            <tr><td><code>ml/dice_destiny_ml/cli.py</code></td><td>Explicit matchup arguments for every applicable runner</td></tr>
+            <tr><td><code>internal/battle/learned/schema.go</code></td><td>Go parity for any schema intended for Godot deployment</td></tr>
+            <tr><td><code>internal/battle/learned/policy.go</code></td><td>Strict new-artifact compatibility and deterministic inference</td></tr>
+            <tr><td><code>ml/dice_destiny_ml/export_policy.py</code></td><td>New versioned export after training acceptance, not before</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="section" id="schema-gate">
+      <p class="section-kicker">Schema gate</p>
+      <h2>New content can fit v1 only after measurement</h2>
+      <p class="section-intro">Stable hash buckets make many authored IDs representable, but “it does not crash” is not proof that the model can distinguish the new decisions. Inspect actual observations and candidate features for both characters.</p>
+
+      <div class="grid">
+        <article class="card">
+          <h3>Potentially compatible</h3>
+          <p>Existing command types, at most 128 legal candidates, familiar public/private state, five ordinary D6 dice or fewer, and abilities/cards expressible through existing candidate fields.</p>
+          <div class="tag-row"><span class="tag good">Still requires tests</span><span class="tag">Content hash changes</span></div>
+        </article>
+        <article class="card">
+          <h3>Requires a schema review or bump</h3>
+          <p>New command types, more dice, non-D6 semantics, new target structures, resources absent from snapshots, more than 128 candidates, or decisions whose important distinction is lost in the current hash buckets.</p>
+          <div class="tag-row"><span class="tag warn">Retrain from scratch</span><span class="tag">Update Go parity</span></div>
+        </article>
+      </div>
+
+      <div class="callout danger"><strong>Never reuse an incompatible checkpoint.</strong> If observation or action meaning changes, increment the schema version, reject old artifacts explicitly, update Python and Go encoders together when deployment is in scope, and create a new checkpoint family. Do not silently pad, truncate, or reinterpret accepted weights.</div>
+    </section>
+
+    <section class="section" id="cli-contract">
+      <p class="section-kicker">Required future runner contract</p>
+      <h2>Commands must name the matchup explicitly</h2>
+      <p class="section-intro">The flags below describe the interface the future context should implement. They are intentionally shown as a target contract: the current Phase 2 CLI does not yet accept character IDs.</p>
+
+      <div class="code-block">
+        <div class="code-label">Proposed explicit workflow</div>
+        <pre># Run from dice-and-destiny-server. Replace both IDs and the run slug.
+CHARACTER_X_ID=character_x
+CHARACTER_Y_ID=character_y
+RUN_SLUG=character-x-v-character-y-shared-v1
+
+# 1. Validate reset, privacy, deterministic replay, and candidate capacity.
+./scripts/ml.sh smoke \
+  --seat-a-character "$CHARACTER_X_ID" \
+  --seat-b-character "$CHARACTER_Y_ID" \
+  --seed 20260801
+
+# 2. Baseline both character orientations and both seats.
+./scripts/ml.sh evaluate \
+  --seat-a-character "$CHARACTER_X_ID" \
+  --seat-b-character "$CHARACTER_Y_ID" \
+  --seat-a random --seat-b random \
+  --swap-characters --swap-policies \
+  --episodes 100 \
+  --output "runs/$RUN_SLUG/baseline-random"
+
+# 3. Train three shared-policy seeds across all four learner role cells.
+./scripts/ml.sh train \
+  --characters "$CHARACTER_X_ID" "$CHARACTER_Y_ID" \
+  --shared-policy \
+  --balanced-character-seat-roles \
+  --seeds 41 52 63 \
+  --timesteps 20000 \
+  --workers 4 \
+  --output "runs/$RUN_SLUG/training"
+
+# 4. Held-out evaluation must be repeated for X and Y as the learned character,
+#    in Seat A and Seat B, with model weights frozen.
+./scripts/ml.sh evaluate \
+  --seat-a-character "$CHARACTER_X_ID" \
+  --seat-b-character "$CHARACTER_Y_ID" \
+  --seat-a "model:runs/$RUN_SLUG/training/seed-41/checkpoints/final.zip" \
+  --seat-b random \
+  --swap-characters --swap-policies \
+  --episodes 100 \
+  --seed-start 12000000 \
+  --output "runs/$RUN_SLUG/held-out/final-41-v-random"
+
+# 5. Final acceptance: 1,000 games balanced across character, seat, and
+#    independently trained checkpoint assignments.
+./scripts/ml.sh acceptance \
+  --characters "$CHARACTER_X_ID" "$CHARACTER_Y_ID" \
+  --shared-model-a "runs/$RUN_SLUG/training/seed-41/checkpoints/final.zip" \
+  --shared-model-b "runs/$RUN_SLUG/training/seed-52/checkpoints/final.zip" \
+  --balanced-character-seat-policy-cells \
+  --output "runs/$RUN_SLUG/acceptance"</pre>
+      </div>
+
+      <div class="callout"><strong>Argument names may change during implementation, but the semantics may not:</strong> character identity, seat identity, policy identity, and learner identity must be independently controllable and recorded.</div>
+    </section>
+
+    <section class="section" id="runbook">
+      <p class="section-kicker">End-to-end runbook</p>
+      <h2>From finished content to an accepted model set</h2>
+      <ol class="steps">
+        <li><strong>Protect the workspace.</strong><p>Read <code>AGENTS.md</code>, inspect all worktrees and current changes, create a dedicated <code>codex/</code> branch/worktree from the intended reviewed baseline, and preserve every ignored checkpoint, run artifact, save, snapshot, and unrelated edit.</p></li>
+        <li><strong>Confirm both combatants are authority-complete.</strong><p>Each definition must load from <code>content/battle_v1</code>, support an external seat, enumerate every reachable planning/roll/card/ability/target/defense/reaction/status/hand-limit decision, and complete deterministic full battles without ML.</p></li>
+        <li><strong>Implement the matchup contract.</strong><p>Make character IDs explicit from CLI through reset, metrics, replay, configuration, and reporting. Add unit tests for X-v-Y and Y-v-X reset, viewer isolation, deterministic replay, repeated reset, and exact candidate acceptance.</p></li>
+        <li><strong>Freeze the representation.</strong><p>Measure maximum candidates and inspect encoded distinctions for both characters. Decide whether v1 remains valid or introduce a new version. Record the decision and add Python/Go parity tests when a runtime export is intended.</p></li>
+        <li><strong>Build honest baselines.</strong><p>Run large random-v-random batches in both orientations. Create and validate transparent heuristics for both characters before using them as baselines or imitation teachers. Confirm zero rejects, stale actions, wrong-seat actions, invalid indices, and unexplained truncations.</p></li>
+        <li><strong>Train three independent shared-policy seeds.</strong><p>Use balanced Roles A–D, disjoint reproducible seeds, terminal rewards (+1/−1/0), periodic checkpoints, random/heuristic/frozen historical opponents, and no evaluation updates. Record decisions and completed episodes per role cell.</p></li>
+        <li><strong>Prove learning per character.</strong><p>On held-out matched seeds, evaluate every final checkpoint as Character X and as Character Y, in both seats. Compare with random, validated heuristics, initial/untrained, behavior-cloned, and early learned checkpoints. Do not let aggregate strength on one character hide failure on the other.</p></li>
+        <li><strong>Run cross-play and the 1,000-game soak.</strong><p>Load two independent shared-policy instances, use same/different checkpoints, balance character/seat/policy assignments, save representative success and failure/surprising replays, and require all 1,000 games in one automated run with no process restart.</p></li>
+        <li><strong>Generate the evidence bundle.</strong><p>Save machine-readable configs, packages, hashes, seeds, checkpoints, curves, role-cell results, cross-play matrix, distributions, action frequencies, throughput, latency, replays, and a human completion report with explicit pass/fail criteria.</p></li>
+        <li><strong>Export only after acceptance.</strong><p>If the model will be used in Godot, create a new named export and update the Go/runtime compatibility contract. Keep the accepted Blade Warden artifact untouched. Run proxy-human and graphical acceptance separately for the new matchup.</p></li>
+      </ol>
+    </section>
+
+    <section class="section" id="acceptance">
+      <p class="section-kicker">Mandatory acceptance gates</p>
+      <h2>The new model set is not accepted unless every category passes</h2>
+
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Category</th><th>Required evidence</th></tr></thead>
+          <tbody>
+            <tr><td>A · Content and authority</td><td>X-v-Y and Y-v-X start and finish through the real authority; all inputs are enumerated; private information remains viewer-safe; existing PvE and accepted Phase 1–3 behavior remains available.</td></tr>
+            <tr><td>B · Shared-policy identity</td><td>One checkpoint controls Character X and Character Y. Roles A–D are trained and evaluated. Character, seat, policy, and learner assignments are explicit and independently swappable.</td></tr>
+            <tr><td>C · Repeated episodes</td><td>At least 1,000 consecutive final-model battles in one automated process, balanced across character/seat/checkpoint cells, with unique IDs/seeds, complete results, and zero crashes, rejects, stale, wrong-seat, invalid, state leaks, or unexplained truncations.</td></tr>
+            <tr><td>D · Actual learning</td><td>Three training seeds; real-authority experience consumed by optimizer updates; changed parameters; initial/intermediate/final checkpoints; disjoint held-out seeds; final beats random with the 95% lower confidence bound above 50% separately when controlling X and when controlling Y.</td></tr>
+            <tr><td>E · Comparative evidence</td><td>Final beats initial/early checkpoints for both characters; heuristic performance is measured separately; same-checkpoint and different-checkpoint cross-play works; no nominal mirror result is presented as learning proof.</td></tr>
+            <tr><td>F · Bias analysis</td><td>Report win/draw/truncation rates and confidence intervals by character, seat, opponent, and checkpoint. State whether character balance, initiative, or reaction priority creates measurable advantage.</td></tr>
+            <tr><td>G · Reproducibility</td><td>Source/content/schema/model versions, exact character IDs, configs, seed rules, role schedule, opponent pool, reward, packages, hardware, checkpoints, and evaluation seeds are saved. A same-seed probe substantially reproduces behavior.</td></tr>
+            <tr><td>H · Artifacts</td><td>Curves, checkpoint win rates, per-character baselines, cross-play matrix/rating, role-cell table, duration/health distributions, action frequencies, invalid counts, games/s, latency, success and failure/surprising replays, checkpoints, JSON config/index, and human report.</td></tr>
+            <tr><td>I · Runtime safety</td><td>Any exported model uses a new ID/path, validates all hashes and schema dimensions, matches Python inference, and cannot mutate authority state directly. Accepted older artifacts remain reproducible and unchanged.</td></tr>
+            <tr><td>J · Regression</td><td>All relevant Go tests, <code>go vet</code>, race tests, ML tests/lint/lock, Phase 2 smoke/replay, Phase 3 inference parity/proxy tests if touched, and Godot authority verification pass.</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="callout danger"><strong>Failure rule:</strong> if either character fails a mandatory learning gate, the shared model set is incomplete even if the aggregate result looks strong. Continue diagnosing representation, character-aware teaching, role balance, training budget, reward design, or authority/content defects. Report the failure honestly.</div>
+    </section>
+
+    <section class="section" id="artifacts">
+      <p class="section-kicker">Artifact preservation</p>
+      <h2>Keep every training family identifiable and recoverable</h2>
+      <div class="grid">
+        <article class="card">
+          <h3>Ignored, large, local</h3>
+          <p>Checkpoints, episode JSONL, evaluation summaries, plots, replays, and acceptance outputs belong under a unique <code>dice-and-destiny-server/ml/runs/&lt;run-slug&gt;/</code> tree. They remain ignored but must not be deleted during development.</p>
+        </article>
+        <article class="card">
+          <h3>Tracked, reviewable</h3>
+          <p>Versioned experiment template/config, implementation source/tests, lockfile changes, human completion report, and an accepted runtime export belong in tracked paths only after review.</p>
+        </article>
+      </div>
+
+      <div class="code-block" style="margin-top:20px">
+        <div class="code-label">Recommended artifact tree</div>
+        <pre>dice-and-destiny-server/ml/runs/&lt;x&gt;-vs-&lt;y&gt;-shared-v1/
+├── training/
+│   ├── seed-41/checkpoints/{initial,behavior-cloned,step-*,final}.zip
+│   ├── seed-52/checkpoints/...
+│   └── seed-63/checkpoints/...
+├── baseline-random/
+├── baseline-heuristic/
+├── held-out/
+│   ├── x-role-cells/
+│   └── y-role-cells/
+├── tournament/
+├── acceptance/
+├── reproducibility/{run-a,run-b}/
+└── report/{artifact-index.json,*.png}
+
+docs/machine-learning-battle-simulation/
+└── &lt;x&gt;-vs-&lt;y&gt;-shared-model-report.md
+
+dice-and-destiny-client/models/learned/
+└── &lt;new-model-id&gt;.json  # only after separate runtime acceptance</pre>
+      </div>
+
+      <ul class="checklist" style="margin-top:20px">
+        <li>Never reuse an output directory from an accepted run.</li>
+        <li>Never delete <code>ml/runs/phase2-*</code> or accepted exports.</li>
+        <li>Record dirty/clean source state and the exact Git revision.</li>
+        <li>Hash all relevant <code>content/battle_v1</code> YAML.</li>
+        <li>Use held-out seed ranges that training cannot generate.</li>
+        <li>Stop for owner review before committing or pushing unless explicitly authorized.</li>
+      </ul>
+    </section>
+
+    <section class="section" id="verification">
+      <p class="section-kicker">Verification floor</p>
+      <h2>Minimum checks after the implementation and training changes</h2>
+      <p class="section-intro">Add focused tests for every new contract, then run the repository gates. Every Godot invocation must use the workspace launcher.</p>
+
+      <div class="code-block">
+        <div class="code-label">Required verification commands</div>
+        <pre># Server authority and arbitrary-matchup environment tests
+cd dice-and-destiny-server
+go test -count=1 ./...
+go vet ./...
+go test -count=1 -race ./internal/battle ./internal/battle/engine ./internal/battle/snapshot
+
+# Locked Python formatting, lint, and tests
+cd ml
+uv lock --check
+uv run ruff format --check dice_destiny_ml tests
+uv run ruff check dice_destiny_ml tests
+uv run pytest -q
+
+# Return to repository root. Never run raw godot --path.
+cd ../..
+./scripts/godot.sh --headless --script res://scripts/verify_battle_authority.gd
+
+# If learned Go inference/export changed, also run its focused parity,
+# Phase 3 proxy, and graphical verification suites documented in phase-3-report.md.
+
+git diff --check</pre>
+      </div>
+    </section>
+
+    <section class="section" id="stop-conditions">
+      <p class="section-kicker">Stop conditions</p>
+      <h2>Do not spend compute on an invalid experiment</h2>
+      <ul class="checklist">
+        <li>Either character cannot complete full external-controller battles.</li>
+        <li>A viewer sees opponent private hand, planning, dice, or future random state.</li>
+        <li>Any legal decision is missing from authority candidates.</li>
+        <li>Candidate capacity exceeds 128 without a reviewed schema change.</li>
+        <li>The encoder cannot distinguish strategically different new actions.</li>
+        <li>The only available heuristic is the unvalidated Blade Warden heuristic.</li>
+        <li>Role scheduling is not balanced or cannot be audited from artifacts.</li>
+        <li>Evaluation seeds overlap the generated training seed space.</li>
+        <li>Any model command bypasses or is rejected by the authority.</li>
+        <li>An accepted model/export would be overwritten or made unreproducible.</li>
+      </ul>
+    </section>
+
+    <section class="section" id="prompt">
+      <p class="section-kicker">Paste-ready future-context prompt</p>
+      <h2>Replace the placeholders, then paste the entire prompt</h2>
+      <p class="section-intro">Start the future Codex task in this repository on the intended reviewed baseline. Replace every bracketed value. The new context must read this page before deciding whether it can train immediately or must first generalize/fix the system.</p>
+
+      <div class="prompt-box">
+        <button type="button" class="copy-button" data-copy-target="future-prompt">Copy prompt</button>
+        <div class="code-label">Zero-context arbitrary-matchup training prompt</div>
+        <pre id="future-prompt">Implement, train, evaluate, and fully verify a new shared machine-learning model set for Dice and Destiny.
+
+CHARACTER X
+- Definition ID: [CHARACTER_X_ID]
+- Display name: [CHARACTER_X_NAME]
+
+CHARACTER Y
+- Definition ID: [CHARACTER_Y_ID]
+- Display name: [CHARACTER_Y_NAME]
+
+RUN
+- Run slug: [RUN_SLUG]
+- Intended baseline branch/commit: [BASELINE]
+- Training seeds: [THREE_OR_MORE_SEEDS]
+- Initial PPO budget per seed: [TIMESTEPS]
+
+MISSION
+
+Train one shared policy architecture/checkpoint family that can control either Character X or Character Y. The same final checkpoint must be capable of controlling X or Y in Seat A or Seat B. Two character-specific policies do not satisfy the mission unless I explicitly approve that change.
+
+Before editing, read completely:
+
+1. AGENTS.md
+2. docs/machine-learning-battle-simulation/arbitrary-character-training-handoff.html
+3. docs/machine-learning-battle-simulation/index.html
+4. docs/machine-learning-battle-simulation/phase-2-report.md
+5. docs/machine-learning-battle-simulation/phase-3-report.md
+6. dice-and-destiny-server/ml/README.md
+
+Then inspect the actual current repository, worktree status, content definitions for both characters, Phase 1 authority/legal-action/viewer-snapshot contracts, Phase 2 environment/training/evaluation code, and Phase 3 Go inference/export compatibility code. Preserve every unrelated edit and every ignored checkpoint, run artifact, runtime save, snapshot, and diagnostic.
+
+CURRENT LIMITATIONS TO VERIFY, NOT ASSUME AWAY
+
+- The accepted Phase 2 reset hardcoded blade_warden for both seats.
+- The v1 observation does not explicitly encode own/opponent combatant identity and contains five-D6-oriented assumptions.
+- HeuristicPolicy and imitation demonstrations are Blade-Warden-specific.
+- Evaluation/report records were designed around a fixed mirror matchup.
+- The accepted Phase 3 export/runtime is version-locked to the Blade Warden v1 artifact and must not be overwritten.
+
+REQUIRED IMPLEMENTATION
+
+- Make both combatant definition IDs explicit from CLI through Go reset, Python bridge, training configuration, evaluation, metrics, replay, report, and artifact metadata.
+- Keep the real Go authority as the only battle-rule and mutation boundary. The policy selects only an index from complete current legal candidates.
+- Build a balanced shared-policy schedule covering:
+  A. X in Seat A, Y in Seat B, learner controls X
+  B. X in Seat B, Y in Seat A, learner controls X
+  C. Y in Seat A, X in Seat B, learner controls Y
+  D. Y in Seat B, X in Seat A, learner controls Y
+- Explicitly encode own/opponent character identity. Audit dice types/counts/faces, cards, abilities, statuses, resources, target shapes, command types, candidate capacity, and every strategically meaningful action feature. Version and test any schema change. Update Go parity only if the new artifact is intended for runtime use.
+- Replace or generalize the Blade-only heuristic before using heuristic results or behavior cloning. Balance any demonstrations across all four role cells.
+- Train at least three independent shared-policy seeds using real-authority experience, terminal +1/-1/0 rewards, periodic checkpoints, and a reproducible opponent pool containing random, validated heuristics, and frozen historical checkpoints.
+- Keep evaluation entirely frozen. Use held-out matched seeds disjoint from training.
+
+MANDATORY LEARNING EVIDENCE
+
+- Final checkpoints beat random separately while controlling Character X and Character Y, across both seats, with the lower bound of each required 95% confidence interval above 50%.
+- Final checkpoints outperform initial/untrained and at least one early learned checkpoint for both character identities.
+- Performance against validated character-aware heuristics is measured for both characters, even if the learned model does not beat them.
+- Same-checkpoint and different-checkpoint model-v-model runs use two independent inference instances and balance character, seat, and checkpoint assignments.
+- Report role-cell results separately. Do not hide a weak character behind an aggregate score.
+
+MANDATORY ACCEPTANCE SOAK
+
+Run at least 1,000 consecutive final-model battles in one automated process, balanced across character orientation, seat, and independently trained checkpoint assignment. Require unique battle IDs and recorded seeds/results; zero crashes; zero authority rejects; zero invalid, stale, fabricated, or wrong-seat actions; zero state leaks; and zero unexplained truncations.
+
+ARTIFACTS AND REPORT
+
+Save a unique ignored ml/runs/[RUN_SLUG] tree containing configurations, all checkpoints, training episodes/curves, held-out role-cell evaluations, heuristic/random baselines, checkpoint cross-play, reproducibility probe, the acceptance run, distributions, action frequencies, inference latency, games/second, and representative success and failure/surprising replays. Produce a tracked machine-readable experiment template and a human completion report with every acceptance category explicitly PASS or FAIL.
+
+REGRESSION AND SAFETY
+
+Run every relevant Go, vet, race, Python lock/format/lint/test, Phase 2, Phase 3-if-touched, and Godot authority verification check. Invoke Godot only through ./scripts/godot.sh. Preserve the accepted Blade Warden checkpoints, Phase 2 runs, and Phase 3 export. Do not add networking, balance changes, unrelated content, or rule reimplementations.
+
+If either character/content definition is incomplete, the schema cannot faithfully represent its decisions, the heuristic/teacher is invalid, learning is not demonstrated separately for both characters, or any acceptance gate fails, do not claim completion. Diagnose or report the exact blocker honestly.
+
+When all gates pass, stop for owner review. Report the architecture and schema changes, four-role schedule, training budget/update counts, checkpoint set, per-character learning evidence, 1,000-game results, character/seat bias, performance, replay/artifact locations, exact reproduction commands, all verification outcomes, every explicit pass/fail criterion, and remaining limitations. Do not commit or push unless I explicitly authorize it.</pre>
+      </div>
+    </section>
+
+    <footer>
+      This handoff is deliberately stricter than “run training again.” It protects character identity, hidden information, schema meaning, accepted artifacts, and per-character learning evidence.
+    </footer>
+  </main>
+
+  <script>
+    document.querySelectorAll('[data-copy-target]').forEach((button) => {
+      button.addEventListener('click', async () => {
+        const target = document.getElementById(button.dataset.copyTarget);
+        if (!target) return;
+        const original = button.textContent;
+        try {
+          await navigator.clipboard.writeText(target.textContent);
+          button.textContent = 'Copied';
+        } catch (_) {
+          const selection = window.getSelection();
+          const range = document.createRange();
+          range.selectNodeContents(target);
+          selection.removeAllRanges();
+          selection.addRange(range);
+          button.textContent = 'Selected';
+        }
+        window.setTimeout(() => { button.textContent = original; }, 1600);
+      });
+    });
+  </script>
+</body>
+</html>

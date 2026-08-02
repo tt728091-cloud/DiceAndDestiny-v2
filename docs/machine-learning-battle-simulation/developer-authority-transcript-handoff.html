@@ -1,0 +1,574 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Zero-context implementation handoff for a debug-only, omniscient Dice and Destiny authority transcript.">
+  <title>Developer Authority Transcript Handoff · Dice &amp; Destiny</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --ink: #edf5f7;
+      --muted: #a8b8bd;
+      --dim: #74888f;
+      --paper: #091215;
+      --panel: #111f23;
+      --panel-2: #172a2f;
+      --line: #29434a;
+      --cyan: #7ed8ef;
+      --mint: #72ddb7;
+      --amber: #f2bd6a;
+      --coral: #f28b78;
+      --violet: #c5a6ff;
+      --shadow: 0 24px 64px rgba(0, 0, 0, .3);
+      --radius: 18px;
+      --mono: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+      --sans: Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      color: var(--ink);
+      background:
+        radial-gradient(circle at 8% -5%, rgba(126, 216, 239, .12), transparent 31rem),
+        radial-gradient(circle at 95% 20%, rgba(197, 166, 255, .09), transparent 28rem),
+        linear-gradient(rgba(126, 216, 239, .025) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(126, 216, 239, .025) 1px, transparent 1px),
+        var(--paper);
+      background-size: auto, auto, 30px 30px, 30px 30px, auto;
+      font-family: var(--sans);
+      line-height: 1.62;
+      overflow-wrap: anywhere;
+    }
+
+    a { color: var(--cyan); text-underline-offset: 3px; }
+    code, pre { font-family: var(--mono); }
+    code {
+      padding: .12em .36em;
+      border: 1px solid rgba(126, 216, 239, .16);
+      border-radius: 6px;
+      color: #d3f4ff;
+      background: rgba(126, 216, 239, .08);
+      font-size: .9em;
+    }
+
+    .topbar {
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 18px;
+      padding: 13px max(18px, calc((100vw - 1180px) / 2));
+      border-bottom: 1px solid rgba(126, 216, 239, .17);
+      background: rgba(9, 18, 21, .92);
+      backdrop-filter: blur(14px);
+    }
+
+    .brand { display: flex; align-items: center; gap: 10px; font-weight: 780; }
+    .brand-mark {
+      display: grid;
+      width: 31px;
+      height: 31px;
+      place-items: center;
+      border: 1px solid rgba(126, 216, 239, .48);
+      border-radius: 9px;
+      color: var(--cyan);
+      background: rgba(126, 216, 239, .08);
+      font-family: var(--mono);
+      font-size: 13px;
+    }
+
+    .topnav { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 5px; }
+    .topnav a {
+      padding: 7px 9px;
+      border-radius: 8px;
+      color: var(--muted);
+      font-size: 12px;
+      text-decoration: none;
+    }
+    .topnav a:hover, .topnav a:focus-visible { color: var(--ink); background: rgba(255,255,255,.06); }
+
+    main { width: min(100% - 32px, 1180px); margin: 0 auto; padding: 42px 0 82px; }
+    .hero {
+      display: grid;
+      grid-template-columns: 1.5fr .72fr;
+      gap: 34px;
+      align-items: end;
+      padding: clamp(30px, 5vw, 54px);
+      border: 1px solid rgba(126, 216, 239, .26);
+      border-radius: 28px;
+      background: linear-gradient(135deg, rgba(23, 42, 47, .98), rgba(11, 25, 29, .98));
+      box-shadow: var(--shadow);
+    }
+    .eyebrow { margin: 0 0 12px; color: var(--cyan); font-size: 12px; font-weight: 850; letter-spacing: .16em; text-transform: uppercase; }
+    h1, h2, h3, h4 { margin-top: 0; line-height: 1.2; }
+    h1 { max-width: 760px; margin-bottom: 18px; font-size: clamp(38px, 6vw, 68px); letter-spacing: -.045em; }
+    h2 { margin-bottom: 12px; font-size: clamp(27px, 4vw, 40px); letter-spacing: -.025em; }
+    h3 { margin-bottom: 9px; font-size: 20px; }
+    h4 { margin-bottom: 7px; color: var(--cyan); font-size: 14px; letter-spacing: .02em; text-transform: uppercase; }
+    p { margin-top: 0; }
+    .lede { max-width: 760px; margin: 0; color: #bed0d5; font-size: 19px; }
+
+    .hero-meta { padding: 22px; border: 1px solid var(--line); border-radius: 16px; background: rgba(4, 12, 14, .35); }
+    .meta-row { display: flex; justify-content: space-between; gap: 16px; padding: 9px 0; border-bottom: 1px solid rgba(255,255,255,.08); }
+    .meta-row:last-child { border: 0; }
+    .meta-row span { color: var(--dim); font-size: 11px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; }
+    .meta-row strong { text-align: right; font-size: 13px; }
+
+    section { scroll-margin-top: 78px; margin-top: 56px; }
+    .section-lede { max-width: 850px; color: var(--muted); }
+    .grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+    .grid.three { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    .card {
+      padding: 22px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: linear-gradient(160deg, rgba(23, 42, 47, .92), rgba(15, 30, 34, .92));
+      box-shadow: 0 12px 34px rgba(0,0,0,.12);
+    }
+    .card p:last-child, .card ul:last-child { margin-bottom: 0; }
+    .callout { padding: 20px 22px; border-left: 4px solid var(--cyan); border-radius: 0 13px 13px 0; background: rgba(126, 216, 239, .075); }
+    .callout.warn { border-color: var(--amber); background: rgba(242, 189, 106, .075); }
+    .callout.stop { border-color: var(--coral); background: rgba(242, 139, 120, .075); }
+    .callout.success { border-color: var(--mint); background: rgba(114, 221, 183, .075); }
+
+    ul, ol { padding-left: 1.35rem; }
+    li + li { margin-top: .38rem; }
+    .checklist { list-style: none; padding-left: 0; }
+    .checklist li { position: relative; padding-left: 27px; }
+    .checklist li::before { content: "□"; position: absolute; left: 0; color: var(--mint); font-family: var(--mono); font-weight: 800; }
+
+    .flow {
+      display: grid;
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+      gap: 9px;
+      margin-top: 20px;
+    }
+    .flow-step { position: relative; padding: 16px 14px; border: 1px solid var(--line); border-radius: 12px; background: var(--panel); }
+    .flow-step:not(:last-child)::after { content: "→"; position: absolute; top: 50%; right: -9px; z-index: 2; color: var(--cyan); transform: translate(50%, -50%); font-weight: 900; }
+    .flow-step small { display: block; margin-bottom: 5px; color: var(--dim); font-weight: 800; letter-spacing: .08em; text-transform: uppercase; }
+
+    .table-wrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 14px; }
+    table { width: 100%; border-collapse: collapse; min-width: 760px; background: rgba(17, 31, 35, .88); }
+    th, td { padding: 13px 15px; border-bottom: 1px solid var(--line); text-align: left; vertical-align: top; }
+    th { color: var(--cyan); background: rgba(126, 216, 239, .055); font-size: 12px; letter-spacing: .06em; text-transform: uppercase; }
+    tr:last-child td { border-bottom: 0; }
+
+    .badge { display: inline-block; padding: 3px 8px; border: 1px solid currentColor; border-radius: 999px; font-size: 11px; font-weight: 850; letter-spacing: .04em; white-space: nowrap; }
+    .public { color: var(--mint); }
+    .self { color: var(--cyan); }
+    .opponent { color: var(--coral); }
+    .system { color: var(--violet); }
+
+    pre {
+      overflow: auto;
+      margin: 14px 0 0;
+      padding: 18px;
+      border: 1px solid #31525b;
+      border-radius: 13px;
+      color: #d9f1f4;
+      background: #071013;
+      font-size: 13px;
+      line-height: 1.58;
+      white-space: pre;
+    }
+    .file { color: var(--amber); }
+    .must { color: var(--mint); font-weight: 800; }
+    .never { color: var(--coral); font-weight: 800; }
+    footer { margin-top: 64px; padding-top: 22px; border-top: 1px solid var(--line); color: var(--dim); font-size: 13px; }
+
+    @media (max-width: 900px) {
+      .hero, .grid, .grid.three { grid-template-columns: 1fr; }
+      .flow { grid-template-columns: 1fr; }
+      .flow-step:not(:last-child)::after { top: auto; right: 50%; bottom: -16px; transform: translate(50%, 50%) rotate(90deg); }
+      .topbar { align-items: flex-start; flex-direction: column; }
+    }
+  </style>
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand"><span class="brand-mark">LOG</span> Dice &amp; Destiny · Developer Handoff</div>
+    <nav class="topnav" aria-label="Page sections">
+      <a href="#mission">Mission</a>
+      <a href="#visibility">Visibility</a>
+      <a href="#records">Records</a>
+      <a href="#interface">Interface</a>
+      <a href="#architecture">Architecture</a>
+      <a href="#verification">Verification</a>
+      <a href="#handoff">New-context prompt</a>
+    </nav>
+  </header>
+
+  <main>
+    <article class="hero">
+      <div>
+        <p class="eyebrow">Zero-context implementation guide · 2026-08-02</p>
+        <h1>Developer Authority Transcript</h1>
+        <p class="lede">Build an opt-in debug mode that explains every meaningful human, learned-opponent, D100, and automatic authority action in chronological log form—without weakening normal hidden-information rules or changing gameplay.</p>
+      </div>
+      <aside class="hero-meta" aria-label="Handoff status">
+        <div class="meta-row"><span>Status</span><strong>Specification only</strong></div>
+        <div class="meta-row"><span>Primary output</span><strong>Live debug panel + JSONL</strong></div>
+        <div class="meta-row"><span>Modes</span><strong>D100 and learned mirror</strong></div>
+        <div class="meta-row"><span>Authority</span><strong>Read-only observer</strong></div>
+        <div class="meta-row"><span>Release default</span><strong>Disabled</strong></div>
+      </aside>
+    </article>
+
+    <section id="mission">
+      <p class="eyebrow">01 · Mission</p>
+      <h2>Make every playtest explainable</h2>
+      <p class="section-lede">A tester must be able to answer “what happened, who caused it, when did it happen, what changed, and was I supposed to see it?” without reconstructing the battle from screenshots or low-level commands.</p>
+
+      <div class="callout success">
+        <strong>Target experience:</strong> when Poison disappears because the learned opponent played Antidote, the normal public log reports the revealed play, while the developer transcript also shows the trigger batch, actual rolls, selected status, operation, stack change, authority stage, and any information that was hidden before reveal.
+      </div>
+
+      <div class="flow" aria-label="Transcript data flow">
+        <div class="flow-step"><small>1 · Authority</small>Produces commands, events, snapshots, automatic effects, and visibility facts.</div>
+        <div class="flow-step"><small>2 · Recorder</small>Writes immutable, ordered, structured debug records exactly once.</div>
+        <div class="flow-step"><small>3 · Formatter</small>Creates concise human-readable summaries from stable fields.</div>
+        <div class="flow-step"><small>4 · Debug UI</small>Shows a live, filterable transcript without submitting gameplay commands.</div>
+        <div class="flow-step"><small>5 · JSONL</small>Preserves the complete battle for live tailing and postmortem review.</div>
+      </div>
+
+      <div class="grid" style="margin-top: 18px">
+        <div class="card">
+          <h3>Required outcomes</h3>
+          <ul>
+            <li>Log every accepted human and opponent decision.</li>
+            <li>Log meaningful automatic authority work, not just submitted commands.</li>
+            <li>Explain dice, reactions, damage math, status applications/triggers/removals, resources, cards, and results.</li>
+            <li>Work in both classic D100 battles and learned-policy mirror battles.</li>
+            <li>Allow live viewing in-game and direct reading from disk.</li>
+            <li>Correlate every entry with battle, round, segment, stage, actor, and source IDs.</li>
+          </ul>
+        </div>
+        <div class="card">
+          <h3>Non-goals</h3>
+          <ul>
+            <li>Do not change combat rules, balancing, authority ordering, or model behavior.</li>
+            <li>Do not expose private data in the normal player combat log.</li>
+            <li>Do not use transcript data as input to the learned policy.</li>
+            <li>Do not replace necessary player-facing presentation fixes with “read the debug log.”</li>
+            <li>Do not add cloud logging, accounts, networking, or production telemetry.</li>
+            <li>Do not rewrite developer history/snapshots; integrate cleanly with them.</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <section id="current-state">
+      <p class="eyebrow">02 · Current state and gap</p>
+      <h2>Build on what exists, but do not mistake it for the transcript</h2>
+      <div class="grid three">
+        <div class="card">
+          <h3>Learned diagnostics</h3>
+          <p><code>phase3/learned-battles.jsonl</code> currently records battle metadata and accepted human/model decision commands. It proved that Antidote targeted Poison, but it did not record the Poison die faces or every automatic outcome.</p>
+        </div>
+        <div class="card">
+          <h3>Viewer-safe result</h3>
+          <p>The normal authority result intentionally filters snapshots and events for one viewer. Preserve that boundary. It is the correct source for the player UI, but it cannot provide an omniscient developer postmortem by itself.</p>
+        </div>
+        <div class="card">
+          <h3>History and inspector</h3>
+          <p>Developer history supports rewind/replay in standard battles, and the inspector exposes current UI state. Neither is a complete, plain-language, learned-battle authority audit trail.</p>
+        </div>
+      </div>
+      <div class="callout warn" style="margin-top: 18px">
+        <strong>Do not reconstruct truth from the rendered UI.</strong> Record authoritative facts at the common Go authority/engine boundary before viewer filtering, then expose them through a separate debug-only channel.
+      </div>
+    </section>
+
+    <section id="visibility">
+      <p class="eyebrow">03 · Visibility contract</p>
+      <h2>Show developers everything, and label why players cannot</h2>
+      <p class="section-lede">Every record must carry an explicit visibility classification at the moment represented by that record. The transcript may be omniscient only because it is debug-only. The ordinary combat log continues to receive only viewer-safe public facts.</p>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Classification</th><th>Meaning</th><th>Examples</th><th>Normal player log</th></tr></thead>
+          <tbody>
+            <tr><td><span class="badge public">PUBLIC</span></td><td>Legitimately revealed to both combatants now.</td><td>Revealed ability, played Antidote, final defense reveal, committed damage, applied/removed status.</td><td>May be displayed.</td></tr>
+            <tr><td><span class="badge self">PRIVATE_SELF</span></td><td>Known only to the human viewer until a later reveal.</td><td>Human hand, secret defense selection, unresolved private die result.</td><td>Only in the owning player’s private UI where rules allow.</td></tr>
+            <tr><td><span class="badge opponent">PRIVATE_OPPONENT</span></td><td>Known only to the opponent/authority until reveal.</td><td>Opponent hand, secret reaction choice, secret defense selection or die.</td><td>Never before reveal.</td></tr>
+            <tr><td><span class="badge system">DEBUG_SYSTEM</span></td><td>Developer mechanics rather than game-world knowledge.</td><td>Candidate index, model latency, checkpoint IDs, pending-input ID, source correlation, authority rejection.</td><td>Never.</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="callout stop" style="margin-top: 18px">
+        <strong>Security gate:</strong> omniscient records must never travel through the ordinary viewer-safe result or normal combat-log fields. Enable the recorder and panel only when <code>OS.is_debug_build()</code>, an explicit environment opt-in, and the matching project development setting all permit it. Default to off. Release builds must not be able to enable it accidentally.
+      </div>
+
+      <h3 style="margin-top: 24px">Reveal transitions are separate facts</h3>
+      <p>A private fact does not become retroactively public. Record the private choice when it occurs, then record a later public reveal referencing the original record/source. This makes secret simultaneous flows auditable.</p>
+      <pre><span class="opponent">[PRIVATE_OPPONENT]</span> Learned Blade Warden selected Basic Defense
+<span class="self">[PRIVATE_SELF]</span>     Human selected Basic Defense
+<span class="opponent">[PRIVATE_OPPONENT]</span> Learned Blade Warden rolled defense face 4
+<span class="self">[PRIVATE_SELF]</span>     Human rolled defense face 3
+<span class="public">[PUBLIC]</span>           Defenses revealed: Learned Basic Defense 4; Human Basic Defense 3</pre>
+    </section>
+
+    <section id="records">
+      <p class="eyebrow">04 · Canonical records</p>
+      <h2>Structured first, readable second</h2>
+      <p class="section-lede">JSONL is the canonical artifact. The in-game transcript and terminal formatter must render from the same structured records so wording can improve without losing facts.</p>
+
+      <div class="grid">
+        <div class="card">
+          <h3>Required envelope</h3>
+          <ul>
+            <li><code>schema_version</code> and recorder version</li>
+            <li><code>recorded_at_utc</code>, monotonic <code>sequence</code>, and optional <code>caused_by_sequence</code></li>
+            <li><code>battle_id</code>, seed, mode, human/model seats, controller</li>
+            <li><code>round</code>, <code>segment</code>, <code>stage</code>, window and pending-input correlation IDs</li>
+            <li><code>kind</code>, actor/target IDs, source/proposal/status/card/ability IDs</li>
+            <li><code>visibility</code> and optional reveal/reference sequence</li>
+            <li>A concise <code>summary</code> plus typed <code>details</code></li>
+          </ul>
+        </div>
+        <div class="card">
+          <h3>Record families</h3>
+          <ul>
+            <li>Battle lifecycle and segment/stage transitions</li>
+            <li>Decision offered, command submitted, accepted, or rejected</li>
+            <li>Ability/card/status selection and reveal</li>
+            <li>Die requested, rolled, modified, and revealed</li>
+            <li>Status applied, stacked, triggered, outcome evaluated, decremented, or removed</li>
+            <li>Damage proposed, defended, prevented, modified, converted to card loss, and committed</li>
+            <li>Energy/card-zone/health/resource changes</li>
+            <li>Model inference metadata and final battle result</li>
+          </ul>
+        </div>
+      </div>
+
+      <h3 style="margin-top: 26px">Illustrative JSONL record</h3>
+      <pre>{
+  "schema_version": 1,
+  "recorder_version": "authority-transcript-v1",
+  "recorded_at_utc": "2026-08-02T14:22:31.125Z",
+  "sequence": 87,
+  "caused_by_sequence": 86,
+  "battle_id": "learned-example",
+  "round": 2,
+  "segment": "ongoing_effects",
+  "stage": "status_roll_reaction",
+  "kind": "status_removed",
+  "actor_id": "seat-b",
+  "controller": "learned_policy",
+  "visibility": "public",
+  "summary": "Learned Blade Warden's Antidote removed Poison ×2",
+  "details": {
+    "card_definition_id": "antidote",
+    "status_id": "poison",
+    "stacks_before": 2,
+    "stacks_removed": 2,
+    "stacks_after": 0,
+    "operation": "remove_status"
+  }
+}</pre>
+
+      <div class="callout warn" style="margin-top: 18px">
+        A command is not an outcome. “Opponent submitted card instance 007 with choice poison” is useful system evidence, but the transcript must also resolve the instance to Antidote and record the resulting Poison stack mutation. Record actual die faces; do not leave <code>[?, ?]</code> once the authority knows them.
+      </div>
+
+      <h3 style="margin-top: 26px">Required Poison narrative</h3>
+      <pre>ROUND 1 · DAMAGE RESOLUTION
+<span class="public">[PUBLIC]</span> Human's Venom Strike dealt 3 damage to Learned Blade Warden
+<span class="public">[PUBLIC]</span> Venom Strike applied Poison ×2 to Learned Blade Warden (0 → 2)
+
+ROUND 2 · ONGOING EFFECTS
+<span class="system">[DEBUG_SYSTEM]</span> Poison ×2 opened two status rolls for Learned Blade Warden
+<span class="opponent">[PRIVATE_OPPONENT]</span> Poison dice rolled: [2, 6]
+<span class="public">[PUBLIC]</span> Poison dice revealed: [2, 6]
+<span class="public">[PUBLIC]</span> Learned Blade Warden played Antidote targeting Poison
+<span class="public">[PUBLIC]</span> Antidote removed Poison ×2 (2 → 0)
+<span class="system">[DEBUG_SYSTEM]</span> Face 2 proposed 1 Poison damage; face 6's one-stack recovery was redundant after Antidote
+<span class="public">[PUBLIC]</span> Poison damage resolved: 1</pre>
+      <p class="section-lede">The exact ordering must come from authority behavior and tests; the example demonstrates the required explanatory depth, not permission to hardcode Poison-specific logic.</p>
+    </section>
+
+    <section id="interface">
+      <p class="eyebrow">05 · Developer interface</p>
+      <h2>Readable during play and useful afterward</h2>
+      <div class="grid">
+        <div class="card">
+          <h3>In-game panel</h3>
+          <ul>
+            <li>A visible <strong>DEV TRANSCRIPT</strong> toggle in debug mode only.</li>
+            <li>Chronological, scrollable entries grouped by round and segment.</li>
+            <li>Color/badge visibility labels and actor names, not only instance IDs.</li>
+            <li>Filters: All, Public, Human, Opponent, Hidden, System, Errors.</li>
+            <li>Follow-latest toggle, pause scrolling, search, copy visible, and copy/export battle.</li>
+            <li>Show current battle ID and output path.</li>
+            <li>Opening, closing, scrolling, and filtering must never send a gameplay command or pause authority progression.</li>
+          </ul>
+        </div>
+        <div class="card">
+          <h3>Disk and terminal</h3>
+          <p>Use workspace-isolated paths through <code>WorkspacePaths</code>. A stable append-only live file is easiest to tail:</p>
+          <pre class="file">dice-and-destiny-client/.godot/runtime/workspace/client/user/debug/authority-transcript.jsonl</pre>
+          <p>Recommended live command:</p>
+          <pre>tail -F dice-and-destiny-client/.godot/runtime/workspace/client/user/debug/authority-transcript.jsonl</pre>
+          <p>Optionally add a small formatter script that prints <code>summary</code> with round/segment/visibility. Keep the raw JSONL authoritative.</p>
+        </div>
+      </div>
+
+      <div class="callout" style="margin-top: 18px">
+        <strong>Normal combat log versus developer transcript:</strong> improve the normal combat log whenever an action is legitimately public—such as “Opponent played Antidote; removed Poison ×2.” The developer transcript additionally exposes hidden and system facts with labels. Do not make the debug panel the only place public gameplay feedback exists.
+      </div>
+    </section>
+
+    <section id="architecture">
+      <p class="eyebrow">06 · Implementation architecture</p>
+      <h2>Observe the common authority path</h2>
+      <p class="section-lede">The implementation agent must inspect the current tree rather than assume these files are unchanged. The paths below identify the present responsibilities and likely integration points.</p>
+
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Area</th><th>Current location</th><th>Implementation direction</th></tr></thead>
+          <tbody>
+            <tr><td>Authority command/result boundary</td><td><code>dice-and-destiny-server/internal/battle/authority.go</code><br><code>internal/battle/engine/command.go</code></td><td>Capture raw commands, raw progression events, and mutation summaries before viewer filtering. Keep recorder failures from mutating battle state.</td></tr>
+            <tr><td>Viewer filtering</td><td><code>internal/battle/event/event.go</code><br><code>internal/battle/snapshot/snapshot.go</code></td><td>Preserve unchanged. Use its rules to classify visibility and test that normal results remain safe.</td></tr>
+            <tr><td>Settled combat facts</td><td><code>internal/battle/engine/settled_engine.go</code><br><code>settled_effects.go</code></td><td>Expose generic typed status, dice, defense, and damage mutation facts. Avoid card/status ID-specific formatters.</td></tr>
+            <tr><td>Learned runtime</td><td><code>internal/battle/learned/session.go</code><br><code>local_client/learned_battle/</code></td><td>Retain model metadata/latency/candidate index records, but route battle facts through the common recorder so D100 and learned modes agree.</td></tr>
+            <tr><td>Client view and presentation</td><td><code>local_client/view_state/battle_view_state.gd</code><br><code>app/screens/battle/battle_screen.gd</code></td><td>Add a separate debug transcript reader/panel. Never merge omniscient records into <code>BattleViewState</code>'s normal viewer-safe events.</td></tr>
+            <tr><td>Workspace paths</td><td><code>WorkspacePaths.persistent_file(...)</code></td><td>No shared <code>/tmp</code>, no fixed cross-worktree paths, and no tracked runtime output.</td></tr>
+            <tr><td>Inspector</td><td><code>dice-and-destiny-client/devtools/inspect_game.py</code></td><td>Optional: add a read-only transcript endpoint after the canonical recorder/panel works. Do not make inspector polling the recorder.</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3 style="margin-top: 26px">Required design properties</h3>
+      <div class="grid three">
+        <div class="card"><h4>Exactly once</h4><p>One authoritative fact produces one record. Use monotonic sequence numbers and correlation IDs; UI rerenders must not duplicate records.</p></div>
+        <div class="card"><h4>Generic</h4><p>Format from typed operations and content catalog names. New characters, cards, statuses, and dice should appear without bespoke logging code.</p></div>
+        <div class="card"><h4>Non-invasive</h4><p>Recorder state cannot affect RNG, candidate ordering, authority validation, model observation, snapshots, or battle results.</p></div>
+        <div class="card"><h4>Failure-aware</h4><p>Log rejected/stale/wrong-seat commands and inference errors. A log write failure must surface clearly in debug mode without fabricating gameplay.</p></div>
+        <div class="card"><h4>Bounded</h4><p>Stream to disk and virtualize or cap rendered UI rows. Do not retain an unlimited duplicate transcript in the render loop.</p></div>
+        <div class="card"><h4>Versioned</h4><p>Version schema and formatter. Unknown fields are tolerated; incompatible schema changes fail explicitly in tests/tools.</p></div>
+      </div>
+
+      <div class="callout stop" style="margin-top: 18px">
+        <strong>Do not log by scraping labels.</strong> UI text such as “Final 0,” “Pending 3,” or a hidden card placeholder is presentation, not authority truth. Derive records from commands, typed operations, events, and before/after authoritative state.
+      </div>
+    </section>
+
+    <section id="startup">
+      <p class="eyebrow">07 · Startup and gating</p>
+      <h2>One explicit debug configuration</h2>
+      <p>Use a new, clearly named opt-in such as <code>DICE_AND_DESTINY_ENABLE_AUTHORITY_TRANSCRIPT=1</code>. Follow the repository’s established pattern: flags must be present before Godot/native authority initialization.</p>
+      <pre>DICE_AND_DESTINY_ENABLE_AUTHORITY_TRANSCRIPT=1 \
+DICE_AND_DESTINY_INSPECTOR=1 \
+./scripts/godot.sh</pre>
+      <ul>
+        <li>The normal <code>./scripts/godot.sh</code> launch must keep omniscient recording and UI disabled.</li>
+        <li>Learned battles and D100 battles started in the opted-in process must both write records.</li>
+        <li>Rematches receive distinct battle IDs and clear UI grouping without truncating prior records.</li>
+        <li>The path must remain beneath the current workspace runtime and uncommitted.</li>
+        <li>Never use raw <code>godot --path</code>; follow <code>AGENTS.md</code>.</li>
+      </ul>
+    </section>
+
+    <section id="verification">
+      <p class="eyebrow">08 · Tests and acceptance</p>
+      <h2>Prove truth, secrecy, and non-interference</h2>
+      <div class="grid">
+        <div class="card">
+          <h3>Automated authority tests</h3>
+          <ul class="checklist">
+            <li>Transcript disabled writes nothing and produces identical battle results/RNG progression.</li>
+            <li>Human and D100/learned commands identify the correct controller and actor.</li>
+            <li>Automatic events appear even when no command directly represents them.</li>
+            <li>Poison ×2, two actual faces, Antidote, full-status removal, and resulting damage are linked and ordered.</li>
+            <li>Secret defenses and dice are private records first, then one public reveal after both finish.</li>
+            <li>Tip It records the card, die mutation, old/new face, and resulting ability change.</li>
+            <li>Damage records show base, prevention/modification, final amount, and card/health consequences.</li>
+            <li>Normal viewer snapshots/events remain byte-equivalent or semantically equivalent and leak nothing new.</li>
+            <li>Rejected, stale, fabricated, wrong-seat, timeout, and model errors are diagnostic records.</li>
+          </ul>
+        </div>
+        <div class="card">
+          <h3>Godot and manual tests</h3>
+          <ul class="checklist">
+            <li>Panel exists only in opted-in debug mode.</li>
+            <li>Opening/filtering/copying the panel submits zero gameplay commands.</li>
+            <li>Entries update live during a learned battle and a D100 battle.</li>
+            <li>Hidden entries are unmistakably marked and absent from the normal player log.</li>
+            <li>Public Antidote/status removal is visible in the normal log and complete in the debug transcript.</li>
+            <li>Long battles remain responsive and follow-latest can be paused.</li>
+            <li>Rematch/new battle separation is clear.</li>
+            <li>JSONL can be tailed while playing and parsed after shutdown without partial/corrupt records.</li>
+          </ul>
+        </div>
+      </div>
+
+      <h3 style="margin-top: 26px">Required verification commands</h3>
+      <pre>cd dice-and-destiny-server &amp;&amp; go test ./...
+cd .. &amp;&amp; ./scripts/godot.sh --headless --script res://scripts/verify_battle_authority.gd
+./scripts/godot.sh --headless --script res://tests/test_client_logic.gd
+./scripts/godot.sh --headless --script res://tests/presentation/verify_battle_scene.gd
+./scripts/godot.sh --headless --script res://tests/phase3/verify_learned_battle.gd</pre>
+      <p>Run every additional Godot test through <code>./scripts/godot.sh</code> and native builds through <code>dice-and-destiny-server/scripts/build_native.sh</code>.</p>
+
+      <h3 style="margin-top: 26px">Manual acceptance scenarios</h3>
+      <ol>
+        <li><strong>Poison/Antidote:</strong> apply Poison ×2, reach Ongoing Effects, observe actual rolls and any Antidote play/removal in both public and developer views.</li>
+        <li><strong>Secret defense:</strong> both actors attack, model defends first, both choose/roll privately, then both defenses and faces reveal together. Confirm the log labels each visibility transition.</li>
+        <li><strong>Tip It:</strong> change a die and resulting ability; confirm the transcript connects card → die → qualification → selected attack.</li>
+        <li><strong>D100:</strong> complete a classic Venom Goblin battle and confirm the same record families work without learned-policy-only assumptions.</li>
+        <li><strong>Disabled mode:</strong> restart normally and confirm there is no panel, omniscient file output, or private-data path.</li>
+      </ol>
+    </section>
+
+    <section id="definition-of-done">
+      <p class="eyebrow">09 · Definition of done</p>
+      <h2>Completion is an evidence-backed debug workflow</h2>
+      <div class="callout success">
+        The feature is complete only when an owner can play either supported mode, watch a live transcript, identify every action and automatic consequence—including hidden opponent activity—then open the JSONL afterward and reconstruct the same ordered story, while ordinary gameplay remains viewer-safe and behaviorally unchanged.
+      </div>
+      <ul class="checklist">
+        <li>One common recorder covers learned and D100 authority paths.</li>
+        <li>All required record families have stable typed fields and readable summaries.</li>
+        <li>Visibility is explicit, tested, and never leaked through production/viewer-safe paths.</li>
+        <li>Debug panel and live JSONL are usable throughout a battle.</li>
+        <li>Poison, defense, Tip It, damage, rematch, errors, and disabled-mode acceptance pass.</li>
+        <li>Relevant Phase 1–3, authority, presentation, and client tests remain green.</li>
+        <li>A concise implementation report lists files, schema, flags, output paths, tests, limitations, and manual checklist results.</li>
+      </ul>
+    </section>
+
+    <section id="handoff">
+      <p class="eyebrow">10 · New-context instructions</p>
+      <h2>Prompt for the implementation task</h2>
+      <p>In a fresh Codex context, attach or reference this file and provide the instruction below:</p>
+      <pre>Implement the Dice and Destiny Developer Authority Transcript described in:
+docs/machine-learning-battle-simulation/developer-authority-transcript-handoff.html
+
+Read AGENTS.md completely first, then read the HTML handoff completely. Inspect
+the current authority, viewer filtering, learned runtime, D100 runtime, developer
+history/snapshots, inspector, battle screen, tests, and working tree before making
+changes. Preserve all unrelated tracked and untracked work.
+
+Implement the complete debug-only transcript, structured JSONL, live Godot panel,
+visibility contract, generic action/outcome summaries, tests, and report. The
+recorder must observe authority facts without changing gameplay, RNG, model input,
+or viewer-safe results. Prove the Poison/Antidote and secret-defense examples, both
+learned and D100 coverage, disabled-mode safety, and all required verification.
+
+Do not commit or push until I review the implementation unless I explicitly ask.</pre>
+      <div class="callout warn" style="margin-top: 18px">
+        <strong>Stop conditions for the implementation agent:</strong> if the only feasible design would leak omniscient data through normal results, alter authority outcomes, rely on UI scraping, or require a broad unrelated rewrite, stop and report the architectural blocker before proceeding.
+      </div>
+    </section>
+
+    <footer>
+      Dice &amp; Destiny · Developer Authority Transcript implementation handoff · Specification date 2026-08-02 · This page defines work; it does not claim the feature is already implemented.
+    </footer>
+  </main>
+</body>
+</html>
