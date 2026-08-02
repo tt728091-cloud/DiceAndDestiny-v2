@@ -88,6 +88,20 @@ func _run() -> void:
 	var after_route: Dictionary = gateway.telemetry()
 	_expect(int(after_route.get("result", {}).get("battle", {}).get("human_decisions", 0)) == before_human + 1, "visible planning-roll click did not reach the Go authority")
 	_expect(route_screen._view.rolls_used("blade") == 1, "visible planning-roll click did not update the human viewer state")
+	# A fresh roll starts with no kept dice. The visible reroll control must be
+	# able to submit keep-none ([]) and then reroll every die without the learned
+	# authority mistaking the empty selection for a stale command.
+	var reroll_button := _find_button(route_screen, "Reroll Unkept")
+	_expect(reroll_button != null and reroll_button.visible and not reroll_button.disabled, "visible reroll-all UI control is missing or disabled")
+	var before_reroll: Dictionary = gateway.telemetry()
+	var before_reroll_human := int(before_reroll.get("result", {}).get("battle", {}).get("human_decisions", 0))
+	if reroll_button != null:
+		reroll_button.pressed.emit()
+		await process_frame
+	var after_reroll: Dictionary = gateway.telemetry()
+	_expect(route_screen._error_message.is_empty(), "keep-none/reroll-all UI route was rejected: %s" % route_screen._error_message)
+	_expect(route_screen._view.rolls_used("blade") == 2, "keep-none/reroll-all UI route did not produce a second roll")
+	_expect(int(after_reroll.get("result", {}).get("battle", {}).get("human_decisions", 0)) == before_reroll_human + 2, "keep-none/reroll-all UI route did not submit both authority decisions")
 	route_screen.queue_free()
 	await process_frame
 

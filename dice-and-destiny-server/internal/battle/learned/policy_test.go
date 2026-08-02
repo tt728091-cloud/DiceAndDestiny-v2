@@ -179,6 +179,75 @@ func TestSessionRoutesHumanAndModelThroughAuthorityAndReusesModel(t *testing.T) 
 	}
 }
 
+func TestSessionAcceptsKeepingNoDiceThenRerollingAll(t *testing.T) {
+	session := testSession(t, 2*time.Second)
+	if _, err := session.Reset("keep-none-reroll-all", 20260802, "seat-a", false); err != nil {
+		t.Fatal(err)
+	}
+
+	submitAliased := func(action command.Command) map[string]any {
+		t.Helper()
+		alias := aliasValue(commandMap(t, action), map[string]string{session.humanSeat: HumanAlias, session.modelSeat: ModelAlias})
+		encoded, err := json.Marshal(alias)
+		if err != nil {
+			t.Fatal(err)
+		}
+		view, err := session.SubmitHuman(string(encoded))
+		if err != nil {
+			t.Fatal(err)
+		}
+		return view
+	}
+
+	roll := actionOfType(t, session.current.Result.LegalActions, command.TypePlanningRoll)
+	submitAliased(roll)
+	var keep command.Command
+	for _, action := range session.current.Result.LegalActions {
+		if action.Type != command.TypePlanningKeep {
+			continue
+		}
+		var payload command.PlanningKeepPayload
+		if json.Unmarshal(action.Payload, &payload) == nil && len(payload.KeptIndices) == 0 {
+			keep = action
+			break
+		}
+	}
+	if keep.Type == "" {
+		t.Fatal("keep-none candidate was not offered")
+	}
+	var keepPayload map[string]any
+	if err := json.Unmarshal(keep.Payload, &keepPayload); err != nil {
+		t.Fatal(err)
+	}
+	if _, ok := keepPayload["kept_indices"].([]any); !ok {
+		t.Fatalf("keep-none candidate did not encode kept_indices as an array: %s", keep.Payload)
+	}
+	submitAliased(keep)
+
+	var rerollAll command.Command
+	for _, action := range session.current.Result.LegalActions {
+		if action.Type != command.TypePlanningReroll {
+			continue
+		}
+		var payload command.PlanningRerollPayload
+		if json.Unmarshal(action.Payload, &payload) == nil && len(payload.RerollIndices) == 5 {
+			rerollAll = action
+			break
+		}
+	}
+	if rerollAll.Type == "" {
+		t.Fatal("reroll-all candidate was not offered after keeping no dice")
+	}
+	view := submitAliased(rerollAll)
+	if view["accepted"] != true {
+		t.Fatalf("reroll-all response was not accepted: %#v", view)
+	}
+	telemetry, _ := session.Telemetry()
+	if telemetry.StaleActions != 0 || telemetry.AuthorityRejects != 0 {
+		t.Fatalf("keep-none/reroll-all caused authority rejection: %#v", telemetry)
+	}
+}
+
 func TestSessionRejectsWrongSeatStaleCommandAndTimeoutWithoutFallback(t *testing.T) {
 	session := testSession(t, time.Nanosecond)
 	view, err := session.Reset("timeout", 77, "seat-b", false)
@@ -217,6 +286,17 @@ func preferredTestAction(actions []command.Command) command.Command {
 		}
 	}
 	return actions[0]
+}
+
+func actionOfType(t *testing.T, actions []command.Command, kind command.Type) command.Command {
+	t.Helper()
+	for _, action := range actions {
+		if action.Type == kind {
+			return action
+		}
+	}
+	t.Fatalf("missing %s action in %#v", kind, actions)
+	return command.Command{}
 }
 
 func commandMap(t *testing.T, action command.Command) map[string]any {

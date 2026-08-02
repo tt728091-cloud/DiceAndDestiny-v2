@@ -339,7 +339,10 @@ func indexSubsets(values []int, includeEmpty bool) [][]int {
 	}
 	result := make([][]int, 0, (1<<len(values))-start)
 	for mask := start; mask < 1<<len(values); mask++ {
-		var subset []int
+		// Command payloads declare index selections as JSON arrays. Keep the
+		// empty selection non-nil so the enumerated planning_keep candidate is
+		// encoded as [] (and exactly matches clients), rather than null.
+		subset := make([]int, 0, len(values))
 		for index, value := range values {
 			if mask&(1<<index) != 0 {
 				subset = append(subset, value)
