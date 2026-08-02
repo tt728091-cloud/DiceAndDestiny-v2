@@ -94,7 +94,7 @@ native_input_fingerprint() {
 
   {
     printf '%s\n' \
-      'build_tags=scenario_tools,snapshot_tools,history_tools' \
+        'build_tags=scenario_tools,snapshot_tools,history_tools,transcript_tools' \
       'buildmode=c-shared' \
       'platform=macos' \
       'arch=arm64' \
@@ -133,7 +133,7 @@ fi
 (
   cd "${ROOT_DIR}"
   go build \
-    -tags "scenario_tools snapshot_tools history_tools" \
+    -tags "scenario_tools snapshot_tools history_tools transcript_tools" \
     -buildmode=c-shared \
     -o "${BUILD_DIR}/libbattle_go_authority.dylib" \
     ./adapters/gdextension/go_export

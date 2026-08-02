@@ -10,6 +10,7 @@ import (
 	"sync"
 	"time"
 
+	"diceanddestiny/server/internal/battle"
 	"diceanddestiny/server/internal/battle/command"
 	"diceanddestiny/server/internal/battle/engine"
 	"diceanddestiny/server/internal/battle/mlsim"
@@ -166,6 +167,7 @@ func (s *Session) SubmitHuman(commandJSON string) (map[string]any, error) {
 	defer s.mu.Unlock()
 	if s.current.ActorID != s.humanSeat {
 		s.telemetry.WrongSeatActions++
+		battle.RecordAuthorityTranscriptDiagnostic(s.telemetry.BattleID, s.humanSeat, "command_rejected_wrong_seat", map[string]any{"controller": "human", "summary": "Human command rejected because the learned opponent owns the decision", "current_actor_id": s.current.ActorID})
 		return nil, fmt.Errorf("human command rejected while %s owns the current decision", s.current.ActorID)
 	}
 	actualJSON, err := s.unaliasCommand(commandJSON)
@@ -180,14 +182,21 @@ func (s *Session) SubmitHuman(commandJSON string) (map[string]any, error) {
 	}
 	if action.ActorID != s.humanSeat {
 		s.telemetry.WrongSeatActions++
+		battle.RecordAuthorityTranscriptDiagnostic(s.telemetry.BattleID, action.ActorID, "command_rejected_wrong_seat", map[string]any{"controller": "human", "summary": "Human command actor did not match the configured human seat", "human_seat": s.humanSeat})
 		return nil, fmt.Errorf("human command actor %q does not match human seat %q", action.ActorID, s.humanSeat)
 	}
 	index := currentActionIndex(s.current.Result.LegalActions, action)
 	if index < 0 {
 		s.telemetry.StaleActions++
+		battle.RecordAuthorityTranscriptDiagnostic(s.telemetry.BattleID, action.ActorID, "command_rejected_stale", map[string]any{"controller": "human", "summary": "Human command was stale, fabricated, or no longer legal", "command": action})
 		return nil, fmt.Errorf("human command is stale, fabricated, or no longer legal")
 	}
-	transition, result, err := s.environment.StepCommandForViewer(action, s.humanSeat)
+	transition, result, err := s.environment.StepCommandForViewerWithTranscript(action, s.humanSeat, battle.TranscriptCommandContext{
+		Controller:     "human",
+		ActionIndex:    index,
+		CandidateCount: len(s.current.Result.LegalActions),
+		Metadata:       map[string]any{"human_seat": s.humanSeat, "model_seat": s.modelSeat},
+	})
 	if err != nil {
 		s.telemetry.AuthorityRejects++
 		s.telemetry.Errors = append(s.telemetry.Errors, err.Error())
@@ -218,6 +227,7 @@ func (s *Session) AdvanceModel() (map[string]any, error) {
 		s.telemetry.Errors = append(s.telemetry.Errors, err.Error())
 		s.lifetime.Errors++
 		s.recordDiagnostic("model_error", map[string]any{"error": err.Error()})
+		battle.RecordAuthorityTranscriptDiagnostic(s.telemetry.BattleID, s.modelSeat, "model_error", map[string]any{"controller": "learned_policy", "summary": "Learned-policy inference failed", "error": err.Error(), "model": s.policy.Metadata()})
 		return nil, err
 	}
 	if latency > s.config.InferenceTimeout {
@@ -226,6 +236,7 @@ func (s *Session) AdvanceModel() (map[string]any, error) {
 		err = fmt.Errorf("learned-policy inference exceeded %s (measured %s)", s.config.InferenceTimeout, latency)
 		s.telemetry.Errors = append(s.telemetry.Errors, err.Error())
 		s.recordDiagnostic("model_timeout", map[string]any{"error": err.Error(), "latency_ms": milliseconds(latency)})
+		battle.RecordAuthorityTranscriptDiagnostic(s.telemetry.BattleID, s.modelSeat, "model_timeout", map[string]any{"controller": "learned_policy", "summary": "Learned-policy inference timed out without submitting a fallback", "error": err.Error(), "latency_ms": milliseconds(latency), "model": s.policy.Metadata()})
 		return nil, err
 	}
 	if selected < 0 || selected >= len(s.current.Result.LegalActions) {
@@ -233,7 +244,20 @@ func (s *Session) AdvanceModel() (map[string]any, error) {
 		return nil, fmt.Errorf("learned policy selected invalid action index %d", selected)
 	}
 	action := s.current.Result.LegalActions[selected]
-	transition, result, err := s.environment.StepForViewer(selected, s.humanSeat)
+	metadata := s.policy.Metadata()
+	transition, result, err := s.environment.StepForViewerWithTranscript(selected, s.humanSeat, battle.TranscriptCommandContext{
+		Controller:     "learned_policy",
+		ActionIndex:    selected,
+		CandidateCount: len(s.current.Result.LegalActions),
+		InferenceMS:    milliseconds(latency),
+		Metadata: map[string]any{
+			"model_id":             metadata.ModelID,
+			"checkpoint_sha256":    metadata.SourceCheckpointSHA256,
+			"policy_export_sha256": metadata.PolicyExportSHA256,
+			"human_seat":           s.humanSeat,
+			"model_seat":           s.modelSeat,
+		},
+	})
 	if err != nil {
 		s.telemetry.AuthorityRejects++
 		s.telemetry.Errors = append(s.telemetry.Errors, err.Error())

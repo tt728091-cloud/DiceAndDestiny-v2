@@ -85,6 +85,17 @@ export DICE_AND_DESTINY_SNAPSHOT_STATE_ROOT="${state_root}/snapshots"
 export DICE_AND_DESTINY_HISTORY_STATE_ROOT="${state_root}/history"
 export DICE_AND_DESTINY_SCENARIO_ROOT="${SERVER_ROOT}/scenarios"
 
+# The omniscient authority transcript has three independent gates: the native
+# debug build tag, the caller's explicit opt-in, and this project development
+# setting. Always replace inherited path/project values so one workspace can
+# never write into another checkout.
+if grep -Eq '^development/enable_authority_transcript=true$' "${CLIENT_ROOT}/project.godot"; then
+  export DICE_AND_DESTINY_AUTHORITY_TRANSCRIPT_PROJECT_ENABLED=1
+else
+  export DICE_AND_DESTINY_AUTHORITY_TRANSCRIPT_PROJECT_ENABLED=0
+fi
+export DICE_AND_DESTINY_AUTHORITY_TRANSCRIPT_PATH="${runtime_root}/user/debug/authority-transcript.jsonl"
+
 # Port zero asks the OS for a free ephemeral port. Always replace inherited
 # values so a shell-level fixed port cannot accidentally reintroduce collisions.
 export DICE_AND_DESTINY_INSPECTOR_PORT=0

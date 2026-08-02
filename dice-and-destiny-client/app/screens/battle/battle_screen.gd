@@ -4,6 +4,7 @@ const SEGMENTS := [["ongoing_effects", "Effects"], ["income", "Income"], ["offen
 const INCOME_DURATION_SETTING := "dice_and_destiny/presentation/income_animation_seconds"
 const MODEL_TIMEOUT_MS := 2000
 const MIN_THINKING_DISPLAY_MS := 180
+const TRANSCRIPT_PANEL := preload("res://devtools/developer_authority_transcript_panel.gd")
 
 var initial_result: Dictionary = {}
 var viewer_actor_id := "blade"
@@ -55,6 +56,7 @@ var _model_started_ms := 0
 var _model_timeout_warning := false
 var _model_error := false
 var _reaction_notice := ""
+var _transcript_panel: CanvasLayer
 
 func _ready() -> void:
 	add_to_group("inspectable_battle_screen")
@@ -63,6 +65,10 @@ func _ready() -> void:
 	if not _view.apply_result(initial_result):
 		_build_error_only(str(initial_result.get("error", "Battle snapshot is missing or unsafe.")))
 		return
+	if TRANSCRIPT_PANEL.is_enabled():
+		_transcript_panel = TRANSCRIPT_PANEL.new()
+		_transcript_panel.set_current_battle(_view.battle_id)
+		add_child(_transcript_panel)
 	_apply_history_context(history_context)
 	_director.configure_learned_battle(learned_battle_mode)
 	_director.queue_result(initial_result, last_presented_sequence)
@@ -146,6 +152,7 @@ func _apply_model_result(result: Dictionary) -> void:
 
 func _render() -> void:
 	_income_animation_generation += 1
+	if is_instance_valid(_transcript_panel): _transcript_panel.set_current_battle(_view.battle_id)
 	_actor_profiles.clear()
 	_income_drawn_cards.clear()
 	if is_instance_valid(_root): _root.queue_free()
@@ -195,6 +202,9 @@ func _build_header(parent: VBoxContainer) -> void:
 	if _snapshot_tools_enabled():
 		var snapshots := Button.new(); snapshots.text = "DEV SNAPSHOTS"; snapshots.pressed.connect(_toggle_snapshot_panel); bar.add_child(snapshots)
 		_inspect(snapshots, "battle.dev_snapshots.toggle", "Open the developer snapshot controls")
+	if is_instance_valid(_transcript_panel):
+		var transcript := Button.new(); transcript.text = "DEV TRANSCRIPT"; transcript.pressed.connect(_transcript_panel.toggle_panel); bar.add_child(transcript)
+		_inspect(transcript, "battle.dev_transcript.toggle", "Open the read-only authority transcript panel")
 
 func _build_player_column(parent: HBoxContainer) -> void:
 	var column := VBoxContainer.new(); column.custom_minimum_size.x = 300; parent.add_child(column)
@@ -1386,11 +1396,25 @@ func _build_reaction_notice() -> void:
 	_inspect(notice, "battle.offensive_reaction.notice", _reaction_notice)
 
 func _combat_event_text(event: Dictionary) -> String:
-	if str(event.get("type", "")) == "card_played" and str(event.get("segment", "")) == "offensive":
-		var data: Dictionary = _as_dictionary(event.get("data", {}))
+	var kind := str(event.get("type", ""))
+	var data: Dictionary = _as_dictionary(event.get("data", {}))
+	if kind == "card_played":
+		var actor_name := _actor_display_name(str(event.get("actor_id", "")))
 		var card_name := _card_display_name(str(data.get("card_definition_id", "")))
-		return "%s played %s" % [_actor_display_name(str(event.get("actor_id", ""))), card_name]
-	return str(event.get("type", "event")).replace("_", " ")
+		var status_id := str(data.get("choice_id", ""))
+		var removed := int(data.get("stacks_removed", 0))
+		if not status_id.is_empty() and removed > 0:
+			var status_name := str(_view.content_definition("statuses", status_id).get("name", status_id.replace("_", " ").capitalize()))
+			return "%s played %s; removed %s ×%d (%d → %d)" % [actor_name, card_name, status_name, removed, int(data.get("stacks_before", removed)), int(data.get("stacks_after", 0))]
+		return "%s played %s" % [actor_name, card_name]
+	if kind == "defense_selected":
+		var ability_id := str(data.get("ability_id", ""))
+		var ability_name := str(_view.content_definition("abilities", ability_id).get("name", ability_id.replace("_", " ").capitalize()))
+		return "%s revealed %s · face %d" % [_actor_display_name(str(event.get("actor_id", ""))), ability_name, int(data.get("rolled_face", 0))]
+	if kind == "battle_completed": return "Battle completed: %s" % str(event.get("battle_result", "result")).replace("_", " ")
+	if kind == "damage_committed": return "Damage and status results committed"
+	if kind == "cards_permanently_removed": return "%s lost %d card(s) to damage" % [_actor_display_name(str(event.get("target_actor_id", ""))), _as_array(event.get("cards", [])).size()]
+	return kind.replace("_", " ")
 
 func _card_display_name(card_definition_id: String) -> String:
 	if card_definition_id.is_empty(): return "a reaction card"
@@ -1490,5 +1514,6 @@ func inspection_state() -> Dictionary:
 		"history_scroll_value": _history_scroll_value,
 		"history_follow_latest": _history_follow_latest,
 		"history_divergence_pending": _history_pending_divergence,
+		"authority_transcript": _transcript_panel.inspection_state() if is_instance_valid(_transcript_panel) else {"enabled": false, "open": false},
 		"error": _error_message,
 	}

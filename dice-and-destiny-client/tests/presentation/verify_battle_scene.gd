@@ -28,6 +28,18 @@ func _run() -> void:
 	yaml_next.pending_input.blade.id = "yaml-next"; yaml_fake.enqueue(yaml_next)
 	var yaml_screen = packed.instantiate(); yaml_screen.initial_result = yaml_fixture; yaml_screen.gateway = BattleGateway.new(yaml_fake); yaml_screen.active_store = ActiveBattleStore.new(WorkspacePaths.persistent_file("verify_yaml_card_active.json")); root.add_child(yaml_screen)
 	await process_frame; await process_frame
+	var transcript_toggle := _button(yaml_screen, "DEV TRANSCRIPT")
+	if OS.get_environment("DICE_AND_DESTINY_ENABLE_AUTHORITY_TRANSCRIPT") == "1":
+		if transcript_toggle == null: _fail("opted-in debug battle screen omitted DEV TRANSCRIPT"); return
+		var commands_before_transcript := yaml_fake.commands.size()
+		transcript_toggle.pressed.emit(); await process_frame
+		yaml_screen._transcript_panel._filter = "Public"
+		yaml_screen._transcript_panel._render_records()
+		yaml_screen._transcript_panel._copy_visible()
+		yaml_screen._transcript_panel.toggle_panel(); await process_frame
+		if yaml_fake.commands.size() != commands_before_transcript: _fail("transcript open/filter/copy/close submitted gameplay commands: %s" % yaml_fake.commands); return
+	elif transcript_toggle != null:
+		_fail("disabled battle screen exposed DEV TRANSCRIPT"); return
 	var yaml_button: Button = null
 	for button in yaml_screen.find_children("*", "Button", true, false):
 		if button.text.begins_with("Alchemist's Gamble"): yaml_button = button
@@ -62,6 +74,9 @@ func _run() -> void:
 	var antidote_command: Dictionary = JSON.parse_string(antidote_fake.commands[0]); var antidote_commitment: Dictionary = antidote_command.get("payload", {}).get("commitment", {})
 	if antidote_command.get("type") != "commit_interaction" or antidote_commitment.get("card_ids", []) != ["antidote-1"] or antidote_commitment.get("choice_id") != "bleed":
 		_fail("Antidote submitted the wrong selected status: %s" % antidote_fake.commands[0]); return
+	var antidote_log: String = antidote_screen._combat_event_text({"type": "card_played", "actor_id": "blade", "data": {"card_definition_id": "antidote", "choice_id": "bleed", "stacks_before": 1, "stacks_after": 0, "stacks_removed": 1}})
+	if "played Antidote; removed Bleed ×1 (1 → 0)" not in antidote_log:
+		_fail("public combat log did not explain the revealed generic status removal: %s" % antidote_log); return
 	antidote_screen.active_store.clear(); antidote_screen.queue_free(); await process_frame
 	var fake := FakeBattleAuthority.new()
 	fake.enqueue(_rolled_fixture("p2", 1, []))
@@ -128,8 +143,9 @@ func _run() -> void:
 	await process_frame; await process_frame
 	var found_continue := false
 	for button in presenting.find_children("*", "Button", true, false):
+		if not button.is_visible_in_tree(): continue
 		if button.text == "Continue Presentation": found_continue = true
-		elif button.text != "DEV SNAPSHOTS" and not button.disabled: _fail("gameplay control remained enabled during automatic presentation: %s" % button.text); return
+		elif button.text not in ["DEV SNAPSHOTS", "DEV TRANSCRIPT"] and not button.disabled: _fail("gameplay control remained enabled during automatic presentation: %s" % button.text); return
 	if not found_continue: _fail("automatic presentation did not expose its continue control"); return
 	presenting.queue_free(); await process_frame
 	ProjectSettings.set_setting("dice_and_destiny/presentation/income_animation_seconds", 0.5)

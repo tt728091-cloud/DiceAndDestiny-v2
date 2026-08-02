@@ -25,6 +25,7 @@ LearnedBattleRuntime="*res://local_client/learned_battle/learned_battle_runtime.
 development/enable_scenarios=true
 development/enable_snapshots=true
 development/enable_history=true
+development/enable_authority_transcript=true
 presentation/income_animation_seconds=2.0
 
 [display]

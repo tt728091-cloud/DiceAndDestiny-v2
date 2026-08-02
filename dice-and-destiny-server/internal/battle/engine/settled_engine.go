@@ -965,11 +965,12 @@ func (e Engine) handleOffensivePlanningCommand(battle *state.Battle, library con
 		if len(payload.CardIDs) != 1 {
 			return nil, errors.New("exactly one card instance is required")
 		}
+		cardDefinitionID := settledCardDefinitionID(battle, actorID, payload.CardIDs[0])
 		if err := e.playSettledCard(battle, library, actorID, payload.CardIDs[0], payload.TargetIDs, payload.AbilityID, payload.DieIndex, payload.StatusID); err != nil {
 			return nil, err
 		}
 		rotateSettledPending(battle, actorID)
-		return []event.Event{settledEvent(event.TypeCardPlayed, battle, actorID, map[string]any{"card_instance_id": payload.CardIDs[0], "targets": payload.TargetIDs, "ability_id": payload.AbilityID})}, nil
+		return []event.Event{settledEvent(event.TypeCardPlayed, battle, actorID, map[string]any{"card_instance_id": payload.CardIDs[0], "card_definition_id": cardDefinitionID, "targets": payload.TargetIDs, "ability_id": payload.AbilityID})}, nil
 	case command.TypePlanningRoll:
 		if runtime.RollsUsed != 0 {
 			return nil, errors.New("initial roll already used")
@@ -1329,11 +1330,12 @@ func (e Engine) handleBlindReactionCommand(battle *state.Battle, library content
 		if len(payload.Commitment.CardIDs) != 1 || len(payload.Commitment.PlanningAdjustments) != 1 {
 			return nil, errors.New("Blind reaction needs one card and die adjustment")
 		}
+		cardDefinitionID := settledCardDefinitionID(battle, cmd.ActorID, payload.Commitment.CardIDs[0])
 		if err := e.playSettledReactionCard(battle, library, cmd.ActorID, payload.Commitment); err != nil {
 			return nil, err
 		}
 		advanceSettledReactionPriority(battle, cmd.ActorID, true)
-		return []event.Event{settledEvent(event.TypeCardPlayed, battle, cmd.ActorID, map[string]any{"card_instance_id": payload.Commitment.CardIDs[0], "blind_face": pending.Face})}, nil
+		return []event.Event{settledEvent(event.TypeCardPlayed, battle, cmd.ActorID, map[string]any{"card_instance_id": payload.Commitment.CardIDs[0], "card_definition_id": cardDefinitionID, "blind_face": pending.Face})}, nil
 	}
 	if cmd.Type != command.TypePass {
 		return nil, unsupportedCommand()
@@ -1426,11 +1428,16 @@ func (e Engine) handleDefenseReactionCommand(battle *state.Battle, library conte
 	if err := command.DecodePayload(cmd, &payload); err != nil {
 		return nil, err
 	}
+	cardID := ""
+	if len(payload.Commitment.CardIDs) > 0 {
+		cardID = payload.Commitment.CardIDs[0]
+	}
+	cardDefinitionID := settledCardDefinitionID(battle, cmd.ActorID, cardID)
 	if err := e.playSettledReactionCard(battle, library, cmd.ActorID, payload.Commitment); err != nil {
 		return nil, err
 	}
 	advanceSettledReactionPriority(battle, cmd.ActorID, true)
-	return []event.Event{settledEvent(event.TypeCardPlayed, battle, cmd.ActorID, map[string]any{"card_instance_id": payload.Commitment.CardIDs[0], "choice_id": payload.Commitment.ChoiceID})}, nil
+	return []event.Event{settledEvent(event.TypeCardPlayed, battle, cmd.ActorID, map[string]any{"card_instance_id": cardID, "card_definition_id": cardDefinitionID, "choice_id": payload.Commitment.ChoiceID})}, nil
 }
 
 func (e Engine) handleStatusReactionCommand(battle *state.Battle, library content.BattleLibrary, cmd command.Command) ([]event.Event, error) {
@@ -1449,11 +1456,14 @@ func (e Engine) handleStatusReactionCommand(battle *state.Battle, library conten
 	if len(payload.Commitment.CardIDs) != 1 {
 		return nil, errors.New("status reaction needs one card")
 	}
+	cardDefinitionID := settledCardDefinitionID(battle, cmd.ActorID, payload.Commitment.CardIDs[0])
+	stacksBefore := statusStackCount(battle.Actors[cmd.ActorID].Statuses, payload.Commitment.ChoiceID)
 	if err := e.playSettledReactionCard(battle, library, cmd.ActorID, payload.Commitment); err != nil {
 		return nil, err
 	}
+	stacksAfter := statusStackCount(battle.Actors[cmd.ActorID].Statuses, payload.Commitment.ChoiceID)
 	advanceSettledReactionPriority(battle, cmd.ActorID, true)
-	return []event.Event{settledEvent(event.TypeCardPlayed, battle, cmd.ActorID, map[string]any{"card_instance_id": payload.Commitment.CardIDs[0], "choice_id": payload.Commitment.ChoiceID})}, nil
+	return []event.Event{settledEvent(event.TypeCardPlayed, battle, cmd.ActorID, map[string]any{"card_instance_id": payload.Commitment.CardIDs[0], "card_definition_id": cardDefinitionID, "choice_id": payload.Commitment.ChoiceID, "stacks_before": stacksBefore, "stacks_after": stacksAfter, "stacks_removed": max(0, stacksBefore-stacksAfter), "operation": "remove_status"})}, nil
 }
 
 func (e Engine) handleDamageReactionCommand(battle *state.Battle, library content.BattleLibrary, cmd command.Command) ([]event.Event, error) {
@@ -2315,6 +2325,23 @@ func findCardDefinitionInZone(battle *state.Battle, actorID, definitionID string
 		}
 	}
 	return ""
+}
+
+func settledCardDefinitionID(battle *state.Battle, actorID, instanceID string) string {
+	if battle == nil || battle.Settled == nil {
+		return ""
+	}
+	return battle.Settled.Actors[actorID].CardInstances[instanceID].DefinitionID
+}
+
+func statusStackCount(statuses []state.StatusState, definitionID string) int {
+	total := 0
+	for _, status := range statuses {
+		if status.DefinitionID == definitionID {
+			total += status.Stacks
+		}
+	}
+	return total
 }
 func dieFace(library content.BattleLibrary, dieID string, number int) content.BattleDieFace {
 	for _, face := range library.Dice[dieID].Faces {

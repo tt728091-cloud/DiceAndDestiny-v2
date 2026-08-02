@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"reflect"
 	"sort"
+	"strings"
 	"time"
 
 	"diceanddestiny/server/internal/battle"
@@ -127,6 +128,17 @@ func (e *Environment) Reset(request ResetRequest) (Transition, error) {
 		repository.NewInMemory(),
 		battle.NewFileParticipantAssembler(e.config.ContentRoot, e.config.RunStateRoot),
 	)
+	humanSeat, modelSeat := transcriptSeats(request.SeatModels)
+	e.authority.ConfigureTranscriptBattle(battle.TranscriptBattleContext{
+		Mode:         "learned_mirror",
+		HumanActorID: humanSeat,
+		ModelActorID: modelSeat,
+		Controllers: map[string]string{
+			humanSeat: "human",
+			modelSeat: "learned_policy",
+		},
+		Metadata: map[string]any{"seat_models": cloneStringsMap(request.SeatModels)},
+	})
 	e.replay = ReplayRecord{
 		EnvironmentSchema: EnvironmentSchemaVersion,
 		ObservationSchema: ObservationSchemaVersion,
@@ -207,6 +219,17 @@ func (e *Environment) Step(actionIndex int) (Transition, error) {
 // the applied command's events and snapshot filtered for viewerActorID. The
 // next transition remains the acting seat's viewer-safe model input.
 func (e *Environment) StepForViewer(actionIndex int, viewerActorID string) (Transition, engine.Result, error) {
+	return e.StepForViewerWithTranscript(actionIndex, viewerActorID, battle.TranscriptCommandContext{})
+}
+
+// StepForViewerWithTranscript follows the identical indexed authority path
+// while carrying diagnostics that are ignored unless transcript tooling is
+// compile-time and runtime enabled.
+func (e *Environment) StepForViewerWithTranscript(
+	actionIndex int,
+	viewerActorID string,
+	transcriptContext battle.TranscriptCommandContext,
+) (Transition, engine.Result, error) {
 	if e.current.Terminal || e.current.TruncationReason != "" {
 		return Transition{}, engine.Result{}, errors.New("episode is complete; reset before stepping")
 	}
@@ -215,7 +238,16 @@ func (e *Environment) StepForViewer(actionIndex int, viewerActorID string) (Tran
 		return Transition{}, engine.Result{}, fmt.Errorf("action index %d outside legal range [0,%d)", actionIndex, len(e.legalActions))
 	}
 	action := e.legalActions[actionIndex]
-	result := e.authority.HandleCommandForViewer(action, viewerActorID)
+	if transcriptContext.ActionIndex == 0 && actionIndex != 0 {
+		transcriptContext.ActionIndex = actionIndex
+	}
+	if transcriptContext.CandidateCount == 0 {
+		transcriptContext.CandidateCount = len(e.legalActions)
+	}
+	if transcriptContext.Controller == "" {
+		transcriptContext.Controller = transcriptController(e.replay.SeatModels[action.ActorID])
+	}
+	result := e.authority.HandleCommandForViewerWithTranscript(action, viewerActorID, transcriptContext)
 	if !result.Accepted {
 		e.metrics.AuthorityRejects++
 		return Transition{}, result, fmt.Errorf("implementation failure: authority rejected enumerated action %s: %s", action.Type, result.Error)
@@ -234,13 +266,53 @@ func (e *Environment) StepForViewer(actionIndex int, viewerActorID string) (Tran
 // StepCommandForViewer accepts only a command currently enumerated by the
 // authority and then submits that original candidate unchanged.
 func (e *Environment) StepCommandForViewer(action command.Command, viewerActorID string) (Transition, engine.Result, error) {
+	return e.StepCommandForViewerWithTranscript(action, viewerActorID, battle.TranscriptCommandContext{})
+}
+
+func (e *Environment) StepCommandForViewerWithTranscript(
+	action command.Command,
+	viewerActorID string,
+	transcriptContext battle.TranscriptCommandContext,
+) (Transition, engine.Result, error) {
 	for index, candidate := range e.legalActions {
 		if commandsEqual(candidate, action) {
-			return e.StepForViewer(index, viewerActorID)
+			return e.StepForViewerWithTranscript(index, viewerActorID, transcriptContext)
 		}
 	}
 	e.metrics.InvalidActionIDs++
 	return Transition{}, engine.Result{}, errors.New("command is not a current legal candidate")
+}
+
+func transcriptSeats(models map[string]string) (string, string) {
+	human, model := "", ""
+	for _, seatID := range SeatIDs {
+		if transcriptController(models[seatID]) == "human" {
+			human = seatID
+		} else if models[seatID] != "" {
+			model = seatID
+		}
+	}
+	if human == "" {
+		human = SeatIDs[0]
+	}
+	if model == "" || model == human {
+		if human == SeatIDs[0] {
+			model = SeatIDs[1]
+		} else {
+			model = SeatIDs[0]
+		}
+	}
+	return human, model
+}
+
+func transcriptController(model string) string {
+	if strings.Contains(strings.ToLower(model), "human") {
+		return "human"
+	}
+	if model != "" {
+		return "learned_policy"
+	}
+	return "external"
 }
 
 func (e *Environment) Current() Transition {

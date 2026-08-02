@@ -25,9 +25,32 @@ type ParticipantAssembler = participant.Assembler
 type ParticipantAssemblerFunc = participant.AssemblerFunc
 
 type Authority struct {
-	engine    engine.Engine
-	repo      repository.Repository
-	assembler ParticipantAssembler
+	engine     engine.Engine
+	repo       repository.Repository
+	assembler  ParticipantAssembler
+	transcript any
+}
+
+// TranscriptBattleContext is diagnostic-only metadata for an authority
+// transcript. It is never consulted by gameplay, legal-action, RNG, or viewer
+// filtering code.
+type TranscriptBattleContext struct {
+	Mode         string
+	HumanActorID string
+	ModelActorID string
+	Controllers  map[string]string
+	Metadata     map[string]any
+}
+
+// TranscriptCommandContext identifies the controller that selected one
+// accepted authority command. Learned-policy callers add candidate and
+// inference metadata here without changing the submitted command envelope.
+type TranscriptCommandContext struct {
+	Controller     string
+	ActionIndex    int
+	CandidateCount int
+	InferenceMS    float64
+	Metadata       map[string]any
 }
 
 var defaultAuthority = newDefaultAuthority()
@@ -76,9 +99,10 @@ func NewAuthority(
 	assembler ParticipantAssembler,
 ) *Authority {
 	return &Authority{
-		engine:    battleEngine,
-		repo:      repo,
-		assembler: assembler,
+		engine:     battleEngine,
+		repo:       repo,
+		assembler:  assembler,
+		transcript: newAuthorityTranscript(),
 	}
 }
 
@@ -98,6 +122,7 @@ func handleCommand(commandJSON string, handler commandHandler) string {
 	// then serialize the engine result. Gameplay meaning stays below this layer.
 	cmd, err := command.ParseJSON(commandJSON)
 	if err != nil {
+		recordAuthorityTranscriptTransportRejection(commandJSON, err)
 		return marshalResult(parseErrorResult(err))
 	}
 
@@ -105,7 +130,7 @@ func handleCommand(commandJSON string, handler commandHandler) string {
 }
 
 func (authority *Authority) HandleCommand(cmd command.Command) engine.Result {
-	return authority.handleCommandForViewer(cmd, cmd.ActorID)
+	return authority.handleCommandForViewer(cmd, cmd.ActorID, TranscriptCommandContext{})
 }
 
 // HandleCommandForViewer applies cmd through the ordinary authority boundary
@@ -113,40 +138,88 @@ func (authority *Authority) HandleCommand(cmd command.Command) engine.Result {
 // The command actor still owns validation; choosing a different result viewer
 // cannot grant that viewer permission to act.
 func (authority *Authority) HandleCommandForViewer(cmd command.Command, resultViewerActorID string) engine.Result {
-	return authority.handleCommandForViewer(cmd, resultViewerActorID)
+	return authority.handleCommandForViewer(cmd, resultViewerActorID, TranscriptCommandContext{})
 }
 
-func (authority *Authority) handleCommandForViewer(cmd command.Command, resultViewerActorID string) engine.Result {
+// HandleCommandForViewerWithTranscript applies the same command path as
+// HandleCommandForViewer while attaching diagnostics that are consumed only
+// when the compile-time and runtime transcript gates are enabled.
+func (authority *Authority) HandleCommandForViewerWithTranscript(
+	cmd command.Command,
+	resultViewerActorID string,
+	context TranscriptCommandContext,
+) engine.Result {
+	return authority.handleCommandForViewer(cmd, resultViewerActorID, context)
+}
+
+// ConfigureTranscriptBattle attaches diagnostic seat/controller labels to
+// this authority. The disabled release implementation is a no-op.
+func (authority *Authority) ConfigureTranscriptBattle(context TranscriptBattleContext) {
+	configureAuthorityTranscript(authority, context)
+}
+
+func (authority *Authority) handleCommandForViewer(
+	cmd command.Command,
+	resultViewerActorID string,
+	context TranscriptCommandContext,
+) engine.Result {
 	if authority == nil || authority.repo == nil || authority.assembler == nil {
-		return authorityRejected("battle authority is not configured")
+		result := authorityRejected("battle authority is not configured")
+		recordAuthorityTranscriptRejected(authority, cmd, context, nil, result.Error)
+		return result
 	}
 	if cmd.Type == command.TypeStartBattle {
-		return authority.startBattle(cmd)
+		beginAuthorityTranscriptCommand(authority, cmd, context, nil)
+		result := authority.startBattle(cmd)
+		if !result.Accepted {
+			recordAuthorityTranscriptRejected(authority, cmd, context, nil, result.Error)
+			return result
+		}
+		checkpoint, err := authority.repo.Load(cmd.BattleID)
+		if err != nil {
+			recordAuthorityTranscriptRejected(authority, cmd, context, nil, fmt.Sprintf("reload started battle: %v", err))
+			return result
+		}
+		recordAuthorityTranscriptAccepted(authority, cmd, context, nil, &checkpoint.Battle, checkpoint.Events)
+		return result
 	}
 
 	checkpoint, err := authority.repo.Load(cmd.BattleID)
 	if err != nil {
 		if errors.Is(err, repository.ErrBattleNotFound) {
-			return authorityRejected("battle not found")
+			result := authorityRejected("battle not found")
+			recordAuthorityTranscriptRejected(authority, cmd, context, nil, result.Error)
+			return result
 		}
-		return authorityRejected(fmt.Sprintf("load battle: %v", err))
+		result := authorityRejected(fmt.Sprintf("load battle: %v", err))
+		recordAuthorityTranscriptRejected(authority, cmd, context, nil, result.Error)
+		return result
 	}
 	if cmd.Type == command.TypeOpenBattle {
 		return authority.engine.OpenResult(&checkpoint.Battle, cmd.ActorID)
 	}
+	before := captureAuthorityTranscriptBefore(authority, &checkpoint.Battle)
+	beginAuthorityTranscriptCommand(authority, cmd, context, &checkpoint.Battle)
 
 	progressed, err := authority.engine.ApplyBattleCommand(&checkpoint.Battle, cmd)
 	if err != nil {
-		return authorityRejected(err.Error())
+		result := authorityRejected(err.Error())
+		recordAuthorityTranscriptRejected(authority, cmd, context, before, result.Error)
+		return result
 	}
 	assigned, err := repository.AppendEvents(&checkpoint, progressed.Events)
 	if err != nil {
-		return authorityRejected(fmt.Sprintf("sequence battle events: %v", err))
+		result := authorityRejected(fmt.Sprintf("sequence battle events: %v", err))
+		recordAuthorityTranscriptRejected(authority, cmd, context, before, result.Error)
+		return result
 	}
 	progressed.Events = assigned
 	if err := authority.repo.Save(checkpoint); err != nil {
-		return authorityRejected(fmt.Sprintf("save battle: %v", err))
+		result := authorityRejected(fmt.Sprintf("save battle: %v", err))
+		recordAuthorityTranscriptRejected(authority, cmd, context, before, result.Error)
+		return result
 	}
+	recordAuthorityTranscriptAccepted(authority, cmd, context, before, &checkpoint.Battle, assigned)
 	return authority.engine.ResultForViewer(&checkpoint.Battle, resultViewerActorID, progressed)
 }
 
