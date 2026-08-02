@@ -23,6 +23,14 @@ func queue_result(result: Dictionary, already_presented_sequence: int = 0) -> vo
 	var viewer_pending_value = result.get("pending_input", {}).get("blade", {})
 	var viewer_pending: Dictionary = viewer_pending_value if viewer_pending_value is Dictionary else {}
 	var pending_segment := str(viewer_pending.get("segment", ""))
+	var snapshot_value = result.get("snapshot", {})
+	var snapshot: Dictionary = snapshot_value if snapshot_value is Dictionary else {}
+	var active_segment := str(snapshot.get("segment", ""))
+	# Segment placeholders describe segments that the authority traversed without
+	# stopping. A segment that remains active is real work, even when its current
+	# pending input belongs to the hidden learned opponent rather than the viewer.
+	# Clear an older placeholder as soon as a later result stops in that segment.
+	if not active_segment.is_empty(): _remove_segment_placeholder(active_segment)
 	var automatic_segment := ""
 	for event in ordered:
 		if event.get("type") == "segment_entered": automatic_segment = str(event.get("segment", event.get("to", "")))
@@ -41,7 +49,7 @@ func queue_result(result: Dictionary, already_presented_sequence: int = 0) -> vo
 			if _queue.is_empty(): _last_sequence = maxi(_last_sequence, sequence)
 			else: _queue[-1]["watermark"] = sequence
 			continue
-		if event.get("type") == "segment_entered" and automatic_segment == pending_segment and not viewer_pending.is_empty():
+		if event.get("type") == "segment_entered" and (automatic_segment == active_segment or (automatic_segment == pending_segment and not viewer_pending.is_empty())):
 			if _queue.is_empty(): _last_sequence = maxi(_last_sequence, sequence)
 			else: _queue[-1]["watermark"] = sequence
 			continue

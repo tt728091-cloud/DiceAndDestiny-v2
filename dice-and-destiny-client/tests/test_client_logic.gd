@@ -128,6 +128,16 @@ func _test_director_and_fake() -> void:
 	if defense_director.peek().get("detail") != "No damage to resolve": failures.append("empty Damage segment omitted its fallback: %s" % defense_director.peek())
 	defense_director.advance()
 	if defense_director.has_beats(): failures.append("unexpected presentation beats remained after empty Damage fallback")
+	var model_first_defense_director := BattlePresentationDirector.new()
+	model_first_defense_director.queue_result({
+		"events": [{"sequence": 1, "type": "segment_entered", "segment": "defensive"}],
+		"pending_input": {},
+		"snapshot": {"segment": "defensive", "stage": "defense_selection", "damage_sources": [
+			{"id": "source-player", "source_actor_id": "blade", "target_actor_id": "goblin", "base_amount": 3},
+			{"id": "source-enemy", "source_actor_id": "goblin", "target_actor_id": "blade", "base_amount": 3},
+		]},
+	})
+	if model_first_defense_director.has_beats(): failures.append("model-first secret defense queued a false empty-segment presentation: %s" % model_first_defense_director.peek())
 	var effects_director := BattlePresentationDirector.new()
 	effects_director.queue_result({"events": [{"sequence": 1, "type": "segment_entered", "segment": "ongoing_effects"}, {"sequence": 2, "type": "status_changed", "segment": "ongoing_effects", "data": {"status_id": "poison"}}]})
 	if effects_director.peek().get("type") != "status_changed": failures.append("active Effects retained its redundant segment pause: %s" % effects_director.peek())
