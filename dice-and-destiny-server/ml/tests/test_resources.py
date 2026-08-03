@@ -9,7 +9,13 @@ def test_m3_max_profiles_resolve_to_bounded_single_thread_workers() -> None:
     assert resolve_resource_budget("max", logical_cpus=16).workers == 12
     assert resolve_resource_budget("balanced-80", logical_cpus=16).workers == 10
     assert resolve_resource_budget("light-50", logical_cpus=16).workers == 6
-    assert resolve_resource_budget("max", logical_cpus=16).torch_threads == 1
+    budget = resolve_resource_budget("max", logical_cpus=16)
+    assert budget.learner_torch_threads == 4
+    assert budget.learner_torch_interop_threads == 1
+    assert budget.learner_blas_threads == 4
+    assert budget.worker_torch_threads == 1
+    assert budget.worker_torch_interop_threads == 1
+    assert budget.worker_blas_threads == 1
 
 
 def test_custom_profile_honors_explicit_worker_and_thread_budget() -> None:
@@ -18,6 +24,26 @@ def test_custom_profile_honors_explicit_worker_and_thread_budget() -> None:
     assert budget.torch_threads == 2
     assert budget.inference_concurrency == 7
     assert budget.io_concurrency == 2
+
+
+def test_custom_profile_separates_learner_and_worker_thread_budgets() -> None:
+    budget = resolve_resource_budget(
+        "custom",
+        workers=12,
+        learner_torch_threads=4,
+        learner_torch_interop_threads=2,
+        learner_blas_threads=4,
+        worker_torch_threads=1,
+        worker_torch_interop_threads=1,
+        worker_blas_threads=1,
+        logical_cpus=16,
+    )
+    assert budget.learner_torch_threads == 4
+    assert budget.learner_torch_interop_threads == 2
+    assert budget.learner_blas_threads == 4
+    assert budget.worker_torch_threads == 1
+    assert budget.worker_torch_interop_threads == 1
+    assert budget.worker_blas_threads == 1
 
 
 def test_named_profiles_reject_hidden_overrides() -> None:

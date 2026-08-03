@@ -366,24 +366,38 @@ class ModelPolicy:
             raise RuntimeError(f"checkpoint has unsupported observation shape {shape}")
         self.inference_seconds: list[float] = []
         self._episode_start = np.array([True], dtype=bool)
+        import torch
+
+        self._sampling_generator = torch.Generator(device="cpu")
 
     def reset(self, seed: int, seat_id: str) -> None:
-        del seed, seat_id
+        seat_salt = 0xA5A5 if seat_id == "seat-a" else 0x5A5A
+        self._sampling_generator.manual_seed((int(seed) ^ seat_salt) & ((1 << 63) - 1))
         self._episode_start[...] = True
         self.inference_seconds.clear()
 
     def select(self, transition: dict, decision: EncodedDecision) -> int:
         del transition
         started = time.perf_counter()
-        action, _ = self.model.predict(
-            decision.observation,
-            episode_start=self._episode_start,
-            deterministic=self.deterministic,
+        observation, _ = self.model.policy.obs_to_tensor(decision.observation)
+        distribution = self.model.policy.get_distribution(
+            observation,
             action_masks=decision.action_mask,
         )
+        probabilities = distribution.distribution.probs
+        if self.deterministic:
+            action = probabilities.argmax(dim=1)
+        else:
+            import torch
+
+            action = torch.multinomial(
+                probabilities.detach().cpu(),
+                1,
+                generator=self._sampling_generator,
+            ).flatten()
         self._episode_start[...] = False
         self.inference_seconds.append(time.perf_counter() - started)
-        return int(action)
+        return int(action.item())
 
 
 def build_policy(specification: str, *, device: str = "cpu", deterministic: bool = True) -> Policy:

@@ -159,13 +159,24 @@ def main(argv: list[str] | None = None) -> int:
                 args.profile,
                 workers=args.workers or (4 if args.profile == "custom" else 0),
                 torch_threads=args.torch_threads,
+                learner_torch_threads=args.learner_torch_threads,
+                learner_torch_interop_threads=args.learner_torch_interop_threads,
+                learner_blas_threads=args.learner_blas_threads,
+                worker_torch_threads=args.worker_torch_threads,
+                worker_torch_interop_threads=args.worker_torch_interop_threads,
+                worker_blas_threads=args.worker_blas_threads,
             )
         except ValueError as error:
             parser.error(str(error))
         print(json.dumps({"resolved_resource_budget": budget.as_dict()}, sort_keys=True), file=sys.stderr)
         summaries = []
         for seed in args.seeds:
-            set_reproducible_runtime(seed, budget.torch_threads)
+            set_reproducible_runtime(
+                seed,
+                budget.learner_torch_threads,
+                budget.learner_torch_interop_threads,
+                budget.learner_blas_threads,
+            )
             config = TrainingConfig(
                 seed=seed,
                 total_timesteps=args.timesteps,
@@ -179,12 +190,22 @@ def main(argv: list[str] | None = None) -> int:
                 imitation_epochs=args.imitation_epochs,
                 device=args.device,
                 resource_profile=budget.profile,
-                torch_threads=budget.torch_threads,
+                torch_threads=budget.learner_torch_threads,
+                learner_torch_interop_threads=budget.learner_torch_interop_threads,
+                learner_blas_threads=budget.learner_blas_threads,
+                worker_torch_threads=budget.worker_torch_threads,
+                worker_torch_interop_threads=budget.worker_torch_interop_threads,
+                worker_blas_threads=budget.worker_blas_threads,
                 observation_schema=args.observation_schema,
                 imitation_teacher=args.imitation_teacher,
                 transport_mode=args.transport_mode,
                 ablation_condition=args.ablation_condition,
                 opponent_specs=tuple(args.opponents),
+                instrumentation=args.instrumentation,
+                sparse_actor=args.sparse_actor,
+                opponent_selection_mode=args.opponent_selection_mode,
+                critic_architecture=args.critic_architecture,
+                verbose=args.verbose,
             )
             summaries.append(
                 train_seed(
@@ -308,7 +329,18 @@ def build_parser() -> argparse.ArgumentParser:
         default="custom",
     )
     train_parser.add_argument("--workers", type=int, default=0)
-    train_parser.add_argument("--torch-threads", type=int, default=0)
+    train_parser.add_argument(
+        "--torch-threads",
+        type=int,
+        default=0,
+        help="legacy fallback for learner/worker intra-op and BLAS threads",
+    )
+    train_parser.add_argument("--learner-torch-threads", type=int, default=0)
+    train_parser.add_argument("--learner-torch-interop-threads", type=int, default=0)
+    train_parser.add_argument("--learner-blas-threads", type=int, default=0)
+    train_parser.add_argument("--worker-torch-threads", type=int, default=0)
+    train_parser.add_argument("--worker-torch-interop-threads", type=int, default=0)
+    train_parser.add_argument("--worker-blas-threads", type=int, default=0)
     train_parser.add_argument("--rollout-steps", type=int, default=256)
     train_parser.add_argument("--batch-size", type=int, default=256)
     train_parser.add_argument("--epochs", type=int, default=8)
@@ -330,11 +362,36 @@ def build_parser() -> argparse.ArgumentParser:
     train_parser.add_argument("--transport-mode", choices=("full", "encoded", "parity"), default="full")
     train_parser.add_argument("--ablation-condition", default="current-recipe")
     train_parser.add_argument(
+        "--instrumentation",
+        action=argparse.BooleanOptionalAction,
+        default=False,
+        help="record nested timing, byte, candidate-density, process, and host profiles",
+    )
+    train_parser.add_argument(
+        "--sparse-actor",
+        action=argparse.BooleanOptionalAction,
+        default=True,
+        help="score only valid v2 candidates; use --no-sparse-actor for dense ablation",
+    )
+    train_parser.add_argument(
+        "--opponent-selection-mode",
+        choices=("category-balanced", "legacy-flat"),
+        default="legacy-flat",
+        help="balance declared opponent categories or retain legacy pool-size weighting",
+    )
+    train_parser.add_argument(
+        "--critic-architecture",
+        choices=("dense", "base"),
+        default="dense",
+        help="dense-critic production path or base-only learning ablation",
+    )
+    train_parser.add_argument(
         "--opponents",
         nargs="+",
         default=["random", "random", "heuristic", "heuristic", "historical"],
     )
     train_parser.add_argument("--output", default="runs/training")
+    train_parser.add_argument("--verbose", type=int, choices=(0, 1, 2), default=1)
 
     tournament_parser = subparsers.add_parser("tournament", help="checkpoint cross-play matrix and Elo")
     tournament_parser.add_argument("--checkpoints", nargs="+", required=True)
