@@ -1,0 +1,57 @@
+{
+  "artifact_root": "runs/phase2-decision-quality-20260802-m3max-v2",
+  "accepted_v1_checkpoint": "runs/phase2-training/seed-11/checkpoints/final.zip",
+  "budgets": [20000, 200000],
+  "conditions": [
+    {
+      "id": "current-recipe-more-steps",
+      "observation_schema": "dice-and-destiny-observation-v1",
+      "imitation_teacher": "heuristic-v1",
+      "imitation_decisions": 5000,
+      "imitation_epochs": 5,
+      "opponents": ["random", "random", "heuristic-v1", "heuristic-v1", "historical"]
+    },
+    {
+      "id": "v2-current-teacher",
+      "observation_schema": "dice-and-destiny-observation-v2",
+      "imitation_teacher": "heuristic-v1",
+      "imitation_decisions": 5000,
+      "imitation_epochs": 5,
+      "opponents": ["random", "heuristic-v1", "accepted-v1", "historical"]
+    },
+    {
+      "id": "v2-mechanics-teacher",
+      "observation_schema": "dice-and-destiny-observation-v2",
+      "imitation_teacher": "mechanics-v2",
+      "imitation_decisions": 5000,
+      "imitation_epochs": 5,
+      "opponents": ["random", "mechanics-v2", "accepted-v1", "historical"]
+    },
+    {
+      "id": "v2-reduced-strategic-imitation",
+      "observation_schema": "dice-and-destiny-observation-v2",
+      "imitation_teacher": "mechanics-v2",
+      "imitation_decisions": 500,
+      "imitation_epochs": 2,
+      "opponents": ["random", "mechanics-v2", "accepted-v1", "historical"]
+    }
+  ],
+  "heldout": {
+    "episodes_per_seat_assignment": 100,
+    "seed_start": 73000000,
+    "swap": true
+  },
+  "profile": "max",
+  "seeds": [11, 22, 33],
+  "training": {
+    "batch_size": 256,
+    "checkpoint_interval": 5000,
+    "device": "cpu",
+    "epochs": 8,
+    "learning_rate": 0.0003,
+    "rollout_steps": 256,
+    "torch_threads": 1,
+    "transport_mode": "full",
+    "workers": 12
+  }
+}

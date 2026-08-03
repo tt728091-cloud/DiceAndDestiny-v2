@@ -1,0 +1,594 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Dice &amp; Destiny · Phase 2 PPO Training Throughput Optimization Handoff</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #07111c;
+      --panel: #101c29;
+      --panel-2: #142334;
+      --line: #2a3b4f;
+      --text: #edf3fa;
+      --muted: #a8b8ca;
+      --gold: #ffc95f;
+      --green: #68d6a2;
+      --cyan: #6fd8ff;
+      --orange: #ff9f62;
+      --red: #ff7b85;
+      --purple: #bd9cff;
+      --shadow: 0 18px 54px rgba(0, 0, 0, .28);
+    }
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      background:
+        radial-gradient(circle at 15% 0%, rgba(75, 124, 170, .18), transparent 31rem),
+        radial-gradient(circle at 90% 10%, rgba(255, 201, 95, .10), transparent 28rem),
+        var(--bg);
+      color: var(--text);
+      font: 16px/1.62 Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+    a { color: var(--cyan); }
+    a:hover { color: #b9ecff; }
+    code, pre { font-family: "SFMono-Regular", Consolas, "Liberation Mono", monospace; }
+    code {
+      padding: .12rem .34rem;
+      border: 1px solid rgba(111, 216, 255, .18);
+      border-radius: .32rem;
+      background: rgba(1, 8, 15, .46);
+      color: #d9f5ff;
+    }
+    pre {
+      margin: 1rem 0 0;
+      padding: 1rem 1.1rem;
+      overflow: auto;
+      border: 1px solid var(--line);
+      border-radius: .65rem;
+      background: #050b12;
+      color: #dcecff;
+      line-height: 1.48;
+      white-space: pre-wrap;
+    }
+    h1, h2, h3 { line-height: 1.16; letter-spacing: -.025em; }
+    h1 { margin: .3rem 0 1rem; font-size: clamp(2.2rem, 5vw, 4.5rem); }
+    h2 { margin: 0 0 .8rem; font-size: clamp(1.55rem, 3vw, 2.35rem); }
+    h3 { margin: 1.6rem 0 .55rem; font-size: 1.22rem; }
+    p { margin: .65rem 0; }
+    ul, ol { margin: .65rem 0; padding-left: 1.4rem; }
+    li + li { margin-top: .38rem; }
+    strong { color: #fff; }
+    .shell { width: min(1220px, calc(100% - 2rem)); margin: 0 auto; padding: 2rem 0 5rem; }
+    .hero, section {
+      border: 1px solid var(--line);
+      border-radius: 1rem;
+      background: linear-gradient(145deg, rgba(20, 35, 52, .96), rgba(12, 23, 35, .96));
+      box-shadow: var(--shadow);
+    }
+    .hero { padding: clamp(1.4rem, 4vw, 3.4rem); }
+    section { margin-top: 1.2rem; padding: clamp(1.2rem, 3vw, 2.25rem); }
+    .eyebrow { color: var(--gold); text-transform: uppercase; letter-spacing: .15em; font-weight: 800; font-size: .78rem; }
+    .lede { max-width: 78rem; color: #cfdae7; font-size: 1.08rem; }
+    .meta { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: .7rem; margin-top: 1.4rem; }
+    .meta div { padding: .75rem .85rem; border: 1px solid var(--line); border-radius: .6rem; background: rgba(2, 9, 16, .35); }
+    .meta small { display: block; color: var(--muted); text-transform: uppercase; letter-spacing: .08em; }
+    .meta strong { display: block; margin-top: .16rem; overflow-wrap: anywhere; }
+    .toc { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: .65rem; }
+    .toc a { display: block; padding: .72rem .82rem; border: 1px solid var(--line); border-radius: .55rem; background: rgba(4, 12, 21, .5); text-decoration: none; }
+    .callout { margin: 1rem 0; padding: .9rem 1rem; border-left: 4px solid var(--cyan); border-radius: .45rem; background: rgba(58, 128, 165, .14); }
+    .callout.good { border-color: var(--green); background: rgba(44, 142, 100, .12); }
+    .callout.warn { border-color: var(--orange); background: rgba(181, 93, 37, .14); }
+    .callout.danger { border-color: var(--red); background: rgba(171, 48, 61, .14); }
+    .callout.gold { border-color: var(--gold); background: rgba(181, 137, 40, .13); }
+    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(285px, 1fr)); gap: .85rem; }
+    .card { padding: 1rem; border: 1px solid var(--line); border-radius: .7rem; background: rgba(3, 11, 19, .42); }
+    .card h3 { margin-top: 0; }
+    .metric { color: var(--gold); font-size: 1.75rem; font-weight: 800; line-height: 1; }
+    .metric-label { color: var(--muted); margin-top: .35rem; }
+    .table-wrap { overflow-x: auto; margin-top: .85rem; }
+    table { width: 100%; border-collapse: collapse; min-width: 730px; }
+    th, td { padding: .7rem .78rem; border: 1px solid var(--line); text-align: left; vertical-align: top; }
+    th { background: rgba(50, 76, 103, .36); color: #fff; }
+    tr:nth-child(even) td { background: rgba(4, 12, 20, .24); }
+    .tag { display: inline-block; margin: .1rem .18rem .1rem 0; padding: .15rem .45rem; border: 1px solid currentColor; border-radius: 999px; font-size: .75rem; font-weight: 750; }
+    .p0 { color: var(--red); }
+    .p1 { color: var(--orange); }
+    .p2 { color: var(--gold); }
+    .p3 { color: var(--purple); }
+    .pure { color: var(--green); }
+    .learning { color: var(--purple); }
+    .steps { counter-reset: handoff-step; list-style: none; padding: 0; }
+    .steps > li { position: relative; margin: .85rem 0; padding: 1rem 1rem 1rem 3.7rem; border: 1px solid var(--line); border-radius: .7rem; background: rgba(3, 11, 19, .4); }
+    .steps > li::before { counter-increment: handoff-step; content: counter(handoff-step); position: absolute; left: 1rem; top: 1rem; display: grid; place-items: center; width: 1.9rem; height: 1.9rem; border-radius: 50%; background: var(--gold); color: #101010; font-weight: 900; }
+    .steps h3 { margin: 0 0 .35rem; }
+    .diagram { display: grid; grid-template-columns: repeat(7, auto); gap: .45rem; align-items: center; overflow-x: auto; padding: 1rem 0; }
+    .diagram .node { min-width: 128px; padding: .7rem; border: 1px solid var(--line); border-radius: .55rem; background: #0a1521; text-align: center; }
+    .diagram .arrow { color: var(--gold); font-weight: 900; }
+    .checklist li::marker { color: var(--green); }
+    .copy-row { display: flex; align-items: center; justify-content: space-between; gap: 1rem; margin-top: 1rem; }
+    button { padding: .55rem .8rem; border: 1px solid var(--gold); border-radius: .5rem; background: transparent; color: var(--gold); cursor: pointer; font-weight: 750; }
+    button:hover { background: rgba(255, 201, 95, .12); }
+    footer { padding-top: 2rem; color: var(--muted); text-align: center; }
+    @media (max-width: 800px) { .diagram { grid-template-columns: 1fr; } .diagram .arrow { transform: rotate(90deg); text-align: center; } }
+  </style>
+</head>
+<body>
+<main class="shell">
+  <header class="hero">
+    <div class="eyebrow">Standalone research and implementation handoff · 2026-08-02</div>
+    <h1>Phase 2 PPO training throughput optimization</h1>
+    <p class="lede">This document gives a fresh Codex context everything needed to profile and optimize the complete Dice &amp; Destiny v2 Maskable PPO training pipeline. It records the current repository state, measured bottlenecks, code-level findings, local research probes, primary-source research, prioritized implementation sequence, correctness constraints, benchmark protocol, acceptance gates, and a copyable implementation prompt.</p>
+    <div class="callout danger"><strong>Research status:</strong> no trainer, engine, model, checkpoint, export, or runtime behavior was changed while producing this document. The implementation work described below has not been performed. Do not report any projected speedup as achieved.</div>
+    <div class="meta">
+      <div><small>Repository</small><strong>/Users/daddymere/games/Dice-and-Destiny-v2</strong></div>
+      <div><small>Branch</small><strong>codex/phase-2-decision-quality</strong></div>
+      <div><small>Observed HEAD</small><strong>93f13c75874f7065444eaab5018b6f6fc953de54</strong></div>
+      <div><small>Machine</small><strong>MacBook Pro Mac15,9 · M3 Max · 16 logical CPUs · 64 GB</strong></div>
+      <div><small>Selected policy</small><strong>Blade Warden v2 · corrected seed 22</strong></div>
+      <div><small>Current baseline</small><strong>309.69 learner steps/s · 1.9826 complete games/s</strong></div>
+    </div>
+  </header>
+
+  <section id="contents">
+    <div class="eyebrow">Navigation</div>
+    <h2>What a fresh context must read</h2>
+    <div class="toc">
+      <a href="#verdict">1 · Executive verdict</a>
+      <a href="#state">2 · Repository and preservation state</a>
+      <a href="#pipeline">3 · Exact training pipeline</a>
+      <a href="#baseline">4 · Measured baseline</a>
+      <a href="#findings">5 · Research findings</a>
+      <a href="#priorities">6 · Prioritized hypotheses</a>
+      <a href="#implementation">7 · Implementation program</a>
+      <a href="#profiling">8 · Profiling contract</a>
+      <a href="#benchmark">9 · Benchmark protocol</a>
+      <a href="#gates">10 · Acceptance gates</a>
+      <a href="#files">11 · Code and artifact map</a>
+      <a href="#sources">12 · Primary sources</a>
+      <a href="#prompt">13 · Copyable next-context prompt</a>
+    </div>
+  </section>
+
+  <section id="verdict">
+    <div class="eyebrow">Executive verdict</div>
+    <h2>The 1.98 games/s result is not a fundamental ceiling</h2>
+    <p>The new bottleneck is the <strong>whole synchronous v2 PPO pipeline</strong>, not the Go battle rules alone and not one isolated function. In the selected 200k-step seed-22 run, collection and PPO optimization consumed almost equal wall time. The strongest near-term opportunities are inside process/thread configuration, opponent lifecycle, and the neural policy's treatment of padded candidate slots.</p>
+    <div class="grid">
+      <article class="card"><div class="metric">52%</div><div class="metric-label">338.66 s collecting real-authority experience</div></article>
+      <article class="card"><div class="metric">48%</div><div class="metric-label">315.48 s performing PPO minibatch updates</div></article>
+      <article class="card"><div class="metric">1.8%</div><div class="metric-label">Mean nonzero density in a 300-decision v2 observation probe</div></article>
+      <article class="card"><div class="metric">83%</div><div class="metric-label">Completed seed-22 episodes whose opponent came from the expanded historical directory</div></article>
+    </div>
+    <div class="callout gold"><strong>Recommended mission:</strong> target at least a reproducible 2× improvement in learner steps/second on the unchanged v2 PPO recipe, with 3× as a stretch. A lower safe plateau is acceptable only if profiling proves the remaining limits. Measure complete games/s too, but use learner steps/s as the primary throughput measure because model behavior changes episode length.</div>
+    <h3>Highest-confidence sequence</h3>
+    <ol>
+      <li>Freeze a reproducible, instrumented v2 training benchmark.</li>
+      <li>Correct worker thread caps and separate actor-worker threads from learner-update threads.</li>
+      <li>Make opponent selection explicit and cache/reuse inference policies without changing intended probabilities.</li>
+      <li>Exploit action masks so the actor scores valid candidates rather than all 128 padded slots.</li>
+      <li>Only then test compact critics, <code>torch.compile</code>, MPS, transport redesign, shared memory, or asynchronous actor/learner systems.</li>
+    </ol>
+    <div class="callout warn"><strong>Do not “optimize” by reducing PPO epochs, changing batch size, removing opponent categories, shortening battles, lowering the action cap, using approximate rules, dropping required terminal records, or weakening action/privacy checks. Those are learning-recipe or correctness changes and require separate ablations.</strong></div>
+  </section>
+
+  <section id="state">
+    <div class="eyebrow">Repository state</div>
+    <h2>Preserve the accepted work before touching performance code</h2>
+    <p>At research time the branch was intentionally dirty, with the Phase 1 and Phase 2 implementation, reports, v2 models, native runtime, and Godot selection changes still uncommitted. A new context must run <code>git status --short --branch</code>, inspect the actual diff, and preserve every user file. It must not clean, reset, checkout over, or copy artifacts from another worktree.</p>
+    <ul class="checklist">
+      <li>Read repository <code>AGENTS.md</code> completely. Always launch Godot through <code>./scripts/godot.sh</code>.</li>
+      <li>Read <code>throughput-and-decision-quality-handoff.html</code>, <code>throughput-optimization-report.md</code>, <code>decision-quality-report.md</code>, <code>observation-schema-v2.md</code>, and the ML README completely.</li>
+      <li>Preserve the accepted v1 checkpoint/export and both current v2 exports. Never reinterpret old weights as a new architecture.</li>
+      <li>Use a unique ignored run root such as <code>dice-and-destiny-server/ml/runs/phase2-throughput-optimization-YYYYMMDD-machine-v2/</code>.</li>
+      <li>Do not modify or remove workspace runtime state, developer snapshots, history, or another worktree's ignored artifacts.</li>
+      <li>Do not commit or push unless the owner explicitly authorizes it.</li>
+    </ul>
+    <h3>Accepted artifacts at research time</h3>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Artifact</th><th>Location / identity</th><th>Rule</th></tr></thead>
+        <tbody>
+          <tr><td>Accepted v1 export</td><td><code>dice-and-destiny-client/models/learned/blade-warden-seed-11-final-v1.json</code><br>SHA-256 <code>dea4a668...e3937</code></td><td>Do not overwrite or reinterpret.</td></tr>
+          <tr><td>Selected v2 checkpoint</td><td><code>ml/runs/phase2-decision-quality-20260802-m3max-v2/selection/tactical-finetune/seed-22-lr1e-4-e60/corrective-cloned.zip</code><br>SHA-256 <code>e3b9fb8c...f772e2</code></td><td>Keep as accepted comparison baseline.</td></tr>
+          <tr><td>Selected v2 export</td><td><code>dice-and-destiny-client/models/learned/blade-warden-decision-quality-seed-22-v2.json</code><br>SHA-256 <code>0e6ea5d8...d23a86</code></td><td>New architectures need a new family or explicit compatible export proof.</td></tr>
+          <tr><td>Phase 2 evidence</td><td><code>dice-and-destiny-server/ml/runs/phase2-decision-quality-20260802-m3max-v2/</code></td><td>Ignored but essential; inspect, do not delete.</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section id="pipeline">
+    <div class="eyebrow">Current architecture</div>
+    <h2>What one synchronous PPO cycle actually does</h2>
+    <div class="diagram" aria-label="Current training pipeline">
+      <div class="node">Main Python<br><strong>learner</strong></div><div class="arrow">→</div>
+      <div class="node">12 SB3<br><strong>spawn workers</strong></div><div class="arrow">→</div>
+      <div class="node">12 persistent<br><strong>Go simulators</strong></div><div class="arrow">→</div>
+      <div class="node">Real authority<br><strong>battle rules</strong></div>
+    </div>
+    <p>The main process owns <code>MaskablePPO</code>. Each <code>SubprocVecEnv</code> worker owns one <code>AuthorityGymEnv</code>, and each environment owns a persistent <code>battle-ml-sim</code> Go child. The Go process resets a fresh Blade Warden mirror authority per episode. One Gym step submits one learner action, then the Python worker drives as many opponent actions as necessary until control returns to the learner.</p>
+    <h3>Selected Phase 2 configuration</h3>
+    <ul>
+      <li>12 workers × 256 learner steps = <strong>3,072 transitions per rollout cycle</strong>.</li>
+      <li>202,752 total steps = <strong>66 collection/update cycles</strong>.</li>
+      <li>Batch size 256 gives 12 minibatches per epoch; 8 epochs gives <strong>96 minibatch updates per cycle</strong>, or 6,336 across the run.</li>
+      <li>Terminal reward only: +1 victory, −1 defeat, 0 draw.</li>
+      <li>Observation size: 2,560 base floats + 128 × 128 candidate floats = <strong>18,944 float32 values</strong>.</li>
+      <li>Policy: mechanics-aware shared candidate scorer with width 96; maximum 128 candidate logits.</li>
+      <li>Opponent configuration: random, mechanics-v2, accepted v1, and historical checkpoints.</li>
+      <li>Authority mode <code>ephemeral</code>, telemetry <code>training</code>, transport <code>full</code>, learner device CPU.</li>
+    </ul>
+    <h3>Where time can accumulate</h3>
+    <div class="grid">
+      <article class="card"><h3>Collection side</h3><p>Go reset/open/step, snapshot construction, legal actions, JSON serialization, pipe I/O, Python JSON decoding, schema v2 encoding, opponent selection/loading/inference, learner batch inference, worker IPC, rollout-buffer copies, and terminal replay/info transfer.</p></article>
+      <article class="card"><h3>Update side</h3><p>Eight full epochs over the 3,072-transition buffer: padded actor scoring, dense critic projection, mask application, distribution math, backward pass, gradient clipping, Adam state updates, and rollout-buffer minibatch permutation/copies.</p></article>
+    </div>
+  </section>
+
+  <section id="baseline">
+    <div class="eyebrow">Measured evidence</div>
+    <h2>Baseline numbers a new implementation must reproduce</h2>
+    <h3>Selected seed-22 v2 mechanics run</h3>
+    <div class="table-wrap">
+      <table>
+        <tbody>
+          <tr><th>Requested / actual learner steps</th><td>200,000 / 202,752</td><th>Completed episodes</th><td>1,298</td></tr>
+          <tr><th>Elapsed</th><td>654.6986 s</td><th>Steps/s</th><td>309.6875</td></tr>
+          <tr><th>Complete games/s</th><td>1.9826</td><th>Reported optimizer epochs</th><td>528 = 66 cycles × 8</td></tr>
+          <tr><th>Collection</th><td>338.6621 s</td><th>PPO updates</th><td>315.4758 s</td></tr>
+          <tr><th>Artifact I/O</th><td>1.0373 s</td><th>Checkpoint directory</th><td>43 ZIP files, about 1.3 GB</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="callout warn"><strong>Timer boundary:</strong> the reported 654.6986 seconds begins immediately before <code>model.learn()</code>. It excludes Python/model startup, initial checkpoint save, generation of the 5,000 mechanics-teacher demonstration decisions, behavior cloning, and the behavior-cloned checkpoint save. The imitation summary reports 4.91 seconds for cloning itself, but demonstration collection is not separately timed. A new benchmark must report both PPO-only time and true process-start-to-final-checkpoint time.</div>
+    <p>The selected warm start generated consecutive Blade Warden mirror episodes with mechanics-v2 controlling both seats until exactly 5,000 state/action labels were collected. The summary counted 40 episode starts; the last can end partway when the decision quota is reached. These games were not selected by outcome. Imitation is short relative to the 200k PPO phase, but it must still be measured and preserved when optimizing the complete launch.</p>
+    <h3>Median across the three 200k runs</h3>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Condition</th><th>Median steps/s</th><th>Median games/s</th><th>Median collection</th><th>Median PPO update</th></tr></thead>
+        <tbody>
+          <tr><td>v1 current recipe</td><td>664.76</td><td>6.128</td><td>125.99 s</td><td>178.45 s</td></tr>
+          <tr><td>v2 current teacher</td><td>352.25</td><td>2.146</td><td>260.02 s</td><td>315.13 s</td></tr>
+          <tr><td>v2 mechanics teacher</td><td>319.31</td><td>1.983</td><td>319.85 s</td><td>314.91 s</td></tr>
+          <tr><td>v2 reduced imitation</td><td>291.79</td><td>1.274</td><td>374.29 s</td><td>315.92 s</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p>The v2 update cost is stable around 315 seconds regardless of teacher condition because schema, model, rollout size, batch size, and epochs are the same. Collection varies with opponent cost and the policy's episode length. This is why learner steps/s must be primary and games/s secondary.</p>
+    <h3>Phase 1 comparison</h3>
+    <p>Phase 1's 59.5993 games/s median was a frozen v1 model-v-model evaluation workload using 12 workers, encoded v1 transport, and no optimizer. It remains valuable evidence that the authority and parallel evaluation foundation are fast, but it is not a valid expected value for PPO training. The Phase 1 single-lane Go authority reached 147.83 games/s; model inference and training work dominate later stages.</p>
+    <h3>Decision-quality baseline that performance work must not erase</h3>
+    <p>The accepted corrected seed-22 v2 policy beat accepted v1 by 656 wins to 290 losses with 54 draws in the primary 1,000-game soak (raw win rate .656, draw-adjusted .683), then repeated on a fresh range at 667–281–52. It completed all final soaks with zero truncations, invalid indices, authority rejects, stale submissions, or wrong-seat submissions. The broad held-out corpus improved action-type agreement significantly but not exact semantic agreement; planning-card exact choice and reaction-card behavior remain known limitations. Performance changes do not waive any of these baselines.</p>
+    <div class="callout danger"><strong>Training-state warning:</strong> the selected base PPO checkpoints were trained before the final v2 progress-mask liveness correction, then reevaluated with the corrected mask and tactically fine-tuned on 600 disjoint first-roll states. Any future large campaign should train with the final progress mask from the first rollout instead of merely continuing the old experiment without review.</div>
+  </section>
+
+  <section id="findings">
+    <div class="eyebrow">Deep research findings</div>
+    <h2>Code-level discoveries and what they imply</h2>
+
+    <h3>1 · The one-thread learner is a measured update bottleneck</h3>
+    <p><code>set_reproducible_runtime()</code> calls <code>torch.set_num_threads(1)</code> in the main process. The same main process performs all PPO updates. The v2 policy has 2,737,090 trainable parameters; 2,441,472 (89.2%) are in the current critic path, whose first layer directly projects all 18,944 observation values to 128 units.</p>
+    <p>A local batch-256 forward/backward microbenchmark using the retained seed-22 checkpoint measured approximately 58.9 ms at one thread, 37.0 ms at two, 26.1 ms at four, and 22.0 ms at eight. This is not an end-to-end promise, but it justifies a controlled learner-thread sweep before architectural changes.</p>
+    <div class="callout good"><strong>First experiment:</strong> give spawned actor workers one intra-op and one inter-op thread, while separately sweeping the main learner at 1/2/4/6/8/10/12 intra-op threads. Record total CPU and contention during both collection and update phases.</div>
+
+    <h3>2 · Training worker thread caps are probably not applied</h3>
+    <p>The evaluation path explicitly sets <code>OMP_NUM_THREADS</code>, <code>OPENBLAS_NUM_THREADS</code>, <code>MKL_NUM_THREADS</code>, and <code>VECLIB_MAXIMUM_THREADS</code>, then configures PyTorch inside each evaluation worker. The training path only configures the parent. On macOS, <code>SubprocVecEnv</code> uses <code>spawn</code>; a fresh child imports PyTorch independently.</p>
+    <p>A local probe after setting the parent to one thread showed a fresh child reporting 12 intra-op and 16 inter-op threads. The current training worker does not call either PyTorch setter. This must be confirmed inside a real <code>SubprocVecEnv</code> worker, but it creates a credible oversubscription risk when many historical model opponents run inference concurrently.</p>
+    <p>Batch-1 policy inference also became slower at high thread counts in a local probe: v2 prediction was about 0.355 ms at one thread and 0.457 ms at twelve; v1 was about 0.297 ms at one and 0.402 ms at twelve, before multiprocess contention.</p>
+
+    <h3>3 · Opponent models are reconstructed every episode</h3>
+    <p><code>AuthorityGymEnv.reset()</code> calls <code>build_policy()</code> for the selected opponent. <code>ModelPolicy</code> calls <code>MaskablePPO.load()</code>, which rebuilds the algorithm and policy from a ZIP. Official SB3 documentation explicitly notes that <code>load()</code> recreates the model from scratch. The mechanics teacher is also recreated, discarding its counterfactual outcome-table cache.</p>
+    <ul>
+      <li>The retained final v2 training checkpoint is about 34.3 MB; the run's checkpoint directory is about 1.3 GB.</li>
+      <li>A warm local <code>MaskablePPO.load()</code> took roughly 57–67 ms; the first load took about 643 ms.</li>
+      <li>Reusing a mechanics teacher instance would retain its safe, mechanics-keyed outcome-table cache across episodes.</li>
+      <li>Inference opponents need actor inference state, not a full training algorithm with optimizer state.</li>
+    </ul>
+    <div class="callout warn"><strong>Reproducibility caveat:</strong> <code>ModelPolicy.reset()</code> currently ignores episode seed and seat, while stochastic prediction uses PyTorch's process-global RNG. Repeated model construction can itself consume RNG. Establish an explicit per-episode opponent RNG contract before caching so a speed change is not silently also a strategy/randomness change.</div>
+
+    <h3>4 · The historical “category” is not category-weighted</h3>
+    <p><code>_available_opponents()</code> replaces one <code>pool:</code> entry with every ZIP currently in the checkpoint directory, then chooses uniformly from the expanded flat list. As checkpoints accumulate, historical policies dominate the opponent probability instead of remaining one category among random, mechanics, accepted-v1, and historical.</p>
+    <p>In the selected run's 1,298 completed episodes:</p>
+    <ul>
+      <li>1,083 (83.4%) used an initial, behavior-cloned, or periodic historical checkpoint.</li>
+      <li>77 used mechanics-v2, 71 random, and 67 accepted v1.</li>
+    </ul>
+    <p>This is both a performance issue and a training-semantics issue. The next implementation must define explicit category weights, select a category first, then select a member within the historical category. If the owner wants the old expanding-file weighting, preserve it as a named legacy mode rather than assuming intent.</p>
+
+    <h3>5 · The existing v2 encoded transport is larger and slower than full transport</h3>
+    <p>The Go v2 encoder already exists and parity checks against Python. It serializes all 18,944 float32 values into base64. The raw float payload is 75,776 bytes; base64 expands it to about 101 KB before JSON framing.</p>
+    <p>A 200-decision parity probe measured mean serialized transition sizes of about 25.6 KB for full JSON versus 101.7 KB for encoded v2. Python raw schema construction averaged about 192 μs; base64 decoding/copying averaged about 261 μs. In a separate 1,000-decision serial run with identical seeds and chosen indices, full mode reached about 1,017 decisions/s and encoded mode about 935 decisions/s. Parity mode, which sends both, reached about 669 decisions/s.</p>
+    <div class="callout danger"><strong>Do not simply change Phase 2 to <code>transport_mode: encoded</code>.</strong> On the measured v2 schema it is a regression, and encoded-only transitions also cannot satisfy the current full-state mechanics teacher or cross-schema v1 model opponent without a per-policy transport design.</div>
+
+    <h3>6 · The flat v2 observation is extremely sparse</h3>
+    <p>In a 300-decision real-authority probe, the 18,944-value observation averaged 345 nonzero values—about 1.82% density. The progressing-action mask had a median of three valid actions, mean of nine, and maximum of 46 in that sample; an owner diagnostic elsewhere reached 68 raw legal candidates.</p>
+    <p>The current actor nevertheless embeds and scores all 128 candidate slots for every sample and every PPO epoch, even though masked padded scores can never be selected. A prototype that gathered nine valid candidates per sample, ran the unchanged actor layers only on those rows, and scattered logits back reduced a representative batch-256 forward/backward from about 55.1 ms to 9.6 ms at one thread while retaining the existing dense critic. A prototype combining sparse candidate scoring with a compact base critic measured about 7.5 ms.</p>
+    <p>These prototypes are directional, not accepted changes. A production implementation must prove identical valid-candidate logits/probabilities and gradient intent, cover behavior cloning and prediction paths, preserve the 128-action public contract, and run learning-quality gates.</p>
+
+    <h3>7 · Artifact writing is not the current limiting factor</h3>
+    <p>The selected run attributed about one second to artifact I/O. Checkpoint cadence and replay transport still deserve cleanup—particularly complete replay objects crossing worker IPC when only a representative is retained—but neither should outrank update compute, worker threading, opponent lifecycle, or sparse candidate scoring without new profiles.</p>
+
+    <h3>8 · Synchronous PPO intentionally alternates collection and updates</h3>
+    <p>The original PPO design alternates fresh on-policy sampling with multiple minibatch epochs. SB3 follows that model: <code>n_steps × n_envs</code> fills the rollout buffer, then the trainer updates. Naively collecting the next batch while updating on the previous one creates policy lag and changes the algorithm's on-policy assumptions. IMPALA and Sample Factory achieve asynchronous scaling with explicit off-policy correction; they are architectural alternatives, not drop-in PPO optimizations.</p>
+  </section>
+
+  <section id="priorities">
+    <div class="eyebrow">Optimization ledger</div>
+    <h2>Ranked hypotheses, expected leverage, and proof burden</h2>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Priority</th><th>Hypothesis</th><th>Evidence / expected leverage</th><th>Semantic risk</th><th>Required proof</th></tr></thead>
+        <tbody>
+          <tr><td><span class="tag p0">P0</span><span class="tag pure">engineering</span></td><td>Separate learner and actor-worker thread controls</td><td>One-thread update microbenchmark improved ~2.7× at eight threads; fresh children default high and may oversubscribe.</td><td>Low to medium; floating reduction order may change exact weights.</td><td>Thread audit inside every process, repeated timing, parity for inference, three-seed quality if hashes differ.</td></tr>
+          <tr><td><span class="tag p0">P0</span><span class="tag pure">engineering</span></td><td>Cache opponent instances and lightweight actor-only weights</td><td>Current reset rebuilds models and discards teacher caches every episode.</td><td>Medium until opponent RNG is explicitly seeded.</td><td>Same selected opponent schedule, same valid logits/probabilities, seeded stochastic-action equivalence or declared new RNG contract.</td></tr>
+          <tr><td><span class="tag p0">P0</span><span class="tag learning">semantics</span></td><td>Fix population category weighting</td><td>Historical opponents were 83.4% of completed episodes despite one historical category entry.</td><td>High: intentionally changes training distribution.</td><td>Owner-approved weights, named legacy mode, separate learning ablation; never count it as pure speed.</td></tr>
+          <tr><td><span class="tag p0">P0</span><span class="tag pure">engineering</span></td><td>Score only mask-valid candidates</td><td>Median 3 / mean 9 valid in probe; prototype update kernel 5–7× faster.</td><td>Medium: policy integration and numerical ordering.</td><td>Dense-vs-sparse valid logits, probabilities, selected actions, entropy, gradients, behavior cloning, checkpoint/export/native parity.</td></tr>
+          <tr><td><span class="tag p1">P1</span><span class="tag learning">architecture</span></td><td>Compact or pooled critic</td><td>Current critic owns 89.2% of parameters and consumes a 98%-sparse flat input.</td><td>High: value approximation changes PPO learning.</td><td>New versioned checkpoint class, 3+ seeds, sample-efficiency curves, full held-out quality and safety.</td></tr>
+          <tr><td><span class="tag p1">P1</span><span class="tag pure">engineering</span></td><td>Stop transporting full replay objects for every terminal episode</td><td>Subproc worker sends terminal <code>info</code>; only first representative is written.</td><td>Low if terminal summary and deterministic selected replay remain.</td><td>Exact terminal metrics, configured retention, replay of retained sample, zero missing summaries.</td></tr>
+          <tr><td><span class="tag p1">P1</span><span class="tag pure">engineering</span></td><td>Profile and compact immutable v2 content handling</td><td>v2 snapshots retain public content so encoders/teacher can interpret mechanics.</td><td>Medium: privacy and parity boundary.</td><td>One-time content hash/catalog handshake, viewer-safe parity, exact features/actions, allocation profiles.</td></tr>
+          <tr><td><span class="tag p2">P2</span><span class="tag pure">experiment</span></td><td><code>torch.compile</code> on stable policy/update regions</td><td>Fixed observation/minibatch shapes are promising; compiler can fuse CPU graphs.</td><td>Medium: graph breaks, compile latency, serialization, numerical drift.</td><td>Warm-up excluded, Chrome trace, no recompilation storm, checkpoint/export unaffected, repeated end-to-end gain.</td></tr>
+          <tr><td><span class="tag p2">P2</span><span class="tag pure">experiment</span></td><td>MPS learner device</td><td>M3 Max GPU is available; update batches are larger than inference batches.</td><td>Medium/high: device transfer, unsupported ops, determinism.</td><td>CPU/MPS profiles, synchronization-aware timing, memory, parity/tolerance, three-seed quality.</td></tr>
+          <tr><td><span class="tag p2">P2</span><span class="tag learning">recipe</span></td><td>Batch size, epochs, rollout length, <code>target_kl</code></td><td>Can reduce number of backward passes or stop epochs early.</td><td>High: directly changes PPO optimization and sample efficiency.</td><td>Wall-clock-to-heldout-quality curves, not raw throughput alone; matched seeds and total experience.</td></tr>
+          <tr><td><span class="tag p3">P3</span><span class="tag pure">architecture</span></td><td>Binary framing/shared memory/custom VecEnv</td><td>May remove JSON/base64 and pickled dense-array copies after higher costs are fixed.</td><td>Medium/high: lifecycle, cleanup, portability.</td><td>Measured IPC share, process-local paths, crash cleanup, exact array/mask/info parity.</td></tr>
+          <tr><td><span class="tag p3">P3</span><span class="tag learning">algorithm</span></td><td>Asynchronous actor/learner or IMPALA-style system</td><td>Can overlap collection and learning and scale actors.</td><td>Very high: policy lag/off-policy correction changes algorithm.</td><td>Separate design, new algorithm family, research-level convergence/quality acceptance. Not a PPO fast path.</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section id="implementation">
+    <div class="eyebrow">Implementation program</div>
+    <h2>Do the work in falsifiable stages</h2>
+    <ol class="steps">
+      <li>
+        <h3>Stage 0 · Freeze the benchmark and add observability</h3>
+        <p>Create a unique ignored artifact tree. Re-run the exact current v2 mechanics recipe three times at 21,504 steps for iteration speed and at least once at 202,752 steps for the long reference. Record config, source diff/hash, dependency lock, content hash, machine/power state, seeds, opponent schedule, checkpoint publication order, parameter hashes, complete terminal summaries, and a representative replay.</p>
+        <p>Add nested timings and counters for reset, opponent selection, policy construction/cache hit, opponent inference by family, learner inference, Go request operations, response bytes, Python v2 encoding, worker IPC, rollout buffer, GAE, PPO epoch/minibatch, forward, distribution/masking, backward, gradient clipping, optimizer step, checkpoint, and terminal replay serialization. Report p50/p95 and totals. Instrumentation must be switchable and low overhead.</p>
+      </li>
+      <li>
+        <h3>Stage 1 · Correct process resources without changing the learning recipe</h3>
+        <p>Refactor <code>ResourceBudget</code> to distinguish collector count, actor-worker intra/inter-op threads, and main learner intra/inter-op threads. Apply BLAS variables before <code>spawn</code>; initialize PyTorch inside every worker before any policy operation. Respect PyTorch's rule that inter-op threads can only be set once before inter-op work begins.</p>
+        <p>Sweep workers 1/2/4/6/8/10/12/14/16 and learner threads 1/2/4/6/8/10/12 in a bounded matrix. Do not test every Cartesian pair blindly: profile one-worker collection, 12-worker collection, update-only replay, then select plausible pairs. Measure CPU, RSS, memory pressure, swap, thermal state, and foreground wake delay.</p>
+      </li>
+      <li>
+        <h3>Stage 2 · Make opponent lifecycle explicit and cheap</h3>
+        <p>Introduce a per-worker opponent manager. It should hold long-lived random and mechanics policies, a permanent accepted-v1 inference actor, and a bounded LRU of historical inference actors. Separate category weights from members. Publish historical checkpoints atomically through a manifest rather than globbing arbitrary partial/stale ZIPs.</p>
+        <p>Create actor-only inference artifacts or load a policy state without recreating a complete PPO optimizer. Prove logits and masks match full <code>MaskablePPO.load()</code>. Define model-opponent stochastic RNG from episode seed, seat, policy identity, and perhaps decision index. Record those fields in episode metadata so caching cannot silently alter randomness.</p>
+        <p>Do not combine the category-weight correction with the cache speed benchmark. First emulate the legacy expanded list exactly with caching; then test the corrected category distribution as a separate decision-quality ablation.</p>
+      </li>
+      <li>
+        <h3>Stage 3 · Add a mask-aware sparse actor path</h3>
+        <p>Create a versioned v2 sparse policy class rather than silently changing how old checkpoints load. Reuse the existing actor tensors and exported actor architecture. Override all relevant Maskable policy paths—<code>forward</code>, <code>evaluate_actions</code>, <code>get_distribution</code>/<code>_predict</code>, and behavior-cloning calls—so action masks are available before candidate embedding/scoring.</p>
+        <p>Gather valid candidate rows across the batch, embed and score only those rows, scatter scores into a 128-logit tensor, fill invalid logits with the masking sentinel, and apply the official mask distribution. Handle at least one valid action per nonterminal observation and reject empty masks. Benchmark mask densities 1/3/9/32/68/128 and batch sizes used by rollout and PPO.</p>
+        <p>Before training, prove dense and sparse valid logits, distributions, argmax, sampled actions under a fixed RNG contract, log probabilities, entropy, and actor gradients. Native runtime already iterates valid mask entries; export tensor names can remain compatible, but Python checkpoint class and hashes must still be versioned and tested.</p>
+      </li>
+      <li>
+        <h3>Stage 4 · Ablate a compact value network</h3>
+        <p>The deployed Go runtime exports only actor tensors, so the critic can evolve without changing runtime inference. Candidate designs include base-only value prediction; base context plus masked mean/max of candidate embeddings; or a small permutation-invariant candidate pool. Do not share value loss into actor embeddings unless that interaction is intentional and evaluated.</p>
+        <p>This is a learning architecture change. Compare current dense critic and each compact critic at equal steps, equal seeds, equal opponent schedule, and equal wall-clock. Report explained variance, value loss, policy KL, entropy, clipping, win probability, tactical metrics, and failures. Select by time-to-quality, not update speed alone.</p>
+      </li>
+      <li>
+        <h3>Stage 5 · Re-profile transport and authority only after Stages 1–4</h3>
+        <p>Keep full v2 transport as baseline; existing dense base64 encoding is larger and slower. Profile whether immutable catalog construction/copying, JSON parsing, or Python schema encoding remains material after learner improvements. If so, design a sparse typed decision message containing public dynamic mechanics and only actual candidate records, or a one-time immutable catalog handshake plus compact per-step state.</p>
+        <p>Mixed opponents need per-actor requirements: mechanics-v2 currently requires the full viewer-safe state; v1 models need v1 features; v2 models need v2 features; random needs only valid indices/types. A hybrid transport should respond according to the current actor's policy requirements without leaking hidden state. Binary framing or shared memory comes only after payload and copy profiles justify it.</p>
+      </li>
+      <li>
+        <h3>Stage 6 · Benchmark PyTorch compiler and Apple MPS</h3>
+        <p>Use <code>torch.profiler</code> to identify update operators and graph gaps. Test eager CPU against <code>torch.compile</code> only on stable, serializable submodules or an isolated update function. Warm up compilation outside measured windows, inspect graph breaks/recompilations, preserve uncompiled state dictionaries for checkpoint/export, and include compile latency in short-run economics.</p>
+        <p>Test MPS rather than assuming it is faster. Measure small batch-12 rollout inference, batch-256 PPO updates, CPU↔MPS transfer, synchronization, unified-memory pressure, and unsupported/fallback operations. CPU remains the SB3 default recommendation for MLP PPO; the larger v2 update may nevertheless justify an empirical MPS lane.</p>
+      </li>
+      <li>
+        <h3>Stage 7 · Consider PPO recipe changes only as quality ablations</h3>
+        <p>Sweep minibatch size, epoch count, rollout length, and optional <code>target_kl</code> only after the engine path is fast. Each reduces or reshapes learning work. Compare equal environment steps and equal wall-clock budgets over at least three seeds. A setting is better only if it reaches or exceeds held-out decision and full-game quality sooner.</p>
+      </li>
+      <li>
+        <h3>Stage 8 · Sustain, report, and prepare the large campaign</h3>
+        <p>Repeat final 21,504- and 202,752-step benchmarks, then run a sustained training soak long enough to expose heat, memory growth, checkpoint-pool growth, and RNG/restart issues. Preserve every safety counter. Re-run Phase 1 throughput regressions and all Phase 2 decision/runtime gates.</p>
+        <p>Only after owner review, start a large end-to-end model campaign using the final progress mask from the first step, explicit population weights, periodic held-out evaluations, and multiple seeds. Use staged budgets such as 2M then 10M learner decisions; continue only while learning curves justify it. Do not mix performance acceptance with declaring a new model accepted.</p>
+      </li>
+    </ol>
+  </section>
+
+  <section id="profiling">
+    <div class="eyebrow">Profiling contract</div>
+    <h2>Measurements required before and after every material change</h2>
+    <div class="grid">
+      <article class="card"><h3>Python orchestration</h3><ul><li><code>cProfile</code> on short representative runs.</li><li>Explicit monotonic spans around bridge request, encoder, opponent manager, VecEnv step, rollout collection, and callback.</li><li>Count response/IPC bytes and object serialization.</li></ul></article>
+      <article class="card"><h3>PyTorch</h3><ul><li><code>torch.profiler</code> CPU traces for rollout inference and PPO update.</li><li>Operator/input shapes, self/total CPU, memory, thread count.</li><li>Separate forward, mask distribution, backward, clip, Adam.</li></ul></article>
+      <article class="card"><h3>Go authority</h3><ul><li><code>runtime/pprof</code> CPU and allocation profiles from representative training, not microbenchmarks alone.</li><li>Reset/open/step/snapshot/legal/encode/JSON timing.</li><li>Exact parity corpus after every retained change.</li></ul></article>
+      <article class="card"><h3>macOS system</h3><ul><li>Normalized total CPU across parent, workers, and Go children.</li><li>Peak/sustained RSS, memory pressure, swap, thermal/performance warnings.</li><li>Instruments Time Profiler or <code>xctrace</code> for multiprocess scheduling/contention when needed.</li></ul></article>
+    </div>
+    <h3>Required summary fields</h3>
+    <pre>{
+  "learner_steps_per_second": 0,
+  "complete_games_per_second": 0,
+  "collection_seconds": 0,
+  "ppo_update_seconds": 0,
+  "rollout_cycles": 0,
+  "minibatch_updates": 0,
+  "process_threads": {"learner_intra": 0, "learner_inter": 0, "worker_intra": 0, "worker_inter": 0},
+  "opponents": {"category_counts": {}, "policy_cache_hits": 0, "policy_cache_misses": 0, "load_seconds": 0},
+  "transport": {"response_bytes": 0, "python_encode_seconds": 0, "ipc_bytes": 0},
+  "policy": {"valid_candidates_p50": 0, "valid_candidates_p95": 0, "forward_seconds": 0, "backward_seconds": 0},
+  "host": {"cpu": 0, "rss": 0, "memory_pressure": "", "swap": "", "thermal": ""},
+  "safety": {"truncations": 0, "rejects": 0, "invalid": 0, "stale": 0, "wrong_seat": 0}
+}</pre>
+  </section>
+
+  <section id="benchmark">
+    <div class="eyebrow">Benchmark protocol</div>
+    <h2>Keep speed, behavior, and learning quality separate</h2>
+    <h3>Lane A · Deterministic engine/transport parity</h3>
+    <p>Run fixed/generated corpora through full, candidate optimized, and any new transport path. Compare actor order, viewer-safe state/features, exact action mask, complete candidate order/content, original submitted command, events, RNG cursor, terminal winner/health, and retained replay. Require zero differences unless the change is an explicitly versioned learning ablation.</p>
+    <h3>Lane B · Update-only performance</h3>
+    <p>Capture or deterministically generate one 3,072-transition v2 rollout buffer with masks and actions, then replay PPO updates without environment time. Sweep thread/device/compiler/sparse-policy choices. Compare valid logits, losses, gradients, parameter deltas, update time, CPU, and memory. Do not call an update-only improvement an end-to-end speedup.</p>
+    <h3>Lane C · Collection-only performance</h3>
+    <p>Run the real learner/opponent schedule with frozen learner weights and no optimizer while retaining the same Gym step definition and terminal summaries. Measure learner steps/s and complete games/s. Include category counts and model-load/cache metrics.</p>
+    <h3>Lane D · End-to-end PPO smoke</h3>
+    <p>Use 12 workers, rollout 256, batch 256, 8 epochs, v2 mechanics teacher, final progress mask, and 21,504 requested timesteps (seven exact 3,072-step cycles). Run at least three repeats for each retained engineering candidate. Use fresh unique output roots.</p>
+    <pre>cd /Users/daddymere/games/Dice-and-Destiny-v2/dice-and-destiny-server
+
+./scripts/ml.sh train \
+  --seeds 22 \
+  --timesteps 21504 \
+  --profile max \
+  --rollout-steps 256 \
+  --batch-size 256 \
+  --epochs 8 \
+  --learning-rate 0.0003 \
+  --checkpoint-interval 5000 \
+  --imitation-decisions 5000 \
+  --imitation-epochs 5 \
+  --device cpu \
+  --observation-schema dice-and-destiny-observation-v2 \
+  --imitation-teacher mechanics-v2 \
+  --transport-mode full \
+  --ablation-condition v2-mechanics-throughput-reference \
+  --opponents random mechanics-v2 \
+    model:runs/phase2-training/seed-11/checkpoints/final.zip historical \
+  --output runs/phase2-throughput-optimization-UNIQUE/baseline-short</pre>
+    <p>The command above reflects the current interface. Once population weighting and separate thread controls exist, the config and summary must name those values explicitly rather than hiding them behind the old arguments.</p>
+    <h3>Lane E · Full 202,752-step reference and sustained soak</h3>
+    <p>After short-run selection, repeat the selected baseline/candidate at 200,000 requested steps for seeds 11/22/33. Follow with a sustained run long enough to exceed 30 minutes or several million steps. Startup and compilation must be amortized honestly.</p>
+    <h3>Lane F · Learning quality</h3>
+    <p>For pure engineering changes, attempt exact reproducibility first. For thread-order, compact critic, compiler/device, population, or PPO recipe changes, require at least three seeds and the complete existing held-out decision/full-game suite. Report confidence intervals and wall-clock-to-quality.</p>
+    <h3>How to report improvement</h3>
+    <ul>
+      <li>Primary: learner steps/s and multiplier versus the exact current baseline.</li>
+      <li>Secondary: complete games/s under the same fixed policy/opponent schedule.</li>
+      <li>Breakdown: collection, PPO update, imitation, checkpoint, evaluation.</li>
+      <li>Economics: time to 2M, 10M, and approximately 100k games at observed episode length.</li>
+      <li>Quality: held-out score per million learner steps and per hour.</li>
+    </ul>
+  </section>
+
+  <section id="gates">
+    <div class="eyebrow">Mandatory acceptance</div>
+    <h2>Phase 2 throughput gates A–K</h2>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Gate</th><th>Required evidence</th></tr></thead>
+        <tbody>
+          <tr><td>A · Baseline reproducibility</td><td>Three short and at least one full current-code v2 PPO references with exact config, hashes, host state, step/game throughput, timing split, opponent counts, and safety counters.</td></tr>
+          <tr><td>B · Authority and privacy parity</td><td>Every engine/transport optimization matches viewer-safe observations, masks, candidate order/content, submitted commands, events, RNG cursor, terminal metrics, and replay on fixed/generated corpora. No hidden information appears.</td></tr>
+          <tr><td>C · Process resource correctness</td><td>Every learner, Python worker, Go child, BLAS pool, and optional device reports resolved resources. No accidental 12×12 Torch oversubscription. Named max/balanced/light/custom profiles remain honest and measured.</td></tr>
+          <tr><td>D · Opponent contract</td><td>Explicit category/member weights, seeded model sampling, atomic historical manifest, bounded cache, exact policy identity per episode, no stale/partial checkpoint, and separate evidence for legacy versus corrected weighting.</td></tr>
+          <tr><td>E · Sparse policy correctness</td><td>Dense/sparse valid logits, mask, probabilities, deterministic actions, seeded samples, log-probability, entropy, behavior-clone result, and actor gradients match within declared tolerance. Empty-mask and capacity tests pass.</td></tr>
+          <tr><td>F · End-to-end throughput</td><td>Target ≥2× current learner steps/s on the unchanged recipe; stretch ≥3×. Report honest plateau if lower. Complete games/s, collection/update split, CPU/RSS/thermal, and startup amortization are included.</td></tr>
+          <tr><td>G · Learning quality</td><td>Any numerically or semantically changed path passes three-seed held-out tactical/broad/full-game evaluation, confidence intervals, behavioral analysis, and zero safety failures. No claim based on throughput alone.</td></tr>
+          <tr><td>H · Sustained stability</td><td>At least one ≥30-minute or multi-million-step soak with no crash, deadlock, resource leak, swap growth attributable to the run, model-cache growth beyond bound, checkpoint race, or safety failure.</td></tr>
+          <tr><td>I · Checkpoint/export/runtime</td><td>Old v1/v2 artifacts still load. New checkpoint classes are versioned. Exported actor tensors and Go inference match Python through complete replays, with strict hashes/schema/content versions.</td></tr>
+          <tr><td>J · Regression</td><td>Phase 1 frozen evaluation retains at least its accepted threshold; Go/vet/race, ML lock/lint/tests, parity, native builds, Godot authority, and both learned-battle verifiers pass.</td></tr>
+          <tr><td>K · Report and owner gate</td><td>Tracked report lists every kept/rejected hypothesis, exact commands, artifacts, absolute/multiplier results, limitations, and PASS/FAIL gates. Stop for owner review before large final training, commit, or push.</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section id="files">
+    <div class="eyebrow">Code map</div>
+    <h2>Files the implementation context must inspect</h2>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Path</th><th>Why it matters</th></tr></thead>
+        <tbody>
+          <tr><td><code>dice-and-destiny-server/ml/dice_destiny_ml/training.py</code></td><td>Training config, callback timing, 12-worker construction, PPO parameters, one-thread runtime, checkpoint cadence.</td></tr>
+          <tr><td><code>.../gym_env.py</code></td><td>Episode seed/seat/opponent selection, per-reset policy construction, opponent-driving loop, terminal reward and info/replay transfer.</td></tr>
+          <tr><td><code>.../policies.py</code></td><td>Mechanics cache, model checkpoint load, ignored model reset seed, cross-schema policy encoding.</td></tr>
+          <tr><td><code>.../model.py</code></td><td>Dense critic and 128-slot candidate actor. Primary sparse/critic optimization surface.</td></tr>
+          <tr><td><code>.../schema_v2.py</code></td><td>18,944-value layout, full/encoded decoding, progress mask, parity.</td></tr>
+          <tr><td><code>.../imitation.py</code></td><td>Full-game demonstrations and behavior cloning; sparse distribution path must work here too.</td></tr>
+          <tr><td><code>.../resources.py</code></td><td>Current coupled worker/thread budget; needs learner/actor separation.</td></tr>
+          <tr><td><code>.../evaluation.py</code></td><td>Correct example of setting BLAS variables and PyTorch thread counts inside workers.</td></tr>
+          <tr><td><code>.../ablation.py</code></td><td>Phase 2 matrix orchestration and full transport choice.</td></tr>
+          <tr><td><code>.../export_policy.py</code></td><td>v2 export includes actor tensors only; critic changes need not alter native actor format.</td></tr>
+          <tr><td><code>dice-and-destiny-server/internal/battle/mlsim/environment.go</code></td><td>Real authority reset/step, snapshot/catalog mode, replay accumulation, transport selection.</td></tr>
+          <tr><td><code>.../mlsim/encoding_v2.go</code></td><td>Go v2 encoder/progress mask and runtime parity. Existing dense base64 path is not compact.</td></tr>
+          <tr><td><code>dice-and-destiny-server/cmd/battle-ml-sim/main.go</code></td><td>JSON-lines protocol and potential profiling/binary framing boundary.</td></tr>
+          <tr><td><code>dice-and-destiny-server/internal/battle/learned/policy_v2.go</code></td><td>Native inference already loops only valid candidates; must stay actor-compatible.</td></tr>
+          <tr><td><code>dice-and-destiny-server/ml/configs/decision-quality-phase2.json</code></td><td>Exact completed matrix settings and opponent intent.</td></tr>
+          <tr><td><code>docs/machine-learning-battle-simulation/decision-quality-report.md</code></td><td>Selected model, matrix, tactical/full-game gates, known limitations and reproduction commands.</td></tr>
+          <tr><td><code>docs/machine-learning-battle-simulation/throughput-optimization-report.md</code></td><td>Phase 1 profiles, 12-worker plateau, parity requirements, resource controls and sustained soak.</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section id="sources">
+    <div class="eyebrow">Primary-source research</div>
+    <h2>External references and how they constrain the plan</h2>
+    <ol>
+      <li><a href="https://arxiv.org/abs/1707.06347">Schulman et al., Proximal Policy Optimization Algorithms</a> — PPO alternates sampling with multiple minibatch epochs; establishes why naive stale-rollout overlap is not a free systems change.</li>
+      <li><a href="https://stable-baselines3.readthedocs.io/en/v2.9.0/modules/ppo.html">Stable-Baselines3 2.9.0 PPO documentation</a> — installed major/minor behavior; recommends CPU and <code>SubprocVecEnv</code> for MLP PPO, defines <code>n_steps × n_envs</code>, and documents that <code>load()</code> recreates a model.</li>
+      <li><a href="https://stable-baselines3.readthedocs.io/en/v2.9.0/guide/vec_envs.html">Stable-Baselines3 vectorized environments</a> — process semantics, automatic reset, terminal observations, worker/core guidance, and spawn safety.</li>
+      <li><a href="https://sb3-contrib.readthedocs.io/en/master/modules/ppo_mask.html">SB3-Contrib Maskable PPO documentation</a> — action masks must be implemented inside the environment for <code>SubprocVecEnv</code>; masking and multiprocessing are supported.</li>
+      <li><a href="https://arxiv.org/abs/2006.14171">Huang and Ontañón, invalid action masking in policy-gradient algorithms</a> — theoretical/empirical basis for masking; sparse execution must preserve the masked policy distribution.</li>
+      <li><a href="https://docs.pytorch.org/docs/stable/notes/multiprocessing.html">PyTorch multiprocessing best practices</a> — warns that CPU oversubscription causes contention and recommends bounding threads per process.</li>
+      <li><a href="https://docs.pytorch.org/docs/stable/generated/torch.set_num_interop_threads.html">PyTorch inter-op thread API</a> — inter-op thread count may only be set once and before inter-op work begins.</li>
+      <li><a href="https://docs.pytorch.org/docs/stable/profiler.html">PyTorch Profiler</a> — operator, input-shape, CPU/device activity and trace support required for update profiling.</li>
+      <li><a href="https://docs.pytorch.org/docs/stable/generated/torch.compile.html">PyTorch <code>torch.compile</code></a> and <a href="https://docs.pytorch.org/docs/stable/user_guide/torch_compiler/torch.compiler_profiling_torch_compile.html">compiler profiling guide</a> — compilation modes, recompilation/guards, graph-break and trace workflow.</li>
+      <li><a href="https://docs.pytorch.org/tutorials/recipes/recipes/tuning_guide.html">PyTorch performance tuning guide</a> — profiler-first optimization, operation fusion and gradient-reset guidance.</li>
+      <li><a href="https://docs.pytorch.org/docs/stable/mps.html">PyTorch MPS API</a> and <a href="https://developer.apple.com/metal/pytorch/">Apple Metal acceleration for PyTorch</a> — establishes MPS availability, not guaranteed superiority for this workload.</li>
+      <li><a href="https://docs.python.org/3.12/library/multiprocessing.shared_memory.html">Python 3.12 shared memory</a> — optional later route to avoid serialization/copying, with explicit close/unlink lifecycle obligations.</li>
+      <li><a href="https://go.dev/doc/diagnostics">Go diagnostics</a> and <a href="https://go.dev/doc/pgo">Go profile-guided optimization</a> — representative CPU/allocation profiling and optional PGO only after a stable real workload exists.</li>
+      <li><a href="https://developer.apple.com/documentation/xcode/xcode-command-line-tool-reference">Apple <code>xctrace</code> reference</a> — multiprocess Time Profiler/System Trace collection on the M3 Max.</li>
+      <li><a href="https://arxiv.org/abs/1802.01561">IMPALA</a> and <a href="https://arxiv.org/abs/2006.11751">Sample Factory</a> — asynchronous actor/learner scaling requires policy-lag/off-policy correction and belongs in a separate algorithmic phase.</li>
+    </ol>
+  </section>
+
+  <section id="prompt">
+    <div class="eyebrow">Next-context handoff</div>
+    <h2>Copyable implementation prompt</h2>
+    <div class="copy-row"><p>Give the following prompt and this HTML file to a fresh implementation context.</p><button type="button" data-copy-target="implementation-prompt">Copy prompt</button></div>
+    <pre id="implementation-prompt">Implement the Phase 2 PPO training-throughput optimization program for Dice &amp; Destiny.
+
+FIRST READ
+
+Read /Users/daddymere/games/Dice-and-Destiny-v2/AGENTS.md completely, then read this document completely:
+/Users/daddymere/games/Dice-and-Destiny-v2/docs/machine-learning-battle-simulation/phase-2-training-throughput-optimization-handoff.html
+
+Also read the complete Phase 1 throughput report, Phase 2 decision-quality report, original throughput/decision-quality handoff, observation-schema-v2 contract, ML README, and every code path and retained artifact named in the HTML. Inspect the real branch, HEAD, dirty files, ignored runs, checkpoints, exports, runtime state, and machine state. Treat hashes in the document as orientation until reverified. Preserve all user work. Never clean/reset/overwrite another worktree or accepted artifact.
+
+MISSION
+
+Optimize the complete real-authority v2 Maskable PPO training path from the measured seed-22 baseline of 309.6875 learner steps/s and 1.9826 complete games/s. Target at least 2× learner-step throughput on the unchanged learning recipe, with 3× as a stretch, while reporting an honest lower plateau if correctness or quality prevents it. Learner steps/s is primary; complete games/s remains required. Do not compare the 59.6 games/s frozen v1 evaluation benchmark directly to PPO training.
+
+NON-NEGOTIABLES
+
+The real Go authority, exact rules/RNG, complete legal candidates, viewer filtering, original-command submission, progress mask, terminal +1/-1/0 objective, terminal summary for every game, selected replay evidence, accepted v1/v2 artifacts, and Python/Go/runtime parity remain mandatory. Do not gain speed by shortening battles, dropping decisions/reactions, removing opponent diversity, changing rewards, lowering PPO epochs/batches, changing population weights, weakening privacy, or using approximate rules and call it an engineering speedup. Any learning-recipe, critic, population, device-numerics, or algorithm change is a separate ablation with three-seed quality gates.
+
+WORK ORDER
+
+1. Create a unique ignored phase2-throughput-optimization run tree. Freeze three 21,504-step current-code references and at least one 202,752-step reference. Record full config/hashes/host/opponent/safety evidence.
+2. Add low-overhead nested timing, byte, cache, candidate-density, process/thread, CPU/RSS/thermal and PPO-minibatch instrumentation listed in the HTML. Profile Python, PyTorch, Go and macOS before editing hot paths.
+3. Separate main learner thread controls from spawned actor-worker/BLAS controls. Configure every spawned worker before Torch work. Sweep plausible learner threads and worker counts without oversubscription.
+4. Establish a deterministic opponent RNG contract. Implement a per-worker opponent manager with long-lived random/mechanics policies, cached accepted model, bounded historical LRU or actor-only inference weights, atomic historical manifest, and explicit category/member selection. Benchmark legacy-equivalent selection first. Treat corrected population weights as a separate owner-visible learning ablation.
+5. Implement a versioned mask-aware sparse v2 actor path that embeds/scores only valid candidate rows and scatters back to 128 logits. Cover forward, evaluate_actions, get_distribution/predict, and behavior cloning. Prove valid logits/probabilities/actions/log-probs/entropy/gradients against the dense actor and preserve export/native inference.
+6. Re-benchmark. Then ablate a compact base or pooled critic as a separate learning architecture, because the current critic owns 89% of parameters. Select by wall-clock-to-heldout-quality, not raw update speed.
+7. Re-profile before transport work. Do not blindly enable encoded v2: measured dense base64 was about 4× the full JSON size and slower. If transport remains material, design per-actor hybrid/sparse typed messages or one-time immutable catalog handling and prove exact privacy/parity.
+8. Benchmark torch.compile and MPS only after profiler evidence, with warm-up, graph-break/recompile, transfer, memory and numerical-quality accounting. PPO epoch/batch/rollout/target-KL changes are separate quality ablations.
+9. Run repeated short/full end-to-end benchmarks, a sustained ≥30-minute or multi-million-step soak, Phase 1 regressions, all Phase 2 tactical/broad/full-game gates, Python/Go/native parity, full Go/vet/race, ML lock/lint/tests, native build, and Godot authority/learned-battle verifiers through ./scripts/godot.sh.
+10. Produce a tracked optimization report with every attempted route, profiles, before/after absolute and multiplier results, resource curves, acceptance gates A-K, exact commands/artifacts/hashes, rejected experiments, remaining risks, and large-training time projections. Stop for owner review before a large final model campaign, commit, or push.
+
+Do not assume any projected improvement in the research HTML has been achieved. Reproduce every measurement and keep pure engineering changes separate from changes to what or how the model learns.</pre>
+  </section>
+
+  <footer>Prepared as a standalone research artifact. Revalidate repository state, dependencies, hardware state, and retained artifacts before implementation.</footer>
+</main>
+<script>
+  document.querySelectorAll('[data-copy-target]').forEach((button) => {
+    button.addEventListener('click', async () => {
+      const target = document.getElementById(button.dataset.copyTarget);
+      if (!target) return;
+      await navigator.clipboard.writeText(target.textContent);
+      const original = button.textContent;
+      button.textContent = 'Copied';
+      setTimeout(() => { button.textContent = original; }, 1200);
+    });
+  });
+</script>
+</body>
+</html>

@@ -5,12 +5,23 @@ import json
 import sys
 from pathlib import Path
 
+from .ablation import run_phase2_matrix
 from .bridge import AuthorityBridge
+from .diagnostics import run_owner_diagnostic
 from .evaluation import evaluate
-from .export_policy import export_phase3_policy
+from .export_policy import export_candidate_policy_v2, export_phase3_policy
+from .imitation import corrective_clone
 from .policies import HeuristicPolicy, select_with_policy
 from .reporting import generate_report_artifacts
+from .resources import resolve_resource_budget
 from .schema import SchemaEncoder
+from .schema_v2 import OBSERVATION_SCHEMA_V2
+from .tactical_corpus import (
+    build_decision_corpus,
+    build_tactical_corpus,
+    evaluate_decision_corpus,
+    evaluate_tactical_matrix,
+)
 from .tournament import run_tournament
 from .training import TrainingConfig, set_reproducible_runtime, train_seed
 
@@ -23,7 +34,8 @@ def main(argv: list[str] | None = None) -> int:
     if args.command != "export-policy" and not binary.exists():
         parser.error(f"simulator binary not found: {binary}; run scripts/ml.sh so it is built first")
     if args.command == "export-policy":
-        result = export_phase3_policy(
+        exporter = export_candidate_policy_v2 if args.policy_family == "v2" else export_phase3_policy
+        result = exporter(
             Path(args.checkpoint),
             Path(args.output),
             model_id=args.model_id,
@@ -31,10 +43,81 @@ def main(argv: list[str] | None = None) -> int:
             source_revision=args.source_revision,
             training_engine_revision=args.training_engine_revision,
         )
+    elif args.command == "phase2-matrix":
+        result = run_phase2_matrix(
+            binary=binary,
+            server_root=server_root,
+            config_file=Path(args.config),
+        )
+    elif args.command == "owner-diagnostic":
+        result = run_owner_diagnostic(
+            binary=binary,
+            server_root=server_root,
+            trace_file=Path(args.trace),
+            accepted_checkpoint=Path(args.checkpoint),
+            output_file=Path(args.output),
+        )
+    elif args.command == "tactical-matrix":
+        result = evaluate_tactical_matrix(
+            binary=binary,
+            server_root=server_root,
+            corpus_file=Path(args.corpus),
+            matrix_root=Path(args.matrix),
+        )
+    elif args.command == "tactical-build":
+        result = build_tactical_corpus(
+            binary=binary,
+            server_root=server_root,
+            seed_start=args.seed_start,
+            cases=args.cases,
+            output_file=Path(args.output),
+        )
+    elif args.command == "decision-corpus-build":
+        result = build_decision_corpus(
+            binary=binary,
+            server_root=server_root,
+            seed_start=args.seed_start,
+            cases_per_category=args.cases_per_category,
+            max_episodes=args.max_episodes,
+            output_file=Path(args.output),
+        )
+    elif args.command == "decision-corpus-evaluate":
+        result = evaluate_decision_corpus(
+            binary=binary,
+            server_root=server_root,
+            corpus_file=Path(args.corpus),
+            checkpoint=Path(args.checkpoint),
+            output_file=Path(args.output),
+            baseline_summary=Path(args.baseline) if args.baseline else None,
+        )
+    elif args.command == "corrective-clone":
+        result = corrective_clone(
+            binary=binary,
+            server_root=server_root,
+            base_checkpoint=Path(args.base_checkpoint),
+            corpus_file=Path(args.corpus),
+            output_dir=Path(args.output),
+            seed=args.seed,
+            full_decisions=args.full_decisions,
+            tactical_repeats=args.tactical_repeats,
+            epochs=args.epochs,
+            batch_size=args.batch_size,
+            device=args.device,
+            learning_rate=args.learning_rate,
+        )
     elif args.command == "smoke":
         result = smoke(binary, server_root, args.seed)
     elif args.command in {"evaluate", "benchmark", "acceptance"}:
         seeds = load_seeds(args)
+        try:
+            budget = resolve_resource_budget(
+                args.profile,
+                workers=args.workers,
+                torch_threads=args.torch_threads,
+            )
+        except ValueError as error:
+            parser.error(str(error))
+        print(json.dumps({"resolved_resource_budget": budget.as_dict()}, sort_keys=True), file=sys.stderr)
         result = evaluate(
             binary=binary,
             server_root=server_root,
@@ -46,6 +129,13 @@ def main(argv: list[str] | None = None) -> int:
             device=args.device,
             deterministic=not args.stochastic,
             save_replays="none" if args.command == "benchmark" else args.save_replays,
+            authority_mode=args.authority_mode,
+            workers=budget.workers,
+            torch_threads=budget.torch_threads,
+            profile=budget.profile,
+            telemetry_mode=args.telemetry_mode,
+            transport_mode=args.transport_mode,
+            observation_schema=args.observation_schema,
         )
         if args.command == "acceptance":
             failures = []
@@ -64,13 +154,22 @@ def main(argv: list[str] | None = None) -> int:
             result["acceptance_failures"] = failures
             Path(args.output, "summary.json").write_text(json.dumps(result, indent=2, sort_keys=True) + "\n")
     elif args.command == "train":
+        try:
+            budget = resolve_resource_budget(
+                args.profile,
+                workers=args.workers or (4 if args.profile == "custom" else 0),
+                torch_threads=args.torch_threads,
+            )
+        except ValueError as error:
+            parser.error(str(error))
+        print(json.dumps({"resolved_resource_budget": budget.as_dict()}, sort_keys=True), file=sys.stderr)
         summaries = []
         for seed in args.seeds:
-            set_reproducible_runtime(seed)
+            set_reproducible_runtime(seed, budget.torch_threads)
             config = TrainingConfig(
                 seed=seed,
                 total_timesteps=args.timesteps,
-                workers=args.workers,
+                workers=budget.workers,
                 rollout_steps=args.rollout_steps,
                 batch_size=args.batch_size,
                 epochs=args.epochs,
@@ -79,6 +178,13 @@ def main(argv: list[str] | None = None) -> int:
                 imitation_decisions=args.imitation_decisions,
                 imitation_epochs=args.imitation_epochs,
                 device=args.device,
+                resource_profile=budget.profile,
+                torch_threads=budget.torch_threads,
+                observation_schema=args.observation_schema,
+                imitation_teacher=args.imitation_teacher,
+                transport_mode=args.transport_mode,
+                ablation_condition=args.ablation_condition,
+                opponent_specs=tuple(args.opponents),
             )
             summaries.append(
                 train_seed(
@@ -124,6 +230,53 @@ def build_parser() -> argparse.ArgumentParser:
     smoke_parser = subparsers.add_parser("smoke", help="reset/observe/step/terminal/replay smoke test")
     smoke_parser.add_argument("--seed", type=int, default=20260801)
 
+    matrix_parser = subparsers.add_parser("phase2-matrix", help="run the declared 4x2x3 Phase 2 ablation")
+    matrix_parser.add_argument("--config", default="ml/configs/decision-quality-phase2.json")
+    diagnostic_parser = subparsers.add_parser(
+        "owner-diagnostic", help="replay the preserved immediate-ability-bias diagnostic"
+    )
+    diagnostic_parser.add_argument("--trace", required=True)
+    diagnostic_parser.add_argument("--checkpoint", required=True)
+    diagnostic_parser.add_argument("--output", required=True)
+    tactical_parser = subparsers.add_parser(
+        "tactical-matrix", help="score every final Phase 2 checkpoint on the fixed tactical corpus"
+    )
+    tactical_parser.add_argument("--corpus", required=True)
+    tactical_parser.add_argument("--matrix", required=True)
+    tactical_build_parser = subparsers.add_parser(
+        "tactical-build", help="build a real-authority first-roll mechanics corpus"
+    )
+    tactical_build_parser.add_argument("--seed-start", type=int, required=True)
+    tactical_build_parser.add_argument("--cases", type=int, required=True)
+    tactical_build_parser.add_argument("--output", required=True)
+    broad_build_parser = subparsers.add_parser(
+        "decision-corpus-build", help="build a broad mechanics decision corpus"
+    )
+    broad_build_parser.add_argument("--seed-start", type=int, required=True)
+    broad_build_parser.add_argument("--cases-per-category", type=int, default=20)
+    broad_build_parser.add_argument("--max-episodes", type=int, default=500)
+    broad_build_parser.add_argument("--output", required=True)
+    broad_eval_parser = subparsers.add_parser(
+        "decision-corpus-evaluate", help="score a checkpoint on a broad decision corpus"
+    )
+    broad_eval_parser.add_argument("--corpus", required=True)
+    broad_eval_parser.add_argument("--checkpoint", required=True)
+    broad_eval_parser.add_argument("--output", required=True)
+    broad_eval_parser.add_argument("--baseline", default="")
+    corrective_parser = subparsers.add_parser(
+        "corrective-clone", help="train a balanced mechanics and tactical imitation candidate"
+    )
+    corrective_parser.add_argument("--base-checkpoint", required=True)
+    corrective_parser.add_argument("--corpus", required=True)
+    corrective_parser.add_argument("--output", required=True)
+    corrective_parser.add_argument("--seed", type=int, default=11)
+    corrective_parser.add_argument("--full-decisions", type=int, default=5_000)
+    corrective_parser.add_argument("--tactical-repeats", type=int, default=20)
+    corrective_parser.add_argument("--epochs", type=int, default=10)
+    corrective_parser.add_argument("--batch-size", type=int, default=256)
+    corrective_parser.add_argument("--device", default="cpu")
+    corrective_parser.add_argument("--learning-rate", type=float)
+
     export_parser = subparsers.add_parser(
         "export-policy",
         help="export the accepted deterministic actor for the Phase 3 Go runtime",
@@ -134,6 +287,7 @@ def build_parser() -> argparse.ArgumentParser:
     export_parser.add_argument("--content-version", required=True)
     export_parser.add_argument("--source-revision", required=True)
     export_parser.add_argument("--training-engine-revision", required=True)
+    export_parser.add_argument("--policy-family", choices=("v1", "v2"), default="v1")
 
     for name, help_text in (
         ("evaluate", "evaluate any two independently instantiated policies"),
@@ -148,7 +302,13 @@ def build_parser() -> argparse.ArgumentParser:
     train_parser = subparsers.add_parser("train", help="train Maskable PPO from real authority episodes")
     train_parser.add_argument("--seeds", type=int, nargs="+", default=[11, 22, 33])
     train_parser.add_argument("--timesteps", type=int, default=20_000)
-    train_parser.add_argument("--workers", type=int, default=4)
+    train_parser.add_argument(
+        "--profile",
+        choices=("max", "balanced-80", "light-50", "custom"),
+        default="custom",
+    )
+    train_parser.add_argument("--workers", type=int, default=0)
+    train_parser.add_argument("--torch-threads", type=int, default=0)
     train_parser.add_argument("--rollout-steps", type=int, default=256)
     train_parser.add_argument("--batch-size", type=int, default=256)
     train_parser.add_argument("--epochs", type=int, default=8)
@@ -157,6 +317,23 @@ def build_parser() -> argparse.ArgumentParser:
     train_parser.add_argument("--imitation-decisions", type=int, default=5_000)
     train_parser.add_argument("--imitation-epochs", type=int, default=5)
     train_parser.add_argument("--device", default="cpu")
+    train_parser.add_argument(
+        "--observation-schema",
+        choices=("dice-and-destiny-observation-v1", OBSERVATION_SCHEMA_V2),
+        default="dice-and-destiny-observation-v1",
+    )
+    train_parser.add_argument(
+        "--imitation-teacher",
+        choices=("heuristic-v1", "mechanics-v2"),
+        default="heuristic-v1",
+    )
+    train_parser.add_argument("--transport-mode", choices=("full", "encoded", "parity"), default="full")
+    train_parser.add_argument("--ablation-condition", default="current-recipe")
+    train_parser.add_argument(
+        "--opponents",
+        nargs="+",
+        default=["random", "random", "heuristic", "heuristic", "historical"],
+    )
     train_parser.add_argument("--output", default="runs/training")
 
     tournament_parser = subparsers.add_parser("tournament", help="checkpoint cross-play matrix and Elo")
@@ -184,6 +361,17 @@ def add_match_arguments(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("--device", default="cpu")
     parser.add_argument("--stochastic", action="store_true", help="sample model actions instead of argmax")
     parser.add_argument("--save-replays", choices=("none", "representative", "all"), default="representative")
+    parser.add_argument("--authority-mode", choices=("normal", "ephemeral"), default="normal")
+    parser.add_argument("--telemetry-mode", choices=("full", "training"), default="full")
+    parser.add_argument("--transport-mode", choices=("full", "encoded", "parity"), default="full")
+    parser.add_argument(
+        "--observation-schema",
+        choices=("dice-and-destiny-observation-v1", OBSERVATION_SCHEMA_V2),
+        default="dice-and-destiny-observation-v1",
+    )
+    parser.add_argument("--profile", choices=("max", "balanced-80", "light-50", "custom"), default="custom")
+    parser.add_argument("--workers", type=int, default=0, help="custom rollout-process budget")
+    parser.add_argument("--torch-threads", type=int, default=0, help="custom Torch/BLAS threads per worker")
     parser.add_argument("--output", default="runs/evaluation")
 
 

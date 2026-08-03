@@ -152,16 +152,83 @@ func (authority *Authority) HandleCommandForViewerWithTranscript(
 	return authority.handleCommandForViewer(cmd, resultViewerActorID, context)
 }
 
+// HandleSimulationCommand applies the identical authority command path while
+// avoiding construction of a result that a training transport immediately
+// discards. Accepted events are still sequenced and persisted; terminal
+// commands still return the complete viewer-safe result.
+func (authority *Authority) HandleSimulationCommand(cmd command.Command) engine.Result {
+	return authority.HandleSimulationCommandWithTranscript(cmd, TranscriptCommandContext{})
+}
+
+// HandleSimulationCommandWithTranscript preserves the optional diagnostic
+// context while using the compact nonterminal result path.
+func (authority *Authority) HandleSimulationCommandWithTranscript(
+	cmd command.Command,
+	context TranscriptCommandContext,
+) engine.Result {
+	return authority.handleCommandForViewerMode(cmd, cmd.ActorID, context, true)
+}
+
 // ConfigureTranscriptBattle attaches diagnostic seat/controller labels to
 // this authority. The disabled release implementation is a no-op.
 func (authority *Authority) ConfigureTranscriptBattle(context TranscriptBattleContext) {
 	configureAuthorityTranscript(authority, context)
 }
 
+// InspectBattleState returns an isolated diagnostic copy of the current
+// authority-owned state. Gameplay callers should consume viewer-filtered
+// results instead; throughput parity tests use this hook to compare hidden
+// state and deterministic RNG cursors without granting mutation access.
+func (authority *Authority) InspectBattleState(battleID string) (state.Battle, error) {
+	if authority == nil || authority.repo == nil {
+		return state.Battle{}, errors.New("battle authority is not configured")
+	}
+	checkpoint, err := authority.repo.Load(battleID)
+	if err != nil {
+		return state.Battle{}, err
+	}
+	return checkpoint.Battle.Clone(), nil
+}
+
+// InspectBattleRandomCursor reads the terminal deterministic cursor without
+// cloning the full battle. It is diagnostic metadata, never gameplay input.
+func (authority *Authority) InspectBattleRandomCursor(battleID string) (uint64, error) {
+	if authority == nil || authority.repo == nil {
+		return 0, errors.New("battle authority is not configured")
+	}
+	checkpoint, err := authority.repo.Load(battleID)
+	if err != nil {
+		return 0, err
+	}
+	return checkpoint.Battle.Random.Cursor, nil
+}
+
+// InspectBattleEventsJSON returns the exact persisted authority event stream
+// for parity diagnostics without exposing mutable repository storage.
+func (authority *Authority) InspectBattleEventsJSON(battleID string) ([]byte, error) {
+	if authority == nil || authority.repo == nil {
+		return nil, errors.New("battle authority is not configured")
+	}
+	checkpoint, err := authority.repo.Load(battleID)
+	if err != nil {
+		return nil, err
+	}
+	return json.Marshal(checkpoint.Events)
+}
+
 func (authority *Authority) handleCommandForViewer(
 	cmd command.Command,
 	resultViewerActorID string,
 	context TranscriptCommandContext,
+) engine.Result {
+	return authority.handleCommandForViewerMode(cmd, resultViewerActorID, context, false)
+}
+
+func (authority *Authority) handleCommandForViewerMode(
+	cmd command.Command,
+	resultViewerActorID string,
+	context TranscriptCommandContext,
+	simulationResult bool,
 ) engine.Result {
 	if authority == nil || authority.repo == nil || authority.assembler == nil {
 		result := authorityRejected("battle authority is not configured")
@@ -220,6 +287,9 @@ func (authority *Authority) handleCommandForViewer(
 		return result
 	}
 	recordAuthorityTranscriptAccepted(authority, cmd, context, before, &checkpoint.Battle, assigned)
+	if simulationResult && progressed.Status != engine.ProgressBattleComplete && !state.IsTerminalBattleStatus(checkpoint.Battle.Status) {
+		return authority.engine.SimulationResult(&checkpoint.Battle, progressed)
+	}
 	return authority.engine.ResultForViewer(&checkpoint.Battle, resultViewerActorID, progressed)
 }
 

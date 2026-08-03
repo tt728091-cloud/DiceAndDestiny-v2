@@ -1,10 +1,12 @@
 package engine
 
 import (
+	"crypto/sha256"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"sort"
+	"sync"
 
 	"diceanddestiny/server/internal/battle/command"
 	"diceanddestiny/server/internal/battle/event"
@@ -14,6 +16,18 @@ import (
 	"diceanddestiny/server/internal/battle/state"
 	"diceanddestiny/server/internal/content"
 )
+
+// settledLibraryCache stores immutable decoded catalogs by their pinned bytes.
+// Battle rules only read BattleLibrary values after content loading and
+// validation; keeping the serialized catalog on each battle preserves the
+// checkpoint/replay compatibility contract while avoiding repeated JSON
+// decoding during progression and legal-action generation.
+var settledLibraryCache sync.Map
+
+type settledLibraryCacheEntry struct {
+	library content.BattleLibrary
+	err     error
+}
 
 const (
 	stageOngoingCollect = "collect_statuses"
@@ -42,10 +56,25 @@ func settledLibrary(battle *state.Battle) (content.BattleLibrary, error) {
 	if battle == nil || battle.Settled == nil {
 		return library, errors.New("settled battle state is required")
 	}
-	if err := json.Unmarshal(battle.SettledCatalog, &library); err != nil {
-		return library, fmt.Errorf("decode pinned settled catalog: %w", err)
+	key := battle.SettledCatalogHash
+	if key == ([32]byte{}) {
+		key = sha256.Sum256(battle.SettledCatalog)
+		battle.SettledCatalogHash = key
 	}
-	return library, nil
+	if cached, ok := settledLibraryCache.Load(key); ok {
+		entry := cached.(settledLibraryCacheEntry)
+		return entry.library, entry.err
+	}
+	if err := json.Unmarshal(battle.SettledCatalog, &library); err != nil {
+		entry := settledLibraryCacheEntry{err: fmt.Errorf("decode pinned settled catalog: %w", err)}
+		actual, _ := settledLibraryCache.LoadOrStore(key, entry)
+		stored := actual.(settledLibraryCacheEntry)
+		return stored.library, stored.err
+	}
+	entry := settledLibraryCacheEntry{library: library}
+	actual, _ := settledLibraryCache.LoadOrStore(key, entry)
+	stored := actual.(settledLibraryCacheEntry)
+	return stored.library, stored.err
 }
 
 func (e Engine) progressSettled(battle *state.Battle) (ProgressionResult, error) {
@@ -604,7 +633,11 @@ func (e Engine) resolveDefenseRollsAndOpenReaction(battle *state.Battle, library
 
 func (e Engine) finalizeDefenses(battle *state.Battle, library content.BattleLibrary) ([]event.Event, error) {
 	var events []event.Event
-	for actorID, selection := range battle.Settled.DefenseSelections {
+	for _, actorID := range sortedSettledActorIDs(battle) {
+		selection, exists := battle.Settled.DefenseSelections[actorID]
+		if !exists {
+			continue
+		}
 		ability := library.Abilities[selection.AbilityID]
 		if sourceBySettledID(battle, selection.SourceID) == nil {
 			continue

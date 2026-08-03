@@ -9,7 +9,9 @@ import (
 
 type runtimeRequest struct {
 	Op              string `json:"op"`
+	ReplaceSession  bool   `json:"replace_session,omitempty"`
 	ModelPath       string `json:"model_path,omitempty"`
+	ModelSHA256     string `json:"model_sha256,omitempty"`
 	ContentRoot     string `json:"content_root,omitempty"`
 	RunStateRoot    string `json:"run_state_root,omitempty"`
 	DiagnosticsPath string `json:"diagnostics_path,omitempty"`
@@ -39,18 +41,23 @@ func HandleRuntimeRequest(requestJSON string) string {
 			ContentRoot:      request.ContentRoot,
 			RunStateRoot:     request.RunStateRoot,
 			ModelPath:        request.ModelPath,
+			ModelSHA256:      request.ModelSHA256,
 			DiagnosticsPath:  request.DiagnosticsPath,
 			InferenceTimeout: time.Duration(request.TimeoutMS) * time.Millisecond,
 		}
-		if learnedRuntime.session == nil {
+		differentConfig := learnedRuntime.session != nil && (config.ModelPath != learnedRuntime.config.ModelPath ||
+			config.ModelSHA256 != learnedRuntime.config.ModelSHA256 ||
+			config.ContentRoot != learnedRuntime.config.ContentRoot)
+		if differentConfig && !request.ReplaceSession {
+			return runtimeError(fmt.Errorf("learned runtime is already initialized with a different model or content root"))
+		}
+		if learnedRuntime.session == nil || differentConfig {
 			session, err := NewSession(config)
 			if err != nil {
 				return runtimeError(err)
 			}
 			learnedRuntime.session = session
 			learnedRuntime.config = config
-		} else if config.ModelPath != learnedRuntime.config.ModelPath || config.ContentRoot != learnedRuntime.config.ContentRoot {
-			return runtimeError(fmt.Errorf("learned runtime is already initialized with a different model or content root"))
 		}
 		_, lifetime := learnedRuntime.session.Telemetry()
 		return runtimeSuccess(map[string]any{

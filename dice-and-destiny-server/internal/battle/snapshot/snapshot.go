@@ -2,6 +2,7 @@ package snapshot
 
 import (
 	"encoding/json"
+	"fmt"
 
 	"diceanddestiny/server/internal/battle/segment"
 	"diceanddestiny/server/internal/battle/state"
@@ -199,6 +200,18 @@ func FromBattle(battle state.Battle) Battle {
 // snapshot. Only the viewer actor receives hidden hand card IDs; all other
 // actors expose counts only.
 func FromBattleForViewer(battle state.Battle, viewerActorID string) Battle {
+	return fromBattleForViewer(battle, viewerActorID, true)
+}
+
+// FromBattleForViewerWithoutContentCatalog builds the identical viewer-safe
+// battle view while omitting the immutable public content catalog. This is for
+// transports that pin content out of band and already omit the catalog from
+// every response; gameplay and production authority snapshots retain it.
+func FromBattleForViewerWithoutContentCatalog(battle state.Battle, viewerActorID string) Battle {
+	return fromBattleForViewer(battle, viewerActorID, false)
+}
+
+func fromBattleForViewer(battle state.Battle, viewerActorID string, includeContentCatalog bool) Battle {
 	actors := make(map[string]Actor, len(battle.Actors))
 	for id, actor := range battle.Actors {
 		cards := actor.Cards
@@ -258,6 +271,21 @@ func FromBattleForViewer(battle state.Battle, viewerActorID string) Battle {
 				}
 			}
 			if id == viewerActorID {
+				if snapshotActor.Dice == nil && (runtime.MaxRolls > 0 || len(runtime.FinalDice) > 0) {
+					snapshotActor.Dice = &DiceRollState{
+						RequestID:      fmt.Sprintf("settled-r%d-%s", battle.Segment.Round, id),
+						Segment:        battle.Segment.Current,
+						Pool:           state.RollPoolOffensive,
+						SourceType:     state.RollSourceSystem,
+						Dice:           copyRolledDice(runtime.FinalDice),
+						KeptIndices:    append([]int(nil), runtime.KeptIndices...),
+						RollsUsed:      runtime.RollsUsed,
+						MaxRolls:       runtime.MaxRolls,
+						RollsRemaining: max(runtime.MaxRolls-runtime.RollsUsed, 0),
+						SymbolCounts:   rolledSymbolCounts(runtime.FinalDice),
+						Complete:       runtime.PlanningCommitted || runtime.RollsUsed >= runtime.MaxRolls,
+					}
+				}
 				snapshotActor.CardInstances = make(map[string]state.CardInstance, len(runtime.CardInstances))
 				for instanceID, instance := range runtime.CardInstances {
 					snapshotActor.CardInstances[instanceID] = instance
@@ -265,6 +293,7 @@ func FromBattleForViewer(battle state.Battle, viewerActorID string) Battle {
 				snapshotActor.RollHistory = append([]state.RollBatch(nil), runtime.RollHistory...)
 				snapshotActor.QualifiedAbilities = copyStrings(runtime.QualifiedAbilityIDs)
 				snapshotActor.SelectedAbility = runtime.SelectedAbilityID
+				snapshotActor.SelectedTier = runtime.SelectedTierID
 				snapshotActor.SelectedTargets = copyStrings(runtime.SelectedTargetIDs)
 			} else if battle.Settled.Stage != "planning" {
 				snapshotActor.RollHistory = append([]state.RollBatch(nil), runtime.RollHistory...)
@@ -289,10 +318,12 @@ func FromBattleForViewer(battle state.Battle, viewerActorID string) Battle {
 		Resolution:         resolutionSnapshot(battle, viewerActorID),
 		Damage:             damageSnapshot(battle),
 		Actors:             actors,
-		ContentCatalog:     settledContentCatalog(battle),
 		OffensiveProposals: planningProposalsForViewer(battle.OffensiveProposals, viewerActorID),
 		DefensiveProposals: planningProposalsForViewer(battle.DefensiveProposals, viewerActorID),
 		Origin:             originSnapshot(battle.Origin),
+	}
+	if includeContentCatalog {
+		result.ContentCatalog = settledContentCatalog(battle)
 	}
 	if battle.Settled != nil {
 		result.CompletedRounds = battle.Settled.CompletedRounds
@@ -333,6 +364,19 @@ func FromBattleForViewer(battle state.Battle, viewerActorID string) Battle {
 			case "status_roll_reaction":
 				result.SettledEffectRolls = append([]state.SettledEffectRoll(nil), battle.Settled.TriggerBatch.Rolls...)
 			}
+		}
+	}
+	return result
+}
+
+func rolledSymbolCounts(dice []state.RolledDie) map[string]int {
+	if len(dice) == 0 {
+		return nil
+	}
+	result := map[string]int{}
+	for _, die := range dice {
+		for _, symbol := range die.Symbols {
+			result[symbol]++
 		}
 	}
 	return result

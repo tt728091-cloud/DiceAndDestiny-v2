@@ -25,8 +25,14 @@ type SessionConfig struct {
 	ContentRoot      string
 	RunStateRoot     string
 	ModelPath        string
+	ModelSHA256      string
 	DiagnosticsPath  string
 	InferenceTimeout time.Duration
+}
+
+type sessionPolicy interface {
+	Metadata() PolicyMetadata
+	Select(mlsim.Transition) (int, time.Duration, error)
 }
 
 type DecisionRecord struct {
@@ -74,7 +80,7 @@ type LifetimeTelemetry struct {
 type Session struct {
 	mu               sync.Mutex
 	config           SessionConfig
-	policy           *Policy
+	policy           sessionPolicy
 	environment      *mlsim.Environment
 	current          mlsim.Transition
 	humanSeat        string
@@ -94,15 +100,16 @@ func NewSession(config SessionConfig) (*Session, error) {
 	if err := VerifyContentVersion(config.ContentRoot); err != nil {
 		return nil, err
 	}
-	policy, err := LoadAcceptedPolicy(config.ModelPath)
+	policy, err := loadSessionPolicy(config.ModelPath, config.ModelSHA256)
 	if err != nil {
 		return nil, err
 	}
 	environment, err := mlsim.New(mlsim.Config{
-		ContentRoot:  config.ContentRoot,
-		RunStateRoot: config.RunStateRoot,
-		MaxActions:   mlsim.DefaultMaxActions,
-		SessionID:    "phase3-player",
+		ContentRoot:       config.ContentRoot,
+		RunStateRoot:      config.RunStateRoot,
+		MaxActions:        mlsim.DefaultMaxActions,
+		SessionID:         "phase3-player",
+		ObservationSchema: policy.Metadata().ObservationSchema,
 	})
 	if err != nil {
 		return nil, err
@@ -113,6 +120,34 @@ func NewSession(config SessionConfig) (*Session, error) {
 		environment: environment,
 		lifetime:    LifetimeTelemetry{ModelLoadCount: 1},
 	}, nil
+}
+
+func loadSessionPolicy(path, expectedSHA256 string) (sessionPolicy, error) {
+	payload, err := os.ReadFile(path)
+	if err != nil {
+		return nil, fmt.Errorf("read learned policy metadata: %w", err)
+	}
+	var header struct {
+		Format string `json:"format"`
+	}
+	if err := json.Unmarshal(payload, &header); err != nil {
+		return nil, fmt.Errorf("decode learned policy metadata: %w", err)
+	}
+	switch header.Format {
+	case PolicyFormat:
+		if expectedSHA256 != "" && expectedSHA256 != AcceptedPolicyFileSHA256 {
+			return nil, fmt.Errorf(
+				"accepted v1 learned policy SHA-256 mismatch: got pin %s, want %s",
+				expectedSHA256,
+				AcceptedPolicyFileSHA256,
+			)
+		}
+		return LoadAcceptedPolicy(path)
+	case PolicyFormatV2:
+		return LoadCandidatePolicyV2(path, expectedSHA256)
+	default:
+		return nil, fmt.Errorf("unsupported learned policy format %q", header.Format)
+	}
 }
 
 func (s *Session) Reset(battleID string, seed uint64, humanSeat string, rematch bool) (map[string]any, error) {

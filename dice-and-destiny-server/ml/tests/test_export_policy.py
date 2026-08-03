@@ -40,3 +40,42 @@ def test_phase3_export_is_pinned_and_complete() -> None:
         for dimension in tensor["shape"]:
             size *= dimension
         assert len(tensor["values"]) == size
+
+
+def test_phase2_v2_export_is_separate_pinned_and_complete() -> None:
+    server_root = Path(__file__).resolve().parents[2]
+    model_path = (
+        server_root.parent
+        / "dice-and-destiny-client"
+        / "models"
+        / "learned"
+        / "blade-warden-decision-quality-seed-22-v2.json"
+    )
+    payload = json.loads(model_path.read_text())
+    assert hashlib.sha256(model_path.read_bytes()).hexdigest() == (
+        "0e6ea5d84c316a7709c9c1b98b983e8f76e486c6e1625c479c55d2860bd23a86"
+    )
+    assert payload["format"] == "dice-and-destiny-candidate-policy-v2"
+    assert payload["model_id"] == "blade-warden-decision-quality-seed-22-v2"
+    assert payload["source_checkpoint_sha256"] == (
+        "e3b9fb8c393f17c6d7a70a563a55e2596e83651f16c9e0fa226096b082f772e2"
+    )
+    assert payload["source_parameter_sha256"] == (
+        "e82001aaa98066e3a60823631de4622ba654267036c140d7647330b69edeb4a5"
+    )
+    assert payload["content_version"] == (
+        "9eed6066ea8c95f8a60038647de935e88ed8d6e9cbc618229070a4d78945edc4"
+    )
+    assert payload["environment_schema"] == "dice-and-destiny-ml-env-v2"
+    assert payload["observation_schema"] == "dice-and-destiny-observation-v2"
+    assert payload["action_schema"] == "dice-and-destiny-action-candidates-v2"
+    assert payload["observation_size"] == 18_944
+    assert payload["maximum_actions"] == 128
+    assert payload["base_features"] == 2_560
+    assert payload["action_features"] == 128
+    assert set(payload["tensors"]) == set(ACTOR_TENSORS)
+    for tensor in payload["tensors"].values():
+        size = 1
+        for dimension in tensor["shape"]:
+            size *= dimension
+        assert len(tensor["values"]) == size

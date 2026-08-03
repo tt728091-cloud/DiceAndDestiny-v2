@@ -6,6 +6,7 @@ import (
 	"path/filepath"
 	"reflect"
 	"strings"
+	"sync"
 
 	"diceanddestiny/server/internal/battle/operation"
 	"diceanddestiny/server/internal/battle/participant"
@@ -19,6 +20,22 @@ import (
 type FileParticipantAssembler struct {
 	ContentRoot  string
 	RunStateRoot string
+
+	cacheSettledContent bool
+	settledOnce         sync.Once
+	settledLibrary      content.BattleLibrary
+	settledCatalog      []byte
+	settledErr          error
+}
+
+// NewCachedFileParticipantAssembler pins validated battle_v1 content for a
+// long-lived simulation process. Run-player state is still loaded normally;
+// production authorities use NewFileParticipantAssembler and retain their
+// existing per-battle filesystem behavior.
+func NewCachedFileParticipantAssembler(contentRoot, runStateRoot string) *FileParticipantAssembler {
+	assembler := NewFileParticipantAssembler(contentRoot, runStateRoot)
+	assembler.cacheSettledContent = true
+	return assembler
 }
 
 func NewFileParticipantAssembler(contentRoot, runStateRoot string) *FileParticipantAssembler {
@@ -36,7 +53,7 @@ func (assembler *FileParticipantAssembler) AssembleParticipants(
 	}
 	settledRoot := filepath.Join(assembler.ContentRoot, "battle_v1")
 	if content.BattleLibraryExists(settledRoot) {
-		library, settledErr := content.LoadBattleLibrary(settledRoot)
+		library, catalog, settledErr := assembler.loadSettledContent(settledRoot)
 		if settledErr != nil {
 			return state.BattleSetup{}, settledErr
 		}
@@ -48,7 +65,7 @@ func (assembler *FileParticipantAssembler) AssembleParticipants(
 			}
 		}
 		if allSettled {
-			return assembleSettledParticipants(participants, library)
+			return assembleSettledParticipantsWithCatalog(participants, library, catalog)
 		}
 	}
 
@@ -101,11 +118,42 @@ func (assembler *FileParticipantAssembler) AssembleParticipants(
 	return combined, nil
 }
 
+func (assembler *FileParticipantAssembler) loadSettledContent(
+	settledRoot string,
+) (content.BattleLibrary, []byte, error) {
+	load := func() (content.BattleLibrary, []byte, error) {
+		library, err := content.LoadBattleLibrary(settledRoot)
+		if err != nil {
+			return content.BattleLibrary{}, nil, err
+		}
+		catalog, err := json.Marshal(library)
+		if err != nil {
+			return content.BattleLibrary{}, nil, fmt.Errorf("marshal settled content catalog: %w", err)
+		}
+		return library, catalog, nil
+	}
+	if !assembler.cacheSettledContent {
+		return load()
+	}
+	assembler.settledOnce.Do(func() {
+		assembler.settledLibrary, assembler.settledCatalog, assembler.settledErr = load()
+	})
+	return assembler.settledLibrary, assembler.settledCatalog, assembler.settledErr
+}
+
 func assembleSettledParticipants(participants []participant.Participant, library content.BattleLibrary) (state.BattleSetup, error) {
 	catalog, err := json.Marshal(library)
 	if err != nil {
 		return state.BattleSetup{}, fmt.Errorf("marshal settled content catalog: %w", err)
 	}
+	return assembleSettledParticipantsWithCatalog(participants, library, catalog)
+}
+
+func assembleSettledParticipantsWithCatalog(
+	participants []participant.Participant,
+	library content.BattleLibrary,
+	catalog []byte,
+) (state.BattleSetup, error) {
 	setupResult := state.BattleSetup{SettledCatalog: catalog, SettledActors: make(map[string]state.SettledActorRuntime)}
 	seenDice := map[string]bool{}
 	for _, requested := range participants {

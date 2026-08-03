@@ -15,12 +15,13 @@ import numpy as np
 import torch
 from sb3_contrib import MaskablePPO
 from stable_baselines3.common.callbacks import BaseCallback
-from stable_baselines3.common.vec_env import DummyVecEnv
+from stable_baselines3.common.vec_env import DummyVecEnv, SubprocVecEnv
 
 from . import ACTION_SCHEMA_VERSION, ENVIRONMENT_SCHEMA_VERSION, OBSERVATION_SCHEMA_VERSION
 from .gym_env import AuthorityGymEnv
-from .imitation import behavior_clone, collect_heuristic_demonstrations
-from .model import CandidateMaskablePolicy
+from .imitation import behavior_clone, collect_demonstrations
+from .model import CandidateMaskablePolicy, CandidateMaskablePolicyV2
+from .schema_v2 import ACTION_SCHEMA_V2, ENVIRONMENT_SCHEMA_V2, OBSERVATION_SCHEMA_V2
 
 
 @dataclass(frozen=True)
@@ -40,8 +41,17 @@ class TrainingConfig:
     imitation_epochs: int = 5
     max_episode_actions: int = 1200
     device: str = "cpu"
+    resource_profile: str = "custom"
+    torch_threads: int = 1
+    authority_mode: str = "ephemeral"
+    telemetry_mode: str = "training"
     opponent_specs: tuple[str, ...] = ("random", "random", "heuristic", "heuristic", "historical")
     reward: str = "+1 victory, -1 defeat, 0 draw; no shaping"
+    observation_schema: str = OBSERVATION_SCHEMA_VERSION
+    imitation_teacher: str = "heuristic-v1"
+    transport_mode: str = "full"
+    ablation_condition: str = "current-recipe"
+    verbose: int = 1
 
 
 class ArtifactCallback(BaseCallback):
@@ -51,6 +61,32 @@ class ArtifactCallback(BaseCallback):
         self.checkpoint_interval = checkpoint_interval
         self.last_checkpoint = 0
         self.episode_file = run_dir / "training_episodes.jsonl"
+        self.collection_seconds = 0.0
+        self.update_seconds = 0.0
+        self.artifact_io_seconds = 0.0
+        self.completed_episodes = 0
+        self._cycle_started = 0.0
+        self._update_started = 0.0
+
+    def _on_training_start(self) -> None:
+        self._cycle_started = time.perf_counter()
+
+    def _on_rollout_start(self) -> None:
+        now = time.perf_counter()
+        if self._update_started:
+            self.update_seconds += now - self._update_started
+            self._update_started = 0.0
+        self._cycle_started = now
+
+    def _on_rollout_end(self) -> None:
+        now = time.perf_counter()
+        self.collection_seconds += now - self._cycle_started
+        self._update_started = now
+
+    def _on_training_end(self) -> None:
+        if self._update_started:
+            self.update_seconds += time.perf_counter() - self._update_started
+            self._update_started = 0.0
 
     def _on_step(self) -> bool:
         for info in self.locals.get("infos", []):
@@ -64,15 +100,22 @@ class ArtifactCallback(BaseCallback):
                 "episode": info.get("episode"),
                 "metrics": info.get("episode_metrics"),
             }
+            io_started = time.perf_counter()
             with self.episode_file.open("a") as handle:
                 handle.write(json.dumps(record, sort_keys=True) + "\n")
+            self.artifact_io_seconds += time.perf_counter() - io_started
+            self.completed_episodes += 1
             replay = info.get("replay")
             if replay and not (self.run_dir / "training_representative_replay.json").exists():
+                io_started = time.perf_counter()
                 (self.run_dir / "training_representative_replay.json").write_text(
                     json.dumps(replay, indent=2, sort_keys=True) + "\n"
                 )
+                self.artifact_io_seconds += time.perf_counter() - io_started
         if self.num_timesteps - self.last_checkpoint >= self.checkpoint_interval:
+            io_started = time.perf_counter()
             self.model.save(self.run_dir / "checkpoints" / f"step-{self.num_timesteps:09d}")
+            self.artifact_io_seconds += time.perf_counter() - io_started
             self.last_checkpoint = self.num_timesteps
         return True
 
@@ -107,12 +150,24 @@ def train_seed(
                 max_episode_actions=config.max_episode_actions,
                 device=config.device,
                 session_id=f"training-{config.seed}-{worker}",
+                authority_mode=config.authority_mode,
+                telemetry_mode=config.telemetry_mode,
+                transport_mode=config.transport_mode,
+                observation_schema=config.observation_schema,
             )
         )
-    vec_env = DummyVecEnv(environments)
+    if config.workers == 1:
+        vec_env = DummyVecEnv(environments)
+    else:
+        vec_env = SubprocVecEnv(environments, start_method="spawn")
     try:
+        policy_class = (
+            CandidateMaskablePolicyV2
+            if config.observation_schema == OBSERVATION_SCHEMA_V2
+            else CandidateMaskablePolicy
+        )
         model = MaskablePPO(
-            CandidateMaskablePolicy,
+            policy_class,
             vec_env,
             learning_rate=config.learning_rate,
             n_steps=config.rollout_steps,
@@ -121,25 +176,35 @@ def train_seed(
             gamma=config.gamma,
             gae_lambda=config.gae_lambda,
             ent_coef=config.entropy_coefficient,
-            verbose=1,
+            verbose=config.verbose,
             seed=config.seed,
             device=config.device,
         )
         initial_hash = parameter_hash(model)
         model.save(checkpoint_dir / "initial")
-        demonstrations = collect_heuristic_demonstrations(
-            binary=binary,
-            server_root=server_root,
-            seed=config.seed,
-            decisions=config.imitation_decisions,
-        )
-        imitation_summary = behavior_clone(
-            model,
-            demonstrations,
-            epochs=config.imitation_epochs,
-            batch_size=config.batch_size,
-            seed=config.seed,
-        )
+        if config.imitation_decisions > 0 and config.imitation_epochs > 0:
+            demonstrations = collect_demonstrations(
+                binary=binary,
+                server_root=server_root,
+                seed=config.seed,
+                decisions=config.imitation_decisions,
+                observation_schema=config.observation_schema,
+                teacher=config.imitation_teacher,
+            )
+            imitation_summary = behavior_clone(
+                model,
+                demonstrations,
+                epochs=config.imitation_epochs,
+                batch_size=config.batch_size,
+                seed=config.seed,
+            )
+        else:
+            imitation_summary = {
+                "demonstrations": 0,
+                "epochs": 0,
+                "teacher": config.imitation_teacher,
+                "skipped": True,
+            }
         model.save(checkpoint_dir / "behavior-cloned")
         (run_dir / "imitation_summary.json").write_text(
             json.dumps(imitation_summary, indent=2, sort_keys=True) + "\n"
@@ -162,6 +227,13 @@ def train_seed(
             "optimizer_updates": int(getattr(model, "_n_updates", 0)),
             "elapsed_seconds": elapsed,
             "steps_per_second": model.num_timesteps / elapsed if elapsed else 0.0,
+            "completed_episodes": callback.completed_episodes,
+            "complete_games_per_second": callback.completed_episodes / elapsed if elapsed else 0.0,
+            "timing": {
+                "collection_seconds": callback.collection_seconds,
+                "ppo_update_seconds": callback.update_seconds,
+                "artifact_io_seconds": callback.artifact_io_seconds,
+            },
             "initial_parameter_hash": initial_hash,
             "final_parameter_hash": final_hash,
             "parameters_changed": initial_hash != final_hash,
@@ -193,15 +265,18 @@ def experiment_metadata(config: TrainingConfig, server_root: Path) -> dict[str, 
     for path in sorted((server_root / "content" / "battle_v1").rglob("*.yaml")):
         content_hash.update(path.relative_to(server_root).as_posix().encode("utf-8"))
         content_hash.update(path.read_bytes())
+    is_v2 = config.observation_schema == OBSERVATION_SCHEMA_V2
     return {
-        "environment_schema": ENVIRONMENT_SCHEMA_VERSION,
-        "observation_schema": OBSERVATION_SCHEMA_VERSION,
-        "action_schema": ACTION_SCHEMA_VERSION,
+		"environment_schema": ENVIRONMENT_SCHEMA_V2 if is_v2 else ENVIRONMENT_SCHEMA_VERSION,
+		"observation_schema": config.observation_schema,
+		"action_schema": ACTION_SCHEMA_V2 if is_v2 else ACTION_SCHEMA_VERSION,
         "source_revision": revision,
         "source_dirty": dirty,
         "content_version": content_hash.hexdigest(),
         "model_architecture": (
-            "MaskablePPO shared candidate scorer: context MLP [64,64], "
+            "MaskablePPO v2 mechanics candidate scorer [96,96]"
+            if is_v2
+            else "MaskablePPO shared candidate scorer: context MLP [64,64], "
             "candidate MLP [64,64], score MLP [64,1], value MLP [128,128]"
         ),
         "training": asdict(config),
@@ -225,12 +300,13 @@ def experiment_metadata(config: TrainingConfig, server_root: Path) -> dict[str, 
     }
 
 
-def set_reproducible_runtime(seed: int) -> None:
+def set_reproducible_runtime(seed: int, torch_threads: int = 1) -> None:
     import random
 
     random.seed(seed)
     np.random.seed(seed)
     torch.manual_seed(seed)
+    torch.set_num_threads(torch_threads)
     torch.use_deterministic_algorithms(True, warn_only=True)
 
 

@@ -29,6 +29,28 @@ func (e Engine) OpenResult(battle *state.Battle, viewerActorID string) Result {
 	return e.ResultForViewer(battle, viewerActorID, ProgressionResult{Status: status})
 }
 
+// SimulationResult reports authority acceptance and enough public scheduling
+// state to select the next external actor without constructing a full result.
+// Terminal callers still use ResultForViewer so every terminal record remains
+// complete.
+func (e Engine) SimulationResult(battle *state.Battle, progressed ProgressionResult) Result {
+	result := Result{Accepted: true, Status: progressed.Status}
+	if battle == nil {
+		return result
+	}
+	result.Snapshot = &snapshot.Battle{
+		BattleID:      battle.ID,
+		Status:        battle.Status,
+		WinnerActorID: battle.WinnerActorID,
+		Segment:       battle.Segment.Current,
+		Round:         battle.Segment.Round,
+	}
+	if battle.Settled != nil && battle.Settled.Window != nil {
+		result.Snapshot.PriorityActorID = battle.Settled.Window.RequiredActorID
+	}
+	return result
+}
+
 func (e Engine) HandleCommand(cmd command.Command) Result {
 	return rejected("battle repository is required")
 }
@@ -117,7 +139,7 @@ func (e Engine) ResultForViewer(
 	progressed ProgressionResult,
 ) Result {
 	viewerActorID = viewerActorIDForBattle(battle, viewerActorID)
-	snap := battleSnapshotForViewer(battle, viewerActorID)
+	snap := e.battleSnapshotForViewer(battle, viewerActorID)
 	if snap != nil && battle.Settled != nil && battle.Segment.Current == "offensive" && battle.Settled.Stage == stageOffensiveReact {
 		if library, err := settledLibrary(battle); err == nil {
 			for _, actorID := range sortedSettledActorIDs(battle) {
@@ -145,11 +167,16 @@ func (e Engine) ResultForViewer(
 	return result
 }
 
-func battleSnapshotForViewer(battle *state.Battle, viewerActorID string) *snapshot.Battle {
+func (e Engine) battleSnapshotForViewer(battle *state.Battle, viewerActorID string) *snapshot.Battle {
 	if battle == nil {
 		return nil
 	}
-	snap := snapshot.FromBattleForViewer(*battle, viewerActorIDForBattle(battle, viewerActorID))
+	viewerActorID = viewerActorIDForBattle(battle, viewerActorID)
+	if e.omitSnapshotContentCatalog {
+		snap := snapshot.FromBattleForViewerWithoutContentCatalog(*battle, viewerActorID)
+		return &snap
+	}
+	snap := snapshot.FromBattleForViewer(*battle, viewerActorID)
 	return &snap
 }
 

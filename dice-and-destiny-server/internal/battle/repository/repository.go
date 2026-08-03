@@ -340,6 +340,63 @@ func (repo *InMemory) Save(checkpoint Checkpoint) error {
 	return nil
 }
 
+// Ephemeral is a single-battle, process-local repository for disposable
+// simulation authorities. It deliberately does not provide recovery or
+// concurrent access guarantees: Load and Save transfer the current checkpoint
+// without deep-cloning its growing battle/event history. Authority command
+// application remains atomic because Engine.ApplyBattleCommand clones the
+// battle before mutation. Production callers must use InMemory or Disk.
+type Ephemeral struct {
+	checkpoint *Checkpoint
+}
+
+func NewEphemeral() *Ephemeral {
+	return &Ephemeral{}
+}
+
+func (repo *Ephemeral) Create(checkpoint Checkpoint) error {
+	if repo == nil {
+		return errors.New("ephemeral repository is nil")
+	}
+	prepared, err := prepareNewCheckpoint(checkpoint)
+	if err != nil {
+		return err
+	}
+	if repo.checkpoint != nil {
+		return ErrBattleExists
+	}
+	repo.checkpoint = &prepared
+	return nil
+}
+
+func (repo *Ephemeral) Load(battleID string) (Checkpoint, error) {
+	if err := validateBattleID(battleID); err != nil {
+		return Checkpoint{}, err
+	}
+	if repo == nil || repo.checkpoint == nil || repo.checkpoint.BattleID != battleID {
+		return Checkpoint{}, ErrBattleNotFound
+	}
+	return *repo.checkpoint, nil
+}
+
+func (repo *Ephemeral) Save(checkpoint Checkpoint) error {
+	if repo == nil || repo.checkpoint == nil {
+		return ErrBattleNotFound
+	}
+	battleID := checkpoint.BattleID
+	if battleID == "" {
+		battleID = checkpoint.Battle.ID
+	}
+	if battleID != repo.checkpoint.BattleID {
+		return ErrBattleNotFound
+	}
+	// AppendEvents has already assigned the exact authority event metadata.
+	// Full checkpoint/history validation is intentionally reserved for the
+	// persistent repositories and parity/diagnostic lanes.
+	repo.checkpoint = &checkpoint
+	return nil
+}
+
 func prepareSavedCheckpoint(existing, checkpoint Checkpoint) (Checkpoint, error) {
 	if checkpoint.SchemaVersion == 0 {
 		prepared, err := NewCheckpoint(checkpoint.Battle)

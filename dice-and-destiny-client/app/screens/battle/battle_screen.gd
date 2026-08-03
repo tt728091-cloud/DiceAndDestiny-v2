@@ -194,7 +194,9 @@ func _build_header(parent: VBoxContainer) -> void:
 	var round := Label.new(); round.text = "     ROUND %d · %s · %s" % [_view.round_number, _segment_name(display_segment).to_upper(), display_stage.replace("_", " ").to_upper()]; round.add_theme_color_override("font_color", Color("79d8ff")); bar.add_child(round)
 	if learned_battle_mode:
 		var policy_badge := Label.new()
-		policy_badge.text = "   LEARNED MIRROR · HUMAN %s   " % learned_human_seat.to_upper()
+		var policy_schema := str(_view.learned_policy.get("observation_schema", ""))
+		var policy_label := "NEW V2" if policy_schema == "dice-and-destiny-observation-v2" else "OLD V1"
+		policy_badge.text = "   LEARNED MIRROR · %s · HUMAN %s   " % [policy_label, learned_human_seat.to_upper()]
 		policy_badge.add_theme_color_override("font_color", Color("9de0ff"))
 		policy_badge.tooltip_text = "Frozen policy %s · no training or fallback" % str(_view.learned_policy.get("model_id", "unknown"))
 		bar.add_child(policy_badge)

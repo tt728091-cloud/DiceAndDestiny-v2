@@ -25,27 +25,29 @@ var (
 )
 
 type Config struct {
-	MaxAutomaticSteps     int
-	MaxReactionChainDepth int
-	MaxReactionRounds     int
-	ProposalRules         []ProposalRule
-	InteractionAI         InteractionAI
-	DiceRandom            battlerandom.Source
-	DamageRandom          battlerandom.Source
-	NamedRandom           battlerandom.NamedSource
+	MaxAutomaticSteps          int
+	MaxReactionChainDepth      int
+	MaxReactionRounds          int
+	ProposalRules              []ProposalRule
+	InteractionAI              InteractionAI
+	DiceRandom                 battlerandom.Source
+	DamageRandom               battlerandom.Source
+	NamedRandom                battlerandom.NamedSource
+	OmitSnapshotContentCatalog bool
 }
 
 type Engine struct {
-	manager               segment.Manager
-	flows                 map[segment.Segment]SegmentFlow
-	maxAutomaticSteps     int
-	maxReactionChainDepth int
-	maxReactionRounds     int
-	proposalRules         map[state.ProposalOperation]ProposalRule
-	interactionAI         InteractionAI
-	diceRandom            battlerandom.Source
-	damageRandom          battlerandom.Source
-	namedRandom           battlerandom.NamedSource
+	manager                    segment.Manager
+	flows                      map[segment.Segment]SegmentFlow
+	maxAutomaticSteps          int
+	maxReactionChainDepth      int
+	maxReactionRounds          int
+	proposalRules              map[state.ProposalOperation]ProposalRule
+	interactionAI              InteractionAI
+	diceRandom                 battlerandom.Source
+	damageRandom               battlerandom.Source
+	namedRandom                battlerandom.NamedSource
+	omitSnapshotContentCatalog bool
 }
 
 type ProgressionResult struct {
@@ -123,16 +125,17 @@ func NewEngineWithConfig(config Config, flows ...SegmentFlow) (Engine, error) {
 	}
 
 	return Engine{
-		manager:               segment.NewManager(),
-		flows:                 registered,
-		maxAutomaticSteps:     maxSteps,
-		maxReactionChainDepth: maxDepth,
-		maxReactionRounds:     maxRounds,
-		proposalRules:         rules,
-		interactionAI:         interactionAI,
-		diceRandom:            config.DiceRandom,
-		damageRandom:          config.DamageRandom,
-		namedRandom:           config.NamedRandom,
+		manager:                    segment.NewManager(),
+		flows:                      registered,
+		maxAutomaticSteps:          maxSteps,
+		maxReactionChainDepth:      maxDepth,
+		maxReactionRounds:          maxRounds,
+		proposalRules:              rules,
+		interactionAI:              interactionAI,
+		diceRandom:                 config.DiceRandom,
+		damageRandom:               config.DamageRandom,
+		namedRandom:                config.NamedRandom,
+		omitSnapshotContentCatalog: config.OmitSnapshotContentCatalog,
 	}, nil
 }
 

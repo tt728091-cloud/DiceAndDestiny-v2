@@ -2,10 +2,13 @@ from __future__ import annotations
 
 import json
 import subprocess
+import time
+from collections import defaultdict
 from pathlib import Path
 from typing import Any
 
 from . import ACTION_SCHEMA_VERSION, ENVIRONMENT_SCHEMA_VERSION, OBSERVATION_SCHEMA_VERSION
+from .schema_v2 import ACTION_SCHEMA_V2, ENVIRONMENT_SCHEMA_V2, OBSERVATION_SCHEMA_V2
 
 
 class SimulatorError(RuntimeError):
@@ -22,6 +25,10 @@ class AuthorityBridge:
         *,
         max_episode_actions: int = 1200,
         session_id: str = "",
+        authority_mode: str = "normal",
+        telemetry_mode: str = "full",
+        transport_mode: str = "full",
+        observation_schema: str = OBSERVATION_SCHEMA_VERSION,
     ) -> None:
         command = [
             str(binary),
@@ -31,6 +38,14 @@ class AuthorityBridge:
             str(server_root / "save" / "run_players"),
             "-max-actions",
             str(max_episode_actions),
+            "-authority-mode",
+            authority_mode,
+            "-telemetry-mode",
+            telemetry_mode,
+            "-transport-mode",
+            transport_mode,
+            "-observation-schema",
+            observation_schema,
         ]
         if session_id:
             command.extend(["-session-id", session_id])
@@ -44,8 +59,24 @@ class AuthorityBridge:
             bufsize=1,
         )
         self._closed = False
+        if observation_schema == OBSERVATION_SCHEMA_V2:
+            self._expected_versions = {
+                "environment_schema": ENVIRONMENT_SCHEMA_V2,
+                "observation_schema": OBSERVATION_SCHEMA_V2,
+                "action_schema": ACTION_SCHEMA_V2,
+            }
+        elif observation_schema == OBSERVATION_SCHEMA_VERSION:
+            self._expected_versions = {
+                "environment_schema": ENVIRONMENT_SCHEMA_VERSION,
+                "observation_schema": OBSERVATION_SCHEMA_VERSION,
+                "action_schema": ACTION_SCHEMA_VERSION,
+            }
+        else:
+            raise ValueError(f"unsupported observation schema {observation_schema!r}")
+        self.operation_seconds: dict[str, list[float]] = defaultdict(list)
 
     def request(self, operation: str, **payload: Any) -> dict[str, Any]:
+        started = time.perf_counter()
         if self._closed or self._process.poll() is not None:
             stderr = self._read_stderr()
             raise SimulatorError(f"simulator is not running{': ' + stderr if stderr else ''}")
@@ -61,6 +92,7 @@ class AuthorityBridge:
         self._verify_versions(response)
         if not response.get("ok"):
             raise SimulatorError(response.get("error", "unknown simulator error"))
+        self.operation_seconds[operation].append(time.perf_counter() - started)
         return response
 
     def reset(
@@ -112,12 +144,7 @@ class AuthorityBridge:
         self.close()
 
     def _verify_versions(self, response: dict[str, Any]) -> None:
-        expected = {
-            "environment_schema": ENVIRONMENT_SCHEMA_VERSION,
-            "observation_schema": OBSERVATION_SCHEMA_VERSION,
-            "action_schema": ACTION_SCHEMA_VERSION,
-        }
-        for key, value in expected.items():
+        for key, value in self._expected_versions.items():
             if response.get(key) != value:
                 raise SimulatorError(f"{key} mismatch: {response.get(key)!r}, expected {value!r}")
 

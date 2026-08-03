@@ -40,13 +40,21 @@ func main() {
 	runStateRoot := flag.String("run-state-root", serverRoot+"/save/run_players", "run-player state root")
 	maxActions := flag.Int("max-actions", mlsim.DefaultMaxActions, "episode action safety limit")
 	sessionID := flag.String("session-id", "", "optional stable process/session identifier")
+	authorityMode := flag.String("authority-mode", mlsim.AuthorityModeNormal, "authority repository mode: normal or ephemeral")
+	telemetryMode := flag.String("telemetry-mode", mlsim.TelemetryModeFull, "result telemetry mode: full or training")
+	transportMode := flag.String("transport-mode", mlsim.TransportModeFull, "Go-Python transport mode: full, encoded, or parity")
+	observationSchema := flag.String("observation-schema", mlsim.ObservationSchemaVersion, "observation schema version")
 	flag.Parse()
 
 	environment, err := mlsim.New(mlsim.Config{
-		ContentRoot:  *contentRoot,
-		RunStateRoot: *runStateRoot,
-		MaxActions:   *maxActions,
-		SessionID:    *sessionID,
+		ContentRoot:       *contentRoot,
+		RunStateRoot:      *runStateRoot,
+		MaxActions:        *maxActions,
+		SessionID:         *sessionID,
+		AuthorityMode:     *authorityMode,
+		TelemetryMode:     *telemetryMode,
+		TransportMode:     *transportMode,
+		ObservationSchema: *observationSchema,
 	})
 	if err != nil {
 		fmt.Fprintln(os.Stderr, err)
@@ -60,7 +68,7 @@ func main() {
 	for scanner.Scan() {
 		var input request
 		if err := json.Unmarshal(scanner.Bytes(), &input); err != nil {
-			writeResponse(encoder, nil, fmt.Errorf("decode request: %w", err))
+			writeResponse(encoder, environment, nil, fmt.Errorf("decode request: %w", err))
 			continue
 		}
 		var value any
@@ -82,12 +90,12 @@ func main() {
 				value, err = environment.Replay(*input.Replay)
 			}
 		case "close":
-			writeResponse(encoder, map[string]bool{"closed": true}, nil)
+			writeResponse(encoder, environment, map[string]bool{"closed": true}, nil)
 			return
 		default:
 			err = fmt.Errorf("unknown operation %q", input.Op)
 		}
-		writeResponse(encoder, value, err)
+		writeResponse(encoder, environment, value, err)
 	}
 	if err := scanner.Err(); err != nil {
 		fmt.Fprintln(os.Stderr, err)
@@ -95,12 +103,13 @@ func main() {
 	}
 }
 
-func writeResponse(encoder *json.Encoder, value any, err error) {
+func writeResponse(encoder *json.Encoder, environment *mlsim.Environment, value any, err error) {
+	environmentSchema, observationSchema, actionSchema := environment.SchemaVersions()
 	result := response{
 		OK:                err == nil,
-		EnvironmentSchema: mlsim.EnvironmentSchemaVersion,
-		ObservationSchema: mlsim.ObservationSchemaVersion,
-		ActionSchema:      mlsim.ActionSchemaVersion,
+		EnvironmentSchema: environmentSchema,
+		ObservationSchema: observationSchema,
+		ActionSchema:      actionSchema,
 	}
 	if err != nil {
 		result.Error = err.Error()

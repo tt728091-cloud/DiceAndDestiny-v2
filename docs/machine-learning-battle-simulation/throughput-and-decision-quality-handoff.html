@@ -1,0 +1,659 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Zero-context two-phase handoff for optimizing Dice and Destiny battle simulation throughput, then improving learned dice and ability decisions without strategy hardcoding.">
+  <title>Throughput &amp; Decision Quality Handoff · Dice &amp; Destiny</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --ink: #edf5f7;
+      --muted: #a6b9be;
+      --dim: #71888f;
+      --paper: #091316;
+      --panel: #122126;
+      --panel-2: #172b31;
+      --line: #29464f;
+      --mint: #67d6ac;
+      --mint-dark: #247e68;
+      --blue: #82bff3;
+      --amber: #f0bb69;
+      --coral: #ef8573;
+      --violet: #bba5f7;
+      --shadow: 0 24px 70px rgba(0, 0, 0, .28);
+      --radius: 20px;
+      --mono: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+      --sans: Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      overflow-wrap: anywhere;
+      color: var(--ink);
+      background:
+        radial-gradient(circle at 9% 0%, rgba(103, 214, 172, .13), transparent 31rem),
+        radial-gradient(circle at 96% 16%, rgba(130, 191, 243, .10), transparent 30rem),
+        var(--paper);
+      font-family: var(--sans);
+      line-height: 1.62;
+    }
+
+    a { color: var(--blue); text-underline-offset: 3px; }
+    code, pre { font-family: var(--mono); }
+    code {
+      padding: .12em .35em;
+      border: 1px solid rgba(130, 191, 243, .16);
+      border-radius: 6px;
+      color: #cce7ff;
+      background: rgba(130, 191, 243, .08);
+      font-size: .9em;
+    }
+
+    .topbar {
+      position: sticky;
+      top: 0;
+      z-index: 20;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 18px;
+      padding: 13px max(18px, calc((100vw - 1180px) / 2));
+      border-bottom: 1px solid rgba(103, 214, 172, .17);
+      background: rgba(9, 19, 22, .92);
+      backdrop-filter: blur(14px);
+    }
+    .brand { display: flex; align-items: center; gap: 10px; font-weight: 780; letter-spacing: .01em; }
+    .brand-mark {
+      display: grid;
+      width: 30px;
+      height: 30px;
+      place-items: center;
+      border: 1px solid rgba(103, 214, 172, .45);
+      border-radius: 9px;
+      color: var(--mint);
+      background: rgba(103, 214, 172, .08);
+    }
+    .topnav { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 5px; }
+    .topnav a { padding: 7px 9px; border-radius: 8px; color: var(--muted); font-size: 13px; text-decoration: none; }
+    .topnav a:hover, .topnav a:focus-visible { color: var(--ink); background: rgba(255,255,255,.06); }
+
+    main { width: min(100% - 32px, 1180px); margin: 0 auto; padding: 42px 0 78px; }
+    .hero {
+      display: grid;
+      grid-template-columns: 1.45fr .75fr;
+      gap: 34px;
+      align-items: end;
+      padding: 46px;
+      border: 1px solid rgba(103, 214, 172, .27);
+      border-radius: 28px;
+      background: linear-gradient(135deg, rgba(23, 43, 49, .98), rgba(13, 28, 32, .98));
+      box-shadow: var(--shadow);
+    }
+    .eyebrow, .section-kicker { margin: 0 0 11px; color: var(--mint); font-size: 12px; font-weight: 850; letter-spacing: .16em; text-transform: uppercase; }
+    h1 { max-width: 840px; margin: 0; font-size: clamp(38px, 5.3vw, 70px); line-height: 1.02; letter-spacing: -.045em; }
+    h2 { margin: 0 0 12px; font-size: clamp(27px, 3vw, 40px); line-height: 1.12; letter-spacing: -.025em; }
+    h3 { margin: 0 0 8px; font-size: 20px; line-height: 1.25; }
+    h4 { margin: 0 0 5px; font-size: 16px; }
+    .lede { max-width: 790px; margin: 21px 0 0; color: #c4d3d7; font-size: 18px; }
+    .hero-meta { display: grid; gap: 10px; }
+    .meta-row { display: flex; justify-content: space-between; gap: 18px; padding: 10px 0; border-bottom: 1px solid var(--line); color: var(--muted); font-size: 13px; }
+    .meta-row strong { color: var(--ink); text-align: right; }
+
+    .phase-strip { display: grid; grid-template-columns: 1fr auto 1fr; gap: 12px; align-items: stretch; margin: 20px 0 0; }
+    .phase-card { padding: 18px 20px; border: 1px solid var(--line); border-radius: 14px; background: rgba(18, 33, 38, .92); }
+    .phase-card.active { border-color: rgba(103,214,172,.45); }
+    .phase-card.locked { border-color: rgba(240,187,105,.38); }
+    .phase-card small { display: block; margin-bottom: 5px; color: var(--dim); font-weight: 850; letter-spacing: .11em; text-transform: uppercase; }
+    .phase-card strong { display: block; font-size: 18px; }
+    .phase-card p { margin: 6px 0 0; color: var(--muted); }
+    .gate-arrow { align-self: center; color: var(--amber); font-size: 25px; }
+
+    .section { margin-top: 24px; padding: 34px; border: 1px solid var(--line); border-radius: var(--radius); background: rgba(18, 33, 38, .89); box-shadow: 0 14px 36px rgba(0,0,0,.12); }
+    .section-intro { max-width: 930px; margin: 0 0 24px; color: var(--muted); font-size: 17px; }
+    .section > :last-child { margin-bottom: 0; }
+
+    .grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+    .grid.three { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    .card { min-width: 0; padding: 21px; border: 1px solid var(--line); border-radius: 15px; background: rgba(23, 43, 49, .76); }
+    .card p { margin: 7px 0 0; color: var(--muted); }
+    .card .number { display: block; margin-bottom: 8px; color: var(--mint); font: 800 12px var(--mono); }
+
+    .callout { margin: 22px 0; padding: 17px 20px; border-left: 4px solid var(--mint); border-radius: 10px; background: rgba(103, 214, 172, .08); }
+    .callout.amber { border-left-color: var(--amber); background: rgba(240, 187, 105, .08); }
+    .callout.danger { border-left-color: var(--coral); background: rgba(239, 133, 115, .08); }
+    .callout.violet { border-left-color: var(--violet); background: rgba(187, 165, 247, .08); }
+
+    .table-wrap { overflow-x: auto; }
+    table { width: 100%; min-width: 760px; border-collapse: collapse; }
+    th, td { padding: 13px 14px; border-bottom: 1px solid var(--line); text-align: left; vertical-align: top; }
+    th { color: var(--mint); font-size: 12px; letter-spacing: .08em; text-transform: uppercase; }
+    td { color: #cbd8db; }
+    td:first-child { color: var(--ink); font-weight: 720; }
+
+    .steps { margin: 18px 0 0; padding: 0; list-style: none; counter-reset: step; }
+    .steps > li { position: relative; margin: 0 0 12px; padding: 18px 18px 18px 61px; border: 1px solid var(--line); border-radius: 12px; background: rgba(9, 19, 22, .38); counter-increment: step; }
+    .steps > li::before { content: counter(step, decimal-leading-zero); position: absolute; left: 17px; top: 18px; color: var(--mint); font: 850 13px var(--mono); }
+    .steps p { margin: 5px 0 0; color: var(--muted); }
+    .steps ul { margin: 9px 0 0; color: var(--muted); }
+
+    ul.checklist { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 9px 18px; padding: 0; list-style: none; }
+    ul.checklist li { position: relative; padding: 9px 10px 9px 31px; border-bottom: 1px solid rgba(41,70,79,.62); }
+    ul.checklist li::before { content: "✓"; position: absolute; left: 5px; color: var(--mint); font-weight: 900; }
+
+    .code-block, .prompt-box { position: relative; overflow: hidden; border: 1px solid var(--line); border-radius: 14px; background: #071013; }
+    pre { overflow-x: auto; margin: 0; padding: 22px; color: #d6e5e8; font-size: 13px; line-height: 1.55; white-space: pre; }
+    .code-label { padding: 9px 14px; border-bottom: 1px solid var(--line); color: var(--dim); font: 750 11px var(--mono); letter-spacing: .08em; text-transform: uppercase; }
+    .copy-button { position: absolute; right: 11px; top: 9px; z-index: 2; padding: 7px 10px; border: 1px solid rgba(103,214,172,.36); border-radius: 8px; color: var(--mint); background: #0e2126; cursor: pointer; font: 750 12px var(--sans); }
+    .copy-button:hover, .copy-button:focus-visible { background: #18363d; }
+
+    .tag-row { display: flex; flex-wrap: wrap; gap: 7px; margin-top: 12px; }
+    .tag { padding: 4px 8px; border: 1px solid var(--line); border-radius: 999px; color: var(--muted); font-size: 11px; }
+    .tag.good { color: var(--mint); border-color: rgba(103,214,172,.35); }
+    .tag.warn { color: var(--amber); border-color: rgba(240,187,105,.35); }
+    .tag.block { color: var(--coral); border-color: rgba(239,133,115,.35); }
+
+    footer { margin-top: 29px; color: var(--dim); text-align: center; font-size: 13px; }
+
+    @media (max-width: 880px) {
+      .topbar { position: static; align-items: flex-start; flex-direction: column; }
+      .topnav { justify-content: flex-start; }
+      .hero { grid-template-columns: 1fr; padding: 30px 24px; }
+      .phase-strip { grid-template-columns: 1fr; }
+      .gate-arrow { transform: rotate(90deg); justify-self: center; }
+      .grid, .grid.three, ul.checklist { grid-template-columns: 1fr; }
+      .section { padding: 25px 20px; }
+    }
+    @media print {
+      :root { color-scheme: light; }
+      body { color: #172629; background: white; }
+      .topbar, .copy-button { display: none; }
+      main { width: 100%; padding: 0; }
+      .hero, .section, .card, .phase-card { color: #172629; background: white; box-shadow: none; break-inside: avoid; }
+      .lede, .section-intro, .card p, .phase-card p, .steps p, td { color: #3c5055; }
+      code { color: #173f57; }
+    }
+  </style>
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand"><span class="brand-mark">D</span> Throughput &amp; Decision Quality Handoff</div>
+    <nav class="topnav" aria-label="Page sections">
+      <a href="#contract">Contract</a>
+      <a href="#current">Current truth</a>
+      <a href="#phase1">Phase 1</a>
+      <a href="#phase1-acceptance">P1 acceptance</a>
+      <a href="#phase2">Phase 2</a>
+      <a href="#phase2-acceptance">P2 acceptance</a>
+      <a href="#prompts">Prompts</a>
+    </nav>
+  </header>
+
+  <main>
+    <section class="hero">
+      <div>
+        <p class="eyebrow">Zero-context implementation + experiment guide</p>
+        <h1>Make battles fast first. Then make decisions better.</h1>
+        <p class="lede">This page gives a fresh Codex context the complete two-phase contract: optimize the real-authority training path from the measured 1.8474 complete games per second toward 20–30 games per second on the M3 Max, prove exact behavior parity after every optimization, obtain owner acceptance, and only then improve dice/ability learning without hardcoding a preferred attack.</p>
+      </div>
+      <aside class="hero-meta" aria-label="Handoff metadata">
+        <div class="meta-row"><span>Repository</span><strong>Dice and Destiny v2</strong></div>
+        <div class="meta-row"><span>Prepared</span><strong>August 2, 2026</strong></div>
+        <div class="meta-row"><span>Orientation commit</span><strong><code>cd036f3</code></strong></div>
+        <div class="meta-row"><span>Machine</span><strong>M3 Max · 16 CPU cores · 64 GB</strong></div>
+        <div class="meta-row"><span>Baseline</span><strong>1.8474 complete games/s</strong></div>
+        <div class="meta-row"><span>Order</span><strong>Phase 1 must pass before Phase 2</strong></div>
+      </aside>
+    </section>
+
+    <div class="phase-strip" aria-label="Required phase order">
+      <article class="phase-card active">
+        <small>Phase 1 · first</small>
+        <strong>Authority throughput optimization</strong>
+        <p>Profile, optimize, parity-test, and scale the single-computer simulator. Desired primary range: 20–30 complete games/s.</p>
+      </article>
+      <div class="gate-arrow" aria-hidden="true">→</div>
+      <article class="phase-card locked">
+        <small>Phase 2 · gated</small>
+        <strong>Mechanics-aware decision learning</strong>
+        <p>Improve representation, teacher/search evidence, training budget, and evaluation without encoding “always choose Sword Cut.”</p>
+      </article>
+    </div>
+
+    <section class="section" id="contract">
+      <p class="section-kicker">Executive contract</p>
+      <h2>Two owner-reviewed projects, not one uncontrolled rewrite</h2>
+      <p class="section-intro">A future context may read both phases, but it must implement only the phase explicitly authorized. Phase 1 stops for review with benchmarks and parity evidence. Phase 2 starts from the accepted Phase 1 result in a separate task/branch and never becomes an excuse to change battle rules or balance.</p>
+
+      <div class="grid three">
+        <article class="card"><span class="number">NON-NEGOTIABLE 01</span><h3>The real authority remains the game</h3><p>No approximate Python rules, skipped reactions, fabricated candidates, hidden-state access, shortened battles, or simplified “training-only” combat logic. Speed comes from removing redundant infrastructure work and adding safe concurrency.</p></article>
+        <article class="card"><span class="number">NON-NEGOTIABLE 02</span><h3>Measure after every material change</h3><p>Do not stack ten optimizations and benchmark only at the end. Each step records before/after speed, CPU, memory, allocations, failures, and correctness parity so regressions and false wins remain attributable.</p></article>
+        <article class="card"><span class="number">NON-NEGOTIABLE 03</span><h3>Information is not strategy steering</h3><p>Phase 2 may expose authored mechanics, remaining rolls, tier requirements, and outcomes. It may not hardcode Sword Cut preferences, human tactical rules, or damage-shaped rewards and then call the result discovery.</p></article>
+        <article class="card"><span class="number">NON-NEGOTIABLE 04</span><h3>Maximum first, controllable headroom second</h3><p>Phase 1 must discover the fastest safe sustained configuration, then turn its resource measurements into lower-impact launch profiles so the owner can reserve part of the computer while training.</p></article>
+      </div>
+
+      <div class="callout danger"><strong>Mandatory phase gate:</strong> Phase 2 does not begin merely because Phase 1 code exists. Phase 1 requires an owner-reviewed performance report, exact parity evidence, stable benchmark commands, complete verification, and an explicitly accepted baseline.</div>
+    </section>
+
+    <section class="section" id="current">
+      <p class="section-kicker">Current repository truth</p>
+      <h2>Understand the accepted system before changing it</h2>
+      <p class="section-intro">Commit IDs are orientation points, not permission to ignore later changes. Start every task by reading the actual branch, worktrees, ignored artifacts, and dirty files. Preserve user work and all accepted checkpoints/runs.</p>
+
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Area</th><th>Current fact</th><th>Consequence</th></tr></thead>
+          <tbody>
+            <tr><td>Complete-game benchmark</td><td>Phase 2 acceptance ran 1,000 model-v-model battles in 541.30 seconds: <strong>1.8474 games/s</strong>, mean 202.27 authority actions, mean/p95 inference 0.4683/0.6938 ms.</td><td>The neural actor is not the primary bottleneck; authority lifecycle, copying, encoding, transport, and serial stepping dominate.</td></tr>
+            <tr><td>Training throughput</td><td>Each seed completed 20,480 PPO steps in about 111–114 seconds: 179.8–185.0 learner steps/s.</td><td>Record both learner steps/s and terminal games/s; they are different measurements.</td></tr>
+            <tr><td>Vector environments</td><td><code>training.py</code> creates four persistent <code>AuthorityGymEnv</code> instances but wraps them in <code>DummyVecEnv</code>.</td><td>Four battles remain active, yet Python steps their synchronous Go bridges sequentially in one Python process.</td></tr>
+            <tr><td>Authority bridge</td><td>Every reset/step is compact JSON written to a persistent Go subprocess; every response is JSON decoded back into Python dictionaries.</td><td>No per-action process launch exists, but serialization, pipe synchronization, and large transitions still cost time.</td></tr>
+            <tr><td>Reset</td><td>A fresh authority, engine, in-memory repository, file participant assembler, content setup, battle, metrics, and replay are created per episode.</td><td>Isolation is correct; immutable content and participant templates should not need repeated loading/decoding.</td></tr>
+            <tr><td>Repository lifecycle</td><td>The in-memory repository clones checkpoints on create/load/save; checkpoint validation and cloning include growing event history.</td><td>Production recovery safety can become repeated and potentially superlinear work inside disposable training battles.</td></tr>
+            <tr><td>Engine lifecycle</td><td>Commands clone battle state for atomic application; settled content is stored as JSON and repeatedly decoded for progression, legal actions, and some viewer results.</td><td>Profile repeated battle/catalog cloning and JSON decoding before designing a cache or ephemeral path.</td></tr>
+            <tr><td>Next decision</td><td>After applying a command, <code>mlsim</code> may call <code>Observe</code> for one or both seats, rebuilding snapshots and legal actions.</td><td>Reuse the already-owned state/result or construct the next viewer result directly when parity permits.</td></tr>
+            <tr><td>Candidate order</td><td><code>canonicalActions</code> JSON-marshals commands inside the sort comparator.</td><td>Precompute canonical keys once or prove engine order canonical; do not weaken deterministic ordering.</td></tr>
+            <tr><td>Replays/metrics</td><td>Exact commands accumulate for every episode; terminal transitions can carry a complete replay even when training retains only one representative.</td><td>Add explicit none/compact/representative/full modes and compare I/O separately.</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="callout"><strong>Read before work:</strong> <a href="../../AGENTS.md">AGENTS.md</a>, <a href="index.html">battle-intelligence roadmap</a>, <a href="phase-2-report.md">Phase 2 report</a>, <a href="phase-3-report.md">Phase 3 report</a>, <a href="arbitrary-character-training-handoff.html">arbitrary-character handoff</a>, and <a href="../../dice-and-destiny-server/ml/README.md">ML README</a>.</div>
+    </section>
+
+    <section class="section" id="phase1">
+      <p class="section-kicker">Phase 1 · authority throughput</p>
+      <h2>Optimize by evidence, one bottleneck at a time</h2>
+      <p class="section-intro">The desired target is 20–30 complete games/s on this single M3 Max. Treat 20 games/s as the primary engineering objective and 30 as a stretch objective, not as permission to fake a faster workload. If rigorous profiling proves a lower plateau, report it honestly with the next limiting resource.</p>
+
+      <h3>Benchmark contract before editing</h3>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Benchmark lane</th><th>Purpose</th><th>Required output</th></tr></thead>
+          <tbody>
+            <tr><td>Authority microbenchmarks</td><td>Reset, one step by stage/candidate count, viewer result, legal actions, content decode, snapshot, checkpoint clone/save, and terminal replay.</td><td>ns/op, allocations/op, bytes/op, CPU profile, memory profile, representative seed/state corpus.</td></tr>
+            <tr><td>Single-environment full battles</td><td>Separate per-core/single-lane improvements from concurrency.</td><td>Actions/s, games/s, reset p50/p95, step p50/p95, duration distribution, zero failures.</td></tr>
+            <tr><td>Primary training benchmark</td><td>Measure the path used to collect PPO experience: frozen model-v-model, terminal summaries for all, selected replays only.</td><td>At least 1,000 games, games/s, learner decisions/s, inference latency, CPU/memory/thermal, exact configuration.</td></tr>
+            <tr><td>Apples-to-apples Phase 2 acceptance</td><td>Compare against the documented 1.8474 games/s without silently removing its work.</td><td>Same checkpoint pair, seed rule, episode count, model mode, metrics, and replay/artifact policy—or explicitly document every difference.</td></tr>
+            <tr><td>Worker saturation sweep</td><td>Find the best sustained M3 Max configuration.</td><td>1, 2, 4, 6, 8, 10, 12, 14, 16 workers; median of repeated runs; scaling efficiency and plateau reason.</td></tr>
+            <tr><td>Resource-budget calibration</td><td>Measure useful lower-impact training modes after the maximum configuration is known.</td><td>At minimum maximum, approximately 80%, and approximately 50% resource profiles; sustained games/s, normalized whole-system CPU, worker/thread counts, memory pressure, swap, thermals, and an interactive-responsiveness probe.</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="callout amber"><strong>Do not compare unlike numbers.</strong> Full debug transcripts and all-replay acceptance are allowed to be slower than ordinary training. Report both. The 20–30 target belongs to a named, repeatable primary training benchmark that still runs complete real-authority battles and records every terminal result.</div>
+
+      <h3 style="margin-top:30px">Optimization ladder</h3>
+      <ol class="steps">
+        <li><strong>Freeze the baseline and add profiling.</strong><p>Create stable fixed-seed benchmark commands and machine-readable output before behavior changes. Add Go full-battle benchmarks and local CPU/allocation profiles; profile Python orchestration/JSON/encoding separately. Record source/content/schema/checkpoint hashes, hardware, power mode, replay mode, worker count, Torch threads, and duration.</p></li>
+        <li><strong>Cache immutable content and participant templates.</strong><p>Load/validate the settled <code>BattleLibrary</code> once per content hash or simulator process. Avoid repeated disk loads, full-library marshals/unmarshals, and immutable catalog copies on reset/step. Preserve the pinned serialized catalog/hash for replay and compatibility. Cache objects must be immutable and safe across concurrent battles.</p></li>
+        <li><strong>Remove avoidable legal-action and observation work.</strong><p>Precompute canonical JSON sort keys once per candidate instead of marshaling within every comparison. Reuse the post-command state/result to identify and encode the next decision rather than issuing redundant repository-backed <code>OpenBattle</code> calls. Preserve candidate completeness, exact stable order, viewer filtering, and command identity.</p></li>
+        <li><strong>Add explicit lightweight telemetry modes.</strong><p>Routine training needs compact per-step fields, terminal metrics for every game, and representative replays—not a full replay payload crossing the bridge every episode. Add none/compact/representative/full modes, asynchronous or buffered artifact writing where safe, and compressed archives for large retained traces. Acceptance/debug modes remain exact and available.</p></li>
+        <li><strong>Build a parity-proven ephemeral training authority.</strong><p>Own one battle directly in memory and continue to call the exact engine, RNG, legal-action generation, viewer filtering, and original-command application. Avoid repository load/save clones, full accumulated-event validation, and copying immutable content on every action. Retain compact incremental trace data. Compare command-for-command against the normal authority across a broad fixed corpus before using it for training.</p></li>
+        <li><strong>Compact the Go/Python boundary.</strong><p>Measure first, then reduce large JSON object traffic. Options include a minimal transition schema, Go-side observation/action encoding with exact Python parity, binary float/mask frames, batched requests, shared memory, or an in-process native binding. Never let transport optimizations change viewer safety, float schema, masks, candidate order, or the submitted original command.</p></li>
+        <li><strong>Add true CPU-parallel rollout collection.</strong><p>Replace sequential <code>DummyVecEnv</code> stepping with measured multiprocessing or a Go-native concurrent battle pool. Each battle owns isolated state and deterministic seeds. Batch policy inference, prevent Torch/BLAS oversubscription, and sweep worker counts rather than assuming 16 is best. Start with 8–12 as a hypothesis, not a setting.</p></li>
+        <li><strong>Add a user-selectable resource budget.</strong><p>After finding the maximum sustained configuration, expose a documented training-launch setting such as <code>max</code>, <code>balanced-80</code>, <code>light-50</code>, and an explicit custom worker/thread budget. Implement the budget with worker limits, Torch/BLAS thread caps, bounded inference and I/O concurrency, and platform-supported process priority or CPU placement where useful. Do not use hidden sleeps or discard experience to manufacture a lower number. The setting must be recorded in checkpoints, run metadata, and reports.</p></li>
+        <li><strong>Parallelize independent experiment work.</strong><p>Run independent seeds and evaluation shards concurrently when memory/CPU allow. This reduces wall time even when one PPO seed remains centrally learned. Keep artifacts, seed ranges, processes, and output roots isolated. Distributed multi-computer rollout is future-capable but not required for this single-computer phase.</p></li>
+        <li><strong>Consolidate only after attribution is clear.</strong><p>Once individual wins are measured, choose the smallest safe combined architecture. Rerun the complete saturation sweep, long soak, parity corpus, profiling, artifact-size comparison, and all regressions. Remove abandoned experimental paths rather than leaving multiple unmaintained simulators.</p></li>
+      </ol>
+
+      <div class="callout violet"><strong>Likely high-value hotspots visible today:</strong> repeated settled-catalog JSON decoding; battle/checkpoint/event-history cloning and validation; redundant viewer results/legal-action generation; JSON serialization across the pipe; terminal replay transfer; and the absence of simultaneous simulator execution. Profiling decides their actual order.</div>
+    </section>
+
+    <section class="section" id="iteration">
+      <p class="section-kicker">Phase 1 experiment discipline</p>
+      <h2>Every optimization is a falsifiable experiment</h2>
+      <ol class="steps">
+        <li><strong>State one hypothesis.</strong><p>Example: “Repeated settled-library decoding consumes at least 20% of single-lane CPU time.” Name the profile evidence and expected effect before editing.</p></li>
+        <li><strong>Make the smallest coherent change.</strong><p>Do not mix content caching, protocol replacement, and multiprocessing in one result. Preserve unrelated user changes and current ignored artifacts.</p></li>
+        <li><strong>Run focused correctness tests first.</strong><p>Reject any implementation that changes legal candidates, viewer visibility, action acceptance, deterministic trace, or terminal result before spending time on throughput.</p></li>
+        <li><strong>Run identical before/after benchmarks.</strong><p>Use the same seeds, checkpoint, replay mode, worker count, power conditions, and sample length. Repeat enough times to report median and variability rather than one favorable run.</p></li>
+        <li><strong>Keep or revert by evidence.</strong><p>Retain the change only if it produces a material sustained win without correctness, maintainability, memory, or artifact regressions. Record unsuccessful experiments too; they prevent repeated dead ends.</p></li>
+        <li><strong>Update the bottleneck.</strong><p>Profile again after each major win. The limiter will move from authority work toward process coordination, inference batching, optimizer work, memory bandwidth, or artifact I/O.</p></li>
+      </ol>
+
+      <div class="table-wrap" style="margin-top:24px">
+        <table>
+          <thead><tr><th>Stop increasing workers when</th><th>Operating choice</th></tr></thead>
+          <tbody>
+            <tr><td>Two additional workers improve sustained throughput by less than 5–10%.</td><td>Use the previous count unless the small gain is operationally worthwhile.</td></tr>
+            <tr><td>CPU is saturated but games/s plateaus or falls.</td><td>Reduce workers; inspect contention, GC, serialization, and learner waits.</td></tr>
+            <tr><td>Memory pressure turns yellow/red or swap grows continuously.</td><td>Reduce processes/buffers and profile retained transitions/content copies.</td></tr>
+            <tr><td>Thermal throttling lowers long-run throughput.</td><td>Choose the best sustained 30–60 minute configuration, not the fastest first minute.</td></tr>
+            <tr><td>Workers wait for centralized inference or PPO updates.</td><td>Batch inference, separate collection/update timing, and resize rollout/worker counts.</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3 style="margin-top:30px">Maximum mode and owner-headroom modes</h3>
+      <p class="section-intro">The optimization target remains the fastest safe sustained complete-game throughput. Lower percentages are operational controls derived from that result, not substitutes for finding it. A requested percentage is a resource ceiling/profile selection; it does not promise the same percentage of maximum games/s because scaling is not linear.</p>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Requirement</th><th>Phase 1 contract</th></tr></thead>
+          <tbody>
+            <tr><td>Maximum profile</td><td>Use the worker, inference, thread, buffering, and I/O configuration that produces the highest stable 30–60 minute games/s without swap growth, thermal collapse, or correctness failures. This is the primary result and the basis for the 20–30 games/s objective.</td></tr>
+            <tr><td>Approximately 80% profile</td><td>Choose a measured configuration intended to consume no more than about 80% of total CPU capacity under the named power mode while preserving useful memory and interactive headroom. Validate actual sustained usage and responsiveness; do not merely multiply maximum workers by 0.8 and assume success.</td></tr>
+            <tr><td>Light/custom profiles</td><td>Provide at least one approximately 50% profile plus explicit worker and Torch/BLAS-thread overrides. Reject impossible or unsafe combinations with a clear error. Preserve deterministic seed ownership and artifact isolation at every setting.</td></tr>
+            <tr><td>Launch interface</td><td>Expose the profile through the normal documented training command/configuration, with maximum as an explicit choice rather than an invisible default. Print the resolved worker/thread/memory-sensitive settings before training begins.</td></tr>
+            <tr><td>Calibration</td><td>Store machine identifier, core topology, power mode, software/content hashes, normalized CPU, memory pressure, swap, thermal/performance warnings, throughput, and responsiveness for each profile. Warn when the machine or architecture has changed enough that the saved calibration should be rerun.</td></tr>
+            <tr><td>Meaning of “80%”</td><td>Define CPU as a normalized percentage of the machine's total schedulable capacity so Activity Monitor-style multi-core totals are not confused with one-core percentages. Treat the cap as best-effort on macOS: verify observed sustained use and prefer leaving real measured headroom over claiming false precision.</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="callout amber"><strong>Responsiveness matters separately from average CPU.</strong> Include a small repeatable foreground probe—such as command latency or a lightweight interactive workload—during calibration. If an “80%” run still makes normal desktop work unpleasant because of memory pressure, priority, thermals, or bursty saturation, lower its concurrency until it satisfies the headroom goal.</div>
+    </section>
+
+    <section class="section" id="phase1-acceptance">
+      <p class="section-kicker">Phase 1 acceptance</p>
+      <h2>Speed counts only when the same game survives</h2>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Gate</th><th>Mandatory evidence</th></tr></thead>
+          <tbody>
+            <tr><td>A · Baseline reproducibility</td><td>Stable commands reproduce the pre-change 1.8474-style lane and capture exact machine/config/hash/replay conditions. Any unavoidable deviation is disclosed.</td></tr>
+            <tr><td>B · Authority parity</td><td>Normal and optimized paths match across fixed and generated seeds: actor order, viewer-safe snapshots/encoded observations, legal candidate count/order/content, selected original commands, accepted events, random cursor, terminal status, winner, health, and replayability.</td></tr>
+            <tr><td>C · Safety</td><td>Zero crashes, authority rejects, invalid indices, stale actions, wrong-seat actions, hidden-information leaks, state leaks, unexplained truncations, or silent fallbacks in the final soak.</td></tr>
+            <tr><td>D · Primary throughput</td><td>At least three repeated 1,000-game primary training-benchmark runs. Target median ≥20 complete games/s; stretch ≥30. Report p50/p95 game and step latency plus variability. A lower plateau must include profile proof and owner review, not a false PASS.</td></tr>
+            <tr><td>E · Saturation</td><td>Worker sweep through the practical plateau on the M3 Max with CPU, memory, swap, thermal/performance warnings, inference, collection, optimizer, and I/O timing.</td></tr>
+            <tr><td>F · Single-lane efficiency</td><td>Before/after single-environment games/s and allocation/CPU profiles show whether speed came from less work, more concurrency, or both.</td></tr>
+            <tr><td>G · Training integration</td><td>A real PPO smoke/training run consumes optimized real-authority experience, performs updates, checkpoints, resets, and produces stable metrics. No evaluation path updates weights.</td></tr>
+            <tr><td>H · Artifact modes</td><td>Compact training and full diagnostic/acceptance modes are both tested, documented, deterministic, and clearly labeled in every reported throughput number.</td></tr>
+            <tr><td>I · Regression</td><td>All relevant Go, race, ML, Phase 2/3 parity, native, and Godot authority checks pass using repository-prescribed launchers.</td></tr>
+            <tr><td>J · Maintainability</td><td>Abandoned experiment code is removed; new fast paths have explicit contracts and parity tests; no production persistence guarantee is silently weakened.</td></tr>
+            <tr><td>K · Resource controls</td><td>The maximum configuration remains the primary optimized result. Maximum, approximately 80%, approximately 50%, and custom launch settings resolve to explicit worker/thread/resource limits; record actual CPU, memory, thermals, responsiveness, and games/s; survive a sustained training smoke; and never alter game behavior, training examples, seeds, or correctness.</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="callout danger"><strong>Phase 1 is incomplete if:</strong> a benchmark skips decisions or rules, uses a different policy workload without disclosure, measures only actions/s, runs only a short warm burst, hides replay/I/O changes, loses parity, or reports an unrepeatable best sample.</div>
+    </section>
+
+    <section class="section" id="phase1-artifacts">
+      <p class="section-kicker">Phase 1 artifacts + report</p>
+      <h2>Leave the next context an evidence trail</h2>
+      <div class="grid">
+        <article class="card"><h3>Ignored run artifacts</h3><p>Raw profiles, traces, benchmark JSON/CSV, per-iteration results, long-soak outputs, worker-sweep logs, replays, and experimental checkpoints belong beneath a uniquely named ignored <code>ml/runs/</code> tree.</p></article>
+        <article class="card"><h3>Tracked review material</h3><p>Benchmark harness/config, parity tests, source changes, a concise machine-readable summary, and <code>docs/machine-learning-battle-simulation/throughput-optimization-report.md</code> belong in reviewable paths only after verification.</p></article>
+      </div>
+
+      <div class="code-block" style="margin-top:20px">
+        <div class="code-label">Recommended Phase 1 run tree</div>
+        <pre>dice-and-destiny-server/ml/runs/throughput-phase1-&lt;date-or-slug&gt;/
+├── baseline/{config.json, summary.json, cpu.pprof, mem.pprof}
+├── iterations/
+│   ├── 01-content-cache/{hypothesis.md, before.json, after.json, profiles/}
+│   ├── 02-candidate-and-observe/{...}
+│   ├── 03-telemetry-modes/{...}
+│   ├── 04-ephemeral-authority/{...}
+│   ├── 05-compact-protocol/{...}
+│   └── 06-parallel-rollouts/{...}
+├── parity/{fixed-corpus.json, generated-corpus.json, failures/}
+├── worker-sweep/{workers-01.json, workers-02.json, ... workers-16.json}
+├── resource-profiles/{max.json, balanced-80.json, light-50.json, custom-smoke.json}
+├── final-soak/{run-01/, run-02/, run-03/}
+└── artifact-index.json</pre>
+      </div>
+
+      <ul class="checklist" style="margin-top:20px">
+        <li>Record unsuccessful optimization experiments and why they were rejected.</li>
+        <li>Report speedups as absolute games/s and relative multiplier.</li>
+        <li>Separate authority, model inference, PPO update, serialization, and artifact time.</li>
+        <li>Preserve all accepted Phase 2 checkpoints and Phase 3 exports unchanged.</li>
+        <li>Do not commit profiles, large traces, temporary binaries, or ignored run artifacts.</li>
+        <li>Stop for owner review before Phase 2 or any commit/push not explicitly authorized.</li>
+      </ul>
+    </section>
+
+    <section class="section" id="phase2">
+      <p class="section-kicker">Phase 2 · decision quality</p>
+      <h2>Give learning the mechanics, not a prescribed move</h2>
+      <p class="section-intro">This phase starts only after Phase 1 acceptance. Its purpose is to eliminate a systematic “take any qualified ability immediately” bias and let the policy compare rolling, rerolling, keeping, cards, targets, and qualified attacks using structured authority-owned mechanics.</p>
+
+      <div class="callout amber"><strong>Observed failure case:</strong> in battle <code>learned-1785691059-2718787-15088</code>, seed <code>1785691061228807</code>, the model rolled <code>[6,1,3,4,2]</code>, had three swords and two rolls remaining, received 68 legal candidates, and immediately chose Sword Cut for five damage. Rerolling only indices <code>[0,3]</code> preserved the three swords and could reach six or seven damage. Ignoring reactions, the two remaining rolls yield about 6.5 expected Sword Cut base damage.</div>
+
+      <h3>What was available versus what the policy understood</h3>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Information/action</th><th>Current status</th><th>Limitation</th></tr></thead>
+          <tbody>
+            <tr><td>Legal rerolls</td><td>Present. After five unkept dice, authority enumerates all 31 non-empty reroll subsets, including <code>[0,3]</code>.</td><td>The action was not missing or masked; the model scored another candidate higher.</td></tr>
+            <tr><td>Legal keeps</td><td>Present. Authority enumerates all 32 keep subsets, including empty/all.</td><td>A model can directly reroll a subset without first issuing a separate keep, so keep frequency alone is not the quality metric.</td></tr>
+            <tr><td>Dice</td><td>The encoder stores the latest five face numbers, dice count, latest roll number/3, and kept-count scalar.</td><td>Symbols are not represented explicitly; max/remaining rolls are not explicit; non-D6 and larger pools do not fit cleanly.</td></tr>
+            <tr><td>Currently qualified abilities</td><td>IDs are projected into eight hashed buckets.</td><td>No names, requirements, tiers, damage/effects, progress-to-next-tier, or full future ability board. Collisions are possible.</td></tr>
+            <tr><td>Ability candidates</td><td>Ability IDs use four hashed candidate buckets plus an arbitrary payload hash.</td><td><code>sword_cut</code> and <code>perfect_form</code> collide in the four-bucket feature. The payload hash distinguishes identity without explaining mechanics.</td></tr>
+            <tr><td>Teacher behavior</td><td>The Blade-only heuristic scores planning roll 100, Sword Cut selection 98, any reroll at most 85, and keep near 10.</td><td>Once an ability qualifies, the 5,000-example imitation warm start teaches immediate commitment instead of comparing remaining-roll value.</td></tr>
+            <tr><td>PPO evidence</td><td>Each seed then received 20,480 learner steps with terminal +1/−1/0 reward; about 195 completed PPO games per seed.</td><td>Sparse terminal credit and limited experience must overcome a strong biased initialization.</td></tr>
+            <tr><td>Owner-play evidence</td><td>At inspection, recorded model play contained 15 planning rolls, 3 rerolls, and 0 keeps, with frequent immediate attack selection.</td><td>This is diagnostic evidence, not a complete statistical evaluation; build a versioned corpus and metrics.</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3 style="margin-top:30px">Phase 2 implementation sequence</h3>
+      <ol class="steps">
+        <li><strong>Freeze tactical diagnostic states.</strong><p>Reconstruct the exact owner-reported seed/decision plus a generated held-out suite covering partial tiers, competing abilities, straights/sets/symbol counts, cards, statuses, different remaining rolls, and cases where committing immediately really is best. Record all legal candidates and current checkpoint scores/probabilities. Do not label every state with a hand-authored move.</p></li>
+        <li><strong>Design a viewer-safe mechanics schema v2.</strong><p>Represent explicit rolls used/max/remaining, die identity/faces/symbols, kept/rerollable state, the viewer's authored ability board, each tier's normalized requirements and progress, qualified/current tier, target/effect summaries, resource costs, damage/prevention/status/resource operations, and candidate links to those mechanics. Use versioned bounded/variable structures without lossy tiny ID buckets as the primary meaning.</p></li>
+        <li><strong>Prove information and privacy coverage.</strong><p>For every reachable decision, show that strategically distinct options produce distinguishable encodings while opponent hands, hidden planning, private dice, unrevealed commitments, and future RNG remain absent. Audit candidate and observation capacities for future characters rather than preserving five-D6 assumptions accidentally.</p></li>
+        <li><strong>Replace the biased teacher or narrow its role.</strong><p>Do not hardcode ability names or “always reroll for more damage.” Prefer generic shallow authority lookahead/search that evaluates legal roll/keep/reroll/card/commit continuations from real rules, or use imitation only for liveness/syntax and allow PPO/population play to learn strategy. Any search expert must use viewer-safe state and authoritative clones.</p></li>
+        <li><strong>Keep the true objective honest.</strong><p>Terminal win/loss/draw remains the primary RL objective. Do not add raw damage reward shaping merely to fix this example. If potential-based or auxiliary learning is explored, isolate it in an ablation and prove it improves held-out win probability without farming damage, prolonging games, or neglecting defense/status strategy.</p></li>
+        <li><strong>Run the ablation matrix.</strong><p>Compare current schema/teacher, more training with the current recipe, v2 with current teacher, v2 with mechanics-aware search teacher, v2 with reduced/no strategic imitation, and at least two budgets such as 20k and 200k steps. Use three seeds, matched held-out evaluation, and the same opponent pool. Increase budget only while curves/evaluation justify it.</p></li>
+        <li><strong>Train with population diversity.</strong><p>Mix random, validated generic heuristics/search, current learner, accepted frozen checkpoint, and historical v2 checkpoints. Do not rely exclusively on two changing learners. Preserve separate training and evaluation paths and exact character/seat/policy metadata.</p></li>
+        <li><strong>Evaluate decisions and games.</strong><p>Report win rate against random, the old heuristic, the accepted v1 checkpoint, earlier v2 checkpoints, and held-out search/value estimates. Analyze rolls used, reroll subset quality, ability tier at commitment, qualified attacks declined, cards/reactions, loops, truncations, and value left on the table—conditioned on state rather than enforcing “always reroll.”</p></li>
+        <li><strong>Export only after complete acceptance.</strong><p>A schema-v2 checkpoint requires a new model ID/path and exact Python/Go encoder/inference parity. Never overwrite or reinterpret the accepted Blade Warden v1 checkpoint/export. Run the graphical learned-opponent acceptance separately.</p></li>
+      </ol>
+
+      <div class="callout"><strong>What “not steering” means here:</strong> the policy receives the same structured mechanics a competent player can inspect, and a generic search/teacher evaluates all authority-legal continuations. No code says “if three swords, pursue Sword Cut,” and no acceptance rule requires one fixed move when another choice has comparable win value.</div>
+    </section>
+
+    <section class="section" id="phase2-acceptance">
+      <p class="section-kicker">Phase 2 acceptance</p>
+      <h2>Prove broader reasoning, not one corrected screenshot</h2>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Gate</th><th>Mandatory evidence</th></tr></thead>
+          <tbody>
+            <tr><td>A · Schema meaning</td><td>Exact documentation/tests show mechanics, tiers, rolls remaining, dice symbols, effect summaries, candidates, and privacy. Strategically distinct states/options are distinguishable without relying on accidental payload hashes.</td></tr>
+            <tr><td>B · Complete legal control</td><td>Keep/reroll subsets, cards, abilities, targets, defense, reactions, pass, hand limit, and status choices remain complete, stable, masked, and authority accepted.</td></tr>
+            <tr><td>C · Teacher neutrality</td><td>No ability-name strategy hardcoding. Search/heuristic behavior derives from generic mechanics/authority rollouts; its decision-quality corpus and known limitations are measured separately.</td></tr>
+            <tr><td>D · Learning evidence</td><td>Three seeds, real-authority experience, changed parameters, initial/intermediate/final checkpoints, disjoint held-out seeds, and statistically supported improvement over initial/current accepted baselines.</td></tr>
+            <tr><td>E · Tactical suite</td><td>The new policy reduces statistically significant value loss across generated and owner-derived held-out decisions, including cases where rerolling, committing, changing goals, playing a card, or passing is best. No one action is mandated universally.</td></tr>
+            <tr><td>F · Full-game strength</td><td>Held-out seat-swapped games show improved win probability against the accepted v1 checkpoint and relevant baselines without increased loops, draws, truncations, or safety failures.</td></tr>
+            <tr><td>G · Behavioral analysis</td><td>Report rolls-used distribution, reroll subsets, commitment tiers, attack/effect mix, cards/reactions, health/duration, and illustrative success/failure replays. Explain whether immediate-commit bias materially fell.</td></tr>
+            <tr><td>H · Runtime parity</td><td>New Python and Go encoders/policies match within tolerance on a golden corpus; export hashes/schema/content versions are strict; old v1 artifacts remain reproducible.</td></tr>
+            <tr><td>I · Human evaluation</td><td>Owner plays held-out graphical battles only after automated gates. Human diagnostics may inform future curated training, but live games never mutate the frozen deployed model.</td></tr>
+            <tr><td>J · Regression</td><td>Phase 1 performance does not materially regress without explicit owner approval, and all Go/ML/native/Godot/Phase 3 checks pass.</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="callout danger"><strong>Phase 2 is incomplete if:</strong> only the exact Sword Cut state improves, the teacher encodes Blade-specific tactics, more damage replaces winning as the objective, schema v2 leaks hidden information, full-game strength falls, or the accepted v1 runtime is silently replaced.</div>
+    </section>
+
+    <section class="section" id="code-map">
+      <p class="section-kicker">Primary code map</p>
+      <h2>Inspect these paths before designing changes</h2>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Path</th><th>Why it matters</th></tr></thead>
+          <tbody>
+            <tr><td><code>cmd/battle-ml-sim/main.go</code></td><td>Persistent JSON-lines simulator transport and operation dispatch.</td></tr>
+            <tr><td><code>internal/battle/mlsim/environment.go</code></td><td>Reset/step/select-next lifecycle, canonical candidates, metrics, and replays.</td></tr>
+            <tr><td><code>internal/battle/authority.go</code></td><td>Production authority load/apply/save/viewer boundary that optimized parity must preserve.</td></tr>
+            <tr><td><code>internal/battle/repository/repository.go</code></td><td>Checkpoint validation, event history, in-memory cloning, persistence guarantees.</td></tr>
+            <tr><td><code>internal/battle/state/battle.go</code></td><td>Deep clone behavior and immutable/mutable state separation.</td></tr>
+            <tr><td><code>internal/battle/engine/command.go</code></td><td>Atomic command application, viewer result, snapshot, and legal-action construction.</td></tr>
+            <tr><td><code>internal/battle/engine/settled_engine.go</code></td><td>Settled-catalog decoding and authoritative automatic/manual progression.</td></tr>
+            <tr><td><code>internal/battle/engine/legal_actions.go</code></td><td>All candidate enumeration, die subsets, ability/card/target actions.</td></tr>
+            <tr><td><code>internal/battle/snapshot/snapshot.go</code></td><td>Viewer-safe copy construction and hidden-information contract.</td></tr>
+            <tr><td><code>internal/battle/participant_assembler.go</code></td><td>Content loading, settled catalog assembly, per-battle participant setup.</td></tr>
+            <tr><td><code>ml/dice_destiny_ml/bridge.py</code></td><td>Synchronous Python↔Go JSON request path.</td></tr>
+            <tr><td><code>ml/dice_destiny_ml/gym_env.py</code></td><td>One learner step plus opponent-driving loop and terminal reward.</td></tr>
+            <tr><td><code>ml/dice_destiny_ml/training.py</code></td><td><code>DummyVecEnv</code>, PPO rollout/update configuration, workers, checkpoints, metadata.</td></tr>
+            <tr><td><code>ml/dice_destiny_ml/schema.py</code></td><td>Current 4,224-value v1 observation, five-D6 assumptions, hashed IDs, candidate features.</td></tr>
+            <tr><td><code>ml/dice_destiny_ml/policies.py</code></td><td>Random, Blade-only heuristic scores, frozen model inference.</td></tr>
+            <tr><td><code>ml/dice_destiny_ml/imitation.py</code></td><td>5,000-decision teacher collection and behavior cloning.</td></tr>
+            <tr><td><code>internal/battle/learned/schema.go</code></td><td>Go observation parity for shipped inference.</td></tr>
+            <tr><td><code>internal/battle/learned/policy.go</code></td><td>Pure-Go candidate-scoring actor.</td></tr>
+            <tr><td><code>internal/battle/learned/session.go</code></td><td>Frozen graphical human/model session and diagnostic records.</td></tr>
+            <tr><td><code>content/battle_v1/abilities/*.yaml</code></td><td>Structured requirements, tiers, costs, targeting, and operations Phase 2 should represent generically.</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="section" id="verification">
+      <p class="section-kicker">Verification + safety</p>
+      <h2>Run focused checks continuously and full gates before review</h2>
+      <p class="section-intro">Add targeted benchmark/parity/schema tests for every new contract. Run Godot only through the repository launcher. Do not clean ignored checkpoints, run artifacts, snapshots, or another worktree’s runtime.</p>
+
+      <div class="code-block">
+        <div class="code-label">Repository regression floor</div>
+        <pre>cd dice-and-destiny-server
+go test -count=1 ./...
+go vet ./...
+go test -count=1 -race ./internal/battle ./internal/battle/engine ./internal/battle/snapshot
+
+cd ml
+uv run --python 3.12 pytest
+uv run --python 3.12 ruff check .
+uv lock --check
+
+cd ../../
+./scripts/godot.sh --headless --script res://scripts/verify_battle_authority.gd
+
+# Run focused Phase 2/Phase 3 smoke, replay, Python↔Go parity,
+# native, proxy-human, and graphical checks whenever touched.
+
+git diff --check</pre>
+      </div>
+
+      <ul class="checklist" style="margin-top:20px">
+        <li>Use <code>./scripts/godot.sh</code> for every Godot invocation.</li>
+        <li>Build native artifacts with <code>dice-and-destiny-server/scripts/build_native.sh</code>.</li>
+        <li>Keep workspace/process runtime state isolated and uncommitted.</li>
+        <li>Never weaken production persistence merely to improve training benchmarks.</li>
+        <li>Never copy native artifacts or ignored runs from another worktree.</li>
+        <li>Never commit or push until the owner explicitly approves the completed phase.</li>
+      </ul>
+    </section>
+
+    <section class="section" id="stop-rules">
+      <p class="section-kicker">Stop and report</p>
+      <h2>Do not spend compute or merge complexity into uncertainty</h2>
+      <ul class="checklist">
+        <li>The optimized path differs from the normal authority on any unexplained legal action, viewer state, random trace, event, or result.</li>
+        <li>Profiles do not support the optimization hypothesis or the speedup disappears in sustained repeated runs.</li>
+        <li>Throughput rises only because required telemetry, model inference, decisions, or rules were removed from the named benchmark.</li>
+        <li>Concurrency causes oversubscription, state leakage, nondeterminism, memory pressure, or thermal collapse.</li>
+        <li>Phase 1 plateaus below target after measured safe alternatives; report the limiting profile and options for owner choice.</li>
+        <li>Phase 2 lacks a viewer-safe, general mechanics representation or requires Blade/Sword Cut special cases.</li>
+        <li>Phase 2 tactical metrics improve while held-out win rate, safety, or Phase 1 performance materially regresses.</li>
+        <li>Any required source/content/checkpoint/runtime artifact is missing or incompatible.</li>
+      </ul>
+    </section>
+
+    <section class="section" id="prompts">
+      <p class="section-kicker">Paste-ready future-context prompts</p>
+      <h2>Use only the prompt for the authorized phase</h2>
+      <p class="section-intro">Start the new task in this repository on the intended reviewed baseline. The Phase 2 prompt is intentionally blocked until the Phase 1 result is explicitly accepted.</p>
+
+      <div class="prompt-box">
+        <button type="button" class="copy-button" data-copy-target="phase1-prompt">Copy Phase 1 prompt</button>
+        <div class="code-label">Phase 1 · throughput optimization</div>
+        <pre id="phase1-prompt">Implement Phase 1 of the Dice and Destiny throughput-and-decision-quality plan: optimize real-authority complete-battle throughput on the local M3 Max.
+
+Before editing, read AGENTS.md completely and then read docs/machine-learning-battle-simulation/throughput-and-decision-quality-handoff.html completely. Read the current battle-intelligence roadmap, Phase 2 report, Phase 3 report, ML README, and the performance/code paths named in the handoff. Inspect the actual branch, commits, worktrees, dirty files, ignored checkpoints, run artifacts, and runtime state. Preserve all user work and accepted artifacts. Treat commit IDs in the document as orientation only.
+
+MISSION
+
+Increase the measured primary training benchmark from the documented 1.8474 complete games/second toward at least 20 games/second, with 30 games/second as a stretch objective, on this M3 Max. Continue profiling and testing safe optimization routes until the practical sustained plateau is understood. Do not fake speed by shortening battles, skipping decisions/reactions/rules, changing policies/content, leaking hidden state, removing required terminal records, or replacing the real Go authority with approximate rules.
+
+ARCHITECTURE AND SAFETY
+
+The real engine, deterministic RNG, complete legal candidates, viewer filtering, original-command submission, and authority-owned state mutation remain mandatory. A training-specific ephemeral authority is allowed only if it calls the exact engine/rules and passes command-for-command parity against the normal authority. Production persistence guarantees must not be weakened. Godot remains outside the training loop.
+
+WORK ORDER
+
+1. Freeze repeatable benchmark lanes and profile reset, step, full battle, allocations, content decode, cloning/event validation, legal actions, snapshots, JSON transport, encoding, inference, PPO update, replay, and artifact I/O.
+2. Establish an apples-to-apples reproduction of the Phase 2 acceptance workload and a separately named primary training benchmark: complete frozen model-v-model authority battles, terminal summary for every game, selected replays, at least 1,000 games.
+3. Optimize one falsifiable hypothesis at a time. After each material change, run focused parity tests, identical repeated before/after benchmarks, and record why the change was kept or rejected.
+4. Evaluate the full ladder in the handoff: immutable content/participant caching; repeated settled-catalog decoding; canonical action sort keys; redundant observe/result work; telemetry/replay modes; parity-proven ephemeral authority; compact/binary/batched Go-Python transfer or Go-side schema encoding; true process/Go-native concurrent rollouts; inference batching; independent seed/evaluation concurrency; artifact I/O.
+5. After single-lane work, run sustained worker sweeps at 1, 2, 4, 6, 8, 10, 12, 14, and 16 workers. Control Torch/BLAS threads. Record normalized whole-machine CPU, memory pressure, swap, thermals/performance warnings, collection/inference/update/I/O timing, scaling efficiency, p50/p95 latency, and the plateau.
+6. Once the maximum sustained configuration is known, implement and calibrate user-selectable launch profiles named or equivalently represented as max, balanced-80, light-50, and an explicit custom worker/thread budget. Apply budgets through worker counts, Torch/BLAS thread caps, bounded inference/I/O concurrency, and supported priority/CPU-placement controls—not by skipping decisions, discarding experience, or adding hidden sleeps. Print and record the resolved settings. Measure actual games/s, CPU, memory, thermals, and a foreground responsiveness probe for every profile. Treat percentages as best-effort resource ceilings, not promised percentages of maximum throughput.
+7. Consolidate the smallest maintainable high-performance architecture and remove abandoned experimental paths.
+
+MANDATORY ACCEPTANCE
+
+Satisfy every Phase 1 gate A-K in the HTML. Normal and optimized paths must match actor order, viewer-safe snapshots/encoded observations, complete candidate count/order/content, submitted commands, accepted events, random cursor, terminal result, health, and replay across fixed/generated corpora. The final repeated 1,000-game soaks require zero crashes, rejects, invalid, stale, wrong-seat, hidden leak, state leak, unexplained truncation, or fallback.
+
+Target a median of at least 20 complete games/s over at least three repeated 1,000-game primary-benchmark runs; 30 is stretch. Report honest results if the safe sustained plateau is lower, including the new limiting profiles and owner options. Never relabel a lighter workload as an apples-to-apples speedup.
+
+ARTIFACTS AND REPORT
+
+Use a unique ignored ml/runs/throughput-phase1-* tree for raw profiles, iteration results, parity corpora, worker sweeps, resource-profile calibrations, soaks, and replays. Produce tracked benchmark/config/parity tests and docs/machine-learning-battle-simulation/throughput-optimization-report.md with baseline, every attempted optimization, before/after measurements, final architecture, full saturation curve, maximum/80%/50%/custom launch controls and measured tradeoffs, artifact modes, exact commands, hashes, all acceptance gates PASS/FAIL, and remaining risks.
+
+Run every relevant Go/vet/race, ML lock/lint/test, Phase 2/3 parity/smoke/native, and Godot authority check. Invoke Godot only through ./scripts/godot.sh. Do not start Phase 2 decision-quality work in this task. Stop for owner review when Phase 1 is fully evidenced. Do not commit or push unless explicitly authorized.</pre>
+      </div>
+
+      <div class="prompt-box" style="margin-top:24px">
+        <button type="button" class="copy-button" data-copy-target="phase2-prompt">Copy Phase 2 prompt</button>
+        <div class="code-label">Phase 2 · mechanics-aware decision learning</div>
+        <pre id="phase2-prompt">Implement Phase 2 of the Dice and Destiny throughput-and-decision-quality plan: improve dice, ability, and tactical decision learning without hardcoding a preferred strategy.
+
+Do not begin unless the owner has explicitly accepted Phase 1 throughput optimization. Before editing, read AGENTS.md and docs/machine-learning-battle-simulation/throughput-and-decision-quality-handoff.html completely, then inspect the accepted Phase 1 report/implementation, current schemas, teacher, training loop, accepted v1 model/export, authority rules/content, owner diagnostics, and all relevant tests. Preserve user work, ignored runs, accepted checkpoints, and the accepted v1 runtime.
+
+MISSION
+
+Replace the current systematic “take a qualified ability immediately” bias with viewer-safe structured mechanics and general learning/search evidence. Do not encode “pursue Sword Cut,” hand-authored dice tactics, or raw damage reward shaping. The model must remain free to commit, reroll, change ability goals, play cards, defend, react, target, or pass based on learned win value.
+
+REQUIRED DIAGNOSTIC
+
+Reconstruct battle learned-1785691059-2718787-15088, seed 1785691061228807, at the model’s first-roll decision: [6,1,3,4,2], three swords, roll 1 of 3, Golden Edge/Sword Cut/Venom Strike qualified, 68 candidates, legal reroll [0,3], accepted v1 chose Sword Cut for five damage. Use it as one held-out diagnostic, not a hardcoded action test. Build a broader generated suite containing cases where rerolling, committing immediately, changing goals, cards, reactions, or passing are best.
+
+IMPLEMENTATION
+
+1. Record current policy scores/probabilities and teacher behavior on the diagnostic corpus.
+2. Design/version a viewer-safe mechanics schema v2 with explicit rolls used/max/remaining, dice identities/faces/symbols, kept/rerollable state, authored ability board, tier requirements/progress/qualification, costs/targets, and generic effect summaries. Remove tiny lossy ID buckets as the primary meaning and prove strategically distinct candidates are distinguishable.
+3. Preserve complete authority legal actions, masks, deterministic order, original-command submission, and hidden-information boundaries. Update Python and Go encoders together for any shippable model and add golden parity tests.
+4. Replace the Blade-specific imitation teacher or restrict it to liveness. Prefer generic shallow authority lookahead/search over all legal continuations. Never special-case Sword Cut, face symbols, or ability names in strategy code.
+5. Keep terminal +1/-1/0 as the primary objective. Any auxiliary/potential experiment must be an isolated ablation with reward-hacking tests.
+6. Run the documented ablation matrix: current recipe with more steps; v2/current teacher; v2 mechanics-aware teacher; v2 reduced/no strategic imitation; at least 20k and 200k budgets initially; three seeds; matched held-out evaluations and population opponents.
+7. Analyze full-game strength and decisions: random/old heuristic/accepted v1/earlier-v2/search comparisons, seat swaps, confidence intervals, rolls-used distribution, reroll subset quality, commitment tiers, value left on table, cards/reactions, duration/health, loops/truncations, and representative success/failure replays.
+
+MANDATORY ACCEPTANCE
+
+Satisfy Phase 2 gates A-J in the HTML. Improvement must generalize beyond the owner screenshot and increase held-out full-game win probability without safety or Phase 1 throughput regression. Do not mandate a single action where multiple choices have comparable authority-search value. Maintain zero invalid/rejected/stale/wrong-seat/hidden-leak behavior.
+
+Create a new schema/model/checkpoint/export family; never overwrite or reinterpret the accepted v1 artifacts. Run Python-Go encoding/inference parity, full Go/ML/native/Godot/Phase 3 regression, and separate graphical owner acceptance after automated gates.
+
+Produce a complete decision-quality report with architecture/schema changes, teacher/search contract, ablations, training budgets/updates, checkpoints, tactical and full-game results, exact reproduction commands, all acceptance gates PASS/FAIL, and limitations. Stop for owner review. Do not commit or push unless explicitly authorized.</pre>
+      </div>
+    </section>
+
+    <footer>Prepared as a local, standalone planning artifact. Repository state and accepted baselines must be revalidated when either phase begins.</footer>
+  </main>
+
+  <script>
+    document.querySelectorAll('[data-copy-target]').forEach((button) => {
+      button.addEventListener('click', async () => {
+        const target = document.getElementById(button.dataset.copyTarget);
+        if (!target) return;
+        const original = button.textContent;
+        try {
+          await navigator.clipboard.writeText(target.textContent);
+          button.textContent = 'Copied';
+        } catch (_) {
+          const selection = window.getSelection();
+          const range = document.createRange();
+          range.selectNodeContents(target);
+          selection.removeAllRanges();
+          selection.addRange(range);
+          button.textContent = 'Selected';
+        }
+        window.setTimeout(() => { button.textContent = original; }, 1800);
+      });
+    });
+  </script>
+</body>
+</html>

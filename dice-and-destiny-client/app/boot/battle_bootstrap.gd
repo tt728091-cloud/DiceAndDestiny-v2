@@ -23,7 +23,7 @@ func _build_mode_menu() -> void:
 	center.set_anchors_preset(Control.PRESET_FULL_RECT)
 	add_child(center)
 	var panel := PanelContainer.new()
-	panel.custom_minimum_size = Vector2(680, 560)
+	panel.custom_minimum_size = Vector2(760, 820)
 	center.add_child(panel)
 	var margin := MarginContainer.new()
 	for side in ["margin_left", "margin_top", "margin_right", "margin_bottom"]:
@@ -52,17 +52,27 @@ func _build_mode_menu() -> void:
 		"battle.mode.classic"
 	)
 	_add_mode_button(
-		"Learned Mirror · Human Seat A\nBlade Warden vs Frozen Learned Blade Warden",
-		_start_learned.bind("seat-a"),
-		"battle.mode.learned.seat_a"
+		"Learned Mirror · Human Seat A · Old v1\nBlade Warden vs Frozen Seed-11 Learned Blade Warden",
+		_start_learned.bind("seat-a", "accepted-v1"),
+		"battle.mode.learned.v1.seat_a"
 	)
 	_add_mode_button(
-		"Learned Mirror · Human Seat B\nBlade Warden vs Frozen Learned Blade Warden",
-		_start_learned.bind("seat-b"),
-		"battle.mode.learned.seat_b"
+		"Learned Mirror · Human Seat B · Old v1\nBlade Warden vs Frozen Seed-11 Learned Blade Warden",
+		_start_learned.bind("seat-b", "accepted-v1"),
+		"battle.mode.learned.v1.seat_b"
+	)
+	_add_mode_button(
+		"Learned Mirror · Human Seat A · New v2\nBlade Warden vs Decision-Quality Seed-22 Blade Warden",
+		_start_learned.bind("seat-a", "decision-v2"),
+		"battle.mode.learned.v2.seat_a"
+	)
+	_add_mode_button(
+		"Learned Mirror · Human Seat B · New v2\nBlade Warden vs Decision-Quality Seed-22 Blade Warden",
+		_start_learned.bind("seat-b", "decision-v2"),
+		"battle.mode.learned.v2.seat_b"
 	)
 	_message = Label.new()
-	_message.text = "The learned mode is inference-only and uses the accepted Phase 2 seed-11 final policy."
+	_message.text = "Learned battles are inference-only. Choose the preserved old v1 or the new decision-quality v2 opponent."
 	_message.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_message.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	_message.add_theme_color_override("font_color", Color("9fb3c8"))
@@ -96,15 +106,15 @@ func _start_classic() -> void:
 		return
 	_handoff_classic(started, 0)
 
-func _start_learned(human_seat: String) -> void:
+func _start_learned(human_seat: String, model_key: String) -> void:
 	_set_buttons_disabled(true)
-	_message.text = "Loading the frozen learned policy once for this application session…"
+	_message.text = "Loading the selected frozen learned policy…"
 	await get_tree().process_frame
 	var runtime := get_node_or_null("/root/LearnedBattleRuntime")
 	if runtime == null:
 		_show_error("The learned battle runtime autoload is unavailable.", {})
 		return
-	var learned_gateway: RefCounted = LEARNED_GATEWAY.new(runtime, human_seat)
+	var learned_gateway: RefCounted = LEARNED_GATEWAY.new(runtime, human_seat, model_key)
 	var seed := int(Time.get_unix_time_from_system() * 1000000.0) ^ Time.get_ticks_usec()
 	var result: Dictionary = learned_gateway.start_battle(_new_battle_id("learned"), seed)
 	if result.get("accepted") != true:

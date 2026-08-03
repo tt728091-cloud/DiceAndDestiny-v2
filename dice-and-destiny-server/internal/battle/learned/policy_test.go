@@ -1,7 +1,9 @@
 package learned
 
 import (
+	"crypto/sha256"
 	"encoding/json"
+	"fmt"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -179,6 +181,80 @@ func TestSessionRoutesHumanAndModelThroughAuthorityAndReusesModel(t *testing.T) 
 	}
 }
 
+func TestSessionLoadsPinnedV2PolicyAndAdvancesThroughAuthority(t *testing.T) {
+	serverRoot := testServerRoot(t)
+	session, err := NewSession(SessionConfig{
+		ContentRoot:      filepath.Join(serverRoot, "content"),
+		RunStateRoot:     filepath.Join(serverRoot, "save", "run_players"),
+		ModelPath:        testV2ModelPath(t),
+		ModelSHA256:      "0e6ea5d84c316a7709c9c1b98b983e8f76e486c6e1625c479c55d2860bd23a86",
+		DiagnosticsPath:  filepath.Join(t.TempDir(), "phase2-v2.jsonl"),
+		InferenceTimeout: 2 * time.Second,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if metadata := session.policy.Metadata(); metadata.ModelID != "blade-warden-decision-quality-seed-22-v2" ||
+		metadata.ObservationSchema != mlsim.ObservationSchemaV2 {
+		t.Fatalf("unexpected v2 session metadata: %#v", metadata)
+	}
+	view, err := session.Reset("phase2-v2-session", 20260804, "seat-b", false)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !object(view["learned_policy"])["model_turn"].(bool) {
+		t.Fatal("v2 policy did not own the opening decision")
+	}
+	if _, err := session.AdvanceModel(); err != nil {
+		t.Fatal(err)
+	}
+	telemetry, _ := session.Telemetry()
+	if telemetry.ModelDecisions != 1 || telemetry.AuthorityRejects != 0 || telemetry.InvalidActions != 0 {
+		t.Fatalf("v2 graphical session did not advance cleanly: %#v", telemetry)
+	}
+}
+
+func TestSessionRejectsUnpinnedOrMismatchedV2Policy(t *testing.T) {
+	serverRoot := testServerRoot(t)
+	base := SessionConfig{
+		ContentRoot:      filepath.Join(serverRoot, "content"),
+		RunStateRoot:     filepath.Join(serverRoot, "save", "run_players"),
+		ModelPath:        testV2ModelPath(t),
+		InferenceTimeout: 2 * time.Second,
+	}
+	if _, err := NewSession(base); err == nil {
+		t.Fatal("unpinned v2 policy was accepted")
+	}
+	base.ModelSHA256 = "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"
+	if _, err := NewSession(base); err == nil {
+		t.Fatal("v2 policy with a mismatched SHA-256 pin was accepted")
+	}
+}
+
+func TestV2PolicyRejectsContentVersionDriftEvenWithMatchingFilePin(t *testing.T) {
+	payload, err := os.ReadFile(testV2ModelPath(t))
+	if err != nil {
+		t.Fatal(err)
+	}
+	var file policyFile
+	if err := json.Unmarshal(payload, &file); err != nil {
+		t.Fatal(err)
+	}
+	file.ContentVersion = "unreviewed-content"
+	mutated, err := json.Marshal(file)
+	if err != nil {
+		t.Fatal(err)
+	}
+	path := filepath.Join(t.TempDir(), "wrong-content-v2.json")
+	if err := os.WriteFile(path, mutated, 0o600); err != nil {
+		t.Fatal(err)
+	}
+	pin := fmt.Sprintf("%x", sha256.Sum256(mutated))
+	if _, err := LoadCandidatePolicyV2(path, pin); err == nil {
+		t.Fatal("v2 policy with a mismatched content version was accepted")
+	}
+}
+
 func TestSessionAcceptsKeepingNoDiceThenRerollingAll(t *testing.T) {
 	session := testSession(t, 2*time.Second)
 	if _, err := session.Reset("keep-none-reroll-all", 20260802, "seat-a", false); err != nil {
@@ -346,6 +422,11 @@ func testEnvironment(t *testing.T) *mlsim.Environment {
 func testModelPath(t *testing.T) string {
 	t.Helper()
 	return filepath.Join(testServerRoot(t), "..", "dice-and-destiny-client", "models", "learned", "blade-warden-seed-11-final-v1.json")
+}
+
+func testV2ModelPath(t *testing.T) string {
+	t.Helper()
+	return filepath.Join(testServerRoot(t), "..", "dice-and-destiny-client", "models", "learned", "blade-warden-decision-quality-seed-22-v2.json")
 }
 
 func testServerRoot(t *testing.T) string {

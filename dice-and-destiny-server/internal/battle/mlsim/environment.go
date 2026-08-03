@@ -23,16 +23,27 @@ const (
 	EnvironmentSchemaVersion = "dice-and-destiny-ml-env-v1"
 	ObservationSchemaVersion = "dice-and-destiny-observation-v1"
 	ActionSchemaVersion      = "dice-and-destiny-action-candidates-v1"
+	EnvironmentSchemaV2      = "dice-and-destiny-ml-env-v2"
+	ObservationSchemaV2      = "dice-and-destiny-observation-v2"
+	ActionSchemaV2           = "dice-and-destiny-action-candidates-v2"
 	DefaultMaxActions        = 1200
+	AuthorityModeNormal      = "normal"
+	AuthorityModeEphemeral   = "ephemeral"
+	TelemetryModeFull        = "full"
+	TelemetryModeTraining    = "training"
 )
 
 var SeatIDs = []string{"seat-a", "seat-b"}
 
 type Config struct {
-	ContentRoot  string
-	RunStateRoot string
-	MaxActions   int
-	SessionID    string
+	ContentRoot       string
+	RunStateRoot      string
+	MaxActions        int
+	SessionID         string
+	AuthorityMode     string
+	TelemetryMode     string
+	TransportMode     string
+	ObservationSchema string
 }
 
 type ResetRequest struct {
@@ -76,20 +87,23 @@ type EpisodeMetrics struct {
 	StaleActions     int                `json:"stale_action_submissions"`
 	WrongSeatActions int                `json:"wrong_seat_submissions"`
 	DurationMillis   float64            `json:"duration_ms"`
+	RandomCursor     uint64             `json:"random_cursor"`
 }
 
 type Transition struct {
-	ActorID          string         `json:"actor_id,omitempty"`
-	Result           engine.Result  `json:"result"`
-	Terminal         bool           `json:"terminal"`
-	Winner           string         `json:"winner,omitempty"`
-	TruncationReason string         `json:"truncation_reason,omitempty"`
-	Metrics          EpisodeMetrics `json:"metrics"`
-	Replay           *ReplayRecord  `json:"replay,omitempty"`
+	ActorID          string           `json:"actor_id,omitempty"`
+	Result           engine.Result    `json:"result"`
+	Terminal         bool             `json:"terminal"`
+	Winner           string           `json:"winner,omitempty"`
+	TruncationReason string           `json:"truncation_reason,omitempty"`
+	Metrics          EpisodeMetrics   `json:"metrics"`
+	Replay           *ReplayRecord    `json:"replay,omitempty"`
+	EncodedDecision  *EncodedDecision `json:"encoded_decision,omitempty"`
 }
 
 type Environment struct {
 	config       Config
+	assembler    battle.ParticipantAssembler
 	authority    *battle.Authority
 	current      Transition
 	legalActions []command.Command
@@ -109,7 +123,34 @@ func New(config Config) (*Environment, error) {
 	if config.SessionID == "" {
 		config.SessionID = fmt.Sprintf("%d", time.Now().UnixNano())
 	}
-	return &Environment{config: config}, nil
+	if config.AuthorityMode == "" {
+		config.AuthorityMode = AuthorityModeNormal
+	}
+	if config.AuthorityMode != AuthorityModeNormal && config.AuthorityMode != AuthorityModeEphemeral {
+		return nil, fmt.Errorf("unknown authority mode %q", config.AuthorityMode)
+	}
+	if config.TelemetryMode == "" {
+		config.TelemetryMode = TelemetryModeFull
+	}
+	if config.TelemetryMode != TelemetryModeFull && config.TelemetryMode != TelemetryModeTraining {
+		return nil, fmt.Errorf("unknown telemetry mode %q", config.TelemetryMode)
+	}
+	if config.TransportMode == "" {
+		config.TransportMode = TransportModeFull
+	}
+	if config.TransportMode != TransportModeFull && config.TransportMode != TransportModeEncoded && config.TransportMode != TransportModeParity {
+		return nil, fmt.Errorf("unknown transport mode %q", config.TransportMode)
+	}
+	if config.ObservationSchema == "" {
+		config.ObservationSchema = ObservationSchemaVersion
+	}
+	if config.ObservationSchema != ObservationSchemaVersion && config.ObservationSchema != ObservationSchemaV2 {
+		return nil, fmt.Errorf("unknown observation schema %q", config.ObservationSchema)
+	}
+	return &Environment{
+		config:    config,
+		assembler: battle.NewCachedFileParticipantAssembler(config.ContentRoot, config.RunStateRoot),
+	}, nil
 }
 
 // Reset creates a completely new in-memory authority and a fresh mirror battle.
@@ -123,10 +164,20 @@ func (e *Environment) Reset(request ResetRequest) (Transition, error) {
 	if request.SeatModels == nil {
 		request.SeatModels = map[string]string{}
 	}
+	var repo repository.Repository = repository.NewInMemory()
+	if e.config.AuthorityMode == AuthorityModeEphemeral {
+		repo = repository.NewEphemeral()
+	}
+	simulationEngine, err := engine.NewEngineWithConfig(engine.Config{
+		OmitSnapshotContentCatalog: e.config.ObservationSchema != ObservationSchemaV2,
+	}, engine.DefaultFlows()...)
+	if err != nil {
+		return Transition{}, err
+	}
 	e.authority = battle.NewAuthority(
-		engine.NewEngine(),
-		repository.NewInMemory(),
-		battle.NewFileParticipantAssembler(e.config.ContentRoot, e.config.RunStateRoot),
+		simulationEngine,
+		repo,
+		e.assembler,
 	)
 	humanSeat, modelSeat := transcriptSeats(request.SeatModels)
 	e.authority.ConfigureTranscriptBattle(battle.TranscriptBattleContext{
@@ -139,10 +190,11 @@ func (e *Environment) Reset(request ResetRequest) (Transition, error) {
 		},
 		Metadata: map[string]any{"seat_models": cloneStringsMap(request.SeatModels)},
 	})
+	environmentSchema, observationSchema, actionSchema := e.SchemaVersions()
 	e.replay = ReplayRecord{
-		EnvironmentSchema: EnvironmentSchemaVersion,
-		ObservationSchema: ObservationSchemaVersion,
-		ActionSchema:      ActionSchemaVersion,
+		EnvironmentSchema: environmentSchema,
+		ObservationSchema: observationSchema,
+		ActionSchema:      actionSchema,
 		BattleID:          battleID,
 		Seed:              request.Seed,
 		SeatModels:        cloneStringsMap(request.SeatModels),
@@ -172,7 +224,11 @@ func (e *Environment) Reset(request ResetRequest) (Transition, error) {
 	if !started.Accepted {
 		return Transition{}, fmt.Errorf("authority rejected reset: %s", started.Error)
 	}
-	return e.selectNext(started, SeatIDs[0])
+	transition, err := e.selectNext(started, SeatIDs[0])
+	if err != nil {
+		return Transition{}, err
+	}
+	return e.transportTransition(transition)
 }
 
 func (e *Environment) Observe(seatID string) (engine.Result, error) {
@@ -211,8 +267,16 @@ func (e *Environment) Step(actionIndex int) (Transition, error) {
 		return Transition{}, fmt.Errorf("action index %d outside legal range [0,%d)", actionIndex, len(e.legalActions))
 	}
 	actorID := e.legalActions[actionIndex].ActorID
-	transition, _, err := e.StepForViewer(actionIndex, actorID)
-	return transition, err
+	transition, _, err := e.stepForViewerWithTranscript(
+		actionIndex,
+		actorID,
+		battle.TranscriptCommandContext{},
+		e.config.TelemetryMode == TelemetryModeTraining,
+	)
+	if err != nil {
+		return Transition{}, err
+	}
+	return e.transportTransition(transition)
 }
 
 // StepForViewer submits the exact indexed authority command while returning
@@ -229,6 +293,15 @@ func (e *Environment) StepForViewerWithTranscript(
 	actionIndex int,
 	viewerActorID string,
 	transcriptContext battle.TranscriptCommandContext,
+) (Transition, engine.Result, error) {
+	return e.stepForViewerWithTranscript(actionIndex, viewerActorID, transcriptContext, false)
+}
+
+func (e *Environment) stepForViewerWithTranscript(
+	actionIndex int,
+	viewerActorID string,
+	transcriptContext battle.TranscriptCommandContext,
+	simulationResult bool,
 ) (Transition, engine.Result, error) {
 	if e.current.Terminal || e.current.TruncationReason != "" {
 		return Transition{}, engine.Result{}, errors.New("episode is complete; reset before stepping")
@@ -247,7 +320,12 @@ func (e *Environment) StepForViewerWithTranscript(
 	if transcriptContext.Controller == "" {
 		transcriptContext.Controller = transcriptController(e.replay.SeatModels[action.ActorID])
 	}
-	result := e.authority.HandleCommandForViewerWithTranscript(action, viewerActorID, transcriptContext)
+	var result engine.Result
+	if simulationResult {
+		result = e.authority.HandleSimulationCommandWithTranscript(action, transcriptContext)
+	} else {
+		result = e.authority.HandleCommandForViewerWithTranscript(action, viewerActorID, transcriptContext)
+	}
 	if !result.Accepted {
 		e.metrics.AuthorityRejects++
 		return Transition{}, result, fmt.Errorf("implementation failure: authority rejected enumerated action %s: %s", action.Type, result.Error)
@@ -373,7 +451,7 @@ func (e *Environment) selectNext(last engine.Result, preferredActor string) (Tra
 			continue
 		}
 		e.legalActions = append([]command.Command(nil), view.LegalActions...)
-		e.current = Transition{ActorID: seatID, Result: compactResult(view), Metrics: e.metrics}
+		e.current = Transition{ActorID: seatID, Result: e.compactResult(view), Metrics: e.metrics}
 		return e.current, nil
 	}
 	return Transition{}, errors.New("active battle has no legal action for either external seat")
@@ -395,9 +473,12 @@ func (e *Environment) finish(result engine.Result, truncation string) Transition
 		e.replay.Status = result.Snapshot.Status
 	}
 	e.metrics.DurationMillis = float64(time.Since(e.startedAt).Microseconds()) / 1000
+	if cursor, err := e.authority.InspectBattleRandomCursor(e.replay.BattleID); err == nil {
+		e.metrics.RandomCursor = cursor
+	}
 	replay := e.replay
 	e.current = Transition{
-		Result:           compactResult(result),
+		Result:           e.compactResult(result),
 		Terminal:         truncation == "",
 		Winner:           e.metrics.Winner,
 		TruncationReason: truncation,
@@ -408,12 +489,22 @@ func (e *Environment) finish(result engine.Result, truncation string) Transition
 }
 
 func canonicalActions(actions []command.Command) []command.Command {
-	result := append([]command.Command(nil), actions...)
-	sort.SliceStable(result, func(i, j int) bool {
-		left, _ := json.Marshal(result[i])
-		right, _ := json.Marshal(result[j])
-		return string(left) < string(right)
+	type keyedAction struct {
+		command command.Command
+		key     string
+	}
+	keyed := make([]keyedAction, len(actions))
+	for index, action := range actions {
+		encoded, _ := json.Marshal(action)
+		keyed[index] = keyedAction{command: action, key: string(encoded)}
+	}
+	sort.SliceStable(keyed, func(i, j int) bool {
+		return keyed[i].key < keyed[j].key
 	})
+	result := make([]command.Command, len(keyed))
+	for index := range keyed {
+		result[index] = keyed[index].command
+	}
 	return result
 }
 
@@ -438,12 +529,40 @@ func validSeat(seatID string) bool {
 	return seatID == SeatIDs[0] || seatID == SeatIDs[1]
 }
 
-func compactResult(result engine.Result) engine.Result {
+func (e *Environment) compactResult(result engine.Result) engine.Result {
 	result.Events = nil
-	if result.Snapshot != nil {
+	if result.Snapshot != nil && e.config.ObservationSchema != ObservationSchemaV2 {
 		result.Snapshot.ContentCatalog = nil
 	}
 	return result
+}
+
+func (e *Environment) transportTransition(transition Transition) (Transition, error) {
+	if e.config.TransportMode == TransportModeFull || transition.Terminal || transition.TruncationReason != "" {
+		return transition, nil
+	}
+	var encoded EncodedDecision
+	var err error
+	if e.config.ObservationSchema == ObservationSchemaV2 {
+		encoded, err = encodeDecisionV2(transition)
+	} else {
+		encoded, err = encodeDecision(transition)
+	}
+	if err != nil {
+		return Transition{}, err
+	}
+	if e.config.TransportMode == TransportModeEncoded {
+		transition.Result = engine.Result{}
+	}
+	transition.EncodedDecision = &encoded
+	return transition, nil
+}
+
+func (e *Environment) SchemaVersions() (string, string, string) {
+	if e.config.ObservationSchema == ObservationSchemaV2 {
+		return EnvironmentSchemaV2, ObservationSchemaV2, ActionSchemaV2
+	}
+	return EnvironmentSchemaVersion, ObservationSchemaVersion, ActionSchemaVersion
 }
 
 func commandsEqual(left, right command.Command) bool {

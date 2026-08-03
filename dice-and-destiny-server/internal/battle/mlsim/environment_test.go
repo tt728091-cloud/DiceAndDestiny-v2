@@ -1,15 +1,274 @@
 package mlsim
 
 import (
+	"encoding/base64"
 	"encoding/json"
+	"fmt"
 	"math/rand"
 	"path/filepath"
+	"reflect"
 	"runtime"
 	"testing"
 
 	"diceanddestiny/server/internal/battle/command"
 	"diceanddestiny/server/internal/battle/state"
 )
+
+func TestEncodedTransportStripsRawDecisionAndParityModeRetainsIt(t *testing.T) {
+	encodedConfig := testConfig()
+	encodedConfig.AuthorityMode = AuthorityModeEphemeral
+	encodedConfig.TelemetryMode = TelemetryModeTraining
+	encodedConfig.TransportMode = TransportModeEncoded
+	encoded, err := New(encodedConfig)
+	if err != nil {
+		t.Fatal(err)
+	}
+	request := ResetRequest{Seed: 41, BattleID: "encoded-transport"}
+	encodedTransition, err := encoded.Reset(request)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if encodedTransition.Result.Snapshot != nil || len(encodedTransition.Result.LegalActions) != 0 {
+		t.Fatal("encoded transport retained raw snapshot or legal commands")
+	}
+	decision := encodedTransition.EncodedDecision
+	if decision == nil || decision.CandidateCount == 0 || len(decision.CandidateTypes) != decision.CandidateCount {
+		t.Fatalf("encoded decision metadata is incomplete: %#v", decision)
+	}
+	observation, err := base64.StdEncoding.DecodeString(decision.ObservationBase64)
+	if err != nil {
+		t.Fatal(err)
+	}
+	mask, err := base64.StdEncoding.DecodeString(decision.ActionMaskBase64)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(observation) != EncodedObservationSize*4 || len(mask) != EncodedMaxActions/8 {
+		t.Fatalf("encoded payload sizes = %d/%d", len(observation), len(mask))
+	}
+
+	parityConfig := testConfig()
+	parityConfig.TransportMode = TransportModeParity
+	parity, err := New(parityConfig)
+	if err != nil {
+		t.Fatal(err)
+	}
+	request.BattleID = "parity-transport"
+	parityTransition, err := parity.Reset(request)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if parityTransition.Result.Snapshot == nil || parityTransition.EncodedDecision == nil {
+		t.Fatal("parity transport must retain raw and encoded decisions")
+	}
+	if len(parityTransition.Result.LegalActions) != parityTransition.EncodedDecision.CandidateCount {
+		t.Fatal("raw and encoded candidate counts differ")
+	}
+}
+
+func TestEphemeralAuthorityMatchesNormalAuthorityCorpus(t *testing.T) {
+	seeds := []uint64{1, 9, 41, 20260801, 30000000}
+	generated := rand.New(rand.NewSource(20260802))
+	for len(seeds) < 25 {
+		seeds = append(seeds, generated.Uint64())
+	}
+	for _, seed := range seeds {
+		seed := seed
+		t.Run(fmt.Sprintf("seed-%d", seed), func(t *testing.T) {
+			normalConfig := testConfig()
+			normalConfig.AuthorityMode = AuthorityModeNormal
+			ephemeralConfig := testConfig()
+			ephemeralConfig.AuthorityMode = AuthorityModeEphemeral
+			normal, err := New(normalConfig)
+			if err != nil {
+				t.Fatal(err)
+			}
+			ephemeral, err := New(ephemeralConfig)
+			if err != nil {
+				t.Fatal(err)
+			}
+			request := ResetRequest{
+				Seed:       seed,
+				BattleID:   fmt.Sprintf("parity-%d", seed),
+				SeatModels: map[string]string{"seat-a": "parity-a", "seat-b": "parity-b"},
+			}
+			normalTransition, err := normal.Reset(request)
+			if err != nil {
+				t.Fatal(err)
+			}
+			ephemeralTransition, err := ephemeral.Reset(request)
+			if err != nil {
+				t.Fatal(err)
+			}
+			assertParityTransition(t, normalTransition, ephemeralTransition)
+
+			selector := rand.New(rand.NewSource(int64(seed)))
+			for !normalTransition.Terminal && normalTransition.TruncationReason == "" {
+				if normalTransition.ActorID != ephemeralTransition.ActorID {
+					t.Fatalf("actor order mismatch: normal=%q ephemeral=%q", normalTransition.ActorID, ephemeralTransition.ActorID)
+				}
+				if !reflect.DeepEqual(normalTransition.Result.LegalActions, ephemeralTransition.Result.LegalActions) {
+					t.Fatal("canonical legal candidates differ")
+				}
+				index := parityActionIndex(selector, normalTransition.Result.LegalActions, normalTransition.Metrics.Actions)
+				viewer := normalTransition.ActorID
+				nextNormal, normalApplied, err := normal.StepForViewer(index, viewer)
+				if err != nil {
+					t.Fatal(err)
+				}
+				nextEphemeral, ephemeralApplied, err := ephemeral.StepForViewer(index, viewer)
+				if err != nil {
+					t.Fatal(err)
+				}
+				normalTransition = nextNormal
+				ephemeralTransition = nextEphemeral
+				normalJSON, _ := json.Marshal(normalApplied)
+				ephemeralJSON, _ := json.Marshal(ephemeralApplied)
+				if string(normalJSON) != string(ephemeralJSON) {
+					t.Fatalf("accepted viewer result/events differ at action %d: %s", normalTransition.Metrics.Actions, firstJSONDifference(normalJSON, ephemeralJSON))
+				}
+				normalState, err := normal.authority.InspectBattleState(request.BattleID)
+				if err != nil {
+					t.Fatal(err)
+				}
+				ephemeralState, err := ephemeral.authority.InspectBattleState(request.BattleID)
+				if err != nil {
+					t.Fatal(err)
+				}
+				if !reflect.DeepEqual(normalState, ephemeralState) {
+					t.Fatalf("authority state or random cursor differs at action %d", normalTransition.Metrics.Actions)
+				}
+				assertParityTransition(t, normalTransition, ephemeralTransition)
+			}
+			if !normalTransition.Terminal || normalTransition.TruncationReason != "" {
+				t.Fatalf("parity corpus battle did not terminate: %#v", normalTransition.Metrics)
+			}
+		})
+	}
+}
+
+func TestTrainingTelemetryMatchesFullAuthorityCorpus(t *testing.T) {
+	seeds := []uint64{1, 9, 41, 20260801, 30000000}
+	generated := rand.New(rand.NewSource(20260803))
+	for len(seeds) < 12 {
+		seeds = append(seeds, generated.Uint64())
+	}
+	for _, seed := range seeds {
+		t.Run(fmt.Sprintf("seed-%d", seed), func(t *testing.T) {
+			fullConfig := testConfig()
+			fullConfig.AuthorityMode = AuthorityModeNormal
+			fullConfig.TelemetryMode = TelemetryModeFull
+			optimizedConfig := testConfig()
+			optimizedConfig.AuthorityMode = AuthorityModeEphemeral
+			optimizedConfig.TelemetryMode = TelemetryModeTraining
+			full, err := New(fullConfig)
+			if err != nil {
+				t.Fatal(err)
+			}
+			optimized, err := New(optimizedConfig)
+			if err != nil {
+				t.Fatal(err)
+			}
+			request := ResetRequest{
+				Seed:       seed,
+				BattleID:   fmt.Sprintf("training-parity-%d", seed),
+				SeatModels: map[string]string{"seat-a": "parity-a", "seat-b": "parity-b"},
+			}
+			fullTransition, err := full.Reset(request)
+			if err != nil {
+				t.Fatal(err)
+			}
+			optimizedTransition, err := optimized.Reset(request)
+			if err != nil {
+				t.Fatal(err)
+			}
+			selector := rand.New(rand.NewSource(int64(seed)))
+			for !fullTransition.Terminal && fullTransition.TruncationReason == "" {
+				assertParityTransition(t, fullTransition, optimizedTransition)
+				if !reflect.DeepEqual(fullTransition.Result.LegalActions, optimizedTransition.Result.LegalActions) {
+					t.Fatal("optimized candidate order or content differs")
+				}
+				index := parityActionIndex(selector, fullTransition.Result.LegalActions, fullTransition.Metrics.Actions)
+				fullTransition, err = full.Step(index)
+				if err != nil {
+					t.Fatal(err)
+				}
+				optimizedTransition, err = optimized.Step(index)
+				if err != nil {
+					t.Fatal(err)
+				}
+				fullState, _ := full.authority.InspectBattleState(request.BattleID)
+				optimizedState, _ := optimized.authority.InspectBattleState(request.BattleID)
+				if !reflect.DeepEqual(fullState, optimizedState) {
+					t.Fatalf("optimized hidden state differs at action %d", fullTransition.Metrics.Actions)
+				}
+			}
+			assertParityTransition(t, fullTransition, optimizedTransition)
+			fullEvents, err := full.authority.InspectBattleEventsJSON(request.BattleID)
+			if err != nil {
+				t.Fatal(err)
+			}
+			optimizedEvents, err := optimized.authority.InspectBattleEventsJSON(request.BattleID)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if string(fullEvents) != string(optimizedEvents) {
+				t.Fatalf("accepted event stream differs: %s", firstJSONDifference(fullEvents, optimizedEvents))
+			}
+		})
+	}
+}
+
+func assertParityTransition(t *testing.T, normal, ephemeral Transition) {
+	t.Helper()
+	normal.Metrics.DurationMillis = 0
+	ephemeral.Metrics.DurationMillis = 0
+	if !reflect.DeepEqual(normal, ephemeral) {
+		normalJSON, _ := json.Marshal(normal)
+		ephemeralJSON, _ := json.Marshal(ephemeral)
+		t.Fatalf("transition mismatch: %s", firstJSONDifference(normalJSON, ephemeralJSON))
+	}
+}
+
+func firstJSONDifference(left, right []byte) string {
+	limit := len(left)
+	if len(right) < limit {
+		limit = len(right)
+	}
+	index := 0
+	for index < limit && left[index] == right[index] {
+		index++
+	}
+	start := index - 120
+	if start < 0 {
+		start = 0
+	}
+	leftEnd := index + 240
+	if leftEnd > len(left) {
+		leftEnd = len(left)
+	}
+	rightEnd := index + 240
+	if rightEnd > len(right) {
+		rightEnd = len(right)
+	}
+	return fmt.Sprintf("first byte %d (lengths %d/%d): left=%q right=%q", index, len(left), len(right), left[start:leftEnd], right[start:rightEnd])
+}
+
+func parityActionIndex(rng *rand.Rand, actions []command.Command, completed int) int {
+	if completed >= 700 {
+		return preferredActionIndex(actions)
+	}
+	progressing := make([]int, 0, len(actions))
+	for index, action := range actions {
+		if action.Type != command.TypePlanningKeep {
+			progressing = append(progressing, index)
+		}
+	}
+	if len(progressing) == 0 {
+		return preferredActionIndex(actions)
+	}
+	return progressing[rng.Intn(len(progressing))]
+}
 
 func TestResetIsDeterministicFreshAndViewerSafe(t *testing.T) {
 	environment := newTestEnvironment(t)
@@ -140,7 +399,28 @@ func TestRepeatedEpisodesDoNotRequireProcessRestart(t *testing.T) {
 }
 
 func BenchmarkAuthorityEnvironmentCompleteBattle(b *testing.B) {
-	environment, err := New(testConfig())
+	benchmarkAuthorityEnvironmentCompleteBattle(b, AuthorityModeNormal)
+}
+
+func BenchmarkAuthorityEnvironmentCompleteBattleEphemeral(b *testing.B) {
+	benchmarkAuthorityEnvironmentCompleteBattle(b, AuthorityModeEphemeral)
+}
+
+func BenchmarkAuthorityEnvironmentCompleteBattleEphemeralTrainingTelemetry(b *testing.B) {
+	config := testConfig()
+	config.AuthorityMode = AuthorityModeEphemeral
+	config.TelemetryMode = TelemetryModeTraining
+	benchmarkAuthorityEnvironmentCompleteBattleWithConfig(b, config)
+}
+
+func benchmarkAuthorityEnvironmentCompleteBattle(b *testing.B, authorityMode string) {
+	config := testConfig()
+	config.AuthorityMode = authorityMode
+	benchmarkAuthorityEnvironmentCompleteBattleWithConfig(b, config)
+}
+
+func benchmarkAuthorityEnvironmentCompleteBattleWithConfig(b *testing.B, config Config) {
+	environment, err := New(config)
 	if err != nil {
 		b.Fatal(err)
 	}

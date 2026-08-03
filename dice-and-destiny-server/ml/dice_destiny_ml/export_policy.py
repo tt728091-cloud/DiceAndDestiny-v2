@@ -8,6 +8,15 @@ from typing import Any
 from sb3_contrib import MaskablePPO
 
 from . import ACTION_SCHEMA_VERSION, ENVIRONMENT_SCHEMA_VERSION, OBSERVATION_SCHEMA_VERSION
+from .schema_v2 import (
+    ACTION_FEATURES_V2,
+    ACTION_SCHEMA_V2,
+    BASE_FEATURES_V2,
+    ENVIRONMENT_SCHEMA_V2,
+    MAX_ACTIONS_V2,
+    OBSERVATION_SCHEMA_V2,
+    OBSERVATION_SIZE_V2,
+)
 from .training import parameter_hash
 
 ACTOR_TENSORS = (
@@ -97,4 +106,59 @@ def export_phase3_policy(
             "observation_schema",
             "action_schema",
         )
+    }
+
+
+def export_candidate_policy_v2(
+    checkpoint: Path,
+    output: Path,
+    *,
+    model_id: str,
+    content_version: str,
+    source_revision: str,
+    training_engine_revision: str,
+) -> dict[str, Any]:
+    """Export a mechanics-aware candidate without changing accepted v1."""
+
+    checkpoint = checkpoint.resolve()
+    model = MaskablePPO.load(checkpoint, device="cpu")
+    if tuple(model.observation_space.shape or ()) != (OBSERVATION_SIZE_V2,):
+        raise RuntimeError("checkpoint is not an observation-v2 model")
+    state = model.policy.state_dict()
+    missing = [name for name in ACTOR_TENSORS if name not in state]
+    if missing:
+        raise RuntimeError(f"checkpoint is missing v2 actor tensors: {missing}")
+    tensors: dict[str, Any] = {}
+    for name in ACTOR_TENSORS:
+        value = state[name].detach().cpu().numpy()
+        tensors[name] = {"shape": list(value.shape), "values": value.reshape(-1).tolist()}
+    payload = {
+        "format": "dice-and-destiny-candidate-policy-v2",
+        "model_id": model_id,
+        "algorithm": "MaskablePPO deterministic masked argmax",
+        "architecture": "v2 mechanics candidate scorer: context/candidate/score width 96",
+        "source_checkpoint": checkpoint.name,
+        "source_checkpoint_sha256": hashlib.sha256(checkpoint.read_bytes()).hexdigest(),
+        "source_parameter_sha256": parameter_hash(model),
+        "source_revision": source_revision,
+        "training_engine_revision": training_engine_revision,
+        "content_version": content_version,
+        "environment_schema": ENVIRONMENT_SCHEMA_V2,
+        "observation_schema": OBSERVATION_SCHEMA_V2,
+        "action_schema": ACTION_SCHEMA_V2,
+        "observation_size": OBSERVATION_SIZE_V2,
+        "maximum_actions": MAX_ACTIONS_V2,
+        "base_features": BASE_FEATURES_V2,
+        "action_features": ACTION_FEATURES_V2,
+        "tensors": tensors,
+    }
+    output.parent.mkdir(parents=True, exist_ok=True)
+    output.write_text(json.dumps(payload, separators=(",", ":"), sort_keys=True) + "\n")
+    return {
+        **{key: payload[key] for key in (
+            "format", "model_id", "source_checkpoint_sha256", "source_parameter_sha256",
+            "source_revision", "training_engine_revision", "content_version",
+            "environment_schema", "observation_schema", "action_schema",
+        )},
+        "policy_export_sha256": hashlib.sha256(output.read_bytes()).hexdigest(),
     }

@@ -29,6 +29,10 @@ type Battle struct {
 	Origin             BattleOrigin
 	Random             RandomState
 	SettledCatalog     []byte
+	// SettledCatalogHash is a transient lookup key for immutable decoded
+	// content. It is recomputed after persistence recovery and never changes
+	// checkpoint or replay JSON.
+	SettledCatalogHash [32]byte `json:"-"`
 	Settled            *SettledRuntime
 }
 

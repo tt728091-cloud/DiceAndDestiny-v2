@@ -1,0 +1,42 @@
+{
+  "baseline": {
+    "documented_games_per_second": 1.8474,
+    "reproduced_games_per_second": 2.261622516,
+    "single_authority_games_per_second": 4.95
+  },
+  "final_soak": {
+    "games_per_run": 1000,
+    "games_per_second": [59.571758140191825, 59.599343120542464, 59.95456957731759],
+    "median_games_per_second": 59.599343120542464,
+    "runs": 3,
+    "safety_failures": 0
+  },
+  "hashes": {
+    "phase2_seed11_final_zip": "e2e98c2ecadfe9e06892676962e751a116cb07183aa193882d73927866d760b8",
+    "phase2_seed22_final_zip": "75692ceb47232f5ab0c7a54c4b1b429220535253f32c19f41e583ee03e49af3d",
+    "phase2_seed33_final_zip": "f60e9cc2d31577056b98ef481ae5b31ca4dcd0c9c1352758d8118638192c8df2",
+    "phase3_frozen_export": "dea4a6681fcd12d368dee6e720bb0742643a25dd46366080ab4e79fba59e3937",
+    "uv_lock": "2a0f2aa2c52170969a65b3999b50c008116c22971cfc7261c2fc6cfd64626588"
+  },
+  "profiles": {
+    "balanced-80": {"games_per_second": 57.149273919, "normalized_cpu_percent": 68.141588861, "peak_rss_bytes": 3403792384, "workers": 10},
+    "custom-4x1": {"games_per_second": 31.524943191, "normalized_cpu_percent": 30.956780765, "peak_rss_bytes": 1369112576, "workers": 4},
+    "light-50": {"games_per_second": 42.231177712, "normalized_cpu_percent": 43.946567767, "peak_rss_bytes": 2050375680, "workers": 6},
+    "max": {"games_per_second": 59.947429853, "normalized_cpu_percent": 76.638878622, "peak_rss_bytes": 4083924992, "workers": 12}
+  },
+  "single_lane_final": {
+    "allocations_per_game": 42423,
+    "bytes_per_game": 11135824,
+    "games_per_second": 147.83
+  },
+  "sustained_max_soak": {
+    "elapsed_seconds": 1906.2141409580363,
+    "games": 140000,
+    "games_per_second": 73.44400452807363,
+    "normalized_cpu_percent": 82.18967320941145,
+    "peak_rss_bytes": 6865960960,
+    "safety_failures": 0,
+    "swap_growth_bytes": 0,
+    "thermal_warnings": 0
+  }
+}

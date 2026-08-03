@@ -11,6 +11,13 @@ from gymnasium import spaces
 from .bridge import AuthorityBridge
 from .policies import Policy, build_policy, select_with_policy
 from .schema import MAX_ACTIONS, OBSERVATION_SIZE, EncodedDecision, SchemaEncoder
+from .schema_v2 import (
+    MAX_ACTIONS_V2,
+    OBSERVATION_SCHEMA_V2,
+    OBSERVATION_SIZE_V2,
+    EncodedDecisionV2,
+    SchemaEncoderV2,
+)
 
 
 class AuthorityGymEnv(gym.Env[np.ndarray, int]):
@@ -34,24 +41,42 @@ class AuthorityGymEnv(gym.Env[np.ndarray, int]):
         max_episode_actions: int = 1200,
         device: str = "cpu",
         session_id: str = "train",
+        authority_mode: str = "ephemeral",
+        telemetry_mode: str = "training",
+        transport_mode: str = "full",
+        observation_schema: str = "dice-and-destiny-observation-v1",
     ) -> None:
         super().__init__()
-        self.action_space = spaces.Discrete(MAX_ACTIONS)
-        self.observation_space = spaces.Box(-10.0, 10.0, (OBSERVATION_SIZE,), dtype=np.float32)
+        self.observation_schema = observation_schema
+        if observation_schema == OBSERVATION_SCHEMA_V2:
+            self.maximum_actions = MAX_ACTIONS_V2
+            self.observation_size = OBSERVATION_SIZE_V2
+            self.encoder: SchemaEncoder | SchemaEncoderV2 = SchemaEncoderV2()
+        else:
+            self.maximum_actions = MAX_ACTIONS
+            self.observation_size = OBSERVATION_SIZE
+            self.encoder = SchemaEncoder()
+        self.action_space = spaces.Discrete(self.maximum_actions)
+        self.observation_space = spaces.Box(
+            -10.0, 10.0, (self.observation_size,), dtype=np.float32
+        )
         self.bridge = AuthorityBridge(
             binary,
             server_root,
             max_episode_actions=max_episode_actions,
             session_id=session_id,
+            authority_mode=authority_mode,
+            telemetry_mode=telemetry_mode,
+            transport_mode=transport_mode,
+            observation_schema=observation_schema,
         )
-        self.encoder = SchemaEncoder()
         self.training_seed = training_seed
         self.opponent_specs = opponent_specs or ["random", "heuristic"]
         self.learner_seat_mode = learner_seat
         self.device = device
         self.episode_index = 0
         self.transition: dict[str, Any] | None = None
-        self.decision: EncodedDecision | None = None
+        self.decision: EncodedDecision | EncodedDecisionV2 | None = None
         self.learner_seat = "seat-a"
         self.opponent_seat = "seat-b"
         self.opponent: Policy | None = None
@@ -91,7 +116,7 @@ class AuthorityGymEnv(gym.Env[np.ndarray, int]):
         if self.transition is None or self.decision is None:
             raise RuntimeError("reset must be called before step")
         selected = int(action)
-        if selected < 0 or selected >= MAX_ACTIONS or not self.decision.action_mask[selected]:
+        if selected < 0 or selected >= self.maximum_actions or not self.decision.action_mask[selected]:
             raise RuntimeError(f"learner selected masked action {selected}")
         self.transition = self.bridge.step(selected)
         self.learner_steps += 1
@@ -111,15 +136,17 @@ class AuthorityGymEnv(gym.Env[np.ndarray, int]):
                     "opponent": self.opponent.name if self.opponent else "",
                 }
             )
-            observation = np.zeros(OBSERVATION_SIZE, dtype=np.float32)
-            self.decision = EncodedDecision(observation, np.zeros(MAX_ACTIONS, dtype=bool))
+            observation = np.zeros(self.observation_size, dtype=np.float32)
+            self.decision = type(self.decision)(
+                observation, np.zeros(self.maximum_actions, dtype=bool)
+            )
             return observation, reward, terminated, truncated, info
         self.decision = self.encoder.encode(self.transition)
         return self.decision.observation, reward, terminated, truncated, info
 
     def action_masks(self) -> np.ndarray:
         if self.decision is None:
-            return np.zeros(MAX_ACTIONS, dtype=bool)
+            return np.zeros(self.maximum_actions, dtype=bool)
         return self.decision.action_mask.copy()
 
     def close(self) -> None:

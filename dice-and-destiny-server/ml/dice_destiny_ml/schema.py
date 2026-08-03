@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import base64
 import hashlib
 import json
 from dataclasses import dataclass
@@ -43,6 +44,20 @@ class SchemaEncoder:
     """
 
     def encode(self, transition: dict[str, Any]) -> EncodedDecision:
+        encoded = transition.get("encoded_decision")
+        if encoded:
+            observation = np.frombuffer(
+                base64.b64decode(encoded["observation_f32_le_base64"]),
+                dtype="<f4",
+            ).copy()
+            if observation.shape != (OBSERVATION_SIZE,):
+                raise RuntimeError(f"encoded observation has shape {observation.shape}")
+            mask_bytes = base64.b64decode(encoded["action_mask_bits_base64"])
+            mask = np.unpackbits(np.frombuffer(mask_bytes, dtype=np.uint8), bitorder="little")[:MAX_ACTIONS]
+            action_mask = mask.astype(bool, copy=False)
+            if int(action_mask.sum()) != int(encoded["candidate_count"]):
+                raise RuntimeError("encoded candidate count does not match action mask")
+            return EncodedDecision(observation=observation, action_mask=action_mask)
         result = transition["result"]
         snapshot = result.get("snapshot") or {}
         viewer = snapshot.get("viewer_actor_id") or transition.get("actor_id")
@@ -93,6 +108,23 @@ class SchemaEncoder:
             raise RuntimeError("nonterminal decision has no legal candidates")
         observation = np.concatenate((base, candidate_matrix.reshape(-1))).astype(np.float32, copy=False)
         return EncodedDecision(observation=observation, action_mask=mask)
+
+    def assert_transport_parity(self, transition: dict[str, Any]) -> None:
+        if not transition.get("encoded_decision") or not transition.get("result", {}).get("snapshot"):
+            raise RuntimeError("transport parity requires raw and Go-encoded decisions")
+        encoded = self.encode(transition)
+        raw_transition = dict(transition)
+        raw_transition.pop("encoded_decision", None)
+        raw = self.encode(raw_transition)
+        if not np.array_equal(encoded.action_mask, raw.action_mask):
+            raise RuntimeError("Go/Python action masks differ")
+        if not np.array_equal(encoded.observation, raw.observation):
+            differing = np.flatnonzero(encoded.observation != raw.observation)
+            index = int(differing[0]) if len(differing) else -1
+            raise RuntimeError(
+                f"Go/Python encoded observation differs at {index}: "
+                f"{encoded.observation[index]} != {raw.observation[index]}"
+            )
 
     def _actor_scalars(self, output: np.ndarray, offset: int, actor: dict[str, Any]) -> None:
         values = (

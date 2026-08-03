@@ -1,0 +1,39 @@
+{
+  "artifact_root": "runs/throughput-phase1-20260802-m3max-v1",
+  "machine": {
+    "chip": "Apple M3 Max",
+    "efficiency_cores": 4,
+    "logical_cpus": 16,
+    "memory_gib": 64,
+    "model_identifier": "Mac15,9",
+    "performance_cores": 12,
+    "power": "AC"
+  },
+  "primary_benchmark": {
+    "authority_mode": "ephemeral",
+    "episodes_per_pairing": 500,
+    "model_a": "runs/phase2-training/seed-11/checkpoints/final.zip",
+    "model_b": "runs/phase2-training/seed-22/checkpoints/final.zip",
+    "save_replays": "representative",
+    "seat_swap": true,
+    "telemetry_mode": "training",
+    "torch_threads_per_worker": 1,
+    "total_games": 1000,
+    "transport_mode": "encoded"
+  },
+  "profiles": {
+    "balanced-80": {"blas_threads_per_worker": 1, "workers": 10},
+    "custom-example": {"blas_threads_per_worker": 1, "workers": 4},
+    "light-50": {"blas_threads_per_worker": 1, "workers": 6},
+    "max": {"blas_threads_per_worker": 1, "workers": 12}
+  },
+  "sustained_max_soak": {
+    "episodes_per_pairing": 70000,
+    "profile": "max",
+    "save_replays": "none",
+    "seat_swap": true,
+    "seed_start": 20000000,
+    "total_games": 140000
+  },
+  "worker_sweep": [1, 2, 4, 6, 8, 10, 12, 14, 16]
+}
