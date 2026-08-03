@@ -118,14 +118,15 @@
 <body>
 <main class="shell">
   <header class="hero">
-    <div class="eyebrow">Standalone research and implementation handoff · 2026-08-02</div>
+    <div class="eyebrow">Standalone research and implementation handoff · revised 2026-08-03</div>
     <h1>Phase 2 PPO training throughput optimization</h1>
     <p class="lede">This document gives a fresh Codex context everything needed to profile and optimize the complete Dice &amp; Destiny v2 Maskable PPO training pipeline. It records the current repository state, measured bottlenecks, code-level findings, local research probes, primary-source research, prioritized implementation sequence, correctness constraints, benchmark protocol, acceptance gates, and a copyable implementation prompt.</p>
     <div class="callout danger"><strong>Research status:</strong> no trainer, engine, model, checkpoint, export, or runtime behavior was changed while producing this document. The implementation work described below has not been performed. Do not report any projected speedup as achieved.</div>
+    <div class="callout good"><strong>Implementation starting point:</strong> begin from the latest <code>main</code> and verify that it contains commit <code>beba8feb6ba0b3727964eb539872cbb1034b5830</code>, which is the pushed Phase 1/2 decision-quality implementation baseline. Create the optimization task branch from that current <code>main</code>; do not resume the former research branch as the baseline.</div>
     <div class="meta">
       <div><small>Repository</small><strong>/Users/daddymere/games/Dice-and-Destiny-v2</strong></div>
-      <div><small>Branch</small><strong>codex/phase-2-decision-quality</strong></div>
-      <div><small>Observed HEAD</small><strong>93f13c75874f7065444eaab5018b6f6fc953de54</strong></div>
+      <div><small>Implementation base</small><strong>latest main containing beba8feb6ba0</strong></div>
+      <div><small>Historical research HEAD</small><strong>93f13c75874f7065444eaab5018b6f6fc953de54</strong></div>
       <div><small>Machine</small><strong>MacBook Pro Mac15,9 · M3 Max · 16 logical CPUs · 64 GB</strong></div>
       <div><small>Selected policy</small><strong>Blade Warden v2 · corrected seed 22</strong></div>
       <div><small>Current baseline</small><strong>309.69 learner steps/s · 1.9826 complete games/s</strong></div>
@@ -177,8 +178,9 @@
   <section id="state">
     <div class="eyebrow">Repository state</div>
     <h2>Preserve the accepted work before touching performance code</h2>
-    <p>At research time the branch was intentionally dirty, with the Phase 1 and Phase 2 implementation, reports, v2 models, native runtime, and Godot selection changes still uncommitted. A new context must run <code>git status --short --branch</code>, inspect the actual diff, and preserve every user file. It must not clean, reset, checkout over, or copy artifacts from another worktree.</p>
+    <p>The research measurements were originally collected from an intentionally dirty <code>codex/phase-2-decision-quality</code> worktree at historical HEAD <code>93f13c75874f7065444eaab5018b6f6fc953de54</code>. The Phase 1/2 implementation, reports, v2 models, native runtime, Godot selection changes, and this handoff were subsequently committed and pushed to <code>main</code>; commit <code>beba8feb6ba0b3727964eb539872cbb1034b5830</code> is the required implementation-baseline ancestor. A new context must fetch the remote, start from the latest <code>main</code>, verify the ancestor, then create its optimization branch from that point. It must also run <code>git status --short --branch</code>, inspect any actual diff, preserve every user file, and never clean, reset, checkout over, or copy artifacts from another worktree.</p>
     <ul class="checklist">
+      <li>Run <code>git fetch origin</code> and verify <code>git merge-base --is-ancestor beba8feb6ba0b3727964eb539872cbb1034b5830 origin/main</code>. Base the optimization work on the latest <code>origin/main</code>, using an isolated <code>codex/</code> task branch or worktree.</li>
       <li>Read repository <code>AGENTS.md</code> completely. Always launch Godot through <code>./scripts/godot.sh</code>.</li>
       <li>Read <code>throughput-and-decision-quality-handoff.html</code>, <code>throughput-optimization-report.md</code>, <code>decision-quality-report.md</code>, <code>observation-schema-v2.md</code>, and the ML README completely.</li>
       <li>Preserve the accepted v1 checkpoint/export and both current v2 exports. Never reinterpret old weights as a new architecture.</li>
@@ -545,12 +547,16 @@
     <div class="copy-row"><p>Give the following prompt and this HTML file to a fresh implementation context.</p><button type="button" data-copy-target="implementation-prompt">Copy prompt</button></div>
     <pre id="implementation-prompt">Implement the Phase 2 PPO training-throughput optimization program for Dice &amp; Destiny.
 
+BASELINE AND BRANCH
+
+Fetch origin and start from the latest main branch. Verify that origin/main contains the pushed Phase 1/2 decision-quality baseline commit beba8feb6ba0b3727964eb539872cbb1034b5830. Do not use the former codex/phase-2-decision-quality research branch as the implementation baseline. Before editing, create or use an isolated codex/ task branch or worktree based on the latest main, unless the task environment has already created the correct isolated branch from main. Preserve any newer commits already on main.
+
 FIRST READ
 
 Read /Users/daddymere/games/Dice-and-Destiny-v2/AGENTS.md completely, then read this document completely:
 /Users/daddymere/games/Dice-and-Destiny-v2/docs/machine-learning-battle-simulation/phase-2-training-throughput-optimization-handoff.html
 
-Also read the complete Phase 1 throughput report, Phase 2 decision-quality report, original throughput/decision-quality handoff, observation-schema-v2 contract, ML README, and every code path and retained artifact named in the HTML. Inspect the real branch, HEAD, dirty files, ignored runs, checkpoints, exports, runtime state, and machine state. Treat hashes in the document as orientation until reverified. Preserve all user work. Never clean/reset/overwrite another worktree or accepted artifact.
+Also read the complete Phase 1 throughput report, Phase 2 decision-quality report, original throughput/decision-quality handoff, observation-schema-v2 contract, ML README, and every code path and retained artifact named in the HTML. Inspect the real branch, HEAD, dirty files, ignored runs, checkpoints, exports, runtime state, and machine state. Treat measurement and artifact hashes in the document as orientation until reverified; treat beba8feb6ba0b3727964eb539872cbb1034b5830 as the required implementation-baseline ancestor of the latest main. Preserve all user work. Never clean/reset/overwrite another worktree or accepted artifact.
 
 MISSION
 
@@ -576,7 +582,7 @@ WORK ORDER
 Do not assume any projected improvement in the research HTML has been achieved. Reproduce every measurement and keep pure engineering changes separate from changes to what or how the model learns.</pre>
   </section>
 
-  <footer>Prepared as a standalone research artifact. Revalidate repository state, dependencies, hardware state, and retained artifacts before implementation.</footer>
+  <footer>Prepared as a standalone research artifact and revised after the Phase 1/2 implementation was pushed to main. Start from the latest main containing baseline commit beba8feb6ba0, then revalidate repository state, dependencies, hardware state, and retained artifacts before implementation.</footer>
 </main>
 <script>
   document.querySelectorAll('[data-copy-target]').forEach((button) => {
