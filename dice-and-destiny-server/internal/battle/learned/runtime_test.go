@@ -50,6 +50,17 @@ func TestRuntimeRequiresExplicitReplacementAndSwitchesPinnedModels(t *testing.T)
 		t.Fatalf("runtime replacement loaded the wrong model: %#v", model)
 	}
 
+	base.ModelPath = testV3ModelPath(t)
+	base.ModelSHA256 = "529a6b4d6ad347d5ba86b5e000cb5fceec306414cdf0af3405713a2bc5c32ebb"
+	v3 := runtimeCall(t, base)
+	if v3["ok"] != true {
+		t.Fatalf("explicit v3 runtime replacement failed: %#v", v3)
+	}
+	v3Model := v3["result"].(map[string]any)["model"].(map[string]any)
+	if v3Model["model_id"] != "blade-warden-optimized-5m-seed-22-v3" {
+		t.Fatalf("runtime replacement loaded the wrong v3 model: %#v", v3Model)
+	}
+
 	base.ModelPath = testModelPath(t)
 	base.ModelSHA256 = ""
 	restored := runtimeCall(t, base)

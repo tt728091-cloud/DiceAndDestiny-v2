@@ -105,6 +105,16 @@ integration:
 ./scripts/godot.sh --headless --script res://tests/phase3/verify_learned_battle.gd
 ```
 
+## Optimized 5M v3 opponent
+
+The finalized optimized seed-22 policy is exported separately at
+`../../dice-and-destiny-client/models/learned/blade-warden-optimized-5m-seed-22-v3.json`
+and pinned with SHA-256
+`529a6b4d6ad347d5ba86b5e000cb5fceec306414cdf0af3405713a2bc5c32ebb`.
+It uses the same v2 observation/action contract as the decision-quality model.
+The local battle menu exposes it as `Strongest v3` for Human Seat A and Human
+Seat B while preserving both earlier opponents.
+
 Run every command from `dice-and-destiny-server` through `scripts/ml.sh`. The
 wrapper builds the local Go bridge once per invocation and uses the locked Python
 environment in `ml/.venv`. Godot is not started.

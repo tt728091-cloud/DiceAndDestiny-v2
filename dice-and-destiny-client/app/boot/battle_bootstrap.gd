@@ -23,7 +23,7 @@ func _build_mode_menu() -> void:
 	center.set_anchors_preset(Control.PRESET_FULL_RECT)
 	add_child(center)
 	var panel := PanelContainer.new()
-	panel.custom_minimum_size = Vector2(760, 820)
+	panel.custom_minimum_size = Vector2(760, 1000)
 	center.add_child(panel)
 	var margin := MarginContainer.new()
 	for side in ["margin_left", "margin_top", "margin_right", "margin_bottom"]:
@@ -71,8 +71,18 @@ func _build_mode_menu() -> void:
 		_start_learned.bind("seat-b", "decision-v2"),
 		"battle.mode.learned.v2.seat_b"
 	)
+	_add_mode_button(
+		"Learned Mirror · Human Seat A · Strongest v3\nBlade Warden vs Optimized 5M Seed-22 Blade Warden",
+		_start_learned.bind("seat-a", "optimized-v3"),
+		"battle.mode.learned.v3.seat_a"
+	)
+	_add_mode_button(
+		"Learned Mirror · Human Seat B · Strongest v3\nBlade Warden vs Optimized 5M Seed-22 Blade Warden",
+		_start_learned.bind("seat-b", "optimized-v3"),
+		"battle.mode.learned.v3.seat_b"
+	)
 	_message = Label.new()
-	_message.text = "Learned battles are inference-only. Choose the preserved old v1 or the new decision-quality v2 opponent."
+	_message.text = "Learned battles are inference-only. Choose the preserved v1, decision-quality v2, or strongest optimized v3 opponent."
 	_message.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_message.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	_message.add_theme_color_override("font_color", Color("9fb3c8"))

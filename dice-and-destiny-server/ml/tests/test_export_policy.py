@@ -63,9 +63,46 @@ def test_phase2_v2_export_is_separate_pinned_and_complete() -> None:
     assert payload["source_parameter_sha256"] == (
         "e82001aaa98066e3a60823631de4622ba654267036c140d7647330b69edeb4a5"
     )
-    assert payload["content_version"] == (
-        "9eed6066ea8c95f8a60038647de935e88ed8d6e9cbc618229070a4d78945edc4"
+    assert payload["content_version"] == ("9eed6066ea8c95f8a60038647de935e88ed8d6e9cbc618229070a4d78945edc4")
+    assert payload["environment_schema"] == "dice-and-destiny-ml-env-v2"
+    assert payload["observation_schema"] == "dice-and-destiny-observation-v2"
+    assert payload["action_schema"] == "dice-and-destiny-action-candidates-v2"
+    assert payload["observation_size"] == 18_944
+    assert payload["maximum_actions"] == 128
+    assert payload["base_features"] == 2_560
+    assert payload["action_features"] == 128
+    assert set(payload["tensors"]) == set(ACTOR_TENSORS)
+    for tensor in payload["tensors"].values():
+        size = 1
+        for dimension in tensor["shape"]:
+            size *= dimension
+        assert len(tensor["values"]) == size
+
+
+def test_optimized_v3_export_is_separate_pinned_and_complete() -> None:
+    server_root = Path(__file__).resolve().parents[2]
+    model_path = (
+        server_root.parent
+        / "dice-and-destiny-client"
+        / "models"
+        / "learned"
+        / "blade-warden-optimized-5m-seed-22-v3.json"
     )
+    payload = json.loads(model_path.read_text())
+    assert hashlib.sha256(model_path.read_bytes()).hexdigest() == (
+        "529a6b4d6ad347d5ba86b5e000cb5fceec306414cdf0af3405713a2bc5c32ebb"
+    )
+    assert payload["format"] == "dice-and-destiny-candidate-policy-v2"
+    assert payload["model_id"] == "blade-warden-optimized-5m-seed-22-v3"
+    assert payload["source_checkpoint_sha256"] == (
+        "5e2214b89cbe84f5405f5fef87f368453801598fc2125f3535c58a245c3b876d"
+    )
+    assert payload["source_parameter_sha256"] == (
+        "8f682a5645692ba278f2082c01411b86c01afb0e5d457583a7a4ab6fb8f3431d"
+    )
+    assert payload["source_revision"] == "5f3de5e2be2cfdd16b66415f8279f58707506288"
+    assert payload["training_engine_revision"] == "5f3de5e2be2cfdd16b66415f8279f58707506288"
+    assert payload["content_version"] == ("9eed6066ea8c95f8a60038647de935e88ed8d6e9cbc618229070a4d78945edc4")
     assert payload["environment_schema"] == "dice-and-destiny-ml-env-v2"
     assert payload["observation_schema"] == "dice-and-destiny-observation-v2"
     assert payload["action_schema"] == "dice-and-destiny-action-candidates-v2"

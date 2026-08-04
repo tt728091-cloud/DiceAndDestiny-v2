@@ -11,6 +11,7 @@ from .diagnostics import run_owner_diagnostic
 from .evaluation import evaluate
 from .export_policy import export_candidate_policy_v2, export_phase3_policy
 from .imitation import corrective_clone
+from .observation_walkthrough import generate_observation_walkthrough
 from .policies import HeuristicPolicy, select_with_policy
 from .reporting import generate_report_artifacts
 from .resources import resolve_resource_budget
@@ -104,6 +105,14 @@ def main(argv: list[str] | None = None) -> int:
             batch_size=args.batch_size,
             device=args.device,
             learning_rate=args.learning_rate,
+        )
+    elif args.command == "observation-walkthrough":
+        result = generate_observation_walkthrough(
+            binary=binary,
+            server_root=server_root,
+            replay_file=Path(args.replay),
+            output_file=Path(args.output),
+            device=args.device,
         )
     elif args.command == "smoke":
         result = smoke(binary, server_root, args.seed)
@@ -297,6 +306,14 @@ def build_parser() -> argparse.ArgumentParser:
     corrective_parser.add_argument("--batch-size", type=int, default=256)
     corrective_parser.add_argument("--device", default="cpu")
     corrective_parser.add_argument("--learning-rate", type=float)
+
+    walkthrough_parser = subparsers.add_parser(
+        "observation-walkthrough",
+        help="reconstruct one observation-v2 replay as a readable self-contained HTML audit",
+    )
+    walkthrough_parser.add_argument("--replay", required=True)
+    walkthrough_parser.add_argument("--output", required=True)
+    walkthrough_parser.add_argument("--device", default="cpu")
 
     export_parser = subparsers.add_parser(
         "export-policy",

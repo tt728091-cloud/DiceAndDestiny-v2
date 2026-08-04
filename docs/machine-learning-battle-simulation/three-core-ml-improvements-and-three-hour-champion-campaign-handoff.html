@@ -1,0 +1,554 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Dice &amp; Destiny · Three Core ML Improvements and Three-Hour Champion Campaign</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #07111d;
+      --panel: #101d2b;
+      --panel-2: #17283a;
+      --line: #2b4258;
+      --text: #eaf0f6;
+      --muted: #9eb2c5;
+      --gold: #f2c45e;
+      --cyan: #69d7e8;
+      --green: #70d69d;
+      --red: #ff8d8d;
+      --purple: #bea7ff;
+    }
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      background:
+        radial-gradient(circle at 12% 0, #17304f 0, transparent 34rem),
+        radial-gradient(circle at 88% 8%, #30233f 0, transparent 30rem),
+        var(--bg);
+      color: var(--text);
+      font: 15px/1.58 Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+    main { width: min(1460px, calc(100% - 34px)); margin: 0 auto; padding: 52px 0 96px; }
+    h1 { font-size: clamp(2.5rem, 6vw, 5.7rem); line-height: .96; max-width: 1220px; margin: .35rem 0 1.2rem; }
+    h2 { font-size: clamp(1.7rem, 3vw, 2.6rem); margin: 0 0 1rem; }
+    h3 { font-size: 1.25rem; margin: 1.25rem 0 .55rem; }
+    h4 { margin: 1rem 0 .35rem; }
+    p, li { color: var(--muted); }
+    strong { color: var(--text); }
+    code { color: #d7e7f5; overflow-wrap: anywhere; }
+    pre {
+      margin: .8rem 0;
+      padding: 15px 17px;
+      overflow: auto;
+      border: 1px solid var(--line);
+      border-radius: 11px;
+      background: #07101a;
+      color: #dce9f4;
+      font: 12.5px/1.48 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    }
+    a { color: var(--cyan); }
+    .eyebrow { color: var(--gold); text-transform: uppercase; letter-spacing: .16em; font-size: .76rem; font-weight: 850; }
+    .lede { max-width: 1050px; font-size: 1.13rem; }
+    .hero { padding-bottom: 34px; border-bottom: 1px solid var(--line); }
+    .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 13px; margin: 20px 0; }
+    .card, .section, .callout {
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      background: linear-gradient(145deg, var(--panel-2), var(--panel));
+      padding: 20px;
+    }
+    .metric { font-size: 1.75rem; font-weight: 850; margin: .25rem 0; }
+    .section { margin: 18px 0; padding: clamp(20px, 4vw, 38px); scroll-margin-top: 116px; }
+    .callout { margin: 15px 0; }
+    .must { border-color: #7b6332; background: #261f14; }
+    .danger { border-color: #76404c; background: #281820; }
+    .success { border-color: #35674e; background: #12241c; }
+    .purple { border-color: #554676; background: #1d1829; }
+    .toc { position: sticky; top: 0; z-index: 5; display: flex; flex-wrap: wrap; gap: 7px; padding: 11px; margin: 22px 0;
+      background: rgba(7, 17, 29, .94); backdrop-filter: blur(12px); border: 1px solid var(--line); border-radius: 13px; }
+    .toc a { text-decoration: none; border: 1px solid var(--line); border-radius: 999px; padding: 5px 10px; color: var(--muted); }
+    .toc a:hover { color: var(--text); border-color: var(--cyan); }
+    .grid2 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 15px; }
+    .grid3 { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 15px; }
+    table { width: 100%; border-collapse: collapse; font-size: .9rem; }
+    th, td { border-bottom: 1px solid var(--line); padding: 9px 10px; text-align: left; vertical-align: top; }
+    th { color: var(--muted); background: #0c1825; }
+    .table-wrap { overflow: auto; border: 1px solid var(--line); border-radius: 11px; }
+    .tag { display: inline-block; padding: 2px 8px; margin-right: 4px; border: 1px solid var(--line); border-radius: 999px; font-size: .75rem; color: var(--muted); }
+    .flow { display: grid; grid-template-columns: 1fr auto 1fr auto 1fr; gap: 12px; align-items: center; margin: 18px 0; }
+    .flow > div { border: 1px solid var(--line); border-radius: 12px; padding: 15px; background: #0d1926; min-height: 105px; }
+    .arrow { color: var(--gold); font-size: 1.5rem; }
+    details { margin: 10px 0; border: 1px solid var(--line); border-radius: 11px; background: #0d1926; }
+    details > summary { cursor: pointer; padding: 12px 15px; color: var(--cyan); font-weight: 750; }
+    details > div { padding: 0 15px 15px; }
+    .checklist li { margin: .35rem 0; }
+    .small { font-size: .86rem; }
+    footer { margin-top: 32px; padding-top: 22px; border-top: 1px solid var(--line); color: var(--muted); }
+    @media (max-width: 900px) {
+      .section { scroll-margin-top: 210px; }
+      .grid2, .grid3 { grid-template-columns: 1fr; }
+      .flow { grid-template-columns: 1fr; }
+      .arrow { transform: rotate(90deg); justify-self: center; }
+    }
+  </style>
+</head>
+<body>
+<main>
+  <header class="hero">
+    <div class="eyebrow">Implementation handoff · owner-approved direction · 2026-08-04</div>
+    <h1>Three Core ML Improvements and a Three-Hour Global-Champion Campaign</h1>
+    <p class="lede">This is the complete handoff for a fresh Codex context that knows nothing about the preceding discussion. Implement all three improvements below, validate them against the real Dice &amp; Destiny authority, then run one time-bounded campaign whose goal is to produce a model that defeats the current global champion: raw V3 checkpoint 400 at 2,001,600 learner steps.</p>
+    <div class="cards">
+      <article class="card"><div class="eyebrow">Improvement 1</div><div class="metric">Controlled training</div><p>Checkpoint/global champion gates, reversible experiments, plateau handling, and permanent history.</p></article>
+      <article class="card"><div class="eyebrow">Improvement 2</div><div class="metric">Observation V3</div><p>Status-aware, roster-scalable, form-aware state and candidate representation.</p></article>
+      <article class="card"><div class="eyebrow">Improvement 3</div><div class="metric">Teacher safety</div><p>No automatic post-PPO rewrite. Any teacher correction is an isolated challenger that must win.</p></article>
+      <article class="card"><div class="eyebrow">Campaign budget</div><div class="metric">3 hours</div><p>Finish the checkpoint and its required evaluation already in flight at the deadline, then stop.</p></article>
+    </div>
+    <div class="callout must"><strong>Owner communication is mandatory.</strong> Send short commentary notes as work proceeds: starting assumptions, schema/preflight result, implementation milestones, tests, exact campaign configuration and timer start, checkpoint promotions/rejections, control changes, global-score trend, deadline handling, and final outcome. During long operations, poll and report brief progress instead of disappearing.</div>
+  </header>
+
+  <nav class="toc">
+    <a href="#mission">Mission</a><a href="#truth">Current truth</a><a href="#improvement-1">1 · Training control</a>
+    <a href="#improvement-2">2 · Observation V3</a><a href="#improvement-3">3 · Teacher safety</a>
+    <a href="#campaign">Three-hour campaign</a><a href="#implementation">Work order</a><a href="#acceptance">Acceptance</a>
+    <a href="#files">Files &amp; commands</a><a href="#report">Final report</a>
+  </nav>
+
+  <section id="mission" class="section">
+    <div class="eyebrow">Mission and authority</div>
+    <h2>Deliver a better training system, not merely another long run</h2>
+    <ol>
+      <li>Implement the three improvements in tracked, tested code.</li>
+      <li>Preserve real-authority rules, deterministic RNG, viewer privacy, complete legal commands, original-command submission, terminal outcomes, and replayability.</li>
+      <li>Run controlled preflight tests and short ablations needed to select a safe campaign configuration.</li>
+      <li>Start a separately measured three-hour training/evaluation campaign using the improvements.</li>
+      <li>Attempt to replace the global champion only through the declared gates.</li>
+      <li>Preserve every promoted checkpoint, configuration, result, and reason so later campaigns learn from this one.</li>
+    </ol>
+    <div class="callout danger"><strong>Do not optimize the metric by weakening the game.</strong> Do not shorten battles, skip decisions/reactions/status rules, use approximate rules, leak hidden state, remove terminal records, change evaluation seeds after seeing results, or call a lighter workload an improvement.</div>
+    <div class="callout"><strong>Three-hour clock interpretation:</strong> implementation and required correctness testing happen first. The campaign clock begins immediately before the main training/evaluation loop. The 10,800-second budget includes its training and checkpoint evaluations. If the deadline arrives while a checkpoint interval, PPO update, checkpoint save, checkpoint gate, or triggered global-promotion evaluation is in flight, finish that checkpoint and those required battles. Do not start another training interval afterward.</div>
+  </section>
+
+  <section id="truth" class="section">
+    <div class="eyebrow">Current verified truth</div>
+    <h2>Use raw checkpoint 400 as the global champion</h2>
+    <div class="grid2">
+      <div>
+        <h3>Global champion artifact</h3>
+        <pre>dice-and-destiny-server/ml/runs/v3-seed22-optimized-5m-20260803-m3max/
+  seed-22/checkpoints/step-002001600.zip</pre>
+        <ul>
+          <li>Learner steps: <strong>2,001,600</strong></li>
+          <li>SHA-256: <code>9cc042d0e355dceb49e98d82296c7017c9fc810296d87b151c2dc9abf8be43b8</code></li>
+          <li>Size: 34,343,385 bytes</li>
+          <li>PPO: LR <code>3e-4</code>, rollout 256/worker, batch 256, 8 epochs, gamma .995, GAE .95, entropy .01, clip .2</li>
+        </ul>
+      </div>
+      <div>
+        <h3>Strength evidence</h3>
+        <ul>
+          <li>Checkpoint 400 vs V2, 1,000 matched games: <strong>781 wins, 48 draws, 171 losses</strong>; adjusted score 80.5%.</li>
+          <li>Corrected deployed V3 vs checkpoint 400: corrected V3 won 341, drew 73, lost 586. Checkpoint 400 is materially stronger.</li>
+          <li>The later post-PPO correction increased teacher agreement but reduced complete-game strength.</li>
+        </ul>
+      </div>
+    </div>
+    <div class="callout must"><strong>Do not confuse models.</strong> The current game-menu “Strongest v3” export is the corrected 5M artifact. It is useful as a playable preserved model, but it is not the global champion for this campaign. The raw 2,001,600-step checkpoint above is the champion.</div>
+    <div class="callout danger"><strong>Ignored artifact warning:</strong> training checkpoints live under ignored <code>ml/runs</code> storage and are not carried into an arbitrary new Git worktree. Work in the primary workspace where the artifact exists. Before implementation, verify the exact path and SHA. If it is missing, stop and ask the owner; never substitute corrected V3 or V2.</div>
+
+    <h3>Existing long-run facts</h3>
+    <div class="table-wrap"><table>
+      <thead><tr><th>Fact</th><th>Evidence / implication</th></tr></thead>
+      <tbody>
+        <tr><td>V3 long run</td><td>5,001,216 learner steps, 55,418 games, 8,443.6 seconds, 592.3 steps/s, 6.563 games/s.</td></tr>
+        <tr><td>Time split</td><td>6,970.0 seconds collection and 1,472.8 seconds PPO updates. Simulation remains predominantly CPU-bound.</td></tr>
+        <tr><td>Opponent skew</td><td>54,602/55,418 games (98.528%) used historical checkpoints because every saved ZIP became a flat-pool member.</td></tr>
+        <tr><td>Checkpoint curve vs V2</td><td>CP100 70.3%, CP200 77.0%, CP300 75.7%, CP400 78.1%, CP500 76.3%, CP600 76.4%, CP700 75.0%, CP800 72.6%, CP900 75.5% raw wins. Chronological final was not best.</td></tr>
+        <tr><td>MPS</td><td>Measured Apple MPS policy compute was 0.879× CPU resident and 0.421× transfer-inclusive. Use CPU unless new profiling proves the neural update has become the bottleneck.</td></tr>
+        <tr><td>Observation gap</td><td>103 of 223 decisions in the preserved walkthrough occurred while active status identity/stacks were omitted from explicit neural input.</td></tr>
+      </tbody>
+    </table></div>
+  </section>
+
+  <section id="improvement-1" class="section">
+    <div class="eyebrow">Core improvement 1</div>
+    <h2>Champion-gated, reversible, history-driven training</h2>
+
+    <h3>Use two distinct champion concepts</h3>
+    <div class="grid2">
+      <div class="callout"><strong>Checkpoint champion</strong><p>The strongest accepted checkpoint within the current campaign/model family. Every new challenger must beat this model first.</p></div>
+      <div class="callout purple"><strong>Global champion</strong><p>The strongest accepted model across all campaigns and model families. Initially raw checkpoint 400. It changes only after the global promotion series passes.</p></div>
+    </div>
+
+    <h3>Adaptive checkpoint gate</h3>
+    <p>Use deterministic policies, real authority, fresh held-out seeds, and seat swaps. Define draw-adjusted score as:</p>
+    <pre>adjusted_score = (challenger_wins + 0.5 * draws) / games</pre>
+    <div class="flow">
+      <div><strong>First block</strong><p>1,000 games = 500 fresh seeds, each played twice with seats swapped.</p></div>
+      <span class="arrow">→</span>
+      <div><strong>Decide or expand</strong><p>≥52% passes. ≤48% fails. Strictly between 48% and 52% triggers another fresh block.</p></div>
+      <span class="arrow">→</span>
+      <div><strong>Gray-zone block</strong><p>3,000 games = 1,500 new seeds with swaps. &gt;50% passes; ≤50% fails. Preserve the combined 4,000-game report too.</p></div>
+    </div>
+    <p>A passed challenger replaces the checkpoint champion. A failed challenger is not continued: restore the immutable checkpoint champion and its optimizer state, then create a controlled child experiment.</p>
+
+    <h3>Global promotion gate</h3>
+    <ul>
+      <li>If checkpoint champion and global champion are the same model, the first checkpoint gate can serve as global block one, but promotion confirmation is still required.</li>
+      <li>If they differ, begin a new held-out global series after the checkpoint gate passes.</li>
+      <li>Each global block is 1,000 games using a distinct 500-seed seat-swapped list.</li>
+      <li>If the challenger does not beat the global champion in block one, stop the promotion attempt. The global champion holds.</li>
+      <li>If the challenger wins block one, run block two. If the series becomes 1–1, run block three.</li>
+      <li>Promote only if the challenger wins at least two blocks, has pooled adjusted score above 50%, the declared confidence/non-inferiority rule passes, and all safety counts are zero.</li>
+      <li>A checkpoint that completes this gate becomes global champion immediately. Do not wait for a later training checkpoint.</li>
+    </ul>
+
+    <h3>Continue on upward global progress</h3>
+    <div class="callout success"><strong>Below 50% does not mean stop.</strong> A sequence such as 25% → 32% → 35% against the global champion is meaningful progress. Continue the campaign while checkpoint champions improve toward the global champion.</div>
+    <p>Use a stable development anchor seed bank for comparable trend measurement and separate sealed/fresh promotion seeds. Do not use evaluation games as PPO training experience. Restart review is triggered by plateau/regression, not merely failure to cross 50%.</p>
+
+    <h3>Default failure and plateau policy</h3>
+    <ul>
+      <li><strong>Three controlled challenger failures from the same checkpoint champion:</strong> declare that recipe branch plateaued and review a new-campaign control.</li>
+      <li><strong>Checkpoint champions continue improving internally and their global scores rise:</strong> continue, regardless of being below 50%.</li>
+      <li><strong>Several checkpoint champions show no meaningful global-score improvement:</strong> diagnose a global-objective plateau. Use confidence intervals and a configurable minimum effect rather than point estimates alone.</li>
+      <li><strong>Global scores regress:</strong> preserve the best checkpoint/global models, roll back, and change the suspected control.</li>
+      <li>Promotion resets checkpoint-failure patience. Global promotion resets global-stagnation tracking.</li>
+    </ul>
+
+    <h3>Opponent population: champions only</h3>
+    <p>Replace directory-driven “all saved checkpoints” sampling with an explicit immutable champion registry. PPO opponents may be:</p>
+    <ul>
+      <li>Current frozen checkpoint champion</li>
+      <li>Current frozen global champion</li>
+      <li>A small hall of prior checkpoint/global champions retained because they were once promoted and represent distinct successful strategies</li>
+    </ul>
+    <p>Do not add ordinary checkpoints merely because they were saved. Deduplicate identical champion paths and apply explicit category weights so file count cannot change sampling probability. Teacher/random policies may be separate opt-in ablations or initial curriculum diagnostics, but are not part of the main three-hour PPO opponent pool.</p>
+
+    <h3>Resume-safe controls versus new-campaign controls</h3>
+    <div class="grid2">
+      <div><h4>May branch from current checkpoint champion</h4><ul>
+        <li>Learning rate and schedule</li><li>PPO epochs and clip range</li><li>Target KL</li><li>Entropy coefficient</li>
+        <li>Batch and rollout size</li><li>Gamma / GAE lambda</li><li>Value-loss coefficient</li>
+        <li>Champion-pool weights and curriculum</li><li>Seat/seed schedule</li>
+      </ul></div>
+      <div><h4>Start a new model family/campaign</h4><ul>
+        <li>Observation schema or input size</li><li>Network width/depth/activation</li><li>Actor/critic/entity architecture</li>
+        <li>Action representation/capacity</li><li>Reward objective</li><li>Recurrent memory</li>
+        <li>Content-manifest incompatibility</li><li>Different teacher warm-start design</li>
+      </ul></div>
+    </div>
+    <p>Every experiment is an immutable child of a named parent checkpoint. If it performs worse, do not keep training it. Restore the parent, reverse the change or try one different control, and preserve the failed evidence.</p>
+
+    <h3>Experiment ledger and telemetry</h3>
+    <p>Implement an append-only machine-readable ledger plus a human HTML/Markdown summary. Each record must include:</p>
+    <div class="grid3">
+      <ul><li>Experiment ID and parent</li><li>Checkpoint/global champion hashes</li><li>Source/content/schema hashes</li><li>Full config and exact diff</li><li>Reason/hypothesis</li></ul>
+      <ul><li>Steps, games, elapsed time</li><li>Training/evaluation seeds</li><li>Opponent and seat distribution</li><li>W/D/L, adjusted score, intervals</li><li>Promotion/rejection/rollback</li></ul>
+      <ul><li>Policy entropy and approximate KL</li><li>Clip fraction and policy loss</li><li>Value loss/explained variance</li><li>Gradient/parameter movement</li><li>Action/ability/reroll/card behavior</li></ul>
+    </div>
+    <p>History must be queryable by comparable experiment family: content hash, observation/action schema, architecture, reward, teacher setup, opponent curriculum, and PPO recipe. Derive “typical best step” only across comparable runs and multiple seeds. Large roster/schema changes reset that expectation without deleting old history.</p>
+  </section>
+
+  <section id="improvement-2" class="section">
+    <div class="eyebrow">Core improvement 2</div>
+    <h2>Create a scalable, explicit, status-aware Observation V3</h2>
+    <p>Observation V2 allocates 18,944 float32 values: 2,560 base values plus 128 candidates × 128 values. It improved ability mechanics, but important state is absent and several capacities do not scale.</p>
+
+    <h3>Confirmed V2 deficiencies</h3>
+    <div class="table-wrap"><table>
+      <thead><tr><th>Area</th><th>Current behavior</th><th>Required V3 behavior</th></tr></thead>
+      <tbody>
+        <tr><td>Statuses</td><td>Only each actor’s status-instance count. Identity, stacks, polarity, lifecycle, and trigger are discarded.</td><td>Encode every viewer-visible active status as an entity with owner, identity/mechanics, stacks, limits, polarity, trigger/lifecycle, effects, and current relevance.</td></tr>
+        <tr><td>Health</td><td>Current/max ratio plus max/30; no explicit normalized current points.</td><td>Encode current/scale, max/scale, and current/max. Derive scale from frozen content manifest rather than unexplained fixed 30.</td></tr>
+        <tr><td>Symbols</td><td>Eight slots across the entire content catalog. Nine catalog symbols hard-fail; sorted insertion can shift semantics.</td><td>Build a stable campaign vocabulary/embedding manifest from the eligible roster and referenced content. No fixed global eight-symbol ceiling.</td></tr>
+        <tr><td>Abilities</td><td>At most 12 active offensive+defensive abilities, 6 tiers, 2 requirements/tier. Only own active board.</td><td>Shared variable/entity encoding sized from maximum simultaneously active board, including explicit passive/form state and prospective transformation mechanics.</td></tr>
+        <tr><td>Forms</td><td>No explicit form concept.</td><td>Encode current form and active board. For a human/werewolf with 16 abilities per exclusive form, size for 16 simultaneous abilities—not 32—unless both boards remain concurrently relevant.</td></tr>
+        <tr><td>Cards</td><td>Base sees counts; legal candidates get generic summaries. Identity and nuanced mechanics can alias.</td><td>Encode viewer-visible hand entities up to manifest-derived maximum hand size. Do not allocate one slot for all 1,500 catalog cards; encode only state-relevant entities and candidates.</td></tr>
+        <tr><td>Opponent state</td><td>Mostly scalar counts; revealed opponent dice/planning/board details are not explicitly encoded.</td><td>Encode only information actually visible in the viewer-safe snapshot, including revealed opponent dice/planning when present. Never expose private hand, card instances, or hidden rolls.</td></tr>
+        <tr><td>Dice layout</td><td>Declares 10 dice, but the tenth die feature range overlaps the first ability range. Current five-die content avoids it.</td><td>Generate non-overlapping offsets from the schema manifest and test every maximum-capacity boundary.</td></tr>
+        <tr><td>Actions</td><td>Hard maximum 128. Fixed 10 command types and seven broad operation-summary dimensions.</td><td>Preflight worst legal-candidate bounds, version command/effect vocabulary, fail on unsupported mechanics, and use sparse shared candidate scoring so padded capacity does not dominate compute.</td></tr>
+      </tbody>
+    </table></div>
+
+    <h3>Frozen campaign content manifest</h3>
+    <p>Before model construction, scan the entire eligible training universe—not merely the current matchup—and write a hashed manifest that determines:</p>
+    <ul>
+      <li>Eligible combatants and forms</li>
+      <li>Stable symbol vocabulary</li>
+      <li>Maximum simultaneously active dice, abilities, passive entities, statuses, tokens, and visible hand cards</li>
+      <li>Maximum tiers and requirements or a variable nested encoding</li>
+      <li>Supported operation and command vocabulary</li>
+      <li>Maximum authority legal-candidate count, backed by generated/adversarial scenario coverage</li>
+      <li>Health, energy, stack, hand, target, and other normalization scales</li>
+    </ul>
+    <p>Freeze the manifest for training, evaluation, export, and deployment. New incompatible content creates a new schema/model-family version. Do not silently resize an existing model.</p>
+
+    <h3>Dynamic without waste</h3>
+    <p>Stable Baselines uses a fixed observation/action shape for one model, but computation need not process every padded slot. Use masked shared encoders and pooling/attention over only valid entities. The public shape may reserve the manifest-derived maximum while the sparse path computes only occupied rows. A catalog with 1,500 cards must not create 1,500 per-state card slots if the viewer can hold only a small hand.</p>
+
+    <h3>Recommended V3 architecture contract</h3>
+    <ul>
+      <li><strong>Scalar context:</strong> round, segment, priority, explicit health/energy/card-zone counts, roll budget, form, defeat state.</li>
+      <li><strong>Dice entities:</strong> owner/visibility, face/value, kept state, symbol embeddings/counts.</li>
+      <li><strong>Ability entities:</strong> active form/board, offensive/defensive/passive role, cost/usage/targeting, tier requirements/progress, effect summaries, selected/qualified state.</li>
+      <li><strong>Status entities:</strong> owner, stable ID embedding or complete mechanics signature, stacks/limit, polarity, activation timing/mode, lifecycle, operations/triggers.</li>
+      <li><strong>Card entities:</strong> only viewer-visible relevant cards, identity/mechanics, energy cost, operations, zone; opponent private identities remain absent.</li>
+      <li><strong>Candidate entities:</strong> original legal command type/payload references plus mechanics-derived linked entities. Preserve candidate order and exact command submission.</li>
+      <li><strong>Actor:</strong> scores valid candidates with shared weights conditioned on pooled context/entities.</li>
+      <li><strong>Critic:</strong> sees a stable pooled state representation and records calibration telemetry. Keep dense/base/pooled critic choices versioned.</li>
+    </ul>
+    <p>Avoid hand-authored rules such as “Golden Edge equals 6.” It is acceptable to use stable learned ID embeddings tied to the frozen manifest, but mechanics must be explicit enough that new content is not forced into false equivalence.</p>
+
+    <h3>V3 safety and parity gates</h3>
+    <ul class="checklist">
+      <li>Python and Go encoders match within the declared float contract on fixed and generated corpora.</li>
+      <li>Viewer-private mutation tests prove opponent hand/card instances/hidden rolls do not affect observations.</li>
+      <li>Status identity/stack mutations do affect the intended status entity and no unrelated features.</li>
+      <li>Exclusive form changes replace active ability entities without summing inactive boards; persistent cross-form state remains encoded.</li>
+      <li>Maximum manifest capacities do not overlap or truncate. Overflow fails loudly before training.</li>
+      <li>All legal candidates, masks, deterministic actions, submitted commands, terminal results, and replays retain authority parity.</li>
+      <li>V2 checkpoints remain loadable as opponents. Never reinterpret V2 weights as V3.</li>
+      <li>Exports include schema/manifest/content/source/checkpoint hashes and Go inference parity.</li>
+    </ul>
+  </section>
+
+  <section id="improvement-3" class="section">
+    <div class="eyebrow">Core improvement 3</div>
+    <h2>Remove automatic post-PPO teacher rewriting</h2>
+    <div class="callout danger"><strong>Default rule:</strong> the main campaign ends with its raw PPO checkpoint. Do not run the prior 600-state × 60-epoch corrective clone, do not overwrite the raw model, and do not select a model because it agrees with the teacher.</div>
+
+    <h3>Why</h3>
+    <ul>
+      <li>The mechanics teacher uses a transparent, local, one-roll utility heuristic—not terminal win probability.</li>
+      <li>It ignores important context such as health, overkill, opponent response, long-term resources, and active status strategy.</li>
+      <li>The V3 correction repeatedly trained 600 teacher-labelled first-roll states for 60 epochs at LR 1e-4 without games or terminal rewards.</li>
+      <li>Teacher agreement rose, while complete-game strength fell from raw checkpoint performance to corrected V3’s 60.2% raw wins against V2.</li>
+      <li>Corrected V3 lost directly to every sampled raw checkpoint.</li>
+    </ul>
+
+    <h3>Permitted teacher use</h3>
+    <ul>
+      <li><strong>Initial warm start:</strong> optional and separately configured. It may move a random network toward legal, live mechanics before PPO. Stress-test teacher warm start versus no/alternative warm starts using complete games, not only imitation accuracy.</li>
+      <li><strong>PPO opponent:</strong> excluded from the main owner-selected champion-only population. It may be an explicit ablation outside the main campaign.</li>
+      <li><strong>Post-PPO correction:</strong> off by default. If explicitly tested later, clone the raw checkpoint into a separate artifact, preserve both hashes, and run corrected clone versus raw parent through the same checkpoint gate. Failure rejects the clone; success only earns the normal global gate.</li>
+      <li><strong>Teacher agreement:</strong> diagnostic only. Never an acceptance criterion.</li>
+    </ul>
+    <p>For this three-hour campaign, use no post-PPO correction. The final tested challenger must be the raw outcome-trained checkpoint.</p>
+  </section>
+
+  <section id="campaign" class="section">
+    <div class="eyebrow">Main experiment</div>
+    <h2>Three-hour time-bounded champion campaign</h2>
+
+    <h3>Pre-campaign prerequisites (outside the clock)</h3>
+    <ol>
+      <li>All three improvements implemented and their focused tests passing.</li>
+      <li>Observation V3 manifest frozen and hashed.</li>
+      <li>Raw checkpoint 400 verified by exact SHA and registered as global champion.</li>
+      <li>Champion-only opponent registry working independently of checkpoint file count.</li>
+      <li>Checkpoint controller, adaptive 1K/3K gate, promotion series, ledger, telemetry, rollback, and timer grace behavior tested on short deterministic probes.</li>
+      <li>Initial warm-start choice selected by a small documented full-game ablation. No post-PPO teacher stage.</li>
+      <li>Training/evaluation seed banks generated before seeing results. Promotion banks are separate from development trend banks.</li>
+      <li>Host on AC power; resource profile, disk availability, memory, and ignored artifact root recorded.</li>
+    </ol>
+
+    <h3>Starting state</h3>
+    <ul>
+      <li>Observation V3 creates a new model family, so do not load V2 checkpoint weights into the learner.</li>
+      <li>Initialize V3 using the accepted preflight warm-start choice.</li>
+      <li>Global champion is frozen raw checkpoint 400 and is always available as an opponent/anchor.</li>
+      <li>The initial V3 checkpoint champion is the warm-start/base candidate once it completes its declared baseline evaluation.</li>
+      <li>Use seed 22 for the main owner-requested campaign unless preflight finds a reproducibility blocker; record every seed.</li>
+    </ul>
+
+    <h3>Recommended main configuration</h3>
+    <div class="table-wrap"><table>
+      <thead><tr><th>Control</th><th>Initial value</th><th>Notes</th></tr></thead>
+      <tbody>
+        <tr><td>Device/profile</td><td>CPU, <code>max</code></td><td>12 rollout workers, worker Torch/inter-op/BLAS 1/1/1, learner 4/1/4 unless current resource resolver changes safely.</td></tr>
+        <tr><td>Checkpoint evaluation interval</td><td>50,000 learner steps</td><td>Recovery saves may occur, but only promoted champions enter the opponent registry.</td></tr>
+        <tr><td>PPO starting recipe</td><td>Rollout 256/worker, batch 256, epochs 8, LR 3e-4, gamma .995, GAE .95, entropy .01, clip .2</td><td>Inherited control baseline; expose all as ledgered toggles. Use target-KL telemetry even if initially disabled.</td></tr>
+        <tr><td>Reward</td><td>+1 win, −1 loss, 0 draw</td><td>No shaping in the initial comparable campaign.</td></tr>
+        <tr><td>Opponent pool</td><td>Checkpoint champion + global champion + promoted hall</td><td>Explicit weights, deduplicated; no random teacher and no directory-expanded ordinary history.</td></tr>
+        <tr><td>Inference</td><td>Stochastic during PPO; deterministic masked argmax during evaluation</td><td>Evaluation policies independently instantiated and frozen.</td></tr>
+        <tr><td>Post-PPO correction</td><td>Disabled</td><td>Raw checkpoint is the only campaign challenger.</td></tr>
+      </tbody>
+    </table></div>
+
+    <h3>Controlled response to a failed challenger</h3>
+    <ol>
+      <li>Reject the challenger and restore checkpoint champion weights plus optimizer.</li>
+      <li>Use telemetry to pick one resume-safe change. Record hypothesis before training.</li>
+      <li>Prefer conservative first responses: lower LR when KL/clipping/weight movement is high; fewer epochs or target KL when updates are too large; entropy adjustment only when exploration evidence supports it; critic controls when explained variance/calibration is poor; pool weights when opponent/forgetting evidence supports it.</li>
+      <li>Do not use the failed evaluation games for PPO.</li>
+      <li>After three controlled failures from the same parent, declare that branch plateaued. If campaign time remains, start only a predeclared new-campaign alternative whose initialization cost is justified; otherwise stop with preserved evidence.</li>
+    </ol>
+
+    <h3>Deadline behavior</h3>
+    <pre>campaign_started = monotonic_clock()
+deadline = campaign_started + 10_800 seconds
+
+before starting each new 50K interval:
+    if now >= deadline:
+        stop
+
+if deadline is crossed inside an interval/update/save/evaluation:
+    finish that checkpoint's PPO work
+    publish the checkpoint atomically
+    run its checkpoint gate
+    run any global-promotion test triggered by that gate
+    record all results
+    stop; do not start another interval</pre>
+    <p>At stop, run a final comparison of the best V3 checkpoint against global checkpoint 400 if the exact required promotion evidence has not already been completed. This final evaluation is allowed as part of finishing the campaign outcome.</p>
+
+    <h3>If a new global champion emerges</h3>
+    <ul>
+      <li>Immediately preserve raw checkpoint, optimizer state, config, manifest, ledger, seed lists, evaluation records, and hashes.</li>
+      <li>Update the global champion registry atomically; do not delete checkpoint 400.</li>
+      <li>Export the new V3-family actor under a new model ID/file. Do not overwrite accepted V1, V2, or the existing corrected V3 export.</li>
+      <li>Run Python/export/Go inference parity, complete authority replay, native tests, and relevant Godot learned-battle smoke before calling it deployable.</li>
+      <li>Report exact W/D/L/draw-adjusted scores for every global block and the pooled result.</li>
+    </ul>
+
+    <h3>If no new global champion emerges</h3>
+    <ul>
+      <li>This is not a failed engineering task if all three systems work correctly.</li>
+      <li>Preserve the strongest V3 checkpoint, its score against checkpoint 400, its checkpoint progression, and why the campaign stopped.</li>
+      <li>State whether global score improved over time, plateaued, or regressed.</li>
+      <li>Use the ledger to recommend the next single controlled campaign change.</li>
+    </ul>
+  </section>
+
+  <section id="implementation" class="section">
+    <div class="eyebrow">Required work order</div>
+    <h2>Implement in falsifiable stages</h2>
+    <ol>
+      <li><strong>Read and audit.</strong> Read <code>AGENTS.md</code>, this handoff, the two throughput reports, the observation walkthrough, current source, artifacts, branches, ignored runs, and tests. Preserve all existing work.</li>
+      <li><strong>Freeze truth.</strong> Verify global checkpoint 400 hash and reproduce one known evaluation/replay before architectural changes.</li>
+      <li><strong>Build experiment/champion registry.</strong> Versioned manifests, atomic champion updates, explicit pool weights, immutable parent/child experiment ledger, and no directory-size coupling.</li>
+      <li><strong>Build checkpoint controller.</strong> Adaptive 1K/3K gate, global promotion series, rollback with optimizer, patience and upward-trend logic, time budget/grace, deterministic seed files, and progress summaries.</li>
+      <li><strong>Build Observation V3 manifest and encoders.</strong> Python and Go parity, entity masks, status/form/card/ability/dice representation, capacity audit, privacy tests, and export metadata.</li>
+      <li><strong>Build configurable V3 policy.</strong> Entity/context/candidate actor and critic, width/depth toggles, sparse valid-row compute, load/export/version separation from V1/V2.</li>
+      <li><strong>Disable post-PPO correction by default.</strong> Keep raw checkpoints immutable; any future correction must use an isolated challenger path and gate.</li>
+      <li><strong>Run short controlled probes.</strong> Schema parity, liveness, tiny learning, warm-start comparison, controller/timer simulations, rollback, champion pool distribution, telemetry/ledger completeness.</li>
+      <li><strong>Run the full relevant verification suite.</strong> Fix failures without weakening contracts.</li>
+      <li><strong>Announce and start the 10,800-second campaign.</strong> Print resolved config, hashes, seed lists, host profile, exact start/deadline, and artifact root.</li>
+      <li><strong>Operate and communicate.</strong> Report meaningful checkpoints, promotions, failures, control changes, global-score trend, elapsed/remaining time, and deadline grace.</li>
+      <li><strong>Finalize.</strong> Finish in-flight checkpoint/evaluation, preserve artifacts, run winner parity if applicable, and produce a complete report.</li>
+    </ol>
+  </section>
+
+  <section id="acceptance" class="section">
+    <div class="eyebrow">Acceptance gates</div>
+    <h2>Nothing is complete without evidence</h2>
+    <div class="table-wrap"><table>
+      <thead><tr><th>Gate</th><th>Required evidence</th></tr></thead>
+      <tbody>
+        <tr><td>A · Champion control</td><td>Checkpoint/global definitions, exact hashes, adaptive gate boundaries, global promotion, rollback, and tie behavior tested.</td></tr>
+        <tr><td>B · History</td><td>Every experiment and promotion/rejection is append-only, reproducible, queryable, and rendered for owner review.</td></tr>
+        <tr><td>C · Pool integrity</td><td>Only explicit promoted champions are sampled. Adding an ordinary checkpoint file does not change distribution.</td></tr>
+        <tr><td>D · Observation completeness</td><td>Status identity/stacks, forms, active abilities, relevant cards/dice, health, and viewer-visible opponent state represented; unsupported capacity fails preflight.</td></tr>
+        <tr><td>E · Privacy/parity</td><td>Python/Go vectors/masks and authority commands match; hidden opponent mutations do not leak; fixed/generated corpora pass.</td></tr>
+        <tr><td>F · Model compatibility</td><td>V1/V2 remain loadable as opponents; V3 is version-separated and exports with complete manifests/hashes.</td></tr>
+        <tr><td>G · Teacher safety</td><td>No automatic post-PPO correction. Raw parents remain immutable. Teacher agreement cannot promote a model.</td></tr>
+        <tr><td>H · Learning telemetry</td><td>KL, entropy, clipping, actor/value loss, explained variance/calibration, behavior, opponent/seat distributions, throughput, and safety recorded by interval.</td></tr>
+        <tr><td>I · Campaign timer</td><td>Exact monotonic start/deadline, no new interval after deadline, in-flight checkpoint/evaluation completed exactly once.</td></tr>
+        <tr><td>J · Authority safety</td><td>Zero unexplained truncations, authority rejects, invalid indices, stale actions, wrong-seat actions, hidden leaks, state leaks, or replay mismatches.</td></tr>
+        <tr><td>K · Outcome</td><td>Best V3 checkpoint versus raw checkpoint 400 with exact W/D/L, adjusted score, confidence, seed files, swaps, hashes, and promotion decision.</td></tr>
+      </tbody>
+    </table></div>
+  </section>
+
+  <section id="files" class="section">
+    <div class="eyebrow">Orientation</div>
+    <h2>Files, artifacts, and commands</h2>
+    <h3>Read first</h3>
+    <ul>
+      <li><code>AGENTS.md</code></li>
+      <li><code>docs/machine-learning-battle-simulation/three-core-ml-improvements-and-three-hour-champion-campaign-handoff.html</code></li>
+      <li><code>docs/machine-learning-battle-simulation/phase-2-training-throughput-optimization-report.md</code></li>
+      <li><code>docs/machine-learning-battle-simulation/phase-2-report.md</code></li>
+      <li><code>docs/machine-learning-battle-simulation/v3-vs-v2-one-game-observation-walkthrough.html</code></li>
+      <li><code>docs/machine-learning-battle-simulation/arbitrary-character-training-handoff.html</code> when present on main</li>
+    </ul>
+    <h3>Primary code paths</h3>
+    <ul>
+      <li><code>dice-and-destiny-server/ml/dice_destiny_ml/schema_v2.py</code></li>
+      <li><code>dice-and-destiny-server/internal/battle/mlsim/encoding_v2.go</code></li>
+      <li><code>dice-and-destiny-server/ml/dice_destiny_ml/model.py</code></li>
+      <li><code>dice-and-destiny-server/ml/dice_destiny_ml/training.py</code></li>
+      <li><code>dice-and-destiny-server/ml/dice_destiny_ml/gym_env.py</code></li>
+      <li><code>dice-and-destiny-server/ml/dice_destiny_ml/opponent_pool.py</code></li>
+      <li><code>dice-and-destiny-server/ml/dice_destiny_ml/profiled_ppo.py</code></li>
+      <li><code>dice-and-destiny-server/ml/dice_destiny_ml/policies.py</code></li>
+      <li><code>dice-and-destiny-server/ml/dice_destiny_ml/imitation.py</code></li>
+      <li><code>dice-and-destiny-server/ml/dice_destiny_ml/evaluation.py</code></li>
+      <li><code>dice-and-destiny-server/ml/dice_destiny_ml/export_policy.py</code></li>
+      <li><code>dice-and-destiny-server/ml/dice_destiny_ml/cli.py</code></li>
+      <li><code>dice-and-destiny-server/internal/battle/snapshot/snapshot.go</code></li>
+      <li><code>dice-and-destiny-server/internal/battle/learned/</code></li>
+    </ul>
+    <h3>Known evidence roots</h3>
+    <ul>
+      <li><code>dice-and-destiny-server/ml/runs/v3-seed22-optimized-5m-20260803-m3max</code></li>
+      <li><code>dice-and-destiny-server/ml/runs/phase2-throughput-optimization-20260803-m3max-v2</code></li>
+    </ul>
+
+    <h3>Standard verification commands</h3>
+    <pre>cd dice-and-destiny-server
+go test ./...
+go vet ./...
+go test -race ./internal/battle/...
+
+cd ml
+uv run --python 3.12 ruff check dice_destiny_ml tests
+uv run --python 3.12 ruff format --check dice_destiny_ml tests
+uv run --python 3.12 pytest -q
+
+cd ../..
+dice-and-destiny-server/scripts/build_native.sh
+./scripts/godot.sh --headless --script res://scripts/verify_battle_authority.gd
+./scripts/godot.sh --headless --script res://tests/phase3/verify_learned_battle_v2.gd</pre>
+    <p>Run every Godot command through repository-root <code>./scripts/godot.sh</code>. Never use raw <code>godot --path</code>. Adjust focused tests as new V3 files are introduced.</p>
+
+    <h3>Evaluation command shape</h3>
+    <pre>cd dice-and-destiny-server
+scripts/ml.sh evaluate \
+  --seat-a model:/absolute/path/to/challenger.zip \
+  --seat-b model:/absolute/path/to/step-002001600.zip \
+  --episodes 500 --swap \
+  --seed-start &lt;predeclared-seed-start&gt; \
+  --observation-schema dice-and-destiny-observation-v3 \
+  --profile max --authority-mode normal --telemetry-mode full \
+  --output ml/runs/&lt;campaign&gt;/evaluations/&lt;block&gt;</pre>
+    <p>The CLI does not support V3 yet; implementing that versioned option is part of this task. Prefer explicit seed files over ad hoc ranges for promotion blocks.</p>
+  </section>
+
+  <section id="report" class="section">
+    <div class="eyebrow">Required final response and artifact</div>
+    <h2>Tell the owner exactly what happened</h2>
+    <p>Create a tracked final report plus ignored raw evidence. The report must include:</p>
+    <ul>
+      <li>Implementation summary for all three improvements</li>
+      <li>Files changed, schema/manifest/architecture diagrams, and migration/compatibility notes</li>
+      <li>Every attempted control change and its parent</li>
+      <li>Preflight and acceptance gate table, PASS/FAIL with artifact links</li>
+      <li>Exact campaign start, deadline, finish, overrun/grace reason, steps, games, throughput, and resource state</li>
+      <li>Checkpoint champion progression and global score trajectory</li>
+      <li>All adaptive 1K/3K and global series W/D/L results</li>
+      <li>Best checkpoint and global champion hashes</li>
+      <li>Whether a new global champion was promoted</li>
+      <li>If not promoted, the strongest evidence-based next experiment</li>
+      <li>All safety counts and reproducibility inputs</li>
+    </ul>
+    <div class="callout success"><strong>Success has two layers.</strong> Engineering success means the new controller, history, observation, parity, and teacher safety are correct. Gameplay success means a raw V3 checkpoint also passes the global promotion gate against checkpoint 400. Report both honestly.</div>
+    <div class="callout must"><strong>Git starting point:</strong> begin from the latest fetched <code>origin/main</code> containing this handoff and the Phase 2 throughput work. Confirm a clean or understood worktree before editing. Do not discard user changes or ignored model artifacts. Do not commit or push the new implementation unless the owner explicitly authorizes it in that task.</div>
+  </section>
+
+  <footer>This document intentionally contains the decision rules, architecture direction, exact champion identity, timer semantics, communication expectations, validation gates, and artifact locations required for a context with no prior conversation history.</footer>
+</main>
+</body>
+</html>
