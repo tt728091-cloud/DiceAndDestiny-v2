@@ -20,13 +20,34 @@ from stable_baselines3.common.callbacks import BaseCallback
 from stable_baselines3.common.vec_env import DummyVecEnv, SubprocVecEnv
 
 from . import ACTION_SCHEMA_VERSION, ENVIRONMENT_SCHEMA_VERSION, OBSERVATION_SCHEMA_VERSION
-from .gym_env import AuthorityGymEnv
+from .gym_env import WINNER_HEALTH_REWARD, AuthorityGymEnv
 from .imitation import behavior_clone, collect_demonstrations
+from .manifest_v3 import (
+    ACTION_SCHEMA_V3,
+    ENVIRONMENT_SCHEMA_V3,
+    OBSERVATION_SCHEMA_V3,
+    ObservationManifestV3,
+)
+from .manifest_v4 import (
+    ACTION_SCHEMA_V4,
+    ENVIRONMENT_SCHEMA_V4,
+    OBSERVATION_SCHEMA_V4,
+    ObservationManifestV4,
+)
+from .manifest_v5 import (
+    ACTION_SCHEMA_V5,
+    ENVIRONMENT_SCHEMA_V5,
+    OBSERVATION_SCHEMA_V5,
+    ObservationManifestV5,
+)
 from .model import (
     CandidateMaskablePolicy,
     CandidateMaskablePolicyV2,
     SparseBaseCriticCandidateMaskablePolicyV2,
     SparseCandidateMaskablePolicyV2,
+    SparseEntityCandidateMaskablePolicyV3,
+    SparseEntityCandidateMaskablePolicyV4,
+    SparseRelationalCandidateMaskablePolicyV5,
 )
 from .profiled_ppo import ProfiledMaskablePPO
 from .profiling import ProfileCollector, merge_profile_summaries, process_snapshot
@@ -61,7 +82,7 @@ class TrainingConfig:
     authority_mode: str = "ephemeral"
     telemetry_mode: str = "training"
     opponent_specs: tuple[str, ...] = ("random", "random", "heuristic", "heuristic", "historical")
-    reward: str = "+1 victory, -1 defeat, 0 draw; no shaping"
+    reward: str = WINNER_HEALTH_REWARD
     observation_schema: str = OBSERVATION_SCHEMA_VERSION
     imitation_teacher: str = "heuristic-v1"
     transport_mode: str = "full"
@@ -69,16 +90,45 @@ class TrainingConfig:
     instrumentation: bool = False
     sparse_actor: bool = True
     opponent_selection_mode: str = "legacy-flat"
+    opponent_deterministic: bool = True
     critic_architecture: str = "dense"
     verbose: int = 1
+    observation_manifest: str = ""
+    seat_a_definition: str = "blade_warden"
+    seat_b_definition: str = "blade_warden"
+    champion_category_weights: tuple[tuple[str, float], ...] = (
+        ("checkpoint", 0.50),
+        ("global", 0.40),
+        ("hall", 0.10),
+    )
+    entity_width: int = 96
+    decision_width: int = 432
+    entity_depth: int = 2
+    decision_depth: int = 2
+    activation: str = "tanh"
+    post_ppo_correction: bool = False
+    clip_range: float = 0.2
+    target_kl: float | None = None
+    value_loss_coefficient: float = 0.5
 
 
 class ArtifactCallback(BaseCallback):
-    def __init__(self, run_dir: Path, checkpoint_interval: int, *, instrumentation: bool) -> None:
+    def __init__(
+        self,
+        run_dir: Path,
+        checkpoint_interval: int,
+        *,
+        instrumentation: bool,
+        checkpoint_directory: Path | None = None,
+        initial_checkpoint_step: int = 0,
+    ) -> None:
         super().__init__(verbose=0)
+        if initial_checkpoint_step < 0:
+            raise ValueError("initial checkpoint step cannot be negative")
         self.run_dir = run_dir
         self.checkpoint_interval = checkpoint_interval
-        self.last_checkpoint = 0
+        self.checkpoint_directory = checkpoint_directory or run_dir / "checkpoints"
+        self.last_checkpoint = initial_checkpoint_step
         self.episode_file = run_dir / "training_episodes.jsonl"
         self.collection_seconds = 0.0
         self.update_seconds = 0.0
@@ -139,7 +189,7 @@ class ArtifactCallback(BaseCallback):
             io_started = time.perf_counter()
             atomic_model_save(
                 self.model,
-                self.run_dir / "checkpoints" / f"step-{self.num_timesteps:09d}.zip",
+                self.checkpoint_directory / f"step-{self.num_timesteps:09d}.zip",
             )
             self.artifact_io_seconds += time.perf_counter() - io_started
             self.last_checkpoint = self.num_timesteps
@@ -153,6 +203,23 @@ def train_seed(
     server_root: Path,
     output_root: Path,
 ) -> dict[str, Any]:
+    if config.post_ppo_correction:
+        raise ValueError(
+            "automatic post-PPO correction is forbidden; create an immutable isolated challenger"
+        )
+    manifest_path = Path(config.observation_manifest).resolve() if config.observation_manifest else None
+    if config.observation_schema == OBSERVATION_SCHEMA_V5:
+        if manifest_path is None:
+            raise ValueError("observation v5 training requires a frozen manifest")
+        ObservationManifestV5.load(manifest_path)
+    elif config.observation_schema == OBSERVATION_SCHEMA_V4:
+        if manifest_path is None:
+            raise ValueError("observation v4 training requires a frozen manifest")
+        ObservationManifestV4.load(manifest_path)
+    elif config.observation_schema == OBSERVATION_SCHEMA_V3:
+        if manifest_path is None:
+            raise ValueError("observation v3 training requires a frozen manifest")
+        ObservationManifestV3.load(manifest_path)
     process_started = time.perf_counter()
     host_before = capture_host_state() if config.instrumentation else {}
     run_profile = ProfileCollector(config.instrumentation)
@@ -188,11 +255,17 @@ def train_seed(
                 torch_interop_threads=config.worker_torch_interop_threads,
                 blas_threads=config.worker_blas_threads,
                 opponent_selection_mode=config.opponent_selection_mode,
+                opponent_deterministic=config.opponent_deterministic,
+                observation_manifest=manifest_path,
+                seat_definitions={
+                    "seat-a": config.seat_a_definition,
+                    "seat-b": config.seat_b_definition,
+                },
+                champion_category_weights=dict(config.champion_category_weights),
+                reward_definition=config.reward,
             )
         )
-    learner_blas_environment = {
-        variable: os.environ.get(variable) for variable in BLAS_THREAD_ENVIRONMENT
-    }
+    learner_blas_environment = {variable: os.environ.get(variable) for variable in BLAS_THREAD_ENVIRONMENT}
     try:
         for variable in BLAS_THREAD_ENVIRONMENT:
             os.environ[variable] = str(config.worker_blas_threads)
@@ -212,16 +285,41 @@ def train_seed(
         blas_threads=config.learner_blas_threads,
     )
     try:
-        if config.observation_schema == OBSERVATION_SCHEMA_V2:
+        policy_kwargs: dict[str, Any] | None = None
+        if config.observation_schema == OBSERVATION_SCHEMA_V5:
+            policy_class = SparseRelationalCandidateMaskablePolicyV5
+            policy_kwargs = {
+                "manifest_path": str(manifest_path),
+                "entity_width": config.entity_width,
+                "decision_width": config.decision_width,
+                "entity_depth": config.entity_depth,
+                "decision_depth": config.decision_depth,
+                "activation": config.activation,
+            }
+        elif config.observation_schema == OBSERVATION_SCHEMA_V4:
+            policy_class = SparseEntityCandidateMaskablePolicyV4
+            policy_kwargs = {
+                "manifest_path": str(manifest_path),
+                "entity_width": config.entity_width,
+                "entity_depth": config.entity_depth,
+                "activation": config.activation,
+            }
+        elif config.observation_schema == OBSERVATION_SCHEMA_V3:
+            policy_class = SparseEntityCandidateMaskablePolicyV3
+            policy_kwargs = {
+                "manifest_path": str(manifest_path),
+                "entity_width": config.entity_width,
+                "entity_depth": config.entity_depth,
+                "activation": config.activation,
+            }
+        elif config.observation_schema == OBSERVATION_SCHEMA_V2:
             if config.critic_architecture == "base":
                 if not config.sparse_actor:
                     raise ValueError("base critic ablation requires the sparse v2 actor")
                 policy_class = SparseBaseCriticCandidateMaskablePolicyV2
             else:
                 policy_class = (
-                    SparseCandidateMaskablePolicyV2
-                    if config.sparse_actor
-                    else CandidateMaskablePolicyV2
+                    SparseCandidateMaskablePolicyV2 if config.sparse_actor else CandidateMaskablePolicyV2
                 )
         else:
             policy_class = CandidateMaskablePolicy
@@ -236,9 +334,13 @@ def train_seed(
             gamma=config.gamma,
             gae_lambda=config.gae_lambda,
             ent_coef=config.entropy_coefficient,
+            clip_range=config.clip_range,
+            target_kl=config.target_kl,
+            vf_coef=config.value_loss_coefficient,
             verbose=config.verbose,
             seed=config.seed,
             device=config.device,
+            policy_kwargs=policy_kwargs,
         )
         if config.instrumentation:
             _instrument_rollout_path(model, vec_env, run_profile)
@@ -254,6 +356,11 @@ def train_seed(
                     decisions=config.imitation_decisions,
                     observation_schema=config.observation_schema,
                     teacher=config.imitation_teacher,
+                    observation_manifest=manifest_path,
+                    seat_definitions={
+                        "seat-a": config.seat_a_definition,
+                        "seat-b": config.seat_b_definition,
+                    },
                 )
             with run_profile.span("imitation.behavior_clone"):
                 imitation_summary = behavior_clone(
@@ -366,15 +473,57 @@ def experiment_metadata(config: TrainingConfig, server_root: Path) -> dict[str, 
         content_hash.update(path.relative_to(server_root).as_posix().encode("utf-8"))
         content_hash.update(path.read_bytes())
     is_v2 = config.observation_schema == OBSERVATION_SCHEMA_V2
+    is_v3 = config.observation_schema == OBSERVATION_SCHEMA_V3
+    is_v4 = config.observation_schema == OBSERVATION_SCHEMA_V4
+    is_v5 = config.observation_schema == OBSERVATION_SCHEMA_V5
+    manifest = (
+        ObservationManifestV5.load(Path(config.observation_manifest))
+        if is_v5
+        else ObservationManifestV4.load(Path(config.observation_manifest))
+        if is_v4
+        else ObservationManifestV3.load(Path(config.observation_manifest))
+        if is_v3
+        else None
+    )
     return {
-		"environment_schema": ENVIRONMENT_SCHEMA_V2 if is_v2 else ENVIRONMENT_SCHEMA_VERSION,
-		"observation_schema": config.observation_schema,
-		"action_schema": ACTION_SCHEMA_V2 if is_v2 else ACTION_SCHEMA_VERSION,
+        "environment_schema": (
+            ENVIRONMENT_SCHEMA_V5
+            if is_v5
+            else ENVIRONMENT_SCHEMA_V4
+            if is_v4
+            else ENVIRONMENT_SCHEMA_V3
+            if is_v3
+            else ENVIRONMENT_SCHEMA_V2
+            if is_v2
+            else ENVIRONMENT_SCHEMA_VERSION
+        ),
+        "observation_schema": config.observation_schema,
+        "action_schema": ACTION_SCHEMA_V5
+        if is_v5
+        else ACTION_SCHEMA_V4
+        if is_v4
+        else ACTION_SCHEMA_V3
+        if is_v3
+        else ACTION_SCHEMA_V2
+        if is_v2
+        else ACTION_SCHEMA_VERSION,
+        "observation_manifest_sha256": manifest.manifest_sha256 if manifest else "",
         "source_revision": revision,
         "source_dirty": dirty,
         "content_version": content_hash.hexdigest(),
         "model_architecture": (
-            "MaskablePPO v2 mechanics sparse candidate scorer [96,96], base-only critic"
+            f"MaskablePPO v5 relational candidate scorer entity_width={config.entity_width} "
+            f"decision_width={config.decision_width} "
+            f"entity_depth={config.entity_depth} decision_depth={config.decision_depth} "
+            f"activation={config.activation}"
+            if is_v5
+            else f"MaskablePPO v4 complete-view sparse entity scorer width={config.entity_width} "
+            f"depth={config.entity_depth} activation={config.activation}"
+            if is_v4
+            else f"MaskablePPO v3 sparse entity scorer width={config.entity_width} "
+            f"depth={config.entity_depth} activation={config.activation}"
+            if is_v3
+            else "MaskablePPO v2 mechanics sparse candidate scorer [96,96], base-only critic"
             if is_v2 and config.sparse_actor and config.critic_architecture == "base"
             else "MaskablePPO v2 mechanics sparse candidate scorer [96,96]"
             if is_v2 and config.sparse_actor
@@ -394,8 +543,7 @@ def experiment_metadata(config: TrainingConfig, server_root: Path) -> dict[str, 
             "torch_threads": torch.get_num_threads(),
             "torch_interop_threads": torch.get_num_interop_threads(),
             "blas_environment": {
-                variable: os.environ.get(variable, "")
-                for variable in BLAS_THREAD_ENVIRONMENT
+                variable: os.environ.get(variable, "") for variable in BLAS_THREAD_ENVIRONMENT
             },
             "device": config.device,
         },
@@ -406,6 +554,11 @@ def experiment_metadata(config: TrainingConfig, server_root: Path) -> dict[str, 
         },
         "opponent_pool": list(config.opponent_specs),
         "reward": config.reward,
+        "teacher_safety": {
+            "post_ppo_correction": False,
+            "raw_ppo_checkpoint_is_challenger": True,
+            "teacher_agreement_is_acceptance_criterion": False,
+        },
     }
 
 

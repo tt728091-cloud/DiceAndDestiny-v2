@@ -1,0 +1,270 @@
+{
+  "id": "beast",
+  "name": "Beast",
+  "identity": "Study a rival’s repeated choices, mark a quarry, and choose when to pounce. Tracking uses public ability history, never private dice or hands.",
+  "symbols": [
+    "Claw",
+    "Track",
+    "Tooth"
+  ],
+  "loop": "Choose a Quarry → earn Instinct when it repeats an attack and Scent when statuses hurt it → spend Scent on an extra die attempt → prepare Pounce to follow a damaging attack.",
+  "statuses": [
+    [
+      "Instinct",
+      "Positive · you · cap 4",
+      "When your Quarry reveals the same Offensive ability they used last round, gain 1 Instinct. A stronger or weaker tier of that same ability still counts. During Offensive, spend 2 Instinct to gain Pounce. Instinct also pays for Beast cards. Keep unused Instinct."
+    ],
+    [
+      "Quarry",
+      "Negative target mark · enemy · cap 1 per player",
+      "Choose one enemy as your Quarry. This marks the enemy watched by Instinct and targeted by your hunting cards. Choosing a new Quarry removes your old mark. Quarry gives no damage bonus on its own. Keep the mark until it is removed or you choose a new Quarry."
+    ],
+    [
+      "Scent",
+      "Negative · enemy · cap 2",
+      "The first time each round your Quarry takes damage from a status, apply 1 Scent to them. Before attacking an enemy with Scent, you may remove 1 Scent to reroll one of your combat dice that is not Frostbound once. This is an extra reroll after your normal attempts. Use Scent once per round, then choose an ability your final dice allow. Remove unused Scent at the end of the following round."
+    ],
+    [
+      "Pounce",
+      "Positive · you · cap 1",
+      "After your Offensive ability makes an enemy lose a health card, remove Pounce and deal 1 more damage to that enemy. They may use damage-prevention cards, but do not roll another Defensive ability. Pounce works once per round. Remove unused Pounce at the end of the following round."
+    ]
+  ],
+  "abilities": [
+    [
+      "Raking Claws",
+      "Offense · 0E",
+      "3 Claw / 4 Claw / 5 Claw",
+      "4 / 5 / 6 damage; apply 1 Scent."
+    ],
+    [
+      "Read the Tracks",
+      "Offense · 0E",
+      "2 Track + 1 Tooth",
+      "Choose a Quarry and gain 2 Instinct."
+    ],
+    [
+      "Pack Angle",
+      "Offense · 0E",
+      "Any three equal numbers",
+      "Deal 5 damage; gain Pounce if absent. Newly gained Pounce waits for a later attack, not this one."
+    ],
+    [
+      "Apex Rush",
+      "Offense · 0E",
+      "3 Tooth",
+      "Deal 6 damage. Optionally spend up to 2 Instinct when choosing this ability for +1 damage each; apply Quarry if you have none."
+    ],
+    [
+      "Hide and Muscle",
+      "Defense · 0E",
+      "Roll 2 Beast dice",
+      "Each Claw prevents 1; each Track gains 1 Instinct; any Tooth applies 1 Scent to the attacker."
+    ],
+    [
+      "Predator’s Turn",
+      "Defense · 1E",
+      "Roll 1 Beast die",
+      "Claw: prevent 2. Track: prevent 3. Tooth: prevent 2 and gain Pounce if absent."
+    ]
+  ],
+  "cards": [
+    [
+      "Choose the Trail",
+      "0",
+      "Action",
+      "Apply Quarry to one enemy; once per round."
+    ],
+    [
+      "Fresh Tracks",
+      "1",
+      "Action",
+      "Apply 2 Scent to one enemy."
+    ],
+    [
+      "Predator’s Patience",
+      "1",
+      "Action",
+      "Gain 2 Instinct."
+    ],
+    [
+      "Crouch",
+      "1",
+      "Action",
+      "Gain Pounce if absent."
+    ],
+    [
+      "Field Study",
+      "1",
+      "Action",
+      "Draw 1 and gain 1 Instinct."
+    ],
+    [
+      "Taste of Rain",
+      "1",
+      "Action",
+      "Apply 1 Scent to your Quarry and draw 1. Requires a living Quarry."
+    ],
+    [
+      "Lunge",
+      "1",
+      "Offensive reaction",
+      "Spend up to 2 Instinct; add 2 damage each to your attack targeting your Quarry."
+    ],
+    [
+      "Trail Rations",
+      "0",
+      "Action",
+      "Spend 2 Instinct; gain 1 Energy. Once per round."
+    ],
+    [
+      "Cornered",
+      "1",
+      "Action",
+      "Spend 1 Instinct; apply 2 Scent to your Quarry."
+    ],
+    [
+      "Pack Signal",
+      "1",
+      "Damage reaction",
+      "Spend 1 Instinct. Choose up to two of your Brood hits about to damage your Quarry; each deals 1 extra damage. You must have already spent those Brood to make their hits."
+    ],
+    [
+      "Long Hunt",
+      "1",
+      "Action",
+      "Spend 1 Instinct; draw 2, then discard 1."
+    ],
+    [
+      "Change the Trail",
+      "0",
+      "Action",
+      "Remove your existing Quarry; gain 1 Instinct. No enemy means no reward."
+    ],
+    [
+      "Sidestep",
+      "1",
+      "Damage reaction",
+      "Prevent 2 from one incoming attack."
+    ],
+    [
+      "Thick Hide",
+      "1",
+      "Damage reaction",
+      "Spend 1 Instinct; prevent 3 from one attack, card or status targeting you."
+    ],
+    [
+      "Read the Feint",
+      "1",
+      "Offensive reaction",
+      "Change one enemy combat die up or down by 1, staying between 1 and 6. The enemy must choose an ability their final dice allow. You cannot change a Frostbound die."
+    ],
+    [
+      "Sure Foot",
+      "1",
+      "Roll reaction",
+      "Reroll one of your dice just rolled for a status, defense or card once."
+    ],
+    [
+      "Blood in the Air",
+      "1",
+      "Damage reaction",
+      "When damage reveals at least one of your Quarry’s health cards for removal, spend 1 Instinct to gain Pounce after that damage finishes. Pounce can then follow a later attack, even if the revealed card was saved."
+    ],
+    [
+      "Shake Free",
+      "1",
+      "Action",
+      "Spend 1 Instinct; remove 1 negative status stack from yourself."
+    ],
+    [
+      "Deny the Leash",
+      "1",
+      "Application reaction",
+      "Stop one Quarry mark or Scent stack an enemy is about to apply to you. If you stop it, gain 1 Instinct."
+    ],
+    [
+      "Stay Low",
+      "0",
+      "Damage reaction",
+      "Spend Pounce; prevent 2 from one attack, card or status. You forgo that follow-up."
+    ],
+    [
+      "Baited Guard",
+      "1",
+      "Defensive reaction",
+      "If your Quarry is attacking you, spend 1 Instinct; prevent 2 and apply 1 Scent after defense resolves."
+    ],
+    [
+      "Hunter’s Almanac",
+      "1",
+      "Action",
+      "Upgrade once per battle: your first repeat-ability Instinct reward each round grants 2 instead of 1."
+    ],
+    [
+      "Relentless Pursuit",
+      "2",
+      "Offensive reaction",
+      "Spend 2 Instinct and 2 enemy Scent; add 4 damage to your attack against that enemy. It must be your Quarry."
+    ],
+    [
+      "Patient Predator",
+      "2",
+      "Action",
+      "Spend 2 Instinct to draw 2 cards and gain Pounce if you have none. Pounce still works at most once per round."
+    ]
+  ],
+  "pairs": [
+    [
+      "venom",
+      "Status damage on the Quarry applies Scent once per round. Scent gives a later extra single-die attempt, helping qualify a Beast or Venom ability. A prepared Pounce can follow that ability if it removes a health card."
+    ],
+    [
+      "frost",
+      "Frostbind restricts one enemy die, which can make repeated ability choices more attractive and earn Instinct. Rime can improve your own numbers before spending Scent on a final unbound-die attempt."
+    ],
+    [
+      "swarm",
+      "Pack Signal adds damage to up to two Brood hits against the Quarry. Those separate hits can finish Web. Spending Instinct for that card means saving less toward Pounce."
+    ]
+  ],
+  "example": "Your Quarry takes Poison damage, gaining 1 Scent. After your normal combat rolls, remove that Scent to reroll one die. If your final dice allow an attack and it removes an enemy health card, a Pounce prepared earlier adds a separate 1-damage hit.",
+  "counter": "Vary ability choices to deny Instinct. Remove Scent before the hunter’s extra reroll. Blocking the entire Offensive ability prevents Pounce from triggering, although the hunter keeps it until it expires.",
+  "balance": "Quarry alone does not increase damage. Scent grants only one extra single-die reroll per round, beyond the normal roll attempts; Frostbind still forbids rerolling a locked die. Pounce requires actual health loss and works at most once per round.",
+  "hooks": [
+    "H-14 public ability history",
+    "H-24 damage commit",
+    "Declared target selection",
+    "Child source provenance"
+  ],
+  "review_status": "Reworked statuses — awaiting user review",
+  "version": 2,
+  "combos": [
+    [
+      "Choose the Trail → Poison damage → Scent",
+      "Mark the enemy as Quarry before Poison hurts them. Scent then helps line up an ability rather than giving an automatic flat damage bonus."
+    ],
+    [
+      "Predator’s Patience → Pounce → Raking Claws",
+      "Spend two Instinct to gain Pounce before attacking. If Raking Claws gets through, Pounce follows it. The Scent applied by Raking Claws can support a later round."
+    ]
+  ],
+  "status_examples": {
+    "Instinct": {
+      "job": "Learn a repeated habit and prepare to chase it.",
+      "example": "Your Quarry uses Needlefang two rounds in a row. You gain one Instinct even if they choose a different Fang tier."
+    },
+    "Quarry": {
+      "job": "Identify the enemy your hunting effects watch.",
+      "example": "Your Quarry repeats an ability, earning Instinct. A different enemy repeating an ability earns nothing."
+    },
+    "Scent": {
+      "job": "Use lingering injuries to line up an attack.",
+      "example": "Your Quarry takes Poison damage. Later you spend that Scent to reroll one die while trying to qualify your Beast attack."
+    },
+    "Pounce": {
+      "job": "Follow a successful hit with one small extra hit.",
+      "example": "Your attack deals damage, so Pounce adds another hit. If the enemy blocks the entire attack, keep Pounce for a later attack."
+    }
+  }
+}

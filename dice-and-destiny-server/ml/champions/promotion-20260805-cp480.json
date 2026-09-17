@@ -1,0 +1,58 @@
+{
+  "candidate": {
+    "champion_id": "raw-v3-step-480",
+    "checkpoint_path": "/Users/daddymere/games/Dice-and-Destiny-v2/dice-and-destiny-server/ml/runs/v3-seed22-optimized-5m-20260803-m3max/seed-22/checkpoints/step-002401920.zip",
+    "checkpoint_sha256": "38412a8821419f98a922149506de4a9c00feed617c37d9778b22e83f1c4df6c6",
+    "learner_steps": 2401920
+  },
+  "confirmation_3000": {
+    "adjusted_score": 0.5176666666666667,
+    "adjusted_wilson_95": [
+      0.4997747270454523,
+      0.5355134202995863
+    ],
+    "draws": 292,
+    "episodes_sha256": "b25ba0e8975ab08db1797f58f4e409fed2e364be00464aab1d1d7955ccfd6510",
+    "losses": 1301,
+    "seed_bank_file_sha256": "d8515704af20fd41160ed2237645d671dd29e88d96499dd59703205487421f6d",
+    "summary_sha256": "674011919f93bde0ab9e087f2fe676fffe926ea19952c682be982d211a705ded",
+    "wins": 1407
+  },
+  "decision": "promoted",
+  "gameplay_export": {
+    "model_id": "blade-warden-global-champion-cp480-v3",
+    "path": "/Users/daddymere/games/Dice-and-Destiny-v2/dice-and-destiny-client/models/learned/blade-warden-global-champion-cp480-v3.json",
+    "sha256": "96755c199f4d93261695d4928a0f95e00858d3a9d6a5c429e46911fbd0a3cac6"
+  },
+  "previous_global": {
+    "champion_id": "raw-v3-step-400",
+    "checkpoint_path": "/Users/daddymere/games/Dice-and-Destiny-v2/dice-and-destiny-server/ml/runs/v3-seed22-optimized-5m-20260803-m3max/seed-22/checkpoints/step-002001600.zip",
+    "checkpoint_sha256": "9cc042d0e355dceb49e98d82296c7017c9fc810296d87b151c2dc9abf8be43b8",
+    "learner_steps": 2001600
+  },
+  "progression_1000": {
+    "adjusted_score": 0.5215,
+    "adjusted_wilson_95": [
+      0.4905158239176074,
+      0.5523196254675137
+    ],
+    "draws": 99,
+    "losses": 429,
+    "summary_sha256": "4cf83dd9fba213c98344edaad99be69f2e4c59957b68bf88704b1b8dc4d30701",
+    "wins": 472
+  },
+  "promoted_at": "2026-08-05T18:48:33Z",
+  "promotion_rule": "1,000-game adjusted score > 50%, followed by a fresh disjoint 3,000-game adjusted score > 50%, with seat swaps and zero safety counts",
+  "registry_path": "/Users/daddymere/games/Dice-and-Destiny-v2/dice-and-destiny-server/ml/champions/current-global.json",
+  "safety": {
+    "authority_rejects": 0,
+    "hidden_state_leaks": 0,
+    "invalid_action_indices": 0,
+    "replay_mismatches": 0,
+    "stale_action_submissions": 0,
+    "state_leaks": 0,
+    "truncations": 0,
+    "wrong_seat_submissions": 0
+  },
+  "schema": "dice-and-destiny-global-promotion-v1"
+}

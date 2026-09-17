@@ -15,13 +15,14 @@ import (
 )
 
 type request struct {
-	Op          string              `json:"op"`
-	Seed        uint64              `json:"seed,omitempty"`
-	BattleID    string              `json:"battle_id,omitempty"`
-	SeatModels  map[string]string   `json:"seat_models,omitempty"`
-	SeatID      string              `json:"seat_id,omitempty"`
-	ActionIndex int                 `json:"action_index,omitempty"`
-	Replay      *mlsim.ReplayRecord `json:"replay,omitempty"`
+	Op              string              `json:"op"`
+	Seed            uint64              `json:"seed,omitempty"`
+	BattleID        string              `json:"battle_id,omitempty"`
+	SeatModels      map[string]string   `json:"seat_models,omitempty"`
+	SeatDefinitions map[string]string   `json:"seat_definitions,omitempty"`
+	SeatID          string              `json:"seat_id,omitempty"`
+	ActionIndex     int                 `json:"action_index,omitempty"`
+	Replay          *mlsim.ReplayRecord `json:"replay,omitempty"`
 }
 
 type response struct {
@@ -44,17 +45,19 @@ func main() {
 	telemetryMode := flag.String("telemetry-mode", mlsim.TelemetryModeFull, "result telemetry mode: full or training")
 	transportMode := flag.String("transport-mode", mlsim.TransportModeFull, "Go-Python transport mode: full, encoded, or parity")
 	observationSchema := flag.String("observation-schema", mlsim.ObservationSchemaVersion, "observation schema version")
+	observationManifest := flag.String("observation-manifest", "", "frozen observation v3 manifest path")
 	flag.Parse()
 
 	environment, err := mlsim.New(mlsim.Config{
-		ContentRoot:       *contentRoot,
-		RunStateRoot:      *runStateRoot,
-		MaxActions:        *maxActions,
-		SessionID:         *sessionID,
-		AuthorityMode:     *authorityMode,
-		TelemetryMode:     *telemetryMode,
-		TransportMode:     *transportMode,
-		ObservationSchema: *observationSchema,
+		ContentRoot:         *contentRoot,
+		RunStateRoot:        *runStateRoot,
+		MaxActions:          *maxActions,
+		SessionID:           *sessionID,
+		AuthorityMode:       *authorityMode,
+		TelemetryMode:       *telemetryMode,
+		TransportMode:       *transportMode,
+		ObservationSchema:   *observationSchema,
+		ObservationManifest: *observationManifest,
 	})
 	if err != nil {
 		fmt.Fprintln(os.Stderr, err)
@@ -74,7 +77,7 @@ func main() {
 		var value any
 		switch input.Op {
 		case "reset":
-			value, err = environment.Reset(mlsim.ResetRequest{Seed: input.Seed, BattleID: input.BattleID, SeatModels: input.SeatModels})
+			value, err = environment.Reset(mlsim.ResetRequest{Seed: input.Seed, BattleID: input.BattleID, SeatModels: input.SeatModels, SeatDefinitions: input.SeatDefinitions})
 		case "observe":
 			value, err = environment.Observe(input.SeatID)
 		case "legal_actions":

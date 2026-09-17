@@ -1,0 +1,182 @@
+{
+  "action_frequency": {
+    "commit_interaction": 31863,
+    "pass": 167947,
+    "planning_commit_cards": 33519,
+    "planning_pass": 1568,
+    "planning_reroll": 59277,
+    "planning_roll": 37968,
+    "planning_select_ability": 72809,
+    "roll_dice": 43428
+  },
+  "authority_rejects": 0,
+  "behavior": {
+    "ability_selections": 72809,
+    "mean_rolls_used_at_ability_selection": 2.5541897292917084,
+    "qualified_immediate_abilities": 19768,
+    "qualified_rerolls": 49432,
+    "qualified_roll_decisions": 136727,
+    "rolls_used_at_selection_total": 185968
+  },
+  "behavior_by_policy": {
+    "model:/Users/daddymere/games/Dice-and-Destiny-v2/dice-and-destiny-server/ml/runs/v2-winner-health-fresh-20260805-1h/intervals/interval-038/raw-ppo-challenger.zip": {
+      "ability_effect_damage": 18009,
+      "ability_effect_status": 4352,
+      "ability_selected_roll_1": 6334,
+      "ability_selected_roll_2": 9415,
+      "ability_selected_roll_3": 20660,
+      "ability_selections": 36409,
+      "action_commit_interaction": 18287,
+      "action_pass": 82690,
+      "action_planning_commit_cards": 16700,
+      "action_planning_pass": 975,
+      "action_planning_reroll": 26682,
+      "action_planning_roll": 18984,
+      "action_planning_select_ability": 36409,
+      "action_roll_dice": 20993,
+      "commitment_tier_1": 18009,
+      "mean_rolls_used_at_ability_selection": 2.393474141009091,
+      "qualified_attacks_declined": 21442,
+      "qualified_immediate_abilities": 13766,
+      "qualified_reroll_rate": 0.26354150022738165,
+      "qualified_rerolls": 21442,
+      "qualified_roll_decisions": 81361,
+      "reroll_subset_size_1": 91,
+      "reroll_subset_size_2": 5237,
+      "reroll_subset_size_3": 9863,
+      "reroll_subset_size_4": 6463,
+      "reroll_subset_size_5": 5028,
+      "rolls_used_at_selection_total": 87144
+    },
+    "model:/Users/daddymere/games/Dice-and-Destiny-v2/dice-and-destiny-server/ml/runs/v2-winner-health-v2-cp35-continuation-cp38-20260806-8h-1k-only/intervals/interval-193/raw-ppo-challenger.zip": {
+      "ability_effect_damage": 18392,
+      "ability_effect_resource": 59,
+      "ability_effect_status": 4007,
+      "ability_selected_roll_1": 2432,
+      "ability_selected_roll_2": 5512,
+      "ability_selected_roll_3": 28456,
+      "ability_selections": 36400,
+      "action_commit_interaction": 13576,
+      "action_pass": 85257,
+      "action_planning_commit_cards": 16819,
+      "action_planning_pass": 593,
+      "action_planning_reroll": 32595,
+      "action_planning_roll": 18984,
+      "action_planning_select_ability": 36400,
+      "action_roll_dice": 22435,
+      "commitment_tier_1": 18392,
+      "mean_rolls_used_at_ability_selection": 2.714945054945055,
+      "qualified_attacks_declined": 27990,
+      "qualified_immediate_abilities": 6002,
+      "qualified_reroll_rate": 0.5055449192645306,
+      "qualified_rerolls": 27990,
+      "qualified_roll_decisions": 55366,
+      "reroll_subset_size_1": 5959,
+      "reroll_subset_size_2": 10187,
+      "reroll_subset_size_3": 10063,
+      "reroll_subset_size_4": 5013,
+      "reroll_subset_size_5": 1373,
+      "rolls_used_at_selection_total": 98824
+    }
+  },
+  "draws": 226,
+  "elapsed_seconds": 92.09369250014424,
+  "game_latency_ms": {
+    "p50": 335.8595,
+    "p95": 519.0341
+  },
+  "games": 3000,
+  "games_per_second": 32.57552084791585,
+  "inference_latency_ms": {
+    "mean": 0.408008716047421,
+    "p95": 0.5837089847773314
+  },
+  "invalid_action_indices": 0,
+  "maximum_candidates": 87,
+  "mean_actions": 149.45966666666666,
+  "mean_remaining_health": 3.1698333333333335,
+  "median_actions": 144.0,
+  "p95_actions": 213.0,
+  "policies": {
+    "model:/Users/daddymere/games/Dice-and-Destiny-v2/dice-and-destiny-server/ml/runs/v2-winner-health-fresh-20260805-1h/intervals/interval-038/raw-ppo-challenger.zip": {
+      "adjudicated_score": 0.402,
+      "games": 3000,
+      "wilson_95": [
+        0.34729623770913876,
+        0.3817174232449997
+      ],
+      "win_rate": 0.36433333333333334,
+      "wins": 1093
+    },
+    "model:/Users/daddymere/games/Dice-and-Destiny-v2/dice-and-destiny-server/ml/runs/v2-winner-health-v2-cp35-continuation-cp38-20260806-8h-1k-only/intervals/interval-193/raw-ppo-challenger.zip": {
+      "adjudicated_score": 0.598,
+      "games": 3000,
+      "wilson_95": [
+        0.5425061625181358,
+        0.578006189735675
+      ],
+      "win_rate": 0.5603333333333333,
+      "wins": 1681
+    }
+  },
+  "resources": {
+    "aggregate_cpu_seconds": 1243.508546,
+    "average_logical_cores": 13.502646188261508,
+    "foreground_responsiveness": {
+      "max_wakeup_delay_ms": 22.03558082692325,
+      "p50_wakeup_delay_ms": 1.1974747758358717,
+      "p95_wakeup_delay_ms": 4.633668344467878,
+      "samples": 1841
+    },
+    "host_after": {
+      "memory_pressure": "The system has 68719476736 (4194304 pages with a page size of 16384).\nSystem-wide memory free percentage: 85%",
+      "platform": "darwin",
+      "swap": "total = 2048.00M  used = 920.75M  free = 1127.25M  (encrypted)",
+      "thermal": "Note: No thermal warning level has been recorded\nNote: No performance warning level has been recorded\nNote: No CPU power status has been recorded"
+    },
+    "host_before": {
+      "memory_pressure": "The system has 68719476736 (4194304 pages with a page size of 16384).\nSystem-wide memory free percentage: 84%",
+      "platform": "darwin",
+      "swap": "total = 2048.00M  used = 920.75M  free = 1127.25M  (encrypted)",
+      "thermal": "Note: No thermal warning level has been recorded\nNote: No performance warning level has been recorded\nNote: No CPU power status has been recorded"
+    },
+    "normalized_whole_machine_cpu_percent": 84.39153867663443,
+    "summed_worker_peak_rss_bytes": 5973524480
+  },
+  "runtime": {
+    "authority_mode": "normal",
+    "blas_threads_per_worker": 1,
+    "inference_concurrency": 12,
+    "io_concurrency": 2,
+    "logical_cpus": 16,
+    "observation_manifest": "",
+    "observation_schema": "dice-and-destiny-observation-v2",
+    "profile": "max",
+    "requested_workers": 12,
+    "seat_definitions": {
+      "seat-a": "blade_warden",
+      "seat-b": "blade_warden"
+    },
+    "telemetry_mode": "full",
+    "torch_threads_per_worker": 1,
+    "transport_mode": "full",
+    "workers": 12
+  },
+  "seat_a_win_rate": 0.4666666666666667,
+  "seat_a_wins": 1400,
+  "seat_b_win_rate": 0.458,
+  "seat_b_wins": 1374,
+  "stale_action_submissions": 0,
+  "timing": {
+    "aggregate_inference_seconds": 182.9425400926266,
+    "aggregate_step_transport_seconds": 713.7626056447625,
+    "artifact_io_seconds": 0.09437820804305375,
+    "collection_seconds": 92.09369250014424,
+    "step_latency_ms": {
+      "p50": 1.5097500290721655,
+      "p95": 2.4202498607337475
+    }
+  },
+  "truncations": 0,
+  "wrong_seat_submissions": 0
+}

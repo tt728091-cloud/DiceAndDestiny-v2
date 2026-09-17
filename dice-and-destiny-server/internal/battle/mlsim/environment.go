@@ -14,6 +14,7 @@ import (
 	"diceanddestiny/server/internal/battle"
 	"diceanddestiny/server/internal/battle/command"
 	"diceanddestiny/server/internal/battle/engine"
+	"diceanddestiny/server/internal/battle/event"
 	"diceanddestiny/server/internal/battle/repository"
 	"diceanddestiny/server/internal/battle/snapshot"
 	"diceanddestiny/server/internal/battle/state"
@@ -26,6 +27,9 @@ const (
 	EnvironmentSchemaV2      = "dice-and-destiny-ml-env-v2"
 	ObservationSchemaV2      = "dice-and-destiny-observation-v2"
 	ActionSchemaV2           = "dice-and-destiny-action-candidates-v2"
+	EnvironmentSchemaV3      = "dice-and-destiny-ml-env-v3"
+	ObservationSchemaV3      = "dice-and-destiny-observation-v3"
+	ActionSchemaV3           = "dice-and-destiny-action-candidates-v3"
 	DefaultMaxActions        = 1200
 	AuthorityModeNormal      = "normal"
 	AuthorityModeEphemeral   = "ephemeral"
@@ -36,20 +40,22 @@ const (
 var SeatIDs = []string{"seat-a", "seat-b"}
 
 type Config struct {
-	ContentRoot       string
-	RunStateRoot      string
-	MaxActions        int
-	SessionID         string
-	AuthorityMode     string
-	TelemetryMode     string
-	TransportMode     string
-	ObservationSchema string
+	ContentRoot         string
+	RunStateRoot        string
+	MaxActions          int
+	SessionID           string
+	AuthorityMode       string
+	TelemetryMode       string
+	TransportMode       string
+	ObservationSchema   string
+	ObservationManifest string
 }
 
 type ResetRequest struct {
-	Seed       uint64            `json:"seed"`
-	BattleID   string            `json:"battle_id,omitempty"`
-	SeatModels map[string]string `json:"seat_models,omitempty"`
+	Seed            uint64            `json:"seed"`
+	BattleID        string            `json:"battle_id,omitempty"`
+	SeatModels      map[string]string `json:"seat_models,omitempty"`
+	SeatDefinitions map[string]string `json:"seat_definitions,omitempty"`
 }
 
 type ActionRecord struct {
@@ -65,6 +71,7 @@ type ReplayRecord struct {
 	BattleID          string             `json:"battle_id"`
 	Seed              uint64             `json:"seed"`
 	SeatModels        map[string]string  `json:"seat_models"`
+	SeatDefinitions   map[string]string  `json:"seat_definitions"`
 	Actions           []ActionRecord     `json:"actions"`
 	Winner            string             `json:"winner,omitempty"`
 	Status            state.BattleStatus `json:"status,omitempty"`
@@ -72,22 +79,37 @@ type ReplayRecord struct {
 }
 
 type EpisodeMetrics struct {
-	BattleID         string             `json:"battle_id"`
-	Seed             uint64             `json:"seed"`
-	Actions          int                `json:"actions"`
-	Rounds           int                `json:"rounds"`
-	Winner           string             `json:"winner,omitempty"`
-	Status           state.BattleStatus `json:"status,omitempty"`
-	TruncationReason string             `json:"truncation_reason,omitempty"`
-	TruncationActor  string             `json:"truncation_actor,omitempty"`
-	ActionFrequency  map[string]int     `json:"action_frequency"`
-	RemainingHealth  map[string]int     `json:"remaining_health,omitempty"`
-	AuthorityRejects int                `json:"authority_rejects"`
-	InvalidActionIDs int                `json:"invalid_action_indices"`
-	StaleActions     int                `json:"stale_action_submissions"`
-	WrongSeatActions int                `json:"wrong_seat_submissions"`
-	DurationMillis   float64            `json:"duration_ms"`
-	RandomCursor     uint64             `json:"random_cursor"`
+	BattleID         string              `json:"battle_id"`
+	Seed             uint64              `json:"seed"`
+	Actions          int                 `json:"actions"`
+	Rounds           int                 `json:"rounds"`
+	Winner           string              `json:"winner,omitempty"`
+	Status           state.BattleStatus  `json:"status,omitempty"`
+	TruncationReason string              `json:"truncation_reason,omitempty"`
+	TruncationActor  string              `json:"truncation_actor,omitempty"`
+	ActionFrequency  map[string]int      `json:"action_frequency"`
+	RemainingHealth  map[string]int      `json:"remaining_health,omitempty"`
+	AuthorityRejects int                 `json:"authority_rejects"`
+	InvalidActionIDs int                 `json:"invalid_action_indices"`
+	StaleActions     int                 `json:"stale_action_submissions"`
+	WrongSeatActions int                 `json:"wrong_seat_submissions"`
+	DurationMillis   float64             `json:"duration_ms"`
+	RandomCursor     uint64              `json:"random_cursor"`
+	DamageBySeat     DamageBySeatMetrics `json:"damage_by_seat"`
+}
+
+type DamageMetrics struct {
+	RawAttack     int `json:"raw_attack"`
+	RawBleed      int `json:"raw_bleed"`
+	RawPoison     int `json:"raw_poison"`
+	RawTotal      int `json:"raw_total"`
+	ResolvedTotal int `json:"resolved_total"`
+	ActualTotal   int `json:"actual_total"`
+}
+
+type DamageBySeatMetrics struct {
+	SeatA DamageMetrics `json:"seat-a"`
+	SeatB DamageMetrics `json:"seat-b"`
 }
 
 type Transition struct {
@@ -111,6 +133,7 @@ type Environment struct {
 	metrics      EpisodeMetrics
 	episode      uint64
 	startedAt    time.Time
+	manifestV3   *observationManifestV3
 }
 
 func New(config Config) (*Environment, error) {
@@ -144,12 +167,21 @@ func New(config Config) (*Environment, error) {
 	if config.ObservationSchema == "" {
 		config.ObservationSchema = ObservationSchemaVersion
 	}
-	if config.ObservationSchema != ObservationSchemaVersion && config.ObservationSchema != ObservationSchemaV2 {
+	if config.ObservationSchema != ObservationSchemaVersion && config.ObservationSchema != ObservationSchemaV2 && config.ObservationSchema != ObservationSchemaV3 {
 		return nil, fmt.Errorf("unknown observation schema %q", config.ObservationSchema)
 	}
+	var manifestV3 *observationManifestV3
+	if config.ObservationSchema == ObservationSchemaV3 {
+		var err error
+		manifestV3, err = loadObservationManifestV3(config.ObservationManifest)
+		if err != nil {
+			return nil, err
+		}
+	}
 	return &Environment{
-		config:    config,
-		assembler: battle.NewCachedFileParticipantAssembler(config.ContentRoot, config.RunStateRoot),
+		config:     config,
+		assembler:  battle.NewCachedFileParticipantAssembler(config.ContentRoot, config.RunStateRoot),
+		manifestV3: manifestV3,
 	}, nil
 }
 
@@ -164,12 +196,20 @@ func (e *Environment) Reset(request ResetRequest) (Transition, error) {
 	if request.SeatModels == nil {
 		request.SeatModels = map[string]string{}
 	}
+	if request.SeatDefinitions == nil {
+		request.SeatDefinitions = map[string]string{SeatIDs[0]: "blade_warden", SeatIDs[1]: "blade_warden"}
+	}
+	for _, seatID := range SeatIDs {
+		if request.SeatDefinitions[seatID] == "" {
+			return Transition{}, fmt.Errorf("definition id is required for %s", seatID)
+		}
+	}
 	var repo repository.Repository = repository.NewInMemory()
 	if e.config.AuthorityMode == AuthorityModeEphemeral {
 		repo = repository.NewEphemeral()
 	}
 	simulationEngine, err := engine.NewEngineWithConfig(engine.Config{
-		OmitSnapshotContentCatalog: e.config.ObservationSchema != ObservationSchemaV2,
+		OmitSnapshotContentCatalog: e.config.ObservationSchema != ObservationSchemaV2 && e.config.ObservationSchema != ObservationSchemaV3,
 	}, engine.DefaultFlows()...)
 	if err != nil {
 		return Transition{}, err
@@ -198,6 +238,7 @@ func (e *Environment) Reset(request ResetRequest) (Transition, error) {
 		BattleID:          battleID,
 		Seed:              request.Seed,
 		SeatModels:        cloneStringsMap(request.SeatModels),
+		SeatDefinitions:   cloneStringsMap(request.SeatDefinitions),
 	}
 	e.metrics = EpisodeMetrics{
 		BattleID:        battleID,
@@ -207,8 +248,8 @@ func (e *Environment) Reset(request ResetRequest) (Transition, error) {
 	e.startedAt = time.Now()
 	payload, err := json.Marshal(command.StartBattlePayload{
 		Seats: []command.ParticipantDescriptor{
-			{InstanceID: SeatIDs[0], DefinitionID: "blade_warden"},
-			{InstanceID: SeatIDs[1], DefinitionID: "blade_warden"},
+			{InstanceID: SeatIDs[0], DefinitionID: request.SeatDefinitions[SeatIDs[0]]},
+			{InstanceID: SeatIDs[1], DefinitionID: request.SeatDefinitions[SeatIDs[1]]},
 		},
 		Seed: &request.Seed,
 	})
@@ -330,6 +371,7 @@ func (e *Environment) stepForViewerWithTranscript(
 		e.metrics.AuthorityRejects++
 		return Transition{}, result, fmt.Errorf("implementation failure: authority rejected enumerated action %s: %s", action.Type, result.Error)
 	}
+	e.recordCommittedDamage(result.Events)
 	e.replay.Actions = append(e.replay.Actions, ActionRecord{Index: actionIndex, ActorID: action.ActorID, Command: action})
 	e.metrics.Actions++
 	e.metrics.ActionFrequency[string(action.Type)]++
@@ -339,6 +381,59 @@ func (e *Environment) stepForViewerWithTranscript(
 	}
 	transition, err := e.selectNext(result, action.ActorID)
 	return transition, result, err
+}
+
+func (e *Environment) recordCommittedDamage(events []event.Event) {
+	for _, battleEvent := range events {
+		if battleEvent.Type != event.TypeDamageCommitted || battleEvent.Data == nil {
+			continue
+		}
+		sources, ok := battleEvent.Data["sources"].([]state.SettledDamageSource)
+		if !ok {
+			continue
+		}
+		for _, source := range sources {
+			metrics := e.damageMetricsForSeat(source.TargetActorID)
+			if metrics == nil {
+				continue
+			}
+			switch source.SourceContentID {
+			case "bleed":
+				metrics.RawBleed += source.BaseAmount
+			case "poison":
+				metrics.RawPoison += source.BaseAmount
+			default:
+				metrics.RawAttack += source.BaseAmount
+			}
+			metrics.RawTotal += source.BaseAmount
+			metrics.ResolvedTotal += source.FinalAmount
+		}
+		removals, ok := battleEvent.Data["removals"].([]state.ProposedCardRemoval)
+		if !ok {
+			continue
+		}
+		for _, removal := range removals {
+			if !removal.Accepted || removal.Released {
+				continue
+			}
+			metrics := e.damageMetricsForSeat(removal.TargetActorID)
+			if metrics == nil {
+				continue
+			}
+			metrics.ActualTotal++
+		}
+	}
+}
+
+func (e *Environment) damageMetricsForSeat(seatID string) *DamageMetrics {
+	switch seatID {
+	case "seat-a":
+		return &e.metrics.DamageBySeat.SeatA
+	case "seat-b":
+		return &e.metrics.DamageBySeat.SeatB
+	default:
+		return nil
+	}
 }
 
 // StepCommandForViewer accepts only a command currently enumerated by the
@@ -402,7 +497,10 @@ func (e *Environment) Metrics() EpisodeMetrics {
 }
 
 func (e *Environment) Replay(record ReplayRecord) (Transition, error) {
-	transition, err := e.Reset(ResetRequest{Seed: record.Seed, BattleID: record.BattleID, SeatModels: record.SeatModels})
+	transition, err := e.Reset(ResetRequest{
+		Seed: record.Seed, BattleID: record.BattleID,
+		SeatModels: record.SeatModels, SeatDefinitions: record.SeatDefinitions,
+	})
 	if err != nil {
 		return Transition{}, err
 	}
@@ -531,7 +629,7 @@ func validSeat(seatID string) bool {
 
 func (e *Environment) compactResult(result engine.Result) engine.Result {
 	result.Events = nil
-	if result.Snapshot != nil && e.config.ObservationSchema != ObservationSchemaV2 {
+	if result.Snapshot != nil && e.config.ObservationSchema != ObservationSchemaV2 && e.config.ObservationSchema != ObservationSchemaV3 {
 		result.Snapshot.ContentCatalog = nil
 	}
 	return result
@@ -545,6 +643,8 @@ func (e *Environment) transportTransition(transition Transition) (Transition, er
 	var err error
 	if e.config.ObservationSchema == ObservationSchemaV2 {
 		encoded, err = encodeDecisionV2(transition)
+	} else if e.config.ObservationSchema == ObservationSchemaV3 {
+		encoded, err = encodeDecisionV3(transition, e.manifestV3)
 	} else {
 		encoded, err = encodeDecision(transition)
 	}
@@ -561,6 +661,9 @@ func (e *Environment) transportTransition(transition Transition) (Transition, er
 func (e *Environment) SchemaVersions() (string, string, string) {
 	if e.config.ObservationSchema == ObservationSchemaV2 {
 		return EnvironmentSchemaV2, ObservationSchemaV2, ActionSchemaV2
+	}
+	if e.config.ObservationSchema == ObservationSchemaV3 {
+		return EnvironmentSchemaV3, ObservationSchemaV3, ActionSchemaV3
 	}
 	return EnvironmentSchemaVersion, ObservationSchemaVersion, ActionSchemaVersion
 }

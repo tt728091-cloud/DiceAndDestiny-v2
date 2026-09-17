@@ -158,6 +158,17 @@ func (e Engine) executeEffect(battle *state.Battle, library content.BattleLibrar
 		return result, err
 	}
 	switch op.Type {
+	case "provoke":
+		return result, nil // ability checks are captured after late cancellation in prepareVenomAttacks
+	case "apply_incubation", "incubation_or_poison":
+		for _, target := range targets {
+			id := "incubation"
+			if op.Type == "incubation_or_poison" && (stacks(battle, target, "poison") == 0 || stacks(battle, target, "incubation") > 0) {
+				id = "poison"
+			}
+			result.StatusApplications = append(result.StatusApplications, state.SettledStatusApplication{SourceActorID: ctx.SourceActorID, TargetActorID: target, StatusID: id, Stacks: 1, RequirePoison: op.Type == "incubation_or_poison"})
+		}
+		return result, nil
 	case "noop":
 		return result, nil
 	case "deal_damage":
@@ -169,8 +180,11 @@ func (e Engine) executeEffect(battle *state.Battle, library content.BattleLibrar
 			result.Damage = append(result.Damage, newSettledDamageSource(battle, ctx.SourceActorID, targetID, ctx.SourceContentID, amount))
 		}
 	case "apply_status":
+		if ctx.SourceContentID == "terminal_bite" && op.StatusID == "catalyst" {
+			return result, nil
+		}
 		for _, targetID := range targets {
-			result.StatusApplications = append(result.StatusApplications, state.SettledStatusApplication{TargetActorID: targetID, StatusID: op.StatusID, Stacks: max(1, op.StackCount)})
+			result.StatusApplications = append(result.StatusApplications, state.SettledStatusApplication{SourceActorID: ctx.SourceActorID, TargetActorID: targetID, StatusID: op.StatusID, Stacks: max(1, op.StackCount)})
 		}
 	case "remove_status", "remove_status_stack":
 		statusID := op.StatusID
@@ -317,6 +331,11 @@ func (e Engine) executeEffect(battle *state.Battle, library content.BattleLibrar
 
 func effectTargets(battle *state.Battle, ctx effectContext, target string) ([]string, error) {
 	switch target {
+	case "enemy":
+		if source := effectDamageSourceByID(battle, first(ctx.ProposalIDs)); source != nil {
+			return []string{source.SourceActorID}, nil
+		}
+		return otherActorIDs(battle, ctx.SourceActorID), nil
 	case "", "self", "source_actor":
 		return []string{ctx.SourceActorID}, nil
 	case "selected_targets", "target_actor":
@@ -390,7 +409,22 @@ func (e Engine) applyEffectMutations(battle *state.Battle, library content.Battl
 		battle.Settled.Actors[change.ActorID] = runtime
 	}
 	for _, application := range result.StatusApplications {
-		applyStatus(battle, library, application.TargetActorID, application.StatusID, application.Stacks)
+		if application.StatusID == "incubation" {
+			if stacks(battle, application.TargetActorID, "incubation") == 0 {
+				v := venomRuntime(battle)
+				duplicate := false
+				for _, w := range v.Queue {
+					if w.Kind == "application" && w.TargetActorID == application.TargetActorID && w.StatusID == "incubation" {
+						duplicate = true
+					}
+				}
+				if !duplicate {
+					v.Queue = append(v.Queue, state.VenomWork{Kind: "application", SourceActorID: application.SourceActorID, TargetActorID: application.TargetActorID, StatusID: "incubation", Stacks: 1, RequirePoison: application.RequirePoison})
+				}
+			}
+		} else {
+			applyVenomStatus(battle, library, application.SourceActorID, application)
+		}
 	}
 	for _, removal := range result.StatusRemovals {
 		removeStatus(battle, removal.ActorID, removal.StatusID, removal.Stacks)

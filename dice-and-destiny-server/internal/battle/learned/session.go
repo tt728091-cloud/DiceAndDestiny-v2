@@ -22,12 +22,13 @@ const (
 )
 
 type SessionConfig struct {
-	ContentRoot      string
-	RunStateRoot     string
-	ModelPath        string
-	ModelSHA256      string
-	DiagnosticsPath  string
-	InferenceTimeout time.Duration
+	ContentRoot         string
+	RunStateRoot        string
+	ModelPath           string
+	ModelSHA256         string
+	ObservationManifest string
+	DiagnosticsPath     string
+	InferenceTimeout    time.Duration
 }
 
 type sessionPolicy interface {
@@ -105,11 +106,12 @@ func NewSession(config SessionConfig) (*Session, error) {
 		return nil, err
 	}
 	environment, err := mlsim.New(mlsim.Config{
-		ContentRoot:       config.ContentRoot,
-		RunStateRoot:      config.RunStateRoot,
-		MaxActions:        mlsim.DefaultMaxActions,
-		SessionID:         "phase3-player",
-		ObservationSchema: policy.Metadata().ObservationSchema,
+		ContentRoot:         config.ContentRoot,
+		RunStateRoot:        config.RunStateRoot,
+		MaxActions:          mlsim.DefaultMaxActions,
+		SessionID:           "phase3-player",
+		ObservationSchema:   policy.Metadata().ObservationSchema,
+		ObservationManifest: config.ObservationManifest,
 	})
 	if err != nil {
 		return nil, err
@@ -145,12 +147,24 @@ func loadSessionPolicy(path, expectedSHA256 string) (sessionPolicy, error) {
 		return LoadAcceptedPolicy(path)
 	case PolicyFormatV2:
 		return LoadCandidatePolicyV2(path, expectedSHA256)
+	case PolicyFormatV3:
+		return LoadCandidatePolicyV3(path, expectedSHA256)
 	default:
 		return nil, fmt.Errorf("unsupported learned policy format %q", header.Format)
 	}
 }
 
 func (s *Session) Reset(battleID string, seed uint64, humanSeat string, rematch bool) (map[string]any, error) {
+	return s.ResetCharacter(battleID, seed, humanSeat, rematch, "blade_warden")
+}
+
+func (s *Session) ResetCharacter(battleID string, seed uint64, humanSeat string, rematch bool, character string) (map[string]any, error) {
+	if character == "" {
+		character = "blade_warden"
+	}
+	if character != "blade_warden" && character != "venom" {
+		return nil, fmt.Errorf("unknown playable character %q", character)
+	}
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	if humanSeat != "seat-a" && humanSeat != "seat-b" {
@@ -159,8 +173,9 @@ func (s *Session) Reset(battleID string, seed uint64, humanSeat string, rematch 
 	s.humanSeat = humanSeat
 	s.modelSeat = otherSeat(humanSeat)
 	transition, err := s.environment.Reset(mlsim.ResetRequest{
-		Seed:     seed,
-		BattleID: battleID,
+		Seed:            seed,
+		BattleID:        battleID,
+		SeatDefinitions: map[string]string{s.humanSeat: character, s.modelSeat: "blade_warden"},
 		SeatModels: map[string]string{
 			s.humanSeat: "human-godot-ui",
 			s.modelSeat: s.policy.Metadata().ModelID,
@@ -375,6 +390,7 @@ func (s *Session) present(result engine.Result) map[string]any {
 		"phase2_revision":          s.policy.Metadata().SourceRevision,
 		"training_engine_revision": s.policy.Metadata().TrainingEngineRevision,
 		"content_version":          s.policy.Metadata().ContentVersion,
+		"runtime_rules":            "automatic-effects-v1",
 		"architecture":             s.policy.Metadata().Architecture,
 		"environment_schema":       s.policy.Metadata().EnvironmentSchema,
 		"observation_schema":       s.policy.Metadata().ObservationSchema,

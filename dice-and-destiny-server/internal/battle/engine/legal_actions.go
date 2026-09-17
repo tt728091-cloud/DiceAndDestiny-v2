@@ -5,6 +5,7 @@ import (
 	"sort"
 
 	"diceanddestiny/server/internal/battle/command"
+	"diceanddestiny/server/internal/battle/segment"
 	"diceanddestiny/server/internal/battle/state"
 	"diceanddestiny/server/internal/content"
 )
@@ -14,6 +15,9 @@ import (
 // actor's private pending input or planning state.
 func (e Engine) LegalActions(battle *state.Battle, viewerActorID string) []command.Command {
 	if battle == nil || battle.Settled == nil || state.IsTerminalBattleStatus(battle.Status) {
+		return nil
+	}
+	if battle.Segment.Current == segment.OngoingEffects {
 		return nil
 	}
 	pending, ok := battle.Flow.PendingInput[viewerActorID]
@@ -63,7 +67,32 @@ func settledLegalActions(battle *state.Battle, library content.BattleLibrary, ac
 					continue
 				}
 				for _, targets := range actorTargetChoices(battle, actorID, ability.Targeting) {
-					actions = append(actions, legalCommand(battle.ID, actorID, command.TypePlanningAbility, command.PlanningAbilityPayload{PendingInputID: pending.ID, Checkpoint: planningCheckpoint(pending), AbilityID: abilityID, TargetIDs: targets}))
+					tiers := []string{""}
+					if abilityID == "needlefang" {
+						tiers = nil
+						for _, tier := range ability.Qualification.ActivationTiers {
+							if requirementsMet(tier.Requirements, runtime.FinalDice) {
+								tiers = append(tiers, tier.ID)
+							}
+						}
+					}
+					choices := [][]string{nil}
+					if abilityID == "terminal_bite" || abilityID == "fever_spike" {
+						n := 2
+						tier, _ := qualifiedTier(ability, runtime.FinalDice)
+						if abilityID == "fever_spike" && tier.ID == "base" {
+							n = 1
+						}
+						choices = toxinChoices(battle, first(targets), n)
+						if len(choices) == 0 {
+							choices = [][]string{nil}
+						}
+					}
+					for _, tierID := range tiers {
+						for _, choice := range choices {
+							actions = append(actions, legalCommand(battle.ID, actorID, command.TypePlanningAbility, command.PlanningAbilityPayload{PendingInputID: pending.ID, Checkpoint: planningCheckpoint(pending), AbilityID: abilityID, TierID: tierID, ToxinChoices: choice, TargetIDs: targets}))
+						}
+					}
 				}
 			}
 		}
@@ -87,7 +116,13 @@ func settledLegalActions(battle *state.Battle, library content.BattleLibrary, ac
 			}
 			for _, source := range battle.Settled.OffensiveSources {
 				if source.TargetActorID == actorID {
+					if abilityID == "barbed_mantle" && library.Abilities[source.SourceContentID].Type != "offensive" {
+						continue
+					}
 					actions = append(actions, legalCommand(battle.ID, actorID, command.TypePlanningAbility, command.PlanningAbilityPayload{PendingInputID: pending.ID, Checkpoint: planningCheckpoint(pending), AbilityID: abilityID, TargetIDs: []string{source.ID}}))
+					if abilityID == "shedskin" && stacks(battle, actorID, "catalyst") > 0 {
+						actions = append(actions, legalCommand(battle.ID, actorID, command.TypePlanningAbility, command.PlanningAbilityPayload{PendingInputID: pending.ID, Checkpoint: planningCheckpoint(pending), AbilityID: abilityID, TargetIDs: []string{source.ID}, SpendCatalyst: true}))
+					}
 				}
 			}
 		}
@@ -123,6 +158,7 @@ func settledLegalActions(battle *state.Battle, library content.BattleLibrary, ac
 			actions = append(actions, legalCommand(battle.ID, actorID, command.TypePass, command.PassPayload{PendingInputID: pending.ID, Checkpoint: interactionCheckpoint(pending)}))
 		}
 	}
+	actions = append(actions, venomCardActions(battle, library, actorID, pending)...)
 	return actions
 }
 
@@ -173,7 +209,7 @@ func reactionCardActions(battle *state.Battle, library content.BattleLibrary, ac
 	var actions []command.Command
 	for _, instanceID := range actor.Cards.Hand {
 		definition := library.Cards[runtime.CardInstances[instanceID].DefinitionID]
-		if actor.Resources.EnergyPoints < definition.Cost.Energy || !cardPlayableDuring(definition, battle, "reaction") {
+		if actor.Resources.EnergyPoints < definition.Cost.Energy || (!cardPlayableDuring(definition, battle, "reaction") && !(battle.Settled.Stage == stageVenomStatus && definition.Targeting.Selector == "one_negative_status_on_self")) {
 			continue
 		}
 		if !reactionSelectorSupported(battle.Settled.Window.Stage, definition.Targeting.Selector) {
@@ -256,7 +292,7 @@ func reactionSelectorSupported(stage, selector string) bool {
 	switch stage {
 	case stageOffensiveReact, stageBlindReact:
 		return selector == "selected_die"
-	case stageOngoingReact, stageDefenseReact:
+	case stageVenomStatus, stageOngoingReact, stageDefenseReact:
 		return selector == "one_negative_status_on_self" || selector == "self"
 	case stageOngoingDamage, stageDamageReact:
 		return selector == "one_incoming_damage_source"
@@ -311,8 +347,12 @@ func otherActorIDs(battle *state.Battle, actorID string) []string {
 }
 
 func cardPlayableDuring(definition content.BattleCardDefinition, battle *state.Battle, purpose string) bool {
+	if battle.Segment.Current == segment.OngoingEffects {
+		return false
+	}
 	for _, timing := range definition.Play.PlayableDuring {
-		if timing.Segment == string(battle.Segment.Current) && timing.Phase == "main" && timing.WindowPurpose == purpose {
+		immediateDamage := battle.Settled != nil && battle.Settled.Stage == stageOngoingDamage && battle.Settled.Venom != nil && battle.Settled.Venom.Active != nil && battle.Settled.Venom.Active.Kind == "damage"
+		if (timing.Segment == string(battle.Segment.Current) || (immediateDamage && timing.Segment == "damage_resolution" && definition.Targeting.Selector == "one_incoming_damage_source")) && timing.Phase == "main" && timing.WindowPurpose == purpose {
 			return true
 		}
 	}

@@ -1,0 +1,39 @@
+{
+  "schema_version": 1,
+  "id": "terminal_formula",
+  "name": "Terminal Formula",
+  "type": "reaction",
+  "presentation": {
+    "rules_text": "Terminal Bite: add 1 direct damage per selected legal Provoke check, maximum 2. Once per source."
+  },
+  "cost": {
+    "energy": 1
+  },
+  "play": {
+    "source_zones": [
+      "hand"
+    ],
+    "destination": "discard",
+    "playable_during": [
+      {
+        "segment": "offensive",
+        "phase": "main",
+        "window_purpose": "reaction"
+      }
+    ]
+  },
+  "targeting": {
+    "selector": "venom_choice",
+    "minimum": 0,
+    "maximum": 1
+  },
+  "reaction_window": {
+    "opens": false
+  },
+  "operations": [
+    {
+      "type": "venom_card",
+      "id": "terminal_formula"
+    }
+  ]
+}

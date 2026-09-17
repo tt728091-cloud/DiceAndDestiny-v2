@@ -1,0 +1,39 @@
+{
+  "schema_version": 1,
+  "id": "venom_lens",
+  "name": "Venom Lens",
+  "type": "action",
+  "presentation": {
+    "rules_text": "Upgrade Needlefang: +1 direct damage to all tiers for this battle. Does not stack."
+  },
+  "cost": {
+    "energy": 1
+  },
+  "play": {
+    "source_zones": [
+      "hand"
+    ],
+    "destination": "discard",
+    "playable_during": [
+      {
+        "segment": "offensive",
+        "phase": "main",
+        "window_purpose": "planning"
+      }
+    ]
+  },
+  "targeting": {
+    "selector": "venom_choice",
+    "minimum": 0,
+    "maximum": 1
+  },
+  "reaction_window": {
+    "opens": false
+  },
+  "operations": [
+    {
+      "type": "venom_card",
+      "id": "venom_lens"
+    }
+  ]
+}

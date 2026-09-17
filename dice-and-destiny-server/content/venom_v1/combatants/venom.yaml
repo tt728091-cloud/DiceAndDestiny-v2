@@ -1,0 +1,141 @@
+{
+  "schema_version": 1,
+  "id": "venom",
+  "name": "Venom",
+  "class": "alchemist",
+  "controller_defaults": {
+    "type": "human"
+  },
+  "resources": {
+    "starting_hand_size": 4,
+    "starting_energy": 2,
+    "hand_limit": 6
+  },
+  "income": {
+    "cards": 1,
+    "energy": 1
+  },
+  "decklist": [
+    {
+      "card_id": "pinprick",
+      "count": 1
+    },
+    {
+      "card_id": "twin_puncture",
+      "count": 1
+    },
+    {
+      "card_id": "culture_flask",
+      "count": 1
+    },
+    {
+      "card_id": "slow_release",
+      "count": 1
+    },
+    {
+      "card_id": "distill",
+      "count": 1
+    },
+    {
+      "card_id": "deep_puncture",
+      "count": 1
+    },
+    {
+      "card_id": "agitate",
+      "count": 1
+    },
+    {
+      "card_id": "fever_cycle",
+      "count": 1
+    },
+    {
+      "card_id": "bitter_reagent",
+      "count": 1
+    },
+    {
+      "card_id": "measured_dose",
+      "count": 1
+    },
+    {
+      "card_id": "steady_hand",
+      "count": 1
+    },
+    {
+      "card_id": "forked_tongue",
+      "count": 1
+    },
+    {
+      "card_id": "extract",
+      "count": 1
+    },
+    {
+      "card_id": "repurpose",
+      "count": 1
+    },
+    {
+      "card_id": "venom_reserve",
+      "count": 1
+    },
+    {
+      "card_id": "coagulate",
+      "count": 1
+    },
+    {
+      "card_id": "shock_dose",
+      "count": 1
+    },
+    {
+      "card_id": "accelerant",
+      "count": 1
+    },
+    {
+      "card_id": "incubate",
+      "count": 1
+    },
+    {
+      "card_id": "venom_lens",
+      "count": 1
+    },
+    {
+      "card_id": "terminal_formula",
+      "count": 1
+    },
+    {
+      "card_id": "emergency_molt",
+      "count": 1
+    },
+    {
+      "card_id": "spined_rebuttal",
+      "count": 1
+    },
+    {
+      "card_id": "antivenom_draught",
+      "count": 1
+    }
+  ],
+  "dice_loadout": [
+    {
+      "dice_id": "venom_d6",
+      "count": 5
+    }
+  ],
+  "ability_board": {
+    "offensive": [
+      "needlefang",
+      "venom_gland",
+      "fever_spike",
+      "terminal_bite"
+    ],
+    "defensive": [
+      "shedskin",
+      "barbed_mantle"
+    ]
+  },
+  "starting_statuses": [],
+  "starting_tokens": [],
+  "roll_preferences": {
+    "status_effects": "automatic",
+    "offensive": "manual",
+    "ability_effects": "manual"
+  }
+}

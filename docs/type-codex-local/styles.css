@@ -25,6 +25,61 @@
   --ui: Optima, Candara, "Segoe UI", sans-serif;
 }
 
+/* Venom concept dossier; scoped to preserve the Curse template. */
+.venom-panel { --moss: #a4b976; --sage: #bbd48d; }
+.venom-specimen { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .5rem; width: min(290px, 100%); padding: 1rem; border: 1px solid #637445; border-radius: 5px 10px 6px 9px; background: radial-gradient(ellipse at top, #303e27, #141a12 85%); }
+.venom-specimen .die-face { padding-bottom: .65rem; border-color: #839362; background: radial-gradient(circle at 35% 25%, #535d3e, #232c1d 72%); }
+.venom-specimen .die-face small { right: auto; bottom: .35rem; color: #e1eac5; font: 700 .58rem var(--ui); letter-spacing: .05em; text-shadow: none; }
+.venom-specimen .gland { background: radial-gradient(circle at 35% 25%, #607c40, #29371e 72%); }
+.venom-specimen .coil { border-color: #d2b872; background: radial-gradient(circle at 35% 25%, #76623a, #302a1b 72%); }
+.venom-ledger { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: .6rem; margin: 0 0 1.5rem; }
+.venom-ledger > div { padding: 1rem; border: 1px solid #4a563b; background: #1a2116; }
+.venom-ledger dt { color: #b7c89d; font: 700 .65rem var(--ui); text-transform: uppercase; letter-spacing: .07em; }
+.venom-ledger dd { margin: .35rem 0; color: #e4ecd4; font: 700 2.2rem var(--heading); }
+.venom-ledger small { color: #b6b8a6; font: .68rem/1.4 var(--ui); }
+.venom-note { margin-top: 1.2rem; padding: 1.15rem; border-left: 3px solid #9aae6f; background: #20271a; color: #c2c4b1; font-size: .86rem; line-height: 1.65; }
+.venom-note strong { color: #e2e8cc; }
+.venom-status-grid, .venom-combos { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .8rem; margin-top: 1.2rem; }
+.venom-status, .venom-combos article { padding: 1.2rem; border: 1px solid #4c583a; background: linear-gradient(145deg, #252d1f, #171c14); }
+.venom-status h4, .venom-combos h4 { color: #e1e9ca; margin: .8rem 0 .6rem; font: 700 1.55rem var(--heading); }
+.venom-status p, .venom-combos p { color: #b7b9a6; font-size: .85rem; line-height: 1.65; }
+.venom-combos article > span { color: #bed68b; font: 700 .64rem var(--ui); letter-spacing: .07em; text-transform: uppercase; }
+.venom-panel .venom-table { width: 100%; border-collapse: collapse; table-layout: fixed; margin: .8rem 0 1rem; font-size: .8rem; }
+.venom-panel .venom-table caption { padding-bottom: .55rem; text-align: left; color: #acb59a; font: .7rem/1.45 var(--ui); }
+.venom-panel .venom-table th, .venom-panel .venom-table td { text-align: left; vertical-align: top; border-bottom: 1px solid #465139; padding: .65rem .55rem; overflow-wrap: anywhere; }
+.venom-panel .venom-table th { color: #d2e2b3; background: #222e1c; font: 700 .68rem/1.4 var(--ui); }
+.venom-panel .venom-table td { color: #c4c6b4; }
+.venom-panel .venom-status .venom-table th:first-child { width: 24%; }
+.venom-panel .ability-card { border-color: #58663e; background: linear-gradient(145deg, rgba(47,60,33,.76), rgba(22,28,18,.96)); box-shadow: inset 0 3px #96ad62; }
+.venom-panel .ability-card.defensive { border-color: #79704c; box-shadow: inset 0 3px #c0a261; }
+.venom-panel .ability-card th { color: #c0d590; width: 112px; padding-right: .7rem; line-height: 1.45; }
+.venom-panel .ability-card td { color: #c5c6b1; }
+.venom-panel .ability-card p, .venom-panel .comparison-grid p, .venom-panel .resolver-track p, .venom-panel .counter-grid p { color: #b4b6a2; }
+.venom-panel .card-list p { font-size: .83rem; line-height: 1.65; color: #b4b6a2; }
+.venom-panel .card-list small { color: #bed48f; font-size: .61rem; line-height: 1.6; letter-spacing: .055em; }
+.venom-panel .card-list b { font-size: 1.08rem; color: #e0e5cc; }
+.venom-panel .card-list .venom-synergy, .venom-panel .ability-card .venom-synergy { border-top: 1px solid #3d4931; margin-top: .85rem; padding-top: .7rem; color: #a7ba89; font-size: .77rem; }
+.venom-panel .pillar-grid p { color: #b0b39e; }
+.venom-details { margin-top: 1rem; padding: 1rem 1.2rem; border: 1px solid #53603f; background: #1a2116; }
+.venom-details summary { cursor: pointer; color: #dae6c3; font: 700 .9rem/1.5 var(--ui); }
+.venom-details p, .venom-details li { color: #b7bba7; font-size: .84rem; line-height: 1.65; }
+.venom-details a { color: #d0dfb0; text-underline-offset: .2em; }
+.venom-source-list { padding-left: 1.2rem; }
+.venom-source-list li { margin: .7rem 0; }
+.venom-section-gap { margin-top: 2rem; }
+[role="tab"]:focus-visible, .venom-details summary:focus-visible { outline: 2px solid #e1c17e; outline-offset: 4px; }
+@media (max-width: 980px) {
+  .venom-ledger { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 760px) {
+  .venom-status-grid, .venom-combos { grid-template-columns: minmax(0, 1fr); }
+}
+@media (max-width: 520px) {
+  .venom-panel .venom-table { font-size: .73rem; }
+  .venom-panel .venom-table th, .venom-panel .venom-table td { padding: .5rem .3rem; }
+  .venom-ledger > div { padding: .75rem; }
+}
+
 /* Combat Type Codex additions — built on the Battle Hooks field-guide template. */
 .local-notice { position: absolute; z-index: 3; top: 1.4rem; right: clamp(1rem, 4vw, 4rem); padding: .42rem .7rem; color: #c8cfaa; border: 1px solid rgba(153,166,105,.38); background: rgba(28,34,22,.9); font: 800 .62rem var(--ui); letter-spacing: .11em; text-transform: uppercase; }
 .local-notice::before { content: "●"; margin-right: .45rem; color: #9aac69; }
@@ -541,3 +596,59 @@ footer a { font: 700 .7rem var(--ui); text-decoration: none; }
   html { scroll-behavior: auto; }
   *, *::before, *::after { scroll-behavior: auto !important; transition-duration: .01ms !important; animation-duration: .01ms !important; animation-iteration-count: 1 !important; }
 }
+
+/* Fourteen review-only dossiers. Existing Curse/Venom rules are unchanged. */
+.review-overview { margin: 1rem 0 2rem; padding: 1.25rem; border: 1px solid var(--line); background: #1c2018; }
+.review-overview > strong { color: #ded2b6; font: 700 1.1rem var(--heading); }
+.review-overview p { color: #b5af9c; font-size: .88rem; }
+.review-overview a, .draft-panel a { color: #dac88c; text-underline-offset: .2em; }
+.draft-panel .section-label, .draft-panel .method-tag { color: var(--type-accent); }
+.draft-panel .die-face small { position: static; color: var(--type-accent); text-shadow: none; font-size: .7rem; word-break: normal; }
+.draft-panel .die-face { display: flex; flex-direction: column; justify-content: center; gap: .15rem; }
+.draft-panel .ability-card { border-color: var(--type-accent); box-shadow: inset 0 3px var(--type-accent); }
+.draft-panel .ability-card th { width: 38%; padding-right: .8rem; line-height: 1.5; }
+.draft-panel .ability-card td { line-height: 1.65; }
+.draft-panel .card-list p { color: #b8b19e; font-size: .84rem; line-height: 1.7; }
+.draft-panel .card-list small { font-size: .65rem; line-height: 1.55; }
+.draft-panel .card-list article { min-width: 0; overflow-wrap: anywhere; }
+.draft-panel .venom-status-card { border-top: 3px solid var(--type-accent); }
+.draft-panel .venom-status-card p { color: #b8b5a5; line-height: 1.75; }
+.draft-note { color: #b5af9c; border-left: 3px solid var(--type-accent); padding: .9rem 1rem; background: #1a1e17; }
+.draft-table-wrap { overflow-x: auto; margin: 1rem 0; }
+.draft-table-wrap table { width: 100%; min-width: 420px; }
+.draft-details { margin: 1.2rem 0; padding: 1rem; border: 1px solid #565744; background: #181d16; }
+.draft-details summary { cursor: pointer; color: #d0c5a7; font-weight: 700; }
+.draft-details p { color: #b9b3a3; line-height: 1.75; }
+.draft-details h4 { margin-bottom: .3rem; }
+.draft-search, .draft-review label { display: block; color: #c8c1ac; font-size: .9rem; }
+.draft-search input, .draft-review textarea { display: block; box-sizing: border-box; width: 100%; margin: .5rem 0; padding: .85rem; color: #e7ddc7; background: #101610; border: 1px solid #69664d; border-radius: 4px; font: inherit; }
+.draft-review textarea { resize: vertical; }
+.draft-result-count { font-size: .8rem; color: #b6b09c; }
+.draft-review { margin-top: 2rem; padding: 1.25rem; background: #20271b; border: 1px solid #697451; }
+.draft-review label { margin: .8rem 0; }
+.draft-review p, [data-review-save] { display: block; color: #c0bba6; font-size: .8rem; line-height: 1.6; }
+.draft-review button { cursor: pointer; padding: .75rem 1rem; color: #e5d7b4; background: #343e29; border: 1px solid #849566; font: 700 .8rem var(--ui); }
+.draft-reviewed::after { content: ' ✓'; color: #b9cc8a; }
+.draft-panel input:focus-visible, .draft-panel textarea:focus-visible, .draft-panel button:focus-visible, .draft-details summary:focus-visible { outline: 2px solid #e2bd72; outline-offset: 3px; }
+@media (max-width: 760px) {
+  .draft-panel .card-list, .draft-panel .ability-grid, .draft-panel .comparison-grid { grid-template-columns: minmax(0,1fr); }
+  .draft-panel .card-list article { border-right: 0; }
+  .draft-panel .subtabs { grid-template-columns: repeat(3,minmax(0,1fr)); }
+}
+@media print {
+  .draft-review, .draft-search, .hero-actions, .archive-nav, .subtabs { display: none !important; }
+  .draft-panel[hidden], .draft-panel .subpanel[hidden], .type-panel[hidden], .type-panel .subpanel[hidden] { display: block !important; }
+  .page-grid { display: block; }
+  .card-list article, .ability-card, .venom-status-card { break-inside: avoid; }
+}
+.draft-panel .venom-status-card { padding: 1.2rem; background: linear-gradient(145deg,#252a20,#161b15); border-left: 1px solid #4c583a; border-right: 1px solid #4c583a; border-bottom: 1px solid #4c583a; }
+.draft-panel .venom-status-card h4 { color: #e1dec8; margin: .8rem 0 .6rem; font: 700 1.55rem var(--heading); }
+.draft-panel .venom-table, .review-overview .venom-table { border-collapse: collapse; font-size: .84rem; }
+.draft-panel .venom-table th, .draft-panel .venom-table td, .review-overview .venom-table th, .review-overview .venom-table td { text-align: left; vertical-align: top; border-bottom: 1px solid #465139; padding: .75rem; color: #c4c6b4; }
+.draft-panel .venom-table th, .review-overview .venom-table th { background: #22291d; color: #dfd7bc; }
+.review-overview .venom-table th:first-child { min-width: 150px; }
+
+/* Revision 2: separate each status's job, rules and worked example. */
+.draft-panel .venom-status-card .status-purpose { color: var(--type-accent); font-weight: 600; line-height: 1.5; }
+.draft-panel .venom-status-card .status-example { margin-top: 1rem; padding-top: .8rem; border-top: 1px solid #4c583a; font-size: .9rem; }
+.draft-panel .status-example strong { display: block; color: #e1dec8; margin-bottom: .25rem; }

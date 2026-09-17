@@ -30,7 +30,10 @@ func TestAcceptedCheckpointExportLoadsAndSelectsGoldenDecision(t *testing.T) {
 	// These are the first decisions from an original Phase 2 Python inference
 	// replay for this seed. Seat A is the accepted checkpoint; Seat B is the
 	// documented heuristic. Checking several changing windows catches schema,
-	// masking, candidate-order, and float inference drift.
+	// masking, candidate-order, and float inference drift. Stop at the first
+	// dice edit: live rules now reopen the affected plan instead of using the
+	// historical automatic fallback. That intentional branch is covered by
+	// TestOffensiveDiceEditReturnsAffectedPlan in the engine package.
 	golden := []struct {
 		actor string
 		index int
@@ -44,10 +47,6 @@ func TestAcceptedCheckpointExportLoadsAndSelectsGoldenDecision(t *testing.T) {
 		{"seat-b", 77, command.TypePlanningAbility},
 		{"seat-a", 0, command.TypePass},
 		{"seat-b", 3, command.TypeCommitInteraction},
-		{"seat-a", 0, command.TypePass},
-		{"seat-b", 0, command.TypePass},
-		{"seat-a", 1, command.TypePlanningAbility},
-		{"seat-b", 1, command.TypePlanningAbility},
 	}
 	for step, expected := range golden {
 		if transition.ActorID != expected.actor {
@@ -244,6 +243,40 @@ func TestSessionLoadsPinnedV3PolicyAndAdvancesThroughAuthority(t *testing.T) {
 	telemetry, _ := session.Telemetry()
 	if telemetry.ModelDecisions != 1 || telemetry.AuthorityRejects != 0 || telemetry.InvalidActions != 0 {
 		t.Fatalf("v3 graphical session did not advance cleanly: %#v", telemetry)
+	}
+}
+
+func TestSessionLoadsPinnedGlobalChampionAndAdvancesThroughAuthority(t *testing.T) {
+	serverRoot := testServerRoot(t)
+	session, err := NewSession(SessionConfig{
+		ContentRoot:      filepath.Join(serverRoot, "content"),
+		RunStateRoot:     filepath.Join(serverRoot, "save", "run_players"),
+		ModelPath:        testGlobalChampionModelPath(t),
+		ModelSHA256:      "96755c199f4d93261695d4928a0f95e00858d3a9d6a5c429e46911fbd0a3cac6",
+		DiagnosticsPath:  filepath.Join(t.TempDir(), "global-champion.jsonl"),
+		InferenceTimeout: 2 * time.Second,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if metadata := session.policy.Metadata(); metadata.ModelID != "blade-warden-global-champion-cp480-v3" ||
+		metadata.SourceCheckpointSHA256 != "38412a8821419f98a922149506de4a9c00feed617c37d9778b22e83f1c4df6c6" ||
+		metadata.ObservationSchema != mlsim.ObservationSchemaV2 {
+		t.Fatalf("unexpected global-champion session metadata: %#v", metadata)
+	}
+	view, err := session.Reset("global-champion-session", 20260806, "seat-b", false)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !object(view["learned_policy"])["model_turn"].(bool) {
+		t.Fatal("global-champion policy did not own the opening decision")
+	}
+	if _, err := session.AdvanceModel(); err != nil {
+		t.Fatal(err)
+	}
+	telemetry, _ := session.Telemetry()
+	if telemetry.ModelDecisions != 1 || telemetry.AuthorityRejects != 0 || telemetry.InvalidActions != 0 {
+		t.Fatalf("global-champion graphical session did not advance cleanly: %#v", telemetry)
 	}
 }
 
@@ -465,6 +498,11 @@ func testV2ModelPath(t *testing.T) string {
 func testV3ModelPath(t *testing.T) string {
 	t.Helper()
 	return filepath.Join(testServerRoot(t), "..", "dice-and-destiny-client", "models", "learned", "blade-warden-optimized-5m-seed-22-v3.json")
+}
+
+func testGlobalChampionModelPath(t *testing.T) string {
+	t.Helper()
+	return filepath.Join(testServerRoot(t), "..", "dice-and-destiny-client", "models", "learned", "blade-warden-global-champion-cp480-v3.json")
 }
 
 func testServerRoot(t *testing.T) string {

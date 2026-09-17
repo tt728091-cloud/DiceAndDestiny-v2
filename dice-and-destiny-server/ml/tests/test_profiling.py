@@ -27,9 +27,7 @@ def test_profile_collector_reports_nested_timings_and_counters() -> None:
     assert merged["counters"]["bytes"] == 24
 
     maximum = {"timings": {}, "counters": {"policy.maximum_valid_candidates": 17}}
-    assert merge_profile_summaries([maximum, maximum])["counters"][
-        "policy.maximum_valid_candidates"
-    ] == 17
+    assert merge_profile_summaries([maximum, maximum])["counters"]["policy.maximum_valid_candidates"] == 17
 
 
 def test_policy_instrumentation_preserves_dense_outputs() -> None:
@@ -78,21 +76,15 @@ def test_sparse_policy_matches_dense_valid_distribution_and_gradients() -> None:
     sparse_distribution = sparse.get_distribution(observations, masks)
     dense_logits = dense.action_net(observations)
     sparse_logits = sparse.action_net.forward_sparse(observations, masks)
-    torch.testing.assert_close(
-        sparse_logits[masks], dense_logits[masks], rtol=1e-6, atol=1e-7
-    )
+    torch.testing.assert_close(sparse_logits[masks], dense_logits[masks], rtol=1e-6, atol=1e-7)
     torch.testing.assert_close(
         sparse_distribution.distribution.probs,
         dense_distribution.distribution.probs,
         rtol=1e-6,
         atol=1e-7,
     )
-    dense_values, dense_log_prob, dense_entropy = dense.evaluate_actions(
-        observations, actions, masks
-    )
-    sparse_values, sparse_log_prob, sparse_entropy = sparse.evaluate_actions(
-        observations, actions, masks
-    )
+    dense_values, dense_log_prob, dense_entropy = dense.evaluate_actions(observations, actions, masks)
+    sparse_values, sparse_log_prob, sparse_entropy = sparse.evaluate_actions(observations, actions, masks)
     torch.testing.assert_close(sparse_values, dense_values, rtol=0, atol=0)
     torch.testing.assert_close(sparse_log_prob, dense_log_prob, rtol=1e-6, atol=1e-7)
     assert dense_entropy is not None and sparse_entropy is not None
@@ -101,13 +93,9 @@ def test_sparse_policy_matches_dense_valid_distribution_and_gradients() -> None:
     sparse_actions, _, _ = sparse(observations, deterministic=True, action_masks=masks)
     torch.testing.assert_close(sparse_actions, dense_actions, rtol=0, atol=0)
     torch.manual_seed(101)
-    dense_samples = torch.stack(
-        [dense_distribution.get_actions(deterministic=False) for _ in range(16)]
-    )
+    dense_samples = torch.stack([dense_distribution.get_actions(deterministic=False) for _ in range(16)])
     torch.manual_seed(101)
-    sparse_samples = torch.stack(
-        [sparse_distribution.get_actions(deterministic=False) for _ in range(16)]
-    )
+    sparse_samples = torch.stack([sparse_distribution.get_actions(deterministic=False) for _ in range(16)])
     torch.testing.assert_close(sparse_samples, dense_samples, rtol=0, atol=0)
 
     dense_loss = dense_values.square().mean() - dense_log_prob.mean() - dense_entropy.mean()

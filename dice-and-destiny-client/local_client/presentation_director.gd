@@ -10,6 +10,7 @@ const MEANINGFUL := {
 }
 
 var _queue: Array = []
+var _status_updates: Array[Dictionary] = []
 var _last_sequence := 0
 var learned_battle_mode := false
 
@@ -31,6 +32,9 @@ func queue_result(result: Dictionary, already_presented_sequence: int = 0) -> vo
 	# pending input belongs to the hidden learned opponent rather than the viewer.
 	# Clear an older placeholder as soon as a later result stops in that segment.
 	if not active_segment.is_empty(): _remove_segment_placeholder(active_segment)
+	var has_effects_summary := false
+	for emitted in ordered:
+		if emitted.get("type") == "effects_resolved": has_effects_summary = true
 	var automatic_segment := ""
 	for event in ordered:
 		if event.get("type") == "segment_entered": automatic_segment = str(event.get("segment", event.get("to", "")))
@@ -39,6 +43,18 @@ func queue_result(result: Dictionary, already_presented_sequence: int = 0) -> vo
 		var kind := str(event.get("type", ""))
 		var event_segment := automatic_segment
 		if event_segment.is_empty(): event_segment = str(event.get("segment", ""))
+		if has_effects_summary and event_segment == "ongoing_effects" and kind != "effects_resolved":
+			if _queue.is_empty(): _last_sequence = maxi(_last_sequence, sequence)
+			else: _queue[-1]["watermark"] = sequence
+			continue
+		if kind == "proposal_batch_committed":
+			var data: Dictionary = event.get("data", {})
+			var conversion: Dictionary = data.get("poison_conversion", {})
+			var incubation: Dictionary = data.get("incubation_application", {})
+			var application: Dictionary = data.get("status_application", {})
+			if int(application.get("after", 0)) > int(application.get("before", 0)): _status_updates.append({"kind": "application", "data": application})
+			if conversion.get("converted", false): _status_updates.append({"kind": "conversion", "data": conversion})
+			if int(incubation.get("after", 0)) > int(incubation.get("before", 0)): _status_updates.append({"kind": "incubation", "data": incubation})
 		if (kind == "dice_rolled" and str(event.get("segment", automatic_segment)) == "defensive") or kind == "defense_selected":
 			_remove_segment_placeholder("defensive")
 			if _queue.is_empty(): _last_sequence = maxi(_last_sequence, sequence)
@@ -110,6 +126,16 @@ func _remove_segment_placeholder(segment_id: String) -> void:
 func has_beats() -> bool:
 	return not _queue.is_empty()
 
+func has_pending_card_cleanse() -> bool:
+	for beat in _queue:
+		if beat.get("type") == "card_cleanse": return true
+	return false
+
+func has_pending_status_animation() -> bool:
+	for beat in _queue:
+		if beat.get("type") in ["card_cleanse", "poison_conversion", "effects_resolved"]: return true
+	return false
+
 func peek() -> Dictionary:
 	return _queue[0] if not _queue.is_empty() else {}
 
@@ -138,6 +164,11 @@ func last_sequence() -> int:
 
 func _is_meaningful(event: Dictionary, automatic_segment: String = "") -> bool:
 	var kind := str(event.get("type", ""))
+	if kind == "effects_resolved": return true
+	if kind == "proposal_batch_committed": return false
+	if kind == "card_played":
+		var data: Dictionary = event.get("data", {})
+		return data.get("operation") == "remove_status" and int(data.get("stacks_removed", 0)) > 0 and not str(data.get("choice_id", "")).is_empty()
 	if kind in ["cards_drawn", "energy_points_gained"] and automatic_segment != "income": return false
 	if kind == "segment_entered":
 		return str(event.get("to", event.get("segment", ""))) in ["ongoing_effects", "income", "defensive", "damage_resolution"]
@@ -145,6 +176,8 @@ func _is_meaningful(event: Dictionary, automatic_segment: String = "") -> bool:
 
 func _beat(event: Dictionary) -> Dictionary:
 	var kind := str(event.get("type", ""))
+	if kind == "card_played": kind = "card_cleanse"
+	if kind == "proposal_batch_committed": kind = "poison_conversion"
 	var title := kind.replace("_", " ").capitalize()
 	var detail := ""
 	match kind:
@@ -178,3 +211,8 @@ func _beat(event: Dictionary) -> Dictionary:
 			title = str(event.get("battle_result", "Battle Complete")).capitalize()
 			detail = "The battle is complete."
 	return {"sequence": int(event.get("sequence", 0)), "type": kind, "title": title, "detail": detail, "event": event}
+
+func take_status_updates() -> Array[Dictionary]:
+	var updates := _status_updates
+	_status_updates = []
+	return updates

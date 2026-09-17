@@ -1,0 +1,64 @@
+{
+  "candidate": {
+    "champion_id": "v2-winner-health-fresh-20260805-1h-interval-038",
+    "checkpoint_path": "/Users/daddymere/games/Dice-and-Destiny-v2/dice-and-destiny-server/ml/runs/v2-winner-health-fresh-20260805-1h/intervals/interval-038/raw-ppo-challenger.zip",
+    "checkpoint_sha256": "70f2b07ffed921358f06348446c1dca1c85be91d299b9008443e70893c75658e",
+    "learner_steps": 1201152,
+    "optimizer_state_sha256": "99013339321bef681863eb9ba464ae0783e7398ca6a4375969b8b0ad49ccd874"
+  },
+  "decision": "promoted",
+  "gameplay_export": {
+    "model_id": "blade-warden-global-champion-cp38-winner-health-v2",
+    "path": "/Users/daddymere/games/Dice-and-Destiny-v2/dice-and-destiny-client/models/learned/blade-warden-global-champion-cp38-winner-health-v2.json",
+    "sha256": "6aeb05e0657c8c221298c79780895bcc6aa527f1780c6c5eb66833293daf6693"
+  },
+  "previous_global": {
+    "champion_id": "v2-winner-health-fresh-20260805-1h-interval-015",
+    "checkpoint_sha256": "414739a40829a45029a61799d8b1207b0b2ce96b221f22fff6c6d32157c89e28",
+    "learner_steps": 783360
+  },
+  "prior_global_comparison_3000": {
+    "adjusted_score": 0.5953333333333334,
+    "adjusted_wilson_95": [
+      0.5776585163912703,
+      0.6127643164517677
+    ],
+    "draws": 238,
+    "episodes_sha256": "ad118f09750c8b55e5555afad30dcbaf69154098941fbe4a240fb5ad8df54000",
+    "losses": 1095,
+    "opponent": "raw-v3-step-480",
+    "seed_bank_file_sha256": "b3b939eec3873c3739d87dfbead71544b129f8566d52d495d84f45d87e51ff89",
+    "summary_sha256": "225bfa1408a66ce82867a4024d8fdddf737df0eb6a8e70b5580808c944c79bb2",
+    "wins": 1667
+  },
+  "promoted_at": "2026-08-06T02:12:02.343373+00:00",
+  "promotion_rule": "fresh direct 3,000-game adjusted score above 50% against the registered global champion, with seat swaps and zero safety counts",
+  "registry_path": "/Users/daddymere/games/Dice-and-Destiny-v2/dice-and-destiny-server/ml/champions/current-global.json",
+  "registry_revision": 15,
+  "registry_sha256_after": "cfd74ef4db9db0c7f3ac8a3beb416fb48884383406564768978af35c431daaa3",
+  "safety": {
+    "authority_rejects": 0,
+    "hidden_state_leaks": 0,
+    "invalid_action_indices": 0,
+    "replay_mismatches": 0,
+    "stale_action_submissions": 0,
+    "state_leaks": 0,
+    "truncations": 0,
+    "wrong_seat_submissions": 0
+  },
+  "schema": "dice-and-destiny-global-promotion-v1",
+  "title_match_3000": {
+    "adjusted_score": 0.568,
+    "adjusted_wilson_95": [
+      0.550198458213609,
+      0.5856276183597466
+    ],
+    "draws": 202,
+    "episodes_sha256": "bee321ea7f4a08968313519e3466f1df81ce1c7e663f97ddec94a213405b16ff",
+    "losses": 1195,
+    "opponent": "v2-winner-health-fresh-20260805-1h-interval-015",
+    "seed_bank_file_sha256": "b6fdbeb4b2ae2ac7d0406b9a77a6ee0513475f001ad47b282587bae9cfc65fce",
+    "summary_sha256": "a9922436a1fb20513984fc48a6c1f6daeacadbc981a24d0a9a5ba20d5ca5fc57",
+    "wins": 1603
+  }
+}

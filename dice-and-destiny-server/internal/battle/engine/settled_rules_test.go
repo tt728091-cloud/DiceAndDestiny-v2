@@ -3,6 +3,7 @@ package engine
 import (
 	"encoding/json"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"diceanddestiny/server/internal/battle/command"
@@ -181,7 +182,7 @@ func TestBlindConsumesWithoutAbilityAndCompletesReactableRollWithAbility(t *test
 	})
 }
 
-func TestOngoingEffectRollWaitsForPlayerAndKeepsEnemyRollHiddenUntilReveal(t *testing.T) {
+func TestOngoingEffectsAutomaticallyRollAndPublishResults(t *testing.T) {
 	library := settledTestLibrary(t)
 	battle := settledStatusBattle(t, library, "poison", 2)
 	battle.Segment.Current = segment.OngoingEffects
@@ -203,49 +204,23 @@ func TestOngoingEffectRollWaitsForPlayerAndKeepsEnemyRollHiddenUntilReveal(t *te
 	if err != nil {
 		t.Fatal(err)
 	}
-	if result.Status != ProgressWaitingForInput || battle.Settled.Stage != stageOngoingRoll {
-		t.Fatalf("ongoing effect stage=%q status=%q, want player roll checkpoint", battle.Settled.Stage, result.Status)
+	if battle.Segment.Current == segment.OngoingEffects && !state.IsTerminalBattleStatus(battle.Status) {
+		t.Fatal("Effects stopped for input")
 	}
-	if batch := battle.Settled.TriggerBatch; len(batch.Rolls) != 3 || batch.Rolls[0].ActorID != "enemy" || batch.Rolls[0].Die.Face != 6 || batch.Rolls[1].Die.Face != 0 || batch.Rolls[2].Die.Face != 0 {
-		t.Fatalf("pre-reveal effect rolls=%#v, want automatic enemy face and blank player dice", batch.Rolls)
+	var summary map[string]any
+	for _, ev := range result.Events {
+		if ev.Type == event.Type("effects_resolved") {
+			summary = ev.Data
+		}
 	}
-	pending := battle.Flow.PendingInput["player"]
-	payload, err := json.Marshal(command.RollDicePayload{PendingInputID: pending.ID, RerollIndices: []int{0}})
-	if err != nil {
-		t.Fatal(err)
+	if summary == nil {
+		t.Fatal("missing seamless Effects presentation")
 	}
-	cmd := command.Command{BattleID: battle.ID, ActorID: "player", Type: command.TypeRollDice, Payload: payload}
-	events, err := eng.handleSettledCommand(&battle, cmd)
-	if err != nil {
-		t.Fatal(err)
+	encoded, _ := json.Marshal(summary)
+	if !strings.Contains(string(encoded), `"face":6`) || !strings.Contains(string(encoded), `"face":2`) || !strings.Contains(string(encoded), `"face":4`) {
+		t.Fatalf("missing automatic faces: %s", encoded)
 	}
-	if battle.Settled.Stage != stageOngoingRoll || battle.Settled.Window == nil || len(events) != 1 || events[0].Data["hidden"] != true {
-		t.Fatalf("first effect die did not remain secret while another was pending: stage=%q window=%#v events=%#v", battle.Settled.Stage, battle.Settled.Window, events)
-	}
-	rolls := battle.Settled.TriggerBatch.Rolls
-	if rolls[1].Die.Face != 2 || !rolls[1].Resolved || rolls[2].Die.Face != 0 || rolls[2].Resolved {
-		t.Fatalf("first player effect roll=%#v, want one resolved and one pending", rolls[1:])
-	}
-	pending = battle.Flow.PendingInput["player"]
-	payload, err = json.Marshal(command.RollDicePayload{PendingInputID: pending.ID, RerollIndices: []int{1}})
-	if err != nil {
-		t.Fatal(err)
-	}
-	cmd.Payload = payload
-	events, err = eng.handleSettledCommand(&battle, cmd)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if battle.Settled.Stage != stageOngoingReact || battle.Settled.Window == nil {
-		t.Fatalf("final effect roll did not open reveal/reaction: stage=%q window=%#v", battle.Settled.Stage, battle.Settled.Window)
-	}
-	rolls = battle.Settled.TriggerBatch.Rolls
-	if rolls[1].Die.Face != 2 || rolls[2].Die.Face != 4 {
-		t.Fatalf("player effect faces=%#v, want [2 4]", rolls[1:])
-	}
-	if len(events) != 2 || events[0].Type != event.TypeDiceRolled || events[1].Type != event.TypeInteractionWindowOpened {
-		t.Fatalf("effect reveal events=%#v", events)
-	}
+
 	if err := script.AssertExhausted(); err != nil {
 		t.Fatal(err)
 	}

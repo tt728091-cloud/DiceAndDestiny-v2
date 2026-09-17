@@ -1,0 +1,361 @@
+{
+  "character": {
+    "id": "barbarian",
+    "name": "Barbarian",
+    "source_character": "Barbarian"
+  },
+  "symbols": {
+    "sword": [1, 2, 3],
+    "life": [4, 5],
+    "pow": [6]
+  },
+  "targets": [
+    {
+      "id": "smack_any",
+      "name": "Smack (at least 3 Sword)",
+      "symbol": "sword",
+      "at_least": 3
+    },
+    {
+      "id": "smack_four",
+      "name": "Smack 4-Sword tier",
+      "symbol": "sword",
+      "at_least": 4
+    },
+    {
+      "id": "smack_five",
+      "name": "Smack 5-Sword tier",
+      "symbol": "sword",
+      "at_least": 5
+    },
+    {
+      "id": "sturdy_blow",
+      "name": "Sturdy Blow",
+      "requirements": [
+        {"symbol": "sword", "at_least": 2},
+        {"symbol": "pow", "at_least": 2}
+      ]
+    },
+    {
+      "id": "fortitude_any",
+      "name": "Fortitude (at least 3 Life)",
+      "symbol": "life",
+      "at_least": 3
+    },
+    {
+      "id": "fortitude_four",
+      "name": "Fortitude 4-Life tier",
+      "symbol": "life",
+      "at_least": 4
+    },
+    {
+      "id": "fortitude_five",
+      "name": "Fortitude 5-Life tier",
+      "symbol": "life",
+      "at_least": 5
+    },
+    {
+      "id": "overpower",
+      "name": "Overpower",
+      "requirements": [
+        {"symbol": "sword", "at_least": 3},
+        {"symbol": "pow", "at_least": 2}
+      ]
+    },
+    {
+      "id": "mighty_blow",
+      "name": "Mighty Blow (Small Straight)",
+      "patterns": [
+        [1, 2, 3, 4],
+        [2, 3, 4, 5],
+        [3, 4, 5, 6]
+      ]
+    },
+    {
+      "id": "crit_bash",
+      "name": "Crit Bash",
+      "symbol": "pow",
+      "at_least": 4
+    },
+    {
+      "id": "reckless",
+      "name": "Reckless (Large Straight)",
+      "patterns": [
+        [1, 2, 3, 4, 5],
+        [2, 3, 4, 5, 6]
+      ]
+    },
+    {
+      "id": "rage",
+      "name": "Rage! (Ultimate)",
+      "symbol": "pow",
+      "at_least": 5
+    },
+    {
+      "id": "war_cry",
+      "name": "War Cry (upgrade option)",
+      "requirements": [
+        {"symbol": "sword", "at_least": 2},
+        {"symbol": "life", "at_least": 2}
+      ]
+    },
+    {
+      "id": "crit_smash",
+      "name": "Crit Smash (upgrade option)",
+      "symbol": "pow",
+      "at_least": 3
+    }
+  ],
+  "include_any_of_all": true,
+  "combined_objectives": [
+    {
+      "id": "any_base_offense",
+      "name": "Maximize any Barbarian base offensive ability",
+      "targets": [
+        "smack_any",
+        "sturdy_blow",
+        "overpower",
+        "mighty_blow",
+        "crit_bash",
+        "reckless",
+        "rage"
+      ]
+    },
+    {
+      "id": "any_base_ability",
+      "name": "Maximize any Barbarian base ability",
+      "targets": [
+        "smack_any",
+        "sturdy_blow",
+        "fortitude_any",
+        "overpower",
+        "mighty_blow",
+        "crit_bash",
+        "reckless",
+        "rage"
+      ]
+    }
+  ],
+  "balance_reports": [
+    {
+      "id": "barbarian_base_offense",
+      "name": "Barbarian base offensive cycle",
+      "teacher_objective": "any_base_offense",
+      "outcomes": [
+        {"target": "smack_any", "damage": 4},
+        {"target": "sturdy_blow", "damage": 4},
+        {"target": "crit_bash", "damage": 5},
+        {"target": "smack_four", "damage": 6},
+        {"target": "smack_five", "damage": 8},
+        {"target": "mighty_blow", "damage": 9},
+        {"target": "overpower", "damage": 10.5},
+        {"target": "reckless", "damage": 15},
+        {"target": "rage", "damage": 15}
+      ]
+    },
+    {
+      "id": "barbarian_base_abilities",
+      "name": "Barbarian base ability cycle including Fortitude",
+      "teacher_objective": "any_base_ability",
+      "outcomes": [
+        {"target": "smack_any", "damage": 4},
+        {"target": "sturdy_blow", "damage": 4},
+        {"target": "fortitude_any", "damage": 4},
+        {"target": "crit_bash", "damage": 5},
+        {"target": "fortitude_four", "damage": 5},
+        {"target": "smack_four", "damage": 6},
+        {"target": "fortitude_five", "damage": 6},
+        {"target": "smack_five", "damage": 8},
+        {"target": "mighty_blow", "damage": 9},
+        {"target": "overpower", "damage": 10.5},
+        {"target": "reckless", "damage": 15},
+        {"target": "rage", "damage": 15}
+      ]
+    }
+  ],
+  "character_analysis": {
+    "reports": {
+      "primary": "barbarian_base_offense",
+      "teacher": "barbarian_base_abilities"
+    },
+    "symbol_labels": {
+      "sword": "Sword",
+      "life": "Life",
+      "pow": "Pow"
+    },
+    "value_label": "damage-equivalent value",
+    "value_unit": "damage-equivalent",
+    "nothing_label": "Nothing",
+    "nothing_note": "No configured base ability completed",
+    "analysis_note": "Expected listed value multiplies qualification odds by printed numeric damage or healing. Tiered abilities use their full tier distributions. Status effects, undefendable damage, incoming defense, card manipulation, self-damage, and tactical board state receive no hidden value.",
+    "overall_note": "Each final roll is assigned once to the highest-valued completed configured outcome, so outcome percentages are mutually exclusive and total 100% including Nothing.",
+    "reroll_note": "Fortitude healing 4 / 5 / 6 is counted as 4 / 5 / 6 damage-equivalent value. No rerolls means the opening 5d6 roll only; one and two rerolls include that many keep/reroll decisions.",
+    "teacher_policy_description": "The teacher first maximizes the chance of completing any configured base ability, including Fortitude, then uses listed numeric value to break exact success ties.",
+    "value_policy_description": "This policy maximizes expected listed numeric value on every decision. One healing currently equals one damage for value comparisons.",
+    "abilities": [
+      {
+        "name": "Smack",
+        "target": "smack_any",
+        "requirement": "Sword ×3 / ×4 / ×5",
+        "effect": "Deal 4 / 6 / 8 damage",
+        "source": "Smack",
+        "category": "Base offense",
+        "value_kind": "damage",
+        "recommendation": "Best neutral default. Extremely reliable and the strongest listed raw-damage average.",
+        "tiers": [
+          {"target": "smack_any", "value": 4},
+          {"target": "smack_four", "value": 6},
+          {"target": "smack_five", "value": 8}
+        ]
+      },
+      {
+        "name": "Sturdy Blow",
+        "target": "sturdy_blow",
+        "requirement": "Sword ×2 + Pow ×2",
+        "effect": "Deal 4 undefendable damage",
+        "source": "Sturdy Blow",
+        "category": "Base offense",
+        "fixed_value": 4,
+        "value_kind": "damage",
+        "recommendation": "Useful Pow pivot, but worse from neutral than Smack or Mighty Blow."
+      },
+      {
+        "name": "Fortitude",
+        "target": "fortitude_any",
+        "requirement": "Life ×3 / ×4 / ×5",
+        "effect": "Heal 4 / 5 / 6",
+        "source": "Fortitude",
+        "category": "Base sustain",
+        "value_kind": "healing",
+        "recommendation": "Reliable sustain route when healing matters; it is not an offensive damage target.",
+        "tiers": [
+          {"target": "fortitude_any", "value": 4},
+          {"target": "fortitude_four", "value": 5},
+          {"target": "fortitude_five", "value": 6}
+        ]
+      },
+      {
+        "name": "Overpower",
+        "target": "overpower",
+        "requirement": "Sword ×3 + Pow ×2",
+        "effect": "Roll 3 dice; deal their total (10.5 average); Concussion at 14+",
+        "source": "Overpower",
+        "category": "Base offense",
+        "fixed_value": 10.5,
+        "value_kind": "damage",
+        "recommendation": "High ceiling but difficult. Favor it from a mixed Sword/Pow opening, especially with 2 Pow."
+      },
+      {
+        "name": "Mighty Blow",
+        "target": "mighty_blow",
+        "requirement": "Small Straight",
+        "effect": "Deal 9 damage",
+        "source": "Mighty Blow",
+        "category": "Base offense",
+        "fixed_value": 9,
+        "value_kind": "damage",
+        "recommendation": "Best general alternative to Smack: meaningful 9 damage with moderate reliability."
+      },
+      {
+        "name": "Crit Bash",
+        "target": "crit_bash",
+        "requirement": "Pow ×4",
+        "effect": "Inflict Stun; deal 5 undefendable damage",
+        "source": "Crit Bash",
+        "category": "Base offense",
+        "fixed_value": 5,
+        "value_kind": "damage plus Stun",
+        "recommendation": "Pow-heavy opportunistic target. Stun must justify the low neutral-start probability."
+      },
+      {
+        "name": "Reckless",
+        "target": "reckless",
+        "requirement": "Large Straight",
+        "effect": "Deal 15 damage; receive 4 damage",
+        "source": "Reckless",
+        "category": "Base offense",
+        "fixed_value": 15,
+        "value_kind": "gross damage",
+        "recommendation": "High gross damage but difficult and self-damaging. Favor strong partial-straight openings."
+      },
+      {
+        "name": "Rage!",
+        "target": "rage",
+        "requirement": "Pow ×5",
+        "effect": "Inflict Stun; deal 15 damage (Ultimate)",
+        "source": "Rage!",
+        "category": "Base ultimate",
+        "fixed_value": 15,
+        "value_kind": "damage plus Stun",
+        "recommendation": "Do not force from neutral. Pursue only from an exceptional Pow-heavy opening."
+      },
+      {
+        "name": "War Cry",
+        "target": "war_cry",
+        "requirement": "Sword ×2 + Life ×2",
+        "effect": "Heal 2; deal 2 undefendable damage",
+        "source": "Overpower II / War Cry",
+        "category": "Upgrade option",
+        "fixed_value": 2,
+        "value_kind": "damage plus healing",
+        "recommendation": "Very reliable upgrade utility; low damage is paired with healing and undefendable damage."
+      },
+      {
+        "name": "Crit Smash",
+        "target": "crit_smash",
+        "requirement": "Pow ×3",
+        "effect": "Inflict Concussion; deal 2 undefendable damage",
+        "source": "Crit Bash II / Crit Smash",
+        "category": "Upgrade option",
+        "fixed_value": 2,
+        "value_kind": "damage plus Concussion",
+        "recommendation": "Utility pivot from a Pow-heavy opening; not a neutral-start damage plan."
+      }
+    ],
+    "tier_targets": [
+      {"target": "smack_any", "note": "Chance to activate Smack at any tier"},
+      {"target": "smack_four", "note": "Chance to reach at least the 4-Sword tier"},
+      {"target": "smack_five", "note": "Chance to reach the 5-Sword tier"},
+      {"target": "fortitude_any", "note": "Chance to activate Fortitude at any tier"},
+      {"target": "fortitude_four", "note": "Chance to reach at least the 4-Life tier"},
+      {"target": "fortitude_five", "note": "Chance to reach the 5-Life tier"}
+    ],
+    "outcome_labels": {
+      "smack_any": "Smack — exactly 3 Sword",
+      "sturdy_blow": "Sturdy Blow",
+      "fortitude_any": "Fortitude — exactly 3 Life",
+      "crit_bash": "Crit Bash",
+      "fortitude_four": "Fortitude — exactly 4 Life",
+      "smack_four": "Smack — exactly 4 Sword",
+      "fortitude_five": "Fortitude — 5 Life",
+      "smack_five": "Smack — 5 Sword",
+      "mighty_blow": "Mighty Blow",
+      "overpower": "Overpower",
+      "reckless": "Reckless",
+      "rage": "Rage!"
+    },
+    "outcome_notes": {
+      "smack_any": "4 damage; higher Smack tiers are separated below",
+      "sturdy_blow": "4 undefendable damage",
+      "fortitude_any": "4 healing; higher Fortitude tiers are separated below",
+      "crit_bash": "5 undefendable damage plus Stun; Stun has no extra numeric value",
+      "fortitude_four": "5 healing",
+      "smack_four": "6 damage",
+      "fortitude_five": "6 healing",
+      "smack_five": "8 damage",
+      "mighty_blow": "9 damage",
+      "overpower": "Uses the 10.5 average of its follow-up 3d6",
+      "reckless": "15 gross damage; 4 self-damage is shown separately",
+      "rage": "15 damage plus Stun"
+    },
+    "adjustments": [
+      {
+        "label": "After Reckless self-damage",
+        "outcome": "reckless",
+        "amount": 4,
+        "operation": "subtract",
+        "note": "Subtract 4 × Reckless probability"
+      }
+    ]
+  }
+}

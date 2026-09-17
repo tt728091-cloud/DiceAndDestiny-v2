@@ -1,0 +1,697 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="A nested reference for every training, observation, architecture, opponent, and campaign control that influences Dice and Destiny PPO models.">
+  <title>Dice &amp; Destiny · Learning Model Control Reference</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #07101b;
+      --surface: #0e1a28;
+      --surface-2: #142537;
+      --surface-3: #1a2e42;
+      --line: #29445b;
+      --line-bright: #3a607c;
+      --text: #edf4f9;
+      --muted: #a4b8c8;
+      --gold: #f3c65d;
+      --cyan: #69d4e7;
+      --green: #78daa3;
+      --orange: #f4a261;
+      --red: #ff9292;
+      --violet: #bea8ff;
+      --shadow: 0 24px 70px rgba(0, 0, 0, .28);
+    }
+
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      color: var(--text);
+      background:
+        radial-gradient(circle at 12% -5%, rgba(40, 96, 142, .46), transparent 32rem),
+        radial-gradient(circle at 88% 0%, rgba(94, 61, 126, .34), transparent 30rem),
+        linear-gradient(rgba(105, 212, 231, .022) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(105, 212, 231, .022) 1px, transparent 1px),
+        var(--bg);
+      background-size: auto, auto, 28px 28px, 28px 28px, auto;
+      font: 15px/1.62 Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    a { color: var(--cyan); text-underline-offset: 3px; }
+    code {
+      color: #d9eaff;
+      overflow-wrap: anywhere;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    }
+    strong { color: var(--text); }
+    p, li { color: var(--muted); }
+    ul, ol { padding-left: 1.25rem; }
+    li + li { margin-top: .35rem; }
+
+    .shell { width: min(1320px, calc(100% - 34px)); margin: 0 auto; padding: 46px 0 90px; }
+    .hero {
+      position: relative;
+      overflow: hidden;
+      padding: clamp(28px, 5vw, 64px);
+      border: 1px solid var(--line-bright);
+      border-radius: 28px;
+      background: linear-gradient(145deg, rgba(27, 57, 83, .97), rgba(12, 26, 40, .98));
+      box-shadow: var(--shadow);
+    }
+    .hero::after {
+      content: "";
+      position: absolute;
+      right: -90px;
+      bottom: -140px;
+      width: 390px;
+      height: 390px;
+      border: 76px solid rgba(255, 255, 255, .035);
+      border-radius: 50%;
+    }
+    .eyebrow { margin: 0 0 10px; color: var(--gold); font-size: .76rem; font-weight: 850; letter-spacing: .16em; text-transform: uppercase; }
+    h1, h2, h3, h4 { line-height: 1.17; }
+    h1 { position: relative; z-index: 1; max-width: 960px; margin: 0 0 18px; font-size: clamp(2.55rem, 6.5vw, 5.8rem); letter-spacing: -.052em; }
+    h2 { margin: 0 0 12px; font-size: clamp(1.8rem, 3.2vw, 2.75rem); }
+    h3 { margin: 0 0 8px; font-size: 1.28rem; }
+    h4 { margin: 18px 0 6px; font-size: 1rem; }
+    .lede { position: relative; z-index: 1; max-width: 930px; margin: 0; font-size: 1.12rem; }
+
+    .stats { position: relative; z-index: 1; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 11px; margin-top: 28px; }
+    .stat { padding: 16px; border: 1px solid rgba(255,255,255,.12); border-radius: 14px; background: rgba(6, 16, 27, .42); }
+    .stat small { display: block; color: var(--muted); font-size: .7rem; font-weight: 850; letter-spacing: .1em; text-transform: uppercase; }
+    .stat b { display: block; margin-top: 4px; font-size: 1.1rem; }
+
+    .toolbar {
+      position: sticky;
+      top: 0;
+      z-index: 20;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 8px;
+      margin: 20px 0;
+      padding: 11px;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      background: rgba(7, 16, 27, .94);
+      backdrop-filter: blur(14px);
+    }
+    .toolbar a, .toolbar button {
+      appearance: none;
+      padding: 7px 11px;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      color: var(--muted);
+      background: var(--surface);
+      text-decoration: none;
+      font: inherit;
+      font-size: .79rem;
+      font-weight: 750;
+      cursor: pointer;
+    }
+    .toolbar a:hover, .toolbar button:hover, .toolbar button:focus-visible { color: var(--text); border-color: var(--cyan); outline: none; }
+    .toolbar .spacer { flex: 1; }
+    .toolbar input {
+      width: min(280px, 100%);
+      padding: 8px 11px;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      color: var(--text);
+      background: #07111c;
+      font: inherit;
+    }
+    .toolbar input:focus { border-color: var(--cyan); outline: none; }
+
+    .section {
+      margin: 18px 0;
+      padding: clamp(22px, 4vw, 40px);
+      scroll-margin-top: 88px;
+      border: 1px solid var(--line);
+      border-radius: 20px;
+      background: linear-gradient(145deg, rgba(20, 37, 55, .96), rgba(12, 26, 40, .98));
+      box-shadow: 0 14px 40px rgba(0, 0, 0, .14);
+    }
+    .section-intro { max-width: 980px; margin: 0 0 22px; font-size: 1.02rem; }
+    .grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+    .grid.three { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    .card { padding: 18px; border: 1px solid var(--line); border-radius: 14px; background: rgba(7, 17, 28, .58); }
+    .card p:last-child, .card ul:last-child { margin-bottom: 0; }
+
+    .flow { display: grid; grid-template-columns: 1fr auto 1fr auto 1fr; align-items: stretch; gap: 10px; margin: 22px 0; }
+    .flow .node { padding: 17px; border: 1px solid var(--line); border-radius: 14px; background: var(--surface); }
+    .flow .arrow { align-self: center; color: var(--gold); font-size: 1.5rem; }
+
+    details.control {
+      margin: 11px 0;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      background: rgba(7, 17, 28, .6);
+    }
+    details.control[open] { border-color: var(--line-bright); background: rgba(10, 25, 39, .9); }
+    details.control > summary {
+      display: grid;
+      grid-template-columns: minmax(190px, .36fr) 1fr auto;
+      gap: 15px;
+      align-items: center;
+      padding: 15px 17px;
+      cursor: pointer;
+      list-style: none;
+    }
+    details.control > summary::-webkit-details-marker { display: none; }
+    .control-name { color: var(--cyan); font-weight: 850; }
+    .control-summary { color: var(--muted); }
+    .chevron { color: var(--gold); transition: transform .18s ease; }
+    details[open] .chevron { transform: rotate(90deg); }
+    .detail-body { padding: 0 17px 18px; border-top: 1px solid var(--line); }
+    .detail-body > *:first-child { margin-top: 16px; }
+
+    .tag { display: inline-flex; align-items: center; margin: 0 5px 4px 0; padding: 3px 8px; border: 1px solid var(--line); border-radius: 999px; color: var(--muted); font-size: .72rem; font-weight: 800; }
+    .tag.current { color: var(--green); border-color: #356b50; background: rgba(35, 92, 64, .22); }
+    .tag.family { color: var(--violet); border-color: #594b78; background: rgba(75, 57, 108, .22); }
+    .tag.branch { color: var(--cyan); border-color: #356b76; background: rgba(42, 93, 105, .2); }
+    .tag.finding { color: var(--orange); border-color: #795634; background: rgba(109, 71, 37, .22); }
+
+    .callout { margin: 14px 0; padding: 14px 16px; border-left: 4px solid var(--cyan); border-radius: 0 11px 11px 0; background: rgba(43, 108, 128, .17); }
+    .callout.good { border-left-color: var(--green); background: rgba(41, 109, 73, .16); }
+    .callout.warn { border-left-color: var(--orange); background: rgba(126, 78, 36, .17); }
+    .callout.risk { border-left-color: var(--red); background: rgba(123, 54, 61, .17); }
+    .callout p { margin: 0; }
+
+    .table-wrap { overflow: auto; margin: 14px 0; border: 1px solid var(--line); border-radius: 12px; }
+    table { width: 100%; border-collapse: collapse; font-size: .9rem; }
+    th, td { padding: 10px 12px; text-align: left; vertical-align: top; border-bottom: 1px solid var(--line); }
+    th { color: var(--muted); background: #0a1724; font-size: .75rem; letter-spacing: .06em; text-transform: uppercase; }
+    tr:last-child td { border-bottom: 0; }
+    td:first-child { color: var(--text); font-weight: 750; }
+
+    .formula { padding: 13px 15px; border: 1px solid var(--line); border-radius: 11px; background: #07111c; color: #dcecf8; font: .88rem/1.55 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; overflow-wrap: anywhere; }
+    .hidden-by-search { display: none !important; }
+    footer { margin-top: 28px; padding: 22px 4px 0; border-top: 1px solid var(--line); color: var(--muted); }
+
+    @media (max-width: 900px) {
+      .stats, .grid, .grid.three { grid-template-columns: 1fr 1fr; }
+      .flow { grid-template-columns: 1fr; }
+      .flow .arrow { justify-self: center; transform: rotate(90deg); }
+      details.control > summary { grid-template-columns: 1fr auto; }
+      .control-summary { grid-column: 1 / -1; grid-row: 2; }
+      .toolbar { position: static; }
+    }
+    @media (max-width: 620px) {
+      .shell { width: min(100% - 20px, 1320px); padding-top: 10px; }
+      .hero, .section { border-radius: 16px; }
+      .stats, .grid, .grid.three { grid-template-columns: 1fr; }
+      .toolbar .spacer { display: none; }
+      .toolbar input { order: 2; width: 100%; }
+    }
+    @media print {
+      body { color-scheme: light; color: #152334; background: white; }
+      .shell { width: 100%; padding: 0; }
+      .hero, .section, details.control, .card { color: #152334; background: white; box-shadow: none; break-inside: avoid; }
+      p, li, .control-summary { color: #425466; }
+      .toolbar { display: none; }
+      details.control > .detail-body { display: block; }
+    }
+  </style>
+</head>
+<body>
+<main class="shell">
+  <header class="hero">
+    <p class="eyebrow">Local technical reference · 2026-08-07</p>
+    <h1>Everything That Influences the Learning Model</h1>
+    <p class="lede">A nested guide to the controls discussed in the two-part review: first the short definition of each control, then the deeper explanation, current CP193 behavior, interactions, risks, and implementation-specific findings.</p>
+    <div class="stats">
+      <div class="stat"><small>Current champion</small><b>CP193</b></div>
+      <div class="stat"><small>Observation</small><b>V2 · 18,944 values</b></div>
+      <div class="stat"><small>Action capacity</small><b>128 candidates</b></div>
+      <div class="stat"><small>Terminal reward</small><b>−1.5 to +1.5</b></div>
+    </div>
+  </header>
+
+  <nav class="toolbar" aria-label="Page controls">
+    <a href="#mental-model">Learning loop</a>
+    <a href="#resume-safe">Resume-safe</a>
+    <a href="#model-family">Model family</a>
+    <a href="#action-pipeline">Actions</a>
+    <a href="#additional">Additional controls</a>
+    <a href="#campaign-selection">Selection</a>
+    <a href="#findings">Findings</a>
+    <span class="spacer"></span>
+    <button type="button" id="expand-all">Expand all</button>
+    <button type="button" id="collapse-all">Collapse all</button>
+    <input id="filter" type="search" placeholder="Filter controls…" aria-label="Filter controls">
+  </nav>
+
+  <section id="mental-model" class="section">
+    <p class="eyebrow">Start here</p>
+    <h2>The learning loop in one picture</h2>
+    <p class="section-intro">At every learner decision, PPO receives the visible state, candidate actions, and a mask. It samples an action during training. The battle eventually produces a terminal reward, and PPO adjusts both the actor and critic.</p>
+    <div class="flow" aria-label="PPO learning loop">
+      <div class="node"><h3>1 · Observation</h3><p>Visible health, resources, dice, abilities, requirements, candidates, and other encoded state.</p></div>
+      <div class="arrow">→</div>
+      <div class="node"><h3>2 · Actor + critic</h3><p>The actor assigns action probabilities. The critic estimates expected eventual reward from the current state.</p></div>
+      <div class="arrow">→</div>
+      <div class="node"><h3>3 · Outcome and update</h3><p>The terminal reward is propagated backward. Better-than-expected actions become more likely; worse actions become less likely.</p></div>
+    </div>
+    <div class="grid three">
+      <article class="card"><h3>What PPO sees</h3><p><strong>18,944 floats:</strong> 2,560 base game-state values plus 128 candidate actions with 128 values each.</p></article>
+      <article class="card"><h3>What PPO may choose</h3><p>Up to 128 exact authority commands. Padding and non-progressing commands are masked out.</p></article>
+      <article class="card"><h3>What PPO optimizes</h3><p>A terminal winner-health reward: outcome ±0.5 plus up to ±1.0 from the actual winner’s health fraction.</p></article>
+    </div>
+    <div class="callout"><p><strong>The five largest levers:</strong> what the model sees, what actions it can consider, what reward it receives, which opponents generate experience, and which checkpoint-selection rule decides what survives.</p></div>
+  </section>
+
+  <section id="resume-safe" class="section control-group">
+    <p class="eyebrow">Group 1 · Current-campaign branches</p>
+    <h2>Resume-safe training controls</h2>
+    <p class="section-intro">These can technically branch from an existing checkpoint while preserving weights and optimizer. “Resume-safe” does not mean statistically clean: changing one creates a new experimental branch and can still destabilize training.</p>
+
+    <details class="control" open>
+      <summary><span class="control-name">Learning rate and schedule</span><span class="control-summary">Controls how strongly gradients move parameters during each optimizer update.</span><span class="chevron">›</span></summary>
+      <div class="detail-body">
+        <span class="tag current">CP193: constant 0.0003</span><span class="tag branch">Branch-safe</span>
+        <p>Weights do not become “heavier” or automatically resist change as training continues. Later updates may become smaller because gradients shrink near a solution, Adam’s stored history changes the effective step, or PPO clipping rejects more movement—but a constant learning rate can continue moving or wandering indefinitely.</p>
+        <p>A decreasing schedule deliberately makes later checkpoints more conservative. Lowering learning rate also scales entropy and critic updates; it does not selectively reduce exploration.</p>
+      </div>
+    </details>
+
+    <details class="control" open>
+      <summary><span class="control-name">PPO epochs</span><span class="control-summary">How many times PPO reuses each collected rollout.</span><span class="chevron">›</span></summary>
+      <div class="detail-body">
+        <span class="tag current">CP193: 8 epochs</span><span class="tag branch">Branch-safe</span>
+        <p>More epochs extract more learning from the same games, but increase the chance of overfitting that rollout or moving the policy too far. Samples already beyond PPO’s useful clip boundary may stop contributing actor gradient in that direction, while unclipped samples, value loss, and entropy still update.</p>
+      </div>
+    </details>
+
+    <details class="control" open>
+      <summary><span class="control-name">Clip range</span><span class="control-summary">Limits the incentive to change the probability of each sampled action—not individual weights.</span><span class="chevron">›</span></summary>
+      <div class="detail-body">
+        <span class="tag current">CP193: 0.2</span><span class="tag current">CP193 clipped fraction: 10.02%</span>
+        <p>Clip range is not a weight-A/weight-B budget. It acts on the probability ratio <code>new action probability / old action probability</code> for each sampled state and action.</p>
+        <div class="formula">Old probability 40% · positive advantage · clip 0.2 → that sample stops rewarding an increase beyond roughly 48% (40% × 1.2).<br>Old probability 40% · negative advantage · clip 0.2 → that sample stops rewarding a decrease below roughly 32% (40% × 0.8).</div>
+        <p>It is a soft objective guard. Other samples share the same weights, so the final probability can still move beyond the nominal boundary.</p>
+      </div>
+    </details>
+
+    <details class="control">
+      <summary><span class="control-name">Target KL</span><span class="control-summary">An update-level emergency brake when average policy movement becomes too large.</span><span class="chevron">›</span></summary>
+      <div class="detail-body">
+        <span class="tag current">CP193: disabled</span><span class="tag current">Observed approximate KL: 0.02036</span>
+        <p>Clip range acts locally on sampled action ratios. Target KL measures broader average divergence between the old and new action distributions. If the threshold is exceeded, PPO stops the remaining epochs for that update.</p>
+      </div>
+    </details>
+
+    <details class="control">
+      <summary><span class="control-name">Entropy coefficient</span><span class="control-summary">Pays the policy to retain action variety instead of collapsing too early.</span><span class="chevron">›</span></summary>
+      <div class="detail-body">
+        <span class="tag current">CP193: 0.01 constant</span>
+        <p>Higher entropy encourages exploration; lower entropy encourages commitment. Entropy can naturally fall when evidence for particular actions overwhelms the bonus, but the coefficient does not currently decay automatically.</p>
+        <p>An entropy schedule could intentionally explore more early and less late. A learning-rate schedule shrinks every loss component together and therefore is not a substitute for a dedicated entropy schedule.</p>
+      </div>
+    </details>
+
+    <details class="control">
+      <summary><span class="control-name">Batch size</span><span class="control-summary">Number of decisions used in each gradient calculation.</span><span class="chevron">›</span></summary>
+      <div class="detail-body">
+        <span class="tag current">CP193: 256</span>
+        <p>CP193 collected 3,072 learner decisions per PPO update: 12 environments × 256 rollout steps. Batch size 256 gives 12 minibatches per epoch and 96 minibatch updates across eight epochs.</p>
+        <p>We judge batch size using approximate KL, clip fraction, entropy, critic explained variance, stability across seeds, and evaluation improvement. The network does not add parameters as it trains, so batch size does not need to grow automatically. A materially larger architecture may benefit from larger batches.</p>
+      </div>
+    </details>
+
+    <details class="control">
+      <summary><span class="control-name">Rollout size</span><span class="control-summary">How much fresh experience is collected before PPO updates.</span><span class="chevron">›</span></summary>
+      <div class="detail-body">
+        <span class="tag current">CP193: 256 per worker</span>
+        <p>Larger rollouts provide broader, less correlated evidence but make updates less frequent. Rollout size interacts with worker count and batch size; changing any one changes the effective update structure.</p>
+      </div>
+    </details>
+
+    <details class="control" open>
+      <summary><span class="control-name">Gamma</span><span class="control-summary">How strongly a final battle result credits decisions made much earlier.</span><span class="chevron">›</span></summary>
+      <div class="detail-body">
+        <span class="tag current">CP193: 0.995</span>
+        <p>Gamma is deliberately high because the reward arrives at battle completion. One environment step is one learner action followed by all opponent actions needed to return control to the learner.</p>
+        <div class="table-wrap"><table><thead><tr><th>Distance from terminal reward</th><th>Remaining influence at γ = 0.995</th></tr></thead><tbody><tr><td>50 learner decisions</td><td>About 77.8%</td></tr><tr><td>100 learner decisions</td><td>About 60.6%</td></tr><tr><td>200 learner decisions</td><td>About 36.7%</td></tr></tbody></table></div>
+        <p>PPO does not literally label every move after replay. It calculates returns and advantages that estimate whether each decision led to a better result than the critic expected.</p>
+      </div>
+    </details>
+
+    <details class="control" open>
+      <summary><span class="control-name">GAE lambda</span><span class="control-summary">Balances long-range direct evidence against lower-variance critic bootstrapping.</span><span class="chevron">›</span></summary>
+      <div class="detail-body">
+        <span class="tag current">CP193: 0.95</span><span class="tag current">Critic explained variance: 0.845</span>
+        <p>The combined trace factor is approximately <code>0.995 × 0.95 = 0.94525</code>. Higher lambda, such as 0.97–0.99, would carry terminal evidence farther backward but would also increase variance.</p>
+        <p>CP193’s critic metrics show the current combination functions well, not that it is optimal. A higher-lambda family should be tested as a one-variable branch against fixed seed banks.</p>
+      </div>
+    </details>
+
+    <details class="control" open>
+      <summary><span class="control-name">Critic/value-loss coefficient</span><span class="control-summary">Controls how strongly the critic learns to predict future return.</span><span class="chevron">›</span></summary>
+      <div class="detail-body">
+        <span class="tag current">CP193: 0.5</span><span class="tag current">Value loss: 0.0384</span>
+        <p>The critic predicts <code>V(state)</code>, the expected discounted final reward before the action. If the result is better than expected, the action has positive advantage; if worse, negative advantage. This baseline prevents every action in a winning battle from appearing equally responsible.</p>
+        <p>CP193’s actor and critic are mostly separate networks, so changing this coefficient chiefly affects critic learning. Explained variance of 0.845 is healthy; there is no current evidence that this should be the first control changed.</p>
+      </div>
+    </details>
+
+    <details class="control">
+      <summary><span class="control-name">Opponent category weights</span><span class="control-summary">How often training draws from global, checkpoint, historical, teacher, or random opponent groups.</span><span class="chevron">›</span></summary>
+      <div class="detail-body"><p>Category weights shape the experience distribution. CP193’s campaign bypassed a mixed pool and used frozen CP38 as the sole PPO opponent.</p></div>
+    </details>
+
+    <details class="control">
+      <summary><span class="control-name">Historical-opponent selection</span><span class="control-summary">Which old checkpoints remain available and how recency or difficulty affects sampling.</span><span class="chevron">›</span></summary>
+      <div class="detail-body"><p>History can prevent forgetting and exploitation of a single opponent. An uncontrolled flat history can dominate training with thousands of nearly identical checkpoints, so selection and weighting must be explicit.</p></div>
+    </details>
+
+    <details class="control">
+      <summary><span class="control-name">Curriculum</span><span class="control-summary">A planned progression from easier or narrower experience to harder, broader experience.</span><span class="chevron">›</span></summary>
+      <div class="detail-body"><p>A curriculum might begin with mechanics teachers or targeted scenarios and later shift to the global champion. It can accelerate early learning but can also bias the final strategy if difficulty changes are poorly timed.</p></div>
+    </details>
+
+    <details class="control">
+      <summary><span class="control-name">Teacher-opponent frequency</span><span class="control-summary">How often normal PPO episodes use a hand-authored mechanics teacher as the opponent.</span><span class="chevron">›</span></summary>
+      <div class="detail-body"><p>This is different from behavior cloning before PPO. CP193’s continuation used no teacher opponent during PPO and forbade automatic post-PPO teacher correction.</p></div>
+    </details>
+
+    <details class="control" open>
+      <summary><span class="control-name">Seat schedule</span><span class="control-summary">How often the learner occupies seat A versus seat B.</span><span class="chevron">›</span></summary>
+      <div class="detail-body">
+        <span class="tag current">CP193: alternating</span>
+        <p>Simultaneous planning does not prove mathematical seat identity. Priority, command resolution, reaction ordering, random-stream consumption, and seat-identity inputs can introduce small effects. The CP193 title match recorded 1,400 seat-A wins and 1,374 seat-B wins, close but not identical. Alternation is inexpensive protection against seat specialization.</p>
+      </div>
+    </details>
+  </section>
+
+  <section id="model-family" class="section control-group">
+    <p class="eyebrow">Group 2 · New model families</p>
+    <h2>Controls that change what the model is</h2>
+    <p class="section-intro">These alter the meaning or shape of inputs, outputs, architecture, or objective. They should normally start a fresh model family rather than reinterpret an existing checkpoint.</p>
+
+    <details class="control" open>
+      <summary><span class="control-name">Observation features</span><span class="control-summary">The visible game-state information supplied to PPO at each decision.</span><span class="chevron">›</span></summary>
+      <div class="detail-body">
+        <span class="tag current">CP193: Observation V2</span><span class="tag family">Family change</span><span class="tag finding">Important opportunity</span>
+        <p>Current inputs include health, resources, dice, rolls remaining, segment, priority, ability requirements and effects, candidate actions, and targets. The model does not receive hidden opponent information or future RNG.</p>
+        <h4>Reroll probability idea</h4>
+        <p>CP193 sees current dice, the subset a candidate would reroll, rolls remaining, and current requirement progress. It does <strong>not</strong> directly receive the probability that a reroll qualifies an ability. It must learn that from experience.</p>
+        <p>The mechanics teacher already calculates public one-roll counterfactual outcomes. Safe new candidate features could include probability of qualifying the selected ability, probability any ability qualifies, expected best tier, expected damage/status value, and probability of improvement. These calculations use public die faces and do not leak the next roll.</p>
+        <div class="callout warn"><p><strong>Implication:</strong> adding public reroll probabilities could materially improve sample efficiency, but it changes observation meaning and requires a fresh family.</p></div>
+      </div>
+    </details>
+
+    <details class="control" open>
+      <summary><span class="control-name">Status encoding</span><span class="control-summary">How active buffs, debuffs, stacks, triggers, and status choices are represented.</span><span class="chevron">›</span></summary>
+      <div class="detail-body">
+        <span class="tag finding">Current V2 is limited</span>
+        <p>Status encoding is one portion of observation; cards and abilities have separate representations. V2 sees each combatant’s number of active statuses and some generic status effects in candidates, but does not provide a complete structured list of active status identities, stacks, durations, polarity, and triggers.</p>
+        <p>Abilities are encoded in more detail. Cards are summarized by cost, target, and generic operation categories. Full active-status rows are a strong Observation V3 candidate.</p>
+      </div>
+    </details>
+
+    <details class="control">
+      <summary><span class="control-name">Network width or depth</span><span class="control-summary">How much representational capacity the actor and critic have.</span><span class="chevron">›</span></summary>
+      <div class="detail-body">
+        <span class="tag current">Actor: two 96-unit layers</span><span class="tag current">Critic: two 128-unit layers</span>
+        <p><strong>Width</strong> adds more parallel feature combinations and is usually the safer first MLP capacity increase. <strong>Depth</strong> supports multi-stage composition—for example dice → ability → card modifier → opponent state → final value—but is harder to optimize.</p>
+        <p>Increase capacity when both training and evaluation plateau while optimization remains healthy. If training becomes strong but evaluation does not, more capacity may worsen overfitting. Controlled comparisons such as 96×2, 128×2, 192×2, and 128×3 are more reliable than guessing.</p>
+      </div>
+    </details>
+
+    <details class="control" open>
+      <summary><span class="control-name">Actor/critic architecture</span><span class="control-summary">The actor chooses actions; the critic predicts how promising the current state is.</span><span class="chevron">›</span></summary>
+      <div class="detail-body">
+        <ol>
+          <li>The critic predicts expected discounted terminal reward from the observation.</li>
+          <li>The battle supplies the eventual reward.</li>
+          <li>PPO compares calculated return with the critic’s expectation.</li>
+          <li>The resulting advantage tells the actor whether the sampled action performed better or worse than expected.</li>
+        </ol>
+        <p>The critic does not search future moves or directly judge an action. It learns from prior trajectories and reduces the noise of sparse terminal rewards.</p>
+      </div>
+    </details>
+
+    <details class="control">
+      <summary><span class="control-name">Entity embeddings</span><span class="control-summary">Learned compact vectors for mechanically described abilities, cards, statuses, or creatures.</span><span class="chevron">›</span></summary>
+      <div class="detail-body">
+        <p>CP193 does not use a traditional ID embedding table. It uses numeric mechanics and shared candidate layers. A fuller entity encoder would transform cost, requirements, damage, statuses, targeting, and qualification into a compact learned vector.</p>
+        <p>Gradients cause mechanically similar entities to develop useful similar representations. This reuses learning across content and supports generalization without depending on names.</p>
+      </div>
+    </details>
+
+    <details class="control">
+      <summary><span class="control-name">Variable-length entity encoding</span><span class="control-summary">Processes however many entities exist instead of assigning every possibility a permanent slot.</span><span class="chevron">›</span></summary>
+      <div class="detail-body">
+        <p>This is not about the number of opponent types. CP193 uses fixed capacities for a one-on-one battle: 12 abilities, 10 dice, 8 symbols, and 128 candidates. Variable-length encoding would pool or attend over the actual number of abilities, statuses, cards, or creatures.</p>
+      </div>
+    </details>
+
+    <details class="control" open>
+      <summary><span class="control-name">Action representation</span><span class="control-summary">How every exact authority command is described to the actor.</span><span class="chevron">›</span></summary>
+      <div class="detail-body">
+        <span class="tag current">Actively used by CP193</span>
+        <p>CP193 does not treat output slot 47 as a permanently named move. The authority generates up to 128 submission-ready commands, and each receives 128 features describing command type, rerolled dice, cards, cost, target, linked ability, requirements, and generic effects.</p>
+        <p>A shared scoring network evaluates every valid candidate. This mechanics-based representation is central to the model.</p>
+      </div>
+    </details>
+
+    <details class="control" open>
+      <summary><span class="control-name">Reward definition</span><span class="control-summary">The objective PPO is directly trained to maximize.</span><span class="chevron">›</span></summary>
+      <div class="detail-body">
+        <span class="tag current">winner-health-v2</span><span class="tag current">Terminal only</span>
+        <div class="formula">Win: +0.5 + 1.0 × learner winner-health fraction<br>Draw: 0<br>Loss: −0.5 − 1.0 × opponent winner-health fraction</div>
+        <p>The new reward materially improved champion performance while retaining an essential property: every win is positive and every loss negative.</p>
+        <p>Additional shaping is risky. Damage can reward pointless aggression, bleed can displace immediate wins, healing can prolong games, and resource rewards can encourage hoarding. Missing observation semantics should be improved before adding more proxy objectives.</p>
+      </div>
+    </details>
+
+    <details class="control">
+      <summary><span class="control-name">Memory/recurrent architecture</span><span class="control-summary">Carries learned information across decisions when the current observation is not sufficient.</span><span class="chevron">›</span></summary>
+      <div class="detail-body">
+        <p>Memory is not the same as search or “thinking many moves ahead.” Gamma, GAE, and the critic already connect current actions to later outcomes.</p>
+        <p>Recurrence helps when relevant history is absent from the snapshot: previously played cards, revealed information, opponent tendencies, or past events. If the current state is Markov-complete, recurrence adds complexity without benefit. Observation omissions should be addressed first.</p>
+      </div>
+    </details>
+
+    <details class="control" open>
+      <summary><span class="control-name">Capacity and expanded content</span><span class="control-summary">Hard limits on dice, symbols, abilities, candidate actions, and episode length.</span><span class="chevron">›</span></summary>
+      <div class="detail-body">
+        <span class="tag current">No hard limit reached</span>
+        <div class="table-wrap"><table><thead><tr><th>Capacity</th><th>Limit</th><th>Observed evidence</th></tr></thead><tbody>
+          <tr><td>Action candidates</td><td>128</td><td>Title-match maximum: 87</td></tr>
+          <tr><td>Authority commands per battle</td><td>1,200</td><td>Title-match maximum: 351; p99: 252</td></tr>
+          <tr><td>Dice</td><td>10</td><td>No overflow</td></tr>
+          <tr><td>Abilities</td><td>12</td><td>No overflow</td></tr>
+          <tr><td>Symbols</td><td>8</td><td>No overflow</td></tr>
+        </tbody></table></div>
+        <p>Hard overflow raises an error rather than silently discarding entities. Separately, the schema intentionally compresses or omits some semantics—such as detailed active statuses and nested card modifiers. That is an observation-design limitation, not a capacity overflow.</p>
+      </div>
+    </details>
+  </section>
+
+  <section id="action-pipeline" class="section control-group">
+    <p class="eyebrow">Action pipeline</p>
+    <h2>What options the model actually receives</h2>
+    <p class="section-intro">The real authority creates complete commands. The encoder describes them. The mask removes padding and non-progressing actions. The actor—not the generator—ranks the remaining candidates.</p>
+
+    <details class="control" open>
+      <summary><span class="control-name">Action-candidate generation</span><span class="control-summary">Creates every immediately legal, submission-ready command for the acting seat.</span><span class="chevron">›</span></summary>
+      <div class="detail-body"><p>If a strategic command is absent here, PPO can never learn it. Current generation includes reroll subsets, qualified ability/target combinations, playable card/target combinations, reactions, defenses, and passes.</p></div>
+    </details>
+
+    <details class="control" open>
+      <summary><span class="control-name">Sharpen Blade case study</span><span class="control-summary">The legal option is complete, but its pre-play semantic description is incomplete.</span><span class="chevron">›</span></summary>
+      <div class="detail-body">
+        <span class="tag good">Authority behavior correct</span><span class="tag finding">Observation gap</span>
+        <p>The authority generates one Sharpen Blade candidate for every owned offensive ability when the card is in hand, affordable, and in the correct window. Playing it on Sword Cut is available.</p>
+        <p>Before play, PPO sees card cost, target ability, and that the card applies an ability modifier. It does not clearly receive the nested meaning “pair or better adds Bleed,” nor a card-name identity. After the card is played, the modified ability correctly includes the pair requirement and Bleed effect in observation.</p>
+        <div class="callout warn"><p>This is a plausible reason Sharpen Blade is underused: the move exists, but the actor receives an incomplete explanation of its future value.</p></div>
+      </div>
+    </details>
+
+    <details class="control" open>
+      <summary><span class="control-name">128-position action mask</span><span class="control-summary">A fixed output canvas containing valid candidates plus disabled padding.</span><span class="chevron">›</span></summary>
+      <div class="detail-body">
+        <p>If the authority supplies 37 candidates, positions 0–36 contain exact commands and the remaining positions are padding. The mask disables padding and certain legal-but-non-progressing commands such as provisional keep actions that could loop indefinitely.</p>
+        <p>The mask is a safety/filter mechanism, not a recommendation score.</p>
+      </div>
+    </details>
+
+    <details class="control">
+      <summary><span class="control-name">Candidate ordering</span><span class="control-summary">Stable canonical placement of commands before the actor scores them.</span><span class="chevron">›</span></summary>
+      <div class="detail-body"><p>The authority does not recommend or rank moves. The actor’s weights determine scores. The shared position-independent candidate scorer reduces dependence on whether a command appears in slot 5 or slot 60.</p></div>
+    </details>
+
+    <details class="control">
+      <summary><span class="control-name">Input/action capacity failure</span><span class="control-summary">Hard overflow or an impossible nonterminal mask produces a visible error.</span><span class="chevron">›</span></summary>
+      <div class="detail-body"><p>Exceeding action, ability, dice, or symbol limits raises a runtime error. A nonterminal state with no valid candidate also fails. Campaign safety checks record invalid actions, truncations, rejects, leaks, and replay mismatches.</p></div>
+    </details>
+  </section>
+
+  <section id="additional" class="section control-group">
+    <p class="eyebrow">Controls missing from the original list</p>
+    <h2>Starting state, optimization guardrails, and experience generation</h2>
+
+    <details class="control">
+      <summary><span class="control-name">Observation scaling and normalization</span><span class="control-summary">Converts health, resources, counts, and progress into numerically useful ranges.</span><span class="chevron">›</span></summary>
+      <div class="detail-body"><p>V2 manually normalizes most counts and fractions. Poor scaling can make useful features difficult to learn. This is distinct from advantage normalization.</p></div>
+    </details>
+
+    <details class="control">
+      <summary><span class="control-name">Hidden-information boundary</span><span class="control-summary">Controls what the learner is legally allowed to observe.</span><span class="chevron">›</span></summary>
+      <div class="detail-body"><p>Opponent hidden cards, private planning state, and future random results must never enter the observation. Viewer-safe authority snapshots and leak counters enforce this boundary.</p></div>
+    </details>
+
+    <details class="control">
+      <summary><span class="control-name">Initial weights, checkpoint, and optimizer</span><span class="control-summary">Determine what knowledge and momentum exist before the next update.</span><span class="chevron">›</span></summary>
+      <div class="detail-body"><p>A fresh network creates a new family. Continuing CP193 preserves learned strategy. Exact rollback must restore both weights and Adam optimizer state because stored momentum changes later updates.</p></div>
+    </details>
+
+    <details class="control">
+      <summary><span class="control-name">Random seed</span><span class="control-summary">Controls initialization, environment randomness, opponent sampling, and reproducible trajectories.</span><span class="chevron">›</span></summary>
+      <div class="detail-body"><p>Different seeds can create substantially different models even with identical controls. Seed changes are therefore real experimental branches, not cosmetic reruns.</p></div>
+    </details>
+
+    <details class="control">
+      <summary><span class="control-name">Behavior-cloning examples and epochs</span><span class="control-summary">How much teacher behavior is copied before PPO begins.</span><span class="chevron">›</span></summary>
+      <div class="detail-body"><p>The original setup allowed 5,000 teacher decisions over five imitation epochs. Teacher identity, scenario distribution, example count, and cloning strength shape the entire family’s starting behavior.</p></div>
+    </details>
+
+    <details class="control">
+      <summary><span class="control-name">Post-PPO correction</span><span class="control-summary">Whether teacher cloning is allowed to rewrite a policy after PPO.</span><span class="chevron">›</span></summary>
+      <div class="detail-body"><span class="tag current">CP193: forbidden</span><p>Automatic correction can overwrite strategies discovered through self-play. Any correction should be an isolated challenger that must pass the same gates rather than silently modifying the accepted parent.</p></div>
+    </details>
+
+    <details class="control" open>
+      <summary><span class="control-name">Advantage normalization</span><span class="control-summary">Rescales minibatch advantages to approximately mean zero and standard deviation one.</span><span class="chevron">›</span></summary>
+      <div class="detail-body">
+        <span class="tag current">Enabled</span>
+        <p>Normalization prevents one unusually large-return batch from dominating gradients. It is especially useful with terminal rewards and variable battle lengths. The downside is removing absolute advantage-scale differences between batches. With batch size 256 and rewards bounded to ±1.5, enabling it is the safer default.</p>
+      </div>
+    </details>
+
+    <details class="control" open>
+      <summary><span class="control-name">Gradient clipping</span><span class="control-summary">Limits the global gradient norm from one minibatch before the optimizer step.</span><span class="chevron">›</span></summary>
+      <div class="detail-body">
+        <span class="tag current">Maximum norm: 0.5</span><span class="tag current">CP193 mean recorded norm: ~0.474</span>
+        <p>These guardrails operate at different layers:</p>
+        <ul><li><strong>PPO clipping:</strong> limits incentive to move sampled action probabilities.</li><li><strong>Target KL:</strong> can stop the remaining update.</li><li><strong>Gradient clipping:</strong> scales an oversized gradient vector while preserving direction.</li><li><strong>Learning rate:</strong> scales application of the resulting update.</li><li><strong>Adam:</strong> adapts movement per parameter using optimizer history.</li></ul>
+      </div>
+    </details>
+
+    <details class="control">
+      <summary><span class="control-name">Value-function clipping</span><span class="control-summary">Optionally restricts how rapidly critic predictions change.</span><span class="chevron">›</span></summary>
+      <div class="detail-body"><span class="tag current">Not separately enabled</span><p>This is distinct from actor probability clipping. It can stabilize a volatile critic but can also slow correction of wrong value estimates.</p></div>
+    </details>
+
+    <details class="control">
+      <summary><span class="control-name">Optimizer type and settings</span><span class="control-summary">Convert gradients into parameter changes using stored momentum and adaptive scaling.</span><span class="chevron">›</span></summary>
+      <div class="detail-body"><p>Adam’s momentum, variance estimates, epsilon, and learning rate all affect movement. This is why optimizer state must be preserved or rolled back with the checkpoint.</p></div>
+    </details>
+
+    <details class="control" open>
+      <summary><span class="control-name">Learner action sampling</span><span class="control-summary">Training samples from action probabilities instead of always selecting the top action.</span><span class="chevron">›</span></summary>
+      <div class="detail-body">
+        <div class="formula">Example policy: Attack 60% · Reroll 30% · Pass 10%<br>Training samples in approximately those proportions. Evaluation and the playable game choose Attack because it is the argmax.</div>
+        <p>PPO records the chosen action’s probability and changes it according to advantage. Entropy resists premature collapse.</p>
+      </div>
+    </details>
+
+    <details class="control" open>
+      <summary><span class="control-name">Opponent determinism</span><span class="control-summary">Whether a model opponent samples its policy or always takes its highest-probability action.</span><span class="chevron">›</span></summary>
+      <div class="detail-body">
+        <span class="tag finding">Current mismatch</span>
+        <div class="table-wrap"><table><thead><tr><th>Context</th><th>Learner behavior</th><th>Opponent behavior</th></tr></thead><tbody>
+          <tr><td>PPO training</td><td>Stochastic sampling</td><td>Stochastic sampling</td></tr>
+          <tr><td>Evaluation</td><td>Deterministic argmax</td><td>Deterministic argmax</td></tr>
+          <tr><td>Playable game</td><td>Human</td><td>Deterministic argmax</td></tr>
+        </tbody></table></div>
+        <p>CP193 trained against a sampled version of CP38, not exactly the deployed behavior. Deterministic opponent training would target the version used in evaluation and play, but would expose the learner to a narrower set of opponent lines.</p>
+      </div>
+    </details>
+
+    <details class="control" open>
+      <summary><span class="control-name">Episode action limit</span><span class="control-summary">Safety limit on total commands from both combatants in one complete battle.</span><span class="chevron">›</span></summary>
+      <div class="detail-body">
+        <span class="tag current">One episode = one battle</span><span class="tag current">Limit: 1,200 commands</span>
+        <p>A battle reaching the limit is truncated and does not receive a normal terminal win/loss reward. This has not occurred: zero truncations in 199,391 campaign training episodes and 303,000 checkpoint evaluations. The CP193 title-match maximum was 351 commands.</p>
+      </div>
+    </details>
+
+    <details class="control" open>
+      <summary><span class="control-name">Training seed distribution</span><span class="control-summary">Determines the reproducible random situations the model experiences.</span><span class="chevron">›</span></summary>
+      <div class="detail-body"><p>Seeds control dice, deck ordering and draws, authority randomness, and reproducible transitions—not only dice. Model sampling uses reproducible random streams as well. Adding probability features changes interpretation, not seed distribution. Rare card/status situations are better addressed with curriculum or stratified scenarios than by guessing seed numbers.</p></div>
+    </details>
+
+    <details class="control" open>
+      <summary><span class="control-name">Game rules, content, and matchup</span><span class="control-summary">The environment’s actual mechanics, distinct from the model’s encoded description of them.</span><span class="chevron">›</span></summary>
+      <div class="detail-body"><p>Rules determine what truly happens; observation determines what PPO knows about it. Sharpen Blade works correctly in the authority while its pre-play value is incompletely encoded. Training only Blade Warden mirrors also teaches a narrower strategy than training across creatures.</p></div>
+    </details>
+
+    <details class="control">
+      <summary><span class="control-name">Training duration, checkpoints, and workers</span><span class="control-summary">How much experience is gathered, how often it is judged, and how many environments contribute.</span><span class="chevron">›</span></summary>
+      <div class="detail-body"><p>More PPO steps create more opportunity to improve or drift. CP193-family intervals requested 50,000 steps and completed 52,224 rollout-aligned steps. Twelve workers created the 3,072-decision update buffer.</p></div>
+    </details>
+  </section>
+
+  <section id="campaign-selection" class="section control-group">
+    <p class="eyebrow">Indirect but powerful</p>
+    <h2>Campaign-selection controls</h2>
+    <p class="section-intro">These do not change one PPO gradient. They decide which checkpoint becomes the next parent and therefore strongly influence the eventual model.</p>
+    <div class="grid">
+      <article class="card"><h3>Evaluation opponent</h3><p>Defines what “better” means. Evaluating only against the global champion selects for that matchup.</p></article>
+      <article class="card"><h3>Game count</h3><p>More games reduce sampling noise. The recent workflow uses 1,000-game checkpoint gates and explicit 3,000-game title matches.</p></article>
+      <article class="card"><h3>Seed banks and seat swaps</h3><p>Fresh, fixed, disjoint seeds and both seat assignments make comparisons reproducible and reduce seat bias.</p></article>
+      <article class="card"><h3>Evaluation score</h3><p>Promotion uses <code>wins + 0.5 × draws</code>. PPO’s health-shaped reward is not used as the match score.</p></article>
+      <article class="card"><h3>Pass threshold</h3><p>Determines whether a challenger merely beats a family baseline or must exceed the global champion.</p></article>
+      <article class="card"><h3>Rollback streak</h3><p>Determines how many consecutive misses are permitted before exact model-and-optimizer restoration.</p></article>
+      <article class="card"><h3>Promotion rule</h3><p>Controls when a high-water checkpoint officially replaces the global champion.</p></article>
+      <article class="card"><h3>Deterministic evaluation</h3><p>Both policies use highest-probability valid actions, matching the deployed model behavior rather than training-time sampling.</p></article>
+    </div>
+  </section>
+
+  <section id="findings" class="section">
+    <p class="eyebrow">Review conclusions</p>
+    <h2>What the detailed review uncovered</h2>
+    <div class="grid">
+      <article class="card"><span class="tag finding">Observation gap</span><h3>Reroll probabilities are learned indirectly</h3><p>The mechanics teacher computes public counterfactual odds, but CP193 does not receive those calculations as features.</p></article>
+      <article class="card"><span class="tag finding">Observation gap</span><h3>Active statuses are underencoded</h3><p>V2 largely exposes status counts and generic effects rather than structured identities, stacks, durations, and triggers.</p></article>
+      <article class="card"><span class="tag finding">Card semantics</span><h3>Sharpen Blade exists but is poorly explained</h3><p>Every legal target option is generated, yet the pre-play candidate does not clearly expose pair-or-better → Bleed.</p></article>
+      <article class="card"><span class="tag finding">Behavior mismatch</span><h3>Training opponents sample; deployed opponents do not</h3><p>Training sees a broader stochastic opponent, while evaluation and the game use deterministic argmax behavior.</p></article>
+      <article class="card"><span class="tag current">Healthy</span><h3>No capacity or truncation issue</h3><p>Maximum observed candidates and battle length were comfortably below limits, and safety counters remained zero.</p></article>
+      <article class="card"><span class="tag current">Healthy</span><h3>Current critic and batch metrics are credible</h3><p>Explained variance 0.845, value loss 0.0384, clip fraction 10.02%, and approximate KL 0.02036 show no obvious failure.</p></article>
+    </div>
+    <div class="callout good"><p><strong>Current ordering of attention:</strong> improve missing observation semantics first; then test deterministic opponent behavior and carefully controlled PPO branches; treat additional reward shaping and recurrence as later experiments.</p></div>
+  </section>
+
+  <footer>
+    Local repository document. No external assets, analytics, network requests, publishing, or deployment are used. Source evidence comes from the CP193 campaign controls and the current V2 training, observation, action-generation, policy, and evaluation implementations.
+  </footer>
+</main>
+
+<script>
+  const controls = Array.from(document.querySelectorAll("details.control"));
+  document.getElementById("expand-all").addEventListener("click", () => {
+    controls.forEach((item) => { if (!item.classList.contains("hidden-by-search")) item.open = true; });
+  });
+  document.getElementById("collapse-all").addEventListener("click", () => {
+    controls.forEach((item) => { item.open = false; });
+  });
+  document.getElementById("filter").addEventListener("input", (event) => {
+    const query = event.target.value.trim().toLowerCase();
+    controls.forEach((item) => {
+      const matches = !query || item.textContent.toLowerCase().includes(query);
+      item.classList.toggle("hidden-by-search", !matches);
+      if (query && matches) item.open = true;
+    });
+    document.querySelectorAll(".control-group").forEach((group) => {
+      const visible = group.querySelector("details.control:not(.hidden-by-search)");
+      group.classList.toggle("hidden-by-search", Boolean(query) && !visible);
+    });
+  });
+</script>
+</body>
+</html>

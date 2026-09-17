@@ -126,35 +126,12 @@ func TestAuthorityRunsBladeWardenVsVenomGoblinFullBattle(t *testing.T) {
 	assertFullBattleWait(t, result, "damage_resolution", 1, "damage_reaction")
 	assertDamageDefinitions(t, result, []string{"loaded_die", "tip_it", "emergency_ward", "battle_focus"})
 	result = sendPassFull(t, authority, result)
-	assertFullBattleWait(t, result, "ongoing_effects", 2, "status_roll")
-	assertZones(t, result, "blade", 14, 4, 1, 1, 2)
-	assertZones(t, result, "goblin", 6, 3, 0, 3, 2)
-	if len(result.Snapshot.SettledEffectRolls) != 2 || result.Snapshot.SettledEffectRolls[0].Die.Face != 0 || result.Snapshot.SettledEffectRolls[1].Die.Face != 0 {
-		t.Fatalf("pre-reveal Poison dice=%#v, want two blank player dice", result.Snapshot.SettledEffectRolls)
-	}
-	for _, battleEvent := range result.Events {
-		if battleEvent.Type == event.TypeInteractionWindowOpened {
-			if rolls, exposed := battleEvent.Data["rolls"]; exposed {
-				t.Fatalf("pre-reveal effect event exposed secret rolls: %#v", rolls)
-			}
-		}
-	}
-	result = sendRollDiceFull(t, authority, result)
-	assertFullBattleWait(t, result, "ongoing_effects", 2, "status_roll_reaction")
-	if len(result.Snapshot.SettledEffectRolls) != 2 || result.Snapshot.SettledEffectRolls[0].Die.Face != 2 || result.Snapshot.SettledEffectRolls[1].Die.Face != 6 {
-		t.Fatalf("revealed Poison dice=%#v, want faces 2 and 6", result.Snapshot.SettledEffectRolls)
-	}
-
-	// Round 2: Antidote responds after both Poison rolls were revealed.
-	antidote := cardInHand(t, result.Snapshot.Actors["blade"], "antidote")
-	result = sendCommitFull(t, authority, result, []string{antidote}, nil, nil, "poison")
-	assertFullBattleWait(t, result, "ongoing_effects", 2, "status_roll_reaction")
-	assertZones(t, result, "blade", 14, 3, 2, 1, 1)
-	result = sendPassFull(t, authority, result)
-	assertFullBattleWait(t, result, "ongoing_effects", 2, "status_damage_reaction")
-	assertDamageDefinitions(t, result, []string{"battle_focus", "loaded_die"})
-	result = sendPassFull(t, authority, result)
 	assertFullBattleWait(t, result, "offensive", 2, "planning")
+	assertEffectsDamageDefinitions(t, result, []string{"battle_focus", "loaded_die"})
+	// Antidote is now a planning decision, before the next Effects segment.
+	antidote := cardInHand(t, result.Snapshot.Actors["blade"], "antidote")
+	p := pendingFull(t, result)
+	result = fullBattleSend(t, authority, envelopeFull(result, command.TypePlanningCards, command.PlanningCardsPayload{PendingInputID: p.ID, Checkpoint: planningCheckpointFull(p), CardIDs: []string{antidote}, StatusID: "poison"}))
 	assertZones(t, result, "blade", 12, 4, 2, 2, 2)
 	assertZones(t, result, "goblin", 4, 4, 0, 4, 3)
 	result = sendPlanningRollFull(t, authority, result)
@@ -184,17 +161,16 @@ func TestAuthorityRunsBladeWardenVsVenomGoblinFullBattle(t *testing.T) {
 		}
 	}
 	result = sendPassFull(t, authority, result)
-	assertFullBattleWait(t, result, "ongoing_effects", 3, "status_damage_reaction")
+	assertFullBattleWait(t, result, "offensive", 3, "planning")
 	// Both stacks dealt damage on Ongoing Effects entry, then Bleed's normal
 	// checkpoint decay removed one stack before opening this reaction window.
 	if statuses := result.Snapshot.Actors["goblin"].Statuses; len(statuses) != 1 || statuses[0].DefinitionID != "bleed" || statuses[0].Stacks != 1 {
 		t.Fatalf("post-trigger Bleed=%#v, want one stack after two-stack damage and one-stack decay", statuses)
 	}
-	assertDamageDefinitions(t, result, []string{"emergency_ward", "tip_it"})
+	assertEffectsDamageDefinitions(t, result, []string{"emergency_ward", "tip_it"})
 
 	// Round 3: five-Sword Sword Cut, paired bonus, two Basic Defenses, and
 	// deck/discard/hand damage selection in one revealed batch.
-	result = sendPassFull(t, authority, result)
 	assertFullBattleWait(t, result, "offensive", 3, "planning")
 	result = sendPlanningRollFull(t, authority, result)
 	result = sendPlanningKeepFull(t, authority, result, []int{0, 1})
@@ -211,15 +187,8 @@ func TestAuthorityRunsBladeWardenVsVenomGoblinFullBattle(t *testing.T) {
 	assertFullBattleWait(t, result, "damage_resolution", 3, "damage_reaction")
 	assertDamageDefinitions(t, result, []string{"tip_it", "battle_focus", "battle_focus", "emergency_ward", "loaded_die"})
 	result = sendPassFull(t, authority, result)
-	assertFullBattleWait(t, result, "ongoing_effects", 4, "status_damage_reaction")
-	assertZones(t, result, "blade", 9, 4, 3, 4, 2)
-	assertZones(t, result, "goblin", 0, 3, 0, 9, 2)
-	assertDamageDefinitions(t, result, []string{"battle_focus", "battle_focus"})
-
-	// Round 4: the final card remains in hand through reveal, overage is four,
-	// and victory is declared only after Damage Resolution exits.
-	result = sendPassFull(t, authority, result)
 	assertFullBattleWait(t, result, "offensive", 4, "planning")
+	assertEffectsDamageDefinitions(t, result, []string{"battle_focus", "battle_focus"})
 	assertZones(t, result, "blade", 8, 5, 3, 4, 3)
 	assertZones(t, result, "goblin", 0, 1, 0, 11, 3)
 	result = sendPlanningRollFull(t, authority, result)
@@ -404,5 +373,34 @@ func assertDamageDefinitions(t *testing.T, r engine.Result, want []string) {
 	}
 	if !reflect.DeepEqual(got, want) {
 		t.Fatalf("damage definitions=%v want=%v", got, want)
+	}
+}
+
+func assertEffectsDamageDefinitions(t *testing.T, r engine.Result, want []string) {
+	t.Helper()
+	var got []string
+	for _, ev := range r.Events {
+		if ev.Type != event.Type("effects_resolved") {
+			continue
+		}
+		raw, _ := json.Marshal(ev.Data["steps"])
+		var steps []event.Event
+		json.Unmarshal(raw, &steps)
+		for _, step := range steps {
+			if step.Type != event.TypeDamageCommitted {
+				continue
+			}
+			raw, _ := json.Marshal(step.Data["removals"])
+			var cards []state.ProposedCardRemoval
+			json.Unmarshal(raw, &cards)
+			for _, card := range cards {
+				if card.Accepted && !card.Released {
+					got = append(got, card.CardDefinitionID)
+				}
+			}
+		}
+	}
+	if !reflect.DeepEqual(got, want) {
+		t.Fatalf("Effects damage cards=%v want=%v", got, want)
 	}
 }

@@ -1,0 +1,19 @@
+{
+  "schema_version": 1,
+  "id": "incubation",
+  "name": "Incubation",
+  "presentation": {
+    "rules_text": "After the next Ongoing toxin checks and damage, convert 1 surviving Poison to Volatile Poison, then expire. Requires room only at conversion. Cap 1; reapplication does not refresh.",
+    "glyph": "\u25c9"
+  },
+  "activation_mode": "automatic",
+  "polarity": "negative",
+  "stacking": {
+    "stack_limit": 1,
+    "overflow_policy": "reject_additional_stacks"
+  },
+  "lifecycle": {
+    "persistent": true
+  },
+  "triggers": []
+}

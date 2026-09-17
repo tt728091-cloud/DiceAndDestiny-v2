@@ -3,16 +3,24 @@ extends Control
 const BATTLE_SCREEN := preload("res://app/screens/battle/battle_screen.tscn")
 const LEARNED_GATEWAY := preload("res://local_client/learned_battle/learned_battle_gateway.gd")
 const VIEWER := "blade"
+const MODE_PANEL_MAXIMUM_SIZE := Vector2(760, 620)
+const MODE_PANEL_VIEWPORT_INSET := Vector2(32, 32)
 
 var gateway: BattleGateway
 var store: ActiveBattleStore
 var _message: Label
 var _buttons: VBoxContainer
+var _mode_panel: PanelContainer
+var _character_choice: OptionButton
+var _model_choice: OptionButton
+var _seat_choice: OptionButton
 
 func _ready() -> void:
 	gateway = BattleGateway.new() if gateway == null else gateway
 	store = ActiveBattleStore.new() if store == null else store
 	_build_mode_menu()
+	resized.connect(_fit_mode_panel)
+	call_deferred("_fit_mode_panel")
 
 func _build_mode_menu() -> void:
 	var background := ColorRect.new()
@@ -22,13 +30,14 @@ func _build_mode_menu() -> void:
 	var center := CenterContainer.new()
 	center.set_anchors_preset(Control.PRESET_FULL_RECT)
 	add_child(center)
-	var panel := PanelContainer.new()
-	panel.custom_minimum_size = Vector2(760, 1000)
-	center.add_child(panel)
+	_mode_panel = PanelContainer.new()
+	_mode_panel.name = "ModePanel"
+	_mode_panel.custom_minimum_size = MODE_PANEL_MAXIMUM_SIZE
+	center.add_child(_mode_panel)
 	var margin := MarginContainer.new()
 	for side in ["margin_left", "margin_top", "margin_right", "margin_bottom"]:
 		margin.add_theme_constant_override(side, 34)
-	panel.add_child(margin)
+	_mode_panel.add_child(margin)
 	var content := VBoxContainer.new()
 	content.add_theme_constant_override("separation", 16)
 	margin.add_child(content)
@@ -39,65 +48,87 @@ func _build_mode_menu() -> void:
 	title.add_theme_color_override("font_color", Color("f5c963"))
 	content.add_child(title)
 	var subtitle := Label.new()
-	subtitle.text = "Choose a local battle mode"
+	subtitle.text = "Choose your character and opponent"
 	subtitle.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	subtitle.add_theme_font_size_override("font_size", 20)
 	content.add_child(subtitle)
+	var mode_scroll := ScrollContainer.new()
+	mode_scroll.name = "ModeScroll"
+	mode_scroll.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	mode_scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	mode_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	mode_scroll.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_AUTO
+	mode_scroll.follow_focus = true
+	content.add_child(mode_scroll)
 	_buttons = VBoxContainer.new()
+	_buttons.name = "ModeButtons"
+	_buttons.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_buttons.add_theme_constant_override("separation", 12)
-	content.add_child(_buttons)
-	_add_mode_button(
-		"Classic Battle\nBlade Warden vs Venom Goblin (D100)",
-		_start_classic,
-		"battle.mode.classic"
-	)
-	_add_mode_button(
-		"Learned Mirror · Human Seat A · Old v1\nBlade Warden vs Frozen Seed-11 Learned Blade Warden",
-		_start_learned.bind("seat-a", "accepted-v1"),
-		"battle.mode.learned.v1.seat_a"
-	)
-	_add_mode_button(
-		"Learned Mirror · Human Seat B · Old v1\nBlade Warden vs Frozen Seed-11 Learned Blade Warden",
-		_start_learned.bind("seat-b", "accepted-v1"),
-		"battle.mode.learned.v1.seat_b"
-	)
-	_add_mode_button(
-		"Learned Mirror · Human Seat A · New v2\nBlade Warden vs Decision-Quality Seed-22 Blade Warden",
-		_start_learned.bind("seat-a", "decision-v2"),
-		"battle.mode.learned.v2.seat_a"
-	)
-	_add_mode_button(
-		"Learned Mirror · Human Seat B · New v2\nBlade Warden vs Decision-Quality Seed-22 Blade Warden",
-		_start_learned.bind("seat-b", "decision-v2"),
-		"battle.mode.learned.v2.seat_b"
-	)
-	_add_mode_button(
-		"Learned Mirror · Human Seat A · Strongest v3\nBlade Warden vs Optimized 5M Seed-22 Blade Warden",
-		_start_learned.bind("seat-a", "optimized-v3"),
-		"battle.mode.learned.v3.seat_a"
-	)
-	_add_mode_button(
-		"Learned Mirror · Human Seat B · Strongest v3\nBlade Warden vs Optimized 5M Seed-22 Blade Warden",
-		_start_learned.bind("seat-b", "optimized-v3"),
-		"battle.mode.learned.v3.seat_b"
-	)
+	mode_scroll.add_child(_buttons)
+	_character_choice = _add_selection("YOUR CHARACTER", [
+		["Blade Warden · sword, shields, and bleed", "blade_warden"],
+		["Venom · Poison, Incubation, and Catalyst", "venom"],
+	], "battle.setup.character")
+	_model_choice = _add_selection("ENEMY · LEARNED BLADE WARDEN", [
+		["Global Champion CP193 · winner-health v2", "global-champion"],
+		["Prior Champion CP38 · winner-health", "prior-global-cp38"],
+		["Prior Champion CP480 · 2.4M steps", "prior-global-cp480"],
+		["Optimized v3 · 5M seed 22", "optimized-v3"],
+		["Decision Quality v2 · seed 22", "decision-v2"],
+		["Original v1 · seed 11", "accepted-v1"],
+	], "battle.setup.model")
+	_seat_choice = _add_selection("YOUR SEAT", [["Seat A", "seat-a"], ["Seat B", "seat-b"]], "battle.setup.seat")
+	_add_mode_button("Start Battle", _start_selected, "battle.setup.start")
 	_message = Label.new()
-	_message.text = "Learned battles are inference-only. Choose the preserved v1, decision-quality v2, or strongest optimized v3 opponent."
+	_message.text = "Play a full battle against the selected trained Blade Warden. Venom has 24 cards and six abilities. Rematch keeps your character and opponent."
 	_message.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_message.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	_message.add_theme_color_override("font_color", Color("9fb3c8"))
 	content.add_child(_message)
 
+func _add_selection(caption: String, choices: Array, control_id: String) -> OptionButton:
+	var heading := Label.new()
+	heading.text = caption
+	heading.add_theme_color_override("font_color", Color("9fb3c8"))
+	_buttons.add_child(heading)
+	var select := OptionButton.new()
+	select.custom_minimum_size.y = 48
+	select.add_theme_font_size_override("font_size", 19)
+	for choice in choices:
+		select.add_item(str(choice[0]))
+		select.set_item_metadata(select.item_count - 1, choice[1])
+	_buttons.add_child(select)
+	var inspector = get_node_or_null("/root/GameInspector")
+	if inspector != null:
+		inspector.register_control(control_id, select, caption)
+	return select
+
+func _start_selected() -> void:
+	_start_learned(str(_seat_choice.get_selected_metadata()), str(_model_choice.get_selected_metadata()))
+
 func _add_mode_button(text: String, callback: Callable, control_id: String) -> void:
 	var button := Button.new()
 	button.text = text
 	button.custom_minimum_size.y = 82
+	button.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	button.add_theme_font_size_override("font_size", 18)
 	button.pressed.connect(callback)
 	_buttons.add_child(button)
 	var inspector = get_node_or_null("/root/GameInspector")
 	if inspector != null:
 		inspector.register_control(control_id, button, text.replace("\n", " — "))
+
+func _fit_mode_panel() -> void:
+	if _mode_panel == null:
+		return
+	var available := Vector2(
+		maxf(1.0, size.x - MODE_PANEL_VIEWPORT_INSET.x),
+		maxf(1.0, size.y - MODE_PANEL_VIEWPORT_INSET.y)
+	)
+	_mode_panel.custom_minimum_size = Vector2(
+		minf(MODE_PANEL_MAXIMUM_SIZE.x, available.x),
+		minf(MODE_PANEL_MAXIMUM_SIZE.y, available.y)
+	)
 
 func _start_classic() -> void:
 	_set_buttons_disabled(true)
@@ -124,7 +155,7 @@ func _start_learned(human_seat: String, model_key: String) -> void:
 	if runtime == null:
 		_show_error("The learned battle runtime autoload is unavailable.", {})
 		return
-	var learned_gateway: RefCounted = LEARNED_GATEWAY.new(runtime, human_seat, model_key)
+	var learned_gateway: RefCounted = LEARNED_GATEWAY.new(runtime, human_seat, model_key, str(_character_choice.get_selected_metadata()) if _character_choice != null else "blade_warden")
 	var seed := int(Time.get_unix_time_from_system() * 1000000.0) ^ Time.get_ticks_usec()
 	var result: Dictionary = learned_gateway.start_battle(_new_battle_id("learned"), seed)
 	if result.get("accepted") != true:

@@ -61,6 +61,17 @@ func TestRuntimeRequiresExplicitReplacementAndSwitchesPinnedModels(t *testing.T)
 		t.Fatalf("runtime replacement loaded the wrong v3 model: %#v", v3Model)
 	}
 
+	base.ModelPath = testGlobalChampionModelPath(t)
+	base.ModelSHA256 = "96755c199f4d93261695d4928a0f95e00858d3a9d6a5c429e46911fbd0a3cac6"
+	globalChampion := runtimeCall(t, base)
+	if globalChampion["ok"] != true {
+		t.Fatalf("explicit global-champion runtime replacement failed: %#v", globalChampion)
+	}
+	globalChampionModel := globalChampion["result"].(map[string]any)["model"].(map[string]any)
+	if globalChampionModel["model_id"] != "blade-warden-global-champion-cp480-v3" {
+		t.Fatalf("runtime replacement loaded the wrong global-champion model: %#v", globalChampionModel)
+	}
+
 	base.ModelPath = testModelPath(t)
 	base.ModelSHA256 = ""
 	restored := runtimeCall(t, base)

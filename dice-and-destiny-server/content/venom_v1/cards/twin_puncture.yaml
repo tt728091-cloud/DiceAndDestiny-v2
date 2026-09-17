@@ -1,0 +1,39 @@
+{
+  "schema_version": 1,
+  "id": "twin_puncture",
+  "name": "Twin Puncture",
+  "type": "action",
+  "presentation": {
+    "rules_text": "Apply 2 Poison. Fill cap 3; overflow adds 1 Incubation if none exists."
+  },
+  "cost": {
+    "energy": 2
+  },
+  "play": {
+    "source_zones": [
+      "hand"
+    ],
+    "destination": "discard",
+    "playable_during": [
+      {
+        "segment": "offensive",
+        "phase": "main",
+        "window_purpose": "planning"
+      }
+    ]
+  },
+  "targeting": {
+    "selector": "venom_choice",
+    "minimum": 0,
+    "maximum": 1
+  },
+  "reaction_window": {
+    "opens": false
+  },
+  "operations": [
+    {
+      "type": "venom_card",
+      "id": "twin_puncture"
+    }
+  ]
+}

@@ -1,0 +1,78 @@
+{
+  "campaign_id": "v2-global-hillclimb-20260805-90m",
+  "status": "revoked-after-direct-9000-game-comparison",
+  "revoked_at": "2026-08-05T22:00:30Z",
+  "revocation_reason": "Checkpoint 480 won the combined direct comparison: attempt 37 scored 49.3222% over 9,000 seat-swapped games.",
+  "champion": {
+    "champion_id": "v2-global-hillclimb-20260805-90m-attempt-037",
+    "checkpoint_path": "/Users/daddymere/games/Dice-and-Destiny-v2/dice-and-destiny-server/ml/runs/v2-global-hillclimb-20260805-90m/attempts/attempt-037/raw-ppo-challenger.zip",
+    "checkpoint_sha256": "2606bc46c3efbf05a9a158bb916487bb8f792f3bb4a9c957d9f036fb5331c8ef",
+    "learner_steps": 2924160,
+    "optimizer_state_sha256": "4b67b905af3083906a1d2c1d2398ea1bc891970a63003d8b6c79631b56c3f8e3",
+    "parameter_sha256": "7b796a5b8755733ae4f4ecf6d68dee3846cd710ff83b293b5f88a05c6b3261b8",
+    "parent_experiment_id": "v2-global-hillclimb-20260805-90m-attempt-031",
+    "promoted_at": "2026-08-05T20:53:25.925171+00:00"
+  },
+  "gate": {
+    "opponent_checkpoint_sha256": "5a465501a4e786004a319466ea4d9af81690630fa66aca75a57e6ebd8a2ba4f3",
+    "opponent_learner_steps": 2871936,
+    "wins": 454,
+    "draws": 112,
+    "losses": 434,
+    "adjusted_score": 0.51,
+    "interval_95": [
+      0.47903749580454597,
+      0.5408859690257428
+    ],
+    "decision": "pass",
+    "threshold_rule": "adjusted score > 50% and zero safety counts",
+    "safety": {
+      "authority_rejects": 0,
+      "hidden_state_leaks": 0,
+      "invalid_action_indices": 0,
+      "replay_mismatches": 0,
+      "stale_action_submissions": 0,
+      "state_leaks": 0,
+      "truncations": 0,
+      "wrong_seat_submissions": 0
+    },
+    "seed_bank": "/Users/daddymere/games/Dice-and-Destiny-v2/dice-and-destiny-server/ml/runs/v2-global-hillclimb-20260805-90m/seed-banks/attempt-037-global-1k.json",
+    "seed_bank_sha256": "ddcd3e1dbb87cd0e0753cdac5a1b219ed3ba189d71c5f3f23f2109650614ae18",
+    "summary_sha256": "d68ba0339345027d70c02400d91c89ebb159e5a58b3207f3ff3adc52968d994b",
+    "episodes_sha256": "f28056f300f2226795a5f4362da8f319f692c918ceed09349c8a932210f20f22"
+  },
+  "gameplay_export": {
+    "model_id": "blade-warden-global-champion-hillclimb-2924160-v3",
+    "path": "/Users/daddymere/games/Dice-and-Destiny-v2/dice-and-destiny-client/models/learned/blade-warden-global-champion-hillclimb-2924160-v3.json",
+    "sha256": "35a9c6142869f84f5b42d5f9f8c559dbfb00e93e8ebcee409e8f9f6756116f9d"
+  },
+  "direct_confirmation": {
+    "games": 9000,
+    "attempt_37_wins": 4018,
+    "draws": 842,
+    "checkpoint_480_wins": 4140,
+    "attempt_37_adjusted_score": 0.49322222222222223,
+    "checkpoint_480_adjusted_score": 0.5067777777777778,
+    "attempt_37_interval_95": [
+      0.482898349,
+      0.503551879
+    ],
+    "safety_violations": 0,
+    "seed_range": [
+      6800000000,
+      6800004499
+    ],
+    "summary_sha256": [
+      "eba60da0333d56f1d1e7100d57fba7f61674c8ed37b8d9b3549560721bb4bbee",
+      "7da941b7ddcb0916478c3d33131775c957fa5d419c8e3e269cf3ec1c56e0fb6f",
+      "dfaeb43b288cc6a960c160ec1fe033ee26c59767e4deccbff13a086f30cf692b"
+    ]
+  },
+  "restored_global": {
+    "champion_id": "raw-v3-step-480",
+    "checkpoint_sha256": "38412a8821419f98a922149506de4a9c00feed617c37d9778b22e83f1c4df6c6",
+    "learner_steps": 2401920,
+    "preserved": true,
+    "restored": true
+  }
+}

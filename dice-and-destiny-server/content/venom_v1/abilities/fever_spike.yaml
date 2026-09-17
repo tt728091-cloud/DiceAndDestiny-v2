@@ -1,0 +1,92 @@
+{
+  "schema_version": 1,
+  "id": "fever_spike",
+  "name": "Fever Spike",
+  "type": "offensive",
+  "presentation": {
+    "rules_text": "2 Fang + 1 Gland + 1 Coil: 3 damage, Provoke 1. 2 Fang + 2 Gland + 1 Coil: 4 damage, Provoke 2. Provoke checks chosen toxins normally after the attack; shared limit 2 per enemy per round."
+  },
+  "cost": {
+    "energy": 0
+  },
+  "usage": {
+    "maximum_per_segment": 1
+  },
+  "targeting": {
+    "selector": "one_enemy",
+    "minimum": 1,
+    "maximum": 1
+  },
+  "qualification": {
+    "activation_tiers": [
+      {
+        "id": "greater",
+        "requirements": {
+          "all": [
+            {
+              "type": "symbol_count",
+              "symbol_id": "fang",
+              "minimum": 2
+            },
+            {
+              "type": "symbol_count",
+              "symbol_id": "gland",
+              "minimum": 2
+            },
+            {
+              "type": "symbol_count",
+              "symbol_id": "coil",
+              "minimum": 1
+            }
+          ]
+        },
+        "operations": [
+          {
+            "type": "deal_damage",
+            "target": "selected_targets",
+            "amount": 4
+          },
+          {
+            "type": "provoke",
+            "target": "selected_targets",
+            "amount": 2
+          }
+        ]
+      },
+      {
+        "id": "base",
+        "requirements": {
+          "all": [
+            {
+              "type": "symbol_count",
+              "symbol_id": "fang",
+              "minimum": 2
+            },
+            {
+              "type": "symbol_count",
+              "symbol_id": "gland",
+              "minimum": 1
+            },
+            {
+              "type": "symbol_count",
+              "symbol_id": "coil",
+              "minimum": 1
+            }
+          ]
+        },
+        "operations": [
+          {
+            "type": "deal_damage",
+            "target": "selected_targets",
+            "amount": 3
+          },
+          {
+            "type": "provoke",
+            "target": "selected_targets",
+            "amount": 1
+          }
+        ]
+      }
+    ]
+  }
+}

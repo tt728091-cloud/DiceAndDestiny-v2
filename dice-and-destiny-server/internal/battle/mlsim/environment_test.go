@@ -11,8 +11,41 @@ import (
 	"testing"
 
 	"diceanddestiny/server/internal/battle/command"
+	"diceanddestiny/server/internal/battle/event"
 	"diceanddestiny/server/internal/battle/state"
 )
+
+func TestCommittedDamageMetricsUseFinalAuthorityBatch(t *testing.T) {
+	environment := &Environment{}
+	environment.recordCommittedDamage([]event.Event{{
+		Type: event.TypeDamageCommitted,
+		Data: map[string]any{
+			"sources": []state.SettledDamageSource{
+				{TargetActorID: "seat-b", SourceContentID: "sword_cut", BaseAmount: 6, FinalAmount: 2},
+				{TargetActorID: "seat-b", SourceContentID: "bleed", BaseAmount: 1, FinalAmount: 1},
+				{TargetActorID: "seat-a", SourceContentID: "poison", BaseAmount: 1, FinalAmount: 1},
+			},
+			"removals": []state.ProposedCardRemoval{
+				{TargetActorID: "seat-b", Accepted: true},
+				{TargetActorID: "seat-b", Accepted: true},
+				{TargetActorID: "seat-b", Accepted: true},
+				{TargetActorID: "seat-b", Accepted: true, Released: true},
+				{TargetActorID: "seat-a", Accepted: true},
+			},
+		},
+	}})
+
+	if got := environment.metrics.DamageBySeat.SeatB; got != (DamageMetrics{
+		RawAttack: 6, RawBleed: 1, RawTotal: 7, ResolvedTotal: 3, ActualTotal: 3,
+	}) {
+		t.Fatalf("seat-b damage metrics = %#v", got)
+	}
+	if got := environment.metrics.DamageBySeat.SeatA; got != (DamageMetrics{
+		RawPoison: 1, RawTotal: 1, ResolvedTotal: 1, ActualTotal: 1,
+	}) {
+		t.Fatalf("seat-a damage metrics = %#v", got)
+	}
+}
 
 func TestEncodedTransportStripsRawDecisionAndParityModeRetainsIt(t *testing.T) {
 	encodedConfig := testConfig()
@@ -184,6 +217,11 @@ func TestTrainingTelemetryMatchesFullAuthorityCorpus(t *testing.T) {
 			}
 			selector := rand.New(rand.NewSource(int64(seed)))
 			for !fullTransition.Terminal && fullTransition.TruncationReason == "" {
+				// Committed-damage diagnostics intentionally require the full
+				// authority event stream. Training telemetry omits that stream;
+				// normalize this evaluation-only metric before state/decision parity.
+				fullTransition.Metrics.DamageBySeat = DamageBySeatMetrics{}
+				optimizedTransition.Metrics.DamageBySeat = DamageBySeatMetrics{}
 				assertParityTransition(t, fullTransition, optimizedTransition)
 				if !reflect.DeepEqual(fullTransition.Result.LegalActions, optimizedTransition.Result.LegalActions) {
 					t.Fatal("optimized candidate order or content differs")
@@ -203,6 +241,8 @@ func TestTrainingTelemetryMatchesFullAuthorityCorpus(t *testing.T) {
 					t.Fatalf("optimized hidden state differs at action %d", fullTransition.Metrics.Actions)
 				}
 			}
+			fullTransition.Metrics.DamageBySeat = DamageBySeatMetrics{}
+			optimizedTransition.Metrics.DamageBySeat = DamageBySeatMetrics{}
 			assertParityTransition(t, fullTransition, optimizedTransition)
 			fullEvents, err := full.authority.InspectBattleEventsJSON(request.BattleID)
 			if err != nil {

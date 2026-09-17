@@ -1,0 +1,349 @@
+{
+  "character": {
+    "id": "monk",
+    "name": "Monk",
+    "source_character": "Monk"
+  },
+  "symbols": {
+    "fist": [1, 2],
+    "palm": [3],
+    "zen": [4, 5],
+    "lotus": [6]
+  },
+  "targets": [
+    {
+      "id": "fist_strike_any",
+      "name": "Fist Strike (at least 3 Fist)",
+      "symbol": "fist",
+      "at_least": 3
+    },
+    {
+      "id": "fist_strike_four",
+      "name": "Fist Strike 4-Fist tier",
+      "symbol": "fist",
+      "at_least": 4
+    },
+    {
+      "id": "fist_strike_five",
+      "name": "Fist Strike 5-Fist tier",
+      "symbol": "fist",
+      "at_least": 5
+    },
+    {
+      "id": "meditate",
+      "name": "Meditate",
+      "symbol": "zen",
+      "at_least": 3
+    },
+    {
+      "id": "combo_strike",
+      "name": "Combo Strike",
+      "requirements": [
+        {"symbol": "fist", "at_least": 3},
+        {"symbol": "palm", "at_least": 1}
+      ]
+    },
+    {
+      "id": "tempest_rush",
+      "name": "Tempest Rush",
+      "symbol": "palm",
+      "at_least": 3
+    },
+    {
+      "id": "fist_of_harmony",
+      "name": "Fist of Harmony (Small Straight)",
+      "patterns": [
+        [1, 2, 3, 4],
+        [2, 3, 4, 5],
+        [3, 4, 5, 6]
+      ]
+    },
+    {
+      "id": "lotus_strike",
+      "name": "Lotus Strike",
+      "symbol": "lotus",
+      "at_least": 4
+    },
+    {
+      "id": "fist_of_tranquility",
+      "name": "Fist of Tranquility (Large Straight)",
+      "patterns": [
+        [1, 2, 3, 4, 5],
+        [2, 3, 4, 5, 6]
+      ]
+    },
+    {
+      "id": "transcendence",
+      "name": "Transcendence! (Ultimate)",
+      "symbol": "lotus",
+      "at_least": 5
+    },
+    {
+      "id": "zen_strike",
+      "name": "Zen Strike (upgrade option)",
+      "requirements": [
+        {"symbol": "fist", "at_least": 2},
+        {"symbol": "zen", "at_least": 2}
+      ]
+    },
+    {
+      "id": "way_of_the_lotus",
+      "name": "Way of the Lotus (upgrade option)",
+      "symbol": "lotus",
+      "at_least": 3
+    },
+    {
+      "id": "way_of_the_monk",
+      "name": "Way of the Monk (upgrade option)",
+      "requirements": [
+        {"symbol": "fist", "at_least": 1},
+        {"symbol": "palm", "at_least": 1},
+        {"symbol": "zen", "at_least": 1},
+        {"symbol": "lotus", "at_least": 1}
+      ]
+    }
+  ],
+  "include_any_of_all": true,
+  "combined_objectives": [
+    {
+      "id": "any_base_damage",
+      "name": "Maximize any Monk base ability with printed damage",
+      "targets": [
+        "fist_strike_any",
+        "combo_strike",
+        "tempest_rush",
+        "fist_of_harmony",
+        "lotus_strike",
+        "fist_of_tranquility",
+        "transcendence"
+      ]
+    },
+    {
+      "id": "any_base_ability",
+      "name": "Maximize any Monk base ability",
+      "targets": [
+        "fist_strike_any",
+        "meditate",
+        "combo_strike",
+        "tempest_rush",
+        "fist_of_harmony",
+        "lotus_strike",
+        "fist_of_tranquility",
+        "transcendence"
+      ]
+    }
+  ],
+  "balance_reports": [
+    {
+      "id": "monk_base_damage",
+      "name": "Monk base raw-damage cycle",
+      "teacher_objective": "any_base_damage",
+      "outcomes": [
+        {"target": "lotus_strike", "damage": 5},
+        {"target": "fist_strike_any", "damage": 6},
+        {"target": "fist_of_harmony", "damage": 6},
+        {"target": "fist_strike_four", "damage": 7},
+        {"target": "fist_of_tranquility", "damage": 7},
+        {"target": "combo_strike", "damage": "43/6"},
+        {"target": "fist_strike_five", "damage": 8},
+        {"target": "transcendence", "damage": 10},
+        {"target": "tempest_rush", "damage": 10.5}
+      ]
+    },
+    {
+      "id": "monk_base_abilities",
+      "name": "Monk base ability cycle including Meditate",
+      "teacher_objective": "any_base_ability",
+      "outcomes": [
+        {"target": "meditate", "damage": 0},
+        {"target": "lotus_strike", "damage": 5},
+        {"target": "fist_strike_any", "damage": 6},
+        {"target": "fist_of_harmony", "damage": 6},
+        {"target": "fist_strike_four", "damage": 7},
+        {"target": "fist_of_tranquility", "damage": 7},
+        {"target": "combo_strike", "damage": "43/6"},
+        {"target": "fist_strike_five", "damage": 8},
+        {"target": "transcendence", "damage": 10},
+        {"target": "tempest_rush", "damage": 10.5}
+      ]
+    }
+  ],
+  "character_analysis": {
+    "reports": {
+      "primary": "monk_base_damage",
+      "teacher": "monk_base_abilities"
+    },
+    "symbol_labels": {
+      "fist": "Fist",
+      "palm": "Palm",
+      "zen": "Zen",
+      "lotus": "Lotus"
+    },
+    "value_label": "raw-damage value",
+    "value_unit": "raw damage",
+    "nothing_label": "Nothing",
+    "nothing_note": "No configured base ability completed",
+    "analysis_note": "Expected listed value counts printed damage only. Expected follow-up dice damage uses its exact average. Chi, Evasive, Cleanse, Knockdown, undefendable damage, incoming defense, card manipulation, and tactical board state receive no hidden value.",
+    "overall_note": "Each final roll is assigned once to the highest-valued completed configured outcome, so outcome percentages are mutually exclusive and total 100% including Nothing.",
+    "reroll_note": "Meditate remains a valid teacher target but contributes zero raw damage. No rerolls means the opening 5d6 roll only; one and two rerolls include that many keep/reroll decisions.",
+    "teacher_policy_description": "The teacher first maximizes the chance of completing any configured base ability, including Meditate, then uses raw damage to break exact success ties.",
+    "value_policy_description": "This policy maximizes expected raw damage on every decision. Chi, Evasive, Cleanse, and Knockdown currently add zero value.",
+    "abilities": [
+      {
+        "name": "Fist Strike",
+        "target": "fist_strike_any",
+        "requirement": "Fist ×3 / ×4 / ×5",
+        "effect": "Deal 6 / 7 / 8 damage",
+        "source": "Fist Strike",
+        "category": "Base offense",
+        "value_kind": "damage",
+        "recommendation": "Reliable raw-damage route and a strong neutral default.",
+        "tiers": [
+          {"target": "fist_strike_any", "value": 6},
+          {"target": "fist_strike_four", "value": 7},
+          {"target": "fist_strike_five", "value": 8}
+        ]
+      },
+      {
+        "name": "Meditate",
+        "target": "meditate",
+        "requirement": "Zen ×3",
+        "effect": "Gain 5 Chi; gain Evasive or Cleanse",
+        "source": "Meditate",
+        "category": "Base utility",
+        "fixed_value": 0,
+        "value_kind": "unvalued utility",
+        "recommendation": "A valid reliability target; its status effects currently contribute zero raw-damage value."
+      },
+      {
+        "name": "Combo Strike",
+        "target": "combo_strike",
+        "requirement": "Fist ×3 + Palm ×1",
+        "effect": "Deal 6 damage; follow-up die averages 7/6 additional damage",
+        "source": "Combo Strike",
+        "category": "Base offense",
+        "fixed_value": "43/6",
+        "value_kind": "expected damage",
+        "recommendation": "Pursue from Fist-heavy rolls that already contain a Palm."
+      },
+      {
+        "name": "Tempest Rush",
+        "target": "tempest_rush",
+        "requirement": "Palm ×3",
+        "effect": "Roll 3 dice; deal their total (10.5 average); Knockdown at 13+",
+        "source": "Tempest Rush",
+        "category": "Base offense",
+        "fixed_value": 10.5,
+        "value_kind": "expected damage",
+        "recommendation": "High raw value but a difficult one-face symbol target."
+      },
+      {
+        "name": "Fist of Harmony",
+        "target": "fist_of_harmony",
+        "requirement": "Small Straight",
+        "effect": "Deal 6 damage; gain 2 Chi",
+        "source": "Fist of Harmony",
+        "category": "Base offense",
+        "fixed_value": 6,
+        "value_kind": "damage",
+        "recommendation": "Flexible straight route; Chi currently adds no numeric value."
+      },
+      {
+        "name": "Lotus Strike",
+        "target": "lotus_strike",
+        "requirement": "Lotus ×4",
+        "effect": "Deal 5 undefendable damage; gain 5 Chi and increase its stack limit",
+        "source": "Lotus Strike",
+        "category": "Base offense",
+        "fixed_value": 5,
+        "value_kind": "damage",
+        "recommendation": "Lotus-heavy opportunistic target; utility receives no extra value yet."
+      },
+      {
+        "name": "Fist of Tranquility",
+        "target": "fist_of_tranquility",
+        "requirement": "Large Straight",
+        "effect": "Deal 7 damage; gain Evasive and 3 Chi",
+        "source": "Fist of Tranquility",
+        "category": "Base offense",
+        "fixed_value": 7,
+        "value_kind": "damage",
+        "recommendation": "Pursue from strong partial-straight openings."
+      },
+      {
+        "name": "Transcendence!",
+        "target": "transcendence",
+        "requirement": "Lotus ×5",
+        "effect": "Deal 10 damage; gain Evasive, Cleanse, and 6 Chi; inflict Knockdown",
+        "source": "Transcendence!",
+        "category": "Base ultimate",
+        "fixed_value": 10,
+        "value_kind": "damage",
+        "recommendation": "Do not force from neutral; pursue from exceptional Lotus-heavy openings."
+      },
+      {
+        "name": "Zen Strike",
+        "target": "zen_strike",
+        "requirement": "Fist ×2 + Zen ×2",
+        "effect": "Deal 6 damage; gain 2 Chi",
+        "source": "Meditate II / Zen Strike",
+        "category": "Upgrade option",
+        "fixed_value": 6,
+        "value_kind": "damage",
+        "recommendation": "Reliable mixed-symbol upgrade route; Chi receives no extra value yet."
+      },
+      {
+        "name": "Way of the Lotus",
+        "target": "way_of_the_lotus",
+        "requirement": "Lotus ×3",
+        "effect": "Deal 2 undefendable damage; gain Evasive and 2 Chi",
+        "source": "Lotus Strike II / Way of the Lotus",
+        "category": "Upgrade option",
+        "fixed_value": 2,
+        "value_kind": "damage",
+        "recommendation": "Easier Lotus pivot whose utility receives no extra value yet."
+      },
+      {
+        "name": "Way of the Monk",
+        "target": "way_of_the_monk",
+        "requirement": "Fist ×1 + Palm ×1 + Zen ×1 + Lotus ×1",
+        "effect": "Gain 2 Evasive; deal 3 undefendable damage",
+        "source": "Fist of Tranquility II / Way of the Monk",
+        "category": "Upgrade option",
+        "fixed_value": 3,
+        "value_kind": "damage",
+        "recommendation": "Flexible four-symbol route; Evasive currently adds no numeric value."
+      }
+    ],
+    "tier_targets": [
+      {"target": "fist_strike_any", "note": "Chance to activate Fist Strike at any tier"},
+      {"target": "fist_strike_four", "note": "Chance to reach at least the 4-Fist tier"},
+      {"target": "fist_strike_five", "note": "Chance to reach the 5-Fist tier"}
+    ],
+    "outcome_labels": {
+      "meditate": "Meditate",
+      "lotus_strike": "Lotus Strike",
+      "fist_strike_any": "Fist Strike — exactly 3 Fist",
+      "fist_of_harmony": "Fist of Harmony",
+      "combo_strike": "Combo Strike",
+      "fist_strike_four": "Fist Strike — exactly 4 Fist",
+      "fist_of_tranquility": "Fist of Tranquility",
+      "fist_strike_five": "Fist Strike — 5 Fist",
+      "transcendence": "Transcendence!",
+      "tempest_rush": "Tempest Rush"
+    },
+    "outcome_notes": {
+      "meditate": "Valid ability completion; status effects currently have zero raw-damage value",
+      "lotus_strike": "5 undefendable damage; Chi receives no extra value",
+      "fist_strike_any": "6 damage; higher Fist Strike tiers are separated below",
+      "fist_of_harmony": "6 damage; Chi receives no extra value",
+      "combo_strike": "Uses the 43/6 expected damage from its follow-up die",
+      "fist_strike_four": "7 damage",
+      "fist_of_tranquility": "7 damage; Evasive and Chi receive no extra value",
+      "fist_strike_five": "8 damage",
+      "transcendence": "10 damage; its status effects receive no extra value",
+      "tempest_rush": "Uses the 10.5 average of its follow-up 3d6"
+    },
+    "adjustments": []
+  }
+}

@@ -11,7 +11,10 @@ import torch
 from sb3_contrib import MaskablePPO
 
 from .bridge import AuthorityBridge
-from .policies import build_policy, select_with_policy
+from .manifest_v3 import OBSERVATION_SCHEMA_V3, ObservationManifestV3
+from .manifest_v4 import OBSERVATION_SCHEMA_V4, ObservationManifestV4
+from .manifest_v5 import OBSERVATION_SCHEMA_V5, ObservationManifestV5
+from .policies import build_policy
 from .schema import MAX_ACTIONS, OBSERVATION_SIZE, SchemaEncoder
 from .schema_v2 import (
     MAX_ACTIONS_V2,
@@ -19,6 +22,9 @@ from .schema_v2 import (
     OBSERVATION_SIZE_V2,
     SchemaEncoderV2,
 )
+from .schema_v3 import SchemaEncoderV3
+from .schema_v4 import EncodedDecisionV4, SchemaEncoderV4
+from .schema_v5 import SchemaEncoderV5
 
 
 @dataclass(frozen=True)
@@ -56,10 +62,33 @@ def collect_demonstrations(
     decisions: int,
     observation_schema: str,
     teacher: str,
+    observation_manifest: Path | None = None,
+    seat_definitions: dict[str, str] | None = None,
 ) -> Demonstrations:
-    if observation_schema == OBSERVATION_SCHEMA_V2:
+    if observation_schema == OBSERVATION_SCHEMA_V5:
+        if observation_manifest is None:
+            raise ValueError("observation v5 demonstrations require a frozen manifest")
+        manifest_v5 = ObservationManifestV5.load(observation_manifest)
+        observation_size = manifest_v5.layout.observation_size
+        maximum_actions = manifest_v5.maximum_legal_candidates
+        encoder = SchemaEncoderV5(manifest_v5)
+    elif observation_schema == OBSERVATION_SCHEMA_V4:
+        if observation_manifest is None:
+            raise ValueError("observation v4 demonstrations require a frozen manifest")
+        manifest_v4 = ObservationManifestV4.load(observation_manifest)
+        observation_size = manifest_v4.layout.observation_size
+        maximum_actions = manifest_v4.maximum_legal_candidates
+        encoder = SchemaEncoderV4(manifest_v4)
+    elif observation_schema == OBSERVATION_SCHEMA_V3:
+        if observation_manifest is None:
+            raise ValueError("observation v3 demonstrations require a frozen manifest")
+        manifest = ObservationManifestV3.load(observation_manifest)
+        observation_size = manifest.layout.observation_size
+        maximum_actions = manifest.maximum_legal_candidates
+        encoder: SchemaEncoder | SchemaEncoderV2 | SchemaEncoderV3 = SchemaEncoderV3(manifest)
+    elif observation_schema == OBSERVATION_SCHEMA_V2:
         observation_size, maximum_actions = OBSERVATION_SIZE_V2, MAX_ACTIONS_V2
-        encoder: SchemaEncoder | SchemaEncoderV2 = SchemaEncoderV2()
+        encoder = SchemaEncoderV2()
     else:
         observation_size, maximum_actions = OBSERVATION_SIZE, MAX_ACTIONS
         encoder = SchemaEncoder()
@@ -78,10 +107,17 @@ def collect_demonstrations(
         binary,
         server_root,
         session_id=f"imitation-{seed}",
-        observation_schema=observation_schema,
+        observation_schema=OBSERVATION_SCHEMA_V2
+        if observation_schema in {OBSERVATION_SCHEMA_V4, OBSERVATION_SCHEMA_V5}
+        else observation_schema,
         transport_mode="full",
         authority_mode="ephemeral",
         telemetry_mode="training",
+        observation_manifest=(
+            None
+            if observation_schema in {OBSERVATION_SCHEMA_V4, OBSERVATION_SCHEMA_V5}
+            else observation_manifest
+        ),
     ) as bridge:
         while collected < decisions:
             episode_seed = seed * 10_000_000 + episodes
@@ -90,6 +126,7 @@ def collect_demonstrations(
             transition = bridge.reset(
                 episode_seed,
                 {seat_id: policy.name for seat_id, policy in policies.items()},
+                seat_definitions=seat_definitions,
             )
             episodes += 1
             while (
@@ -99,12 +136,23 @@ def collect_demonstrations(
             ):
                 actor = transition["actor_id"]
                 decision = encoder.encode(transition)
-                selected = select_with_policy(policies[actor], transition, encoder)
+                selected = policies[actor].select(transition, decision)
+                if (
+                    selected < 0
+                    or selected >= len(decision.action_mask)
+                    or not decision.action_mask[selected]
+                ):
+                    raise RuntimeError(f"teacher selected masked model action {selected}")
                 observations[collected] = decision.observation
                 masks[collected] = decision.action_mask
                 actions[collected] = selected
                 collected += 1
-                transition = bridge.step(selected)
+                authority_selected = (
+                    int(decision.authority_indices[selected])
+                    if isinstance(decision, EncodedDecisionV4)
+                    else selected
+                )
+                transition = bridge.step(authority_selected)
             metrics = transition.get("metrics") or {}
             rejects += int(metrics.get("authority_rejects", 0))
             truncations += int(bool(transition.get("truncation_reason")))

@@ -51,7 +51,22 @@ func (r *Recorder) Accepted(transition Transition) {
 	}
 	cause := r.takeCause(transition.Command.BattleID)
 	context := normalizedCommandContext(transition.Context, transition.Battle, transition.After, transition.Command.ActorID)
-	accepted := baseDraft(transition.Command.BattleID, transition.Battle, transition.After)
+	commandState := transition.Before
+	if commandState == nil {
+		commandState = transition.After
+	}
+	eventContext := baseDraft(transition.Command.BattleID, transition.Battle, commandState)
+	if transition.Before == nil {
+		// A newly started battle may already be at Planning in After. Its
+		// lifecycle records still begin at the first actual segment event.
+		for _, ev := range transition.Events {
+			if ev.Segment != "" || (ev.Type == event.TypeSegmentAdvanced && ev.To != "") {
+				eventContext = advanceEventContext(eventContext, ev)
+				break
+			}
+		}
+	}
+	accepted := eventContext
 	accepted.Kind = "command_accepted"
 	accepted.ActorID = transition.Command.ActorID
 	accepted.Controller = context.Controller
@@ -61,7 +76,7 @@ func (r *Recorder) Accepted(transition Transition) {
 
 	drafts := []draft{{Record: accepted}}
 	if transition.Command.Type == command.TypeStartBattle {
-		started := baseDraft(transition.Command.BattleID, transition.Battle, transition.After)
+		started := eventContext
 		started.Kind = "battle_started"
 		started.ActorID = transition.Command.ActorID
 		started.Controller = context.Controller
@@ -73,7 +88,8 @@ func (r *Recorder) Accepted(transition Transition) {
 
 	library := settledLibrary(transition.After)
 	for _, authorityEvent := range transition.Events {
-		drafts = append(drafts, eventDrafts(authorityEvent, transition, library)...)
+		eventContext = advanceEventContext(eventContext, authorityEvent)
+		drafts = append(drafts, eventDraftsAt(authorityEvent, transition, library, eventContext)...)
 	}
 	drafts = append(drafts, defenseRevealDrafts(transition, library)...)
 	drafts = append(drafts, automaticPlanningDrafts(transition, library)...)
@@ -88,6 +104,34 @@ func (r *Recorder) Accepted(transition Transition) {
 		drafts = append(drafts, draft{Record: completed})
 	}
 	r.appendDrafts(cause, dedupePrivateDrafts(drafts))
+}
+
+// A single command can resolve several segments before returning its snapshot.
+// Unstamped events belong to the current position in that ordered event stream,
+// never automatically to the final snapshot's segment or reaction window.
+func advanceEventContext(current Record, ev event.Event) Record {
+	nextSegment := string(ev.Segment)
+	if ev.Type == event.TypeSegmentAdvanced && ev.To != "" {
+		nextSegment = string(ev.To)
+	}
+	if (nextSegment != "" && nextSegment != current.Segment) || (ev.Round != 0 && ev.Round != current.Round) {
+		current.Stage = ""
+		current.WindowID = ""
+		current.PendingInputID = ""
+	}
+	if nextSegment != "" {
+		current.Segment = nextSegment
+	}
+	if ev.Round != 0 {
+		current.Round = ev.Round
+	}
+	if ev.WindowID != "" {
+		current.WindowID = ev.WindowID
+	}
+	if ev.PendingInputID != "" {
+		current.PendingInputID = ev.PendingInputID
+	}
+	return current
 }
 
 func (r *Recorder) Rejected(transition Transition) {

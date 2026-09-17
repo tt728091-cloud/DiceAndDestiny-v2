@@ -2,8 +2,9 @@ class_name BattlePresentationCatalog
 extends RefCounted
 
 # The authority publishes the exact catalog pinned into the battle. Keeping it
-# here lets existing presentation controls stay small while removing every
-# card/ability/status ID switch from the client.
+# here lets presentation controls use the pinned definitions. Actor-specific
+# upgrades are applied to a fresh presentation dictionary, never the catalog.
+const CARD_SUMMARIES := preload("res://content/card_effect_summaries.gd")
 static var _catalog: Dictionary = {}
 
 static func configure(catalog: Dictionary) -> void:
@@ -24,20 +25,62 @@ static func card(id: String) -> Dictionary:
 		"cost": int(_dictionary(value.get("cost", {})).get("energy", 0)),
 		"text": str(presentation.get("rules_text", "")),
 		"art": "res://assets/battle/cards/%s.png" % id,
+		"effect_summary": str(presentation.get("effect_summary", CARD_SUMMARIES.TEXT.get(id, presentation.get("rules_text", "No effect")))),
 		"targeting": _dictionary(value.get("targeting", {})),
 		"play": _dictionary(value.get("play", {})),
 		"operations": _array(value.get("operations", [])),
 	}
 
-static func ability(id: String) -> Dictionary:
+static func ability(id: String, actor: Dictionary = {}) -> Dictionary:
 	var value := definition("abilities", id)
 	var presentation := _dictionary(value.get("presentation", {}))
+	var rules := str(presentation.get("rules_text", ""))
+	var bonus := int(actor.get("needlefang_damage_bonus", 0))
+	if id == "needlefang" and bonus > 0:
+		var lines: Array[String] = ["Choose a qualified tier (Venom Lens +%d damage included):" % bonus]
+		for tier in needlefang_tiers(actor): lines.append(tier.text)
+		lines.append("Poison overflow applies Incubation if none exists.")
+		rules = "\n".join(lines)
 	return {
 		"name": str(value.get("name", _title(id))),
 		"recipe": _ability_recipe(value),
-		"text": str(presentation.get("rules_text", "")),
+		"text": rules,
 		"targeting": _dictionary(value.get("targeting", {})),
 	}
+
+# Shared by the whole-ability hover and the inline tier buttons.
+static func needlefang_tiers(actor: Dictionary = {}) -> Array[Dictionary]:
+	var value := definition("abilities", "needlefang")
+	var tiers := _array(_dictionary(value.get("qualification", {})).get("activation_tiers", [])).duplicate()
+	tiers.sort_custom(func(a, b): return str(a.get("id", "")) < str(b.get("id", "")))
+	var result: Array[Dictionary] = []
+	for tier in tiers:
+		var damage := 0
+		var poison := 0
+		for operation in _array(tier.get("operations", [])):
+			if operation.get("type") == "deal_damage": damage += int(operation.get("amount", 0)) + int(actor.get("needlefang_damage_bonus", 0))
+			if operation.get("type") == "apply_status" and operation.get("status_id") == "poison": poison += int(operation.get("stack_count", 0))
+		var recipe := _ability_recipe({"qualification": {"activation_tiers": [tier]}})
+		result.append({"id": str(tier.get("id", "")), "label": recipe, "damage": damage, "poison": poison, "text": "%s: %d damage + %d Poison" % [recipe, damage, poison]})
+	return result
+
+# Inline benefits come from the battle's pinned tier operations, like the
+# requirements, so previews remain correct when a content definition changes.
+static func offensive_tier_summaries(id: String) -> Array[Dictionary]:
+	var value := definition("abilities", id)
+	var result: Array[Dictionary] = []
+	for tier in _array(_dictionary(value.get("qualification", {})).get("activation_tiers", [])):
+		var benefits: Array[String] = []
+		for operation in _array(tier.get("operations", [])):
+			match str(operation.get("type", "")):
+				"deal_damage": benefits.append("%d DMG" % int(operation.get("amount", 0)))
+				"provoke": benefits.append("Provoke %d" % int(operation.get("amount", 0)))
+				"apply_status":
+					var status_id := str(operation.get("status_id", ""))
+					var name := str(status(status_id).glyph) if status_id == "poison" else str(status(status_id).name)
+					benefits.append("%s %d%s%s" % ["Gain" if operation.get("target") == "self" else "Apply", int(operation.get("stack_count", 0)), "" if status_id == "poison" else " ", name])
+		result.append({"id": str(tier.get("id", "")), "recipe": _ability_recipe({"qualification": {"activation_tiers": [tier]}}), "summary": " · ".join(benefits)})
+	return result
 
 static func status(id: String) -> Dictionary:
 	var value := definition("statuses", id)

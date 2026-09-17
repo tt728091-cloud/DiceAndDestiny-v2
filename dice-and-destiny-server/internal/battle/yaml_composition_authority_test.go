@@ -1,8 +1,10 @@
 package battle
 
 import (
+	"diceanddestiny/server/internal/battle/event"
 	"encoding/json"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"diceanddestiny/server/internal/battle/command"
@@ -106,14 +108,19 @@ func TestYAMLOnlyCardAbilityAndStatusComposeThroughAuthority(t *testing.T) {
 	}
 
 	result = sendPassFull(t, authority, result)
-	assertFullBattleWait(t, result, "ongoing_effects", 2, "status_roll_reaction")
-	result = sendPassFull(t, authority, result)
-	assertFullBattleWait(t, result, "ongoing_effects", 2, "status_damage_reaction")
-	if len(result.Snapshot.SettledDamage.Sources) != 1 || result.Snapshot.SettledDamage.Sources[0].SourceContentID != "volatile_poison" || result.Snapshot.SettledDamage.Sources[0].FinalAmount != 2 {
-		t.Fatalf("Volatile Poison did not resolve through the shared roll interpreter: %#v", result.Snapshot.SettledDamage.Sources)
-	}
-	result = sendPassFull(t, authority, result)
 	assertFullBattleWait(t, result, "offensive", 2, "planning")
+	foundDamage := false
+	for _, ev := range result.Events {
+		if ev.Type == event.Type("effects_resolved") {
+			raw, _ := json.Marshal(ev.Data)
+			if strings.Contains(string(raw), `"source_content_id":"volatile_poison"`) && strings.Contains(string(raw), `"final_amount":2`) {
+				foundDamage = true
+			}
+		}
+	}
+	if !foundDamage {
+		t.Fatal("automatic Effects omitted YAML Volatile Poison damage")
+	}
 	if !actorHasStatus(result.Snapshot.Actors["goblin"], "volatile_poison", 1) {
 		t.Fatalf("damage outcome unexpectedly removed persistent Volatile Poison: %#v", result.Snapshot.Actors["goblin"].Statuses)
 	}

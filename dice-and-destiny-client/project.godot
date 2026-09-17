@@ -27,6 +27,9 @@ development/enable_snapshots=true
 development/enable_history=true
 development/enable_authority_transcript=true
 presentation/income_animation_seconds=2.0
+presentation/defense_roll_seconds=1.2
+presentation/defense_effects_seconds=2.4
+presentation/defense_hold_seconds=1.5
 
 [display]
 

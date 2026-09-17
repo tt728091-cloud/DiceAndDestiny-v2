@@ -1,0 +1,44 @@
+{
+  "schema_version": 1,
+  "id": "emergency_molt",
+  "name": "Emergency Molt",
+  "type": "reaction",
+  "presentation": {
+    "rules_text": "Prevent 2 from one incoming source. If at least 1 is actually prevented, gain 1 Catalyst after that damage batch."
+  },
+  "cost": {
+    "energy": 1
+  },
+  "play": {
+    "source_zones": [
+      "hand"
+    ],
+    "destination": "discard",
+    "playable_during": [
+      {
+        "segment": "offensive",
+        "phase": "main",
+        "window_purpose": "reaction"
+      },
+      {
+        "segment": "damage_resolution",
+        "phase": "main",
+        "window_purpose": "reaction"
+      }
+    ]
+  },
+  "targeting": {
+    "selector": "venom_choice",
+    "minimum": 0,
+    "maximum": 1
+  },
+  "reaction_window": {
+    "opens": false
+  },
+  "operations": [
+    {
+      "type": "venom_card",
+      "id": "emergency_molt"
+    }
+  ]
+}

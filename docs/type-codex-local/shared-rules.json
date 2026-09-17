@@ -1,0 +1,74 @@
+{
+  "title": "Shared play rules for the fourteen review drafts",
+  "scope": "These rules explain the proposed mixed types. Curse and Venom keep their reviewed rules. The new statuses and mixed-dice behavior still need approval and implementation.",
+  "rules": [
+    [
+      "Reading these rules",
+      "You means the player using the type or the effect that placed a mark. This enemy means the creature carrying the harmful status. Gain puts stacks on you; apply puts them on the chosen enemy. A cap is the most stacks allowed. Keep unused stacks unless the rule says when to remove them."
+    ],
+    [
+      "When cards can be used",
+      "Action: during your Offensive planning, before choosing your ability. Offensive reaction: after the combat dice and chosen abilities are revealed, before attacks. Defensive reaction: after a Defensive ability is rolled. Roll reaction: after dice are rolled for a status, defense or card, before using their results. Application reaction: before a new status or mark is added. Damage reaction: after incoming damage and the health cards at risk are shown, before those cards are removed."
+    ],
+    [
+      "Playing and paying",
+      "Playing a card means using it from your hand, paying its Energy and any other listed costs, and putting it in discard. This counts as a play even if the opponent later cancels its effect. A card you cannot afford is not played and costs nothing. Echo repeating damage, a status activating, drawing a card and discarding a card are not plays from your hand. Pay optional ability costs when choosing the ability; resources it will give you afterward cannot pay those costs."
+    ],
+    [
+      "One creature when types mix",
+      "A mixed creature still uses five combat dice and chooses one Offensive ability. Its chosen types each provide their listed ways to earn resources, even when it has zero stacks. Gaining a status from another type gives that status its printed uses, but does not grant that other type’s separate rewards: gaining Armor does not also give the Stone way to earn Resolve. Card pools are options for building a creature, not a starting deck containing every card."
+    ],
+    [
+      "Numbers and symbols",
+      "These types use faces 1–3 for their first symbol, 4–5 for their second, and 6 for their third. Symbols belong to their type: Blood Fang is not Venom Fang. A matching-number or straight recipe can use dice from any type. Three equal numbers means at least three matching dice. A four-number straight is 1–4, 2–5 or 3–6. A die supplies only one required symbol in a recipe, even if Graft gives it another option. Rune stores a number; it does not add a symbol."
+    ],
+    [
+      "Rolling versus changing a number",
+      "Rolling a die can activate a marked face such as Curse or Boon, even if that number is later rerolled. Changing the number without rolling does not activate either mark. Use the final number for the normal status, defense or card result, including Conductive. A die rolled for one effect may be rerolled at most once and have its number changed at most once. Catalyst acts automatically before optional Soaked retries. Neither can reroll a die the other already retried."
+    ],
+    [
+      "Which die carries a mark",
+      "Combat rolls use your five combat dice. A card such as Pulse that tells an enemy to roll a combat die uses that die and its marks; the extra roll does not change their saved combat results. A Defensive ability instead uses fresh dice of its named type. Proposed mixed Curse/Venom creatures will also roll their marked combat dice for toxins: assign checks to dice 1 through 5 in order, then start again at die 1 if more checks are needed. That mixed-dice rule is a design proposal; playable Venom currently uses separate effect dice."
+    ],
+    [
+      "Extra rolls and locked dice",
+      "Normal combat rolls and their rerolls use the game’s roll limit. Overload adds one attempt, up to four total including the first roll. Entangle uses its existing reduction. Chill instead charges 1 Energy to begin rerolling. Scent explicitly allows one extra single-die attempt after the normal attempts. It can earn Charge and affect Streak, but cannot reroll a Frostbound die."
+    ],
+    [
+      "Attacks, follow-ups and prevention",
+      "An Offensive ability is your attack. Damaging Action cards join the attacks due to resolve and remain separate hits; they do not give extra ability selections. Use your one Defensive ability against one attack or damaging card. Echo, Pulse, Brood and Pounce happen as their text directs, allow damage prevention, and do not grant another Defensive roll. For one incoming hit, apply rolled defense and protective statuses first, then any halving effect, then damage-reaction card prevention."
+    ],
+    [
+      "Applying a status with an attack",
+      "Blocking attack damage does not also stop statuses or resources the ability grants. A reaction that cancels the whole ability stops those effects too. Unless the text specifically puts a mark before damage, a newly applied Blood Mark, Web or similar mark watches later damage, not the attack that just placed it. Effects saying after the attack happen after its damage and attached statuses finish."
+    ],
+    [
+      "Rewards and limits",
+      "Earn prevention rewards only for damage you actually stop: preventing 3 against a 1-damage hit counts as 1. Damage rewards require damage that gets through. Each type can earn its own reward from the same event, but its per-round limit still applies. A new reward becomes available after the action that earned it. It cannot pay for that same action. An extra damage effect cannot repeatedly activate itself through other extra damage effects."
+    ],
+    [
+      "Stack limits, expiry and cleansing",
+      "Extra stacks above the cap are lost unless a rule says otherwise; Poison retains its reviewed Incubation overflow rule. Adding a stack does not refresh older stacks. Next Offensive or next Ongoing Effects means the next one that starts after application. Following round means the round after the current one. Remove unused timed stacks when their stated expiry arrives. Cleanse removes an existing stack. Stopping a new stack prevents its application; it is not a cleanse. Once a status has produced a visible roll or damage to answer, removing the status does not undo that pending effect."
+    ],
+    [
+      "Card and die marks",
+      "Enemy card marks may target the discard pile or cards already revealed by damage, never a hidden hand or deck. Drawing a marked card does not reveal the rest of the hand. Moving a mark keeps its remaining uses and expiry. A face or card may have both a helpful and harmful mark. Removing one named mark leaves the others. A normal status cleanse does not erase card marks, die marks, Corpse records, Echo Records or installed Modules unless the effect explicitly names that kind of target."
+    ],
+    [
+      "Recovery and sacrifice",
+      "One health card is one card in your hand, deck or discard pile. Recovery returns a card previously lost to damage to your discard pile; it is not a draw. Cards sacrificed, paid as costs or otherwise removed without damage cannot be recovered. Recover at most two cards per round across all types. Choose cards already lost before the current attack or damage began, and reserve the recovery when you pay: a failed paid attempt still uses that part of the two-card limit. Do not pay for recovery when there is no card to choose. Recovering a card erases its Corpse token."
+    ],
+    [
+      "Last chances",
+      "Sacrifice permanently removes an additional card from your hand or discard pile as a cost. It cannot be the card being played or a card the incoming damage would already remove, and it must leave you at least one health card. Death Anchor can save you once per battle by returning an earlier damage loss before defeat is decided; it also needs a remaining recovery use that round. Beacon instead selects your next Income draw. Cards cannot be played after defeat."
+    ],
+    [
+      "Transfers and redirects",
+      "Moving a status removes it from one creature and puts it on the other. If the destination cannot receive it, leave it where it was. Moving never duplicates a stack or refreshes its expiry. Redirecting damage moves the stated amount to the enemy instead of you; it keeps its damage type, allows prevention, and does not grant another defense roll. The same point of damage cannot be redirected twice."
+    ],
+    [
+      "Review scope",
+      "Each draft keeps six abilities, 24 cards and four signature statuses or records. Card-specific marks are explained on their cards. Upgrades can be bought once per battle and do not stack with themselves. These are webpage design drafts awaiting review and playtesting, not implemented characters or claims of balanced matchups."
+    ]
+  ]
+}

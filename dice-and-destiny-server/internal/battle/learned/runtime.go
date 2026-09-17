@@ -19,6 +19,7 @@ type runtimeRequest struct {
 	BattleID        string `json:"battle_id,omitempty"`
 	Seed            uint64 `json:"seed,omitempty"`
 	HumanSeat       string `json:"human_seat,omitempty"`
+	Character       string `json:"character,omitempty"`
 	Rematch         bool   `json:"rematch,omitempty"`
 	CommandJSON     string `json:"command_json,omitempty"`
 }
@@ -72,7 +73,7 @@ func HandleRuntimeRequest(requestJSON string) string {
 	var err error
 	switch request.Op {
 	case "reset":
-		value, err = learnedRuntime.session.Reset(request.BattleID, request.Seed, request.HumanSeat, request.Rematch)
+		value, err = learnedRuntime.session.ResetCharacter(request.BattleID, request.Seed, request.HumanSeat, request.Rematch, request.Character)
 	case "submit_human":
 		value, err = learnedRuntime.session.SubmitHuman(request.CommandJSON)
 	case "advance_model":

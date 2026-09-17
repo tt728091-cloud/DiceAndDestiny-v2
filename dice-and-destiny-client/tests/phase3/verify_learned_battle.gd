@@ -36,13 +36,11 @@ func _run() -> void:
 	var menu = BOOTSTRAP.instantiate()
 	root.add_child(menu)
 	await process_frame
-	var menu_text := _button_text(menu)
-	_expect("Classic Battle" in menu_text, "classic mode is missing from the visible menu")
-	_expect("Human Seat A" in menu_text and "Human Seat B" in menu_text, "both learned human seat assignments are missing from the visible menu")
-	var classic_button := _find_button_containing(menu, "Classic Battle")
-	_expect(classic_button != null and classic_button.visible and not classic_button.disabled, "classic D100 mode is not graphically actionable")
-	if classic_button != null:
-		classic_button.pressed.emit()
+	_expect(menu._character_choice.item_count == 2, "character selector is missing")
+	_expect(menu._seat_choice.item_count == 2, "both human seats are missing")
+	# The retired goblin route remains callable for regression coverage, but is
+	# intentionally absent from the player's learned-opponent selection.
+	menu._start_classic()
 	await process_frame
 	var classic_screen = _current_battle_screen()
 	_expect(classic_screen != null, "classic menu click did not open the battle screen")
@@ -55,7 +53,8 @@ func _run() -> void:
 	var learned_menu = BOOTSTRAP.instantiate()
 	root.add_child(learned_menu)
 	await process_frame
-	var learned_button := _find_button_containing(learned_menu, "Learned Mirror · Human Seat A")
+	learned_menu._model_choice.select(5) # preserved v1
+	var learned_button := _find_button_containing(learned_menu, "Start Battle")
 	_expect(learned_button != null and learned_button.visible and not learned_button.disabled, "learned Seat A mode is not graphically actionable")
 	if learned_button != null:
 		learned_button.pressed.emit()

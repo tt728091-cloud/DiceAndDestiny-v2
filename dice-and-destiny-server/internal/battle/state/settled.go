@@ -6,18 +6,20 @@ import "diceanddestiny/server/internal/battle/command"
 // immutable compiled catalog is pinned separately on Battle as JSON so engine
 // commands never need to reload files.
 type SettledRuntime struct {
-	Initialized       bool
-	CompletedRounds   int
-	Stage             string
-	Window            *SettledWindow
-	Actors            map[string]SettledActorRuntime
-	PlanningPublic    map[string]SettledPlanningPublicState
-	OffensiveSources  []SettledDamageSource
-	DefenseSelections map[string]SettledDefense
-	PendingDamage     *SettledDamageBatch
-	TriggerBatch      *SettledTriggerBatch
-	PendingBlind      *SettledBlindResolution
-	Sequence          int
+	ReactionReplanning bool
+	Initialized        bool
+	CompletedRounds    int
+	Stage              string
+	Window             *SettledWindow
+	Actors             map[string]SettledActorRuntime
+	PlanningPublic     map[string]SettledPlanningPublicState
+	OffensiveSources   []SettledDamageSource
+	DefenseSelections  map[string]SettledDefense
+	PendingDamage      *SettledDamageBatch
+	TriggerBatch       *SettledTriggerBatch
+	PendingBlind       *SettledBlindResolution
+	Sequence           int
+	Venom              *VenomRuntime `json:",omitempty"`
 }
 
 type SettledPlanningPublicState struct {
@@ -44,6 +46,7 @@ type SettledActorRuntime struct {
 	QualifiedAbilityIDs []string
 	SelectedAbilityID   string
 	SelectedTierID      string
+	SelectedToxins      []string
 	SelectedTargetIDs   []string
 	SelectedSourceID    string
 	PlanningCommitted   bool
@@ -102,17 +105,21 @@ type SettledDamageSource struct {
 }
 
 type SettledStatusApplication struct {
+	RequirePoison bool   `json:"require_poison,omitempty"`
+	SourceActorID string `json:"source_actor_id,omitempty"`
 	TargetActorID string `json:"target_actor_id"`
 	StatusID      string `json:"status_id"`
 	Stacks        int    `json:"stacks"`
 }
 
 type SettledDefense struct {
-	ActorID    string `json:"actor_id"`
-	AbilityID  string `json:"ability_id"`
-	SourceID   string `json:"source_id"`
-	RolledFace int    `json:"rolled_face,omitempty"`
-	Finalized  bool   `json:"finalized"`
+	ActorID      string `json:"actor_id"`
+	AbilityID    string `json:"ability_id"`
+	SourceID     string `json:"source_id"`
+	RolledFace   int    `json:"rolled_face,omitempty"`
+	RolledFaces  []int  `json:"rolled_faces,omitempty"`
+	CatalystPaid bool   `json:"catalyst_paid,omitempty"`
+	Finalized    bool   `json:"finalized"`
 }
 
 type SettledDamageBatch struct {
@@ -148,6 +155,8 @@ type SettledEffectRoll struct {
 	OperationIndex int       `json:"operation_index"`
 	Die            RolledDie `json:"die"`
 	Resolved       bool      `json:"resolved,omitempty"`
+	Rerolled       bool      `json:"rerolled,omitempty"`
+	FaceSet        bool      `json:"face_set,omitempty"`
 }
 
 type SettledStatusRemoval struct {
@@ -182,6 +191,9 @@ func cloneSettledRuntime(value *SettledRuntime) *SettledRuntime {
 		return nil
 	}
 	cloned := *value
+	if value.Venom != nil {
+		cloned.Venom = CloneVenom(value.Venom)
+	}
 	cloned.Actors = make(map[string]SettledActorRuntime, len(value.Actors))
 	for id, actor := range value.Actors {
 		cloned.Actors[id] = cloneSettledActor(actor)
@@ -197,6 +209,7 @@ func cloneSettledRuntime(value *SettledRuntime) *SettledRuntime {
 	}
 	cloned.DefenseSelections = make(map[string]SettledDefense, len(value.DefenseSelections))
 	for id, defense := range value.DefenseSelections {
+		defense.RolledFaces = append([]int(nil), defense.RolledFaces...)
 		cloned.DefenseSelections[id] = defense
 	}
 	if value.Window != nil {
@@ -231,6 +244,7 @@ func cloneSettledRuntime(value *SettledRuntime) *SettledRuntime {
 }
 
 func cloneSettledActor(value SettledActorRuntime) SettledActorRuntime {
+	value.SelectedToxins = copyStrings(value.SelectedToxins)
 	value.OffensiveAbilityIDs = copyStrings(value.OffensiveAbilityIDs)
 	value.DefensiveAbilityIDs = copyStrings(value.DefensiveAbilityIDs)
 	cards := make(map[string]CardInstance, len(value.CardInstances))

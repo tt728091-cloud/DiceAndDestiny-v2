@@ -1,0 +1,274 @@
+{
+  "id": "grave",
+  "name": "Grave",
+  "identity": "Turn lost cards into Corpse tokens and Remnant. Haunt enemy cards to force a choice, or reserve Remnant for recovery and Death Anchor.",
+  "symbols": [
+    "Bone",
+    "Urn",
+    "Skull"
+  ],
+  "loop": "Create Corpse records when your cards are lost → spend them for Remnant → Haunt visible enemy cards → use Remnant for recovery, or reserve it for Death Anchor.",
+  "statuses": [
+    [
+      "Corpse",
+      "Neutral card record · you · cap 3",
+      "When damage or a sacrifice permanently removes one of your cards, you may place a Corpse token beside that card. Create no more than two Corpses each round. If full, discard an old Corpse token before making a new one. Spending a Corpse does not bring back its card. If the card is recovered, remove its Corpse token."
+    ],
+    [
+      "Remnant",
+      "Positive · you · cap 4",
+      "During Offensive, spend 1 Corpse to gain 2 Remnant. Use this once per round. During Offensive, you may also spend 2 Remnant to place Haunt on an enemy card in their discard pile, once per round. Remnant pays for other Grave cards and abilities. Keep unused Remnant."
+    ],
+    [
+      "Haunt",
+      "Negative card mark · enemy card · max 2 per player",
+      "Mark an enemy card in their discard pile or a card revealed because damage may remove it. When they play the marked card, they must pay 1 extra Energy or take 1 status damage after using it. Then erase Haunt. If damage removes the marked card instead, erase Haunt and give the player who placed it 1 Remnant. Only your first Haunt used each round can charge extra Energy, deal damage or give Remnant. Later marked cards simply lose their Haunt when played or removed that round. Erase unused Haunts at the end of the following round."
+    ],
+    [
+      "Death Anchor",
+      "Positive · you · cap 1",
+      "When damage would leave you with no health cards, you may spend Death Anchor and 2 Remnant to recover one of your cards lost to damage earlier in the battle. Put it in your discard pile before defeat is decided. This saves you only once per battle. It cannot recover a sacrifice or work without a card lost to earlier damage. You must also have one of your two recovery uses left this round."
+    ]
+  ],
+  "abilities": [
+    [
+      "Bone Rake",
+      "Offense · 0E",
+      "3 Bone / 4 Bone / 5 Bone",
+      "4 / 5 / 6 damage and gain 1 Remnant."
+    ],
+    [
+      "Gather Remains",
+      "Offense · 0E",
+      "2 Urn + 1 Skull",
+      "Gain 2 Remnant. Optionally consume 1 Corpse when choosing this ability to draw 1 after resolution."
+    ],
+    [
+      "Grave Calling",
+      "Offense · 0E",
+      "Any three equal numbers",
+      "Deal 4 damage; Haunt one revealed enemy card if available. Optionally spend 1 Remnant for +1 damage when choosing this ability."
+    ],
+    [
+      "Last Procession",
+      "Offense · 0E",
+      "3 Skull",
+      "Deal 6 damage. Optionally consume 1 Corpse and spend 2 Remnant when choosing this ability to return one of your cards previously lost to damage to your discard pile after the attack."
+    ],
+    [
+      "Bone Fence",
+      "Defense · 0E",
+      "Roll 2 Grave dice",
+      "Each Bone prevents 1; each Urn gains 1 Remnant; any Skull draws 1 (maximum 1 card for this defense)."
+    ],
+    [
+      "Crypt Door",
+      "Defense · 1E",
+      "Roll 1 Grave die",
+      "Bone: prevent 2. Urn: prevent 3. Skull: prevent 2 and gain Death Anchor if absent and unused this battle."
+    ]
+  ],
+  "cards": [
+    [
+      "Grave Lantern",
+      "1",
+      "Action",
+      "Gain 2 Remnant."
+    ],
+    [
+      "Whisper on Paper",
+      "1",
+      "Action",
+      "Haunt one revealed enemy card."
+    ],
+    [
+      "Anchor Rite",
+      "1",
+      "Action",
+      "Gain Death Anchor if absent and unused this battle."
+    ],
+    [
+      "Funeral Ledger",
+      "1",
+      "Action",
+      "Draw 1 and gain 1 Remnant."
+    ],
+    [
+      "Read the Remains",
+      "0",
+      "Action",
+      "Spend 1 Corpse to draw 1. The card beside that token stays removed. You do not also gain the two Remnant offered by Remnant’s separate exchange."
+    ],
+    [
+      "Grave Dust",
+      "1",
+      "Action",
+      "Spend 1 Remnant to deal 2 damage to one enemy with this card."
+    ],
+    [
+      "Ossuary Strike",
+      "1",
+      "Offensive reaction",
+      "Spend up to 2 Remnant; add 2 damage each to your attack."
+    ],
+    [
+      "Unearth",
+      "1",
+      "Action",
+      "Spend 2 Remnant and consume 1 Corpse; return one of your cards previously lost to damage to your discard pile."
+    ],
+    [
+      "Inheritance",
+      "0",
+      "Action",
+      "Consume 1 Corpse; gain 1 Energy. Once per round."
+    ],
+    [
+      "Long Eulogy",
+      "1",
+      "Action",
+      "Spend 1 Remnant; draw 2, then discard 1."
+    ],
+    [
+      "Burial Exchange",
+      "1",
+      "Action",
+      "Move one existing Haunt to another revealed card belonging to the same enemy, without refreshing its expiry."
+    ],
+    [
+      "Bone Tokens",
+      "1",
+      "Action",
+      "Consume 1 Corpse; gain 2 Armor. The physical removed card remains removed."
+    ],
+    [
+      "Pall",
+      "1",
+      "Damage reaction",
+      "Prevent 2 from one attack, card or status targeting you."
+    ],
+    [
+      "Ossuary Wall",
+      "1",
+      "Damage reaction",
+      "Consume 1 Corpse; prevent 3 from one incoming attack."
+    ],
+    [
+      "Quiet the Dead",
+      "1",
+      "Action",
+      "Spend 1 Remnant; remove one negative mark from a revealed card you own."
+    ],
+    [
+      "Grave Seal",
+      "1",
+      "Application reaction",
+      "Spend 1 Remnant; stop 1 negative status stack an enemy is about to apply to you."
+    ],
+    [
+      "Rattle the Bones",
+      "1",
+      "Roll reaction",
+      "Reroll one of your dice just rolled for a status, defense or card once."
+    ],
+    [
+      "Mortuary Measure",
+      "1",
+      "Offensive reaction",
+      "Set one of your combat dice that is not Frostbound to face 1 or 4; the final dice must allow the chosen ability."
+    ],
+    [
+      "Name the Fallen",
+      "1",
+      "Damage reaction",
+      "Haunt one enemy health card revealed by incoming damage. If that damage removes the card, its Haunt can give you 1 Remnant, subject to Haunt’s once-per-round limit."
+    ],
+    [
+      "Burial Shroud",
+      "0",
+      "Damage reaction",
+      "Spend 1 Remnant to prevent 2 damage from one status, including Haunt."
+    ],
+    [
+      "Let Go",
+      "0",
+      "Action",
+      "Remove your Death Anchor to gain 2 Remnant. This does not use its once-per-battle rescue, so you may gain another Anchor later if you have not yet been rescued."
+    ],
+    [
+      "Ossuary Catalogue",
+      "1",
+      "Action",
+      "Upgrade once per battle: your first Corpse-to-Remnant conversion each round grants 3 instead of 2."
+    ],
+    [
+      "Return the Name",
+      "2",
+      "Action",
+      "Spend 3 Remnant and consume 2 Corpses; return up to two of your cards previously lost to damage to your discard pile."
+    ],
+    [
+      "Last Lantern",
+      "2",
+      "Damage reaction",
+      "Spend 2 Remnant; prevent 3 and gain Death Anchor if absent and unused. A subsequent rescue still costs 2 Remnant."
+    ]
+  ],
+  "pairs": [
+    [
+      "blood",
+      "Sacrifice earns Ichor once per round and can create a Corpse for Remnant. The sacrificed card stays removed; Grave’s recovery must choose a different card previously lost to damage."
+    ],
+    [
+      "flame",
+      "Losing an Ember-marked card to damage can give Heat and a Corpse. Haunt can also earn Heat if the enemy chooses its status damage instead of paying the extra Energy."
+    ],
+    [
+      "verdant",
+      "Regrowth can recover a card with a Corpse token, removing that token. Spend the Corpse for Remnant before recovering its card to get use from both effects, while paying each recovery cost normally."
+    ],
+    [
+      "radiant",
+      "Grave can recover a lost card into discard; Beacon selects that card for the next Income draw. Recovering the card removes its Corpse token. Only Death Anchor provides a last-chance rescue."
+    ]
+  ],
+  "example": "Damage removes an Ember-marked card: Flame gains Heat and Grave may create a Corpse beside that card. Spend the Corpse for Remnant. If you later recover the card, it no longer has a Corpse to spend. A sacrificed card can create a Corpse but cannot be recovered.",
+  "counter": "An enemy may pay Haunt’s extra Energy to avoid its damage. Pressure Remnant spending so Death Anchor lacks its two-stack cost. A Corpse token is not a health card and cannot save a defeated creature by itself.",
+  "balance": "Corpse creates no more than two tokens per round and keeps no more than three. A recovered card loses its token. Haunt can charge, damage or reward only once per round for the player who placed it. Death Anchor is Grave’s one last-chance rescue per battle and still shares the normal recovery limit.",
+  "hooks": [
+    "H-22 public card overlays",
+    "H-24 removal reason and linked records",
+    "H-26 pending defeat",
+    "Card played and restoration"
+  ],
+  "review_status": "Reworked statuses — awaiting user review",
+  "version": 2,
+  "combos": [
+    [
+      "Read the Remains or Remnant conversion",
+      "A Corpse can become a drawn card through Read the Remains, or two Remnant through the type’s normal exchange. Spending it for one choice does not also grant the other."
+    ],
+    [
+      "Whisper on Paper → enemy card play → Flame Heat",
+      "Haunt a card the enemy may redraw. If they choose its damage rather than the extra Energy, that status damage can earn Heat. If damage removes the marked card instead, gain Remnant."
+    ]
+  ],
+  "status_examples": {
+    "Corpse": {
+      "job": "Remember a lost card so its remains can be spent.",
+      "example": "Sacrifice a card and mark it with a Corpse. Spend the Corpse for Remnant later; the sacrificed card stays removed."
+    },
+    "Remnant": {
+      "job": "Turn lost cards into hauntings and recovery tools.",
+      "example": "Spend a Corpse for two Remnant, then spend those Remnant to Haunt a discarded enemy card."
+    },
+    "Haunt": {
+      "job": "Make one card costly to use, or useful to you when lost.",
+      "example": "The enemy plays a Haunted card with no spare Energy. The card still works, but they take 1 damage afterward."
+    },
+    "Death Anchor": {
+      "job": "Offer Grave one costly last chance to survive.",
+      "example": "The current hit removes your last card. Spend the Anchor and Remnant to recover a card lost on a previous hit and stay alive with one health card."
+    }
+  }
+}

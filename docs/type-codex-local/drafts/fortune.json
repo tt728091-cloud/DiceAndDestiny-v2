@@ -1,0 +1,274 @@
+{
+  "id": "fortune",
+  "name": "Fortune",
+  "identity": "Mark a face with Boon, risk rerolls for Streak, and spend Insurance to keep progress after a miss. Favor offers a small, reliable number change.",
+  "symbols": [
+    "Pip",
+    "Coin",
+    "Star"
+  ],
+  "loop": "Mark Boon faces → risk rerolls to grow Streak and earn Favor → spend Insurance to protect a missed attempt → cash in three Streak for Jackpot or use Favor for a small number change.",
+  "statuses": [
+    [
+      "Favor",
+      "Positive · you · cap 4",
+      "When you physically roll a face marked with your Boon, gain 1 Favor. Earn this no more than twice per round. During Offensive, spend 2 Favor to change one of your combat dice by +1 or −1, staying within 1–6. Use this once per round. Changing a number does not count as rolling a Boon. Keep unused Favor. You cannot change a Frostbound die."
+    ],
+    [
+      "Boon",
+      "Positive die-face mark · your combat dice · max 2 marked faces",
+      "Mark one face on one of your combat dice. Rolling that face earns Favor, even when you roll that die for a status or another effect. Changing a die to that face does not earn Favor. Erase the Boon after it is rolled twice, or after your next Offensive segment ends. Boon and Curse can share a face and both work when it is rolled."
+    ],
+    [
+      "Streak",
+      "Positive · you · cap 3",
+      "Whenever you choose to reroll combat dice during Offensive, gain 1 Streak if at least one of those dice lands on Boon. Otherwise lose 1 Streak. Count the whole reroll attempt once, not each die. During Offensive, spend 3 Streak for Jackpot: gain 1 Energy and draw 2 cards. Use Jackpot once per round. Keep unused Streak."
+    ],
+    [
+      "Insurance",
+      "Positive · you · cap 2",
+      "When one of your voluntary Offensive rerolls misses every Boon, you may spend 1 Insurance to keep the Streak you would have lost. It does not give Favor or turn the miss into a hit. Keep unused Insurance."
+    ]
+  ],
+  "abilities": [
+    [
+      "Lucky Strike",
+      "Offense · 0E",
+      "3 Pip / 4 Pip / 5 Pip",
+      "4 / 5 / 6 damage and gain 1 Favor."
+    ],
+    [
+      "Place the Bet",
+      "Offense · 0E",
+      "2 Coin + 1 Star",
+      "Apply one Boon if a slot exists; gain 1 Insurance."
+    ],
+    [
+      "Running Numbers",
+      "Offense · 0E",
+      "Any four-number straight",
+      "Deal 5 damage. Optionally spend 1 Favor when choosing this ability to gain 1 Streak afterward."
+    ],
+    [
+      "Sevenfold Smile",
+      "Offense · 0E",
+      "3 Star",
+      "Deal 6 damage; apply one Boon if a slot exists and gain 1 Favor."
+    ],
+    [
+      "Lucky Break",
+      "Defense · 0E",
+      "Roll 2 Fortune dice",
+      "Each Pip prevents 1; each Coin gains 1 Favor; any Star gains 1 Insurance."
+    ],
+    [
+      "House Guard",
+      "Defense · 1E",
+      "Roll 1 Fortune die",
+      "Pip: prevent 2. Coin: prevent 3. Star: prevent 2 and apply one Boon if a slot exists."
+    ]
+  ],
+  "cards": [
+    [
+      "Good Omen",
+      "1",
+      "Action",
+      "Apply one Boon to a chosen face on one of your combat dice if a slot exists."
+    ],
+    [
+      "Pocket Favor",
+      "1",
+      "Action",
+      "Gain 2 Favor."
+    ],
+    [
+      "Safety Net",
+      "1",
+      "Action",
+      "Gain 2 Insurance."
+    ],
+    [
+      "Lucky Ledger",
+      "1",
+      "Action",
+      "Draw 1 and gain 1 Favor."
+    ],
+    [
+      "Mark the Risk",
+      "1",
+      "Action",
+      "Apply one Boon to a face that already has Curse, or apply an ordinary Boon if none of your faces have Curse."
+    ],
+    [
+      "Small Wager",
+      "0",
+      "Action",
+      "Spend 1 Favor; roll one of your combat dice to determine this card’s result. On 1–3 gain 1 Insurance; on 4–6 gain 1 Streak."
+    ],
+    [
+      "Raise the Stakes",
+      "1",
+      "Offensive reaction",
+      "Spend up to 2 Favor; add 2 damage each to your attack."
+    ],
+    [
+      "Cash Out",
+      "0",
+      "Action",
+      "Spend 2 Favor; gain 1 Energy. Once per round."
+    ],
+    [
+      "Bank the Run",
+      "1",
+      "Action",
+      "Spend 2 Streak; draw 2 and gain 1 Insurance. Does not count as Jackpot."
+    ],
+    [
+      "Move the Omen",
+      "1",
+      "Action",
+      "Move one of your Boon marks to an unmarked face of the same die, preserving remaining hits and expiry."
+    ],
+    [
+      "Favorable Study",
+      "1",
+      "Action",
+      "Spend 1 Favor; draw 2, then discard 1."
+    ],
+    [
+      "Double Cover",
+      "1",
+      "Action",
+      "Spend 1 Favor; gain 2 Insurance."
+    ],
+    [
+      "Nudge Fate",
+      "1",
+      "Offensive reaction",
+      "Shift the number on one of your combat dice that is not Frostbound by 1 without going below 1 or above 6. Your final dice must still allow the ability you choose. Boon does not trigger."
+    ],
+    [
+      "Risk Again",
+      "1",
+      "Roll reaction",
+      "Spend 1 Favor; physically reroll one of your dice just rolled for a status, defense or card once. Curse or Boon can activate if the die rolls a marked face."
+    ],
+    [
+      "Safe Number",
+      "1",
+      "Roll reaction",
+      "Spend 1 Favor; set one of your dice just rolled for a status, defense or card to face 3. Changing a number does not activate Boon or Curse."
+    ],
+    [
+      "Lucky Escape",
+      "1",
+      "Damage reaction",
+      "Prevent 2 from one attack, card or status targeting you."
+    ],
+    [
+      "Covered Loss",
+      "0",
+      "Damage reaction",
+      "Spend 1 Insurance to prevent 2 damage from one attack, card or status. That Insurance cannot also protect your Streak. This gives no Favor."
+    ],
+    [
+      "Change Fortune",
+      "1",
+      "Application reaction",
+      "Spend 1 Favor; stop 1 negative status stack an enemy is about to apply to you."
+    ],
+    [
+      "Walk Away",
+      "0",
+      "Action",
+      "Remove one of your Boon marks; gain 1 Favor. Its remaining potential is lost."
+    ],
+    [
+      "Even Odds",
+      "1",
+      "Action",
+      "After your first combat roll, set one of your combat dice that is not Frostbound to face 4. No Streak or Favor trigger."
+    ],
+    [
+      "Hedge the Bet",
+      "1",
+      "Damage reaction",
+      "Spend 1 Streak; prevent 3 from one incoming attack."
+    ],
+    [
+      "Fortune Almanac",
+      "1",
+      "Action",
+      "Upgrade once per battle: the first physical Boon hit each round grants 2 Favor instead of 1; still uses one of two reward slots."
+    ],
+    [
+      "Golden Run",
+      "2",
+      "Action",
+      "Spend 2 Favor; gain 2 Streak and 1 Insurance. Normal caps apply; no automatic Jackpot."
+    ],
+    [
+      "Perfect Exit",
+      "2",
+      "Damage reaction",
+      "Spend 3 Favor; prevent 4 and gain 1 Insurance after the damage is dealt."
+    ]
+  ],
+  "pairs": [
+    [
+      "curse",
+      "Boon and Curse can share a die face. A real roll of that face activates both. Insurance can protect Streak when a reroll misses Boon, but cannot stop Curse when its marked face is rolled."
+    ],
+    [
+      "storm",
+      "Voluntary combat rerolls earn Charge while giving Boon and Streak a chance to work. Insurance can protect a missed Streak without losing that reroll’s Charge reward."
+    ],
+    [
+      "arcane",
+      "Rune can save a useful number for a later round while Insurance protects Streak during risky rerolls. Using Rune to set a Boon face helps a recipe but gives no Favor or Streak."
+    ],
+    [
+      "radiant",
+      "Purify Face can erase Curse while keeping Boon on the same face, earning Grace for the cleanse. Fortune can then reroll that die for Boon without risking the removed Curse."
+    ]
+  ],
+  "example": "You have two Streak and one Insurance. A voluntary reroll misses every Boon, so Streak would fall to one. Spend Insurance to keep two instead. You gain no Favor from that miss. A later reroll hitting Boon can bring you to three Streak for Jackpot.",
+  "counter": "Boon marks expire and disappear after two hits. A player must risk a real reroll to earn Streak; setting a marked face gives no Boon reward. Make Fortune spend Insurance defensively with Covered Loss to expose its next risky reroll.",
+  "balance": "Favor gains from Boon are capped at two rewards per round, though a Boon’s two-hit lifetime still advances after that limit. Count Streak once per voluntary reroll, regardless of how many Boons appear. Insurance preserves one otherwise-lost Streak; it gives neither damage prevention nor Favor without a card saying so.",
+  "hooks": [
+    "H-10 physical roll and command grouping",
+    "H-04/H-18 effect-roll overlays",
+    "H-12 final qualification distinction",
+    "Resource spend and bounded reward"
+  ],
+  "review_status": "Reworked statuses — awaiting user review",
+  "version": 2,
+  "combos": [
+    [
+      "Good Omen → reroll → Insurance",
+      "Mark a face, then decide which dice to reroll. A Boon hit grows Streak. Insurance can preserve your progress when the attempt misses, without turning it into a successful roll."
+    ],
+    [
+      "Running Numbers → Golden Run → Jackpot",
+      "The ability and card can supply Streak directly, using Favor and Energy. Jackpot spends three Streak for Energy and two drawn cards; it does not automatically happen when you reach three."
+    ]
+  ],
+  "status_examples": {
+    "Favor": {
+      "job": "Trade earned luck for a small, reliable correction.",
+      "example": "Use two Favor to change a 5 to a 6. This may finish your ability, but it does not earn Favor even if 6 has Boon."
+    },
+    "Boon": {
+      "job": "Put a reward on a specific physical face.",
+      "example": "Roll a face bearing both Boon and Curse: you gain Favor and also suffer that Curse’s normal effect."
+    },
+    "Streak": {
+      "job": "Risk a good run for a larger payoff.",
+      "example": "Reroll three dice and hit two Boons: gain one Streak. Your next reroll hits none, so you lose one Streak."
+    },
+    "Insurance": {
+      "job": "Protect progress when you decide to risk another reroll.",
+      "example": "At two Streak, you reroll and miss. Spend Insurance to stay at two Streak and keep your chance of a later Jackpot."
+    }
+  }
+}

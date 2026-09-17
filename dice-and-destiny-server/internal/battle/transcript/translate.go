@@ -12,8 +12,12 @@ import (
 )
 
 func eventDrafts(authorityEvent event.Event, transition Transition, library content.BattleLibrary) []draft {
+	base := advanceEventContext(baseDraft(transition.Command.BattleID, transition.Battle, transition.After), authorityEvent)
+	return eventDraftsAt(authorityEvent, transition, library, base)
+}
+
+func eventDraftsAt(authorityEvent event.Event, transition Transition, library content.BattleLibrary, base Record) []draft {
 	battle := transition.After
-	base := baseDraft(transition.Command.BattleID, transition.Battle, battle)
 	base.Kind = string(authorityEvent.Type)
 	base.ActorID = authorityEvent.ActorID
 	base.TargetActorID = authorityEvent.TargetActorID
@@ -69,6 +73,18 @@ func eventDrafts(authorityEvent event.Event, transition Transition, library cont
 			return []draft{{Record: base}}
 		}
 		base.Kind = "die_rolled"
+		if stringValue(authorityEvent.Data, "source_type") == "catalyst" {
+			base.Visibility = VisibilityPublic
+			base.SourceType = "status"
+			base.SourceID = "catalyst"
+			base.StatusID = stringValue(authorityEvent.Data, "status_id")
+			base.Summary = fmt.Sprintf("%s's Catalyst automatically rerolled %s's %s die %d: %d → %d. The reroll is complete; passing only declines a card response.",
+				actorName(battle, stringValue(authorityEvent.Data, "holder")), actorName(battle, authorityEvent.ActorID),
+				contentName(library, "status", base.StatusID), intValue(authorityEvent.Data, "die_index")+1,
+				intValue(authorityEvent.Data, "face_before"), rolls[0].Face)
+			base.Details["dice"] = rolls
+			return []draft{{Record: base}}
+		}
 		base.Visibility = privateVisibility(authorityEvent.ActorID, transition.Battle, battle)
 		base.Summary = fmt.Sprintf("%s rolled %s", actorName(battle, authorityEvent.ActorID), faceList(rolls))
 		base.Details["dice"] = rolls
@@ -80,6 +96,13 @@ func eventDrafts(authorityEvent event.Event, transition Transition, library cont
 	case event.TypeInteractionWindowOpened:
 		rollGroups := effectRollGroups(authorityEvent.Data["rolls"])
 		if len(rollGroups) == 0 {
+			if batchID := stringValue(authorityEvent.Data, "batch_id"); batchID != "" && base.Segment == "ongoing_effects" && authorityEvent.Purpose == "" {
+				base.Kind = "status_trigger_batch_opened"
+				base.Visibility = VisibilityDebugSystem
+				base.SourceID = batchID
+				base.Summary = "Authority began resolving ongoing status effects"
+				return []draft{{Record: base}}
+			}
 			if battle != nil && battle.Settled != nil && battle.Settled.TriggerBatch != nil && base.Segment == "ongoing_effects" {
 				batch := battle.Settled.TriggerBatch
 				base.Kind = "status_trigger_batch_opened"
@@ -169,6 +192,10 @@ func eventDrafts(authorityEvent event.Event, transition Transition, library cont
 	case event.TypeDamageModified:
 		base.Visibility = VisibilityPublic
 		base.Summary = fmt.Sprintf("%s modified incoming damage", actorName(battle, authorityEvent.ActorID))
+		if cardID := stringValue(authorityEvent.Data, "card_definition_id"); cardID != "" {
+			base.CardDefinitionID = cardID
+			base.Summary = fmt.Sprintf("%s played %s: incoming damage %v → %v", actorName(battle, authorityEvent.ActorID), contentName(library, "card", cardID), authorityEvent.Data["damage_before"], authorityEvent.Data["damage_after"])
+		}
 		return []draft{{Record: base}}
 	case event.TypeDamageCommitted:
 		base.Visibility = VisibilityPublic
@@ -373,7 +400,9 @@ func statusOutcomeDrafts(base Record, data map[string]any, transition Transition
 			}
 		}
 		redundant := false
-		if strings.HasPrefix(operation.Type, "remove_status") && transition.Before != nil {
+		// Before may precede the previous round's damage applications. It
+		// cannot prove a status was absent when this later Effects roll ran.
+		if strings.HasPrefix(operation.Type, "remove_status") && transition.Before != nil && transition.Before.Segment.Round == base.Round && string(transition.Before.Segment.Current) == base.Segment {
 			redundant = statusStacks(transition.Before.Actors[roll.ActorID].Statuses)[roll.SourceContentID] == 0
 		}
 		record := base

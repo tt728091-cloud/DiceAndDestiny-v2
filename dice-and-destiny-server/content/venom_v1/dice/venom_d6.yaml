@@ -1,0 +1,33 @@
+{
+  "schema_version": 1,
+  "id": "venom_d6",
+  "name": "Venom D6",
+  "die_type": "combat",
+  "side_count": 6,
+  "faces": [
+    {
+      "number": 1,
+      "symbol": "fang"
+    },
+    {
+      "number": 2,
+      "symbol": "fang"
+    },
+    {
+      "number": 3,
+      "symbol": "fang"
+    },
+    {
+      "number": 4,
+      "symbol": "gland"
+    },
+    {
+      "number": 5,
+      "symbol": "gland"
+    },
+    {
+      "number": 6,
+      "symbol": "coil"
+    }
+  ]
+}

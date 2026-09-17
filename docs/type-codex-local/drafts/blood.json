@@ -1,0 +1,274 @@
+{
+  "id": "blood",
+  "name": "Blood",
+  "identity": "Choose when to sacrifice a health card for Ichor. Bleed and Blood Mark keep pressure on the enemy, while a successful attack can recover a card lost to earlier damage.",
+  "symbols": [
+    "Fang",
+    "Vein",
+    "Chalice"
+  ],
+  "loop": "Mark an enemy to earn Ichor from damage → use Ichor to prepare recovery on a successful attack → apply Bleed for steady pressure → reserve Clot for a dangerous Ongoing Effects.",
+  "statuses": [
+    [
+      "Ichor",
+      "Positive · you · cap 4",
+      "The first time each round you sacrifice one of your cards, gain 2 Ichor. Before your Offensive attack, you may spend 2 Ichor. If that attack makes the enemy lose a health card, return one of your cards previously lost to damage to your discard pile. Use this recovery once per round. Sacrificed cards cannot be recovered. Keep unused Ichor."
+    ],
+    [
+      "Bleed",
+      "Existing negative · enemy · cap 3",
+      "During Ongoing Effects, this enemy takes 1 damage per Bleed, then remove 1 Bleed. No die is rolled."
+    ],
+    [
+      "Blood Mark",
+      "Negative · enemy · cap 2",
+      "When damage makes this enemy lose at least one health card, remove 1 Blood Mark. The player who placed it gains 1 Ichor. Use only one Mark for damage dealt together, regardless of how many cards are lost. A sacrifice does not trigger Blood Mark. Remove unused Marks at the end of the following round."
+    ],
+    [
+      "Clot",
+      "Positive · you · cap 2",
+      "When normal Poison or Bleed would damage you during Ongoing Effects, spend 1 Clot to prevent all damage from one of those statuses for that Ongoing Effects. Poison still rolls and can clear normally; Bleed still loses one stack. Use Clot once per round. Keep unused Clot. Clot does not stop Volatile Poison."
+    ]
+  ],
+  "abilities": [
+    [
+      "Scarlet Cut",
+      "Offense · 0E",
+      "3 Fang / 4 Fang / 5 Fang",
+      "4 / 5 / 6 damage and apply 1 Blood Mark to that enemy after damage is dealt. This new Mark does not count that same damage."
+    ],
+    [
+      "Open Vein",
+      "Offense · 0E",
+      "2 Vein + 1 Chalice",
+      "Gain 2 Ichor and 1 Clot. No health payment."
+    ],
+    [
+      "Crimson Thread",
+      "Offense · 0E",
+      "2 Fang + 2 Vein + 1 Chalice",
+      "Deal 4 damage and apply 1 Bleed. Optionally spend 1 Ichor when choosing this ability to apply one additional Bleed."
+    ],
+    [
+      "Red Communion",
+      "Offense · 0E",
+      "3 Chalice",
+      "Deal 6 damage. When choosing this ability, you may spend 1 Ichor to apply 1 Bleed and gain 1 Clot after the attack. You may separately use Ichor’s recovery rule if you can spend its 2 Ichor cost."
+    ],
+    [
+      "Sanguine Guard",
+      "Defense · 0E",
+      "Roll 2 Blood dice",
+      "Each Fang prevents 1; each Vein gains 1 Ichor; any Chalice gains 1 Clot."
+    ],
+    [
+      "Blood Aegis",
+      "Defense · 1E",
+      "Roll 1 Blood die",
+      "Fang: prevent 2. Vein: prevent 3. Chalice: prevent 2 and apply 1 Blood Mark to the attacker."
+    ]
+  ],
+  "cards": [
+    [
+      "Blood Seal",
+      "1",
+      "Action",
+      "Apply 1 Blood Mark to one enemy."
+    ],
+    [
+      "Pin the Wound",
+      "1",
+      "Action",
+      "Apply 1 Bleed to one enemy."
+    ],
+    [
+      "Stored Vitae",
+      "1",
+      "Action",
+      "Gain 2 Ichor."
+    ],
+    [
+      "Coagulum",
+      "1",
+      "Action",
+      "Gain 1 Clot and draw 1."
+    ],
+    [
+      "Bloodletting",
+      "0",
+      "Action",
+      "Sacrifice one additional card from your hand or discard pile, then draw 1. You must keep at least one health card after paying. Your first sacrifice each round earns 2 Ichor."
+    ],
+    [
+      "Red Journal",
+      "1",
+      "Action",
+      "Draw 2, then discard 1."
+    ],
+    [
+      "Crimson Edge",
+      "1",
+      "Offensive reaction",
+      "Spend up to 2 Ichor; add 2 damage each to your attack."
+    ],
+    [
+      "Wound Wager",
+      "1",
+      "Action",
+      "Spend 1 Ichor; apply 1 Bleed and 1 Blood Mark to one enemy."
+    ],
+    [
+      "Vein Exchange",
+      "0",
+      "Action",
+      "Spend 2 Ichor; gain 1 Energy. Once per round."
+    ],
+    [
+      "Borrowed Pulse",
+      "1",
+      "Action",
+      "Spend 2 Ichor to return one of your cards previously lost to damage to your discard pile. Unlike Ichor’s attack reward, this does not require you to damage an enemy."
+    ],
+    [
+      "Deep Cut",
+      "1",
+      "Offensive reaction",
+      "Spend 1 enemy Bleed; add 2 damage to your attack against that enemy."
+    ],
+    [
+      "Scar Memory",
+      "1",
+      "Action",
+      "Spend 1 Clot; gain 2 Ichor."
+    ],
+    [
+      "Clotting Band",
+      "1",
+      "Damage reaction",
+      "Prevent 2 from one attack, card or status targeting you."
+    ],
+    [
+      "Sanguine Pact",
+      "1",
+      "Damage reaction",
+      "Sacrifice one additional card from your hand or discard pile to prevent 4 damage from one attack, card or status. Choose a card that the incoming damage would not already remove. You must keep at least one health card after paying. The sacrificed card cannot be recovered."
+    ],
+    [
+      "Redirection of Pain",
+      "1",
+      "Damage reaction",
+      "Spend 2 Ichor. Take 1 less damage from one enemy attack, card or status; that enemy takes that 1 damage instead. They may prevent it but do not roll another Defensive ability. The same damage cannot be redirected again."
+    ],
+    [
+      "Pulse Check",
+      "1",
+      "Offensive reaction",
+      "Set one of your combat dice that is not Frostbound to face 1 or 4; the final dice must allow the chosen ability."
+    ],
+    [
+      "Vein Compass",
+      "1",
+      "Roll reaction",
+      "Reroll one of your dice just rolled for a status, defense or card. Use the new number for that effect; Curse or Boon can still activate on either roll if it hits a marked face."
+    ],
+    [
+      "Wash the Scar",
+      "1",
+      "Action",
+      "Spend 1 Ichor; remove 1 negative status stack from yourself."
+    ],
+    [
+      "Stem the Flow",
+      "0",
+      "Action",
+      "Remove 1 Bleed from yourself; gain 1 Clot. Requires Bleed."
+    ],
+    [
+      "Blood Price",
+      "1",
+      "Application reaction",
+      "Spend 1 Ichor; stop 1 negative status stack an enemy is about to apply to you."
+    ],
+    [
+      "Crimson Insurance",
+      "1",
+      "Damage reaction",
+      "Choose one of your health cards revealed by incoming damage. If that damage removes the card, gain 1 Ichor and 1 Clot afterward."
+    ],
+    [
+      "Vitae Ledger",
+      "1",
+      "Action",
+      "Upgrade once per battle: the first Blood Mark you consume each round grants 2 Ichor instead of 1."
+    ],
+    [
+      "Heart’s Reserve",
+      "2",
+      "Damage reaction",
+      "Spend 3 Ichor to prevent 4 damage from one attack, card or status. If that damage still removes a health card, return one of your cards lost to earlier damage to your discard pile afterward."
+    ],
+    [
+      "Final Transfusion",
+      "2",
+      "Action",
+      "Spend 3 Ichor to return two of your cards previously lost to damage to your discard pile. Use once per battle, during your Offensive planning. You cannot play it after defeat."
+    ]
+  ],
+  "pairs": [
+    [
+      "venom",
+      "Poison damage can consume Blood Mark for Ichor, setting up Blood’s next attack-heal payment. Clot also offers one round of protection against normal Poison on the mixed creature, without cleansing it."
+    ],
+    [
+      "grave",
+      "Sacrifice earns Ichor once per round and can create a Corpse for Remnant. The sacrificed card stays removed; Grave’s recovery must choose a different card previously lost to damage."
+    ],
+    [
+      "stone",
+      "Sanguine Pact sacrifices a card to prevent attack damage. That can earn Ichor from the sacrifice and Resolve from preventing at least 2. Armor protects against later attacks but cannot reduce sacrifice costs."
+    ],
+    [
+      "verdant",
+      "Bleed applying to a Spored enemy earns Growth. Growth pays for protection and recovery while Blood spends Ichor on conditional recovery. Neither type can recover cards paid as sacrifices."
+    ]
+  ],
+  "example": "An enemy with Blood Mark loses a card to Poison. You gain 1 Ichor. Add one saved Ichor and spend both before attacking. If the attack removes an enemy health card, recover a card you lost to earlier damage. A fully blocked attack gives no recovery.",
+  "counter": "Block an Ichor-funded attack to deny its recovery after the cost is paid. Remove Blood Mark to cut off safe Ichor generation. Clot handles normal Poison or Bleed for one round; other damage still gets through.",
+  "balance": "The existing Bleed rule stays unchanged: three stacks deal 3, then 2, then 1 damage over successive Ongoing Effects, with no dice. Ichor recovery requires both payment and a damaging attack. Clot does not remove the affliction and does not protect against Volatile Poison.",
+  "hooks": [
+    "H-24 actual health-card removal",
+    "Card paid/removal reason",
+    "H-06 status damage",
+    "H-26 pending versus final defeat"
+  ],
+  "review_status": "Reworked statuses — awaiting user review",
+  "version": 2,
+  "combos": [
+    [
+      "Blood Seal → Pin the Wound → Ichor",
+      "Apply a Mark before Bleed deals damage. One health-card loss consumes one Mark and earns Ichor; several lost cards do not multiply that reward."
+    ],
+    [
+      "Bloodletting → Ichor attack payment → Clot",
+      "A sacrifice earns two Ichor once per round, but that sacrificed card cannot be recovered. Spend Ichor to recover an earlier damage loss if your attack lands; keep Clot for enemy Poison or Bleed."
+    ]
+  ],
+  "status_examples": {
+    "Ichor": {
+      "job": "Trade a health payment for conditional recovery and Blood techniques.",
+      "example": "Spend Ichor before attacking. If the enemy blocks all damage, you paid the Ichor but recover no card."
+    },
+    "Bleed": {
+      "job": "Deal damage that declines one stack at a time.",
+      "example": "With three Bleed, you take 3 damage and keep two stacks. If nothing changes, later rounds deal 2, then 1."
+    },
+    "Blood Mark": {
+      "job": "Let any damaging attack or status supply Ichor.",
+      "example": "Poison makes a marked enemy lose two cards. Remove one Blood Mark and gain one Ichor, not two."
+    },
+    "Clot": {
+      "job": "Stop one round of a specific affliction without cleansing it.",
+      "example": "With both Poison and Bleed, spend Clot to stop the Bleed damage. Poison still deals its normal damage."
+    }
+  }
+}

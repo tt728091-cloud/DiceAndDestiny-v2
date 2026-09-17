@@ -1,0 +1,19 @@
+{
+  "schema_version": 1,
+  "id": "catalyst",
+  "name": "Catalyst",
+  "presentation": {
+    "rules_text": "After toxin dice roll, automatically spend 1 Catalyst to reroll one enemy clearing result: Volatile Poison 6 first, otherwise Poison 5\u20136. Never Volatile Poison 5. Once per group of toxin rolls; each die can be rerolled once. Effects resolves automatically. Cap 3.",
+    "glyph": "\u2697"
+  },
+  "activation_mode": "automatic",
+  "polarity": "positive",
+  "stacking": {
+    "stack_limit": 3,
+    "overflow_policy": "reject_additional_stacks"
+  },
+  "lifecycle": {
+    "persistent": true
+  },
+  "triggers": []
+}

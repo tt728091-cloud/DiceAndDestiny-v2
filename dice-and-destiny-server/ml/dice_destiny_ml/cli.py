@@ -3,14 +3,41 @@ from __future__ import annotations
 import argparse
 import json
 import sys
+from dataclasses import asdict
 from pathlib import Path
 
 from .ablation import run_phase2_matrix
 from .bridge import AuthorityBridge
+from .campaign import (
+    EXPECTED_GLOBAL_SHA256,
+    CampaignConfig,
+    initialize_campaign_registry,
+    preflight_campaign,
+    run_campaign,
+    write_campaign_seed_banks,
+    write_model_family_plan,
+)
+from .champions import read_seed_bank
 from .diagnostics import run_owner_diagnostic
 from .evaluation import evaluate
-from .export_policy import export_candidate_policy_v2, export_phase3_policy
+from .export_policy import (
+    export_candidate_policy_v2,
+    export_candidate_policy_v3,
+    export_phase3_policy,
+)
+from .gym_env import REWARD_DEFINITIONS
+from .hillclimb import (
+    HillClimbConfig,
+    preflight_hillclimb,
+    run_hillclimb,
+    write_hillclimb_seed_banks,
+)
 from .imitation import corrective_clone
+from .manifest_v3 import (
+    OBSERVATION_SCHEMA_V3,
+    ObservationManifestV3,
+    build_observation_manifest_v3,
+)
 from .observation_walkthrough import generate_observation_walkthrough
 from .policies import HeuristicPolicy, select_with_policy
 from .reporting import generate_report_artifacts
@@ -25,6 +52,12 @@ from .tactical_corpus import (
 )
 from .tournament import run_tournament
 from .training import TrainingConfig, set_reproducible_runtime, train_seed
+from .winner_health_campaign import (
+    WinnerHealthCampaignConfig,
+    prepare_winner_health_campaign,
+    run_winner_health_campaign,
+    run_winner_health_plateau_continuation,
+)
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -32,18 +65,187 @@ def main(argv: list[str] | None = None) -> int:
     args = parser.parse_args(argv)
     server_root = Path(__file__).resolve().parents[2]
     binary = Path(args.binary) if args.binary else server_root / "build" / "battle-ml-sim"
-    if args.command != "export-policy" and not binary.exists():
+    if (
+        args.command
+        not in {
+            "export-policy",
+            "manifest-v3",
+            "campaign-seed-banks",
+            "campaign-family-plan",
+            "champion-registry-init",
+            "global-hillclimb-seed-banks",
+        }
+        and not binary.exists()
+    ):
         parser.error(f"simulator binary not found: {binary}; run scripts/ml.sh so it is built first")
-    if args.command == "export-policy":
-        exporter = export_candidate_policy_v2 if args.policy_family == "v2" else export_phase3_policy
-        result = exporter(
-            Path(args.checkpoint),
-            Path(args.output),
-            model_id=args.model_id,
-            content_version=args.content_version,
-            source_revision=args.source_revision,
-            training_engine_revision=args.training_engine_revision,
+    if args.command == "manifest-v3":
+        manifest = build_observation_manifest_v3(
+            server_root / "content" / "battle_v1",
+            eligible_combatants=args.combatants,
+            observed_candidate_maximum=args.observed_candidate_maximum,
+            generated_scenarios=args.generated_scenarios,
         )
+        manifest.save(Path(args.output))
+        result = {
+            "output": str(Path(args.output).resolve()),
+            "manifest_sha256": manifest.manifest_sha256,
+            "content_sha256": manifest.content_sha256,
+            "observation_size": manifest.layout.observation_size,
+            "maximum_legal_candidates": manifest.maximum_legal_candidates,
+        }
+    elif args.command == "campaign-seed-banks":
+        result = write_campaign_seed_banks(
+            Path(args.output),
+            attempts=args.attempts,
+            seed_offset=args.seed_offset,
+        )
+    elif args.command == "campaign-family-plan":
+        result = write_model_family_plan(
+            Path(args.output),
+            [json.loads(value) for value in args.family],
+        )
+    elif args.command == "champion-registry-init":
+        manifest = ObservationManifestV3.load(Path(args.observation_manifest))
+        registry = initialize_campaign_registry(
+            Path(args.output),
+            global_checkpoint=Path(args.global_checkpoint),
+            expected_global_sha256=args.expected_global_sha256,
+            checkpoint_champion=Path(args.checkpoint_champion),
+            manifest=manifest,
+            baseline_evidence=args.baseline_evidence,
+        )
+        result = asdict(registry)
+    elif args.command == "global-hillclimb-seed-banks":
+        result = write_hillclimb_seed_banks(
+            Path(args.output),
+            attempts=args.attempts,
+            evaluation_seed_offset=args.evaluation_seed_offset,
+            training_seed_offset=args.training_seed_offset,
+        )
+    elif args.command in {"global-hillclimb-preflight", "global-hillclimb-campaign"}:
+        budget = resolve_resource_budget("max")
+        print(json.dumps({"resolved_resource_budget": budget.as_dict()}, sort_keys=True), file=sys.stderr)
+        hillclimb_config = HillClimbConfig(
+            campaign_id=args.campaign_id,
+            artifact_root=Path(args.output),
+            registry_path=Path(args.registry),
+            seed_bank_root=Path(args.seed_banks),
+            source_config_path=Path(args.source_config),
+            historical_checkpoint_root=Path(args.historical_checkpoints),
+            accepted_v1_checkpoint=Path(args.accepted_v1),
+            binary=binary,
+            server_root=server_root,
+            budget=budget,
+            interval_steps=args.interval_steps,
+            time_budget_seconds=args.time_budget_seconds,
+            maximum_attempts=args.maximum_attempts,
+            require_full_window=args.require_full_window,
+            seat_a_definition=args.seat_a_definition,
+            seat_b_definition=args.seat_b_definition,
+        )
+        result = (
+            preflight_hillclimb(hillclimb_config)
+            if args.command == "global-hillclimb-preflight"
+            else run_hillclimb(hillclimb_config)
+        )
+    elif args.command in {"champion-campaign-preflight", "champion-campaign"}:
+        budget = resolve_resource_budget("max")
+        print(json.dumps({"resolved_resource_budget": budget.as_dict()}, sort_keys=True), file=sys.stderr)
+        campaign_config = CampaignConfig(
+            campaign_id=args.campaign_id,
+            seed=22,
+            artifact_root=Path(args.output),
+            manifest_path=Path(args.observation_manifest),
+            registry_path=Path(args.registry),
+            initial_checkpoint=Path(args.initial_checkpoint),
+            seed_bank_root=Path(args.seed_banks),
+            budget=budget,
+            time_budget_seconds=args.time_budget_seconds,
+            seat_a_definition=args.seat_a_definition,
+            seat_b_definition=args.seat_b_definition,
+            warm_start=args.warm_start,
+            warm_start_evidence=args.warm_start_evidence,
+            maximum_attempts=args.maximum_attempts,
+            family_plan_path=Path(args.family_plan) if args.family_plan else None,
+            require_full_window=args.require_full_window,
+            allow_battery_power=args.allow_battery_power,
+            initial_selection_score=args.initial_selection_score,
+        )
+        result = (
+            preflight_campaign(campaign_config)
+            if args.command == "champion-campaign-preflight"
+            else run_campaign(campaign_config)
+        )
+    elif args.command in {"winner-health-campaign-prepare", "winner-health-campaign"}:
+        budget = resolve_resource_budget("max")
+        print(json.dumps({"resolved_resource_budget": budget.as_dict()}, sort_keys=True), file=sys.stderr)
+        winner_health_config = WinnerHealthCampaignConfig(
+            campaign_id=args.campaign_id,
+            artifact_root=Path(args.output),
+            registry_path=Path(args.registry),
+            source_config_path=Path(args.source_config),
+            binary=binary,
+            server_root=server_root,
+            budget=budget,
+            time_budget_seconds=args.time_budget_seconds,
+            maximum_intervals=args.maximum_intervals,
+            seat_a_definition=args.seat_a_definition,
+            seat_b_definition=args.seat_b_definition,
+            require_full_window=args.require_full_window,
+            expected_global_sha256=args.expected_global_sha256,
+            failure_streak_limit=args.failure_streak_limit,
+            warmup_intervals=args.warmup_intervals,
+            global_confirmation_games=args.global_confirmation_games,
+            source_campaign_root=(Path(args.source_campaign) if args.source_campaign else None),
+            source_interval=args.source_interval,
+        )
+        result = (
+            prepare_winner_health_campaign(winner_health_config)
+            if args.command == "winner-health-campaign-prepare"
+            else run_winner_health_campaign(winner_health_config)
+        )
+    elif args.command == "winner-health-plateau-continuation":
+        budget = resolve_resource_budget("max")
+        print(json.dumps({"resolved_resource_budget": budget.as_dict()}, sort_keys=True), file=sys.stderr)
+        winner_health_config = WinnerHealthCampaignConfig(
+            campaign_id=args.campaign_id,
+            artifact_root=Path(args.output),
+            registry_path=Path(args.registry),
+            source_config_path=Path(args.source_config),
+            binary=binary,
+            server_root=server_root,
+            budget=budget,
+            seat_a_definition=args.seat_a_definition,
+            seat_b_definition=args.seat_b_definition,
+            require_full_window=False,
+        )
+        result = run_winner_health_plateau_continuation(
+            winner_health_config,
+            Path(args.source_campaign),
+            source_interval=args.source_interval,
+        )
+    elif args.command == "export-policy":
+        if args.policy_family == "v3":
+            if not args.observation_manifest:
+                parser.error("v3 export requires --observation-manifest")
+            result = export_candidate_policy_v3(
+                Path(args.checkpoint),
+                Path(args.output),
+                manifest_path=Path(args.observation_manifest),
+                model_id=args.model_id,
+                source_revision=args.source_revision,
+                training_engine_revision=args.training_engine_revision,
+            )
+        else:
+            exporter = export_candidate_policy_v2 if args.policy_family == "v2" else export_phase3_policy
+            result = exporter(
+                Path(args.checkpoint),
+                Path(args.output),
+                model_id=args.model_id,
+                content_version=args.content_version,
+                source_revision=args.source_revision,
+                training_engine_revision=args.training_engine_revision,
+            )
     elif args.command == "phase2-matrix":
         result = run_phase2_matrix(
             binary=binary,
@@ -145,6 +347,11 @@ def main(argv: list[str] | None = None) -> int:
             telemetry_mode=args.telemetry_mode,
             transport_mode=args.transport_mode,
             observation_schema=args.observation_schema,
+            observation_manifest=(
+                Path(args.observation_manifest).resolve() if args.observation_manifest else None
+            ),
+            seat_a_definition=args.seat_a_definition,
+            seat_b_definition=args.seat_b_definition,
         )
         if args.command == "acceptance":
             failures = []
@@ -215,6 +422,17 @@ def main(argv: list[str] | None = None) -> int:
                 opponent_selection_mode=args.opponent_selection_mode,
                 critic_architecture=args.critic_architecture,
                 verbose=args.verbose,
+                observation_manifest=args.observation_manifest,
+                seat_a_definition=args.seat_a_definition,
+                seat_b_definition=args.seat_b_definition,
+                entity_width=args.entity_width,
+                entity_depth=args.entity_depth,
+                activation=args.activation,
+                post_ppo_correction=args.post_ppo_correction,
+                clip_range=args.clip_range,
+                target_kl=args.target_kl,
+                value_loss_coefficient=args.value_loss_coefficient,
+                reward=REWARD_DEFINITIONS[args.reward],
             )
             summaries.append(
                 train_seed(
@@ -256,6 +474,132 @@ def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="Dice and Destiny battle-intelligence runners")
     parser.add_argument("--binary", default="", help="prebuilt battle-ml-sim path")
     subparsers = parser.add_subparsers(dest="command", required=True)
+
+    manifest_parser = subparsers.add_parser(
+        "manifest-v3", help="freeze and hash the Observation V3 campaign content manifest"
+    )
+    manifest_parser.add_argument("--combatants", nargs="+", default=None)
+    manifest_parser.add_argument("--observed-candidate-maximum", type=int, default=0)
+    manifest_parser.add_argument("--generated-scenarios", type=int, default=0)
+    manifest_parser.add_argument("--output", required=True)
+
+    seed_bank_parser = subparsers.add_parser(
+        "campaign-seed-banks", help="predeclare disjoint global progression and confirmation banks"
+    )
+    seed_bank_parser.add_argument("--attempts", type=int, default=512)
+    seed_bank_parser.add_argument("--seed-offset", type=int, default=0)
+    seed_bank_parser.add_argument("--output", required=True)
+
+    family_plan_parser = subparsers.add_parser(
+        "campaign-family-plan",
+        help="freeze and hash predeclared seed/model-family restart checkpoints",
+    )
+    family_plan_parser.add_argument(
+        "--family",
+        action="append",
+        required=True,
+        help="JSON object with family_id, seed, checkpoint/evidence, and architecture",
+    )
+    family_plan_parser.add_argument("--output", required=True)
+
+    registry_parser = subparsers.add_parser(
+        "champion-registry-init", help="create the hash-verified initial champion registry"
+    )
+    registry_parser.add_argument("--global-checkpoint", required=True)
+    registry_parser.add_argument("--expected-global-sha256", required=True)
+    registry_parser.add_argument("--checkpoint-champion", required=True)
+    registry_parser.add_argument("--observation-manifest", required=True)
+    registry_parser.add_argument("--baseline-evidence", required=True)
+    registry_parser.add_argument("--output", required=True)
+
+    hillclimb_banks_parser = subparsers.add_parser(
+        "global-hillclimb-seed-banks",
+        help="predeclare disjoint 1,000-game banks and stochastic training seeds",
+    )
+    hillclimb_banks_parser.add_argument("--attempts", type=int, default=128)
+    hillclimb_banks_parser.add_argument("--evaluation-seed-offset", type=int, required=True)
+    hillclimb_banks_parser.add_argument("--training-seed-offset", type=int, required=True)
+    hillclimb_banks_parser.add_argument("--output", required=True)
+
+    for name, help_text in (
+        ("global-hillclimb-preflight", "verify the frozen checkpoint-480 rollback hill-climb"),
+        ("global-hillclimb-campaign", "run the timed checkpoint-480 rollback hill-climb"),
+    ):
+        hillclimb_parser = subparsers.add_parser(name, help=help_text)
+        hillclimb_parser.add_argument("--campaign-id", required=True)
+        hillclimb_parser.add_argument("--registry", required=True)
+        hillclimb_parser.add_argument("--seed-banks", required=True)
+        hillclimb_parser.add_argument("--source-config", required=True)
+        hillclimb_parser.add_argument("--historical-checkpoints", required=True)
+        hillclimb_parser.add_argument("--accepted-v1", required=True)
+        hillclimb_parser.add_argument("--output", required=True)
+        hillclimb_parser.add_argument("--interval-steps", type=int, default=50_000)
+        hillclimb_parser.add_argument("--time-budget-seconds", type=float, default=5_400.0)
+        hillclimb_parser.add_argument("--maximum-attempts", type=int, default=128)
+        hillclimb_parser.add_argument(
+            "--require-full-window",
+            action=argparse.BooleanOptionalAction,
+            default=True,
+        )
+        hillclimb_parser.add_argument("--seat-a-definition", default="blade_warden")
+        hillclimb_parser.add_argument("--seat-b-definition", default="blade_warden")
+
+    campaign_preflight_parser = subparsers.add_parser(
+        "champion-campaign-preflight",
+        help="verify every timed campaign input without starting its clock",
+    )
+    add_campaign_arguments(campaign_preflight_parser)
+    campaign_parser = subparsers.add_parser(
+        "champion-campaign", help="run the timed reversible Observation V3 champion campaign"
+    )
+    add_campaign_arguments(campaign_parser)
+
+    for name, help_text in (
+        (
+            "winner-health-campaign-prepare",
+            "prepare a fresh frozen-global reward family using the checkpoint-480 PPO recipe",
+        ),
+        ("winner-health-campaign", "run the timed fresh winner-health campaign"),
+    ):
+        reward_campaign_parser = subparsers.add_parser(name, help=help_text)
+        reward_campaign_parser.add_argument("--campaign-id", required=True)
+        reward_campaign_parser.add_argument("--registry", required=True)
+        reward_campaign_parser.add_argument("--source-config", required=True)
+        reward_campaign_parser.add_argument("--output", required=True)
+        reward_campaign_parser.add_argument("--time-budget-seconds", type=float, default=3_600.0)
+        reward_campaign_parser.add_argument("--maximum-intervals", type=int, default=128)
+        reward_campaign_parser.add_argument(
+            "--expected-global-sha256",
+            default=EXPECTED_GLOBAL_SHA256,
+        )
+        reward_campaign_parser.add_argument("--failure-streak-limit", type=int, default=3)
+        reward_campaign_parser.add_argument("--warmup-intervals", type=int, default=5)
+        reward_campaign_parser.add_argument(
+            "--global-confirmation-games",
+            type=int,
+            choices=(0, 3_000),
+            default=3_000,
+        )
+        reward_campaign_parser.add_argument("--source-campaign", default="")
+        reward_campaign_parser.add_argument("--source-interval", type=int, default=None)
+        reward_campaign_parser.add_argument(
+            "--require-full-window", action=argparse.BooleanOptionalAction, default=True
+        )
+        reward_campaign_parser.add_argument("--seat-a-definition", default="blade_warden")
+        reward_campaign_parser.add_argument("--seat-b-definition", default="blade_warden")
+
+    plateau_parser = subparsers.add_parser(
+        "winner-health-plateau-continuation",
+        help="continue an accepted winner-health checkpoint until three consecutive misses",
+    )
+    plateau_parser.add_argument("--campaign-id", required=True)
+    plateau_parser.add_argument("--registry", required=True)
+    plateau_parser.add_argument("--source-config", required=True)
+    plateau_parser.add_argument("--source-campaign", required=True)
+    plateau_parser.add_argument("--source-interval", type=int, default=38)
+    plateau_parser.add_argument("--output", required=True)
+    plateau_parser.add_argument("--seat-a-definition", default="blade_warden")
+    plateau_parser.add_argument("--seat-b-definition", default="blade_warden")
 
     smoke_parser = subparsers.add_parser("smoke", help="reset/observe/step/terminal/replay smoke test")
     smoke_parser.add_argument("--seed", type=int, default=20260801)
@@ -325,7 +669,8 @@ def build_parser() -> argparse.ArgumentParser:
     export_parser.add_argument("--content-version", required=True)
     export_parser.add_argument("--source-revision", required=True)
     export_parser.add_argument("--training-engine-revision", required=True)
-    export_parser.add_argument("--policy-family", choices=("v1", "v2"), default="v1")
+    export_parser.add_argument("--policy-family", choices=("v1", "v2", "v3"), default="v1")
+    export_parser.add_argument("--observation-manifest", default="")
 
     for name, help_text in (
         ("evaluate", "evaluate any two independently instantiated policies"),
@@ -362,13 +707,22 @@ def build_parser() -> argparse.ArgumentParser:
     train_parser.add_argument("--batch-size", type=int, default=256)
     train_parser.add_argument("--epochs", type=int, default=8)
     train_parser.add_argument("--learning-rate", type=float, default=3e-4)
+    train_parser.add_argument("--clip-range", type=float, default=0.2)
+    train_parser.add_argument("--target-kl", type=float)
+    train_parser.add_argument("--value-loss-coefficient", type=float, default=0.5)
+    train_parser.add_argument(
+        "--reward",
+        choices=tuple(REWARD_DEFINITIONS),
+        default="winner-health-v2",
+        help="terminal PPO reward; evaluation remains win/draw/loss scoring",
+    )
     train_parser.add_argument("--checkpoint-interval", type=int, default=5_000)
     train_parser.add_argument("--imitation-decisions", type=int, default=5_000)
     train_parser.add_argument("--imitation-epochs", type=int, default=5)
     train_parser.add_argument("--device", default="cpu")
     train_parser.add_argument(
         "--observation-schema",
-        choices=("dice-and-destiny-observation-v1", OBSERVATION_SCHEMA_V2),
+        choices=("dice-and-destiny-observation-v1", OBSERVATION_SCHEMA_V2, OBSERVATION_SCHEMA_V3),
         default="dice-and-destiny-observation-v1",
     )
     train_parser.add_argument(
@@ -392,7 +746,7 @@ def build_parser() -> argparse.ArgumentParser:
     )
     train_parser.add_argument(
         "--opponent-selection-mode",
-        choices=("category-balanced", "legacy-flat"),
+        choices=("champion-registry", "category-balanced", "legacy-flat"),
         default="legacy-flat",
         help="balance declared opponent categories or retain legacy pool-size weighting",
     )
@@ -409,6 +763,18 @@ def build_parser() -> argparse.ArgumentParser:
     )
     train_parser.add_argument("--output", default="runs/training")
     train_parser.add_argument("--verbose", type=int, choices=(0, 1, 2), default=1)
+    train_parser.add_argument("--observation-manifest", default="")
+    train_parser.add_argument("--seat-a-definition", default="blade_warden")
+    train_parser.add_argument("--seat-b-definition", default="blade_warden")
+    train_parser.add_argument("--entity-width", type=int, default=96)
+    train_parser.add_argument("--entity-depth", type=int, default=2)
+    train_parser.add_argument("--activation", choices=("tanh", "relu", "gelu"), default="tanh")
+    train_parser.add_argument(
+        "--post-ppo-correction",
+        action=argparse.BooleanOptionalAction,
+        default=False,
+        help="forbidden in the main campaign; isolated corrective-clone remains separately gated",
+    )
 
     tournament_parser = subparsers.add_parser("tournament", help="checkpoint cross-play matrix and Elo")
     tournament_parser.add_argument("--checkpoints", nargs="+", required=True)
@@ -440,13 +806,39 @@ def add_match_arguments(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("--transport-mode", choices=("full", "encoded", "parity"), default="full")
     parser.add_argument(
         "--observation-schema",
-        choices=("dice-and-destiny-observation-v1", OBSERVATION_SCHEMA_V2),
+        choices=("dice-and-destiny-observation-v1", OBSERVATION_SCHEMA_V2, OBSERVATION_SCHEMA_V3),
         default="dice-and-destiny-observation-v1",
     )
     parser.add_argument("--profile", choices=("max", "balanced-80", "light-50", "custom"), default="custom")
     parser.add_argument("--workers", type=int, default=0, help="custom rollout-process budget")
     parser.add_argument("--torch-threads", type=int, default=0, help="custom Torch/BLAS threads per worker")
     parser.add_argument("--output", default="runs/evaluation")
+    parser.add_argument("--observation-manifest", default="")
+    parser.add_argument("--seat-a-definition", default="blade_warden")
+    parser.add_argument("--seat-b-definition", default="blade_warden")
+
+
+def add_campaign_arguments(parser: argparse.ArgumentParser) -> None:
+    parser.add_argument("--campaign-id", required=True)
+    parser.add_argument("--output", required=True)
+    parser.add_argument("--observation-manifest", required=True)
+    parser.add_argument("--registry", required=True)
+    parser.add_argument("--initial-checkpoint", required=True)
+    parser.add_argument("--seed-banks", required=True)
+    parser.add_argument("--time-budget-seconds", type=float, default=10_800.0)
+    parser.add_argument("--seat-a-definition", default="blade_warden")
+    parser.add_argument("--seat-b-definition", default="blade_warden")
+    parser.add_argument("--warm-start", default="mechanics-v2")
+    parser.add_argument("--warm-start-evidence", required=True)
+    parser.add_argument("--maximum-attempts", type=int, default=512)
+    parser.add_argument("--family-plan", default="")
+    parser.add_argument("--require-full-window", action=argparse.BooleanOptionalAction, default=False)
+    parser.add_argument(
+        "--allow-battery-power",
+        action="store_true",
+        help="owner-authorized override of the AC-only full-window preflight prerequisite",
+    )
+    parser.add_argument("--initial-selection-score", type=float, default=0.0)
 
 
 def add_seed_arguments(parser: argparse.ArgumentParser) -> None:
@@ -457,9 +849,12 @@ def add_seed_arguments(parser: argparse.ArgumentParser) -> None:
 
 def load_seeds(args: argparse.Namespace) -> list[int]:
     if args.seeds_file:
-        value = json.loads(Path(args.seeds_file).read_text())
+        path = Path(args.seeds_file)
+        value = json.loads(path.read_text())
+        if isinstance(value, dict) and isinstance(value.get("seeds"), list):
+            return read_seed_bank(path, expected_games=2 * len(value["seeds"]))
         if not isinstance(value, list):
-            raise ValueError("seeds file must contain a JSON array")
+            raise ValueError("seeds file must contain a JSON array or hashed campaign seed bank")
         return [int(seed) for seed in value]
     return list(range(args.seed_start, args.seed_start + args.episodes))
 

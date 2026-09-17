@@ -1,0 +1,39 @@
+{
+  "schema_version": 1,
+  "id": "fever_cycle",
+  "name": "Fever Cycle",
+  "type": "action",
+  "presentation": {
+    "rules_text": "Provoke up to 2 distinct enemy toxins now, within the shared limit of 2 per target per round."
+  },
+  "cost": {
+    "energy": 2
+  },
+  "play": {
+    "source_zones": [
+      "hand"
+    ],
+    "destination": "discard",
+    "playable_during": [
+      {
+        "segment": "offensive",
+        "phase": "main",
+        "window_purpose": "planning"
+      }
+    ]
+  },
+  "targeting": {
+    "selector": "venom_choice",
+    "minimum": 0,
+    "maximum": 1
+  },
+  "reaction_window": {
+    "opens": false
+  },
+  "operations": [
+    {
+      "type": "venom_card",
+      "id": "fever_cycle"
+    }
+  ]
+}

@@ -1,0 +1,66 @@
+{
+  "title": "Mixed-type rules for the fourteen new drafts",
+  "scope": "These are explicit design proposals, not claims of engine support. They govern the new drafts and their proposed mixed builds; they do not silently rewrite the reviewed Curse or Venom dossiers. Where a mixed interaction needs a new hook, implementation must add and test it after review.",
+  "rules": [
+    [
+      "One creature, one turn economy",
+      "A mixed creature still has five combat dice, one Offensive ability selection and one Defensive ability selection per segment. Type pools are menus for future creature construction, not permission to equip every card, die or ability. Each selected type's core engine runs once per actor, even at zero resource stacks; duplicate type labels do not duplicate passive rewards. No new draft adds a turn, a hand or an autonomous summon actor. A status explicitly granted by another type still carries its printed spend/use rules; receiving Armor, for example, does not grant Stone’s separate Resolve-earning engine."
+    ],
+    [
+      "Dice and qualification",
+      "Each new type proposes five identical D6: faces 1–3 use its first symbol, 4–5 its second, 6 its third. Symbol IDs are namespaced by type even where display names match. Symbols do not become universal wildcards when types mix. Raw-number straights and equal-number recipes accept dice from any type. Three equal numbers means at least three dice with the same number; a four-number straight is 1–4, 2–5 or 3–6 with no wrap. A tiered ability may select any qualified tier. Graft/Rune add a symbol to one result; a die counts once within each requirement and can satisfy separate requirements only if each independently allows it."
+    ],
+    [
+      "Physical die identity is a proposed shared hook",
+      "Combat rolls use the five persistent owned combat die instances. A draft effect that rolls one of those dice uses a separate result context and never overwrites the finalized combat pool. A named type-defense die uses a fresh effect die of that type, so a cursed combat die is not silently substituted. For mixed Curse/Venom builds, declare which persistent afflicted-actor die supplies each toxin check; default choose distinct owned dice in stable index order, wrapping only when checks exceed five. This persistent-toxin selection is a design extension, not current Venom runtime behavior. Every actual physical result invokes its own face overlays, including discarded results; face sets, copies and Echoes do not."
+    ],
+    [
+      "Timing labels",
+      "Action: your Offensive planning input before locking the ability. Offensive reaction: shared revealed pool before final revalidation/source construction. Defensive reaction: revealed defense window before prevention finalizes. Roll reaction: an explicitly opened status/defense/card effect-roll window before outcomes finalize; it excludes hidden combat planning and refers only to dice actually in that batch. Application reaction: a proposed status/overlay application before commit. Damage reaction: after source totals and threatened cards are revealed, before removals commit, including status damage. A reaction never creates a new window unless its text explicitly creates a child roll/application/damage batch."
+    ],
+    [
+      "Targets and accepted costs",
+      "Unless stated otherwise, gains/paid positive resources belong to the controller; damage/debuffs choose one living enemy; prevention targets one incoming source on the controller. A defense selects one incoming defendable source and has one response window; any retaliation targets that source's enemy controller. Additional costs, selected targets, limited uses and at least one legal effect are validated together. Played cards pay listed Energy and move to discard immediately at acceptance; all resource, stack, Corpse, Module and additional-card payments are also immediate. The played card cannot pay its own additional sacrifice/discard cost. Invalid commands pay nothing. Later prevention, target loss or cancellation does not refund accepted costs. If an effect first draws or creates objects and then asks for a choice among them, collect that later choice after the earlier operation resolves; do not require impossible advance knowledge. Revalidate it then, without replaying costs or granting an extra ability."
+    ],
+    [
+      "Pools, prevention and source timing",
+      "Direct damage is ordinary defendable damage unless a rule explicitly says otherwise. Action-card damage joins the normal pending attack batch and remains a separate source; it does not select an extra ability. A damaging ability's attached statuses/resources normally commit with its damage even if damage is prevented to zero. Preventing damage does not cancel those applications; canceling the entire source does. Effects expressly after an attack, Pulse and Echo create child batches with damage responses and no additional Defensive selection. Source prevention applies before scaling (round down), then damage-reaction prevention. Defense reduction only touches the selected defense contribution, with a zero floor; it never erases unrelated card prevention."
+    ],
+    [
+      "Batches, conflicts and children",
+      "Collect simultaneous work from one pre-batch state, reveal, respond, revalidate conflicts, commit together, then collect child consequences. A new marker cannot observe the damage in the batch that first applied it. Conflicting edits to the same field are mutually exclusive: the affected object's owner selects one legal replacement; losing paid effects are not refunded. The latest legal state determines caps and target validity. Each proposed transfer/conversion rechecks both endpoints and is atomic: if either endpoint is invalid or full, neither half happens. No child source may retrigger a trigger already in its causal ancestry. Independent listeners can still respond once within their stated limits."
+    ],
+    [
+      "Finite corrections and roll allowance",
+      "Each effect-die result permits at most one physical correction reroll and one face-setting edit per batch across these drafts and Venom. A later legal reroll can replace a set result. Different fresh rolls requested by a printed effect are separate results, but cannot recursively request themselves. Offensive voluntary commands remain distinct and consume roll allowance. Resolve all extra/reduced roll allowances at Offensive entry, then clamp to 1–4 total commands. Initial roll is always available; no draft skips an entire turn."
+    ],
+    [
+      "Status lifecycle",
+      "Caps include every source and mixed affinity. Excess is lost unless an explicit overflow rule applies; Venom Poison overflow keeps its reviewed Incubation rule. Timed stack instances carry their own expiry; adding a stack never refreshes old instances. 'Next segment' means the next entry strictly after application, not an already-entered segment; a status tied to that entry expires at its matching exit. Capture original stack identities for ongoing work, consume only those originals, and do not let a replacement inherit old scheduled work. A status cleanse removes one chosen existing stack; it does not cancel already collected roll/damage proposals. An application cancellation stops one proposed stack, not existing state."
+    ],
+    [
+      "Public overlays and records",
+      "Only eligible public cards may be targeted by an enemy overlay. Hidden cards keep their identity private, even if an overlay persists through deck or hand. A drawn marked card is visible to its owner; the opponent learns no new hidden hand information. Overlay moves preserve original expiry, remaining charges and use history. Each face/instance accepts at most one copy of a named overlay. Positive overlays can coexist with negative ones. Neutral Corpse and Echo records are not positive status stacks; ordinary status cleanse cannot remove them. Module is an installed positive object, so only effects explicitly targeting modules/objects can dismantle it."
+    ],
+    [
+      "Actual prevention and damage rewards",
+      "A source reduced to zero creates no damage-hit reward. Overage is not additional cards removed. Reward actual committed prevention in response order against the final source amount; canceled or scale-to-zero damage cannot manufacture a prevention reward. Multiple types may each earn their own once-per-round reward from one event, but none earns one reward per prevented point unless explicitly stated. New resources arrive in child consequences and cannot retroactively pay for the action that generated them. A card's alternate spend of a status can earn that status's native on-spend reward only if the text explicitly preserves it."
+    ],
+    [
+      "Restoration and sacrifice",
+      "One health point is one card in hand/deck/discard. Restore N returns up to N chosen own cards removed by DAMAGE in an earlier committed batch to discard, preserving instance identity. Never restore paid, sacrificed, exhausted, banished or originally out-of-deck cards; never exceed the original deck's card count. At most two cards may be restored per actor per round across all types. Reserve slots at acceptance without refund; no eligible card means no restore payment. Restoring deletes linked Corpse records. Restoration is not draw and cannot restart removal listeners. A restored card may later take real damage again, subject to normal per-round record limits."
+    ],
+    [
+      "Pending defeat and rescue",
+      "Sacrifice is a chosen, additional hand/discard card removed as an irreversible accepted cost; it requires at least two remaining health cards before payment and cannot select an already threatened card. It is not damage or prevention. Beacon and Death Anchor share ONE last-chance rescue per actor per battle, even if the marker is reacquired. Only their explicit post-damage trigger may act while pending defeat; ordinary Action cards cannot be played then. Final defeat is checked after current child consequences at segment exit. No ability acts after final defeat."
+    ],
+    [
+      "Redirecting and deferring",
+      "Redirect 1 moves one point from a chosen source to its enemy controller, retaining source identity/type and total damage, then reconciles both targets' health-card proposals in the same response window. A point can be redirected once, with no extra defense roll and no reflection chain. A deferred status stack is omitted from exactly its next Ongoing collection, then resumes normal timing; each instance may be deferred once. Bleed removes one eligible, nondeferred original stack when its normal trigger resolves. A deferred stack cannot evade a separately printed expiry."
+    ],
+    [
+      "Review baseline",
+      "Every new dossier has six abilities (four Offensive, two Defensive), 24 distinct proposed cards in groups of 6 / 6 / 9 / 3, and four signature state definitions plus explicitly described card overlays where needed. This is a content pool, not a finalized creature deck or health total. All upgrades are once per battle and nonstacking. The 24-card playable Venom deck remains its existing separate baseline. Values need playtesting after approval; this pass audits completeness, timing, finite loops and concrete synergy rather than claiming balanced win rates."
+    ]
+  ]
+}

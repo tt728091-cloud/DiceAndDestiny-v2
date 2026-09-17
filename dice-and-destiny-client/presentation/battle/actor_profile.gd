@@ -12,23 +12,27 @@ var _income_markers: Dictionary = {}
 var _display_values: Dictionary = {}
 var _income_start_values: Dictionary = {}
 var _income_final_values: Dictionary = {}
+var _status_entries: Array = []
+var _defense_status_preview: Dictionary = {}
 
 const NORMAL_STAT_COLOR := Color("e6e8ec")
 const INCOME_HIGHLIGHT_COLOR := Color("ffd36a")
 
 func _ready() -> void:
-	custom_minimum_size = Vector2(250, 205)
+	custom_minimum_size = Vector2(300, 150)
+	add_theme_stylebox_override("panel", preload("res://presentation/battle/cinematic_theme.gd").panel(Color("08080860"), Color("00000000"), 10))
 	var row := HBoxContainer.new()
 	add_child(row)
 	portrait = TextureRect.new()
-	portrait.custom_minimum_size = Vector2(100, 170)
+	portrait.custom_minimum_size = Vector2.ZERO
+	portrait.visible = false
 	portrait.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	portrait.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 	row.add_child(portrait)
 	var info := VBoxContainer.new()
 	info.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	row.add_child(info)
-	title = Label.new(); title.add_theme_font_size_override("font_size", 22); info.add_child(title)
+	title = Label.new(); title.add_theme_font_size_override("font_size", 28); title.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT; title.clip_text = true; info.add_child(title)
 	health = ProgressBar.new(); health.show_percentage = false; health.custom_minimum_size.y = 18; info.add_child(health)
 	var primary_stats := HBoxContainer.new(); primary_stats.add_theme_constant_override("separation", 10); info.add_child(primary_stats)
 	_health_text = Label.new(); _health_text.size_flags_horizontal = Control.SIZE_EXPAND_FILL; primary_stats.add_child(_health_text)
@@ -40,7 +44,7 @@ func _ready() -> void:
 	# the combined stats label. The visible profile now uses individual values so
 	# income changes can be highlighted without moving the profile.
 	stats = Label.new(); stats.visible = false; info.add_child(stats)
-	statuses = Label.new(); statuses.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART; info.add_child(statuses)
+	statuses = Label.new(); statuses.add_theme_font_size_override("font_size", 18); statuses.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART; info.add_child(statuses)
 
 func _add_stat_cell(parent: HBoxContainer, key: String, caption: String, font_size: int = 15) -> void:
 	var cell := VBoxContainer.new(); cell.alignment = BoxContainer.ALIGNMENT_CENTER; cell.size_flags_horizontal = Control.SIZE_EXPAND_FILL; parent.add_child(cell)
@@ -50,6 +54,8 @@ func _add_stat_cell(parent: HBoxContainer, key: String, caption: String, font_si
 	_income_markers[key] = marker
 
 func display(actor_id: String, actor: Dictionary, is_player: bool) -> void:
+	_defense_status_preview.clear()
+	statuses.remove_theme_color_override("font_color")
 	var definition := str(actor.get("definition_id", actor_id))
 	title.text = BattlePresentationCatalog.ability(definition).get("name", definition.replace("_", " ").capitalize())
 	if definition == "blade_warden": title.text = "Blade Warden"
@@ -67,13 +73,63 @@ func display(actor_id: String, actor: Dictionary, is_player: bool) -> void:
 	_refresh_stat_labels()
 	stats.text = "Health %d/%d    ✦ Energy %d\nDeck %d  Hand %d  Discard %d  Removed %d" % [current, maximum, int(_display_values.energy), int(_display_values.deck), int(_display_values.hand), int(_display_values.discard), int(_display_values.removed)]
 	var status_text: Array[String] = []
+	_status_entries = actor.get("statuses", []).duplicate(true)
 	for entry in actor.get("statuses", []):
 		var id := str(entry.get("definition_id", entry.get("id", "status")))
 		status_text.append("%s %s ×%d" % [BattlePresentationCatalog.status(id).glyph, BattlePresentationCatalog.status(id).name, int(entry.get("stacks", 1))])
 	statuses.text = "No active statuses" if status_text.is_empty() else "\n".join(status_text)
 	var path := "res://assets/battle/portraits/blade_warden.png" if definition == "blade_warden" else "res://assets/battle/portraits/venom_goblin.png"
+	if definition == "venom":
+		path = "res://assets/battle/portraits/venom.svg"
+		title.text = "Venom"
 	if ResourceLoader.exists(path): portrait.texture = load(path)
-	tooltip_text = "%s authoritative profile" % title.text
+	tooltip_text = "%s
+%s" % [title.text, stats.text]
+	var rules: Array[String] = []
+	for entry in _status_entries:
+		var data := BattlePresentationCatalog.status(str(entry.get("definition_id", "")))
+		rules.append("%s — %s" % [data.name, data.text])
+	statuses.tooltip_text = "\n\n".join(rules)
+	statuses.mouse_filter = Control.MOUSE_FILTER_STOP
+
+func animate_card_cleanse(status_id: String, before: int, duration: float) -> void:
+	# Only the removed status fades; unrelated statuses remain readable.
+	var final_text := statuses.text
+	var other_statuses: Array[String] = []
+	for entry in _status_entries:
+		var id := str(entry.get("definition_id", entry.get("id", "")))
+		if id == status_id: continue
+		var data := BattlePresentationCatalog.status(id)
+		other_statuses.append("%s %s ×%d" % [data.glyph, data.name, int(entry.get("stacks", 1))])
+	statuses.text = "\n".join(other_statuses)
+	statuses.visible = not other_statuses.is_empty()
+	var status_data := BattlePresentationCatalog.status(status_id)
+	var fading := Label.new(); fading.name = "CleansedStatus"
+	fading.text = "%s %s ×%d" % [status_data.glyph, status_data.name, before]
+	fading.add_theme_color_override("font_color", Color("afe079"))
+	statuses.get_parent().add_child(fading)
+	var tween := create_tween()
+	tween.tween_interval(duration * 0.3)
+	tween.tween_property(fading, "modulate:a", 0.0, duration * 0.4)
+	tween.tween_callback(func():
+		fading.queue_free()
+		statuses.text = final_text
+		statuses.visible = true
+	)
+
+func show_defense_status_preview(status_id: String, count: int) -> void:
+	_defense_status_preview[status_id] = count
+	var lines: Array[String] = []
+	for entry in _status_entries:
+		var id := str(entry.get("definition_id", entry.get("id", "")))
+		if _defense_status_preview.has(id): continue
+		var data := BattlePresentationCatalog.status(id)
+		lines.append("%s %s ×%d" % [data.glyph, data.name, int(entry.get("stacks", 1))])
+	for id in _defense_status_preview:
+		var data := BattlePresentationCatalog.status(str(id))
+		lines.append("%s %s ×%d · pending" % [data.glyph, data.name, int(_defense_status_preview[id])])
+	statuses.text = "\n".join(lines)
+	statuses.add_theme_color_override("font_color", Color("c1eca0"))
 
 func prepare_income(actor_income: Dictionary) -> void:
 	_income_final_values = _display_values.duplicate(true)
@@ -147,3 +203,46 @@ func _refresh_stat_labels() -> void:
 	for key in _stat_labels:
 		var label: Label = _stat_labels[key]
 		label.text = "%s %d" % [str(label.get_meta("caption", key.capitalize())), int(_display_values.get(key, 0))]
+
+func show_effects_progress(before: Dictionary, after: Dictionary, phase: String, progress: float) -> void:
+	var cards_progress := progress if phase == "cards" else 1.0
+	var current := roundi(lerpf(float(before.get("health", 0)), float(after.get("health", 0)), cards_progress))
+	health.value = current; _health_text.text = "Health %d/%d" % [current, int(health.max_value)]
+	for key in ["deck", "hand", "discard", "removed"]:
+		_display_values[key] = roundi(lerpf(float(before.get(key + "_count", 0)), float(after.get(key + "_count", 0)), cards_progress))
+	_display_values.energy = int(before.get("energy", _display_values.energy)); _refresh_stat_labels()
+	var initial := {}; var final := {}
+	for status in before.get("statuses", []) if before.get("statuses") is Array else []: initial[str(status.definition_id)] = int(status.stacks)
+	for status in after.get("statuses", []) if after.get("statuses") is Array else []: final[str(status.definition_id)] = int(status.stacks)
+	for id in final:
+		if not initial.has(id): initial[id] = 0
+	var lines: Array[String] = []
+	for id in initial:
+		var count := roundi(lerpf(float(initial[id]), float(final.get(id, 0)), progress if phase == "statuses" else 0.0))
+		if count <= 0: continue
+		var data := BattlePresentationCatalog.status(str(id)); lines.append("%s %s ×%d" % [data.glyph, data.name, count])
+	statuses.text = "No active statuses" if lines.is_empty() else "\n".join(lines)
+	statuses.modulate = Color.WHITE.lerp(Color("b5e591"), sin(progress * PI)) if phase == "statuses" else Color.WHITE
+
+func show_status_transition(update: Dictionary, progress: float) -> void:
+	var counts := {}
+	for entry in _status_entries:
+		counts[str(entry.get("definition_id", ""))] = int(entry.get("stacks", 0))
+	var data: Dictionary = update.data
+	var applied_id := str(data.get("status_id", "incubation"))
+	# A later action may already have changed the target again. Never restore
+	# stale counts merely to finish an older visual effect.
+	var current := int(counts.get(applied_id, 0)) == int(data.get("after", 0)) if update.kind != "conversion" else int(counts.get("poison", 0)) == int(data.poison_after) and int(counts.get("volatile_poison", 0)) == int(data.volatile_after)
+	if not current: statuses.modulate = Color.WHITE; return
+	if update.kind != "conversion":
+		counts[applied_id] = roundi(lerpf(float(data.before), float(data.after), progress))
+	else:
+		counts.poison = roundi(lerpf(float(data.poison_before), float(data.poison_after), progress))
+		counts.volatile_poison = roundi(lerpf(float(data.volatile_before), float(data.volatile_after), progress))
+	var lines: Array[String] = []
+	for id in counts:
+		if int(counts[id]) <= 0: continue
+		var status := BattlePresentationCatalog.status(str(id))
+		lines.append("%s %s ×%d" % [status.glyph, status.name, int(counts[id])])
+	statuses.text = "No active statuses" if lines.is_empty() else "\n".join(lines)
+	statuses.modulate = Color.WHITE.lerp(Color("d5afff") if update.kind == "conversion" else Color("b7e39a"), sin(progress * PI))

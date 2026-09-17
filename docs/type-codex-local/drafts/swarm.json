@@ -1,0 +1,274 @@
+{
+  "id": "swarm",
+  "name": "Swarm",
+  "identity": "Grow Brood from discarded cards. Keep them for Carapace protection or send them as separate hits that can finish Web.",
+  "symbols": [
+    "Sting",
+    "Cell",
+    "Queen"
+  ],
+  "loop": "Draw and discard to grow Brood → keep units for Carapace or send them for separate hits → connect hits with Web → use Royal Order for a larger commitment.",
+  "statuses": [
+    [
+      "Brood",
+      "Positive creature counters · you · cap 3",
+      "The first time each round you discard a card during Offensive, gain 1 Brood. Playing a card does not count as discarding it for this rule. Before your Offensive attack, you may spend up to 2 Brood. After that attack, each spent Brood deals a separate 1 damage to the same enemy. The enemy may prevent this damage but does not roll another Defensive ability. Keep unused Brood."
+    ],
+    [
+      "Web",
+      "Negative · enemy · cap 1",
+      "Track the next two separate hits that damage this enemy after Web is applied. After the second hit, remove Web and deal 1 status damage to them. The hits can come from attacks, cards, Brood or damaging statuses. Each damaging die is one hit; a status without dice, such as Bleed, deals one hit for all its stacks together. A hit that is completely prevented does not count. Web can trigger once per round for each player who placed it. Remove unused Web at the end of the following round."
+    ],
+    [
+      "Carapace",
+      "Positive · you · cap 3",
+      "Before an attack damages you, spend 1 Carapace to prevent 1 damage for each Brood you still have, up to 3. Use Carapace once per attack. It does not remove those Brood. Keep unused Carapace."
+    ],
+    [
+      "Royal Order",
+      "Positive · you · cap 1",
+      "Before your next Offensive attack, you may remove Royal Order to send up to 3 Brood instead of the usual 2. You must already have the Brood and spend them normally. Remove unused Royal Order at the end of your next Offensive segment."
+    ]
+  ],
+  "abilities": [
+    [
+      "Needle Cloud",
+      "Offense · 0E",
+      "3 Sting / 4 Sting / 5 Sting",
+      "4 / 5 / 6 damage; gain 1 Brood after the attack. This new Brood cannot join that same attack."
+    ],
+    [
+      "Build the Hive",
+      "Offense · 0E",
+      "2 Cell + 1 Queen",
+      "Gain 2 Brood and 1 Carapace."
+    ],
+    [
+      "Silken Pincer",
+      "Offense · 0E",
+      "Any three equal numbers",
+      "Deal 4 damage, then apply Web. Any Brood you sent with this attack hit afterward and can count toward Web. The ability’s earlier damage does not count toward this new Web."
+    ],
+    [
+      "Queen’s Signal",
+      "Offense · 0E",
+      "3 Queen",
+      "Deal 6 damage. After the attack, gain Royal Order and 1 Brood for a later attack."
+    ],
+    [
+      "Chitin Screen",
+      "Defense · 0E",
+      "Roll 2 Swarm dice",
+      "Each Sting prevents 1; each Cell gains 1 Carapace; any Queen gains 1 Brood."
+    ],
+    [
+      "Living Bulwark",
+      "Defense · 1E",
+      "Roll 1 Swarm die",
+      "Sting: prevent 2. Cell: prevent 3. Queen: prevent 2 and apply Web to the attacker if absent."
+    ]
+  ],
+  "cards": [
+    [
+      "Hatch",
+      "1",
+      "Action",
+      "Gain 2 Brood."
+    ],
+    [
+      "Spin Thread",
+      "1",
+      "Action",
+      "Apply Web to one enemy if absent."
+    ],
+    [
+      "Chitin Stores",
+      "1",
+      "Action",
+      "Gain 2 Carapace."
+    ],
+    [
+      "Royal Scent",
+      "1",
+      "Action",
+      "Gain Royal Order if absent."
+    ],
+    [
+      "Hive Survey",
+      "1",
+      "Action",
+      "Draw 1 and gain 1 Carapace."
+    ],
+    [
+      "Worker’s Errand",
+      "0",
+      "Action",
+      "Spend 1 Brood; draw 1."
+    ],
+    [
+      "Swarming Charge",
+      "1",
+      "Offensive reaction",
+      "Spend up to 2 Brood; add 2 damage per unit to your attack instead of dealing separate Brood hits."
+    ],
+    [
+      "Forage",
+      "0",
+      "Action",
+      "Spend 2 Carapace; gain 1 Energy. Once per round."
+    ],
+    [
+      "Split Sting",
+      "1",
+      "Action",
+      "Spend 2 Brood to deal two separate 1-damage hits to one enemy. The enemy can prevent either hit. Each hit that deals damage counts toward Web."
+    ],
+    [
+      "Brood Rotation",
+      "1",
+      "Action",
+      "Spend 1 Carapace; gain 2 Brood."
+    ],
+    [
+      "Colony Notes",
+      "1",
+      "Action",
+      "Draw 2, then discard 1."
+    ],
+    [
+      "Feeding Line",
+      "1",
+      "Action",
+      "Spend 1 Brood; gain 2 Carapace and Royal Order if absent."
+    ],
+    [
+      "Scuttle",
+      "1",
+      "Offensive reaction",
+      "Shift the number on one of your combat dice that is not Frostbound by 1 without going below 1 or above 6. Your final dice must still allow the ability you choose."
+    ],
+    [
+      "Scatter",
+      "1",
+      "Damage reaction",
+      "Prevent 1 damage from each of up to two hits about to damage you. For example, stop two separate Brood hits."
+    ],
+    [
+      "Body Shield",
+      "1",
+      "Damage reaction",
+      "Spend 1 Brood; prevent 3 from one attack, card or status targeting you."
+    ],
+    [
+      "Silk Cocoon",
+      "1",
+      "Application reaction",
+      "Spend 1 Carapace; stop 1 negative status stack an enemy is about to apply to you."
+    ],
+    [
+      "Wingbeat",
+      "1",
+      "Roll reaction",
+      "Reroll one of your dice just rolled for a status, defense or card once."
+    ],
+    [
+      "Unweave",
+      "0",
+      "Action",
+      "Remove one existing Web on yourself; draw 1. Requires Web."
+    ],
+    [
+      "Hold the Nest",
+      "1",
+      "Damage reaction",
+      "Prevent 2 damage from one attack, card or status. If this stops any damage, gain 1 Brood afterward."
+    ],
+    [
+      "Crawler’s Detour",
+      "1",
+      "Action",
+      "Move your Web to a different enemy with no Web, or remove it to gain 1 Brood. Moving Web keeps its current hit count and expiry."
+    ],
+    [
+      "Sting Together",
+      "1",
+      "Damage reaction",
+      "Spend 1 Carapace to add 1 damage to one of your Brood hits about to deal damage."
+    ],
+    [
+      "Colony Ledger",
+      "1",
+      "Action",
+      "Upgrade once per battle: when your first discard during Offensive earns Brood, also gain 1 Carapace."
+    ],
+    [
+      "Mass Emergence",
+      "2",
+      "Action",
+      "Spend 2 Carapace; gain 3 Brood and Royal Order if absent."
+    ],
+    [
+      "Last Shelter",
+      "2",
+      "Damage reaction",
+      "Spend up to 3 Brood; prevent 2 per unit from one attack, card or status. Units paid here cannot attack later."
+    ]
+  ],
+  "pairs": [
+    [
+      "beast",
+      "Pack Signal adds damage to up to two Brood hits against the Quarry. Those separate hits can finish Web. Spending Instinct for that card means saving less toward Pounce."
+    ],
+    [
+      "arcane",
+      "Index the Possible draws two cards and discards one: the discard earns Brood once during Offensive. Playing it as the second card from your hand also earns Aether. A later Echo hit can help finish Web."
+    ],
+    [
+      "flame",
+      "Web’s status damage can earn Heat and use Kindling. Brood supplies the separate hits that complete Web, while spending the Brood weakens Carapace until the swarm rebuilds."
+    ],
+    [
+      "stone",
+      "Keeping at least two Brood lets Carapace block enough attack damage to earn Resolve. Sending them all removes that benefit. Armor offers a separate first-attack defense while the swarm rebuilds."
+    ]
+  ],
+  "example": "The enemy has Web. Your ability damages them for the first hit. A Brood then deals 1 damage for the second hit, so Web causes 1 status damage. If the Brood is fully blocked, Web waits for another damaging hit before it expires.",
+  "counter": "Prevent small hits to delay Web. Force the player to choose between sending Brood and keeping them for Carapace. Carapace offers no protection if all Brood have already been spent.",
+  "balance": "Web needs two damaging hits after it is placed; they do not need to come from the same attack. It works at most once per round. Each Brood is spent only once. Royal Order raises the attack commitment from two to three units, leaving fewer units for Carapace.",
+  "hooks": [
+    "H-24 multi-source commit",
+    "Accepted card-play count",
+    "Child-batch source attribution",
+    "H-23 per-source prevention"
+  ],
+  "review_status": "Reworked statuses — awaiting user review",
+  "version": 2,
+  "combos": [
+    [
+      "Colony Notes → Brood → Carapace",
+      "Draw two and discard one during Offensive to earn a Brood. Keeping three Brood lets one Carapace block 3 attack damage; spending Brood reduces that protection."
+    ],
+    [
+      "Spin Thread → Hatch → Split Sting",
+      "Place Web before dealing damage. Two Brood hits can finish it. If one is prevented, Web keeps the first hit and can still be completed by later Poison, Echo or another attack before expiry."
+    ]
+  ],
+  "status_examples": {
+    "Brood": {
+      "job": "Grow units from discarded cards, then send them to attack.",
+      "example": "Discard one card after drawing two to gain a Brood. Sending two Brood later creates two small hits."
+    },
+    "Web": {
+      "job": "Connect separate small hits, even across different types.",
+      "example": "Poison deals damage first. A Brood later deals damage, completing Web and causing one extra damage."
+    },
+    "Carapace": {
+      "job": "Make unspent Brood useful as a defensive formation.",
+      "example": "Three Brood let one Carapace prevent 3 damage. Send two Brood to attack first and the remaining one prevents only 1."
+    },
+    "Royal Order": {
+      "job": "Send more of your swarm with one attack.",
+      "example": "With three Brood and Royal Order, you can send all three, but then Carapace has no Brood left to protect you."
+    }
+  }
+}

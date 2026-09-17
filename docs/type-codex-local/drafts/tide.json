@@ -1,0 +1,274 @@
+{
+  "id": "tide",
+  "name": "Tide",
+  "identity": "Manage a reserve that rewards preventing damage and cleansing. Redirect a limited amount of pressure without transferring every enemy status.",
+  "symbols": [
+    "Wave",
+    "Shell",
+    "Pearl"
+  ],
+  "loop": "Prevent damage or cleanse yourself → earn Flow → spend Flow on Tide techniques → store Breakwater for protection and use Soaked to influence enemy status rolls.",
+  "statuses": [
+    [
+      "Flow",
+      "Positive · you · cap 4",
+      "Once per round, gain 1 Flow after you prevent damage or remove a negative status from yourself. Spend Flow on Tide cards and abilities. Flow does not prevent damage by itself. Keep unused Flow."
+    ],
+    [
+      "Soaked",
+      "Negative · enemy · cap 2",
+      "After this enemy rolls dice for a status, you may remove 1 Soaked to reroll one of those dice. Keep the new result, even if it helps the enemy. Use this once per enemy each round. A die already rerolled by Catalyst or another effect cannot be rerolled again. Remove unused Soaked at the end of the next Ongoing Effects."
+    ],
+    [
+      "Undertow",
+      "Negative · enemy · cap 1",
+      "During this enemy’s next Income, they do not gain their usual 1 Energy. You gain 1 Flow instead, then remove Undertow. Their normal card draw and any extra Energy from other effects are unchanged."
+    ],
+    [
+      "Breakwater",
+      "Positive · you · cap 3",
+      "Before damage is dealt to you, spend any number of Breakwater. Each stack prevents 1 damage from one chosen attack, card or status. Keep unused stacks."
+    ]
+  ],
+  "abilities": [
+    [
+      "Riptide",
+      "Offense · 0E",
+      "3 Wave / 4 Wave / 5 Wave",
+      "4 / 5 / 6 damage. Gain 1 Flow."
+    ],
+    [
+      "Gather Current",
+      "Offense · 0E",
+      "2 Shell + 1 Pearl",
+      "Gain 2 Flow and 1 Breakwater."
+    ],
+    [
+      "Drowning Bell",
+      "Offense · 0E",
+      "2 Wave + 2 Shell + 1 Pearl",
+      "Deal 4 damage; apply 1 Soaked and 1 Undertow to that enemy."
+    ],
+    [
+      "Turn the Sea",
+      "Offense · 0E",
+      "3 Pearl",
+      "Deal 6 damage. Optionally spend up to 2 Flow when choosing this ability to gain that many Breakwater after the attack."
+    ],
+    [
+      "Shell Harbor",
+      "Defense · 0E",
+      "Roll 2 Tide dice",
+      "Each Wave prevents 1; each Shell gains 1 Flow; any Pearl gains 1 Breakwater."
+    ],
+    [
+      "Returning Wave",
+      "Defense · 1E",
+      "Roll 1 Tide die",
+      "Wave: prevent 2. Shell: prevent 3. Pearl: prevent 2 and apply 1 Soaked to the attacker."
+    ]
+  ],
+  "cards": [
+    [
+      "Waterline",
+      "1",
+      "Action",
+      "Gain 2 Flow."
+    ],
+    [
+      "Sheltered Cove",
+      "1",
+      "Action",
+      "Gain 2 Breakwater."
+    ],
+    [
+      "Cold Spray",
+      "1",
+      "Action",
+      "Apply 1 Soaked to one enemy."
+    ],
+    [
+      "Tidal Tax",
+      "1",
+      "Action",
+      "Apply Undertow to one enemy who has none."
+    ],
+    [
+      "Rinse",
+      "1",
+      "Action",
+      "Cleanse 1 chosen existing negative status stack from yourself."
+    ],
+    [
+      "Driftwood",
+      "1",
+      "Action",
+      "Draw 1 and gain 1 Flow."
+    ],
+    [
+      "Tidal Exchange",
+      "1",
+      "Action",
+      "Spend 2 Flow to move 1 normal Poison or Burn from yourself to an enemy with room for it. If the stack cannot be moved, it stays on you."
+    ],
+    [
+      "Pressure Jet",
+      "1",
+      "Offensive reaction",
+      "Spend up to 2 Flow for +2 damage per stack on your attack."
+    ],
+    [
+      "Condense",
+      "0",
+      "Action",
+      "Spend 2 Flow; gain 1 Energy. Once per round."
+    ],
+    [
+      "Foam Reserve",
+      "1",
+      "Action",
+      "Spend 1 Flow; gain 3 Breakwater."
+    ],
+    [
+      "River Reading",
+      "1",
+      "Action",
+      "Draw 2 cards, then discard 1. If the discarded card has Action timing, gain 1 Flow."
+    ],
+    [
+      "Carry the Rain",
+      "1",
+      "Action",
+      "Move one existing Soaked to a different enemy with room, or remove it to gain 1 Flow. Draw 1 after either successful choice."
+    ],
+    [
+      "Slipstream",
+      "1",
+      "Offensive reaction",
+      "Spend 1 Flow to change one of your combat dice up or down by 1, staying between 1 and 6. Choose an ability your final dice allow. You cannot change a Frostbound die."
+    ],
+    [
+      "Eddy",
+      "1",
+      "Roll reaction",
+      "Reroll one of your dice just rolled for a status, defense or card once. Gain 1 Flow only if its final face is 1 or 2."
+    ],
+    [
+      "Surge Wall",
+      "1",
+      "Damage reaction",
+      "Prevent 2 from one attack, card or status targeting you."
+    ],
+    [
+      "Recede",
+      "1",
+      "Application reaction",
+      "Spend 1 Flow; stop 1 negative status stack an enemy is about to apply to you."
+    ],
+    [
+      "Wash the Mark",
+      "1",
+      "Action",
+      "Spend 1 Flow; remove one chosen negative card mark from a revealed card you own."
+    ],
+    [
+      "Ferry",
+      "1",
+      "Damage reaction",
+      "Spend 2 Flow. Take 1 less damage from one enemy attack, card or status; that enemy takes that 1 damage instead. They may prevent it, but do not roll another Defensive ability. The same damage cannot be redirected again."
+    ],
+    [
+      "Held Breath",
+      "0",
+      "Damage reaction",
+      "Spend 1 Breakwater to prevent 2 damage from one status instead of the usual 1 damage."
+    ],
+    [
+      "Clear Channel",
+      "1",
+      "Action",
+      "Remove 1 negative status stack from yourself. If you removed a stack, gain 1 Breakwater."
+    ],
+    [
+      "Estuary",
+      "1",
+      "Action",
+      "Spend 1 Flow to apply 1 Soaked to one enemy and gain 1 Breakwater."
+    ],
+    [
+      "Tidal Almanac",
+      "1",
+      "Action",
+      "Upgrade once per battle: your once-per-round earned Flow reward grants 2 Flow instead of 1."
+    ],
+    [
+      "High Water",
+      "2",
+      "Action",
+      "Spend 3 Flow; gain 3 Breakwater and draw 1."
+    ],
+    [
+      "Ebb and Return",
+      "2",
+      "Damage reaction",
+      "Spend 2 Flow to prevent 4 damage from one enemy attack, card or status. If this stops at least 2 damage, apply 1 Soaked to that enemy afterward."
+    ]
+  ],
+  "pairs": [
+    [
+      "venom",
+      "Soaked offers a retry on a Poison or Volatile Poison die. Catalyst acts automatically first; Soaked can reroll a different die afterward, but cannot reroll a die Catalyst already retried."
+    ],
+    [
+      "stone",
+      "Armor or a rolled defense that prevents at least 2 attack damage can earn both Flow and Resolve once that round. Flow buys Tide techniques while Resolve prepares Fortify or Stone cards."
+    ],
+    [
+      "radiant",
+      "Removing an existing harmful status can earn Flow and Grace once each. Ward stops a new stack instead, so it gives neither cleanse reward. Grace can fund a later cleanse while Flow funds a Tide card."
+    ],
+    [
+      "curse",
+      "A Soaked reroll gives a cursed status die another chance to land on its marked face. This mixed-type design needs status rolls to use the marked combat dice, as explained in the shared dice rules."
+    ]
+  ],
+  "example": "You prevent 2 attack damage with Armor and earn 1 Flow. Later, Foam Reserve spends that Flow to give 3 Breakwater. Those stacks can stop 3 damage together. Spending them does not earn more Flow if you already earned it this round.",
+  "counter": "Make Tide spend Breakwater before a stronger hit. Remove Soaked before rolling Poison if possible. Undertow affects just the next usual Energy gain, so saving Energy ahead of time helps.",
+  "balance": "Flow is a currency for printed Tide effects; Breakwater is stored prevention. Their roles no longer overlap. Flow earned from prevention and cleansing is limited to one reward per round. A transfer moves one existing stack and cannot copy it.",
+  "hooks": [
+    "Damage modification and commit",
+    "Status removal / application response",
+    "Income replacement",
+    "Physical status roll reveal"
+  ],
+  "review_status": "Reworked statuses — awaiting user review",
+  "version": 2,
+  "combos": [
+    [
+      "Sheltered Cove → block damage → Foam Reserve",
+      "Blocking damage earns 1 Flow. Spend it with Foam Reserve to refill Breakwater; the earned Flow limit stops repeated refills in the same round."
+    ],
+    [
+      "Cold Spray → enemy Poison roll → Soaked",
+      "Apply Soaked before the roll. If Poison would clear, spend Soaked to try again. Catalyst acts automatically first, so choose a different die if Catalyst already rerolled one."
+    ]
+  ],
+  "status_examples": {
+    "Flow": {
+      "job": "Pay for movement, cleansing and Tide techniques.",
+      "example": "You prevent 3 damage and later remove Poison in the same round. These actions earn only 1 Flow total."
+    },
+    "Soaked": {
+      "job": "Control a status roll, with a real recovery risk.",
+      "example": "An enemy Poison die shows 6. Soaked lets you try again, but another 5 or 6 still clears that Poison."
+    },
+    "Undertow": {
+      "job": "Trade the enemy’s next Income for your reserve.",
+      "example": "The enemy normally draws 1 card and gains 1 Energy. With Undertow, they still draw the card, while you gain Flow."
+    },
+    "Breakwater": {
+      "job": "Bank protection that can be spent together.",
+      "example": "Spend all 3 Breakwater against a 5-damage attack. You take 2 damage and can earn Flow if you have not already earned it this round."
+    }
+  }
+}

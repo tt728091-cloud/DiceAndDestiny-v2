@@ -115,9 +115,77 @@ It uses the same v2 observation/action contract as the decision-quality model.
 The local battle menu exposes it as `Strongest v3` for Human Seat A and Human
 Seat B while preserving both earlier opponents.
 
+## Current global champion opponent
+
+Winner-health-v2 checkpoint 193 at 3,603,456 PPO steps is the current global
+champion. It defeated checkpoint 38 by 1,681/226/1,093 in a fresh, seat-swapped
+3,000-game title match (59.80% adjusted score). Its source checkpoint SHA-256 is
+`804fff1caaf5ddf15e4c8714d9c2d0b2563681ddb6f61477e832e5afde93c010`.
+The pinned gameplay export is
+`../../dice-and-destiny-client/models/learned/blade-warden-global-champion-cp193-winner-health-v2.json`
+with SHA-256
+`cd3d7451e91d071274c874b017e3c7e73358862090fd71954e282e5bf505b814`.
+The menu exposes it as `Global Champion CP193` for either human seat. CP38 and
+CP480 are retained separately as prior global champions, and every older export
+remains playable. The canonical forward-looking registry is
+`champions/current-global.json`.
+
+Reproduce the current champion export from `dice-and-destiny-server`:
+
+```bash
+./scripts/ml.sh export-policy \
+  --checkpoint /absolute/path/to/ml/runs/v2-winner-health-v2-cp35-continuation-cp38-20260806-8h-1k-only/intervals/interval-193/raw-ppo-challenger.zip \
+  --output /absolute/path/to/dice-and-destiny-client/models/learned/blade-warden-global-champion-cp193-winner-health-v2.json \
+  --model-id blade-warden-global-champion-cp193-winner-health-v2 \
+  --content-version 9eed6066ea8c95f8a60038647de935e88ed8d6e9cbc618229070a4d78945edc4 \
+  --source-revision 1a8aa21c7ed020a0a4482ebab734b256e6f64609 \
+  --training-engine-revision 1a8aa21c7ed020a0a4482ebab734b256e6f64609 \
+  --policy-family v2
+```
+
+### Reversible global hill climb
+
+The `global-hillclimb-*` commands preserve the complete current global model
+and optimizer, train exactly one requested 50,000-step interval (52,224 actual
+rollout-aligned steps), and run one fresh 1,000-game seat-swapped gate against
+that current global. A challenger passes only when its draw-adjusted score is
+strictly above 50% and every safety counter is zero. A pass is promoted
+atomically and becomes the next interval's parent. A failure is preserved as an
+artifact, but both weights and optimizer roll back to the last accepted global
+before another RNG seed is tried.
+
+The checkpoint-480 observation/action contracts, network, reward, PPO recipe,
+opponent mix, historical selection, curriculum, teacher frequency, and seat
+schedule are frozen for the entire campaign. Only predeclared training RNG
+seeds and disjoint evaluation seed banks vary. No corrective update runs after
+PPO. `global-hillclimb-preflight` verifies the source recipe, exact initial
+checkpoint, optimizer, 1,002 historical checkpoints, seed manifest, and frozen
+controls before the campaign timer starts. Each decision is appended to a
+hash-chained history, and a failed checkpoint can never become a future parent.
+
 Run every command from `dice-and-destiny-server` through `scripts/ml.sh`. The
 wrapper builds the local Go bridge once per invocation and uses the locked Python
 environment in `ml/.venv`. Godot is not started.
+
+### Winner-health reward for new training families
+
+New `train` runs default to the versioned `winner-health-v2` terminal PPO
+reward. A learner win uses the learner's remaining-health fraction; a learner
+loss uses the opposing winner's remaining-health fraction:
+
+```text
+learner win:  +0.5 + 1.0 * learner_remaining_health / learner_max_health
+draw:          0
+learner loss: -0.5 - 1.0 * opponent_remaining_health / opponent_max_health
+```
+
+The health fraction is clamped to `[0, 1]`, making the reward zero-sum with a
+range of `[-1.5, +1.5]`. It is applied only at a terminal battle. Evaluation
+and champion promotion remain pure win/draw/loss scoring (`1`, `0.5`, `0`).
+Use `--reward outcome-only-v1` only when intentionally reproducing a historical
+recipe; phase-2 matrix runs read and preserve their recorded reward explicitly.
+Use `--reward winner-health-v1` to reproduce CP38's earlier 0.75 outcome plus
+0.75 health-coefficient recipe.
 
 ## Versioned contract
 
@@ -193,6 +261,19 @@ whole observation.
 # Generate plots and the artifact index
 ./scripts/ml.sh report --evaluations /path/to/evaluation-a /path/to/evaluation-b --output runs/report
 ```
+
+Every evaluation writes `statistics.html`. Champion-gated campaigns also write
+`checkpoint-statistics.html` beside each evaluated checkpoint and compare the
+challenger with its frozen global-champion opponent, previous checkpoint, and
+family best. The campaign root writes both the combined `statistics.html`
+overview and a standalone `gameplay-statistics.html` sheet. It also preserves
+the same values in `checkpoint-metrics.json` and registers the required report
+artifacts in `metrics-artifacts.json`, so completed runs can be compared without
+replaying evaluations. The checkpoint and gameplay pages include offensive ability-versus-pass rates
+both before and after the offensive reaction window; first-, second-, and
+third-roll ability-selection percentages; reaction-caused ability preservation,
+loss, gain, or switching; and authoritative per-round attack, bleed, poison,
+resolved, and actual damage dealt and taken.
 
 The untrained `initial.zip` checkpoint is saved first. Training then uses a
 documented heuristic-demonstration warm start (real authority observations and

@@ -118,9 +118,7 @@ def test_v2_exposes_roll_budget_dice_board_tier_progress_and_candidate_link() ->
     # First authored ability is qualified and its first tier is fully met.
     assert base[256:261].tolist() == [1, 1, 0, 1, 0]
     assert base[256 + 16 : 256 + 20].tolist() == [1, 0, 1, 1]
-    candidate = encoded.observation[
-        BASE_FEATURES_V2 : BASE_FEATURES_V2 + ACTION_FEATURES_V2
-    ]
+    candidate = encoded.observation[BASE_FEATURES_V2 : BASE_FEATURES_V2 + ACTION_FEATURES_V2]
     assert candidate[18] == 1
     assert candidate[32] == 1  # exact board-slot reference, not an ID bucket
 
@@ -184,9 +182,7 @@ def test_mechanics_teacher_is_content_id_neutral_and_values_roll_option() -> Non
     ability["qualification"]["activation_tiers"] = [
         {
             "id": f"level_{count}",
-            "requirements": {
-                "all": [{"type": "symbol_count", "symbol_id": "blade", "exact": count}]
-            },
+            "requirements": {"all": [{"type": "symbol_count", "symbol_id": "blade", "exact": count}]},
             "operations": [{"type": "deal_damage", "target": "selected_targets", "amount": count + 2}],
         }
         for count in (3, 4, 5)
@@ -258,9 +254,7 @@ def test_v2_includes_runtime_authored_modifier_tier_when_base_bonus_list_is_null
                 "modifier": {
                     "add_conditional_bonus": {
                         "id": "pair_bonus",
-                        "requirements": {
-                            "all": [{"type": "number_pattern", "pattern": "pair_or_better"}]
-                        },
+                        "requirements": {"all": [{"type": "number_pattern", "pattern": "pair_or_better"}]},
                         "operations": [
                             {"type": "apply_status", "target": "selected_targets", "stack_count": 1}
                         ],
@@ -354,9 +348,7 @@ def decision_transition_v2() -> dict:
                         {
                             "id": "base",
                             "requirements": {
-                                "all": [
-                                    {"type": "symbol_count", "symbol_id": "blade", "minimum": 2}
-                                ]
+                                "all": [{"type": "symbol_count", "symbol_id": "blade", "minimum": 2}]
                             },
                             "operations": [
                                 {"type": "deal_damage", "target": "selected_targets", "amount": 4}

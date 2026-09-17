@@ -12,28 +12,32 @@ import (
 // Battle is the read-only view returned after events have been applied.
 // It is safe for presentation or future network clients to render from.
 type Battle struct {
-	BattleID           string                          `json:"battle_id"`
-	Status             state.BattleStatus              `json:"status,omitempty"`
-	WinnerActorID      string                          `json:"winner_actor_id,omitempty"`
-	Segment            segment.Segment                 `json:"segment"`
-	Round              int                             `json:"round"`
-	ViewerActorID      string                          `json:"viewer_actor_id,omitempty"`
-	Flow               *SegmentFlow                    `json:"flow,omitempty"`
-	Resolution         *Resolution                     `json:"resolution,omitempty"`
-	Damage             *DamageResolution               `json:"damage,omitempty"`
-	Actors             map[string]Actor                `json:"actors,omitempty"`
-	OffensiveProposals []state.PlanningProposal        `json:"offensive_proposals,omitempty"`
-	DefensiveProposals []state.PlanningProposal        `json:"defensive_proposals,omitempty"`
-	Origin             *state.BattleOrigin             `json:"origin,omitempty"`
-	CompletedRounds    int                             `json:"completed_rounds,omitempty"`
-	Stage              string                          `json:"stage,omitempty"`
-	PriorityActorID    string                          `json:"priority_actor_id,omitempty"`
-	ReactionPriority   []string                        `json:"reaction_priority,omitempty"`
-	SettledSources     []state.SettledDamageSource     `json:"damage_sources,omitempty"`
-	SettledDefenses    map[string]state.SettledDefense `json:"defense_selections,omitempty"`
-	SettledEffectRolls []state.SettledEffectRoll       `json:"effect_rolls,omitempty"`
-	SettledDamage      *state.SettledDamageBatch       `json:"settled_damage,omitempty"`
-	ContentCatalog     *ContentCatalog                 `json:"content_catalog,omitempty"`
+	OffensiveReselection bool                            `json:"offensive_reselection,omitempty"`
+	PassHandsOffPriority bool                            `json:"pass_hands_off_priority,omitempty"`
+	PresentationStage    string                          `json:"presentation_stage,omitempty"`
+	VenomWork            *state.VenomWork                `json:"venom_work,omitempty"`
+	BattleID             string                          `json:"battle_id"`
+	Status               state.BattleStatus              `json:"status,omitempty"`
+	WinnerActorID        string                          `json:"winner_actor_id,omitempty"`
+	Segment              segment.Segment                 `json:"segment"`
+	Round                int                             `json:"round"`
+	ViewerActorID        string                          `json:"viewer_actor_id,omitempty"`
+	Flow                 *SegmentFlow                    `json:"flow,omitempty"`
+	Resolution           *Resolution                     `json:"resolution,omitempty"`
+	Damage               *DamageResolution               `json:"damage,omitempty"`
+	Actors               map[string]Actor                `json:"actors,omitempty"`
+	OffensiveProposals   []state.PlanningProposal        `json:"offensive_proposals,omitempty"`
+	DefensiveProposals   []state.PlanningProposal        `json:"defensive_proposals,omitempty"`
+	Origin               *state.BattleOrigin             `json:"origin,omitempty"`
+	CompletedRounds      int                             `json:"completed_rounds,omitempty"`
+	Stage                string                          `json:"stage,omitempty"`
+	PriorityActorID      string                          `json:"priority_actor_id,omitempty"`
+	ReactionPriority     []string                        `json:"reaction_priority,omitempty"`
+	SettledSources       []state.SettledDamageSource     `json:"damage_sources,omitempty"`
+	SettledDefenses      map[string]state.SettledDefense `json:"defense_selections,omitempty"`
+	SettledEffectRolls   []state.SettledEffectRoll       `json:"effect_rolls,omitempty"`
+	SettledDamage        *state.SettledDamageBatch       `json:"settled_damage,omitempty"`
+	ContentCatalog       *ContentCatalog                 `json:"content_catalog,omitempty"`
 }
 
 // ContentCatalog publishes the same pinned immutable definitions used by the
@@ -49,40 +53,46 @@ type ContentCatalog struct {
 }
 
 type Actor struct {
-	DefinitionID       string                         `json:"definition_id,omitempty"`
-	Controller         state.ControllerType           `json:"controller,omitempty"`
-	Character          *CharacterMetadata             `json:"character,omitempty"`
-	EnergyPoints       int                            `json:"energy_points"`
-	MaxEnergyPoints    int                            `json:"max_energy_points,omitempty"`
-	MaxHandSize        int                            `json:"max_hand_size,omitempty"`
-	MaxHealth          int                            `json:"max_health,omitempty"`
-	CurrentHealth      int                            `json:"current_health,omitempty"`
-	HealthCardCount    *int                           `json:"health_card_count,omitempty"`
-	Decklist           []state.DecklistEntry          `json:"decklist,omitempty"`
-	Hand               []string                       `json:"hand,omitempty"`
-	HandCount          int                            `json:"hand_count"`
-	DeckCount          int                            `json:"deck_count"`
-	DiscardCount       int                            `json:"discard_count"`
-	RemovedCount       int                            `json:"removed_count"`
-	DiceLoadout        []state.DiceLoadoutEntry       `json:"dice_loadout,omitempty"`
-	DiceCount          int                            `json:"dice_count,omitempty"`
-	AbilityIDs         []string                       `json:"abilities,omitempty"`
-	AbilityCount       int                            `json:"ability_count,omitempty"`
-	Statuses           []state.StatusState            `json:"statuses,omitempty"`
-	Tokens             []state.TokenState             `json:"tokens,omitempty"`
-	RollPreferences    *state.RollPreferences         `json:"roll_preferences,omitempty"`
-	Dice               *DiceRollState                 `json:"dice,omitempty"`
-	DefeatState        state.ActorDefeatState         `json:"defeat_state,omitempty"`
-	CardInstances      map[string]state.CardInstance  `json:"card_instances,omitempty"`
-	OffensiveAbilities []string                       `json:"offensive_abilities,omitempty"`
-	DefensiveAbilities []string                       `json:"defensive_abilities,omitempty"`
-	RollHistory        []state.RollBatch              `json:"roll_history,omitempty"`
-	QualifiedAbilities []string                       `json:"qualified_abilities,omitempty"`
-	SelectedAbility    string                         `json:"selected_ability,omitempty"`
-	SelectedTier       string                         `json:"selected_tier,omitempty"`
-	SelectedTargets    []string                       `json:"selected_targets,omitempty"`
-	OffensiveOutcome   map[string]any                 `json:"offensive_outcome,omitempty"`
-	AbilityModifiers   []state.RuntimeAbilityModifier `json:"ability_modifiers,omitempty"`
+	NeedlefangDamageBonus int                            `json:"needlefang_damage_bonus,omitempty"`
+	DefinitionID          string                         `json:"definition_id,omitempty"`
+	Controller            state.ControllerType           `json:"controller,omitempty"`
+	Character             *CharacterMetadata             `json:"character,omitempty"`
+	EnergyPoints          int                            `json:"energy_points"`
+	MaxEnergyPoints       int                            `json:"max_energy_points,omitempty"`
+	MaxHandSize           int                            `json:"max_hand_size,omitempty"`
+	MaxHealth             int                            `json:"max_health,omitempty"`
+	CurrentHealth         int                            `json:"current_health,omitempty"`
+	HealthCardCount       *int                           `json:"health_card_count,omitempty"`
+	Decklist              []state.DecklistEntry          `json:"decklist,omitempty"`
+	Hand                  []string                       `json:"hand,omitempty"`
+	DeckComposition       map[string]int                 `json:"deck_composition,omitempty"`
+	DiscardComposition    map[string]int                 `json:"discard_composition,omitempty"`
+	RemovedComposition    map[string]int                 `json:"removed_composition,omitempty"`
+	HandCount             int                            `json:"hand_count"`
+	DeckCount             int                            `json:"deck_count"`
+	DiscardCount          int                            `json:"discard_count"`
+	RemovedCount          int                            `json:"removed_count"`
+	DiceLoadout           []state.DiceLoadoutEntry       `json:"dice_loadout,omitempty"`
+	DiceCount             int                            `json:"dice_count,omitempty"`
+	AbilityIDs            []string                       `json:"abilities,omitempty"`
+	AbilityCount          int                            `json:"ability_count,omitempty"`
+	Statuses              []state.StatusState            `json:"statuses,omitempty"`
+	Tokens                []state.TokenState             `json:"tokens,omitempty"`
+	RollPreferences       *state.RollPreferences         `json:"roll_preferences,omitempty"`
+	Dice                  *DiceRollState                 `json:"dice,omitempty"`
+	DefeatState           state.ActorDefeatState         `json:"defeat_state,omitempty"`
+	CardInstances         map[string]state.CardInstance  `json:"card_instances,omitempty"`
+	OffensiveAbilities    []string                       `json:"offensive_abilities,omitempty"`
+	DefensiveAbilities    []string                       `json:"defensive_abilities,omitempty"`
+	RollHistory           []state.RollBatch              `json:"roll_history,omitempty"`
+	QualifiedAbilities    []string                       `json:"qualified_abilities,omitempty"`
+	SelectedAbility       string                         `json:"selected_ability,omitempty"`
+	SelectedTier          string                         `json:"selected_tier,omitempty"`
+	SelectedTargets       []string                       `json:"selected_targets,omitempty"`
+	OffensiveOutcome      map[string]any                 `json:"offensive_outcome,omitempty"`
+	AbilityModifiers      []state.RuntimeAbilityModifier `json:"ability_modifiers,omitempty"`
+	CurrentForm           string                         `json:"current_form,omitempty"`
+	PassiveAbilities      []string                       `json:"passive_abilities,omitempty"`
 }
 
 type CharacterMetadata struct {
@@ -260,7 +270,7 @@ func fromBattleForViewer(battle state.Battle, viewerActorID string, includeConte
 			snapshotActor.OffensiveAbilities = copyStrings(runtime.OffensiveAbilityIDs)
 			snapshotActor.DefensiveAbilities = copyStrings(runtime.DefensiveAbilityIDs)
 			snapshotActor.AbilityModifiers = append([]state.RuntimeAbilityModifier(nil), runtime.AbilityModifiers...)
-			if id != viewerActorID && battle.Settled.Stage == "planning" {
+			if id != viewerActorID && state.SettledPlanningPrivate(battle) {
 				if public, ok := battle.Settled.PlanningPublic[id]; ok {
 					snapshotActor.EnergyPoints = public.EnergyPoints
 					snapshotActor.HandCount = public.HandCount
@@ -271,6 +281,12 @@ func fromBattleForViewer(battle state.Battle, viewerActorID string, includeConte
 				}
 			}
 			if id == viewerActorID {
+				if battle.Settled.Venom != nil && battle.Settled.Venom.Used["battle:lens:"+id] {
+					snapshotActor.NeedlefangDamageBonus = 1
+				}
+				snapshotActor.DeckComposition = cardComposition(cards.Deck, runtime.CardInstances)
+				snapshotActor.DiscardComposition = cardComposition(cards.Discard, runtime.CardInstances)
+				snapshotActor.RemovedComposition = cardComposition(cards.Removed, runtime.CardInstances)
 				if snapshotActor.Dice == nil && (runtime.MaxRolls > 0 || len(runtime.FinalDice) > 0) {
 					snapshotActor.Dice = &DiceRollState{
 						RequestID:      fmt.Sprintf("settled-r%d-%s", battle.Segment.Round, id),
@@ -295,7 +311,21 @@ func fromBattleForViewer(battle state.Battle, viewerActorID string, includeConte
 				snapshotActor.SelectedAbility = runtime.SelectedAbilityID
 				snapshotActor.SelectedTier = runtime.SelectedTierID
 				snapshotActor.SelectedTargets = copyStrings(runtime.SelectedTargetIDs)
-			} else if battle.Settled.Stage != "planning" {
+			} else if !state.SettledPlanningPrivate(battle) {
+				if snapshotActor.Dice == nil && len(runtime.FinalDice) > 0 {
+					snapshotActor.Dice = &DiceRollState{
+						RequestID:      fmt.Sprintf("settled-r%d-%s", battle.Segment.Round, id),
+						Segment:        battle.Segment.Current,
+						Pool:           state.RollPoolOffensive,
+						SourceType:     state.RollSourceSystem,
+						Dice:           copyRolledDice(runtime.FinalDice),
+						RollsUsed:      runtime.RollsUsed,
+						MaxRolls:       runtime.MaxRolls,
+						RollsRemaining: max(runtime.MaxRolls-runtime.RollsUsed, 0),
+						SymbolCounts:   rolledSymbolCounts(runtime.FinalDice),
+						Complete:       true,
+					}
+				}
 				snapshotActor.RollHistory = append([]state.RollBatch(nil), runtime.RollHistory...)
 				snapshotActor.SelectedAbility = runtime.SelectedAbilityID
 				snapshotActor.SelectedTargets = copyStrings(runtime.SelectedTargetIDs)
@@ -322,18 +352,39 @@ func fromBattleForViewer(battle state.Battle, viewerActorID string, includeConte
 		DefensiveProposals: planningProposalsForViewer(battle.DefensiveProposals, viewerActorID),
 		Origin:             originSnapshot(battle.Origin),
 	}
+	if battle.Settled != nil && battle.Settled.Venom != nil && battle.Settled.Venom.Active != nil {
+		work := *battle.Settled.Venom.Active
+		work.Rolls = nil
+		result.VenomWork = &work
+		if work.Kind == "application" && battle.Settled.Venom.Resume != nil {
+			result.PresentationStage = battle.Settled.Venom.Resume.Stage
+		}
+	}
 	if includeContentCatalog {
 		result.ContentCatalog = settledContentCatalog(battle)
 	}
 	if battle.Settled != nil {
 		result.CompletedRounds = battle.Settled.CompletedRounds
 		result.Stage = battle.Settled.Stage
+		result.OffensiveReselection = battle.Settled.ReactionReplanning
 		if battle.Settled.Window != nil && battle.Settled.Window.RequiredActorID != "" {
 			result.PriorityActorID = battle.Settled.Window.RequiredActorID
 			result.ReactionPriority = copyStrings(battle.Settled.Window.PriorityActorIDs)
+			window := battle.Settled.Window
+			// Public response progress only: no opponent hand or legal-card information.
+			switch window.Stage {
+			case "offensive_reaction", "defense_reaction", "damage_reaction", "status_damage_reaction", "status_roll_reaction", "venom_status_reaction":
+				if window.RequiredActorID == viewerActorID {
+					for _, id := range window.PriorityActorIDs {
+						if id != viewerActorID && !window.Passes[id] {
+							result.PassHandsOffPriority = true
+						}
+					}
+				}
+			}
 		}
 		result.SettledSources = append([]state.SettledDamageSource(nil), battle.Settled.OffensiveSources...)
-		if battle.Segment.Current == segment.Defensive && battle.Settled.Stage == "defense_reaction" {
+		if battle.Segment.Current == segment.Defensive && (battle.Settled.Stage == "defense_reaction" || result.PresentationStage == "defense_reaction") {
 			result.SettledDefenses = make(map[string]state.SettledDefense, len(battle.Settled.DefenseSelections))
 			for actorID, defense := range battle.Settled.DefenseSelections {
 				result.SettledDefenses[actorID] = defense
@@ -349,7 +400,9 @@ func fromBattleForViewer(battle state.Battle, viewerActorID string, includeConte
 			damage.Removals = append([]state.ProposedCardRemoval(nil), battle.Settled.PendingDamage.Removals...)
 			result.SettledDamage = &damage
 		}
-		if battle.Segment.Current == segment.OngoingEffects && battle.Settled.TriggerBatch != nil {
+		// Provoke can interrupt Offensive or Defensive with the same status-roll
+		// windows. Visibility follows the roll stage, not the parent segment.
+		if battle.Settled.TriggerBatch != nil {
 			switch battle.Settled.Stage {
 			case "status_roll":
 				for _, roll := range battle.Settled.TriggerBatch.Rolls {
@@ -453,6 +506,20 @@ func diceCount(loadout []state.DiceLoadoutEntry) int {
 
 func copyDecklist(values []state.DecklistEntry) []state.DecklistEntry {
 	return append([]state.DecklistEntry(nil), values...)
+}
+
+func cardComposition(instanceIDs []string, instances map[string]state.CardInstance) map[string]int {
+	result := make(map[string]int)
+	for _, instanceID := range instanceIDs {
+		definitionID := instances[instanceID].DefinitionID
+		if definitionID != "" {
+			result[definitionID]++
+		}
+	}
+	if len(result) == 0 {
+		return nil
+	}
+	return result
 }
 
 func copyDiceLoadout(values []state.DiceLoadoutEntry) []state.DiceLoadoutEntry {

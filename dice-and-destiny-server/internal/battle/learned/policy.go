@@ -135,6 +135,11 @@ func LoadAcceptedPolicy(path string) (*Policy, error) {
 	return policy, nil
 }
 
+// Reviewed runtime rules update: automatic Effects removes response windows and
+// moves Antidote to planning. Card IDs, model inputs and action encoding remain
+// compatible; the exported models retain their original training metadata.
+const AutomaticEffectsContentVersion = "80449df424b039b7409372aa4f6bbb33c9f2143c72629372dda2cd2d7bbd3792"
+
 func VerifyContentVersion(contentRoot string) error {
 	paths := []string{}
 	err := filepath.Walk(filepath.Join(contentRoot, "battle_v1"), func(path string, info os.FileInfo, walkErr error) error {
@@ -165,7 +170,7 @@ func VerifyContentVersion(contentRoot string) error {
 		digest.Write(payload)
 	}
 	actual := fmt.Sprintf("%x", digest.Sum(nil))
-	if actual != AcceptedContentVersion {
+	if actual != AcceptedContentVersion && actual != AutomaticEffectsContentVersion {
 		return fmt.Errorf("learned policy content version mismatch: got %s, want %s", actual, AcceptedContentVersion)
 	}
 	return nil

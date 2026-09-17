@@ -1,9 +1,11 @@
 from __future__ import annotations
 
+from collections import Counter
 from pathlib import Path
 from random import Random
 
 from dice_destiny_ml import opponent_pool
+from dice_destiny_ml.champions import Champion, ChampionRegistry
 from dice_destiny_ml.opponent_pool import OpponentManager
 from dice_destiny_ml.training import atomic_model_save
 
@@ -21,9 +23,7 @@ class FakePolicy:
         return 0
 
 
-def test_flat_manifest_preserves_legacy_expansion_and_cache_classes(
-    tmp_path: Path, monkeypatch
-) -> None:
+def test_flat_manifest_preserves_legacy_expansion_and_cache_classes(tmp_path: Path, monkeypatch) -> None:
     first = tmp_path / "a.zip"
     second = tmp_path / "b.zip"
     first.touch()
@@ -53,9 +53,7 @@ def test_flat_manifest_preserves_legacy_expansion_and_cache_classes(
         manager.flat_manifest()
     )
     balanced_rng = Random(33)
-    categories = [
-        manager.select(balanced_rng, mode="category-balanced").category for _ in range(400)
-    ]
+    categories = [manager.select(balanced_rng, mode="category-balanced").category for _ in range(400)]
     assert set(categories) == {"random", "mechanics", "historical"}
     assert max(categories.count(category) for category in set(categories)) < 170
     assert manager.acquire("random").cache_status == "static_miss"
@@ -82,3 +80,44 @@ def test_atomic_model_save_never_publishes_a_partial_zip(tmp_path: Path) -> None
     atomic_model_save(FakeModel(), target)  # type: ignore[arg-type]
     assert target.read_bytes() == b"complete"
     assert list((checkpoints / ".staging").glob("*.zip")) == []
+
+
+def _champion(path: Path, identifier: str) -> Champion:
+    path.write_bytes(identifier.encode())
+    return Champion.from_checkpoint(
+        champion_id=identifier,
+        checkpoint=path,
+        observation_schema="observation",
+        action_schema="action",
+        model_family="family",
+        learner_steps=1,
+        promoted_at="now",
+    )
+
+
+def test_champion_registry_sampling_is_explicit_deduplicated_and_file_count_independent(
+    tmp_path: Path,
+) -> None:
+    global_champion = _champion(tmp_path / "global.zip", "global")
+    checkpoint = _champion(tmp_path / "checkpoint.zip", "checkpoint")
+    hall = _champion(tmp_path / "hall.zip", "hall")
+    registry_path = tmp_path / "registry.json"
+    ChampionRegistry(global_champion, checkpoint, [hall, global_champion]).save(registry_path)
+    manager = OpponentManager(
+        [f"registry:{registry_path}"],
+        device="cpu",
+        deterministic=True,
+        category_weights={"checkpoint": 0.5, "global": 0.4, "hall": 0.1},
+    )
+    before_rng = Random(44)
+    before = [manager.select(before_rng, mode="champion-registry") for _ in range(1_000)]
+    for index in range(50):
+        (tmp_path / f"ordinary-{index}.zip").write_bytes(b"ordinary")
+    after_rng = Random(44)
+    after = [manager.select(after_rng, mode="champion-registry") for _ in range(1_000)]
+    assert before == after
+    counts = Counter(selection.category for selection in before)
+    assert set(counts) == {"checkpoint", "global", "hall"}
+    assert abs(counts["checkpoint"] - 500) < 80
+    assert abs(counts["global"] - 400) < 80
+    assert abs(counts["hall"] - 100) < 60

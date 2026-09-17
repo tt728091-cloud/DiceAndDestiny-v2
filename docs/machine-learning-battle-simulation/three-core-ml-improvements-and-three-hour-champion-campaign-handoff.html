@@ -99,7 +99,7 @@
   <header class="hero">
     <div class="eyebrow">Implementation handoff · owner-approved direction · 2026-08-04</div>
     <h1>Three Core ML Improvements and a Three-Hour Global-Champion Campaign</h1>
-    <p class="lede">This is the complete handoff for a fresh Codex context that knows nothing about the preceding discussion. Implement all three improvements below, validate them against the real Dice &amp; Destiny authority, then run one time-bounded campaign whose goal is to produce a model that defeats the current global champion: raw V3 checkpoint 400 at 2,001,600 learner steps.</p>
+    <p class="lede">This is the complete handoff for a fresh Codex context that knows nothing about the preceding discussion. Implement all three improvements below, validate them against the real Dice &amp; Destiny authority, then run one time-bounded campaign whose goal is to produce a model that defeats the current global champion: raw V3 checkpoint 480 at 2,401,920 learner steps.</p>
     <div class="cards">
       <article class="card"><div class="eyebrow">Improvement 1</div><div class="metric">Controlled training</div><p>Checkpoint/global champion gates, reversible experiments, plateau handling, and permanent history.</p></article>
       <article class="card"><div class="eyebrow">Improvement 2</div><div class="metric">Observation V3</div><p>Status-aware, roster-scalable, form-aware state and candidate representation.</p></article>
@@ -107,6 +107,7 @@
       <article class="card"><div class="eyebrow">Campaign budget</div><div class="metric">3 hours</div><p>Finish the checkpoint and its required evaluation already in flight at the deadline, then stop.</p></article>
     </div>
     <div class="callout must"><strong>Owner communication is mandatory.</strong> Send short commentary notes as work proceeds: starting assumptions, schema/preflight result, implementation milestones, tests, exact campaign configuration and timer start, checkpoint promotions/rejections, control changes, global-score trend, deadline handling, and final outcome. During long operations, poll and report brief progress instead of disappearing.</div>
+    <div class="callout success"><strong>Champion update · 2026-08-05.</strong> Checkpoint 480 passed 472/99/429 in its 1,000-game screen and 1,407/292/1,301 in a fresh 3,000-game confirmation, for adjusted scores of 52.15% and 51.77%. It supersedes checkpoint 400 as the global anchor. The canonical registry is <code>dice-and-destiny-server/ml/champions/current-global.json</code>; checkpoint 400 remains preserved in its hall. All older checkpoint-400 language below that describes completed evidence remains historical.</div>
   </header>
 
   <nav class="toc">
@@ -133,29 +134,29 @@
 
   <section id="truth" class="section">
     <div class="eyebrow">Current verified truth</div>
-    <h2>Use raw checkpoint 400 as the global champion</h2>
+    <h2>Use raw checkpoint 480 as the global champion</h2>
     <div class="grid2">
       <div>
         <h3>Global champion artifact</h3>
         <pre>dice-and-destiny-server/ml/runs/v3-seed22-optimized-5m-20260803-m3max/
-  seed-22/checkpoints/step-002001600.zip</pre>
+  seed-22/checkpoints/step-002401920.zip</pre>
         <ul>
-          <li>Learner steps: <strong>2,001,600</strong></li>
-          <li>SHA-256: <code>9cc042d0e355dceb49e98d82296c7017c9fc810296d87b151c2dc9abf8be43b8</code></li>
-          <li>Size: 34,343,385 bytes</li>
+          <li>Learner steps: <strong>2,401,920</strong></li>
+          <li>SHA-256: <code>38412a8821419f98a922149506de4a9c00feed617c37d9778b22e83f1c4df6c6</code></li>
+          <li>Size: 34,343,376 bytes</li>
           <li>PPO: LR <code>3e-4</code>, rollout 256/worker, batch 256, 8 epochs, gamma .995, GAE .95, entropy .01, clip .2</li>
         </ul>
       </div>
       <div>
         <h3>Strength evidence</h3>
         <ul>
-          <li>Checkpoint 400 vs V2, 1,000 matched games: <strong>781 wins, 48 draws, 171 losses</strong>; adjusted score 80.5%.</li>
-          <li>Corrected deployed V3 vs checkpoint 400: corrected V3 won 341, drew 73, lost 586. Checkpoint 400 is materially stronger.</li>
-          <li>The later post-PPO correction increased teacher agreement but reduced complete-game strength.</li>
+          <li>Checkpoint 480 vs checkpoint 400, 1,000-game screen: <strong>472 wins, 99 draws, 429 losses</strong>; adjusted score 52.15%.</li>
+          <li>Fresh 3,000-game confirmation: <strong>1,407 wins, 292 draws, 1,301 losses</strong>; adjusted score 51.77% with all safety counts zero.</li>
+          <li>Checkpoint 400 remains preserved as the prior champion and historical anchor.</li>
         </ul>
       </div>
     </div>
-    <div class="callout must"><strong>Do not confuse models.</strong> The current game-menu “Strongest v3” export is the corrected 5M artifact. It is useful as a playable preserved model, but it is not the global champion for this campaign. The raw 2,001,600-step checkpoint above is the champion.</div>
+    <div class="callout must"><strong>Do not confuse models.</strong> The game-menu “Strongest v3” export is the corrected 5M artifact. It is useful as a playable preserved model, but it is not the global champion. The raw 2,401,920-step checkpoint above is the champion.</div>
     <div class="callout danger"><strong>Ignored artifact warning:</strong> training checkpoints live under ignored <code>ml/runs</code> storage and are not carried into an arbitrary new Git worktree. Work in the primary workspace where the artifact exists. Before implementation, verify the exact path and SHA. If it is missing, stop and ask the owner; never substitute corrected V3 or V2.</div>
 
     <h3>Existing long-run facts</h3>
@@ -179,7 +180,7 @@
     <h3>Use two distinct champion concepts</h3>
     <div class="grid2">
       <div class="callout"><strong>Checkpoint champion</strong><p>The strongest accepted checkpoint within the current campaign/model family. Every new challenger must beat this model first.</p></div>
-      <div class="callout purple"><strong>Global champion</strong><p>The strongest accepted model across all campaigns and model families. Initially raw checkpoint 400. It changes only after the global promotion series passes.</p></div>
+      <div class="callout purple"><strong>Global champion</strong><p>The strongest accepted model across all campaigns and model families. Currently raw checkpoint 480; checkpoint 400 is retained as the prior champion. It changes only after the global promotion series passes.</p></div>
     </div>
 
     <h3>Adaptive checkpoint gate</h3>
@@ -347,7 +348,7 @@
     <ol>
       <li>All three improvements implemented and their focused tests passing.</li>
       <li>Observation V3 manifest frozen and hashed.</li>
-      <li>Raw checkpoint 400 verified by exact SHA and registered as global champion.</li>
+      <li>Raw checkpoint 480 verified by exact SHA and registered as global champion.</li>
       <li>Champion-only opponent registry working independently of checkpoint file count.</li>
       <li>Checkpoint controller, adaptive 1K/3K gate, promotion series, ledger, telemetry, rollback, and timer grace behavior tested on short deterministic probes.</li>
       <li>Initial warm-start choice selected by a small documented full-game ablation. No post-PPO teacher stage.</li>
@@ -359,7 +360,7 @@
     <ul>
       <li>Observation V3 creates a new model family, so do not load V2 checkpoint weights into the learner.</li>
       <li>Initialize V3 using the accepted preflight warm-start choice.</li>
-      <li>Global champion is frozen raw checkpoint 400 and is always available as an opponent/anchor.</li>
+      <li>Global champion is frozen raw checkpoint 480 and is always available as an opponent/anchor.</li>
       <li>The initial V3 checkpoint champion is the warm-start/base candidate once it completes its declared baseline evaluation.</li>
       <li>Use seed 22 for the main owner-requested campaign unless preflight finds a reproducibility blocker; record every seed.</li>
     </ul>
@@ -402,12 +403,12 @@ if deadline is crossed inside an interval/update/save/evaluation:
     run any global-promotion test triggered by that gate
     record all results
     stop; do not start another interval</pre>
-    <p>At stop, run a final comparison of the best V3 checkpoint against global checkpoint 400 if the exact required promotion evidence has not already been completed. This final evaluation is allowed as part of finishing the campaign outcome.</p>
+    <p>At stop, run a final comparison of the best V3 checkpoint against the current registered global champion if the exact required promotion evidence has not already been completed. This final evaluation is allowed as part of finishing the campaign outcome.</p>
 
     <h3>If a new global champion emerges</h3>
     <ul>
       <li>Immediately preserve raw checkpoint, optimizer state, config, manifest, ledger, seed lists, evaluation records, and hashes.</li>
-      <li>Update the global champion registry atomically; do not delete checkpoint 400.</li>
+      <li>Update the global champion registry atomically; do not delete the previous champion.</li>
       <li>Export the new V3-family actor under a new model ID/file. Do not overwrite accepted V1, V2, or the existing corrected V3 export.</li>
       <li>Run Python/export/Go inference parity, complete authority replay, native tests, and relevant Godot learned-battle smoke before calling it deployable.</li>
       <li>Report exact W/D/L/draw-adjusted scores for every global block and the pooled result.</li>
@@ -416,7 +417,7 @@ if deadline is crossed inside an interval/update/save/evaluation:
     <h3>If no new global champion emerges</h3>
     <ul>
       <li>This is not a failed engineering task if all three systems work correctly.</li>
-      <li>Preserve the strongest V3 checkpoint, its score against checkpoint 400, its checkpoint progression, and why the campaign stopped.</li>
+      <li>Preserve the strongest V3 checkpoint, its score against the current global champion, its checkpoint progression, and why the campaign stopped.</li>
       <li>State whether global score improved over time, plateaued, or regressed.</li>
       <li>Use the ledger to recommend the next single controlled campaign change.</li>
     </ul>
@@ -427,7 +428,7 @@ if deadline is crossed inside an interval/update/save/evaluation:
     <h2>Implement in falsifiable stages</h2>
     <ol>
       <li><strong>Read and audit.</strong> Read <code>AGENTS.md</code>, this handoff, the two throughput reports, the observation walkthrough, current source, artifacts, branches, ignored runs, and tests. Preserve all existing work.</li>
-      <li><strong>Freeze truth.</strong> Verify global checkpoint 400 hash and reproduce one known evaluation/replay before architectural changes.</li>
+      <li><strong>Freeze truth.</strong> Verify the registered global champion hash and reproduce one known evaluation/replay before architectural changes.</li>
       <li><strong>Build experiment/champion registry.</strong> Versioned manifests, atomic champion updates, explicit pool weights, immutable parent/child experiment ledger, and no directory-size coupling.</li>
       <li><strong>Build checkpoint controller.</strong> Adaptive 1K/3K gate, global promotion series, rollback with optimizer, patience and upward-trend logic, time budget/grace, deterministic seed files, and progress summaries.</li>
       <li><strong>Build Observation V3 manifest and encoders.</strong> Python and Go parity, entity masks, status/form/card/ability/dice representation, capacity audit, privacy tests, and export metadata.</li>
@@ -457,7 +458,7 @@ if deadline is crossed inside an interval/update/save/evaluation:
         <tr><td>H · Learning telemetry</td><td>KL, entropy, clipping, actor/value loss, explained variance/calibration, behavior, opponent/seat distributions, throughput, and safety recorded by interval.</td></tr>
         <tr><td>I · Campaign timer</td><td>Exact monotonic start/deadline, no new interval after deadline, in-flight checkpoint/evaluation completed exactly once.</td></tr>
         <tr><td>J · Authority safety</td><td>Zero unexplained truncations, authority rejects, invalid indices, stale actions, wrong-seat actions, hidden leaks, state leaks, or replay mismatches.</td></tr>
-        <tr><td>K · Outcome</td><td>Best V3 checkpoint versus raw checkpoint 400 with exact W/D/L, adjusted score, confidence, seed files, swaps, hashes, and promotion decision.</td></tr>
+        <tr><td>K · Outcome</td><td>Best V3 checkpoint versus the registered global champion with exact W/D/L, adjusted score, confidence, seed files, swaps, hashes, and promotion decision.</td></tr>
       </tbody>
     </table></div>
   </section>
@@ -518,7 +519,7 @@ dice-and-destiny-server/scripts/build_native.sh
     <pre>cd dice-and-destiny-server
 scripts/ml.sh evaluate \
   --seat-a model:/absolute/path/to/challenger.zip \
-  --seat-b model:/absolute/path/to/step-002001600.zip \
+  --seat-b model:/absolute/path/to/step-002401920.zip \
   --episodes 500 --swap \
   --seed-start &lt;predeclared-seed-start&gt; \
   --observation-schema dice-and-destiny-observation-v3 \
@@ -544,7 +545,7 @@ scripts/ml.sh evaluate \
       <li>If not promoted, the strongest evidence-based next experiment</li>
       <li>All safety counts and reproducibility inputs</li>
     </ul>
-    <div class="callout success"><strong>Success has two layers.</strong> Engineering success means the new controller, history, observation, parity, and teacher safety are correct. Gameplay success means a raw V3 checkpoint also passes the global promotion gate against checkpoint 400. Report both honestly.</div>
+    <div class="callout success"><strong>Success has two layers.</strong> Engineering success means the new controller, history, observation, parity, and teacher safety are correct. Gameplay success means a raw V3 checkpoint also passes the global promotion gate against the registered global champion. Report both honestly.</div>
     <div class="callout must"><strong>Git starting point:</strong> begin from the latest fetched <code>origin/main</code> containing this handoff and the Phase 2 throughput work. Confirm a clean or understood worktree before editing. Do not discard user changes or ignored model artifacts. Do not commit or push the new implementation unless the owner explicitly authorizes it in that task.</div>
   </section>
 

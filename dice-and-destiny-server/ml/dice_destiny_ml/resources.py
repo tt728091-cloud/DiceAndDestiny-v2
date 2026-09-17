@@ -129,9 +129,7 @@ def resolve_resource_budget(
     )
 
 
-def configure_thread_runtime(
-    *, torch_threads: int, torch_interop_threads: int, blas_threads: int
-) -> None:
+def configure_thread_runtime(*, torch_threads: int, torch_interop_threads: int, blas_threads: int) -> None:
     """Apply an explicit intra/inter-op and BLAS contract in the current process."""
 
     if min(torch_threads, torch_interop_threads, blas_threads) < 1:

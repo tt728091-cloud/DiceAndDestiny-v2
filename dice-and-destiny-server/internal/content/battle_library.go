@@ -613,7 +613,7 @@ func validateTargeting(targeting *TargetingDefinition) error {
 		return nil
 	}
 	selectors := map[string]bool{
-		"self": true, "one_enemy": true, "one_owned_combat_die": true,
+		"venom_choice": true, "self": true, "one_enemy": true, "one_owned_combat_die": true,
 		"selected_die": true, "one_negative_status_on_self": true,
 		"one_incoming_damage_source": true, "one_owned_offensive_ability": true,
 	}
@@ -671,7 +671,7 @@ func validateTier(tier AbilityTier, lib BattleLibrary) error {
 	return validateBattleOperations(tier.Operations, lib)
 }
 func validateBattleOperations(ops []BattleOperation, lib BattleLibrary) error {
-	supported := map[string]bool{"noop": true, "deal_damage": true, "prevent_damage": true, "scale_damage": true, "apply_status": true, "remove_status": true, "remove_status_stack": true, "gain_resource": true, "draw_cards": true, "modify_die": true, "apply_ability_modifier": true, "adjust_max_rolls": true, "cancel_source": true, "roll_dice": true}
+	supported := map[string]bool{"provoke": true, "apply_incubation": true, "incubation_or_poison": true, "venom_card": true, "noop": true, "deal_damage": true, "prevent_damage": true, "scale_damage": true, "apply_status": true, "remove_status": true, "remove_status_stack": true, "gain_resource": true, "draw_cards": true, "modify_die": true, "apply_ability_modifier": true, "adjust_max_rolls": true, "cancel_source": true, "roll_dice": true}
 	for _, op := range ops {
 		if !supported[op.Type] {
 			return fmt.Errorf("unsupported operation type %q", op.Type)
@@ -681,7 +681,7 @@ func validateBattleOperations(ops []BattleOperation, lib BattleLibrary) error {
 				return fmt.Errorf("operation references unknown status %q", op.StatusID)
 			}
 		}
-		validTargets := map[string]bool{"": true, "self": true, "source_actor": true, "selected_targets": true, "target_actor": true, "selected_proposal": true, "selected_status": true, "selected_die": true, "selected_ability": true, "selected_offensive_ability": true}
+		validTargets := map[string]bool{"enemy": true, "": true, "self": true, "source_actor": true, "selected_targets": true, "target_actor": true, "selected_proposal": true, "selected_status": true, "selected_die": true, "selected_ability": true, "selected_offensive_ability": true}
 		if !validTargets[op.Target] {
 			return fmt.Errorf("operation %q has unknown target %q", op.Type, op.Target)
 		}

@@ -9,9 +9,7 @@ from .resources import capture_host_state
 from .training import TrainingConfig, set_reproducible_runtime, train_seed
 
 
-def run_phase2_matrix(
-    *, binary: Path, server_root: Path, config_file: Path
-) -> dict[str, Any]:
+def run_phase2_matrix(*, binary: Path, server_root: Path, config_file: Path) -> dict[str, Any]:
     config = json.loads(config_file.read_text())
     artifact_root = server_root / "ml" / config["artifact_root"]
     artifact_root.mkdir(parents=True, exist_ok=True)
@@ -57,6 +55,7 @@ def run_phase2_matrix(
                             imitation_teacher=condition["imitation_teacher"],
                             transport_mode=config["training"]["transport_mode"],
                             ablation_condition=condition["id"],
+                            reward=str(config["reward"]),
                             verbose=0,
                         ),
                         binary=binary,

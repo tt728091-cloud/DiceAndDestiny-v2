@@ -1,0 +1,44 @@
+{
+  "schema_version": 1,
+  "id": "coagulate",
+  "name": "Coagulate",
+  "type": "reaction",
+  "presentation": {
+    "rules_text": "Spend 1 surviving enemy Poison as a cost. Prevent 3 from one incoming source."
+  },
+  "cost": {
+    "energy": 1
+  },
+  "play": {
+    "source_zones": [
+      "hand"
+    ],
+    "destination": "discard",
+    "playable_during": [
+      {
+        "segment": "offensive",
+        "phase": "main",
+        "window_purpose": "reaction"
+      },
+      {
+        "segment": "damage_resolution",
+        "phase": "main",
+        "window_purpose": "reaction"
+      }
+    ]
+  },
+  "targeting": {
+    "selector": "venom_choice",
+    "minimum": 0,
+    "maximum": 1
+  },
+  "reaction_window": {
+    "opens": false
+  },
+  "operations": [
+    {
+      "type": "venom_card",
+      "id": "coagulate"
+    }
+  ]
+}

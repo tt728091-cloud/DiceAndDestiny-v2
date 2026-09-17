@@ -8,6 +8,9 @@ from typing import Protocol
 
 import numpy as np
 
+from .manifest_v3 import OBSERVATION_SCHEMA_V3
+from .manifest_v4 import OBSERVATION_SCHEMA_V4
+from .manifest_v5 import OBSERVATION_SCHEMA_V5
 from .schema import OBSERVATION_SIZE, EncodedDecision, SchemaEncoder, parse_payload
 from .schema_v2 import (
     OBSERVATION_SCHEMA_V2,
@@ -17,6 +20,9 @@ from .schema_v2 import (
     enumerate_reroll_outcomes,
     parse_payload_v2,
 )
+from .schema_v3 import EncodedDecisionV3, SchemaEncoderV3
+from .schema_v4 import EncodedDecisionV4, SchemaEncoderV4
+from .schema_v5 import EncodedDecisionV5, SchemaEncoderV5
 
 
 class Policy(Protocol):
@@ -25,7 +31,13 @@ class Policy(Protocol):
 
     def reset(self, seed: int, seat_id: str) -> None: ...
 
-    def select(self, transition: dict, decision: EncodedDecision) -> int: ...
+    def select(
+        self,
+        transition: dict,
+        decision: (
+            EncodedDecision | EncodedDecisionV2 | EncodedDecisionV3 | EncodedDecisionV4 | EncodedDecisionV5
+        ),
+    ) -> int: ...
 
 
 class RandomLegalPolicy:
@@ -167,8 +179,16 @@ class MechanicsPolicyV2:
         if not catalog or not actions:
             raise RuntimeError("mechanics-v2 requires full viewer-safe v2 transport")
         selectable = np.flatnonzero(decision.action_mask)
+        authority_indices = getattr(decision, "authority_indices", None)
         selected = max(
-            (self._score(actions[int(index)], actor, catalog), int(index))
+            (
+                self._score(
+                    actions[int(authority_indices[index]) if authority_indices is not None else int(index)],
+                    actor,
+                    catalog,
+                ),
+                int(index),
+            )
             for index in selectable
         )[1]
         self.inference_seconds.append(time.perf_counter() - started)
@@ -278,8 +298,7 @@ class MechanicsPolicyV2:
                 )
             utilities[coordinates] = self._best_ability_utility(actor, catalog, outcome)
         face_indices = [
-            {int(face.get("number", 0)): index for index, face in enumerate(faces)}
-            for faces in face_options
+            {int(face.get("number", 0)): index for index, face in enumerate(faces)} for faces in face_options
         ]
         result = (utilities, face_indices)
         self._outcome_tables[key] = result
@@ -296,9 +315,7 @@ class MechanicsPolicyV2:
         board = list(actor.get("offensive_abilities") or [])
         return max(
             (
-                self._ability_utility(
-                    SchemaEncoderV2.effective_ability(identifier, actor, catalog), dice
-                )
+                self._ability_utility(SchemaEncoderV2.effective_ability(identifier, actor, catalog), dice)
                 for identifier in board
             ),
             default=0.0,
@@ -362,6 +379,12 @@ class ModelPolicy:
             self.observation_schema = "dice-and-destiny-observation-v1"
         elif shape == (OBSERVATION_SIZE_V2,):
             self.observation_schema = OBSERVATION_SCHEMA_V2
+        elif hasattr(self.model.policy, "manifest"):
+            manifest = self.model.policy.manifest
+            if shape != (manifest.layout.observation_size,):
+                raise RuntimeError("entity checkpoint shape does not match its frozen manifest")
+            self.observation_schema = manifest.observation_schema
+            self.observation_manifest = manifest
         else:
             raise RuntimeError(f"checkpoint has unsupported observation shape {shape}")
         self.inference_seconds: list[float] = []
@@ -376,7 +399,13 @@ class ModelPolicy:
         self._episode_start[...] = True
         self.inference_seconds.clear()
 
-    def select(self, transition: dict, decision: EncodedDecision) -> int:
+    def select(
+        self,
+        transition: dict,
+        decision: (
+            EncodedDecision | EncodedDecisionV2 | EncodedDecisionV3 | EncodedDecisionV4 | EncodedDecisionV5
+        ),
+    ) -> int:
         del transition
         started = time.perf_counter()
         observation, _ = self.model.policy.obs_to_tensor(decision.observation)
@@ -419,15 +448,22 @@ def build_policy(specification: str, *, device: str = "cpu", deterministic: bool
 def select_with_policy(
     policy: Policy,
     transition: dict,
-    encoder: SchemaEncoder | SchemaEncoderV2,
+    encoder: SchemaEncoder | SchemaEncoderV2 | SchemaEncoderV3 | SchemaEncoderV4 | SchemaEncoderV5,
 ) -> int:
     required_schema = getattr(policy, "observation_schema", None)
-    if required_schema == OBSERVATION_SCHEMA_V2 and not isinstance(encoder, SchemaEncoderV2):
+    if required_schema == OBSERVATION_SCHEMA_V5:
+        decision = SchemaEncoderV5(policy.observation_manifest).encode(transition)
+    elif required_schema == OBSERVATION_SCHEMA_V4:
+        decision = SchemaEncoderV4(policy.observation_manifest).encode(transition)
+    elif required_schema == OBSERVATION_SCHEMA_V3:
+        decision = SchemaEncoderV3(policy.observation_manifest).encode(transition)
+    elif required_schema == OBSERVATION_SCHEMA_V2 and not isinstance(encoder, SchemaEncoderV2):
         decision = SchemaEncoderV2().encode(transition)
     elif (
         required_schema
-        and required_schema != OBSERVATION_SCHEMA_V2
-        and isinstance(encoder, SchemaEncoderV2)
+        and required_schema
+        not in {OBSERVATION_SCHEMA_V2, OBSERVATION_SCHEMA_V3, OBSERVATION_SCHEMA_V4, OBSERVATION_SCHEMA_V5}
+        and isinstance(encoder, (SchemaEncoderV2, SchemaEncoderV3, SchemaEncoderV4, SchemaEncoderV5))
     ):
         decision = SchemaEncoder().encode(transition)
     else:
@@ -435,4 +471,6 @@ def select_with_policy(
     selected = policy.select(transition, decision)
     if selected < 0 or selected >= len(decision.action_mask) or not decision.action_mask[selected]:
         raise RuntimeError(f"policy {policy.name} selected masked action {selected}")
+    if isinstance(decision, EncodedDecisionV4):
+        return int(decision.authority_indices[selected])
     return selected

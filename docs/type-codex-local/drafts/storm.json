@@ -1,0 +1,270 @@
+{
+  "id": "storm",
+  "name": "Storm",
+  "identity": "Store charge from deliberate rerolls, then release one bounded pulse. Extra rolls help a mixed build, but expose its marked dice.",
+  "symbols": [
+    "Bolt",
+    "Cloud",
+    "Eye"
+  ],
+  "loop": "Reroll combat dice to build Charge → collect more Charge with Ground when the enemy pays for cards → spend it on Pulse → punish low effect rolls with Conductive.",
+  "statuses": [
+    [
+      "Charge",
+      "Positive · you · cap 4",
+      "During Offensive, gain 1 Charge each time you choose to reroll one or more combat dice, up to twice per round. The first roll and rerolls forced by enemies give no Charge. Spend Charge on Storm cards and abilities, including Pulse. Keep unused Charge."
+    ],
+    [
+      "Conductive",
+      "Negative · enemy · cap 2",
+      "When this enemy finishes a roll with a 1 or 2 on a status die, defense die or a die rolled by a card, remove 1 Conductive. They take 1 status damage after finishing that roll’s normal effects. Use at most 1 Conductive for a group of dice rolled together. Offensive combat rolls do not trigger it. Keep unused stacks."
+    ],
+    [
+      "Ground",
+      "Positive · you · cap 2",
+      "When an enemy spends Energy to play a card, you may spend 1 Ground to gain that much Charge, up to 2. Use Ground once per round. The enemy still pays for and plays their card normally. Keep unused Ground."
+    ],
+    [
+      "Overload",
+      "Positive · you · cap 1",
+      "Your next Offensive segment allows one extra reroll attempt, up to four total rolls including the first roll. Remove Overload when that Offensive segment ends. You may stop rolling early. Gaining Overload again does not add more attempts or extend it."
+    ]
+  ],
+  "abilities": [
+    [
+      "Static Claw",
+      "Offense · 0E",
+      "3 Bolt / 4 Bolt / 5 Bolt",
+      "4 / 5 / 6 damage and gain 1 Charge."
+    ],
+    [
+      "Cloud Bank",
+      "Offense · 0E",
+      "2 Cloud + 1 Eye",
+      "Gain 2 Charge and 1 Ground."
+    ],
+    [
+      "Forked Sky",
+      "Offense · 0E",
+      "Any four-number straight",
+      "Deal 5 damage. When choosing this ability, you may spend 2 Charge to use Pulse against that enemy after the attack. You must have your once-per-round Pulse available."
+    ],
+    [
+      "Thunderhead",
+      "Offense · 0E",
+      "3 Eye",
+      "Deal 6 damage and apply 1 Conductive. Gain Overload for next round."
+    ],
+    [
+      "Windbreak",
+      "Defense · 0E",
+      "Roll 2 Storm dice",
+      "Each Bolt prevents 1; each Cloud gains 1 Charge; any Eye gains 1 Ground."
+    ],
+    [
+      "Lightning Rod",
+      "Defense · 1E",
+      "Roll 1 Storm die",
+      "Bolt: prevent 2. Cloud: prevent 3. Eye: prevent 2 and apply 1 Conductive to the attacker."
+    ]
+  ],
+  "cards": [
+    [
+      "Gather Static",
+      "1",
+      "Action",
+      "Gain 2 Charge."
+    ],
+    [
+      "Metal Rain",
+      "1",
+      "Action",
+      "Apply 1 Conductive to one enemy."
+    ],
+    [
+      "Ground Cable",
+      "1",
+      "Action",
+      "Gain 1 Ground and 1 Charge."
+    ],
+    [
+      "Storm Front",
+      "1",
+      "Action",
+      "Gain Overload if absent."
+    ],
+    [
+      "Test Current",
+      "1",
+      "Action",
+      "Spend 1 Charge; Pulse one enemy."
+    ],
+    [
+      "Weather Notes",
+      "1",
+      "Action",
+      "Draw 1; if you voluntarily rerolled this round, gain 1 Charge."
+    ],
+    [
+      "Capacitor",
+      "0",
+      "Action",
+      "Spend 2 Charge; gain 1 Energy. Once per round."
+    ],
+    [
+      "High Voltage",
+      "1",
+      "Offensive reaction",
+      "Spend 2 Charge. After your attack, apply 1 Conductive to that enemy and use Pulse against them. You must have your once-per-round Pulse available."
+    ],
+    [
+      "Circuit Jump",
+      "1",
+      "Action",
+      "Spend 1 Charge; move Conductive from an enemy to another with room, or remove it to draw 1."
+    ],
+    [
+      "Pressure Drop",
+      "1",
+      "Action",
+      "Spend 1 Charge; draw 2, then discard 1."
+    ],
+    [
+      "Charged Mist",
+      "2",
+      "Action",
+      "Apply 2 Conductive and gain 1 Charge."
+    ],
+    [
+      "Aftershock",
+      "1",
+      "Offensive reaction",
+      "Spend 2 Charge to use Pulse against the enemy after your attack. You must have your once-per-round Pulse available."
+    ],
+    [
+      "Gust",
+      "1",
+      "Offensive reaction",
+      "Change one of your combat dice up or down by 1, staying between 1 and 6. Choose an ability your final dice allow. You cannot change a Frostbound die."
+    ],
+    [
+      "Crosswind",
+      "1",
+      "Roll reaction",
+      "Physically reroll one of your dice just rolled for a status, defense or card once."
+    ],
+    [
+      "Insulate",
+      "1",
+      "Damage reaction",
+      "Prevent 3 damage from one status."
+    ],
+    [
+      "Static Guard",
+      "1",
+      "Damage reaction",
+      "Prevent 2 damage from one attack, card or status. If this stops any damage, gain 1 Charge afterward."
+    ],
+    [
+      "Discharge Seal",
+      "1",
+      "Application reaction",
+      "Spend 1 Charge; stop 1 negative status stack an enemy is about to apply to you."
+    ],
+    [
+      "Fair Weather",
+      "0",
+      "Action",
+      "Remove your Overload; draw 1. Requires Overload."
+    ],
+    [
+      "Stormglass",
+      "1",
+      "Action",
+      "After your first combat roll, set one of your combat dice to face 4."
+    ],
+    [
+      "Lightning Study",
+      "1",
+      "Roll reaction",
+      "Spend 1 Charge; set one of your dice just rolled for a status, defense or card to face 3. This is not a physical roll."
+    ],
+    [
+      "Quiet Center",
+      "0",
+      "Damage reaction",
+      "Spend 1 Ground to prevent 3 damage from one card. That Ground cannot also collect Charge."
+    ],
+    [
+      "Storm Journal",
+      "1",
+      "Action",
+      "Upgrade once per battle: the first voluntary-reroll Charge reward each round grants 2 instead of 1."
+    ],
+    [
+      "Circuit Breaker",
+      "2",
+      "Damage reaction",
+      "Spend 2 Charge; prevent 4. Remove up to 1 existing Conductive from yourself."
+    ],
+    [
+      "Eye of the Storm",
+      "2",
+      "Action",
+      "Spend 3 Charge; gain 2 Ground and Overload if absent."
+    ]
+  ],
+  "pairs": [
+    [
+      "curse",
+      "Pulse makes the enemy roll one of their combat dice, so a Curse mark on that die has another chance to activate. Pulse is limited to once per round and its effect roll does not earn Charge."
+    ],
+    [
+      "fortune",
+      "Voluntary combat rerolls earn Charge while giving Boon and Streak a chance to work. Insurance can protect a missed Streak without losing that reroll’s Charge reward."
+    ],
+    [
+      "construct",
+      "Spending Charge while Recycler is active earns Scrap for later construction. Ground collects more Charge when an enemy pays for cards; each reward keeps its own once-per-round limit."
+    ]
+  ],
+  "example": "After two voluntary rerolls you have earned 2 Charge. Forked Sky spends those stacks for Pulse after its attack. The enemy rolls 2: Pulse deals 1 damage and Conductive then threatens 1 status damage. Rolling 5 would deal 2 Pulse damage and leave Conductive in place.",
+  "counter": "Cleanse Conductive before effect rolls. Cheap or free cards deny Ground a large Charge gain. Extra combat rerolls build Charge but may hit your own cursed faces.",
+  "balance": "Pulse: choose one enemy combat die and have the enemy roll it for this effect. On 1–3, deal 1 damage; on 4–6, deal 2. They may prevent this damage but do not roll another defense. Use Pulse once per round across all Storm cards and abilities. When you pay to prepare Pulse, that use is spent even if the attack is later canceled. The roll does not change their combat results or earn Charge. Conductive uses the final number after any allowed reroll or number change.",
+  "hooks": [
+    "H-10 physical combat roll",
+    "H-04/H-18 effect dice",
+    "H-15 revalidation",
+    "H-24 child consequences"
+  ],
+  "review_status": "Reworked statuses — awaiting user review",
+  "version": 2,
+  "combos": [
+    [
+      "Storm Front → reroll → Aftershock",
+      "Overload allows an extra normal reroll next Offensive. Two rerolls earn the 2 Charge needed for Aftershock’s Pulse. It shares the once-per-round Pulse limit with Test Current."
+    ],
+    [
+      "Ground Cable → enemy card → High Voltage",
+      "Keep Ground until the enemy pays Energy for a card. Collect up to 2 Charge, then spend it on High Voltage to apply Conductive before making the enemy roll Pulse."
+    ]
+  ],
+  "status_examples": {
+    "Charge": {
+      "job": "Turn extra rolling into electricity to spend.",
+      "example": "You reroll three dice together, then reroll one die. Those two attempts give 2 Charge total."
+    },
+    "Conductive": {
+      "job": "Make low effect rolls carry an extra consequence.",
+      "example": "A defense die shows 2. The defense still works, but Conductive also causes 1 damage afterward."
+    },
+    "Ground": {
+      "job": "Collect Charge from the enemy’s spending.",
+      "example": "The enemy pays 2 Energy for a card. Spend Ground to gain 2 Charge for a later Pulse or Storm card."
+    },
+    "Overload": {
+      "job": "Give you an extra chance to improve your combat dice.",
+      "example": "With the normal three-roll limit, Overload lets you roll once and reroll up to three times."
+    }
+  }
+}

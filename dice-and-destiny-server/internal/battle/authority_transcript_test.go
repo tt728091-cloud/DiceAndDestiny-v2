@@ -86,16 +86,31 @@ func TestAuthorityTranscriptProvesD100PoisonAntidoteDamageAndSecretDefense(t *te
 	removed := findTranscriptRecord(records, func(record transcript.Record) bool {
 		return record.Kind == "status_removed" && record.StatusID == "poison"
 	})
-	if antidote.Visibility != transcript.VisibilityPublic || intValueAny(removed.Details["stacks_before"]) != 2 || intValueAny(removed.Details["stacks_after"]) != 0 || antidote.Sequence >= removed.Sequence {
+	// Effects now finish automatically: the face-6 save clears one stack,
+	// then Antidote can clear the remaining stack during Offensive Planning.
+	if antidote.Visibility != transcript.VisibilityPublic || antidote.Segment != "offensive" || intValueAny(removed.Details["stacks_before"]) != 1 || intValueAny(removed.Details["stacks_after"]) != 0 || antidote.Sequence >= removed.Sequence {
 		t.Fatalf("Antidote/full removal narrative is incomplete: antidote=%#v removed=%#v", antidote, removed)
 	}
-	redundant := findTranscriptRecord(records, func(record transcript.Record) bool {
+	saved := findTranscriptRecord(records, func(record transcript.Record) bool {
 		roll := mapAny(record.Details["roll"])
 		die := mapAny(roll["die"])
-		return record.Kind == "status_outcome_evaluated" && record.StatusID == "poison" && intValueAny(die["face"]) == 6 && record.Details["redundant"] == true
+		return record.Kind == "status_outcome_evaluated" && record.StatusID == "poison" && intValueAny(die["face"]) == 6
 	})
-	if redundant.Sequence <= removed.Sequence {
-		t.Fatalf("redundant face-6 outcome was not evaluated after Antidote: %#v", redundant)
+	if saved.Sequence == 0 || saved.Sequence >= antidote.Sequence || saved.Segment != "ongoing_effects" || saved.Details["redundant"] == true {
+		t.Fatalf("automatic face-6 save must resolve before Antidote: %#v", saved)
+	}
+	previous := 0
+	ranks := map[string]int{"ongoing_effects": 0, "income": 1, "offensive": 2, "defensive": 3, "damage_resolution": 4}
+	for _, record := range records {
+		rank, ok := ranks[record.Segment]
+		if !ok || record.Round == 0 {
+			continue
+		}
+		position := record.Round*5 + rank
+		if position < previous {
+			t.Fatalf("transcript jumped backwards at #%d: round %d %s (%s)", record.Sequence, record.Round, record.Segment, record.Kind)
+		}
+		previous = position
 	}
 	poisonDamage := findTranscriptRecord(records, func(record transcript.Record) bool {
 		return record.Kind == "damage_calculated" && record.SourceID == "poison" && record.Details["committed"] == true

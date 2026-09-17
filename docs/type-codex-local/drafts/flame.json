@@ -1,0 +1,269 @@
+{
+  "id": "flame",
+  "name": "Flame",
+  "identity": "Turn short-lived burns and card embers into a controlled burst. Heat rewards status pressure even when another type supplied it.",
+  "symbols": [
+    "Spark",
+    "Coal",
+    "Crown"
+  ],
+  "loop": "Apply Burn or another damaging status → build Heat to three → keep the attack bonus, or spend Heat before it cools → mark discarded cards with Ember to rebuild.",
+  "statuses": [
+    [
+      "Heat",
+      "Positive · you · cap 4",
+      "Once per round, after an enemy takes damage from a status such as Burn or Poison, gain 1 Heat. While you have 3 or more Heat, your damaging Offensive ability deals 1 extra damage. At the start of Ongoing Effects, lose 1 Heat. Cards and abilities can spend Heat before it cools."
+    ],
+    [
+      "Burn",
+      "Negative · enemy · cap 3",
+      "At the start of the next Ongoing Effects, this enemy takes 1 damage per Burn, then remove all Burn. The Burn is removed even if its damage is prevented. Burn applied during Ongoing Effects waits until the following round."
+    ],
+    [
+      "Kindling",
+      "Negative · enemy · cap 2",
+      "The next time a status would damage this enemy, remove 1 Kindling and increase that status damage by 1. If several status dice deal damage together, increase only one die’s damage. Use no more than 1 Kindling during each Ongoing Effects or other status-damage event. Remove unused Kindling at the end of the next Ongoing Effects."
+    ],
+    [
+      "Ember",
+      "Positive card mark · your discard pile · max 2 marked cards",
+      "Mark a card in your discard pile. When you next play that card, or damage permanently removes it, gain 1 Heat and erase its Ember. Drawing or discarding the card does nothing to Ember. Erase unused Embers at the end of the following round."
+    ]
+  ],
+  "abilities": [
+    [
+      "Cinderlash",
+      "Offense · 0E",
+      "3 Spark / 4 Spark / 5 Spark",
+      "4 / 5 / 6 damage and apply 1 Burn at every tier."
+    ],
+    [
+      "Bank the Coals",
+      "Offense · 0E",
+      "2 Coal + 1 Crown",
+      "Gain 2 Heat and mark one card in your discard pile with Ember, if available."
+    ],
+    [
+      "Flashpoint",
+      "Offense · 0E",
+      "2 Spark + 2 Coal + 1 Crown",
+      "Deal 4 damage. Optionally spend up to 2 enemy Burn when choosing this ability for +2 damage each; consumed Burn will not tick."
+    ],
+    [
+      "Kiln Heart",
+      "Offense · 0E",
+      "3 Crown",
+      "Deal 6 damage and apply 1 Kindling. Optionally spend 2 Heat when choosing this ability to apply 2 Burn as well."
+    ],
+    [
+      "Smoke Screen",
+      "Defense · 0E",
+      "Roll 2 Flame dice",
+      "Each Spark prevents 1; each Coal gains 1 Heat; any Crown applies 1 Burn to the attacker (maximum 1 from this defense)."
+    ],
+    [
+      "Tempered Ash",
+      "Defense · 1E",
+      "Roll 1 Flame die",
+      "Spark: prevent 2. Coal: prevent 3. Crown: prevent 2 and apply 1 Kindling to the attacker."
+    ]
+  ],
+  "cards": [
+    [
+      "First Spark",
+      "1",
+      "Action",
+      "Apply 1 Burn to one enemy."
+    ],
+    [
+      "Hot Coals",
+      "2",
+      "Action",
+      "Apply 2 Burn to one enemy."
+    ],
+    [
+      "Stoke",
+      "1",
+      "Action",
+      "Gain 2 Heat."
+    ],
+    [
+      "Dry Tinder",
+      "1",
+      "Action",
+      "Apply 1 Kindling to one enemy."
+    ],
+    [
+      "Pocket Ember",
+      "0",
+      "Action",
+      "Mark one card in your discard pile with Ember; requires an unmarked card in your discard pile."
+    ],
+    [
+      "Cinder Study",
+      "1",
+      "Action",
+      "Draw 1. If you already have Heat, mark one unmarked card in your discard pile with Ember."
+    ],
+    [
+      "Quick Ignition",
+      "1",
+      "Action",
+      "Remove 1 Burn from an enemy to deal 2 damage to them with this card."
+    ],
+    [
+      "Bellows",
+      "1",
+      "Offensive reaction",
+      "Spend 1 Heat. After your attack, apply 1 Kindling to that enemy. If the attack made them lose a health card, also apply 1 Burn."
+    ],
+    [
+      "Feed the Furnace",
+      "0",
+      "Action",
+      "Discard one additional hand card; gain 2 Heat. The discarded card can carry Ember but discarding does not trigger it."
+    ],
+    [
+      "Burning Lesson",
+      "1",
+      "Action",
+      "Draw 2, then discard 1. Apply Ember to the discarded card if fewer than two of your cards have Ember."
+    ],
+    [
+      "Afterglow",
+      "1",
+      "Damage reaction",
+      "Prevent 2 damage from one status. If this stops at least 1 damage, gain 1 Heat afterward."
+    ],
+    [
+      "Charcoal Budget",
+      "0",
+      "Action",
+      "Spend 2 Heat; gain 1 Energy and draw 1. Once per round."
+    ],
+    [
+      "Firebreak",
+      "1",
+      "Damage reaction",
+      "Prevent 3 from one attack, card or status; spend 1 Heat as an additional cost."
+    ],
+    [
+      "Scorch the Seam",
+      "1",
+      "Offensive reaction",
+      "Spend 1 Heat. The enemy’s rolled Defensive ability prevents up to 2 less damage from your attack, down to zero. Their cards and protective statuses still work normally."
+    ],
+    [
+      "Flare Read",
+      "1",
+      "Offensive reaction",
+      "Change one of your combat dice to 1 or 4. Your final dice must allow the ability you choose. You cannot change a Frostbound die."
+    ],
+    [
+      "Fickle Flame",
+      "1",
+      "Roll reaction",
+      "Physically reroll one of your dice just rolled for a status, defense or card once; resolve its final face normally."
+    ],
+    [
+      "Backdraft",
+      "1",
+      "Damage reaction",
+      "Prevent 1 damage from an enemy attack, card or status. If this stops any damage, apply 1 Burn to that enemy afterward."
+    ],
+    [
+      "Singe the Fuse",
+      "0",
+      "Action",
+      "Remove 1 Burn from yourself to gain 1 Heat. Requires that Burn."
+    ],
+    [
+      "Smoke Passage",
+      "1",
+      "Application reaction",
+      "Spend 1 Heat; stop 1 negative status stack an enemy is about to apply to you. Other stacks remain."
+    ],
+    [
+      "Warm Start",
+      "0",
+      "Action",
+      "If you have no Heat, gain 1 Heat. Once per round."
+    ],
+    [
+      "Crown of Sparks",
+      "2",
+      "Action",
+      "Apply 1 Burn and 1 Kindling to the same enemy. The enemy can use cards or statuses that stop new negative stacks."
+    ],
+    [
+      "Ember Ledger",
+      "1",
+      "Action",
+      "Upgrade once per battle: the first Ember trigger you resolve each round also draws 1 card."
+    ],
+    [
+      "Furnace Door",
+      "2",
+      "Damage reaction",
+      "Spend 2 Heat to prevent 5 damage from one attack, card or status."
+    ],
+    [
+      "Controlled Wildfire",
+      "2",
+      "Action",
+      "Spend 3 Heat; apply 3 Burn divided among legal enemies, maximum 2 per enemy. With one enemy apply only 2."
+    ]
+  ],
+  "pairs": [
+    [
+      "venom",
+      "Poison or Volatile Poison damage earns Heat once per round and can use Kindling. Flame benefits from Venom’s ongoing pressure without adding extra toxin rolls or replacing Catalyst."
+    ],
+    [
+      "grave",
+      "Losing an Ember-marked card to damage can give Heat and a Corpse. Haunt can also earn Heat if the enemy chooses its status damage instead of paying the extra Energy."
+    ],
+    [
+      "stone",
+      "Firebreak spends Heat to prevent attack damage. Stopping at least 2 earns Resolve, which can buy Fortify to protect Flame’s next combat result. Armor helps preserve Energy for Flame setup."
+    ]
+  ],
+  "example": "You enter Ongoing Effects with 3 Heat and lose 1, leaving 2. The enemy takes Poison damage, earning your once-per-round Heat and returning you to 3. Your next attack gains 1 damage. Spending Heat before the attack may lose that bonus.",
+  "counter": "Remove damaging statuses before they earn Heat. Heat also cools on its own. Kindling expires, and stopping all of the increased damage stops Heat from being earned.",
+  "balance": "Heat gives a single +1 attack bonus at three or four stacks; it does not add damage per stack. Burn at three stacks threatens 3 total damage before expiring. Kindling adds at most 1 during an Ongoing Effects segment. Values still need playtesting.",
+  "hooks": [
+    "Status collection and damage commit",
+    "Card played / health-card removal",
+    "Offensive source modification"
+  ],
+  "review_status": "Reworked statuses — awaiting user review",
+  "version": 2,
+  "combos": [
+    [
+      "Stoke → Cinderlash → maintain Heat",
+      "Stoke provides 2 Heat. Cinderlash applies Burn, which can replenish Heat after it cools. Ember offers a second way to reach the three-Heat attack bonus."
+    ],
+    [
+      "Dry Tinder → Poison or Burn → Bellows",
+      "Kindling strengthens the next status damage. Bellows spends Heat to prepare more Kindling and possibly Burn, trading your immediate Heat threshold for later pressure."
+    ]
+  ],
+  "status_examples": {
+    "Heat": {
+      "job": "Build and maintain a damage threshold.",
+      "example": "At 3 Heat, your attack gains 1 damage without spending Heat. Spend 1 Heat on a card and you drop below that bonus."
+    },
+    "Burn": {
+      "job": "One short burst of delayed damage.",
+      "example": "Two Burn threaten 2 damage next Ongoing Effects. Removing one beforehand leaves only 1 damage."
+    },
+    "Kindling": {
+      "job": "Make another damaging status more dangerous.",
+      "example": "A Poison die would deal 1 damage. Kindling raises that die to 2, without adding Poison or making another roll."
+    },
+    "Ember": {
+      "job": "Recover Heat by cycling or losing a particular card.",
+      "example": "You mark a discarded card, later draw it and play it. Playing it gives 1 Heat; drawing it did not."
+    }
+  }
+}

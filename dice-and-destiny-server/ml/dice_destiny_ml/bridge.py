@@ -8,6 +8,7 @@ from pathlib import Path
 from typing import Any
 
 from . import ACTION_SCHEMA_VERSION, ENVIRONMENT_SCHEMA_VERSION, OBSERVATION_SCHEMA_VERSION
+from .manifest_v3 import ACTION_SCHEMA_V3, ENVIRONMENT_SCHEMA_V3, OBSERVATION_SCHEMA_V3
 from .profiling import ProfileCollector, process_snapshot
 from .schema_v2 import ACTION_SCHEMA_V2, ENVIRONMENT_SCHEMA_V2, OBSERVATION_SCHEMA_V2
 
@@ -30,6 +31,7 @@ class AuthorityBridge:
         telemetry_mode: str = "full",
         transport_mode: str = "full",
         observation_schema: str = OBSERVATION_SCHEMA_VERSION,
+        observation_manifest: Path | None = None,
         instrumentation: bool = False,
     ) -> None:
         command = [
@@ -49,6 +51,8 @@ class AuthorityBridge:
             "-observation-schema",
             observation_schema,
         ]
+        if observation_manifest is not None:
+            command.extend(["-observation-manifest", str(observation_manifest)])
         if session_id:
             command.extend(["-session-id", session_id])
         self._process = subprocess.Popen(  # noqa: S603 - local repository binary only
@@ -67,6 +71,12 @@ class AuthorityBridge:
                 "environment_schema": ENVIRONMENT_SCHEMA_V2,
                 "observation_schema": OBSERVATION_SCHEMA_V2,
                 "action_schema": ACTION_SCHEMA_V2,
+            }
+        elif observation_schema == OBSERVATION_SCHEMA_V3:
+            self._expected_versions = {
+                "environment_schema": ENVIRONMENT_SCHEMA_V3,
+                "observation_schema": OBSERVATION_SCHEMA_V3,
+                "action_schema": ACTION_SCHEMA_V3,
             }
         elif observation_schema == OBSERVATION_SCHEMA_VERSION:
             self._expected_versions = {
@@ -120,12 +130,18 @@ class AuthorityBridge:
         seat_models: dict[str, str],
         *,
         battle_id: str = "",
+        seat_definitions: dict[str, str] | None = None,
     ) -> dict[str, Any]:
         return self.request(
             "reset",
             seed=int(seed),
             battle_id=battle_id,
             seat_models=seat_models,
+            seat_definitions=seat_definitions
+            or {
+                "seat-a": "blade_warden",
+                "seat-b": "blade_warden",
+            },
         )["transition"]
 
     def step(self, action_index: int) -> dict[str, Any]:

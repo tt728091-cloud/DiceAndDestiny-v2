@@ -1,0 +1,270 @@
+{
+  "id": "frost",
+  "name": "Frost",
+  "identity": "Make rerolls cost Energy, lock one enemy die, and reward keeping your own useful results. Brittle makes a strong enemy block come with a cost.",
+  "symbols": [
+    "Shard",
+    "Rime",
+    "Crystal"
+  ],
+  "loop": "Keep useful dice to earn Rime → copy a matching number when needed → use Chill and Frostbind to disrupt enemy setup → make a strong enemy block trigger Brittle.",
+  "statuses": [
+    [
+      "Chill",
+      "Negative · enemy · cap 1",
+      "During this enemy’s next Offensive segment, their first reroll costs 1 Energy. If they do not pay, they keep their first roll and choose an ability from it. Once they pay, their remaining rerolls have no extra Chill cost. Remove Chill when that Offensive segment ends."
+    ],
+    [
+      "Frostbind",
+      "Negative die mark · enemy combat die · max 1 per enemy",
+      "Mark one enemy combat die. During their next Offensive segment, they roll it normally on the first roll, then must keep its number. Neither player can change or voluntarily reroll it that segment. It can still be used to roll for a status or defense. Remove Frostbind when that Offensive segment ends."
+    ],
+    [
+      "Rime",
+      "Positive · you · cap 3",
+      "When you choose your Offensive ability, gain 1 Rime if you kept at least two dice unchanged since the first roll. Gain this once per round. During Offensive, spend 2 Rime to change one of your dice to match another of your combat dice. Use this once per round; a Frostbound die cannot be changed. Keep unused Rime."
+    ],
+    [
+      "Brittle",
+      "Negative · enemy · cap 2",
+      "If this enemy prevents at least 2 damage from one attack, remove 1 Brittle. After that attack, they take 1 status damage from the broken ice. Trigger this once per round, even if several defenses help stop the attack. Keep unused Brittle until the end of the following round."
+    ]
+  ],
+  "abilities": [
+    [
+      "Ice Needle",
+      "Offense · 0E",
+      "3 Shard / 4 Shard / 5 Shard",
+      "4 / 5 / 6 damage and apply 1 Brittle."
+    ],
+    [
+      "Still Lake",
+      "Offense · 0E",
+      "2 Rime + 1 Crystal",
+      "Gain 2 Rime and apply 1 Chill to one enemy."
+    ],
+    [
+      "Glacial Line",
+      "Offense · 0E",
+      "Any four-number straight",
+      "Deal 5 damage; Frostbind one chosen enemy combat die for its next Offensive segment."
+    ],
+    [
+      "White Silence",
+      "Offense · 0E",
+      "3 Crystal",
+      "Deal 6 damage and apply 2 Brittle. Optionally spend 2 Rime when choosing this ability to also apply Chill."
+    ],
+    [
+      "Snowdrift",
+      "Defense · 0E",
+      "Roll 2 Frost dice",
+      "Each Shard prevents 1; each Rime gains 1 Rime status; any Crystal applies 1 Brittle to the attacker."
+    ],
+    [
+      "Ice Wall",
+      "Defense · 1E",
+      "Roll 1 Frost die",
+      "Shard: prevent 2. Rime: prevent 3. Crystal: prevent 2 and gain 1 Rime."
+    ]
+  ],
+  "cards": [
+    [
+      "First Frost",
+      "1",
+      "Action",
+      "Apply Chill to one enemy if absent."
+    ],
+    [
+      "Thin Ice",
+      "1",
+      "Action",
+      "Apply 1 Brittle to one enemy."
+    ],
+    [
+      "Rime Cache",
+      "1",
+      "Action",
+      "Gain 2 Rime."
+    ],
+    [
+      "Freeze the Pivot",
+      "1",
+      "Action",
+      "Frostbind one chosen enemy combat die if that enemy has no Frostbind."
+    ],
+    [
+      "Snow Reading",
+      "1",
+      "Action",
+      "Draw 1 and gain 1 Rime."
+    ],
+    [
+      "Glaze",
+      "1",
+      "Action",
+      "Apply 2 Brittle to one enemy."
+    ],
+    [
+      "Shatter Line",
+      "1",
+      "Offensive reaction",
+      "Spend up to 2 Rime; add 2 damage per stack to your attack."
+    ],
+    [
+      "Crystal Store",
+      "0",
+      "Action",
+      "Spend 2 Rime; gain 1 Energy. Once per round."
+    ],
+    [
+      "Cold Ledger",
+      "1",
+      "Action",
+      "Spend 1 Rime; draw 2, then discard 1."
+    ],
+    [
+      "Preserve",
+      "1",
+      "Action",
+      "Spend 1 Rime. Choose one Burn or Bleed stack on yourself. It deals no damage and is not removed during the next Ongoing Effects. It works normally again afterward. Each stack can be delayed only once."
+    ],
+    [
+      "Ice Lens",
+      "1",
+      "Action",
+      "After your first combat roll, set one of your combat dice that is not Frostbound to face 1 or 4."
+    ],
+    [
+      "Breaking Point",
+      "1",
+      "Action",
+      "Spend 2 enemy Brittle; create 3 damage from this card against that enemy."
+    ],
+    [
+      "Whiteout",
+      "1",
+      "Offensive reaction",
+      "Spend 1 Rime to change one enemy combat die up or down by 1, staying between 1 and 6. The enemy must choose an ability their final dice allow. You cannot change a Frostbound die."
+    ],
+    [
+      "Snap Freeze",
+      "1",
+      "Application reaction",
+      "Spend 1 Rime; stop 1 positive status stack an enemy is about to gain. Other stacks are unaffected."
+    ],
+    [
+      "Packed Snow",
+      "1",
+      "Damage reaction",
+      "Prevent 2 from one attack, card or status."
+    ],
+    [
+      "Cold Comfort",
+      "1",
+      "Damage reaction",
+      "Spend 1 Rime; prevent 3 damage from one status."
+    ],
+    [
+      "Thaw",
+      "0",
+      "Action",
+      "Remove one Chill or Frostbind affecting you; gain 1 Rime. Requires a removed effect."
+    ],
+    [
+      "Icy Grip",
+      "1",
+      "Damage reaction",
+      "Place Ice Seal on one enemy health card revealed by damage, even if the enemy saves it. The marked card cannot be played until the end of that enemy’s next Offensive segment; then remove Ice Seal. It still counts as health and can be lost to damage or sacrificed normally. Maximum one card with your Ice Seal."
+    ],
+    [
+      "Sleet",
+      "1",
+      "Action",
+      "Remove 1 Brittle from an enemy to apply Chill to them. Requires at least one Brittle and no Chill on that enemy."
+    ],
+    [
+      "Cold Read",
+      "1",
+      "Roll reaction",
+      "Set one of your dice just rolled for a status, defense or card to face 3; no Boon or Curse activation from changing the number."
+    ],
+    [
+      "Crack the Shield",
+      "1",
+      "Defensive reaction",
+      "Spend 1 Rime; reduce prevention supplied by one enemy Defensive ability by 1, minimum zero."
+    ],
+    [
+      "Winter Map",
+      "1",
+      "Action",
+      "Upgrade once per battle: your first kept-dice Rime reward each round grants 2 Rime instead of 1."
+    ],
+    [
+      "Absolute Shelter",
+      "2",
+      "Damage reaction",
+      "Spend 2 Rime to prevent 5 damage from one attack, card or status."
+    ],
+    [
+      "Deep Freeze",
+      "2",
+      "Action",
+      "Spend 2 Rime; apply Chill and 1 Brittle to one enemy and Frostbind one of its combat dice if unbound."
+    ]
+  ],
+  "pairs": [
+    [
+      "stone",
+      "Brittle turns a strong enemy block into status damage. Fracture offers the opposite pressure by weakening the rolled block: spend it carefully, since reducing prevention below 2 can switch Brittle off."
+    ],
+    [
+      "venom",
+      "Chill asks the enemy to spend Energy on combat rerolls while Poison keeps threatening damage. Frostbind can further narrow their options, helping Venom’s setup survive into another Ongoing Effects."
+    ],
+    [
+      "beast",
+      "Frostbind restricts one enemy die, which can make repeated ability choices more attractive and earn Instinct. Rime can improve your own numbers before spending Scent on a final unbound-die attempt."
+    ]
+  ],
+  "example": "An enemy has Chill and Overload. They roll once for free. To start rerolling they must pay 1 Energy; after paying, Overload still allows its extra attempt. Chill does not subtract a roll. Meanwhile, a Frostbound die keeps its first result.",
+  "counter": "Keep a useful first roll to avoid paying Chill. Use cards and status damage while Frostbind restricts combat dice. Against Brittle, a small block avoids its trigger, but accepting extra attack damage may be worse.",
+  "balance": "Chill charges Energy once rather than copying Entangle’s roll reduction. Rime trades two earned stacks for a matching-number edit, not damage prevention. Brittle deals at most 1 extra damage per round and requires at least 2 attack damage to be prevented. Ice Seal is defined on Icy Grip.",
+  "hooks": [
+    "H-09 roll allowance",
+    "H-11 kept dice",
+    "H-15 edits/revalidation",
+    "H-22 public health-card reveal"
+  ],
+  "review_status": "Reworked statuses — awaiting user review",
+  "version": 2,
+  "combos": [
+    [
+      "Still Lake → save two dice → Rime",
+      "Still Lake gives Rime for a later matching-number change. Keeping at least two dice unchanged when choosing your ability earns another Rime, once per round."
+    ],
+    [
+      "Thin Ice → attack → enemy block",
+      "Brittle lets the enemy keep their full defense. If they block at least 2, broken ice deals 1 status damage afterward. Breaking Point offers an alternative: spend two Brittle for an immediate 3-damage card."
+    ]
+  ],
+  "status_examples": {
+    "Chill": {
+      "job": "Make the first reroll cost Energy.",
+      "example": "You can keep a useful first roll for free, or spend 1 Energy to start rerolling. Entangle still has its separate fewer-rolls effect."
+    },
+    "Frostbind": {
+      "job": "Lock one result while leaving the other dice usable.",
+      "example": "A marked die rolls 4. The enemy keeps that 4 and can reroll their other four dice normally."
+    },
+    "Rime": {
+      "job": "Reward keeping dice, then help build a matching set.",
+      "example": "Your dice show 2, 2, 5, 4, 6. Spend 2 Rime to change the 5 into a 2, giving three matching numbers."
+    },
+    "Brittle": {
+      "job": "Add an icy after-effect when the enemy blocks strongly.",
+      "example": "The enemy blocks 3 of a 5-damage attack. They take the remaining 2 damage, then Brittle threatens another 1."
+    }
+  }
+}

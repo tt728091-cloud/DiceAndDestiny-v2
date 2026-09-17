@@ -9,6 +9,9 @@ import numpy as np
 from gymnasium import spaces
 
 from .bridge import AuthorityBridge
+from .manifest_v3 import OBSERVATION_SCHEMA_V3, ObservationManifestV3
+from .manifest_v4 import OBSERVATION_SCHEMA_V4, ObservationManifestV4
+from .manifest_v5 import OBSERVATION_SCHEMA_V5, ObservationManifestV5
 from .opponent_pool import OpponentManager
 from .policies import Policy, select_with_policy
 from .profiling import ProfileCollector, process_snapshot
@@ -21,6 +24,28 @@ from .schema_v2 import (
     EncodedDecisionV2,
     SchemaEncoderV2,
 )
+from .schema_v3 import EncodedDecisionV3, SchemaEncoderV3
+from .schema_v4 import EncodedDecisionV4, SchemaEncoderV4
+from .schema_v5 import EncodedDecisionV5, SchemaEncoderV5
+
+OUTCOME_ONLY_REWARD = "+1 victory, -1 defeat, 0 draw; no shaping"
+WINNER_HEALTH_V1_OUTCOME_VALUE = 0.75
+WINNER_HEALTH_V1_COEFFICIENT = 0.75
+WINNER_HEALTH_V1_REWARD = (
+    "winner-health-v1: +/-0.75 outcome +/-0.75 * winner remaining health / "
+    "winner max health; 0 draw; terminal-only"
+)
+WINNER_HEALTH_OUTCOME_VALUE = 0.5
+WINNER_HEALTH_COEFFICIENT = 1.0
+WINNER_HEALTH_REWARD = (
+    "winner-health-v2: +/-0.5 outcome +/-1.0 * winner remaining health / "
+    "winner max health; 0 draw; terminal-only"
+)
+REWARD_DEFINITIONS = {
+    "outcome-only-v1": OUTCOME_ONLY_REWARD,
+    "winner-health-v1": WINNER_HEALTH_V1_REWARD,
+    "winner-health-v2": WINNER_HEALTH_REWARD,
+}
 
 
 class AuthorityGymEnv(gym.Env[np.ndarray, int]):
@@ -54,6 +79,11 @@ class AuthorityGymEnv(gym.Env[np.ndarray, int]):
         blas_threads: int = 1,
         historical_cache_size: int = 8,
         opponent_selection_mode: str = "legacy-flat",
+        observation_manifest: Path | None = None,
+        seat_definitions: dict[str, str] | None = None,
+        champion_category_weights: dict[str, float] | None = None,
+        reward_definition: str = OUTCOME_ONLY_REWARD,
+        opponent_deterministic: bool = True,
     ) -> None:
         configure_thread_runtime(
             torch_threads=torch_threads,
@@ -61,8 +91,33 @@ class AuthorityGymEnv(gym.Env[np.ndarray, int]):
             blas_threads=blas_threads,
         )
         super().__init__()
+        if reward_definition not in REWARD_DEFINITIONS.values():
+            raise ValueError(f"unsupported PPO reward definition {reward_definition!r}")
+        self.reward_definition = reward_definition
         self.observation_schema = observation_schema
-        if observation_schema == OBSERVATION_SCHEMA_V2:
+        self.observation_manifest = observation_manifest
+        if observation_schema == OBSERVATION_SCHEMA_V5:
+            if observation_manifest is None:
+                raise ValueError("observation v5 requires a frozen manifest path")
+            manifest_v5 = ObservationManifestV5.load(observation_manifest)
+            self.maximum_actions = manifest_v5.maximum_legal_candidates
+            self.observation_size = manifest_v5.layout.observation_size
+            self.encoder = SchemaEncoderV5(manifest_v5)
+        elif observation_schema == OBSERVATION_SCHEMA_V4:
+            if observation_manifest is None:
+                raise ValueError("observation v4 requires a frozen manifest path")
+            manifest_v4 = ObservationManifestV4.load(observation_manifest)
+            self.maximum_actions = manifest_v4.maximum_legal_candidates
+            self.observation_size = manifest_v4.layout.observation_size
+            self.encoder = SchemaEncoderV4(manifest_v4)
+        elif observation_schema == OBSERVATION_SCHEMA_V3:
+            if observation_manifest is None:
+                raise ValueError("observation v3 requires a frozen manifest path")
+            manifest = ObservationManifestV3.load(observation_manifest)
+            self.maximum_actions = manifest.maximum_legal_candidates
+            self.observation_size = manifest.layout.observation_size
+            self.encoder: SchemaEncoder | SchemaEncoderV2 | SchemaEncoderV3 = SchemaEncoderV3(manifest)
+        elif observation_schema == OBSERVATION_SCHEMA_V2:
             self.maximum_actions = MAX_ACTIONS_V2
             self.observation_size = OBSERVATION_SIZE_V2
             self.encoder: SchemaEncoder | SchemaEncoderV2 = SchemaEncoderV2()
@@ -71,9 +126,7 @@ class AuthorityGymEnv(gym.Env[np.ndarray, int]):
             self.observation_size = OBSERVATION_SIZE
             self.encoder = SchemaEncoder()
         self.action_space = spaces.Discrete(self.maximum_actions)
-        self.observation_space = spaces.Box(
-            -10.0, 10.0, (self.observation_size,), dtype=np.float32
-        )
+        self.observation_space = spaces.Box(-10.0, 10.0, (self.observation_size,), dtype=np.float32)
         self.bridge = AuthorityBridge(
             binary,
             server_root,
@@ -82,7 +135,12 @@ class AuthorityGymEnv(gym.Env[np.ndarray, int]):
             authority_mode=authority_mode,
             telemetry_mode=telemetry_mode,
             transport_mode=transport_mode,
-            observation_schema=observation_schema,
+            observation_schema=OBSERVATION_SCHEMA_V2
+            if observation_schema in {OBSERVATION_SCHEMA_V4, OBSERVATION_SCHEMA_V5}
+            else observation_schema,
+            observation_manifest=None
+            if observation_schema in {OBSERVATION_SCHEMA_V4, OBSERVATION_SCHEMA_V5}
+            else observation_manifest,
             instrumentation=instrumentation,
         )
         self.training_seed = training_seed
@@ -90,9 +148,20 @@ class AuthorityGymEnv(gym.Env[np.ndarray, int]):
         self.learner_seat_mode = learner_seat
         self.device = device
         self.opponent_selection_mode = opponent_selection_mode
+        self.seat_definitions = seat_definitions or {
+            "seat-a": "blade_warden",
+            "seat-b": "blade_warden",
+        }
         self.episode_index = 0
         self.transition: dict[str, Any] | None = None
-        self.decision: EncodedDecision | EncodedDecisionV2 | None = None
+        self.decision: (
+            EncodedDecision
+            | EncodedDecisionV2
+            | EncodedDecisionV3
+            | EncodedDecisionV4
+            | EncodedDecisionV5
+            | None
+        ) = None
         self.learner_seat = "seat-a"
         self.opponent_seat = "seat-b"
         self.opponent: Policy | None = None
@@ -102,8 +171,9 @@ class AuthorityGymEnv(gym.Env[np.ndarray, int]):
         self._opponent_manager = OpponentManager(
             self.opponent_specs,
             device=device,
-            deterministic=False,
+            deterministic=opponent_deterministic,
             historical_cache_size=historical_cache_size,
+            category_weights=champion_category_weights,
         )
         self.profile = ProfileCollector(instrumentation)
 
@@ -138,7 +208,11 @@ class AuthorityGymEnv(gym.Env[np.ndarray, int]):
             self.opponent_seat: self.opponent.name,
         }
         with self.profile.span("environment.authority_reset"):
-            self.transition = self.bridge.reset(episode_seed, seat_models)
+            self.transition = self.bridge.reset(
+                episode_seed,
+                seat_models,
+                seat_definitions=self.seat_definitions,
+            )
         self.episode_index += 1
         self.episode_return = 0.0
         self.learner_steps = 0
@@ -156,7 +230,12 @@ class AuthorityGymEnv(gym.Env[np.ndarray, int]):
         if selected < 0 or selected >= self.maximum_actions or not self.decision.action_mask[selected]:
             raise RuntimeError(f"learner selected masked action {selected}")
         with self.profile.span("environment.learner_authority_step"):
-            self.transition = self.bridge.step(selected)
+            authority_action = (
+                self.encoder.authority_index(self.decision, selected)
+                if isinstance(self.decision, EncodedDecisionV4)
+                else selected
+            )
+            self.transition = self.bridge.step(authority_action)
         self.learner_steps += 1
         with self.profile.span("environment.opponent_drive"):
             self._drive_opponent()
@@ -178,9 +257,12 @@ class AuthorityGymEnv(gym.Env[np.ndarray, int]):
             if self.profile.enabled:
                 info["throughput_profile"] = self._profile_summary()
             observation = np.zeros(self.observation_size, dtype=np.float32)
-            self.decision = type(self.decision)(
-                observation, np.zeros(self.maximum_actions, dtype=bool)
-            )
+            if isinstance(self.decision, EncodedDecisionV4):
+                self.decision = type(self.decision)(
+                    observation, np.zeros(self.maximum_actions, dtype=bool), np.zeros(0, dtype=np.int32)
+                )
+            else:
+                self.decision = type(self.decision)(observation, np.zeros(self.maximum_actions, dtype=bool))
             return observation, reward, terminated, truncated, info
         self.decision = self._encode_transition(self.transition)
         return self.decision.observation, reward, terminated, truncated, info
@@ -219,7 +301,40 @@ class AuthorityGymEnv(gym.Env[np.ndarray, int]):
         winner = self.transition.get("winner") if self.transition else ""
         if not winner:
             return 0.0
-        return 1.0 if winner == self.learner_seat else -1.0
+        sign = 1.0 if winner == self.learner_seat else -1.0
+        if self.reward_definition == OUTCOME_ONLY_REWARD:
+            return sign
+        winner_health_fraction = self._winner_health_fraction(str(winner))
+        outcome_value, health_coefficient = (
+            (WINNER_HEALTH_V1_OUTCOME_VALUE, WINNER_HEALTH_V1_COEFFICIENT)
+            if self.reward_definition == WINNER_HEALTH_V1_REWARD
+            else (WINNER_HEALTH_OUTCOME_VALUE, WINNER_HEALTH_COEFFICIENT)
+        )
+        return sign * (outcome_value + health_coefficient * winner_health_fraction)
+
+    def _winner_health_fraction(self, winner: str) -> float:
+        """Return terminal health for the actual winner, never the learner by assumption."""
+
+        assert self.transition is not None
+        metrics = self.transition.get("metrics") or {}
+        remaining_health = metrics.get("remaining_health") or {}
+        if winner not in remaining_health:
+            raise RuntimeError(f"terminal metrics omit winner health for {winner!r}")
+        snapshot = (self.transition.get("result") or {}).get("snapshot") or {}
+        actor = (snapshot.get("actors") or {}).get(winner) or {}
+        if "max_health" not in actor:
+            raise RuntimeError(f"terminal snapshot omits winner max health for {winner!r}")
+        try:
+            current_health = float(remaining_health[winner])
+            max_health = float(actor["max_health"])
+        except (TypeError, ValueError) as error:
+            raise RuntimeError(f"terminal winner health is not numeric for {winner!r}") from error
+        if max_health <= 0.0:
+            raise RuntimeError(f"terminal winner max health must be positive for {winner!r}")
+        snapshot_health = actor.get("current_health")
+        if snapshot_health is not None and float(snapshot_health) != current_health:
+            raise RuntimeError(f"terminal winner health disagrees for {winner!r}")
+        return min(max(current_health / max_health, 0.0), 1.0)
 
     def _learner_seat_for_episode(self) -> str:
         if self.learner_seat_mode == "alternate":
@@ -240,7 +355,7 @@ class AuthorityGymEnv(gym.Env[np.ndarray, int]):
 
     def _encode_transition(
         self, transition: dict[str, Any]
-    ) -> EncodedDecision | EncodedDecisionV2:
+    ) -> EncodedDecision | EncodedDecisionV2 | EncodedDecisionV3 | EncodedDecisionV4 | EncodedDecisionV5:
         with self.profile.span("environment.python_schema_encode"):
             decision = self.encoder.encode(transition)
         if self.profile.enabled:

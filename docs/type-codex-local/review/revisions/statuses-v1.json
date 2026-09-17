@@ -1,0 +1,3569 @@
+{
+  "arcane": {
+    "id": "arcane",
+    "name": "Arcane",
+    "identity": "Remember a small committed outcome, then pay to echo its damage. Rune edits help mixed dice qualify while copied events remain distinct from physical actions.",
+    "symbols": [
+      "Sigil",
+      "Lens",
+      "Star"
+    ],
+    "loop": "Play a sequence to earn Aether → record committed damage → pay for a bounded Echo → use Rune and Mirror to protect the next setup.",
+    "statuses": [
+      [
+        "Aether",
+        "Positive · self · cap 4",
+        "Persistent. After your second accepted card play in a round, gain 1 Aether, once per round. Copies and automatic triggers are not card plays. At Offensive reveal spend up to 2 Aether for +1 damage each to one own ability."
+      ],
+      [
+        "Echo Record",
+        "Neutral public record · self · cap 1",
+        "After an own non-copy ability or card damage source commits at least 1 actual damage, you may record its amount, capped at 3, and source ID. Choose one if several qualify together. Lasts until replaced or consumed. Never records status damage, Echo damage or a descendant of an Echo. Copies no statuses, costs, rolls or prevention."
+      ],
+      [
+        "Rune",
+        "Positive die overlay · own combat die · max 1",
+        "Choose one face. Until next Offensive exit that face adds Sigil alongside its original symbol for qualification, with no numeric change. Physical and face-set results can qualify; only physical rolls trigger other overlays."
+      ],
+      [
+        "Mirror",
+        "Positive · self · cap 1",
+        "During an application response, optionally consume Mirror to cancel one negative combatant-status stack against you and propose it against its enemy source controller in a child batch. New target and cap must be legal; otherwise the reflected application fails. Mark reflected so it cannot be reflected again. Expires after next Ongoing exit."
+      ]
+    ],
+    "abilities": [
+      [
+        "Prism Bolt",
+        "Offense · 0E",
+        "3 Sigil / 4 Sigil / 5 Sigil",
+        "4 / 5 / 6 damage and gain 1 Aether."
+      ],
+      [
+        "Arcane Study",
+        "Offense · 0E",
+        "2 Lens + 1 Star",
+        "Gain 2 Aether and apply Rune to one own die face if absent."
+      ],
+      [
+        "Recursive Ray",
+        "Offense · 0E",
+        "Any four-number straight",
+        "Deal 5 damage. Optionally pay 2 Aether and consume an existing Echo Record at selection to queue its Echo after this attack."
+      ],
+      [
+        "Astral Mirror",
+        "Offense · 0E",
+        "3 Star",
+        "Deal 6 damage and gain Mirror if absent. Optionally pay 1 Aether at selection to draw 1 afterward."
+      ],
+      [
+        "Prism Guard",
+        "Defense · 0E",
+        "Roll 2 Arcane dice",
+        "Each Sigil prevents 1; each Lens gains 1 Aether; any Star applies Rune to one own die face if absent."
+      ],
+      [
+        "Reflecting Wall",
+        "Defense · 1E",
+        "Roll 1 Arcane die",
+        "Sigil: prevent 2. Lens: prevent 3. Star: prevent 2 and gain Mirror if absent."
+      ]
+    ],
+    "cards": [
+      [
+        "Gather Aether",
+        "1",
+        "Action",
+        "Gain 2 Aether."
+      ],
+      [
+        "Inscribe",
+        "1",
+        "Action",
+        "Apply Rune to one own combat die face if absent."
+      ],
+      [
+        "Silver Surface",
+        "1",
+        "Action",
+        "Gain Mirror if absent."
+      ],
+      [
+        "Working Notes",
+        "1",
+        "Action",
+        "Draw 1 and gain 1 Aether."
+      ],
+      [
+        "Minor Echo",
+        "1",
+        "Action",
+        "Pay 2 Aether and consume your Echo Record; Echo its recorded damage against one enemy."
+      ],
+      [
+        "Index the Possible",
+        "1",
+        "Action",
+        "Draw 2, then discard 1."
+      ],
+      [
+        "Focus Ray",
+        "1",
+        "Offensive reaction",
+        "Pay up to 2 Aether; add 2 damage each to one own damaging ability."
+      ],
+      [
+        "Mana Exchange",
+        "0",
+        "Action",
+        "Pay 2 Aether; gain 1 Energy. Once per round."
+      ],
+      [
+        "Refract",
+        "1",
+        "Action",
+        "Move your Rune to another owned die face, preserving original expiry."
+      ],
+      [
+        "Pocket Formula",
+        "1",
+        "Action",
+        "Pay 1 Aether; draw 2, then discard 1."
+      ],
+      [
+        "Recorded Guard",
+        "1",
+        "Damage reaction",
+        "Consume your Echo Record; prevent its recorded amount from one source instead of dealing Echo damage."
+      ],
+      [
+        "Deferred Copy",
+        "1",
+        "Offensive reaction",
+        "Pay 2 Aether and consume an existing Echo Record; queue its Echo after your selected ability. Requires unused Echo allowance."
+      ],
+      [
+        "Tip the Prism",
+        "1",
+        "Offensive reaction",
+        "Shift one unbound own combat face by 1 without wrapping; revalidate."
+      ],
+      [
+        "Double Refraction",
+        "1",
+        "Roll reaction",
+        "Reroll one revealed effect die belonging to any actor once. It resolves for its normal owner; overlays can trigger, but the roll is not copied."
+      ],
+      [
+        "Face Formula",
+        "1",
+        "Roll reaction",
+        "Pay 1 Aether; set one own effect die to face 3, with no physical-roll triggers."
+      ],
+      [
+        "Counterglyph",
+        "1",
+        "Application reaction",
+        "Pay 1 Aether; cancel one negative status stack proposed against you."
+      ],
+      [
+        "Glass Shield",
+        "1",
+        "Damage reaction",
+        "Prevent 2 from one source targeting you."
+      ],
+      [
+        "Mirror Buffer",
+        "0",
+        "Damage reaction",
+        "Pay Mirror; prevent 2 from one status source instead of reflecting an application."
+      ],
+      [
+        "Unwrite",
+        "1",
+        "Action",
+        "Pay 1 Aether; remove one negative overlay from an owned die face or public own card."
+      ],
+      [
+        "Lens Shift",
+        "1",
+        "Action",
+        "After your first combat roll, set one unbound own combat die to face 4."
+      ],
+      [
+        "Break the Record",
+        "0",
+        "Action",
+        "Consume Echo Record; gain 1 Aether and draw 1."
+      ],
+      [
+        "Resonance Ledger",
+        "1",
+        "Action",
+        "Upgrade once per battle: your second-card Aether reward grants 2 instead of 1."
+      ],
+      [
+        "Prismatic Shelter",
+        "2",
+        "Damage reaction",
+        "Pay 2 Aether; prevent 4 and gain Mirror if absent after commit."
+      ],
+      [
+        "Time Capsule",
+        "2",
+        "Action",
+        "Pay 3 Aether; restore 1 eligible own damage-removed card to discard and apply Rune if absent."
+      ]
+    ],
+    "pairs": [
+      [
+        "swarm",
+        "The same second accepted card play can earn Aether and Brood. Echoed outcomes never count as a third card or a fresh play."
+      ],
+      [
+        "fortune",
+        "Rune and Boon can share a face. A set face may qualify through Rune but cannot manufacture Favor from Boon."
+      ],
+      [
+        "curse",
+        "Double Refraction can reroll an enemy status die carrying Curse, adding another physical overlay opportunity. Echo copies a damage number and never replays that roll or its Curse overlays."
+      ],
+      [
+        "flame",
+        "Flame’s direct attacks can fill an Echo Record after actual damage. Echo cannot reapply Burn or copy a Kindling status source."
+      ]
+    ],
+    "example": "Prism Bolt actually deals 2 after defense, so record 2. Next round Minor Echo pays 1 Energy, 2 Aether and the record to deal 2 card damage. It opens damage responses but cannot write another record or replay Poison attached to the original attack.",
+    "counter": "Prevent direct damage to deny good records. An Echo tops out at 3 and consumes its record. Mirror does not reflect die overlays, costs, positive statuses or already reflected applications.",
+    "balance": "All Echo creation shares one per controller per round, reserved at acceptance without refund. Echo is ordinary card damage, not an extra ability; it has the copied tag and original-source ancestry for loop checks.",
+    "hooks": [
+      "H-24 source result records",
+      "H-12 rune qualification",
+      "H-15 revalidation",
+      "Explicit copied-event provenance"
+    ],
+    "review_status": "Draft — awaiting user review",
+    "version": 1,
+    "combos": [
+      [
+        "Prism Bolt → Echo Record → Minor Echo",
+        "Record actual damage after defense, capped at 3. Minor Echo consumes that record and two Aether to replay only the number, not statuses, rolls or on-play rewards."
+      ],
+      [
+        "Inscribe → Lens Shift → mixed qualification",
+        "Put Rune on face 4 of a partner die, then set that die to 4 after rolling. It retains its original symbol and adds Sigil, but neither Boon nor Curse physically triggers."
+      ]
+    ]
+  },
+  "beast": {
+    "id": "beast",
+    "name": "Beast",
+    "identity": "Study a rival’s repeated choices, mark a quarry, and choose when to pounce. Tracking uses public ability history, never private dice or hands.",
+    "symbols": [
+      "Claw",
+      "Track",
+      "Tooth"
+    ],
+    "loop": "Name a Quarry → observe a repeat or punish marked prey → earn Instinct → spend it on a precise strike or a bounded follow-up.",
+    "statuses": [
+      [
+        "Instinct",
+        "Positive · self · cap 4",
+        "Persistent. At shared Offensive reveal, gain 1 if your Quarry selected the same nonempty ability ID as in its previous Offensive segment; once per round. Initial encounters, passed turns and different tiers of the same ID are handled explicitly: no prior ID means no reward, tier changes still repeat."
+      ],
+      [
+        "Quarry",
+        "Negative · enemy · cap 1 per Beast controller",
+        "One living enemy may be your Quarry. Applying it to another removes your prior Quarry; markers from other controllers are independent. Persistent. Once per round at Offensive reveal, pay 1 Instinct for +2 damage to your ability targeting your Quarry."
+      ],
+      [
+        "Scent",
+        "Negative · enemy · cap 2",
+        "At Offensive reveal, optionally consume up to 2 on that enemy for +1 ability damage each. A committed damaging status batch against your Quarry applies 1 Scent, once per round per controller, even if another type supplied the status. Expires after next Defensive exit."
+      ],
+      [
+        "Pounce",
+        "Positive · self · cap 1",
+        "After your next non-copy Offensive ability removes at least one enemy health card, consume Pounce to create one 1-damage follow-up against the same enemy. Ordinary card damage; no new defense, always damage responses. At most one follow-up per controller per round; expires after the following round’s Damage Resolution exit."
+      ]
+    ],
+    "abilities": [
+      [
+        "Raking Claws",
+        "Offense · 0E",
+        "3 Claw / 4 Claw / 5 Claw",
+        "4 / 5 / 6 damage; apply 1 Scent."
+      ],
+      [
+        "Read the Tracks",
+        "Offense · 0E",
+        "2 Track + 1 Tooth",
+        "Choose a Quarry and gain 2 Instinct."
+      ],
+      [
+        "Pack Angle",
+        "Offense · 0E",
+        "Any three equal numbers",
+        "Deal 5 damage; gain Pounce if absent. Newly gained Pounce waits for a later attack, not this one."
+      ],
+      [
+        "Apex Rush",
+        "Offense · 0E",
+        "3 Tooth",
+        "Deal 6 damage. Optionally pay up to 2 Instinct at selection for +1 damage each; apply Quarry if you have none."
+      ],
+      [
+        "Hide and Muscle",
+        "Defense · 0E",
+        "Roll 2 Beast dice",
+        "Each Claw prevents 1; each Track gains 1 Instinct; any Tooth applies 1 Scent to the attacker."
+      ],
+      [
+        "Predator’s Turn",
+        "Defense · 1E",
+        "Roll 1 Beast die",
+        "Claw: prevent 2. Track: prevent 3. Tooth: prevent 2 and gain Pounce if absent."
+      ]
+    ],
+    "cards": [
+      [
+        "Choose the Trail",
+        "0",
+        "Action",
+        "Apply Quarry to one enemy; once per round."
+      ],
+      [
+        "Fresh Tracks",
+        "1",
+        "Action",
+        "Apply 2 Scent to one enemy."
+      ],
+      [
+        "Predator’s Patience",
+        "1",
+        "Action",
+        "Gain 2 Instinct."
+      ],
+      [
+        "Crouch",
+        "1",
+        "Action",
+        "Gain Pounce if absent."
+      ],
+      [
+        "Field Study",
+        "1",
+        "Action",
+        "Draw 1 and gain 1 Instinct."
+      ],
+      [
+        "Taste of Rain",
+        "1",
+        "Action",
+        "Apply 1 Scent to your Quarry and draw 1. Requires a living Quarry."
+      ],
+      [
+        "Lunge",
+        "1",
+        "Offensive reaction",
+        "Pay up to 2 Instinct; add 2 damage each to one own ability targeting your Quarry."
+      ],
+      [
+        "Trail Rations",
+        "0",
+        "Action",
+        "Pay 2 Instinct; gain 1 Energy. Once per round."
+      ],
+      [
+        "Cornered",
+        "1",
+        "Action",
+        "Pay 1 Instinct; apply 2 Scent to your Quarry."
+      ],
+      [
+        "Pack Signal",
+        "1",
+        "Offensive reaction",
+        "Pay 1 Instinct; grant +1 damage to each of up to two existing own sources targeting your Quarry."
+      ],
+      [
+        "Long Hunt",
+        "1",
+        "Action",
+        "Pay 1 Instinct; draw 2, then discard 1."
+      ],
+      [
+        "Change the Trail",
+        "0",
+        "Action",
+        "Remove your existing Quarry; gain 1 Instinct. No enemy means no reward."
+      ],
+      [
+        "Sidestep",
+        "1",
+        "Damage reaction",
+        "Prevent 2 from one incoming ability source."
+      ],
+      [
+        "Thick Hide",
+        "1",
+        "Damage reaction",
+        "Pay 1 Instinct; prevent 3 from one source targeting you."
+      ],
+      [
+        "Read the Feint",
+        "1",
+        "Offensive reaction",
+        "Shift one unbound enemy combat face by 1 without wrapping; revalidate."
+      ],
+      [
+        "Sure Foot",
+        "1",
+        "Roll reaction",
+        "Reroll one own revealed effect die once."
+      ],
+      [
+        "Blood in the Air",
+        "1",
+        "Damage reaction",
+        "If your Quarry has at least one unreleased damage-removal proposal, pay 1 Instinct to gain Pounce for a later qualifying attack."
+      ],
+      [
+        "Shake Free",
+        "1",
+        "Action",
+        "Pay 1 Instinct; cleanse 1 own negative status stack."
+      ],
+      [
+        "Deny the Leash",
+        "1",
+        "Application reaction",
+        "Cancel one proposed Quarry or Scent stack against you; gain 1 Instinct only if canceled."
+      ],
+      [
+        "Stay Low",
+        "0",
+        "Damage reaction",
+        "Pay Pounce; prevent 2 from one source. You forgo that follow-up."
+      ],
+      [
+        "Baited Guard",
+        "1",
+        "Defensive reaction",
+        "If your Quarry is attacking you, pay 1 Instinct; prevent 2 and apply 1 Scent after defense resolves."
+      ],
+      [
+        "Hunter’s Almanac",
+        "1",
+        "Action",
+        "Upgrade once per battle: your first repeat-ability Instinct reward each round grants 2 instead of 1."
+      ],
+      [
+        "Relentless Pursuit",
+        "2",
+        "Offensive reaction",
+        "Pay 2 Instinct and 2 enemy Scent; add 4 damage to your chosen ability against that enemy. It must be your Quarry."
+      ],
+      [
+        "Patient Predator",
+        "2",
+        "Action",
+        "Pay 2 Instinct; draw 2 and gain Pounce if absent. Does not increase the follow-up allowance."
+      ]
+    ],
+    "pairs": [
+      [
+        "venom",
+        "Quarry takes actual Poison damage → Scent is applied once. Spend Scent on a later direct attack; many Poison dice never generate many Scent in the same round."
+      ],
+      [
+        "frost",
+        "Frostbind narrows easy rerolls, making repeated ability choices more likely. Beast reads the actual public choice, not a presumed forced choice."
+      ],
+      [
+        "swarm",
+        "Pack Signal can improve two existing Swarm sources. Extra small sources do not each trigger Pounce because it listens only to a non-copy Offensive ability."
+      ]
+    ],
+    "example": "The Quarry repeats Needlefang at a new tier: gain one Instinct because the ability ID repeated. An earlier Poison batch gave it Scent. Pay one Instinct through Quarry and consume one Scent for +3 on one attack.",
+    "counter": "Vary ability IDs to deny repeat rewards. Cleanse Scent before reveal. Stop every card removal from the main attack to deny Pounce; overage alone is not a hit.",
+    "balance": "Instinct has no automatic generic damage spend beyond the explicit Quarry option. Pounce has a one-per-round shared allowance and cannot retrigger itself or other follow-up listeners.",
+    "hooks": [
+      "H-14 public ability history",
+      "H-24 damage commit",
+      "Declared target selection",
+      "Child source provenance"
+    ],
+    "review_status": "Draft — awaiting user review",
+    "version": 1,
+    "combos": [
+      [
+        "Choose the Trail → repeated enemy ability → Lunge",
+        "Instinct rewards a real repeat of the Quarry’s ability ID. Lunge converts the reserve into damage; changing targets to chase it gives up the old Quarry."
+      ],
+      [
+        "Crouch → Raking Claws → Pounce",
+        "Gain Pounce before attacking. If Claws actually removes a health card, Pounce deals its single follow-up. The new Scent can strengthen a later attack but does not retroactively improve Claws."
+      ]
+    ]
+  },
+  "blood": {
+    "id": "blood",
+    "name": "Blood",
+    "identity": "Choose exactly when to pay health cards for power. Bleed pressures the enemy while Blood Marks turn committed injury into a limited supply.",
+    "symbols": [
+      "Fang",
+      "Vein",
+      "Chalice"
+    ],
+    "loop": "Apply a Blood Mark → cause real damage → gain Ichor → spend it on attack or recovery; Sacrifice is an optional, explicit shortcut.",
+    "statuses": [
+      [
+        "Ichor",
+        "Positive · self · cap 4",
+        "Persistent. When you voluntarily Sacrifice an eligible own hand or discard card, gain 2 Ichor in a child batch, maximum once per round. At Offensive reveal spend up to 2 Ichor for +1 damage each to one own ability. Sacrifice is never automatic."
+      ],
+      [
+        "Bleed",
+        "Existing negative · enemy · cap 3",
+        "Use the active game rule: each Ongoing entry deals 1 status damage per captured stack, then removes one stack total. It does not roll a die. With no interference, 1/2/3 stacks deal 1/3/6 lifetime damage."
+      ],
+      [
+        "Blood Mark",
+        "Negative · enemy · cap 2",
+        "After at least one health card is removed from this target by damage, consume 1 Blood Mark to grant its applier 1 Ichor. Maximum one per target per batch. Prevented damage, overage, and Sacrifice do not qualify. Expires after next Damage Resolution exit."
+      ],
+      [
+        "Clot",
+        "Positive · self · cap 2",
+        "Spend 1 during a damage response to prevent 2 from one status source targeting you. Persistent. Does not prevent Sacrifice."
+      ]
+    ],
+    "abilities": [
+      [
+        "Scarlet Cut",
+        "Offense · 0E",
+        "3 Fang / 4 Fang / 5 Fang",
+        "4 / 5 / 6 damage and apply 1 Blood Mark to that enemy after damage commits. This new Mark does not count that same damage."
+      ],
+      [
+        "Open Vein",
+        "Offense · 0E",
+        "2 Vein + 1 Chalice",
+        "Gain 2 Ichor and 1 Clot. No health payment."
+      ],
+      [
+        "Crimson Thread",
+        "Offense · 0E",
+        "2 Fang + 2 Vein + 1 Chalice",
+        "Deal 4 damage and apply 1 Bleed. Optionally pay 1 Ichor at selection to apply one additional Bleed."
+      ],
+      [
+        "Red Communion",
+        "Offense · 0E",
+        "3 Chalice",
+        "Deal 6 damage. Optionally pay 2 Ichor at selection: if this attack removes at least 1 enemy health card, restore 1 eligible own damage-removed card afterward."
+      ],
+      [
+        "Sanguine Guard",
+        "Defense · 0E",
+        "Roll 2 Blood dice",
+        "Each Fang prevents 1; each Vein gains 1 Ichor; any Chalice gains 1 Clot."
+      ],
+      [
+        "Blood Aegis",
+        "Defense · 1E",
+        "Roll 1 Blood die",
+        "Fang: prevent 2. Vein: prevent 3. Chalice: prevent 2 and apply 1 Blood Mark to the attacker."
+      ]
+    ],
+    "cards": [
+      [
+        "Blood Seal",
+        "1",
+        "Action",
+        "Apply 1 Blood Mark to one enemy."
+      ],
+      [
+        "Pin the Wound",
+        "1",
+        "Action",
+        "Apply 1 Bleed to one enemy."
+      ],
+      [
+        "Stored Vitae",
+        "1",
+        "Action",
+        "Gain 2 Ichor."
+      ],
+      [
+        "Coagulum",
+        "1",
+        "Action",
+        "Gain 1 Clot and draw 1."
+      ],
+      [
+        "Bloodletting",
+        "0",
+        "Action",
+        "Sacrifice one additional eligible own hand or discard card; draw 1. Native Ichor reward remains capped once per round."
+      ],
+      [
+        "Red Journal",
+        "1",
+        "Action",
+        "Draw 2, then discard 1."
+      ],
+      [
+        "Crimson Edge",
+        "1",
+        "Offensive reaction",
+        "Pay up to 2 Ichor; add 2 damage each to your selected damaging ability."
+      ],
+      [
+        "Wound Wager",
+        "1",
+        "Action",
+        "Pay 1 Ichor; apply 1 Bleed and 1 Blood Mark to one enemy."
+      ],
+      [
+        "Vein Exchange",
+        "0",
+        "Action",
+        "Pay 2 Ichor; gain 1 Energy. Once per round."
+      ],
+      [
+        "Borrowed Pulse",
+        "1",
+        "Action",
+        "Pay 2 Ichor; restore 1 eligible own damage-removed card to discard."
+      ],
+      [
+        "Deep Cut",
+        "1",
+        "Offensive reaction",
+        "Pay 1 enemy Bleed; add 2 damage to your selected ability against that enemy."
+      ],
+      [
+        "Scar Memory",
+        "1",
+        "Action",
+        "Pay 1 Clot; gain 2 Ichor."
+      ],
+      [
+        "Clotting Band",
+        "1",
+        "Damage reaction",
+        "Prevent 2 from one source targeting you."
+      ],
+      [
+        "Sanguine Pact",
+        "1",
+        "Damage reaction",
+        "Sacrifice one additional eligible own card not currently threatened; prevent 4. Payment cannot be prevented or restored."
+      ],
+      [
+        "Redirection of Pain",
+        "1",
+        "Damage reaction",
+        "Pay 2 Ichor; redirect 1 damage from a source targeting you to its enemy controller."
+      ],
+      [
+        "Pulse Check",
+        "1",
+        "Offensive reaction",
+        "Set one unbound own combat die to face 1 or 4; revalidate."
+      ],
+      [
+        "Vein Compass",
+        "1",
+        "Roll reaction",
+        "Reroll one own revealed effect die once. No reward based on the discarded face."
+      ],
+      [
+        "Wash the Scar",
+        "1",
+        "Action",
+        "Pay 1 Ichor; cleanse 1 own negative status stack."
+      ],
+      [
+        "Stem the Flow",
+        "0",
+        "Action",
+        "Remove 1 own Bleed; gain 1 Clot. Requires Bleed."
+      ],
+      [
+        "Blood Price",
+        "1",
+        "Application reaction",
+        "Pay 1 Ichor; cancel one negative status stack proposed against you."
+      ],
+      [
+        "Crimson Insurance",
+        "1",
+        "Damage reaction",
+        "Choose one threatened own card. If damage removes it, gain 1 Ichor and 1 Clot after commit."
+      ],
+      [
+        "Vitae Ledger",
+        "1",
+        "Action",
+        "Upgrade once per battle: the first Blood Mark you consume each round grants 2 Ichor instead of 1."
+      ],
+      [
+        "Heart’s Reserve",
+        "2",
+        "Damage reaction",
+        "Pay 3 Ichor; prevent 4. If at least 1 damage still removes your health cards, restore 1 eligible prior damage removal after this batch."
+      ],
+      [
+        "Final Transfusion",
+        "2",
+        "Action",
+        "Pay 3 Ichor; restore 2 eligible own damage-removed cards to discard. Once per battle; never revives a finally defeated actor."
+      ]
+    ],
+    "pairs": [
+      [
+        "venom",
+        "Poison damage can consume an existing Blood Mark and generate Ichor; a single batch still spends only one Mark even with several toxin sources."
+      ],
+      [
+        "grave",
+        "Sacrifice creates a Corpse record for Grave’s information/resource engine, but the paid card is never eligible for restoration. This prevents refunded sacrifices."
+      ],
+      [
+        "stone",
+        "Armor handles enemy attacks so you can afford voluntary Sacrifice. Sacrifice cannot be reduced by Armor or counted as prevention."
+      ],
+      [
+        "verdant",
+        "Regrowth and Blood restoration share a cap. Spores reward actual Bleed application; Bleed’s larger lifetime total makes repeated stacks a deliberate investment."
+      ]
+    ],
+    "example": "An enemy with a Blood Mark loses two cards to Poison: consume one Mark, gain one Ichor. Paying that Ichor later increases an ability; it does not create more Blood Marks unless a card or ability says so.",
+    "counter": "Prevent all real health-card removal to deny Marks. Cleanse Bleed early, before its stacked lifetime damage grows. Pressure the Blood player after it pays an unpreventable Sacrifice.",
+    "balance": "Sacrifice removes a chosen additional own hand/discard card at acceptance, records it as paid, and requires at least 2 remaining health cards before payment. It is not damage and cannot use a card already committed to removal or this played card. Bleed is deterministic, unlike Poison.",
+    "hooks": [
+      "H-24 actual health-card removal",
+      "Card paid/removal reason",
+      "H-06 status damage",
+      "H-26 pending versus final defeat"
+    ],
+    "review_status": "Draft — awaiting user review",
+    "version": 1,
+    "combos": [
+      [
+        "Blood Seal → partner Poison damage → Crimson Edge",
+        "An existing Blood Mark earns Ichor from actual enemy card loss. Crimson Edge spends it for attack damage; preventing all Poison damage denies the Mark reward."
+      ],
+      [
+        "Bloodletting → Grave Corpse conversion → Borrowed Pulse",
+        "Sacrifice can fund Ichor and an optional Grave record, but Borrowed Pulse may only restore a different, damage-removed card. The paid sacrifice stays paid."
+      ]
+    ]
+  },
+  "construct": {
+    "id": "construct",
+    "name": "Construct",
+    "identity": "Install a small public machine, then select which program runs. Reusing the same resource-spend and prevention events creates synergy without manufacturing unlimited parts.",
+    "symbols": [
+      "Gear",
+      "Rivet",
+      "Core"
+    ],
+    "loop": "Gain Scrap → install a Module → choose one program each round → spend resources or prevent damage to run it → repair or salvage deliberately.",
+    "statuses": [
+      [
+        "Scrap",
+        "Positive · self · cap 4",
+        "Persistent. Once per round after an own installed Module is dismantled as an explicit cost or destroyed by an enemy effect, gain 1 Scrap after the event. Expiry/replacement is not destruction. At Action timing, pay 2 Scrap to install one missing Module; once per round."
+      ],
+      [
+        "Module",
+        "Positive installed objects · self · max 2 distinct",
+        "Choose Ram, Recycler or Plating; one of each maximum. At Offensive entry choose one installed Module as active until round end. Ram: first own ability source finalized gains +1 damage. Recycler: first explicit spend of another positive status grants 1 Scrap after commit; Scrap spending excluded. Plating: first incoming damage batch may prevent 1 from one source. Each active program runs once per round. Installed objects persist; no separate turns or HP."
+      ],
+      [
+        "Corrosion",
+        "Negative · enemy · cap 2",
+        "At Defensive reaction, optionally consume 1 to reduce one chosen enemy defense’s prevention by 2, minimum zero. Maximum one per target per round. Expires at next Defensive exit. Cards and resource prevention are unaffected."
+      ],
+      [
+        "Calibration",
+        "Positive die overlay · own combat die · max 1",
+        "Name one number when installed. Until next Offensive exit, once in your planning after a roll, you may clear Calibration to set that unbound die to the named face. No physical-roll triggers; normal revalidation."
+      ]
+    ],
+    "abilities": [
+      [
+        "Rivet Driver",
+        "Offense · 0E",
+        "3 Gear / 4 Gear / 5 Gear",
+        "4 / 5 / 6 damage and gain 1 Scrap."
+      ],
+      [
+        "Assembly Shift",
+        "Offense · 0E",
+        "2 Rivet + 1 Core",
+        "Gain 2 Scrap and install one missing Module if a slot exists. This install uses the round’s one-install allowance."
+      ],
+      [
+        "Acid Bore",
+        "Offense · 0E",
+        "2 Gear + 2 Rivet + 1 Core",
+        "Deal 4 damage and apply 2 Corrosion. Optionally pay 1 Scrap at selection for +2 damage."
+      ],
+      [
+        "Core Hammer",
+        "Offense · 0E",
+        "3 Core",
+        "Deal 6 damage. Optionally dismantle one installed Module at selection for +3 damage; its active program is unavailable afterward."
+      ],
+      [
+        "Plate Assembly",
+        "Defense · 0E",
+        "Roll 2 Construct dice",
+        "Each Gear prevents 1; each Rivet gains 1 Scrap; any Core applies Calibration to one own combat die if absent."
+      ],
+      [
+        "Reactive Plating",
+        "Defense · 1E",
+        "Roll 1 Construct die",
+        "Gear: prevent 2. Rivet: prevent 3. Core: prevent 2 and apply 1 Corrosion to the attacker."
+      ]
+    ],
+    "cards": [
+      [
+        "Spare Stock",
+        "1",
+        "Action",
+        "Gain 2 Scrap."
+      ],
+      [
+        "Assembly Kit",
+        "1",
+        "Action",
+        "Install one missing Module with an open slot; use the shared once-per-round install allowance."
+      ],
+      [
+        "Acid Primer",
+        "1",
+        "Action",
+        "Apply 1 Corrosion to one enemy."
+      ],
+      [
+        "Calibrate",
+        "1",
+        "Action",
+        "Apply Calibration to one own combat die, naming face 1 or 4."
+      ],
+      [
+        "Blueprint",
+        "1",
+        "Action",
+        "Draw 1 and gain 1 Scrap."
+      ],
+      [
+        "Grease the Gears",
+        "1",
+        "Action",
+        "Pay 1 Scrap; draw 2, then discard 1."
+      ],
+      [
+        "Overclock Ram",
+        "1",
+        "Offensive reaction",
+        "Pay up to 2 Scrap; add 2 damage each to one own damaging ability."
+      ],
+      [
+        "Salvage Shift",
+        "0",
+        "Action",
+        "Dismantle one installed Module; gain 1 Energy. Its native Scrap reward is limited once per round."
+      ],
+      [
+        "Rebuild",
+        "1",
+        "Action",
+        "Pay 1 Scrap; replace one installed Module with a missing one. Uses install allowance; no destruction reward."
+      ],
+      [
+        "Acid Wash",
+        "1",
+        "Action",
+        "Apply 2 Corrosion to one enemy."
+      ],
+      [
+        "Change Program",
+        "1",
+        "Action",
+        "Switch active Module to another installed one. Does not reset any module’s once-per-round usage."
+      ],
+      [
+        "Machined Memory",
+        "1",
+        "Action",
+        "Pay 2 Scrap; restore 1 eligible own damage-removed card to discard."
+      ],
+      [
+        "Metal Skin",
+        "1",
+        "Damage reaction",
+        "Prevent 2 from one incoming source."
+      ],
+      [
+        "Emergency Plate",
+        "1",
+        "Damage reaction",
+        "Pay 1 Scrap; prevent 3 from one source."
+      ],
+      [
+        "Fuse",
+        "1",
+        "Application reaction",
+        "Pay 1 Scrap; cancel one negative status stack proposed against you."
+      ],
+      [
+        "Alignment Tool",
+        "1",
+        "Offensive reaction",
+        "Shift one unbound own combat face by 1 without wrapping; revalidate."
+      ],
+      [
+        "Test Bench",
+        "1",
+        "Roll reaction",
+        "Reroll one own revealed effect die once; does not reset any module."
+      ],
+      [
+        "Rust Removal",
+        "0",
+        "Action",
+        "Remove 1 existing Corrosion from yourself; gain 1 Scrap. Requires Corrosion."
+      ],
+      [
+        "Strip the Plate",
+        "1",
+        "Defensive reaction",
+        "Pay 1 Scrap; reduce prevention from one enemy defense by 2, minimum zero."
+      ],
+      [
+        "Crash Barrier",
+        "1",
+        "Damage reaction",
+        "Dismantle one own Module; prevent 4. Native salvage reward can occur once per round."
+      ],
+      [
+        "Rewire",
+        "1",
+        "Action",
+        "Move existing Calibration to another own die, keeping its named face and original expiry."
+      ],
+      [
+        "Workshop Ledger",
+        "1",
+        "Action",
+        "Upgrade once per battle: your first Module destruction reward each round grants 2 Scrap instead of 1."
+      ],
+      [
+        "Foundry Reserve",
+        "2",
+        "Action",
+        "Pay 2 Scrap; gain 1 Armor and install one missing Module if allowed. No slot means Armor only."
+      ],
+      [
+        "Core Shelter",
+        "2",
+        "Damage reaction",
+        "Pay 3 Scrap; halve one source after source prevention, rounding down, before damage-reaction prevention."
+      ]
+    ],
+    "pairs": [
+      [
+        "storm",
+        "Recycler can gain Scrap when Charge is explicitly spent. The returned Scrap is not Charge and cannot retrigger the same program."
+      ],
+      [
+        "tide",
+        "Flow spending can run Recycler. Plating’s actual prevention can earn Flow, but each program and Flow reward has its own once-per-round latch."
+      ],
+      [
+        "stone",
+        "Module Plating and Armor combine. Corrosion and Fracture reduce selected defense prevention with a floor of zero; excess reductions are lost."
+      ],
+      [
+        "fortune",
+        "Calibration can complete an ability on a Boon face, but setting it does not roll it or earn Favor. Fortune rerolls can instead chase both outcomes."
+      ]
+    ],
+    "example": "Activate Recycler, then spend one Flow on prevention. After the spend commits, gain one Scrap. Spending more Flow this round gives no extra Scrap. Rewire and Change Program never reset Recycler’s latch.",
+    "counter": "Pressure resources before an installation turn. Corrosion expires and cannot defeat late card prevention. Only one Module is active at a time; removal sacrifices its program.",
+    "balance": "All installs, including ability/card installs, share one per controller per round. New modules become selectable next Offensive entry unless Change Program explicitly switches. Programs never run retroactively.",
+    "hooks": [
+      "H-02 segment entry",
+      "Resource-spend events",
+      "Persistent object identity",
+      "H-19/H-24 bounded programs"
+    ],
+    "review_status": "Draft — awaiting user review",
+    "version": 1,
+    "combos": [
+      [
+        "Assembly Kit → active Recycler → partner resource spend",
+        "Install Recycler, activate it at the next Offensive entry, then spend Flow/Charge/another positive status. Gain Scrap once. Change Program cannot reset that used program."
+      ],
+      [
+        "Spare Stock → Acid Wash → Core Hammer",
+        "Corrosion reduces a selected defense; Core Hammer can dismantle a Module for burst. Dismantling loses the program and only returns the capped salvage reward afterward."
+      ]
+    ]
+  },
+  "flame": {
+    "id": "flame",
+    "name": "Flame",
+    "identity": "Turn short-lived burns and card embers into a controlled burst. Heat rewards status pressure even when another type supplied it.",
+    "symbols": [
+      "Spark",
+      "Coal",
+      "Crown"
+    ],
+    "loop": "Establish Burn → earn Heat from status damage → choose an early detonation or a stronger attack → bank Embers on cards that will cycle.",
+    "statuses": [
+      [
+        "Heat",
+        "Positive · self · cap 4",
+        "Persistent. After a batch commits at least 1 enemy status damage, gain 1 Heat; once per round, regardless of source type or stack count. At Offensive reveal, optionally spend up to 2 for +1 damage each to one own Offensive ability source. No source means no payment."
+      ],
+      [
+        "Burn",
+        "Negative · enemy · cap 3",
+        "At next Ongoing entry capture existing stacks. They create one status-damage source of 1 per stack; captured stacks expire when outcomes finalize, even if damage is prevented. Applications during that entry wait for the next one."
+      ],
+      [
+        "Kindling",
+        "Negative · enemy · cap 2",
+        "After the next enemy-targeting status-damage source is collected, consume 1 to add 1 to that source before its damage responses. Maximum one Kindling consumption per target per batch. Expires after the target’s next Ongoing exit."
+      ],
+      [
+        "Ember",
+        "Positive card overlay · own discard · max 2 marked cards",
+        "Choose a public own discard card. Until end of the following round, its next accepted play or committed damage removal grants 1 Heat in a child batch, then clears the overlay. Ordinary draws/discards do not trigger. No duplicate overlay on one card."
+      ]
+    ],
+    "abilities": [
+      [
+        "Cinderlash",
+        "Offense · 0E",
+        "3 Spark / 4 Spark / 5 Spark",
+        "4 / 5 / 6 damage and apply 1 Burn at every tier."
+      ],
+      [
+        "Bank the Coals",
+        "Offense · 0E",
+        "2 Coal + 1 Crown",
+        "Gain 2 Heat and mark one own discard card with Ember, if available."
+      ],
+      [
+        "Flashpoint",
+        "Offense · 0E",
+        "2 Spark + 2 Coal + 1 Crown",
+        "Deal 4 damage. Optionally pay up to 2 enemy Burn at selection for +2 damage each; consumed Burn will not tick."
+      ],
+      [
+        "Kiln Heart",
+        "Offense · 0E",
+        "3 Crown",
+        "Deal 6 damage and apply 1 Kindling. Optionally pay 2 Heat at selection to apply 2 Burn as well."
+      ],
+      [
+        "Smoke Screen",
+        "Defense · 0E",
+        "Roll 2 Flame dice",
+        "Each Spark prevents 1; each Coal gains 1 Heat; any Crown applies 1 Burn to the attacker (maximum 1 from this defense)."
+      ],
+      [
+        "Tempered Ash",
+        "Defense · 1E",
+        "Roll 1 Flame die",
+        "Spark: prevent 2. Coal: prevent 3. Crown: prevent 2 and apply 1 Kindling to the attacker."
+      ]
+    ],
+    "cards": [
+      [
+        "First Spark",
+        "1",
+        "Action",
+        "Apply 1 Burn to one enemy."
+      ],
+      [
+        "Hot Coals",
+        "2",
+        "Action",
+        "Apply 2 Burn to one enemy."
+      ],
+      [
+        "Stoke",
+        "1",
+        "Action",
+        "Gain 2 Heat."
+      ],
+      [
+        "Dry Tinder",
+        "1",
+        "Action",
+        "Apply 1 Kindling to one enemy."
+      ],
+      [
+        "Pocket Ember",
+        "0",
+        "Action",
+        "Mark one own discard card with Ember; requires an unmarked eligible card."
+      ],
+      [
+        "Cinder Study",
+        "1",
+        "Action",
+        "Draw 1. If you already have Heat, mark one eligible own discard card with Ember."
+      ],
+      [
+        "Quick Ignition",
+        "1",
+        "Action",
+        "Pay 1 enemy Burn; create 2 ordinary card damage against that enemy."
+      ],
+      [
+        "Bellows",
+        "1",
+        "Offensive reaction",
+        "Pay up to 2 Heat; add 2 damage per stack to your selected damaging Offensive ability."
+      ],
+      [
+        "Feed the Furnace",
+        "0",
+        "Action",
+        "Discard one additional hand card; gain 2 Heat. The discarded card can carry Ember but discarding does not trigger it."
+      ],
+      [
+        "Burning Lesson",
+        "1",
+        "Action",
+        "Draw 2, then discard 1. Apply Ember to the discarded card if an overlay slot is open."
+      ],
+      [
+        "Afterglow",
+        "1",
+        "Damage reaction",
+        "Prevent 2 from an incoming status source. After commit gain 1 Heat if this prevented at least 1."
+      ],
+      [
+        "Charcoal Budget",
+        "0",
+        "Action",
+        "Pay 2 Heat; gain 1 Energy and draw 1. Once per round."
+      ],
+      [
+        "Firebreak",
+        "1",
+        "Damage reaction",
+        "Prevent 3 from one incoming source; pay 1 Heat as an additional cost."
+      ],
+      [
+        "Scorch the Seam",
+        "1",
+        "Offensive reaction",
+        "Pay 1 Heat; your chosen ability source ignores up to 2 source prevention, not damage reactions."
+      ],
+      [
+        "Flare Read",
+        "1",
+        "Offensive reaction",
+        "Set one own combat die to face 1 or 4; revalidate your selected ability."
+      ],
+      [
+        "Fickle Flame",
+        "1",
+        "Roll reaction",
+        "Physically reroll one own revealed effect die once; resolve its final face normally."
+      ],
+      [
+        "Backdraft",
+        "1",
+        "Damage reaction",
+        "Prevent 1. If actual prevention is positive, apply 1 Burn to that source’s enemy controller after commit."
+      ],
+      [
+        "Singe the Fuse",
+        "0",
+        "Action",
+        "Remove 1 own Burn to gain 1 Heat. Requires that Burn."
+      ],
+      [
+        "Smoke Passage",
+        "1",
+        "Application reaction",
+        "Pay 1 Heat; cancel one negative status stack proposed against you. Other stacks remain."
+      ],
+      [
+        "Warm Start",
+        "0",
+        "Action",
+        "If you have no Heat, gain 1 Heat. Once per round."
+      ],
+      [
+        "Crown of Sparks",
+        "2",
+        "Action",
+        "Apply 1 Burn and 1 Kindling to the same enemy as separate proposals."
+      ],
+      [
+        "Ember Ledger",
+        "1",
+        "Action",
+        "Upgrade once per battle: the first Ember trigger you resolve each round also draws 1 card."
+      ],
+      [
+        "Furnace Door",
+        "2",
+        "Damage reaction",
+        "Pay 2 Heat; prevent 5 from one source. No retaliation or new Heat from this card."
+      ],
+      [
+        "Controlled Wildfire",
+        "2",
+        "Action",
+        "Pay 3 Heat; apply 3 Burn divided among legal enemies, maximum 2 per enemy. With one enemy apply only 2."
+      ]
+    ],
+    "pairs": [
+      [
+        "venom",
+        "Poison and Volatile damage can earn Heat and spend Kindling. Neither effect adds toxin checks or interferes with Catalyst."
+      ],
+      [
+        "grave",
+        "A damage-removed Ember card can create both its Heat reward and a Grave Corpse; one shared removal event, two bounded listeners."
+      ],
+      [
+        "stone",
+        "Afterglow can prevent 2 status damage and earn its Heat reward plus Stone’s Resolve in the same batch. Both rewards require actual prevention; neither is granted per point prevented."
+      ]
+    ],
+    "example": "With 1 Kindling and 2 Poison on the enemy, a Poison damage batch consumes one Kindling for +1 total damage. If any status damage commits, gain exactly 1 Heat, not one per stack. Next round spend that Heat on an ability.",
+    "counter": "Cleanse Burn before its entry; it expires even if prevented. Deny Heat by preventing every status-damage source in a batch. Force Heat spending before the burst.",
+    "balance": "Burn is worth at most 1 delayed damage per newly applied stack, unlike Poison’s unmodified expected lifetime 2. Cinderlash starts at 5/6/7 total before prevention. Flashpoint trades two future points for four immediate, defendable points.",
+    "hooks": [
+      "Status collection and damage commit",
+      "Card played / health-card removal",
+      "Offensive source modification"
+    ],
+    "review_status": "Draft — awaiting user review",
+    "version": 1,
+    "combos": [
+      [
+        "Dry Tinder → First Spark → Flashpoint",
+        "Kindling is setup for a later status source; Flashpoint may consume Burn for immediate damage instead. Choosing that detonation gives up Burn’s scheduled point, so Kindling may need a partner’s Poison/Web source."
+      ],
+      [
+        "Pocket Ember → Burning Lesson → Ember Ledger",
+        "Mark a discard card, cycle toward it, then gain Heat when that card is actually played or damage-removed. The upgrade adds a draw only on the first successful Ember trigger each round."
+      ]
+    ]
+  },
+  "fortune": {
+    "id": "fortune",
+    "name": "Fortune",
+    "identity": "Put a temporary reward on a risky face, earn Favor from real rolls, and cash a capped streak. Luck is a choice of risk rather than unlimited corrections.",
+    "symbols": [
+      "Pip",
+      "Coin",
+      "Star"
+    ],
+    "loop": "Place Boon on a die face → physically chase it → earn Favor and a limited Streak → spend before the next risk or bank a Jackpot.",
+    "statuses": [
+      [
+        "Favor",
+        "Positive · self · cap 4",
+        "Persistent. A physical result landing on one of your Boon faces grants 1 Favor, at most twice per round across all your Boons and dice. Gain belongs to the die owner. No reward from face-setting, copied results or qualification inspection. At Offensive reveal spend up to 2 for +1 ability damage each."
+      ],
+      [
+        "Boon",
+        "Positive die-face overlay · own dice · max 2 marked faces total",
+        "Choose a currently unmarked face on an owned persistent combat die; at most one Boon per face. It adds a beneficial Fortune marker, not a combat qualification symbol. Lasts through next Offensive exit or two physical hits on that face, whichever comes first. It can coexist with Curse; both resolve from the same physical result."
+      ],
+      [
+        "Streak",
+        "Positive · self · cap 3",
+        "After a voluntary combat reroll command hits at least one Boon, gain 1 Streak; if it hits none, remove 1 Streak. Once per command, not per die. Initial/forced/effect rolls neither raise nor lower Streak. At Action timing pay 3 Streak for Jackpot: gain 1 Energy and draw 2; once per round. Persistent otherwise."
+      ],
+      [
+        "Insurance",
+        "Positive · self · cap 2",
+        "At damage response, optionally spend 1 Insurance to prevent 1 from one source. If it actually prevents at least 1, gain 1 Favor after commit, maximum one such Favor reward per round. Persistent."
+      ]
+    ],
+    "abilities": [
+      [
+        "Lucky Strike",
+        "Offense · 0E",
+        "3 Pip / 4 Pip / 5 Pip",
+        "4 / 5 / 6 damage and gain 1 Favor."
+      ],
+      [
+        "Place the Bet",
+        "Offense · 0E",
+        "2 Coin + 1 Star",
+        "Apply one Boon if a slot exists; gain 1 Insurance."
+      ],
+      [
+        "Running Numbers",
+        "Offense · 0E",
+        "Any four-number straight",
+        "Deal 5 damage. Optionally pay 1 Favor at selection to gain 1 Streak after commit."
+      ],
+      [
+        "Sevenfold Smile",
+        "Offense · 0E",
+        "3 Star",
+        "Deal 6 damage; apply one Boon if a slot exists and gain 1 Favor. No literal seven-face die is required."
+      ],
+      [
+        "Lucky Break",
+        "Defense · 0E",
+        "Roll 2 Fortune dice",
+        "Each Pip prevents 1; each Coin gains 1 Favor; any Star gains 1 Insurance."
+      ],
+      [
+        "House Guard",
+        "Defense · 1E",
+        "Roll 1 Fortune die",
+        "Pip: prevent 2. Coin: prevent 3. Star: prevent 2 and apply one Boon if a slot exists."
+      ]
+    ],
+    "cards": [
+      [
+        "Good Omen",
+        "1",
+        "Action",
+        "Apply one Boon to a chosen own combat die face if a slot exists."
+      ],
+      [
+        "Pocket Favor",
+        "1",
+        "Action",
+        "Gain 2 Favor."
+      ],
+      [
+        "Safety Net",
+        "1",
+        "Action",
+        "Gain 2 Insurance."
+      ],
+      [
+        "Lucky Ledger",
+        "1",
+        "Action",
+        "Draw 1 and gain 1 Favor."
+      ],
+      [
+        "Mark the Risk",
+        "1",
+        "Action",
+        "Apply one Boon to a face that already has Curse, or apply an ordinary Boon if no such own face exists."
+      ],
+      [
+        "Small Wager",
+        "0",
+        "Action",
+        "Pay 1 Favor; roll one own persistent combat die as an effect. On 1–3 gain 1 Insurance; on 4–6 gain 1 Streak."
+      ],
+      [
+        "Raise the Stakes",
+        "1",
+        "Offensive reaction",
+        "Pay up to 2 Favor; add 2 damage each to one own damaging ability."
+      ],
+      [
+        "Cash Out",
+        "0",
+        "Action",
+        "Pay 2 Favor; gain 1 Energy. Once per round."
+      ],
+      [
+        "Bank the Run",
+        "1",
+        "Action",
+        "Pay 2 Streak; draw 2 and gain 1 Insurance. Does not count as Jackpot."
+      ],
+      [
+        "Move the Omen",
+        "1",
+        "Action",
+        "Move one own Boon to an unmarked face of the same die, preserving remaining hits and expiry."
+      ],
+      [
+        "Favorable Study",
+        "1",
+        "Action",
+        "Pay 1 Favor; draw 2, then discard 1."
+      ],
+      [
+        "Double Cover",
+        "1",
+        "Action",
+        "Pay 1 Favor; gain 2 Insurance."
+      ],
+      [
+        "Nudge Fate",
+        "1",
+        "Offensive reaction",
+        "Shift one unbound own combat face by 1 without wrapping; revalidate. Boon does not trigger."
+      ],
+      [
+        "Risk Again",
+        "1",
+        "Roll reaction",
+        "Pay 1 Favor; physically reroll one own revealed effect die once. Normal overlays resolve on that roll."
+      ],
+      [
+        "Safe Number",
+        "1",
+        "Roll reaction",
+        "Pay 1 Favor; set one own effect die to face 3. No physical-roll rewards."
+      ],
+      [
+        "Lucky Escape",
+        "1",
+        "Damage reaction",
+        "Prevent 2 from one source targeting you."
+      ],
+      [
+        "Covered Loss",
+        "0",
+        "Damage reaction",
+        "Pay 1 Insurance; prevent 2 from one source instead of its usual 1. Native Insurance reward remains once per round."
+      ],
+      [
+        "Change Fortune",
+        "1",
+        "Application reaction",
+        "Pay 1 Favor; cancel one negative status stack proposed against you."
+      ],
+      [
+        "Walk Away",
+        "0",
+        "Action",
+        "Remove one own Boon; gain 1 Favor. Its remaining potential is lost."
+      ],
+      [
+        "Even Odds",
+        "1",
+        "Action",
+        "After your first combat roll, set one unbound own combat die to face 4. No Streak or Favor trigger."
+      ],
+      [
+        "Hedge the Bet",
+        "1",
+        "Damage reaction",
+        "Pay 1 Streak; prevent 3 from one incoming ability source."
+      ],
+      [
+        "Fortune Almanac",
+        "1",
+        "Action",
+        "Upgrade once per battle: the first physical Boon hit each round grants 2 Favor instead of 1; still uses one of two reward slots."
+      ],
+      [
+        "Golden Run",
+        "2",
+        "Action",
+        "Pay 2 Favor; gain 2 Streak and 1 Insurance. Normal caps apply; no automatic Jackpot."
+      ],
+      [
+        "Perfect Exit",
+        "2",
+        "Damage reaction",
+        "Pay 3 Favor; prevent 4 and gain 1 Insurance after the batch commits."
+      ]
+    ],
+    "pairs": [
+      [
+        "curse",
+        "One face can hold both Boon and Curse. A physical hit grants bounded Favor and uncapped Curse Count; copied or face-set results grant neither."
+      ],
+      [
+        "storm",
+        "Voluntary rerolls can earn Charge and change Streak. An incoming Pulse can hit your Boon for Favor, but your outgoing Pulse rolls an enemy die and cannot grant you that enemy’s Favor. Pulse never changes Streak."
+      ],
+      [
+        "arcane",
+        "Rune can make a Boon face useful for an ability while Echo cannot replay Boon rewards. Moves preserve each overlay’s own duration."
+      ],
+      [
+        "radiant",
+        "Purify Face can remove Curse while keeping Boon. Insurance’s prevention can support defensive builds without counting as a cleanse."
+      ]
+    ],
+    "example": "Reroll three dice and hit two Boons. Gain at most two Favor and exactly one Streak. Reroll again with no Boon hit: lose one Streak. Any Curse overlays on those physical results still add their normal Curse Count.",
+    "counter": "Force resource spending before a big payoff. Boons expire, have only two hits, and can occupy only two faces. Streak can fall when a voluntary reroll misses.",
+    "balance": "No Fortune effect rerolls a die indefinitely or counts face-setting as a roll. Jackpot consumes all three Streak and uses its once-per-round allowance; gaining new Streak does not automatically cash it out.",
+    "hooks": [
+      "H-10 physical roll and command grouping",
+      "H-04/H-18 effect-roll overlays",
+      "H-12 final qualification distinction",
+      "Resource spend and bounded reward"
+    ],
+    "review_status": "Draft — awaiting user review",
+    "version": 1,
+    "combos": [
+      [
+        "Good Omen → voluntary reroll → Bank the Run",
+        "Reroll toward the marked physical face. A hit can grant Favor and Streak; a miss lowers Streak. Cash two Streak safely or risk another command to reach Jackpot’s three."
+      ],
+      [
+        "Safety Net → Covered Loss → Raise the Stakes",
+        "Spend Insurance on actual prevention to earn its once-per-round Favor reward. Raise the Stakes converts stored Favor into damage; zero prevention earns no rebate."
+      ]
+    ]
+  },
+  "frost": {
+    "id": "frost",
+    "name": "Frost",
+    "identity": "Make future decisions costly without skipping turns: one die can become fixed, one public card can become unavailable, and brittle targets crack under a chosen hit.",
+    "symbols": [
+      "Shard",
+      "Rime",
+      "Crystal"
+    ],
+    "loop": "Apply Chill or Frostbind → keep a stable pool to gain Rime → choose control or direct pressure → spend Brittle on a decisive source.",
+    "statuses": [
+      [
+        "Chill",
+        "Negative · enemy · cap 1",
+        "At the target’s next Offensive entry, consume Chill and reduce its maximum roll commands by 1, minimum 1. Does not cancel an already accepted command. No refresh; extra-roll bonuses combine before the minimum/maximum clamps."
+      ],
+      [
+        "Frostbind",
+        "Negative die overlay · enemy combat die · max 1 per target",
+        "Mark a declared enemy combat die. During its next Offensive segment, it rolls in the initial pool, then cannot be voluntarily rerolled or face-set by either player. Forced rolls explicitly naming it remain legal. Clear at that segment’s exit. Never affects effect-roll requests."
+      ],
+      [
+        "Rime",
+        "Positive · self · cap 3",
+        "Persistent. At your final Offensive reveal, gain 1 if at least two dice were kept through every voluntary reroll after the first roll; once per round. With no voluntary reroll, any two final dice qualify. Spend 1 in damage response to prevent 1."
+      ],
+      [
+        "Brittle",
+        "Negative · enemy · cap 2",
+        "At Offensive reveal, optionally consume up to 2 on your chosen enemy to add +1 each to one ability damage source. A consumed stack is lost if the source is later canceled. Expires after target’s next Defensive exit."
+      ]
+    ],
+    "abilities": [
+      [
+        "Ice Needle",
+        "Offense · 0E",
+        "3 Shard / 4 Shard / 5 Shard",
+        "4 / 5 / 6 damage and apply 1 Brittle."
+      ],
+      [
+        "Still Lake",
+        "Offense · 0E",
+        "2 Rime + 1 Crystal",
+        "Gain 2 Rime and apply 1 Chill to one enemy."
+      ],
+      [
+        "Glacial Line",
+        "Offense · 0E",
+        "Any four-number straight",
+        "Deal 5 damage; Frostbind one chosen enemy combat die for its next Offensive segment."
+      ],
+      [
+        "White Silence",
+        "Offense · 0E",
+        "3 Crystal",
+        "Deal 6 damage and apply 2 Brittle. Optionally pay 2 Rime at selection to also apply Chill."
+      ],
+      [
+        "Snowdrift",
+        "Defense · 0E",
+        "Roll 2 Frost dice",
+        "Each Shard prevents 1; each Rime gains 1 Rime status; any Crystal applies 1 Brittle to the attacker."
+      ],
+      [
+        "Ice Wall",
+        "Defense · 1E",
+        "Roll 1 Frost die",
+        "Shard: prevent 2. Rime: prevent 3. Crystal: prevent 2 and gain 1 Rime."
+      ]
+    ],
+    "cards": [
+      [
+        "First Frost",
+        "1",
+        "Action",
+        "Apply Chill to one enemy if absent."
+      ],
+      [
+        "Thin Ice",
+        "1",
+        "Action",
+        "Apply 1 Brittle to one enemy."
+      ],
+      [
+        "Rime Cache",
+        "1",
+        "Action",
+        "Gain 2 Rime."
+      ],
+      [
+        "Freeze the Pivot",
+        "1",
+        "Action",
+        "Frostbind one chosen enemy combat die if that enemy has no Frostbind."
+      ],
+      [
+        "Snow Reading",
+        "1",
+        "Action",
+        "Draw 1 and gain 1 Rime."
+      ],
+      [
+        "Glaze",
+        "1",
+        "Action",
+        "Apply 2 Brittle to one enemy."
+      ],
+      [
+        "Shatter Line",
+        "1",
+        "Offensive reaction",
+        "Pay up to 2 Rime; add 2 damage per stack to your selected damaging ability."
+      ],
+      [
+        "Crystal Store",
+        "0",
+        "Action",
+        "Pay 2 Rime; gain 1 Energy. Once per round."
+      ],
+      [
+        "Cold Ledger",
+        "1",
+        "Action",
+        "Pay 1 Rime; draw 2, then discard 1."
+      ],
+      [
+        "Preserve",
+        "1",
+        "Action",
+        "Pay 1 Rime; defer one existing own Burn or Bleed stack’s next Ongoing trigger by one entry. Each stack can be deferred once."
+      ],
+      [
+        "Ice Lens",
+        "1",
+        "Action",
+        "After your first combat roll, set one unbound own combat die to face 1 or 4."
+      ],
+      [
+        "Breaking Point",
+        "1",
+        "Action",
+        "Pay 2 enemy Brittle; create 3 ordinary card damage against that enemy."
+      ],
+      [
+        "Whiteout",
+        "1",
+        "Offensive reaction",
+        "Pay 1 Rime; shift one unbound enemy combat face by 1 without wrapping and revalidate."
+      ],
+      [
+        "Snap Freeze",
+        "1",
+        "Application reaction",
+        "Pay 1 Rime; cancel one positive status stack proposed for an enemy. Other proposals remain."
+      ],
+      [
+        "Packed Snow",
+        "1",
+        "Damage reaction",
+        "Prevent 2 from one incoming source."
+      ],
+      [
+        "Cold Comfort",
+        "1",
+        "Damage reaction",
+        "Pay 1 Rime; prevent 3 from an incoming status source."
+      ],
+      [
+        "Thaw",
+        "0",
+        "Action",
+        "Remove one Chill or Frostbind affecting you; gain 1 Rime. Requires a removed effect."
+      ],
+      [
+        "Icy Grip",
+        "1",
+        "Damage reaction",
+        "Mark one revealed enemy health card with Ice Seal, whether or not it is saved."
+      ],
+      [
+        "Sleet",
+        "1",
+        "Action",
+        "Remove up to 1 enemy Brittle; apply Chill if absent. Requires a Brittle payment."
+      ],
+      [
+        "Cold Read",
+        "1",
+        "Roll reaction",
+        "Set one own effect die to face 3; no physical-roll triggers."
+      ],
+      [
+        "Crack the Shield",
+        "1",
+        "Defensive reaction",
+        "Pay 1 Rime; reduce prevention supplied by one enemy defense by 1, minimum zero."
+      ],
+      [
+        "Winter Map",
+        "1",
+        "Action",
+        "Upgrade once per battle: your first kept-dice Rime reward each round grants 2 Rime instead of 1."
+      ],
+      [
+        "Absolute Shelter",
+        "2",
+        "Damage reaction",
+        "Pay 2 Rime; prevent 5 from one source. Cannot also spend Rime’s native prevention in this batch."
+      ],
+      [
+        "Deep Freeze",
+        "2",
+        "Action",
+        "Pay 2 Rime; apply Chill and 1 Brittle to one enemy and Frostbind one of its combat dice if unbound."
+      ]
+    ],
+    "pairs": [
+      [
+        "stone",
+        "Keeping dice earns Rime while Armor handles incoming damage. Both reward committing to a stable plan, and Brittle adds pressure without extra rolls."
+      ],
+      [
+        "venom",
+        "Chill slows the enemy’s attack setup while Poison matures. Preserve can delay your own harmful Bleed/Burn, but cannot postpone enemy Poison to preserve it indefinitely."
+      ],
+      [
+        "beast",
+        "Frostbind can make the enemy retain a predictable die, supporting Scent tracking; it does not force an ability choice."
+      ]
+    ],
+    "example": "A target with Chill and Overload enters Offensive: normal 3 commands +1 −1 =3. Frostbind allows its initial die roll, then locks that die for voluntary edits only. The target still selects any legal ability.",
+    "counter": "Cleanse control before Offensive entry. Keep a good Frostbound face and build around it. Frost cannot erase the initial roll, and its seals do not prevent health removal.",
+    "balance": "Ice Seal is a negative overlay on one publicly revealed enemy card, maximum one sealed card per target. Until end of next round the card cannot be played or voluntarily moved from discard to hand; normal draws, discards, reshuffle and damage removal remain legal. It never reveals a hidden hand. If the card is removed, clear the seal.",
+    "hooks": [
+      "H-09 roll allowance",
+      "H-11 kept dice",
+      "H-15 edits/revalidation",
+      "H-22 public health-card reveal"
+    ],
+    "review_status": "Draft — awaiting user review",
+    "version": 1,
+    "combos": [
+      [
+        "Freeze the Pivot → First Frost → Read the Feint",
+        "Frostbind fixes one enemy die after its initial roll next segment; Chill reduces the total command budget. A Beast partner can observe the enemy’s resulting public ability rather than guessing hidden dice."
+      ],
+      [
+        "Glaze → Breaking Point or native Brittle spend",
+        "Choose between spending Brittle for direct attack bonuses or paying two for 3 card damage. The latter costs an additional stack and card but can create a separate source."
+      ]
+    ]
+  },
+  "grave": {
+    "id": "grave",
+    "name": "Grave",
+    "identity": "Record what was actually lost, harvest its remains, and haunt public cards as they move. Recovery preserves card identity and cannot refund costs.",
+    "symbols": [
+      "Bone",
+      "Urn",
+      "Skull"
+    ],
+    "loop": "Damage or sacrifice creates a Corpse record → consume it for Remnant → attach Haunt or recover an eligible card → keep one finite last-chance option.",
+    "statuses": [
+      [
+        "Corpse",
+        "Neutral owned records · self · cap 3",
+        "When an own card is permanently removed by damage or Sacrifice, optionally create one linked Corpse; maximum 2 records per round, ignoring overage. At cap choose which old record to discard. Consuming a record does not move the physical card. Restore immediately deletes its linked record. Played/exhausted cards create no Corpse."
+      ],
+      [
+        "Remnant",
+        "Positive · self · cap 4",
+        "Persistent. At Action timing once per round, consume 1 Corpse to gain 2 Remnant. At Offensive reveal pay up to 2 Remnant for +1 damage each to one own ability."
+      ],
+      [
+        "Haunt",
+        "Negative card overlay · enemy public card · max 2 per applier",
+        "Mark an enemy discard card or publicly revealed health card. Its next accepted play or committed damage removal creates 1 ordinary status damage against its owner, then clears Haunt. Maximum one Haunt trigger per applier per batch. Lasts through end of following round. It never reveals cards in hand/deck or triggers on ordinary discard."
+      ],
+      [
+        "Death Anchor",
+        "Positive · self · cap 1",
+        "Once per battle, after a damage batch leaves you pending defeat, you may consume Anchor and 2 Remnant to restore 1 eligible prior damage-removed card before final defeat. Requires an eligible card and remaining shared restore allowance. No eligible card means no payment. Expires only on use/removal; cannot save a finally defeated actor."
+      ]
+    ],
+    "abilities": [
+      [
+        "Bone Rake",
+        "Offense · 0E",
+        "3 Bone / 4 Bone / 5 Bone",
+        "4 / 5 / 6 damage and gain 1 Remnant."
+      ],
+      [
+        "Gather Remains",
+        "Offense · 0E",
+        "2 Urn + 1 Skull",
+        "Gain 2 Remnant. Optionally consume 1 Corpse at selection to draw 1 after resolution."
+      ],
+      [
+        "Grave Calling",
+        "Offense · 0E",
+        "Any three equal numbers",
+        "Deal 4 damage; Haunt one eligible public enemy card if available. Optionally pay 1 Remnant for +1 damage at selection."
+      ],
+      [
+        "Last Procession",
+        "Offense · 0E",
+        "3 Skull",
+        "Deal 6 damage. Optionally consume 1 Corpse and pay 2 Remnant at selection to restore 1 eligible own damage-removed card after the attack."
+      ],
+      [
+        "Bone Fence",
+        "Defense · 0E",
+        "Roll 2 Grave dice",
+        "Each Bone prevents 1; each Urn gains 1 Remnant; any Skull draws 1 (maximum 1 card for this defense)."
+      ],
+      [
+        "Crypt Door",
+        "Defense · 1E",
+        "Roll 1 Grave die",
+        "Bone: prevent 2. Urn: prevent 3. Skull: prevent 2 and gain Death Anchor if absent and unused this battle."
+      ]
+    ],
+    "cards": [
+      [
+        "Grave Lantern",
+        "1",
+        "Action",
+        "Gain 2 Remnant."
+      ],
+      [
+        "Whisper on Paper",
+        "1",
+        "Action",
+        "Haunt one eligible public enemy card."
+      ],
+      [
+        "Anchor Rite",
+        "1",
+        "Action",
+        "Gain Death Anchor if absent and unused this battle."
+      ],
+      [
+        "Funeral Ledger",
+        "1",
+        "Action",
+        "Draw 1 and gain 1 Remnant."
+      ],
+      [
+        "Read the Remains",
+        "0",
+        "Action",
+        "Consume 1 Corpse; draw 1. Does not also grant native Remnant."
+      ],
+      [
+        "Grave Dust",
+        "1",
+        "Action",
+        "Pay 1 Remnant; create 2 ordinary card damage against one enemy."
+      ],
+      [
+        "Ossuary Strike",
+        "1",
+        "Offensive reaction",
+        "Pay up to 2 Remnant; add 2 damage each to one own damaging ability."
+      ],
+      [
+        "Unearth",
+        "1",
+        "Action",
+        "Pay 2 Remnant and consume 1 Corpse; restore 1 eligible own damage-removed card to discard."
+      ],
+      [
+        "Inheritance",
+        "0",
+        "Action",
+        "Consume 1 Corpse; gain 1 Energy. Once per round."
+      ],
+      [
+        "Long Eulogy",
+        "1",
+        "Action",
+        "Pay 1 Remnant; draw 2, then discard 1."
+      ],
+      [
+        "Burial Exchange",
+        "1",
+        "Action",
+        "Move one existing Haunt to another eligible card of the same enemy, without refreshing its expiry."
+      ],
+      [
+        "Bone Tokens",
+        "1",
+        "Action",
+        "Consume 1 Corpse; gain 2 Armor. The physical removed card remains removed."
+      ],
+      [
+        "Pall",
+        "1",
+        "Damage reaction",
+        "Prevent 2 from one source targeting you."
+      ],
+      [
+        "Ossuary Wall",
+        "1",
+        "Damage reaction",
+        "Consume 1 Corpse; prevent 3 from one incoming ability source."
+      ],
+      [
+        "Quiet the Dead",
+        "1",
+        "Action",
+        "Pay 1 Remnant; remove one negative overlay from a public card you own."
+      ],
+      [
+        "Grave Seal",
+        "1",
+        "Application reaction",
+        "Pay 1 Remnant; cancel one negative status stack proposed against you."
+      ],
+      [
+        "Rattle the Bones",
+        "1",
+        "Roll reaction",
+        "Reroll one own revealed effect die once."
+      ],
+      [
+        "Mortuary Measure",
+        "1",
+        "Offensive reaction",
+        "Set one unbound own combat die to face 1 or 4; revalidate."
+      ],
+      [
+        "Name the Fallen",
+        "1",
+        "Damage reaction",
+        "Haunt one revealed enemy health card. It can trigger if that removal actually commits."
+      ],
+      [
+        "Burial Shroud",
+        "0",
+        "Damage reaction",
+        "Pay 1 Remnant; prevent 2 from one Haunt or other status source targeting you."
+      ],
+      [
+        "Let Go",
+        "0",
+        "Action",
+        "Remove your unused Death Anchor; gain 2 Remnant. This does not consume its once-per-battle rescue allowance."
+      ],
+      [
+        "Ossuary Catalogue",
+        "1",
+        "Action",
+        "Upgrade once per battle: your first native Corpse-to-Remnant conversion each round grants 3 instead of 2."
+      ],
+      [
+        "Return the Name",
+        "2",
+        "Action",
+        "Pay 3 Remnant and consume 2 Corpses; restore up to 2 eligible own damage-removed cards to discard."
+      ],
+      [
+        "Last Lantern",
+        "2",
+        "Damage reaction",
+        "Pay 2 Remnant; prevent 3 and gain Death Anchor if absent and unused. A subsequent rescue still costs 2 Remnant."
+      ]
+    ],
+    "pairs": [
+      [
+        "blood",
+        "Sacrifice yields a paid-card Corpse usable for Remnant, but Unearth can only restore cards removed by damage. This is a resource trade, never a refunded sacrifice."
+      ],
+      [
+        "flame",
+        "An Ember-marked own card can give Heat and a Corpse when damage removes it. Haunt damage against an enemy can earn Flame Heat."
+      ],
+      [
+        "verdant",
+        "Regrowth restores physical card instances and deletes their linked Corpse. A consumed Corpse cannot be spent twice, even if that card is damaged again later."
+      ],
+      [
+        "radiant",
+        "A Grave/Radiant creature has multiple rescue tools but shares restoration limits and only one last-chance rescue per battle."
+      ]
+    ],
+    "example": "You sacrifice a hand card: it may make a Corpse and Ichor. Later consume that Corpse for Remnant. The card remains paid and ineligible for Restore; you may instead restore a different card lost to enemy damage.",
+    "counter": "Cleanse Haunt before playing the marked card. Deny damage removals or force corpse spending on defense. Exhaustion never generates Corpses.",
+    "balance": "Haunt’s damage is a child source, not another card play/removal. Haunt descendant damage cannot trigger Haunt again in the same causal chain. Death Anchor and Radiant last-chance effects share one rescue allowance per actor per battle.",
+    "hooks": [
+      "H-22 public card overlays",
+      "H-24 removal reason and linked records",
+      "H-26 pending defeat",
+      "Card played and restoration"
+    ],
+    "review_status": "Draft — awaiting user review",
+    "version": 1,
+    "combos": [
+      [
+        "Whisper on Paper → marked card play → Haunt damage",
+        "The marked public card follows its instance through zones. When its owner plays it, Haunt deals 1 status damage and expires. Ordinary discard does not trigger it."
+      ],
+      [
+        "Damage removal → Corpse → Unearth",
+        "Consume a linked record as a resource; the removed physical card stays where it is until Restore separately succeeds. Restoring any card deletes its surviving Corpse record."
+      ]
+    ]
+  },
+  "radiant": {
+    "id": "radiant",
+    "name": "Radiant",
+    "identity": "Prevent new corruption, cleanse existing harm, and restore a small number of real lost cards. Protection and recovery have different timing and costs.",
+    "symbols": [
+      "Ray",
+      "Halo",
+      "Sun"
+    ],
+    "loop": "Build Grace → ward incoming applications → cleanse existing harm to replenish Grace → choose recovery or a decisive illuminated strike.",
+    "statuses": [
+      [
+        "Grace",
+        "Positive · self · cap 4",
+        "Persistent. After you cleanse an existing own negative stack/overlay or successfully restore an own damage-removed card, gain 1 Grace, once per round across both events. Canceling a new application earns none. At Offensive reveal spend up to 2 Grace for +1 ability damage each."
+      ],
+      [
+        "Ward",
+        "Positive · self · cap 3",
+        "During an application response, spend 1 Ward to cancel one negative combatant-status stack proposed against you. Maximum 2 Ward per batch. Does not erase existing statuses, die/card overlays or committed costs. Persistent."
+      ],
+      [
+        "Censure",
+        "Negative · enemy · cap 1",
+        "At the target’s next Offensive source construction, reduce one of its damaging ability sources by 1, minimum zero, then consume. If no damaging ability resolves, expire at that Offensive exit. Does not affect cards or status damage."
+      ],
+      [
+        "Beacon",
+        "Positive · self · cap 1",
+        "Once per battle, when a committed damage batch leaves you pending defeat, you may consume Beacon and 2 Grace to restore one eligible prior damage-removed card before final defeat. Subject to the shared rescue and restore allowances. Persistent until used/removed."
+      ]
+    ],
+    "abilities": [
+      [
+        "Dawn Spear",
+        "Offense · 0E",
+        "3 Ray / 4 Ray / 5 Ray",
+        "4 / 5 / 6 damage and gain 1 Grace."
+      ],
+      [
+        "Sheltering Halo",
+        "Offense · 0E",
+        "2 Halo + 1 Sun",
+        "Gain 2 Ward and 1 Grace."
+      ],
+      [
+        "Judgment Beam",
+        "Offense · 0E",
+        "Any four-number straight",
+        "Deal 5 damage and apply Censure if absent."
+      ],
+      [
+        "Daybreak",
+        "Offense · 0E",
+        "3 Sun",
+        "Deal 6 damage. Optionally pay 2 Grace at selection to restore one eligible own damage-removed card after the attack."
+      ],
+      [
+        "Ray Screen",
+        "Defense · 0E",
+        "Roll 2 Radiant dice",
+        "Each Ray prevents 1; each Halo gains 1 Grace; any Sun gains 1 Ward."
+      ],
+      [
+        "Sanctuary",
+        "Defense · 1E",
+        "Roll 1 Radiant die",
+        "Ray: prevent 2. Halo: prevent 3. Sun: prevent 2 and cleanse 1 chosen existing own negative status stack."
+      ]
+    ],
+    "cards": [
+      [
+        "Morning Prayer",
+        "1",
+        "Action",
+        "Gain 2 Grace."
+      ],
+      [
+        "Wardlight",
+        "1",
+        "Action",
+        "Gain 2 Ward."
+      ],
+      [
+        "Cleanse",
+        "1",
+        "Action",
+        "Remove 1 chosen existing negative status stack from yourself."
+      ],
+      [
+        "Seal of Dawn",
+        "1",
+        "Action",
+        "Apply Censure to one enemy if absent."
+      ],
+      [
+        "Litany",
+        "1",
+        "Action",
+        "Draw 1 and gain 1 Grace."
+      ],
+      [
+        "Light the Beacon",
+        "1",
+        "Action",
+        "Gain Beacon if absent and your shared rescue allowance is unused."
+      ],
+      [
+        "Sunsteel",
+        "1",
+        "Offensive reaction",
+        "Pay up to 2 Grace; add 2 damage each to one own damaging ability."
+      ],
+      [
+        "Restore the Name",
+        "1",
+        "Action",
+        "Pay 2 Grace; restore 1 eligible own damage-removed card to discard."
+      ],
+      [
+        "Candle Exchange",
+        "0",
+        "Action",
+        "Pay 2 Grace; gain 1 Energy. Once per round."
+      ],
+      [
+        "Clear Script",
+        "1",
+        "Action",
+        "Pay 1 Grace; remove one negative overlay from a public own card and draw 1. Requires that overlay."
+      ],
+      [
+        "Purify Face",
+        "1",
+        "Action",
+        "Pay 1 Grace; remove one chosen negative overlay from one face of an owned die. Other faces remain marked."
+      ],
+      [
+        "Meditation",
+        "1",
+        "Action",
+        "Pay 1 Grace; draw 2, then discard 1."
+      ],
+      [
+        "Shield of Noon",
+        "1",
+        "Damage reaction",
+        "Prevent 2 from one source targeting you."
+      ],
+      [
+        "Shelter the Weak",
+        "1",
+        "Damage reaction",
+        "Pay 1 Grace; prevent 3 from one incoming status source."
+      ],
+      [
+        "Brilliant Refusal",
+        "1",
+        "Application reaction",
+        "Cancel one negative status stack proposed against you; gain 1 Ward only if cancellation commits."
+      ],
+      [
+        "Clear Sight",
+        "1",
+        "Offensive reaction",
+        "Set one unbound own combat die to face 1 or 4; revalidate."
+      ],
+      [
+        "Guiding Light",
+        "1",
+        "Roll reaction",
+        "Pay 1 Grace; set one own effect die to face 4. This is not a physical roll."
+      ],
+      [
+        "Sacred Lens",
+        "1",
+        "Roll reaction",
+        "Reroll one own revealed effect die once."
+      ],
+      [
+        "Ward Conversion",
+        "0",
+        "Action",
+        "Pay 2 Ward; gain 1 Grace and draw 1."
+      ],
+      [
+        "Unburden",
+        "1",
+        "Action",
+        "Cleanse 1 own negative stack. If it was Incubation, also gain 1 Ward after removal."
+      ],
+      [
+        "Exorcism",
+        "1",
+        "Action",
+        "Pay 1 Grace; remove up to two negative overlays from one public own card. Cannot recover a removed card."
+      ],
+      [
+        "Dawn Ledger",
+        "1",
+        "Action",
+        "Upgrade once per battle: your first earned Grace reward each round grants 2 instead of 1."
+      ],
+      [
+        "Sanctified Ground",
+        "2",
+        "Damage reaction",
+        "Pay 2 Grace; prevent 4 from one source and gain 1 Ward after commit."
+      ],
+      [
+        "Second Sunrise",
+        "2",
+        "Action",
+        "Pay 3 Grace; restore up to 2 eligible own damage-removed cards to discard. Once per battle; shares normal restore limit."
+      ]
+    ],
+    "pairs": [
+      [
+        "tide",
+        "A successful existing-status cleanse can earn Grace and Flow once each. Spending Ward cancels a proposal and earns neither cleanse reward."
+      ],
+      [
+        "grave",
+        "Both can recover damage-removed cards, but each restore invalidates any linked Corpse. Beacon and Death Anchor cannot chain two last-chance rescues."
+      ],
+      [
+        "fortune",
+        "Purify Face removes a Curse overlay while leaving a Boon on that face intact. Guiding Light changes a result without rolling, so it does not trigger Boon or Curse."
+      ],
+      [
+        "venom",
+        "Ward and Sanctuary buy time for Incubation to mature. They cannot protect an enemy toxin from clearing; Catalyst still owns that job."
+      ]
+    ],
+    "example": "Cleanse one own Poison: gain one Grace, and one Flow if Tide’s reward is unused. Next application spend Ward to cancel Poison: this is prevention of an application, so no new Grace or Flow is generated.",
+    "counter": "Force Ward spending with several status batches, or use die/card overlays it cannot stop. Stop the recovery setup before a pending-defeat window. Censure reduces only one ability by 1.",
+    "balance": "Restore is card recovery, never a free draw or refund. Radiant shares the per-round cap with Verdant, Grave, Blood and Arcane; Beacon’s rescue is once per battle even if reacquired.",
+    "hooks": [
+      "Status removal versus cancellation",
+      "H-24 restoration",
+      "H-26 last-chance completion",
+      "Die/card overlay removal"
+    ],
+    "review_status": "Draft — awaiting user review",
+    "version": 1,
+    "combos": [
+      [
+        "Cleanse → earned Grace → Restore the Name",
+        "Removing an existing negative stack earns Grace once. Use saved Grace for one restoration; that same round’s restoration cannot earn a second native Grace reward."
+      ],
+      [
+        "Wardlight → incoming application → Unburden",
+        "Ward can stop new stacks; Unburden removes an old one. These are different windows, so holding one tool does not retroactively substitute for the other."
+      ]
+    ]
+  },
+  "stone": {
+    "id": "stone",
+    "name": "Stone",
+    "identity": "Store real prevention, expose defensive weaknesses, and resist die manipulation. The damage you stop becomes a limited resource rather than a permanent immunity.",
+    "symbols": [
+      "Hammer",
+      "Plate",
+      "Mountain"
+    ],
+    "loop": "Raise Armor → prevent a meaningful hit → gain Resolve → spend on a counterattack or Fortify → use Fracture against protected enemies.",
+    "statuses": [
+      [
+        "Armor",
+        "Positive · self · cap 3",
+        "Persistent. During a damage response, spend up to 2 Armor to prevent 1 each from one source targeting you. No automatic consumption."
+      ],
+      [
+        "Resolve",
+        "Positive · self · cap 3",
+        "Persistent. After you actually prevent at least 2 damage in one batch, gain 1 Resolve, once per round. At Offensive reveal spend up to 2 for +1 ability damage each."
+      ],
+      [
+        "Fracture",
+        "Negative · enemy · cap 2",
+        "During Defensive reaction, consume up to 2 to reduce the prevention granted by one of that enemy’s selected defenses by 1 each, minimum zero. Does not reduce card prevention, scaling or unspent Armor. Expires at next Defensive exit."
+      ],
+      [
+        "Fortify",
+        "Positive · self · cap 1",
+        "Until your next Offensive exit, cancel the first enemy-proposed nonphysical edit to one of your combat dice, then consume. Does not stop rerolls, Curse overlays, or effects on status dice. Optional decline leaves Fortify unused."
+      ]
+    ],
+    "abilities": [
+      [
+        "Quarry Blow",
+        "Offense · 0E",
+        "3 Hammer / 4 Hammer / 5 Hammer",
+        "4 / 5 / 6 damage and gain 1 Armor."
+      ],
+      [
+        "Raise Rampart",
+        "Offense · 0E",
+        "2 Plate + 1 Mountain",
+        "Gain 2 Armor and Fortify if absent."
+      ],
+      [
+        "Fault Line",
+        "Offense · 0E",
+        "2 Hammer + 2 Plate + 1 Mountain",
+        "Deal 4 damage and apply 2 Fracture. Optionally pay 1 Resolve at selection for +2 damage."
+      ],
+      [
+        "Mountainfall",
+        "Offense · 0E",
+        "3 Mountain",
+        "Deal 6 damage. Optionally pay up to 2 Armor at selection for +1 damage each; gain 1 Resolve after the source commits."
+      ],
+      [
+        "Pebble Guard",
+        "Defense · 0E",
+        "Roll 2 Stone dice",
+        "Each Hammer prevents 1; each Plate gains 1 Armor; any Mountain gains 1 Resolve."
+      ],
+      [
+        "Bastion",
+        "Defense · 1E",
+        "Roll 1 Stone die",
+        "Hammer: prevent 2. Plate: prevent 4. Mountain: prevent 3 and apply 1 Fracture to the attacker."
+      ]
+    ],
+    "cards": [
+      [
+        "Mortar",
+        "1",
+        "Action",
+        "Gain 2 Armor."
+      ],
+      [
+        "Fault Mark",
+        "1",
+        "Action",
+        "Apply 1 Fracture to one enemy."
+      ],
+      [
+        "Take a Stand",
+        "1",
+        "Action",
+        "Gain 1 Resolve and Fortify if absent."
+      ],
+      [
+        "Stone Ledger",
+        "1",
+        "Action",
+        "Draw 1 and gain 1 Armor."
+      ],
+      [
+        "Reinforce",
+        "1",
+        "Action",
+        "Pay 1 Resolve; gain 3 Armor."
+      ],
+      [
+        "Read the Strata",
+        "1",
+        "Action",
+        "Draw 2, then discard 1."
+      ],
+      [
+        "Ballast",
+        "0",
+        "Action",
+        "Pay 2 Armor; gain 1 Energy. Once per round."
+      ],
+      [
+        "Counterweight",
+        "1",
+        "Offensive reaction",
+        "Pay up to 2 Resolve; add 2 damage each to your selected damaging ability."
+      ],
+      [
+        "Rubble Shot",
+        "1",
+        "Action",
+        "Pay 2 Armor; create 3 ordinary card damage against one enemy."
+      ],
+      [
+        "Fault Survey",
+        "1",
+        "Action",
+        "Apply 2 Fracture to one enemy."
+      ],
+      [
+        "Deep Foundation",
+        "1",
+        "Action",
+        "Pay 1 Armor; gain 2 Resolve."
+      ],
+      [
+        "Lode Bearing",
+        "1",
+        "Action",
+        "Mark one own discard card with Anchor until next round ends; when damage would remove it, you may pay 1 Armor to replace it with a random unmarked eligible card."
+      ],
+      [
+        "Stonewall",
+        "1",
+        "Damage reaction",
+        "Prevent 3 from one incoming ability source."
+      ],
+      [
+        "Cushion the Fall",
+        "1",
+        "Damage reaction",
+        "Prevent 2 from one incoming status source."
+      ],
+      [
+        "Set in Stone",
+        "1",
+        "Offensive reaction",
+        "Set one own combat die to face 4; revalidate. Cannot edit a Frostbound die."
+      ],
+      [
+        "Granite Veto",
+        "1",
+        "Roll reaction",
+        "Pay 1 Resolve; cancel one pending enemy face-set on your effect die, preserving its prior result."
+      ],
+      [
+        "Grind Down",
+        "1",
+        "Defensive reaction",
+        "Pay 1 Resolve; reduce one enemy defense’s prevention by 2, minimum zero."
+      ],
+      [
+        "Dust Veil",
+        "1",
+        "Application reaction",
+        "Pay 1 Armor; cancel one negative status stack proposed against you."
+      ],
+      [
+        "Brace",
+        "0",
+        "Damage reaction",
+        "Pay 1 Resolve; prevent 2 from one source."
+      ],
+      [
+        "Reclaim Rubble",
+        "1",
+        "Action",
+        "Remove 1 existing Fracture from yourself; gain 1 Armor and draw 1. Requires Fracture."
+      ],
+      [
+        "Split Load",
+        "1",
+        "Damage reaction",
+        "Pay 1 Armor; prevent 1 from each of up to two sources targeting you."
+      ],
+      [
+        "Mason’s Rule",
+        "1",
+        "Action",
+        "Upgrade once per battle: your first earned Resolve each round also grants 1 Armor."
+      ],
+      [
+        "Living Citadel",
+        "2",
+        "Damage reaction",
+        "Pay 2 Armor and 1 Resolve; halve one incoming source after source prevention, rounding down, before damage-reaction prevention."
+      ],
+      [
+        "Bedrock Return",
+        "2",
+        "Action",
+        "Pay 2 Resolve; restore 1 eligible own damage-removed card to discard and gain Fortify if absent."
+      ]
+    ],
+    "pairs": [
+      [
+        "tide",
+        "Preventing two damage can earn both Resolve and Flow once each in that round. Their individual caps still apply."
+      ],
+      [
+        "blood",
+        "Sanguine Pact sacrifices a card for 4 prevention: Blood can earn Ichor from the paid sacrifice and Stone can earn Resolve from actual prevention. The sacrifice itself remains unpreventable and cannot be restored."
+      ],
+      [
+        "swarm",
+        "Spending Carapace to prevent at least 2 in a batch can earn Resolve. Stone’s Fracture can weaken the one enemy defense while Swarm spreads pressure across several separate sources."
+      ],
+      [
+        "radiant",
+        "Sanctuary can both cleanse an existing negative stack and prevent at least 2: a mixed creature can earn Grace from the cleanse and Resolve from actual prevention. Ward alone grants neither reward."
+      ]
+    ],
+    "example": "Bastion prevents 4 from a 6-damage source. After the batch commits, earn one Resolve. With Tide, also earn one Flow. Four points prevented never grant four copies of either reward.",
+    "counter": "Use status damage or multiple separate sources to pressure Armor spending. Fracture cannot reduce card prevention. Fortify stops only one qualifying edit.",
+    "balance": "Anchor is a positive card overlay, cap 1 own marked card. Substitution is optional, never reduces total damage, preserves zone priority and fails if no alternative exists. One replacement per card per batch. Bastion’s mean prevention is 17/6 before other effects.",
+    "hooks": [
+      "H-19 prevention",
+      "H-20 scaling",
+      "H-21 card substitution",
+      "H-24 actual prevention rewards"
+    ],
+    "review_status": "Draft — awaiting user review",
+    "version": 1,
+    "combos": [
+      [
+        "Mortar → Bastion → Counterweight",
+        "Bank Armor, prevent at least 2 in a real batch to earn one Resolve, then spend Resolve with Counterweight on an attack. Additional prevention that round does not mint more Resolve."
+      ],
+      [
+        "Fault Mark → Fault Survey → Grind Down",
+        "Stack only to Fracture cap 2. Spend Fracture and a card to reduce one defense, with zero as the floor; excess reduction never becomes damage."
+      ]
+    ]
+  },
+  "storm": {
+    "id": "storm",
+    "name": "Storm",
+    "identity": "Store charge from deliberate rerolls, then release one bounded pulse. Extra rolls help a mixed build, but expose its marked dice.",
+    "symbols": [
+      "Bolt",
+      "Cloud",
+      "Eye"
+    ],
+    "loop": "Reroll a combat die → earn Charge → pulse a Conductive enemy or power an attack → use Ground to survive the discharge.",
+    "statuses": [
+      [
+        "Charge",
+        "Positive · self · cap 4",
+        "Persistent. After a voluntary combat reroll command physically rolls at least one die, gain 1 Charge; maximum twice per round. Initial rolls, effect dice and forced rerolls do not earn this reward. At Offensive reveal, pay up to 2 Charge for +1 damage each to one own ability source."
+      ],
+      [
+        "Conductive",
+        "Negative · enemy · cap 2",
+        "When a Storm Pulse against this target resolves, optionally consume 1 Conductive to add 1 damage to that pulse. Maximum one per pulse. Persistent; no autonomous damage."
+      ],
+      [
+        "Ground",
+        "Positive · self · cap 2",
+        "Spend 1 during a damage response to prevent 2 from one status or card source targeting you. At most one Ground per batch. Persistent."
+      ],
+      [
+        "Overload",
+        "Positive · self · cap 1",
+        "Before next Offensive entry, consume this to grant one extra voluntary reroll command for that segment, subject to the shared maximum of 4 total roll commands. It never forces a reroll. No stacking or refresh."
+      ]
+    ],
+    "abilities": [
+      [
+        "Static Claw",
+        "Offense · 0E",
+        "3 Bolt / 4 Bolt / 5 Bolt",
+        "4 / 5 / 6 damage and gain 1 Charge."
+      ],
+      [
+        "Cloud Bank",
+        "Offense · 0E",
+        "2 Cloud + 1 Eye",
+        "Gain 2 Charge and 1 Ground."
+      ],
+      [
+        "Forked Sky",
+        "Offense · 0E",
+        "Any four-number straight",
+        "Deal 5 damage. Optionally pay 2 Charge at selection to queue one Pulse against that enemy after the attack."
+      ],
+      [
+        "Thunderhead",
+        "Offense · 0E",
+        "3 Eye",
+        "Deal 6 damage and apply 1 Conductive. Gain Overload for next round."
+      ],
+      [
+        "Windbreak",
+        "Defense · 0E",
+        "Roll 2 Storm dice",
+        "Each Bolt prevents 1; each Cloud gains 1 Charge; any Eye gains 1 Ground."
+      ],
+      [
+        "Lightning Rod",
+        "Defense · 1E",
+        "Roll 1 Storm die",
+        "Bolt: prevent 2. Cloud: prevent 3. Eye: prevent 2 and apply 1 Conductive to the attacker."
+      ]
+    ],
+    "cards": [
+      [
+        "Gather Static",
+        "1",
+        "Action",
+        "Gain 2 Charge."
+      ],
+      [
+        "Metal Rain",
+        "1",
+        "Action",
+        "Apply 1 Conductive to one enemy."
+      ],
+      [
+        "Ground Cable",
+        "1",
+        "Action",
+        "Gain 1 Ground and 1 Charge."
+      ],
+      [
+        "Storm Front",
+        "1",
+        "Action",
+        "Gain Overload if absent."
+      ],
+      [
+        "Test Current",
+        "1",
+        "Action",
+        "Pay 1 Charge; Pulse one enemy."
+      ],
+      [
+        "Weather Notes",
+        "1",
+        "Action",
+        "Draw 1; if you voluntarily rerolled this round, gain 1 Charge."
+      ],
+      [
+        "Capacitor",
+        "0",
+        "Action",
+        "Pay 2 Charge; gain 1 Energy. Once per round."
+      ],
+      [
+        "High Voltage",
+        "1",
+        "Offensive reaction",
+        "Pay up to 2 Charge for +2 damage each to your selected damaging ability."
+      ],
+      [
+        "Circuit Jump",
+        "1",
+        "Action",
+        "Pay 1 Charge; move Conductive from an enemy to another with room, or remove it to draw 1."
+      ],
+      [
+        "Pressure Drop",
+        "1",
+        "Action",
+        "Pay 1 Charge; draw 2, then discard 1."
+      ],
+      [
+        "Charged Mist",
+        "2",
+        "Action",
+        "Apply 2 Conductive and gain 1 Charge."
+      ],
+      [
+        "Aftershock",
+        "1",
+        "Offensive reaction",
+        "Pay 2 Charge; queue one Pulse against your selected enemy after your ability resolves. Requires a Pulse slot."
+      ],
+      [
+        "Gust",
+        "1",
+        "Offensive reaction",
+        "Shift one own combat face by 1 without wrapping; revalidate."
+      ],
+      [
+        "Crosswind",
+        "1",
+        "Roll reaction",
+        "Physically reroll one revealed effect die you own once."
+      ],
+      [
+        "Insulate",
+        "1",
+        "Damage reaction",
+        "Prevent 3 from an incoming status source."
+      ],
+      [
+        "Static Guard",
+        "1",
+        "Damage reaction",
+        "Prevent 2 from one source; if positive prevention commits, gain 1 Charge after the batch."
+      ],
+      [
+        "Discharge Seal",
+        "1",
+        "Application reaction",
+        "Pay 1 Charge; cancel one negative status stack proposed against you."
+      ],
+      [
+        "Fair Weather",
+        "0",
+        "Action",
+        "Remove own Overload; draw 1. Requires Overload."
+      ],
+      [
+        "Stormglass",
+        "1",
+        "Action",
+        "After your first combat roll, set one own combat die to face 4."
+      ],
+      [
+        "Lightning Study",
+        "1",
+        "Roll reaction",
+        "Pay 1 Charge; set one own revealed effect die to face 3. This is not a physical roll."
+      ],
+      [
+        "Quiet Center",
+        "0",
+        "Damage reaction",
+        "Pay 1 Ground; prevent 3 from one card source instead of its normal 2."
+      ],
+      [
+        "Storm Journal",
+        "1",
+        "Action",
+        "Upgrade once per battle: the first voluntary-reroll Charge reward each round grants 2 instead of 1."
+      ],
+      [
+        "Circuit Breaker",
+        "2",
+        "Damage reaction",
+        "Pay 2 Charge; prevent 4. Remove up to 1 existing Conductive from yourself."
+      ],
+      [
+        "Eye of the Storm",
+        "2",
+        "Action",
+        "Pay 3 Charge; gain 2 Ground and Overload if absent."
+      ]
+    ],
+    "pairs": [
+      [
+        "curse",
+        "Pulse makes the enemy physically roll a persistent die, so a Curse overlay on that die can add Curse Count. Pulse is capped once per round and its roll never earns voluntary-reroll Charge."
+      ],
+      [
+        "fortune",
+        "Voluntary rerolls earn Charge and can hit Boon faces. A beneficial face setting does not earn Charge or physical-roll Favor."
+      ],
+      [
+        "construct",
+        "Charge is a positive status spend, so a Recycler part can earn Scrap from it. Construct’s prevention protects time spent charging."
+      ]
+    ],
+    "example": "After two voluntary reroll commands, gain 2 Charge. Pay both for Forked Sky’s one queued Pulse. Its natural roll is 5: Pulse deals 2, plus 1 if you consume Conductive. This roll cannot earn Charge or create another Pulse.",
+    "counter": "Cleanse Conductive before a Pulse. Ground does not stop an Offensive ability. Extra rerolls can improve the enemy pool but also trigger Curse.",
+    "balance": "Pulse: the target rolls one of its persistent combat dice, chosen by the Pulse controller as an effect roll; faces 1–3 deal 1, 4–6 deal 2 ordinary card damage, no ability qualification. Maximum one Pulse per controller per round across all sources; reserve at acceptance, no refund. Base mean 1.5.",
+    "hooks": [
+      "H-10 physical combat roll",
+      "H-04/H-18 effect dice",
+      "H-15 revalidation",
+      "H-24 child consequences"
+    ],
+    "review_status": "Draft — awaiting user review",
+    "version": 1,
+    "combos": [
+      [
+        "Storm Front → voluntary rerolls → Aftershock",
+        "Overload provides one extra command next Offensive. Two voluntary rerolls can generate two Charge to pay Aftershock; its Pulse consumes the same single allowance as Test Current."
+      ],
+      [
+        "Metal Rain → Test Current → Ground Cable",
+        "Conductive improves the one Pulse by 1. Ground is the defensive reserve when the Pulse does not finish the enemy; no Pulse result regenerates its own Charge cost."
+      ]
+    ]
+  },
+  "swarm": {
+    "id": "swarm",
+    "name": "Swarm",
+    "identity": "Build expendable units and decide how many separate threats to release. A swarm has bounded pieces and one shared response window, not extra turns.",
+    "symbols": [
+      "Sting",
+      "Cell",
+      "Queen"
+    ],
+    "loop": "Grow Brood through card sequences → release several small sources → use Web to reward a connected hit → keep Carapace for survival.",
+    "statuses": [
+      [
+        "Brood",
+        "Positive summon counters · self · cap 3",
+        "Persistent, with no separate health, hand, die pool or turn. After your second accepted card play of a round, gain 1 Brood, once per round. At Offensive reveal, optionally spend up to 2 Brood to queue one separate 1-damage card source each against the ability’s enemy after that ability commits. All queued units resolve in one batch; no additional defense selection."
+      ],
+      [
+        "Web",
+        "Negative · enemy · cap 1",
+        "If at least two distinct sources from the Web applier each deal at least 1 actual damage to this target in one batch, consume Web and create one 1-damage status source after commit. Maximum one Web trigger per applier per round. Expires after next Damage Resolution exit."
+      ],
+      [
+        "Carapace",
+        "Positive · self · cap 3",
+        "Persistent. In damage response spend up to 2 Carapace to prevent 1 each from one source. Does not protect Brood: counters cannot be attacked as separate combatants."
+      ],
+      [
+        "Royal Order",
+        "Positive · self · cap 1",
+        "At your next Offensive reveal you may consume this to raise that reveal’s Brood spend limit from 2 to 3. It adds no units and expires at that Offensive exit."
+      ]
+    ],
+    "abilities": [
+      [
+        "Needle Cloud",
+        "Offense · 0E",
+        "3 Sting / 4 Sting / 5 Sting",
+        "4 / 5 / 6 damage; gain 1 Brood after commit. That new unit cannot fund this attack’s Brood payment."
+      ],
+      [
+        "Build the Hive",
+        "Offense · 0E",
+        "2 Cell + 1 Queen",
+        "Gain 2 Brood and 1 Carapace."
+      ],
+      [
+        "Silken Pincer",
+        "Offense · 0E",
+        "Any three equal numbers",
+        "Deal 4 damage and apply Web. Web is active for the queued Brood batch, not retroactively for this source."
+      ],
+      [
+        "Queen’s Signal",
+        "Offense · 0E",
+        "3 Queen",
+        "Deal 6 damage. Gain Royal Order and 1 Brood after commit for a later attack."
+      ],
+      [
+        "Chitin Screen",
+        "Defense · 0E",
+        "Roll 2 Swarm dice",
+        "Each Sting prevents 1; each Cell gains 1 Carapace; any Queen gains 1 Brood."
+      ],
+      [
+        "Living Bulwark",
+        "Defense · 1E",
+        "Roll 1 Swarm die",
+        "Sting: prevent 2. Cell: prevent 3. Queen: prevent 2 and apply Web to the attacker if absent."
+      ]
+    ],
+    "cards": [
+      [
+        "Hatch",
+        "1",
+        "Action",
+        "Gain 2 Brood."
+      ],
+      [
+        "Spin Thread",
+        "1",
+        "Action",
+        "Apply Web to one enemy if absent."
+      ],
+      [
+        "Chitin Stores",
+        "1",
+        "Action",
+        "Gain 2 Carapace."
+      ],
+      [
+        "Royal Scent",
+        "1",
+        "Action",
+        "Gain Royal Order if absent."
+      ],
+      [
+        "Hive Survey",
+        "1",
+        "Action",
+        "Draw 1 and gain 1 Carapace."
+      ],
+      [
+        "Worker’s Errand",
+        "0",
+        "Action",
+        "Pay 1 Brood; draw 1."
+      ],
+      [
+        "Swarming Charge",
+        "1",
+        "Offensive reaction",
+        "Pay up to 2 Brood; add 2 damage per unit to one own ability instead of creating separate sources."
+      ],
+      [
+        "Forage",
+        "0",
+        "Action",
+        "Pay 2 Carapace; gain 1 Energy. Once per round."
+      ],
+      [
+        "Split Sting",
+        "1",
+        "Action",
+        "Pay 2 Brood; create two separate 1-damage card sources against one enemy in one batch."
+      ],
+      [
+        "Brood Rotation",
+        "1",
+        "Action",
+        "Pay 1 Carapace; gain 2 Brood."
+      ],
+      [
+        "Colony Notes",
+        "1",
+        "Action",
+        "Draw 2, then discard 1."
+      ],
+      [
+        "Feeding Line",
+        "1",
+        "Action",
+        "Pay 1 Brood; gain 2 Carapace and Royal Order if absent."
+      ],
+      [
+        "Scuttle",
+        "1",
+        "Offensive reaction",
+        "Shift one unbound own combat face by 1 without wrapping; revalidate."
+      ],
+      [
+        "Scatter",
+        "1",
+        "Damage reaction",
+        "Prevent 1 from each of up to two sources targeting you."
+      ],
+      [
+        "Body Shield",
+        "1",
+        "Damage reaction",
+        "Pay 1 Brood; prevent 3 from one source targeting you."
+      ],
+      [
+        "Silk Cocoon",
+        "1",
+        "Application reaction",
+        "Pay 1 Carapace; cancel one negative status stack proposed against you."
+      ],
+      [
+        "Wingbeat",
+        "1",
+        "Roll reaction",
+        "Reroll one own revealed effect die once."
+      ],
+      [
+        "Unweave",
+        "0",
+        "Action",
+        "Remove one existing Web on yourself; draw 1. Requires Web."
+      ],
+      [
+        "Hold the Nest",
+        "1",
+        "Damage reaction",
+        "Prevent 2. If positive prevention commits, gain 1 Brood afterward."
+      ],
+      [
+        "Crawler’s Detour",
+        "1",
+        "Action",
+        "Move your Web to another enemy, or remove it to gain 1 Brood. No duration refresh."
+      ],
+      [
+        "Sting Together",
+        "1",
+        "Damage reaction",
+        "Pay 1 Carapace; add 1 damage to one existing own Brood source before this batch commits."
+      ],
+      [
+        "Colony Ledger",
+        "1",
+        "Action",
+        "Upgrade once per battle: your second-card Brood reward also grants 1 Carapace."
+      ],
+      [
+        "Mass Emergence",
+        "2",
+        "Action",
+        "Pay 2 Carapace; gain 3 Brood and Royal Order if absent."
+      ],
+      [
+        "Last Shelter",
+        "2",
+        "Damage reaction",
+        "Pay up to 3 Brood; prevent 2 per unit from one source. Units paid here cannot attack later."
+      ]
+    ],
+    "pairs": [
+      [
+        "beast",
+        "Pack Signal improves two queued Brood sources, and Web rewards both getting through. Pounce’s separate attack rule remains capped."
+      ],
+      [
+        "arcane",
+        "Cheap card sequences can reach the second-play Brood reward. Echo copies do not count as accepted card plays."
+      ],
+      [
+        "flame",
+        "Web’s status damage can earn Heat after the batch. Kindling can improve Web’s one damage without creating additional Web triggers."
+      ],
+      [
+        "stone",
+        "Carapace and Armor can support one source together; Resolve rewards total real prevention once, not once per unit spent."
+      ]
+    ],
+    "example": "Pay two Brood at Offensive reveal. After Silken Pincer applies Web, both queued unit sources deal 1. Web then consumes itself for one status damage. One unit prevented to zero means Web does not trigger.",
+    "counter": "Prevent one of the small sources to deny Web. Force defensive Brood spending. Board counters are capped and never supply extra hands, actions or response windows.",
+    "balance": "At most three Brood sources can be released at one Offensive reveal with Royal Order. Each unit is spent. Split Sting uses the same physical units but is a card action, not an additional Offensive ability.",
+    "hooks": [
+      "H-24 multi-source commit",
+      "Accepted card-play count",
+      "Child-batch source attribution",
+      "H-23 per-source prevention"
+    ],
+    "review_status": "Draft — awaiting user review",
+    "version": 1,
+    "combos": [
+      [
+        "Hatch → Spin Thread → Split Sting",
+        "Pay two Brood to create two 1-damage sources in one batch. If both damage the Web target, Web adds one delayed status source; preventing either sting denies Web."
+      ],
+      [
+        "Hive Survey → Worker’s Errand → second-card reward",
+        "Two accepted plays earn one Brood. Worker’s Errand spends a preexisting unit at acceptance, so it cannot borrow the unit awarded by that very card play."
+      ]
+    ]
+  },
+  "tide": {
+    "id": "tide",
+    "name": "Tide",
+    "identity": "Manage a reserve that rewards genuine prevention and cleansing. Redirect a limited amount of pressure without transferring every enemy status.",
+    "symbols": [
+      "Wave",
+      "Shell",
+      "Pearl"
+    ],
+    "loop": "Build Flow → spend it on prevention or controlled transfers → cleanse to rebuild the reserve → exploit Soaked targets with effect rolls.",
+    "statuses": [
+      [
+        "Flow",
+        "Positive · self · cap 4",
+        "Persistent. After you actually prevent at least 1 damage in a batch OR cleanse an existing negative stack from yourself, gain 1 Flow; shared once-per-round gain across these events. At damage response, once per batch, pay 1 Flow to prevent 1 from a source targeting you."
+      ],
+      [
+        "Soaked",
+        "Negative · enemy · cap 2",
+        "At a status-roll response you control, optionally spend 1 existing Soaked on that target to reroll one of its revealed status dice once. Ordinary outcomes, physical overlays and reroll limits apply. Maximum one Soaked use per target per round. Expires after next Ongoing exit."
+      ],
+      [
+        "Undertow",
+        "Negative · enemy · cap 1",
+        "At the target’s next Income, replace 1 of its standard +1 Energy with a gain of 1 Flow for the applier, then expire. Does not affect card draw or other Energy gains. A canceled replacement leaves normal Income intact."
+      ],
+      [
+        "Breakwater",
+        "Positive · self · cap 3",
+        "During damage response, optionally spend any number to prevent 1 per stack from one source targeting you. Persistent until spent or removed. This is prevention and can earn the shared Flow reward."
+      ]
+    ],
+    "abilities": [
+      [
+        "Riptide",
+        "Offense · 0E",
+        "3 Wave / 4 Wave / 5 Wave",
+        "4 / 5 / 6 damage. Gain 1 Flow."
+      ],
+      [
+        "Gather Current",
+        "Offense · 0E",
+        "2 Shell + 1 Pearl",
+        "Gain 2 Flow and 1 Breakwater."
+      ],
+      [
+        "Drowning Bell",
+        "Offense · 0E",
+        "2 Wave + 2 Shell + 1 Pearl",
+        "Deal 4 damage; apply 1 Soaked and 1 Undertow to that enemy."
+      ],
+      [
+        "Turn the Sea",
+        "Offense · 0E",
+        "3 Pearl",
+        "Deal 6 damage. Optionally pay up to 2 Flow at selection to gain that many Breakwater after the attack."
+      ],
+      [
+        "Shell Harbor",
+        "Defense · 0E",
+        "Roll 2 Tide dice",
+        "Each Wave prevents 1; each Shell gains 1 Flow; any Pearl gains 1 Breakwater."
+      ],
+      [
+        "Returning Wave",
+        "Defense · 1E",
+        "Roll 1 Tide die",
+        "Wave: prevent 2. Shell: prevent 3. Pearl: prevent 2 and apply 1 Soaked to the attacker."
+      ]
+    ],
+    "cards": [
+      [
+        "Waterline",
+        "1",
+        "Action",
+        "Gain 2 Flow."
+      ],
+      [
+        "Sheltered Cove",
+        "1",
+        "Action",
+        "Gain 2 Breakwater."
+      ],
+      [
+        "Cold Spray",
+        "1",
+        "Action",
+        "Apply 1 Soaked to one enemy."
+      ],
+      [
+        "Tidal Tax",
+        "1",
+        "Action",
+        "Apply Undertow to one enemy who has none."
+      ],
+      [
+        "Rinse",
+        "1",
+        "Action",
+        "Cleanse 1 chosen existing negative status stack from yourself."
+      ],
+      [
+        "Driftwood",
+        "1",
+        "Action",
+        "Draw 1 and gain 1 Flow."
+      ],
+      [
+        "Tidal Exchange",
+        "1",
+        "Action",
+        "Pay 2 Flow; move 1 own Poison or Burn to an enemy with room. Failed transfer removes neither stack."
+      ],
+      [
+        "Pressure Jet",
+        "1",
+        "Offensive reaction",
+        "Pay up to 2 Flow for +2 damage per stack on your selected damaging ability."
+      ],
+      [
+        "Condense",
+        "0",
+        "Action",
+        "Pay 2 Flow; gain 1 Energy. Once per round."
+      ],
+      [
+        "Foam Reserve",
+        "1",
+        "Action",
+        "Pay 1 Flow; gain 3 Breakwater."
+      ],
+      [
+        "River Reading",
+        "1",
+        "Action",
+        "Draw 2, then discard 1. If that card is an action, gain 1 Flow."
+      ],
+      [
+        "Carry the Rain",
+        "1",
+        "Action",
+        "Move one existing Soaked to a different enemy with room, or remove it to gain 1 Flow. Draw 1 after either successful choice."
+      ],
+      [
+        "Slipstream",
+        "1",
+        "Offensive reaction",
+        "Pay 1 Flow; shift one own combat face by +1 or −1 without wrapping; revalidate."
+      ],
+      [
+        "Eddy",
+        "1",
+        "Roll reaction",
+        "Reroll one own revealed effect die once. Gain 1 Flow only if its final face is 1 or 2."
+      ],
+      [
+        "Surge Wall",
+        "1",
+        "Damage reaction",
+        "Prevent 2 from one source targeting you."
+      ],
+      [
+        "Recede",
+        "1",
+        "Application reaction",
+        "Pay 1 Flow; cancel one negative status stack proposed against you."
+      ],
+      [
+        "Wash the Mark",
+        "1",
+        "Action",
+        "Pay 1 Flow; remove one chosen negative card overlay from a public card you own."
+      ],
+      [
+        "Ferry",
+        "1",
+        "Damage reaction",
+        "Pay 2 Flow; redirect 1 damage from a source targeting you to its enemy controller. Preserve damage kind; no new defense roll."
+      ],
+      [
+        "Held Breath",
+        "0",
+        "Damage reaction",
+        "Pay 1 Breakwater; prevent 2 from an incoming status source instead of its usual 1."
+      ],
+      [
+        "Clear Channel",
+        "1",
+        "Action",
+        "Cleanse 1 own negative stack. If removal commits, gain 1 Breakwater after it."
+      ],
+      [
+        "Estuary",
+        "1",
+        "Action",
+        "Pay 1 Flow; apply 1 Soaked and gain 1 Breakwater."
+      ],
+      [
+        "Tidal Almanac",
+        "1",
+        "Action",
+        "Upgrade once per battle: your once-per-round earned Flow reward grants 2 Flow instead of 1."
+      ],
+      [
+        "High Water",
+        "2",
+        "Action",
+        "Pay 3 Flow; gain 3 Breakwater and draw 1."
+      ],
+      [
+        "Ebb and Return",
+        "2",
+        "Damage reaction",
+        "Pay 2 Flow; prevent 4. If at least 2 is actually prevented, apply 1 Soaked to that source’s enemy controller after commit."
+      ]
+    ],
+    "pairs": [
+      [
+        "venom",
+        "Soaked gives an additional way to retry a toxin die, sharing its one-reroll limit with Catalyst. Choose deliberately: a Tide retry can leave Catalyst with no eligible die."
+      ],
+      [
+        "stone",
+        "Armor prevention earns Flow; Flow funds Tide protection without requiring Tide symbols on every die."
+      ],
+      [
+        "radiant",
+        "Existing negative-stack cleanses earn Flow while Ward handles new applications. A canceled application is not a cleanse and earns no Flow."
+      ],
+      [
+        "curse",
+        "A Soaked physical reroll can trigger Curse on the selected persistent die; transferring Poison does not transfer die overlays."
+      ]
+    ],
+    "example": "Stone prevents 2 from a hit: gain 1 Flow after the batch. Next batch, spend it to prevent 1. The spending does not create more Flow in the same round because the shared earned-gain limit is already used.",
+    "counter": "Use damage from several batches to exhaust Breakwater. Soaked is optional and expires; clear it before revealing a valuable status die. Undertow only redirects standard Income once.",
+    "balance": "Flow’s baseline defense exchange is 1:1. Extra value requires cards and Energy. Transfer never clones statuses, and Ferry redirects at most 1 damage per card.",
+    "hooks": [
+      "Damage modification and commit",
+      "Status removal / application response",
+      "Income replacement",
+      "Physical status roll reveal"
+    ],
+    "review_status": "Draft — awaiting user review",
+    "version": 1,
+    "combos": [
+      [
+        "Sheltered Cove → Surge Wall → High Water",
+        "Prevent actual damage with Breakwater or a card to earn Flow once. Bank enough Flow for High Water’s three Breakwater, rather than repeatedly assuming each point prevented earns Flow."
+      ],
+      [
+        "Cold Spray → status roll → Soaked spend",
+        "Mark the target before its status roll. Spend Soaked on one revealed die; a 5–6 Poison retry may deal damage or still clear. This competes with Catalyst’s reroll opportunity."
+      ]
+    ]
+  },
+  "verdant": {
+    "id": "verdant",
+    "name": "Verdant",
+    "identity": "Invest in living reserves and harvest successful applications. Growth repairs prior damage slowly; Spores make an ally type’s status application productive.",
+    "symbols": [
+      "Leaf",
+      "Vine",
+      "Bud"
+    ],
+    "loop": "Seed Growth → mark an enemy with Spores → harvest successful negative applications → pay Growth for regeneration or a strong strike.",
+    "statuses": [
+      [
+        "Growth",
+        "Positive · self · cap 4",
+        "Persistent. At Income entry, if you already have at least 1 Growth, gain 1; once per Income. This occurs after Ongoing costs. No Growth at entry means no passive generation."
+      ],
+      [
+        "Spores",
+        "Negative · enemy · cap 2",
+        "After a different negative status actually gains at least one stack on this target, consume 1 Spore to grant the Spore applier 1 Growth in a child batch. Once per target per batch. Spore applications, transfers and mere refreshes do not trigger. Expires after target’s next Ongoing exit."
+      ],
+      [
+        "Regrowth",
+        "Positive · self · cap 2",
+        "At Ongoing entry, you may pay 2 Growth and consume 1 Regrowth to restore 1 eligible damage-removed own card to discard after the ongoing batch. At most once per round. No eligible card means no payment. Unused stacks persist."
+      ],
+      [
+        "Graft",
+        "Positive die overlay · own combat die · max 1",
+        "Mark one chosen face on an owned combat die. Until your next Offensive exit, that face adds Leaf alongside its normal symbol for final qualification. Each die counts at most once toward any one requirement. Face-setting can use Graft; no physical-roll reward is created."
+      ]
+    ],
+    "abilities": [
+      [
+        "Briar Lash",
+        "Offense · 0E",
+        "3 Leaf / 4 Leaf / 5 Leaf",
+        "4 / 5 / 6 damage and apply 1 Spore."
+      ],
+      [
+        "Seedbed",
+        "Offense · 0E",
+        "2 Vine + 1 Bud",
+        "Gain 2 Growth and 1 Regrowth."
+      ],
+      [
+        "Canopy Reach",
+        "Offense · 0E",
+        "Any three equal numbers",
+        "Deal 4 damage. Optionally pay up to 2 Growth at selection for +1 damage each; apply Graft to one own combat face after the attack."
+      ],
+      [
+        "Ancient Bloom",
+        "Offense · 0E",
+        "3 Bud",
+        "Deal 6 damage and gain 2 Growth. If you already have Regrowth at selection, optionally pay 2 Growth to queue one Restore 1 after the attack."
+      ],
+      [
+        "Living Bark",
+        "Defense · 0E",
+        "Roll 2 Verdant dice",
+        "Each Leaf prevents 1; each Vine gains 1 Growth; any Bud gains 1 Regrowth."
+      ],
+      [
+        "Thorn Trellis",
+        "Defense · 1E",
+        "Roll 1 Verdant die",
+        "Leaf: prevent 2. Vine: prevent 3. Bud: prevent 2 and apply 1 Spore to the attacker."
+      ]
+    ],
+    "cards": [
+      [
+        "Planting",
+        "1",
+        "Action",
+        "Gain 2 Growth."
+      ],
+      [
+        "Spore Dust",
+        "1",
+        "Action",
+        "Apply 1 Spore to one enemy."
+      ],
+      [
+        "Sleeping Root",
+        "1",
+        "Action",
+        "Gain 1 Regrowth and 1 Growth."
+      ],
+      [
+        "New Shoot",
+        "1",
+        "Action",
+        "Apply Graft to one own combat die face if you have no Graft."
+      ],
+      [
+        "Seed Catalogue",
+        "1",
+        "Action",
+        "Draw 1 and gain 1 Growth."
+      ],
+      [
+        "Thick Spores",
+        "1",
+        "Action",
+        "Apply 2 Spores to one enemy."
+      ],
+      [
+        "Harvest",
+        "0",
+        "Action",
+        "Pay 2 Growth; gain 1 Energy and draw 1. Once per round."
+      ],
+      [
+        "Bramble Burst",
+        "1",
+        "Offensive reaction",
+        "Pay up to 2 Growth; add 2 damage each to one own damaging ability."
+      ],
+      [
+        "Root Mend",
+        "1",
+        "Action",
+        "Pay 2 Growth; restore 1 eligible own damage-removed card to discard."
+      ],
+      [
+        "Spring Pruning",
+        "1",
+        "Action",
+        "Pay 1 Growth; cleanse 1 existing negative status stack from yourself."
+      ],
+      [
+        "Seed Exchange",
+        "1",
+        "Action",
+        "Pay 1 Growth; draw 2, then discard 1."
+      ],
+      [
+        "Graft Bridge",
+        "1",
+        "Action",
+        "Move your existing Graft to a different own die face without extending its expiry."
+      ],
+      [
+        "Leaf Turn",
+        "1",
+        "Offensive reaction",
+        "Set one unbound own combat die to face 1; revalidate."
+      ],
+      [
+        "Dew Catch",
+        "1",
+        "Roll reaction",
+        "Reroll one own revealed effect die once. On final 4–6, gain 1 Growth."
+      ],
+      [
+        "Barkwrap",
+        "1",
+        "Damage reaction",
+        "Prevent 2 from one source targeting you."
+      ],
+      [
+        "Root Brace",
+        "1",
+        "Damage reaction",
+        "Pay 1 Growth; prevent 3 from one incoming ability source."
+      ],
+      [
+        "Clean Sap",
+        "1",
+        "Application reaction",
+        "Pay 1 Growth; cancel one negative status stack proposed against you."
+      ],
+      [
+        "Wilt the Mark",
+        "0",
+        "Action",
+        "Pay 1 enemy Spore; gain 1 Growth. This is a cost, not a Spore trigger."
+      ],
+      [
+        "Dormant Seed",
+        "1",
+        "Damage reaction",
+        "Choose one threatened own card; if damage actually removes it, gain 1 Regrowth after commit."
+      ],
+      [
+        "Overgrowth",
+        "1",
+        "Action",
+        "Pay 1 Regrowth; gain 2 Growth."
+      ],
+      [
+        "Tangle Memory",
+        "1",
+        "Action",
+        "Pay 2 Growth; apply 1 existing Entangle to an enemy, using its normal cap and Offensive-entry rules."
+      ],
+      [
+        "Perennial Ledger",
+        "1",
+        "Action",
+        "Upgrade once per battle: once per round, after your Restore succeeds, gain 1 Growth. A failed Restore gives none."
+      ],
+      [
+        "Canopy Shelter",
+        "2",
+        "Damage reaction",
+        "Pay 2 Growth; prevent 4 and gain 1 Regrowth after commit."
+      ],
+      [
+        "Return of Spring",
+        "2",
+        "Action",
+        "Pay 3 Growth and 1 Regrowth; restore 2 eligible own damage-removed cards to discard within the shared restore limit."
+      ]
+    ],
+    "pairs": [
+      [
+        "venom",
+        "Spores reward Poison stacks that actually fit, or a committed Incubation/Volatile application. Rejected Poison overflow alone is not a successful stack application."
+      ],
+      [
+        "blood",
+        "Blood can use Growth defense to survive its costs. Regrowth restores prior damage removals, never the cards paid as Sacrifice."
+      ],
+      [
+        "fortune",
+        "Graft and Boon may share a physical face. One adds a qualification symbol, the other rewards a physical roll; face-setting activates only the former."
+      ],
+      [
+        "grave",
+        "A restored card keeps its instance identity. Clear its old Corpse link so Grave cannot spend a stale corpse after revival."
+      ]
+    ],
+    "example": "Spores are on an enemy with 2 Poison. Twin Puncture adds one Poison and overflows one: the committed Poison gain consumes one Spore and earns Growth. Incubation’s later child application can consume another Spore if one remains.",
+    "counter": "Force Growth spending before Income to break passive growth. Cleanse Spores before a partner application. Restoring a card to discard does not immediately draw it.",
+    "balance": "Growth regeneration consumes both setup and 2 resource per restored card. Restoration is capped across mixed types and excludes sacrificed/exhausted cards. Extra Growth at cap is lost.",
+    "hooks": [
+      "H-07 Income",
+      "Status application commit",
+      "H-12 qualification overlays",
+      "H-24 restoration and object identity"
+    ],
+    "review_status": "Draft — awaiting user review",
+    "version": 1,
+    "combos": [
+      [
+        "Planting → Sleeping Root → Root Mend",
+        "Leave at least one Growth through Income to grow the reserve. Root Mend provides earlier repair, while Regrowth waits for Ongoing and pays its own two Growth. Both share restoration slots."
+      ],
+      [
+        "Spore Dust → partner status application → Bramble Burst",
+        "A successful new negative stack consumes one Spore for Growth. Spend that Growth through Bramble Burst, or preserve it to keep Income growth active."
+      ]
+    ]
+  }
+}

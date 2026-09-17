@@ -45,6 +45,13 @@ func encodeDecisionV2(transition Transition) (EncodedDecision, error) {
 	opponent := otherSeat(viewer)
 	own, other := snap.Actors[viewer], snap.Actors[opponent]
 	symbols := sortedKeys(snap.ContentCatalog.Symbols)
+	baseSymbols := symbols[:0]
+	for _, symbol := range symbols {
+		if !content.IsVenomIdentifier(symbol) {
+			baseSymbols = append(baseSymbols, symbol)
+		}
+	}
+	symbols = baseSymbols
 	board := append(append([]string(nil), own.OffensiveAbilities...), own.DefensiveAbilities...)
 	if err := auditV2Capacity(symbols, board, own); err != nil {
 		return EncodedDecision{}, err
@@ -256,6 +263,9 @@ func encodeV2Dice(values []float32, offset int, dice []state.RolledDie, kept map
 		for _, symbol := range die.Symbols {
 			index := indexOf(symbols, symbol)
 			if index < 0 {
+				if content.IsVenomIdentifier(symbol) {
+					continue
+				}
 				return fmt.Errorf("rolled die references unknown symbol %q", symbol)
 			}
 			values[start+6+index] = 1

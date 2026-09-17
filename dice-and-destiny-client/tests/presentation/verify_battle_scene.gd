@@ -128,11 +128,13 @@ func _run() -> void:
 	await process_frame; await process_frame
 	var enemy_die_ids: Array[String] = []; var saw_enemy_caption := false; var saw_player_outcome := false; var saw_enemy_outcome := false; var leaked_generic_rules := false
 	for label in offensive_reveal.find_children("*", "Label", true, false):
-		if label.text == "ENEMY OFFENSIVE DICE · Simulated rolls 1": saw_enemy_caption = true
-		if "Sword Cut\nPending: 7 damage\nApplies: Bleed ×2\nTarget: Venom Goblin" in label.text: saw_player_outcome = true
-		if "Jagged Slash\nPending: 4 damage\nTarget: Blade Warden" in label.text: saw_enemy_outcome = true
+		if label.text == "ENEMY DICE · Simulated rolls 1": saw_enemy_caption = true
+
+
 		if "Deal 5 / 6 / 7 damage" in label.text or "Deal 4 / 5 / 6 damage" in label.text: leaked_generic_rules = true
 	for button in offensive_reveal.find_children("*", "Button", true, false):
+		if button is BattleAbilityTile and "Sword Cut\n7 damage · pending\nBleed ×2" in button.text: saw_player_outcome = true
+		if button.get_meta("inspection_id", "") == "battle.outcome.goblin" and "4 damage" in button.text: saw_enemy_outcome = true
 		if button.has_meta("inspection_id") and str(button.get_meta("inspection_id")).begins_with("battle.die.goblin.") and button.text != "—": enemy_die_ids.append(str(button.get_meta("inspection_id")))
 	if not saw_enemy_caption or enemy_die_ids.size() != 5: _fail("offensive reaction did not reveal all five simulated enemy dice: %s" % enemy_die_ids); return
 	if not saw_player_outcome or not saw_enemy_outcome or leaked_generic_rules: _fail("offensive reaction did not show only resolved outcomes: player=%s enemy=%s generic=%s" % [saw_player_outcome, saw_enemy_outcome, leaked_generic_rules]); return
@@ -145,7 +147,7 @@ func _run() -> void:
 	for button in presenting.find_children("*", "Button", true, false):
 		if not button.is_visible_in_tree(): continue
 		if button.text == "Continue Presentation": found_continue = true
-		elif button.text not in ["DEV SNAPSHOTS", "DEV TRANSCRIPT"] and not button.disabled: _fail("gameplay control remained enabled during automatic presentation: %s" % button.text); return
+		elif button.text not in ["DEV SNAPSHOTS", "DEV TRANSCRIPT", "Disable auto-pass"] and not button.disabled and not button.get_meta("battle_utility", false): _fail("gameplay control remained enabled during automatic presentation: %s" % button.text); return
 	if not found_continue: _fail("automatic presentation did not expose its continue control"); return
 	presenting.queue_free(); await process_frame
 	ProjectSettings.set_setting("dice_and_destiny/presentation/income_animation_seconds", 0.5)
@@ -203,7 +205,7 @@ func _run() -> void:
 		if button.text.begins_with("Emergency Ward") and not button.disabled: _fail("Emergency Ward was enabled outside the damage-resolution segment"); return
 		if button.has_meta("inspection_id") and str(button.get_meta("inspection_id")) == "battle.damage_card.ward-1": saw_status_card = true
 		if button.text == "Continue Presentation": _fail("status damage reveal created a redundant presentation popup"); return
-		if "Sword Cut" in button.text or "Venom Strike" in button.text: leaked_stale_attack = true
+		if str(button.get_meta("inspection_id", "")).begins_with("battle.source.") and ("Sword Cut" in button.text or "Venom Strike" in button.text): leaked_stale_attack = true
 	if not saw_status_context or not saw_status_card or not saw_player_poison or not saw_enemy_bleed or not saw_poison_damage or not saw_bleed_damage or leaked_stale_attack: _fail("status damage board omitted current totals or rendered stale offensive sources"); return
 	status_damage.queue_free(); await process_frame
 	var prevented_damage = packed.instantiate(); var prevented_fixture := _fixture()
@@ -236,31 +238,28 @@ func _run() -> void:
 	defense_roll_fixture.snapshot.damage_sources = defense_roll_result.snapshot.damage_sources.duplicate(true)
 	defense_roll_fixture.snapshot.defense_selections = {"blade": {"actor_id": "blade", "ability_id": "basic_defense", "source_id": "source-enemy"}}
 	defense_roll_fixture.snapshot.actors.blade.selected_ability = "sword_cut"
+	defense_roll_fixture.legal_actions = [{"battle_id": defense_roll_fixture.snapshot.battle_id, "actor_id": "blade", "type": "roll_dice", "payload": {"pending_input_id": str(defense_roll_fixture.pending_input.blade.id)}}]
 	defense_roll.initial_result = defense_roll_fixture; defense_roll.gateway = BattleGateway.new(defense_roll_fake); defense_roll.active_store = ActiveBattleStore.new(WorkspacePaths.persistent_file("verify_defense_die_active.json")); root.add_child(defense_roll)
 	await process_frame; await process_frame
-	var pending_die: Button = null; var saw_selected_defense := false; var leaked_roll_label := false; var leaked_enemy_before_reveal := false; var saw_pending_damage := false; var saw_false_final_zero := false
-	for label in defense_roll.find_children("*", "Label", true, false):
-		if label.has_meta("inspection_id") and label.get_meta("inspection_id") == "battle.defense_selected.blade" and label.text.begins_with("Basic Defense"): saw_selected_defense = true
+	var saw_pending_damage := false; var saw_false_final_zero := false
+	for panel in defense_roll.find_children("*", "VBoxContainer", true, false):
+		if panel.get_script() == preload("res://presentation/battle/defense_roll.gd"): _fail("legacy roll mat must not appear"); return
 	for button in defense_roll.find_children("*", "Button", true, false):
-		if "Jagged Slash" in button.text and "Base 4 · Prevented 0 · Pending 4" in button.text: saw_pending_damage = true
+		if "Jagged Slash" in button.text and "4 damage · pending" in button.text: saw_pending_damage = true
 		if "Jagged Slash" in button.text and "Final 0" in button.text: saw_false_final_zero = true
-		if button.text == "Roll Defense Die": leaked_roll_label = true
-		if button.has_meta("inspection_id") and button.get_meta("inspection_id") == "battle.defense_die.blade.pending": pending_die = button
-		if button.has_meta("inspection_id") and str(button.get_meta("inspection_id")).begins_with("battle.defense_die.goblin"): leaked_enemy_before_reveal = true
-	if not saw_selected_defense or pending_die == null or not pending_die.text.is_empty() or leaked_roll_label or leaked_enemy_before_reveal: _fail("pre-reveal defense UI did not expose only the player's blank die"); return
-	if not saw_pending_damage or saw_false_final_zero: _fail("unresolved incoming damage was not labeled as pending: pending=%s false_final=%s" % [saw_pending_damage, saw_false_final_zero]); return
-	var pre_roll_die_position := pending_die.global_position
-	pending_die.pressed.emit(); await process_frame; await process_frame
+	if defense_roll._defense_result_panels.is_empty(): _fail("unified defense panels missing"); return
+	if not saw_pending_damage or saw_false_final_zero: _fail("unresolved incoming damage was not labeled as pending"); return
+	await create_timer(1.3).timeout
 	var defense_roll_command: Dictionary = JSON.parse_string(defense_roll_fake.commands[0]) if defense_roll_fake.commands.size() == 1 else {}
-	if defense_roll_command.get("type") != "roll_dice" or defense_roll_command.get("payload", {}) != {"pending_input_id": str(defense_roll_fixture.pending_input.blade.id)}: _fail("blank defense die did not submit the exact current roll_dice candidate: %s" % defense_roll_fake.commands); return
+	if defense_roll_command.get("type") != "roll_dice" or defense_roll_command.get("payload", {}) != {"pending_input_id": str(defense_roll_fixture.pending_input.blade.id)}: _fail("automatic defense did not submit the exact current roll_dice candidate: %s" % defense_roll_fake.commands); return
 	var player_rolled_die: Button = null; var enemy_rolled_die: Button = null; var leaked_enemy_pending_die := false
 	for button in defense_roll.find_children("*", "Button", true, false):
 		if button.has_meta("inspection_id") and button.get_meta("inspection_id") == "battle.defense_die.blade" and "5" in button.text: player_rolled_die = button
 		if button.has_meta("inspection_id") and button.get_meta("inspection_id") == "battle.defense_die.goblin" and "3" in button.text: enemy_rolled_die = button
 		if button.has_meta("inspection_id") and button.get_meta("inspection_id") == "battle.defense_die.goblin.pending": leaked_enemy_pending_die = true
 	if player_rolled_die == null or enemy_rolled_die == null or leaked_enemy_pending_die: _fail("defense reveal did not show both secret results without an enemy roll control"); return
-	if player_rolled_die.global_position.distance_to(pre_roll_die_position) > 1.0 or enemy_rolled_die.global_position.x <= player_rolled_die.global_position.x: _fail("defense dice moved during reveal instead of updating the fixed two-column mat"); return
-	pending_die = null; player_rolled_die = null; enemy_rolled_die = null
+	if not root.get_visible_rect().encloses(player_rolled_die.get_global_rect()) or not root.get_visible_rect().encloses(enemy_rolled_die.get_global_rect()) or enemy_rolled_die.global_position.x <= player_rolled_die.global_position.x: _fail("compact defense results must keep both players' dice visible in their respective columns"); return
+	player_rolled_die = null; enemy_rolled_die = null
 	defense_roll.active_store.clear(); defense_roll.queue_free(); await process_frame
 	var effect_roll_fake := FakeBattleAuthority.new()
 	var effect_roll_result := _fixture()
@@ -317,6 +316,33 @@ func _run() -> void:
 	for index in 2:
 		if revealed_player_effect_dice[index].global_position.distance_to(pre_effect_positions[index]) > 1.0: _fail("player effect dice moved during reveal instead of filling in place"); return
 	if revealed_enemy_effect_die.global_position.x <= revealed_player_effect_dice[0].global_position.x: _fail("enemy effect result did not populate the reserved right column"); return
+	# Agitate interrupts Offensive; a later opponent Pass has no roll event.
+	# The authoritative revealed result must still populate the mat and log.
+	var agitate_result := effect_roll_result.duplicate(true)
+	agitate_result.snapshot.segment = "offensive"
+	agitate_result.pending_input.blade.segment = "offensive"
+	agitate_result.events = []
+	agitate_result.snapshot.content_catalog.statuses.volatile_poison.triggers = [{"operations": [{"type": "roll_dice", "outcomes": [{"faces": [1, 2, 3, 4], "operations": [{"type": "deal_damage", "amount": 2}]}]}]}]
+	agitate_result.snapshot.effect_rolls = [{"actor_id": "goblin", "source_content_id": "volatile_poison", "resolved": true, "die": {"index": 0, "die_id": "standard_d6", "face": 1}}, {"actor_id": "goblin", "source_content_id": "volatile_poison", "resolved": true, "die": {"index": 1, "die_id": "standard_d6", "face": 1}}]
+	agitate_result.snapshot.actors.goblin.statuses = [{"definition_id": "volatile_poison", "stacks": 2}, {"definition_id": "poison", "stacks": 3}]
+	agitate_result.snapshot.actors.blade.hand = ["agitate-preview"]
+	agitate_result.snapshot.actors.blade.card_instances = {"agitate-preview": {"instance_id": "agitate-preview", "definition_id": "agitate"}}
+	agitate_result.snapshot.content_catalog.cards.agitate = _card_fixture("Agitate", 1, "offensive", "planning", "venom_choice")
+	effect_roll._view.apply_result(agitate_result)
+	effect_roll._render()
+	await process_frame
+	await create_timer(1.1).timeout
+	var agitate_dice := 0
+	var agitate_outcome := false
+	for button in effect_roll.find_children("*", "Button", true, false):
+		if str(button.get_meta("inspection_id", "")).begins_with("battle.effect_die.goblin.") and button.text.ends_with("\n1"): agitate_dice += 1
+	for label in effect_roll.find_children("*", "Label", true, false):
+		if label.text == "2 damage pending": agitate_outcome = true
+	if agitate_dice != 2 or not agitate_outcome or not effect_roll._log.text.contains("Volatile Poison · 1 · 2 damage pending"):
+		_fail("Agitate lost its Offensive roll, pending damage, or log after an eventless response"); return
+	for choice in [["poison", "Check all 3 Poison stacks"], ["volatile_poison", "Check all 2 Volatile Poison stacks"]]:
+		var choice_label: String = effect_roll._venom_choice_label({"payload": {"card_ids": ["agitate-preview"], "status_id": choice[0], "target_ids": ["goblin"]}})
+		if choice_label != choice[1]: _fail("Agitate choice omitted the full selected stack count: " + choice_label); return
 	pending_effect_dice.clear(); revealed_player_effect_dice.clear(); revealed_enemy_effect_die = null
 	effect_roll.active_store.clear(); effect_roll.queue_free(); await process_frame
 	var defense_reveal = packed.instantiate(); var defense_fixture := _fixture()
@@ -328,10 +354,10 @@ func _run() -> void:
 	defense_reveal.initial_result = defense_fixture; root.add_child(defense_reveal)
 	await process_frame; await process_frame
 	var saw_player_math := false; var saw_enemy_protect := false; var saw_enemy_math := false
-	for label in defense_reveal.find_children("*", "Label", true, false):
-		if "Greedy Blow: 7 − 5 = 2 pending" in label.text: saw_player_math = true
-		if label.text == "Protect": saw_enemy_protect = true
-		if "Golden Edge: 5 → 2 pending" in label.text: saw_enemy_math = true
+	for panel in defense_reveal._defense_result_panels:
+		if panel.data.actor_id == "blade" and panel.data.before == 7 and panel.data.after == 2 and panel.data.prevented == 5: saw_player_math = true
+		if panel.data.ability_name == "Protect": saw_enemy_protect = true
+		if panel.data.actor_id == "goblin" and panel.data.before == 5 and panel.data.after == 2: saw_enemy_math = true
 	var die_ids: Array[String] = []
 	for button in defense_reveal.find_children("*", "Button", true, false):
 		if button.has_meta("inspection_id") and str(button.get_meta("inspection_id")).begins_with("battle.defense_die."): die_ids.append(str(button.get_meta("inspection_id")))
@@ -344,9 +370,10 @@ func _run() -> void:
 	no_defense.initial_result = no_defense_fixture; root.add_child(no_defense)
 	await process_frame; await process_frame
 	var saw_no_enemy_defense := false; var saw_unchanged_attack := false
-	for label in no_defense.find_children("*", "Label", true, false):
-		if label.text == "NO DEFENSE USED": saw_no_enemy_defense = true
-		if label.text == "Golden Edge: 5 → 5 pending": saw_unchanged_attack = true
+	for panel in no_defense._defense_result_panels:
+		if panel.data.actor_id != "goblin": continue
+		if panel.data.ability_name == "No defense used": saw_no_enemy_defense = true
+		if panel.data.before == 5 and panel.data.after == 5: saw_unchanged_attack = true
 	if not saw_no_enemy_defense or not saw_unchanged_attack: _fail("defense reveal did not explicitly show an undefended player attack"); return
 	no_defense.queue_free(); await process_frame
 	var snapshot_fake := FakeBattleAuthority.new()

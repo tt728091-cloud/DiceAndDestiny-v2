@@ -47,10 +47,7 @@ class ProfileCollector:
 
     def summary(self) -> dict[str, Any]:
         return {
-            "timings": {
-                name: summarize_samples(samples)
-                for name, samples in sorted(self.durations.items())
-            },
+            "timings": {name: summarize_samples(samples) for name, samples in sorted(self.durations.items())},
             "counters": dict(sorted(self.counters.items())),
         }
 
@@ -88,14 +85,10 @@ def merge_profile_summaries(summaries: list[dict[str, Any]]) -> dict[str, Any]:
                 counters[name] += float(value)
         process = summary.get("process")
         if process:
-            existing = next(
-                (entry for entry in processes if entry.get("pid") == process.get("pid")), None
-            )
+            existing = next((entry for entry in processes if entry.get("pid") == process.get("pid")), None)
             if existing is None:
                 processes.append(process)
-            elif process.get("rss_high_water_bytes", 0) > existing.get(
-                "rss_high_water_bytes", 0
-            ):
+            elif process.get("rss_high_water_bytes", 0) > existing.get("rss_high_water_bytes", 0):
                 processes[processes.index(existing)] = process
     return {
         "timings": {name: dict(value) for name, value in sorted(timings.items())},

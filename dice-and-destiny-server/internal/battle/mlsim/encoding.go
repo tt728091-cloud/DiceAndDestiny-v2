@@ -31,6 +31,7 @@ type EncodedDecision struct {
 	ActionMaskBase64  string         `json:"action_mask_bits_base64"`
 	CandidateCount    int            `json:"candidate_count"`
 	CandidateTypes    []command.Type `json:"candidate_types"`
+	ManifestSHA256    string         `json:"manifest_sha256,omitempty"`
 }
 
 func encodeDecision(transition Transition) (EncodedDecision, error) {

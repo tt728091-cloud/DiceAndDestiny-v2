@@ -1,0 +1,274 @@
+{
+  "id": "radiant",
+  "name": "Radiant",
+  "identity": "Prevent new corruption, cleanse existing harm, and restore a small number of real lost cards. Protection and recovery have different timing and costs.",
+  "symbols": [
+    "Ray",
+    "Halo",
+    "Sun"
+  ],
+  "loop": "Use Ward to stop new afflictions → cleanse existing ones to earn Grace → spend Grace on recovery or further cleansing → use Beacon to redraw a chosen discarded card.",
+  "statuses": [
+    [
+      "Grace",
+      "Positive · you · cap 4",
+      "Once per round, gain 1 Grace after you remove a negative status or harmful die/card mark from yourself, or recover one of your health cards. During Offensive, spend 2 Grace to remove one negative status stack from yourself or recover one card previously lost to damage into your discard pile. Use this spend once per round. Keep unused Grace."
+    ],
+    [
+      "Ward",
+      "Positive · you · cap 3",
+      "When an enemy would give you a negative status, spend 1 Ward to stop one stack. You may spend up to 2 Ward against one card, ability or status effect. Ward does not remove statuses already on you and does not stop marks placed on dice or cards. Keep unused Ward."
+    ],
+    [
+      "Censure",
+      "Negative · enemy · cap 1",
+      "The next card this enemy plays costs 1 extra Energy. Remove Censure when they pay that extra Energy. If they cannot pay, they must choose a different legal action. Remove unused Censure at the end of the following round."
+    ],
+    [
+      "Beacon",
+      "Positive card mark · your discard pile · max 1",
+      "When you gain Beacon, mark one card in your discard pile. During your next Income, take that card into your hand instead of your normal random draw, then remove Beacon. If the card is no longer in your discard pile, draw normally and remove Beacon. It gives no extra card or health."
+    ]
+  ],
+  "abilities": [
+    [
+      "Dawn Spear",
+      "Offense · 0E",
+      "3 Ray / 4 Ray / 5 Ray",
+      "4 / 5 / 6 damage and gain 1 Grace."
+    ],
+    [
+      "Sheltering Halo",
+      "Offense · 0E",
+      "2 Halo + 1 Sun",
+      "Gain 2 Ward and 1 Grace."
+    ],
+    [
+      "Judgment Beam",
+      "Offense · 0E",
+      "Any four-number straight",
+      "Deal 5 damage and apply Censure if absent."
+    ],
+    [
+      "Daybreak",
+      "Offense · 0E",
+      "3 Sun",
+      "Deal 6 damage. Optionally spend 2 Grace when choosing this ability to return one of your cards previously lost to damage to your discard pile after the attack."
+    ],
+    [
+      "Ray Screen",
+      "Defense · 0E",
+      "Roll 2 Radiant dice",
+      "Each Ray prevents 1; each Halo gains 1 Grace; any Sun gains 1 Ward."
+    ],
+    [
+      "Sanctuary",
+      "Defense · 1E",
+      "Roll 1 Radiant die",
+      "Ray: prevent 2. Halo: prevent 3. Sun: prevent 2 and remove 1 chosen negative status stack from yourself."
+    ]
+  ],
+  "cards": [
+    [
+      "Morning Prayer",
+      "1",
+      "Action",
+      "Gain 2 Grace."
+    ],
+    [
+      "Wardlight",
+      "1",
+      "Action",
+      "Gain 2 Ward."
+    ],
+    [
+      "Cleanse",
+      "1",
+      "Action",
+      "Remove 1 chosen existing negative status stack from yourself."
+    ],
+    [
+      "Seal of Dawn",
+      "1",
+      "Action",
+      "Apply Censure to one enemy if absent."
+    ],
+    [
+      "Litany",
+      "1",
+      "Action",
+      "Draw 1 and gain 1 Grace."
+    ],
+    [
+      "Light the Beacon",
+      "1",
+      "Action",
+      "Place Beacon on one card in your discard pile. Requires no existing Beacon. At your next Income, take that card into your hand instead of drawing your usual card."
+    ],
+    [
+      "Sunsteel",
+      "1",
+      "Offensive reaction",
+      "Spend up to 2 Grace; add 2 damage each to your attack."
+    ],
+    [
+      "Restore the Name",
+      "1",
+      "Action",
+      "Spend 1 Grace to return one of your cards previously lost to damage to your discard pile. This uses the shared recovery limit, but does not use Grace’s once-per-round choice."
+    ],
+    [
+      "Candle Exchange",
+      "0",
+      "Action",
+      "Spend 2 Grace; gain 1 Energy. Once per round."
+    ],
+    [
+      "Clear Script",
+      "1",
+      "Action",
+      "Spend 1 Grace to remove one harmful mark from a revealed card you own, then draw 1. You must have a marked card to cleanse."
+    ],
+    [
+      "Purify Face",
+      "1",
+      "Action",
+      "Spend 1 Grace; remove one chosen negative mark from one face of an owned die. Other faces remain marked."
+    ],
+    [
+      "Meditation",
+      "1",
+      "Action",
+      "Spend 1 Grace; draw 2, then discard 1."
+    ],
+    [
+      "Shield of Noon",
+      "1",
+      "Damage reaction",
+      "Prevent 2 from one attack, card or status targeting you."
+    ],
+    [
+      "Shelter the Weak",
+      "1",
+      "Damage reaction",
+      "Spend 1 Grace; prevent 3 damage from one status."
+    ],
+    [
+      "Brilliant Refusal",
+      "1",
+      "Application reaction",
+      "Stop 1 negative status stack an enemy is about to apply to you. If you stop it, gain 1 Ward."
+    ],
+    [
+      "Clear Sight",
+      "1",
+      "Offensive reaction",
+      "Set one of your combat dice that is not Frostbound to face 1 or 4; the final dice must allow the chosen ability."
+    ],
+    [
+      "Guiding Light",
+      "1",
+      "Roll reaction",
+      "Spend 1 Grace; set one of your dice just rolled for a status, defense or card to face 4. This is not a physical roll."
+    ],
+    [
+      "Sacred Lens",
+      "1",
+      "Roll reaction",
+      "Reroll one of your dice just rolled for a status, defense or card once."
+    ],
+    [
+      "Ward Conversion",
+      "0",
+      "Action",
+      "Spend 2 Ward; gain 1 Grace and draw 1."
+    ],
+    [
+      "Unburden",
+      "1",
+      "Action",
+      "Remove 1 negative status stack from yourself. If you removed Incubation, also gain 1 Ward."
+    ],
+    [
+      "Exorcism",
+      "1",
+      "Action",
+      "Spend 1 Grace; remove up to two negative marks from one revealed card you own. Cannot recover a removed card."
+    ],
+    [
+      "Dawn Ledger",
+      "1",
+      "Action",
+      "Upgrade once per battle: your first earned Grace reward each round grants 2 instead of 1."
+    ],
+    [
+      "Sanctified Ground",
+      "2",
+      "Damage reaction",
+      "Spend 2 Grace; prevent 4 from one attack, card or status and gain 1 Ward afterward."
+    ],
+    [
+      "Second Sunrise",
+      "2",
+      "Action",
+      "Spend 3 Grace to return up to two of your cards previously lost to damage to your discard pile. Use once per battle. All types share a maximum of two recovered cards per round."
+    ]
+  ],
+  "pairs": [
+    [
+      "tide",
+      "Removing an existing harmful status can earn Flow and Grace once each. Ward stops a new stack instead, so it gives neither cleanse reward. Grace can fund a later cleanse while Flow funds a Tide card."
+    ],
+    [
+      "grave",
+      "Grave can recover a lost card into discard; Beacon selects that card for the next Income draw. Recovering the card removes its Corpse token. Only Death Anchor provides a last-chance rescue."
+    ],
+    [
+      "fortune",
+      "Purify Face can erase Curse while keeping Boon on the same face, earning Grace for the cleanse. Fortune can then reroll that die for Boon without risking the removed Curse."
+    ],
+    [
+      "venom",
+      "Sanctuary can remove harmful statuses while Venom waits for its toxins to work. That cleanse earns Grace for later recovery. Ward protects the mixed creature from new afflictions; Catalyst handles toxin clearing on the enemy."
+    ]
+  ],
+  "example": "Cleanse removes an existing Poison, earning 1 Grace and, with Tide, 1 Flow. Ward stopping incoming Poison earns neither reward. Later recover a lost card into discard and mark it with Beacon; next Income, take it into your hand instead of the normal draw.",
+  "counter": "Ward cannot remove existing statuses or stop harmful card and die marks. Beacon replaces a draw rather than adding one, and loses its chosen draw if the marked card leaves discard first. Censure can be waited out or paid once.",
+  "balance": "Grace has one earned reward and one two-stack choice per round. Its own recovery may earn Grace only if the earned reward remains unused. All types share a maximum of two recovered health cards per round. Beacon is a chosen redraw, not another last-chance rescue.",
+  "hooks": [
+    "Status removal versus cancellation",
+    "H-24 restoration",
+    "H-26 last-chance completion",
+    "Die/card overlay removal"
+  ],
+  "review_status": "Reworked statuses — awaiting user review",
+  "version": 2,
+  "combos": [
+    [
+      "Cleanse → Grace → Restore the Name",
+      "Removing an affliction earns Grace. Restore the Name spends one Grace plus its printed Energy to recover a card; the normal Grace choice costs two Grace without needing that card."
+    ],
+    [
+      "Restore the Name → Light the Beacon → Income",
+      "Recover a useful card into discard and mark it with Beacon. At Income, take that card into hand instead of the random draw, turning recovery into a planned future play."
+    ]
+  ],
+  "status_examples": {
+    "Grace": {
+      "job": "Turn cleansing into further recovery.",
+      "example": "Remove Poison to earn Grace. Spend two saved Grace to recover a lost card; you do not earn another Grace if you already earned one this round."
+    },
+    "Ward": {
+      "job": "Stop new afflictions before they arrive.",
+      "example": "Two incoming Poison can be stopped with two Ward. Ward cannot remove Poison you already had."
+    },
+    "Censure": {
+      "job": "Pressure the enemy’s card budget.",
+      "example": "A card costing 1 Energy now costs 2. The enemy may save their Energy and use a rolled ability instead."
+    },
+    "Beacon": {
+      "job": "Bring a chosen recovered card back to your hand.",
+      "example": "Restore a lost card to discard, then mark it with Beacon. Next Income you draw that exact card instead of a random one."
+    }
+  }
+}

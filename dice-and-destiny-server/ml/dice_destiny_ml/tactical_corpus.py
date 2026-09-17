@@ -148,9 +148,7 @@ def evaluate_tactical_checkpoint(
                 }
             )
     reroll_cases = [record for record in records if record["teacher_category"] == "qualified_reroll"]
-    immediate_cases = [
-        record for record in records if record["teacher_category"] == "qualified_immediate"
-    ]
+    immediate_cases = [record for record in records if record["teacher_category"] == "qualified_immediate"]
     result = {
         "schema": "dice-and-destiny-tactical-evaluation-v2",
         "checkpoint": str(checkpoint.resolve()),
@@ -161,9 +159,7 @@ def evaluate_tactical_checkpoint(
         "cases": len(records),
         "teacher_agreement": sum(record["agreement"] for record in records) / len(records),
         "qualified_reroll_agreement": (
-            sum(record["agreement"] for record in reroll_cases) / len(reroll_cases)
-            if reroll_cases
-            else 0.0
+            sum(record["agreement"] for record in reroll_cases) / len(reroll_cases) if reroll_cases else 0.0
         ),
         "qualified_immediate_agreement": (
             sum(record["agreement"] for record in immediate_cases) / len(immediate_cases)
@@ -217,9 +213,7 @@ def evaluate_tactical_matrix(
             for summary in summaries
         ],
     }
-    (matrix_root / "tactical-index.json").write_text(
-        json.dumps(result, indent=2, sort_keys=True) + "\n"
-    )
+    (matrix_root / "tactical-index.json").write_text(json.dumps(result, indent=2, sort_keys=True) + "\n")
     return result
 
 
@@ -332,9 +326,7 @@ def evaluate_decision_corpus(
     corpus = json.loads(corpus_file.read_text())
     records_by_episode: dict[int, dict[int, dict[str, Any]]] = {}
     for record in corpus["records"]:
-        records_by_episode.setdefault(int(record["episode_index"]), {})[
-            int(record["sequence"])
-        ] = record
+        records_by_episode.setdefault(int(record["episode_index"]), {})[int(record["sequence"])] = record
     policy = ModelPolicy(checkpoint, deterministic=True, device="cpu")
     encoder = SchemaEncoderV2()
     evaluated = []
@@ -375,9 +367,7 @@ def evaluate_decision_corpus(
         rows = [row for row in evaluated if row["category"] == category]
         by_category[category] = {
             "cases": len(rows),
-            "semantic_agreement": sum(row["semantic_agreement"] for row in rows) / len(rows)
-            if rows
-            else 0.0,
+            "semantic_agreement": sum(row["semantic_agreement"] for row in rows) / len(rows) if rows else 0.0,
             "action_type_agreement": sum(row["action_type_agreement"] for row in rows) / len(rows)
             if rows
             else 0.0,
@@ -398,6 +388,7 @@ def evaluate_decision_corpus(
         baseline = json.loads(baseline_summary.read_text())
         if baseline.get("corpus_sha256") != result["corpus_sha256"]:
             raise ValueError("paired baseline uses a different decision corpus")
+
         def key(row: dict[str, Any]) -> tuple[int, int, str]:
             return int(row["seed"]), int(row["sequence"]), str(row["category"])
 

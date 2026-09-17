@@ -1,0 +1,176 @@
+{
+  "action_frequency": {
+    "commit_interaction": 44,
+    "pass": 292,
+    "planning_commit_cards": 44,
+    "planning_reroll": 40,
+    "planning_roll": 60,
+    "planning_select_ability": 120,
+    "roll_dice": 148
+  },
+  "authority_rejects": 0,
+  "behavior": {
+    "ability_selections": 120,
+    "mean_rolls_used_at_ability_selection": 1.6666666666666667,
+    "qualified_immediate_abilities": 92,
+    "qualified_rerolls": 30,
+    "qualified_roll_decisions": 510,
+    "rolls_used_at_selection_total": 200
+  },
+  "behavior_by_policy": {
+    "model:/Users/daddymere/games/Dice-and-Destiny-v2/dice-and-destiny-server/ml/runs/v3-seed22-optimized-5m-20260803-m3max/seed-22/checkpoints/../checkpoints/step-002001600.zip": {
+      "ability_effect_damage": 30,
+      "ability_effect_status": 22,
+      "ability_selected_roll_1": 30,
+      "ability_selected_roll_2": 20,
+      "ability_selected_roll_3": 10,
+      "ability_selections": 60,
+      "action_commit_interaction": 22,
+      "action_pass": 146,
+      "action_planning_commit_cards": 22,
+      "action_planning_reroll": 20,
+      "action_planning_roll": 30,
+      "action_planning_select_ability": 60,
+      "action_roll_dice": 74,
+      "commitment_tier_1": 30,
+      "mean_rolls_used_at_ability_selection": 1.6666666666666667,
+      "qualified_attacks_declined": 15,
+      "qualified_immediate_abilities": 46,
+      "qualified_reroll_rate": 0.058823529411764705,
+      "qualified_rerolls": 15,
+      "qualified_roll_decisions": 255,
+      "reroll_subset_size_1": 3,
+      "reroll_subset_size_3": 6,
+      "reroll_subset_size_4": 10,
+      "reroll_subset_size_5": 1,
+      "rolls_used_at_selection_total": 100
+    },
+    "model:/Users/daddymere/games/Dice-and-Destiny-v2/dice-and-destiny-server/ml/runs/v3-seed22-optimized-5m-20260803-m3max/seed-22/checkpoints/step-002001600.zip": {
+      "ability_effect_damage": 30,
+      "ability_effect_status": 22,
+      "ability_selected_roll_1": 30,
+      "ability_selected_roll_2": 20,
+      "ability_selected_roll_3": 10,
+      "ability_selections": 60,
+      "action_commit_interaction": 22,
+      "action_pass": 146,
+      "action_planning_commit_cards": 22,
+      "action_planning_reroll": 20,
+      "action_planning_roll": 30,
+      "action_planning_select_ability": 60,
+      "action_roll_dice": 74,
+      "commitment_tier_1": 30,
+      "mean_rolls_used_at_ability_selection": 1.6666666666666667,
+      "qualified_attacks_declined": 15,
+      "qualified_immediate_abilities": 46,
+      "qualified_reroll_rate": 0.058823529411764705,
+      "qualified_rerolls": 15,
+      "qualified_roll_decisions": 255,
+      "reroll_subset_size_1": 3,
+      "reroll_subset_size_3": 6,
+      "reroll_subset_size_4": 10,
+      "reroll_subset_size_5": 1,
+      "rolls_used_at_selection_total": 100
+    }
+  },
+  "draws": 2,
+  "elapsed_seconds": 2.015557416016236,
+  "game_latency_ms": {
+    "p50": 327.69550000000004,
+    "p95": 330.64110000000005
+  },
+  "games": 4,
+  "games_per_second": 1.9845626664935347,
+  "inference_latency_ms": {
+    "mean": 0.29343182194908274,
+    "p95": 0.4191791696939617
+  },
+  "invalid_action_indices": 0,
+  "maximum_candidates": 82,
+  "mean_actions": 187.0,
+  "mean_remaining_health": 1.25,
+  "median_actions": 187.0,
+  "p95_actions": 189.0,
+  "policies": {
+    "model:/Users/daddymere/games/Dice-and-Destiny-v2/dice-and-destiny-server/ml/runs/v3-seed22-optimized-5m-20260803-m3max/seed-22/checkpoints/../checkpoints/step-002001600.zip": {
+      "adjudicated_score": 0.5,
+      "games": 4,
+      "wilson_95": [
+        0.04558726080970055,
+        0.6993581574175981
+      ],
+      "win_rate": 0.25,
+      "wins": 1
+    },
+    "model:/Users/daddymere/games/Dice-and-Destiny-v2/dice-and-destiny-server/ml/runs/v3-seed22-optimized-5m-20260803-m3max/seed-22/checkpoints/step-002001600.zip": {
+      "adjudicated_score": 0.5,
+      "games": 4,
+      "wilson_95": [
+        0.04558726080970055,
+        0.6993581574175981
+      ],
+      "win_rate": 0.25,
+      "wins": 1
+    }
+  },
+  "resources": {
+    "aggregate_cpu_seconds": 6.853370999999999,
+    "average_logical_cores": 3.4002360565573655,
+    "foreground_responsiveness": {
+      "max_wakeup_delay_ms": 5.045539233833551,
+      "p50_wakeup_delay_ms": 5.021602904889733,
+      "p95_wakeup_delay_ms": 5.039199709426612,
+      "samples": 40
+    },
+    "host_after": {
+      "memory_pressure": "The system has 68719476736 (4194304 pages with a page size of 16384).\nSystem-wide memory free percentage: 84%",
+      "platform": "darwin",
+      "swap": "total = 2048.00M  used = 920.75M  free = 1127.25M  (encrypted)",
+      "thermal": "Note: No thermal warning level has been recorded\nNote: No performance warning level has been recorded\nNote: No CPU power status has been recorded"
+    },
+    "host_before": {
+      "memory_pressure": "The system has 68719476736 (4194304 pages with a page size of 16384).\nSystem-wide memory free percentage: 84%",
+      "platform": "darwin",
+      "swap": "total = 2048.00M  used = 920.75M  free = 1127.25M  (encrypted)",
+      "thermal": "Note: No thermal warning level has been recorded\nNote: No performance warning level has been recorded\nNote: No CPU power status has been recorded"
+    },
+    "normalized_whole_machine_cpu_percent": 21.251475353483535,
+    "summed_worker_peak_rss_bytes": 1635647488
+  },
+  "runtime": {
+    "authority_mode": "normal",
+    "blas_threads_per_worker": 1,
+    "inference_concurrency": 4,
+    "io_concurrency": 2,
+    "logical_cpus": 16,
+    "observation_manifest": "",
+    "observation_schema": "dice-and-destiny-observation-v2",
+    "profile": "max",
+    "requested_workers": 12,
+    "seat_definitions": {
+      "seat-a": "blade_warden",
+      "seat-b": "blade_warden"
+    },
+    "telemetry_mode": "full",
+    "torch_threads_per_worker": 1,
+    "transport_mode": "full",
+    "workers": 4
+  },
+  "seat_a_win_rate": 0.0,
+  "seat_a_wins": 0,
+  "seat_b_win_rate": 0.5,
+  "seat_b_wins": 2,
+  "stale_action_submissions": 0,
+  "timing": {
+    "aggregate_inference_seconds": 0.2194870028179139,
+    "aggregate_step_transport_seconds": 0.8922007645014673,
+    "artifact_io_seconds": 0.0005866250721737742,
+    "collection_seconds": 2.015557416016236,
+    "step_latency_ms": {
+      "p50": 1.1626459890976548,
+      "p95": 1.754902274115011
+    }
+  },
+  "truncations": 0,
+  "wrong_seat_submissions": 0
+}

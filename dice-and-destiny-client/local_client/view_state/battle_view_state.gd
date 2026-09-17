@@ -14,6 +14,7 @@ var origin: Dictionary = {}
 var damage_sources: Array = []
 var settled_damage: Dictionary = {}
 var events: Array = []
+var legal_actions: Array = []
 var defense_rolls: Dictionary = {}
 var defense_selections: Dictionary = {}
 var effect_rolls: Array = []
@@ -58,6 +59,7 @@ func apply_result(result: Dictionary) -> bool:
 	settled_damage = snapshot.get("settled_damage", {}).duplicate(true)
 	effect_rolls = snapshot.get("effect_rolls", []).duplicate(true)
 	events = result.get("events", []).duplicate(true)
+	legal_actions = result.get("legal_actions", []).duplicate(true)
 	var incoming_defenses = snapshot.get("defense_selections", {})
 	if incoming_defenses is Dictionary and not incoming_defenses.is_empty():
 		defense_selections = incoming_defenses.duplicate(true)
@@ -65,7 +67,7 @@ func apply_result(result: Dictionary) -> bool:
 			var selection: Dictionary = defense_selections[actor_id]
 			var face := int(selection.get("rolled_face", 0))
 			if face > 0:
-				defense_rolls[str(actor_id)] = {"actor_id": str(actor_id), "ability_id": str(selection.get("ability_id", "")), "source_id": str(selection.get("source_id", "")), "face": face}
+				defense_rolls[str(actor_id)] = {"actor_id": str(actor_id), "ability_id": str(selection.get("ability_id", "")), "source_id": str(selection.get("source_id", "")), "face": face, "rolled_faces": selection.get("rolled_faces", [face]), "catalyst_paid": selection.get("catalyst_paid", false)}
 	for battle_event in events:
 		if battle_event.get("type") == "dice_rolled" and int(battle_event.get("max_rolls", 0)) > 0:
 			max_rolls_by_actor[str(battle_event.get("actor_id", "blade"))] = int(battle_event.max_rolls)
@@ -82,6 +84,7 @@ func apply_result(result: Dictionary) -> bool:
 			existing["ability_id"] = str(data.get("ability_id", existing.get("ability_id", "")))
 			existing["face"] = int(data.get("rolled_face", existing.get("face", 0)))
 			existing["source_id"] = str(data.get("source_id", existing.get("source_id", "")))
+			existing["rolled_faces"] = data.get("rolled_faces", existing.get("rolled_faces", []))
 			defense_rolls[actor_id] = existing
 			defense_selections[actor_id] = existing.duplicate(true)
 		if battle_event.get("type") == "interaction_revealed" and battle_event.get("segment") == "offensive":
@@ -137,6 +140,10 @@ func hand_cards() -> Array:
 	return result
 
 func rolled_dice(actor_id: String) -> Array:
+	# Card edits update the live pool without changing the historical roll.
+	# Prefer the current viewer-safe snapshot over history or cached reveals.
+	var current := _offensive_dice_state(actor(actor_id))
+	if not current.is_empty(): return _array(current.get("dice", []))
 	# A reaction can mutate the final revealed dice without adding another roll
 	# history entry. Prefer the latest authority reveal so the tray and selected
 	# ability always describe the same post-reaction state.
@@ -158,11 +165,18 @@ func offensive_reveal(actor_id: String) -> Dictionary:
 		"ability_id": str(actor_state.get("selected_ability", "")),
 		"tier_id": str(actor_state.get("selected_tier", "")),
 		"targets": _array(actor_state.get("selected_targets", [])),
-		"dice": rolled_dice_from_history(actor_state),
+		"dice": _actor_offensive_dice(actor_state),
 		"outcome": outcome.duplicate(true),
 	}
 
-func rolled_dice_from_history(actor_state: Dictionary) -> Array:
+func _offensive_dice_state(actor_state: Dictionary) -> Dictionary:
+	var current = actor_state.get("dice", {})
+	if current is Dictionary and current.get("pool", "") == "offensive": return current
+	return {}
+
+func _actor_offensive_dice(actor_state: Dictionary) -> Array:
+	var current := _offensive_dice_state(actor_state)
+	if not current.is_empty(): return _array(current.get("dice", []))
 	var history: Array = _array(actor_state.get("roll_history", []))
 	if history.is_empty(): return []
 	return _array(history[-1].get("dice", []))

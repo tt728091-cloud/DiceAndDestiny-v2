@@ -1,0 +1,34 @@
+{
+  "attempts": 1,
+  "distinct_seeds": 3000,
+  "files": [
+    {
+      "bank_id": "attempt-001-global-1k",
+      "games": 1000,
+      "hash": "b1bc2aca5f79a5c912c43c8ddab9999a63682229738b787b28791747c74321bc",
+      "path": "/Users/daddymere/games/Dice-and-Destiny-v2/dice-and-destiny-server/ml/ml/runs/v2-winner-health-v2-cp193-vs-cp38-3000-20260806/seed-banks/attempt-001-global-1k.json"
+    },
+    {
+      "bank_id": "attempt-001-global-confirmation-3k",
+      "games": 3000,
+      "hash": "6bfb79765360c0b526e5e0d03920b73fd1fd48baec27168b21b29004712a0245",
+      "path": "/Users/daddymere/games/Dice-and-Destiny-v2/dice-and-destiny-server/ml/ml/runs/v2-winner-health-v2-cp193-vs-cp38-3000-20260806/seed-banks/attempt-001-global-confirmation-3k.json"
+    },
+    {
+      "bank_id": "final-global-comparison",
+      "games": 1000,
+      "hash": "cea7e4135c7bf57de0f8dd5a87b14a02d5f2f53ca6a98593c749a33541216510",
+      "path": "/Users/daddymere/games/Dice-and-Destiny-v2/dice-and-destiny-server/ml/ml/runs/v2-winner-health-v2-cp193-vs-cp38-3000-20260806/seed-banks/final-global-comparison.json"
+    },
+    {
+      "bank_id": "development-global-anchor",
+      "games": 1000,
+      "hash": "67849498924e595f0e2aaeaa20aa569cb2c898aef902ac48ab07a85e7dfae7eb",
+      "path": "/Users/daddymere/games/Dice-and-Destiny-v2/dice-and-destiny-server/ml/ml/runs/v2-winner-health-v2-cp193-vs-cp38-3000-20260806/seed-banks/development-global-anchor.json"
+    }
+  ],
+  "generated_at": "2026-08-06T12:11:46.263756+00:00",
+  "schema": "dice-and-destiny-campaign-seed-banks-v2",
+  "seed_offset": 90000000000,
+  "sha256": "d2473c663c78a21b078ba5dc3eb00dd2957acd44a3d50fef6ab7d7331b6c426c"
+}

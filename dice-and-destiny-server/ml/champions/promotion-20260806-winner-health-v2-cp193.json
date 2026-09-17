@@ -1,0 +1,67 @@
+{
+  "candidate": {
+    "action_schema": "dice-and-destiny-action-candidates-v2",
+    "champion_id": "v2-winner-health-v2-cp35-continuation-cp38-20260806-8h-1k-only-interval-193",
+    "checkpoint_path": "/Users/daddymere/games/Dice-and-Destiny-v2/dice-and-destiny-server/ml/runs/v2-winner-health-v2-cp35-continuation-cp38-20260806-8h-1k-only/intervals/interval-193/raw-ppo-challenger.zip",
+    "checkpoint_sha256": "804fff1caaf5ddf15e4c8714d9c2d0b2563681ddb6f61477e832e5afde93c010",
+    "learner_steps": 3603456,
+    "model_family": "v2-winner-health-v2-fresh",
+    "observation_schema": "dice-and-destiny-observation-v2",
+    "optimizer_state_sha256": "26cf84888c5ce2f5352bf8e0e5c12d6bc6d56f2edddab75879f81cea9a292325",
+    "parent_experiment_id": "v2-winner-health-fresh-20260805-1h-interval-038",
+    "promoted_at": "2026-08-06T12:15:41.930804+00:00"
+  },
+  "decision": "promoted",
+  "gameplay_export": {
+    "model_id": "blade-warden-global-champion-cp193-winner-health-v2",
+    "path": "/Users/daddymere/games/Dice-and-Destiny-v2/dice-and-destiny-client/models/learned/blade-warden-global-champion-cp193-winner-health-v2.json",
+    "sha256": "cd3d7451e91d071274c874b017e3c7e73358862090fd71954e282e5bf505b814"
+  },
+  "previous_global": {
+    "action_schema": "dice-and-destiny-action-candidates-v2",
+    "champion_id": "v2-winner-health-fresh-20260805-1h-interval-038",
+    "checkpoint_path": "/Users/daddymere/games/Dice-and-Destiny-v2/dice-and-destiny-server/ml/runs/v2-winner-health-fresh-20260805-1h/intervals/interval-038/raw-ppo-challenger.zip",
+    "checkpoint_sha256": "70f2b07ffed921358f06348446c1dca1c85be91d299b9008443e70893c75658e",
+    "learner_steps": 1201152,
+    "model_family": "v2-winner-health-v1-fresh",
+    "observation_schema": "dice-and-destiny-observation-v2",
+    "optimizer_state_sha256": "99013339321bef681863eb9ba464ae0783e7398ca6a4375969b8b0ad49ccd874",
+    "parent_experiment_id": "v2-winner-health-fresh-20260805-1h-interval-015",
+    "promoted_at": "2026-08-06T02:12:02.343373+00:00"
+  },
+  "promoted_at": "2026-08-06T12:15:41.930804+00:00",
+  "promotion_rule": "fresh direct 3,000-game adjusted score above 50% against the registered global champion, with seat swaps and zero safety counts",
+  "registry_path": "/Users/daddymere/games/Dice-and-Destiny-v2/dice-and-destiny-server/ml/champions/current-global.json",
+  "registry_revision": 16,
+  "registry_sha256_after": "75f19837a1c0507c14ab2db22c9267212de808bebdbe297b43db2ccefd5ad1f7",
+  "registry_sha256_before": "cfd74ef4db9db0c7f3ac8a3beb416fb48884383406564768978af35c431daaa3",
+  "safety": {
+    "authority_rejects": 0,
+    "hidden_state_leaks": 0,
+    "invalid_action_indices": 0,
+    "replay_mismatches": 0,
+    "stale_action_submissions": 0,
+    "state_leaks": 0,
+    "truncations": 0,
+    "wrong_seat_submissions": 0
+  },
+  "schema": "dice-and-destiny-global-promotion-v1",
+  "title_match_3000": {
+    "adjusted_score": 0.598,
+    "adjusted_wilson_95": [
+      0.5803405396819801,
+      0.615408805967856
+    ],
+    "draws": 226,
+    "episodes": "/Users/daddymere/games/Dice-and-Destiny-v2/dice-and-destiny-server/ml/ml/runs/v2-winner-health-v2-cp193-vs-cp38-3000-20260806/title-match-3000/episodes.jsonl",
+    "episodes_sha256": "52942399ac1989b307ded8b01a6d67c95ca38b9b59957c453babeca513aae721",
+    "losses": 1093,
+    "opponent": "v2-winner-health-fresh-20260805-1h-interval-038",
+    "seed_bank": "/Users/daddymere/games/Dice-and-Destiny-v2/dice-and-destiny-server/ml/ml/runs/v2-winner-health-v2-cp193-vs-cp38-3000-20260806/seed-banks/attempt-001-global-confirmation-3k.json",
+    "seed_bank_canonical_sha256": "6bfb79765360c0b526e5e0d03920b73fd1fd48baec27168b21b29004712a0245",
+    "seed_bank_file_sha256": "5029a8be2b5baea82e4ee4c24156e2d279bac2a39ff7d2268fd7a549e0c62425",
+    "summary": "/Users/daddymere/games/Dice-and-Destiny-v2/dice-and-destiny-server/ml/ml/runs/v2-winner-health-v2-cp193-vs-cp38-3000-20260806/title-match-3000/summary.json",
+    "summary_sha256": "fe4273dc57ecd29a96a57f791ec5210669c010d88042d9c5feb03cfd57b9c462",
+    "wins": 1681
+  }
+}

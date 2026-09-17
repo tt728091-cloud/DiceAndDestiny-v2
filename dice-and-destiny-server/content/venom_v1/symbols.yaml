@@ -1,0 +1,23 @@
+{
+  "schema_version": 1,
+  "symbols": [
+    {
+      "id": "fang",
+      "name": "Fang",
+      "presentation_key": "fang",
+      "glyph": "\u265c"
+    },
+    {
+      "id": "gland",
+      "name": "Gland",
+      "presentation_key": "gland",
+      "glyph": "\u2697"
+    },
+    {
+      "id": "coil",
+      "name": "Coil",
+      "presentation_key": "coil",
+      "glyph": "\u25c9"
+    }
+  ]
+}

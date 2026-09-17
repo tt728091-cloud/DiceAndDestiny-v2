@@ -1,0 +1,82 @@
+{
+  "symbols": {
+    "sword": [1, 2, 3],
+    "shield": [4, 5],
+    "heart": [6]
+  },
+  "targets": [
+    {
+      "id": "three_shields",
+      "name": "at least three shields",
+      "symbol": "shield",
+      "at_least": 3
+    },
+    {
+      "id": "four_shields",
+      "name": "at least four shields",
+      "symbol": "shield",
+      "at_least": 4
+    },
+    {
+      "id": "five_shields",
+      "name": "five shields",
+      "symbol": "shield",
+      "at_least": 5
+    },
+    {
+      "id": "small_straight",
+      "name": "a small straight",
+      "patterns": [
+        [1, 2, 3, 4],
+        [2, 3, 4, 5],
+        [3, 4, 5, 6]
+      ]
+    }
+  ],
+  "include_any_of_all": true,
+  "ranked_objectives": [
+    {
+      "id": "shield_tiers",
+      "name": "Prefer the highest shield tier",
+      "tiers": [
+        {
+          "target": "three_shields",
+          "reward": 1
+        },
+        {
+          "target": "four_shields",
+          "reward": 2
+        },
+        {
+          "target": "five_shields",
+          "reward": 3
+        }
+      ]
+    }
+  ],
+  "balance_reports": [
+    {
+      "id": "offensive_cycle_damage",
+      "name": "Shield tiers and small straight damage",
+      "teacher_objective": "any_of_all",
+      "outcomes": [
+        {
+          "target": "three_shields",
+          "damage": 5
+        },
+        {
+          "target": "four_shields",
+          "damage": 6
+        },
+        {
+          "target": "five_shields",
+          "damage": 7
+        },
+        {
+          "target": "small_straight",
+          "damage": 9
+        }
+      ]
+    }
+  ]
+}

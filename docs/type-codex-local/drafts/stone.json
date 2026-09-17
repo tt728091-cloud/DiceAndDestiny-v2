@@ -1,0 +1,274 @@
+{
+  "id": "stone",
+  "name": "Stone",
+  "identity": "Wear down Armor while blocking attacks, earn Resolve from strong defense, and protect your next dice setup with Fortify.",
+  "symbols": [
+    "Hammer",
+    "Plate",
+    "Mountain"
+  ],
+  "loop": "Build Armor → let it wear down while stopping attacks → earn Resolve from a strong block → protect your dice with Fortify or spend Resolve on Stone cards.",
+  "statuses": [
+    [
+      "Armor",
+      "Positive · you · cap 3",
+      "The first Offensive ability that would damage you each round deals 1 less damage per Armor you have. Then remove 1 Armor, even if the attack is fully blocked. Armor does not reduce damage from cards or statuses. Keep the remaining stacks for later rounds."
+    ],
+    [
+      "Resolve",
+      "Positive · you · cap 3",
+      "Once per round, after you prevent at least 2 damage from one attack, gain 1 Resolve. During Offensive, spend 2 Resolve to gain Fortify. Resolve also pays for Stone cards and abilities. Keep unused Resolve."
+    ],
+    [
+      "Fracture",
+      "Negative · enemy · cap 2",
+      "After this enemy rolls their Defensive ability, you may remove any number of Fracture. Their defense prevents 1 less damage per stack removed, down to zero. Fracture does not weaken prevention from cards or statuses. Remove unused Fracture after their next Defensive segment."
+    ],
+    [
+      "Fortify",
+      "Positive · you · cap 1",
+      "When an enemy would change the number on one of your combat dice, you may remove Fortify to stop that change. It does not stop a physical reroll or erase Curse. Remove unused Fortify after your next Offensive segment."
+    ]
+  ],
+  "abilities": [
+    [
+      "Quarry Blow",
+      "Offense · 0E",
+      "3 Hammer / 4 Hammer / 5 Hammer",
+      "4 / 5 / 6 damage and gain 1 Armor."
+    ],
+    [
+      "Raise Rampart",
+      "Offense · 0E",
+      "2 Plate + 1 Mountain",
+      "Gain 2 Armor and Fortify if absent."
+    ],
+    [
+      "Fault Line",
+      "Offense · 0E",
+      "2 Hammer + 2 Plate + 1 Mountain",
+      "Deal 4 damage and apply 2 Fracture. Optionally spend 1 Resolve when choosing this ability for +2 damage."
+    ],
+    [
+      "Mountainfall",
+      "Offense · 0E",
+      "3 Mountain",
+      "Deal 6 damage. Optionally spend up to 2 Armor when choosing this ability for +1 damage each; gain 1 Resolve after the attack."
+    ],
+    [
+      "Pebble Guard",
+      "Defense · 0E",
+      "Roll 2 Stone dice",
+      "Each Hammer prevents 1; each Plate gains 1 Armor; any Mountain gains 1 Resolve."
+    ],
+    [
+      "Bastion",
+      "Defense · 1E",
+      "Roll 1 Stone die",
+      "Hammer: prevent 2. Plate: prevent 4. Mountain: prevent 3 and apply 1 Fracture to the attacker."
+    ]
+  ],
+  "cards": [
+    [
+      "Mortar",
+      "1",
+      "Action",
+      "Gain 2 Armor."
+    ],
+    [
+      "Fault Mark",
+      "1",
+      "Action",
+      "Apply 1 Fracture to one enemy."
+    ],
+    [
+      "Take a Stand",
+      "1",
+      "Action",
+      "Gain 1 Resolve and Fortify if absent."
+    ],
+    [
+      "Stone Ledger",
+      "1",
+      "Action",
+      "Draw 1 and gain 1 Armor."
+    ],
+    [
+      "Reinforce",
+      "1",
+      "Action",
+      "Spend 1 Resolve; gain 3 Armor."
+    ],
+    [
+      "Read the Strata",
+      "1",
+      "Action",
+      "Draw 2, then discard 1."
+    ],
+    [
+      "Ballast",
+      "0",
+      "Action",
+      "Spend 2 Armor; gain 1 Energy. Once per round."
+    ],
+    [
+      "Counterweight",
+      "1",
+      "Offensive reaction",
+      "Spend up to 2 Resolve; add 2 damage each to your attack."
+    ],
+    [
+      "Rubble Shot",
+      "1",
+      "Action",
+      "Spend 2 Armor to deal 3 damage to one enemy with this card."
+    ],
+    [
+      "Fault Survey",
+      "1",
+      "Action",
+      "Apply 2 Fracture to one enemy."
+    ],
+    [
+      "Deep Foundation",
+      "1",
+      "Action",
+      "Spend 1 Armor; gain 2 Resolve."
+    ],
+    [
+      "Lode Bearing",
+      "1",
+      "Action",
+      "Mark one card in your discard pile with Anchor, replacing your old Anchor if any. If damage would remove it before the end of the following round, you may spend 1 Armor to lose a different random, unmarked card from the same pile instead. Erase Anchor after one replacement. If no other card is available, lose the marked card normally."
+    ],
+    [
+      "Stonewall",
+      "1",
+      "Damage reaction",
+      "Prevent 3 from one incoming attack."
+    ],
+    [
+      "Cushion the Fall",
+      "1",
+      "Damage reaction",
+      "Prevent 2 damage from one status."
+    ],
+    [
+      "Set in Stone",
+      "1",
+      "Offensive reaction",
+      "Set one of your combat dice to face 4; the final dice must allow the chosen ability. Cannot edit a Frostbound die."
+    ],
+    [
+      "Granite Veto",
+      "1",
+      "Roll reaction",
+      "Spend 1 Resolve to stop an enemy changing the number on one of your dice just rolled for a status, defense or card. Keep the number it had before that change. This cannot stop a reroll."
+    ],
+    [
+      "Grind Down",
+      "1",
+      "Defensive reaction",
+      "Spend 1 Resolve; reduce one enemy Defensive ability’s prevention by 2, minimum zero."
+    ],
+    [
+      "Dust Veil",
+      "1",
+      "Application reaction",
+      "Spend 1 Armor; stop 1 negative status stack an enemy is about to apply to you."
+    ],
+    [
+      "Brace",
+      "0",
+      "Damage reaction",
+      "Spend 1 Resolve; prevent 2 from one attack, card or status."
+    ],
+    [
+      "Reclaim Rubble",
+      "1",
+      "Action",
+      "Remove 1 existing Fracture from yourself; gain 1 Armor and draw 1. Requires Fracture."
+    ],
+    [
+      "Split Load",
+      "1",
+      "Damage reaction",
+      "Spend 1 Armor to prevent 1 damage from each of up to two hits about to damage you."
+    ],
+    [
+      "Mason’s Rule",
+      "1",
+      "Action",
+      "Upgrade once per battle: your first earned Resolve each round also grants 1 Armor."
+    ],
+    [
+      "Living Citadel",
+      "2",
+      "Damage reaction",
+      "Spend 2 Armor and 1 Resolve. After your Defensive ability and protective statuses, halve the damage left from one attack, rounding down. Then apply prevention from damage-reaction cards."
+    ],
+    [
+      "Bedrock Return",
+      "2",
+      "Action",
+      "Spend 2 Resolve; return one of your cards previously lost to damage to your discard pile and gain Fortify if absent."
+    ]
+  ],
+  "pairs": [
+    [
+      "tide",
+      "Armor or a rolled defense that prevents at least 2 attack damage can earn both Flow and Resolve once that round. Flow buys Tide techniques while Resolve prepares Fortify or Stone cards."
+    ],
+    [
+      "blood",
+      "Sanguine Pact sacrifices a card to prevent attack damage. That can earn Ichor from the sacrifice and Resolve from preventing at least 2. Armor protects against later attacks but cannot reduce sacrifice costs."
+    ],
+    [
+      "swarm",
+      "Keeping at least two Brood lets Carapace block enough attack damage to earn Resolve. Sending them all removes that benefit. Armor offers a separate first-attack defense while the swarm rebuilds."
+    ],
+    [
+      "radiant",
+      "Sanctuary can remove a harmful status and prevent at least 2 attack damage, earning Grace and Resolve once each. Those resources pay for different follow-ups: recovery or Fortify."
+    ]
+  ],
+  "example": "You have 3 Armor. An incoming 6-damage attack is reduced by 3, and Armor falls to 2. You earn 1 Resolve for preventing at least 2 attack damage. With Tide, you also earn 1 Flow. A later attack this round gets no automatic Armor reduction.",
+  "counter": "Armor only helps against the first damaging Offensive ability each round. Cards and statuses bypass it. Fracture weakens rolled defense, so prevention from cards and statuses remains useful.",
+  "balance": "At three stacks, Armor can prevent 3, then 2, then 1 across three rounds if it is not replenished. The player cannot spend all three for repeated protection in one round. Fracture stops at zero defense and never becomes extra damage. Anchor’s card replacement is fully defined on Lode Bearing.",
+  "hooks": [
+    "H-19 prevention",
+    "H-20 scaling",
+    "H-21 card substitution",
+    "H-24 actual prevention rewards"
+  ],
+  "review_status": "Reworked statuses — awaiting user review",
+  "version": 2,
+  "combos": [
+    [
+      "Mortar → block → Take a Stand",
+      "Mortar builds Armor; a block of at least 2 earns Resolve. Take a Stand can supply the second Resolve and Fortify, or you can keep Resolve for Counterweight."
+    ],
+    [
+      "Fault Mark → Fault Survey → attack",
+      "Build Fracture to its cap of two. After seeing the enemy’s rolled defense, spend only the stacks that will reduce it. Save a stack if the defense is already near zero."
+    ]
+  ],
+  "status_examples": {
+    "Armor": {
+      "job": "Provide protection that gradually wears down.",
+      "example": "Three Armor block 3 from the first attack this round. You then have two Armor for next round."
+    },
+    "Resolve": {
+      "job": "Turn a strong defense into protection for your next setup.",
+      "example": "Armor blocks 2 damage, earning 1 Resolve. Save a second Resolve to gain Fortify before your next attack."
+    },
+    "Fracture": {
+      "job": "Weaken a rolled defense before the attack lands.",
+      "example": "A defense would block 3. Spend two Fracture to make it block only 1."
+    },
+    "Fortify": {
+      "job": "Protect a chosen result against one enemy edit.",
+      "example": "You have the dice for your attack. An enemy card would change a 6 to a 5; Fortify keeps the 6."
+    }
+  }
+}

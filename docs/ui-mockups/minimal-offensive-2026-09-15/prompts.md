@@ -1,0 +1,37 @@
+# Image generation prompts
+
+Mode: built-in image_gen; one generation per direction, using both supplied screenshots as references.
+
+## Shared prompt
+
+Use case: ui-mockup.
+Create ONE polished widescreen 16:9 game screenshot concept for Dice and Destiny, a minimalist grimdark fantasy dice-and-card battler, in offensive planning before the first roll. This is a visual redesign, not a collage or presentation sheet.
+Reference 1 is the actual current game and source of battle state. Reference 2 provides only dark fantasy mood; radically simplify its ornate crowded framing.
+Hierarchy: battlefield first, small full-body actor sprites second, compact useful UI third. Reserve at least 55% of the entire canvas as contiguous quiet center battlefield for future animated dice throws, blood effects, and cards tearing apart. Show just two small readable characters positioned well apart toward left and right, no giant portraits, no large character information boxes. Venom is a creative sinister poison-themed hooded alchemist/assassin with green vial accents; Blade Warden is a dark armored swordsman. Characters no taller than 20% screen height. Grimdark, restrained muted color, legible ivory typography, dim brass details, tiny green poison and red bleed accents. Dark but comfortably readable, restrained textures, no busy wallpaper.
+Preserve the source information through compact UI and clearly labeled expandable controls, not full paragraphs everywhere. Player: "Venom", slender health bar "7/24", energy crystal "1", blood-drop effect badge "2". Enemy: "Blade Warden", slender bar "12/20", energy crystal "5", poison badge "2". Exact health and stacks remain available in the compact labels. At top a tiny five-step phase track "Effects · Income · Offensive · Defensive · Damage", Offensive active, and "Round 4 · Planning".
+Player abilities shown as FOUR small pictographic buttons with short names "Needlefang", "Venom Gland", "Fever Spike", "Terminal Bite"; recipes and full effects accessed on hover/inspect rather than filling screen. Enemy ability book accessible via compact "Enemy abilities" control. Five low-profile illustrated card tabs at bottom with visible names/costs: "Extract" 0, "Incubate" 0, "Coagulate" 1, "Shock Dose" 2, "Measured Dose" 2. All five identifiable, full text opens on focus. Card art tiny expressive ink engravings of alchemy, venoms, blood, thorns. Compact pile counters "Deck 2 · Hand 5 · Discard 0 · Removed 17"; opponent compact "Piles" control retains accessible deck 1/hand 4/discard 7/removed 8 in inspect. No permanently visible five dice slots; a small dice-pouch button "Roll 5 dice", with "3 rolls left" and subtle secondary "Skip". Enemy dice available through a small dice icon alongside enemy controls. "Log" and "Inspect" controls and small settings icon keep history, character details, auto-pass and developer transcript accessible. NO oversized panels, no full-screen ability grid, no random floating dice before the roll, no central text instructions, no giant concept title, no fake mechanical damage changes, no warning triangle. Show a calm usable game interface, not promotional illustration.
+
+## Cinematic duel
+
+Direction 1: CINEMATIC DUEL. A restrained side-on ruined cathedral stage, foggy desaturated slate stone and a single faint circular floor sigil fading into darkness. Two tiny hand-painted full-body 2D sprites stand at x=18% and x=82%, y=51%; Venom faces right and Warden left. Compact health/status nameplates directly above each sprite, leaving center completely empty. Narrow phase header centered top. Four ability medallions in one centered slim row just above a shallow five-card bottom dock. Roll control beside dock, small piles at lower left, utility controls lower right. Finely rendered sprite artwork but very little environment clutter. Quiet premium game UI.
+
+## Tabletop miniatures
+
+Direction 2: TABLETOP MINIATURES. A softly lit almost-top-down slate ritual gaming table, broad empty charcoal stone. Two small exquisite painted tabletop figurines on thin weathered round bases, at x=22% y=48% and x=78% y=48%, facing diagonally inward. Hooded poison figure and armored swordsman. Name, health and status integrated as very slim base-adjacent labels, with an arc on the base suggesting health plus exact fraction. Leave a very large unobstructed stone center for physical dice tumbling. Compact top phase line. Four ability runestones in a thin left-bottom row, five small straight card tabs in bottom-center, roll pouch bottom-right. Tiny side utility tabs. No board grid, no huge decorative circles, no giant panels. Tactile, restrained, unusually clean.
+
+## Ink and ash
+
+Direction 3: INK AND ASH. Stylized high-contrast woodcut/ink full-body sprites with simple silhouette animation potential: hooded poison assassin at x=17%, dark angular swordsman at x=83%, both at mid-height. Warm soot-black field with subtle grey mist, ivory etched lines, desaturated parchment UI, two accents only of muted venom green and dried-blood red. Extremely spare background, flat graphic depth with small ground shadows, no lush 3D environment. Compact character health/status strips above the sprites. Thin top phase track. Along bottom five shallow separated illustrated card plaques with ample breathing room; four small ability seals immediately above, roll button on right. Faint narrow utility strip on bottom edge. This should feel like a beautiful minimal illustrated dark-fantasy boardgame brought to life, leaving nearly two-thirds empty center.
+
+## Command rail
+
+Direction 4: COMMAND RAIL. Strongly asymmetric layout, distinct from bottom-ability arrangements. Ultra-compact vertical action rail occupying only the leftmost 12% of screen contains four small ability icons and labels in a tidy vertical list; roll button and 3 rolls left beneath. Battlefield takes the rest, quiet blue-black ruined crypt floor. Two small painterly full-body sprites at x=29% and x=84%, y=48%, facing across an expansive empty arena. Status nameplates above sprites. Phase line across top. Five compact slightly overlapping cards in a shallow bottom-center dock, not a giant fan. Small card pile counters at bottom left below rail. Opponent ability book and dice controls on extreme right edge. No enclosing panel around the action rail: fine line and generous spacing only. Purposeful modern game UX within restrained grimdark art.
+
+## Orbiting sigils
+
+Direction 5: ORBITING SIGILS. Two small stylized sculptural character pawns with hand-painted details facing inward on far-left and far-right faint ritual seals, x=18% and 82%, y=48%. Very large quiet uninterrupted central expanse of dark basalt with barely visible ash haze. Four small clickable ability sigils form a SHORT outward-facing arc behind the player, entirely on the left edge, each with short readable name; do not ring or clutter the center. Enemy has small book and dice controls on its outward right side. Slim health arc around each base, exact 7/24 and 12/20 above, tiny energy crystals and status stacks attached to nameplate. Minimal phase strip at top, five low-profile card tabs at bottom, compact roll control above the bottom dock and below the empty animation space. Elegantly sparse ceremonial UI, restrained brass circles and matte stone, sprite silhouettes clearly visible, no ornate screen border.
+
+## Targeted correction for sample 4
+
+Change only the player Deck count in the lower-left Your Piles group from 1 to 2. Keep enemy Deck 1 and preserve the rest of the composition.
+

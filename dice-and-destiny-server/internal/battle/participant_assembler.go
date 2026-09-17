@@ -3,6 +3,7 @@ package battle
 import (
 	"encoding/json"
 	"fmt"
+	"os"
 	"path/filepath"
 	"reflect"
 	"strings"
@@ -125,6 +126,13 @@ func (assembler *FileParticipantAssembler) loadSettledContent(
 		library, err := content.LoadBattleLibrary(settledRoot)
 		if err != nil {
 			return content.BattleLibrary{}, nil, err
+		}
+		extensionRoot := filepath.Join(filepath.Dir(settledRoot), "venom_v1")
+		if _, statErr := os.Stat(extensionRoot); statErr == nil {
+			library, err = content.LoadBattleExtension(library, extensionRoot)
+			if err != nil {
+				return content.BattleLibrary{}, nil, err
+			}
 		}
 		catalog, err := json.Marshal(library)
 		if err != nil {

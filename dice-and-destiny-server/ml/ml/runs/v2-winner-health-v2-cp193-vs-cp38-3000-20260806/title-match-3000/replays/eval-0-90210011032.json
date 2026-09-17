@@ -1,0 +1,2903 @@
+{
+  "action_schema": "dice-and-destiny-action-candidates-v2",
+  "actions": [
+    {
+      "action_index": 0,
+      "actor_id": "seat-a",
+      "command": {
+        "actor_id": "seat-a",
+        "battle_id": "eval-0-90210011032",
+        "payload": {
+          "card_ids": [
+            "seat-a-card-019"
+          ],
+          "checkpoint": {
+            "iteration": 1,
+            "planning_cycle": 1,
+            "segment": "offensive",
+            "stage": "planning",
+            "window_id": "offensive-planning-r1-2"
+          },
+          "pending_input_id": "input-offensive-planning-r1-2-seat-a-3",
+          "target_ids": [
+            "seat-a"
+          ]
+        },
+        "type": "planning_commit_cards"
+      }
+    },
+    {
+      "action_index": 1,
+      "actor_id": "seat-a",
+      "command": {
+        "actor_id": "seat-a",
+        "battle_id": "eval-0-90210011032",
+        "payload": {
+          "checkpoint": {
+            "iteration": 1,
+            "planning_cycle": 1,
+            "segment": "offensive",
+            "stage": "planning",
+            "window_id": "offensive-planning-r1-2"
+          },
+          "pending_input_id": "input-offensive-planning-r1-2-seat-a-5"
+        },
+        "type": "planning_roll"
+      }
+    },
+    {
+      "action_index": 54,
+      "actor_id": "seat-a",
+      "command": {
+        "actor_id": "seat-a",
+        "battle_id": "eval-0-90210011032",
+        "payload": {
+          "checkpoint": {
+            "iteration": 1,
+            "planning_cycle": 1,
+            "segment": "offensive",
+            "stage": "planning",
+            "window_id": "offensive-planning-r1-2"
+          },
+          "pending_input_id": "input-offensive-planning-r1-2-seat-a-6",
+          "reroll_indices": [
+            1,
+            2,
+            3,
+            4
+          ]
+        },
+        "type": "planning_reroll"
+      }
+    },
+    {
+      "action_index": 67,
+      "actor_id": "seat-a",
+      "command": {
+        "actor_id": "seat-a",
+        "battle_id": "eval-0-90210011032",
+        "payload": {
+          "checkpoint": {
+            "iteration": 1,
+            "planning_cycle": 1,
+            "segment": "offensive",
+            "stage": "planning",
+            "window_id": "offensive-planning-r1-2"
+          },
+          "pending_input_id": "input-offensive-planning-r1-2-seat-a-7",
+          "reroll_indices": [
+            3
+          ]
+        },
+        "type": "planning_reroll"
+      }
+    },
+    {
+      "action_index": 40,
+      "actor_id": "seat-a",
+      "command": {
+        "actor_id": "seat-a",
+        "battle_id": "eval-0-90210011032",
+        "payload": {
+          "ability_id": "venom_strike",
+          "checkpoint": {
+            "iteration": 1,
+            "planning_cycle": 1,
+            "segment": "offensive",
+            "stage": "planning",
+            "window_id": "offensive-planning-r1-2"
+          },
+          "pending_input_id": "input-offensive-planning-r1-2-seat-a-8",
+          "target_ids": [
+            "seat-b"
+          ]
+        },
+        "type": "planning_select_ability"
+      }
+    },
+    {
+      "action_index": 3,
+      "actor_id": "seat-b",
+      "command": {
+        "actor_id": "seat-b",
+        "battle_id": "eval-0-90210011032",
+        "payload": {
+          "ability_id": "sword_cut",
+          "card_ids": [
+            "seat-b-card-010"
+          ],
+          "checkpoint": {
+            "iteration": 1,
+            "planning_cycle": 1,
+            "segment": "offensive",
+            "stage": "planning",
+            "window_id": "offensive-planning-r1-2"
+          },
+          "pending_input_id": "input-offensive-planning-r1-2-seat-b-4"
+        },
+        "type": "planning_commit_cards"
+      }
+    },
+    {
+      "action_index": 0,
+      "actor_id": "seat-b",
+      "command": {
+        "actor_id": "seat-b",
+        "battle_id": "eval-0-90210011032",
+        "payload": {
+          "card_ids": [
+            "seat-b-card-017"
+          ],
+          "checkpoint": {
+            "iteration": 1,
+            "planning_cycle": 1,
+            "segment": "offensive",
+            "stage": "planning",
+            "window_id": "offensive-planning-r1-2"
+          },
+          "pending_input_id": "input-offensive-planning-r1-2-seat-b-9",
+          "target_ids": [
+            "seat-b"
+          ]
+        },
+        "type": "planning_commit_cards"
+      }
+    },
+    {
+      "action_index": 0,
+      "actor_id": "seat-b",
+      "command": {
+        "actor_id": "seat-b",
+        "battle_id": "eval-0-90210011032",
+        "payload": {
+          "card_ids": [
+            "seat-b-card-020"
+          ],
+          "checkpoint": {
+            "iteration": 1,
+            "planning_cycle": 1,
+            "segment": "offensive",
+            "stage": "planning",
+            "window_id": "offensive-planning-r1-2"
+          },
+          "pending_input_id": "input-offensive-planning-r1-2-seat-b-10",
+          "target_ids": [
+            "seat-b"
+          ]
+        },
+        "type": "planning_commit_cards"
+      }
+    },
+    {
+      "action_index": 1,
+      "actor_id": "seat-b",
+      "command": {
+        "actor_id": "seat-b",
+        "battle_id": "eval-0-90210011032",
+        "payload": {
+          "checkpoint": {
+            "iteration": 1,
+            "planning_cycle": 1,
+            "segment": "offensive",
+            "stage": "planning",
+            "window_id": "offensive-planning-r1-2"
+          },
+          "pending_input_id": "input-offensive-planning-r1-2-seat-b-11"
+        },
+        "type": "planning_roll"
+      }
+    },
+    {
+      "action_index": 42,
+      "actor_id": "seat-b",
+      "command": {
+        "actor_id": "seat-b",
+        "battle_id": "eval-0-90210011032",
+        "payload": {
+          "checkpoint": {
+            "iteration": 1,
+            "planning_cycle": 1,
+            "segment": "offensive",
+            "stage": "planning",
+            "window_id": "offensive-planning-r1-2"
+          },
+          "pending_input_id": "input-offensive-planning-r1-2-seat-b-12",
+          "reroll_indices": [
+            0,
+            1,
+            3,
+            4
+          ]
+        },
+        "type": "planning_reroll"
+      }
+    },
+    {
+      "action_index": 48,
+      "actor_id": "seat-b",
+      "command": {
+        "actor_id": "seat-b",
+        "battle_id": "eval-0-90210011032",
+        "payload": {
+          "checkpoint": {
+            "iteration": 1,
+            "planning_cycle": 1,
+            "segment": "offensive",
+            "stage": "planning",
+            "window_id": "offensive-planning-r1-2"
+          },
+          "pending_input_id": "input-offensive-planning-r1-2-seat-b-13",
+          "reroll_indices": [
+            0,
+            2,
+            4
+          ]
+        },
+        "type": "planning_reroll"
+      }
+    },
+    {
+      "action_index": 40,
+      "actor_id": "seat-b",
+      "command": {
+        "actor_id": "seat-b",
+        "battle_id": "eval-0-90210011032",
+        "payload": {
+          "ability_id": "venom_strike",
+          "checkpoint": {
+            "iteration": 1,
+            "planning_cycle": 1,
+            "segment": "offensive",
+            "stage": "planning",
+            "window_id": "offensive-planning-r1-2"
+          },
+          "pending_input_id": "input-offensive-planning-r1-2-seat-b-14",
+          "target_ids": [
+            "seat-a"
+          ]
+        },
+        "type": "planning_select_ability"
+      }
+    },
+    {
+      "action_index": 2,
+      "actor_id": "seat-a",
+      "command": {
+        "actor_id": "seat-a",
+        "battle_id": "eval-0-90210011032",
+        "payload": {
+          "checkpoint": {
+            "iteration": 3,
+            "planning_cycle": 1,
+            "reaction_round": 1,
+            "stage": "offensive_reaction",
+            "window_id": "offensive-reaction-r1-15"
+          },
+          "pending_input_id": "input-offensive-reaction-r1-15-seat-a-16"
+        },
+        "type": "pass"
+      }
+    },
+    {
+      "action_index": 0,
+      "actor_id": "seat-b",
+      "command": {
+        "actor_id": "seat-b",
+        "battle_id": "eval-0-90210011032",
+        "payload": {
+          "checkpoint": {
+            "iteration": 4,
+            "planning_cycle": 1,
+            "reaction_round": 1,
+            "stage": "offensive_reaction",
+            "window_id": "offensive-reaction-r1-15"
+          },
+          "commitment": {
+            "card_ids": [
+              "seat-b-card-001"
+            ],
+            "planning_adjustments": [
+              {
+                "actor_id": "seat-a",
+                "die_index": 3,
+                "face": 5,
+                "type": "set_die_face"
+              }
+            ]
+          },
+          "pending_input_id": "input-offensive-reaction-r1-15-seat-b-17"
+        },
+        "type": "commit_interaction"
+      }
+    },
+    {
+      "action_index": 1,
+      "actor_id": "seat-a",
+      "command": {
+        "actor_id": "seat-a",
+        "battle_id": "eval-0-90210011032",
+        "payload": {
+          "checkpoint": {
+            "iteration": 5,
+            "planning_cycle": 1,
+            "reaction_round": 2,
+            "stage": "offensive_reaction",
+            "window_id": "offensive-reaction-r1-15"
+          },
+          "pending_input_id": "input-offensive-reaction-r1-15-seat-a-18"
+        },
+        "type": "pass"
+      }
+    },
+    {
+      "action_index": 0,
+      "actor_id": "seat-b",
+      "command": {
+        "actor_id": "seat-b",
+        "battle_id": "eval-0-90210011032",
+        "payload": {
+          "checkpoint": {
+            "iteration": 6,
+            "planning_cycle": 1,
+            "reaction_round": 2,
+            "stage": "offensive_reaction",
+            "window_id": "offensive-reaction-r1-15"
+          },
+          "commitment": {
+            "card_ids": [
+              "seat-b-card-002"
+            ],
+            "planning_adjustments": [
+              {
+                "actor_id": "seat-b",
+                "die_index": 4,
+                "face": 5,
+                "type": "set_die_face"
+              }
+            ]
+          },
+          "pending_input_id": "input-offensive-reaction-r1-15-seat-b-19"
+        },
+        "type": "commit_interaction"
+      }
+    },
+    {
+      "action_index": 0,
+      "actor_id": "seat-a",
+      "command": {
+        "actor_id": "seat-a",
+        "battle_id": "eval-0-90210011032",
+        "payload": {
+          "checkpoint": {
+            "iteration": 7,
+            "planning_cycle": 1,
+            "reaction_round": 3,
+            "stage": "offensive_reaction",
+            "window_id": "offensive-reaction-r1-15"
+          },
+          "pending_input_id": "input-offensive-reaction-r1-15-seat-a-20"
+        },
+        "type": "pass"
+      }
+    },
+    {
+      "action_index": 0,
+      "actor_id": "seat-b",
+      "command": {
+        "actor_id": "seat-b",
+        "battle_id": "eval-0-90210011032",
+        "payload": {
+          "checkpoint": {
+            "iteration": 8,
+            "planning_cycle": 1,
+            "reaction_round": 3,
+            "stage": "offensive_reaction",
+            "window_id": "offensive-reaction-r1-15"
+          },
+          "pending_input_id": "input-offensive-reaction-r1-15-seat-b-21"
+        },
+        "type": "pass"
+      }
+    },
+    {
+      "action_index": 1,
+      "actor_id": "seat-a",
+      "command": {
+        "actor_id": "seat-a",
+        "battle_id": "eval-0-90210011032",
+        "payload": {
+          "ability_id": "basic_defense",
+          "checkpoint": {
+            "iteration": 2,
+            "planning_cycle": 1,
+            "segment": "defensive",
+            "stage": "defense_selection",
+            "window_id": "defense-select-r1-24"
+          },
+          "pending_input_id": "input-defense-select-r1-24-seat-a-25",
+          "target_ids": [
+            "source-r1-shield_bash-23"
+          ]
+        },
+        "type": "planning_select_ability"
+      }
+    },
+    {
+      "action_index": 1,
+      "actor_id": "seat-b",
+      "command": {
+        "actor_id": "seat-b",
+        "battle_id": "eval-0-90210011032",
+        "payload": {
+          "ability_id": "basic_defense",
+          "checkpoint": {
+            "iteration": 3,
+            "planning_cycle": 1,
+            "segment": "defensive",
+            "stage": "defense_selection",
+            "window_id": "defense-select-r1-24"
+          },
+          "pending_input_id": "input-defense-select-r1-24-seat-b-26",
+          "target_ids": [
+            "source-r1-shield_bash-22"
+          ]
+        },
+        "type": "planning_select_ability"
+      }
+    },
+    {
+      "action_index": 0,
+      "actor_id": "seat-a",
+      "command": {
+        "actor_id": "seat-a",
+        "battle_id": "eval-0-90210011032",
+        "payload": {
+          "pending_input_id": "input-defense-roll-r1-27-seat-a-28"
+        },
+        "type": "roll_dice"
+      }
+    },
+    {
+      "action_index": 0,
+      "actor_id": "seat-b",
+      "command": {
+        "actor_id": "seat-b",
+        "battle_id": "eval-0-90210011032",
+        "payload": {
+          "pending_input_id": "input-defense-roll-r1-27-seat-b-29"
+        },
+        "type": "roll_dice"
+      }
+    },
+    {
+      "action_index": 0,
+      "actor_id": "seat-a",
+      "command": {
+        "actor_id": "seat-a",
+        "battle_id": "eval-0-90210011032",
+        "payload": {
+          "checkpoint": {
+            "iteration": 8,
+            "planning_cycle": 1,
+            "reaction_round": 1,
+            "stage": "defense_reaction",
+            "window_id": "defense-react-r1-30"
+          },
+          "pending_input_id": "input-defense-react-r1-30-seat-a-31"
+        },
+        "type": "pass"
+      }
+    },
+    {
+      "action_index": 0,
+      "actor_id": "seat-b",
+      "command": {
+        "actor_id": "seat-b",
+        "battle_id": "eval-0-90210011032",
+        "payload": {
+          "checkpoint": {
+            "iteration": 9,
+            "planning_cycle": 1,
+            "reaction_round": 1,
+            "stage": "defense_reaction",
+            "window_id": "defense-react-r1-30"
+          },
+          "pending_input_id": "input-defense-react-r1-30-seat-b-32"
+        },
+        "type": "pass"
+      }
+    },
+    {
+      "action_index": 0,
+      "actor_id": "seat-a",
+      "command": {
+        "actor_id": "seat-a",
+        "battle_id": "eval-0-90210011032",
+        "payload": {
+          "checkpoint": {
+            "iteration": 2,
+            "planning_cycle": 1,
+            "reaction_round": 1,
+            "stage": "damage_reaction",
+            "window_id": "damage-r1-34"
+          },
+          "commitment": {
+            "card_ids": [
+              "seat-a-card-012"
+            ],
+            "proposal_ids": [
+              "source-r1-shield_bash-23"
+            ]
+          },
+          "pending_input_id": "input-damage-r1-34-seat-a-35"
+        },
+        "type": "commit_interaction"
+      }
+    },
+    {
+      "action_index": 0,
+      "actor_id": "seat-b",
+      "command": {
+        "actor_id": "seat-b",
+        "battle_id": "eval-0-90210011032",
+        "payload": {
+          "checkpoint": {
+            "iteration": 3,
+            "planning_cycle": 1,
+            "reaction_round": 2,
+            "stage": "damage_reaction",
+            "window_id": "damage-r1-34"
+          },
+          "commitment": {
+            "card_ids": [
+              "seat-b-card-011"
+            ],
+            "proposal_ids": [
+              "source-r1-shield_bash-22"
+            ]
+          },
+          "pending_input_id": "input-damage-r1-34-seat-b-36"
+        },
+        "type": "commit_interaction"
+      }
+    },
+    {
+      "action_index": 0,
+      "actor_id": "seat-a",
+      "command": {
+        "actor_id": "seat-a",
+        "battle_id": "eval-0-90210011032",
+        "payload": {
+          "checkpoint": {
+            "iteration": 4,
+            "planning_cycle": 1,
+            "reaction_round": 3,
+            "stage": "damage_reaction",
+            "window_id": "damage-r1-34"
+          },
+          "commitment": {
+            "card_ids": [
+              "seat-a-card-013"
+            ],
+            "proposal_ids": [
+              "source-r1-shield_bash-23"
+            ]
+          },
+          "pending_input_id": "input-damage-r1-34-seat-a-37"
+        },
+        "type": "commit_interaction"
+      }
+    },
+    {
+      "action_index": 0,
+      "actor_id": "seat-b",
+      "command": {
+        "actor_id": "seat-b",
+        "battle_id": "eval-0-90210011032",
+        "payload": {
+          "checkpoint": {
+            "iteration": 5,
+            "planning_cycle": 1,
+            "reaction_round": 4,
+            "stage": "damage_reaction",
+            "window_id": "damage-r1-34"
+          },
+          "pending_input_id": "input-damage-r1-34-seat-b-38"
+        },
+        "type": "pass"
+      }
+    },
+    {
+      "action_index": 0,
+      "actor_id": "seat-a",
+      "command": {
+        "actor_id": "seat-a",
+        "battle_id": "eval-0-90210011032",
+        "payload": {
+          "checkpoint": {
+            "iteration": 6,
+            "planning_cycle": 1,
+            "reaction_round": 4,
+            "stage": "damage_reaction",
+            "window_id": "damage-r1-34"
+          },
+          "commitment": {
+            "card_ids": [
+              "seat-a-card-014"
+            ],
+            "proposal_ids": [
+              "source-r1-shield_bash-23"
+            ]
+          },
+          "pending_input_id": "input-damage-r1-34-seat-a-39"
+        },
+        "type": "commit_interaction"
+      }
+    },
+    {
+      "action_index": 0,
+      "actor_id": "seat-b",
+      "command": {
+        "actor_id": "seat-b",
+        "battle_id": "eval-0-90210011032",
+        "payload": {
+          "checkpoint": {
+            "iteration": 7,
+            "planning_cycle": 1,
+            "reaction_round": 5,
+            "stage": "damage_reaction",
+            "window_id": "damage-r1-34"
+          },
+          "pending_input_id": "input-damage-r1-34-seat-b-40"
+        },
+        "type": "pass"
+      }
+    },
+    {
+      "action_index": 0,
+      "actor_id": "seat-a",
+      "command": {
+        "actor_id": "seat-a",
+        "battle_id": "eval-0-90210011032",
+        "payload": {
+          "checkpoint": {
+            "iteration": 8,
+            "planning_cycle": 1,
+            "reaction_round": 5,
+            "stage": "damage_reaction",
+            "window_id": "damage-r1-34"
+          },
+          "pending_input_id": "input-damage-r1-34-seat-a-41"
+        },
+        "type": "pass"
+      }
+    },
+    {
+      "action_index": 0,
+      "actor_id": "seat-a",
+      "command": {
+        "actor_id": "seat-a",
+        "battle_id": "eval-0-90210011032",
+        "payload": {
+          "card_ids": [
+            "seat-a-card-017"
+          ],
+          "checkpoint": {
+            "iteration": 1,
+            "planning_cycle": 2,
+            "segment": "offensive",
+            "stage": "planning",
+            "window_id": "offensive-planning-r2-45"
+          },
+          "pending_input_id": "input-offensive-planning-r2-45-seat-a-46",
+          "target_ids": [
+            "seat-a"
+          ]
+        },
+        "type": "planning_commit_cards"
+      }
+    },
+    {
+      "action_index": 1,
+      "actor_id": "seat-a",
+      "command": {
+        "actor_id": "seat-a",
+        "battle_id": "eval-0-90210011032",
+        "payload": {
+          "checkpoint": {
+            "iteration": 1,
+            "planning_cycle": 2,
+            "segment": "offensive",
+            "stage": "planning",
+            "window_id": "offensive-planning-r2-45"
+          },
+          "pending_input_id": "input-offensive-planning-r2-45-seat-a-48"
+        },
+        "type": "planning_roll"
+      }
+    },
+    {
+      "action_index": 44,
+      "actor_id": "seat-a",
+      "command": {
+        "actor_id": "seat-a",
+        "battle_id": "eval-0-90210011032",
+        "payload": {
+          "checkpoint": {
+            "iteration": 1,
+            "planning_cycle": 2,
+            "segment": "offensive",
+            "stage": "planning",
+            "window_id": "offensive-planning-r2-45"
+          },
+          "pending_input_id": "input-offensive-planning-r2-45-seat-a-49",
+          "reroll_indices": [
+            0,
+            1,
+            4
+          ]
+        },
+        "type": "planning_reroll"
+      }
+    },
+    {
+      "action_index": 38,
+      "actor_id": "seat-a",
+      "command": {
+        "actor_id": "seat-a",
+        "battle_id": "eval-0-90210011032",
+        "payload": {
+          "ability_id": "sword_cut",
+          "checkpoint": {
+            "iteration": 1,
+            "planning_cycle": 2,
+            "segment": "offensive",
+            "stage": "planning",
+            "window_id": "offensive-planning-r2-45"
+          },
+          "pending_input_id": "input-offensive-planning-r2-45-seat-a-50",
+          "target_ids": [
+            "seat-b"
+          ]
+        },
+        "type": "planning_select_ability"
+      }
+    },
+    {
+      "action_index": 0,
+      "actor_id": "seat-b",
+      "command": {
+        "actor_id": "seat-b",
+        "battle_id": "eval-0-90210011032",
+        "payload": {
+          "card_ids": [
+            "seat-b-card-018"
+          ],
+          "checkpoint": {
+            "iteration": 1,
+            "planning_cycle": 2,
+            "segment": "offensive",
+            "stage": "planning",
+            "window_id": "offensive-planning-r2-45"
+          },
+          "pending_input_id": "input-offensive-planning-r2-45-seat-b-47",
+          "target_ids": [
+            "seat-b"
+          ]
+        },
+        "type": "planning_commit_cards"
+      }
+    },
+    {
+      "action_index": 3,
+      "actor_id": "seat-b",
+      "command": {
+        "actor_id": "seat-b",
+        "battle_id": "eval-0-90210011032",
+        "payload": {
+          "ability_id": "sword_cut",
+          "card_ids": [
+            "seat-b-card-009"
+          ],
+          "checkpoint": {
+            "iteration": 1,
+            "planning_cycle": 2,
+            "segment": "offensive",
+            "stage": "planning",
+            "window_id": "offensive-planning-r2-45"
+          },
+          "pending_input_id": "input-offensive-planning-r2-45-seat-b-51"
+        },
+        "type": "planning_commit_cards"
+      }
+    },
+    {
+      "action_index": 1,
+      "actor_id": "seat-b",
+      "command": {
+        "actor_id": "seat-b",
+        "battle_id": "eval-0-90210011032",
+        "payload": {
+          "checkpoint": {
+            "iteration": 1,
+            "planning_cycle": 2,
+            "segment": "offensive",
+            "stage": "planning",
+            "window_id": "offensive-planning-r2-45"
+          },
+          "pending_input_id": "input-offensive-planning-r2-45-seat-b-52"
+        },
+        "type": "planning_roll"
+      }
+    },
+    {
+      "action_index": 38,
+      "actor_id": "seat-b",
+      "command": {
+        "actor_id": "seat-b",
+        "battle_id": "eval-0-90210011032",
+        "payload": {
+          "checkpoint": {
+            "iteration": 1,
+            "planning_cycle": 2,
+            "segment": "offensive",
+            "stage": "planning",
+            "window_id": "offensive-planning-r2-45"
+          },
+          "pending_input_id": "input-offensive-planning-r2-45-seat-b-53",
+          "reroll_indices": [
+            0,
+            1,
+            2,
+            3,
+            4
+          ]
+        },
+        "type": "planning_reroll"
+      }
+    },
+    {
+      "action_index": 39,
+      "actor_id": "seat-b",
+      "command": {
+        "actor_id": "seat-b",
+        "battle_id": "eval-0-90210011032",
+        "payload": {
+          "ability_id": "sword_cut",
+          "checkpoint": {
+            "iteration": 1,
+            "planning_cycle": 2,
+            "segment": "offensive",
+            "stage": "planning",
+            "window_id": "offensive-planning-r2-45"
+          },
+          "pending_input_id": "input-offensive-planning-r2-45-seat-b-54",
+          "target_ids": [
+            "seat-a"
+          ]
+        },
+        "type": "planning_select_ability"
+      }
+    },
+    {
+      "action_index": 0,
+      "actor_id": "seat-b",
+      "command": {
+        "actor_id": "seat-b",
+        "battle_id": "eval-0-90210011032",
+        "payload": {
+          "checkpoint": {
+            "iteration": 3,
+            "planning_cycle": 2,
+            "reaction_round": 1,
+            "stage": "offensive_reaction",
+            "window_id": "offensive-reaction-r2-55"
+          },
+          "pending_input_id": "input-offensive-reaction-r2-55-seat-b-56"
+        },
+        "type": "pass"
+      }
+    },
+    {
+      "action_index": 2,
+      "actor_id": "seat-a",
+      "command": {
+        "actor_id": "seat-a",
+        "battle_id": "eval-0-90210011032",
+        "payload": {
+          "checkpoint": {
+            "iteration": 4,
+            "planning_cycle": 2,
+            "reaction_round": 1,
+            "stage": "offensive_reaction",
+            "window_id": "offensive-reaction-r2-55"
+          },
+          "pending_input_id": "input-offensive-reaction-r2-55-seat-a-57"
+        },
+        "type": "pass"
+      }
+    },
+    {
+      "action_index": 1,
+      "actor_id": "seat-b",
+      "command": {
+        "actor_id": "seat-b",
+        "battle_id": "eval-0-90210011032",
+        "payload": {
+          "ability_id": "basic_defense",
+          "checkpoint": {
+            "iteration": 2,
+            "planning_cycle": 2,
+            "segment": "defensive",
+            "stage": "defense_selection",
+            "window_id": "defense-select-r2-60"
+          },
+          "pending_input_id": "input-defense-select-r2-60-seat-b-61",
+          "target_ids": [
+            "source-r2-sword_cut-58"
+          ]
+        },
+        "type": "planning_select_ability"
+      }
+    },
+    {
+      "action_index": 2,
+      "actor_id": "seat-a",
+      "command": {
+        "actor_id": "seat-a",
+        "battle_id": "eval-0-90210011032",
+        "payload": {
+          "ability_id": "protect",
+          "checkpoint": {
+            "iteration": 3,
+            "planning_cycle": 2,
+            "segment": "defensive",
+            "stage": "defense_selection",
+            "window_id": "defense-select-r2-60"
+          },
+          "pending_input_id": "input-defense-select-r2-60-seat-a-62",
+          "target_ids": [
+            "source-r2-sword_cut-59"
+          ]
+        },
+        "type": "planning_select_ability"
+      }
+    },
+    {
+      "action_index": 0,
+      "actor_id": "seat-b",
+      "command": {
+        "actor_id": "seat-b",
+        "battle_id": "eval-0-90210011032",
+        "payload": {
+          "pending_input_id": "input-defense-roll-r2-63-seat-b-64"
+        },
+        "type": "roll_dice"
+      }
+    },
+    {
+      "action_index": 0,
+      "actor_id": "seat-b",
+      "command": {
+        "actor_id": "seat-b",
+        "battle_id": "eval-0-90210011032",
+        "payload": {
+          "checkpoint": {
+            "iteration": 7,
+            "planning_cycle": 2,
+            "reaction_round": 1,
+            "stage": "defense_reaction",
+            "window_id": "defense-react-r2-65"
+          },
+          "pending_input_id": "input-defense-react-r2-65-seat-b-66"
+        },
+        "type": "pass"
+      }
+    },
+    {
+      "action_index": 0,
+      "actor_id": "seat-a",
+      "command": {
+        "actor_id": "seat-a",
+        "battle_id": "eval-0-90210011032",
+        "payload": {
+          "checkpoint": {
+            "iteration": 8,
+            "planning_cycle": 2,
+            "reaction_round": 1,
+            "stage": "defense_reaction",
+            "window_id": "defense-react-r2-65"
+          },
+          "pending_input_id": "input-defense-react-r2-65-seat-a-67"
+        },
+        "type": "pass"
+      }
+    },
+    {
+      "action_index": 0,
+      "actor_id": "seat-b",
+      "command": {
+        "actor_id": "seat-b",
+        "battle_id": "eval-0-90210011032",
+        "payload": {
+          "checkpoint": {
+            "iteration": 2,
+            "planning_cycle": 2,
+            "reaction_round": 1,
+            "stage": "damage_reaction",
+            "window_id": "damage-r2-69"
+          },
+          "pending_input_id": "input-damage-r2-69-seat-b-70"
+        },
+        "type": "pass"
+      }
+    },
+    {
+      "action_index": 0,
+      "actor_id": "seat-a",
+      "command": {
+        "actor_id": "seat-a",
+        "battle_id": "eval-0-90210011032",
+        "payload": {
+          "checkpoint": {
+            "iteration": 3,
+            "planning_cycle": 2,
+            "reaction_round": 1,
+            "stage": "damage_reaction",
+            "window_id": "damage-r2-69"
+          },
+          "pending_input_id": "input-damage-r2-69-seat-a-71"
+        },
+        "type": "pass"
+      }
+    },
+    {
+      "action_index": 0,
+      "actor_id": "seat-a",
+      "command": {
+        "actor_id": "seat-a",
+        "battle_id": "eval-0-90210011032",
+        "payload": {
+          "checkpoint": {
+            "iteration": 2,
+            "planning_cycle": 3,
+            "reaction_round": 1,
+            "stage": "status_damage_reaction",
+            "window_id": "status-damage-r3-80"
+          },
+          "pending_input_id": "input-status-damage-r3-80-seat-a-81"
+        },
+        "type": "pass"
+      }
+    },
+    {
+      "action_index": 0,
+      "actor_id": "seat-b",
+      "command": {
+        "actor_id": "seat-b",
+        "battle_id": "eval-0-90210011032",
+        "payload": {
+          "checkpoint": {
+            "iteration": 3,
+            "planning_cycle": 3,
+            "reaction_round": 1,
+            "stage": "status_damage_reaction",
+            "window_id": "status-damage-r3-80"
+          },
+          "pending_input_id": "input-status-damage-r3-80-seat-b-82"
+        },
+        "type": "pass"
+      }
+    },
+    {
+      "action_index": 1,
+      "actor_id": "seat-b",
+      "command": {
+        "actor_id": "seat-b",
+        "battle_id": "eval-0-90210011032",
+        "payload": {
+          "checkpoint": {
+            "iteration": 1,
+            "planning_cycle": 3,
+            "segment": "offensive",
+            "stage": "planning",
+            "window_id": "offensive-planning-r3-83"
+          },
+          "pending_input_id": "input-offensive-planning-r3-83-seat-b-85"
+        },
+        "type": "planning_roll"
+      }
+    },
+    {
+      "action_index": 48,
+      "actor_id": "seat-b",
+      "command": {
+        "actor_id": "seat-b",
+        "battle_id": "eval-0-90210011032",
+        "payload": {
+          "checkpoint": {
+            "iteration": 1,
+            "planning_cycle": 3,
+            "segment": "offensive",
+            "stage": "planning",
+            "window_id": "offensive-planning-r3-83"
+          },
+          "pending_input_id": "input-offensive-planning-r3-83-seat-b-86",
+          "reroll_indices": [
+            0,
+            2,
+            4
+          ]
+        },
+        "type": "planning_reroll"
+      }
+    },
+    {
+      "action_index": 48,
+      "actor_id": "seat-b",
+      "command": {
+        "actor_id": "seat-b",
+        "battle_id": "eval-0-90210011032",
+        "payload": {
+          "checkpoint": {
+            "iteration": 1,
+            "planning_cycle": 3,
+            "segment": "offensive",
+            "stage": "planning",
+            "window_id": "offensive-planning-r3-83"
+          },
+          "pending_input_id": "input-offensive-planning-r3-83-seat-b-87",
+          "reroll_indices": [
+            0,
+            2,
+            4
+          ]
+        },
+        "type": "planning_reroll"
+      }
+    },
+    {
+      "action_index": 39,
+      "actor_id": "seat-b",
+      "command": {
+        "actor_id": "seat-b",
+        "battle_id": "eval-0-90210011032",
+        "payload": {
+          "ability_id": "venom_strike",
+          "checkpoint": {
+            "iteration": 1,
+            "planning_cycle": 3,
+            "segment": "offensive",
+            "stage": "planning",
+            "window_id": "offensive-planning-r3-83"
+          },
+          "pending_input_id": "input-offensive-planning-r3-83-seat-b-88",
+          "target_ids": [
+            "seat-a"
+          ]
+        },
+        "type": "planning_select_ability"
+      }
+    },
+    {
+      "action_index": 0,
+      "actor_id": "seat-a",
+      "command": {
+        "actor_id": "seat-a",
+        "battle_id": "eval-0-90210011032",
+        "payload": {
+          "card_ids": [
+            "seat-a-card-016"
+          ],
+          "checkpoint": {
+            "iteration": 1,
+            "planning_cycle": 3,
+            "segment": "offensive",
+            "stage": "planning",
+            "window_id": "offensive-planning-r3-83"
+          },
+          "pending_input_id": "input-offensive-planning-r3-83-seat-a-84",
+          "target_ids": [
+            "seat-a"
+          ]
+        },
+        "type": "planning_commit_cards"
+      }
+    },
+    {
+      "action_index": 1,
+      "actor_id": "seat-a",
+      "command": {
+        "actor_id": "seat-a",
+        "battle_id": "eval-0-90210011032",
+        "payload": {
+          "checkpoint": {
+            "iteration": 1,
+            "planning_cycle": 3,
+            "segment": "offensive",
+            "stage": "planning",
+            "window_id": "offensive-planning-r3-83"
+          },
+          "pending_input_id": "input-offensive-planning-r3-83-seat-a-89"
+        },
+        "type": "planning_roll"
+      }
+    },
+    {
+      "action_index": 55,
+      "actor_id": "seat-a",
+      "command": {
+        "actor_id": "seat-a",
+        "battle_id": "eval-0-90210011032",
+        "payload": {
+          "checkpoint": {
+            "iteration": 1,
+            "planning_cycle": 3,
+            "segment": "offensive",
+            "stage": "planning",
+            "window_id": "offensive-planning-r3-83"
+          },
+          "pending_input_id": "input-offensive-planning-r3-83-seat-a-90",
+          "reroll_indices": [
+            0,
+            3,
+            4
+          ]
+        },
+        "type": "planning_reroll"
+      }
+    },
+    {
+      "action_index": 58,
+      "actor_id": "seat-a",
+      "command": {
+        "actor_id": "seat-a",
+        "battle_id": "eval-0-90210011032",
+        "payload": {
+          "checkpoint": {
+            "iteration": 1,
+            "planning_cycle": 3,
+            "segment": "offensive",
+            "stage": "planning",
+            "window_id": "offensive-planning-r3-83"
+          },
+          "pending_input_id": "input-offensive-planning-r3-83-seat-a-91",
+          "reroll_indices": [
+            0
+          ]
+        },
+        "type": "planning_reroll"
+      }
+    },
+    {
+      "action_index": 43,
+      "actor_id": "seat-a",
+      "command": {
+        "actor_id": "seat-a",
+        "battle_id": "eval-0-90210011032",
+        "payload": {
+          "ability_id": "sword_cut",
+          "checkpoint": {
+            "iteration": 1,
+            "planning_cycle": 3,
+            "segment": "offensive",
+            "stage": "planning",
+            "window_id": "offensive-planning-r3-83"
+          },
+          "pending_input_id": "input-offensive-planning-r3-83-seat-a-92",
+          "target_ids": [
+            "seat-b"
+          ]
+        },
+        "type": "planning_select_ability"
+      }
+    },
+    {
+      "action_index": 4,
+      "actor_id": "seat-a",
+      "command": {
+        "actor_id": "seat-a",
+        "battle_id": "eval-0-90210011032",
+        "payload": {
+          "checkpoint": {
+            "iteration": 3,
+            "planning_cycle": 3,
+            "reaction_round": 1,
+            "stage": "offensive_reaction",
+            "window_id": "offensive-reaction-r3-93"
+          },
+          "pending_input_id": "input-offensive-reaction-r3-93-seat-a-94"
+        },
+        "type": "pass"
+      }
+    },
+    {
+      "action_index": 0,
+      "actor_id": "seat-b",
+      "command": {
+        "actor_id": "seat-b",
+        "battle_id": "eval-0-90210011032",
+        "payload": {
+          "checkpoint": {
+            "iteration": 4,
+            "planning_cycle": 3,
+            "reaction_round": 1,
+            "stage": "offensive_reaction",
+            "window_id": "offensive-reaction-r3-93"
+          },
+          "pending_input_id": "input-offensive-reaction-r3-93-seat-b-95"
+        },
+        "type": "pass"
+      }
+    },
+    {
+      "action_index": 1,
+      "actor_id": "seat-a",
+      "command": {
+        "actor_id": "seat-a",
+        "battle_id": "eval-0-90210011032",
+        "payload": {
+          "ability_id": "basic_defense",
+          "checkpoint": {
+            "iteration": 2,
+            "planning_cycle": 3,
+            "segment": "defensive",
+            "stage": "defense_selection",
+            "window_id": "defense-select-r3-98"
+          },
+          "pending_input_id": "input-defense-select-r3-98-seat-a-99",
+          "target_ids": [
+            "source-r3-venom_strike-97"
+          ]
+        },
+        "type": "planning_select_ability"
+      }
+    },
+    {
+      "action_index": 1,
+      "actor_id": "seat-b",
+      "command": {
+        "actor_id": "seat-b",
+        "battle_id": "eval-0-90210011032",
+        "payload": {
+          "ability_id": "basic_defense",
+          "checkpoint": {
+            "iteration": 3,
+            "planning_cycle": 3,
+            "segment": "defensive",
+            "stage": "defense_selection",
+            "window_id": "defense-select-r3-98"
+          },
+          "pending_input_id": "input-defense-select-r3-98-seat-b-100",
+          "target_ids": [
+            "source-r3-sword_cut-96"
+          ]
+        },
+        "type": "planning_select_ability"
+      }
+    },
+    {
+      "action_index": 0,
+      "actor_id": "seat-a",
+      "command": {
+        "actor_id": "seat-a",
+        "battle_id": "eval-0-90210011032",
+        "payload": {
+          "pending_input_id": "input-defense-roll-r3-101-seat-a-102"
+        },
+        "type": "roll_dice"
+      }
+    },
+    {
+      "action_index": 0,
+      "actor_id": "seat-b",
+      "command": {
+        "actor_id": "seat-b",
+        "battle_id": "eval-0-90210011032",
+        "payload": {
+          "pending_input_id": "input-defense-roll-r3-101-seat-b-103"
+        },
+        "type": "roll_dice"
+      }
+    },
+    {
+      "action_index": 0,
+      "actor_id": "seat-a",
+      "command": {
+        "actor_id": "seat-a",
+        "battle_id": "eval-0-90210011032",
+        "payload": {
+          "checkpoint": {
+            "iteration": 8,
+            "planning_cycle": 3,
+            "reaction_round": 1,
+            "stage": "defense_reaction",
+            "window_id": "defense-react-r3-104"
+          },
+          "pending_input_id": "input-defense-react-r3-104-seat-a-105"
+        },
+        "type": "pass"
+      }
+    },
+    {
+      "action_index": 0,
+      "actor_id": "seat-b",
+      "command": {
+        "actor_id": "seat-b",
+        "battle_id": "eval-0-90210011032",
+        "payload": {
+          "checkpoint": {
+            "iteration": 9,
+            "planning_cycle": 3,
+            "reaction_round": 1,
+            "stage": "defense_reaction",
+            "window_id": "defense-react-r3-104"
+          },
+          "pending_input_id": "input-defense-react-r3-104-seat-b-106"
+        },
+        "type": "pass"
+      }
+    },
+    {
+      "action_index": 0,
+      "actor_id": "seat-a",
+      "command": {
+        "actor_id": "seat-a",
+        "battle_id": "eval-0-90210011032",
+        "payload": {
+          "checkpoint": {
+            "iteration": 2,
+            "planning_cycle": 3,
+            "reaction_round": 1,
+            "stage": "damage_reaction",
+            "window_id": "damage-r3-108"
+          },
+          "pending_input_id": "input-damage-r3-108-seat-a-109"
+        },
+        "type": "pass"
+      }
+    },
+    {
+      "action_index": 0,
+      "actor_id": "seat-b",
+      "command": {
+        "actor_id": "seat-b",
+        "battle_id": "eval-0-90210011032",
+        "payload": {
+          "checkpoint": {
+            "iteration": 3,
+            "planning_cycle": 3,
+            "reaction_round": 1,
+            "stage": "damage_reaction",
+            "window_id": "damage-r3-108"
+          },
+          "commitment": {
+            "card_ids": [
+              "seat-b-card-013"
+            ],
+            "proposal_ids": [
+              "source-r3-sword_cut-96"
+            ]
+          },
+          "pending_input_id": "input-damage-r3-108-seat-b-110"
+        },
+        "type": "commit_interaction"
+      }
+    },
+    {
+      "action_index": 0,
+      "actor_id": "seat-a",
+      "command": {
+        "actor_id": "seat-a",
+        "battle_id": "eval-0-90210011032",
+        "payload": {
+          "checkpoint": {
+            "iteration": 4,
+            "planning_cycle": 3,
+            "reaction_round": 2,
+            "stage": "damage_reaction",
+            "window_id": "damage-r3-108"
+          },
+          "pending_input_id": "input-damage-r3-108-seat-a-111"
+        },
+        "type": "pass"
+      }
+    },
+    {
+      "action_index": 0,
+      "actor_id": "seat-b",
+      "command": {
+        "actor_id": "seat-b",
+        "battle_id": "eval-0-90210011032",
+        "payload": {
+          "checkpoint": {
+            "iteration": 5,
+            "planning_cycle": 3,
+            "reaction_round": 2,
+            "stage": "damage_reaction",
+            "window_id": "damage-r3-108"
+          },
+          "pending_input_id": "input-damage-r3-108-seat-b-112"
+        },
+        "type": "pass"
+      }
+    },
+    {
+      "action_index": 0,
+      "actor_id": "seat-a",
+      "command": {
+        "actor_id": "seat-a",
+        "battle_id": "eval-0-90210011032",
+        "payload": {
+          "pending_input_id": "input-status-roll-r4-119-seat-a-120",
+          "reroll_indices": [
+            0,
+            1
+          ]
+        },
+        "type": "roll_dice"
+      }
+    },
+    {
+      "action_index": 0,
+      "actor_id": "seat-b",
+      "command": {
+        "actor_id": "seat-b",
+        "battle_id": "eval-0-90210011032",
+        "payload": {
+          "checkpoint": {
+            "iteration": 3,
+            "planning_cycle": 4,
+            "reaction_round": 1,
+            "stage": "status_roll_reaction",
+            "window_id": "status-roll-r4-121"
+          },
+          "pending_input_id": "input-status-roll-r4-121-seat-b-122"
+        },
+        "type": "pass"
+      }
+    },
+    {
+      "action_index": 0,
+      "actor_id": "seat-a",
+      "command": {
+        "actor_id": "seat-a",
+        "battle_id": "eval-0-90210011032",
+        "payload": {
+          "checkpoint": {
+            "iteration": 4,
+            "planning_cycle": 4,
+            "reaction_round": 1,
+            "stage": "status_roll_reaction",
+            "window_id": "status-roll-r4-121"
+          },
+          "pending_input_id": "input-status-roll-r4-121-seat-a-123"
+        },
+        "type": "pass"
+      }
+    },
+    {
+      "action_index": 0,
+      "actor_id": "seat-b",
+      "command": {
+        "actor_id": "seat-b",
+        "battle_id": "eval-0-90210011032",
+        "payload": {
+          "checkpoint": {
+            "iteration": 6,
+            "planning_cycle": 4,
+            "reaction_round": 1,
+            "stage": "status_damage_reaction",
+            "window_id": "status-damage-r4-127"
+          },
+          "pending_input_id": "input-status-damage-r4-127-seat-b-128"
+        },
+        "type": "pass"
+      }
+    },
+    {
+      "action_index": 0,
+      "actor_id": "seat-a",
+      "command": {
+        "actor_id": "seat-a",
+        "battle_id": "eval-0-90210011032",
+        "payload": {
+          "checkpoint": {
+            "iteration": 7,
+            "planning_cycle": 4,
+            "reaction_round": 1,
+            "stage": "status_damage_reaction",
+            "window_id": "status-damage-r4-127"
+          },
+          "pending_input_id": "input-status-damage-r4-127-seat-a-129"
+        },
+        "type": "pass"
+      }
+    },
+    {
+      "action_index": 2,
+      "actor_id": "seat-a",
+      "command": {
+        "actor_id": "seat-a",
+        "battle_id": "eval-0-90210011032",
+        "payload": {
+          "checkpoint": {
+            "iteration": 1,
+            "planning_cycle": 4,
+            "segment": "offensive",
+            "stage": "planning",
+            "window_id": "offensive-planning-r4-130"
+          },
+          "pending_input_id": "input-offensive-planning-r4-130-seat-a-131"
+        },
+        "type": "planning_roll"
+      }
+    },
+    {
+      "action_index": 59,
+      "actor_id": "seat-a",
+      "command": {
+        "actor_id": "seat-a",
+        "battle_id": "eval-0-90210011032",
+        "payload": {
+          "checkpoint": {
+            "iteration": 1,
+            "planning_cycle": 4,
+            "segment": "offensive",
+            "stage": "planning",
+            "window_id": "offensive-planning-r4-130"
+          },
+          "pending_input_id": "input-offensive-planning-r4-130-seat-a-133",
+          "reroll_indices": [
+            0
+          ]
+        },
+        "type": "planning_reroll"
+      }
+    },
+    {
+      "action_index": 75,
+      "actor_id": "seat-a",
+      "command": {
+        "actor_id": "seat-a",
+        "battle_id": "eval-0-90210011032",
+        "payload": {
+          "ability_id": "sword_cut",
+          "checkpoint": {
+            "iteration": 1,
+            "planning_cycle": 4,
+            "segment": "offensive",
+            "stage": "planning",
+            "window_id": "offensive-planning-r4-130"
+          },
+          "pending_input_id": "input-offensive-planning-r4-130-seat-a-134",
+          "target_ids": [
+            "seat-b"
+          ]
+        },
+        "type": "planning_select_ability"
+      }
+    },
+    {
+      "action_index": 1,
+      "actor_id": "seat-b",
+      "command": {
+        "actor_id": "seat-b",
+        "battle_id": "eval-0-90210011032",
+        "payload": {
+          "checkpoint": {
+            "iteration": 1,
+            "planning_cycle": 4,
+            "segment": "offensive",
+            "stage": "planning",
+            "window_id": "offensive-planning-r4-130"
+          },
+          "pending_input_id": "input-offensive-planning-r4-130-seat-b-132"
+        },
+        "type": "planning_roll"
+      }
+    },
+    {
+      "action_index": 48,
+      "actor_id": "seat-b",
+      "command": {
+        "actor_id": "seat-b",
+        "battle_id": "eval-0-90210011032",
+        "payload": {
+          "checkpoint": {
+            "iteration": 1,
+            "planning_cycle": 4,
+            "segment": "offensive",
+            "stage": "planning",
+            "window_id": "offensive-planning-r4-130"
+          },
+          "pending_input_id": "input-offensive-planning-r4-130-seat-b-135",
+          "reroll_indices": [
+            0,
+            2,
+            4
+          ]
+        },
+        "type": "planning_reroll"
+      }
+    },
+    {
+      "action_index": 69,
+      "actor_id": "seat-b",
+      "command": {
+        "actor_id": "seat-b",
+        "battle_id": "eval-0-90210011032",
+        "payload": {
+          "ability_id": "sword_cut",
+          "checkpoint": {
+            "iteration": 1,
+            "planning_cycle": 4,
+            "segment": "offensive",
+            "stage": "planning",
+            "window_id": "offensive-planning-r4-130"
+          },
+          "pending_input_id": "input-offensive-planning-r4-130-seat-b-136",
+          "target_ids": [
+            "seat-a"
+          ]
+        },
+        "type": "planning_select_ability"
+      }
+    },
+    {
+      "action_index": 0,
+      "actor_id": "seat-b",
+      "command": {
+        "actor_id": "seat-b",
+        "battle_id": "eval-0-90210011032",
+        "payload": {
+          "checkpoint": {
+            "iteration": 3,
+            "planning_cycle": 4,
+            "reaction_round": 1,
+            "stage": "offensive_reaction",
+            "window_id": "offensive-reaction-r4-137"
+          },
+          "pending_input_id": "input-offensive-reaction-r4-137-seat-b-138"
+        },
+        "type": "pass"
+      }
+    },
+    {
+      "action_index": 0,
+      "actor_id": "seat-a",
+      "command": {
+        "actor_id": "seat-a",
+        "battle_id": "eval-0-90210011032",
+        "payload": {
+          "checkpoint": {
+            "iteration": 4,
+            "planning_cycle": 4,
+            "reaction_round": 1,
+            "stage": "offensive_reaction",
+            "window_id": "offensive-reaction-r4-137"
+          },
+          "pending_input_id": "input-offensive-reaction-r4-137-seat-a-139"
+        },
+        "type": "pass"
+      }
+    },
+    {
+      "action_index": 1,
+      "actor_id": "seat-b",
+      "command": {
+        "actor_id": "seat-b",
+        "battle_id": "eval-0-90210011032",
+        "payload": {
+          "ability_id": "basic_defense",
+          "checkpoint": {
+            "iteration": 2,
+            "planning_cycle": 4,
+            "segment": "defensive",
+            "stage": "defense_selection",
+            "window_id": "defense-select-r4-142"
+          },
+          "pending_input_id": "input-defense-select-r4-142-seat-b-143",
+          "target_ids": [
+            "source-r4-sword_cut-140"
+          ]
+        },
+        "type": "planning_select_ability"
+      }
+    },
+    {
+      "action_index": 1,
+      "actor_id": "seat-a",
+      "command": {
+        "actor_id": "seat-a",
+        "battle_id": "eval-0-90210011032",
+        "payload": {
+          "ability_id": "basic_defense",
+          "checkpoint": {
+            "iteration": 3,
+            "planning_cycle": 4,
+            "segment": "defensive",
+            "stage": "defense_selection",
+            "window_id": "defense-select-r4-142"
+          },
+          "pending_input_id": "input-defense-select-r4-142-seat-a-144",
+          "target_ids": [
+            "source-r4-sword_cut-141"
+          ]
+        },
+        "type": "planning_select_ability"
+      }
+    },
+    {
+      "action_index": 0,
+      "actor_id": "seat-b",
+      "command": {
+        "actor_id": "seat-b",
+        "battle_id": "eval-0-90210011032",
+        "payload": {
+          "pending_input_id": "input-defense-roll-r4-145-seat-b-146"
+        },
+        "type": "roll_dice"
+      }
+    },
+    {
+      "action_index": 0,
+      "actor_id": "seat-a",
+      "command": {
+        "actor_id": "seat-a",
+        "battle_id": "eval-0-90210011032",
+        "payload": {
+          "pending_input_id": "input-defense-roll-r4-145-seat-a-147"
+        },
+        "type": "roll_dice"
+      }
+    },
+    {
+      "action_index": 0,
+      "actor_id": "seat-b",
+      "command": {
+        "actor_id": "seat-b",
+        "battle_id": "eval-0-90210011032",
+        "payload": {
+          "checkpoint": {
+            "iteration": 8,
+            "planning_cycle": 4,
+            "reaction_round": 1,
+            "stage": "defense_reaction",
+            "window_id": "defense-react-r4-148"
+          },
+          "pending_input_id": "input-defense-react-r4-148-seat-b-149"
+        },
+        "type": "pass"
+      }
+    },
+    {
+      "action_index": 0,
+      "actor_id": "seat-a",
+      "command": {
+        "actor_id": "seat-a",
+        "battle_id": "eval-0-90210011032",
+        "payload": {
+          "checkpoint": {
+            "iteration": 9,
+            "planning_cycle": 4,
+            "reaction_round": 1,
+            "stage": "defense_reaction",
+            "window_id": "defense-react-r4-148"
+          },
+          "pending_input_id": "input-defense-react-r4-148-seat-a-150"
+        },
+        "type": "pass"
+      }
+    },
+    {
+      "action_index": 0,
+      "actor_id": "seat-b",
+      "command": {
+        "actor_id": "seat-b",
+        "battle_id": "eval-0-90210011032",
+        "payload": {
+          "checkpoint": {
+            "iteration": 2,
+            "planning_cycle": 4,
+            "reaction_round": 1,
+            "stage": "damage_reaction",
+            "window_id": "damage-r4-152"
+          },
+          "pending_input_id": "input-damage-r4-152-seat-b-153"
+        },
+        "type": "pass"
+      }
+    },
+    {
+      "action_index": 0,
+      "actor_id": "seat-a",
+      "command": {
+        "actor_id": "seat-a",
+        "battle_id": "eval-0-90210011032",
+        "payload": {
+          "checkpoint": {
+            "iteration": 3,
+            "planning_cycle": 4,
+            "reaction_round": 1,
+            "stage": "damage_reaction",
+            "window_id": "damage-r4-152"
+          },
+          "pending_input_id": "input-damage-r4-152-seat-a-154"
+        },
+        "type": "pass"
+      }
+    },
+    {
+      "action_index": 0,
+      "actor_id": "seat-a",
+      "command": {
+        "actor_id": "seat-a",
+        "battle_id": "eval-0-90210011032",
+        "payload": {
+          "pending_input_id": "input-status-roll-r5-161-seat-a-162",
+          "reroll_indices": [
+            0,
+            1
+          ]
+        },
+        "type": "roll_dice"
+      }
+    },
+    {
+      "action_index": 0,
+      "actor_id": "seat-a",
+      "command": {
+        "actor_id": "seat-a",
+        "battle_id": "eval-0-90210011032",
+        "payload": {
+          "checkpoint": {
+            "iteration": 3,
+            "planning_cycle": 5,
+            "reaction_round": 1,
+            "stage": "status_roll_reaction",
+            "window_id": "status-roll-r5-163"
+          },
+          "pending_input_id": "input-status-roll-r5-163-seat-a-164"
+        },
+        "type": "pass"
+      }
+    },
+    {
+      "action_index": 0,
+      "actor_id": "seat-b",
+      "command": {
+        "actor_id": "seat-b",
+        "battle_id": "eval-0-90210011032",
+        "payload": {
+          "checkpoint": {
+            "iteration": 4,
+            "planning_cycle": 5,
+            "reaction_round": 1,
+            "stage": "status_roll_reaction",
+            "window_id": "status-roll-r5-163"
+          },
+          "pending_input_id": "input-status-roll-r5-163-seat-b-165"
+        },
+        "type": "pass"
+      }
+    },
+    {
+      "action_index": 0,
+      "actor_id": "seat-a",
+      "command": {
+        "actor_id": "seat-a",
+        "battle_id": "eval-0-90210011032",
+        "payload": {
+          "checkpoint": {
+            "iteration": 6,
+            "planning_cycle": 5,
+            "reaction_round": 1,
+            "stage": "status_damage_reaction",
+            "window_id": "status-damage-r5-168"
+          },
+          "pending_input_id": "input-status-damage-r5-168-seat-a-169"
+        },
+        "type": "pass"
+      }
+    },
+    {
+      "action_index": 0,
+      "actor_id": "seat-b",
+      "command": {
+        "actor_id": "seat-b",
+        "battle_id": "eval-0-90210011032",
+        "payload": {
+          "checkpoint": {
+            "iteration": 7,
+            "planning_cycle": 5,
+            "reaction_round": 1,
+            "stage": "status_damage_reaction",
+            "window_id": "status-damage-r5-168"
+          },
+          "pending_input_id": "input-status-damage-r5-168-seat-b-170"
+        },
+        "type": "pass"
+      }
+    },
+    {
+      "action_index": 1,
+      "actor_id": "seat-b",
+      "command": {
+        "actor_id": "seat-b",
+        "battle_id": "eval-0-90210011032",
+        "payload": {
+          "checkpoint": {
+            "iteration": 1,
+            "planning_cycle": 5,
+            "segment": "offensive",
+            "stage": "planning",
+            "window_id": "offensive-planning-r5-171"
+          },
+          "pending_input_id": "input-offensive-planning-r5-171-seat-b-173"
+        },
+        "type": "planning_roll"
+      }
+    },
+    {
+      "action_index": 58,
+      "actor_id": "seat-b",
+      "command": {
+        "actor_id": "seat-b",
+        "battle_id": "eval-0-90210011032",
+        "payload": {
+          "checkpoint": {
+            "iteration": 1,
+            "planning_cycle": 5,
+            "segment": "offensive",
+            "stage": "planning",
+            "window_id": "offensive-planning-r5-171"
+          },
+          "pending_input_id": "input-offensive-planning-r5-171-seat-b-174",
+          "reroll_indices": [
+            1,
+            3,
+            4
+          ]
+        },
+        "type": "planning_reroll"
+      }
+    },
+    {
+      "action_index": 58,
+      "actor_id": "seat-b",
+      "command": {
+        "actor_id": "seat-b",
+        "battle_id": "eval-0-90210011032",
+        "payload": {
+          "checkpoint": {
+            "iteration": 1,
+            "planning_cycle": 5,
+            "segment": "offensive",
+            "stage": "planning",
+            "window_id": "offensive-planning-r5-171"
+          },
+          "pending_input_id": "input-offensive-planning-r5-171-seat-b-175",
+          "reroll_indices": [
+            1,
+            3,
+            4
+          ]
+        },
+        "type": "planning_reroll"
+      }
+    },
+    {
+      "action_index": 39,
+      "actor_id": "seat-b",
+      "command": {
+        "actor_id": "seat-b",
+        "battle_id": "eval-0-90210011032",
+        "payload": {
+          "ability_id": "sword_cut",
+          "checkpoint": {
+            "iteration": 1,
+            "planning_cycle": 5,
+            "segment": "offensive",
+            "stage": "planning",
+            "window_id": "offensive-planning-r5-171"
+          },
+          "pending_input_id": "input-offensive-planning-r5-171-seat-b-176",
+          "target_ids": [
+            "seat-a"
+          ]
+        },
+        "type": "planning_select_ability"
+      }
+    },
+    {
+      "action_index": 3,
+      "actor_id": "seat-a",
+      "command": {
+        "actor_id": "seat-a",
+        "battle_id": "eval-0-90210011032",
+        "payload": {
+          "checkpoint": {
+            "iteration": 1,
+            "planning_cycle": 5,
+            "segment": "offensive",
+            "stage": "planning",
+            "window_id": "offensive-planning-r5-171"
+          },
+          "pending_input_id": "input-offensive-planning-r5-171-seat-a-172"
+        },
+        "type": "planning_roll"
+      }
+    },
+    {
+      "action_index": 76,
+      "actor_id": "seat-a",
+      "command": {
+        "actor_id": "seat-a",
+        "battle_id": "eval-0-90210011032",
+        "payload": {
+          "ability_id": "sword_cut",
+          "checkpoint": {
+            "iteration": 1,
+            "planning_cycle": 5,
+            "segment": "offensive",
+            "stage": "planning",
+            "window_id": "offensive-planning-r5-171"
+          },
+          "pending_input_id": "input-offensive-planning-r5-171-seat-a-177",
+          "target_ids": [
+            "seat-b"
+          ]
+        },
+        "type": "planning_select_ability"
+      }
+    },
+    {
+      "action_index": 0,
+      "actor_id": "seat-a",
+      "command": {
+        "actor_id": "seat-a",
+        "battle_id": "eval-0-90210011032",
+        "payload": {
+          "checkpoint": {
+            "iteration": 3,
+            "planning_cycle": 5,
+            "reaction_round": 1,
+            "stage": "offensive_reaction",
+            "window_id": "offensive-reaction-r5-178"
+          },
+          "pending_input_id": "input-offensive-reaction-r5-178-seat-a-179"
+        },
+        "type": "pass"
+      }
+    },
+    {
+      "action_index": 0,
+      "actor_id": "seat-b",
+      "command": {
+        "actor_id": "seat-b",
+        "battle_id": "eval-0-90210011032",
+        "payload": {
+          "checkpoint": {
+            "iteration": 4,
+            "planning_cycle": 5,
+            "reaction_round": 1,
+            "stage": "offensive_reaction",
+            "window_id": "offensive-reaction-r5-178"
+          },
+          "pending_input_id": "input-offensive-reaction-r5-178-seat-b-180"
+        },
+        "type": "pass"
+      }
+    },
+    {
+      "action_index": 1,
+      "actor_id": "seat-a",
+      "command": {
+        "actor_id": "seat-a",
+        "battle_id": "eval-0-90210011032",
+        "payload": {
+          "ability_id": "basic_defense",
+          "checkpoint": {
+            "iteration": 2,
+            "planning_cycle": 5,
+            "segment": "defensive",
+            "stage": "defense_selection",
+            "window_id": "defense-select-r5-183"
+          },
+          "pending_input_id": "input-defense-select-r5-183-seat-a-184",
+          "target_ids": [
+            "source-r5-sword_cut-182"
+          ]
+        },
+        "type": "planning_select_ability"
+      }
+    },
+    {
+      "action_index": 1,
+      "actor_id": "seat-b",
+      "command": {
+        "actor_id": "seat-b",
+        "battle_id": "eval-0-90210011032",
+        "payload": {
+          "ability_id": "basic_defense",
+          "checkpoint": {
+            "iteration": 3,
+            "planning_cycle": 5,
+            "segment": "defensive",
+            "stage": "defense_selection",
+            "window_id": "defense-select-r5-183"
+          },
+          "pending_input_id": "input-defense-select-r5-183-seat-b-185",
+          "target_ids": [
+            "source-r5-sword_cut-181"
+          ]
+        },
+        "type": "planning_select_ability"
+      }
+    },
+    {
+      "action_index": 0,
+      "actor_id": "seat-a",
+      "command": {
+        "actor_id": "seat-a",
+        "battle_id": "eval-0-90210011032",
+        "payload": {
+          "pending_input_id": "input-defense-roll-r5-186-seat-a-187"
+        },
+        "type": "roll_dice"
+      }
+    },
+    {
+      "action_index": 0,
+      "actor_id": "seat-b",
+      "command": {
+        "actor_id": "seat-b",
+        "battle_id": "eval-0-90210011032",
+        "payload": {
+          "pending_input_id": "input-defense-roll-r5-186-seat-b-188"
+        },
+        "type": "roll_dice"
+      }
+    },
+    {
+      "action_index": 0,
+      "actor_id": "seat-a",
+      "command": {
+        "actor_id": "seat-a",
+        "battle_id": "eval-0-90210011032",
+        "payload": {
+          "checkpoint": {
+            "iteration": 8,
+            "planning_cycle": 5,
+            "reaction_round": 1,
+            "stage": "defense_reaction",
+            "window_id": "defense-react-r5-189"
+          },
+          "pending_input_id": "input-defense-react-r5-189-seat-a-190"
+        },
+        "type": "pass"
+      }
+    },
+    {
+      "action_index": 0,
+      "actor_id": "seat-b",
+      "command": {
+        "actor_id": "seat-b",
+        "battle_id": "eval-0-90210011032",
+        "payload": {
+          "checkpoint": {
+            "iteration": 9,
+            "planning_cycle": 5,
+            "reaction_round": 1,
+            "stage": "defense_reaction",
+            "window_id": "defense-react-r5-189"
+          },
+          "pending_input_id": "input-defense-react-r5-189-seat-b-191"
+        },
+        "type": "pass"
+      }
+    },
+    {
+      "action_index": 0,
+      "actor_id": "seat-a",
+      "command": {
+        "actor_id": "seat-a",
+        "battle_id": "eval-0-90210011032",
+        "payload": {
+          "checkpoint": {
+            "iteration": 2,
+            "planning_cycle": 5,
+            "reaction_round": 1,
+            "stage": "damage_reaction",
+            "window_id": "damage-r5-193"
+          },
+          "pending_input_id": "input-damage-r5-193-seat-a-194"
+        },
+        "type": "pass"
+      }
+    },
+    {
+      "action_index": 0,
+      "actor_id": "seat-b",
+      "command": {
+        "actor_id": "seat-b",
+        "battle_id": "eval-0-90210011032",
+        "payload": {
+          "checkpoint": {
+            "iteration": 3,
+            "planning_cycle": 5,
+            "reaction_round": 1,
+            "stage": "damage_reaction",
+            "window_id": "damage-r5-193"
+          },
+          "commitment": {
+            "card_ids": [
+              "seat-b-card-013"
+            ],
+            "proposal_ids": [
+              "source-r5-sword_cut-181"
+            ]
+          },
+          "pending_input_id": "input-damage-r5-193-seat-b-195"
+        },
+        "type": "commit_interaction"
+      }
+    },
+    {
+      "action_index": 0,
+      "actor_id": "seat-a",
+      "command": {
+        "actor_id": "seat-a",
+        "battle_id": "eval-0-90210011032",
+        "payload": {
+          "checkpoint": {
+            "iteration": 4,
+            "planning_cycle": 5,
+            "reaction_round": 2,
+            "stage": "damage_reaction",
+            "window_id": "damage-r5-193"
+          },
+          "pending_input_id": "input-damage-r5-193-seat-a-196"
+        },
+        "type": "pass"
+      }
+    },
+    {
+      "action_index": 0,
+      "actor_id": "seat-b",
+      "command": {
+        "actor_id": "seat-b",
+        "battle_id": "eval-0-90210011032",
+        "payload": {
+          "checkpoint": {
+            "iteration": 5,
+            "planning_cycle": 5,
+            "reaction_round": 2,
+            "stage": "damage_reaction",
+            "window_id": "damage-r5-193"
+          },
+          "pending_input_id": "input-damage-r5-193-seat-b-197"
+        },
+        "type": "pass"
+      }
+    },
+    {
+      "action_index": 0,
+      "actor_id": "seat-a",
+      "command": {
+        "actor_id": "seat-a",
+        "battle_id": "eval-0-90210011032",
+        "payload": {
+          "pending_input_id": "input-status-roll-r6-204-seat-a-205",
+          "reroll_indices": [
+            0
+          ]
+        },
+        "type": "roll_dice"
+      }
+    },
+    {
+      "action_index": 0,
+      "actor_id": "seat-b",
+      "command": {
+        "actor_id": "seat-b",
+        "battle_id": "eval-0-90210011032",
+        "payload": {
+          "checkpoint": {
+            "iteration": 3,
+            "planning_cycle": 6,
+            "reaction_round": 1,
+            "stage": "status_roll_reaction",
+            "window_id": "status-roll-r6-206"
+          },
+          "pending_input_id": "input-status-roll-r6-206-seat-b-207"
+        },
+        "type": "pass"
+      }
+    },
+    {
+      "action_index": 0,
+      "actor_id": "seat-a",
+      "command": {
+        "actor_id": "seat-a",
+        "battle_id": "eval-0-90210011032",
+        "payload": {
+          "checkpoint": {
+            "iteration": 4,
+            "planning_cycle": 6,
+            "reaction_round": 1,
+            "stage": "status_roll_reaction",
+            "window_id": "status-roll-r6-206"
+          },
+          "pending_input_id": "input-status-roll-r6-206-seat-a-208"
+        },
+        "type": "pass"
+      }
+    },
+    {
+      "action_index": 0,
+      "actor_id": "seat-b",
+      "command": {
+        "actor_id": "seat-b",
+        "battle_id": "eval-0-90210011032",
+        "payload": {
+          "checkpoint": {
+            "iteration": 6,
+            "planning_cycle": 6,
+            "reaction_round": 1,
+            "stage": "status_damage_reaction",
+            "window_id": "status-damage-r6-211"
+          },
+          "pending_input_id": "input-status-damage-r6-211-seat-b-212"
+        },
+        "type": "pass"
+      }
+    },
+    {
+      "action_index": 0,
+      "actor_id": "seat-a",
+      "command": {
+        "actor_id": "seat-a",
+        "battle_id": "eval-0-90210011032",
+        "payload": {
+          "checkpoint": {
+            "iteration": 7,
+            "planning_cycle": 6,
+            "reaction_round": 1,
+            "stage": "status_damage_reaction",
+            "window_id": "status-damage-r6-211"
+          },
+          "pending_input_id": "input-status-damage-r6-211-seat-a-213"
+        },
+        "type": "pass"
+      }
+    },
+    {
+      "action_index": 1,
+      "actor_id": "seat-a",
+      "command": {
+        "actor_id": "seat-a",
+        "battle_id": "eval-0-90210011032",
+        "payload": {
+          "checkpoint": {
+            "iteration": 1,
+            "planning_cycle": 6,
+            "segment": "offensive",
+            "stage": "planning",
+            "window_id": "offensive-planning-r6-214"
+          },
+          "pending_input_id": "input-offensive-planning-r6-214-seat-a-215"
+        },
+        "type": "planning_roll"
+      }
+    },
+    {
+      "action_index": 53,
+      "actor_id": "seat-a",
+      "command": {
+        "actor_id": "seat-a",
+        "battle_id": "eval-0-90210011032",
+        "payload": {
+          "checkpoint": {
+            "iteration": 1,
+            "planning_cycle": 6,
+            "segment": "offensive",
+            "stage": "planning",
+            "window_id": "offensive-planning-r6-214"
+          },
+          "pending_input_id": "input-offensive-planning-r6-214-seat-a-217",
+          "reroll_indices": [
+            0
+          ]
+        },
+        "type": "planning_reroll"
+      }
+    },
+    {
+      "action_index": 53,
+      "actor_id": "seat-a",
+      "command": {
+        "actor_id": "seat-a",
+        "battle_id": "eval-0-90210011032",
+        "payload": {
+          "checkpoint": {
+            "iteration": 1,
+            "planning_cycle": 6,
+            "segment": "offensive",
+            "stage": "planning",
+            "window_id": "offensive-planning-r6-214"
+          },
+          "pending_input_id": "input-offensive-planning-r6-214-seat-a-218",
+          "reroll_indices": [
+            0
+          ]
+        },
+        "type": "planning_reroll"
+      }
+    },
+    {
+      "action_index": 40,
+      "actor_id": "seat-a",
+      "command": {
+        "actor_id": "seat-a",
+        "battle_id": "eval-0-90210011032",
+        "payload": {
+          "ability_id": "venom_strike",
+          "checkpoint": {
+            "iteration": 1,
+            "planning_cycle": 6,
+            "segment": "offensive",
+            "stage": "planning",
+            "window_id": "offensive-planning-r6-214"
+          },
+          "pending_input_id": "input-offensive-planning-r6-214-seat-a-219",
+          "target_ids": [
+            "seat-b"
+          ]
+        },
+        "type": "planning_select_ability"
+      }
+    },
+    {
+      "action_index": 2,
+      "actor_id": "seat-b",
+      "command": {
+        "actor_id": "seat-b",
+        "battle_id": "eval-0-90210011032",
+        "payload": {
+          "checkpoint": {
+            "iteration": 1,
+            "planning_cycle": 6,
+            "segment": "offensive",
+            "stage": "planning",
+            "window_id": "offensive-planning-r6-214"
+          },
+          "pending_input_id": "input-offensive-planning-r6-214-seat-b-216"
+        },
+        "type": "planning_roll"
+      }
+    },
+    {
+      "action_index": 39,
+      "actor_id": "seat-b",
+      "command": {
+        "actor_id": "seat-b",
+        "battle_id": "eval-0-90210011032",
+        "payload": {
+          "checkpoint": {
+            "iteration": 1,
+            "planning_cycle": 6,
+            "segment": "offensive",
+            "stage": "planning",
+            "window_id": "offensive-planning-r6-214"
+          },
+          "pending_input_id": "input-offensive-planning-r6-214-seat-b-220",
+          "reroll_indices": [
+            0,
+            1,
+            2,
+            3,
+            4
+          ]
+        },
+        "type": "planning_reroll"
+      }
+    },
+    {
+      "action_index": 59,
+      "actor_id": "seat-b",
+      "command": {
+        "actor_id": "seat-b",
+        "battle_id": "eval-0-90210011032",
+        "payload": {
+          "checkpoint": {
+            "iteration": 1,
+            "planning_cycle": 6,
+            "segment": "offensive",
+            "stage": "planning",
+            "window_id": "offensive-planning-r6-214"
+          },
+          "pending_input_id": "input-offensive-planning-r6-214-seat-b-221",
+          "reroll_indices": [
+            1,
+            3,
+            4
+          ]
+        },
+        "type": "planning_reroll"
+      }
+    },
+    {
+      "action_index": 39,
+      "actor_id": "seat-b",
+      "command": {
+        "actor_id": "seat-b",
+        "battle_id": "eval-0-90210011032",
+        "payload": {
+          "ability_id": "perfect_form",
+          "checkpoint": {
+            "iteration": 1,
+            "planning_cycle": 6,
+            "segment": "offensive",
+            "stage": "planning",
+            "window_id": "offensive-planning-r6-214"
+          },
+          "pending_input_id": "input-offensive-planning-r6-214-seat-b-222",
+          "target_ids": [
+            "seat-a"
+          ]
+        },
+        "type": "planning_select_ability"
+      }
+    },
+    {
+      "action_index": 0,
+      "actor_id": "seat-b",
+      "command": {
+        "actor_id": "seat-b",
+        "battle_id": "eval-0-90210011032",
+        "payload": {
+          "checkpoint": {
+            "iteration": 3,
+            "planning_cycle": 6,
+            "reaction_round": 1,
+            "stage": "offensive_reaction",
+            "window_id": "offensive-reaction-r6-223"
+          },
+          "commitment": {
+            "card_ids": [
+              "seat-b-card-002"
+            ],
+            "planning_adjustments": [
+              {
+                "actor_id": "seat-a",
+                "face": 5,
+                "type": "set_die_face"
+              }
+            ]
+          },
+          "pending_input_id": "input-offensive-reaction-r6-223-seat-b-224"
+        },
+        "type": "commit_interaction"
+      }
+    },
+    {
+      "action_index": 0,
+      "actor_id": "seat-a",
+      "command": {
+        "actor_id": "seat-a",
+        "battle_id": "eval-0-90210011032",
+        "payload": {
+          "checkpoint": {
+            "iteration": 4,
+            "planning_cycle": 6,
+            "reaction_round": 2,
+            "stage": "offensive_reaction",
+            "window_id": "offensive-reaction-r6-223"
+          },
+          "pending_input_id": "input-offensive-reaction-r6-223-seat-a-225"
+        },
+        "type": "pass"
+      }
+    },
+    {
+      "action_index": 0,
+      "actor_id": "seat-b",
+      "command": {
+        "actor_id": "seat-b",
+        "battle_id": "eval-0-90210011032",
+        "payload": {
+          "checkpoint": {
+            "iteration": 5,
+            "planning_cycle": 6,
+            "reaction_round": 2,
+            "stage": "offensive_reaction",
+            "window_id": "offensive-reaction-r6-223"
+          },
+          "pending_input_id": "input-offensive-reaction-r6-223-seat-b-226"
+        },
+        "type": "pass"
+      }
+    },
+    {
+      "action_index": 1,
+      "actor_id": "seat-b",
+      "command": {
+        "actor_id": "seat-b",
+        "battle_id": "eval-0-90210011032",
+        "payload": {
+          "ability_id": "basic_defense",
+          "checkpoint": {
+            "iteration": 2,
+            "planning_cycle": 6,
+            "segment": "defensive",
+            "stage": "defense_selection",
+            "window_id": "defense-select-r6-229"
+          },
+          "pending_input_id": "input-defense-select-r6-229-seat-b-230",
+          "target_ids": [
+            "source-r6-sword_cut-227"
+          ]
+        },
+        "type": "planning_select_ability"
+      }
+    },
+    {
+      "action_index": 1,
+      "actor_id": "seat-a",
+      "command": {
+        "actor_id": "seat-a",
+        "battle_id": "eval-0-90210011032",
+        "payload": {
+          "ability_id": "basic_defense",
+          "checkpoint": {
+            "iteration": 3,
+            "planning_cycle": 6,
+            "segment": "defensive",
+            "stage": "defense_selection",
+            "window_id": "defense-select-r6-229"
+          },
+          "pending_input_id": "input-defense-select-r6-229-seat-a-231",
+          "target_ids": [
+            "source-r6-perfect_form-228"
+          ]
+        },
+        "type": "planning_select_ability"
+      }
+    },
+    {
+      "action_index": 0,
+      "actor_id": "seat-b",
+      "command": {
+        "actor_id": "seat-b",
+        "battle_id": "eval-0-90210011032",
+        "payload": {
+          "pending_input_id": "input-defense-roll-r6-232-seat-b-233"
+        },
+        "type": "roll_dice"
+      }
+    },
+    {
+      "action_index": 0,
+      "actor_id": "seat-a",
+      "command": {
+        "actor_id": "seat-a",
+        "battle_id": "eval-0-90210011032",
+        "payload": {
+          "pending_input_id": "input-defense-roll-r6-232-seat-a-234"
+        },
+        "type": "roll_dice"
+      }
+    },
+    {
+      "action_index": 0,
+      "actor_id": "seat-b",
+      "command": {
+        "actor_id": "seat-b",
+        "battle_id": "eval-0-90210011032",
+        "payload": {
+          "checkpoint": {
+            "iteration": 8,
+            "planning_cycle": 6,
+            "reaction_round": 1,
+            "stage": "defense_reaction",
+            "window_id": "defense-react-r6-235"
+          },
+          "pending_input_id": "input-defense-react-r6-235-seat-b-236"
+        },
+        "type": "pass"
+      }
+    },
+    {
+      "action_index": 0,
+      "actor_id": "seat-a",
+      "command": {
+        "actor_id": "seat-a",
+        "battle_id": "eval-0-90210011032",
+        "payload": {
+          "checkpoint": {
+            "iteration": 9,
+            "planning_cycle": 6,
+            "reaction_round": 1,
+            "stage": "defense_reaction",
+            "window_id": "defense-react-r6-235"
+          },
+          "pending_input_id": "input-defense-react-r6-235-seat-a-237"
+        },
+        "type": "pass"
+      }
+    },
+    {
+      "action_index": 0,
+      "actor_id": "seat-b",
+      "command": {
+        "actor_id": "seat-b",
+        "battle_id": "eval-0-90210011032",
+        "payload": {
+          "checkpoint": {
+            "iteration": 2,
+            "planning_cycle": 6,
+            "reaction_round": 1,
+            "stage": "damage_reaction",
+            "window_id": "damage-r6-239"
+          },
+          "pending_input_id": "input-damage-r6-239-seat-b-240"
+        },
+        "type": "pass"
+      }
+    },
+    {
+      "action_index": 0,
+      "actor_id": "seat-a",
+      "command": {
+        "actor_id": "seat-a",
+        "battle_id": "eval-0-90210011032",
+        "payload": {
+          "checkpoint": {
+            "iteration": 3,
+            "planning_cycle": 6,
+            "reaction_round": 1,
+            "stage": "damage_reaction",
+            "window_id": "damage-r6-239"
+          },
+          "pending_input_id": "input-damage-r6-239-seat-a-241"
+        },
+        "type": "pass"
+      }
+    }
+  ],
+  "battle_id": "eval-0-90210011032",
+  "environment_schema": "dice-and-destiny-ml-env-v2",
+  "observation_schema": "dice-and-destiny-observation-v2",
+  "seat_definitions": {
+    "seat-a": "blade_warden",
+    "seat-b": "blade_warden"
+  },
+  "seat_models": {
+    "seat-a": "model:/Users/daddymere/games/Dice-and-Destiny-v2/dice-and-destiny-server/ml/runs/v2-winner-health-v2-cp35-continuation-cp38-20260806-8h-1k-only/intervals/interval-193/raw-ppo-challenger.zip",
+    "seat-b": "model:/Users/daddymere/games/Dice-and-Destiny-v2/dice-and-destiny-server/ml/runs/v2-winner-health-fresh-20260805-1h/intervals/interval-038/raw-ppo-challenger.zip"
+  },
+  "seed": 90210011032,
+  "status": "draw"
+}

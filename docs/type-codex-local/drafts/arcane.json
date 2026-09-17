@@ -1,0 +1,274 @@
+{
+  "id": "arcane",
+  "name": "Arcane",
+  "identity": "Store a useful die number, remember damage that got through, and spend Aether to repeat that damage or help pay for a card.",
+  "symbols": [
+    "Sigil",
+    "Lens",
+    "Star"
+  ],
+  "loop": "Play cards from your hand to earn Aether → spend Aether to discount another card → store a useful number in Rune → record actual damage for a paid Echo.",
+  "statuses": [
+    [
+      "Aether",
+      "Positive · you · cap 4",
+      "After you play your second card from your hand in a round, gain 1 Aether, once per round. During Offensive, you may spend 2 Aether instead of 1 Energy when playing a card. Use this discount once per round. Aether also pays for Arcane cards and abilities. Keep unused Aether."
+    ],
+    [
+      "Echo Record",
+      "Neutral damage record · you · cap 1",
+      "After your attack or a card you play damages an enemy, you may write down the damage it dealt, up to 3. Replace your old record if you choose to record again. Arcane cards and abilities can spend this record to deal that much damage again. Echo repeats only the damage number, not the original card’s other effects. Brood, Pounce, damaging statuses and Echo itself cannot make a record. Keep the record until used or replaced."
+    ],
+    [
+      "Rune",
+      "Positive stored die result · you · cap 1",
+      "When you gain Rune, copy the number showing on one of your combat dice rolled this round onto it. During Offensive, after rolling, you may spend Rune to change one of your other combat dice to that number. You cannot change a Frostbound die. Keep Rune until spent; you cannot gain a Rune before you have a combat die result to record."
+    ],
+    [
+      "Mirror",
+      "Positive · you · cap 1",
+      "When an enemy would apply a negative status to you, you may spend Mirror to send one of those stacks back to them instead. The returned stack must be a status they can receive and must fit their stack limit. Otherwise it is simply stopped. A returned stack cannot be sent back again. Remove unused Mirror after the next Ongoing Effects."
+    ]
+  ],
+  "abilities": [
+    [
+      "Prism Bolt",
+      "Offense · 0E",
+      "3 Sigil / 4 Sigil / 5 Sigil",
+      "4 / 5 / 6 damage and gain 1 Aether."
+    ],
+    [
+      "Arcane Study",
+      "Offense · 0E",
+      "2 Lens + 1 Star",
+      "Gain 2 Aether. If you have no Rune, gain one by recording the number on one of your combat dice."
+    ],
+    [
+      "Recursive Ray",
+      "Offense · 0E",
+      "Any four-number straight",
+      "Deal 5 damage. When choosing this ability, you may spend 2 Aether and your existing Echo Record to deal its stored damage to the same enemy after the attack. You must have your once-per-round Echo available."
+    ],
+    [
+      "Astral Mirror",
+      "Offense · 0E",
+      "3 Star",
+      "Deal 6 damage and gain Mirror if absent. Optionally spend 1 Aether when choosing this ability to draw 1 afterward."
+    ],
+    [
+      "Prism Guard",
+      "Defense · 0E",
+      "Roll 2 Arcane dice",
+      "Each Sigil prevents 1; each Lens gains 1 Aether. If you roll any Star and have no Rune, gain one by recording a number from your combat dice, if you have rolled them this round."
+    ],
+    [
+      "Reflecting Wall",
+      "Defense · 1E",
+      "Roll 1 Arcane die",
+      "Sigil: prevent 2. Lens: prevent 3. Star: prevent 2 and gain Mirror if absent."
+    ]
+  ],
+  "cards": [
+    [
+      "Gather Aether",
+      "1",
+      "Action",
+      "Gain 2 Aether."
+    ],
+    [
+      "Inscribe",
+      "1",
+      "Action",
+      "After your first combat roll, gain a Rune by recording the number on one of your combat dice. Requires no existing Rune."
+    ],
+    [
+      "Silver Surface",
+      "1",
+      "Action",
+      "Gain Mirror if absent."
+    ],
+    [
+      "Working Notes",
+      "1",
+      "Action",
+      "Draw 1 and gain 1 Aether."
+    ],
+    [
+      "Minor Echo",
+      "1",
+      "Action",
+      "Spend 2 Aether and consume your Echo Record; Echo its recorded damage against one enemy."
+    ],
+    [
+      "Index the Possible",
+      "1",
+      "Action",
+      "Draw 2, then discard 1."
+    ],
+    [
+      "Focus Ray",
+      "1",
+      "Offensive reaction",
+      "Spend 1 Aether. If your attack deals damage, gain a Rune afterward by recording a number from your combat dice. If you already have a Rune, you may replace it. Also gain 1 Aether if the attack dealt at least 5 damage."
+    ],
+    [
+      "Mana Exchange",
+      "0",
+      "Action",
+      "Spend 2 Aether to gain 1 Energy and draw 1. Use once per round. You can save the Energy for a later card or paid defense."
+    ],
+    [
+      "Refract",
+      "1",
+      "Action",
+      "Choose one of your combat dice rolled this round. Replace your Rune’s stored number and recorded die with that die’s number and identity. Requires an existing Rune. Draw 1."
+    ],
+    [
+      "Pocket Formula",
+      "1",
+      "Action",
+      "Spend 1 Aether; draw 2, then discard 1."
+    ],
+    [
+      "Recorded Guard",
+      "1",
+      "Damage reaction",
+      "Spend your Echo Record to prevent damage equal to its stored number from one attack, card or status. This does not deal Echo damage."
+    ],
+    [
+      "Deferred Copy",
+      "1",
+      "Offensive reaction",
+      "Spend 2 Aether and your Echo Record. After your attack, deal Echo damage equal to the stored number to that enemy. You must have your once-per-round Echo available."
+    ],
+    [
+      "Tip the Prism",
+      "1",
+      "Offensive reaction",
+      "Shift the number on one of your combat dice that is not Frostbound by 1 without going below 1 or above 6. Your final dice must still allow the ability you choose."
+    ],
+    [
+      "Double Refraction",
+      "1",
+      "Roll reaction",
+      "Reroll one die just rolled for a status, defense or card, belonging to either player. Use its new number for that same effect. If the die has a marked face such as Curse or Boon, rolling that face can activate the mark."
+    ],
+    [
+      "Face Formula",
+      "1",
+      "Roll reaction",
+      "Spend 1 Aether; set one of your dice just rolled for a status, defense or card to face 3, with no Boon or Curse activation from changing the number."
+    ],
+    [
+      "Counterglyph",
+      "1",
+      "Application reaction",
+      "Spend 1 Aether; stop 1 negative status stack an enemy is about to apply to you."
+    ],
+    [
+      "Glass Shield",
+      "1",
+      "Damage reaction",
+      "Prevent 2 from one attack, card or status targeting you."
+    ],
+    [
+      "Mirror Buffer",
+      "0",
+      "Damage reaction",
+      "Spend Mirror to prevent 2 damage from one status. That Mirror cannot also reflect a new negative stack."
+    ],
+    [
+      "Unwrite",
+      "1",
+      "Action",
+      "Spend 1 Aether; remove one negative mark from an owned die face or revealed card you own."
+    ],
+    [
+      "Lens Shift",
+      "1",
+      "Action",
+      "After your first combat roll, set one of your combat dice that is not Frostbound to face 4."
+    ],
+    [
+      "Break the Record",
+      "0",
+      "Action",
+      "Consume Echo Record; gain 1 Aether and draw 1."
+    ],
+    [
+      "Resonance Ledger",
+      "1",
+      "Action",
+      "Upgrade once per battle: your second-card Aether reward grants 2 instead of 1."
+    ],
+    [
+      "Prismatic Shelter",
+      "2",
+      "Damage reaction",
+      "Spend 2 Aether; prevent 4 and gain Mirror if absent afterward."
+    ],
+    [
+      "Time Capsule",
+      "2",
+      "Action",
+      "Spend 3 Aether to return one of your cards previously lost to damage to your discard pile. If you have no Rune and have rolled your combat dice this round, also gain a Rune from one of those numbers."
+    ]
+  ],
+  "pairs": [
+    [
+      "swarm",
+      "Index the Possible draws two cards and discards one: the discard earns Brood once during Offensive. Playing it as the second card from your hand also earns Aether. A later Echo hit can help finish Web."
+    ],
+    [
+      "fortune",
+      "Rune can save a useful number for a later round while Insurance protects Streak during risky rerolls. Using Rune to set a Boon face helps a recipe but gives no Favor or Streak."
+    ],
+    [
+      "curse",
+      "Double Refraction can reroll a cursed enemy status die, giving its mark another chance to activate. Echo only repeats damage; it cannot reroll that die or repeat its Curse effect."
+    ],
+    [
+      "flame",
+      "Flame’s attack damage can supply an Echo Record, and Heat’s maintained attack bonus can raise that recorded damage up to the cap of three. Echo repeats the number but never reapplies Burn."
+    ]
+  ],
+  "example": "Play Working Notes, then Index the Possible from your hand: the second card earns 1 Aether. An Echo produced later does not count as another card play; it only deals the number stored in Echo Record. If your earlier attack dealt 2 damage after defense, the record is 2.",
+  "counter": "Prevent attack or card damage to keep Echo Record small. Rune can only store a rolled combat number, and cannot change the die that supplied it. Stop or tax card plays to slow Aether income.",
+  "balance": "Echo repeats up to 3 recorded damage against one enemy, with prevention but no additional Defensive ability roll. It never repeats statuses, dice, card draws or other instructions. Use Echo once per round across all Arcane effects; paying for it spends that use even if the attack is canceled. Damage from Echo, Brood, Pounce and statuses cannot create an Echo Record.",
+  "hooks": [
+    "H-24 source result records",
+    "H-12 rune qualification",
+    "H-15 revalidation",
+    "Explicit copied-event provenance"
+  ],
+  "review_status": "Reworked statuses — awaiting user review",
+  "version": 2,
+  "combos": [
+    [
+      "Working Notes → Index the Possible → Aether discount",
+      "Two cards from your hand earn one Aether total. With a second Aether saved, pay two Aether instead of one Energy on a later card. This does not waive that card’s other costs."
+    ],
+    [
+      "Inscribe → stored number → Recursive Ray",
+      "Store a useful rolled number in Rune, then use it on a different die to help form a recipe. Recursive Ray can spend an older Echo Record; it cannot borrow a record its own attack has not made yet."
+    ]
+  ],
+  "status_examples": {
+    "Aether": {
+      "job": "Reward using cards, then help pay for another.",
+      "example": "Play two cards from your hand to gain one Aether. Repeating damage with Echo does not play a card from your hand."
+    },
+    "Echo Record": {
+      "job": "Remember actual damage for a later paid repeat.",
+      "example": "Your attack deals 2 after defense, so record 2. An Echo can deal 2 later, but cannot also apply the Poison attached to that attack."
+    },
+    "Rune": {
+      "job": "Carry a useful number into a later roll or round.",
+      "example": "Store a 6 from one die. Next round, spend Rune to turn a different die’s 2 into that stored 6."
+    },
+    "Mirror": {
+      "job": "Reflect a new harmful status once.",
+      "example": "An enemy tries to apply two Poison. Mirror sends one stack back and leaves the other stack coming to you."
+    }
+  }
+}

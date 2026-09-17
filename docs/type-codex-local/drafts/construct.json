@@ -1,0 +1,274 @@
+{
+  "id": "construct",
+  "name": "Construct",
+  "identity": "Build a small set of Modules and choose which one works each round. Convert spent partner resources into Scrap, and use Corrosion to disrupt the enemy’s next status gain.",
+  "symbols": [
+    "Gear",
+    "Rivet",
+    "Core"
+  ],
+  "loop": "Gather Scrap → install distinct Modules → choose the part you need this round → use Calibration for a planned number → apply Corrosion to disrupt enemy status gains.",
+  "statuses": [
+    [
+      "Scrap",
+      "Positive · you · cap 4",
+      "The first time each round one of your Modules is dismantled or destroyed, gain 1 Scrap afterward. During Offensive, spend 2 Scrap to install a Module. You may install only one Module each round, including installs from cards and abilities. Keep unused Scrap."
+    ],
+    [
+      "Module",
+      "Positive equipment · you · max 2 different Modules",
+      "Install Ram, Recycler or Plating. At the start of Offensive, choose one installed Module to use this round. Ram adds 1 damage to your damaging Offensive ability. Recycler gives 1 Scrap the first time you spend a different positive status, such as Flow or Charge. Plating prevents 1 damage from the first attack that would damage you. Each Module works once per round. Keep installed Modules until they are dismantled or destroyed."
+    ],
+    [
+      "Corrosion",
+      "Negative · enemy · cap 2",
+      "The next time this enemy would gain a positive status, remove 1 Corrosion and reduce that gain by 1 stack. Use only one Corrosion against each card, ability or automatic status gain. Energy and card draws are unchanged. Keep unused Corrosion."
+    ],
+    [
+      "Calibration",
+      "Positive die mark · your combat die · max 1",
+      "Mark one of your combat dice and choose a number from 1 to 6. During Offensive, after rolling that die, you may remove Calibration to change it to the chosen number. You cannot change a Frostbound die. Remove unused Calibration after your next Offensive segment."
+    ]
+  ],
+  "abilities": [
+    [
+      "Rivet Driver",
+      "Offense · 0E",
+      "3 Gear / 4 Gear / 5 Gear",
+      "4 / 5 / 6 damage and gain 1 Scrap."
+    ],
+    [
+      "Assembly Shift",
+      "Offense · 0E",
+      "2 Rivet + 1 Core",
+      "Gain 2 Scrap and install one Module you do not already have if fewer than two are installed. Install at most one Module per round."
+    ],
+    [
+      "Acid Bore",
+      "Offense · 0E",
+      "2 Gear + 2 Rivet + 1 Core",
+      "Deal 4 damage and apply 2 Corrosion. Optionally spend 1 Scrap when choosing this ability for +2 damage."
+    ],
+    [
+      "Core Hammer",
+      "Offense · 0E",
+      "3 Core",
+      "Deal 6 damage. Optionally dismantle one installed Module when choosing this ability for +3 damage; you can no longer use that Module after dismantling it."
+    ],
+    [
+      "Plate Assembly",
+      "Defense · 0E",
+      "Roll 2 Construct dice",
+      "Each Gear prevents 1; each Rivet gains 1 Scrap. If you roll any Core and have no Calibration, mark one of your combat dice with Calibration and choose its stored number."
+    ],
+    [
+      "Reactive Plating",
+      "Defense · 1E",
+      "Roll 1 Construct die",
+      "Gear: prevent 2. Rivet: prevent 3. Core: prevent 2 and apply 1 Corrosion to the attacker."
+    ]
+  ],
+  "cards": [
+    [
+      "Spare Stock",
+      "1",
+      "Action",
+      "Gain 2 Scrap."
+    ],
+    [
+      "Assembly Kit",
+      "1",
+      "Action",
+      "Install a Module you do not already have. You must have fewer than two installed Modules and must not have installed one yet this round."
+    ],
+    [
+      "Acid Primer",
+      "1",
+      "Action",
+      "Apply 1 Corrosion to one enemy."
+    ],
+    [
+      "Calibrate",
+      "1",
+      "Action",
+      "Gain Calibration on one of your combat dice, choosing 1 or 4 as its stored number."
+    ],
+    [
+      "Blueprint",
+      "1",
+      "Action",
+      "Draw 1 and gain 1 Scrap."
+    ],
+    [
+      "Grease the Gears",
+      "1",
+      "Action",
+      "Spend 1 Scrap; draw 2, then discard 1."
+    ],
+    [
+      "Overclock Ram",
+      "1",
+      "Offensive reaction",
+      "Spend up to 2 Scrap; add 2 damage each to your attack."
+    ],
+    [
+      "Salvage Shift",
+      "0",
+      "Action",
+      "Dismantle one installed Module; gain 1 Energy. Its Scrap reward is limited once per round."
+    ],
+    [
+      "Rebuild",
+      "1",
+      "Action",
+      "Spend 1 Scrap to replace one installed Module with a different one you do not have. This counts as your one install this round. Replacing it does not earn the Scrap reward for dismantling."
+    ],
+    [
+      "Acid Wash",
+      "1",
+      "Action",
+      "Apply 2 Corrosion to one enemy."
+    ],
+    [
+      "Change Program",
+      "1",
+      "Action",
+      "Choose a different installed Module to use for the rest of this round. A Module that already worked this round cannot work again; changing programs does not refresh it."
+    ],
+    [
+      "Machined Memory",
+      "1",
+      "Action",
+      "Spend 2 Scrap; return one of your cards previously lost to damage to your discard pile."
+    ],
+    [
+      "Metal Skin",
+      "1",
+      "Damage reaction",
+      "Prevent 2 from one attack, card or status."
+    ],
+    [
+      "Emergency Plate",
+      "1",
+      "Damage reaction",
+      "Spend 1 Scrap; prevent 3 from one attack, card or status."
+    ],
+    [
+      "Fuse",
+      "1",
+      "Application reaction",
+      "Spend 1 Scrap; stop 1 negative status stack an enemy is about to apply to you."
+    ],
+    [
+      "Alignment Tool",
+      "1",
+      "Offensive reaction",
+      "Shift the number on one of your combat dice that is not Frostbound by 1 without going below 1 or above 6. Your final dice must still allow the ability you choose."
+    ],
+    [
+      "Test Bench",
+      "1",
+      "Roll reaction",
+      "Reroll one of your dice just rolled for a status, defense or card once; does not reset any module."
+    ],
+    [
+      "Rust Removal",
+      "0",
+      "Action",
+      "Remove 1 existing Corrosion from yourself; gain 1 Scrap. Requires Corrosion."
+    ],
+    [
+      "Strip the Plate",
+      "1",
+      "Defensive reaction",
+      "Spend 1 Scrap; reduce prevention from one enemy Defensive ability by 2, minimum zero."
+    ],
+    [
+      "Crash Barrier",
+      "1",
+      "Damage reaction",
+      "Dismantle one of your Modules to prevent 4 damage from one attack, card or status. If this is your first dismantled or destroyed Module this round, earn 1 Scrap afterward."
+    ],
+    [
+      "Rewire",
+      "1",
+      "Action",
+      "Move your Calibration to another of your combat dice. Keep the stored number and the original time when Calibration expires."
+    ],
+    [
+      "Workshop Ledger",
+      "1",
+      "Action",
+      "Upgrade once per battle: your first Module dismantled or destroyed each round gives 2 Scrap instead of 1."
+    ],
+    [
+      "Foundry Reserve",
+      "2",
+      "Action",
+      "Spend 2 Scrap; gain 1 Armor and install one missing Module if allowed. No slot means Armor only."
+    ],
+    [
+      "Core Shelter",
+      "2",
+      "Damage reaction",
+      "Spend 3 Scrap. After your Defensive ability and protective statuses, halve the damage left from one attack, rounding down. Then apply prevention from damage-reaction cards."
+    ]
+  ],
+  "pairs": [
+    [
+      "storm",
+      "Spending Charge while Recycler is active earns Scrap for later construction. Ground collects more Charge when an enemy pays for cards; each reward keeps its own once-per-round limit."
+    ],
+    [
+      "tide",
+      "Spending Flow while Recycler is active earns Scrap. On another round, Plating can prevent attack damage and earn Flow. Choosing the active Module makes this a round-to-round cycle, not an unlimited exchange."
+    ],
+    [
+      "stone",
+      "Plating and Armor can combine to stop attack damage and earn Resolve. Scrap can buy Foundry Reserve for more Armor. Spending Armor does not count as dismantling a Module and gives no salvage."
+    ],
+    [
+      "fortune",
+      "Calibration guarantees a chosen number while Favor nudges a number by one. Either can finish an ability, but neither earns Boon rewards. Real rerolls remain the way to grow Streak."
+    ]
+  ],
+  "example": "Choose Recycler at the start of Offensive. Spending Charge on a Storm card then gives 1 Scrap, once that round. On a later round, choose Plating instead to block 1 attack damage. Installing both Modules does not make both work at once.",
+  "counter": "Dismantling a Module removes a lasting benefit, even if it gives a strong immediate card effect. Cleanse Corrosion before a valuable status gain. Calibration can be disrupted before its number is used.",
+  "balance": "Install at most one Module per round and keep at most two different Modules. A newly installed Module is available to choose next Offensive; Change Program can activate it sooner. Switching does not refresh a Module that already worked. Corrosion removes only one stack from a gain, not the whole effect.",
+  "hooks": [
+    "H-02 segment entry",
+    "Resource-spend events",
+    "Persistent object identity",
+    "H-19/H-24 bounded programs"
+  ],
+  "review_status": "Reworked statuses — awaiting user review",
+  "version": 2,
+  "combos": [
+    [
+      "Assembly Kit → Recycler → partner resource spend",
+      "Install Recycler, then activate it next Offensive. Spending Flow or Charge supplies Scrap for another Module. Spending Scrap itself does not feed Recycler."
+    ],
+    [
+      "Acid Primer → enemy setup → Core Hammer",
+      "Corrosion reduces an enemy’s next positive status gain. While they rebuild, Core Hammer can dismantle one of your Modules for a stronger attack, earning limited salvage afterward."
+    ]
+  ],
+  "status_examples": {
+    "Scrap": {
+      "job": "Build and salvage persistent equipment.",
+      "example": "You dismantle Ram for Core Hammer, then gain one Scrap. The lost Ram no longer improves your attacks."
+    },
+    "Module": {
+      "job": "Choose which installed part works this round.",
+      "example": "Recycler is active. Spend Flow on a Tide card and gain one Scrap. More Flow spending this round gives no extra Scrap."
+    },
+    "Corrosion": {
+      "job": "Interfere with an enemy’s resource or protection supply.",
+      "example": "Culture Flask would give 2 Catalyst. Corrosion removes itself and lets the enemy gain only 1 Catalyst."
+    },
+    "Calibration": {
+      "job": "Set up one reliable result in advance.",
+      "example": "You calibrate a die to 6. Next Offensive it rolls 2; spend Calibration to make it a 6 without rerolling."
+    }
+  }
+}

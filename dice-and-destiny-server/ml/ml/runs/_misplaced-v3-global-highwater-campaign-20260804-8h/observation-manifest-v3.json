@@ -1,0 +1,159 @@
+{
+  "ability_vocabulary": [
+    "basic_defense",
+    "crushing_advance",
+    "fateful_strike",
+    "golden_edge",
+    "greedy_blow",
+    "jagged_slash",
+    "perfect_form",
+    "protect",
+    "shield_bash",
+    "sword_cut",
+    "venom_strike"
+  ],
+  "action_schema": "dice-and-destiny-action-candidates-v3",
+  "capacity_evidence": {
+    "derived_candidate_upper_bound": 226,
+    "exclusive_form_rule": "maximum active form board, never sum mutually exclusive boards",
+    "generated_scenarios": 0,
+    "maximum_authored_hand_limit": 6,
+    "maximum_complete_deck_cards": 20,
+    "method": "content combinatorial upper bound plus generated/adversarial observation",
+    "observed_candidate_maximum": 0,
+    "reserved_candidate_capacity": 256,
+    "runtime_ability_modifier_bonus_ids": [
+      "sharpened_pair_bleed"
+    ],
+    "visible_hand_rule": "reserve the complete eligible deck, not the pre-checkpoint hand limit"
+  },
+  "card_vocabulary": [
+    "alchemists_gamble",
+    "antidote",
+    "battle_focus",
+    "emergency_ward",
+    "loaded_die",
+    "sharpen_blade",
+    "tip_it"
+  ],
+  "combatant_vocabulary": [
+    "blade_warden",
+    "venom_goblin"
+  ],
+  "command_vocabulary": [
+    "commit_interaction",
+    "pass",
+    "planning_commit_cards",
+    "planning_keep",
+    "planning_pass",
+    "planning_reroll",
+    "planning_roll",
+    "planning_select_ability",
+    "planning_select_targets",
+    "roll_dice"
+  ],
+  "content_sha256": "33d540af82133e8b8ad7e633c4cca6e352367da9d72f0dd930bc22ebcd263fd0",
+  "die_vocabulary": [
+    "standard_d6"
+  ],
+  "eligible_combatants": [
+    "blade_warden",
+    "venom_goblin"
+  ],
+  "environment_schema": "dice-and-destiny-ml-env-v3",
+  "form_vocabulary": [],
+  "layout": {
+    "abilities": {
+      "features": 64,
+      "offset": 368,
+      "rows": 14
+    },
+    "actors": {
+      "features": 32,
+      "offset": 64,
+      "rows": 2
+    },
+    "candidates": {
+      "features": 96,
+      "offset": 2864,
+      "rows": 256
+    },
+    "cards": {
+      "features": 48,
+      "offset": 1904,
+      "rows": 20
+    },
+    "context": {
+      "features": 64,
+      "offset": 0,
+      "rows": 1
+    },
+    "dice": {
+      "features": 24,
+      "offset": 128,
+      "rows": 10
+    },
+    "observation_size": 27440,
+    "statuses": {
+      "features": 64,
+      "offset": 1264,
+      "rows": 10
+    }
+  },
+  "manifest_sha256": "5ede31f0126be159f4a7f3ff04a94973643a237d586f806818792c9ce29316e2",
+  "maximum_active_abilities_per_actor": 7,
+  "maximum_dice_per_actor": 5,
+  "maximum_legal_candidates": 256,
+  "maximum_passives_per_actor": 0,
+  "maximum_requirements_per_tier": 2,
+  "maximum_statuses_per_actor": 5,
+  "maximum_targets": 1,
+  "maximum_tiers_per_ability": 5,
+  "maximum_tokens_per_actor": 1,
+  "maximum_visible_hand_cards": 20,
+  "normalization": {
+    "abilities": 7.0,
+    "deck": 20.0,
+    "dice": 5.0,
+    "energy": 22.0,
+    "face": 6.0,
+    "hand": 20.0,
+    "health": 20.0,
+    "rolls": 3.0,
+    "round": 50.0,
+    "stacks": 3.0,
+    "statuses": 5.0,
+    "targets": 1.0
+  },
+  "observation_schema": "dice-and-destiny-observation-v3",
+  "operation_vocabulary": [
+    "adjust_max_rolls",
+    "apply_ability_modifier",
+    "apply_status",
+    "cancel_source",
+    "deal_damage",
+    "draw_cards",
+    "gain_resource",
+    "modify_die",
+    "noop",
+    "number_pattern",
+    "prevent_damage",
+    "remove_status",
+    "remove_status_stack",
+    "roll_dice",
+    "scale_damage"
+  ],
+  "schema": "dice-and-destiny-observation-v3-manifest-v1",
+  "status_vocabulary": [
+    "bleed",
+    "blind",
+    "entangle",
+    "poison",
+    "volatile_poison"
+  ],
+  "symbol_vocabulary": [
+    "gold_coin",
+    "shield",
+    "sword"
+  ]
+}

@@ -5,10 +5,19 @@ const PHASE2_V2_MODEL_PATH := "res://models/learned/blade-warden-decision-qualit
 const PHASE2_V2_MODEL_SHA256 := "0e6ea5d84c316a7709c9c1b98b983e8f76e486c6e1625c479c55d2860bd23a86"
 const OPTIMIZED_V3_MODEL_PATH := "res://models/learned/blade-warden-optimized-5m-seed-22-v3.json"
 const OPTIMIZED_V3_MODEL_SHA256 := "529a6b4d6ad347d5ba86b5e000cb5fceec306414cdf0af3405713a2bc5c32ebb"
+const GLOBAL_CHAMPION_MODEL_PATH := "res://models/learned/blade-warden-global-champion-cp193-winner-health-v2.json"
+const GLOBAL_CHAMPION_MODEL_SHA256 := "cd3d7451e91d071274c874b017e3c7e73358862090fd71954e282e5bf505b814"
+const PRIOR_GLOBAL_CP38_MODEL_PATH := "res://models/learned/blade-warden-global-champion-cp38-winner-health-v2.json"
+const PRIOR_GLOBAL_CP38_MODEL_SHA256 := "6aeb05e0657c8c221298c79780895bcc6aa527f1780c6c5eb66833293daf6693"
+const PRIOR_GLOBAL_CP480_MODEL_PATH := "res://models/learned/blade-warden-global-champion-cp480-v3.json"
+const PRIOR_GLOBAL_CP480_MODEL_SHA256 := "96755c199f4d93261695d4928a0f95e00858d3a9d6a5c429e46911fbd0a3cac6"
 const PHASE2_OPT_IN_ENV := "DICE_AND_DESTINY_PHASE2_DECISION_MODEL"
 const MODEL_ACCEPTED_V1 := "accepted-v1"
 const MODEL_DECISION_V2 := "decision-v2"
 const MODEL_OPTIMIZED_V3 := "optimized-v3"
+const MODEL_GLOBAL_CHAMPION := "global-champion"
+const MODEL_PRIOR_GLOBAL_CP38 := "prior-global-cp38"
+const MODEL_PRIOR_GLOBAL_CP480 := "prior-global-cp480"
 const INFERENCE_TIMEOUT_MS := 2000
 
 var _native_authority: Object
@@ -26,7 +35,7 @@ func _ready() -> void:
 		_initialization_error = "NativeBattleAuthority GDExtension class is unavailable."
 
 func select_model(model_key: String) -> Dictionary:
-	if model_key not in [MODEL_ACCEPTED_V1, MODEL_DECISION_V2, MODEL_OPTIMIZED_V3]:
+	if model_key not in [MODEL_ACCEPTED_V1, MODEL_DECISION_V2, MODEL_OPTIMIZED_V3, MODEL_GLOBAL_CHAMPION, MODEL_PRIOR_GLOBAL_CP38, MODEL_PRIOR_GLOBAL_CP480]:
 		return {"ok": false, "error": "Unknown learned model selection: %s" % model_key}
 	_selected_model_key = model_key
 	_initialized = _initialized_model_key == model_key
@@ -64,6 +73,12 @@ func _selected_model_path() -> String:
 			return PHASE2_V2_MODEL_PATH
 		MODEL_OPTIMIZED_V3:
 			return OPTIMIZED_V3_MODEL_PATH
+		MODEL_GLOBAL_CHAMPION:
+			return GLOBAL_CHAMPION_MODEL_PATH
+		MODEL_PRIOR_GLOBAL_CP38:
+			return PRIOR_GLOBAL_CP38_MODEL_PATH
+		MODEL_PRIOR_GLOBAL_CP480:
+			return PRIOR_GLOBAL_CP480_MODEL_PATH
 		_:
 			return ACCEPTED_V1_MODEL_PATH
 
@@ -73,10 +88,16 @@ func _selected_model_sha256() -> String:
 			return PHASE2_V2_MODEL_SHA256
 		MODEL_OPTIMIZED_V3:
 			return OPTIMIZED_V3_MODEL_SHA256
+		MODEL_GLOBAL_CHAMPION:
+			return GLOBAL_CHAMPION_MODEL_SHA256
+		MODEL_PRIOR_GLOBAL_CP38:
+			return PRIOR_GLOBAL_CP38_MODEL_SHA256
+		MODEL_PRIOR_GLOBAL_CP480:
+			return PRIOR_GLOBAL_CP480_MODEL_SHA256
 		_:
 			return ""
 
-func start_battle(battle_id: String, human_seat: String, seed: int, rematch: bool = false) -> Dictionary:
+func start_battle(battle_id: String, human_seat: String, seed: int, rematch: bool = false, character: String = "blade_warden") -> Dictionary:
 	var initialized := ensure_initialized()
 	if initialized.get("ok") != true:
 		return {"accepted": false, "error": initialized.get("error", _initialization_error)}
@@ -84,6 +105,7 @@ func start_battle(battle_id: String, human_seat: String, seed: int, rematch: boo
 		"op": "reset",
 		"battle_id": battle_id,
 		"human_seat": human_seat,
+		"character": character,
 		"seed": seed,
 		"rematch": rematch,
 	})

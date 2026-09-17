@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="320" height="440" viewBox="0 0 320 440">
+<defs><linearGradient id="bg" x2="0" y2="1"><stop stop-color="#182c26"/><stop offset="1" stop-color="#080e14"/></linearGradient><linearGradient id="v" x2="0" y2="1"><stop stop-color="#c3f66c"/><stop offset="1" stop-color="#388e63"/></linearGradient></defs>
+<rect width="320" height="440" rx="22" fill="url(#bg)"/>
+<path d="M160 35 277 105v158L160 354 43 263V105Z" fill="#152720" stroke="#6fa55a" stroke-width="3"/>
+<path d="M129 103h62v23l-12 9v43l52 100q10 25-18 25H107q-28 0-18-25l52-100v-43l-12-9Z" fill="#263c35" stroke="#b9d897" stroke-width="5"/>
+<path d="m139 203-38 77q-4 9 10 9h98q14 0 10-9l-38-77q-20 18-42 0" fill="url(#v)"/>
+<circle cx="149" cy="241" r="8" fill="#e9ff9b"/><circle cx="173" cy="270" r="5" fill="#e9ff9b"/>
+<path d="M160 177c-40-22 53-28 2-53m-2-13c-35-20 42-32 12-50" fill="none" stroke="#9ed869" stroke-width="7" stroke-linecap="round"/>
+<text x="160" y="398" text-anchor="middle" font-family="serif" font-size="32" letter-spacing="5" fill="#d8edb2">VENOM</text></svg>

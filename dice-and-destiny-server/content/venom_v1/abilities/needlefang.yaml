@@ -1,0 +1,99 @@
+{
+  "schema_version": 1,
+  "id": "needlefang",
+  "name": "Needlefang",
+  "type": "offensive",
+  "presentation": {
+    "rules_text": "Choose a qualified tier: 3 Fang: 4 damage + 1 Poison; 4 Fang: 3 damage + 2 Poison; 5 Fang: 2 damage + 3 Poison. Poison overflow applies Incubation if none exists."
+  },
+  "cost": {
+    "energy": 0
+  },
+  "usage": {
+    "maximum_per_segment": 1
+  },
+  "targeting": {
+    "selector": "one_enemy",
+    "minimum": 1,
+    "maximum": 1
+  },
+  "qualification": {
+    "activation_tiers": [
+      {
+        "id": "fang_5",
+        "requirements": {
+          "all": [
+            {
+              "type": "symbol_count",
+              "symbol_id": "fang",
+              "minimum": 5
+            }
+          ]
+        },
+        "operations": [
+          {
+            "type": "deal_damage",
+            "target": "selected_targets",
+            "amount": 2
+          },
+          {
+            "type": "apply_status",
+            "target": "selected_targets",
+            "status_id": "poison",
+            "stack_count": 3
+          }
+        ]
+      },
+      {
+        "id": "fang_4",
+        "requirements": {
+          "all": [
+            {
+              "type": "symbol_count",
+              "symbol_id": "fang",
+              "minimum": 4
+            }
+          ]
+        },
+        "operations": [
+          {
+            "type": "deal_damage",
+            "target": "selected_targets",
+            "amount": 3
+          },
+          {
+            "type": "apply_status",
+            "target": "selected_targets",
+            "status_id": "poison",
+            "stack_count": 2
+          }
+        ]
+      },
+      {
+        "id": "fang_3",
+        "requirements": {
+          "all": [
+            {
+              "type": "symbol_count",
+              "symbol_id": "fang",
+              "minimum": 3
+            }
+          ]
+        },
+        "operations": [
+          {
+            "type": "deal_damage",
+            "target": "selected_targets",
+            "amount": 4
+          },
+          {
+            "type": "apply_status",
+            "target": "selected_targets",
+            "status_id": "poison",
+            "stack_count": 1
+          }
+        ]
+      }
+    ]
+  }
+}

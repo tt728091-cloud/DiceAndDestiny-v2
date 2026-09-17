@@ -91,9 +91,10 @@ def run_owner_diagnostic(
     teacher.reset(OWNER_SEED, transition["actor_id"])
     teacher_index = teacher.select(transition, SchemaEncoderV2().encode(transition))
     teacher_command = actions[teacher_index]
-    if teacher_command["type"] != "planning_reroll" or teacher_command["payload"].get(
-        "reroll_indices"
-    ) != [0, 3]:
+    if teacher_command["type"] != "planning_reroll" or teacher_command["payload"].get("reroll_indices") != [
+        0,
+        3,
+    ]:
         raise RuntimeError(f"mechanics teacher diagnostic regression: {teacher_command}")
 
     result = {
@@ -126,9 +127,7 @@ def run_owner_diagnostic(
     return result
 
 
-def score_checkpoint_on_transition(
-    checkpoint: Path, transition: dict[str, Any]
-) -> dict[str, Any]:
+def score_checkpoint_on_transition(checkpoint: Path, transition: dict[str, Any]) -> dict[str, Any]:
     """Return deterministic choice and legal probabilities for either family."""
     model = MaskablePPO.load(checkpoint, device="cpu")
     if tuple(model.observation_space.shape or ()) == (OBSERVATION_SIZE_V2,):

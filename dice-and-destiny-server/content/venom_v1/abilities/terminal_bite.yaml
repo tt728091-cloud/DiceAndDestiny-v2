@@ -1,0 +1,54 @@
+{
+  "schema_version": 1,
+  "id": "terminal_bite",
+  "name": "Terminal Bite",
+  "type": "offensive",
+  "presentation": {
+    "rules_text": "Gain 1 Catalyst then deal 4 damage and Provoke 2 against that enemy. Checks use normal toxin outcomes and the shared limit of 2 per enemy per round."
+  },
+  "cost": {
+    "energy": 0
+  },
+  "usage": {
+    "maximum_per_segment": 1
+  },
+  "targeting": {
+    "selector": "one_enemy",
+    "minimum": 1,
+    "maximum": 1
+  },
+  "qualification": {
+    "activation_tiers": [
+      {
+        "id": "base",
+        "requirements": {
+          "all": [
+            {
+              "type": "symbol_count",
+              "symbol_id": "coil",
+              "minimum": 3
+            }
+          ]
+        },
+        "operations": [
+          {
+            "type": "apply_status",
+            "target": "self",
+            "status_id": "catalyst",
+            "stack_count": 1
+          },
+          {
+            "type": "deal_damage",
+            "target": "selected_targets",
+            "amount": 4
+          },
+          {
+            "type": "provoke",
+            "target": "selected_targets",
+            "amount": 2
+          }
+        ]
+      }
+    ]
+  }
+}

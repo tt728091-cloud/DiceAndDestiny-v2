@@ -1,0 +1,274 @@
+{
+  "id": "verdant",
+  "name": "Verdant",
+  "identity": "Keep Growth alive through Income, collect more when another affliction lands on Spores, and reserve enough to recover lost cards. Graft helps a partner die meet Leaf requirements.",
+  "symbols": [
+    "Leaf",
+    "Vine",
+    "Bud"
+  ],
+  "loop": "Keep at least one Growth through Income → gain more from Spores when another affliction lands → choose between spending now and reserving Growth for recovery → Graft partner dice into Leaf recipes.",
+  "statuses": [
+    [
+      "Growth",
+      "Positive · you · cap 4",
+      "At the start of Income, gain 1 Growth if you already have any Growth. Spend Growth on Verdant cards, abilities and Regrowth. Keep unused Growth. If you spend your last stack, you need a card or ability to start growing again."
+    ],
+    [
+      "Spores",
+      "Negative · enemy · cap 2",
+      "When this enemy gains a different negative status, remove 1 Spore and give 1 Growth to the player who placed that Spore. One card or ability can use only one Spore this way, even if it applies several stacks. Spores do not trigger from more Spores or a status moved from someone else. Remove unused Spores after the next Ongoing Effects."
+    ],
+    [
+      "Regrowth",
+      "Positive · you · cap 2",
+      "At the start of Ongoing Effects, you may spend 1 Regrowth and 2 Growth. After Ongoing damage is dealt, return one of your cards previously lost to damage to your discard pile. Use this once per round. You cannot return a sacrificed card. Keep unused Regrowth."
+    ],
+    [
+      "Graft",
+      "Positive die-face mark · your combat die · max 1",
+      "Choose one face on one of your combat dice. Until the end of your next Offensive segment, that face also counts as Leaf, alongside its usual symbol. Its number does not change. Graft works when you roll that face or change a die to it."
+    ]
+  ],
+  "abilities": [
+    [
+      "Briar Lash",
+      "Offense · 0E",
+      "3 Leaf / 4 Leaf / 5 Leaf",
+      "4 / 5 / 6 damage and apply 1 Spore."
+    ],
+    [
+      "Seedbed",
+      "Offense · 0E",
+      "2 Vine + 1 Bud",
+      "Gain 2 Growth and 1 Regrowth."
+    ],
+    [
+      "Canopy Reach",
+      "Offense · 0E",
+      "Any three equal numbers",
+      "Deal 4 damage. When choosing this ability, you may spend up to 2 Growth for 1 extra damage each. After the attack, if you have no Graft, place Graft on one face of one of your combat dice."
+    ],
+    [
+      "Ancient Bloom",
+      "Offense · 0E",
+      "3 Bud",
+      "Deal 6 damage and gain 2 Growth. If you already have Regrowth when choosing this ability, you may spend 2 Growth to recover one card previously lost to damage into your discard pile after the attack. This payment does not spend Regrowth. The Growth you gain from this ability cannot pay this cost."
+    ],
+    [
+      "Living Bark",
+      "Defense · 0E",
+      "Roll 2 Verdant dice",
+      "Each Leaf prevents 1; each Vine gains 1 Growth; any Bud gains 1 Regrowth."
+    ],
+    [
+      "Thorn Trellis",
+      "Defense · 1E",
+      "Roll 1 Verdant die",
+      "Leaf: prevent 2. Vine: prevent 3. Bud: prevent 2 and apply 1 Spore to the attacker."
+    ]
+  ],
+  "cards": [
+    [
+      "Planting",
+      "1",
+      "Action",
+      "Gain 2 Growth."
+    ],
+    [
+      "Spore Dust",
+      "1",
+      "Action",
+      "Apply 1 Spore to one enemy."
+    ],
+    [
+      "Sleeping Root",
+      "1",
+      "Action",
+      "Gain 1 Regrowth and 1 Growth."
+    ],
+    [
+      "New Shoot",
+      "1",
+      "Action",
+      "Apply Graft to one face on one of your combat dice if you have no Graft."
+    ],
+    [
+      "Seed Catalogue",
+      "1",
+      "Action",
+      "Draw 1 and gain 1 Growth."
+    ],
+    [
+      "Thick Spores",
+      "1",
+      "Action",
+      "Apply 2 Spores to one enemy."
+    ],
+    [
+      "Harvest",
+      "0",
+      "Action",
+      "Spend 2 Growth; gain 1 Energy and draw 1. Once per round."
+    ],
+    [
+      "Bramble Burst",
+      "1",
+      "Offensive reaction",
+      "Spend up to 2 Growth; add 2 damage each to your attack."
+    ],
+    [
+      "Root Mend",
+      "1",
+      "Action",
+      "Spend 2 Growth; return one of your cards previously lost to damage to your discard pile."
+    ],
+    [
+      "Spring Pruning",
+      "1",
+      "Action",
+      "Spend 1 Growth; cleanse 1 existing negative status stack from yourself."
+    ],
+    [
+      "Seed Exchange",
+      "1",
+      "Action",
+      "Spend 1 Growth; draw 2, then discard 1."
+    ],
+    [
+      "Graft Bridge",
+      "1",
+      "Action",
+      "Move your existing Graft to a different face on one of your dice without extending its expiry."
+    ],
+    [
+      "Leaf Turn",
+      "1",
+      "Offensive reaction",
+      "Set one of your combat dice that is not Frostbound to face 1; the final dice must allow the chosen ability."
+    ],
+    [
+      "Dew Catch",
+      "1",
+      "Roll reaction",
+      "Reroll one of your dice just rolled for a status, defense or card once. On final 4–6, gain 1 Growth."
+    ],
+    [
+      "Barkwrap",
+      "1",
+      "Damage reaction",
+      "Prevent 2 from one attack, card or status targeting you."
+    ],
+    [
+      "Root Brace",
+      "1",
+      "Damage reaction",
+      "Spend 1 Growth; prevent 3 from one incoming attack."
+    ],
+    [
+      "Clean Sap",
+      "1",
+      "Application reaction",
+      "Spend 1 Growth; stop 1 negative status stack an enemy is about to apply to you."
+    ],
+    [
+      "Wilt the Mark",
+      "0",
+      "Action",
+      "Spend 1 enemy Spore; gain 1 Growth. This is a cost, not a Spore trigger."
+    ],
+    [
+      "Dormant Seed",
+      "1",
+      "Damage reaction",
+      "Choose one of your health cards revealed by incoming damage. If that damage removes the card, gain 1 Regrowth afterward."
+    ],
+    [
+      "Overgrowth",
+      "1",
+      "Action",
+      "Spend 1 Regrowth; gain 2 Growth."
+    ],
+    [
+      "Tangle Memory",
+      "1",
+      "Action",
+      "Spend 2 Growth to apply 1 Entangle to one enemy. Entangle uses its existing game rules: it reduces the rolls available during their next Offensive segment."
+    ],
+    [
+      "Perennial Ledger",
+      "1",
+      "Action",
+      "Upgrade once per battle: the first time each round you recover a card lost to damage, gain 1 Growth."
+    ],
+    [
+      "Canopy Shelter",
+      "2",
+      "Damage reaction",
+      "Spend 2 Growth; prevent 4 and gain 1 Regrowth afterward."
+    ],
+    [
+      "Return of Spring",
+      "2",
+      "Action",
+      "Spend 3 Growth and 1 Regrowth to return two of your cards previously lost to damage to your discard pile. All types share a maximum of two recovered cards per round."
+    ]
+  ],
+  "pairs": [
+    [
+      "venom",
+      "An added Poison, Incubation or Volatile Poison can use Spores to earn Growth. Poison that fails to fit does not earn Growth by itself. One attack uses at most one Spore even when it adds multiple afflictions."
+    ],
+    [
+      "blood",
+      "Bleed applying to a Spored enemy earns Growth. Growth pays for protection and recovery while Blood spends Ichor on conditional recovery. Neither type can recover cards paid as sacrifices."
+    ],
+    [
+      "fortune",
+      "Graft and Boon may share a die face. Rolling it can supply Leaf and earn Favor; changing a die to it supplies Leaf but earns no Favor. Favor’s small number change can help reach the grafted face."
+    ],
+    [
+      "grave",
+      "Regrowth can recover a card with a Corpse token, removing that token. Spend the Corpse for Remnant before recovering its card to get use from both effects, while paying each recovery cost normally."
+    ]
+  ],
+  "example": "The enemy has Spores and 2 Poison. An attack adds Poison up to its cap and earns 1 Growth from one Spore. If the same attack also overflows Poison into Incubation, it still earns only one Spore reward from that attack. A later Incubation conversion can use a remaining Spore when Volatile Poison is added.",
+  "counter": "Force Growth spending before Income to stop its automatic increase. Remove Spores before the next affliction lands. Recovered cards go to discard and still need to be drawn.",
+  "balance": "Regrowth costs a stack plus 2 Growth per recovered card, paid before Ongoing damage. All recovery shares the two-card limit per round and excludes sacrificed cards. Graft adds only Leaf to one marked face; it does not change numbers or make every die a wildcard.",
+  "hooks": [
+    "H-07 Income",
+    "Status application commit",
+    "H-12 qualification overlays",
+    "H-24 restoration and object identity"
+  ],
+  "review_status": "Reworked statuses — awaiting user review",
+  "version": 2,
+  "combos": [
+    [
+      "Planting → Sleeping Root → Regrowth",
+      "Build enough Growth to pay for recovery while keeping one stack for next Income. Spending your final Growth buys help now but stops your free growth."
+    ],
+    [
+      "Spore Dust → partner affliction → Graft",
+      "A new Poison or Bleed stack consumes a Spore for Growth. Graft then helps a mixed creature’s partner die meet a Leaf requirement without losing its original symbol."
+    ]
+  ],
+  "status_examples": {
+    "Growth": {
+      "job": "Maintain a reserve that grows between rounds.",
+      "example": "Keep one Growth through Ongoing Effects and it becomes two during Income. Spend your last stack and that extra Growth stops."
+    },
+    "Spores": {
+      "job": "Reward applying a second kind of affliction.",
+      "example": "An enemy with Spores gains Poison from Needlefang. Remove one Spore and gain one Growth. Poison rejected at its stack limit earns nothing."
+    },
+    "Regrowth": {
+      "job": "Schedule recovery before seeing this round’s damage.",
+      "example": "Pay before Poison rolls. After that damage finishes, recover a card lost in an earlier round, ready to draw again later."
+    },
+    "Graft": {
+      "job": "Make a partner type’s die help qualify Verdant abilities.",
+      "example": "Graft the Shell face of a Tide die. That face can help a Leaf requirement while keeping its Tide symbol."
+    }
+  }
+}

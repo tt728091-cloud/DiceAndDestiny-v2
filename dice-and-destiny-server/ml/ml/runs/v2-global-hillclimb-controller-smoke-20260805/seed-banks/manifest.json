@@ -1,0 +1,18 @@
+{
+  "attempts": 1,
+  "distinct_evaluation_seeds": 500,
+  "evaluation_seed_offset": 6699000000,
+  "files": [
+    {
+      "attempt": 1,
+      "games": 1000,
+      "path": "/Users/daddymere/games/Dice-and-Destiny-v2/dice-and-destiny-server/ml/ml/runs/v2-global-hillclimb-controller-smoke-20260805/seed-banks/attempt-001-global-1k.json",
+      "sha256": "3e586130916dfdf69afef7830a50e485dfcf4adb59ec3de7b33da83ffc7c7a8c",
+      "training_seed": 859001
+    }
+  ],
+  "generated_at": "2026-08-05T19:31:58.812818+00:00",
+  "schema": "dice-and-destiny-global-hillclimb-seed-banks-v1",
+  "sha256": "2c27380467962703d7c0a8b030a734d11669ca62466754f042ba72c5d4802bab",
+  "training_seed_offset": 859000
+}

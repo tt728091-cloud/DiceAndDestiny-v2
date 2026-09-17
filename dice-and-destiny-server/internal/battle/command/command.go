@@ -157,6 +157,9 @@ type PlanningCardsPayload struct {
 }
 
 type PlanningAbilityPayload struct {
+	TierID         string             `json:"tier_id,omitempty"`
+	ToxinChoices   []string           `json:"toxin_choices,omitempty"`
+	SpendCatalyst  bool               `json:"spend_catalyst,omitempty"`
 	PendingInputID string             `json:"pending_input_id"`
 	Checkpoint     PlanningCheckpoint `json:"checkpoint"`
 	AbilityID      string             `json:"ability_id"`

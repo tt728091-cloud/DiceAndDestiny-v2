@@ -134,6 +134,59 @@ func TestFromBattleForViewerCopiesVisibleHandCardIDs(t *testing.T) {
 	}
 }
 
+func TestFromBattleForViewerPublishesOnlyOwnerCardZoneComposition(t *testing.T) {
+	battle := battleWithCardVisibilityState()
+	battle.Settled = &state.SettledRuntime{
+		Actors: map[string]state.SettledActorRuntime{
+			"player-1": {CardInstances: map[string]state.CardInstance{
+				"focus": {InstanceID: "focus", DefinitionID: "focus"},
+				"spent": {InstanceID: "spent", DefinitionID: "guard"},
+				"lost":  {InstanceID: "lost", DefinitionID: "focus"},
+			}},
+			"player-2": {CardInstances: map[string]state.CardInstance{
+				"hidden-draw": {InstanceID: "hidden-draw", DefinitionID: "secret"},
+			}},
+		},
+	}
+	got := snapshot.FromBattleForViewer(battle, "player-1")
+	owner := got.Actors["player-1"]
+	if !reflect.DeepEqual(owner.DeckComposition, map[string]int{"focus": 1}) ||
+		!reflect.DeepEqual(owner.DiscardComposition, map[string]int{"guard": 1}) ||
+		!reflect.DeepEqual(owner.RemovedComposition, map[string]int{"focus": 1}) {
+		t.Fatalf("owner compositions = %#v/%#v/%#v", owner.DeckComposition, owner.DiscardComposition, owner.RemovedComposition)
+	}
+	opponent := got.Actors["player-2"]
+	if opponent.DeckComposition != nil || opponent.DiscardComposition != nil || opponent.RemovedComposition != nil {
+		t.Fatalf("opponent hidden composition leaked: %#v", opponent)
+	}
+}
+
+func TestSettledOpponentDiceAppearOnlyAfterPlanningReveal(t *testing.T) {
+	battle := state.Battle{
+		ID:      "revealed-dice",
+		Segment: segment.State{Current: segment.Offensive, Round: 2},
+		Actors: map[string]state.ActorState{
+			"seat-a": {},
+			"seat-b": {},
+		},
+		Settled: &state.SettledRuntime{
+			Stage: "planning",
+			Actors: map[string]state.SettledActorRuntime{
+				"seat-a": {FinalDice: []state.RolledDie{{DieID: "d6", Face: 6, Value: 6, Symbols: []string{"sword"}}}, RollsUsed: 3, MaxRolls: 3},
+				"seat-b": {},
+			},
+		},
+	}
+	if hidden := snapshot.FromBattleForViewer(battle, "seat-b").Actors["seat-a"].Dice; hidden != nil {
+		t.Fatalf("opponent dice leaked during planning: %#v", hidden)
+	}
+	battle.Settled.Stage = "offensive_reaction"
+	revealed := snapshot.FromBattleForViewer(battle, "seat-b").Actors["seat-a"].Dice
+	if revealed == nil || len(revealed.Dice) != 1 || revealed.Dice[0].Face != 6 || !revealed.Complete {
+		t.Fatalf("revealed opponent dice = %#v", revealed)
+	}
+}
+
 func TestSettledPlanningSnapshotUsesOpponentPublicBaseline(t *testing.T) {
 	battle := state.Battle{
 		ID:      "hidden-planning",
@@ -208,28 +261,31 @@ func TestBattleSnapshotRoundTripsThroughJSON(t *testing.T) {
 	}
 }
 
-func TestOngoingEffectRollSnapshotHidesEnemyUntilReactionReveal(t *testing.T) {
-	battle := state.Battle{
-		ID:      "effects",
-		Segment: segment.State{Current: segment.OngoingEffects, Round: 2},
-		Settled: &state.SettledRuntime{
-			Stage: "status_roll",
-			TriggerBatch: &state.SettledTriggerBatch{Rolls: []state.SettledEffectRoll{
-				{ActorID: "player", StatusID: "poison", Die: state.RolledDie{DieID: "standard_d6", Face: 2, Value: 2, Symbols: []string{"cross"}}, Resolved: true},
-				{ActorID: "enemy", StatusID: "poison", Die: state.RolledDie{DieID: "standard_d6", Face: 6}, Resolved: true},
-			}},
-		},
+func TestEffectRollSnapshotHidesEnemyUntilReactionRevealInEverySegment(t *testing.T) {
+	for _, parent := range []segment.Segment{segment.OngoingEffects, segment.Offensive, segment.Defensive, segment.DamageResolution} {
+		battle := state.Battle{
+			ID:      "effects",
+			Segment: segment.State{Current: parent, Round: 2},
+			Settled: &state.SettledRuntime{
+				Stage: "status_roll",
+				TriggerBatch: &state.SettledTriggerBatch{Rolls: []state.SettledEffectRoll{
+					{ActorID: "player", StatusID: "poison", Die: state.RolledDie{DieID: "standard_d6", Face: 2, Value: 2, Symbols: []string{"cross"}}, Resolved: true},
+					{ActorID: "enemy", StatusID: "poison", Die: state.RolledDie{DieID: "standard_d6", Face: 6}, Resolved: true},
+				}},
+			},
+		}
+
+		preReveal := snapshot.FromBattleForViewer(battle, "player")
+		if len(preReveal.SettledEffectRolls) != 1 || preReveal.SettledEffectRolls[0].ActorID != "player" || preReveal.SettledEffectRolls[0].Die.Face != 0 || !preReveal.SettledEffectRolls[0].Resolved || len(preReveal.SettledEffectRolls[0].Die.Symbols) != 0 {
+			t.Fatalf("pre-reveal effect rolls=%#v, want only the player's resolved-but-hidden die", preReveal.SettledEffectRolls)
+		}
+		battle.Settled.Stage = "status_roll_reaction"
+		revealed := snapshot.FromBattleForViewer(battle, "player")
+		if len(revealed.SettledEffectRolls) != 2 || revealed.SettledEffectRolls[1].ActorID != "enemy" || revealed.SettledEffectRolls[1].Die.Face != 6 {
+			t.Fatalf("revealed effect rolls=%#v, want both actors' results", revealed.SettledEffectRolls)
+		}
 	}
 
-	preReveal := snapshot.FromBattleForViewer(battle, "player")
-	if len(preReveal.SettledEffectRolls) != 1 || preReveal.SettledEffectRolls[0].ActorID != "player" || preReveal.SettledEffectRolls[0].Die.Face != 0 || !preReveal.SettledEffectRolls[0].Resolved || len(preReveal.SettledEffectRolls[0].Die.Symbols) != 0 {
-		t.Fatalf("pre-reveal effect rolls=%#v, want only the player's resolved-but-hidden die", preReveal.SettledEffectRolls)
-	}
-	battle.Settled.Stage = "status_roll_reaction"
-	revealed := snapshot.FromBattleForViewer(battle, "player")
-	if len(revealed.SettledEffectRolls) != 2 || revealed.SettledEffectRolls[1].ActorID != "enemy" || revealed.SettledEffectRolls[1].Die.Face != 6 {
-		t.Fatalf("revealed effect rolls=%#v, want both actors' results", revealed.SettledEffectRolls)
-	}
 }
 
 func TestDefenseReactionSnapshotRevealsEverySelectedDefense(t *testing.T) {

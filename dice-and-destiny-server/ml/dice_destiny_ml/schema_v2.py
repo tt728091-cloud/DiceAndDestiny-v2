@@ -252,8 +252,7 @@ class SchemaEncoderV2:
         tiers = [(tier, False) for tier in activation] + [(tier, True) for tier in bonuses]
         if len(tiers) > MAX_TIERS_V2:
             raise RuntimeError(
-                f"ability {ability.get('id')!r} has {len(tiers)} tiers; "
-                f"v2 capacity is {MAX_TIERS_V2}"
+                f"ability {ability.get('id')!r} has {len(tiers)} tiers; v2 capacity is {MAX_TIERS_V2}"
             )
         output[0] = 1
         output[1] = ability.get("type") == "offensive"
@@ -291,7 +290,7 @@ class SchemaEncoderV2:
         dice: list[dict[str, Any]],
         symbols: list[str],
     ) -> None:
-        requirements = ((tier.get("requirements") or {}).get("all") or [])
+        requirements = (tier.get("requirements") or {}).get("all") or []
         if len(requirements) > MAX_REQUIREMENTS_V2:
             raise RuntimeError(
                 f"tier {tier.get('id')!r} has {len(requirements)} requirements; "
@@ -392,7 +391,7 @@ class SchemaEncoderV2:
                 if tier_index >= 4:
                     continue
                 compact = linked[32 + tier_index * 16 : 32 + (tier_index + 1) * 16]
-                reqs = ((tier.get("requirements") or {}).get("all") or [])
+                reqs = (tier.get("requirements") or {}).get("all") or []
                 compact[0] = 1
                 compact[1] = conditional
                 compact[2] = self.tier_progress(tier, dice)
@@ -432,9 +431,7 @@ class SchemaEncoderV2:
         ]
 
     @staticmethod
-    def effective_ability(
-        ability_id: str, actor: dict[str, Any], catalog: dict[str, Any]
-    ) -> dict[str, Any]:
+    def effective_ability(ability_id: str, actor: dict[str, Any], catalog: dict[str, Any]) -> dict[str, Any]:
         base = (catalog.get("abilities") or {}).get(ability_id)
         if not base:
             return {}
@@ -456,7 +453,7 @@ class SchemaEncoderV2:
             source = instances.get(modifier.get("source_card_instance_id")) or {}
             card = cards.get(source.get("definition_id")) or {}
             for operation in card.get("operations") or []:
-                tier = ((operation.get("modifier") or {}).get("add_conditional_bonus"))
+                tier = (operation.get("modifier") or {}).get("add_conditional_bonus")
                 if tier and tier.get("id") == modifier.get("bonus_id"):
                     identifier = tier.get("id", "")
                     if identifier not in resolved:
@@ -469,11 +466,11 @@ class SchemaEncoderV2:
         return result
 
     def tier_progress(self, tier: dict[str, Any], dice: list[dict[str, Any]]) -> float:
-        requirements = ((tier.get("requirements") or {}).get("all") or [])
+        requirements = (tier.get("requirements") or {}).get("all") or []
         return min((self.requirement_progress(req, dice) for req in requirements), default=0.0)
 
     def tier_met(self, tier: dict[str, Any], dice: list[dict[str, Any]]) -> bool:
-        requirements = ((tier.get("requirements") or {}).get("all") or [])
+        requirements = (tier.get("requirements") or {}).get("all") or []
         return bool(requirements) and all(self.requirement_met(req, dice) for req in requirements)
 
     @staticmethod
@@ -573,13 +570,9 @@ class SchemaEncoderV2:
             result[6] += numeric / 20.0
             for outcome in operation.get("outcomes") or []:
                 possible_faces = {
-                    face
-                    for item in operation.get("outcomes") or []
-                    for face in item.get("faces") or []
+                    face for item in operation.get("outcomes") or [] for face in item.get("faces") or []
                 }
-                probability = len(outcome.get("faces") or []) / max(
-                    1.0, float(len(possible_faces))
-                )
+                probability = len(outcome.get("faces") or []) / max(1.0, float(len(possible_faces)))
                 result += cls.operation_summary(outcome.get("operations") or []) * probability
         return result
 
