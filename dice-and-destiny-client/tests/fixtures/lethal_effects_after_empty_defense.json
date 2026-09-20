@@ -1,0 +1,414 @@
+{
+  "type": "effects_resolved",
+  "round": 6,
+  "segment": "ongoing_effects",
+  "data": {
+    "actors_after": {
+      "blade": {
+        "deck_count": 0,
+        "discard_count": 1,
+        "energy": 0,
+        "hand_count": 2,
+        "health": 3,
+        "removed_count": 21,
+        "statuses": [
+          {
+            "definition_id": "bleed",
+            "instance_id": "seat-a-status-bleed-42",
+            "stacks": 1
+          },
+          {
+            "definition_id": "catalyst",
+            "instance_id": "seat-a-status-catalyst-249",
+            "stacks": 1
+          }
+        ]
+      },
+      "goblin": {
+        "deck_count": 0,
+        "discard_count": 0,
+        "energy": 6,
+        "hand_count": 0,
+        "health": 0,
+        "removed_count": 20,
+        "statuses": [
+          {
+            "definition_id": "poison",
+            "instance_id": "seat-b-status-poison-41",
+            "stacks": 2
+          },
+          {
+            "definition_id": "volatile_poison",
+            "instance_id": "seat-b-status-volatile_poison-159",
+            "stacks": 2
+          }
+        ]
+      }
+    },
+    "actors_before": {
+      "blade": {
+        "deck_count": 0,
+        "discard_count": 3,
+        "energy": 0,
+        "hand_count": 2,
+        "health": 5,
+        "removed_count": 19,
+        "statuses": [
+          {
+            "definition_id": "bleed",
+            "instance_id": "seat-a-status-bleed-42",
+            "stacks": 2
+          },
+          {
+            "definition_id": "catalyst",
+            "instance_id": "seat-a-status-catalyst-249",
+            "stacks": 2
+          }
+        ]
+      },
+      "goblin": {
+        "deck_count": 0,
+        "discard_count": 0,
+        "energy": 6,
+        "hand_count": 2,
+        "health": 2,
+        "removed_count": 18,
+        "statuses": [
+          {
+            "definition_id": "poison",
+            "instance_id": "seat-b-status-poison-41",
+            "stacks": 3
+          },
+          {
+            "definition_id": "volatile_poison",
+            "instance_id": "seat-b-status-volatile_poison-159",
+            "stacks": 2
+          }
+        ]
+      }
+    },
+    "steps": [
+      {
+        "actor_id": "goblin",
+        "data": {
+          "die_index": 4,
+          "face_before": 6,
+          "forced": true,
+          "holder": "blade",
+          "rolls": [
+            {
+              "actor_id": "goblin",
+              "die": {
+                "die_id": "standard_d6",
+                "face": 5,
+                "index": 1,
+                "symbols": [
+                  "shield"
+                ],
+                "value": 5
+              },
+              "operation_id": "volatile_poison_rolls",
+              "operation_index": 0,
+              "rerolled": true,
+              "resolved": true,
+              "source_content_id": "volatile_poison",
+              "source_content_type": "status",
+              "status_id": "volatile_poison",
+              "status_instance_id": "seat-b-status-volatile_poison-159",
+              "trigger_id": "volatile_poison_on_enter"
+            }
+          ],
+          "source_type": "catalyst",
+          "status_id": "volatile_poison"
+        },
+        "round": 6,
+        "segment": "ongoing_effects",
+        "type": "dice_rolled"
+      },
+      {
+        "data": {
+          "batch_id": "trigger-r6-ongoing_effects-251",
+          "damage": [
+            {
+              "base_amount": 1,
+              "final_amount": 0,
+              "id": "source-r6-bleed-252",
+              "prevention": 0,
+              "source_actor_id": "blade",
+              "source_content_id": "bleed",
+              "target_actor_id": "blade"
+            },
+            {
+              "base_amount": 1,
+              "final_amount": 0,
+              "id": "source-r6-bleed-253",
+              "prevention": 0,
+              "source_actor_id": "blade",
+              "source_content_id": "bleed",
+              "target_actor_id": "blade"
+            },
+            {
+              "base_amount": 1,
+              "final_amount": 0,
+              "id": "source-r6-poison-262",
+              "prevention": 0,
+              "source_actor_id": "goblin",
+              "source_content_id": "poison",
+              "target_actor_id": "goblin"
+            },
+            {
+              "base_amount": 1,
+              "final_amount": 0,
+              "id": "source-r6-poison-263",
+              "prevention": 0,
+              "source_actor_id": "goblin",
+              "source_content_id": "poison",
+              "target_actor_id": "goblin"
+            }
+          ],
+          "rolls": [
+            {
+              "actor_id": "goblin",
+              "die": {
+                "die_id": "standard_d6",
+                "face": 2,
+                "index": 0,
+                "symbols": [
+                  "sword"
+                ],
+                "value": 2
+              },
+              "operation_id": "poison_rolls",
+              "operation_index": 0,
+              "resolved": true,
+              "source_content_id": "poison",
+              "source_content_type": "status",
+              "status_id": "poison",
+              "status_instance_id": "seat-b-status-poison-41",
+              "trigger_id": "poison_on_enter"
+            },
+            {
+              "actor_id": "goblin",
+              "die": {
+                "die_id": "standard_d6",
+                "face": 1,
+                "index": 1,
+                "symbols": [
+                  "sword"
+                ],
+                "value": 1
+              },
+              "operation_id": "poison_rolls",
+              "operation_index": 0,
+              "resolved": true,
+              "source_content_id": "poison",
+              "source_content_type": "status",
+              "status_id": "poison",
+              "status_instance_id": "seat-b-status-poison-41",
+              "trigger_id": "poison_on_enter"
+            },
+            {
+              "actor_id": "goblin",
+              "die": {
+                "die_id": "standard_d6",
+                "face": 5,
+                "index": 2,
+                "symbols": [
+                  "shield"
+                ],
+                "value": 5
+              },
+              "operation_id": "poison_rolls",
+              "operation_index": 0,
+              "resolved": true,
+              "source_content_id": "poison",
+              "source_content_type": "status",
+              "status_id": "poison",
+              "status_instance_id": "seat-b-status-poison-41",
+              "trigger_id": "poison_on_enter"
+            },
+            {
+              "actor_id": "goblin",
+              "die": {
+                "die_id": "standard_d6",
+                "face": 5,
+                "index": 0,
+                "symbols": [
+                  "shield"
+                ],
+                "value": 5
+              },
+              "operation_id": "volatile_poison_rolls",
+              "operation_index": 0,
+              "resolved": true,
+              "source_content_id": "volatile_poison",
+              "source_content_type": "status",
+              "status_id": "volatile_poison",
+              "status_instance_id": "seat-b-status-volatile_poison-159",
+              "trigger_id": "volatile_poison_on_enter"
+            },
+            {
+              "actor_id": "goblin",
+              "die": {
+                "die_id": "standard_d6",
+                "face": 5,
+                "index": 1,
+                "symbols": [
+                  "shield"
+                ],
+                "value": 5
+              },
+              "operation_id": "volatile_poison_rolls",
+              "operation_index": 0,
+              "rerolled": true,
+              "resolved": true,
+              "source_content_id": "volatile_poison",
+              "source_content_type": "status",
+              "status_id": "volatile_poison",
+              "status_instance_id": "seat-b-status-volatile_poison-159",
+              "trigger_id": "volatile_poison_on_enter"
+            }
+          ],
+          "status_removals": [
+            {
+              "actor_id": "blade",
+              "stacks": 1,
+              "status_id": "bleed"
+            },
+            {
+              "actor_id": "goblin",
+              "stacks": 1,
+              "status_id": "poison"
+            }
+          ]
+        },
+        "round": 6,
+        "segment": "ongoing_effects",
+        "type": "proposal_batch_committed"
+      },
+      {
+        "data": {
+          "batch_id": "damage-r6-264",
+          "overage": {},
+          "removals": [
+            {
+              "accepted": true,
+              "card_definition_id": "fever_cycle",
+              "card_id": "seat-a-card-008",
+              "damage_proposal_ids": [
+                "source-r6-bleed-252",
+                "source-r6-bleed-253"
+              ],
+              "id": "damage-r6-264-removal-1",
+              "original_zone": "discard",
+              "revealed": true,
+              "sequence": 1,
+              "source_actor_ids": [
+                "blade",
+                "blade"
+              ],
+              "target_actor_id": "blade"
+            },
+            {
+              "accepted": true,
+              "card_definition_id": "agitate",
+              "card_id": "seat-a-card-007",
+              "damage_proposal_ids": [
+                "source-r6-bleed-252",
+                "source-r6-bleed-253"
+              ],
+              "id": "damage-r6-264-removal-2",
+              "original_zone": "discard",
+              "revealed": true,
+              "sequence": 2,
+              "source_actor_ids": [
+                "blade",
+                "blade"
+              ],
+              "target_actor_id": "blade"
+            },
+            {
+              "accepted": true,
+              "card_definition_id": "loaded_die",
+              "card_id": "seat-b-card-005",
+              "damage_proposal_ids": [
+                "source-r6-poison-262",
+                "source-r6-poison-263"
+              ],
+              "id": "damage-r6-264-removal-3",
+              "original_zone": "hand",
+              "revealed": true,
+              "sequence": 1,
+              "source_actor_ids": [
+                "goblin",
+                "goblin"
+              ],
+              "target_actor_id": "goblin"
+            },
+            {
+              "accepted": true,
+              "card_definition_id": "loaded_die",
+              "card_id": "seat-b-card-006",
+              "damage_proposal_ids": [
+                "source-r6-poison-262",
+                "source-r6-poison-263"
+              ],
+              "id": "damage-r6-264-removal-4",
+              "original_zone": "hand",
+              "revealed": true,
+              "sequence": 2,
+              "source_actor_ids": [
+                "goblin",
+                "goblin"
+              ],
+              "target_actor_id": "goblin"
+            }
+          ],
+          "sources": [
+            {
+              "base_amount": 1,
+              "final_amount": 1,
+              "id": "source-r6-bleed-252",
+              "prevention": 0,
+              "source_actor_id": "blade",
+              "source_content_id": "bleed",
+              "target_actor_id": "blade"
+            },
+            {
+              "base_amount": 1,
+              "final_amount": 1,
+              "id": "source-r6-bleed-253",
+              "prevention": 0,
+              "source_actor_id": "blade",
+              "source_content_id": "bleed",
+              "target_actor_id": "blade"
+            },
+            {
+              "base_amount": 1,
+              "final_amount": 1,
+              "id": "source-r6-poison-262",
+              "prevention": 0,
+              "source_actor_id": "goblin",
+              "source_content_id": "poison",
+              "target_actor_id": "goblin"
+            },
+            {
+              "base_amount": 1,
+              "final_amount": 1,
+              "id": "source-r6-poison-263",
+              "prevention": 0,
+              "source_actor_id": "goblin",
+              "source_content_id": "poison",
+              "target_actor_id": "goblin"
+            }
+          ],
+          "status_applications": null
+        },
+        "round": 6,
+        "segment": "ongoing_effects",
+        "type": "damage_committed"
+      }
+    ]
+  },
+  "sequence": 5
+}

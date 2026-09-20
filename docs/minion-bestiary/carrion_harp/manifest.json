@@ -1,0 +1,253 @@
+{
+  "boss_id": "carrion_harp",
+  "boss_name": "Carrion Harp",
+  "theme": "Ossuary scavengers that answer a death-song: weathered bone, ragged charcoal feathers, gut strings, tarnished brass bells.",
+  "minions": [
+    {
+      "id": "rattlejack",
+      "name": "Rattlejack",
+      "role": "skirmishing scavenger",
+      "description": "A lean skeletal jackal with short ragged black feather tufts along its spine, bone jaw slightly open, a few brass rattles suspended beneath its ribs and taut sinew binding its narrow legs.",
+      "prompt": "Use case: stylized-concept. Asset type: standalone transparent PNG battle enemy sprite for a dark fantasy game. Create ONE unique lesser minion, clearly modest compared with its boss. Subject: Rattlejack. A lean skeletal jackal with short ragged black feather tufts along its spine, bone jaw slightly open, a few brass rattles suspended beneath its ribs and taut sinew binding its narrow legs. Faction materials: Ossuary scavengers that answer a death-song: weathered bone, ragged charcoal feathers, gut strings, tarnished brass bells. Style: highly detailed desaturated dark watercolor washes inside forms, fine expressive black ink contours, weathered tactile material detail and restrained highlights; solemn eerie handmade bestiary painting, consistent with grim watercolor RPG enemies. Full body in left-facing three-quarter battle stance, entire silhouette within canvas with small transparent safety margin. TRUE transparent RGBA background, all pixels outside creature alpha zero, including between limbs. No environment, ground, platform, cast shadow, surrounding smoke, aura, paper background, checkerboard, text, letters, UI, frame or other creatures. Not a boss clone. Use square canvas.",
+      "relative_asset_path": "dice-and-destiny-client/assets/battle/minions/carrion_harp/rattlejack.png",
+      "source_reference_paths": [
+        "dice-and-destiny-client/assets/battle/fighters/carrion_harp.png"
+      ],
+      "generated_source_path": "/Users/daddymere/.codex/generated_images/01a0ba30-7da5-7522-9728-234de4f720f5/exec-ca428cbe-4f8c-4e3a-8bd2-33888c37a038.png",
+      "status": "completed",
+      "validation": {
+        "size": [
+          1254,
+          1254
+        ],
+        "mode": "RGBA",
+        "transparent_fraction": 0.6627,
+        "sha256": "5eeb98083320a2a7c8f78bb83650f519db65059e18674202383c916ced0b924c",
+        "visual_review": "Distinct full-body design, desaturated watercolor/ink rendering, no scenery or text; real transparency verified."
+      }
+    },
+    {
+      "id": "rib_cricket",
+      "name": "Rib Cricket",
+      "role": "sonic disrupter",
+      "description": "A large hunched cricket with curved ivory rib armor over a charcoal body, immense bent jumping legs, short ragged wings and a pair of taut gut strings across its forelimbs.",
+      "prompt": "Use case: stylized-concept. Asset type: standalone transparent PNG battle enemy sprite for a dark fantasy game. Create ONE unique lesser minion, clearly modest compared with its boss. Subject: Rib Cricket. A large hunched cricket with curved ivory rib armor over a charcoal body, immense bent jumping legs, short ragged wings and a pair of taut gut strings across its forelimbs. Faction materials: Ossuary scavengers that answer a death-song: weathered bone, ragged charcoal feathers, gut strings, tarnished brass bells. Style: highly detailed desaturated dark watercolor washes inside forms, fine expressive black ink contours, weathered tactile material detail and restrained highlights; solemn eerie handmade bestiary painting, consistent with grim watercolor RPG enemies. Full body in left-facing three-quarter battle stance, entire silhouette within canvas with small transparent safety margin. TRUE transparent RGBA background, all pixels outside creature alpha zero, including between limbs. No environment, ground, platform, cast shadow, surrounding smoke, aura, paper background, checkerboard, text, letters, UI, frame or other creatures. Not a boss clone. Use square canvas.",
+      "relative_asset_path": "dice-and-destiny-client/assets/battle/minions/carrion_harp/rib_cricket.png",
+      "source_reference_paths": [
+        "dice-and-destiny-client/assets/battle/fighters/carrion_harp.png"
+      ],
+      "generated_source_path": "/Users/daddymere/.codex/generated_images/01a0ba30-7da5-7522-9728-234de4f720f5/exec-540e0af4-b593-4b40-9fd0-39c2ec97ef47.png",
+      "status": "completed",
+      "validation": {
+        "size": [
+          1254,
+          1254
+        ],
+        "mode": "RGBA",
+        "transparent_fraction": 0.5996,
+        "sha256": "fcf462af7f04962e5b9cace570ab352893cdaac802cca466e2c2f928d47bd079",
+        "visual_review": "Distinct full-body design, desaturated watercolor/ink rendering, no scenery or text; real transparency verified."
+      }
+    },
+    {
+      "id": "bell_vulture",
+      "name": "Bell Vulture",
+      "role": "aerial scout",
+      "description": "A hunched vulture with a small weathered bone skull, ragged black wing feathers, a bare sinewy neck and a single tarnished brass bell tied below its breast; wings half opened, full legs visible.",
+      "prompt": "Use case: stylized-concept. Asset type: standalone transparent PNG battle enemy sprite for a dark fantasy game. Create ONE unique lesser minion, clearly modest compared with its boss. Subject: Bell Vulture. A hunched vulture with a small weathered bone skull, ragged black wing feathers, a bare sinewy neck and a single tarnished brass bell tied below its breast; wings half opened, full legs visible. Faction materials: Ossuary scavengers that answer a death-song: weathered bone, ragged charcoal feathers, gut strings, tarnished brass bells. Style: highly detailed desaturated dark watercolor washes inside forms, fine expressive black ink contours, weathered tactile material detail and restrained highlights; solemn eerie handmade bestiary painting, consistent with grim watercolor RPG enemies. Full body in left-facing three-quarter battle stance, entire silhouette within canvas with small transparent safety margin. TRUE transparent RGBA background, all pixels outside creature alpha zero, including between limbs. No environment, ground, platform, cast shadow, surrounding smoke, aura, paper background, checkerboard, text, letters, UI, frame or other creatures. Not a boss clone. Use square canvas.",
+      "relative_asset_path": "dice-and-destiny-client/assets/battle/minions/carrion_harp/bell_vulture.png",
+      "source_reference_paths": [
+        "dice-and-destiny-client/assets/battle/fighters/carrion_harp.png"
+      ],
+      "generated_source_path": "/Users/daddymere/.codex/generated_images/01a0ba30-7da5-7522-9728-234de4f720f5/exec-b3849c7e-5a76-4373-8d77-33ceedc13718.png",
+      "status": "completed",
+      "validation": {
+        "size": [
+          1254,
+          1254
+        ],
+        "mode": "RGBA",
+        "transparent_fraction": 0.505,
+        "sha256": "e876e9d2bc6ce999558275b90cf06f4fa662ad3abfc2e70c36447bf5a317db28",
+        "visual_review": "Distinct full-body design, desaturated watercolor/ink rendering, no scenery or text; real transparency verified."
+      }
+    },
+    {
+      "id": "marrow_rat",
+      "name": "Marrow Rat",
+      "role": "gnawing parasite",
+      "description": "A large bony rat with patchy charcoal fur, exposed ivory spinal knobs, a long naked segmented tail threaded through two small brass rings and thin clawed feet, nose tilted toward the left.",
+      "prompt": "Use case: stylized-concept. Asset type: standalone transparent PNG battle enemy sprite for a dark fantasy game. Create ONE unique lesser minion, clearly modest compared with its boss. Subject: Marrow Rat. A large bony rat with patchy charcoal fur, exposed ivory spinal knobs, a long naked segmented tail threaded through two small brass rings and thin clawed feet, nose tilted toward the left. Faction materials: Ossuary scavengers that answer a death-song: weathered bone, ragged charcoal feathers, gut strings, tarnished brass bells. Style: highly detailed desaturated dark watercolor washes inside forms, fine expressive black ink contours, weathered tactile material detail and restrained highlights; solemn eerie handmade bestiary painting, consistent with grim watercolor RPG enemies. Full body in left-facing three-quarter battle stance, entire silhouette within canvas with small transparent safety margin. TRUE transparent RGBA background, all pixels outside creature alpha zero, including between limbs. No environment, ground, platform, cast shadow, surrounding smoke, aura, paper background, checkerboard, text, letters, UI, frame or other creatures. Not a boss clone. Use square canvas.",
+      "relative_asset_path": "dice-and-destiny-client/assets/battle/minions/carrion_harp/marrow_rat.png",
+      "source_reference_paths": [
+        "dice-and-destiny-client/assets/battle/fighters/carrion_harp.png"
+      ],
+      "generated_source_path": "/Users/daddymere/.codex/generated_images/01a0ba30-7da5-7522-9728-234de4f720f5/exec-8ed7803f-3459-49bf-b47a-28373df02f92.png",
+      "status": "completed",
+      "validation": {
+        "size": [
+          1254,
+          1254
+        ],
+        "mode": "RGBA",
+        "transparent_fraction": 0.639,
+        "sha256": "cdb660cfccd53b7b846f7467355b429ddf075b71bb610ba9ae7079e7c8d91ecf",
+        "visual_review": "Distinct full-body design, desaturated watercolor/ink rendering, no scenery or text; real transparency verified."
+      }
+    },
+    {
+      "id": "dirge_toad",
+      "name": "Dirge Toad",
+      "role": "sonic debuffer",
+      "description": "A broad squat black toad with an inflated pale throat sac braced by curved rib-like struts, tiny brass studs along its jaw, coarse featherlike back warts and long spread finger bones.",
+      "prompt": "Use case: stylized-concept. Asset type: standalone transparent PNG battle enemy sprite for a dark fantasy game. Create ONE unique lesser minion, clearly modest compared with its boss. Subject: Dirge Toad. A broad squat black toad with an inflated pale throat sac braced by curved rib-like struts, tiny brass studs along its jaw, coarse featherlike back warts and long spread finger bones. Faction materials: Ossuary scavengers that answer a death-song: weathered bone, ragged charcoal feathers, gut strings, tarnished brass bells. Style: highly detailed desaturated dark watercolor washes inside forms, fine expressive black ink contours, weathered tactile material detail and restrained highlights; solemn eerie handmade bestiary painting, consistent with grim watercolor RPG enemies. Full body in left-facing three-quarter battle stance, entire silhouette within canvas with small transparent safety margin. TRUE transparent RGBA background, all pixels outside creature alpha zero, including between limbs. No environment, ground, platform, cast shadow, surrounding smoke, aura, paper background, checkerboard, text, letters, UI, frame or other creatures. Not a boss clone. Use square canvas.",
+      "relative_asset_path": "dice-and-destiny-client/assets/battle/minions/carrion_harp/dirge_toad.png",
+      "source_reference_paths": [
+        "dice-and-destiny-client/assets/battle/fighters/carrion_harp.png"
+      ],
+      "generated_source_path": "/Users/daddymere/.codex/generated_images/01a0ba30-7da5-7522-9728-234de4f720f5/exec-581bf13e-226f-4ed6-8ac2-5de507ca3044.png",
+      "status": "completed",
+      "validation": {
+        "size": [
+          1254,
+          1254
+        ],
+        "mode": "RGBA",
+        "transparent_fraction": 0.4923,
+        "sha256": "3f04b25cca9505012d7da175d39f215927cdf67b2ec58aa4611a9d13559cdc96",
+        "visual_review": "Distinct full-body design, desaturated watercolor/ink rendering, no scenery or text; real transparency verified."
+      }
+    },
+    {
+      "id": "ossuary_snail",
+      "name": "Ossuary Snail",
+      "role": "armored ward",
+      "description": "A charcoal snail bearing a shell assembled from overlapping weathered vertebrae in a spiral, two thin bone antennae and a dangling brass chime tucked close beneath the shell.",
+      "prompt": "Use case: stylized-concept. Asset type: standalone transparent PNG battle enemy sprite for a dark fantasy game. Create ONE unique lesser minion, clearly modest compared with its boss. Subject: Ossuary Snail. A charcoal snail bearing a shell assembled from overlapping weathered vertebrae in a spiral, two thin bone antennae and a dangling brass chime tucked close beneath the shell. Faction materials: Ossuary scavengers that answer a death-song: weathered bone, ragged charcoal feathers, gut strings, tarnished brass bells. Style: highly detailed desaturated dark watercolor washes inside forms, fine expressive black ink contours, weathered tactile material detail and restrained highlights; solemn eerie handmade bestiary painting, consistent with grim watercolor RPG enemies. Full body in left-facing three-quarter battle stance, entire silhouette within canvas with small transparent safety margin. TRUE transparent RGBA background, all pixels outside creature alpha zero, including between limbs. No environment, ground, platform, cast shadow, surrounding smoke, aura, paper background, checkerboard, text, letters, UI, frame or other creatures. Not a boss clone. Use square canvas.",
+      "relative_asset_path": "dice-and-destiny-client/assets/battle/minions/carrion_harp/ossuary_snail.png",
+      "source_reference_paths": [
+        "dice-and-destiny-client/assets/battle/fighters/carrion_harp.png"
+      ],
+      "generated_source_path": "/Users/daddymere/.codex/generated_images/01a0ba30-7da5-7522-9728-234de4f720f5/exec-14550d18-661d-4187-bcc7-d3f02ed7f243.png",
+      "status": "completed",
+      "validation": {
+        "size": [
+          1254,
+          1254
+        ],
+        "mode": "RGBA",
+        "transparent_fraction": 0.5322,
+        "sha256": "0a0ac9bd9950dd5060caa177f3a793ee177e2fdf2b153bd29df042887d4b1182",
+        "visual_review": "Distinct full-body design, desaturated watercolor/ink rendering, no scenery or text; real transparency verified."
+      }
+    },
+    {
+      "id": "sinew_walker",
+      "name": "Sinew Walker",
+      "role": "ensnaring sentinel",
+      "description": "A strange animated bone tripod with a small raven skull suspended between three long jointed legs by taut gut strings, sparse black feathers around its central knot and tiny brass tuning pegs.",
+      "prompt": "Use case: stylized-concept. Asset type: standalone transparent PNG battle enemy sprite for a dark fantasy game. Create ONE unique lesser minion, clearly modest compared with its boss. Subject: Sinew Walker. A strange animated bone tripod with a small raven skull suspended between three long jointed legs by taut gut strings, sparse black feathers around its central knot and tiny brass tuning pegs. Faction materials: Ossuary scavengers that answer a death-song: weathered bone, ragged charcoal feathers, gut strings, tarnished brass bells. Style: highly detailed desaturated dark watercolor washes inside forms, fine expressive black ink contours, weathered tactile material detail and restrained highlights; solemn eerie handmade bestiary painting, consistent with grim watercolor RPG enemies. Full body in left-facing three-quarter battle stance, entire silhouette within canvas with small transparent safety margin. TRUE transparent RGBA background, all pixels outside creature alpha zero, including between limbs. No environment, ground, platform, cast shadow, surrounding smoke, aura, paper background, checkerboard, text, letters, UI, frame or other creatures. Not a boss clone. Use square canvas.",
+      "relative_asset_path": "dice-and-destiny-client/assets/battle/minions/carrion_harp/sinew_walker.png",
+      "source_reference_paths": [
+        "dice-and-destiny-client/assets/battle/fighters/carrion_harp.png"
+      ],
+      "generated_source_path": "/Users/daddymere/.codex/generated_images/01a0ba30-7da5-7522-9728-234de4f720f5/exec-4a4c25d8-1ebb-4c8a-8ea4-ef6fea8dd220.png",
+      "status": "completed",
+      "validation": {
+        "size": [
+          1254,
+          1254
+        ],
+        "mode": "RGBA",
+        "transparent_fraction": 0.8002,
+        "sha256": "b9c47c0821176b057897f30a8ad787165a9b3519e90897126419bbc4aa104458",
+        "visual_review": "Distinct full-body design, desaturated watercolor/ink rendering, no scenery or text; real transparency verified."
+      }
+    },
+    {
+      "id": "grave_marten",
+      "name": "Grave Marten",
+      "role": "fast flanker",
+      "description": "A sinuous long-bodied marten with four low limbs, charcoal pelt, ivory skull-mask face and a fan of tattered black tail feathers threaded with one dull brass ring, spine arched in motion.",
+      "prompt": "Use case: stylized-concept. Asset type: standalone transparent PNG battle enemy sprite for a dark fantasy game. Create ONE unique lesser minion, clearly modest compared with its boss. Subject: Grave Marten. A sinuous long-bodied marten with four low limbs, charcoal pelt, ivory skull-mask face and a fan of tattered black tail feathers threaded with one dull brass ring, spine arched in motion. Faction materials: Ossuary scavengers that answer a death-song: weathered bone, ragged charcoal feathers, gut strings, tarnished brass bells. Style: highly detailed desaturated dark watercolor washes inside forms, fine expressive black ink contours, weathered tactile material detail and restrained highlights; solemn eerie handmade bestiary painting, consistent with grim watercolor RPG enemies. Full body in left-facing three-quarter battle stance, entire silhouette within canvas with small transparent safety margin. TRUE transparent RGBA background, all pixels outside creature alpha zero, including between limbs. No environment, ground, platform, cast shadow, surrounding smoke, aura, paper background, checkerboard, text, letters, UI, frame or other creatures. Not a boss clone. Use square canvas.",
+      "relative_asset_path": "dice-and-destiny-client/assets/battle/minions/carrion_harp/grave_marten.png",
+      "source_reference_paths": [
+        "dice-and-destiny-client/assets/battle/fighters/carrion_harp.png"
+      ],
+      "generated_source_path": "/Users/daddymere/.codex/generated_images/01a0ba30-7da5-7522-9728-234de4f720f5/exec-3fff92d8-f7ab-43f1-900d-f5a206eacb74.png",
+      "status": "completed",
+      "validation": {
+        "size": [
+          1254,
+          1254
+        ],
+        "mode": "RGBA",
+        "transparent_fraction": 0.5771,
+        "sha256": "5f8c16b434580b8f995863367a5350393fbc055a85ac4e80a8972f928c64ebe8",
+        "visual_review": "Distinct full-body design, desaturated watercolor/ink rendering, no scenery or text; real transparency verified."
+      }
+    },
+    {
+      "id": "knell_beetle",
+      "name": "Knell Beetle",
+      "role": "rolling bruiser",
+      "description": "A stocky six-legged beetle with an ivory skull-like carapace over black chitin, broad shovel mandibles and a round tarnished bell chamber integrated into its abdomen, no bird wings.",
+      "prompt": "Use case: stylized-concept. Asset type: standalone transparent PNG battle enemy sprite for a dark fantasy game. Create ONE unique lesser minion, clearly modest compared with its boss. Subject: Knell Beetle. A stocky six-legged beetle with an ivory skull-like carapace over black chitin, broad shovel mandibles and a round tarnished bell chamber integrated into its abdomen, no bird wings. Faction materials: Ossuary scavengers that answer a death-song: weathered bone, ragged charcoal feathers, gut strings, tarnished brass bells. Style: highly detailed desaturated dark watercolor washes inside forms, fine expressive black ink contours, weathered tactile material detail and restrained highlights; solemn eerie handmade bestiary painting, consistent with grim watercolor RPG enemies. Full body in left-facing three-quarter battle stance, entire silhouette within canvas with small transparent safety margin. TRUE transparent RGBA background, all pixels outside creature alpha zero, including between limbs. No environment, ground, platform, cast shadow, surrounding smoke, aura, paper background, checkerboard, text, letters, UI, frame or other creatures. Not a boss clone. Use square canvas.",
+      "relative_asset_path": "dice-and-destiny-client/assets/battle/minions/carrion_harp/knell_beetle.png",
+      "source_reference_paths": [
+        "dice-and-destiny-client/assets/battle/fighters/carrion_harp.png"
+      ],
+      "generated_source_path": "/Users/daddymere/.codex/generated_images/01a0ba30-7da5-7522-9728-234de4f720f5/exec-944dab9b-988e-4411-b7f6-dc27013b1040.png",
+      "status": "completed",
+      "validation": {
+        "size": [
+          1254,
+          1254
+        ],
+        "mode": "RGBA",
+        "transparent_fraction": 0.564,
+        "sha256": "ac615ccdbc5eeb6809d00c1ba66cc3e173d13a78d53f05fac247193ddaa038d4",
+        "visual_review": "Distinct full-body design, desaturated watercolor/ink rendering, no scenery or text; real transparency verified."
+      }
+    },
+    {
+      "id": "mute_cantor",
+      "name": "Mute Cantor",
+      "role": "support chanter",
+      "description": "A short crouched bone-faced scavenger imp with a stitched shut beaklike mouth, ragged black feather cloak, long pale arms cradling a tiny rib-and-sinew lyre, thin bent legs and brass ankle rings.",
+      "prompt": "Use case: precise-object-edit. Input image is the Mute Cantor sprite, edit target. Preserve this same creature, its stitched beak skull, feather cloak, small bone lyre, pose, colors and detailed desaturated watercolor-ink rendering. Repair the cropped uppermost feather tips. Zoom out substantially so the COMPLETE creature INCLUDING EVERY top feather tip and bottom talon fits comfortably with at least 8 percent completely transparent margin on EACH of the four edges. Creature should occupy at most 84 percent of canvas height. Do not crop any anatomy. Maintain full-body left-facing three-quarter view. True transparent RGBA PNG, all empty outside space alpha zero, clean transparent gaps between limbs and strings. No environment, ground, shadow, aura, background fill, paper, checkerboard, UI or text. Square canvas.",
+      "relative_asset_path": "dice-and-destiny-client/assets/battle/minions/carrion_harp/mute_cantor.png",
+      "source_reference_paths": [
+        "dice-and-destiny-client/assets/battle/fighters/carrion_harp.png",
+        "/Users/daddymere/.codex/generated_images/01a0ba30-7da5-7522-9728-234de4f720f5/exec-fb44e70f-105b-45e3-883d-ce33abea32af.png"
+      ],
+      "generated_source_path": "/Users/daddymere/.codex/generated_images/01a0ba30-7da5-7522-9728-234de4f720f5/exec-fddbb77b-3fe2-4d5a-ba4b-356ebe7587d2.png",
+      "status": "completed",
+      "validation": {
+        "size": [
+          1254,
+          1254
+        ],
+        "mode": "RGBA",
+        "transparent_fraction": 0.6533,
+        "sha256": "447feb8900b05c0f413954298414a407ceb71558677a6d3c77d47a6e39a04b0e",
+        "opaque_bounds_alpha_gt_64": [
+          276,
+          48,
+          1086,
+          1210
+        ],
+        "visual_review": "Revised with fully contained top feathers and bottom talons. Distinct full-body watercolor/ink design, no scenery or text; real transparency and strict in-canvas opaque silhouette verified."
+      },
+      "revisions": [
+        {
+          "source": "/Users/daddymere/.codex/generated_images/01a0ba30-7da5-7522-9728-234de4f720f5/exec-fb44e70f-105b-45e3-883d-ce33abea32af.png",
+          "prompt": "Use case: stylized-concept. Asset type: standalone transparent PNG battle enemy sprite for a dark fantasy game. Create ONE unique lesser minion, clearly modest compared with its boss. Subject: Mute Cantor. A short crouched bone-faced scavenger imp with a stitched shut beaklike mouth, ragged black feather cloak, long pale arms cradling a tiny rib-and-sinew lyre, thin bent legs and brass ankle rings. Faction materials: Ossuary scavengers that answer a death-song: weathered bone, ragged charcoal feathers, gut strings, tarnished brass bells. Style: highly detailed desaturated dark watercolor washes inside forms, fine expressive black ink contours, weathered tactile material detail and restrained highlights; solemn eerie handmade bestiary painting, consistent with grim watercolor RPG enemies. Full body in left-facing three-quarter battle stance, entire silhouette within canvas with small transparent safety margin. TRUE transparent RGBA background, all pixels outside creature alpha zero, including between limbs. No environment, ground, platform, cast shadow, surrounding smoke, aura, paper background, checkerboard, text, letters, UI, frame or other creatures. Not a boss clone. Use square canvas.",
+          "selected": false,
+          "reason": "Uppermost cloak feathers clipped at top canvas edge."
+        }
+      ]
+    }
+  ],
+  "generation_mode": "built-in image_gen; one independently prompted image per minion; original pixels preserved"
+}

@@ -1,0 +1,238 @@
+{
+  "boss_id": "wax_revenant",
+  "boss_name": "Wax Revenant",
+  "theme": "Funerary waxcraft and abandoned chapel vermin: warm ivory wax, black cloth, tarnished brass, tiny amber wicks.",
+  "minions": [
+    {
+      "id": "tallow_hound",
+      "name": "Tallow Hound",
+      "role": "tracking hunter",
+      "description": "A thin black burial-cloth hound whose back is armored with lumpy melted ivory wax, bare brass jaw hinges, narrow claw feet and a single unlit wick at its forehead, ears like torn shrouds.",
+      "prompt": "Use case: stylized-concept. Asset type: standalone transparent PNG battle enemy sprite for a dark fantasy game. Create ONE unique lesser minion, clearly modest compared with its boss. Subject: Tallow Hound. A thin black burial-cloth hound whose back is armored with lumpy melted ivory wax, bare brass jaw hinges, narrow claw feet and a single unlit wick at its forehead, ears like torn shrouds. Faction materials: Funerary waxcraft and abandoned chapel vermin: warm ivory wax, black cloth, tarnished brass, tiny amber wicks. Style: highly detailed desaturated dark watercolor washes inside forms, fine expressive black ink contours, weathered tactile material detail and restrained highlights; solemn eerie handmade bestiary painting, consistent with grim watercolor RPG enemies. Full body in left-facing three-quarter battle stance, entire silhouette within canvas with small transparent safety margin. TRUE transparent RGBA background, all pixels outside creature alpha zero, including between limbs. No environment, ground, platform, cast shadow, surrounding smoke, aura, paper background, checkerboard, text, letters, UI, frame or other creatures. Not a boss clone. Use square canvas.",
+      "relative_asset_path": "dice-and-destiny-client/assets/battle/minions/wax_revenant/tallow_hound.png",
+      "source_reference_paths": [
+        "dice-and-destiny-client/assets/battle/fighters/wax_revenant.png"
+      ],
+      "generated_source_path": "/Users/daddymere/.codex/generated_images/01a0ba30-7da5-7522-9728-234de4f720f5/exec-b3d6d895-54c1-4414-9e4a-dd293ba571d9.png",
+      "status": "completed",
+      "validation": {
+        "size": [
+          1254,
+          1254
+        ],
+        "mode": "RGBA",
+        "transparent_fraction": 0.603,
+        "sha256": "aa8720d5f06141ef664921f417242a2d5a9b7325f7be6a1fdf8b3994a9192228",
+        "visual_review": "Distinct full-body design, desaturated watercolor/ink rendering, no scenery or text; real transparency verified."
+      }
+    },
+    {
+      "id": "candle_crab",
+      "name": "Candle Crab",
+      "role": "defensive crawler",
+      "description": "A squat crab made of hardened ivory candle drips around a tarnished brass votive cup, six black jointed legs, asymmetric wax pincers and a tiny burning wick recessed in its cup.",
+      "prompt": "Use case: stylized-concept. Asset type: standalone transparent PNG battle enemy sprite for a dark fantasy game. Create ONE unique lesser minion, clearly modest compared with its boss. Subject: Candle Crab. A squat crab made of hardened ivory candle drips around a tarnished brass votive cup, six black jointed legs, asymmetric wax pincers and a tiny burning wick recessed in its cup. Faction materials: Funerary waxcraft and abandoned chapel vermin: warm ivory wax, black cloth, tarnished brass, tiny amber wicks. Style: highly detailed desaturated dark watercolor washes inside forms, fine expressive black ink contours, weathered tactile material detail and restrained highlights; solemn eerie handmade bestiary painting, consistent with grim watercolor RPG enemies. Full body in left-facing three-quarter battle stance, entire silhouette within canvas with small transparent safety margin. TRUE transparent RGBA background, all pixels outside creature alpha zero, including between limbs. No environment, ground, platform, cast shadow, surrounding smoke, aura, paper background, checkerboard, text, letters, UI, frame or other creatures. Not a boss clone. Use square canvas.",
+      "relative_asset_path": "dice-and-destiny-client/assets/battle/minions/wax_revenant/candle_crab.png",
+      "source_reference_paths": [
+        "dice-and-destiny-client/assets/battle/fighters/wax_revenant.png"
+      ],
+      "generated_source_path": "/Users/daddymere/.codex/generated_images/01a0ba30-7da5-7522-9728-234de4f720f5/exec-c4314470-c2b1-4155-acdc-6be529804951.png",
+      "status": "completed",
+      "validation": {
+        "size": [
+          1254,
+          1254
+        ],
+        "mode": "RGBA",
+        "transparent_fraction": 0.6832,
+        "sha256": "b81a8af66222818bbbe31314db4734a79e86405f87f607193edc4fc168b9327b",
+        "visual_review": "Distinct full-body design, desaturated watercolor/ink rendering, no scenery or text; real transparency verified."
+      }
+    },
+    {
+      "id": "wick_stitcher",
+      "name": "Wick Stitcher",
+      "role": "binding support",
+      "description": "A spindly humanoid wax puppet with an oversized featureless oval head sewn shut by black wick, two short brass needle arms, bent skinny legs and a small ragged funeral apron, no hood.",
+      "prompt": "Use case: stylized-concept. Asset type: standalone transparent PNG battle enemy sprite for a dark fantasy game. Create ONE unique lesser minion, clearly modest compared with its boss. Subject: Wick Stitcher. A spindly humanoid wax puppet with an oversized featureless oval head sewn shut by black wick, two short brass needle arms, bent skinny legs and a small ragged funeral apron, no hood. Faction materials: Funerary waxcraft and abandoned chapel vermin: warm ivory wax, black cloth, tarnished brass, tiny amber wicks. Style: highly detailed desaturated dark watercolor washes inside forms, fine expressive black ink contours, weathered tactile material detail and restrained highlights; solemn eerie handmade bestiary painting, consistent with grim watercolor RPG enemies. Full body in left-facing three-quarter battle stance, entire silhouette within canvas with small transparent safety margin. TRUE transparent RGBA background, all pixels outside creature alpha zero, including between limbs. No environment, ground, platform, cast shadow, surrounding smoke, aura, paper background, checkerboard, text, letters, UI, frame or other creatures. Not a boss clone. Use square canvas.",
+      "relative_asset_path": "dice-and-destiny-client/assets/battle/minions/wax_revenant/wick_stitcher.png",
+      "source_reference_paths": [
+        "dice-and-destiny-client/assets/battle/fighters/wax_revenant.png"
+      ],
+      "generated_source_path": "/Users/daddymere/.codex/generated_images/01a0ba30-7da5-7522-9728-234de4f720f5/exec-39e8813d-ee18-4d19-b2a0-7da0e6baaf92.png",
+      "status": "completed",
+      "validation": {
+        "size": [
+          1254,
+          1254
+        ],
+        "mode": "RGBA",
+        "transparent_fraction": 0.7119,
+        "sha256": "c397b079189873e96c276014852ec1df68ac0dc936657fb43d811a71757dce94",
+        "visual_review": "Distinct full-body design, desaturated watercolor/ink rendering, no scenery or text; real transparency verified."
+      }
+    },
+    {
+      "id": "pew_maggot",
+      "name": "Pew Maggot",
+      "role": "devouring crawler",
+      "description": "A fat pale wax-coated larva with black cloth rings between its segments, a round brass jaw and four tiny hooked front limbs, a stubby soot-dark tail and a small amber eye.",
+      "prompt": "Use case: stylized-concept. Asset type: standalone transparent PNG battle enemy sprite for a dark fantasy game. Create ONE unique lesser minion, clearly modest compared with its boss. Subject: Pew Maggot. A fat pale wax-coated larva with black cloth rings between its segments, a round brass jaw and four tiny hooked front limbs, a stubby soot-dark tail and a small amber eye. Faction materials: Funerary waxcraft and abandoned chapel vermin: warm ivory wax, black cloth, tarnished brass, tiny amber wicks. Style: highly detailed desaturated dark watercolor washes inside forms, fine expressive black ink contours, weathered tactile material detail and restrained highlights; solemn eerie handmade bestiary painting, consistent with grim watercolor RPG enemies. Full body in left-facing three-quarter battle stance, entire silhouette within canvas with small transparent safety margin. TRUE transparent RGBA background, all pixels outside creature alpha zero, including between limbs. No environment, ground, platform, cast shadow, surrounding smoke, aura, paper background, checkerboard, text, letters, UI, frame or other creatures. Not a boss clone. Use square canvas.",
+      "relative_asset_path": "dice-and-destiny-client/assets/battle/minions/wax_revenant/pew_maggot.png",
+      "source_reference_paths": [
+        "dice-and-destiny-client/assets/battle/fighters/wax_revenant.png"
+      ],
+      "generated_source_path": "/Users/daddymere/.codex/generated_images/01a0ba30-7da5-7522-9728-234de4f720f5/exec-98ae9546-514a-4351-b7fe-c7ab398c1c09.png",
+      "status": "completed",
+      "validation": {
+        "size": [
+          1254,
+          1254
+        ],
+        "mode": "RGBA",
+        "transparent_fraction": 0.6022,
+        "sha256": "70bfba4ff593b9f26b3ea0232e9c7b5d2cab83e5655382ef68974ed9271cbb06",
+        "visual_review": "Distinct full-body design, desaturated watercolor/ink rendering, no scenery or text; real transparency verified."
+      }
+    },
+    {
+      "id": "votive_snail",
+      "name": "Votive Snail",
+      "role": "ward bearer",
+      "description": "A broad charcoal snail carrying a cracked ivory wax spiral shell pierced by three short spent candle sockets, antennae tipped with tarnished brass beads, hanging wax scallops confined to its body.",
+      "prompt": "Use case: stylized-concept. Asset type: standalone transparent PNG battle enemy sprite for a dark fantasy game. Create ONE unique lesser minion, clearly modest compared with its boss. Subject: Votive Snail. A broad charcoal snail carrying a cracked ivory wax spiral shell pierced by three short spent candle sockets, antennae tipped with tarnished brass beads, hanging wax scallops confined to its body. Faction materials: Funerary waxcraft and abandoned chapel vermin: warm ivory wax, black cloth, tarnished brass, tiny amber wicks. Style: highly detailed desaturated dark watercolor washes inside forms, fine expressive black ink contours, weathered tactile material detail and restrained highlights; solemn eerie handmade bestiary painting, consistent with grim watercolor RPG enemies. Full body in left-facing three-quarter battle stance, entire silhouette within canvas with small transparent safety margin. TRUE transparent RGBA background, all pixels outside creature alpha zero, including between limbs. No environment, ground, platform, cast shadow, surrounding smoke, aura, paper background, checkerboard, text, letters, UI, frame or other creatures. Not a boss clone. Use square canvas.",
+      "relative_asset_path": "dice-and-destiny-client/assets/battle/minions/wax_revenant/votive_snail.png",
+      "source_reference_paths": [
+        "dice-and-destiny-client/assets/battle/fighters/wax_revenant.png"
+      ],
+      "generated_source_path": "/Users/daddymere/.codex/generated_images/01a0ba30-7da5-7522-9728-234de4f720f5/exec-0a636759-b5f3-4b0d-b374-68f54c69d5c7.png",
+      "status": "completed",
+      "validation": {
+        "size": [
+          1254,
+          1254
+        ],
+        "mode": "RGBA",
+        "transparent_fraction": 0.5265,
+        "sha256": "56e9c124fdbccfdc6d282b7e36099dc30810816d2a7c824c772db739c1204e20",
+        "visual_review": "Distinct full-body design, desaturated watercolor/ink rendering, no scenery or text; real transparency verified."
+      }
+    },
+    {
+      "id": "mourning_bat",
+      "name": "Mourning Bat",
+      "role": "aerial harrier",
+      "description": "A small black-furred bat with ragged funeral-lace wing membranes, dripping ivory wax plates over its shoulders and a brass bell clapper for a lower jaw, wings swept upward and claws curled.",
+      "prompt": "Use case: stylized-concept. Asset type: standalone transparent PNG battle enemy sprite for a dark fantasy game. Create ONE unique lesser minion, clearly modest compared with its boss. Subject: Mourning Bat. A small black-furred bat with ragged funeral-lace wing membranes, dripping ivory wax plates over its shoulders and a brass bell clapper for a lower jaw, wings swept upward and claws curled. Faction materials: Funerary waxcraft and abandoned chapel vermin: warm ivory wax, black cloth, tarnished brass, tiny amber wicks. Style: highly detailed desaturated dark watercolor washes inside forms, fine expressive black ink contours, weathered tactile material detail and restrained highlights; solemn eerie handmade bestiary painting, consistent with grim watercolor RPG enemies. Full body in left-facing three-quarter battle stance, entire silhouette within canvas with small transparent safety margin. TRUE transparent RGBA background, all pixels outside creature alpha zero, including between limbs. No environment, ground, platform, cast shadow, surrounding smoke, aura, paper background, checkerboard, text, letters, UI, frame or other creatures. Not a boss clone. Use square canvas.",
+      "relative_asset_path": "dice-and-destiny-client/assets/battle/minions/wax_revenant/mourning_bat.png",
+      "source_reference_paths": [
+        "dice-and-destiny-client/assets/battle/fighters/wax_revenant.png"
+      ],
+      "generated_source_path": "/Users/daddymere/.codex/generated_images/01a0ba30-7da5-7522-9728-234de4f720f5/exec-741b198e-8b07-46ca-b03b-1e870756600e.png",
+      "status": "completed",
+      "validation": {
+        "size": [
+          1254,
+          1254
+        ],
+        "mode": "RGBA",
+        "transparent_fraction": 0.5999,
+        "sha256": "307b413d1ea9a73f2b326bfa4ae2cd56af0250a3c4f7ced9ad33b40ea75c76f9",
+        "visual_review": "Distinct full-body design, desaturated watercolor/ink rendering, no scenery or text; real transparency verified."
+      }
+    },
+    {
+      "id": "sealmouth_acolyte",
+      "name": "Sealmouth Acolyte",
+      "role": "silencing caster",
+      "description": "A short stooped undead attendant with face entirely sealed by a thick round ivory wax disk, knotted black robes above visible thin shins, carrying a narrow brass candle snuffer across its body.",
+      "prompt": "Use case: stylized-concept. Asset type: standalone transparent PNG battle enemy sprite for a dark fantasy game. Create ONE unique lesser minion, clearly modest compared with its boss. Subject: Sealmouth Acolyte. A short stooped undead attendant with face entirely sealed by a thick round ivory wax disk, knotted black robes above visible thin shins, carrying a narrow brass candle snuffer across its body. Faction materials: Funerary waxcraft and abandoned chapel vermin: warm ivory wax, black cloth, tarnished brass, tiny amber wicks. Style: highly detailed desaturated dark watercolor washes inside forms, fine expressive black ink contours, weathered tactile material detail and restrained highlights; solemn eerie handmade bestiary painting, consistent with grim watercolor RPG enemies. Full body in left-facing three-quarter battle stance, entire silhouette within canvas with small transparent safety margin. TRUE transparent RGBA background, all pixels outside creature alpha zero, including between limbs. No environment, ground, platform, cast shadow, surrounding smoke, aura, paper background, checkerboard, text, letters, UI, frame or other creatures. Not a boss clone. Use square canvas.",
+      "relative_asset_path": "dice-and-destiny-client/assets/battle/minions/wax_revenant/sealmouth_acolyte.png",
+      "source_reference_paths": [
+        "dice-and-destiny-client/assets/battle/fighters/wax_revenant.png"
+      ],
+      "generated_source_path": "/Users/daddymere/.codex/generated_images/01a0ba30-7da5-7522-9728-234de4f720f5/exec-c57a4998-3bf4-4fd6-aadc-1aa5b71b93df.png",
+      "status": "completed",
+      "validation": {
+        "size": [
+          1254,
+          1254
+        ],
+        "mode": "RGBA",
+        "transparent_fraction": 0.6184,
+        "sha256": "2c3ebffe6db13abe13d45bdd1a505da09cea9c7c78b8c1283864d06e31967a60",
+        "visual_review": "Distinct full-body design, desaturated watercolor/ink rendering, no scenery or text; real transparency verified."
+      }
+    },
+    {
+      "id": "dripjaw_toad",
+      "name": "Dripjaw Toad",
+      "role": "slowing spitter",
+      "description": "A heavy squat toad sculpted from gray tallow with ivory stalactite wax teeth around an open black mouth, coarse funeral-thread sutures and stout bent legs, one tiny amber wick eye.",
+      "prompt": "Use case: stylized-concept. Asset type: standalone transparent PNG battle enemy sprite for a dark fantasy game. Create ONE unique lesser minion, clearly modest compared with its boss. Subject: Dripjaw Toad. A heavy squat toad sculpted from gray tallow with ivory stalactite wax teeth around an open black mouth, coarse funeral-thread sutures and stout bent legs, one tiny amber wick eye. Faction materials: Funerary waxcraft and abandoned chapel vermin: warm ivory wax, black cloth, tarnished brass, tiny amber wicks. Style: highly detailed desaturated dark watercolor washes inside forms, fine expressive black ink contours, weathered tactile material detail and restrained highlights; solemn eerie handmade bestiary painting, consistent with grim watercolor RPG enemies. Full body in left-facing three-quarter battle stance, entire silhouette within canvas with small transparent safety margin. TRUE transparent RGBA background, all pixels outside creature alpha zero, including between limbs. No environment, ground, platform, cast shadow, surrounding smoke, aura, paper background, checkerboard, text, letters, UI, frame or other creatures. Not a boss clone. Use square canvas.",
+      "relative_asset_path": "dice-and-destiny-client/assets/battle/minions/wax_revenant/dripjaw_toad.png",
+      "source_reference_paths": [
+        "dice-and-destiny-client/assets/battle/fighters/wax_revenant.png"
+      ],
+      "generated_source_path": "/Users/daddymere/.codex/generated_images/01a0ba30-7da5-7522-9728-234de4f720f5/exec-8854115c-a939-4882-b077-02faea1ff264.png",
+      "status": "completed",
+      "validation": {
+        "size": [
+          1254,
+          1254
+        ],
+        "mode": "RGBA",
+        "transparent_fraction": 0.5041,
+        "sha256": "eb148a235cab8a99822a7617d83dd8b4f2555b661997b7950601e4be8046dd84",
+        "visual_review": "Distinct full-body design, desaturated watercolor/ink rendering, no scenery or text; real transparency verified."
+      }
+    },
+    {
+      "id": "censer_tick",
+      "name": "Censer Tick",
+      "role": "draining parasite",
+      "description": "A large flattened six-legged tick whose body is an oval tarnished brass incense cage filled with solidified ivory wax, black hook feet and small opposing needle jaws, no smoke.",
+      "prompt": "Use case: stylized-concept. Asset type: standalone transparent PNG battle enemy sprite for a dark fantasy game. Create ONE unique lesser minion, clearly modest compared with its boss. Subject: Censer Tick. A large flattened six-legged tick whose body is an oval tarnished brass incense cage filled with solidified ivory wax, black hook feet and small opposing needle jaws, no smoke. Faction materials: Funerary waxcraft and abandoned chapel vermin: warm ivory wax, black cloth, tarnished brass, tiny amber wicks. Style: highly detailed desaturated dark watercolor washes inside forms, fine expressive black ink contours, weathered tactile material detail and restrained highlights; solemn eerie handmade bestiary painting, consistent with grim watercolor RPG enemies. Full body in left-facing three-quarter battle stance, entire silhouette within canvas with small transparent safety margin. TRUE transparent RGBA background, all pixels outside creature alpha zero, including between limbs. No environment, ground, platform, cast shadow, surrounding smoke, aura, paper background, checkerboard, text, letters, UI, frame or other creatures. Not a boss clone. Use square canvas.",
+      "relative_asset_path": "dice-and-destiny-client/assets/battle/minions/wax_revenant/censer_tick.png",
+      "source_reference_paths": [
+        "dice-and-destiny-client/assets/battle/fighters/wax_revenant.png"
+      ],
+      "generated_source_path": "/Users/daddymere/.codex/generated_images/01a0ba30-7da5-7522-9728-234de4f720f5/exec-754ab439-98b1-4434-ba3b-d7df689bbe95.png",
+      "status": "completed",
+      "validation": {
+        "size": [
+          1254,
+          1254
+        ],
+        "mode": "RGBA",
+        "transparent_fraction": 0.6146,
+        "sha256": "bd45793f461b9fdb46833cd33adee7c4f2a99d8b316c4e91368fe4026f24aae5",
+        "visual_review": "Distinct full-body design, desaturated watercolor/ink rendering, no scenery or text; real transparency verified."
+      }
+    },
+    {
+      "id": "pallbearer_hand",
+      "name": "Pallbearer Hand",
+      "role": "grappling servant",
+      "description": "A severed animated giant wax hand walking on four long blackened fingers, thumb raised as a hook, a brass funeral ring and fraying black ribbon tied around its capped wrist, clearly hand-shaped.",
+      "prompt": "Use case: stylized-concept. Asset type: standalone transparent PNG battle enemy sprite for a dark fantasy game. Create ONE unique lesser minion, clearly modest compared with its boss. Subject: Pallbearer Hand. A severed animated giant wax hand walking on four long blackened fingers, thumb raised as a hook, a brass funeral ring and fraying black ribbon tied around its capped wrist, clearly hand-shaped. Faction materials: Funerary waxcraft and abandoned chapel vermin: warm ivory wax, black cloth, tarnished brass, tiny amber wicks. Style: highly detailed desaturated dark watercolor washes inside forms, fine expressive black ink contours, weathered tactile material detail and restrained highlights; solemn eerie handmade bestiary painting, consistent with grim watercolor RPG enemies. Full body in left-facing three-quarter battle stance, entire silhouette within canvas with small transparent safety margin. TRUE transparent RGBA background, all pixels outside creature alpha zero, including between limbs. No environment, ground, platform, cast shadow, surrounding smoke, aura, paper background, checkerboard, text, letters, UI, frame or other creatures. Not a boss clone. Use square canvas.",
+      "relative_asset_path": "dice-and-destiny-client/assets/battle/minions/wax_revenant/pallbearer_hand.png",
+      "source_reference_paths": [
+        "dice-and-destiny-client/assets/battle/fighters/wax_revenant.png"
+      ],
+      "generated_source_path": "/Users/daddymere/.codex/generated_images/01a0ba30-7da5-7522-9728-234de4f720f5/exec-8b3837bd-033b-4ded-bde7-015ee9baa8b0.png",
+      "status": "completed",
+      "validation": {
+        "size": [
+          1254,
+          1254
+        ],
+        "mode": "RGBA",
+        "transparent_fraction": 0.6257,
+        "sha256": "db50e585b76f3070b86778b7a6752ab6bc32f5bb3d6deb31ddfa53d54d77c046",
+        "visual_review": "Distinct full-body design, desaturated watercolor/ink rendering, no scenery or text; real transparency verified."
+      }
+    }
+  ],
+  "generation_mode": "built-in image_gen; one independently prompted image per minion; original pixels preserved"
+}

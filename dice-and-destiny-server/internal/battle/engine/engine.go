@@ -389,12 +389,18 @@ func evaluateBattleCompletion(battle *state.Battle) ([]event.Event, error) {
 		}
 		sort.Strings(externalIDs)
 		var alive []string
+		aliveTeams := map[string]bool{}
 		for _, actorID := range externalIDs {
 			if battle.Actors[actorID].DefeatState != state.ActorDefeated {
 				alive = append(alive, actorID)
+				team := battle.Actors[actorID].TeamID
+				if team == "" {
+					team = actorID
+				}
+				aliveTeams[team] = true
 			}
 		}
-		switch len(alive) {
+		switch len(aliveTeams) {
 		case 0:
 			battle.Status = state.BattleDraw
 		case 1:

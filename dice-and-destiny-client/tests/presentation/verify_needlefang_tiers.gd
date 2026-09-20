@@ -88,7 +88,8 @@ func _check(count: int, size: Vector2i, bonus: int) -> void:
 			var command: Dictionary = JSON.parse_string(fake.commands[-1])
 			_expect(command.payload.tier_id == "fang_%d" % chosen and command.payload.target_ids == ["goblin"], "exact offered tier and target submitted")
 		_expect(screen.find_children("*", "AcceptDialog", false, false).is_empty(), "no tier popup")
-		_expect(_tier(screen, chosen).button_pressed, "selected tier is highlighted")
+		_expect(screen._view.actor("blade").get("selected_tier") == "fang_%d" % chosen, "selected tier retained while outcome replaces choices")
+		while not screen._selection_morph.is_empty() or Time.get_ticks_msec() <= screen._flow_until: await process_frame
 	# Old callbacks and review mode must never send gameplay commands.
 	var before: int = fake.commands.size()
 	screen._view.legal_actions = []

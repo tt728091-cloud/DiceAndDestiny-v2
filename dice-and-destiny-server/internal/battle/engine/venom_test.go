@@ -237,7 +237,7 @@ func TestAgitateRevealsAllVolatileRollsDealsDamageAndResumesPlanning(t *testing.
 	b.Settled.Stage = stageOffensivePlan
 	for _, id := range []string{"player", "enemy"} {
 		a := b.Actors[id]
-		a.Controller = state.ControllerHuman
+		a.Controller = state.ControllerExternal
 		a.Resources.EnergyPoints = 2
 		a.Cards.Deck = []string{id + "-1", id + "-2", id + "-3", id + "-4", id + "-5", id + "-6"}
 		if id == "player" {

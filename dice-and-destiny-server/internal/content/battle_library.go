@@ -299,21 +299,29 @@ type CombatantAI struct {
 	DefensiveSelection DefensiveSelectionAI `yaml:"defensive_selection" json:"defensive_selection"`
 }
 
+// SingleAbilityPolicy is an external authority-command controller. It never
+// invents dice or chooses between attacks; the ability board supplies both moves.
+type SingleAbilityPolicy struct {
+	TargetFace int    `yaml:"target_face" json:"target_face"`
+	CardID     string `yaml:"card_id,omitempty" json:"card_id,omitempty"`
+}
+
 type CombatantDefinition struct {
-	SchemaVersion      int                      `yaml:"schema_version" json:"schema_version"`
-	ID                 string                   `yaml:"id" json:"id"`
-	Name               string                   `yaml:"name" json:"name"`
-	Class              string                   `yaml:"class" json:"class"`
-	ControllerDefaults ControllerDefaults       `yaml:"controller_defaults" json:"controller_defaults"`
-	Resources          CombatantResources       `yaml:"resources" json:"resources"`
-	Income             CombatantIncome          `yaml:"income" json:"income"`
-	Decklist           []DecklistEntry          `yaml:"decklist" json:"decklist"`
-	DiceLoadout        []DiceLoadoutEntry       `yaml:"dice_loadout" json:"dice_loadout"`
-	AbilityBoard       AbilityBoard             `yaml:"ability_board" json:"ability_board"`
-	StartingStatuses   []StartingStatus         `yaml:"starting_statuses" json:"starting_statuses"`
-	StartingTokens     []StartingToken          `yaml:"starting_tokens" json:"starting_tokens"`
-	RollPreferences    CombatantRollPreferences `yaml:"roll_preferences" json:"roll_preferences"`
-	AI                 *CombatantAI             `yaml:"ai,omitempty" json:"ai,omitempty"`
+	SingleAbilityPolicy *SingleAbilityPolicy     `yaml:"single_ability_policy,omitempty" json:"single_ability_policy,omitempty"`
+	SchemaVersion       int                      `yaml:"schema_version" json:"schema_version"`
+	ID                  string                   `yaml:"id" json:"id"`
+	Name                string                   `yaml:"name" json:"name"`
+	Class               string                   `yaml:"class" json:"class"`
+	ControllerDefaults  ControllerDefaults       `yaml:"controller_defaults" json:"controller_defaults"`
+	Resources           CombatantResources       `yaml:"resources" json:"resources"`
+	Income              CombatantIncome          `yaml:"income" json:"income"`
+	Decklist            []DecklistEntry          `yaml:"decklist" json:"decklist"`
+	DiceLoadout         []DiceLoadoutEntry       `yaml:"dice_loadout" json:"dice_loadout"`
+	AbilityBoard        AbilityBoard             `yaml:"ability_board" json:"ability_board"`
+	StartingStatuses    []StartingStatus         `yaml:"starting_statuses" json:"starting_statuses"`
+	StartingTokens      []StartingToken          `yaml:"starting_tokens" json:"starting_tokens"`
+	RollPreferences     CombatantRollPreferences `yaml:"roll_preferences" json:"roll_preferences"`
+	AI                  *CombatantAI             `yaml:"ai,omitempty" json:"ai,omitempty"`
 }
 
 var stableID = regexp.MustCompile(`^[a-z][a-z0-9]*(?:_[a-z0-9]+)*$`)
@@ -577,6 +585,22 @@ func validateBattleLibrary(lib BattleLibrary) error {
 				return fmt.Errorf("%w: combatant %q has invalid status %q", ErrInvalidContent, id, s.DefinitionID)
 			}
 		}
+		if policy := combatant.SingleAbilityPolicy; policy != nil {
+			if combatant.ControllerDefaults.Type != "external" || len(combatant.AbilityBoard.Offensive) != 1 || len(combatant.AbilityBoard.Defensive) != 1 {
+				return fmt.Errorf("single ability combatant %q requires external control and exactly one attack and defense", id)
+			}
+			for _, entry := range combatant.DiceLoadout {
+				if policy.TargetFace < 1 || policy.TargetFace > lib.Dice[entry.DiceID].SideCount {
+					return fmt.Errorf("invalid target face for %q", id)
+				}
+			}
+			if policy.CardID != "" {
+				card, ok := lib.Cards[policy.CardID]
+				if !ok || card.Cost.Energy != 1 || len(card.Operations) != 1 || card.Operations[0].Type != "apply_ability_modifier" || card.Operations[0].Duration != "round" {
+					return fmt.Errorf("single ability combatant %q requires a one-energy round attack modifier", id)
+				}
+			}
+		}
 		if combatant.ControllerDefaults.Type == "ai" {
 			if combatant.AI == nil {
 				return fmt.Errorf("%w: AI combatant %q needs ai data", ErrInvalidContent, id)
@@ -690,8 +714,8 @@ func validateBattleOperations(ops []BattleOperation, lib BattleLibrary) error {
 				return fmt.Errorf("operation references unknown dice %q", op.DiceID)
 			}
 		}
-		if op.Type == "apply_ability_modifier" && (op.Duration != "battle" || op.Modifier == nil || op.Modifier.AddConditionalBonus == nil) {
-			return fmt.Errorf("ability modifier must be a battle-duration conditional bonus")
+		if op.Type == "apply_ability_modifier" && ((op.Duration != "battle" && op.Duration != "round") || op.Modifier == nil || op.Modifier.AddConditionalBonus == nil) {
+			return fmt.Errorf("ability modifier must be a battle- or round-duration conditional bonus")
 		}
 		switch op.Type {
 		case "deal_damage", "prevent_damage", "draw_cards":

@@ -22,6 +22,9 @@ const (
 )
 
 type SessionConfig struct {
+	OpponentDefinition string
+	OpponentCount      int
+
 	ContentRoot         string
 	RunStateRoot        string
 	ModelPath           string
@@ -92,8 +95,11 @@ type Session struct {
 }
 
 func NewSession(config SessionConfig) (*Session, error) {
-	if config.ContentRoot == "" || config.ModelPath == "" {
-		return nil, fmt.Errorf("content root and learned-policy path are required")
+	if config.OpponentCount < 0 || config.OpponentCount > 2 || (config.OpponentCount > 1 && config.OpponentDefinition == "") {
+		return nil, fmt.Errorf("opponent count must be one or two scripted minions")
+	}
+	if config.ContentRoot == "" || (config.ModelPath == "" && config.OpponentDefinition == "") {
+		return nil, fmt.Errorf("content root and a learned-policy path or single-ability opponent are required")
 	}
 	if config.InferenceTimeout <= 0 {
 		config.InferenceTimeout = 2 * time.Second
@@ -101,17 +107,24 @@ func NewSession(config SessionConfig) (*Session, error) {
 	if err := VerifyContentVersion(config.ContentRoot); err != nil {
 		return nil, err
 	}
-	policy, err := loadSessionPolicy(config.ModelPath, config.ModelSHA256)
+	var policy sessionPolicy
+	var err error
+	if config.OpponentDefinition != "" {
+		policy, err = loadSingleAbilityPolicy(config.ContentRoot, config.OpponentDefinition)
+	} else {
+		policy, err = loadSessionPolicy(config.ModelPath, config.ModelSHA256)
+	}
 	if err != nil {
 		return nil, err
 	}
 	environment, err := mlsim.New(mlsim.Config{
-		ContentRoot:         config.ContentRoot,
-		RunStateRoot:        config.RunStateRoot,
-		MaxActions:          mlsim.DefaultMaxActions,
-		SessionID:           "phase3-player",
-		ObservationSchema:   policy.Metadata().ObservationSchema,
-		ObservationManifest: config.ObservationManifest,
+		IncludeContentCatalog: config.OpponentDefinition != "",
+		ContentRoot:           config.ContentRoot,
+		RunStateRoot:          config.RunStateRoot,
+		MaxActions:            mlsim.DefaultMaxActions,
+		SessionID:             "phase3-player",
+		ObservationSchema:     policy.Metadata().ObservationSchema,
+		ObservationManifest:   config.ObservationManifest,
 	})
 	if err != nil {
 		return nil, err
@@ -120,7 +133,7 @@ func NewSession(config SessionConfig) (*Session, error) {
 		config:      config,
 		policy:      policy,
 		environment: environment,
-		lifetime:    LifetimeTelemetry{ModelLoadCount: 1},
+		lifetime:    LifetimeTelemetry{ModelLoadCount: modelLoadCount(policy)},
 	}, nil
 }
 
@@ -170,16 +183,27 @@ func (s *Session) ResetCharacter(battleID string, seed uint64, humanSeat string,
 	if humanSeat != "seat-a" && humanSeat != "seat-b" {
 		return nil, fmt.Errorf("human seat must be seat-a or seat-b")
 	}
+	if s.config.OpponentCount > 1 && s.config.OpponentDefinition == "" {
+		return nil, fmt.Errorf("multiple opponents require a scripted minion")
+	}
 	s.humanSeat = humanSeat
 	s.modelSeat = otherSeat(humanSeat)
+	opponent := "blade_warden"
+	if s.config.OpponentDefinition != "" {
+		opponent = s.config.OpponentDefinition
+	}
+	definitions := map[string]string{s.humanSeat: character, s.modelSeat: opponent}
+	models := map[string]string{s.humanSeat: "human-godot-ui", s.modelSeat: s.policy.Metadata().ModelID}
+	var teams map[string]string
+	if s.config.OpponentCount == 2 {
+		definitions["seat-c"] = opponent
+		models["seat-c"] = s.policy.Metadata().ModelID
+		teams = map[string]string{s.humanSeat: "heroes", s.modelSeat: "minions", "seat-c": "minions"}
+	}
 	transition, err := s.environment.Reset(mlsim.ResetRequest{
 		Seed:            seed,
 		BattleID:        battleID,
-		SeatDefinitions: map[string]string{s.humanSeat: character, s.modelSeat: "blade_warden"},
-		SeatModels: map[string]string{
-			s.humanSeat: "human-godot-ui",
-			s.modelSeat: s.policy.Metadata().ModelID,
-		},
+		SeatDefinitions: definitions, SeatModels: models, SeatTeams: teams,
 	})
 	if err != nil {
 		s.lifetime.Errors++
@@ -269,7 +293,7 @@ func (s *Session) AdvanceModel() (map[string]any, error) {
 	if s.current.Terminal || s.current.TruncationReason != "" {
 		return nil, fmt.Errorf("battle is complete")
 	}
-	if s.current.ActorID != s.modelSeat {
+	if !s.isModelSeat(s.current.ActorID) {
 		return nil, fmt.Errorf("learned policy does not own the current decision")
 	}
 	selected, latency, err := s.policy.Select(s.current)
@@ -371,8 +395,8 @@ func (s *Session) present(result engine.Result) map[string]any {
 	decoder.UseNumber()
 	var view map[string]any
 	_ = decoder.Decode(&view)
-	view = aliasMap(view, map[string]string{s.humanSeat: HumanAlias, s.modelSeat: ModelAlias})
-	modelTurn := !s.current.Terminal && s.current.TruncationReason == "" && s.current.ActorID == s.modelSeat
+	view = aliasMap(view, s.aliases(false))
+	modelTurn := !s.current.Terminal && s.current.TruncationReason == "" && s.isModelSeat(s.current.ActorID)
 	if modelTurn {
 		delete(view, "pending_input")
 		delete(view, "legal_actions")
@@ -382,7 +406,10 @@ func (s *Session) present(result engine.Result) map[string]any {
 	}
 	view["learned_policy"] = map[string]any{
 		"enabled":                  true,
+		"controller_kind":          s.policy.Metadata().Algorithm,
 		"model_turn":               modelTurn,
+		"acting_actor_id":          s.aliases(false)[s.current.ActorID],
+		"opponent_count":           max(1, s.config.OpponentCount),
 		"model_id":                 s.policy.Metadata().ModelID,
 		"policy_export_sha256":     s.policy.Metadata().PolicyExportSHA256,
 		"checkpoint_sha256":        s.policy.Metadata().SourceCheckpointSHA256,
@@ -415,7 +442,7 @@ func (s *Session) unaliasCommand(commandJSON string) (string, error) {
 	if err := decoder.Decode(&value); err != nil {
 		return "", fmt.Errorf("decode human command: %w", err)
 	}
-	actual := aliasMap(value, map[string]string{HumanAlias: s.humanSeat, ModelAlias: s.modelSeat})
+	actual := aliasMap(value, s.aliases(true))
 	encoded, err := json.Marshal(actual)
 	if err != nil {
 		return "", fmt.Errorf("encode human command: %w", err)
@@ -531,4 +558,29 @@ func cloneTelemetry(source BattleTelemetry) BattleTelemetry {
 	var result BattleTelemetry
 	_ = json.Unmarshal(encoded, &result)
 	return result
+}
+
+func modelLoadCount(policy sessionPolicy) int {
+	if _, ok := policy.(*singleAbilityPolicy); ok {
+		return 0
+	}
+	return 1
+}
+
+func (s *Session) isModelSeat(id string) bool {
+	return id == s.modelSeat || (s.config.OpponentCount == 2 && id == "seat-c")
+}
+func (s *Session) aliases(reverse bool) map[string]string {
+	m := map[string]string{s.humanSeat: HumanAlias, s.modelSeat: ModelAlias}
+	if s.config.OpponentCount == 2 {
+		m["seat-c"] = "goblin-2"
+	}
+	if !reverse {
+		return m
+	}
+	r := map[string]string{}
+	for k, v := range m {
+		r[v] = k
+	}
+	return r
 }

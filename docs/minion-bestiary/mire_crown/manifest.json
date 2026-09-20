@@ -1,0 +1,197 @@
+{
+  "boss_id": "mire_crown",
+  "boss_name": "Mire Crown",
+  "theme": "Peat-bog scavengers and drowned marsh predators; black wet hide, hollow ivory reeds, moss and muted green.",
+  "minions": [
+    {
+      "id": "reedjaw_newt",
+      "name": "Reedjaw Newt",
+      "role": "Ambusher",
+      "description": "A low four-legged marsh newt with a shovel-shaped skull, pale hollow reed teeth projecting from its hinged jaw, slick black skin and a moss-fringed paddle tail; crouched, narrow and nimble.",
+      "prompt": "Use case: stylized-concept. Create ONE original dark-fantasy game minion sprite named Reedjaw Newt. Reference image is the faction boss, used ONLY for rendering style, material vocabulary and restrained palette, never its anatomy or scale. Design: A low four-legged marsh newt with a shovel-shaped skull, pale hollow reed teeth projecting from its hinged jaw, slick black skin and a moss-fringed paddle tail; crouched, narrow and nimble. Faction ecology: Peat-bog scavengers and drowned marsh predators; black wet hide, hollow ivory reeds, moss and muted green. This is a weaker encountered creature, not a boss or a miniature replica. Detailed hand-painted dark watercolor and fine ink hatching, tactile materials, readable distinctive silhouette. Full body, three-quarter view facing left, entire anatomy including tail, toes and wings visible with 5% empty margin; square canvas. Isolated on a genuinely transparent alpha PNG background. No environment, floor, cast shadow, aura, text, labels, borders, watermark or additional creatures.",
+      "relative_asset_path": "dice-and-destiny-client/assets/battle/minions/mire_crown/reedjaw_newt.png",
+      "source_reference_paths": [
+        "/Users/daddymere/games/Dice-and-Destiny-v2/dice-and-destiny-client/assets/battle/fighters/mire_crown.png"
+      ],
+      "generated_source_path": "/Users/daddymere/.codex/generated_images/01a077cd-7da1-7e53-8836-ee884c7866fd/exec-73ada9ae-a062-4326-9ae0-81cdd6a16727.png",
+      "status": "completed",
+      "review": {
+        "alpha_empty_fraction": 0.6622,
+        "width": 1254,
+        "height": 1254,
+        "visual": "Full creature, distinct silhouette, faction style; reviewed."
+      }
+    },
+    {
+      "id": "peatbell_toad",
+      "name": "Peatbell Toad",
+      "role": "Caller",
+      "description": "A squat eyeless toad with a translucent amber throat sac shaped like a cracked bell, warty peat-black hide, long webbed front fingers and a few ivory reed stubs on its back.",
+      "prompt": "Use case: stylized-concept. Create ONE original dark-fantasy game minion sprite named Peatbell Toad. Reference image is the faction boss, used ONLY for rendering style, material vocabulary and restrained palette, never its anatomy or scale. Design: A squat eyeless toad with a translucent amber throat sac shaped like a cracked bell, warty peat-black hide, long webbed front fingers and a few ivory reed stubs on its back. Faction ecology: Peat-bog scavengers and drowned marsh predators; black wet hide, hollow ivory reeds, moss and muted green. This is a weaker encountered creature, not a boss or a miniature replica. Detailed hand-painted dark watercolor and fine ink hatching, tactile materials, readable distinctive silhouette. Full body, three-quarter view facing left, entire anatomy including tail, toes and wings visible with 5% empty margin; square canvas. Isolated on a genuinely transparent alpha PNG background. No environment, floor, cast shadow, aura, text, labels, borders, watermark or additional creatures.",
+      "relative_asset_path": "dice-and-destiny-client/assets/battle/minions/mire_crown/peatbell_toad.png",
+      "source_reference_paths": [
+        "/Users/daddymere/games/Dice-and-Destiny-v2/dice-and-destiny-client/assets/battle/fighters/mire_crown.png"
+      ],
+      "generated_source_path": "/Users/daddymere/.codex/generated_images/01a077cd-7da1-7e53-8836-ee884c7866fd/exec-0b0f7ba6-5299-44ef-abe8-9d16494352d1.png",
+      "status": "completed",
+      "review": {
+        "alpha_empty_fraction": 0.4961,
+        "width": 1254,
+        "height": 1254,
+        "visual": "Full creature, distinct silhouette, faction style; reviewed."
+      }
+    },
+    {
+      "id": "fen_lantern_snail",
+      "name": "Fen Lantern Snail",
+      "role": "Lure",
+      "description": "A predatory snail with a broken spiral shell made of peat-stained bone, a dim green organ visible in the shell aperture, two forked tactile stalks and an elongated muscular black foot.",
+      "prompt": "Use case: stylized-concept. Create ONE original dark-fantasy game minion sprite named Fen Lantern Snail. Reference image is the faction boss, used ONLY for rendering style, material vocabulary and restrained palette, never its anatomy or scale. Design: A predatory snail with a broken spiral shell made of peat-stained bone, a dim green organ visible in the shell aperture, two forked tactile stalks and an elongated muscular black foot. Faction ecology: Peat-bog scavengers and drowned marsh predators; black wet hide, hollow ivory reeds, moss and muted green. This is a weaker encountered creature, not a boss or a miniature replica. Detailed hand-painted dark watercolor and fine ink hatching, tactile materials, readable distinctive silhouette. Full body, three-quarter view facing left, entire anatomy including tail, toes and wings visible with 5% empty margin; square canvas. Isolated on a genuinely transparent alpha PNG background. No environment, floor, cast shadow, aura, text, labels, borders, watermark or additional creatures.",
+      "relative_asset_path": "dice-and-destiny-client/assets/battle/minions/mire_crown/fen_lantern_snail.png",
+      "source_reference_paths": [
+        "/Users/daddymere/games/Dice-and-Destiny-v2/dice-and-destiny-client/assets/battle/fighters/mire_crown.png"
+      ],
+      "generated_source_path": "/Users/daddymere/.codex/generated_images/01a077cd-7da1-7e53-8836-ee884c7866fd/exec-8b4d2cda-3516-4613-9aa7-37f601fd0db7.png",
+      "status": "completed",
+      "review": {
+        "alpha_empty_fraction": 0.5928,
+        "width": 1254,
+        "height": 1254,
+        "visual": "Full creature, distinct silhouette, faction style; reviewed."
+      }
+    },
+    {
+      "id": "willow_knuckle",
+      "name": "Willow Knuckle",
+      "role": "Grappler",
+      "description": "A hunched root homunculus assembled from a willow stump; two oversized knotted root fists, two short root feet, a hollow vertical face slit with green sap and a sparse mantle of damp moss.",
+      "prompt": "Use case: stylized-concept. Create ONE original dark-fantasy game minion sprite named Willow Knuckle. Reference image is the faction boss, used ONLY for rendering style, material vocabulary and restrained palette, never its anatomy or scale. Design: A hunched root homunculus assembled from a willow stump; two oversized knotted root fists, two short root feet, a hollow vertical face slit with green sap and a sparse mantle of damp moss. Faction ecology: Peat-bog scavengers and drowned marsh predators; black wet hide, hollow ivory reeds, moss and muted green. This is a weaker encountered creature, not a boss or a miniature replica. Detailed hand-painted dark watercolor and fine ink hatching, tactile materials, readable distinctive silhouette. Full body, three-quarter view facing left, entire anatomy including tail, toes and wings visible with 5% empty margin; square canvas. Isolated on a genuinely transparent alpha PNG background. No environment, floor, cast shadow, aura, text, labels, borders, watermark or additional creatures.",
+      "relative_asset_path": "dice-and-destiny-client/assets/battle/minions/mire_crown/willow_knuckle.png",
+      "source_reference_paths": [
+        "/Users/daddymere/games/Dice-and-Destiny-v2/dice-and-destiny-client/assets/battle/fighters/mire_crown.png"
+      ],
+      "generated_source_path": "/Users/daddymere/.codex/generated_images/01a077cd-7da1-7e53-8836-ee884c7866fd/exec-6b7f0024-8bd2-4f7f-8c62-08f6c09ee428.png",
+      "status": "completed",
+      "review": {
+        "alpha_empty_fraction": 0.4429,
+        "width": 1254,
+        "height": 1254,
+        "visual": "Full creature, distinct silhouette, faction style; reviewed."
+      }
+    },
+    {
+      "id": "sedge_raker",
+      "name": "Sedge Raker",
+      "role": "Skirmisher",
+      "description": "A gaunt marsh rail bird with four stilt legs, an ivory serrated bill, ragged black sedge feathers and a narrow hunched torso; one foot lifted as if stalking through shallow water.",
+      "prompt": "Use case: stylized-concept. Create ONE original dark-fantasy game minion sprite named Sedge Raker. Reference image is the faction boss, used ONLY for rendering style, material vocabulary and restrained palette, never its anatomy or scale. Design: A gaunt marsh rail bird with four stilt legs, an ivory serrated bill, ragged black sedge feathers and a narrow hunched torso; one foot lifted as if stalking through shallow water. Faction ecology: Peat-bog scavengers and drowned marsh predators; black wet hide, hollow ivory reeds, moss and muted green. This is a weaker encountered creature, not a boss or a miniature replica. Detailed hand-painted dark watercolor and fine ink hatching, tactile materials, readable distinctive silhouette. Full body, three-quarter view facing left, entire anatomy including tail, toes and wings visible with 5% empty margin; square canvas. Isolated on a genuinely transparent alpha PNG background. No environment, floor, cast shadow, aura, text, labels, borders, watermark or additional creatures.",
+      "relative_asset_path": "dice-and-destiny-client/assets/battle/minions/mire_crown/sedge_raker.png",
+      "source_reference_paths": [
+        "/Users/daddymere/games/Dice-and-Destiny-v2/dice-and-destiny-client/assets/battle/fighters/mire_crown.png"
+      ],
+      "generated_source_path": "/Users/daddymere/.codex/generated_images/01a077cd-7da1-7e53-8836-ee884c7866fd/exec-4ac74a41-665f-43e6-84f5-33ec2f40ef61.png",
+      "status": "completed",
+      "review": {
+        "alpha_empty_fraction": 0.6148,
+        "width": 1254,
+        "height": 1254,
+        "visual": "Full creature, distinct silhouette, faction style; reviewed."
+      }
+    },
+    {
+      "id": "bogglass_midge",
+      "name": "Bogglass Midge",
+      "role": "Harrier",
+      "description": "A single large predatory midge with four cracked transparent smoky wings, a long ivory piercing proboscis, six delicate hooked legs and a moss-green swollen abdomen; wings fully spread.",
+      "prompt": "Use case: stylized-concept. Create ONE original dark-fantasy game minion sprite named Bogglass Midge. Reference image is the faction boss, used ONLY for rendering style, material vocabulary and restrained palette, never its anatomy or scale. Design: A single large predatory midge with four cracked transparent smoky wings, a long ivory piercing proboscis, six delicate hooked legs and a moss-green swollen abdomen; wings fully spread. Faction ecology: Peat-bog scavengers and drowned marsh predators; black wet hide, hollow ivory reeds, moss and muted green. This is a weaker encountered creature, not a boss or a miniature replica. Detailed hand-painted dark watercolor and fine ink hatching, tactile materials, readable distinctive silhouette. Full body, three-quarter view facing left, entire anatomy including tail, toes and wings visible with 5% empty margin; square canvas. Isolated on a genuinely transparent alpha PNG background. No environment, floor, cast shadow, aura, text, labels, borders, watermark or additional creatures.",
+      "relative_asset_path": "dice-and-destiny-client/assets/battle/minions/mire_crown/bogglass_midge.png",
+      "source_reference_paths": [
+        "/Users/daddymere/games/Dice-and-Destiny-v2/dice-and-destiny-client/assets/battle/fighters/mire_crown.png"
+      ],
+      "generated_source_path": "/Users/daddymere/.codex/generated_images/01a077cd-7da1-7e53-8836-ee884c7866fd/exec-dc1d803a-8fab-4a60-9152-d7480b678b80.png",
+      "status": "completed",
+      "review": {
+        "alpha_empty_fraction": 0.5835,
+        "width": 1254,
+        "height": 1254,
+        "visual": "Full creature, distinct silhouette, faction style; reviewed."
+      }
+    },
+    {
+      "id": "silt_mantle",
+      "name": "Silt Mantle",
+      "role": "Constrictor",
+      "description": "A flat slug-like scavenger whose leathery black mantle folds into an angular hood over a small lamprey mouth, six short sucker-ended feelers and pale grit embedded along the rim; no spiral shell.",
+      "prompt": "Use case: stylized-concept. Create ONE original dark-fantasy game minion sprite named Silt Mantle. Reference image is the faction boss, used ONLY for rendering style, material vocabulary and restrained palette, never its anatomy or scale. Design: A flat slug-like scavenger whose leathery black mantle folds into an angular hood over a small lamprey mouth, six short sucker-ended feelers and pale grit embedded along the rim; no spiral shell. Faction ecology: Peat-bog scavengers and drowned marsh predators; black wet hide, hollow ivory reeds, moss and muted green. This is a weaker encountered creature, not a boss or a miniature replica. Detailed hand-painted dark watercolor and fine ink hatching, tactile materials, readable distinctive silhouette. Full body, three-quarter view facing left, entire anatomy including tail, toes and wings visible with 5% empty margin; square canvas. Isolated on a genuinely transparent alpha PNG background. No environment, floor, cast shadow, aura, text, labels, borders, watermark or additional creatures.",
+      "relative_asset_path": "dice-and-destiny-client/assets/battle/minions/mire_crown/silt_mantle.png",
+      "source_reference_paths": [
+        "/Users/daddymere/games/Dice-and-Destiny-v2/dice-and-destiny-client/assets/battle/fighters/mire_crown.png"
+      ],
+      "generated_source_path": "/Users/daddymere/.codex/generated_images/01a077cd-7da1-7e53-8836-ee884c7866fd/exec-f4f039a1-d188-4223-abd1-2b89dd97e216.png",
+      "status": "completed",
+      "review": {
+        "alpha_empty_fraction": 0.6583,
+        "width": 1254,
+        "height": 1254,
+        "visual": "Full creature, distinct silhouette, faction style; reviewed."
+      }
+    },
+    {
+      "id": "mossback_mole",
+      "name": "Mossback Mole",
+      "role": "Burrower",
+      "description": "A compact eyeless bog mole with enormous ivory digging palms, sparse dark whiskers, matted moss coat and damp black fur, a blunt rubbery snout and stubby tail.",
+      "prompt": "Use case: stylized-concept. Create ONE original dark-fantasy game minion sprite named Mossback Mole. Reference image is the faction boss, used ONLY for rendering style, material vocabulary and restrained palette, never its anatomy or scale. Design: A compact eyeless bog mole with enormous ivory digging palms, sparse dark whiskers, matted moss coat and damp black fur, a blunt rubbery snout and stubby tail. Faction ecology: Peat-bog scavengers and drowned marsh predators; black wet hide, hollow ivory reeds, moss and muted green. This is a weaker encountered creature, not a boss or a miniature replica. Detailed hand-painted dark watercolor and fine ink hatching, tactile materials, readable distinctive silhouette. Full body, three-quarter view facing left, entire anatomy including tail, toes and wings visible with 5% empty margin; square canvas. Isolated on a genuinely transparent alpha PNG background. No environment, floor, cast shadow, aura, text, labels, borders, watermark or additional creatures.",
+      "relative_asset_path": "dice-and-destiny-client/assets/battle/minions/mire_crown/mossback_mole.png",
+      "source_reference_paths": [
+        "/Users/daddymere/games/Dice-and-Destiny-v2/dice-and-destiny-client/assets/battle/fighters/mire_crown.png"
+      ],
+      "generated_source_path": "/Users/daddymere/.codex/generated_images/01a077cd-7da1-7e53-8836-ee884c7866fd/exec-8710a3eb-5d04-4769-b187-63fcad0055a1.png",
+      "status": "completed",
+      "review": {
+        "alpha_empty_fraction": 0.5147,
+        "width": 1254,
+        "height": 1254,
+        "visual": "Full creature, distinct silhouette, faction style; reviewed."
+      }
+    },
+    {
+      "id": "rushbone_crake",
+      "name": "Rushbone Crake",
+      "role": "Sentry",
+      "description": "A thin flightless skeletal crane with reed-bundle legs, a crooked split beak and ragged peat-cloth plumage, three green seedlike eyes across its narrow skull and a fan of broken reed quills.",
+      "prompt": "Use case: stylized-concept. Create ONE original dark-fantasy game minion sprite named Rushbone Crake. Reference image is the faction boss, used ONLY for rendering style, material vocabulary and restrained palette, never its anatomy or scale. Design: A thin flightless skeletal crane with reed-bundle legs, a crooked split beak and ragged peat-cloth plumage, three green seedlike eyes across its narrow skull and a fan of broken reed quills. Faction ecology: Peat-bog scavengers and drowned marsh predators; black wet hide, hollow ivory reeds, moss and muted green. This is a weaker encountered creature, not a boss or a miniature replica. Detailed hand-painted dark watercolor and fine ink hatching, tactile materials, readable distinctive silhouette. Full body, three-quarter view facing left, entire anatomy including tail, toes and wings visible with 5% empty margin; square canvas. Isolated on a genuinely transparent alpha PNG background. No environment, floor, cast shadow, aura, text, labels, borders, watermark or additional creatures.",
+      "relative_asset_path": "dice-and-destiny-client/assets/battle/minions/mire_crown/rushbone_crake.png",
+      "source_reference_paths": [
+        "/Users/daddymere/games/Dice-and-Destiny-v2/dice-and-destiny-client/assets/battle/fighters/mire_crown.png"
+      ],
+      "generated_source_path": "/Users/daddymere/.codex/generated_images/01a077cd-7da1-7e53-8836-ee884c7866fd/exec-21876203-26ed-4a8c-8941-5b02e3061ff4.png",
+      "status": "completed",
+      "review": {
+        "alpha_empty_fraction": 0.6439,
+        "width": 1254,
+        "height": 1254,
+        "visual": "Full creature, distinct silhouette, faction style; reviewed."
+      }
+    },
+    {
+      "id": "drowned_purse",
+      "name": "Drowned Purse",
+      "role": "Trap",
+      "description": "A fist-sized animate seed purse inflated into a leathery bladder, four tiny hooked legs, a stitched-looking natural mouth seam lined with ivory barbs, trailing root tassels and a dim green heart visible through wet hide.",
+      "prompt": "Use case: stylized-concept. Create ONE original dark-fantasy game minion sprite named Drowned Purse. Reference image is the faction boss, used ONLY for rendering style, material vocabulary and restrained palette, never its anatomy or scale. Design: A fist-sized animate seed purse inflated into a leathery bladder, four tiny hooked legs, a stitched-looking natural mouth seam lined with ivory barbs, trailing root tassels and a dim green heart visible through wet hide. Faction ecology: Peat-bog scavengers and drowned marsh predators; black wet hide, hollow ivory reeds, moss and muted green. This is a weaker encountered creature, not a boss or a miniature replica. Detailed hand-painted dark watercolor and fine ink hatching, tactile materials, readable distinctive silhouette. Full body, three-quarter view facing left, entire anatomy including tail, toes and wings visible with 5% empty margin; square canvas. Isolated on a genuinely transparent alpha PNG background. No environment, floor, cast shadow, aura, text, labels, borders, watermark or additional creatures.",
+      "relative_asset_path": "dice-and-destiny-client/assets/battle/minions/mire_crown/drowned_purse.png",
+      "source_reference_paths": [
+        "/Users/daddymere/games/Dice-and-Destiny-v2/dice-and-destiny-client/assets/battle/fighters/mire_crown.png"
+      ],
+      "generated_source_path": "/Users/daddymere/.codex/generated_images/01a077cd-7da1-7e53-8836-ee884c7866fd/exec-f031d66c-f8b7-4861-a57b-b4262f1eac07.png",
+      "status": "completed",
+      "review": {
+        "alpha_empty_fraction": 0.562,
+        "width": 1254,
+        "height": 1254,
+        "visual": "Full creature, distinct silhouette, faction style; reviewed."
+      }
+    }
+  ]
+}

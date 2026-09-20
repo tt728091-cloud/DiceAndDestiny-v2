@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="FighterVisualProfile" load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://content/battle_visuals/fighter_visual_profile.gd" id="1"]
+[ext_resource type="Texture2D" path="res://assets/battle/minions/bellback_pilgrim/chainback_rolypoly.png" id="2"]
+
+[resource]
+script = ExtResource("1")
+definition_id = "bellback_pilgrim_chainback_rolypoly"
+display_name = "Chainback Roly-poly"
+texture = ExtResource("2")
+portrait = ExtResource("2")
+faces_left = true
+default_height = 280.0
+ground_anchor = Vector2(0.5, 0.887695)

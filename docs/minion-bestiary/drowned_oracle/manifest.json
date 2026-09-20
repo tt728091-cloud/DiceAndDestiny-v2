@@ -1,0 +1,238 @@
+{
+  "boss_id": "drowned_oracle",
+  "boss_name": "Drowned Oracle",
+  "theme": "Drowned divination cult and abyssal familiars: charcoal wet cloth, cracked ivory ceramic, aged brass, muted sea-green organs.",
+  "minions": [
+    {
+      "id": "brine_mask",
+      "name": "Brine Mask",
+      "role": "deceiving familiar",
+      "description": "A hovering broken ivory porcelain face mask with asymmetrical eye holes, a charcoal jellyfish body behind it and eight thin ribbon tentacles with tiny brass beads, a dim sea-green throat.",
+      "prompt": "Use case: stylized-concept. Asset type: standalone transparent PNG battle enemy sprite for a dark fantasy game. Create ONE unique lesser minion, clearly modest compared with its boss. Subject: Brine Mask. A hovering broken ivory porcelain face mask with asymmetrical eye holes, a charcoal jellyfish body behind it and eight thin ribbon tentacles with tiny brass beads, a dim sea-green throat. Faction materials: Drowned divination cult and abyssal familiars: charcoal wet cloth, cracked ivory ceramic, aged brass, muted sea-green organs. Style: highly detailed desaturated dark watercolor washes inside forms, fine expressive black ink contours, weathered tactile material detail and restrained highlights; solemn eerie handmade bestiary painting, consistent with grim watercolor RPG enemies. Full body in left-facing three-quarter battle stance, entire silhouette within canvas with small transparent safety margin. TRUE transparent RGBA background, all pixels outside creature alpha zero, including between limbs. No environment, ground, platform, cast shadow, surrounding smoke, aura, paper background, checkerboard, text, letters, UI, frame or other creatures. Not a boss clone. Use square canvas.",
+      "relative_asset_path": "dice-and-destiny-client/assets/battle/minions/drowned_oracle/brine_mask.png",
+      "source_reference_paths": [
+        "dice-and-destiny-client/assets/battle/fighters/drowned_oracle.png"
+      ],
+      "generated_source_path": "/Users/daddymere/.codex/generated_images/01a0ba30-7da5-7522-9728-234de4f720f5/exec-e7a18a0d-d3a4-4c83-83de-9abb6192e78b.png",
+      "status": "completed",
+      "validation": {
+        "size": [
+          1254,
+          1254
+        ],
+        "mode": "RGBA",
+        "transparent_fraction": 0.7245,
+        "sha256": "4d1cae6629feeea8856b8f2b72f501a0b80e4deca9b7d584be5f33afdf27caee",
+        "visual_review": "Distinct full-body design, desaturated watercolor/ink rendering, no scenery or text; real transparency verified."
+      }
+    },
+    {
+      "id": "silt_hound",
+      "name": "Silt Hound",
+      "role": "tracking hunter",
+      "description": "An emaciated amphibious hound with slate-gray skin, webbed claw feet, a cracked ivory muzzle plate and small brass divination charms tangled in short kelp-like neck fringes.",
+      "prompt": "Use case: stylized-concept. Asset type: standalone transparent PNG battle enemy sprite for a dark fantasy game. Create ONE unique lesser minion, clearly modest compared with its boss. Subject: Silt Hound. An emaciated amphibious hound with slate-gray skin, webbed claw feet, a cracked ivory muzzle plate and small brass divination charms tangled in short kelp-like neck fringes. Faction materials: Drowned divination cult and abyssal familiars: charcoal wet cloth, cracked ivory ceramic, aged brass, muted sea-green organs. Style: highly detailed desaturated dark watercolor washes inside forms, fine expressive black ink contours, weathered tactile material detail and restrained highlights; solemn eerie handmade bestiary painting, consistent with grim watercolor RPG enemies. Full body in left-facing three-quarter battle stance, entire silhouette within canvas with small transparent safety margin. TRUE transparent RGBA background, all pixels outside creature alpha zero, including between limbs. No environment, ground, platform, cast shadow, surrounding smoke, aura, paper background, checkerboard, text, letters, UI, frame or other creatures. Not a boss clone. Use square canvas.",
+      "relative_asset_path": "dice-and-destiny-client/assets/battle/minions/drowned_oracle/silt_hound.png",
+      "source_reference_paths": [
+        "dice-and-destiny-client/assets/battle/fighters/drowned_oracle.png"
+      ],
+      "generated_source_path": "/Users/daddymere/.codex/generated_images/01a0ba30-7da5-7522-9728-234de4f720f5/exec-8e3cab4b-3121-4dad-9199-6fe1781ac94b.png",
+      "status": "completed",
+      "validation": {
+        "size": [
+          1254,
+          1254
+        ],
+        "mode": "RGBA",
+        "transparent_fraction": 0.6167,
+        "sha256": "5c56a270a1dce1ee11e463f3f35bac4907d9677ea12726bf220a25970a0a7c6a",
+        "visual_review": "Distinct full-body design, desaturated watercolor/ink rendering, no scenery or text; real transparency verified."
+      }
+    },
+    {
+      "id": "augur_crab",
+      "name": "Augur Crab",
+      "role": "guarding interpreter",
+      "description": "A squat four-legged crab carrying a shallow cracked ceramic divining dish as its shell, two small hooked claws, worn brass seams and a muted green living pearl inside its body.",
+      "prompt": "Use case: stylized-concept. Asset type: standalone transparent PNG battle enemy sprite for a dark fantasy game. Create ONE unique lesser minion, clearly modest compared with its boss. Subject: Augur Crab. A squat four-legged crab carrying a shallow cracked ceramic divining dish as its shell, two small hooked claws, worn brass seams and a muted green living pearl inside its body. Faction materials: Drowned divination cult and abyssal familiars: charcoal wet cloth, cracked ivory ceramic, aged brass, muted sea-green organs. Style: highly detailed desaturated dark watercolor washes inside forms, fine expressive black ink contours, weathered tactile material detail and restrained highlights; solemn eerie handmade bestiary painting, consistent with grim watercolor RPG enemies. Full body in left-facing three-quarter battle stance, entire silhouette within canvas with small transparent safety margin. TRUE transparent RGBA background, all pixels outside creature alpha zero, including between limbs. No environment, ground, platform, cast shadow, surrounding smoke, aura, paper background, checkerboard, text, letters, UI, frame or other creatures. Not a boss clone. Use square canvas.",
+      "relative_asset_path": "dice-and-destiny-client/assets/battle/minions/drowned_oracle/augur_crab.png",
+      "source_reference_paths": [
+        "dice-and-destiny-client/assets/battle/fighters/drowned_oracle.png"
+      ],
+      "generated_source_path": "/Users/daddymere/.codex/generated_images/01a0ba30-7da5-7522-9728-234de4f720f5/exec-4dd53138-f546-4c23-af60-72e0fa2a0651.png",
+      "status": "completed",
+      "validation": {
+        "size": [
+          1254,
+          1254
+        ],
+        "mode": "RGBA",
+        "transparent_fraction": 0.5794,
+        "sha256": "be37b5dc131546459a973a7d8ff82035f971e1058d8d1142843ffff77d3f92e6",
+        "visual_review": "Distinct full-body design, desaturated watercolor/ink rendering, no scenery or text; real transparency verified."
+      }
+    },
+    {
+      "id": "bell_diver",
+      "name": "Bell Diver",
+      "role": "armored bruiser",
+      "description": "A short hunched drowned diver creature with an oversized tarnished brass bell helmet, dark eel-like arms, ceramic knee plates and broad flipper feet, one dim green window and no human face.",
+      "prompt": "Use case: stylized-concept. Asset type: standalone transparent PNG battle enemy sprite for a dark fantasy game. Create ONE unique lesser minion, clearly modest compared with its boss. Subject: Bell Diver. A short hunched drowned diver creature with an oversized tarnished brass bell helmet, dark eel-like arms, ceramic knee plates and broad flipper feet, one dim green window and no human face. Faction materials: Drowned divination cult and abyssal familiars: charcoal wet cloth, cracked ivory ceramic, aged brass, muted sea-green organs. Style: highly detailed desaturated dark watercolor washes inside forms, fine expressive black ink contours, weathered tactile material detail and restrained highlights; solemn eerie handmade bestiary painting, consistent with grim watercolor RPG enemies. Full body in left-facing three-quarter battle stance, entire silhouette within canvas with small transparent safety margin. TRUE transparent RGBA background, all pixels outside creature alpha zero, including between limbs. No environment, ground, platform, cast shadow, surrounding smoke, aura, paper background, checkerboard, text, letters, UI, frame or other creatures. Not a boss clone. Use square canvas.",
+      "relative_asset_path": "dice-and-destiny-client/assets/battle/minions/drowned_oracle/bell_diver.png",
+      "source_reference_paths": [
+        "dice-and-destiny-client/assets/battle/fighters/drowned_oracle.png"
+      ],
+      "generated_source_path": "/Users/daddymere/.codex/generated_images/01a0ba30-7da5-7522-9728-234de4f720f5/exec-09a1ecef-b11c-4fe5-9277-a6ff5b97361b.png",
+      "status": "completed",
+      "validation": {
+        "size": [
+          1254,
+          1254
+        ],
+        "mode": "RGBA",
+        "transparent_fraction": 0.5582,
+        "sha256": "21a5a7e9c7326e28f9c520c6b8f3b928afb3d9abdd435eabf6ef40278220c437",
+        "visual_review": "Distinct full-body design, desaturated watercolor/ink rendering, no scenery or text; real transparency verified."
+      }
+    },
+    {
+      "id": "ribbon_eel",
+      "name": "Ribbon Eel",
+      "role": "snaring striker",
+      "description": "A long floating eel with a pale cracked ceramic skull, charcoal translucent body tapering into three wet cloth ribbons, a row of tiny brass vertebral rings and muted green gills, curled in an S shape.",
+      "prompt": "Use case: stylized-concept. Asset type: standalone transparent PNG battle enemy sprite for a dark fantasy game. Create ONE unique lesser minion, clearly modest compared with its boss. Subject: Ribbon Eel. A long floating eel with a pale cracked ceramic skull, charcoal translucent body tapering into three wet cloth ribbons, a row of tiny brass vertebral rings and muted green gills, curled in an S shape. Faction materials: Drowned divination cult and abyssal familiars: charcoal wet cloth, cracked ivory ceramic, aged brass, muted sea-green organs. Style: highly detailed desaturated dark watercolor washes inside forms, fine expressive black ink contours, weathered tactile material detail and restrained highlights; solemn eerie handmade bestiary painting, consistent with grim watercolor RPG enemies. Full body in left-facing three-quarter battle stance, entire silhouette within canvas with small transparent safety margin. TRUE transparent RGBA background, all pixels outside creature alpha zero, including between limbs. No environment, ground, platform, cast shadow, surrounding smoke, aura, paper background, checkerboard, text, letters, UI, frame or other creatures. Not a boss clone. Use square canvas.",
+      "relative_asset_path": "dice-and-destiny-client/assets/battle/minions/drowned_oracle/ribbon_eel.png",
+      "source_reference_paths": [
+        "dice-and-destiny-client/assets/battle/fighters/drowned_oracle.png"
+      ],
+      "generated_source_path": "/Users/daddymere/.codex/generated_images/01a0ba30-7da5-7522-9728-234de4f720f5/exec-831e84a5-2a29-4ef5-87c4-977e9c01f652.png",
+      "status": "completed",
+      "validation": {
+        "size": [
+          1254,
+          1254
+        ],
+        "mode": "RGBA",
+        "transparent_fraction": 0.6656,
+        "sha256": "512cfd60e31160bf4d455b04c04930b36140ce3414f5846bf68be6b7a849e2ab",
+        "visual_review": "Distinct full-body design, desaturated watercolor/ink rendering, no scenery or text; real transparency verified."
+      }
+    },
+    {
+      "id": "blind_pool_newt",
+      "name": "Blind Pool Newt",
+      "role": "poison skirmisher",
+      "description": "A low broad blind salamander with smooth stone-gray skin, pale lidless eye scars, delicate black external gills and porcelain-like armor spots, long flat tail and restrained sea-green throat.",
+      "prompt": "Use case: stylized-concept. Asset type: standalone transparent PNG battle enemy sprite for a dark fantasy game. Create ONE unique lesser minion, clearly modest compared with its boss. Subject: Blind Pool Newt. A low broad blind salamander with smooth stone-gray skin, pale lidless eye scars, delicate black external gills and porcelain-like armor spots, long flat tail and restrained sea-green throat. Faction materials: Drowned divination cult and abyssal familiars: charcoal wet cloth, cracked ivory ceramic, aged brass, muted sea-green organs. Style: highly detailed desaturated dark watercolor washes inside forms, fine expressive black ink contours, weathered tactile material detail and restrained highlights; solemn eerie handmade bestiary painting, consistent with grim watercolor RPG enemies. Full body in left-facing three-quarter battle stance, entire silhouette within canvas with small transparent safety margin. TRUE transparent RGBA background, all pixels outside creature alpha zero, including between limbs. No environment, ground, platform, cast shadow, surrounding smoke, aura, paper background, checkerboard, text, letters, UI, frame or other creatures. Not a boss clone. Use square canvas.",
+      "relative_asset_path": "dice-and-destiny-client/assets/battle/minions/drowned_oracle/blind_pool_newt.png",
+      "source_reference_paths": [
+        "dice-and-destiny-client/assets/battle/fighters/drowned_oracle.png"
+      ],
+      "generated_source_path": "/Users/daddymere/.codex/generated_images/01a0ba30-7da5-7522-9728-234de4f720f5/exec-5784b0f2-f341-41c4-ac12-7348a4c670f6.png",
+      "status": "completed",
+      "validation": {
+        "size": [
+          1254,
+          1254
+        ],
+        "mode": "RGBA",
+        "transparent_fraction": 0.5995,
+        "sha256": "6acedc8c6b6ce2dedd726c5c26696bbe0275b72456d619d182d003755806d1a7",
+        "visual_review": "Distinct full-body design, desaturated watercolor/ink rendering, no scenery or text; real transparency verified."
+      }
+    },
+    {
+      "id": "lot_caster",
+      "name": "Lot Caster",
+      "role": "support diviner",
+      "description": "A small bent cult imp with a dark conical reed mask, long pale fingers holding three blank chipped ceramic counters, wet ragged shawl, narrow bare feet and a brass weight on its belt.",
+      "prompt": "Use case: stylized-concept. Asset type: standalone transparent PNG battle enemy sprite for a dark fantasy game. Create ONE unique lesser minion, clearly modest compared with its boss. Subject: Lot Caster. A small bent cult imp with a dark conical reed mask, long pale fingers holding three blank chipped ceramic counters, wet ragged shawl, narrow bare feet and a brass weight on its belt. Faction materials: Drowned divination cult and abyssal familiars: charcoal wet cloth, cracked ivory ceramic, aged brass, muted sea-green organs. Style: highly detailed desaturated dark watercolor washes inside forms, fine expressive black ink contours, weathered tactile material detail and restrained highlights; solemn eerie handmade bestiary painting, consistent with grim watercolor RPG enemies. Full body in left-facing three-quarter battle stance, entire silhouette within canvas with small transparent safety margin. TRUE transparent RGBA background, all pixels outside creature alpha zero, including between limbs. No environment, ground, platform, cast shadow, surrounding smoke, aura, paper background, checkerboard, text, letters, UI, frame or other creatures. Not a boss clone. Use square canvas.",
+      "relative_asset_path": "dice-and-destiny-client/assets/battle/minions/drowned_oracle/lot_caster.png",
+      "source_reference_paths": [
+        "dice-and-destiny-client/assets/battle/fighters/drowned_oracle.png"
+      ],
+      "generated_source_path": "/Users/daddymere/.codex/generated_images/01a0ba30-7da5-7522-9728-234de4f720f5/exec-76de34de-19d5-47c5-9052-ba2336c25bbe.png",
+      "status": "completed",
+      "validation": {
+        "size": [
+          1254,
+          1254
+        ],
+        "mode": "RGBA",
+        "transparent_fraction": 0.6923,
+        "sha256": "4556adea8d5f9336c3edfc9471f74958fb661dc2a3afb1b4e1f1a3f0c47cbaa9",
+        "visual_review": "Distinct full-body design, desaturated watercolor/ink rendering, no scenery or text; real transparency verified."
+      }
+    },
+    {
+      "id": "pearl_leech",
+      "name": "Pearl Leech",
+      "role": "draining parasite",
+      "description": "A thick upright leech curled into a hooked posture, charcoal ringed skin, an open ivory circular mouth surrounding a muted green pearl and a few tarnished brass loops embedded down its back.",
+      "prompt": "Use case: stylized-concept. Asset type: standalone transparent PNG battle enemy sprite for a dark fantasy game. Create ONE unique lesser minion, clearly modest compared with its boss. Subject: Pearl Leech. A thick upright leech curled into a hooked posture, charcoal ringed skin, an open ivory circular mouth surrounding a muted green pearl and a few tarnished brass loops embedded down its back. Faction materials: Drowned divination cult and abyssal familiars: charcoal wet cloth, cracked ivory ceramic, aged brass, muted sea-green organs. Style: highly detailed desaturated dark watercolor washes inside forms, fine expressive black ink contours, weathered tactile material detail and restrained highlights; solemn eerie handmade bestiary painting, consistent with grim watercolor RPG enemies. Full body in left-facing three-quarter battle stance, entire silhouette within canvas with small transparent safety margin. TRUE transparent RGBA background, all pixels outside creature alpha zero, including between limbs. No environment, ground, platform, cast shadow, surrounding smoke, aura, paper background, checkerboard, text, letters, UI, frame or other creatures. Not a boss clone. Use square canvas.",
+      "relative_asset_path": "dice-and-destiny-client/assets/battle/minions/drowned_oracle/pearl_leech.png",
+      "source_reference_paths": [
+        "dice-and-destiny-client/assets/battle/fighters/drowned_oracle.png"
+      ],
+      "generated_source_path": "/Users/daddymere/.codex/generated_images/01a0ba30-7da5-7522-9728-234de4f720f5/exec-41244e15-9d3c-49b6-8a42-5290061f626f.png",
+      "status": "completed",
+      "validation": {
+        "size": [
+          1254,
+          1254
+        ],
+        "mode": "RGBA",
+        "transparent_fraction": 0.5317,
+        "sha256": "d2cb6cf0e41a063ce4cfbfb6d818ac02c5b69cb49d0d1aa48338b3865ba5983a",
+        "visual_review": "Distinct full-body design, desaturated watercolor/ink rendering, no scenery or text; real transparency verified."
+      }
+    },
+    {
+      "id": "undertow_urchin",
+      "name": "Undertow Urchin",
+      "role": "blocking sentinel",
+      "description": "A squat sea-urchin creature walking on five long jointed pale tube feet, black stubby spines around a cracked ivory ceramic core and a tiny green eye, no watery scenery.",
+      "prompt": "Use case: stylized-concept. Asset type: standalone transparent PNG battle enemy sprite for a dark fantasy game. Create ONE unique lesser minion, clearly modest compared with its boss. Subject: Undertow Urchin. A squat sea-urchin creature walking on five long jointed pale tube feet, black stubby spines around a cracked ivory ceramic core and a tiny green eye, no watery scenery. Faction materials: Drowned divination cult and abyssal familiars: charcoal wet cloth, cracked ivory ceramic, aged brass, muted sea-green organs. Style: highly detailed desaturated dark watercolor washes inside forms, fine expressive black ink contours, weathered tactile material detail and restrained highlights; solemn eerie handmade bestiary painting, consistent with grim watercolor RPG enemies. Full body in left-facing three-quarter battle stance, entire silhouette within canvas with small transparent safety margin. TRUE transparent RGBA background, all pixels outside creature alpha zero, including between limbs. No environment, ground, platform, cast shadow, surrounding smoke, aura, paper background, checkerboard, text, letters, UI, frame or other creatures. Not a boss clone. Use square canvas.",
+      "relative_asset_path": "dice-and-destiny-client/assets/battle/minions/drowned_oracle/undertow_urchin.png",
+      "source_reference_paths": [
+        "dice-and-destiny-client/assets/battle/fighters/drowned_oracle.png"
+      ],
+      "generated_source_path": "/Users/daddymere/.codex/generated_images/01a0ba30-7da5-7522-9728-234de4f720f5/exec-62a2695e-8409-4a5d-ac51-fbdd293025e4.png",
+      "status": "completed",
+      "validation": {
+        "size": [
+          1254,
+          1254
+        ],
+        "mode": "RGBA",
+        "transparent_fraction": 0.5807,
+        "sha256": "996ebc451dcbd7397cc87dcf8542778c896a1d741acb914d2b8d97df71e39ed2",
+        "visual_review": "Distinct full-body design, desaturated watercolor/ink rendering, no scenery or text; real transparency verified."
+      }
+    },
+    {
+      "id": "tideglass_ray",
+      "name": "Tideglass Ray",
+      "role": "aerial curse bearer",
+      "description": "A narrow diamond-bodied ray floating with folded smoky gray translucent fins, a cracked ivory crest, pale underside with one soft sea-green organ and a thin tail ending in a brass plummet.",
+      "prompt": "Use case: stylized-concept. Asset type: standalone transparent PNG battle enemy sprite for a dark fantasy game. Create ONE unique lesser minion, clearly modest compared with its boss. Subject: Tideglass Ray. A narrow diamond-bodied ray floating with folded smoky gray translucent fins, a cracked ivory crest, pale underside with one soft sea-green organ and a thin tail ending in a brass plummet. Faction materials: Drowned divination cult and abyssal familiars: charcoal wet cloth, cracked ivory ceramic, aged brass, muted sea-green organs. Style: highly detailed desaturated dark watercolor washes inside forms, fine expressive black ink contours, weathered tactile material detail and restrained highlights; solemn eerie handmade bestiary painting, consistent with grim watercolor RPG enemies. Full body in left-facing three-quarter battle stance, entire silhouette within canvas with small transparent safety margin. TRUE transparent RGBA background, all pixels outside creature alpha zero, including between limbs. No environment, ground, platform, cast shadow, surrounding smoke, aura, paper background, checkerboard, text, letters, UI, frame or other creatures. Not a boss clone. Use square canvas.",
+      "relative_asset_path": "dice-and-destiny-client/assets/battle/minions/drowned_oracle/tideglass_ray.png",
+      "source_reference_paths": [
+        "dice-and-destiny-client/assets/battle/fighters/drowned_oracle.png"
+      ],
+      "generated_source_path": "/Users/daddymere/.codex/generated_images/01a0ba30-7da5-7522-9728-234de4f720f5/exec-39c4b381-a930-41f0-be78-0c6c2cbf609d.png",
+      "status": "completed",
+      "validation": {
+        "size": [
+          1254,
+          1254
+        ],
+        "mode": "RGBA",
+        "transparent_fraction": 0.7049,
+        "sha256": "36af9e8443b1a3c37f9ffc47863dbf1751679f20dc0233f8a7f14d54747b5457",
+        "visual_review": "Distinct full-body design, desaturated watercolor/ink rendering, no scenery or text; real transparency verified."
+      }
+    }
+  ],
+  "generation_mode": "built-in image_gen; one independently prompted image per minion; original pixels preserved"
+}

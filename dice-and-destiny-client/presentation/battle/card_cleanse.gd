@@ -1,52 +1,68 @@
-extends PanelContainer
+extends Control
 
 signal finished
 
-const DURATION := 2.8
-var _tokens: Array[Label] = []
-var _card: PanelContainer
+const TIMING := preload("res://presentation/battle/combat_timing.gd")
+var duration := 3.2
+var _card: BattleCard
+var _profile: ActorProfile
+var _target: Label
+var _status_id := ""
+var _before := 0
+var _started_ms := 0
+var _running := false
+var _progress := 0.0
+var _settled := false
+var _enemy := true
 
-func configure(actor_name: String, card_data: Dictionary, status_data: Dictionary, before: int, after: int) -> void:
-	custom_minimum_size = Vector2(560, 330)
-	var frame := StyleBoxFlat.new()
-	frame.bg_color = Color("101e25f5")
-	frame.border_color = Color("68c8b8")
-	frame.set_border_width_all(2)
-	frame.set_corner_radius_all(14)
-	frame.content_margin_left = 24; frame.content_margin_right = 24
-	frame.content_margin_top = 20; frame.content_margin_bottom = 20
-	add_theme_stylebox_override("panel", frame)
-	var layout := VBoxContainer.new(); layout.add_theme_constant_override("separation", 18); add_child(layout)
-	var title := Label.new(); title.text = "%s played %s" % [actor_name, card_data.name]
-	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER; title.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	title.add_theme_font_size_override("font_size", 24); layout.add_child(title)
-	var row := HBoxContainer.new(); row.alignment = BoxContainer.ALIGNMENT_CENTER; row.add_theme_constant_override("separation", 28); layout.add_child(row)
-	_card = PanelContainer.new(); _card.custom_minimum_size = Vector2(180, 225); row.add_child(_card)
-	var card_style := frame.duplicate() as StyleBoxFlat; card_style.bg_color = Color("203b3f"); card_style.set_border_width_all(1); _card.add_theme_stylebox_override("panel", card_style)
-	var card_layout := VBoxContainer.new(); card_layout.alignment = BoxContainer.ALIGNMENT_CENTER; _card.add_child(card_layout)
-	var played := Label.new(); played.text = "PLAYED"; played.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER; played.add_theme_color_override("font_color", Color("8ce5c6")); card_layout.add_child(played)
-	var art_path := str(card_data.get("art", ""))
-	if not art_path.is_empty() and ResourceLoader.exists(art_path):
-		var art := TextureRect.new(); art.texture = load(art_path); art.custom_minimum_size = Vector2(110, 120); art.expand_mode = TextureRect.EXPAND_IGNORE_SIZE; art.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED; card_layout.add_child(art)
-	var name_label := Label.new(); name_label.text = card_data.name; name_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER; name_label.add_theme_font_size_override("font_size", 21); card_layout.add_child(name_label)
-	var effect := VBoxContainer.new(); effect.alignment = BoxContainer.ALIGNMENT_CENTER; effect.add_theme_constant_override("separation", 12); row.add_child(effect)
-	var cleared := Label.new(); cleared.text = "STATUS CLEARED" if after == 0 else "STATUS REDUCED"; cleared.add_theme_color_override("font_color", Color("8ce5c6")); effect.add_child(cleared)
-	var counts := Label.new(); counts.text = "%s  %d → %d" % [status_data.name, before, after]; counts.add_theme_font_size_override("font_size", 28); effect.add_child(counts)
-	var tokens := HBoxContainer.new(); tokens.add_theme_constant_override("separation", 12); effect.add_child(tokens)
-	for index in mini(before - after, 8):
-		var token := Label.new(); token.text = str(status_data.glyph); token.add_theme_font_size_override("font_size", 40); token.add_theme_color_override("font_color", Color("afe079")); tokens.add_child(token); _tokens.append(token)
-	var cause := Label.new(); cause.text = "%s removed %d stack%s" % [card_data.name, before - after, "s" if before - after != 1 else ""]; effect.add_child(cause)
-	tooltip_text = title.text + ": " + counts.text
+func configure(actor_name: String, card_id: String, status_id: String, before: int, after: int, enemy: bool) -> void:
+	mouse_filter = Control.MOUSE_FILTER_IGNORE
+	z_index = 20
+	set_process(false)
+	duration = maxf(0.5, TIMING.seconds("card_cleanse_seconds", 3.2))
+	_status_id = status_id; _before = before; _enemy = enemy
+	var data := BattlePresentationCatalog.card(card_id)
+	var status := BattlePresentationCatalog.status(status_id)
+	tooltip_text = "%s played %s: %s  %d → %d" % [actor_name, data.name, status.name, before, after]
+	_card = BattleCard.new(); _card.name = "PlayedCleanseCard"
+	_card.configure("cleanse-presentation", card_id, false, false, true)
+	_card.custom_minimum_size = Vector2(145, 195); _card.size = _card.custom_minimum_size
+	_card.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	add_child(_card)
+	# The enemy card sits immediately left of its profile; mirror for the player.
+	_card.position = Vector2(1345, 25) if enemy else Vector2(448, 25)
 
-func animate() -> void:
-	_card.modulate.a = 0.0
-	var reveal := create_tween()
-	reveal.tween_property(_card, "modulate:a", 1.0, 0.25)
-	for index in _tokens.size():
-		var token := _tokens[index]
-		var tween := token.create_tween()
-		tween.tween_interval(0.85 + index * 0.12)
-		tween.tween_property(token, "modulate:a", 0.0, 0.75)
-	var timer := create_tween()
-	timer.tween_interval(DURATION)
-	timer.tween_callback(func(): finished.emit())
+func prepare(profile: ActorProfile) -> void:
+	_profile = profile
+	_target = profile.prepare_card_cleanse(_status_id, _before)
+
+func animate(started_ms: int) -> void:
+	_started_ms = started_ms
+	_running = true
+	set_process(true)
+	_process(0.0)
+
+func _process(_delta: float) -> void:
+	if not _running or not is_instance_valid(_target): return
+	_progress = clampf((Time.get_ticks_msec() - _started_ms) / (duration * 1000.0), 0.0, 1.0)
+	_card.modulate.a = clampf(_progress / 0.10, 0.0, 1.0) * clampf((1.0 - _progress) / 0.16, 0.0, 1.0)
+	# Read the card, follow the trail, then remove just the affected stacks.
+	_target.modulate.a = 1.0 - clampf((_progress - 0.43) / 0.27, 0.0, 1.0)
+	if _progress >= 0.70 and not _settled:
+		_settled = true
+		_profile.finish_card_cleanse(_target)
+	queue_redraw()
+	if _progress >= 1.0:
+		_running = false; set_process(false); finished.emit()
+
+func _draw() -> void:
+	if not is_instance_valid(_target) or _progress < 0.23 or _progress >= 0.70: return
+	var inverse := get_global_transform_with_canvas().affine_inverse()
+	var start := _card.position + Vector2(_card.size.x if _enemy else 0.0, _card.size.y * 0.55)
+	var bounds := _target.get_global_rect()
+	var target := inverse * (bounds.position + Vector2(8, bounds.size.y * 0.5))
+	var tip := start.lerp(target, clampf((_progress - 0.23) / 0.20, 0.0, 1.0))
+	var alpha := clampf((0.70 - _progress) / 0.14, 0.0, 1.0)
+	draw_line(start, tip, Color(0.55, 0.94, 0.48, alpha * 0.18), 9.0, true)
+	draw_line(start, tip, Color(0.69, 1.0, 0.58, alpha), 2.0, true)
+	draw_circle(tip, 4.0, Color(0.80, 1.0, 0.68, alpha))

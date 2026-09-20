@@ -40,6 +40,8 @@ const (
 var SeatIDs = []string{"seat-a", "seat-b"}
 
 type Config struct {
+	IncludeContentCatalog bool
+
 	ContentRoot         string
 	RunStateRoot        string
 	MaxActions          int
@@ -52,6 +54,7 @@ type Config struct {
 }
 
 type ResetRequest struct {
+	SeatTeams       map[string]string `json:"seat_teams,omitempty"`
 	Seed            uint64            `json:"seed"`
 	BattleID        string            `json:"battle_id,omitempty"`
 	SeatModels      map[string]string `json:"seat_models,omitempty"`
@@ -65,6 +68,7 @@ type ActionRecord struct {
 }
 
 type ReplayRecord struct {
+	SeatTeams         map[string]string  `json:"seat_teams,omitempty"`
 	EnvironmentSchema string             `json:"environment_schema"`
 	ObservationSchema string             `json:"observation_schema"`
 	ActionSchema      string             `json:"action_schema"`
@@ -124,6 +128,7 @@ type Transition struct {
 }
 
 type Environment struct {
+	seatIDs      []string
 	config       Config
 	assembler    battle.ParticipantAssembler
 	authority    *battle.Authority
@@ -199,7 +204,15 @@ func (e *Environment) Reset(request ResetRequest) (Transition, error) {
 	if request.SeatDefinitions == nil {
 		request.SeatDefinitions = map[string]string{SeatIDs[0]: "blade_warden", SeatIDs[1]: "blade_warden"}
 	}
-	for _, seatID := range SeatIDs {
+	e.seatIDs = nil
+	for id := range request.SeatDefinitions {
+		e.seatIDs = append(e.seatIDs, id)
+	}
+	sort.Strings(e.seatIDs)
+	if len(e.seatIDs) != 2 && (e.config.ObservationSchema != ObservationSchemaVersion || e.config.TransportMode != TransportModeFull) {
+		return Transition{}, errors.New("multi-combatant encounters require raw observations")
+	}
+	for _, seatID := range e.seatIDs {
 		if request.SeatDefinitions[seatID] == "" {
 			return Transition{}, fmt.Errorf("definition id is required for %s", seatID)
 		}
@@ -209,7 +222,7 @@ func (e *Environment) Reset(request ResetRequest) (Transition, error) {
 		repo = repository.NewEphemeral()
 	}
 	simulationEngine, err := engine.NewEngineWithConfig(engine.Config{
-		OmitSnapshotContentCatalog: e.config.ObservationSchema != ObservationSchemaV2 && e.config.ObservationSchema != ObservationSchemaV3,
+		OmitSnapshotContentCatalog: !e.config.IncludeContentCatalog && e.config.ObservationSchema != ObservationSchemaV2 && e.config.ObservationSchema != ObservationSchemaV3,
 	}, engine.DefaultFlows()...)
 	if err != nil {
 		return Transition{}, err
@@ -239,6 +252,7 @@ func (e *Environment) Reset(request ResetRequest) (Transition, error) {
 		Seed:              request.Seed,
 		SeatModels:        cloneStringsMap(request.SeatModels),
 		SeatDefinitions:   cloneStringsMap(request.SeatDefinitions),
+		SeatTeams:         cloneStringsMap(request.SeatTeams),
 	}
 	e.metrics = EpisodeMetrics{
 		BattleID:        battleID,
@@ -246,12 +260,13 @@ func (e *Environment) Reset(request ResetRequest) (Transition, error) {
 		ActionFrequency: map[string]int{},
 	}
 	e.startedAt = time.Now()
+	var seats []command.ParticipantDescriptor
+	for _, id := range e.seatIDs {
+		seats = append(seats, command.ParticipantDescriptor{InstanceID: id, DefinitionID: request.SeatDefinitions[id], TeamID: request.SeatTeams[id]})
+	}
 	payload, err := json.Marshal(command.StartBattlePayload{
-		Seats: []command.ParticipantDescriptor{
-			{InstanceID: SeatIDs[0], DefinitionID: request.SeatDefinitions[SeatIDs[0]]},
-			{InstanceID: SeatIDs[1], DefinitionID: request.SeatDefinitions[SeatIDs[1]]},
-		},
-		Seed: &request.Seed,
+		Seats: seats,
+		Seed:  &request.Seed,
 	})
 	if err != nil {
 		return Transition{}, err
@@ -276,7 +291,7 @@ func (e *Environment) Observe(seatID string) (engine.Result, error) {
 	if e.authority == nil || e.replay.BattleID == "" {
 		return engine.Result{}, errors.New("environment has not been reset")
 	}
-	if !validSeat(seatID) {
+	if e.replay.SeatDefinitions[seatID] == "" {
 		return engine.Result{}, fmt.Errorf("unknown seat %q", seatID)
 	}
 	result := e.authority.HandleCommand(command.Command{
@@ -499,7 +514,7 @@ func (e *Environment) Metrics() EpisodeMetrics {
 func (e *Environment) Replay(record ReplayRecord) (Transition, error) {
 	transition, err := e.Reset(ResetRequest{
 		Seed: record.Seed, BattleID: record.BattleID,
-		SeatModels: record.SeatModels, SeatDefinitions: record.SeatDefinitions,
+		SeatModels: record.SeatModels, SeatDefinitions: record.SeatDefinitions, SeatTeams: record.SeatTeams,
 	})
 	if err != nil {
 		return Transition{}, err
@@ -564,7 +579,7 @@ func (e *Environment) finish(result engine.Result, truncation string) Transition
 		e.metrics.Winner = result.Snapshot.WinnerActorID
 		e.metrics.Status = result.Snapshot.Status
 		e.metrics.RemainingHealth = map[string]int{}
-		for _, seatID := range SeatIDs {
+		for _, seatID := range e.seatIDs {
 			e.metrics.RemainingHealth[seatID] = result.Snapshot.Actors[seatID].CurrentHealth
 		}
 		e.replay.Winner = result.Snapshot.WinnerActorID
@@ -607,13 +622,24 @@ func canonicalActions(actions []command.Command) []command.Command {
 }
 
 func nextSeatOrder(snap *snapshot.Battle, preferred string) []string {
-	if snap != nil && validSeat(snap.PriorityActorID) {
-		return []string{snap.PriorityActorID, otherSeat(snap.PriorityActorID)}
+	ids := append([]string(nil), SeatIDs...)
+	if snap != nil && len(snap.Actors) > 0 {
+		ids = nil
+		for id := range snap.Actors {
+			ids = append(ids, id)
+		}
+		sort.Strings(ids)
 	}
-	if validSeat(preferred) {
-		return []string{preferred, otherSeat(preferred)}
+	first := preferred
+	if snap != nil && snap.PriorityActorID != "" {
+		first = snap.PriorityActorID
 	}
-	return append([]string(nil), SeatIDs...)
+	for i, id := range ids {
+		if id == first {
+			return append([]string{id}, append(ids[:i], ids[i+1:]...)...)
+		}
+	}
+	return ids
 }
 
 func otherSeat(seatID string) string {
@@ -629,7 +655,7 @@ func validSeat(seatID string) bool {
 
 func (e *Environment) compactResult(result engine.Result) engine.Result {
 	result.Events = nil
-	if result.Snapshot != nil && e.config.ObservationSchema != ObservationSchemaV2 && e.config.ObservationSchema != ObservationSchemaV3 {
+	if result.Snapshot != nil && !e.config.IncludeContentCatalog && e.config.ObservationSchema != ObservationSchemaV2 && e.config.ObservationSchema != ObservationSchemaV3 {
 		result.Snapshot.ContentCatalog = nil
 	}
 	return result

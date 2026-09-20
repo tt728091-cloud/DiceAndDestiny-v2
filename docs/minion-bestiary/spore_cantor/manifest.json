@@ -1,0 +1,197 @@
+{
+  "boss_id": "spore_cantor",
+  "boss_name": "Spore Cantor",
+  "theme": "Subterranean fungal ecology, dusty mauve caps, ivory gills, black damp chitin and muted sickly green spores.",
+  "minions": [
+    {
+      "id": "gillmask_prowler",
+      "name": "Gillmask Prowler",
+      "role": "Stalker",
+      "description": "A lean ferret-like cavern predator with four long paws, bare dark velvet skin, an oval ivory mushroom-gill mask instead of eyes, and a low ridge of mauve shelf fungi along its flexible spine.",
+      "prompt": "Use case: stylized-concept. Create ONE original dark-fantasy game minion sprite named Gillmask Prowler. Reference image is the faction boss, used ONLY for rendering style, material vocabulary and restrained palette, never its anatomy or scale. Design: A lean ferret-like cavern predator with four long paws, bare dark velvet skin, an oval ivory mushroom-gill mask instead of eyes, and a low ridge of mauve shelf fungi along its flexible spine. Faction ecology: Subterranean fungal ecology, dusty mauve caps, ivory gills, black damp chitin and muted sickly green spores. This is a weaker encountered creature, not a boss or a miniature replica. Detailed hand-painted dark watercolor and fine ink hatching, tactile materials, readable distinctive silhouette. Full body, three-quarter view facing left, entire anatomy including tail, toes and wings visible with 5% empty margin; square canvas. Isolated on a genuinely transparent alpha PNG background. No environment, floor, cast shadow, aura, text, labels, borders, watermark or additional creatures.",
+      "relative_asset_path": "dice-and-destiny-client/assets/battle/minions/spore_cantor/gillmask_prowler.png",
+      "source_reference_paths": [
+        "/Users/daddymere/games/Dice-and-Destiny-v2/dice-and-destiny-client/assets/battle/fighters/spore_cantor.png"
+      ],
+      "generated_source_path": "/Users/daddymere/.codex/generated_images/01a077cd-7da1-7e53-8836-ee884c7866fd/exec-3e53dac5-a9c6-4df8-b846-54fca4cbd690.png",
+      "status": "completed",
+      "review": {
+        "alpha_empty_fraction": 0.6357,
+        "width": 1254,
+        "height": 1254,
+        "visual": "Full creature, distinct silhouette, faction style; reviewed."
+      }
+    },
+    {
+      "id": "pufflung_hopper",
+      "name": "Pufflung Hopper",
+      "role": "Spore carrier",
+      "description": "A round puffball creature on two powerful jointed hopping legs, cracked parchment skin, a small dark toothed breathing opening and several purple-brown spore vents; two tiny balancing claws.",
+      "prompt": "Use case: stylized-concept. Create ONE original dark-fantasy game minion sprite named Pufflung Hopper. Reference image is the faction boss, used ONLY for rendering style, material vocabulary and restrained palette, never its anatomy or scale. Design: A round puffball creature on two powerful jointed hopping legs, cracked parchment skin, a small dark toothed breathing opening and several purple-brown spore vents; two tiny balancing claws. Faction ecology: Subterranean fungal ecology, dusty mauve caps, ivory gills, black damp chitin and muted sickly green spores. This is a weaker encountered creature, not a boss or a miniature replica. Detailed hand-painted dark watercolor and fine ink hatching, tactile materials, readable distinctive silhouette. Full body, three-quarter view facing left, entire anatomy including tail, toes and wings visible with 5% empty margin; square canvas. Isolated on a genuinely transparent alpha PNG background. No environment, floor, cast shadow, aura, text, labels, borders, watermark or additional creatures.",
+      "relative_asset_path": "dice-and-destiny-client/assets/battle/minions/spore_cantor/pufflung_hopper.png",
+      "source_reference_paths": [
+        "/Users/daddymere/games/Dice-and-Destiny-v2/dice-and-destiny-client/assets/battle/fighters/spore_cantor.png"
+      ],
+      "generated_source_path": "/Users/daddymere/.codex/generated_images/01a077cd-7da1-7e53-8836-ee884c7866fd/exec-580c5398-f948-4cea-907d-d23f4ab7ffda.png",
+      "status": "completed",
+      "review": {
+        "alpha_empty_fraction": 0.5804,
+        "width": 1254,
+        "height": 1254,
+        "visual": "Full creature, distinct silhouette, faction style; reviewed."
+      }
+    },
+    {
+      "id": "mycelial_mason",
+      "name": "Mycelial Mason",
+      "role": "Builder",
+      "description": "A squat six-legged fungal worker with a bricklike stack of chalky porous mycelium for a torso, chitin pincers, fine white root whiskers and a single asymmetrical mauve shelf cap as a shoulder shield.",
+      "prompt": "Use case: stylized-concept. Create ONE original dark-fantasy game minion sprite named Mycelial Mason. Reference image is the faction boss, used ONLY for rendering style, material vocabulary and restrained palette, never its anatomy or scale. Design: A squat six-legged fungal worker with a bricklike stack of chalky porous mycelium for a torso, chitin pincers, fine white root whiskers and a single asymmetrical mauve shelf cap as a shoulder shield. Faction ecology: Subterranean fungal ecology, dusty mauve caps, ivory gills, black damp chitin and muted sickly green spores. This is a weaker encountered creature, not a boss or a miniature replica. Detailed hand-painted dark watercolor and fine ink hatching, tactile materials, readable distinctive silhouette. Full body, three-quarter view facing left, entire anatomy including tail, toes and wings visible with 5% empty margin; square canvas. Isolated on a genuinely transparent alpha PNG background. No environment, floor, cast shadow, aura, text, labels, borders, watermark or additional creatures.",
+      "relative_asset_path": "dice-and-destiny-client/assets/battle/minions/spore_cantor/mycelial_mason.png",
+      "source_reference_paths": [
+        "/Users/daddymere/games/Dice-and-Destiny-v2/dice-and-destiny-client/assets/battle/fighters/spore_cantor.png"
+      ],
+      "generated_source_path": "/Users/daddymere/.codex/generated_images/01a077cd-7da1-7e53-8836-ee884c7866fd/exec-06824d4a-dc9c-4149-850e-052defbdd3af.png",
+      "status": "completed",
+      "review": {
+        "alpha_empty_fraction": 0.5329,
+        "width": 1254,
+        "height": 1254,
+        "visual": "Full creature, distinct silhouette, faction style; reviewed."
+      }
+    },
+    {
+      "id": "morel_listener",
+      "name": "Morel Listener",
+      "role": "Scout",
+      "description": "A tiny upright salamander-like creature with two huge honeycombed morel ears, blind pinhole face, cream translucent skin, three grasping digits on each hand and a long curled tail.",
+      "prompt": "Use case: stylized-concept. Create ONE original dark-fantasy game minion sprite named Morel Listener. Reference image is the faction boss, used ONLY for rendering style, material vocabulary and restrained palette, never its anatomy or scale. Design: A tiny upright salamander-like creature with two huge honeycombed morel ears, blind pinhole face, cream translucent skin, three grasping digits on each hand and a long curled tail. Faction ecology: Subterranean fungal ecology, dusty mauve caps, ivory gills, black damp chitin and muted sickly green spores. This is a weaker encountered creature, not a boss or a miniature replica. Detailed hand-painted dark watercolor and fine ink hatching, tactile materials, readable distinctive silhouette. Full body, three-quarter view facing left, entire anatomy including tail, toes and wings visible with 5% empty margin; square canvas. Isolated on a genuinely transparent alpha PNG background. No environment, floor, cast shadow, aura, text, labels, borders, watermark or additional creatures.",
+      "relative_asset_path": "dice-and-destiny-client/assets/battle/minions/spore_cantor/morel_listener.png",
+      "source_reference_paths": [
+        "/Users/daddymere/games/Dice-and-Destiny-v2/dice-and-destiny-client/assets/battle/fighters/spore_cantor.png"
+      ],
+      "generated_source_path": "/Users/daddymere/.codex/generated_images/01a077cd-7da1-7e53-8836-ee884c7866fd/exec-26b5774b-791c-4970-9d7c-047c93169b07.png",
+      "status": "completed",
+      "review": {
+        "alpha_empty_fraction": 0.5709,
+        "width": 1254,
+        "height": 1254,
+        "visual": "Full creature, distinct silhouette, faction style; reviewed."
+      }
+    },
+    {
+      "id": "velvet_sporebat",
+      "name": "Velvet Sporebat",
+      "role": "Harrier",
+      "description": "A small cavern bat with ragged mauve suede wings, ivory gill ridges along the wing fingers, dark eyeless face and tiny hooked feet; hanging-free flying pose with full wings visible.",
+      "prompt": "Use case: stylized-concept. Create ONE original dark-fantasy game minion sprite named Velvet Sporebat. Reference image is the faction boss, used ONLY for rendering style, material vocabulary and restrained palette, never its anatomy or scale. Design: A small cavern bat with ragged mauve suede wings, ivory gill ridges along the wing fingers, dark eyeless face and tiny hooked feet; hanging-free flying pose with full wings visible. Faction ecology: Subterranean fungal ecology, dusty mauve caps, ivory gills, black damp chitin and muted sickly green spores. This is a weaker encountered creature, not a boss or a miniature replica. Detailed hand-painted dark watercolor and fine ink hatching, tactile materials, readable distinctive silhouette. Full body, three-quarter view facing left, entire anatomy including tail, toes and wings visible with 5% empty margin; square canvas. Isolated on a genuinely transparent alpha PNG background. No environment, floor, cast shadow, aura, text, labels, borders, watermark or additional creatures.",
+      "relative_asset_path": "dice-and-destiny-client/assets/battle/minions/spore_cantor/velvet_sporebat.png",
+      "source_reference_paths": [
+        "/Users/daddymere/games/Dice-and-Destiny-v2/dice-and-destiny-client/assets/battle/fighters/spore_cantor.png"
+      ],
+      "generated_source_path": "/Users/daddymere/.codex/generated_images/01a077cd-7da1-7e53-8836-ee884c7866fd/exec-69ac1a6c-25cd-489e-98d7-def2c4a9c30c.png",
+      "status": "completed",
+      "review": {
+        "alpha_empty_fraction": 0.6411,
+        "width": 1254,
+        "height": 1254,
+        "visual": "Full creature, distinct silhouette, faction style; reviewed."
+      }
+    },
+    {
+      "id": "truffle_grinder",
+      "name": "Truffle Grinder",
+      "role": "Forager",
+      "description": "A broad beetle with a ridged black truffle-like shell split into uneven lobes, cream grinding mandibles, six stout legs and a small crown of branching white fungal threads.",
+      "prompt": "Use case: stylized-concept. Create ONE original dark-fantasy game minion sprite named Truffle Grinder. Reference image is the faction boss, used ONLY for rendering style, material vocabulary and restrained palette, never its anatomy or scale. Design: A broad beetle with a ridged black truffle-like shell split into uneven lobes, cream grinding mandibles, six stout legs and a small crown of branching white fungal threads. Faction ecology: Subterranean fungal ecology, dusty mauve caps, ivory gills, black damp chitin and muted sickly green spores. This is a weaker encountered creature, not a boss or a miniature replica. Detailed hand-painted dark watercolor and fine ink hatching, tactile materials, readable distinctive silhouette. Full body, three-quarter view facing left, entire anatomy including tail, toes and wings visible with 5% empty margin; square canvas. Isolated on a genuinely transparent alpha PNG background. No environment, floor, cast shadow, aura, text, labels, borders, watermark or additional creatures.",
+      "relative_asset_path": "dice-and-destiny-client/assets/battle/minions/spore_cantor/truffle_grinder.png",
+      "source_reference_paths": [
+        "/Users/daddymere/games/Dice-and-Destiny-v2/dice-and-destiny-client/assets/battle/fighters/spore_cantor.png"
+      ],
+      "generated_source_path": "/Users/daddymere/.codex/generated_images/01a077cd-7da1-7e53-8836-ee884c7866fd/exec-2f159fb3-84cf-4ef5-b7d5-0fe2fcee08b8.png",
+      "status": "completed",
+      "review": {
+        "alpha_empty_fraction": 0.5089,
+        "width": 1254,
+        "height": 1254,
+        "visual": "Full creature, distinct silhouette, faction style; reviewed."
+      }
+    },
+    {
+      "id": "inkcap_drudge",
+      "name": "Inkcap Drudge",
+      "role": "Shambler",
+      "description": "A short stooped humanoid made of black ink-like mycelial cords with an elongated dripping inkcap hood, two thick feet, one shovel-shaped hand and one delicate root hand; face entirely hidden by pale gills.",
+      "prompt": "Use case: stylized-concept. Create ONE original dark-fantasy game minion sprite named Inkcap Drudge. Reference image is the faction boss, used ONLY for rendering style, material vocabulary and restrained palette, never its anatomy or scale. Design: A short stooped humanoid made of black ink-like mycelial cords with an elongated dripping inkcap hood, two thick feet, one shovel-shaped hand and one delicate root hand; face entirely hidden by pale gills. Faction ecology: Subterranean fungal ecology, dusty mauve caps, ivory gills, black damp chitin and muted sickly green spores. This is a weaker encountered creature, not a boss or a miniature replica. Detailed hand-painted dark watercolor and fine ink hatching, tactile materials, readable distinctive silhouette. Full body, three-quarter view facing left, entire anatomy including tail, toes and wings visible with 5% empty margin; square canvas. Isolated on a genuinely transparent alpha PNG background. No environment, floor, cast shadow, aura, text, labels, borders, watermark or additional creatures.",
+      "relative_asset_path": "dice-and-destiny-client/assets/battle/minions/spore_cantor/inkcap_drudge.png",
+      "source_reference_paths": [
+        "/Users/daddymere/games/Dice-and-Destiny-v2/dice-and-destiny-client/assets/battle/fighters/spore_cantor.png"
+      ],
+      "generated_source_path": "/Users/daddymere/.codex/generated_images/01a077cd-7da1-7e53-8836-ee884c7866fd/exec-f0c59781-241f-477c-87a3-e477d3848c18.png",
+      "status": "completed",
+      "review": {
+        "alpha_empty_fraction": 0.5193,
+        "width": 1254,
+        "height": 1254,
+        "visual": "Full creature, distinct silhouette, faction style; reviewed."
+      }
+    },
+    {
+      "id": "lichen_shepherd",
+      "name": "Lichen Shepherd",
+      "role": "Support",
+      "description": "A deerlike cave grazer with a low bony body, four narrow hooves, broad fan-shaped lichen growths replacing antlers, a fungal blindfold and a coat of peeling gray barklike scales.",
+      "prompt": "Use case: stylized-concept. Create ONE original dark-fantasy game minion sprite named Lichen Shepherd. Reference image is the faction boss, used ONLY for rendering style, material vocabulary and restrained palette, never its anatomy or scale. Design: A deerlike cave grazer with a low bony body, four narrow hooves, broad fan-shaped lichen growths replacing antlers, a fungal blindfold and a coat of peeling gray barklike scales. Faction ecology: Subterranean fungal ecology, dusty mauve caps, ivory gills, black damp chitin and muted sickly green spores. This is a weaker encountered creature, not a boss or a miniature replica. Detailed hand-painted dark watercolor and fine ink hatching, tactile materials, readable distinctive silhouette. Full body, three-quarter view facing left, entire anatomy including tail, toes and wings visible with 5% empty margin; square canvas. Isolated on a genuinely transparent alpha PNG background. No environment, floor, cast shadow, aura, text, labels, borders, watermark or additional creatures.",
+      "relative_asset_path": "dice-and-destiny-client/assets/battle/minions/spore_cantor/lichen_shepherd.png",
+      "source_reference_paths": [
+        "/Users/daddymere/games/Dice-and-Destiny-v2/dice-and-destiny-client/assets/battle/fighters/spore_cantor.png"
+      ],
+      "generated_source_path": "/Users/daddymere/.codex/generated_images/01a077cd-7da1-7e53-8836-ee884c7866fd/exec-5e77fd39-d00c-443c-b00d-071b9bf43872.png",
+      "status": "completed",
+      "review": {
+        "alpha_empty_fraction": 0.5487,
+        "width": 1254,
+        "height": 1254,
+        "visual": "Full creature, distinct silhouette, faction style; reviewed."
+      }
+    },
+    {
+      "id": "cordyceps_lancer",
+      "name": "Cordyceps Lancer",
+      "role": "Striker",
+      "description": "A slender mantis-nymph infected by one long crooked ivory cordyceps spear growing forward from its head, charcoal jointed limbs, a small mauve abdomen and stubby vestigial wings; six limbs.",
+      "prompt": "Use case: stylized-concept. Create ONE original dark-fantasy game minion sprite named Cordyceps Lancer. Reference image is the faction boss, used ONLY for rendering style, material vocabulary and restrained palette, never its anatomy or scale. Design: A slender mantis-nymph infected by one long crooked ivory cordyceps spear growing forward from its head, charcoal jointed limbs, a small mauve abdomen and stubby vestigial wings; six limbs. Faction ecology: Subterranean fungal ecology, dusty mauve caps, ivory gills, black damp chitin and muted sickly green spores. This is a weaker encountered creature, not a boss or a miniature replica. Detailed hand-painted dark watercolor and fine ink hatching, tactile materials, readable distinctive silhouette. Full body, three-quarter view facing left, entire anatomy including tail, toes and wings visible with 5% empty margin; square canvas. Isolated on a genuinely transparent alpha PNG background. No environment, floor, cast shadow, aura, text, labels, borders, watermark or additional creatures.",
+      "relative_asset_path": "dice-and-destiny-client/assets/battle/minions/spore_cantor/cordyceps_lancer.png",
+      "source_reference_paths": [
+        "/Users/daddymere/games/Dice-and-Destiny-v2/dice-and-destiny-client/assets/battle/fighters/spore_cantor.png"
+      ],
+      "generated_source_path": "/Users/daddymere/.codex/generated_images/01a077cd-7da1-7e53-8836-ee884c7866fd/exec-adae86b0-2d6e-4575-9fd7-9f984ec52ada.png",
+      "status": "completed",
+      "review": {
+        "alpha_empty_fraction": 0.6745,
+        "width": 1254,
+        "height": 1254,
+        "visual": "Full creature, distinct silhouette, faction style; reviewed."
+      }
+    },
+    {
+      "id": "sponge_whelp",
+      "name": "Sponge Whelp",
+      "role": "Tank",
+      "description": "A squat amphibian with thick stubby legs, a porous ivory sponge hide, dark open nostril pits, scattered violet fungal bruises and a broad blunt head with tiny moss-green eyes.",
+      "prompt": "Use case: stylized-concept. Create ONE original dark-fantasy game minion sprite named Sponge Whelp. Reference image is the faction boss, used ONLY for rendering style, material vocabulary and restrained palette, never its anatomy or scale. Design: A squat amphibian with thick stubby legs, a porous ivory sponge hide, dark open nostril pits, scattered violet fungal bruises and a broad blunt head with tiny moss-green eyes. Faction ecology: Subterranean fungal ecology, dusty mauve caps, ivory gills, black damp chitin and muted sickly green spores. This is a weaker encountered creature, not a boss or a miniature replica. Detailed hand-painted dark watercolor and fine ink hatching, tactile materials, readable distinctive silhouette. Full body, three-quarter view facing left, entire anatomy including tail, toes and wings visible with 5% empty margin; square canvas. Isolated on a genuinely transparent alpha PNG background. No environment, floor, cast shadow, aura, text, labels, borders, watermark or additional creatures.",
+      "relative_asset_path": "dice-and-destiny-client/assets/battle/minions/spore_cantor/sponge_whelp.png",
+      "source_reference_paths": [
+        "/Users/daddymere/games/Dice-and-Destiny-v2/dice-and-destiny-client/assets/battle/fighters/spore_cantor.png"
+      ],
+      "generated_source_path": "/Users/daddymere/.codex/generated_images/01a077cd-7da1-7e53-8836-ee884c7866fd/exec-172456ce-36eb-449d-a889-d4f06db72ba8.png",
+      "status": "completed",
+      "review": {
+        "alpha_empty_fraction": 0.5283,
+        "width": 1254,
+        "height": 1254,
+        "visual": "Full creature, distinct silhouette, faction style; reviewed."
+      }
+    }
+  ]
+}

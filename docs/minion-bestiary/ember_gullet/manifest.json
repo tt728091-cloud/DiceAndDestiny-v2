@@ -1,0 +1,159 @@
+{
+  "boss_id": "ember_gullet",
+  "boss_name": "Ember Gullet",
+  "theme": "volcanic caldera, stable ash platform, distant lava seams and basalt walls, smoke and falling ash",
+  "minions": [
+    {
+      "id": "cinder_tick",
+      "name": "Furnace Tick",
+      "role": "heat parasite",
+      "description": "Flat engorged tick, eight angular charcoal legs, leathery ash-gray abdomen with three faint ember creases, tiny hook mouth, ivory nodules",
+      "prompt": "Use case: stylized-concept. Asset: standalone full-body dark fantasy battle minion sprite, ONE creature. Subject: Cinder Tick: Flat engorged tick, eight angular charcoal legs, leathery ash-gray abdomen with three faint ember creases, tiny hook mouth, ivory nodules. A weaker heat parasite from volcanic caldera, stable ash platform, distant lava seams and basalt walls, smoke and falling ash, associated with Ember Gullet but a distinct species, never a miniature boss. Highly detailed desaturated dark watercolor with granular pigment and layered washes within creature, broken ink contours, rich tactile anatomy and charcoal shadows, restrained theme accents. Full body centered facing LEFT in three-quarter view, ALL extremities completely visible with ample empty margin. GENUINELY TRANSPARENT PNG ALPHA CHANNEL everywhere outside creature. No background, no scenery, no paper rectangle, no ground patch, no floor, NO SHADOW, no cast/drop shadow, no aura, no haze, no text, no label, no frame, no UI. Finished production game asset.",
+      "relative_asset_path": "dice-and-destiny-client/assets/battle/minions/ember_gullet/cinder_tick.png",
+      "source_reference_paths": [
+        "dice-and-destiny-client/assets/battle/fighters/ember_gullet.png",
+        "dice-and-destiny-client/assets/battle/habitats/ash_caldera.png"
+      ],
+      "generated_source_path": "/Users/daddymere/.codex/generated_images/01a0ba2d-5cc7-7070-96c9-d262aeade317/exec-df531260-3ab6-43ac-82b5-5e02f1b0d0c7.png",
+      "status": "completed",
+      "renamed_from": "Cinder Tick",
+      "final_prompt": "Use case: stylized-concept. Asset: standalone full-body dark fantasy battle minion sprite, ONE creature. Subject: Cinder Tick: Flat engorged tick, eight angular charcoal legs, leathery ash-gray abdomen with three faint ember creases, tiny hook mouth, ivory nodules. A weaker heat parasite from volcanic caldera, stable ash platform, distant lava seams and basalt walls, smoke and falling ash, associated with Ember Gullet but a distinct species, never a miniature boss. Highly detailed desaturated dark watercolor with granular pigment and layered washes within creature, broken ink contours, rich tactile anatomy and charcoal shadows, restrained theme accents. Full body centered facing LEFT in three-quarter view, ALL extremities completely visible with ample empty margin. GENUINELY TRANSPARENT PNG ALPHA CHANNEL everywhere outside creature. No background, no scenery, no paper rectangle, no ground patch, no floor, NO SHADOW, no cast/drop shadow, no aura, no haze, no text, no label, no frame, no UI. Finished production game asset. Keep long appendages curled inward to preserve all tips. Leave 10% clear transparent margin."
+    },
+    {
+      "id": "ashwing_moth",
+      "name": "Ashwing Moth",
+      "role": "blinding flier",
+      "description": "Broad moth with ragged soot-black wings and dusty ivory streaks, fuzzy gray body, comb antennae, dim copper abdomen segment",
+      "prompt": "Use case: stylized-concept. Asset: standalone full-body dark fantasy battle minion sprite, ONE creature. Subject: Ashwing Moth: Broad moth with ragged soot-black wings and dusty ivory streaks, fuzzy gray body, comb antennae, dim copper abdomen segment. A weaker blinding flier from volcanic caldera, stable ash platform, distant lava seams and basalt walls, smoke and falling ash, associated with Ember Gullet but a distinct species, never a miniature boss. Highly detailed desaturated dark watercolor with granular pigment and layered washes within creature, broken ink contours, rich tactile anatomy and charcoal shadows, restrained theme accents. Full body centered facing LEFT in three-quarter view, ALL extremities completely visible with ample empty margin. GENUINELY TRANSPARENT PNG ALPHA CHANNEL everywhere outside creature. No background, no scenery, no paper rectangle, no ground patch, no floor, NO SHADOW, no cast/drop shadow, no aura, no haze, no text, no label, no frame, no UI. Finished production game asset.",
+      "relative_asset_path": "dice-and-destiny-client/assets/battle/minions/ember_gullet/ashwing_moth.png",
+      "source_reference_paths": [
+        "dice-and-destiny-client/assets/battle/fighters/ember_gullet.png",
+        "dice-and-destiny-client/assets/battle/habitats/ash_caldera.png"
+      ],
+      "generated_source_path": "/Users/daddymere/.codex/generated_images/01a0ba2d-5cc7-7070-96c9-d262aeade317/exec-dbe98293-00f1-462f-8b4a-f5e13757bb1d.png",
+      "status": "completed",
+      "previous_generated_source_path": "/Users/daddymere/.codex/generated_images/01a0ba2d-5cc7-7070-96c9-d262aeade317/exec-15c55f9a-0a07-4ace-b31c-050857dfd8cb.png",
+      "final_prompt": "Use case: stylized-concept. Asset: standalone full-body dark fantasy battle minion sprite, ONE creature. Subject: Ashwing Moth: Broad moth with ragged soot-black wings and dusty ivory streaks, fuzzy gray body, comb antennae, dim copper abdomen segment. A weaker blinding flier from volcanic caldera, stable ash platform, distant lava seams and basalt walls, smoke and falling ash, associated with Ember Gullet but a distinct species, never a miniature boss. Highly detailed desaturated dark watercolor with granular pigment and layered washes within creature, broken ink contours, rich tactile anatomy and charcoal shadows, restrained theme accents. Full body centered facing LEFT in three-quarter view, ALL extremities completely visible with ample empty margin. GENUINELY TRANSPARENT PNG ALPHA CHANNEL everywhere outside creature. No background, no scenery, no paper rectangle, no ground patch, no floor, NO SHADOW, no cast/drop shadow, no aura, no haze, no text, no label, no frame, no UI. Finished production game asset. FRAMING CORRECTION: Wings held compactly at a diagonal, each wingtip fully visible. Creature occupies ONLY CENTER 70 PERCENT of canvas. Wide empty transparent padding on every side. Absolutely zero body parts or wing/antenna tips touching any image edge. Zoom out."
+    },
+    {
+      "id": "pumice_hare",
+      "name": "Pumice Hare",
+      "role": "leaping scout",
+      "description": "Lean monstrous hare, porous stone-gray hide, long torn ears, angular hind legs, tiny forepaws, ash fur patches, muted orange eye",
+      "prompt": "Use case: stylized-concept. Asset: standalone full-body dark fantasy battle minion sprite, ONE creature. Subject: Pumice Hare: Lean monstrous hare, porous stone-gray hide, long torn ears, angular hind legs, tiny forepaws, ash fur patches, muted orange eye. A weaker leaping scout from volcanic caldera, stable ash platform, distant lava seams and basalt walls, smoke and falling ash, associated with Ember Gullet but a distinct species, never a miniature boss. Highly detailed desaturated dark watercolor with granular pigment and layered washes within creature, broken ink contours, rich tactile anatomy and charcoal shadows, restrained theme accents. Full body centered facing LEFT in three-quarter view, ALL extremities completely visible with ample empty margin. GENUINELY TRANSPARENT PNG ALPHA CHANNEL everywhere outside creature. No background, no scenery, no paper rectangle, no ground patch, no floor, NO SHADOW, no cast/drop shadow, no aura, no haze, no text, no label, no frame, no UI. Finished production game asset.",
+      "relative_asset_path": "dice-and-destiny-client/assets/battle/minions/ember_gullet/pumice_hare.png",
+      "source_reference_paths": [
+        "dice-and-destiny-client/assets/battle/fighters/ember_gullet.png",
+        "dice-and-destiny-client/assets/battle/habitats/ash_caldera.png"
+      ],
+      "generated_source_path": "/Users/daddymere/.codex/generated_images/01a0ba2d-5cc7-7070-96c9-d262aeade317/exec-2e81e8ff-01bf-4c41-8d3c-fac1584dbe88.png",
+      "status": "completed",
+      "final_prompt": "Use case: stylized-concept. Asset: standalone full-body dark fantasy battle minion sprite, ONE creature. Subject: Pumice Hare: Lean monstrous hare, porous stone-gray hide, long torn ears, angular hind legs, tiny forepaws, ash fur patches, muted orange eye. A weaker leaping scout from volcanic caldera, stable ash platform, distant lava seams and basalt walls, smoke and falling ash, associated with Ember Gullet but a distinct species, never a miniature boss. Highly detailed desaturated dark watercolor with granular pigment and layered washes within creature, broken ink contours, rich tactile anatomy and charcoal shadows, restrained theme accents. Full body centered facing LEFT in three-quarter view, ALL extremities completely visible with ample empty margin. GENUINELY TRANSPARENT PNG ALPHA CHANNEL everywhere outside creature. No background, no scenery, no paper rectangle, no ground patch, no floor, NO SHADOW, no cast/drop shadow, no aura, no haze, no text, no label, no frame, no UI. Finished production game asset. Keep long appendages curled inward to preserve all tips. Leave 10% clear transparent margin."
+    },
+    {
+      "id": "kilnback_snail",
+      "name": "Kilnback Snail",
+      "role": "armored grazer",
+      "description": "Black slug with tall irregular spiral ceramic shell, flaking matte chalk glaze, thick eye stalks, wide rasping mouth, tiny warm seam inside shell",
+      "prompt": "Use case: stylized-concept. Asset: standalone full-body dark fantasy battle minion sprite, ONE creature. Subject: Kilnback Snail: Black slug with tall irregular spiral ceramic shell, flaking matte chalk glaze, thick eye stalks, wide rasping mouth, tiny warm seam inside shell. A weaker armored grazer from volcanic caldera, stable ash platform, distant lava seams and basalt walls, smoke and falling ash, associated with Ember Gullet but a distinct species, never a miniature boss. Highly detailed desaturated dark watercolor with granular pigment and layered washes within creature, broken ink contours, rich tactile anatomy and charcoal shadows, restrained theme accents. Full body centered facing LEFT in three-quarter view, ALL extremities completely visible with ample empty margin. GENUINELY TRANSPARENT PNG ALPHA CHANNEL everywhere outside creature. No background, no scenery, no paper rectangle, no ground patch, no floor, NO SHADOW, no cast/drop shadow, no aura, no haze, no text, no label, no frame, no UI. Finished production game asset.",
+      "relative_asset_path": "dice-and-destiny-client/assets/battle/minions/ember_gullet/kilnback_snail.png",
+      "source_reference_paths": [
+        "dice-and-destiny-client/assets/battle/fighters/ember_gullet.png",
+        "dice-and-destiny-client/assets/battle/habitats/ash_caldera.png"
+      ],
+      "generated_source_path": "/Users/daddymere/.codex/generated_images/01a0ba2d-5cc7-7070-96c9-d262aeade317/exec-bb15da12-3f29-4ca2-9ec7-f028abf8e641.png",
+      "status": "completed",
+      "final_prompt": "Use case: stylized-concept. Asset: standalone full-body dark fantasy battle minion sprite, ONE creature. Subject: Kilnback Snail: Black slug with tall irregular spiral ceramic shell, flaking matte chalk glaze, thick eye stalks, wide rasping mouth, tiny warm seam inside shell. A weaker armored grazer from volcanic caldera, stable ash platform, distant lava seams and basalt walls, smoke and falling ash, associated with Ember Gullet but a distinct species, never a miniature boss. Highly detailed desaturated dark watercolor with granular pigment and layered washes within creature, broken ink contours, rich tactile anatomy and charcoal shadows, restrained theme accents. Full body centered facing LEFT in three-quarter view, ALL extremities completely visible with ample empty margin. GENUINELY TRANSPARENT PNG ALPHA CHANNEL everywhere outside creature. No background, no scenery, no paper rectangle, no ground patch, no floor, NO SHADOW, no cast/drop shadow, no aura, no haze, no text, no label, no frame, no UI. Finished production game asset. Keep long appendages curled inward to preserve all tips. Leave 10% clear transparent margin."
+    },
+    {
+      "id": "coalspit_toad",
+      "name": "Coalspit Toad",
+      "role": "ranged nuisance",
+      "description": "Squat warty toad, large dark inflated throat sac dimly glowing within, short muscular limbs, ash-encrusted knuckles, tiny black eyes",
+      "prompt": "Use case: stylized-concept. Asset: standalone full-body dark fantasy battle minion sprite, ONE creature. Subject: Coalspit Toad: Squat warty toad, large dark inflated throat sac dimly glowing within, short muscular limbs, ash-encrusted knuckles, tiny black eyes. A weaker ranged nuisance from volcanic caldera, stable ash platform, distant lava seams and basalt walls, smoke and falling ash, associated with Ember Gullet but a distinct species, never a miniature boss. Highly detailed desaturated dark watercolor with granular pigment and layered washes within creature, broken ink contours, rich tactile anatomy and charcoal shadows, restrained theme accents. Full body centered facing LEFT in three-quarter view, ALL extremities completely visible with ample empty margin. GENUINELY TRANSPARENT PNG ALPHA CHANNEL everywhere outside creature. No background, no scenery, no paper rectangle, no ground patch, no floor, NO SHADOW, no cast/drop shadow, no aura, no haze, no text, no label, no frame, no UI. Finished production game asset.",
+      "relative_asset_path": "dice-and-destiny-client/assets/battle/minions/ember_gullet/coalspit_toad.png",
+      "source_reference_paths": [
+        "dice-and-destiny-client/assets/battle/fighters/ember_gullet.png",
+        "dice-and-destiny-client/assets/battle/habitats/ash_caldera.png"
+      ],
+      "generated_source_path": "/Users/daddymere/.codex/generated_images/01a0ba2d-5cc7-7070-96c9-d262aeade317/exec-217bbb5c-0a03-4168-8aee-3f9bff84365f.png",
+      "status": "completed",
+      "final_prompt": "Use case: stylized-concept. Asset: standalone full-body dark fantasy battle minion sprite, ONE creature. Subject: Coalspit Toad: Squat warty toad, large dark inflated throat sac dimly glowing within, short muscular limbs, ash-encrusted knuckles, tiny black eyes. A weaker ranged nuisance from volcanic caldera, stable ash platform, distant lava seams and basalt walls, smoke and falling ash, associated with Ember Gullet but a distinct species, never a miniature boss. Highly detailed desaturated dark watercolor with granular pigment and layered washes within creature, broken ink contours, rich tactile anatomy and charcoal shadows, restrained theme accents. Full body centered facing LEFT in three-quarter view, ALL extremities completely visible with ample empty margin. GENUINELY TRANSPARENT PNG ALPHA CHANNEL everywhere outside creature. No background, no scenery, no paper rectangle, no ground patch, no floor, NO SHADOW, no cast/drop shadow, no aura, no haze, no text, no label, no frame, no UI. Finished production game asset. Keep long appendages curled inward to preserve all tips. Leave 10% clear transparent margin."
+    },
+    {
+      "id": "slag_beak",
+      "name": "Slag Beak",
+      "role": "carrion scout",
+      "description": "Thin bipedal volcanic crow, long chipped obsidian beak, folded ragged charcoal wings, long ivory talons, ash-white neck hackles",
+      "prompt": "Use case: stylized-concept. Asset: standalone full-body dark fantasy battle minion sprite, ONE creature. Subject: Slag Beak: Thin bipedal volcanic crow, long chipped obsidian beak, folded ragged charcoal wings, long ivory talons, ash-white neck hackles. A weaker carrion scout from volcanic caldera, stable ash platform, distant lava seams and basalt walls, smoke and falling ash, associated with Ember Gullet but a distinct species, never a miniature boss. Highly detailed desaturated dark watercolor with granular pigment and layered washes within creature, broken ink contours, rich tactile anatomy and charcoal shadows, restrained theme accents. Full body centered facing LEFT in three-quarter view, ALL extremities completely visible with ample empty margin. GENUINELY TRANSPARENT PNG ALPHA CHANNEL everywhere outside creature. No background, no scenery, no paper rectangle, no ground patch, no floor, NO SHADOW, no cast/drop shadow, no aura, no haze, no text, no label, no frame, no UI. Finished production game asset.",
+      "relative_asset_path": "dice-and-destiny-client/assets/battle/minions/ember_gullet/slag_beak.png",
+      "source_reference_paths": [
+        "dice-and-destiny-client/assets/battle/fighters/ember_gullet.png",
+        "dice-and-destiny-client/assets/battle/habitats/ash_caldera.png"
+      ],
+      "generated_source_path": "/Users/daddymere/.codex/generated_images/01a0ba2d-5cc7-7070-96c9-d262aeade317/exec-a951a506-9851-4940-bcbf-1b69d8bc3f1e.png",
+      "status": "completed",
+      "final_prompt": "Use case: stylized-concept. Asset: standalone full-body dark fantasy battle minion sprite, ONE creature. Subject: Slag Beak: Thin bipedal volcanic crow, long chipped obsidian beak, folded ragged charcoal wings, long ivory talons, ash-white neck hackles. A weaker carrion scout from volcanic caldera, stable ash platform, distant lava seams and basalt walls, smoke and falling ash, associated with Ember Gullet but a distinct species, never a miniature boss. Highly detailed desaturated dark watercolor with granular pigment and layered washes within creature, broken ink contours, rich tactile anatomy and charcoal shadows, restrained theme accents. Full body centered facing LEFT in three-quarter view, ALL extremities completely visible with ample empty margin. GENUINELY TRANSPARENT PNG ALPHA CHANNEL everywhere outside creature. No background, no scenery, no paper rectangle, no ground patch, no floor, NO SHADOW, no cast/drop shadow, no aura, no haze, no text, no label, no frame, no UI. Finished production game asset. Keep long appendages curled inward to preserve all tips. Leave 10% clear transparent margin."
+    },
+    {
+      "id": "furnace_weasel",
+      "name": "Furnace Weasel",
+      "role": "pack harrier",
+      "description": "Long low sinuous weasel, charcoal bristly fur, tiny hooked paws, whip tail, pale toothy muzzle, rust-orange throat patches",
+      "prompt": "Use case: stylized-concept. Asset: standalone full-body dark fantasy battle minion sprite, ONE creature. Subject: Furnace Weasel: Long low sinuous weasel, charcoal bristly fur, tiny hooked paws, whip tail, pale toothy muzzle, rust-orange throat patches. A weaker pack harrier from volcanic caldera, stable ash platform, distant lava seams and basalt walls, smoke and falling ash, associated with Ember Gullet but a distinct species, never a miniature boss. Highly detailed desaturated dark watercolor with granular pigment and layered washes within creature, broken ink contours, rich tactile anatomy and charcoal shadows, restrained theme accents. Full body centered facing LEFT in three-quarter view, ALL extremities completely visible with ample empty margin. GENUINELY TRANSPARENT PNG ALPHA CHANNEL everywhere outside creature. No background, no scenery, no paper rectangle, no ground patch, no floor, NO SHADOW, no cast/drop shadow, no aura, no haze, no text, no label, no frame, no UI. Finished production game asset.",
+      "relative_asset_path": "dice-and-destiny-client/assets/battle/minions/ember_gullet/furnace_weasel.png",
+      "source_reference_paths": [
+        "dice-and-destiny-client/assets/battle/fighters/ember_gullet.png",
+        "dice-and-destiny-client/assets/battle/habitats/ash_caldera.png"
+      ],
+      "generated_source_path": "/Users/daddymere/.codex/generated_images/01a0ba2d-5cc7-7070-96c9-d262aeade317/exec-a22121bf-4141-4a73-b7ec-f89eb09d9764.png",
+      "status": "completed",
+      "final_prompt": "Use case: stylized-concept. Asset: standalone full-body dark fantasy battle minion sprite, ONE creature. Subject: Furnace Weasel: Long low sinuous weasel, charcoal bristly fur, tiny hooked paws, whip tail, pale toothy muzzle, rust-orange throat patches. A weaker pack harrier from volcanic caldera, stable ash platform, distant lava seams and basalt walls, smoke and falling ash, associated with Ember Gullet but a distinct species, never a miniature boss. Highly detailed desaturated dark watercolor with granular pigment and layered washes within creature, broken ink contours, rich tactile anatomy and charcoal shadows, restrained theme accents. Full body centered facing LEFT in three-quarter view, ALL extremities completely visible with ample empty margin. GENUINELY TRANSPARENT PNG ALPHA CHANNEL everywhere outside creature. No background, no scenery, no paper rectangle, no ground patch, no floor, NO SHADOW, no cast/drop shadow, no aura, no haze, no text, no label, no frame, no UI. Finished production game asset. Keep long appendages curled inward to preserve all tips. Leave 10% clear transparent margin."
+    },
+    {
+      "id": "glass_lancet",
+      "name": "Glass Lancet",
+      "role": "precision striker",
+      "description": "Slender smoky obsidian mantis, six articulated limbs, two narrow glass-sickle arms, pale triangular face, fan-folded abdomen, dull copper joints",
+      "prompt": "Use case: stylized-concept. Asset: standalone full-body dark fantasy battle minion sprite, ONE creature. Subject: Glass Lancet: Slender smoky obsidian mantis, six articulated limbs, two narrow glass-sickle arms, pale triangular face, fan-folded abdomen, dull copper joints. A weaker precision striker from volcanic caldera, stable ash platform, distant lava seams and basalt walls, smoke and falling ash, associated with Ember Gullet but a distinct species, never a miniature boss. Highly detailed desaturated dark watercolor with granular pigment and layered washes within creature, broken ink contours, rich tactile anatomy and charcoal shadows, restrained theme accents. Full body centered facing LEFT in three-quarter view, ALL extremities completely visible with ample empty margin. GENUINELY TRANSPARENT PNG ALPHA CHANNEL everywhere outside creature. No background, no scenery, no paper rectangle, no ground patch, no floor, NO SHADOW, no cast/drop shadow, no aura, no haze, no text, no label, no frame, no UI. Finished production game asset.",
+      "relative_asset_path": "dice-and-destiny-client/assets/battle/minions/ember_gullet/glass_lancet.png",
+      "source_reference_paths": [
+        "dice-and-destiny-client/assets/battle/fighters/ember_gullet.png",
+        "dice-and-destiny-client/assets/battle/habitats/ash_caldera.png"
+      ],
+      "generated_source_path": "/Users/daddymere/.codex/generated_images/01a0ba2d-5cc7-7070-96c9-d262aeade317/exec-eda7c2d4-c9cf-48ea-b760-19100d0175da.png",
+      "status": "completed",
+      "final_prompt": "Use case: stylized-concept. Asset: standalone full-body dark fantasy battle minion sprite, ONE creature. Subject: Glass Lancet: Slender smoky obsidian mantis, six articulated limbs, two narrow glass-sickle arms, pale triangular face, fan-folded abdomen, dull copper joints. A weaker precision striker from volcanic caldera, stable ash platform, distant lava seams and basalt walls, smoke and falling ash, associated with Ember Gullet but a distinct species, never a miniature boss. Highly detailed desaturated dark watercolor with granular pigment and layered washes within creature, broken ink contours, rich tactile anatomy and charcoal shadows, restrained theme accents. Full body centered facing LEFT in three-quarter view, ALL extremities completely visible with ample empty margin. GENUINELY TRANSPARENT PNG ALPHA CHANNEL everywhere outside creature. No background, no scenery, no paper rectangle, no ground patch, no floor, NO SHADOW, no cast/drop shadow, no aura, no haze, no text, no label, no frame, no UI. Finished production game asset. Keep long appendages curled inward to preserve all tips. Leave 10% clear transparent margin."
+    },
+    {
+      "id": "scoria_tortoise",
+      "name": "Scoria Tortoise",
+      "role": "blocking defender",
+      "description": "Small tortoise, high porous pumice shell, blunt ash-gray head, thick wrinkled legs, black flint claws, few dull red shell pinholes",
+      "prompt": "Use case: stylized-concept. Asset: standalone full-body dark fantasy battle minion sprite, ONE creature. Subject: Scoria Tortoise: Small tortoise, high porous pumice shell, blunt ash-gray head, thick wrinkled legs, black flint claws, few dull red shell pinholes. A weaker blocking defender from volcanic caldera, stable ash platform, distant lava seams and basalt walls, smoke and falling ash, associated with Ember Gullet but a distinct species, never a miniature boss. Highly detailed desaturated dark watercolor with granular pigment and layered washes within creature, broken ink contours, rich tactile anatomy and charcoal shadows, restrained theme accents. Full body centered facing LEFT in three-quarter view, ALL extremities completely visible with ample empty margin. GENUINELY TRANSPARENT PNG ALPHA CHANNEL everywhere outside creature. No background, no scenery, no paper rectangle, no ground patch, no floor, NO SHADOW, no cast/drop shadow, no aura, no haze, no text, no label, no frame, no UI. Finished production game asset.",
+      "relative_asset_path": "dice-and-destiny-client/assets/battle/minions/ember_gullet/scoria_tortoise.png",
+      "source_reference_paths": [
+        "dice-and-destiny-client/assets/battle/fighters/ember_gullet.png",
+        "dice-and-destiny-client/assets/battle/habitats/ash_caldera.png"
+      ],
+      "generated_source_path": "/Users/daddymere/.codex/generated_images/01a0ba2d-5cc7-7070-96c9-d262aeade317/exec-a6082328-d839-4f8c-aeec-0a7d747f554f.png",
+      "status": "completed",
+      "final_prompt": "Use case: stylized-concept. Asset: standalone full-body dark fantasy battle minion sprite, ONE creature. Subject: Scoria Tortoise: Small tortoise, high porous pumice shell, blunt ash-gray head, thick wrinkled legs, black flint claws, few dull red shell pinholes. A weaker blocking defender from volcanic caldera, stable ash platform, distant lava seams and basalt walls, smoke and falling ash, associated with Ember Gullet but a distinct species, never a miniature boss. Highly detailed desaturated dark watercolor with granular pigment and layered washes within creature, broken ink contours, rich tactile anatomy and charcoal shadows, restrained theme accents. Full body centered facing LEFT in three-quarter view, ALL extremities completely visible with ample empty margin. GENUINELY TRANSPARENT PNG ALPHA CHANNEL everywhere outside creature. No background, no scenery, no paper rectangle, no ground patch, no floor, NO SHADOW, no cast/drop shadow, no aura, no haze, no text, no label, no frame, no UI. Finished production game asset. Keep long appendages curled inward to preserve all tips. Leave 10% clear transparent margin."
+    },
+    {
+      "id": "vent_siphon",
+      "name": "Vent Siphon",
+      "role": "hazard feeder",
+      "description": "Walking anemone, squat charcoal leathery bulb, six thick fleshy support lobes, crown of short curled ivory siphon tubes around tiny warm red mouth",
+      "prompt": "Use case: stylized-concept. Asset: standalone full-body dark fantasy battle minion sprite, ONE creature. Subject: Vent Siphon: Walking anemone, squat charcoal leathery bulb, six thick fleshy support lobes, crown of short curled ivory siphon tubes around tiny warm red mouth. A weaker hazard feeder from volcanic caldera, stable ash platform, distant lava seams and basalt walls, smoke and falling ash, associated with Ember Gullet but a distinct species, never a miniature boss. Highly detailed desaturated dark watercolor with granular pigment and layered washes within creature, broken ink contours, rich tactile anatomy and charcoal shadows, restrained theme accents. Full body centered facing LEFT in three-quarter view, ALL extremities completely visible with ample empty margin. GENUINELY TRANSPARENT PNG ALPHA CHANNEL everywhere outside creature. No background, no scenery, no paper rectangle, no ground patch, no floor, NO SHADOW, no cast/drop shadow, no aura, no haze, no text, no label, no frame, no UI. Finished production game asset.",
+      "relative_asset_path": "dice-and-destiny-client/assets/battle/minions/ember_gullet/vent_siphon.png",
+      "source_reference_paths": [
+        "dice-and-destiny-client/assets/battle/fighters/ember_gullet.png",
+        "dice-and-destiny-client/assets/battle/habitats/ash_caldera.png"
+      ],
+      "generated_source_path": "/Users/daddymere/.codex/generated_images/01a0ba2d-5cc7-7070-96c9-d262aeade317/exec-23dce29f-667f-41a9-891a-b7349ec038b1.png",
+      "status": "completed",
+      "final_prompt": "Use case: stylized-concept. Asset: standalone full-body dark fantasy battle minion sprite, ONE creature. Subject: Vent Siphon: Walking anemone, squat charcoal leathery bulb, six thick fleshy support lobes, crown of short curled ivory siphon tubes around tiny warm red mouth. A weaker hazard feeder from volcanic caldera, stable ash platform, distant lava seams and basalt walls, smoke and falling ash, associated with Ember Gullet but a distinct species, never a miniature boss. Highly detailed desaturated dark watercolor with granular pigment and layered washes within creature, broken ink contours, rich tactile anatomy and charcoal shadows, restrained theme accents. Full body centered facing LEFT in three-quarter view, ALL extremities completely visible with ample empty margin. GENUINELY TRANSPARENT PNG ALPHA CHANNEL everywhere outside creature. No background, no scenery, no paper rectangle, no ground patch, no floor, NO SHADOW, no cast/drop shadow, no aura, no haze, no text, no label, no frame, no UI. Finished production game asset. Keep long appendages curled inward to preserve all tips. Leave 10% clear transparent margin."
+    }
+  ]
+}

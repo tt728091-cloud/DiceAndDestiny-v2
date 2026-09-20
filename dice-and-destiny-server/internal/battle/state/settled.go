@@ -15,6 +15,8 @@ type SettledRuntime struct {
 	PlanningPublic     map[string]SettledPlanningPublicState
 	OffensiveSources   []SettledDamageSource
 	DefenseSelections  map[string]SettledDefense
+	DefenseHistory     map[string]SettledDefense
+	DefensePlans       map[string]SettledDefense
 	PendingDamage      *SettledDamageBatch
 	TriggerBatch       *SettledTriggerBatch
 	PendingBlind       *SettledBlindResolution
@@ -69,6 +71,7 @@ type RollBatch struct {
 }
 
 type RuntimeAbilityModifier struct {
+	ExpiresAfterRound    int    `json:"expires_after_round,omitempty"`
 	SourceCardInstanceID string `json:"source_card_instance_id"`
 	AbilityID            string `json:"ability_id"`
 	BonusID              string `json:"bonus_id"`
@@ -206,6 +209,16 @@ func cloneSettledRuntime(value *SettledRuntime) *SettledRuntime {
 	cloned.OffensiveSources = append([]SettledDamageSource(nil), value.OffensiveSources...)
 	for i := range cloned.OffensiveSources {
 		cloned.OffensiveSources[i].StatusApplications = append([]SettledStatusApplication(nil), value.OffensiveSources[i].StatusApplications...)
+	}
+	cloned.DefensePlans = make(map[string]SettledDefense, len(value.DefensePlans))
+	for id, defense := range value.DefensePlans {
+		defense.RolledFaces = append([]int(nil), defense.RolledFaces...)
+		cloned.DefensePlans[id] = defense
+	}
+	cloned.DefenseHistory = make(map[string]SettledDefense, len(value.DefenseHistory))
+	for id, defense := range value.DefenseHistory {
+		defense.RolledFaces = append([]int(nil), defense.RolledFaces...)
+		cloned.DefenseHistory[id] = defense
 	}
 	cloned.DefenseSelections = make(map[string]SettledDefense, len(value.DefenseSelections))
 	for id, defense := range value.DefenseSelections {

@@ -61,7 +61,9 @@ func _run() -> void:
 	fixture.pending_input.blade.id = "next-round-defense"
 	fixture.legal_actions = [_pass("next-round-defense")]
 	screen.set_process(false)
-	screen._view.apply_result(fixture); screen._render(); screen._auto_pass_if_only_action()
+	screen._view.apply_result(fixture); screen._render()
+	while Time.get_ticks_msec() <= screen._flow_until: await process_frame
+	screen._auto_pass_if_only_action()
 	_expect(fake.commands.size() == 2 and screen._auto_pass_preview_input.ends_with("next-round-defense"), "new round gets a fresh review")
 	screen.active_store.clear(); screen.queue_free(); await process_frame
 	print("ENEMY-ONLY DEFENSE REVIEW: " + ("FAILED" if failed else "PASSED"))

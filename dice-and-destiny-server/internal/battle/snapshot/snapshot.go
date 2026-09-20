@@ -34,6 +34,8 @@ type Battle struct {
 	PriorityActorID      string                          `json:"priority_actor_id,omitempty"`
 	ReactionPriority     []string                        `json:"reaction_priority,omitempty"`
 	SettledSources       []state.SettledDamageSource     `json:"damage_sources,omitempty"`
+	DefenseHistory       map[string]state.SettledDefense `json:"defense_history,omitempty"`
+	DefensePlans         map[string]state.SettledDefense `json:"defense_plans,omitempty"`
 	SettledDefenses      map[string]state.SettledDefense `json:"defense_selections,omitempty"`
 	SettledEffectRolls   []state.SettledEffectRoll       `json:"effect_rolls,omitempty"`
 	SettledDamage        *state.SettledDamageBatch       `json:"settled_damage,omitempty"`
@@ -53,6 +55,7 @@ type ContentCatalog struct {
 }
 
 type Actor struct {
+	TeamID                string                         `json:"team_id,omitempty"`
 	NeedlefangDamageBonus int                            `json:"needlefang_damage_bonus,omitempty"`
 	DefinitionID          string                         `json:"definition_id,omitempty"`
 	Controller            state.ControllerType           `json:"controller,omitempty"`
@@ -231,6 +234,7 @@ func fromBattleForViewer(battle state.Battle, viewerActorID string, includeConte
 		}
 		snapshotActor := Actor{
 			DefinitionID:    actor.DefinitionID,
+			TeamID:          actor.TeamID,
 			Controller:      actor.Controller,
 			Character:       characterSnapshot(actor.Character),
 			EnergyPoints:    energyPoints,
@@ -382,6 +386,17 @@ func fromBattleForViewer(battle state.Battle, viewerActorID string, includeConte
 					}
 				}
 			}
+		}
+		result.DefensePlans = map[string]state.SettledDefense{}
+		for id, plan := range battle.Settled.DefensePlans {
+			if plan.ActorID == viewerActorID {
+				result.DefensePlans[id] = plan
+			}
+		}
+		result.DefenseHistory = make(map[string]state.SettledDefense, len(battle.Settled.DefenseHistory))
+		for id, defense := range battle.Settled.DefenseHistory {
+			defense.RolledFaces = append([]int(nil), defense.RolledFaces...)
+			result.DefenseHistory[id] = defense
 		}
 		result.SettledSources = append([]state.SettledDamageSource(nil), battle.Settled.OffensiveSources...)
 		if battle.Segment.Current == segment.Defensive && (battle.Settled.Stage == "defense_reaction" || result.PresentationStage == "defense_reaction") {

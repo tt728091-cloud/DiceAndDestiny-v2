@@ -1,0 +1,39 @@
+[gd_resource type="Resource" script_class="BattleEncounterVisual" load_steps=9 format=3]
+
+[ext_resource type="Script" path="res://content/battle_visuals/encounter_visual.gd" id="1"]
+[ext_resource type="Script" path="res://content/battle_visuals/fighter_placement.gd" id="2"]
+[ext_resource type="Resource" path="res://content/battle_visuals/habitats/mushroom_cavern.tres" id="3"]
+[ext_resource type="Resource" path="res://content/battle_visuals/fighters/venom.tres" id="venom"]
+[ext_resource type="Resource" path="res://content/battle_visuals/fighters/spore_cantor.tres" id="spore"]
+
+[sub_resource type="Resource" id="Player"]
+script = ExtResource("2")
+instance_id = "Player"
+profile = ExtResource("venom")
+ground_position = Vector2(720, 700)
+height = 340.0
+face_left = false
+draw_order = 2
+
+[sub_resource type="Resource" id="Cantor"]
+script = ExtResource("2")
+instance_id = "Cantor"
+profile = ExtResource("spore")
+ground_position = Vector2(1330, 555)
+height = 430.0
+face_left = true
+draw_order = 0
+
+[sub_resource type="Resource" id="CantorTwin"]
+script = ExtResource("2")
+instance_id = "CantorTwin"
+profile = ExtResource("spore")
+ground_position = Vector2(1515, 680)
+height = 460.0
+face_left = true
+draw_order = 1
+
+[resource]
+script = ExtResource("1")
+habitat = ExtResource("3")
+fighters = Array[ExtResource("2")]([SubResource("Player"), SubResource("Cantor"), SubResource("CantorTwin")])

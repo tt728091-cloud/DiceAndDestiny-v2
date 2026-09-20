@@ -1,0 +1,197 @@
+{
+  "boss_id": "silk_regent",
+  "boss_name": "Silk Regent",
+  "theme": "Silk-shrouded ravine brood and scavengers, ivory thread, soot chitin, faded burgundy.",
+  "minions": [
+    {
+      "id": "shroud_grub",
+      "name": "Shroud Grub",
+      "role": "silk producer",
+      "description": "Plump segmented pale grub partly clothed in its own frayed ivory cocoon, small black mandibles, six tiny gripping feet, burgundy veins and soft ring folds.",
+      "prompt": "Use case: stylized-concept. Asset type: individual dark fantasy combat minion sprite. Create ONLY ONE original lesser monster, full body, clear distinctive silhouette and detailed anatomy, facing screen-left or left three-quarter, centered with comfortable transparent padding. Highly detailed desaturated dark watercolor and fine rough ink edges, textured pigment inside the creature only, worn materials, ominous grounded naturalistic creature design. Backdrop MUST be genuinely transparent alpha, not a painted solid color, gradient or checkerboard. Absolutely no environment, floor, ground patch, cast shadow, haze, border, text, UI, labels or detached accessories. Keep all anatomy in frame. This is a weaker ecological follower of the named boss, not a miniature boss clone. Do not depict the boss. Output a high quality transparent PNG.\nBoss family context: Silk Regent. Silk-shrouded ravine brood and scavengers, ivory thread, soot chitin, faded burgundy.\nCreature name (metadata only, do not render text): Shroud Grub. Ecological role: silk producer.\nSubject design: Plump segmented pale grub partly clothed in its own frayed ivory cocoon, small black mandibles, six tiny gripping feet, burgundy veins and soft ring folds.\nRestrained dark palette, readable highlights, modest ornament, no heroic boss regalia.",
+      "relative_asset_path": "dice-and-destiny-client/assets/battle/minions/silk_regent/shroud_grub.png",
+      "source_reference_paths": [
+        "dice-and-destiny-client/assets/battle/fighters/silk_regent.png"
+      ],
+      "generated_source_path": "/Users/daddymere/.codex/generated_images/01a0ba2e-83e8-7e52-b7fc-570065c3b1dd/exec-d6691a4a-b891-4902-980a-7d52e63ae758.png",
+      "status": "completed",
+      "review": "Visual review passed; distinct full-body creature, transparent alpha verified.",
+      "dimensions": [
+        1246,
+        1262
+      ],
+      "alpha_verified": true
+    },
+    {
+      "id": "lacewing_mourner",
+      "name": "Lacewing Mourner",
+      "role": "flying herald",
+      "description": "Long delicate lacewing insect with ragged netted ivory wings and a narrow burgundy thorax, threadlike antennae and dangling slender hooked legs.",
+      "prompt": "Use case: stylized-concept. Asset type: individual dark fantasy combat minion sprite. Create ONLY ONE original lesser monster, full body, clear distinctive silhouette and detailed anatomy, facing screen-left or left three-quarter, centered with comfortable transparent padding. Highly detailed desaturated dark watercolor and fine rough ink edges, textured pigment inside the creature only, worn materials, ominous grounded naturalistic creature design. Backdrop MUST be genuinely transparent alpha, not a painted solid color, gradient or checkerboard. Absolutely no environment, floor, ground patch, cast shadow, haze, border, text, UI, labels or detached accessories. Keep all anatomy in frame. This is a weaker ecological follower of the named boss, not a miniature boss clone. Do not depict the boss. Output a high quality transparent PNG.\nBoss family context: Silk Regent. Silk-shrouded ravine brood and scavengers, ivory thread, soot chitin, faded burgundy.\nCreature name (metadata only, do not render text): Lacewing Mourner. Ecological role: flying herald.\nSubject design: Long delicate lacewing insect with ragged netted ivory wings and a narrow burgundy thorax, threadlike antennae and dangling slender hooked legs.\nRestrained dark palette, readable highlights, modest ornament, no heroic boss regalia.",
+      "relative_asset_path": "dice-and-destiny-client/assets/battle/minions/silk_regent/lacewing_mourner.png",
+      "source_reference_paths": [
+        "dice-and-destiny-client/assets/battle/fighters/silk_regent.png"
+      ],
+      "generated_source_path": "/Users/daddymere/.codex/generated_images/01a0ba2e-83e8-7e52-b7fc-570065c3b1dd/exec-3c3ee7b3-822b-4aca-a632-aba584fb4797.png",
+      "status": "completed",
+      "review": "Visual review passed; distinct full-body creature, transparent alpha verified.",
+      "dimensions": [
+        1226,
+        1283
+      ],
+      "alpha_verified": true
+    },
+    {
+      "id": "cocoon_rat",
+      "name": "Cocoon Rat",
+      "role": "forager",
+      "description": "Hunched naked ravine rat wearing scraps of abandoned silk around its shoulders, long bare ringed tail, oversized incisors, sharp paws and dull burgundy eyes.",
+      "prompt": "Use case: stylized-concept. Asset type: individual dark fantasy combat minion sprite. Create ONLY ONE original lesser monster, full body, clear distinctive silhouette and detailed anatomy, facing screen-left or left three-quarter, centered with comfortable transparent padding. Highly detailed desaturated dark watercolor and fine rough ink edges, textured pigment inside the creature only, worn materials, ominous grounded naturalistic creature design. Backdrop MUST be genuinely transparent alpha, not a painted solid color, gradient or checkerboard. Absolutely no environment, floor, ground patch, cast shadow, haze, border, text, UI, labels or detached accessories. Keep all anatomy in frame. This is a weaker ecological follower of the named boss, not a miniature boss clone. Do not depict the boss. Output a high quality transparent PNG.\nBoss family context: Silk Regent. Silk-shrouded ravine brood and scavengers, ivory thread, soot chitin, faded burgundy.\nCreature name (metadata only, do not render text): Cocoon Rat. Ecological role: forager.\nSubject design: Hunched naked ravine rat wearing scraps of abandoned silk around its shoulders, long bare ringed tail, oversized incisors, sharp paws and dull burgundy eyes.\nRestrained dark palette, readable highlights, modest ornament, no heroic boss regalia.",
+      "relative_asset_path": "dice-and-destiny-client/assets/battle/minions/silk_regent/cocoon_rat.png",
+      "source_reference_paths": [
+        "dice-and-destiny-client/assets/battle/fighters/silk_regent.png"
+      ],
+      "generated_source_path": "/Users/daddymere/.codex/generated_images/01a0ba2e-83e8-7e52-b7fc-570065c3b1dd/exec-26c227e6-e950-4861-8ff7-6146291881e0.png",
+      "status": "completed",
+      "review": "Visual review passed; distinct full-body creature, transparent alpha verified.",
+      "dimensions": [
+        1246,
+        1262
+      ],
+      "alpha_verified": true
+    },
+    {
+      "id": "webshoe_toad",
+      "name": "Webshoe Toad",
+      "role": "trap tender",
+      "description": "Squat pale toad with enlarged splayed feet entangled in tough silk mitts, porous grey skin, swollen thread glands behind the eyes and a small burgundy throat.",
+      "prompt": "Use case: stylized-concept. Asset type: individual dark fantasy combat minion sprite. Create ONLY ONE original lesser monster, full body, clear distinctive silhouette and detailed anatomy, facing screen-left or left three-quarter, centered with comfortable transparent padding. Highly detailed desaturated dark watercolor and fine rough ink edges, textured pigment inside the creature only, worn materials, ominous grounded naturalistic creature design. Backdrop MUST be genuinely transparent alpha, not a painted solid color, gradient or checkerboard. Absolutely no environment, floor, ground patch, cast shadow, haze, border, text, UI, labels or detached accessories. Keep all anatomy in frame. This is a weaker ecological follower of the named boss, not a miniature boss clone. Do not depict the boss. Output a high quality transparent PNG.\nBoss family context: Silk Regent. Silk-shrouded ravine brood and scavengers, ivory thread, soot chitin, faded burgundy.\nCreature name (metadata only, do not render text): Webshoe Toad. Ecological role: trap tender.\nSubject design: Squat pale toad with enlarged splayed feet entangled in tough silk mitts, porous grey skin, swollen thread glands behind the eyes and a small burgundy throat.\nRestrained dark palette, readable highlights, modest ornament, no heroic boss regalia.",
+      "relative_asset_path": "dice-and-destiny-client/assets/battle/minions/silk_regent/webshoe_toad.png",
+      "source_reference_paths": [
+        "dice-and-destiny-client/assets/battle/fighters/silk_regent.png"
+      ],
+      "generated_source_path": "/Users/daddymere/.codex/generated_images/01a0ba2e-83e8-7e52-b7fc-570065c3b1dd/exec-f4f3d6ff-a39e-4706-9167-205da4d5eeaa.png",
+      "status": "completed",
+      "review": "Visual review passed; distinct full-body creature, transparent alpha verified.",
+      "dimensions": [
+        1312,
+        1199
+      ],
+      "alpha_verified": true
+    },
+    {
+      "id": "spindle_centipede",
+      "name": "Spindle Centipede",
+      "role": "thread carrier",
+      "description": "Elongated many-legged centipede with alternating soot and ivory chitin segments, two silk bobbin growths at its tail, delicate small mandibles and a low serpentine posture.",
+      "prompt": "Use case: stylized-concept. Asset type: individual dark fantasy combat minion sprite. Create ONLY ONE original lesser monster, full body, clear distinctive silhouette and detailed anatomy, facing screen-left or left three-quarter, centered with comfortable transparent padding. Highly detailed desaturated dark watercolor and fine rough ink edges, textured pigment inside the creature only, worn materials, ominous grounded naturalistic creature design. Backdrop MUST be genuinely transparent alpha, not a painted solid color, gradient or checkerboard. Absolutely no environment, floor, ground patch, cast shadow, haze, border, text, UI, labels or detached accessories. Keep all anatomy in frame. This is a weaker ecological follower of the named boss, not a miniature boss clone. Do not depict the boss. Output a high quality transparent PNG.\nBoss family context: Silk Regent. Silk-shrouded ravine brood and scavengers, ivory thread, soot chitin, faded burgundy.\nCreature name (metadata only, do not render text): Spindle Centipede. Ecological role: thread carrier.\nSubject design: Elongated many-legged centipede with alternating soot and ivory chitin segments, two silk bobbin growths at its tail, delicate small mandibles and a low serpentine posture.\nRestrained dark palette, readable highlights, modest ornament, no heroic boss regalia.",
+      "relative_asset_path": "dice-and-destiny-client/assets/battle/minions/silk_regent/spindle_centipede.png",
+      "source_reference_paths": [
+        "dice-and-destiny-client/assets/battle/fighters/silk_regent.png"
+      ],
+      "generated_source_path": "/Users/daddymere/.codex/generated_images/01a0ba2e-83e8-7e52-b7fc-570065c3b1dd/exec-781ade19-8b6a-4426-b2eb-99700c4bdc1a.png",
+      "status": "completed",
+      "review": "Visual review passed; distinct full-body creature, transparent alpha verified.",
+      "dimensions": [
+        1536,
+        1024
+      ],
+      "alpha_verified": true
+    },
+    {
+      "id": "veil_mite",
+      "name": "Veil Mite",
+      "role": "cocoon cleaner",
+      "description": "Tiny round velvet mite enlarged for detail, eight short plush legs, pale masklike face and torn translucent silk veil trailing from its domed burgundy abdomen.",
+      "prompt": "Use case: stylized-concept. Asset type: individual dark fantasy combat minion sprite. Create ONLY ONE original lesser monster, full body, clear distinctive silhouette and detailed anatomy, facing screen-left or left three-quarter, centered with comfortable transparent padding. Highly detailed desaturated dark watercolor and fine rough ink edges, textured pigment inside the creature only, worn materials, ominous grounded naturalistic creature design. Backdrop MUST be genuinely transparent alpha, not a painted solid color, gradient or checkerboard. Absolutely no environment, floor, ground patch, cast shadow, haze, border, text, UI, labels or detached accessories. Keep all anatomy in frame. This is a weaker ecological follower of the named boss, not a miniature boss clone. Do not depict the boss. Output a high quality transparent PNG.\nBoss family context: Silk Regent. Silk-shrouded ravine brood and scavengers, ivory thread, soot chitin, faded burgundy.\nCreature name (metadata only, do not render text): Veil Mite. Ecological role: cocoon cleaner.\nSubject design: Tiny round velvet mite enlarged for detail, eight short plush legs, pale masklike face and torn translucent silk veil trailing from its domed burgundy abdomen.\nRestrained dark palette, readable highlights, modest ornament, no heroic boss regalia.",
+      "relative_asset_path": "dice-and-destiny-client/assets/battle/minions/silk_regent/veil_mite.png",
+      "source_reference_paths": [
+        "dice-and-destiny-client/assets/battle/fighters/silk_regent.png"
+      ],
+      "generated_source_path": "/Users/daddymere/.codex/generated_images/01a0ba2e-83e8-7e52-b7fc-570065c3b1dd/exec-3deb9633-046c-4545-bdb8-32e97f0f4f38.png",
+      "status": "completed",
+      "review": "Visual review passed; distinct full-body creature, transparent alpha verified.",
+      "dimensions": [
+        1374,
+        1145
+      ],
+      "alpha_verified": true
+    },
+    {
+      "id": "ravine_hookbird",
+      "name": "Ravine Hookbird",
+      "role": "silk thief",
+      "description": "Small hunched flightless cliff bird with hooked ivory beak, long grasping toes, ragged charcoal feathers and silk strands tied around its short vestigial wings.",
+      "prompt": "Use case: stylized-concept. Asset type: individual dark fantasy combat minion sprite. Create ONLY ONE original lesser monster, full body, clear distinctive silhouette and detailed anatomy, facing screen-left or left three-quarter, centered with comfortable transparent padding. Highly detailed desaturated dark watercolor and fine rough ink edges, textured pigment inside the creature only, worn materials, ominous grounded naturalistic creature design. Backdrop MUST be genuinely transparent alpha, not a painted solid color, gradient or checkerboard. Absolutely no environment, floor, ground patch, cast shadow, haze, border, text, UI, labels or detached accessories. Keep all anatomy in frame. This is a weaker ecological follower of the named boss, not a miniature boss clone. Do not depict the boss. Output a high quality transparent PNG.\nBoss family context: Silk Regent. Silk-shrouded ravine brood and scavengers, ivory thread, soot chitin, faded burgundy.\nCreature name (metadata only, do not render text): Ravine Hookbird. Ecological role: silk thief.\nSubject design: Small hunched flightless cliff bird with hooked ivory beak, long grasping toes, ragged charcoal feathers and silk strands tied around its short vestigial wings.\nRestrained dark palette, readable highlights, modest ornament, no heroic boss regalia.",
+      "relative_asset_path": "dice-and-destiny-client/assets/battle/minions/silk_regent/ravine_hookbird.png",
+      "source_reference_paths": [
+        "dice-and-destiny-client/assets/battle/fighters/silk_regent.png"
+      ],
+      "generated_source_path": "/Users/daddymere/.codex/generated_images/01a0ba2e-83e8-7e52-b7fc-570065c3b1dd/exec-afe31133-c2d6-415b-a314-c3c0e358e074.png",
+      "status": "completed",
+      "review": "Visual review passed; distinct full-body creature, transparent alpha verified.",
+      "dimensions": [
+        1246,
+        1262
+      ],
+      "alpha_verified": true
+    },
+    {
+      "id": "threadbelly_leech",
+      "name": "Threadbelly Leech",
+      "role": "snare parasite",
+      "description": "Flattened pale leech with puckered circular mouth, translucent belly containing loops of burgundy thread, tiny edge hooks and a curling tapering body.",
+      "prompt": "Use case: stylized-concept. Asset type: individual dark fantasy combat minion sprite. Create ONLY ONE original lesser monster, full body, clear distinctive silhouette and detailed anatomy, facing screen-left or left three-quarter, centered with comfortable transparent padding. Highly detailed desaturated dark watercolor and fine rough ink edges, textured pigment inside the creature only, worn materials, ominous grounded naturalistic creature design. Backdrop MUST be genuinely transparent alpha, not a painted solid color, gradient or checkerboard. Absolutely no environment, floor, ground patch, cast shadow, haze, border, text, UI, labels or detached accessories. Keep all anatomy in frame. This is a weaker ecological follower of the named boss, not a miniature boss clone. Do not depict the boss. Output a high quality transparent PNG.\nBoss family context: Silk Regent. Silk-shrouded ravine brood and scavengers, ivory thread, soot chitin, faded burgundy.\nCreature name (metadata only, do not render text): Threadbelly Leech. Ecological role: snare parasite.\nSubject design: Flattened pale leech with puckered circular mouth, translucent belly containing loops of burgundy thread, tiny edge hooks and a curling tapering body.\nRestrained dark palette, readable highlights, modest ornament, no heroic boss regalia.",
+      "relative_asset_path": "dice-and-destiny-client/assets/battle/minions/silk_regent/threadbelly_leech.png",
+      "source_reference_paths": [
+        "dice-and-destiny-client/assets/battle/fighters/silk_regent.png"
+      ],
+      "generated_source_path": "/Users/daddymere/.codex/generated_images/01a0ba2e-83e8-7e52-b7fc-570065c3b1dd/exec-ae20829c-6761-49da-8cb1-547ff9bed9b0.png",
+      "status": "completed",
+      "review": "Visual review passed; distinct full-body creature, transparent alpha verified.",
+      "dimensions": [
+        1536,
+        1024
+      ],
+      "alpha_verified": true
+    },
+    {
+      "id": "cowl_cricket",
+      "name": "Cowl Cricket",
+      "role": "alarm caller",
+      "description": "Cricket with towering bent jumping legs, ragged ivory silk cowl over a small dark head, ribbed burgundy abdomen and asymmetrical folded wings.",
+      "prompt": "Use case: stylized-concept. Asset type: individual dark fantasy combat minion sprite. Create ONLY ONE original lesser monster, full body, clear distinctive silhouette and detailed anatomy, facing screen-left or left three-quarter, centered with comfortable transparent padding. Highly detailed desaturated dark watercolor and fine rough ink edges, textured pigment inside the creature only, worn materials, ominous grounded naturalistic creature design. Backdrop MUST be genuinely transparent alpha, not a painted solid color, gradient or checkerboard. Absolutely no environment, floor, ground patch, cast shadow, haze, border, text, UI, labels or detached accessories. Keep all anatomy in frame. This is a weaker ecological follower of the named boss, not a miniature boss clone. Do not depict the boss. Output a high quality transparent PNG.\nBoss family context: Silk Regent. Silk-shrouded ravine brood and scavengers, ivory thread, soot chitin, faded burgundy.\nCreature name (metadata only, do not render text): Cowl Cricket. Ecological role: alarm caller.\nSubject design: Cricket with towering bent jumping legs, ragged ivory silk cowl over a small dark head, ribbed burgundy abdomen and asymmetrical folded wings.\nRestrained dark palette, readable highlights, modest ornament, no heroic boss regalia.",
+      "relative_asset_path": "dice-and-destiny-client/assets/battle/minions/silk_regent/cowl_cricket.png",
+      "source_reference_paths": [
+        "dice-and-destiny-client/assets/battle/fighters/silk_regent.png"
+      ],
+      "generated_source_path": "/Users/daddymere/.codex/generated_images/01a0ba2e-83e8-7e52-b7fc-570065c3b1dd/exec-d39e0f88-9c47-406a-8c7b-639847cac135.png",
+      "status": "completed",
+      "review": "Visual review passed; distinct full-body creature, transparent alpha verified.",
+      "dimensions": [
+        1536,
+        1024
+      ],
+      "alpha_verified": true
+    },
+    {
+      "id": "cocoon_hermit",
+      "name": "Cocoon Hermit",
+      "role": "mobile nest guard",
+      "description": "Small land hermit creature with two unequal fine pincers and six short black legs, occupying a sideways broken silk cocoon reinforced by splinters and worn red fibers.",
+      "prompt": "Use case: stylized-concept. Asset type: individual dark fantasy combat minion sprite. Create ONLY ONE original lesser monster, full body, clear distinctive silhouette and detailed anatomy, facing screen-left or left three-quarter, centered with comfortable transparent padding. Highly detailed desaturated dark watercolor and fine rough ink edges, textured pigment inside the creature only, worn materials, ominous grounded naturalistic creature design. Backdrop MUST be genuinely transparent alpha, not a painted solid color, gradient or checkerboard. Absolutely no environment, floor, ground patch, cast shadow, haze, border, text, UI, labels or detached accessories. Keep all anatomy in frame. This is a weaker ecological follower of the named boss, not a miniature boss clone. Do not depict the boss. Output a high quality transparent PNG.\nBoss family context: Silk Regent. Silk-shrouded ravine brood and scavengers, ivory thread, soot chitin, faded burgundy.\nCreature name (metadata only, do not render text): Cocoon Hermit. Ecological role: mobile nest guard.\nSubject design: Small land hermit creature with two unequal fine pincers and six short black legs, occupying a sideways broken silk cocoon reinforced by splinters and worn red fibers.\nRestrained dark palette, readable highlights, modest ornament, no heroic boss regalia.",
+      "relative_asset_path": "dice-and-destiny-client/assets/battle/minions/silk_regent/cocoon_hermit.png",
+      "source_reference_paths": [
+        "dice-and-destiny-client/assets/battle/fighters/silk_regent.png"
+      ],
+      "generated_source_path": "/Users/daddymere/.codex/generated_images/01a0ba2e-83e8-7e52-b7fc-570065c3b1dd/exec-063f2ca1-dc4f-4037-8426-210a8725953e.png",
+      "status": "completed",
+      "review": "Visual review passed; distinct full-body creature, transparent alpha verified.",
+      "dimensions": [
+        1374,
+        1145
+      ],
+      "alpha_verified": true
+    }
+  ]
+}

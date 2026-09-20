@@ -1,0 +1,61 @@
+{
+  "schema_version": 1,
+  "id": "brine_surge",
+  "name": "Brine Surge",
+  "type": "planning",
+  "presentation": {
+    "rules_text": "Spend 1 energy: add 1 damage to your attack this round. Brine Mask automatically plays at most one after rolling a successful attack."
+  },
+  "cost": {
+    "energy": 1
+  },
+  "play": {
+    "source_zones": [
+      "hand"
+    ],
+    "destination": "discard",
+    "playable_during": [
+      {
+        "segment": "offensive",
+        "phase": "main",
+        "window_purpose": "planning"
+      }
+    ]
+  },
+  "targeting": {
+    "selector": "one_owned_offensive_ability",
+    "minimum": 1,
+    "maximum": 1
+  },
+  "reaction_window": {
+    "opens": false
+  },
+  "operations": [
+    {
+      "type": "apply_ability_modifier",
+      "target": "selected_ability",
+      "duration": "round",
+      "modifier": {
+        "add_conditional_bonus": {
+          "id": "brine_surge_bonus",
+          "requirements": {
+            "all": [
+              {
+                "type": "symbol_count",
+                "symbol_id": "brine",
+                "minimum": 1
+              }
+            ]
+          },
+          "operations": [
+            {
+              "type": "deal_damage",
+              "target": "selected_targets",
+              "amount": 1
+            }
+          ]
+        }
+      }
+    }
+  ]
+}

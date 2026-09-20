@@ -1,0 +1,238 @@
+{
+  "boss_id": "cinder_colossus",
+  "boss_name": "Cinder Colossus",
+  "theme": "Abandoned kiln servants and volcanic fauna: charcoal basalt, rust iron, chalk fragments, restrained ember seams.",
+  "minions": [
+    {
+      "id": "slag_jackal",
+      "name": "Slag Jackal",
+      "role": "pursuit hunter",
+      "description": "A lean quadruped jackal built from layered clinker scales, a narrow iron muzzle, hooked scrap-metal claws and a long articulated tail; tiny ember seams at throat and knees.",
+      "prompt": "Use case: stylized-concept. Asset type: standalone transparent PNG battle enemy sprite for a dark fantasy game. Create ONE unique lesser minion, clearly modest compared with its boss. Subject: Slag Jackal. A lean quadruped jackal built from layered clinker scales, a narrow iron muzzle, hooked scrap-metal claws and a long articulated tail; tiny ember seams at throat and knees. Faction materials: Abandoned kiln servants and volcanic fauna: charcoal basalt, rust iron, chalk fragments, restrained ember seams. Style: highly detailed desaturated dark watercolor washes inside forms, fine expressive black ink contours, weathered tactile material detail and restrained highlights; solemn eerie handmade bestiary painting, consistent with grim watercolor RPG enemies. Full body in left-facing three-quarter battle stance, entire silhouette within canvas with small transparent safety margin. TRUE transparent RGBA background, all pixels outside creature alpha zero, including between limbs. No environment, ground, platform, cast shadow, surrounding smoke, aura, paper background, checkerboard, text, letters, UI, frame or other creatures. Not a boss clone. Use square canvas.",
+      "relative_asset_path": "dice-and-destiny-client/assets/battle/minions/cinder_colossus/slag_jackal.png",
+      "source_reference_paths": [
+        "dice-and-destiny-client/assets/battle/fighters/cinder_colossus.png"
+      ],
+      "generated_source_path": "/Users/daddymere/.codex/generated_images/01a0ba30-7da5-7522-9728-234de4f720f5/exec-e2ad6013-1f1a-494d-b898-5dae3a125866.png",
+      "status": "completed",
+      "validation": {
+        "size": [
+          1254,
+          1254
+        ],
+        "mode": "RGBA",
+        "transparent_fraction": 0.6204,
+        "sha256": "57083f56990358fe5509a1a5bc058fc691534f3603479b1297899c77e82a3af5",
+        "visual_review": "Distinct full-body design, desaturated watercolor/ink rendering, no scenery or text; real transparency verified."
+      }
+    },
+    {
+      "id": "kiln_crab",
+      "name": "Kiln Crab",
+      "role": "shield guard",
+      "description": "A squat six-legged crab with a rounded cracked kiln-pot shell, one flat shovel-like rust-iron pincer and one delicate coal-tong claw, a small furnace slit beneath its shell.",
+      "prompt": "Use case: stylized-concept. Asset type: standalone transparent PNG battle enemy sprite for a dark fantasy game. Create ONE unique lesser minion, clearly modest compared with its boss. Subject: Kiln Crab. A squat six-legged crab with a rounded cracked kiln-pot shell, one flat shovel-like rust-iron pincer and one delicate coal-tong claw, a small furnace slit beneath its shell. Faction materials: Abandoned kiln servants and volcanic fauna: charcoal basalt, rust iron, chalk fragments, restrained ember seams. Style: highly detailed desaturated dark watercolor washes inside forms, fine expressive black ink contours, weathered tactile material detail and restrained highlights; solemn eerie handmade bestiary painting, consistent with grim watercolor RPG enemies. Full body in left-facing three-quarter battle stance, entire silhouette within canvas with small transparent safety margin. TRUE transparent RGBA background, all pixels outside creature alpha zero, including between limbs. No environment, ground, platform, cast shadow, surrounding smoke, aura, paper background, checkerboard, text, letters, UI, frame or other creatures. Not a boss clone. Use square canvas.",
+      "relative_asset_path": "dice-and-destiny-client/assets/battle/minions/cinder_colossus/kiln_crab.png",
+      "source_reference_paths": [
+        "dice-and-destiny-client/assets/battle/fighters/cinder_colossus.png"
+      ],
+      "generated_source_path": "/Users/daddymere/.codex/generated_images/01a0ba30-7da5-7522-9728-234de4f720f5/exec-63f6c82c-9368-4567-a2e9-d6d20e9f0a40.png",
+      "status": "completed",
+      "validation": {
+        "size": [
+          1254,
+          1254
+        ],
+        "mode": "RGBA",
+        "transparent_fraction": 0.6099,
+        "sha256": "49c7c572b77cafa421eae948b89579e5faa70badab33aff7245ceea92b183f48",
+        "visual_review": "Distinct full-body design, desaturated watercolor/ink rendering, no scenery or text; real transparency verified."
+      }
+    },
+    {
+      "id": "bellows_bat",
+      "name": "Bellows Bat",
+      "role": "aerial disrupter",
+      "description": "A leathery bat-shaped animated bellows with pleated soot-black ribbed wings, rusty hinge bones, short hooked feet and a narrow nozzle snout, a dim coal glow visible inside the mouth.",
+      "prompt": "Use case: stylized-concept. Asset type: standalone transparent PNG battle enemy sprite for a dark fantasy game. Create ONE unique lesser minion, clearly modest compared with its boss. Subject: Bellows Bat. A leathery bat-shaped animated bellows with pleated soot-black ribbed wings, rusty hinge bones, short hooked feet and a narrow nozzle snout, a dim coal glow visible inside the mouth. Faction materials: Abandoned kiln servants and volcanic fauna: charcoal basalt, rust iron, chalk fragments, restrained ember seams. Style: highly detailed desaturated dark watercolor washes inside forms, fine expressive black ink contours, weathered tactile material detail and restrained highlights; solemn eerie handmade bestiary painting, consistent with grim watercolor RPG enemies. Full body in left-facing three-quarter battle stance, entire silhouette within canvas with small transparent safety margin. TRUE transparent RGBA background, all pixels outside creature alpha zero, including between limbs. No environment, ground, platform, cast shadow, surrounding smoke, aura, paper background, checkerboard, text, letters, UI, frame or other creatures. Not a boss clone. Use square canvas.",
+      "relative_asset_path": "dice-and-destiny-client/assets/battle/minions/cinder_colossus/bellows_bat.png",
+      "source_reference_paths": [
+        "dice-and-destiny-client/assets/battle/fighters/cinder_colossus.png"
+      ],
+      "generated_source_path": "/Users/daddymere/.codex/generated_images/01a0ba30-7da5-7522-9728-234de4f720f5/exec-0aed18fe-34b4-451f-87dd-d7f8733a0903.png",
+      "status": "completed",
+      "validation": {
+        "size": [
+          1254,
+          1254
+        ],
+        "mode": "RGBA",
+        "transparent_fraction": 0.6238,
+        "sha256": "8082617eb47e188c4b4165ecc29ca2936e393d2819589e107f0f5e5b4b2e59d3",
+        "visual_review": "Distinct full-body design, desaturated watercolor/ink rendering, no scenery or text; real transparency verified."
+      }
+    },
+    {
+      "id": "clinker_urchin",
+      "name": "Clinker Urchin",
+      "role": "rolling blocker",
+      "description": "A low round mineral beast on five stubby stone feet, armored in uneven charcoal clinker spikes and chalky shards, small ember-red eyes set beneath a rusted iron rim.",
+      "prompt": "Use case: stylized-concept. Asset type: standalone transparent PNG battle enemy sprite for a dark fantasy game. Create ONE unique lesser minion, clearly modest compared with its boss. Subject: Clinker Urchin. A low round mineral beast on five stubby stone feet, armored in uneven charcoal clinker spikes and chalky shards, small ember-red eyes set beneath a rusted iron rim. Faction materials: Abandoned kiln servants and volcanic fauna: charcoal basalt, rust iron, chalk fragments, restrained ember seams. Style: highly detailed desaturated dark watercolor washes inside forms, fine expressive black ink contours, weathered tactile material detail and restrained highlights; solemn eerie handmade bestiary painting, consistent with grim watercolor RPG enemies. Full body in left-facing three-quarter battle stance, entire silhouette within canvas with small transparent safety margin. TRUE transparent RGBA background, all pixels outside creature alpha zero, including between limbs. No environment, ground, platform, cast shadow, surrounding smoke, aura, paper background, checkerboard, text, letters, UI, frame or other creatures. Not a boss clone. Use square canvas.",
+      "relative_asset_path": "dice-and-destiny-client/assets/battle/minions/cinder_colossus/clinker_urchin.png",
+      "source_reference_paths": [
+        "dice-and-destiny-client/assets/battle/fighters/cinder_colossus.png"
+      ],
+      "generated_source_path": "/Users/daddymere/.codex/generated_images/01a0ba30-7da5-7522-9728-234de4f720f5/exec-09faf3bb-35b4-4257-af0f-c32616034f8f.png",
+      "status": "completed",
+      "validation": {
+        "size": [
+          1254,
+          1254
+        ],
+        "mode": "RGBA",
+        "transparent_fraction": 0.5458,
+        "sha256": "80e994d7254f8df4e20972e3358fe69338996553af459377e2d7d5213c7f1c33",
+        "visual_review": "Distinct full-body design, desaturated watercolor/ink rendering, no scenery or text; real transparency verified."
+      }
+    },
+    {
+      "id": "forge_newt",
+      "name": "Forge Newt",
+      "role": "burn skirmisher",
+      "description": "A long squat salamander with black pumice skin, white mineral barnacles across its shoulders, paddle toes and a heavy curling tail, three restrained orange slits along its flank.",
+      "prompt": "Use case: stylized-concept. Asset type: standalone transparent PNG battle enemy sprite for a dark fantasy game. Create ONE unique lesser minion, clearly modest compared with its boss. Subject: Forge Newt. A long squat salamander with black pumice skin, white mineral barnacles across its shoulders, paddle toes and a heavy curling tail, three restrained orange slits along its flank. Faction materials: Abandoned kiln servants and volcanic fauna: charcoal basalt, rust iron, chalk fragments, restrained ember seams. Style: highly detailed desaturated dark watercolor washes inside forms, fine expressive black ink contours, weathered tactile material detail and restrained highlights; solemn eerie handmade bestiary painting, consistent with grim watercolor RPG enemies. Full body in left-facing three-quarter battle stance, entire silhouette within canvas with small transparent safety margin. TRUE transparent RGBA background, all pixels outside creature alpha zero, including between limbs. No environment, ground, platform, cast shadow, surrounding smoke, aura, paper background, checkerboard, text, letters, UI, frame or other creatures. Not a boss clone. Use square canvas.",
+      "relative_asset_path": "dice-and-destiny-client/assets/battle/minions/cinder_colossus/forge_newt.png",
+      "source_reference_paths": [
+        "dice-and-destiny-client/assets/battle/fighters/cinder_colossus.png"
+      ],
+      "generated_source_path": "/Users/daddymere/.codex/generated_images/01a0ba30-7da5-7522-9728-234de4f720f5/exec-252f381c-3686-4cb4-87ab-60f73d32530e.png",
+      "status": "completed",
+      "validation": {
+        "size": [
+          1254,
+          1254
+        ],
+        "mode": "RGBA",
+        "transparent_fraction": 0.5995,
+        "sha256": "2e6340c55b3d1352cf2774ec9a4cd1845693b2c5716150302d2d431c137f3f00",
+        "visual_review": "Distinct full-body design, desaturated watercolor/ink rendering, no scenery or text; real transparency verified."
+      }
+    },
+    {
+      "id": "chain_gnawer",
+      "name": "Chain Gnawer",
+      "role": "snaring bruiser",
+      "description": "A stocky hyena-sized rodent with broken anvil-like incisors, soot-matted fur threaded with short rusty chain loops and stout iron-capped paws, a lumpy charcoal growth across its spine.",
+      "prompt": "Use case: stylized-concept. Asset type: standalone transparent PNG battle enemy sprite for a dark fantasy game. Create ONE unique lesser minion, clearly modest compared with its boss. Subject: Chain Gnawer. A stocky hyena-sized rodent with broken anvil-like incisors, soot-matted fur threaded with short rusty chain loops and stout iron-capped paws, a lumpy charcoal growth across its spine. Faction materials: Abandoned kiln servants and volcanic fauna: charcoal basalt, rust iron, chalk fragments, restrained ember seams. Style: highly detailed desaturated dark watercolor washes inside forms, fine expressive black ink contours, weathered tactile material detail and restrained highlights; solemn eerie handmade bestiary painting, consistent with grim watercolor RPG enemies. Full body in left-facing three-quarter battle stance, entire silhouette within canvas with small transparent safety margin. TRUE transparent RGBA background, all pixels outside creature alpha zero, including between limbs. No environment, ground, platform, cast shadow, surrounding smoke, aura, paper background, checkerboard, text, letters, UI, frame or other creatures. Not a boss clone. Use square canvas.",
+      "relative_asset_path": "dice-and-destiny-client/assets/battle/minions/cinder_colossus/chain_gnawer.png",
+      "source_reference_paths": [
+        "dice-and-destiny-client/assets/battle/fighters/cinder_colossus.png"
+      ],
+      "generated_source_path": "/Users/daddymere/.codex/generated_images/01a0ba30-7da5-7522-9728-234de4f720f5/exec-19032ac7-a073-45f1-bda1-40ce127f3b69.png",
+      "status": "completed",
+      "validation": {
+        "size": [
+          1254,
+          1254
+        ],
+        "mode": "RGBA",
+        "transparent_fraction": 0.5789,
+        "sha256": "44a66fb36859d303f43a87a676923282ea6f73ce119b6518b3b2170f90c50521",
+        "visual_review": "Distinct full-body design, desaturated watercolor/ink rendering, no scenery or text; real transparency verified."
+      }
+    },
+    {
+      "id": "shard_stilt",
+      "name": "Shard Stilt",
+      "role": "ranged sentinel",
+      "description": "A narrow tripod automaton on three spindly rust-iron legs, a tilted cracked crucible torso filled with ivory furnace shards and one small ember eye behind a slotted mask, no humanoid arms.",
+      "prompt": "Use case: stylized-concept. Asset type: standalone transparent PNG battle enemy sprite for a dark fantasy game. Create ONE unique lesser minion, clearly modest compared with its boss. Subject: Shard Stilt. A narrow tripod automaton on three spindly rust-iron legs, a tilted cracked crucible torso filled with ivory furnace shards and one small ember eye behind a slotted mask, no humanoid arms. Faction materials: Abandoned kiln servants and volcanic fauna: charcoal basalt, rust iron, chalk fragments, restrained ember seams. Style: highly detailed desaturated dark watercolor washes inside forms, fine expressive black ink contours, weathered tactile material detail and restrained highlights; solemn eerie handmade bestiary painting, consistent with grim watercolor RPG enemies. Full body in left-facing three-quarter battle stance, entire silhouette within canvas with small transparent safety margin. TRUE transparent RGBA background, all pixels outside creature alpha zero, including between limbs. No environment, ground, platform, cast shadow, surrounding smoke, aura, paper background, checkerboard, text, letters, UI, frame or other creatures. Not a boss clone. Use square canvas.",
+      "relative_asset_path": "dice-and-destiny-client/assets/battle/minions/cinder_colossus/shard_stilt.png",
+      "source_reference_paths": [
+        "dice-and-destiny-client/assets/battle/fighters/cinder_colossus.png"
+      ],
+      "generated_source_path": "/Users/daddymere/.codex/generated_images/01a0ba30-7da5-7522-9728-234de4f720f5/exec-a530e905-6e25-4981-b305-b2796baab86b.png",
+      "status": "completed",
+      "validation": {
+        "size": [
+          1254,
+          1254
+        ],
+        "mode": "RGBA",
+        "transparent_fraction": 0.7692,
+        "sha256": "6391f8ce192a7b58f8334968c26d075a7bae205a0718992610a03d6f09633b9c",
+        "visual_review": "Distinct full-body design, desaturated watercolor/ink rendering, no scenery or text; real transparency verified."
+      }
+    },
+    {
+      "id": "coal_borer",
+      "name": "Coal Borer",
+      "role": "burrowing striker",
+      "description": "A segmented black basalt larva with a blunt circular iron drill mouth, six small hooked ivory digging claws near its head and ember pinholes between rear plates, coiled low and menacing.",
+      "prompt": "Use case: stylized-concept. Asset type: standalone transparent PNG battle enemy sprite for a dark fantasy game. Create ONE unique lesser minion, clearly modest compared with its boss. Subject: Coal Borer. A segmented black basalt larva with a blunt circular iron drill mouth, six small hooked ivory digging claws near its head and ember pinholes between rear plates, coiled low and menacing. Faction materials: Abandoned kiln servants and volcanic fauna: charcoal basalt, rust iron, chalk fragments, restrained ember seams. Style: highly detailed desaturated dark watercolor washes inside forms, fine expressive black ink contours, weathered tactile material detail and restrained highlights; solemn eerie handmade bestiary painting, consistent with grim watercolor RPG enemies. Full body in left-facing three-quarter battle stance, entire silhouette within canvas with small transparent safety margin. TRUE transparent RGBA background, all pixels outside creature alpha zero, including between limbs. No environment, ground, platform, cast shadow, surrounding smoke, aura, paper background, checkerboard, text, letters, UI, frame or other creatures. Not a boss clone. Use square canvas.",
+      "relative_asset_path": "dice-and-destiny-client/assets/battle/minions/cinder_colossus/coal_borer.png",
+      "source_reference_paths": [
+        "dice-and-destiny-client/assets/battle/fighters/cinder_colossus.png"
+      ],
+      "generated_source_path": "/Users/daddymere/.codex/generated_images/01a0ba30-7da5-7522-9728-234de4f720f5/exec-39de9ad2-63dc-41ef-b275-962b94b35fcd.png",
+      "status": "completed",
+      "validation": {
+        "size": [
+          1254,
+          1254
+        ],
+        "mode": "RGBA",
+        "transparent_fraction": 0.5298,
+        "sha256": "cc6e18211f2af1cfbdae7566d683f7bf39422aea9355f154936914f17a7003de",
+        "visual_review": "Distinct full-body design, desaturated watercolor/ink rendering, no scenery or text; real transparency verified."
+      }
+    },
+    {
+      "id": "cinder_sack",
+      "name": "Cinder Sack",
+      "role": "volatile support",
+      "description": "A hunched sack-bodied imp stitched from scorched hide around a compact coal belly, knobby twiglike iron legs and long mitten hands, a rusty chimney collar and dim amber cracks, no flame plume.",
+      "prompt": "Use case: stylized-concept. Asset type: standalone transparent PNG battle enemy sprite for a dark fantasy game. Create ONE unique lesser minion, clearly modest compared with its boss. Subject: Cinder Sack. A hunched sack-bodied imp stitched from scorched hide around a compact coal belly, knobby twiglike iron legs and long mitten hands, a rusty chimney collar and dim amber cracks, no flame plume. Faction materials: Abandoned kiln servants and volcanic fauna: charcoal basalt, rust iron, chalk fragments, restrained ember seams. Style: highly detailed desaturated dark watercolor washes inside forms, fine expressive black ink contours, weathered tactile material detail and restrained highlights; solemn eerie handmade bestiary painting, consistent with grim watercolor RPG enemies. Full body in left-facing three-quarter battle stance, entire silhouette within canvas with small transparent safety margin. TRUE transparent RGBA background, all pixels outside creature alpha zero, including between limbs. No environment, ground, platform, cast shadow, surrounding smoke, aura, paper background, checkerboard, text, letters, UI, frame or other creatures. Not a boss clone. Use square canvas.",
+      "relative_asset_path": "dice-and-destiny-client/assets/battle/minions/cinder_colossus/cinder_sack.png",
+      "source_reference_paths": [
+        "dice-and-destiny-client/assets/battle/fighters/cinder_colossus.png"
+      ],
+      "generated_source_path": "/Users/daddymere/.codex/generated_images/01a0ba30-7da5-7522-9728-234de4f720f5/exec-604bf6f9-1f34-42dd-8284-a81aef488e21.png",
+      "status": "completed",
+      "validation": {
+        "size": [
+          1254,
+          1254
+        ],
+        "mode": "RGBA",
+        "transparent_fraction": 0.6184,
+        "sha256": "e6f6a7f7a00c9c198217e0a28c7f3f620d403819e9140b0c3fe1422ecda36e47",
+        "visual_review": "Distinct full-body design, desaturated watercolor/ink rendering, no scenery or text; real transparency verified."
+      }
+    },
+    {
+      "id": "tongs_widow",
+      "name": "Tongs Widow",
+      "role": "precision grappler",
+      "description": "An agile four-legged foundry spider with a tiny rusted brazier abdomen, two long opposing coal-tong forelimbs, chalk encrusted joints and a recessed orange eye, silhouette delicate rather than massive.",
+      "prompt": "Use case: stylized-concept. Asset type: standalone transparent PNG battle enemy sprite for a dark fantasy game. Create ONE unique lesser minion, clearly modest compared with its boss. Subject: Tongs Widow. An agile four-legged foundry spider with a tiny rusted brazier abdomen, two long opposing coal-tong forelimbs, chalk encrusted joints and a recessed orange eye, silhouette delicate rather than massive. Faction materials: Abandoned kiln servants and volcanic fauna: charcoal basalt, rust iron, chalk fragments, restrained ember seams. Style: highly detailed desaturated dark watercolor washes inside forms, fine expressive black ink contours, weathered tactile material detail and restrained highlights; solemn eerie handmade bestiary painting, consistent with grim watercolor RPG enemies. Full body in left-facing three-quarter battle stance, entire silhouette within canvas with small transparent safety margin. TRUE transparent RGBA background, all pixels outside creature alpha zero, including between limbs. No environment, ground, platform, cast shadow, surrounding smoke, aura, paper background, checkerboard, text, letters, UI, frame or other creatures. Not a boss clone. Use square canvas.",
+      "relative_asset_path": "dice-and-destiny-client/assets/battle/minions/cinder_colossus/tongs_widow.png",
+      "source_reference_paths": [
+        "dice-and-destiny-client/assets/battle/fighters/cinder_colossus.png"
+      ],
+      "generated_source_path": "/Users/daddymere/.codex/generated_images/01a0ba30-7da5-7522-9728-234de4f720f5/exec-dc7e0cb2-4822-4997-b907-e05503067a95.png",
+      "status": "completed",
+      "validation": {
+        "size": [
+          1254,
+          1254
+        ],
+        "mode": "RGBA",
+        "transparent_fraction": 0.744,
+        "sha256": "d916a102fc6af3d8b75aeb2163dba834aba85682d6f18ac0ad6f8944299445be",
+        "visual_review": "Distinct full-body design, desaturated watercolor/ink rendering, no scenery or text; real transparency verified."
+      }
+    }
+  ],
+  "generation_mode": "built-in image_gen; one independently prompted image per minion; original pixels preserved"
+}

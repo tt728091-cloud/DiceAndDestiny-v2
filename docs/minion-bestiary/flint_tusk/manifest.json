@@ -1,0 +1,197 @@
+{
+  "boss_id": "flint_tusk",
+  "boss_name": "Flint Tusk",
+  "theme": "Rugged wasteland pack ecology; chipped flint, dark bristles, ivory scrimshaw bone, weathered hide and restrained burgundy ties.",
+  "minions": [
+    {
+      "id": "shale_jackal",
+      "name": "Shale Jackal",
+      "role": "Pack hunter",
+      "description": "A lean jackal with angular shale plates down its back, oversize chipped ivory canine teeth, dark wiry fur, narrow brindled legs and a torn burgundy cord around one foreleg.",
+      "prompt": "Use case: stylized-concept. Create ONE original dark-fantasy game minion sprite named Shale Jackal. Reference image is the faction boss, used ONLY for rendering style, material vocabulary and restrained palette, never its anatomy or scale. Design: A lean jackal with angular shale plates down its back, oversize chipped ivory canine teeth, dark wiry fur, narrow brindled legs and a torn burgundy cord around one foreleg. Faction ecology: Rugged wasteland pack ecology; chipped flint, dark bristles, ivory scrimshaw bone, weathered hide and restrained burgundy ties. This is a weaker encountered creature, not a boss or a miniature replica. Detailed hand-painted dark watercolor and fine ink hatching, tactile materials, readable distinctive silhouette. Full body, three-quarter view facing left, entire anatomy including tail, toes and wings visible with 5% empty margin; square canvas. Isolated on a genuinely transparent alpha PNG background. No environment, floor, cast shadow, aura, text, labels, borders, watermark or additional creatures.",
+      "relative_asset_path": "dice-and-destiny-client/assets/battle/minions/flint_tusk/shale_jackal.png",
+      "source_reference_paths": [
+        "/Users/daddymere/games/Dice-and-Destiny-v2/dice-and-destiny-client/assets/battle/fighters/flint_tusk.png"
+      ],
+      "generated_source_path": "/Users/daddymere/.codex/generated_images/01a077cd-7da1-7e53-8836-ee884c7866fd/exec-f9c9d9da-6274-49f8-b6d6-2502cd94f92f.png",
+      "status": "completed",
+      "review": {
+        "alpha_empty_fraction": 0.6158,
+        "width": 1254,
+        "height": 1254,
+        "visual": "Full creature, distinct silhouette, faction style; reviewed."
+      }
+    },
+    {
+      "id": "knap_claw",
+      "name": "Knap Claw",
+      "role": "Digger",
+      "description": "A squat badgerlike creature with huge flint foreclaws, a blunt bone snout mask, dark bristled shoulders and small unarmored rear legs; asymmetrical chipped stone elbow plates.",
+      "prompt": "Use case: stylized-concept. Create ONE original dark-fantasy game minion sprite named Knap Claw. Reference image is the faction boss, used ONLY for rendering style, material vocabulary and restrained palette, never its anatomy or scale. Design: A squat badgerlike creature with huge flint foreclaws, a blunt bone snout mask, dark bristled shoulders and small unarmored rear legs; asymmetrical chipped stone elbow plates. Faction ecology: Rugged wasteland pack ecology; chipped flint, dark bristles, ivory scrimshaw bone, weathered hide and restrained burgundy ties. This is a weaker encountered creature, not a boss or a miniature replica. Detailed hand-painted dark watercolor and fine ink hatching, tactile materials, readable distinctive silhouette. Full body, three-quarter view facing left, entire anatomy including tail, toes and wings visible with 5% empty margin; square canvas. Isolated on a genuinely transparent alpha PNG background. No environment, floor, cast shadow, aura, text, labels, borders, watermark or additional creatures.",
+      "relative_asset_path": "dice-and-destiny-client/assets/battle/minions/flint_tusk/knap_claw.png",
+      "source_reference_paths": [
+        "/Users/daddymere/games/Dice-and-Destiny-v2/dice-and-destiny-client/assets/battle/fighters/flint_tusk.png"
+      ],
+      "generated_source_path": "/Users/daddymere/.codex/generated_images/01a077cd-7da1-7e53-8836-ee884c7866fd/exec-e9b3f9b6-aebe-4fa4-b3a0-ac37644a9d69.png",
+      "status": "completed",
+      "review": {
+        "alpha_empty_fraction": 0.5873,
+        "width": 1254,
+        "height": 1254,
+        "visual": "Full creature, distinct silhouette, faction style; reviewed."
+      }
+    },
+    {
+      "id": "scree_hopper",
+      "name": "Scree Hopper",
+      "role": "Skirmisher",
+      "description": "A two-legged rock locust with oversized springing flint hind legs, a compact black chitin body, blunt bone head crest, folded cracked gray wings and short ivory feelers.",
+      "prompt": "Use case: stylized-concept. Create ONE original dark-fantasy game minion sprite named Scree Hopper. Reference image is the faction boss, used ONLY for rendering style, material vocabulary and restrained palette, never its anatomy or scale. Design: A two-legged rock locust with oversized springing flint hind legs, a compact black chitin body, blunt bone head crest, folded cracked gray wings and short ivory feelers. Faction ecology: Rugged wasteland pack ecology; chipped flint, dark bristles, ivory scrimshaw bone, weathered hide and restrained burgundy ties. This is a weaker encountered creature, not a boss or a miniature replica. Detailed hand-painted dark watercolor and fine ink hatching, tactile materials, readable distinctive silhouette. Full body, three-quarter view facing left, entire anatomy including tail, toes and wings visible with 5% empty margin; square canvas. Isolated on a genuinely transparent alpha PNG background. No environment, floor, cast shadow, aura, text, labels, borders, watermark or additional creatures.",
+      "relative_asset_path": "dice-and-destiny-client/assets/battle/minions/flint_tusk/scree_hopper.png",
+      "source_reference_paths": [
+        "/Users/daddymere/games/Dice-and-Destiny-v2/dice-and-destiny-client/assets/battle/fighters/flint_tusk.png"
+      ],
+      "generated_source_path": "/Users/daddymere/.codex/generated_images/01a077cd-7da1-7e53-8836-ee884c7866fd/exec-bc3862e3-072f-435f-a34e-2e5a83bac64c.png",
+      "status": "completed",
+      "review": {
+        "alpha_empty_fraction": 0.5706,
+        "width": 1254,
+        "height": 1254,
+        "visual": "Full creature, distinct silhouette, faction style; reviewed."
+      }
+    },
+    {
+      "id": "tuskroot_marmot",
+      "name": "Tuskroot Marmot",
+      "role": "Forager",
+      "description": "A stout marmot with two downward ivory shovel incisors, dark bristles braided with burgundy fiber, wide bare digging palms and a low ridge of chipped stone scales.",
+      "prompt": "Use case: stylized-concept. Create ONE original dark-fantasy game minion sprite named Tuskroot Marmot. Reference image is the faction boss, used ONLY for rendering style, material vocabulary and restrained palette, never its anatomy or scale. Design: A stout marmot with two downward ivory shovel incisors, dark bristles braided with burgundy fiber, wide bare digging palms and a low ridge of chipped stone scales. Faction ecology: Rugged wasteland pack ecology; chipped flint, dark bristles, ivory scrimshaw bone, weathered hide and restrained burgundy ties. This is a weaker encountered creature, not a boss or a miniature replica. Detailed hand-painted dark watercolor and fine ink hatching, tactile materials, readable distinctive silhouette. Full body, three-quarter view facing left, entire anatomy including tail, toes and wings visible with 5% empty margin; square canvas. Isolated on a genuinely transparent alpha PNG background. No environment, floor, cast shadow, aura, text, labels, borders, watermark or additional creatures.",
+      "relative_asset_path": "dice-and-destiny-client/assets/battle/minions/flint_tusk/tuskroot_marmot.png",
+      "source_reference_paths": [
+        "/Users/daddymere/games/Dice-and-Destiny-v2/dice-and-destiny-client/assets/battle/fighters/flint_tusk.png"
+      ],
+      "generated_source_path": "/Users/daddymere/.codex/generated_images/01a077cd-7da1-7e53-8836-ee884c7866fd/exec-6b52d543-d915-4b12-9b83-603e9504b9c2.png",
+      "status": "completed",
+      "review": {
+        "alpha_empty_fraction": 0.5031,
+        "width": 1254,
+        "height": 1254,
+        "visual": "Full creature, distinct silhouette, faction style; reviewed."
+      }
+    },
+    {
+      "id": "cairn_beetle",
+      "name": "Cairn Beetle",
+      "role": "Tank",
+      "description": "A six-legged beetle with three stacked flat flint slabs for its shell, thick bone pincers, a narrow crimson underside and chalk-white scratch marks in the stone; no massive boss armor.",
+      "prompt": "Use case: stylized-concept. Create ONE original dark-fantasy game minion sprite named Cairn Beetle. Reference image is the faction boss, used ONLY for rendering style, material vocabulary and restrained palette, never its anatomy or scale. Design: A six-legged beetle with three stacked flat flint slabs for its shell, thick bone pincers, a narrow crimson underside and chalk-white scratch marks in the stone; no massive boss armor. Faction ecology: Rugged wasteland pack ecology; chipped flint, dark bristles, ivory scrimshaw bone, weathered hide and restrained burgundy ties. This is a weaker encountered creature, not a boss or a miniature replica. Detailed hand-painted dark watercolor and fine ink hatching, tactile materials, readable distinctive silhouette. Full body, three-quarter view facing left, entire anatomy including tail, toes and wings visible with 5% empty margin; square canvas. Isolated on a genuinely transparent alpha PNG background. No environment, floor, cast shadow, aura, text, labels, borders, watermark or additional creatures.",
+      "relative_asset_path": "dice-and-destiny-client/assets/battle/minions/flint_tusk/cairn_beetle.png",
+      "source_reference_paths": [
+        "/Users/daddymere/games/Dice-and-Destiny-v2/dice-and-destiny-client/assets/battle/fighters/flint_tusk.png"
+      ],
+      "generated_source_path": "/Users/daddymere/.codex/generated_images/01a077cd-7da1-7e53-8836-ee884c7866fd/exec-b092068e-b502-4c1a-8ded-86c730bc1ff3.png",
+      "status": "completed",
+      "review": {
+        "alpha_empty_fraction": 0.5803,
+        "width": 1254,
+        "height": 1254,
+        "visual": "Full creature, distinct silhouette, faction style; reviewed."
+      }
+    },
+    {
+      "id": "splinter_owl",
+      "name": "Splinter Owl",
+      "role": "Watcher",
+      "description": "A small ground owl with a jagged flint facial disc, deep amber eyes, black bristly feathers, ivory talons and uneven slate shoulder quills; wings partly lifted.",
+      "prompt": "Use case: stylized-concept. Create ONE original dark-fantasy game minion sprite named Splinter Owl. Reference image is the faction boss, used ONLY for rendering style, material vocabulary and restrained palette, never its anatomy or scale. Design: A small ground owl with a jagged flint facial disc, deep amber eyes, black bristly feathers, ivory talons and uneven slate shoulder quills; wings partly lifted. Faction ecology: Rugged wasteland pack ecology; chipped flint, dark bristles, ivory scrimshaw bone, weathered hide and restrained burgundy ties. This is a weaker encountered creature, not a boss or a miniature replica. Detailed hand-painted dark watercolor and fine ink hatching, tactile materials, readable distinctive silhouette. Full body, three-quarter view facing left, entire anatomy including tail, toes and wings visible with 5% empty margin; square canvas. Isolated on a genuinely transparent alpha PNG background. No environment, floor, cast shadow, aura, text, labels, borders, watermark or additional creatures.",
+      "relative_asset_path": "dice-and-destiny-client/assets/battle/minions/flint_tusk/splinter_owl.png",
+      "source_reference_paths": [
+        "/Users/daddymere/games/Dice-and-Destiny-v2/dice-and-destiny-client/assets/battle/fighters/flint_tusk.png"
+      ],
+      "generated_source_path": "/Users/daddymere/.codex/generated_images/01a077cd-7da1-7e53-8836-ee884c7866fd/exec-da3a5e29-4c66-4fc4-a196-65c9596c00d0.png",
+      "status": "completed",
+      "review": {
+        "alpha_empty_fraction": 0.5051,
+        "width": 1254,
+        "height": 1254,
+        "visual": "Full creature, distinct silhouette, faction style; reviewed."
+      }
+    },
+    {
+      "id": "knuckle_ram",
+      "name": "Knuckle Ram",
+      "role": "Charger",
+      "description": "A compact rocky ram with one broken flint horn and one curled ivory horn, a slablike forehead, patchy charcoal wool, thick jointed legs and a short ragged burgundy tether.",
+      "prompt": "Use case: stylized-concept. Create ONE original dark-fantasy game minion sprite named Knuckle Ram. Reference image is the faction boss, used ONLY for rendering style, material vocabulary and restrained palette, never its anatomy or scale. Design: A compact rocky ram with one broken flint horn and one curled ivory horn, a slablike forehead, patchy charcoal wool, thick jointed legs and a short ragged burgundy tether. Faction ecology: Rugged wasteland pack ecology; chipped flint, dark bristles, ivory scrimshaw bone, weathered hide and restrained burgundy ties. This is a weaker encountered creature, not a boss or a miniature replica. Detailed hand-painted dark watercolor and fine ink hatching, tactile materials, readable distinctive silhouette. Full body, three-quarter view facing left, entire anatomy including tail, toes and wings visible with 5% empty margin; square canvas. Isolated on a genuinely transparent alpha PNG background. No environment, floor, cast shadow, aura, text, labels, borders, watermark or additional creatures.",
+      "relative_asset_path": "dice-and-destiny-client/assets/battle/minions/flint_tusk/knuckle_ram.png",
+      "source_reference_paths": [
+        "/Users/daddymere/games/Dice-and-Destiny-v2/dice-and-destiny-client/assets/battle/fighters/flint_tusk.png"
+      ],
+      "generated_source_path": "/Users/daddymere/.codex/generated_images/01a077cd-7da1-7e53-8836-ee884c7866fd/exec-3419dc2b-3262-48bc-8056-6caf78bc1569.png",
+      "status": "completed",
+      "review": {
+        "alpha_empty_fraction": 0.5275,
+        "width": 1254,
+        "height": 1254,
+        "visual": "Full creature, distinct silhouette, faction style; reviewed."
+      }
+    },
+    {
+      "id": "quarry_skink",
+      "name": "Quarry Skink",
+      "role": "Ambusher",
+      "description": "A flat wasteland skink with overlapping chipped flint scales, broad spade tail, six short legs, pale ridged jaw and tiny orange eyes; camouflaged charcoal-gray matte texture.",
+      "prompt": "Use case: stylized-concept. Create ONE original dark-fantasy game minion sprite named Quarry Skink. Reference image is the faction boss, used ONLY for rendering style, material vocabulary and restrained palette, never its anatomy or scale. Design: A flat wasteland skink with overlapping chipped flint scales, broad spade tail, six short legs, pale ridged jaw and tiny orange eyes; camouflaged charcoal-gray matte texture. Faction ecology: Rugged wasteland pack ecology; chipped flint, dark bristles, ivory scrimshaw bone, weathered hide and restrained burgundy ties. This is a weaker encountered creature, not a boss or a miniature replica. Detailed hand-painted dark watercolor and fine ink hatching, tactile materials, readable distinctive silhouette. Full body, three-quarter view facing left, entire anatomy including tail, toes and wings visible with 5% empty margin; square canvas. Isolated on a genuinely transparent alpha PNG background. No environment, floor, cast shadow, aura, text, labels, borders, watermark or additional creatures.",
+      "relative_asset_path": "dice-and-destiny-client/assets/battle/minions/flint_tusk/quarry_skink.png",
+      "source_reference_paths": [
+        "/Users/daddymere/games/Dice-and-Destiny-v2/dice-and-destiny-client/assets/battle/fighters/flint_tusk.png"
+      ],
+      "generated_source_path": "/Users/daddymere/.codex/generated_images/01a077cd-7da1-7e53-8836-ee884c7866fd/exec-aeff702f-82c2-4102-9497-9f93b6a12120.png",
+      "status": "completed",
+      "review": {
+        "alpha_empty_fraction": 0.6278,
+        "width": 1254,
+        "height": 1254,
+        "visual": "Full creature, distinct silhouette, faction style; reviewed."
+      }
+    },
+    {
+      "id": "bonepick_scrounger",
+      "name": "Bonepick Scrounger",
+      "role": "Scavenger",
+      "description": "A small hunched imp with dark hide, long pointed ears, an ivory jaw-guard, a bundle of chipped flint tools strapped to its back and one crooked bone pick held in a thin clawed hand.",
+      "prompt": "Use case: stylized-concept. Create ONE original dark-fantasy game minion sprite named Bonepick Scrounger. Reference image is the faction boss, used ONLY for rendering style, material vocabulary and restrained palette, never its anatomy or scale. Design: A small hunched imp with dark hide, long pointed ears, an ivory jaw-guard, a bundle of chipped flint tools strapped to its back and one crooked bone pick held in a thin clawed hand. Faction ecology: Rugged wasteland pack ecology; chipped flint, dark bristles, ivory scrimshaw bone, weathered hide and restrained burgundy ties. This is a weaker encountered creature, not a boss or a miniature replica. Detailed hand-painted dark watercolor and fine ink hatching, tactile materials, readable distinctive silhouette. Full body, three-quarter view facing left, entire anatomy including tail, toes and wings visible with 5% empty margin; square canvas. Isolated on a genuinely transparent alpha PNG background. No environment, floor, cast shadow, aura, text, labels, borders, watermark or additional creatures.",
+      "relative_asset_path": "dice-and-destiny-client/assets/battle/minions/flint_tusk/bonepick_scrounger.png",
+      "source_reference_paths": [
+        "/Users/daddymere/games/Dice-and-Destiny-v2/dice-and-destiny-client/assets/battle/fighters/flint_tusk.png"
+      ],
+      "generated_source_path": "/Users/daddymere/.codex/generated_images/01a077cd-7da1-7e53-8836-ee884c7866fd/exec-8feb514a-58ca-4403-b86d-dc07cf8a9dd2.png",
+      "status": "completed",
+      "review": {
+        "alpha_empty_fraction": 0.5745,
+        "width": 1254,
+        "height": 1254,
+        "visual": "Full creature, distinct silhouette, faction style; reviewed."
+      }
+    },
+    {
+      "id": "bristleback_shrew",
+      "name": "Bristleback Shrew",
+      "role": "Harrier",
+      "description": "An aggressive elongated shrew with fine needle teeth, a fan of black quills tipped with tiny flint chips, sinewy paws, a narrow ivory snout shield and a whipping naked tail.",
+      "prompt": "Use case: stylized-concept. Create ONE original dark-fantasy game minion sprite named Bristleback Shrew. Reference image is the faction boss, used ONLY for rendering style, material vocabulary and restrained palette, never its anatomy or scale. Design: An aggressive elongated shrew with fine needle teeth, a fan of black quills tipped with tiny flint chips, sinewy paws, a narrow ivory snout shield and a whipping naked tail. Faction ecology: Rugged wasteland pack ecology; chipped flint, dark bristles, ivory scrimshaw bone, weathered hide and restrained burgundy ties. This is a weaker encountered creature, not a boss or a miniature replica. Detailed hand-painted dark watercolor and fine ink hatching, tactile materials, readable distinctive silhouette. Full body, three-quarter view facing left, entire anatomy including tail, toes and wings visible with 5% empty margin; square canvas. Isolated on a genuinely transparent alpha PNG background. No environment, floor, cast shadow, aura, text, labels, borders, watermark or additional creatures.",
+      "relative_asset_path": "dice-and-destiny-client/assets/battle/minions/flint_tusk/bristleback_shrew.png",
+      "source_reference_paths": [
+        "/Users/daddymere/games/Dice-and-Destiny-v2/dice-and-destiny-client/assets/battle/fighters/flint_tusk.png"
+      ],
+      "generated_source_path": "/Users/daddymere/.codex/generated_images/01a077cd-7da1-7e53-8836-ee884c7866fd/exec-3527c1dd-776e-40b4-8935-2cea861261b2.png",
+      "status": "completed",
+      "review": {
+        "alpha_empty_fraction": 0.6236,
+        "width": 1254,
+        "height": 1254,
+        "visual": "Full creature, distinct silhouette, faction style; reviewed."
+      }
+    }
+  ]
+}

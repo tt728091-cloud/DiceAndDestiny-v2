@@ -69,22 +69,32 @@ func _build_mode_menu() -> void:
 		["Blade Warden · sword, shields, and bleed", "blade_warden"],
 		["Venom · Poison, Incubation, and Catalyst", "venom"],
 	], "battle.setup.character")
-	_model_choice = _add_selection("ENEMY · LEARNED BLADE WARDEN", [
-		["Global Champion CP193 · winner-health v2", "global-champion"],
+	_character_choice.select(1)
+	_model_choice = _add_selection("OPPONENT", [
+		["Brine Mask · minion · keeps every 3", "brine-mask"],
+		["Blade Warden · Global Champion CP193", "global-champion"],
 		["Prior Champion CP38 · winner-health", "prior-global-cp38"],
 		["Prior Champion CP480 · 2.4M steps", "prior-global-cp480"],
 		["Optimized v3 · 5M seed 22", "optimized-v3"],
 		["Decision Quality v2 · seed 22", "decision-v2"],
 		["Original v1 · seed 11", "accepted-v1"],
+		["Two Brine Masks · allied minion encounter", "brine-mask-pair"],
 	], "battle.setup.model")
 	_seat_choice = _add_selection("YOUR SEAT", [["Seat A", "seat-a"], ["Seat B", "seat-b"]], "battle.setup.seat")
 	_add_mode_button("Start Battle", _start_selected, "battle.setup.start")
 	_message = Label.new()
-	_message.text = "Play a full battle against the selected trained Blade Warden. Venom has 24 cards and six abilities. Rematch keeps your character and opponent."
+	_model_choice.item_selected.connect(func(_index: int): _update_opponent_description())
+	_update_opponent_description()
 	_message.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_message.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	_message.add_theme_color_override("font_color", Color("9fb3c8"))
 	content.add_child(_message)
+
+func _update_opponent_description() -> void:
+	if _model_choice.get_selected_metadata() == "brine-mask-pair":
+		_message.text = "Two Brine Masks, 16 health each. Choose your attack target and defend separately against each incoming attack. Both keep every 3 and roll Salt Veil to block half their die, rounded up."
+		return
+	_message.text = "Brine Mask: 16 health, one attack, one defense. Keeps every 3 across up to three rolls. Brine Surge adds 1 attack damage for 1 energy." if _model_choice.get_selected_metadata() == "brine-mask" else "Play against the selected trained Blade Warden. Rematch keeps your character and opponent."
 
 func _add_selection(caption: String, choices: Array, control_id: String) -> OptionButton:
 	var heading := Label.new()
@@ -149,7 +159,7 @@ func _start_classic() -> void:
 
 func _start_learned(human_seat: String, model_key: String) -> void:
 	_set_buttons_disabled(true)
-	_message.text = "Loading the selected frozen learned policy…"
+	_message.text = "Preparing Brine Masks…" if model_key in ["brine-mask", "brine-mask-pair"] else "Loading the selected frozen learned policy…"
 	await get_tree().process_frame
 	var runtime := get_node_or_null("/root/LearnedBattleRuntime")
 	if runtime == null:

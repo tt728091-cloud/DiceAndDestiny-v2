@@ -1,0 +1,3016 @@
+{
+  "result": "passed",
+  "factions": 20,
+  "creatures": 200,
+  "total_png_bytes": 368833021,
+  "checks": [
+    "10 completed designs per boss",
+    "unique IDs, names and PNG hashes",
+    "full-resolution RGBA",
+    "corner alpha below 3% and substantial zero-alpha coverage",
+    "opaque silhouettes contained within canvas",
+    "description, role, prompt and provenance present"
+  ],
+  "assets": [
+    {
+      "id": "mire_crown_reedjaw_newt",
+      "size": [
+        1254,
+        1254
+      ],
+      "transparent_fraction": 0.6622,
+      "silhouette_bounds": [
+        10,
+        275,
+        1246,
+        1064
+      ],
+      "bytes": 1513154
+    },
+    {
+      "id": "mire_crown_peatbell_toad",
+      "size": [
+        1254,
+        1254
+      ],
+      "transparent_fraction": 0.4961,
+      "silhouette_bounds": [
+        39,
+        78,
+        1231,
+        1196
+      ],
+      "bytes": 2193463
+    },
+    {
+      "id": "mire_crown_fen_lantern_snail",
+      "size": [
+        1254,
+        1254
+      ],
+      "transparent_fraction": 0.5928,
+      "silhouette_bounds": [
+        31,
+        166,
+        1225,
+        1104
+      ],
+      "bytes": 1789970
+    },
+    {
+      "id": "mire_crown_willow_knuckle",
+      "size": [
+        1254,
+        1254
+      ],
+      "transparent_fraction": 0.4429,
+      "silhouette_bounds": [
+        21,
+        13,
+        1232,
+        1238
+      ],
+      "bytes": 2398170
+    },
+    {
+      "id": "mire_crown_sedge_raker",
+      "size": [
+        1254,
+        1254
+      ],
+      "transparent_fraction": 0.6148,
+      "silhouette_bounds": [
+        58,
+        9,
+        1228,
+        1247
+      ],
+      "bytes": 1687445
+    },
+    {
+      "id": "mire_crown_bogglass_midge",
+      "size": [
+        1254,
+        1254
+      ],
+      "transparent_fraction": 0.5835,
+      "silhouette_bounds": [
+        44,
+        30,
+        1237,
+        1221
+      ],
+      "bytes": 1952480
+    },
+    {
+      "id": "mire_crown_silt_mantle",
+      "size": [
+        1254,
+        1254
+      ],
+      "transparent_fraction": 0.6583,
+      "silhouette_bounds": [
+        24,
+        204,
+        1243,
+        1053
+      ],
+      "bytes": 1517080
+    },
+    {
+      "id": "mire_crown_mossback_mole",
+      "size": [
+        1254,
+        1254
+      ],
+      "transparent_fraction": 0.5147,
+      "silhouette_bounds": [
+        17,
+        126,
+        1246,
+        1190
+      ],
+      "bytes": 2119229
+    },
+    {
+      "id": "mire_crown_rushbone_crake",
+      "size": [
+        1254,
+        1254
+      ],
+      "transparent_fraction": 0.6439,
+      "silhouette_bounds": [
+        88,
+        6,
+        1228,
+        1248
+      ],
+      "bytes": 1558309
+    },
+    {
+      "id": "mire_crown_drowned_purse",
+      "size": [
+        1254,
+        1254
+      ],
+      "transparent_fraction": 0.562,
+      "silhouette_bounds": [
+        50,
+        78,
+        1235,
+        1191
+      ],
+      "bytes": 1930203
+    },
+    {
+      "id": "rime_burrower_hoarfang_shrew",
+      "size": [
+        1245,
+        1263
+      ],
+      "transparent_fraction": 0.715,
+      "silhouette_bounds": [
+        28,
+        269,
+        1235,
+        1060
+      ],
+      "bytes": 1270808
+    },
+    {
+      "id": "rime_burrower_icicle_stilt",
+      "size": [
+        1024,
+        1536
+      ],
+      "transparent_fraction": 0.7673,
+      "silhouette_bounds": [
+        29,
+        15,
+        1004,
+        1528
+      ],
+      "bytes": 1876956
+    },
+    {
+      "id": "rime_burrower_glassback_mite",
+      "size": [
+        1536,
+        1024
+      ],
+      "transparent_fraction": 0.6181,
+      "silhouette_bounds": [
+        69,
+        83,
+        1479,
+        959
+      ],
+      "bytes": 2373926
+    },
+    {
+      "id": "rime_burrower_snowblind_loper",
+      "size": [
+        1145,
+        1373
+      ],
+      "transparent_fraction": 0.5842,
+      "silhouette_bounds": [
+        49,
+        46,
+        1121,
+        1352
+      ],
+      "bytes": 1791682
+    },
+    {
+      "id": "rime_burrower_sleet_sail",
+      "size": [
+        1240,
+        1269
+      ],
+      "transparent_fraction": 0.6292,
+      "silhouette_bounds": [
+        18,
+        26,
+        1228,
+        1247
+      ],
+      "bytes": 1554984
+    },
+    {
+      "id": "rime_burrower_frostbell_polyp",
+      "size": [
+        1214,
+        1295
+      ],
+      "transparent_fraction": 0.6093,
+      "silhouette_bounds": [
+        83,
+        64,
+        1145,
+        1229
+      ],
+      "bytes": 1577051
+    },
+    {
+      "id": "rime_burrower_cracktooth_mole",
+      "size": [
+        1231,
+        1278
+      ],
+      "transparent_fraction": 0.5816,
+      "silhouette_bounds": [
+        19,
+        197,
+        1209,
+        1083
+      ],
+      "bytes": 1817267
+    },
+    {
+      "id": "rime_burrower_shard_quill",
+      "size": [
+        1225,
+        1284
+      ],
+      "transparent_fraction": 0.5307,
+      "silhouette_bounds": [
+        31,
+        49,
+        1212,
+        1251
+      ],
+      "bytes": 2115363
+    },
+    {
+      "id": "rime_burrower_brine_lantern",
+      "size": [
+        1536,
+        1024
+      ],
+      "transparent_fraction": 0.5436,
+      "silhouette_bounds": [
+        97,
+        31,
+        1488,
+        1008
+      ],
+      "bytes": 2657145
+    },
+    {
+      "id": "rime_burrower_rime_spindle",
+      "size": [
+        1536,
+        1024
+      ],
+      "transparent_fraction": 0.8723,
+      "silhouette_bounds": [
+        440,
+        143,
+        1138,
+        890
+      ],
+      "bytes": 1359711
+    },
+    {
+      "id": "dune_sieve_saltglass_gecko",
+      "size": [
+        1536,
+        1024
+      ],
+      "transparent_fraction": 0.6415,
+      "silhouette_bounds": [
+        65,
+        40,
+        1521,
+        976
+      ],
+      "bytes": 2427261
+    },
+    {
+      "id": "dune_sieve_sievejaw_antlion",
+      "size": [
+        1536,
+        1024
+      ],
+      "transparent_fraction": 0.5434,
+      "silhouette_bounds": [
+        23,
+        31,
+        1522,
+        964
+      ],
+      "bytes": 2570845
+    },
+    {
+      "id": "dune_sieve_moonspine_jerboa",
+      "size": [
+        1226,
+        1283
+      ],
+      "transparent_fraction": 0.7038,
+      "silhouette_bounds": [
+        15,
+        10,
+        1219,
+        1275
+      ],
+      "bytes": 1314733
+    },
+    {
+      "id": "dune_sieve_brine_blister",
+      "size": [
+        1374,
+        1145
+      ],
+      "transparent_fraction": 0.5336,
+      "silhouette_bounds": [
+        37,
+        94,
+        1354,
+        1083
+      ],
+      "bytes": 1929279
+    },
+    {
+      "id": "dune_sieve_dune_needlewing",
+      "size": [
+        1536,
+        1024
+      ],
+      "transparent_fraction": 0.6617,
+      "silhouette_bounds": [
+        40,
+        8,
+        1488,
+        1017
+      ],
+      "bytes": 2167729
+    },
+    {
+      "id": "dune_sieve_chalkcoil_viper",
+      "size": [
+        1536,
+        1024
+      ],
+      "transparent_fraction": 0.6424,
+      "silhouette_bounds": [
+        109,
+        71,
+        1455,
+        957
+      ],
+      "bytes": 2256531
+    },
+    {
+      "id": "dune_sieve_saltroot_strider",
+      "size": [
+        1536,
+        1024
+      ],
+      "transparent_fraction": 0.8882,
+      "silhouette_bounds": [
+        480,
+        84,
+        1135,
+        932
+      ],
+      "bytes": 1343033
+    },
+    {
+      "id": "dune_sieve_crust_peeler",
+      "size": [
+        1536,
+        1024
+      ],
+      "transparent_fraction": 0.6206,
+      "silhouette_bounds": [
+        13,
+        74,
+        1524,
+        959
+      ],
+      "bytes": 2354632
+    },
+    {
+      "id": "dune_sieve_hollow_puff",
+      "size": [
+        1312,
+        1199
+      ],
+      "transparent_fraction": 0.5618,
+      "silhouette_bounds": [
+        48,
+        110,
+        1281,
+        1153
+      ],
+      "bytes": 1971352
+    },
+    {
+      "id": "dune_sieve_flint_carrionling",
+      "size": [
+        1222,
+        1287
+      ],
+      "transparent_fraction": 0.5583,
+      "silhouette_bounds": [
+        26,
+        21,
+        1204,
+        1273
+      ],
+      "bytes": 1850539
+    },
+    {
+      "id": "spore_cantor_gillmask_prowler",
+      "size": [
+        1254,
+        1254
+      ],
+      "transparent_fraction": 0.6357,
+      "silhouette_bounds": [
+        38,
+        83,
+        1233,
+        1168
+      ],
+      "bytes": 1664233
+    },
+    {
+      "id": "spore_cantor_pufflung_hopper",
+      "size": [
+        1254,
+        1254
+      ],
+      "transparent_fraction": 0.5804,
+      "silhouette_bounds": [
+        161,
+        20,
+        1188,
+        1243
+      ],
+      "bytes": 1899279
+    },
+    {
+      "id": "spore_cantor_mycelial_mason",
+      "size": [
+        1254,
+        1254
+      ],
+      "transparent_fraction": 0.5329,
+      "silhouette_bounds": [
+        44,
+        57,
+        1224,
+        1212
+      ],
+      "bytes": 2150807
+    },
+    {
+      "id": "spore_cantor_morel_listener",
+      "size": [
+        1254,
+        1254
+      ],
+      "transparent_fraction": 0.5709,
+      "silhouette_bounds": [
+        103,
+        3,
+        1212,
+        1250
+      ],
+      "bytes": 1916000
+    },
+    {
+      "id": "spore_cantor_velvet_sporebat",
+      "size": [
+        1254,
+        1254
+      ],
+      "transparent_fraction": 0.6411,
+      "silhouette_bounds": [
+        15,
+        78,
+        1241,
+        1178
+      ],
+      "bytes": 1650603
+    },
+    {
+      "id": "spore_cantor_truffle_grinder",
+      "size": [
+        1254,
+        1254
+      ],
+      "transparent_fraction": 0.5089,
+      "silhouette_bounds": [
+        32,
+        49,
+        1237,
+        1217
+      ],
+      "bytes": 2206750
+    },
+    {
+      "id": "spore_cantor_inkcap_drudge",
+      "size": [
+        1254,
+        1254
+      ],
+      "transparent_fraction": 0.5193,
+      "silhouette_bounds": [
+        42,
+        17,
+        1230,
+        1235
+      ],
+      "bytes": 2160736
+    },
+    {
+      "id": "spore_cantor_lichen_shepherd",
+      "size": [
+        1254,
+        1254
+      ],
+      "transparent_fraction": 0.5487,
+      "silhouette_bounds": [
+        10,
+        6,
+        1245,
+        1240
+      ],
+      "bytes": 2089373
+    },
+    {
+      "id": "spore_cantor_cordyceps_lancer",
+      "size": [
+        1254,
+        1254
+      ],
+      "transparent_fraction": 0.6745,
+      "silhouette_bounds": [
+        10,
+        8,
+        1242,
+        1247
+      ],
+      "bytes": 1563072
+    },
+    {
+      "id": "spore_cantor_sponge_whelp",
+      "size": [
+        1254,
+        1254
+      ],
+      "transparent_fraction": 0.5283,
+      "silhouette_bounds": [
+        33,
+        117,
+        1223,
+        1157
+      ],
+      "bytes": 2113100
+    },
+    {
+      "id": "reef_breaker_kelp_snatcher",
+      "size": [
+        1227,
+        1282
+      ],
+      "transparent_fraction": 0.504,
+      "silhouette_bounds": [
+        41,
+        54,
+        1191,
+        1236
+      ],
+      "bytes": 2104481
+    },
+    {
+      "id": "reef_breaker_barnacle_hopper",
+      "size": [
+        1223,
+        1286
+      ],
+      "transparent_fraction": 0.6265,
+      "silhouette_bounds": [
+        109,
+        59,
+        1159,
+        1230
+      ],
+      "bytes": 1669389
+    },
+    {
+      "id": "reef_breaker_brinecomb_urchin",
+      "size": [
+        1374,
+        1145
+      ],
+      "transparent_fraction": 0.5787,
+      "silhouette_bounds": [
+        110,
+        13,
+        1287,
+        1113
+      ],
+      "bytes": 1844865
+    },
+    {
+      "id": "reef_breaker_wrack_hound",
+      "size": [
+        1536,
+        1024
+      ],
+      "transparent_fraction": 0.6391,
+      "silhouette_bounds": [
+        116,
+        76,
+        1450,
+        965
+      ],
+      "bytes": 2272829
+    },
+    {
+      "id": "reef_breaker_razorshell_skate",
+      "size": [
+        1536,
+        1024
+      ],
+      "transparent_fraction": 0.6204,
+      "silhouette_bounds": [
+        109,
+        27,
+        1473,
+        962
+      ],
+      "bytes": 2231420
+    },
+    {
+      "id": "reef_breaker_tide_chisel",
+      "size": [
+        1222,
+        1287
+      ],
+      "transparent_fraction": 0.7454,
+      "silhouette_bounds": [
+        153,
+        62,
+        1105,
+        1261
+      ],
+      "bytes": 1164627
+    },
+    {
+      "id": "reef_breaker_mussel_maw",
+      "size": [
+        1214,
+        1295
+      ],
+      "transparent_fraction": 0.6748,
+      "silhouette_bounds": [
+        285,
+        18,
+        1006,
+        1266
+      ],
+      "bytes": 1382012
+    },
+    {
+      "id": "reef_breaker_spray_skitter",
+      "size": [
+        1536,
+        1024
+      ],
+      "transparent_fraction": 0.6791,
+      "silhouette_bounds": [
+        96,
+        152,
+        1444,
+        853
+      ],
+      "bytes": 2112909
+    },
+    {
+      "id": "reef_breaker_saltpurse_slug",
+      "size": [
+        1536,
+        1024
+      ],
+      "transparent_fraction": 0.5223,
+      "silhouette_bounds": [
+        115,
+        63,
+        1452,
+        930
+      ],
+      "bytes": 2506508
+    },
+    {
+      "id": "reef_breaker_breakwater_bristle",
+      "size": [
+        1536,
+        1024
+      ],
+      "transparent_fraction": 0.6391,
+      "silhouette_bounds": [
+        88,
+        96,
+        1490,
+        944
+      ],
+      "bytes": 2269137
+    },
+    {
+      "id": "ember_gullet_cinder_tick",
+      "size": [
+        1536,
+        1024
+      ],
+      "transparent_fraction": 0.6252,
+      "silhouette_bounds": [
+        192,
+        45,
+        1364,
+        965
+      ],
+      "bytes": 2219833
+    },
+    {
+      "id": "ember_gullet_ashwing_moth",
+      "size": [
+        1536,
+        1024
+      ],
+      "transparent_fraction": 0.7877,
+      "silhouette_bounds": [
+        376,
+        69,
+        1169,
+        910
+      ],
+      "bytes": 1561369
+    },
+    {
+      "id": "ember_gullet_pumice_hare",
+      "size": [
+        1208,
+        1302
+      ],
+      "transparent_fraction": 0.6478,
+      "silhouette_bounds": [
+        61,
+        39,
+        1153,
+        1269
+      ],
+      "bytes": 1583639
+    },
+    {
+      "id": "ember_gullet_kilnback_snail",
+      "size": [
+        1223,
+        1286
+      ],
+      "transparent_fraction": 0.5822,
+      "silhouette_bounds": [
+        69,
+        32,
+        1185,
+        1244
+      ],
+      "bytes": 1799258
+    },
+    {
+      "id": "ember_gullet_coalspit_toad",
+      "size": [
+        1374,
+        1145
+      ],
+      "transparent_fraction": 0.6168,
+      "silhouette_bounds": [
+        140,
+        135,
+        1236,
+        1026
+      ],
+      "bytes": 1557788
+    },
+    {
+      "id": "ember_gullet_slag_beak",
+      "size": [
+        1199,
+        1312
+      ],
+      "transparent_fraction": 0.6939,
+      "silhouette_bounds": [
+        79,
+        35,
+        1139,
+        1283
+      ],
+      "bytes": 1370338
+    },
+    {
+      "id": "ember_gullet_furnace_weasel",
+      "size": [
+        1536,
+        1024
+      ],
+      "transparent_fraction": 0.658,
+      "silhouette_bounds": [
+        45,
+        221,
+        1512,
+        891
+      ],
+      "bytes": 2059144
+    },
+    {
+      "id": "ember_gullet_glass_lancet",
+      "size": [
+        1217,
+        1293
+      ],
+      "transparent_fraction": 0.7205,
+      "silhouette_bounds": [
+        83,
+        17,
+        1151,
+        1276
+      ],
+      "bytes": 1178906
+    },
+    {
+      "id": "ember_gullet_scoria_tortoise",
+      "size": [
+        1376,
+        1143
+      ],
+      "transparent_fraction": 0.5124,
+      "silhouette_bounds": [
+        80,
+        69,
+        1294,
+        1077
+      ],
+      "bytes": 2005145
+    },
+    {
+      "id": "ember_gullet_vent_siphon",
+      "size": [
+        1318,
+        1193
+      ],
+      "transparent_fraction": 0.5454,
+      "silhouette_bounds": [
+        66,
+        100,
+        1267,
+        1118
+      ],
+      "bytes": 1852814
+    },
+    {
+      "id": "root_widow_pip_gnawer",
+      "size": [
+        1254,
+        1254
+      ],
+      "transparent_fraction": 0.6132,
+      "silhouette_bounds": [
+        18,
+        106,
+        1236,
+        1186
+      ],
+      "bytes": 1773787
+    },
+    {
+      "id": "root_widow_bramble_fawn",
+      "size": [
+        1254,
+        1254
+      ],
+      "transparent_fraction": 0.718,
+      "silhouette_bounds": [
+        55,
+        4,
+        1139,
+        1233
+      ],
+      "bytes": 1328293
+    },
+    {
+      "id": "root_widow_graft_stump",
+      "size": [
+        1254,
+        1254
+      ],
+      "transparent_fraction": 0.5801,
+      "silhouette_bounds": [
+        5,
+        40,
+        1247,
+        1235
+      ],
+      "bytes": 1963414
+    },
+    {
+      "id": "root_widow_orchard_mourner",
+      "size": [
+        1254,
+        1254
+      ],
+      "transparent_fraction": 0.6354,
+      "silhouette_bounds": [
+        81,
+        31,
+        1229,
+        1228
+      ],
+      "bytes": 1625981
+    },
+    {
+      "id": "root_widow_burr_roller",
+      "size": [
+        1254,
+        1254
+      ],
+      "transparent_fraction": 0.5172,
+      "silhouette_bounds": [
+        40,
+        32,
+        1240,
+        1225
+      ],
+      "bytes": 2208008
+    },
+    {
+      "id": "root_widow_sapwick_gecko",
+      "size": [
+        1254,
+        1254
+      ],
+      "transparent_fraction": 0.6797,
+      "silhouette_bounds": [
+        19,
+        56,
+        1245,
+        1206
+      ],
+      "bytes": 1501956
+    },
+    {
+      "id": "root_widow_pome_husk",
+      "size": [
+        1254,
+        1254
+      ],
+      "transparent_fraction": 0.6431,
+      "silhouette_bounds": [
+        55,
+        23,
+        1212,
+        1241
+      ],
+      "bytes": 1648149
+    },
+    {
+      "id": "root_widow_pruning_wasp",
+      "size": [
+        1254,
+        1254
+      ],
+      "transparent_fraction": 0.653,
+      "silhouette_bounds": [
+        55,
+        17,
+        1227,
+        1231
+      ],
+      "bytes": 1590794
+    },
+    {
+      "id": "root_widow_rootbound_hare",
+      "size": [
+        1254,
+        1254
+      ],
+      "transparent_fraction": 0.5233,
+      "silhouette_bounds": [
+        23,
+        30,
+        1237,
+        1234
+      ],
+      "bytes": 2169450
+    },
+    {
+      "id": "root_widow_gallows_gourd",
+      "size": [
+        1254,
+        1254
+      ],
+      "transparent_fraction": 0.6354,
+      "silhouette_bounds": [
+        27,
+        14,
+        1228,
+        1240
+      ],
+      "bytes": 1664056
+    },
+    {
+      "id": "prism_devourer_shardmuzzle_mole",
+      "size": [
+        1536,
+        1024
+      ],
+      "transparent_fraction": 0.4169,
+      "silhouette_bounds": [
+        39,
+        29,
+        1508,
+        997
+      ],
+      "bytes": 2900428
+    },
+    {
+      "id": "prism_devourer_geode_slug",
+      "size": [
+        1536,
+        1024
+      ],
+      "transparent_fraction": 0.4797,
+      "silhouette_bounds": [
+        57,
+        55,
+        1506,
+        945
+      ],
+      "bytes": 2648394
+    },
+    {
+      "id": "prism_devourer_cleftwing_bat",
+      "size": [
+        1241,
+        1268
+      ],
+      "transparent_fraction": 0.6255,
+      "silhouette_bounds": [
+        37,
+        10,
+        1236,
+        1258
+      ],
+      "bytes": 1607354
+    },
+    {
+      "id": "prism_devourer_mica_urchin",
+      "size": [
+        1312,
+        1199
+      ],
+      "transparent_fraction": 0.4547,
+      "silhouette_bounds": [
+        67,
+        25,
+        1284,
+        1167
+      ],
+      "bytes": 2340523
+    },
+    {
+      "id": "prism_devourer_flintjaw_newt",
+      "size": [
+        1536,
+        1024
+      ],
+      "transparent_fraction": 0.5913,
+      "silhouette_bounds": [
+        50,
+        23,
+        1521,
+        992
+      ],
+      "bytes": 2419192
+    },
+    {
+      "id": "prism_devourer_hollowstone_tick",
+      "size": [
+        1536,
+        1024
+      ],
+      "transparent_fraction": 0.6193,
+      "silhouette_bounds": [
+        88,
+        69,
+        1451,
+        965
+      ],
+      "bytes": 2307456
+    },
+    {
+      "id": "prism_devourer_quartz_rib_eel",
+      "size": [
+        1024,
+        1536
+      ],
+      "transparent_fraction": 0.5376,
+      "silhouette_bounds": [
+        51,
+        20,
+        1005,
+        1522
+      ],
+      "bytes": 2698045
+    },
+    {
+      "id": "prism_devourer_splintercrest_roach",
+      "size": [
+        1536,
+        1024
+      ],
+      "transparent_fraction": 0.6245,
+      "silhouette_bounds": [
+        17,
+        49,
+        1519,
+        995
+      ],
+      "bytes": 2347580
+    },
+    {
+      "id": "prism_devourer_veinglass_moth",
+      "size": [
+        1214,
+        1295
+      ],
+      "transparent_fraction": 0.5784,
+      "silhouette_bounds": [
+        19,
+        7,
+        1208,
+        1287
+      ],
+      "bytes": 1813120
+    },
+    {
+      "id": "prism_devourer_gravelback_hare",
+      "size": [
+        1243,
+        1266
+      ],
+      "transparent_fraction": 0.5715,
+      "silhouette_bounds": [
+        52,
+        7,
+        1232,
+        1256
+      ],
+      "bytes": 1814000
+    },
+    {
+      "id": "silk_regent_shroud_grub",
+      "size": [
+        1246,
+        1262
+      ],
+      "transparent_fraction": 0.542,
+      "silhouette_bounds": [
+        25,
+        195,
+        1243,
+        1083
+      ],
+      "bytes": 1892123
+    },
+    {
+      "id": "silk_regent_lacewing_mourner",
+      "size": [
+        1226,
+        1283
+      ],
+      "transparent_fraction": 0.6017,
+      "silhouette_bounds": [
+        21,
+        22,
+        1211,
+        1261
+      ],
+      "bytes": 1725007
+    },
+    {
+      "id": "silk_regent_cocoon_rat",
+      "size": [
+        1246,
+        1262
+      ],
+      "transparent_fraction": 0.6215,
+      "silhouette_bounds": [
+        6,
+        141,
+        1226,
+        1200
+      ],
+      "bytes": 1683842
+    },
+    {
+      "id": "silk_regent_webshoe_toad",
+      "size": [
+        1312,
+        1199
+      ],
+      "transparent_fraction": 0.5106,
+      "silhouette_bounds": [
+        43,
+        66,
+        1269,
+        1174
+      ],
+      "bytes": 2154887
+    },
+    {
+      "id": "silk_regent_spindle_centipede",
+      "size": [
+        1536,
+        1024
+      ],
+      "transparent_fraction": 0.6985,
+      "silhouette_bounds": [
+        11,
+        14,
+        1515,
+        1000
+      ],
+      "bytes": 1978488
+    },
+    {
+      "id": "silk_regent_veil_mite",
+      "size": [
+        1374,
+        1145
+      ],
+      "transparent_fraction": 0.5367,
+      "silhouette_bounds": [
+        19,
+        101,
+        1362,
+        1076
+      ],
+      "bytes": 2035380
+    },
+    {
+      "id": "silk_regent_ravine_hookbird",
+      "size": [
+        1246,
+        1262
+      ],
+      "transparent_fraction": 0.5684,
+      "silhouette_bounds": [
+        26,
+        15,
+        1235,
+        1249
+      ],
+      "bytes": 1821030
+    },
+    {
+      "id": "silk_regent_threadbelly_leech",
+      "size": [
+        1536,
+        1024
+      ],
+      "transparent_fraction": 0.6053,
+      "silhouette_bounds": [
+        38,
+        107,
+        1503,
+        953
+      ],
+      "bytes": 2309069
+    },
+    {
+      "id": "silk_regent_cowl_cricket",
+      "size": [
+        1536,
+        1024
+      ],
+      "transparent_fraction": 0.6928,
+      "silhouette_bounds": [
+        17,
+        53,
+        1525,
+        983
+      ],
+      "bytes": 2109490
+    },
+    {
+      "id": "silk_regent_cocoon_hermit",
+      "size": [
+        1374,
+        1145
+      ],
+      "transparent_fraction": 0.533,
+      "silhouette_bounds": [
+        45,
+        29,
+        1343,
+        1122
+      ],
+      "bytes": 2046835
+    },
+    {
+      "id": "sluice_horror_grate_gnawer",
+      "size": [
+        1536,
+        1024
+      ],
+      "transparent_fraction": 0.6166,
+      "silhouette_bounds": [
+        81,
+        55,
+        1475,
+        971
+      ],
+      "bytes": 2298786
+    },
+    {
+      "id": "sluice_horror_silt_lantern",
+      "size": [
+        1536,
+        1024
+      ],
+      "transparent_fraction": 0.6693,
+      "silhouette_bounds": [
+        54,
+        105,
+        1493,
+        918
+      ],
+      "bytes": 2034997
+    },
+    {
+      "id": "sluice_horror_pipe_limpet",
+      "size": [
+        1536,
+        1024
+      ],
+      "transparent_fraction": 0.5955,
+      "silhouette_bounds": [
+        104,
+        151,
+        1455,
+        871
+      ],
+      "bytes": 2403047
+    },
+    {
+      "id": "sluice_horror_rustwing_caddis",
+      "size": [
+        1536,
+        1024
+      ],
+      "transparent_fraction": 0.6692,
+      "silhouette_bounds": [
+        90,
+        58,
+        1484,
+        972
+      ],
+      "bytes": 2297609
+    },
+    {
+      "id": "sluice_horror_weir_stilt",
+      "size": [
+        1024,
+        1536
+      ],
+      "transparent_fraction": 0.7254,
+      "silhouette_bounds": [
+        48,
+        63,
+        982,
+        1505
+      ],
+      "bytes": 1883542
+    },
+    {
+      "id": "sluice_horror_sluice_sowbug",
+      "size": [
+        1536,
+        1024
+      ],
+      "transparent_fraction": 0.6346,
+      "silhouette_bounds": [
+        44,
+        159,
+        1501,
+        837
+      ],
+      "bytes": 2264370
+    },
+    {
+      "id": "sluice_horror_drainbell_jelly",
+      "size": [
+        1218,
+        1292
+      ],
+      "transparent_fraction": 0.6194,
+      "silhouette_bounds": [
+        144,
+        147,
+        1143,
+        1117
+      ],
+      "bytes": 1666165
+    },
+    {
+      "id": "sluice_horror_limejaw_frog",
+      "size": [
+        1334,
+        1179
+      ],
+      "transparent_fraction": 0.7016,
+      "silhouette_bounds": [
+        147,
+        88,
+        1209,
+        1099
+      ],
+      "bytes": 1278499
+    },
+    {
+      "id": "sluice_horror_chain_tuft",
+      "size": [
+        1374,
+        1145
+      ],
+      "transparent_fraction": 0.6049,
+      "silhouette_bounds": [
+        58,
+        65,
+        1336,
+        1080
+      ],
+      "bytes": 1684863
+    },
+    {
+      "id": "sluice_horror_reservoir_shear",
+      "size": [
+        1536,
+        1024
+      ],
+      "transparent_fraction": 0.689,
+      "silhouette_bounds": [
+        77,
+        36,
+        1473,
+        945
+      ],
+      "bytes": 2102217
+    },
+    {
+      "id": "bellback_pilgrim_clapper_hound",
+      "size": [
+        1374,
+        1145
+      ],
+      "transparent_fraction": 0.6321,
+      "silhouette_bounds": [
+        42,
+        52,
+        1355,
+        1123
+      ],
+      "bytes": 1529762
+    },
+    {
+      "id": "bellback_pilgrim_tollwing_crow",
+      "size": [
+        1310,
+        1201
+      ],
+      "transparent_fraction": 0.5704,
+      "silhouette_bounds": [
+        44,
+        11,
+        1300,
+        1190
+      ],
+      "bytes": 1834989
+    },
+    {
+      "id": "bellback_pilgrim_chainback_rolypoly",
+      "size": [
+        1536,
+        1024
+      ],
+      "transparent_fraction": 0.5686,
+      "silhouette_bounds": [
+        27,
+        103,
+        1522,
+        909
+      ],
+      "bytes": 2418050
+    },
+    {
+      "id": "bellback_pilgrim_cinder_censer_imp",
+      "size": [
+        1191,
+        1321
+      ],
+      "transparent_fraction": 0.5713,
+      "silhouette_bounds": [
+        31,
+        10,
+        1162,
+        1305
+      ],
+      "bytes": 1769391
+    },
+    {
+      "id": "bellback_pilgrim_knucklebone_hopper",
+      "size": [
+        1536,
+        1024
+      ],
+      "transparent_fraction": 0.6163,
+      "silhouette_bounds": [
+        103,
+        21,
+        1524,
+        1005
+      ],
+      "bytes": 2376470
+    },
+    {
+      "id": "bellback_pilgrim_rusthorn_snail",
+      "size": [
+        1243,
+        1266
+      ],
+      "transparent_fraction": 0.593,
+      "silhouette_bounds": [
+        32,
+        20,
+        1231,
+        1221
+      ],
+      "bytes": 1665522
+    },
+    {
+      "id": "bellback_pilgrim_mourning_kite",
+      "size": [
+        1242,
+        1266
+      ],
+      "transparent_fraction": 0.707,
+      "silhouette_bounds": [
+        37,
+        60,
+        1232,
+        1192
+      ],
+      "bytes": 1246652
+    },
+    {
+      "id": "bellback_pilgrim_chime_throat_gecko",
+      "size": [
+        1536,
+        1024
+      ],
+      "transparent_fraction": 0.6172,
+      "silhouette_bounds": [
+        59,
+        47,
+        1478,
+        976
+      ],
+      "bytes": 2430553
+    },
+    {
+      "id": "bellback_pilgrim_ash_pannier_beetle",
+      "size": [
+        1374,
+        1145
+      ],
+      "transparent_fraction": 0.5518,
+      "silhouette_bounds": [
+        43,
+        14,
+        1345,
+        1129
+      ],
+      "bytes": 1853705
+    },
+    {
+      "id": "bellback_pilgrim_rattlejaw_vagrant",
+      "size": [
+        1222,
+        1287
+      ],
+      "transparent_fraction": 0.5855,
+      "silhouette_bounds": [
+        28,
+        1,
+        1152,
+        1285
+      ],
+      "bytes": 1673739
+    },
+    {
+      "id": "ashwing_matriarch_soot_snout",
+      "size": [
+        1254,
+        1254
+      ],
+      "transparent_fraction": 0.4753,
+      "silhouette_bounds": [
+        47,
+        39,
+        1229,
+        1210
+      ],
+      "bytes": 2147942
+    },
+    {
+      "id": "ashwing_matriarch_vellum_hound",
+      "size": [
+        1254,
+        1254
+      ],
+      "transparent_fraction": 0.5845,
+      "silhouette_bounds": [
+        73,
+        9,
+        1208,
+        1245
+      ],
+      "bytes": 1762645
+    },
+    {
+      "id": "ashwing_matriarch_cocoon_porter",
+      "size": [
+        1254,
+        1254
+      ],
+      "transparent_fraction": 0.5283,
+      "silhouette_bounds": [
+        71,
+        49,
+        1241,
+        1209
+      ],
+      "bytes": 2007268
+    },
+    {
+      "id": "ashwing_matriarch_ashcomb_toad",
+      "size": [
+        1254,
+        1254
+      ],
+      "transparent_fraction": 0.5555,
+      "silhouette_bounds": [
+        28,
+        106,
+        1224,
+        1163
+      ],
+      "bytes": 1974335
+    },
+    {
+      "id": "ashwing_matriarch_shroud_mantis",
+      "size": [
+        1254,
+        1254
+      ],
+      "transparent_fraction": 0.7214,
+      "silhouette_bounds": [
+        78,
+        12,
+        1184,
+        1243
+      ],
+      "bytes": 1277179
+    },
+    {
+      "id": "ashwing_matriarch_wicktail_rat",
+      "size": [
+        1254,
+        1254
+      ],
+      "transparent_fraction": 0.6422,
+      "silhouette_bounds": [
+        17,
+        84,
+        1233,
+        1189
+      ],
+      "bytes": 1579539
+    },
+    {
+      "id": "ashwing_matriarch_embergill_slug",
+      "size": [
+        1254,
+        1254
+      ],
+      "transparent_fraction": 0.6307,
+      "silhouette_bounds": [
+        64,
+        68,
+        1229,
+        1163
+      ],
+      "bytes": 1639848
+    },
+    {
+      "id": "ashwing_matriarch_pallid_lanternfly",
+      "size": [
+        1254,
+        1254
+      ],
+      "transparent_fraction": 0.653,
+      "silhouette_bounds": [
+        137,
+        97,
+        1245,
+        1173
+      ],
+      "bytes": 1527301
+    },
+    {
+      "id": "ashwing_matriarch_funeral_puff",
+      "size": [
+        1254,
+        1254
+      ],
+      "transparent_fraction": 0.6118,
+      "silhouette_bounds": [
+        165,
+        19,
+        1191,
+        1237
+      ],
+      "bytes": 1726217
+    },
+    {
+      "id": "ashwing_matriarch_cinder_tick",
+      "size": [
+        1254,
+        1254
+      ],
+      "transparent_fraction": 0.6448,
+      "silhouette_bounds": [
+        28,
+        221,
+        1219,
+        1053
+      ],
+      "bytes": 1557310
+    },
+    {
+      "id": "reliquary_crab_votive_scorpion",
+      "size": [
+        1312,
+        1199
+      ],
+      "transparent_fraction": 0.6757,
+      "silhouette_bounds": [
+        30,
+        27,
+        1301,
+        1178
+      ],
+      "bytes": 1370096
+    },
+    {
+      "id": "reliquary_crab_urnback_snail",
+      "size": [
+        1230,
+        1278
+      ],
+      "transparent_fraction": 0.523,
+      "silhouette_bounds": [
+        38,
+        125,
+        1212,
+        1149
+      ],
+      "bytes": 1894783
+    },
+    {
+      "id": "reliquary_crab_crypt_key_weasel",
+      "size": [
+        1226,
+        1283
+      ],
+      "transparent_fraction": 0.6912,
+      "silhouette_bounds": [
+        18,
+        78,
+        1224,
+        1216
+      ],
+      "bytes": 1400986
+    },
+    {
+      "id": "reliquary_crab_mortar_mite",
+      "size": [
+        1536,
+        1024
+      ],
+      "transparent_fraction": 0.5572,
+      "silhouette_bounds": [
+        35,
+        40,
+        1519,
+        990
+      ],
+      "bytes": 2680953
+    },
+    {
+      "id": "reliquary_crab_lantern_gnat",
+      "size": [
+        1312,
+        1199
+      ],
+      "transparent_fraction": 0.7428,
+      "silhouette_bounds": [
+        49,
+        62,
+        1278,
+        1164
+      ],
+      "bytes": 1159511
+    },
+    {
+      "id": "reliquary_crab_ossuary_toad",
+      "size": [
+        1374,
+        1145
+      ],
+      "transparent_fraction": 0.4034,
+      "silhouette_bounds": [
+        30,
+        21,
+        1358,
+        1124
+      ],
+      "bytes": 2361263
+    },
+    {
+      "id": "reliquary_crab_tileback_pangolin",
+      "size": [
+        1536,
+        1024
+      ],
+      "transparent_fraction": 0.5793,
+      "silhouette_bounds": [
+        28,
+        111,
+        1525,
+        910
+      ],
+      "bytes": 2322587
+    },
+    {
+      "id": "reliquary_crab_cenotaph_limpet",
+      "size": [
+        1536,
+        1024
+      ],
+      "transparent_fraction": 0.5906,
+      "silhouette_bounds": [
+        98,
+        17,
+        1487,
+        1006
+      ],
+      "bytes": 2357324
+    },
+    {
+      "id": "reliquary_crab_relic_pecker",
+      "size": [
+        1199,
+        1312
+      ],
+      "transparent_fraction": 0.6116,
+      "silhouette_bounds": [
+        18,
+        16,
+        1186,
+        1302
+      ],
+      "bytes": 1617239
+    },
+    {
+      "id": "reliquary_crab_bronze_writhe",
+      "size": [
+        1205,
+        1305
+      ],
+      "transparent_fraction": 0.5228,
+      "silhouette_bounds": [
+        44,
+        32,
+        1183,
+        1281
+      ],
+      "bytes": 1948024
+    },
+    {
+      "id": "thorn_seamstress_pincushion_hog",
+      "size": [
+        1374,
+        1145
+      ],
+      "transparent_fraction": 0.4494,
+      "silhouette_bounds": [
+        65,
+        28,
+        1329,
+        1111
+      ],
+      "bytes": 2400555
+    },
+    {
+      "id": "thorn_seamstress_hem_rat",
+      "size": [
+        1536,
+        1024
+      ],
+      "transparent_fraction": 0.6818,
+      "silhouette_bounds": [
+        18,
+        98,
+        1517,
+        991
+      ],
+      "bytes": 2151481
+    },
+    {
+      "id": "thorn_seamstress_shearjaw_mantis",
+      "size": [
+        1212,
+        1298
+      ],
+      "transparent_fraction": 0.7195,
+      "silhouette_bounds": [
+        11,
+        2,
+        1205,
+        1293
+      ],
+      "bytes": 1213564
+    },
+    {
+      "id": "thorn_seamstress_bobbin_snail",
+      "size": [
+        1374,
+        1145
+      ],
+      "transparent_fraction": 0.5507,
+      "silhouette_bounds": [
+        20,
+        49,
+        1361,
+        1099
+      ],
+      "bytes": 1902058
+    },
+    {
+      "id": "thorn_seamstress_thimble_beetle",
+      "size": [
+        1374,
+        1145
+      ],
+      "transparent_fraction": 0.5497,
+      "silhouette_bounds": [
+        66,
+        19,
+        1343,
+        1124
+      ],
+      "bytes": 1901228
+    },
+    {
+      "id": "thorn_seamstress_ragwing_bat",
+      "size": [
+        1536,
+        1024
+      ],
+      "transparent_fraction": 0.603,
+      "silhouette_bounds": [
+        62,
+        35,
+        1497,
+        985
+      ],
+      "bytes": 2427817
+    },
+    {
+      "id": "thorn_seamstress_briar_dolly",
+      "size": [
+        1024,
+        1536
+      ],
+      "transparent_fraction": 0.6289,
+      "silhouette_bounds": [
+        51,
+        26,
+        977,
+        1498
+      ],
+      "bytes": 2377141
+    },
+    {
+      "id": "thorn_seamstress_seam_ripper_worm",
+      "size": [
+        1536,
+        1024
+      ],
+      "transparent_fraction": 0.635,
+      "silhouette_bounds": [
+        41,
+        40,
+        1504,
+        980
+      ],
+      "bytes": 2351318
+    },
+    {
+      "id": "thorn_seamstress_pattern_hare",
+      "size": [
+        1223,
+        1286
+      ],
+      "transparent_fraction": 0.6984,
+      "silhouette_bounds": [
+        26,
+        9,
+        1198,
+        1268
+      ],
+      "bytes": 1403954
+    },
+    {
+      "id": "thorn_seamstress_knot_spider",
+      "size": [
+        1536,
+        1024
+      ],
+      "transparent_fraction": 0.6313,
+      "silhouette_bounds": [
+        30,
+        16,
+        1511,
+        1009
+      ],
+      "bytes": 2340845
+    },
+    {
+      "id": "cinder_colossus_slag_jackal",
+      "size": [
+        1254,
+        1254
+      ],
+      "transparent_fraction": 0.6204,
+      "silhouette_bounds": [
+        29,
+        3,
+        1239,
+        1250
+      ],
+      "bytes": 1694200
+    },
+    {
+      "id": "cinder_colossus_kiln_crab",
+      "size": [
+        1254,
+        1254
+      ],
+      "transparent_fraction": 0.6099,
+      "silhouette_bounds": [
+        18,
+        84,
+        1237,
+        1159
+      ],
+      "bytes": 1701779
+    },
+    {
+      "id": "cinder_colossus_bellows_bat",
+      "size": [
+        1254,
+        1254
+      ],
+      "transparent_fraction": 0.6238,
+      "silhouette_bounds": [
+        39,
+        57,
+        1227,
+        1208
+      ],
+      "bytes": 1557709
+    },
+    {
+      "id": "cinder_colossus_clinker_urchin",
+      "size": [
+        1254,
+        1254
+      ],
+      "transparent_fraction": 0.5458,
+      "silhouette_bounds": [
+        68,
+        80,
+        1196,
+        1176
+      ],
+      "bytes": 1985055
+    },
+    {
+      "id": "cinder_colossus_forge_newt",
+      "size": [
+        1254,
+        1254
+      ],
+      "transparent_fraction": 0.5995,
+      "silhouette_bounds": [
+        10,
+        126,
+        1251,
+        1139
+      ],
+      "bytes": 1698146
+    },
+    {
+      "id": "cinder_colossus_chain_gnawer",
+      "size": [
+        1254,
+        1254
+      ],
+      "transparent_fraction": 0.5789,
+      "silhouette_bounds": [
+        23,
+        151,
+        1234,
+        1132
+      ],
+      "bytes": 1803123
+    },
+    {
+      "id": "cinder_colossus_shard_stilt",
+      "size": [
+        1254,
+        1254
+      ],
+      "transparent_fraction": 0.7692,
+      "silhouette_bounds": [
+        219,
+        22,
+        1173,
+        1233
+      ],
+      "bytes": 1025004
+    },
+    {
+      "id": "cinder_colossus_coal_borer",
+      "size": [
+        1254,
+        1254
+      ],
+      "transparent_fraction": 0.5298,
+      "silhouette_bounds": [
+        38,
+        175,
+        1248,
+        1082
+      ],
+      "bytes": 1944603
+    },
+    {
+      "id": "cinder_colossus_cinder_sack",
+      "size": [
+        1254,
+        1254
+      ],
+      "transparent_fraction": 0.6184,
+      "silhouette_bounds": [
+        92,
+        53,
+        1175,
+        1215
+      ],
+      "bytes": 1609665
+    },
+    {
+      "id": "cinder_colossus_tongs_widow",
+      "size": [
+        1254,
+        1254
+      ],
+      "transparent_fraction": 0.744,
+      "silhouette_bounds": [
+        24,
+        130,
+        1231,
+        1126
+      ],
+      "bytes": 1137439
+    },
+    {
+      "id": "wax_revenant_tallow_hound",
+      "size": [
+        1254,
+        1254
+      ],
+      "transparent_fraction": 0.603,
+      "silhouette_bounds": [
+        36,
+        79,
+        1235,
+        1191
+      ],
+      "bytes": 1623880
+    },
+    {
+      "id": "wax_revenant_candle_crab",
+      "size": [
+        1254,
+        1254
+      ],
+      "transparent_fraction": 0.6832,
+      "silhouette_bounds": [
+        17,
+        267,
+        1232,
+        1091
+      ],
+      "bytes": 1330593
+    },
+    {
+      "id": "wax_revenant_wick_stitcher",
+      "size": [
+        1254,
+        1254
+      ],
+      "transparent_fraction": 0.7119,
+      "silhouette_bounds": [
+        92,
+        12,
+        1166,
+        1242
+      ],
+      "bytes": 1206226
+    },
+    {
+      "id": "wax_revenant_pew_maggot",
+      "size": [
+        1254,
+        1254
+      ],
+      "transparent_fraction": 0.6022,
+      "silhouette_bounds": [
+        33,
+        216,
+        1237,
+        1051
+      ],
+      "bytes": 1568761
+    },
+    {
+      "id": "wax_revenant_votive_snail",
+      "size": [
+        1254,
+        1254
+      ],
+      "transparent_fraction": 0.5265,
+      "silhouette_bounds": [
+        72,
+        60,
+        1226,
+        1192
+      ],
+      "bytes": 1891726
+    },
+    {
+      "id": "wax_revenant_mourning_bat",
+      "size": [
+        1254,
+        1254
+      ],
+      "transparent_fraction": 0.5999,
+      "silhouette_bounds": [
+        64,
+        66,
+        1217,
+        1212
+      ],
+      "bytes": 1680382
+    },
+    {
+      "id": "wax_revenant_sealmouth_acolyte",
+      "size": [
+        1254,
+        1254
+      ],
+      "transparent_fraction": 0.6184,
+      "silhouette_bounds": [
+        82,
+        6,
+        1166,
+        1240
+      ],
+      "bytes": 1526756
+    },
+    {
+      "id": "wax_revenant_dripjaw_toad",
+      "size": [
+        1254,
+        1254
+      ],
+      "transparent_fraction": 0.5041,
+      "silhouette_bounds": [
+        37,
+        150,
+        1221,
+        1164
+      ],
+      "bytes": 2016643
+    },
+    {
+      "id": "wax_revenant_censer_tick",
+      "size": [
+        1254,
+        1254
+      ],
+      "transparent_fraction": 0.6146,
+      "silhouette_bounds": [
+        66,
+        87,
+        1198,
+        1184
+      ],
+      "bytes": 1627012
+    },
+    {
+      "id": "wax_revenant_pallbearer_hand",
+      "size": [
+        1254,
+        1254
+      ],
+      "transparent_fraction": 0.6257,
+      "silhouette_bounds": [
+        111,
+        10,
+        1234,
+        1239
+      ],
+      "bytes": 1618107
+    },
+    {
+      "id": "flint_tusk_shale_jackal",
+      "size": [
+        1254,
+        1254
+      ],
+      "transparent_fraction": 0.6158,
+      "silhouette_bounds": [
+        55,
+        116,
+        1224,
+        1170
+      ],
+      "bytes": 1695429
+    },
+    {
+      "id": "flint_tusk_knap_claw",
+      "size": [
+        1254,
+        1254
+      ],
+      "transparent_fraction": 0.5873,
+      "silhouette_bounds": [
+        42,
+        185,
+        1232,
+        1125
+      ],
+      "bytes": 1834699
+    },
+    {
+      "id": "flint_tusk_scree_hopper",
+      "size": [
+        1254,
+        1254
+      ],
+      "transparent_fraction": 0.5706,
+      "silhouette_bounds": [
+        8,
+        6,
+        1246,
+        1246
+      ],
+      "bytes": 1957919
+    },
+    {
+      "id": "flint_tusk_tuskroot_marmot",
+      "size": [
+        1254,
+        1254
+      ],
+      "transparent_fraction": 0.5031,
+      "silhouette_bounds": [
+        13,
+        111,
+        1244,
+        1152
+      ],
+      "bytes": 2160517
+    },
+    {
+      "id": "flint_tusk_cairn_beetle",
+      "size": [
+        1254,
+        1254
+      ],
+      "transparent_fraction": 0.5803,
+      "silhouette_bounds": [
+        20,
+        162,
+        1237,
+        1126
+      ],
+      "bytes": 1904164
+    },
+    {
+      "id": "flint_tusk_splinter_owl",
+      "size": [
+        1254,
+        1254
+      ],
+      "transparent_fraction": 0.5051,
+      "silhouette_bounds": [
+        31,
+        85,
+        1232,
+        1199
+      ],
+      "bytes": 2131425
+    },
+    {
+      "id": "flint_tusk_knuckle_ram",
+      "size": [
+        1254,
+        1254
+      ],
+      "transparent_fraction": 0.5275,
+      "silhouette_bounds": [
+        20,
+        113,
+        1243,
+        1158
+      ],
+      "bytes": 2038625
+    },
+    {
+      "id": "flint_tusk_quarry_skink",
+      "size": [
+        1254,
+        1254
+      ],
+      "transparent_fraction": 0.6278,
+      "silhouette_bounds": [
+        17,
+        191,
+        1247,
+        1103
+      ],
+      "bytes": 1688931
+    },
+    {
+      "id": "flint_tusk_bonepick_scrounger",
+      "size": [
+        1254,
+        1254
+      ],
+      "transparent_fraction": 0.5745,
+      "silhouette_bounds": [
+        47,
+        50,
+        1220,
+        1213
+      ],
+      "bytes": 1900052
+    },
+    {
+      "id": "flint_tusk_bristleback_shrew",
+      "size": [
+        1254,
+        1254
+      ],
+      "transparent_fraction": 0.6236,
+      "silhouette_bounds": [
+        23,
+        140,
+        1244,
+        1128
+      ],
+      "bytes": 1679183
+    },
+    {
+      "id": "drowned_oracle_brine_mask",
+      "size": [
+        1254,
+        1254
+      ],
+      "transparent_fraction": 0.7245,
+      "silhouette_bounds": [
+        178,
+        15,
+        1154,
+        1238
+      ],
+      "bytes": 1245739
+    },
+    {
+      "id": "drowned_oracle_silt_hound",
+      "size": [
+        1254,
+        1254
+      ],
+      "transparent_fraction": 0.6167,
+      "silhouette_bounds": [
+        45,
+        98,
+        1238,
+        1214
+      ],
+      "bytes": 1603467
+    },
+    {
+      "id": "drowned_oracle_augur_crab",
+      "size": [
+        1254,
+        1254
+      ],
+      "transparent_fraction": 0.5794,
+      "silhouette_bounds": [
+        79,
+        102,
+        1190,
+        1153
+      ],
+      "bytes": 1762891
+    },
+    {
+      "id": "drowned_oracle_bell_diver",
+      "size": [
+        1254,
+        1254
+      ],
+      "transparent_fraction": 0.5582,
+      "silhouette_bounds": [
+        58,
+        13,
+        1218,
+        1241
+      ],
+      "bytes": 1898389
+    },
+    {
+      "id": "drowned_oracle_ribbon_eel",
+      "size": [
+        1254,
+        1254
+      ],
+      "transparent_fraction": 0.6656,
+      "silhouette_bounds": [
+        105,
+        32,
+        1221,
+        1237
+      ],
+      "bytes": 1420240
+    },
+    {
+      "id": "drowned_oracle_blind_pool_newt",
+      "size": [
+        1254,
+        1254
+      ],
+      "transparent_fraction": 0.5995,
+      "silhouette_bounds": [
+        33,
+        157,
+        1241,
+        1155
+      ],
+      "bytes": 1643471
+    },
+    {
+      "id": "drowned_oracle_lot_caster",
+      "size": [
+        1254,
+        1254
+      ],
+      "transparent_fraction": 0.6923,
+      "silhouette_bounds": [
+        237,
+        7,
+        1035,
+        1237
+      ],
+      "bytes": 1328187
+    },
+    {
+      "id": "drowned_oracle_pearl_leech",
+      "size": [
+        1254,
+        1254
+      ],
+      "transparent_fraction": 0.5317,
+      "silhouette_bounds": [
+        119,
+        24,
+        1177,
+        1229
+      ],
+      "bytes": 1901274
+    },
+    {
+      "id": "drowned_oracle_undertow_urchin",
+      "size": [
+        1254,
+        1254
+      ],
+      "transparent_fraction": 0.5807,
+      "silhouette_bounds": [
+        74,
+        4,
+        1181,
+        1246
+      ],
+      "bytes": 1807564
+    },
+    {
+      "id": "drowned_oracle_tideglass_ray",
+      "size": [
+        1254,
+        1254
+      ],
+      "transparent_fraction": 0.7049,
+      "silhouette_bounds": [
+        36,
+        37,
+        1219,
+        1222
+      ],
+      "bytes": 1293594
+    },
+    {
+      "id": "carrion_harp_rattlejack",
+      "size": [
+        1254,
+        1254
+      ],
+      "transparent_fraction": 0.6627,
+      "silhouette_bounds": [
+        45,
+        14,
+        1238,
+        1250
+      ],
+      "bytes": 1525984
+    },
+    {
+      "id": "carrion_harp_rib_cricket",
+      "size": [
+        1254,
+        1254
+      ],
+      "transparent_fraction": 0.5996,
+      "silhouette_bounds": [
+        59,
+        15,
+        1232,
+        1244
+      ],
+      "bytes": 1800677
+    },
+    {
+      "id": "carrion_harp_bell_vulture",
+      "size": [
+        1254,
+        1254
+      ],
+      "transparent_fraction": 0.505,
+      "silhouette_bounds": [
+        27,
+        38,
+        1243,
+        1236
+      ],
+      "bytes": 1987714
+    },
+    {
+      "id": "carrion_harp_marrow_rat",
+      "size": [
+        1254,
+        1254
+      ],
+      "transparent_fraction": 0.639,
+      "silhouette_bounds": [
+        17,
+        127,
+        1236,
+        1083
+      ],
+      "bytes": 1597272
+    },
+    {
+      "id": "carrion_harp_dirge_toad",
+      "size": [
+        1254,
+        1254
+      ],
+      "transparent_fraction": 0.4923,
+      "silhouette_bounds": [
+        20,
+        92,
+        1235,
+        1173
+      ],
+      "bytes": 2067671
+    },
+    {
+      "id": "carrion_harp_ossuary_snail",
+      "size": [
+        1254,
+        1254
+      ],
+      "transparent_fraction": 0.5322,
+      "silhouette_bounds": [
+        34,
+        118,
+        1247,
+        1140
+      ],
+      "bytes": 1930369
+    },
+    {
+      "id": "carrion_harp_sinew_walker",
+      "size": [
+        1254,
+        1254
+      ],
+      "transparent_fraction": 0.8002,
+      "silhouette_bounds": [
+        74,
+        14,
+        1188,
+        1237
+      ],
+      "bytes": 921472
+    },
+    {
+      "id": "carrion_harp_grave_marten",
+      "size": [
+        1254,
+        1254
+      ],
+      "transparent_fraction": 0.5771,
+      "silhouette_bounds": [
+        19,
+        20,
+        1239,
+        1228
+      ],
+      "bytes": 1736891
+    },
+    {
+      "id": "carrion_harp_knell_beetle",
+      "size": [
+        1254,
+        1254
+      ],
+      "transparent_fraction": 0.564,
+      "silhouette_bounds": [
+        25,
+        115,
+        1238,
+        1191
+      ],
+      "bytes": 1843506
+    },
+    {
+      "id": "carrion_harp_mute_cantor",
+      "size": [
+        1254,
+        1254
+      ],
+      "transparent_fraction": 0.6533,
+      "silhouette_bounds": [
+        276,
+        48,
+        1086,
+        1210
+      ],
+      "bytes": 1495563
+    },
+    {
+      "id": "glass_centipede_retort_tick",
+      "size": [
+        1254,
+        1254
+      ],
+      "transparent_fraction": 0.6293,
+      "silhouette_bounds": [
+        42,
+        96,
+        1217,
+        1181
+      ],
+      "bytes": 1617170
+    },
+    {
+      "id": "glass_centipede_ampoule_skate",
+      "size": [
+        1254,
+        1254
+      ],
+      "transparent_fraction": 0.674,
+      "silhouette_bounds": [
+        79,
+        6,
+        1227,
+        1240
+      ],
+      "bytes": 1475168
+    },
+    {
+      "id": "glass_centipede_verdigris_mole",
+      "size": [
+        1254,
+        1254
+      ],
+      "transparent_fraction": 0.6311,
+      "silhouette_bounds": [
+        86,
+        142,
+        1181,
+        1131
+      ],
+      "bytes": 1649578
+    },
+    {
+      "id": "glass_centipede_phial_mantis",
+      "size": [
+        1254,
+        1254
+      ],
+      "transparent_fraction": 0.6859,
+      "silhouette_bounds": [
+        65,
+        11,
+        1226,
+        1240
+      ],
+      "bytes": 1488359
+    },
+    {
+      "id": "glass_centipede_crucible_hatchling",
+      "size": [
+        1254,
+        1254
+      ],
+      "transparent_fraction": 0.5971,
+      "silhouette_bounds": [
+        65,
+        210,
+        1224,
+        1116
+      ],
+      "bytes": 1734488
+    },
+    {
+      "id": "glass_centipede_lens_louse",
+      "size": [
+        1254,
+        1254
+      ],
+      "transparent_fraction": 0.6966,
+      "silhouette_bounds": [
+        32,
+        258,
+        1234,
+        1027
+      ],
+      "bytes": 1323952
+    },
+    {
+      "id": "glass_centipede_siphon_wren",
+      "size": [
+        1254,
+        1254
+      ],
+      "transparent_fraction": 0.6307,
+      "silhouette_bounds": [
+        63,
+        25,
+        1232,
+        1240
+      ],
+      "bytes": 1700032
+    },
+    {
+      "id": "glass_centipede_alembic_slug",
+      "size": [
+        1254,
+        1254
+      ],
+      "transparent_fraction": 0.6449,
+      "silhouette_bounds": [
+        39,
+        141,
+        1230,
+        1078
+      ],
+      "bytes": 1521694
+    },
+    {
+      "id": "glass_centipede_shardhand_homunculus",
+      "size": [
+        1254,
+        1254
+      ],
+      "transparent_fraction": 0.6259,
+      "silhouette_bounds": [
+        123,
+        53,
+        1236,
+        1221
+      ],
+      "bytes": 1715684
+    },
+    {
+      "id": "glass_centipede_bottlejaw_weasel",
+      "size": [
+        1254,
+        1254
+      ],
+      "transparent_fraction": 0.6554,
+      "silhouette_bounds": [
+        14,
+        72,
+        1241,
+        1189
+      ],
+      "bytes": 1535144
+    }
+  ]
+}

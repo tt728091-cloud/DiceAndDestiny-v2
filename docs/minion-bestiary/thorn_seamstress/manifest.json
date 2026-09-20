@@ -1,0 +1,197 @@
+{
+  "boss_id": "thorn_seamstress",
+  "boss_name": "Thorn Seamstress",
+  "theme": "Cursed sewing familiars and thornwoven constructs, weathered linen, bone needles, restrained red thread.",
+  "minions": [
+    {
+      "id": "pincushion_hog",
+      "name": "Pincushion Hog",
+      "role": "needle guard",
+      "description": "Low squat hedgehog with faded linen patches sewn across its back, uneven thorn and bone-needle spines, small charcoal snout, short paws and sparse dark red stitches.",
+      "prompt": "Use case: stylized-concept. Asset type: individual dark fantasy combat minion sprite. Create ONLY ONE original lesser monster, full body, clear distinctive silhouette and detailed anatomy, facing screen-left or left three-quarter, centered with comfortable transparent padding. Highly detailed desaturated dark watercolor and fine rough ink edges, textured pigment inside the creature only, worn materials, ominous grounded naturalistic creature design. Backdrop MUST be genuinely transparent alpha, not a painted solid color, gradient or checkerboard. Absolutely no environment, floor, ground patch, cast shadow, haze, border, text, UI, labels or detached accessories. Keep all anatomy in frame. This is a weaker ecological follower of the named boss, not a miniature boss clone. Do not depict the boss. Output a high quality transparent PNG.\nBoss family context: Thorn Seamstress. Cursed sewing familiars and thornwoven constructs, weathered linen, bone needles, restrained red thread.\nCreature name (metadata only, do not render text): Pincushion Hog. Ecological role: needle guard.\nSubject design: Low squat hedgehog with faded linen patches sewn across its back, uneven thorn and bone-needle spines, small charcoal snout, short paws and sparse dark red stitches.\nRestrained dark palette, readable highlights, modest ornament, no heroic boss regalia.",
+      "relative_asset_path": "dice-and-destiny-client/assets/battle/minions/thorn_seamstress/pincushion_hog.png",
+      "source_reference_paths": [
+        "dice-and-destiny-client/assets/battle/fighters/thorn_seamstress.png"
+      ],
+      "generated_source_path": "/Users/daddymere/.codex/generated_images/01a0ba2e-83e8-7e52-b7fc-570065c3b1dd/exec-75a594c3-d99d-4bd1-b66b-3385f77bac1e.png",
+      "status": "completed",
+      "review": "Visual review passed; distinct full-body creature, transparent alpha verified.",
+      "dimensions": [
+        1374,
+        1145
+      ],
+      "alpha_verified": true
+    },
+    {
+      "id": "hem_rat",
+      "name": "Hem Rat",
+      "role": "thread thief",
+      "description": "Long-tailed scruffy rat made partly of patched ash linen, real dark paws and whiskers, frayed red thread tail strands and a tiny button-like black eye.",
+      "prompt": "Use case: stylized-concept. Asset type: individual dark fantasy combat minion sprite. Create ONLY ONE original lesser monster, full body, clear distinctive silhouette and detailed anatomy, facing screen-left or left three-quarter, centered with comfortable transparent padding. Highly detailed desaturated dark watercolor and fine rough ink edges, textured pigment inside the creature only, worn materials, ominous grounded naturalistic creature design. Backdrop MUST be genuinely transparent alpha, not a painted solid color, gradient or checkerboard. Absolutely no environment, floor, ground patch, cast shadow, haze, border, text, UI, labels or detached accessories. Keep all anatomy in frame. This is a weaker ecological follower of the named boss, not a miniature boss clone. Do not depict the boss. Output a high quality transparent PNG.\nBoss family context: Thorn Seamstress. Cursed sewing familiars and thornwoven constructs, weathered linen, bone needles, restrained red thread.\nCreature name (metadata only, do not render text): Hem Rat. Ecological role: thread thief.\nSubject design: Long-tailed scruffy rat made partly of patched ash linen, real dark paws and whiskers, frayed red thread tail strands and a tiny button-like black eye.\nRestrained dark palette, readable highlights, modest ornament, no heroic boss regalia.",
+      "relative_asset_path": "dice-and-destiny-client/assets/battle/minions/thorn_seamstress/hem_rat.png",
+      "source_reference_paths": [
+        "dice-and-destiny-client/assets/battle/fighters/thorn_seamstress.png"
+      ],
+      "generated_source_path": "/Users/daddymere/.codex/generated_images/01a0ba2e-83e8-7e52-b7fc-570065c3b1dd/exec-5e57100d-54c3-439b-8924-c704d427d2e0.png",
+      "status": "completed",
+      "review": "Visual review passed; distinct full-body creature, transparent alpha verified.",
+      "dimensions": [
+        1536,
+        1024
+      ],
+      "alpha_verified": true
+    },
+    {
+      "id": "shearjaw_mantis",
+      "name": "Shearjaw Mantis",
+      "role": "cutting skirmisher",
+      "description": "Small lean mantis with crooked thorn legs and paired tarnished shear blades as jaws, folded grey leaf wings, narrow ivory torso and one red thread binding at the neck.",
+      "prompt": "Use case: stylized-concept. Asset type: individual dark fantasy combat minion sprite. Create ONLY ONE original lesser monster, full body, clear distinctive silhouette and detailed anatomy, facing screen-left or left three-quarter, centered with comfortable transparent padding. Highly detailed desaturated dark watercolor and fine rough ink edges, textured pigment inside the creature only, worn materials, ominous grounded naturalistic creature design. Backdrop MUST be genuinely transparent alpha, not a painted solid color, gradient or checkerboard. Absolutely no environment, floor, ground patch, cast shadow, haze, border, text, UI, labels or detached accessories. Keep all anatomy in frame. This is a weaker ecological follower of the named boss, not a miniature boss clone. Do not depict the boss. Output a high quality transparent PNG.\nBoss family context: Thorn Seamstress. Cursed sewing familiars and thornwoven constructs, weathered linen, bone needles, restrained red thread.\nCreature name (metadata only, do not render text): Shearjaw Mantis. Ecological role: cutting skirmisher.\nSubject design: Small lean mantis with crooked thorn legs and paired tarnished shear blades as jaws, folded grey leaf wings, narrow ivory torso and one red thread binding at the neck.\nRestrained dark palette, readable highlights, modest ornament, no heroic boss regalia.",
+      "relative_asset_path": "dice-and-destiny-client/assets/battle/minions/thorn_seamstress/shearjaw_mantis.png",
+      "source_reference_paths": [
+        "dice-and-destiny-client/assets/battle/fighters/thorn_seamstress.png"
+      ],
+      "generated_source_path": "/Users/daddymere/.codex/generated_images/01a0ba2e-83e8-7e52-b7fc-570065c3b1dd/exec-1b05cbea-550a-4f0a-a45f-14a4e3a5c612.png",
+      "status": "completed",
+      "review": "Visual review passed; distinct full-body creature, transparent alpha verified.",
+      "dimensions": [
+        1212,
+        1298
+      ],
+      "alpha_verified": true
+    },
+    {
+      "id": "bobbin_snail",
+      "name": "Bobbin Snail",
+      "role": "thread carrier",
+      "description": "Wrinkled charcoal snail carrying an old wooden spool shell wound with faded red thread, frayed linen apron-like skin folds and two slender bone feelers.",
+      "prompt": "Use case: stylized-concept. Asset type: individual dark fantasy combat minion sprite. Create ONLY ONE original lesser monster, full body, clear distinctive silhouette and detailed anatomy, facing screen-left or left three-quarter, centered with comfortable transparent padding. Highly detailed desaturated dark watercolor and fine rough ink edges, textured pigment inside the creature only, worn materials, ominous grounded naturalistic creature design. Backdrop MUST be genuinely transparent alpha, not a painted solid color, gradient or checkerboard. Absolutely no environment, floor, ground patch, cast shadow, haze, border, text, UI, labels or detached accessories. Keep all anatomy in frame. This is a weaker ecological follower of the named boss, not a miniature boss clone. Do not depict the boss. Output a high quality transparent PNG.\nBoss family context: Thorn Seamstress. Cursed sewing familiars and thornwoven constructs, weathered linen, bone needles, restrained red thread.\nCreature name (metadata only, do not render text): Bobbin Snail. Ecological role: thread carrier.\nSubject design: Wrinkled charcoal snail carrying an old wooden spool shell wound with faded red thread, frayed linen apron-like skin folds and two slender bone feelers.\nRestrained dark palette, readable highlights, modest ornament, no heroic boss regalia.",
+      "relative_asset_path": "dice-and-destiny-client/assets/battle/minions/thorn_seamstress/bobbin_snail.png",
+      "source_reference_paths": [
+        "dice-and-destiny-client/assets/battle/fighters/thorn_seamstress.png"
+      ],
+      "generated_source_path": "/Users/daddymere/.codex/generated_images/01a0ba2e-83e8-7e52-b7fc-570065c3b1dd/exec-882cacca-ecb9-46bd-9c59-451c64780d4c.png",
+      "status": "completed",
+      "review": "Visual review passed; distinct full-body creature, transparent alpha verified.",
+      "dimensions": [
+        1374,
+        1145
+      ],
+      "alpha_verified": true
+    },
+    {
+      "id": "thimble_beetle",
+      "name": "Thimble Beetle",
+      "role": "armored tender",
+      "description": "Round six-legged beetle whose punctured tarnished thimble carapace sits over a soft stitched linen abdomen, thorn feet and small dark red mandibles.",
+      "prompt": "Use case: stylized-concept. Asset type: individual dark fantasy combat minion sprite. Create ONLY ONE original lesser monster, full body, clear distinctive silhouette and detailed anatomy, facing screen-left or left three-quarter, centered with comfortable transparent padding. Highly detailed desaturated dark watercolor and fine rough ink edges, textured pigment inside the creature only, worn materials, ominous grounded naturalistic creature design. Backdrop MUST be genuinely transparent alpha, not a painted solid color, gradient or checkerboard. Absolutely no environment, floor, ground patch, cast shadow, haze, border, text, UI, labels or detached accessories. Keep all anatomy in frame. This is a weaker ecological follower of the named boss, not a miniature boss clone. Do not depict the boss. Output a high quality transparent PNG.\nBoss family context: Thorn Seamstress. Cursed sewing familiars and thornwoven constructs, weathered linen, bone needles, restrained red thread.\nCreature name (metadata only, do not render text): Thimble Beetle. Ecological role: armored tender.\nSubject design: Round six-legged beetle whose punctured tarnished thimble carapace sits over a soft stitched linen abdomen, thorn feet and small dark red mandibles.\nRestrained dark palette, readable highlights, modest ornament, no heroic boss regalia.",
+      "relative_asset_path": "dice-and-destiny-client/assets/battle/minions/thorn_seamstress/thimble_beetle.png",
+      "source_reference_paths": [
+        "dice-and-destiny-client/assets/battle/fighters/thorn_seamstress.png"
+      ],
+      "generated_source_path": "/Users/daddymere/.codex/generated_images/01a0ba2e-83e8-7e52-b7fc-570065c3b1dd/exec-9b65bd0b-fec5-4b93-b476-7d3488701927.png",
+      "status": "completed",
+      "review": "Visual review passed; distinct full-body creature, transparent alpha verified.",
+      "dimensions": [
+        1374,
+        1145
+      ],
+      "alpha_verified": true
+    },
+    {
+      "id": "ragwing_bat",
+      "name": "Ragwing Bat",
+      "role": "aerial scout",
+      "description": "Small skeletal bat with tattered grey patchwork linen wings held by bone spars and visibly uneven red stitches, dark furry chest, folded ears and tiny clawed feet.",
+      "prompt": "Use case: stylized-concept. Asset type: individual dark fantasy combat minion sprite. Create ONLY ONE original lesser monster, full body, clear distinctive silhouette and detailed anatomy, facing screen-left or left three-quarter, centered with comfortable transparent padding. Highly detailed desaturated dark watercolor and fine rough ink edges, textured pigment inside the creature only, worn materials, ominous grounded naturalistic creature design. Backdrop MUST be genuinely transparent alpha, not a painted solid color, gradient or checkerboard. Absolutely no environment, floor, ground patch, cast shadow, haze, border, text, UI, labels or detached accessories. Keep all anatomy in frame. This is a weaker ecological follower of the named boss, not a miniature boss clone. Do not depict the boss. Output a high quality transparent PNG.\nBoss family context: Thorn Seamstress. Cursed sewing familiars and thornwoven constructs, weathered linen, bone needles, restrained red thread.\nCreature name (metadata only, do not render text): Ragwing Bat. Ecological role: aerial scout.\nSubject design: Small skeletal bat with tattered grey patchwork linen wings held by bone spars and visibly uneven red stitches, dark furry chest, folded ears and tiny clawed feet.\nRestrained dark palette, readable highlights, modest ornament, no heroic boss regalia.",
+      "relative_asset_path": "dice-and-destiny-client/assets/battle/minions/thorn_seamstress/ragwing_bat.png",
+      "source_reference_paths": [
+        "dice-and-destiny-client/assets/battle/fighters/thorn_seamstress.png"
+      ],
+      "generated_source_path": "/Users/daddymere/.codex/generated_images/01a0ba2e-83e8-7e52-b7fc-570065c3b1dd/exec-f88d5466-e27c-46ce-acf1-2a2b15769644.png",
+      "status": "completed",
+      "review": "Visual review passed; distinct full-body creature, transparent alpha verified.",
+      "dimensions": [
+        1536,
+        1024
+      ],
+      "alpha_verified": true
+    },
+    {
+      "id": "briar_dolly",
+      "name": "Briar Dolly",
+      "role": "decoy construct",
+      "description": "Child-sized crude nonhuman twig doll with a bulbous stuffed linen head, two mismatched button eyes, crooked single-jointed branch limbs and sparse red seam stitches; eerie not cute.",
+      "prompt": "Use case: stylized-concept. Asset type: individual dark fantasy combat minion sprite. Create ONLY ONE original lesser monster, full body, clear distinctive silhouette and detailed anatomy, facing screen-left or left three-quarter, centered with comfortable transparent padding. Highly detailed desaturated dark watercolor and fine rough ink edges, textured pigment inside the creature only, worn materials, ominous grounded naturalistic creature design. Backdrop MUST be genuinely transparent alpha, not a painted solid color, gradient or checkerboard. Absolutely no environment, floor, ground patch, cast shadow, haze, border, text, UI, labels or detached accessories. Keep all anatomy in frame. This is a weaker ecological follower of the named boss, not a miniature boss clone. Do not depict the boss. Output a high quality transparent PNG.\nBoss family context: Thorn Seamstress. Cursed sewing familiars and thornwoven constructs, weathered linen, bone needles, restrained red thread.\nCreature name (metadata only, do not render text): Briar Dolly. Ecological role: decoy construct.\nSubject design: Child-sized crude nonhuman twig doll with a bulbous stuffed linen head, two mismatched button eyes, crooked single-jointed branch limbs and sparse red seam stitches; eerie not cute.\nRestrained dark palette, readable highlights, modest ornament, no heroic boss regalia.",
+      "relative_asset_path": "dice-and-destiny-client/assets/battle/minions/thorn_seamstress/briar_dolly.png",
+      "source_reference_paths": [
+        "dice-and-destiny-client/assets/battle/fighters/thorn_seamstress.png"
+      ],
+      "generated_source_path": "/Users/daddymere/.codex/generated_images/01a0ba2e-83e8-7e52-b7fc-570065c3b1dd/exec-34a81ca1-b0db-4c11-9e6f-43b6b54c7e39.png",
+      "status": "completed",
+      "review": "Visual review passed; distinct full-body creature, transparent alpha verified.",
+      "dimensions": [
+        1024,
+        1536
+      ],
+      "alpha_verified": true
+    },
+    {
+      "id": "seam_ripper_worm",
+      "name": "Seam Ripper Worm",
+      "role": "burrowing saboteur",
+      "description": "Long pale cloth-skinned worm with a forked bone seam-ripper mouth, tight segmented red thread sutures, thorn barbs along its underside and curled muscular tail.",
+      "prompt": "Use case: stylized-concept. Asset type: individual dark fantasy combat minion sprite. Create ONLY ONE original lesser monster, full body, clear distinctive silhouette and detailed anatomy, facing screen-left or left three-quarter, centered with comfortable transparent padding. Highly detailed desaturated dark watercolor and fine rough ink edges, textured pigment inside the creature only, worn materials, ominous grounded naturalistic creature design. Backdrop MUST be genuinely transparent alpha, not a painted solid color, gradient or checkerboard. Absolutely no environment, floor, ground patch, cast shadow, haze, border, text, UI, labels or detached accessories. Keep all anatomy in frame. This is a weaker ecological follower of the named boss, not a miniature boss clone. Do not depict the boss. Output a high quality transparent PNG.\nBoss family context: Thorn Seamstress. Cursed sewing familiars and thornwoven constructs, weathered linen, bone needles, restrained red thread.\nCreature name (metadata only, do not render text): Seam Ripper Worm. Ecological role: burrowing saboteur.\nSubject design: Long pale cloth-skinned worm with a forked bone seam-ripper mouth, tight segmented red thread sutures, thorn barbs along its underside and curled muscular tail.\nRestrained dark palette, readable highlights, modest ornament, no heroic boss regalia.",
+      "relative_asset_path": "dice-and-destiny-client/assets/battle/minions/thorn_seamstress/seam_ripper_worm.png",
+      "source_reference_paths": [
+        "dice-and-destiny-client/assets/battle/fighters/thorn_seamstress.png"
+      ],
+      "generated_source_path": "/Users/daddymere/.codex/generated_images/01a0ba2e-83e8-7e52-b7fc-570065c3b1dd/exec-fca72709-ad0f-4f15-a483-a52f9d9cf30c.png",
+      "status": "completed",
+      "review": "Visual review passed; distinct full-body creature, transparent alpha verified.",
+      "dimensions": [
+        1536,
+        1024
+      ],
+      "alpha_verified": true
+    },
+    {
+      "id": "pattern_hare",
+      "name": "Pattern Hare",
+      "role": "lookout",
+      "description": "Gaunt long-eared hare assembled from irregular grey linen pattern scraps, thin exposed twig hindlegs, thorn whiskers and one small dark red stitch line on its flank.",
+      "prompt": "Use case: stylized-concept. Asset type: individual dark fantasy combat minion sprite. Create ONLY ONE original lesser monster, full body, clear distinctive silhouette and detailed anatomy, facing screen-left or left three-quarter, centered with comfortable transparent padding. Highly detailed desaturated dark watercolor and fine rough ink edges, textured pigment inside the creature only, worn materials, ominous grounded naturalistic creature design. Backdrop MUST be genuinely transparent alpha, not a painted solid color, gradient or checkerboard. Absolutely no environment, floor, ground patch, cast shadow, haze, border, text, UI, labels or detached accessories. Keep all anatomy in frame. This is a weaker ecological follower of the named boss, not a miniature boss clone. Do not depict the boss. Output a high quality transparent PNG.\nBoss family context: Thorn Seamstress. Cursed sewing familiars and thornwoven constructs, weathered linen, bone needles, restrained red thread.\nCreature name (metadata only, do not render text): Pattern Hare. Ecological role: lookout.\nSubject design: Gaunt long-eared hare assembled from irregular grey linen pattern scraps, thin exposed twig hindlegs, thorn whiskers and one small dark red stitch line on its flank.\nRestrained dark palette, readable highlights, modest ornament, no heroic boss regalia.",
+      "relative_asset_path": "dice-and-destiny-client/assets/battle/minions/thorn_seamstress/pattern_hare.png",
+      "source_reference_paths": [
+        "dice-and-destiny-client/assets/battle/fighters/thorn_seamstress.png"
+      ],
+      "generated_source_path": "/Users/daddymere/.codex/generated_images/01a0ba2e-83e8-7e52-b7fc-570065c3b1dd/exec-706c83b2-e457-4617-87c8-932293b174d4.png",
+      "status": "completed",
+      "review": "Visual review passed; distinct full-body creature, transparent alpha verified.",
+      "dimensions": [
+        1223,
+        1286
+      ],
+      "alpha_verified": true
+    },
+    {
+      "id": "knot_spider",
+      "name": "Knot Spider",
+      "role": "snare tender",
+      "description": "Low broad eight-legged spider whose abdomen is a tangled knot of faded red thread around a dark seed pod, needle-thin ivory legs, tiny thorn jaws and ragged linen tufts.",
+      "prompt": "Use case: stylized-concept. Asset type: individual dark fantasy combat minion sprite. Create ONLY ONE original lesser monster, full body, clear distinctive silhouette and detailed anatomy, facing screen-left or left three-quarter, centered with comfortable transparent padding. Highly detailed desaturated dark watercolor and fine rough ink edges, textured pigment inside the creature only, worn materials, ominous grounded naturalistic creature design. Backdrop MUST be genuinely transparent alpha, not a painted solid color, gradient or checkerboard. Absolutely no environment, floor, ground patch, cast shadow, haze, border, text, UI, labels or detached accessories. Keep all anatomy in frame. This is a weaker ecological follower of the named boss, not a miniature boss clone. Do not depict the boss. Output a high quality transparent PNG.\nBoss family context: Thorn Seamstress. Cursed sewing familiars and thornwoven constructs, weathered linen, bone needles, restrained red thread.\nCreature name (metadata only, do not render text): Knot Spider. Ecological role: snare tender.\nSubject design: Low broad eight-legged spider whose abdomen is a tangled knot of faded red thread around a dark seed pod, needle-thin ivory legs, tiny thorn jaws and ragged linen tufts.\nRestrained dark palette, readable highlights, modest ornament, no heroic boss regalia.",
+      "relative_asset_path": "dice-and-destiny-client/assets/battle/minions/thorn_seamstress/knot_spider.png",
+      "source_reference_paths": [
+        "dice-and-destiny-client/assets/battle/fighters/thorn_seamstress.png"
+      ],
+      "generated_source_path": "/Users/daddymere/.codex/generated_images/01a0ba2e-83e8-7e52-b7fc-570065c3b1dd/exec-2bdbad3b-38c0-48ff-a5af-52805984ed46.png",
+      "status": "completed",
+      "review": "Visual review passed; distinct full-body creature, transparent alpha verified.",
+      "dimensions": [
+        1536,
+        1024
+      ],
+      "alpha_verified": true
+    }
+  ]
+}

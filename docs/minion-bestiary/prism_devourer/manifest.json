@@ -1,0 +1,197 @@
+{
+  "boss_id": "prism_devourer",
+  "boss_name": "Prism Devourer",
+  "theme": "Smoky quartz cavern scavengers, fractured mineral armor, tiny muted amethyst and amber accents.",
+  "minions": [
+    {
+      "id": "shardmuzzle_mole",
+      "name": "Shardmuzzle Mole",
+      "role": "burrower",
+      "description": "Blind compact mole with powerful slate digging paws, a blunt quartz chisel muzzle, sparse silver whiskers and a few cloudy crystal plates in its charcoal fur; low broad rounded silhouette.",
+      "prompt": "Use case: stylized-concept. Asset type: individual dark fantasy combat minion sprite. Create ONLY ONE original lesser monster, full body, clear distinctive silhouette and detailed anatomy, facing screen-left or left three-quarter, centered with comfortable transparent padding. Highly detailed desaturated dark watercolor and fine rough ink edges, textured pigment inside the creature only, worn materials, ominous grounded naturalistic creature design. Backdrop MUST be genuinely transparent alpha, not a painted solid color, gradient or checkerboard. Absolutely no environment, floor, ground patch, cast shadow, haze, border, text, UI, labels or detached accessories. Keep all anatomy in frame. This is a weaker ecological follower of the named boss, not a miniature boss clone. Do not depict the boss. Output a high quality transparent PNG.\nBoss family context: Prism Devourer. Smoky quartz cavern scavengers, fractured mineral armor, tiny muted amethyst and amber accents.\nCreature name (metadata only, do not render text): Shardmuzzle Mole. Ecological role: burrower.\nSubject design: Blind compact mole with powerful slate digging paws, a blunt quartz chisel muzzle, sparse silver whiskers and a few cloudy crystal plates in its charcoal fur; low broad rounded silhouette.\nRestrained dark palette, readable highlights, modest ornament, no heroic boss regalia.",
+      "relative_asset_path": "dice-and-destiny-client/assets/battle/minions/prism_devourer/shardmuzzle_mole.png",
+      "source_reference_paths": [
+        "dice-and-destiny-client/assets/battle/fighters/prism_devourer.png"
+      ],
+      "generated_source_path": "/Users/daddymere/.codex/generated_images/01a0ba2e-83e8-7e52-b7fc-570065c3b1dd/exec-94109f94-2d4b-415e-be8e-a71910b36864.png",
+      "status": "completed",
+      "review": "Visual review passed; distinct full-body creature, transparent alpha verified.",
+      "dimensions": [
+        1536,
+        1024
+      ],
+      "alpha_verified": true
+    },
+    {
+      "id": "geode_slug",
+      "name": "Geode Slug",
+      "role": "mineral grazer",
+      "description": "Heavy eyeless slug whose split stony back exposes a narrow amethyst geode cavity; fleshy charcoal foot, two tiny pale feelers, folded mineral wrinkles and no legs.",
+      "prompt": "Use case: stylized-concept. Asset type: individual dark fantasy combat minion sprite. Create ONLY ONE original lesser monster, full body, clear distinctive silhouette and detailed anatomy, facing screen-left or left three-quarter, centered with comfortable transparent padding. Highly detailed desaturated dark watercolor and fine rough ink edges, textured pigment inside the creature only, worn materials, ominous grounded naturalistic creature design. Backdrop MUST be genuinely transparent alpha, not a painted solid color, gradient or checkerboard. Absolutely no environment, floor, ground patch, cast shadow, haze, border, text, UI, labels or detached accessories. Keep all anatomy in frame. This is a weaker ecological follower of the named boss, not a miniature boss clone. Do not depict the boss. Output a high quality transparent PNG.\nBoss family context: Prism Devourer. Smoky quartz cavern scavengers, fractured mineral armor, tiny muted amethyst and amber accents.\nCreature name (metadata only, do not render text): Geode Slug. Ecological role: mineral grazer.\nSubject design: Heavy eyeless slug whose split stony back exposes a narrow amethyst geode cavity; fleshy charcoal foot, two tiny pale feelers, folded mineral wrinkles and no legs.\nRestrained dark palette, readable highlights, modest ornament, no heroic boss regalia.",
+      "relative_asset_path": "dice-and-destiny-client/assets/battle/minions/prism_devourer/geode_slug.png",
+      "source_reference_paths": [
+        "dice-and-destiny-client/assets/battle/fighters/prism_devourer.png"
+      ],
+      "generated_source_path": "/Users/daddymere/.codex/generated_images/01a0ba2e-83e8-7e52-b7fc-570065c3b1dd/exec-1a64ed26-430d-48bd-b494-f98dd4990e4a.png",
+      "status": "completed",
+      "review": "Visual review passed; distinct full-body creature, transparent alpha verified.",
+      "dimensions": [
+        1536,
+        1024
+      ],
+      "alpha_verified": true
+    },
+    {
+      "id": "cleftwing_bat",
+      "name": "Cleftwing Bat",
+      "role": "aerial scout",
+      "description": "Small long-eared cavern bat, angular torn membrane wings with delicate crystalline veins, velvet ash fur, one quartz fang and folded hooked feet; hovering with wings asymmetric.",
+      "prompt": "Use case: stylized-concept. Asset type: individual dark fantasy combat minion sprite. Create ONLY ONE original lesser monster, full body, clear distinctive silhouette and detailed anatomy, facing screen-left or left three-quarter, centered with comfortable transparent padding. Highly detailed desaturated dark watercolor and fine rough ink edges, textured pigment inside the creature only, worn materials, ominous grounded naturalistic creature design. Backdrop MUST be genuinely transparent alpha, not a painted solid color, gradient or checkerboard. Absolutely no environment, floor, ground patch, cast shadow, haze, border, text, UI, labels or detached accessories. Keep all anatomy in frame. This is a weaker ecological follower of the named boss, not a miniature boss clone. Do not depict the boss. Output a high quality transparent PNG.\nBoss family context: Prism Devourer. Smoky quartz cavern scavengers, fractured mineral armor, tiny muted amethyst and amber accents.\nCreature name (metadata only, do not render text): Cleftwing Bat. Ecological role: aerial scout.\nSubject design: Small long-eared cavern bat, angular torn membrane wings with delicate crystalline veins, velvet ash fur, one quartz fang and folded hooked feet; hovering with wings asymmetric.\nRestrained dark palette, readable highlights, modest ornament, no heroic boss regalia.",
+      "relative_asset_path": "dice-and-destiny-client/assets/battle/minions/prism_devourer/cleftwing_bat.png",
+      "source_reference_paths": [
+        "dice-and-destiny-client/assets/battle/fighters/prism_devourer.png"
+      ],
+      "generated_source_path": "/Users/daddymere/.codex/generated_images/01a0ba2e-83e8-7e52-b7fc-570065c3b1dd/exec-334bbc40-a64a-46ce-a364-d4108b952919.png",
+      "status": "completed",
+      "review": "Visual review passed; distinct full-body creature, transparent alpha verified.",
+      "dimensions": [
+        1241,
+        1268
+      ],
+      "alpha_verified": true
+    },
+    {
+      "id": "mica_urchin",
+      "name": "Mica Urchin",
+      "role": "passage guard",
+      "description": "Low spherical cave urchin on five short fleshy tube feet, layered mica scales among irregular smoky quartz needles, an offset ivory rasp mouth underneath.",
+      "prompt": "Use case: stylized-concept. Asset type: individual dark fantasy combat minion sprite. Create ONLY ONE original lesser monster, full body, clear distinctive silhouette and detailed anatomy, facing screen-left or left three-quarter, centered with comfortable transparent padding. Highly detailed desaturated dark watercolor and fine rough ink edges, textured pigment inside the creature only, worn materials, ominous grounded naturalistic creature design. Backdrop MUST be genuinely transparent alpha, not a painted solid color, gradient or checkerboard. Absolutely no environment, floor, ground patch, cast shadow, haze, border, text, UI, labels or detached accessories. Keep all anatomy in frame. This is a weaker ecological follower of the named boss, not a miniature boss clone. Do not depict the boss. Output a high quality transparent PNG.\nBoss family context: Prism Devourer. Smoky quartz cavern scavengers, fractured mineral armor, tiny muted amethyst and amber accents.\nCreature name (metadata only, do not render text): Mica Urchin. Ecological role: passage guard.\nSubject design: Low spherical cave urchin on five short fleshy tube feet, layered mica scales among irregular smoky quartz needles, an offset ivory rasp mouth underneath.\nRestrained dark palette, readable highlights, modest ornament, no heroic boss regalia.",
+      "relative_asset_path": "dice-and-destiny-client/assets/battle/minions/prism_devourer/mica_urchin.png",
+      "source_reference_paths": [
+        "dice-and-destiny-client/assets/battle/fighters/prism_devourer.png"
+      ],
+      "generated_source_path": "/Users/daddymere/.codex/generated_images/01a0ba2e-83e8-7e52-b7fc-570065c3b1dd/exec-830e7090-f40c-4815-9432-a26f5fd2801f.png",
+      "status": "completed",
+      "review": "Visual review passed; distinct full-body creature, transparent alpha verified.",
+      "dimensions": [
+        1312,
+        1199
+      ],
+      "alpha_verified": true
+    },
+    {
+      "id": "flintjaw_newt",
+      "name": "Flintjaw Newt",
+      "role": "ambush skirmisher",
+      "description": "Lean six-toed cave newt with blunt flint jaws, matte charcoal skin and isolated translucent spine fins, long curling paddle tail, crouching alert.",
+      "prompt": "Use case: stylized-concept. Asset type: individual dark fantasy combat minion sprite. Create ONLY ONE original lesser monster, full body, clear distinctive silhouette and detailed anatomy, facing screen-left or left three-quarter, centered with comfortable transparent padding. Highly detailed desaturated dark watercolor and fine rough ink edges, textured pigment inside the creature only, worn materials, ominous grounded naturalistic creature design. Backdrop MUST be genuinely transparent alpha, not a painted solid color, gradient or checkerboard. Absolutely no environment, floor, ground patch, cast shadow, haze, border, text, UI, labels or detached accessories. Keep all anatomy in frame. This is a weaker ecological follower of the named boss, not a miniature boss clone. Do not depict the boss. Output a high quality transparent PNG.\nBoss family context: Prism Devourer. Smoky quartz cavern scavengers, fractured mineral armor, tiny muted amethyst and amber accents.\nCreature name (metadata only, do not render text): Flintjaw Newt. Ecological role: ambush skirmisher.\nSubject design: Lean six-toed cave newt with blunt flint jaws, matte charcoal skin and isolated translucent spine fins, long curling paddle tail, crouching alert.\nRestrained dark palette, readable highlights, modest ornament, no heroic boss regalia.",
+      "relative_asset_path": "dice-and-destiny-client/assets/battle/minions/prism_devourer/flintjaw_newt.png",
+      "source_reference_paths": [
+        "dice-and-destiny-client/assets/battle/fighters/prism_devourer.png"
+      ],
+      "generated_source_path": "/Users/daddymere/.codex/generated_images/01a0ba2e-83e8-7e52-b7fc-570065c3b1dd/exec-5ea5e7b2-38db-4bf3-b288-126e88e8155b.png",
+      "status": "completed",
+      "review": "Visual review passed; distinct full-body creature, transparent alpha verified.",
+      "dimensions": [
+        1536,
+        1024
+      ],
+      "alpha_verified": true
+    },
+    {
+      "id": "hollowstone_tick",
+      "name": "Hollowstone Tick",
+      "role": "parasite",
+      "description": "Flattened eight-legged tick with a hollow pebble carapace, delicate hooked legs, tiny sucking proboscis and translucent grey belly with one dim amber inclusion.",
+      "prompt": "Use case: stylized-concept. Asset type: individual dark fantasy combat minion sprite. Create ONLY ONE original lesser monster, full body, clear distinctive silhouette and detailed anatomy, facing screen-left or left three-quarter, centered with comfortable transparent padding. Highly detailed desaturated dark watercolor and fine rough ink edges, textured pigment inside the creature only, worn materials, ominous grounded naturalistic creature design. Backdrop MUST be genuinely transparent alpha, not a painted solid color, gradient or checkerboard. Absolutely no environment, floor, ground patch, cast shadow, haze, border, text, UI, labels or detached accessories. Keep all anatomy in frame. This is a weaker ecological follower of the named boss, not a miniature boss clone. Do not depict the boss. Output a high quality transparent PNG.\nBoss family context: Prism Devourer. Smoky quartz cavern scavengers, fractured mineral armor, tiny muted amethyst and amber accents.\nCreature name (metadata only, do not render text): Hollowstone Tick. Ecological role: parasite.\nSubject design: Flattened eight-legged tick with a hollow pebble carapace, delicate hooked legs, tiny sucking proboscis and translucent grey belly with one dim amber inclusion.\nRestrained dark palette, readable highlights, modest ornament, no heroic boss regalia.",
+      "relative_asset_path": "dice-and-destiny-client/assets/battle/minions/prism_devourer/hollowstone_tick.png",
+      "source_reference_paths": [
+        "dice-and-destiny-client/assets/battle/fighters/prism_devourer.png"
+      ],
+      "generated_source_path": "/Users/daddymere/.codex/generated_images/01a0ba2e-83e8-7e52-b7fc-570065c3b1dd/exec-e31c10fb-f952-4552-896a-fdd3ee9108a1.png",
+      "status": "completed",
+      "review": "Visual review passed; distinct full-body creature, transparent alpha verified.",
+      "dimensions": [
+        1536,
+        1024
+      ],
+      "alpha_verified": true
+    },
+    {
+      "id": "quartz_rib_eel",
+      "name": "Quartz Rib Eel",
+      "role": "crevice hunter",
+      "description": "Coiling eyeless terrestrial eel with exposed-looking translucent mineral rib hoops, leathery soot skin, two vestigial front flippers and a needle mouth; tall S-shaped pose.",
+      "prompt": "Use case: stylized-concept. Asset type: individual dark fantasy combat minion sprite. Create ONLY ONE original lesser monster, full body, clear distinctive silhouette and detailed anatomy, facing screen-left or left three-quarter, centered with comfortable transparent padding. Highly detailed desaturated dark watercolor and fine rough ink edges, textured pigment inside the creature only, worn materials, ominous grounded naturalistic creature design. Backdrop MUST be genuinely transparent alpha, not a painted solid color, gradient or checkerboard. Absolutely no environment, floor, ground patch, cast shadow, haze, border, text, UI, labels or detached accessories. Keep all anatomy in frame. This is a weaker ecological follower of the named boss, not a miniature boss clone. Do not depict the boss. Output a high quality transparent PNG.\nBoss family context: Prism Devourer. Smoky quartz cavern scavengers, fractured mineral armor, tiny muted amethyst and amber accents.\nCreature name (metadata only, do not render text): Quartz Rib Eel. Ecological role: crevice hunter.\nSubject design: Coiling eyeless terrestrial eel with exposed-looking translucent mineral rib hoops, leathery soot skin, two vestigial front flippers and a needle mouth; tall S-shaped pose.\nRestrained dark palette, readable highlights, modest ornament, no heroic boss regalia.",
+      "relative_asset_path": "dice-and-destiny-client/assets/battle/minions/prism_devourer/quartz_rib_eel.png",
+      "source_reference_paths": [
+        "dice-and-destiny-client/assets/battle/fighters/prism_devourer.png"
+      ],
+      "generated_source_path": "/Users/daddymere/.codex/generated_images/01a0ba2e-83e8-7e52-b7fc-570065c3b1dd/exec-2f772854-a1fe-48b7-b78d-3c53316c180b.png",
+      "status": "completed",
+      "review": "Visual review passed; distinct full-body creature, transparent alpha verified.",
+      "dimensions": [
+        1024,
+        1536
+      ],
+      "alpha_verified": true
+    },
+    {
+      "id": "splintercrest_roach",
+      "name": "Splintercrest Roach",
+      "role": "debris scavenger",
+      "description": "Broad armored cave cockroach with asymmetrical chipped slate wing cases, short blunt quartz crest, comb antennae, six low scuttling legs and dusty abdomen.",
+      "prompt": "Use case: stylized-concept. Asset type: individual dark fantasy combat minion sprite. Create ONLY ONE original lesser monster, full body, clear distinctive silhouette and detailed anatomy, facing screen-left or left three-quarter, centered with comfortable transparent padding. Highly detailed desaturated dark watercolor and fine rough ink edges, textured pigment inside the creature only, worn materials, ominous grounded naturalistic creature design. Backdrop MUST be genuinely transparent alpha, not a painted solid color, gradient or checkerboard. Absolutely no environment, floor, ground patch, cast shadow, haze, border, text, UI, labels or detached accessories. Keep all anatomy in frame. This is a weaker ecological follower of the named boss, not a miniature boss clone. Do not depict the boss. Output a high quality transparent PNG.\nBoss family context: Prism Devourer. Smoky quartz cavern scavengers, fractured mineral armor, tiny muted amethyst and amber accents.\nCreature name (metadata only, do not render text): Splintercrest Roach. Ecological role: debris scavenger.\nSubject design: Broad armored cave cockroach with asymmetrical chipped slate wing cases, short blunt quartz crest, comb antennae, six low scuttling legs and dusty abdomen.\nRestrained dark palette, readable highlights, modest ornament, no heroic boss regalia.",
+      "relative_asset_path": "dice-and-destiny-client/assets/battle/minions/prism_devourer/splintercrest_roach.png",
+      "source_reference_paths": [
+        "dice-and-destiny-client/assets/battle/fighters/prism_devourer.png"
+      ],
+      "generated_source_path": "/Users/daddymere/.codex/generated_images/01a0ba2e-83e8-7e52-b7fc-570065c3b1dd/exec-5ff84f5a-6ef5-44a5-a4ac-ee2de1366c8a.png",
+      "status": "completed",
+      "review": "Visual review passed; distinct full-body creature, transparent alpha verified.",
+      "dimensions": [
+        1536,
+        1024
+      ],
+      "alpha_verified": true
+    },
+    {
+      "id": "veinglass_moth",
+      "name": "Veinglass Moth",
+      "role": "light lure",
+      "description": "Fragile cave moth with four smoky translucent glasslike wings, cloudy mineral vein patterns, fuzzy narrow charcoal body, feathery antennae and one muted violet eye spot.",
+      "prompt": "Use case: stylized-concept. Asset type: individual dark fantasy combat minion sprite. Create ONLY ONE original lesser monster, full body, clear distinctive silhouette and detailed anatomy, facing screen-left or left three-quarter, centered with comfortable transparent padding. Highly detailed desaturated dark watercolor and fine rough ink edges, textured pigment inside the creature only, worn materials, ominous grounded naturalistic creature design. Backdrop MUST be genuinely transparent alpha, not a painted solid color, gradient or checkerboard. Absolutely no environment, floor, ground patch, cast shadow, haze, border, text, UI, labels or detached accessories. Keep all anatomy in frame. This is a weaker ecological follower of the named boss, not a miniature boss clone. Do not depict the boss. Output a high quality transparent PNG.\nBoss family context: Prism Devourer. Smoky quartz cavern scavengers, fractured mineral armor, tiny muted amethyst and amber accents.\nCreature name (metadata only, do not render text): Veinglass Moth. Ecological role: light lure.\nSubject design: Fragile cave moth with four smoky translucent glasslike wings, cloudy mineral vein patterns, fuzzy narrow charcoal body, feathery antennae and one muted violet eye spot.\nRestrained dark palette, readable highlights, modest ornament, no heroic boss regalia.",
+      "relative_asset_path": "dice-and-destiny-client/assets/battle/minions/prism_devourer/veinglass_moth.png",
+      "source_reference_paths": [
+        "dice-and-destiny-client/assets/battle/fighters/prism_devourer.png"
+      ],
+      "generated_source_path": "/Users/daddymere/.codex/generated_images/01a0ba2e-83e8-7e52-b7fc-570065c3b1dd/exec-ba13ffb6-e1f1-494a-8c8c-20d5b17a79da.png",
+      "status": "completed",
+      "review": "Visual review passed; distinct full-body creature, transparent alpha verified.",
+      "dimensions": [
+        1214,
+        1295
+      ],
+      "alpha_verified": true
+    },
+    {
+      "id": "gravelback_hare",
+      "name": "Gravelback Hare",
+      "role": "lookout",
+      "description": "Gaunt cave hare with long folded ears tipped in tiny quartz splinters, heavily muscled hind legs, ash fur interrupted by pebble scales and dim amber eyes.",
+      "prompt": "Use case: stylized-concept. Asset type: individual dark fantasy combat minion sprite. Create ONLY ONE original lesser monster, full body, clear distinctive silhouette and detailed anatomy, facing screen-left or left three-quarter, centered with comfortable transparent padding. Highly detailed desaturated dark watercolor and fine rough ink edges, textured pigment inside the creature only, worn materials, ominous grounded naturalistic creature design. Backdrop MUST be genuinely transparent alpha, not a painted solid color, gradient or checkerboard. Absolutely no environment, floor, ground patch, cast shadow, haze, border, text, UI, labels or detached accessories. Keep all anatomy in frame. This is a weaker ecological follower of the named boss, not a miniature boss clone. Do not depict the boss. Output a high quality transparent PNG.\nBoss family context: Prism Devourer. Smoky quartz cavern scavengers, fractured mineral armor, tiny muted amethyst and amber accents.\nCreature name (metadata only, do not render text): Gravelback Hare. Ecological role: lookout.\nSubject design: Gaunt cave hare with long folded ears tipped in tiny quartz splinters, heavily muscled hind legs, ash fur interrupted by pebble scales and dim amber eyes.\nRestrained dark palette, readable highlights, modest ornament, no heroic boss regalia.",
+      "relative_asset_path": "dice-and-destiny-client/assets/battle/minions/prism_devourer/gravelback_hare.png",
+      "source_reference_paths": [
+        "dice-and-destiny-client/assets/battle/fighters/prism_devourer.png"
+      ],
+      "generated_source_path": "/Users/daddymere/.codex/generated_images/01a0ba2e-83e8-7e52-b7fc-570065c3b1dd/exec-a32b90b2-e92e-45ad-b2ad-9bc617bd3218.png",
+      "status": "completed",
+      "review": "Visual review passed; distinct full-body creature, transparent alpha verified.",
+      "dimensions": [
+        1243,
+        1266
+      ],
+      "alpha_verified": true
+    }
+  ]
+}

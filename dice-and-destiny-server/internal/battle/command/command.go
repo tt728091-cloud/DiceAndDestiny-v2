@@ -65,6 +65,7 @@ type envelope struct {
 type AdvanceSegmentPayload struct{}
 
 type ParticipantDescriptor struct {
+	TeamID       string `json:"team_id,omitempty"`
 	InstanceID   string `json:"instance_id"`
 	DefinitionID string `json:"definition_id"`
 }
@@ -173,6 +174,7 @@ type PlanningTargetsPayload struct {
 }
 
 type PlanningPassPayload struct {
+	SourceID       string             `json:"source_id,omitempty"`
 	PendingInputID string             `json:"pending_input_id"`
 	Checkpoint     PlanningCheckpoint `json:"checkpoint"`
 }

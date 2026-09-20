@@ -3,6 +3,7 @@ package battle
 import (
 	"encoding/json"
 	"fmt"
+	"maps"
 	"os"
 	"path/filepath"
 	"reflect"
@@ -27,6 +28,10 @@ type FileParticipantAssembler struct {
 	settledLibrary      content.BattleLibrary
 	settledCatalog      []byte
 	settledErr          error
+	minionOnce          sync.Once
+	minionLibrary       content.BattleLibrary
+	minionCatalog       []byte
+	minionErr           error
 }
 
 // NewCachedFileParticipantAssembler pins validated battle_v1 content for a
@@ -57,6 +62,21 @@ func (assembler *FileParticipantAssembler) AssembleParticipants(
 		library, catalog, settledErr := assembler.loadSettledContent(settledRoot)
 		if settledErr != nil {
 			return state.BattleSetup{}, settledErr
+		}
+		// Minion definitions are an opt-in pack. Keep the frozen learned
+		// opponents' vocabulary byte-for-byte unchanged in existing matchups.
+		for _, requested := range participants {
+			if _, ok := library.Combatants[requested.DefinitionID]; ok {
+				continue
+			}
+			if _, err := os.Stat(filepath.Join(assembler.ContentRoot, "minions_v1")); err != nil {
+				break
+			}
+			library, catalog, settledErr = assembler.loadMinionContent(library)
+			if settledErr != nil {
+				return state.BattleSetup{}, settledErr
+			}
+			break
 		}
 		allSettled := true
 		for _, requested := range participants {
@@ -187,7 +207,7 @@ func assembleSettledParticipantsWithCatalog(
 			statuses[i] = state.StatusState{InstanceID: instanceID, DefinitionID: status.DefinitionID, Stacks: status.Stacks}
 		}
 		abilities := append(append([]string(nil), definition.AbilityBoard.Offensive...), definition.AbilityBoard.Defensive...)
-		setupResult.Actors = append(setupResult.Actors, state.ActorSetup{ID: requested.InstanceID, DefinitionID: definition.ID, ControllerType: controller, Character: state.CharacterMetadata{ID: definition.ID, Name: definition.Name, Class: definition.Class}, Resources: state.ResourceState{StartingHandSize: definition.Resources.StartingHandSize, MaxHandSize: definition.Resources.HandLimit, StartingEnergyPoints: definition.Resources.StartingEnergy, EnergyPoints: definition.Resources.StartingEnergy}, Health: state.HealthMetadata{Model: "card_zones", MaxHealth: len(deck)}, Decklist: convertSettledDecklist(definition.Decklist), Deck: deck, DiceLoadout: convertSettledDiceLoadout(definition.DiceLoadout), AbilityIDs: abilities, Statuses: statuses, RollPreferences: state.RollPreferences{StatusEffects: state.RollMode(definition.RollPreferences.StatusEffects), Offensive: state.RollMode(definition.RollPreferences.Offensive)}})
+		setupResult.Actors = append(setupResult.Actors, state.ActorSetup{ID: requested.InstanceID, TeamID: requested.TeamID, DefinitionID: definition.ID, ControllerType: controller, Character: state.CharacterMetadata{ID: definition.ID, Name: definition.Name, Class: definition.Class}, Resources: state.ResourceState{StartingHandSize: definition.Resources.StartingHandSize, MaxHandSize: definition.Resources.HandLimit, StartingEnergyPoints: definition.Resources.StartingEnergy, EnergyPoints: definition.Resources.StartingEnergy}, Health: state.HealthMetadata{Model: "card_zones", MaxHealth: len(deck)}, Decklist: convertSettledDecklist(definition.Decklist), Deck: deck, DiceLoadout: convertSettledDiceLoadout(definition.DiceLoadout), AbilityIDs: abilities, Statuses: statuses, RollPreferences: state.RollPreferences{StatusEffects: state.RollMode(definition.RollPreferences.StatusEffects), Offensive: state.RollMode(definition.RollPreferences.Offensive)}})
 		setupResult.SettledActors[requested.InstanceID] = state.SettledActorRuntime{IncomeCards: definition.Income.Cards, IncomeEnergy: definition.Income.Energy, HandLimit: definition.Resources.HandLimit, OffensiveAbilityIDs: append([]string(nil), definition.AbilityBoard.Offensive...), DefensiveAbilityIDs: append([]string(nil), definition.AbilityBoard.Defensive...), CardInstances: instances, MaxRolls: 3, UsedAbilities: map[string]int{}}
 		for _, entry := range definition.DiceLoadout {
 			if seenDice[entry.DiceID] {
@@ -496,4 +516,23 @@ func contentSegments(values []string) []segment.Segment {
 		segments[i] = segment.Segment(value)
 	}
 	return segments
+}
+
+func (assembler *FileParticipantAssembler) loadMinionContent(base content.BattleLibrary) (content.BattleLibrary, []byte, error) {
+	load := func() (content.BattleLibrary, []byte, error) {
+		// Extension loading adds entries to these maps; copy them without a
+		// JSON roundtrip so operation amounts retain their integer types.
+		library := content.BattleLibrary{Symbols: maps.Clone(base.Symbols), Dice: maps.Clone(base.Dice), Cards: maps.Clone(base.Cards), Abilities: maps.Clone(base.Abilities), Statuses: maps.Clone(base.Statuses), Combatants: maps.Clone(base.Combatants)}
+		library, err := content.LoadBattleExtension(library, filepath.Join(assembler.ContentRoot, "minions_v1"))
+		if err != nil {
+			return library, nil, err
+		}
+		catalog, err := json.Marshal(library)
+		return library, catalog, err
+	}
+	if !assembler.cacheSettledContent {
+		return load()
+	}
+	assembler.minionOnce.Do(func() { assembler.minionLibrary, assembler.minionCatalog, assembler.minionErr = load() })
+	return assembler.minionLibrary, assembler.minionCatalog, assembler.minionErr
 }

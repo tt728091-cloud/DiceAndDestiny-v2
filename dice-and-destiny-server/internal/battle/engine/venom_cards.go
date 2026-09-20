@@ -17,12 +17,29 @@ type venomCardChoice struct {
 }
 
 func venomCardChoices(b *state.Battle, lib content.BattleLibrary, actor string, def content.BattleCardDefinition) []venomCardChoice {
+	var result []venomCardChoice
+	seen := map[string]bool{}
+	enemies := otherActorIDs(b, actor)
+	if len(enemies) == 0 {
+		enemies = []string{""}
+	}
+	for _, enemy := range enemies {
+		for _, choice := range venomCardChoicesForEnemy(b, lib, actor, enemy, def) {
+			key := choice.Key + "|" + strings.Join(choice.Targets, "|")
+			if !seen[key] {
+				seen[key] = true
+				result = append(result, choice)
+			}
+		}
+	}
+	return result
+}
+func venomCardChoicesForEnemy(b *state.Battle, lib content.BattleLibrary, actor, enemy string, def content.BattleCardDefinition) []venomCardChoice {
 	if b.Actors[actor].Resources.EnergyPoints < def.Cost.Energy {
 		return nil
 	}
 	stage := b.Settled.Stage
 	id := def.ID
-	enemy := enemyOf(b, actor)
 	p := stacks(b, enemy, "poison")
 	cat := stacks(b, actor, "catalyst")
 	v := venomRuntime(b)
@@ -104,6 +121,9 @@ func venomCardChoices(b *state.Battle, lib content.BattleLibrary, actor string, 
 			}
 		}
 	case "deep_puncture":
+		if !containsString(b.Settled.Actors[actor].SelectedTargetIDs, enemy) {
+			break
+		}
 		if stage == stageOffensiveReact && !v.Used["deep:"+actor] {
 			ops, ok := resolvedOffensiveOperations(b, lib, actor)
 			if ok {
@@ -123,6 +143,9 @@ func venomCardChoices(b *state.Battle, lib content.BattleLibrary, actor string, 
 			}
 		}
 	case "terminal_formula":
+		if !containsString(b.Settled.Actors[actor].SelectedTargetIDs, enemy) {
+			break
+		}
 		if stage == stageOffensiveReact && b.Settled.Actors[actor].SelectedAbilityID == "terminal_bite" && !v.Used["formula:"+actor] && (p+stacks(b, enemy, "volatile_poison")) > 0 {
 			add("formula", enemy)
 		}
@@ -145,7 +168,11 @@ func venomCardChoices(b *state.Battle, lib content.BattleLibrary, actor string, 
 			if id == "spined_rebuttal" && lib.Abilities[source.SourceContentID].Type != "offensive" {
 				continue
 			}
-			add("prevent", source.ID)
+			if id == "coagulate" && len(otherActorIDs(b, actor)) > 1 {
+				add("prevent|"+enemy, source.ID)
+			} else {
+				add("prevent", source.ID)
+			}
 			if id == "antivenom_draught" && cat > 0 {
 				for _, status := range []string{"poison", "volatile_poison", "incubation"} {
 					if stacks(b, actor, status) > 0 {
@@ -177,7 +204,17 @@ func (e Engine) playVenomCard(b *state.Battle, lib content.BattleLibrary, actor,
 	moveCard(&a.Cards, instance, operation.ZoneHand, operation.ZoneDiscard)
 	b.Actors[actor] = a
 	id := def.ID
-	enemy := enemyOf(b, actor)
+	enemy := first(targets)
+	if source := effectDamageSourceByID(b, enemy); source != nil {
+		enemy = source.SourceActorID
+	}
+	if id == "coagulate" {
+		if strings.HasPrefix(key, "prevent|") {
+			enemy = strings.TrimPrefix(key, "prevent|")
+		} else {
+			enemy = enemyOf(b, actor)
+		}
+	}
 	v := venomRuntime(b)
 	switch id {
 	case "distill", "accelerant", "incubate", "repurpose", "venom_reserve":

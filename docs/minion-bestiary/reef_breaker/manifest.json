@@ -1,0 +1,157 @@
+{
+  "boss_id": "reef_breaker",
+  "boss_name": "Reef Breaker",
+  "theme": "storm-beaten black sand shore, distant surf and sea stacks, wet sand and tide pools, rust seaweed",
+  "minions": [
+    {
+      "id": "kelp_snatcher",
+      "name": "Kelp Snatcher",
+      "role": "tidepool ambusher",
+      "description": "Lean octopus, six curling muscular arms, ragged rust-red kelp skin frills, slit eyes, pale sucker rows, mottled slate mantle",
+      "prompt": "Use case: stylized-concept. Asset: standalone full-body dark fantasy battle minion sprite, ONE creature. Subject: Kelp Snatcher: Lean octopus, six curling muscular arms, ragged rust-red kelp skin frills, slit eyes, pale sucker rows, mottled slate mantle. A weaker tidepool ambusher from storm-beaten black sand shore, distant surf and sea stacks, wet sand and tide pools, rust seaweed, associated with Reef Breaker but a distinct species, never a miniature boss. Highly detailed desaturated dark watercolor with granular pigment and layered washes within creature, broken ink contours, rich tactile anatomy and charcoal shadows, restrained theme accents. Full body centered facing LEFT in three-quarter view, ALL extremities completely visible with ample empty margin. GENUINELY TRANSPARENT PNG ALPHA CHANNEL everywhere outside creature. No background, no scenery, no paper rectangle, no ground patch, no floor, NO SHADOW, no cast/drop shadow, no aura, no haze, no text, no label, no frame, no UI. Finished production game asset.",
+      "relative_asset_path": "dice-and-destiny-client/assets/battle/minions/reef_breaker/kelp_snatcher.png",
+      "source_reference_paths": [
+        "dice-and-destiny-client/assets/battle/fighters/reef_breaker.png",
+        "dice-and-destiny-client/assets/battle/habitats/storm_shore.png"
+      ],
+      "generated_source_path": "/Users/daddymere/.codex/generated_images/01a0ba2d-5cc7-7070-96c9-d262aeade317/exec-4396c965-5f24-43bd-8c8b-7406485ca9b6.png",
+      "status": "completed",
+      "final_prompt": "Use case: stylized-concept. Asset: standalone full-body dark fantasy battle minion sprite, ONE creature. Subject: Kelp Snatcher: Lean octopus, six curling muscular arms, ragged rust-red kelp skin frills, slit eyes, pale sucker rows, mottled slate mantle. A weaker tidepool ambusher from storm-beaten black sand shore, distant surf and sea stacks, wet sand and tide pools, rust seaweed, associated with Reef Breaker but a distinct species, never a miniature boss. Highly detailed desaturated dark watercolor with granular pigment and layered washes within creature, broken ink contours, rich tactile anatomy and charcoal shadows, restrained theme accents. Full body centered facing LEFT in three-quarter view, ALL extremities completely visible with ample empty margin. GENUINELY TRANSPARENT PNG ALPHA CHANNEL everywhere outside creature. No background, no scenery, no paper rectangle, no ground patch, no floor, NO SHADOW, no cast/drop shadow, no aura, no haze, no text, no label, no frame, no UI. Finished production game asset. Keep long appendages curled inward to preserve all tips. Leave 10% clear transparent margin."
+    },
+    {
+      "id": "barnacle_hopper",
+      "name": "Barnacle Hopper",
+      "role": "close harrier",
+      "description": "Amphibious blenny with two long muscular pelvic legs, short fin arms, blunt ugly fish face, ivory spinal barnacles, ragged dorsal fin",
+      "prompt": "Use case: stylized-concept. Asset: standalone full-body dark fantasy battle minion sprite, ONE creature. Subject: Barnacle Hopper: Amphibious blenny with two long muscular pelvic legs, short fin arms, blunt ugly fish face, ivory spinal barnacles, ragged dorsal fin. A weaker close harrier from storm-beaten black sand shore, distant surf and sea stacks, wet sand and tide pools, rust seaweed, associated with Reef Breaker but a distinct species, never a miniature boss. Highly detailed desaturated dark watercolor with granular pigment and layered washes within creature, broken ink contours, rich tactile anatomy and charcoal shadows, restrained theme accents. Full body centered facing LEFT in three-quarter view, ALL extremities completely visible with ample empty margin. GENUINELY TRANSPARENT PNG ALPHA CHANNEL everywhere outside creature. No background, no scenery, no paper rectangle, no ground patch, no floor, NO SHADOW, no cast/drop shadow, no aura, no haze, no text, no label, no frame, no UI. Finished production game asset.",
+      "relative_asset_path": "dice-and-destiny-client/assets/battle/minions/reef_breaker/barnacle_hopper.png",
+      "source_reference_paths": [
+        "dice-and-destiny-client/assets/battle/fighters/reef_breaker.png",
+        "dice-and-destiny-client/assets/battle/habitats/storm_shore.png"
+      ],
+      "generated_source_path": "/Users/daddymere/.codex/generated_images/01a0ba2d-5cc7-7070-96c9-d262aeade317/exec-2233b7ea-f193-440b-93fa-1ac4d7b1a606.png",
+      "status": "completed",
+      "final_prompt": "Use case: stylized-concept. Asset: standalone full-body dark fantasy battle minion sprite, ONE creature. Subject: Barnacle Hopper: Amphibious blenny with two long muscular pelvic legs, short fin arms, blunt ugly fish face, ivory spinal barnacles, ragged dorsal fin. A weaker close harrier from storm-beaten black sand shore, distant surf and sea stacks, wet sand and tide pools, rust seaweed, associated with Reef Breaker but a distinct species, never a miniature boss. Highly detailed desaturated dark watercolor with granular pigment and layered washes within creature, broken ink contours, rich tactile anatomy and charcoal shadows, restrained theme accents. Full body centered facing LEFT in three-quarter view, ALL extremities completely visible with ample empty margin. GENUINELY TRANSPARENT PNG ALPHA CHANNEL everywhere outside creature. No background, no scenery, no paper rectangle, no ground patch, no floor, NO SHADOW, no cast/drop shadow, no aura, no haze, no text, no label, no frame, no UI. Finished production game asset. Keep long appendages curled inward to preserve all tips. Leave 10% clear transparent margin."
+    },
+    {
+      "id": "brinecomb_urchin",
+      "name": "Brinecomb Urchin",
+      "role": "area defender",
+      "description": "Flattened urchin, varied ivory needles, five thick articulated walking spines, small front black mouth, purple-gray test, sparse rusty algae",
+      "prompt": "Use case: stylized-concept. Asset: standalone full-body dark fantasy battle minion sprite, ONE creature. Subject: Brinecomb Urchin: Flattened urchin, varied ivory needles, five thick articulated walking spines, small front black mouth, purple-gray test, sparse rusty algae. A weaker area defender from storm-beaten black sand shore, distant surf and sea stacks, wet sand and tide pools, rust seaweed, associated with Reef Breaker but a distinct species, never a miniature boss. Highly detailed desaturated dark watercolor with granular pigment and layered washes within creature, broken ink contours, rich tactile anatomy and charcoal shadows, restrained theme accents. Full body centered facing LEFT in three-quarter view, ALL extremities completely visible with ample empty margin. GENUINELY TRANSPARENT PNG ALPHA CHANNEL everywhere outside creature. No background, no scenery, no paper rectangle, no ground patch, no floor, NO SHADOW, no cast/drop shadow, no aura, no haze, no text, no label, no frame, no UI. Finished production game asset.",
+      "relative_asset_path": "dice-and-destiny-client/assets/battle/minions/reef_breaker/brinecomb_urchin.png",
+      "source_reference_paths": [
+        "dice-and-destiny-client/assets/battle/fighters/reef_breaker.png",
+        "dice-and-destiny-client/assets/battle/habitats/storm_shore.png"
+      ],
+      "generated_source_path": "/Users/daddymere/.codex/generated_images/01a0ba2d-5cc7-7070-96c9-d262aeade317/exec-308bee46-e55a-4e28-83d5-e4b2c4b05316.png",
+      "status": "completed",
+      "final_prompt": "Use case: stylized-concept. Asset: standalone full-body dark fantasy battle minion sprite, ONE creature. Subject: Brinecomb Urchin: Flattened urchin, varied ivory needles, five thick articulated walking spines, small front black mouth, purple-gray test, sparse rusty algae. A weaker area defender from storm-beaten black sand shore, distant surf and sea stacks, wet sand and tide pools, rust seaweed, associated with Reef Breaker but a distinct species, never a miniature boss. Highly detailed desaturated dark watercolor with granular pigment and layered washes within creature, broken ink contours, rich tactile anatomy and charcoal shadows, restrained theme accents. Full body centered facing LEFT in three-quarter view, ALL extremities completely visible with ample empty margin. GENUINELY TRANSPARENT PNG ALPHA CHANNEL everywhere outside creature. No background, no scenery, no paper rectangle, no ground patch, no floor, NO SHADOW, no cast/drop shadow, no aura, no haze, no text, no label, no frame, no UI. Finished production game asset. Keep long appendages curled inward to preserve all tips. Leave 10% clear transparent margin."
+    },
+    {
+      "id": "wrack_hound",
+      "name": "Wrack Hound",
+      "role": "pack hunter",
+      "description": "Small lean seal-dog, wet slate fur, webbed clawed paws, whiskered muzzle, short tail, seaweed around one shoulder, narrow ivory tusks",
+      "prompt": "Use case: stylized-concept. Asset: standalone full-body dark fantasy battle minion sprite, ONE creature. Subject: Wrack Hound: Small lean seal-dog, wet slate fur, webbed clawed paws, whiskered muzzle, short tail, seaweed around one shoulder, narrow ivory tusks. A weaker pack hunter from storm-beaten black sand shore, distant surf and sea stacks, wet sand and tide pools, rust seaweed, associated with Reef Breaker but a distinct species, never a miniature boss. Highly detailed desaturated dark watercolor with granular pigment and layered washes within creature, broken ink contours, rich tactile anatomy and charcoal shadows, restrained theme accents. Full body centered facing LEFT in three-quarter view, ALL extremities completely visible with ample empty margin. GENUINELY TRANSPARENT PNG ALPHA CHANNEL everywhere outside creature. No background, no scenery, no paper rectangle, no ground patch, no floor, NO SHADOW, no cast/drop shadow, no aura, no haze, no text, no label, no frame, no UI. Finished production game asset.",
+      "relative_asset_path": "dice-and-destiny-client/assets/battle/minions/reef_breaker/wrack_hound.png",
+      "source_reference_paths": [
+        "dice-and-destiny-client/assets/battle/fighters/reef_breaker.png",
+        "dice-and-destiny-client/assets/battle/habitats/storm_shore.png"
+      ],
+      "generated_source_path": "/Users/daddymere/.codex/generated_images/01a0ba2d-5cc7-7070-96c9-d262aeade317/exec-35866b81-0635-4f9e-931a-f6613543de65.png",
+      "status": "completed",
+      "final_prompt": "Use case: stylized-concept. Asset: standalone full-body dark fantasy battle minion sprite, ONE creature. Subject: Wrack Hound: Small lean seal-dog, wet slate fur, webbed clawed paws, whiskered muzzle, short tail, seaweed around one shoulder, narrow ivory tusks. A weaker pack hunter from storm-beaten black sand shore, distant surf and sea stacks, wet sand and tide pools, rust seaweed, associated with Reef Breaker but a distinct species, never a miniature boss. Highly detailed desaturated dark watercolor with granular pigment and layered washes within creature, broken ink contours, rich tactile anatomy and charcoal shadows, restrained theme accents. Full body centered facing LEFT in three-quarter view, ALL extremities completely visible with ample empty margin. GENUINELY TRANSPARENT PNG ALPHA CHANNEL everywhere outside creature. No background, no scenery, no paper rectangle, no ground patch, no floor, NO SHADOW, no cast/drop shadow, no aura, no haze, no text, no label, no frame, no UI. Finished production game asset. Keep long appendages curled inward to preserve all tips. Leave 10% clear transparent margin."
+    },
+    {
+      "id": "razorshell_skate",
+      "name": "Razorshell Skate",
+      "role": "flanking swimmer",
+      "description": "Diamond ray, abrasive shell plates only on wing edges, short clawed pelvic feet, whip tail, folded cephalic lobes and small toothed mouth",
+      "prompt": "Use case: stylized-concept. Asset: standalone full-body dark fantasy battle minion sprite, ONE creature. Subject: Razorshell Skate: Diamond ray, abrasive shell plates only on wing edges, short clawed pelvic feet, whip tail, folded cephalic lobes and small toothed mouth. A weaker flanking swimmer from storm-beaten black sand shore, distant surf and sea stacks, wet sand and tide pools, rust seaweed, associated with Reef Breaker but a distinct species, never a miniature boss. Highly detailed desaturated dark watercolor with granular pigment and layered washes within creature, broken ink contours, rich tactile anatomy and charcoal shadows, restrained theme accents. Full body centered facing LEFT in three-quarter view, ALL extremities completely visible with ample empty margin. GENUINELY TRANSPARENT PNG ALPHA CHANNEL everywhere outside creature. No background, no scenery, no paper rectangle, no ground patch, no floor, NO SHADOW, no cast/drop shadow, no aura, no haze, no text, no label, no frame, no UI. Finished production game asset.",
+      "relative_asset_path": "dice-and-destiny-client/assets/battle/minions/reef_breaker/razorshell_skate.png",
+      "source_reference_paths": [
+        "dice-and-destiny-client/assets/battle/fighters/reef_breaker.png",
+        "dice-and-destiny-client/assets/battle/habitats/storm_shore.png"
+      ],
+      "generated_source_path": "/Users/daddymere/.codex/generated_images/01a0ba2d-5cc7-7070-96c9-d262aeade317/exec-d8890ecf-1dde-49e7-ab81-d4e0fddeedd7.png",
+      "status": "completed",
+      "final_prompt": "Use case: stylized-concept. Asset: standalone full-body dark fantasy battle minion sprite, ONE creature. Subject: Razorshell Skate: Diamond ray, abrasive shell plates only on wing edges, short clawed pelvic feet, whip tail, folded cephalic lobes and small toothed mouth. A weaker flanking swimmer from storm-beaten black sand shore, distant surf and sea stacks, wet sand and tide pools, rust seaweed, associated with Reef Breaker but a distinct species, never a miniature boss. Highly detailed desaturated dark watercolor with granular pigment and layered washes within creature, broken ink contours, rich tactile anatomy and charcoal shadows, restrained theme accents. Full body centered facing LEFT in three-quarter view, ALL extremities completely visible with ample empty margin. GENUINELY TRANSPARENT PNG ALPHA CHANNEL everywhere outside creature. No background, no scenery, no paper rectangle, no ground patch, no floor, NO SHADOW, no cast/drop shadow, no aura, no haze, no text, no label, no frame, no UI. Finished production game asset. Keep long appendages curled inward to preserve all tips. Leave 10% clear transparent margin."
+    },
+    {
+      "id": "tide_chisel",
+      "name": "Tide Chisel",
+      "role": "armor picker",
+      "description": "Thin long-necked shorebird, knobbly webbed legs, hooked chisel beak, charcoal salt-edged feathers, ragged hunched back, folded wings",
+      "prompt": "Use case: stylized-concept. Asset: standalone full-body dark fantasy battle minion sprite, ONE creature. Subject: Tide Chisel: Thin long-necked shorebird, knobbly webbed legs, hooked chisel beak, charcoal salt-edged feathers, ragged hunched back, folded wings. A weaker armor picker from storm-beaten black sand shore, distant surf and sea stacks, wet sand and tide pools, rust seaweed, associated with Reef Breaker but a distinct species, never a miniature boss. Highly detailed desaturated dark watercolor with granular pigment and layered washes within creature, broken ink contours, rich tactile anatomy and charcoal shadows, restrained theme accents. Full body centered facing LEFT in three-quarter view, ALL extremities completely visible with ample empty margin. GENUINELY TRANSPARENT PNG ALPHA CHANNEL everywhere outside creature. No background, no scenery, no paper rectangle, no ground patch, no floor, NO SHADOW, no cast/drop shadow, no aura, no haze, no text, no label, no frame, no UI. Finished production game asset.",
+      "relative_asset_path": "dice-and-destiny-client/assets/battle/minions/reef_breaker/tide_chisel.png",
+      "source_reference_paths": [
+        "dice-and-destiny-client/assets/battle/fighters/reef_breaker.png",
+        "dice-and-destiny-client/assets/battle/habitats/storm_shore.png"
+      ],
+      "generated_source_path": "/Users/daddymere/.codex/generated_images/01a0ba2d-5cc7-7070-96c9-d262aeade317/exec-910e0731-d6dc-4f94-8245-3d49c67d40af.png",
+      "status": "completed",
+      "final_prompt": "Use case: stylized-concept. Asset: standalone full-body dark fantasy battle minion sprite, ONE creature. Subject: Tide Chisel: Thin long-necked shorebird, knobbly webbed legs, hooked chisel beak, charcoal salt-edged feathers, ragged hunched back, folded wings. A weaker armor picker from storm-beaten black sand shore, distant surf and sea stacks, wet sand and tide pools, rust seaweed, associated with Reef Breaker but a distinct species, never a miniature boss. Highly detailed desaturated dark watercolor with granular pigment and layered washes within creature, broken ink contours, rich tactile anatomy and charcoal shadows, restrained theme accents. Full body centered facing LEFT in three-quarter view, ALL extremities completely visible with ample empty margin. GENUINELY TRANSPARENT PNG ALPHA CHANNEL everywhere outside creature. No background, no scenery, no paper rectangle, no ground patch, no floor, NO SHADOW, no cast/drop shadow, no aura, no haze, no text, no label, no frame, no UI. Finished production game asset. Keep long appendages curled inward to preserve all tips. Leave 10% clear transparent margin."
+    },
+    {
+      "id": "mussel_maw",
+      "name": "Mussel Maw",
+      "role": "stationary snapper",
+      "description": "Upright elongated black mussel, hinged shell slightly open with pale internal tooth ridges and fleshy tongue, three thick tendril feet, barnacle scars",
+      "prompt": "Use case: stylized-concept. Asset: standalone full-body dark fantasy battle minion sprite, ONE creature. Subject: Mussel Maw: Upright elongated black mussel, hinged shell slightly open with pale internal tooth ridges and fleshy tongue, three thick tendril feet, barnacle scars. A weaker stationary snapper from storm-beaten black sand shore, distant surf and sea stacks, wet sand and tide pools, rust seaweed, associated with Reef Breaker but a distinct species, never a miniature boss. Highly detailed desaturated dark watercolor with granular pigment and layered washes within creature, broken ink contours, rich tactile anatomy and charcoal shadows, restrained theme accents. Full body centered facing LEFT in three-quarter view, ALL extremities completely visible with ample empty margin. GENUINELY TRANSPARENT PNG ALPHA CHANNEL everywhere outside creature. No background, no scenery, no paper rectangle, no ground patch, no floor, NO SHADOW, no cast/drop shadow, no aura, no haze, no text, no label, no frame, no UI. Finished production game asset.",
+      "relative_asset_path": "dice-and-destiny-client/assets/battle/minions/reef_breaker/mussel_maw.png",
+      "source_reference_paths": [
+        "dice-and-destiny-client/assets/battle/fighters/reef_breaker.png",
+        "dice-and-destiny-client/assets/battle/habitats/storm_shore.png"
+      ],
+      "generated_source_path": "/Users/daddymere/.codex/generated_images/01a0ba2d-5cc7-7070-96c9-d262aeade317/exec-897bccad-ab80-4ee4-877e-f7422f6ccc3f.png",
+      "status": "completed",
+      "final_prompt": "Use case: stylized-concept. Asset: standalone full-body dark fantasy battle minion sprite, ONE creature. Subject: Mussel Maw: Upright elongated black mussel, hinged shell slightly open with pale internal tooth ridges and fleshy tongue, three thick tendril feet, barnacle scars. A weaker stationary snapper from storm-beaten black sand shore, distant surf and sea stacks, wet sand and tide pools, rust seaweed, associated with Reef Breaker but a distinct species, never a miniature boss. Highly detailed desaturated dark watercolor with granular pigment and layered washes within creature, broken ink contours, rich tactile anatomy and charcoal shadows, restrained theme accents. Full body centered facing LEFT in three-quarter view, ALL extremities completely visible with ample empty margin. GENUINELY TRANSPARENT PNG ALPHA CHANNEL everywhere outside creature. No background, no scenery, no paper rectangle, no ground patch, no floor, NO SHADOW, no cast/drop shadow, no aura, no haze, no text, no label, no frame, no UI. Finished production game asset. Keep long appendages curled inward to preserve all tips. Leave 10% clear transparent margin."
+    },
+    {
+      "id": "spray_skitter",
+      "name": "Spray Skitter",
+      "role": "scout",
+      "description": "Amphipod sand hopper, curved shrimp body, seven delicate running legs, translucent fan tail, long sensory antennae, no large claws",
+      "prompt": "Use case: stylized-concept. Asset: standalone full-body dark fantasy battle minion sprite, ONE creature. Subject: Spray Skitter: Amphipod sand hopper, curved shrimp body, seven delicate running legs, translucent fan tail, long sensory antennae, no large claws. A weaker scout from storm-beaten black sand shore, distant surf and sea stacks, wet sand and tide pools, rust seaweed, associated with Reef Breaker but a distinct species, never a miniature boss. Highly detailed desaturated dark watercolor with granular pigment and layered washes within creature, broken ink contours, rich tactile anatomy and charcoal shadows, restrained theme accents. Full body centered facing LEFT in three-quarter view, ALL extremities completely visible with ample empty margin. GENUINELY TRANSPARENT PNG ALPHA CHANNEL everywhere outside creature. No background, no scenery, no paper rectangle, no ground patch, no floor, NO SHADOW, no cast/drop shadow, no aura, no haze, no text, no label, no frame, no UI. Finished production game asset.",
+      "relative_asset_path": "dice-and-destiny-client/assets/battle/minions/reef_breaker/spray_skitter.png",
+      "source_reference_paths": [
+        "dice-and-destiny-client/assets/battle/fighters/reef_breaker.png",
+        "dice-and-destiny-client/assets/battle/habitats/storm_shore.png"
+      ],
+      "generated_source_path": "/Users/daddymere/.codex/generated_images/01a0ba2d-5cc7-7070-96c9-d262aeade317/exec-8c5a4b8f-db09-488c-9635-ea6031a91363.png",
+      "status": "completed",
+      "final_prompt": "Use case: stylized-concept. Asset: standalone full-body dark fantasy battle minion sprite, ONE creature. Subject: Spray Skitter: Amphipod sand hopper, curved shrimp body, seven delicate running legs, translucent fan tail, long sensory antennae, no large claws. A weaker scout from storm-beaten black sand shore, distant surf and sea stacks, wet sand and tide pools, rust seaweed, associated with Reef Breaker but a distinct species, never a miniature boss. Highly detailed desaturated dark watercolor with granular pigment and layered washes within creature, broken ink contours, rich tactile anatomy and charcoal shadows, restrained theme accents. Full body centered facing LEFT in three-quarter view, ALL extremities completely visible with ample empty margin. GENUINELY TRANSPARENT PNG ALPHA CHANNEL everywhere outside creature. No background, no scenery, no paper rectangle, no ground patch, no floor, NO SHADOW, no cast/drop shadow, no aura, no haze, no text, no label, no frame, no UI. Finished production game asset. Keep long appendages curled inward to preserve all tips. Leave 10% clear transparent margin."
+    },
+    {
+      "id": "saltpurse_slug",
+      "name": "Saltpurse Slug",
+      "role": "healing grazer",
+      "description": "Thick low sea slug, folded charcoal mantle lobes, ivory rear gill branches, two blunt rhinophores, pearly mouth flap, restrained teal spots",
+      "prompt": "Use case: stylized-concept. Asset: standalone full-body dark fantasy battle minion sprite, ONE creature. Subject: Saltpurse Slug: Thick low sea slug, folded charcoal mantle lobes, ivory rear gill branches, two blunt rhinophores, pearly mouth flap, restrained teal spots. A weaker healing grazer from storm-beaten black sand shore, distant surf and sea stacks, wet sand and tide pools, rust seaweed, associated with Reef Breaker but a distinct species, never a miniature boss. Highly detailed desaturated dark watercolor with granular pigment and layered washes within creature, broken ink contours, rich tactile anatomy and charcoal shadows, restrained theme accents. Full body centered facing LEFT in three-quarter view, ALL extremities completely visible with ample empty margin. GENUINELY TRANSPARENT PNG ALPHA CHANNEL everywhere outside creature. No background, no scenery, no paper rectangle, no ground patch, no floor, NO SHADOW, no cast/drop shadow, no aura, no haze, no text, no label, no frame, no UI. Finished production game asset.",
+      "relative_asset_path": "dice-and-destiny-client/assets/battle/minions/reef_breaker/saltpurse_slug.png",
+      "source_reference_paths": [
+        "dice-and-destiny-client/assets/battle/fighters/reef_breaker.png",
+        "dice-and-destiny-client/assets/battle/habitats/storm_shore.png"
+      ],
+      "generated_source_path": "/Users/daddymere/.codex/generated_images/01a0ba2d-5cc7-7070-96c9-d262aeade317/exec-a89649f7-66b5-429c-a923-9e337d9ce310.png",
+      "status": "completed",
+      "final_prompt": "Use case: stylized-concept. Asset: standalone full-body dark fantasy battle minion sprite, ONE creature. Subject: Saltpurse Slug: Thick low sea slug, folded charcoal mantle lobes, ivory rear gill branches, two blunt rhinophores, pearly mouth flap, restrained teal spots. A weaker healing grazer from storm-beaten black sand shore, distant surf and sea stacks, wet sand and tide pools, rust seaweed, associated with Reef Breaker but a distinct species, never a miniature boss. Highly detailed desaturated dark watercolor with granular pigment and layered washes within creature, broken ink contours, rich tactile anatomy and charcoal shadows, restrained theme accents. Full body centered facing LEFT in three-quarter view, ALL extremities completely visible with ample empty margin. GENUINELY TRANSPARENT PNG ALPHA CHANNEL everywhere outside creature. No background, no scenery, no paper rectangle, no ground patch, no floor, NO SHADOW, no cast/drop shadow, no aura, no haze, no text, no label, no frame, no UI. Finished production game asset. Keep long appendages curled inward to preserve all tips. Leave 10% clear transparent margin."
+    },
+    {
+      "id": "breakwater_bristle",
+      "name": "Breakwater Bristle",
+      "role": "burrowing striker",
+      "description": "Short thick bristleworm in shallow S, pale stiff bristles, dark maroon wet segments, four mouth palps, small black hook jaws, no armor",
+      "prompt": "Use case: stylized-concept. Asset: standalone full-body dark fantasy battle minion sprite, ONE creature. Subject: Breakwater Bristle: Short thick bristleworm in shallow S, pale stiff bristles, dark maroon wet segments, four mouth palps, small black hook jaws, no armor. A weaker burrowing striker from storm-beaten black sand shore, distant surf and sea stacks, wet sand and tide pools, rust seaweed, associated with Reef Breaker but a distinct species, never a miniature boss. Highly detailed desaturated dark watercolor with granular pigment and layered washes within creature, broken ink contours, rich tactile anatomy and charcoal shadows, restrained theme accents. Full body centered facing LEFT in three-quarter view, ALL extremities completely visible with ample empty margin. GENUINELY TRANSPARENT PNG ALPHA CHANNEL everywhere outside creature. No background, no scenery, no paper rectangle, no ground patch, no floor, NO SHADOW, no cast/drop shadow, no aura, no haze, no text, no label, no frame, no UI. Finished production game asset.",
+      "relative_asset_path": "dice-and-destiny-client/assets/battle/minions/reef_breaker/breakwater_bristle.png",
+      "source_reference_paths": [
+        "dice-and-destiny-client/assets/battle/fighters/reef_breaker.png",
+        "dice-and-destiny-client/assets/battle/habitats/storm_shore.png"
+      ],
+      "generated_source_path": "/Users/daddymere/.codex/generated_images/01a0ba2d-5cc7-7070-96c9-d262aeade317/exec-aec263e8-55f3-4ae5-ae22-4f368b1dd541.png",
+      "status": "completed",
+      "final_prompt": "Use case: stylized-concept. Asset: standalone full-body dark fantasy battle minion sprite, ONE creature. Subject: Breakwater Bristle: Short thick bristleworm in shallow S, pale stiff bristles, dark maroon wet segments, four mouth palps, small black hook jaws, no armor. A weaker burrowing striker from storm-beaten black sand shore, distant surf and sea stacks, wet sand and tide pools, rust seaweed, associated with Reef Breaker but a distinct species, never a miniature boss. Highly detailed desaturated dark watercolor with granular pigment and layered washes within creature, broken ink contours, rich tactile anatomy and charcoal shadows, restrained theme accents. Full body centered facing LEFT in three-quarter view, ALL extremities completely visible with ample empty margin. GENUINELY TRANSPARENT PNG ALPHA CHANNEL everywhere outside creature. No background, no scenery, no paper rectangle, no ground patch, no floor, NO SHADOW, no cast/drop shadow, no aura, no haze, no text, no label, no frame, no UI. Finished production game asset. Keep long appendages curled inward to preserve all tips. Leave 10% clear transparent margin."
+    }
+  ]
+}

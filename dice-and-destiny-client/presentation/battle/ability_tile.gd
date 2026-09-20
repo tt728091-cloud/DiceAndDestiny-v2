@@ -9,6 +9,7 @@ var _offensive_summary: VBoxContainer
 const CINEMATIC := preload("res://presentation/battle/cinematic_theme.gd")
 const UPGRADE_DURATION := 2.8
 signal tier_pressed(tier_id: String)
+signal choice_pressed(action: Dictionary)
 
 # The tile remains the visual/tooltip container; only the individual tiers
 # receive clicks and keyboard focus in this mode.
@@ -79,6 +80,44 @@ func configure_tiers(options: Array[Dictionary], selected_tier: String) -> void:
 	_upgrade_notice.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(_upgrade_notice)
 	custom_minimum_size = Vector2(370, 66) if _compact else content.get_combined_minimum_size() + Vector2(12, 12)
+
+# All non-Needlefang action variants share an inline row. The ability's rules
+# remain above it; the outer tile cannot accidentally choose a paid alternative.
+func configure_choices(options: Array[Dictionary]) -> void:
+	disabled = true; focus_mode = Control.FOCUS_NONE; mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var available := false
+	for option in options: available = available or bool(option.enabled)
+	_style_availability(available)
+	var body_height := custom_minimum_size.y
+	if ability_id == "shedskin":
+		# Payment is explicit in the two buttons, so don't repeat that line.
+		_recipe_label.text = _recipe_label.text.get_slice("\nOptional:", 0)
+		body_height -= 25
+	if is_instance_valid(_recipe_label):
+		_recipe_label.anchor_bottom = 0; _recipe_label.offset_bottom = body_height - 5
+	if is_instance_valid(_offensive_summary):
+		_offensive_summary.anchor_bottom = 0; _offensive_summary.offset_bottom = body_height - 4
+	var choices := GridContainer.new(); choices.name = "AbilityChoices"
+	choices.columns = mini(3, options.size())
+	choices.add_theme_constant_override("h_separation", 5); choices.add_theme_constant_override("v_separation", 5)
+	add_child(choices); choices.set_anchors_and_offsets_preset(Control.PRESET_TOP_WIDE)
+	choices.offset_left = 10; choices.offset_right = -10; choices.offset_top = body_height
+	for option in options:
+		var button := Button.new(); button.text = str(option.label); button.tooltip_text = str(option.get("tooltip", option.label))
+		button.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		button.custom_minimum_size = Vector2(0, 48); button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		button.add_theme_font_size_override("font_size", 14)
+		for state in ["normal", "hover", "pressed", "disabled"]:
+			var style := CINEMATIC.panel(Color("ffffff18") if state == "disabled" else Color("ffefc980") if state == "normal" else Color("fff1c6"), Color("8a867b") if state == "disabled" else Color("ad7b29"), 3)
+			button.add_theme_stylebox_override(state, style)
+			button.add_theme_color_override("font_" + state + "_color" if state != "normal" else "font_color", Color("7d776c") if state == "disabled" else CINEMATIC.INK)
+		button.disabled = not bool(option.enabled)
+		button.set_meta("ability_action", option.get("action", {}))
+		button.pressed.connect(func():
+			if not button.disabled: choice_pressed.emit(option.get("action", {}))
+		)
+		choices.add_child(button)
+	custom_minimum_size.y = body_height + ceili(options.size() / 3.0) * 53 + 8
 
 func show_upgrade(amount: int, elapsed: float) -> void:
 	if amount <= 0 or elapsed >= UPGRADE_DURATION or not is_instance_valid(_upgrade_notice): return

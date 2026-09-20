@@ -13,6 +13,7 @@ const (
 )
 
 type Participant struct {
+	TeamID       string
 	InstanceID   string
 	DefinitionID string
 	Controller   state.ControllerType

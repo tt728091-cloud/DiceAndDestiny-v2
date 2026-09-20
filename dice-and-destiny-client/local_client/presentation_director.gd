@@ -1,23 +1,26 @@
 class_name BattlePresentationDirector
 extends RefCounted
 
+# Completion goes straight to the viewer's results screen after queued effects;
+# it must not add a second result screen or a presentation acknowledgement.
 const MEANINGFUL := {
 	"segment_entered": true,
 	"cards_drawn": true,
 	"energy_points_gained": true,
 	"status_changed": true,
-	"battle_completed": true,
 }
 
 var _queue: Array = []
 var _status_updates: Array[Dictionary] = []
 var _last_sequence := 0
+# Received events must not replay while their presentation watermark is pending.
+var _last_received_sequence := 0
 var learned_battle_mode := false
 
 func configure_learned_battle(enabled: bool) -> void:
 	learned_battle_mode = enabled
 
-func queue_result(result: Dictionary, already_presented_sequence: int = 0) -> void:
+func queue_result(result: Dictionary, already_presented_sequence: int = 0, previous_actors: Dictionary = {}) -> void:
 	_last_sequence = maxi(_last_sequence, already_presented_sequence)
 	var ordered: Array = result.get("events", []).duplicate(true)
 	ordered.sort_custom(func(a, b): return int(a.get("sequence", 0)) < int(b.get("sequence", 0)))
@@ -36,10 +39,14 @@ func queue_result(result: Dictionary, already_presented_sequence: int = 0) -> vo
 	for emitted in ordered:
 		if emitted.get("type") == "effects_resolved": has_effects_summary = true
 	var automatic_segment := ""
+	var fresh_events: Array = []
+	var damage_actors := previous_actors.duplicate(true)
 	for event in ordered:
 		if event.get("type") == "segment_entered": automatic_segment = str(event.get("segment", event.get("to", "")))
 		var sequence := int(event.get("sequence", 0))
-		if sequence > 0 and sequence <= _last_sequence: continue
+		if sequence > 0 and sequence <= maxi(_last_sequence, _last_received_sequence): continue
+		_last_received_sequence = maxi(_last_received_sequence, sequence)
+		fresh_events.append(event)
 		var kind := str(event.get("type", ""))
 		var event_segment := automatic_segment
 		if event_segment.is_empty(): event_segment = str(event.get("segment", ""))
@@ -60,6 +67,20 @@ func queue_result(result: Dictionary, already_presented_sequence: int = 0) -> vo
 			if _queue.is_empty(): _last_sequence = maxi(_last_sequence, sequence)
 			else: _queue[-1]["watermark"] = sequence
 			continue
+		if kind == "damage_committed" and event_segment == "damage_resolution":
+			_remove_segment_placeholder(event_segment)
+			var data: Dictionary = event.get("data", {}).duplicate(true)
+			# Go's empty slices can arrive as JSON null (not a missing key).
+			# Keep blocked sources/status applications as a real Damage beat,
+			# and normalize its collections for every downstream presenter.
+			for field in ["sources", "removals", "status_applications"]:
+				data[field] = _array(data.get(field))
+			if not data.get("sources", []).is_empty() or not data.get("removals", []).is_empty() or not data.get("status_applications", []).is_empty():
+				data["actors_before"] = _damage_baseline(event, ordered, damage_actors, snapshot)
+				damage_actors = _project_removals(data.actors_before, data.get("removals", []), -1)
+				var damage_event: Dictionary = event.duplicate(true); damage_event["data"] = data
+				_queue.append({"type": "combat_damage", "title": "Damage", "presentation_segment": "damage_resolution", "event": damage_event, "watermark": sequence})
+				continue
 		if kind in ["damage_cards_revealed", "damage_prevented_or_modified", "damage_committed", "cards_permanently_removed"]:
 			_remove_segment_placeholder(event_segment)
 			if _queue.is_empty(): _last_sequence = maxi(_last_sequence, sequence)
@@ -82,6 +103,114 @@ func queue_result(result: Dictionary, already_presented_sequence: int = 0) -> vo
 		beat["presentation_segment"] = event_segment
 		beat["segment_placeholder"] = event.get("type") == "segment_entered"
 		_queue.append(beat)
+
+	_queue_card_gains(fresh_events, previous_actors, snapshot.get("actors", {}))
+
+func _damage_baseline(event: Dictionary, ordered: Array, previous: Dictionary, snapshot: Dictionary) -> Dictionary:
+	# The last shown authority state is already before this damage batch. Never
+	# replace it with a reconstruction from a later round's Effects summary.
+	if not previous.is_empty(): return previous.duplicate(true)
+	var sequence := int(event.get("sequence", 0))
+	var baseline := previous.duplicate(true)
+	var reverse_cards: Array = []
+	# A future Effects baseline is authoritative immediately after combat. Walk
+	# back only the combat removals still awaiting presentation, never poison.
+	for later in ordered:
+		if int(later.get("sequence", 0)) < sequence: continue
+		if later.get("type") == "damage_committed" and later.get("segment") == "damage_resolution": reverse_cards.append_array(_array(later.get("data", {}).get("removals")))
+		if later.get("type") == "effects_resolved":
+			for actor_id in later.get("data", {}).get("actors_before", {}):
+				var final: Dictionary = later.data.actors_before[actor_id]
+				var actor: Dictionary = baseline.get(actor_id, {}).duplicate(true)
+				actor["current_health"] = final.get("health", 0)
+				for field in ["deck_count", "hand_count", "discard_count", "removed_count"]: actor[field] = final.get(field, 0)
+				if not actor.has("statuses"): actor["statuses"] = final.get("statuses", [])
+				baseline[actor_id] = actor
+			return _project_removals(baseline, reverse_cards, 1)
+	if not baseline.is_empty(): return baseline
+	# Restoring a save can provide the final snapshot and unpresented events,
+	# without the previous in-memory view. Reconstruct the card-count baseline.
+	return _project_removals(snapshot.get("actors", {}), reverse_cards, 1)
+
+func _array(value: Variant) -> Array:
+	return value if value is Array else []
+
+func _project_removals(actors: Dictionary, cards: Array, direction: int) -> Dictionary:
+	var projected := actors.duplicate(true)
+	var seen := {}
+	for card in cards:
+		var target := str(card.get("target_actor_id", ""))
+		var id := str(card.get("card_id", ""))
+		if not projected.has(target) or not card.get("accepted", false) or card.get("released", false) or seen.has(id): continue
+		seen[id] = true
+		var actor: Dictionary = projected[target]
+		actor["current_health"] = maxi(0, int(actor.get("current_health", 0)) + direction)
+		actor["removed_count"] = maxi(0, int(actor.get("removed_count", 0)) - direction)
+		var zone := str(card.get("original_zone", "deck")).to_lower() + "_count"
+		actor[zone] = maxi(0, int(actor.get(zone, 0)) + direction)
+	return projected
+
+func _queue_card_gains(events: Array, before: Dictionary, after: Dictionary) -> void:
+	if before.is_empty(): return
+	var played: Array = []
+	var card_events: Array = []
+	var paid_energy := {}
+	var played_count := {}
+	var seen_cards := {}
+	for event in events:
+		# These have their own coordinated animations; never infer card rewards
+		# from a snapshot that also includes next-round income or rolled defenses.
+		if event.get("type") in ["segment_entered", "effects_resolved", "defense_selected"]: return
+		if event.get("type") in ["card_played", "damage_prevented_or_modified"]:
+			var card_id := str(event.get("data", {}).get("card_definition_id", ""))
+			var instance := str(event.get("data", {}).get("card_instance_id", ""))
+			if not card_id.is_empty() and not seen_cards.has(instance):
+				seen_cards[instance] = true
+				played.append(card_id)
+				card_events.append({"definition_id": card_id, "actor_id": str(event.get("actor_id", "")), "sequence": int(event.get("sequence", 0)), "instance_id": instance})
+				var owner := str(event.get("actor_id", ""))
+				paid_energy[owner] = int(paid_energy.get(owner, 0)) + int(event.get("energy_cost", BattlePresentationCatalog.card(card_id).cost))
+				played_count[owner] = int(played_count.get(owner, 0)) + 1
+	if played.is_empty(): return
+	var names: Array[String] = []
+	for card_id in played: names.append(str(BattlePresentationCatalog.card(card_id).name))
+	var card_name := ", ".join(names)
+	var feedback := {"key": JSON.stringify(card_events), "cards": card_events}
+	var first_update := _status_updates.size()
+	for actor_id in after:
+		if not before.has(actor_id): continue
+		var initial: Dictionary = before[actor_id]
+		var final: Dictionary = after[actor_id]
+		var counts := {}
+		for status in initial.get("statuses", []): counts[str(status.get("definition_id", ""))] = int(status.get("stacks", 0))
+		for status in final.get("statuses", []):
+			var id := str(status.get("definition_id", ""))
+			var start := int(counts.get(id, 0)); var finish := int(status.get("stacks", 0))
+			if finish <= start: continue
+			var already_animated := false
+			for update in _status_updates:
+				if str(update.data.get("target_actor_id", "")) != str(actor_id): continue
+				if str(update.data.get("status_id", "incubation" if update.kind == "incubation" else "volatile_poison")) == id:
+					already_animated = true
+					update["card_name"] = card_name
+					update["card_feedback"] = feedback
+			if not already_animated:
+				_status_updates.append({"kind": "application", "card_name": card_name, "data": {"target_actor_id": actor_id, "status_id": id, "before": start, "after": finish}})
+		for pair in [["energy_points", "energy", "Energy"], ["hand_count", "hand", "cards"]]:
+			var start := int(initial.get(pair[0], 0)); var finish := int(final.get(pair[0], 0))
+			var gained := finish - start + int(paid_energy.get(actor_id, 0) if pair[1] == "energy" else played_count.get(actor_id, 0))
+			# Playing a card can hide a draw in the net hand-size change. Public
+			# draw events also work for opponents without exposing hidden card IDs.
+			if pair[1] == "hand":
+				var drawn := 0
+				for event in events:
+					if event.get("type") == "cards_drawn" and str(event.get("actor_id", "")) == str(actor_id):
+						drawn += maxi(int(event.get("count", 0)), event.get("cards", []).size())
+				gained = maxi(gained, drawn)
+			if gained > 0:
+				_status_updates.append({"kind": "resource", "card_name": card_name, "data": {"target_actor_id": actor_id, "stat": pair[1], "caption": pair[2], "amount": gained, "before": maxi(0, finish - gained), "after": finish}})
+
+	for index in range(first_update, _status_updates.size()): _status_updates[index]["card_feedback"] = feedback
 
 func _queue_income_event(event: Dictionary, sequence: int) -> void:
 	_remove_segment_placeholder("income")
@@ -138,6 +267,20 @@ func has_pending_status_animation() -> bool:
 
 func peek() -> Dictionary:
 	return _queue[0] if not _queue.is_empty() else {}
+
+func pending_damage_actor_before(actor_id: String) -> Dictionary:
+	for beat in _queue:
+		if beat.get("type") == "combat_damage": return beat.get("event", {}).get("data", {}).get("actors_before", {}).get(actor_id, {})
+	return {}
+
+func pending_effects_actor_before(actor_id: String) -> Dictionary:
+	# The authority can finish the next round while earlier segment beats are
+	# still queued. Keep profiles before that Effects batch until it is shown.
+	for beat in _queue:
+		if beat.get("type") != "effects_resolved": continue
+		var before = beat.get("event", {}).get("data", {}).get("actors_before", {}).get(actor_id, {})
+		return before if before is Dictionary else {}
+	return {}
 
 func pending_income_actor(actor_id: String) -> Dictionary:
 	for beat_value in _queue:
@@ -207,9 +350,6 @@ func _beat(event: Dictionary) -> Dictionary:
 			title = "Income Results"
 			detail = "Both combatants receive their round income"
 		"status_changed": detail = JSON.stringify(event.get("data", {}))
-		"battle_completed":
-			title = str(event.get("battle_result", "Battle Complete")).capitalize()
-			detail = "The battle is complete."
 	return {"sequence": int(event.get("sequence", 0)), "type": kind, "title": title, "detail": detail, "event": event}
 
 func take_status_updates() -> Array[Dictionary]:

@@ -28,8 +28,20 @@ development/enable_history=true
 development/enable_authority_transcript=true
 presentation/income_animation_seconds=2.0
 presentation/defense_roll_seconds=1.2
+presentation/player_roll_seconds=0.45
 presentation/defense_effects_seconds=2.4
 presentation/defense_hold_seconds=1.5
+presentation/card_cleanse_seconds=3.2
+presentation/card_gain_seconds=2.4
+presentation/catalyst_cue_seconds=0.9
+presentation/catalyst_reroll_seconds=0.9
+presentation/combat_transition_seconds=0.65
+presentation/damage_reveal_seconds=0.65
+presentation/damage_hold_seconds=2.4
+presentation/damage_removal_seconds=0.7
+presentation/damage_count_seconds=0.35
+presentation/effects_gather_seconds=0.65
+presentation/empty_segment_hold_seconds=0.8
 
 [display]
 

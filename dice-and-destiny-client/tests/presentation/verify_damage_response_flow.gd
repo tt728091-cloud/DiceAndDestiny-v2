@@ -33,7 +33,7 @@ func _run() -> void:
 	# damage batch never impose another review or manual acknowledgement.
 	screen._auto_pass_if_only_action()
 	_expect(fake.commands.is_empty(), "initial cards get review time")
-	screen._auto_pass_preview_started_ms = Time.get_ticks_msec() - 3000
+	screen._auto_pass_preview_started_ms = Time.get_ticks_msec() - ceili((preload("res://presentation/battle/combat_timing.gd").reveal() + preload("res://presentation/battle/combat_timing.gd").hold() + 0.5) * 1000)
 	screen._auto_pass_if_only_action()
 	screen._auto_pass_highlight_ms = Time.get_ticks_msec() - 300
 	fake.enqueue(damage("second", 5))

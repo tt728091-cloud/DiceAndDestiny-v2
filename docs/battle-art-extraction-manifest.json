@@ -1,0 +1,490 @@
+{
+  "mode": "built-in image generation; reference editing",
+  "entries": [
+    {
+      "id": "mire_crown",
+      "name": "Mire Crown",
+      "source": "docs/ui-mockups/dark-watercolor-monster-habitats-2026-09-15/01-mire-crowned-leech.png",
+      "habitat": "peat_bog",
+      "environment": "drowned peat bog, twisted willows, pale firm peat shelves, dark shallow pools, root arches, fog, tiny amber lights",
+      "subject": "broad low black ringed leech beast, crown of hollow ivory reed tubes, hooked gripping limbs, green-glowing toothed circular mouth, curled tapering tail",
+      "height": 390,
+      "final_height": 286.1
+    },
+    {
+      "id": "rime_burrower",
+      "name": "Rime Burrower",
+      "source": "docs/ui-mockups/dark-watercolor-monster-habitats-2026-09-15/02-rime-burrower.png",
+      "habitat": "fractured_glacier",
+      "environment": "midnight glacier chasm, vertical blue ice walls, hanging icicles, broad flat frozen lake and snowbanks",
+      "subject": "rearing segmented pale ice worm, translucent layered ice armor, wedge-shaped head, black mandibles, short ivory digging claws, coiled tail",
+      "height": 460,
+      "final_height": 433.3
+    },
+    {
+      "id": "dune_sieve",
+      "name": "Dune Sieve",
+      "source": "docs/ui-mockups/dark-watercolor-monster-habitats-2026-09-15/03-dune-sieve.png",
+      "habitat": "salt_dunes",
+      "environment": "moonlit pale salt dunes, wind-eroded sandstone fins at edges, broad smooth sand basin, smoky violet shadows",
+      "subject": "six-legged desert beetle with overlapping ivory fan armor, huge curved shovel mandibles, fine antennae",
+      "height": 380,
+      "final_height": 365.8
+    },
+    {
+      "id": "spore_cantor",
+      "name": "Spore Cantor",
+      "source": "docs/ui-mockups/dark-watercolor-monster-habitats-2026-09-15/04-spore-cantor.png",
+      "habitat": "mushroom_cavern",
+      "environment": "existing",
+      "subject": "existing",
+      "height": 520,
+      "final_height": 520.0
+    },
+    {
+      "id": "reef_breaker",
+      "name": "Reef Breaker",
+      "source": "docs/ui-mockups/dark-watercolor-monster-habitats-2026-09-15/05-reef-breaker.png",
+      "habitat": "storm_shore",
+      "environment": "storm-beaten black sand shore, distant surf and sea stacks, wet sand and tide pools, rust seaweed",
+      "subject": "massive low armored crab turtle hybrid with barnacled limestone shell, crushing claw flippers, rear webbed feet, kelp, tooth-ring mouth",
+      "height": 400,
+      "final_height": 365.8
+    },
+    {
+      "id": "ember_gullet",
+      "name": "Ember Gullet",
+      "source": "docs/ui-mockups/dark-watercolor-monster-habitats-2026-09-15/06-ember-gullet.png",
+      "habitat": "ash_caldera",
+      "environment": "volcanic caldera, stable ash platform, distant lava seams and basalt walls, smoke and falling ash",
+      "subject": "squat six-legged salamander with cracked black ceramic skin, restrained ember seams, glowing throat, ivory spinal plates, thick curled tail",
+      "height": 370,
+      "final_height": 333.9
+    },
+    {
+      "id": "root_widow",
+      "name": "Root Widow",
+      "source": "docs/ui-mockups/dark-watercolor-monster-habitats-2026-09-15/07-root-widow.png",
+      "habitat": "dead_orchard",
+      "environment": "abandoned orchard, bare black thorn trees, hanging dried fruit, distant low stone walls, rust leaves and pale earth clearing",
+      "subject": "eight-legged woody arachnid, split seedpod abdomen wrapped in roots, long crooked thorn-hook branch legs, dried seed husks, amber insect eyes",
+      "height": 420,
+      "final_height": 365.8
+    },
+    {
+      "id": "prism_devourer",
+      "name": "Prism Devourer",
+      "source": "docs/ui-mockups/dark-watercolor-monster-habitats-2026-09-15/08-prism-devourer.png",
+      "habitat": "crystal_cavern",
+      "environment": "smoky quartz cavern, muted amethyst geodes at edges, broad pale mineral sand floor, faint refractions",
+      "subject": "angular mantis-like insect, four walking limbs, two hooked crystal forearms, smoky quartz armor, diamond insect head, translucent abdomen with warm mineral core",
+      "height": 490,
+      "final_height": 433.3
+    },
+    {
+      "id": "silk_regent",
+      "name": "Silk Regent",
+      "source": "docs/ui-mockups/dark-watercolor-monster-habitats-2026-09-15/09-silk-regent.png",
+      "habitat": "shrouded_ravine",
+      "environment": "deep ravine with torn ivory silk curtains, overhead web bridges, outer-wall cocoons and black roots, broad taut dust-covered silk platform",
+      "subject": "tall draped insectoid weaver, four long walking legs, upright ribbed abdomen, hood of ragged burgundy and ivory silk, chitin head and needle forelimbs",
+      "height": 520,
+      "final_height": 433.3
+    },
+    {
+      "id": "sluice_horror",
+      "name": "Sluice Horror",
+      "source": "docs/ui-mockups/dark-watercolor-monster-habitats-2026-09-15/10-sluice-horror.png",
+      "habitat": "flooded_aqueduct",
+      "environment": "collapsed aqueduct reservoir, broken arches, rusted gates, shallow dark water, broad pale silt-covered dry embankment",
+      "subject": "blind eel monster with long jaw and needle teeth, barbels, armored body with lime scale and rusty iron rings, broad clawed forelimbs and curled tail",
+      "height": 410,
+      "final_height": 365.8
+    },
+    {
+      "id": "bellback_pilgrim",
+      "name": "Bellback Pilgrim",
+      "source": "docs/ui-mockups/dark-watercolor-enemy-lineup-2026-09-15/01-bellback-pilgrim.png",
+      "habitat": "wasteland",
+      "environment": "",
+      "subject": "quadruped with gigantic cracked iron bell shell, chains, small hanging bells, dangling bone charms, four long knuckled ivory limbs",
+      "height": 500,
+      "final_height": 459.9
+    },
+    {
+      "id": "ashwing_matriarch",
+      "name": "Ashwing Matriarch",
+      "source": "docs/ui-mockups/dark-watercolor-enemy-lineup-2026-09-15/02-ashwing-matriarch.png",
+      "habitat": "wasteland",
+      "environment": "",
+      "subject": "grounded moth beast, huge upright folded ragged ivory vellum wings with soot veins and burgundy burned edges, feathery antennae, dark hairy body and insect legs",
+      "height": 550,
+      "final_height": 433.3
+    },
+    {
+      "id": "reliquary_crab",
+      "name": "Reliquary Crab",
+      "source": "docs/ui-mockups/dark-watercolor-enemy-lineup-2026-09-15/03-reliquary-crab.png",
+      "habitat": "wasteland",
+      "environment": "",
+      "subject": "asymmetrical six-legged crustacean, weathered carved stone reliquary shell, lanterns, bronze strapping and enormous uneven claws",
+      "height": 430,
+      "final_height": 365.8
+    },
+    {
+      "id": "thorn_seamstress",
+      "name": "Thorn Seamstress",
+      "source": "docs/ui-mockups/dark-watercolor-enemy-lineup-2026-09-15/04-thorn-seamstress.png",
+      "habitat": "wasteland",
+      "environment": "",
+      "subject": "stooped four-armed seamstress, featureless ceramic face, ragged grey linen, thorn branches, long needle, red thread spools and hooked shears",
+      "height": 520,
+      "final_height": 491.8
+    },
+    {
+      "id": "cinder_colossus",
+      "name": "Cinder Colossus",
+      "source": "docs/ui-mockups/dark-watercolor-enemy-lineup-2026-09-15/05-cinder-colossus.png",
+      "habitat": "wasteland",
+      "environment": "",
+      "subject": "squat broad kiln golem of charcoal basalt and fused iron, glowing furnace chest grate, ivory stone shards, massive fist and iron shovel forearm",
+      "height": 430,
+      "final_height": 430.0
+    },
+    {
+      "id": "wax_revenant",
+      "name": "Wax Revenant",
+      "source": "docs/ui-mockups/dark-watercolor-enemy-lineup-2026-09-15/06-wax-revenant.png",
+      "habitat": "wasteland",
+      "environment": "",
+      "subject": "hovering slender wax apparition, hooded featureless darkness, pale dripping candle wax, funeral cloth, burning candles and dangling thin claws",
+      "height": 530,
+      "final_height": 530.0
+    },
+    {
+      "id": "flint_tusk",
+      "name": "Flint Tusk",
+      "source": "docs/ui-mockups/dark-watercolor-enemy-lineup-2026-09-15/07-flint-tusk.png",
+      "habitat": "wasteland",
+      "environment": "",
+      "subject": "low heavy boar beast, black flint spine ridge, charcoal hide, huge uneven curved ivory tusks, cracked bone shoulder armor",
+      "height": 370,
+      "final_height": 370.0
+    },
+    {
+      "id": "drowned_oracle",
+      "name": "Drowned Oracle",
+      "source": "docs/ui-mockups/dark-watercolor-enemy-lineup-2026-09-15/08-drowned-oracle.png",
+      "habitat": "wasteland",
+      "environment": "",
+      "subject": "floating abyssal oracle with smoky mantle, broken ivory ceramic crown, pale arms holding a bowl, soft green core and dangling ribbon tendrils and brass charms",
+      "height": 520,
+      "final_height": 496.4
+    },
+    {
+      "id": "carrion_harp",
+      "name": "Carrion Harp",
+      "source": "docs/ui-mockups/dark-watercolor-enemy-lineup-2026-09-15/09-carrion-harp.png",
+      "habitat": "wasteland",
+      "environment": "",
+      "subject": "gaunt flightless skeletal bird, tall arched bony harp back with taut strands and small hanging brass charms, long hooked beak, ragged dark plumage and talons",
+      "height": 520,
+      "final_height": 520.0
+    },
+    {
+      "id": "glass_centipede",
+      "name": "Glass Centipede",
+      "source": "docs/ui-mockups/dark-watercolor-enemy-lineup-2026-09-15/10-glass-centipede.png",
+      "habitat": "wasteland",
+      "environment": "",
+      "subject": "coiled centipede with raised front, smoky green bottle-glass armor segments, bronze seams, many fine ivory legs, antennae and ivory mandibles",
+      "height": 410,
+      "final_height": 365.8
+    }
+  ],
+  "jobs": [
+    {
+      "key": "mire_crown",
+      "kind": "fighter",
+      "source": "/Users/daddymere/games/Dice-and-Destiny-v2/docs/ui-mockups/dark-watercolor-monster-habitats-2026-09-15/01-mire-crowned-leech.png",
+      "prompt": "Use case: background-extraction. Asset type: reusable transparent full-body game enemy sprite. Reference image: supplied battle mockup; isolate ONLY Mire Crown, the large enemy on the RIGHT. Preserve the reference creature's design, pose, proportions, camera angle, facing toward the left, dark desaturated watercolor and fine ink style. Subject details: broad low black ringed leech beast, crown of hollow ivory reed tubes, hooked gripping limbs, green-glowing toothed circular mouth, curled tapering tail. Entire creature must fit including every limb, tail, antenna, wing tip, weapon or dangling ornament, reconstruct any parts hidden by UI/water without adding scenery. Closely fit canvas to whole silhouette with a 3% transparent safety margin on EVERY side. Landscape canvas for wide creatures, portrait for tall ones. True transparent alpha PNG, clean antialiased edges and transparent gaps between limbs; NOT a painted checkerboard. NO human alchemist, no environment, no ground patch or shadow, no UI, text, frame or extra creatures.",
+      "dest": "dice-and-destiny-client/assets/battle/fighters/mire_crown.png"
+    },
+    {
+      "key": "rime_burrower",
+      "kind": "fighter",
+      "source": "/Users/daddymere/games/Dice-and-Destiny-v2/docs/ui-mockups/dark-watercolor-monster-habitats-2026-09-15/02-rime-burrower.png",
+      "prompt": "Use case: background-extraction. Asset type: reusable transparent full-body game enemy sprite. Reference image: supplied battle mockup; isolate ONLY Rime Burrower, the large enemy on the RIGHT. Preserve the reference creature's design, pose, proportions, camera angle, facing toward the left, dark desaturated watercolor and fine ink style. Subject details: rearing segmented pale ice worm, translucent layered ice armor, wedge-shaped head, black mandibles, short ivory digging claws, coiled tail. Entire creature must fit including every limb, tail, antenna, wing tip, weapon or dangling ornament, reconstruct any parts hidden by UI/water without adding scenery. Closely fit canvas to whole silhouette with a 3% transparent safety margin on EVERY side. Landscape canvas for wide creatures, portrait for tall ones. True transparent alpha PNG, clean antialiased edges and transparent gaps between limbs; NOT a painted checkerboard. NO human alchemist, no environment, no ground patch or shadow, no UI, text, frame or extra creatures.",
+      "dest": "dice-and-destiny-client/assets/battle/fighters/rime_burrower.png"
+    },
+    {
+      "key": "dune_sieve",
+      "kind": "fighter",
+      "source": "/Users/daddymere/games/Dice-and-Destiny-v2/docs/ui-mockups/dark-watercolor-monster-habitats-2026-09-15/03-dune-sieve.png",
+      "prompt": "Use case: background-extraction. Asset type: reusable transparent full-body game enemy sprite. Reference image: supplied battle mockup; isolate ONLY Dune Sieve, the large enemy on the RIGHT. Preserve the reference creature's design, pose, proportions, camera angle, facing toward the left, dark desaturated watercolor and fine ink style. Subject details: six-legged desert beetle with overlapping ivory fan armor, huge curved shovel mandibles, fine antennae. Entire creature must fit including every limb, tail, antenna, wing tip, weapon or dangling ornament, reconstruct any parts hidden by UI/water without adding scenery. Closely fit canvas to whole silhouette with a 3% transparent safety margin on EVERY side. Landscape canvas for wide creatures, portrait for tall ones. True transparent alpha PNG, clean antialiased edges and transparent gaps between limbs; NOT a painted checkerboard. NO human alchemist, no environment, no ground patch or shadow, no UI, text, frame or extra creatures.",
+      "dest": "dice-and-destiny-client/assets/battle/fighters/dune_sieve.png"
+    },
+    {
+      "key": "reef_breaker",
+      "kind": "fighter",
+      "source": "/Users/daddymere/games/Dice-and-Destiny-v2/docs/ui-mockups/dark-watercolor-monster-habitats-2026-09-15/05-reef-breaker.png",
+      "prompt": "Use case: background-extraction. Asset type: reusable transparent full-body game enemy sprite. Reference image: supplied battle mockup; isolate ONLY Reef Breaker, the large enemy on the RIGHT. Preserve the reference creature's design, pose, proportions, camera angle, facing toward the left, dark desaturated watercolor and fine ink style. Subject details: massive low armored crab turtle hybrid with barnacled limestone shell, crushing claw flippers, rear webbed feet, kelp, tooth-ring mouth. Entire creature must fit including every limb, tail, antenna, wing tip, weapon or dangling ornament, reconstruct any parts hidden by UI/water without adding scenery. Closely fit canvas to whole silhouette with a 3% transparent safety margin on EVERY side. Landscape canvas for wide creatures, portrait for tall ones. True transparent alpha PNG, clean antialiased edges and transparent gaps between limbs; NOT a painted checkerboard. NO human alchemist, no environment, no ground patch or shadow, no UI, text, frame or extra creatures.",
+      "dest": "dice-and-destiny-client/assets/battle/fighters/reef_breaker.png"
+    },
+    {
+      "key": "ember_gullet",
+      "kind": "fighter",
+      "source": "/Users/daddymere/games/Dice-and-Destiny-v2/docs/ui-mockups/dark-watercolor-monster-habitats-2026-09-15/06-ember-gullet.png",
+      "prompt": "Use case: background-extraction. Asset type: reusable transparent full-body game enemy sprite. Reference image: supplied battle mockup; isolate ONLY Ember Gullet, the large enemy on the RIGHT. Preserve the reference creature's design, pose, proportions, camera angle, facing toward the left, dark desaturated watercolor and fine ink style. Subject details: squat six-legged salamander with cracked black ceramic skin, restrained ember seams, glowing throat, ivory spinal plates, thick curled tail. Entire creature must fit including every limb, tail, antenna, wing tip, weapon or dangling ornament, reconstruct any parts hidden by UI/water without adding scenery. Closely fit canvas to whole silhouette with a 3% transparent safety margin on EVERY side. Landscape canvas for wide creatures, portrait for tall ones. True transparent alpha PNG, clean antialiased edges and transparent gaps between limbs; NOT a painted checkerboard. NO human alchemist, no environment, no ground patch or shadow, no UI, text, frame or extra creatures.",
+      "dest": "dice-and-destiny-client/assets/battle/fighters/ember_gullet.png"
+    },
+    {
+      "key": "root_widow",
+      "kind": "fighter",
+      "source": "/Users/daddymere/games/Dice-and-Destiny-v2/docs/ui-mockups/dark-watercolor-monster-habitats-2026-09-15/07-root-widow.png",
+      "prompt": "Use case: background-extraction. Asset type: reusable transparent full-body game enemy sprite. Reference image: supplied battle mockup; isolate ONLY Root Widow, the large enemy on the RIGHT. Preserve the reference creature's design, pose, proportions, camera angle, facing toward the left, dark desaturated watercolor and fine ink style. Subject details: eight-legged woody arachnid, split seedpod abdomen wrapped in roots, long crooked thorn-hook branch legs, dried seed husks, amber insect eyes. Entire creature must fit including every limb, tail, antenna, wing tip, weapon or dangling ornament, reconstruct any parts hidden by UI/water without adding scenery. Closely fit canvas to whole silhouette with a 3% transparent safety margin on EVERY side. Landscape canvas for wide creatures, portrait for tall ones. True transparent alpha PNG, clean antialiased edges and transparent gaps between limbs; NOT a painted checkerboard. NO human alchemist, no environment, no ground patch or shadow, no UI, text, frame or extra creatures.",
+      "dest": "dice-and-destiny-client/assets/battle/fighters/root_widow.png"
+    },
+    {
+      "key": "prism_devourer",
+      "kind": "fighter",
+      "source": "/Users/daddymere/games/Dice-and-Destiny-v2/docs/ui-mockups/dark-watercolor-monster-habitats-2026-09-15/08-prism-devourer.png",
+      "prompt": "Use case: background-extraction. Asset type: reusable transparent full-body game enemy sprite. Reference image: supplied battle mockup; isolate ONLY Prism Devourer, the large enemy on the RIGHT. Preserve the reference creature's design, pose, proportions, camera angle, facing toward the left, dark desaturated watercolor and fine ink style. Subject details: angular mantis-like insect, four walking limbs, two hooked crystal forearms, smoky quartz armor, diamond insect head, translucent abdomen with warm mineral core. Entire creature must fit including every limb, tail, antenna, wing tip, weapon or dangling ornament, reconstruct any parts hidden by UI/water without adding scenery. Closely fit canvas to whole silhouette with a 3% transparent safety margin on EVERY side. Landscape canvas for wide creatures, portrait for tall ones. True transparent alpha PNG, clean antialiased edges and transparent gaps between limbs; NOT a painted checkerboard. NO human alchemist, no environment, no ground patch or shadow, no UI, text, frame or extra creatures.",
+      "dest": "dice-and-destiny-client/assets/battle/fighters/prism_devourer.png"
+    },
+    {
+      "key": "silk_regent",
+      "kind": "fighter",
+      "source": "/Users/daddymere/games/Dice-and-Destiny-v2/docs/ui-mockups/dark-watercolor-monster-habitats-2026-09-15/09-silk-regent.png",
+      "prompt": "Use case: background-extraction. Asset type: reusable transparent full-body game enemy sprite. Reference image: supplied battle mockup; isolate ONLY Silk Regent, the large enemy on the RIGHT. Preserve the reference creature's design, pose, proportions, camera angle, facing toward the left, dark desaturated watercolor and fine ink style. Subject details: tall draped insectoid weaver, four long walking legs, upright ribbed abdomen, hood of ragged burgundy and ivory silk, chitin head and needle forelimbs. Entire creature must fit including every limb, tail, antenna, wing tip, weapon or dangling ornament, reconstruct any parts hidden by UI/water without adding scenery. Closely fit canvas to whole silhouette with a 3% transparent safety margin on EVERY side. Landscape canvas for wide creatures, portrait for tall ones. True transparent alpha PNG, clean antialiased edges and transparent gaps between limbs; NOT a painted checkerboard. NO human alchemist, no environment, no ground patch or shadow, no UI, text, frame or extra creatures.",
+      "dest": "dice-and-destiny-client/assets/battle/fighters/silk_regent.png"
+    },
+    {
+      "key": "sluice_horror",
+      "kind": "fighter",
+      "source": "/Users/daddymere/games/Dice-and-Destiny-v2/docs/ui-mockups/dark-watercolor-monster-habitats-2026-09-15/10-sluice-horror.png",
+      "prompt": "Use case: background-extraction. Asset type: reusable transparent full-body game enemy sprite. Reference image: supplied battle mockup; isolate ONLY Sluice Horror, the large enemy on the RIGHT. Preserve the reference creature's design, pose, proportions, camera angle, facing toward the left, dark desaturated watercolor and fine ink style. Subject details: blind eel monster with long jaw and needle teeth, barbels, armored body with lime scale and rusty iron rings, broad clawed forelimbs and curled tail. Entire creature must fit including every limb, tail, antenna, wing tip, weapon or dangling ornament, reconstruct any parts hidden by UI/water without adding scenery. Closely fit canvas to whole silhouette with a 3% transparent safety margin on EVERY side. Landscape canvas for wide creatures, portrait for tall ones. True transparent alpha PNG, clean antialiased edges and transparent gaps between limbs; NOT a painted checkerboard. NO human alchemist, no environment, no ground patch or shadow, no UI, text, frame or extra creatures.",
+      "dest": "dice-and-destiny-client/assets/battle/fighters/sluice_horror.png"
+    },
+    {
+      "key": "bellback_pilgrim",
+      "kind": "fighter",
+      "source": "/Users/daddymere/games/Dice-and-Destiny-v2/docs/ui-mockups/dark-watercolor-enemy-lineup-2026-09-15/01-bellback-pilgrim.png",
+      "prompt": "Use case: background-extraction. Asset type: reusable transparent full-body game enemy sprite. Reference image: supplied battle mockup; isolate ONLY Bellback Pilgrim, the large enemy on the RIGHT. Preserve the reference creature's design, pose, proportions, camera angle, facing toward the left, dark desaturated watercolor and fine ink style. Subject details: quadruped with gigantic cracked iron bell shell, chains, small hanging bells, dangling bone charms, four long knuckled ivory limbs. Entire creature must fit including every limb, tail, antenna, wing tip, weapon or dangling ornament, reconstruct any parts hidden by UI/water without adding scenery. Closely fit canvas to whole silhouette with a 3% transparent safety margin on EVERY side. Landscape canvas for wide creatures, portrait for tall ones. True transparent alpha PNG, clean antialiased edges and transparent gaps between limbs; NOT a painted checkerboard. NO human alchemist, no environment, no ground patch or shadow, no UI, text, frame or extra creatures. Absolutely no backdrop or glow: every pixel outside the creature silhouette must have alpha=0.",
+      "dest": "dice-and-destiny-client/assets/battle/fighters/bellback_pilgrim.png"
+    },
+    {
+      "key": "ashwing_matriarch",
+      "kind": "fighter",
+      "source": "/Users/daddymere/games/Dice-and-Destiny-v2/docs/ui-mockups/dark-watercolor-enemy-lineup-2026-09-15/02-ashwing-matriarch.png",
+      "prompt": "Use case: background-extraction. Asset type: reusable transparent full-body game enemy sprite. Reference image: supplied battle mockup; isolate ONLY Ashwing Matriarch, the large enemy on the RIGHT. Preserve the reference creature's design, pose, proportions, camera angle, facing toward the left, dark desaturated watercolor and fine ink style. Subject details: grounded moth beast, huge upright folded ragged ivory vellum wings with soot veins and burgundy burned edges, feathery antennae, dark hairy body and insect legs. Entire creature must fit including every limb, tail, antenna, wing tip, weapon or dangling ornament, reconstruct any parts hidden by UI/water without adding scenery. Closely fit canvas to whole silhouette with a 3% transparent safety margin on EVERY side. Landscape canvas for wide creatures, portrait for tall ones. True transparent alpha PNG, clean antialiased edges and transparent gaps between limbs; NOT a painted checkerboard. NO human alchemist, no environment, no ground patch or shadow, no UI, text, frame or extra creatures. Absolutely no backdrop or glow: every pixel outside the creature silhouette must have alpha=0.",
+      "dest": "dice-and-destiny-client/assets/battle/fighters/ashwing_matriarch.png"
+    },
+    {
+      "key": "reliquary_crab",
+      "kind": "fighter",
+      "source": "/Users/daddymere/games/Dice-and-Destiny-v2/docs/ui-mockups/dark-watercolor-enemy-lineup-2026-09-15/03-reliquary-crab.png",
+      "prompt": "Use case: background-extraction. Asset type: reusable transparent full-body game enemy sprite. Reference image: supplied battle mockup; isolate ONLY Reliquary Crab, the large enemy on the RIGHT. Preserve the reference creature's design, pose, proportions, camera angle, facing toward the left, dark desaturated watercolor and fine ink style. Subject details: asymmetrical six-legged crustacean, weathered carved stone reliquary shell, lanterns, bronze strapping and enormous uneven claws. Entire creature must fit including every limb, tail, antenna, wing tip, weapon or dangling ornament, reconstruct any parts hidden by UI/water without adding scenery. Closely fit canvas to whole silhouette with a 3% transparent safety margin on EVERY side. Landscape canvas for wide creatures, portrait for tall ones. True transparent alpha PNG, clean antialiased edges and transparent gaps between limbs; NOT a painted checkerboard. NO human alchemist, no environment, no ground patch or shadow, no UI, text, frame or extra creatures. Absolutely no backdrop or glow: every pixel outside the creature silhouette must have alpha=0.",
+      "dest": "dice-and-destiny-client/assets/battle/fighters/reliquary_crab.png"
+    },
+    {
+      "key": "thorn_seamstress",
+      "kind": "fighter",
+      "source": "/Users/daddymere/games/Dice-and-Destiny-v2/docs/ui-mockups/dark-watercolor-enemy-lineup-2026-09-15/04-thorn-seamstress.png",
+      "prompt": "Use case: background-extraction. Asset type: reusable transparent full-body game enemy sprite. Reference image: supplied battle mockup; isolate ONLY Thorn Seamstress, the large enemy on the RIGHT. Preserve the reference creature's design, pose, proportions, camera angle, facing toward the left, dark desaturated watercolor and fine ink style. Subject details: stooped four-armed seamstress, featureless ceramic face, ragged grey linen, thorn branches, long needle, red thread spools and hooked shears. Entire creature must fit including every limb, tail, antenna, wing tip, weapon or dangling ornament, reconstruct any parts hidden by UI/water without adding scenery. Closely fit canvas to whole silhouette with a 3% transparent safety margin on EVERY side. Landscape canvas for wide creatures, portrait for tall ones. True transparent alpha PNG, clean antialiased edges and transparent gaps between limbs; NOT a painted checkerboard. NO human alchemist, no environment, no ground patch or shadow, no UI, text, frame or extra creatures. Absolutely no backdrop or glow: every pixel outside the creature silhouette must have alpha=0.",
+      "dest": "dice-and-destiny-client/assets/battle/fighters/thorn_seamstress.png"
+    },
+    {
+      "key": "cinder_colossus",
+      "kind": "fighter",
+      "source": "/Users/daddymere/games/Dice-and-Destiny-v2/docs/ui-mockups/dark-watercolor-enemy-lineup-2026-09-15/05-cinder-colossus.png",
+      "prompt": "Use case: background-extraction. Asset type: reusable transparent full-body game enemy sprite. Reference image: supplied battle mockup; isolate ONLY Cinder Colossus, the large enemy on the RIGHT. Preserve the reference creature's design, pose, proportions, camera angle, facing toward the left, dark desaturated watercolor and fine ink style. Subject details: squat broad kiln golem of charcoal basalt and fused iron, glowing furnace chest grate, ivory stone shards, massive fist and iron shovel forearm. Entire creature must fit including every limb, tail, antenna, wing tip, weapon or dangling ornament, reconstruct any parts hidden by UI/water without adding scenery. Closely fit canvas to whole silhouette with a 3% transparent safety margin on EVERY side. Landscape canvas for wide creatures, portrait for tall ones. True transparent alpha PNG, clean antialiased edges and transparent gaps between limbs; NOT a painted checkerboard. NO human alchemist, no environment, no ground patch or shadow, no UI, text, frame or extra creatures. Absolutely no backdrop or glow: every pixel outside the creature silhouette must have alpha=0.",
+      "dest": "dice-and-destiny-client/assets/battle/fighters/cinder_colossus.png"
+    },
+    {
+      "key": "wax_revenant",
+      "kind": "fighter",
+      "source": "/Users/daddymere/games/Dice-and-Destiny-v2/docs/ui-mockups/dark-watercolor-enemy-lineup-2026-09-15/06-wax-revenant.png",
+      "prompt": "Use case: background-extraction. Asset type: reusable transparent full-body game enemy sprite. Reference image: supplied battle mockup; isolate ONLY Wax Revenant, the large enemy on the RIGHT. Preserve the reference creature's design, pose, proportions, camera angle, facing toward the left, dark desaturated watercolor and fine ink style. Subject details: hovering slender wax apparition, hooded featureless darkness, pale dripping candle wax, funeral cloth, burning candles and dangling thin claws. Entire creature must fit including every limb, tail, antenna, wing tip, weapon or dangling ornament, reconstruct any parts hidden by UI/water without adding scenery. Closely fit canvas to whole silhouette with a 3% transparent safety margin on EVERY side. Landscape canvas for wide creatures, portrait for tall ones. True transparent alpha PNG, clean antialiased edges and transparent gaps between limbs; NOT a painted checkerboard. NO human alchemist, no environment, no ground patch or shadow, no UI, text, frame or extra creatures. Absolutely no backdrop or glow: every pixel outside the creature silhouette must have alpha=0.",
+      "dest": "dice-and-destiny-client/assets/battle/fighters/wax_revenant.png"
+    },
+    {
+      "key": "flint_tusk",
+      "kind": "fighter",
+      "source": "/Users/daddymere/games/Dice-and-Destiny-v2/docs/ui-mockups/dark-watercolor-enemy-lineup-2026-09-15/07-flint-tusk.png",
+      "prompt": "Use case: background-extraction. Asset type: reusable transparent full-body game enemy sprite. Reference image: supplied battle mockup; isolate ONLY Flint Tusk, the large enemy on the RIGHT. Preserve the reference creature's design, pose, proportions, camera angle, facing toward the left, dark desaturated watercolor and fine ink style. Subject details: low heavy boar beast, black flint spine ridge, charcoal hide, huge uneven curved ivory tusks, cracked bone shoulder armor. Entire creature must fit including every limb, tail, antenna, wing tip, weapon or dangling ornament, reconstruct any parts hidden by UI/water without adding scenery. Closely fit canvas to whole silhouette with a 3% transparent safety margin on EVERY side. Landscape canvas for wide creatures, portrait for tall ones. True transparent alpha PNG, clean antialiased edges and transparent gaps between limbs; NOT a painted checkerboard. NO human alchemist, no environment, no ground patch or shadow, no UI, text, frame or extra creatures. Absolutely no backdrop or glow: every pixel outside the creature silhouette must have alpha=0.",
+      "dest": "dice-and-destiny-client/assets/battle/fighters/flint_tusk.png"
+    },
+    {
+      "key": "drowned_oracle",
+      "kind": "fighter",
+      "source": "/Users/daddymere/games/Dice-and-Destiny-v2/docs/ui-mockups/dark-watercolor-enemy-lineup-2026-09-15/08-drowned-oracle.png",
+      "prompt": "Use case: background-extraction. Asset type: reusable transparent full-body game enemy sprite. Reference image: supplied battle mockup; isolate ONLY Drowned Oracle, the large enemy on the RIGHT. Preserve the reference creature's design, pose, proportions, camera angle, facing toward the left, dark desaturated watercolor and fine ink style. Subject details: floating abyssal oracle with smoky mantle, broken ivory ceramic crown, pale arms holding a bowl, soft green core and dangling ribbon tendrils and brass charms. Entire creature must fit including every limb, tail, antenna, wing tip, weapon or dangling ornament, reconstruct any parts hidden by UI/water without adding scenery. Closely fit canvas to whole silhouette with a 3% transparent safety margin on EVERY side. Landscape canvas for wide creatures, portrait for tall ones. True transparent alpha PNG, clean antialiased edges and transparent gaps between limbs; NOT a painted checkerboard. NO human alchemist, no environment, no ground patch or shadow, no UI, text, frame or extra creatures. Absolutely no backdrop or glow: every pixel outside the creature silhouette must have alpha=0.",
+      "dest": "dice-and-destiny-client/assets/battle/fighters/drowned_oracle.png"
+    },
+    {
+      "key": "carrion_harp",
+      "kind": "fighter",
+      "source": "/Users/daddymere/games/Dice-and-Destiny-v2/docs/ui-mockups/dark-watercolor-enemy-lineup-2026-09-15/09-carrion-harp.png",
+      "prompt": "Use case: background-extraction. Asset type: reusable transparent full-body game enemy sprite. Reference image: supplied battle mockup; isolate ONLY Carrion Harp, the large enemy on the RIGHT. Preserve the reference creature's design, pose, proportions, camera angle, facing toward the left, dark desaturated watercolor and fine ink style. Subject details: gaunt flightless skeletal bird, tall arched bony harp back with taut strands and small hanging brass charms, long hooked beak, ragged dark plumage and talons. Entire creature must fit including every limb, tail, antenna, wing tip, weapon or dangling ornament, reconstruct any parts hidden by UI/water without adding scenery. Closely fit canvas to whole silhouette with a 3% transparent safety margin on EVERY side. Landscape canvas for wide creatures, portrait for tall ones. True transparent alpha PNG, clean antialiased edges and transparent gaps between limbs; NOT a painted checkerboard. NO human alchemist, no environment, no ground patch or shadow, no UI, text, frame or extra creatures. Absolutely no backdrop or glow: every pixel outside the creature silhouette must have alpha=0.",
+      "dest": "dice-and-destiny-client/assets/battle/fighters/carrion_harp.png"
+    },
+    {
+      "key": "glass_centipede",
+      "kind": "fighter",
+      "source": "/Users/daddymere/games/Dice-and-Destiny-v2/docs/ui-mockups/dark-watercolor-enemy-lineup-2026-09-15/10-glass-centipede.png",
+      "prompt": "Use case: background-extraction. Asset type: reusable transparent full-body game enemy sprite. Reference image: supplied battle mockup; isolate ONLY Glass Centipede, the large enemy on the RIGHT. Preserve the reference creature's design, pose, proportions, camera angle, facing toward the left, dark desaturated watercolor and fine ink style. Subject details: coiled centipede with raised front, smoky green bottle-glass armor segments, bronze seams, many fine ivory legs, antennae and ivory mandibles. Entire creature must fit including every limb, tail, antenna, wing tip, weapon or dangling ornament, reconstruct any parts hidden by UI/water without adding scenery. Closely fit canvas to whole silhouette with a 3% transparent safety margin on EVERY side. Landscape canvas for wide creatures, portrait for tall ones. True transparent alpha PNG, clean antialiased edges and transparent gaps between limbs; NOT a painted checkerboard. NO human alchemist, no environment, no ground patch or shadow, no UI, text, frame or extra creatures. Absolutely no backdrop or glow: every pixel outside the creature silhouette must have alpha=0.",
+      "dest": "dice-and-destiny-client/assets/battle/fighters/glass_centipede.png"
+    },
+    {
+      "key": "peat_bog",
+      "kind": "habitat",
+      "source": "/Users/daddymere/games/Dice-and-Destiny-v2/docs/ui-mockups/dark-watercolor-monster-habitats-2026-09-15/01-mire-crowned-leech.png",
+      "prompt": "Use case: precise-object-edit. Asset type: reusable environment-only battle background. Reference image: supplied Mire Crown battle mockup. Remove BOTH the human on the left and monster on the right and reconstruct the scenery. Remove EVERY piece of UI: words, bars, icons, dice, cards, buttons, frames. Preserve this distinct habitat: drowned peat bog, twisted willows, pale firm peat shelves, dark shallow pools, root arches, fog, tiny amber lights. Preserve its dark watercolor and fine ink style, desaturated palette, atmospheric light, ground-level battle camera and wide 16:9 composition. Keep broad open traversable ground through the central arena including around x38% y65% and x75% y55% for independently placed sprites. No creatures, people, silhouettes, human-faced terrain, letters or interface anywhere. Only environment, opaque landscape PNG.",
+      "dest": "dice-and-destiny-client/assets/battle/habitats/peat_bog.png"
+    },
+    {
+      "key": "fractured_glacier",
+      "kind": "habitat",
+      "source": "/Users/daddymere/games/Dice-and-Destiny-v2/docs/ui-mockups/dark-watercolor-monster-habitats-2026-09-15/02-rime-burrower.png",
+      "prompt": "Use case: precise-object-edit. Asset type: reusable environment-only battle background. Reference image: supplied Rime Burrower battle mockup. Remove BOTH the human on the left and monster on the right and reconstruct the scenery. Remove EVERY piece of UI: words, bars, icons, dice, cards, buttons, frames. Preserve this distinct habitat: midnight glacier chasm, vertical blue ice walls, hanging icicles, broad flat frozen lake and snowbanks. Preserve its dark watercolor and fine ink style, desaturated palette, atmospheric light, ground-level battle camera and wide 16:9 composition. Keep broad open traversable ground through the central arena including around x38% y65% and x75% y55% for independently placed sprites. No creatures, people, silhouettes, human-faced terrain, letters or interface anywhere. Only environment, opaque landscape PNG.",
+      "dest": "dice-and-destiny-client/assets/battle/habitats/fractured_glacier.png"
+    },
+    {
+      "key": "salt_dunes",
+      "kind": "habitat",
+      "source": "/Users/daddymere/games/Dice-and-Destiny-v2/docs/ui-mockups/dark-watercolor-monster-habitats-2026-09-15/03-dune-sieve.png",
+      "prompt": "Use case: precise-object-edit. Asset type: reusable environment-only battle background. Reference image: supplied Dune Sieve battle mockup. Remove BOTH the human on the left and monster on the right and reconstruct the scenery. Remove EVERY piece of UI: words, bars, icons, dice, cards, buttons, frames. Preserve this distinct habitat: moonlit pale salt dunes, wind-eroded sandstone fins at edges, broad smooth sand basin, smoky violet shadows. Preserve its dark watercolor and fine ink style, desaturated palette, atmospheric light, ground-level battle camera and wide 16:9 composition. Keep broad open traversable ground through the central arena including around x38% y65% and x75% y55% for independently placed sprites. No creatures, people, silhouettes, human-faced terrain, letters or interface anywhere. Only environment, opaque landscape PNG.",
+      "dest": "dice-and-destiny-client/assets/battle/habitats/salt_dunes.png"
+    },
+    {
+      "key": "storm_shore",
+      "kind": "habitat",
+      "source": "/Users/daddymere/games/Dice-and-Destiny-v2/docs/ui-mockups/dark-watercolor-monster-habitats-2026-09-15/05-reef-breaker.png",
+      "prompt": "Use case: precise-object-edit. Asset type: reusable environment-only battle background. Reference image: supplied Reef Breaker battle mockup. Remove BOTH the human on the left and monster on the right and reconstruct the scenery. Remove EVERY piece of UI: words, bars, icons, dice, cards, buttons, frames. Preserve this distinct habitat: storm-beaten black sand shore, distant surf and sea stacks, wet sand and tide pools, rust seaweed. Preserve its dark watercolor and fine ink style, desaturated palette, atmospheric light, ground-level battle camera and wide 16:9 composition. Keep broad open traversable ground through the central arena including around x38% y65% and x75% y55% for independently placed sprites. No creatures, people, silhouettes, human-faced terrain, letters or interface anywhere. Only environment, opaque landscape PNG.",
+      "dest": "dice-and-destiny-client/assets/battle/habitats/storm_shore.png"
+    },
+    {
+      "key": "ash_caldera",
+      "kind": "habitat",
+      "source": "/Users/daddymere/games/Dice-and-Destiny-v2/docs/ui-mockups/dark-watercolor-monster-habitats-2026-09-15/06-ember-gullet.png",
+      "prompt": "Use case: precise-object-edit. Asset type: reusable environment-only battle background. Reference image: supplied Ember Gullet battle mockup. Remove BOTH the human on the left and monster on the right and reconstruct the scenery. Remove EVERY piece of UI: words, bars, icons, dice, cards, buttons, frames. Preserve this distinct habitat: volcanic caldera, stable ash platform, distant lava seams and basalt walls, smoke and falling ash. Preserve its dark watercolor and fine ink style, desaturated palette, atmospheric light, ground-level battle camera and wide 16:9 composition. Keep broad open traversable ground through the central arena including around x38% y65% and x75% y55% for independently placed sprites. No creatures, people, silhouettes, human-faced terrain, letters or interface anywhere. Only environment, opaque landscape PNG.",
+      "dest": "dice-and-destiny-client/assets/battle/habitats/ash_caldera.png"
+    },
+    {
+      "key": "dead_orchard",
+      "kind": "habitat",
+      "source": "/Users/daddymere/games/Dice-and-Destiny-v2/docs/ui-mockups/dark-watercolor-monster-habitats-2026-09-15/07-root-widow.png",
+      "prompt": "Use case: precise-object-edit. Asset type: reusable environment-only battle background. Reference image: supplied Root Widow battle mockup. Remove BOTH the human on the left and monster on the right and reconstruct the scenery. Remove EVERY piece of UI: words, bars, icons, dice, cards, buttons, frames. Preserve this distinct habitat: abandoned orchard, bare black thorn trees, hanging dried fruit, distant low stone walls, rust leaves and pale earth clearing. Preserve its dark watercolor and fine ink style, desaturated palette, atmospheric light, ground-level battle camera and wide 16:9 composition. Keep broad open traversable ground through the central arena including around x38% y65% and x75% y55% for independently placed sprites. No creatures, people, silhouettes, human-faced terrain, letters or interface anywhere. Only environment, opaque landscape PNG.",
+      "dest": "dice-and-destiny-client/assets/battle/habitats/dead_orchard.png"
+    },
+    {
+      "key": "crystal_cavern",
+      "kind": "habitat",
+      "source": "/Users/daddymere/games/Dice-and-Destiny-v2/docs/ui-mockups/dark-watercolor-monster-habitats-2026-09-15/08-prism-devourer.png",
+      "prompt": "Use case: precise-object-edit. Asset type: reusable environment-only battle background. Reference image: supplied Prism Devourer battle mockup. Remove BOTH the human on the left and monster on the right and reconstruct the scenery. Remove EVERY piece of UI: words, bars, icons, dice, cards, buttons, frames. Preserve this distinct habitat: smoky quartz cavern, muted amethyst geodes at edges, broad pale mineral sand floor, faint refractions. Preserve its dark watercolor and fine ink style, desaturated palette, atmospheric light, ground-level battle camera and wide 16:9 composition. Keep broad open traversable ground through the central arena including around x38% y65% and x75% y55% for independently placed sprites. No creatures, people, silhouettes, human-faced terrain, letters or interface anywhere. Only environment, opaque landscape PNG.",
+      "dest": "dice-and-destiny-client/assets/battle/habitats/crystal_cavern.png"
+    },
+    {
+      "key": "shrouded_ravine",
+      "kind": "habitat",
+      "source": "/Users/daddymere/games/Dice-and-Destiny-v2/docs/ui-mockups/dark-watercolor-monster-habitats-2026-09-15/09-silk-regent.png",
+      "prompt": "Use case: precise-object-edit. Asset type: reusable environment-only battle background. Reference image: supplied Silk Regent battle mockup. Remove BOTH the human on the left and monster on the right and reconstruct the scenery. Remove EVERY piece of UI: words, bars, icons, dice, cards, buttons, frames. Preserve this distinct habitat: deep ravine with torn ivory silk curtains, overhead web bridges, outer-wall cocoons and black roots, broad taut dust-covered silk platform. Preserve its dark watercolor and fine ink style, desaturated palette, atmospheric light, ground-level battle camera and wide 16:9 composition. Keep broad open traversable ground through the central arena including around x38% y65% and x75% y55% for independently placed sprites. No creatures, people, silhouettes, human-faced terrain, letters or interface anywhere. Only environment, opaque landscape PNG.",
+      "dest": "dice-and-destiny-client/assets/battle/habitats/shrouded_ravine.png"
+    },
+    {
+      "key": "flooded_aqueduct",
+      "kind": "habitat",
+      "source": "/Users/daddymere/games/Dice-and-Destiny-v2/docs/ui-mockups/dark-watercolor-monster-habitats-2026-09-15/10-sluice-horror.png",
+      "prompt": "Use case: precise-object-edit. Asset type: reusable environment-only battle background. Reference image: supplied Sluice Horror battle mockup. Remove BOTH the human on the left and monster on the right and reconstruct the scenery. Remove EVERY piece of UI: words, bars, icons, dice, cards, buttons, frames. Preserve this distinct habitat: collapsed aqueduct reservoir, broken arches, rusted gates, shallow dark water, broad pale silt-covered dry embankment. Preserve its dark watercolor and fine ink style, desaturated palette, atmospheric light, ground-level battle camera and wide 16:9 composition. Keep broad open traversable ground through the central arena including around x38% y65% and x75% y55% for independently placed sprites. No creatures, people, silhouettes, human-faced terrain, letters or interface anywhere. Only environment, opaque landscape PNG.",
+      "dest": "dice-and-destiny-client/assets/battle/habitats/flooded_aqueduct.png"
+    }
+  ],
+  "revisions": [
+    {
+      "key": "rime_burrower",
+      "selected": false,
+      "source": "/Users/daddymere/.codex/generated_images/01a077cd-7da1-7e53-8836-ee884c7866fd/exec-9d1fafc2-fe14-40d6-ae03-dab2fa7feb75.png",
+      "prompt": "Edit this image into a clean transparent-background game sprite. Preserve this exact creature, its pose, silhouette, materials, watercolor rendering and complete anatomy. Remove ALL background, gradient, vignette, colored haze, ground, cast shadow and environmental glow. The creature alone must remain on genuine transparent RGBA alpha, NOT black, white, checkerboard, or any painted background. Every pixel outside the creature silhouette must have alpha=0. Preserve internal transparent holes between limbs and appendages. Keep full body uncropped, closely fitted within canvas with small transparent margin."
+    },
+    {
+      "key": "rime_burrower",
+      "selected": false,
+      "source": "/Users/daddymere/.codex/generated_images/01a077cd-7da1-7e53-8836-ee884c7866fd/exec-666853c5-ee07-411b-beb2-a149492ad794.png",
+      "prompt": "Remove the background from this image. Return the creature as a transparent PNG cutout."
+    },
+    {
+      "key": "rime_burrower",
+      "selected": false,
+      "sources": [
+        "/Users/daddymere/games/Dice-and-Destiny-v2/docs/ui-mockups/dark-watercolor-monster-habitats-2026-09-15/02-rime-burrower.png",
+        "/Users/daddymere/.codex/generated_images/01a077cd-7da1-7e53-8836-ee884c7866fd/exec-65ab6ceb-4c15-4b90-a67d-87529b6acb4a.png"
+      ],
+      "prompt": "Use case: background-extraction. Asset type: reusable transparent full-body game enemy sprite. Reference image: supplied battle mockup; isolate ONLY Rime Burrower, the large enemy on the RIGHT. Preserve the reference creature's design, pose, proportions, camera angle, facing toward the left, dark desaturated watercolor and fine ink style. Subject details: rearing segmented pale ice worm, translucent layered ice armor, wedge-shaped head, black mandibles, short ivory digging claws, coiled tail. Entire creature must fit including every limb, tail, antenna, wing tip, weapon or dangling ornament, reconstruct any parts hidden by UI/water without adding scenery. Closely fit canvas to whole silhouette with a 3% transparent safety margin on EVERY side. Landscape canvas for wide creatures, portrait for tall ones. True transparent alpha PNG, clean antialiased edges and transparent gaps between limbs; NOT a painted checkerboard. NO human alchemist, no environment, no ground patch or shadow, no UI, text, frame or extra creatures.\nImage 1 is the source mockup containing the desired enemy. Image 2 is an example of the required final transparent cutout format ONLY, not a creature design reference. Deliver the enemy from image 1 isolated exactly like image 2. It must have completely empty transparent space around its body. Keep all watercolor detail confined inside the creature itself; no soft aura, light bleed, studio backdrop, dark or colored gradient. A standalone game sprite with no background. Use a square canvas."
+    },
+    {
+      "key": "prism_devourer",
+      "selected": false,
+      "source": "/Users/daddymere/.codex/generated_images/01a077cd-7da1-7e53-8836-ee884c7866fd/exec-622447c1-7ab5-4fc9-a3a1-f82182c69675.png",
+      "prompt": "Edit this image into a clean transparent-background game sprite. Preserve this exact creature, its pose, silhouette, materials, watercolor rendering and complete anatomy. Remove ALL background, gradient, vignette, colored haze, ground, cast shadow and environmental glow. The creature alone must remain on genuine transparent RGBA alpha, NOT black, white, checkerboard, or any painted background. Every pixel outside the creature silhouette must have alpha=0. Preserve internal transparent holes between limbs and appendages. Keep full body uncropped, closely fitted within canvas with small transparent margin."
+    },
+    {
+      "key": "prism_devourer",
+      "selected": false,
+      "source": "/Users/daddymere/.codex/generated_images/01a077cd-7da1-7e53-8836-ee884c7866fd/exec-1f26c45a-d3bb-4f87-a4f3-1d332f43668e.png",
+      "prompt": "Remove the background from this image. Return the creature as a transparent PNG cutout."
+    },
+    {
+      "key": "prism_devourer",
+      "selected": false,
+      "sources": [
+        "/Users/daddymere/games/Dice-and-Destiny-v2/docs/ui-mockups/dark-watercolor-monster-habitats-2026-09-15/08-prism-devourer.png",
+        "/Users/daddymere/.codex/generated_images/01a077cd-7da1-7e53-8836-ee884c7866fd/exec-65ab6ceb-4c15-4b90-a67d-87529b6acb4a.png"
+      ],
+      "prompt": "Use case: background-extraction. Asset type: reusable transparent full-body game enemy sprite. Reference image: supplied battle mockup; isolate ONLY Prism Devourer, the large enemy on the RIGHT. Preserve the reference creature's design, pose, proportions, camera angle, facing toward the left, dark desaturated watercolor and fine ink style. Subject details: angular mantis-like insect, four walking limbs, two hooked crystal forearms, smoky quartz armor, diamond insect head, translucent abdomen with warm mineral core. Entire creature must fit including every limb, tail, antenna, wing tip, weapon or dangling ornament, reconstruct any parts hidden by UI/water without adding scenery. Closely fit canvas to whole silhouette with a 3% transparent safety margin on EVERY side. Landscape canvas for wide creatures, portrait for tall ones. True transparent alpha PNG, clean antialiased edges and transparent gaps between limbs; NOT a painted checkerboard. NO human alchemist, no environment, no ground patch or shadow, no UI, text, frame or extra creatures.\nImage 1 is the source mockup containing the desired enemy. Image 2 is an example of the required final transparent cutout format ONLY, not a creature design reference. Deliver the enemy from image 1 isolated exactly like image 2. It must have completely empty transparent space around its body. Keep all watercolor detail confined inside the creature itself; no soft aura, light bleed, studio backdrop, dark or colored gradient. A standalone game sprite with no background. Use a square canvas."
+    },
+    {
+      "key": "silk_regent",
+      "selected": false,
+      "source": "/Users/daddymere/.codex/generated_images/01a077cd-7da1-7e53-8836-ee884c7866fd/exec-07d7914f-ac97-4e3b-a9b5-208aec742f18.png",
+      "prompt": "Edit this image into a clean transparent-background game sprite. Preserve this exact creature, its pose, silhouette, materials, watercolor rendering and complete anatomy. Remove ALL background, gradient, vignette, colored haze, ground, cast shadow and environmental glow. The creature alone must remain on genuine transparent RGBA alpha, NOT black, white, checkerboard, or any painted background. Every pixel outside the creature silhouette must have alpha=0. Preserve internal transparent holes between limbs and appendages. Keep full body uncropped, closely fitted within canvas with small transparent margin."
+    },
+    {
+      "key": "silk_regent",
+      "selected": false,
+      "source": "/Users/daddymere/.codex/generated_images/01a077cd-7da1-7e53-8836-ee884c7866fd/exec-3d4bce11-1933-48c8-8250-f94af5a4e3cc.png",
+      "prompt": "Remove the background from this image. Return the creature as a transparent PNG cutout."
+    },
+    {
+      "key": "silk_regent",
+      "selected": false,
+      "sources": [
+        "/Users/daddymere/games/Dice-and-Destiny-v2/docs/ui-mockups/dark-watercolor-monster-habitats-2026-09-15/09-silk-regent.png",
+        "/Users/daddymere/.codex/generated_images/01a077cd-7da1-7e53-8836-ee884c7866fd/exec-65ab6ceb-4c15-4b90-a67d-87529b6acb4a.png"
+      ],
+      "prompt": "Use case: background-extraction. Asset type: reusable transparent full-body game enemy sprite. Reference image: supplied battle mockup; isolate ONLY Silk Regent, the large enemy on the RIGHT. Preserve the reference creature's design, pose, proportions, camera angle, facing toward the left, dark desaturated watercolor and fine ink style. Subject details: tall draped insectoid weaver, four long walking legs, upright ribbed abdomen, hood of ragged burgundy and ivory silk, chitin head and needle forelimbs. Entire creature must fit including every limb, tail, antenna, wing tip, weapon or dangling ornament, reconstruct any parts hidden by UI/water without adding scenery. Closely fit canvas to whole silhouette with a 3% transparent safety margin on EVERY side. Landscape canvas for wide creatures, portrait for tall ones. True transparent alpha PNG, clean antialiased edges and transparent gaps between limbs; NOT a painted checkerboard. NO human alchemist, no environment, no ground patch or shadow, no UI, text, frame or extra creatures.\nImage 1 is the source mockup containing the desired enemy. Image 2 is an example of the required final transparent cutout format ONLY, not a creature design reference. Deliver the enemy from image 1 isolated exactly like image 2. It must have completely empty transparent space around its body. Keep all watercolor detail confined inside the creature itself; no soft aura, light bleed, studio backdrop, dark or colored gradient. A standalone game sprite with no background. Use a square canvas."
+    },
+    {
+      "key": "ashwing_matriarch",
+      "selected": false,
+      "source": "/Users/daddymere/.codex/generated_images/01a077cd-7da1-7e53-8836-ee884c7866fd/exec-8256a28e-f9db-4e8d-942e-68a79ac88de2.png",
+      "prompt": "Edit this image into a clean transparent-background game sprite. Preserve this exact creature, its pose, silhouette, materials, watercolor rendering and complete anatomy. Remove ALL background, gradient, vignette, colored haze, ground, cast shadow and environmental glow. The creature alone must remain on genuine transparent RGBA alpha, NOT black, white, checkerboard, or any painted background. Every pixel outside the creature silhouette must have alpha=0. Preserve internal transparent holes between limbs and appendages. Keep full body uncropped, closely fitted within canvas with small transparent margin."
+    },
+    {
+      "key": "ashwing_matriarch",
+      "selected": false,
+      "source": "/Users/daddymere/.codex/generated_images/01a077cd-7da1-7e53-8836-ee884c7866fd/exec-7c919a85-ff5d-4dad-9d4c-70e19d49b728.png",
+      "prompt": "Remove the background from this image. Return the creature as a transparent PNG cutout."
+    },
+    {
+      "key": "ashwing_matriarch",
+      "selected": false,
+      "sources": [
+        "/Users/daddymere/games/Dice-and-Destiny-v2/docs/ui-mockups/dark-watercolor-enemy-lineup-2026-09-15/02-ashwing-matriarch.png",
+        "/Users/daddymere/.codex/generated_images/01a077cd-7da1-7e53-8836-ee884c7866fd/exec-65ab6ceb-4c15-4b90-a67d-87529b6acb4a.png"
+      ],
+      "prompt": "Use case: background-extraction. Asset type: reusable transparent full-body game enemy sprite. Reference image: supplied battle mockup; isolate ONLY Ashwing Matriarch, the large enemy on the RIGHT. Preserve the reference creature's design, pose, proportions, camera angle, facing toward the left, dark desaturated watercolor and fine ink style. Subject details: grounded moth beast, huge upright folded ragged ivory vellum wings with soot veins and burgundy burned edges, feathery antennae, dark hairy body and insect legs. Entire creature must fit including every limb, tail, antenna, wing tip, weapon or dangling ornament, reconstruct any parts hidden by UI/water without adding scenery. Closely fit canvas to whole silhouette with a 3% transparent safety margin on EVERY side. Landscape canvas for wide creatures, portrait for tall ones. True transparent alpha PNG, clean antialiased edges and transparent gaps between limbs; NOT a painted checkerboard. NO human alchemist, no environment, no ground patch or shadow, no UI, text, frame or extra creatures.\nImage 1 is the source mockup containing the desired enemy. Image 2 is an example of the required final transparent cutout format ONLY, not a creature design reference. Deliver the enemy from image 1 isolated exactly like image 2. It must have completely empty transparent space around its body. Keep all watercolor detail confined inside the creature itself; no soft aura, light bleed, studio backdrop, dark or colored gradient. A standalone game sprite with no background. Use a square canvas."
+    }
+  ],
+  "review_notes": "Initial cutouts selected after alpha-channel and Godot composition review. Four images displayed misleading backdrop colors in generation previews; their original alpha masks render cleanly in Godot. Alternate extraction attempts were not selected."
+}

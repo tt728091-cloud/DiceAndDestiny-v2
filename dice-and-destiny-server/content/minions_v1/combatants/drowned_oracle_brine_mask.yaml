@@ -1,0 +1,47 @@
+{
+  "schema_version": 1,
+  "id": "drowned_oracle_brine_mask",
+  "name": "Brine Mask",
+  "class": "minion",
+  "controller_defaults": {
+    "type": "external"
+  },
+  "resources": {
+    "starting_hand_size": 1,
+    "starting_energy": 0,
+    "hand_limit": 3
+  },
+  "income": {
+    "cards": 1,
+    "energy": 1
+  },
+  "decklist": [
+    {
+      "card_id": "brine_surge",
+      "count": 16
+    }
+  ],
+  "dice_loadout": [
+    {
+      "dice_id": "brine_d6",
+      "count": 5
+    }
+  ],
+  "ability_board": {
+    "offensive": [
+      "brine_lash"
+    ],
+    "defensive": [
+      "salt_veil"
+    ]
+  },
+  "roll_preferences": {
+    "status_effects": "automatic",
+    "offensive": "automatic",
+    "ability_effects": "automatic"
+  },
+  "single_ability_policy": {
+    "target_face": 3,
+    "card_id": "brine_surge"
+  }
+}

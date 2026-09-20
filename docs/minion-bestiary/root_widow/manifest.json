@@ -1,0 +1,197 @@
+{
+  "boss_id": "root_widow",
+  "boss_name": "Root Widow",
+  "theme": "Dead orchard ecology; thornwood, split fruit stones, rust leaves, pale bark, amber sap, no universal spider anatomy.",
+  "minions": [
+    {
+      "id": "pip_gnawer",
+      "name": "Pip Gnawer",
+      "role": "Scavenger",
+      "description": "A ratlike orchard scavenger with a split peach-stone skull, chisel seed teeth, a coat of rust-colored dead leaves, thin black paws and a long fibrous root tail.",
+      "prompt": "Use case: stylized-concept. Create ONE original dark-fantasy game minion sprite named Pip Gnawer. Reference image is the faction boss, used ONLY for rendering style, material vocabulary and restrained palette, never its anatomy or scale. Design: A ratlike orchard scavenger with a split peach-stone skull, chisel seed teeth, a coat of rust-colored dead leaves, thin black paws and a long fibrous root tail. Faction ecology: Dead orchard ecology; thornwood, split fruit stones, rust leaves, pale bark, amber sap, no universal spider anatomy. This is a weaker encountered creature, not a boss or a miniature replica. Detailed hand-painted dark watercolor and fine ink hatching, tactile materials, readable distinctive silhouette. Full body, three-quarter view facing left, entire anatomy including tail, toes and wings visible with 5% empty margin; square canvas. Isolated on a genuinely transparent alpha PNG background. No environment, floor, cast shadow, aura, text, labels, borders, watermark or additional creatures.",
+      "relative_asset_path": "dice-and-destiny-client/assets/battle/minions/root_widow/pip_gnawer.png",
+      "source_reference_paths": [
+        "/Users/daddymere/games/Dice-and-Destiny-v2/dice-and-destiny-client/assets/battle/fighters/root_widow.png"
+      ],
+      "generated_source_path": "/Users/daddymere/.codex/generated_images/01a077cd-7da1-7e53-8836-ee884c7866fd/exec-51eedbdc-c975-4754-a7ea-b77af35c3e95.png",
+      "status": "completed",
+      "review": {
+        "alpha_empty_fraction": 0.6132,
+        "width": 1254,
+        "height": 1254,
+        "visual": "Full creature, distinct silhouette, faction style; reviewed."
+      }
+    },
+    {
+      "id": "bramble_fawn",
+      "name": "Bramble Fawn",
+      "role": "Runner",
+      "description": "A small fawn with thornwood ribs, four delicate root hooves, a smooth pale pear-shaped wooden face and antlers formed by two crooked thorn twigs; amber sap beads at joints.",
+      "prompt": "Use case: stylized-concept. Create ONE original dark-fantasy game minion sprite named Bramble Fawn. Reference image is the faction boss, used ONLY for rendering style, material vocabulary and restrained palette, never its anatomy or scale. Design: A small fawn with thornwood ribs, four delicate root hooves, a smooth pale pear-shaped wooden face and antlers formed by two crooked thorn twigs; amber sap beads at joints. Faction ecology: Dead orchard ecology; thornwood, split fruit stones, rust leaves, pale bark, amber sap, no universal spider anatomy. This is a weaker encountered creature, not a boss or a miniature replica. Detailed hand-painted dark watercolor and fine ink hatching, tactile materials, readable distinctive silhouette. Full body, three-quarter view facing left, entire anatomy including tail, toes and wings visible with 5% empty margin; square canvas. Isolated on a genuinely transparent alpha PNG background. No environment, floor, cast shadow, aura, text, labels, borders, watermark or additional creatures.",
+      "relative_asset_path": "dice-and-destiny-client/assets/battle/minions/root_widow/bramble_fawn.png",
+      "source_reference_paths": [
+        "/Users/daddymere/games/Dice-and-Destiny-v2/dice-and-destiny-client/assets/battle/fighters/root_widow.png"
+      ],
+      "generated_source_path": "/Users/daddymere/.codex/generated_images/01a077cd-7da1-7e53-8836-ee884c7866fd/exec-b66c0ec8-b980-4e58-bc8e-36116d60de90.png",
+      "status": "completed",
+      "review": {
+        "alpha_empty_fraction": 0.718,
+        "width": 1254,
+        "height": 1254,
+        "visual": "Full creature, distinct silhouette, faction style; reviewed."
+      }
+    },
+    {
+      "id": "graft_stump",
+      "name": "Graft Stump",
+      "role": "Bruiser",
+      "description": "A low walking orchard stump on three gnarled root legs, a graft scar forming an angry slit face, one heavy branch club arm and one claw of pruning-thorn growth; dry lichen bark.",
+      "prompt": "Use case: stylized-concept. Create ONE original dark-fantasy game minion sprite named Graft Stump. Reference image is the faction boss, used ONLY for rendering style, material vocabulary and restrained palette, never its anatomy or scale. Design: A low walking orchard stump on three gnarled root legs, a graft scar forming an angry slit face, one heavy branch club arm and one claw of pruning-thorn growth; dry lichen bark. Faction ecology: Dead orchard ecology; thornwood, split fruit stones, rust leaves, pale bark, amber sap, no universal spider anatomy. This is a weaker encountered creature, not a boss or a miniature replica. Detailed hand-painted dark watercolor and fine ink hatching, tactile materials, readable distinctive silhouette. Full body, three-quarter view facing left, entire anatomy including tail, toes and wings visible with 5% empty margin; square canvas. Isolated on a genuinely transparent alpha PNG background. No environment, floor, cast shadow, aura, text, labels, borders, watermark or additional creatures.",
+      "relative_asset_path": "dice-and-destiny-client/assets/battle/minions/root_widow/graft_stump.png",
+      "source_reference_paths": [
+        "/Users/daddymere/games/Dice-and-Destiny-v2/dice-and-destiny-client/assets/battle/fighters/root_widow.png"
+      ],
+      "generated_source_path": "/Users/daddymere/.codex/generated_images/01a077cd-7da1-7e53-8836-ee884c7866fd/exec-ac86f0a2-0401-46b0-917b-7d23dbd86c96.png",
+      "status": "completed",
+      "review": {
+        "alpha_empty_fraction": 0.5801,
+        "width": 1254,
+        "height": 1254,
+        "visual": "Full creature, distinct silhouette, faction style; reviewed."
+      }
+    },
+    {
+      "id": "orchard_mourner",
+      "name": "Orchard Mourner",
+      "role": "Caller",
+      "description": "A hunched crow made of curled rust leaves and black bark, with an ivory seed-husk beak, one swollen amber throat gourd and two wiry root legs; folded ragged wings.",
+      "prompt": "Use case: stylized-concept. Create ONE original dark-fantasy game minion sprite named Orchard Mourner. Reference image is the faction boss, used ONLY for rendering style, material vocabulary and restrained palette, never its anatomy or scale. Design: A hunched crow made of curled rust leaves and black bark, with an ivory seed-husk beak, one swollen amber throat gourd and two wiry root legs; folded ragged wings. Faction ecology: Dead orchard ecology; thornwood, split fruit stones, rust leaves, pale bark, amber sap, no universal spider anatomy. This is a weaker encountered creature, not a boss or a miniature replica. Detailed hand-painted dark watercolor and fine ink hatching, tactile materials, readable distinctive silhouette. Full body, three-quarter view facing left, entire anatomy including tail, toes and wings visible with 5% empty margin; square canvas. Isolated on a genuinely transparent alpha PNG background. No environment, floor, cast shadow, aura, text, labels, borders, watermark or additional creatures.",
+      "relative_asset_path": "dice-and-destiny-client/assets/battle/minions/root_widow/orchard_mourner.png",
+      "source_reference_paths": [
+        "/Users/daddymere/games/Dice-and-Destiny-v2/dice-and-destiny-client/assets/battle/fighters/root_widow.png"
+      ],
+      "generated_source_path": "/Users/daddymere/.codex/generated_images/01a077cd-7da1-7e53-8836-ee884c7866fd/exec-0e3e20c8-424c-4083-b186-67676867a62b.png",
+      "status": "completed",
+      "review": {
+        "alpha_empty_fraction": 0.6354,
+        "width": 1254,
+        "height": 1254,
+        "visual": "Full creature, distinct silhouette, faction style; reviewed."
+      }
+    },
+    {
+      "id": "burr_roller",
+      "name": "Burr Roller",
+      "role": "Charger",
+      "description": "A spherical burdock husk beast with layered hooked burr plates, four tiny jointed legs, a narrow toothless face opening and amber seed eyes; one side unfolded showing pale fibrous inner rind.",
+      "prompt": "Use case: stylized-concept. Create ONE original dark-fantasy game minion sprite named Burr Roller. Reference image is the faction boss, used ONLY for rendering style, material vocabulary and restrained palette, never its anatomy or scale. Design: A spherical burdock husk beast with layered hooked burr plates, four tiny jointed legs, a narrow toothless face opening and amber seed eyes; one side unfolded showing pale fibrous inner rind. Faction ecology: Dead orchard ecology; thornwood, split fruit stones, rust leaves, pale bark, amber sap, no universal spider anatomy. This is a weaker encountered creature, not a boss or a miniature replica. Detailed hand-painted dark watercolor and fine ink hatching, tactile materials, readable distinctive silhouette. Full body, three-quarter view facing left, entire anatomy including tail, toes and wings visible with 5% empty margin; square canvas. Isolated on a genuinely transparent alpha PNG background. No environment, floor, cast shadow, aura, text, labels, borders, watermark or additional creatures.",
+      "relative_asset_path": "dice-and-destiny-client/assets/battle/minions/root_widow/burr_roller.png",
+      "source_reference_paths": [
+        "/Users/daddymere/games/Dice-and-Destiny-v2/dice-and-destiny-client/assets/battle/fighters/root_widow.png"
+      ],
+      "generated_source_path": "/Users/daddymere/.codex/generated_images/01a077cd-7da1-7e53-8836-ee884c7866fd/exec-ef620bb9-4c63-433a-8b97-e177d3b47d62.png",
+      "status": "completed",
+      "review": {
+        "alpha_empty_fraction": 0.5172,
+        "width": 1254,
+        "height": 1254,
+        "visual": "Full creature, distinct silhouette, faction style; reviewed."
+      }
+    },
+    {
+      "id": "sapwick_gecko",
+      "name": "Sapwick Gecko",
+      "role": "Climber",
+      "description": "A slender bark gecko with six adhesive twig toes per foot, flat leaflike tail, pale peeling trunk-pattern skin and glowing amber sap nodules down its neck; low lateral crawling pose.",
+      "prompt": "Use case: stylized-concept. Create ONE original dark-fantasy game minion sprite named Sapwick Gecko. Reference image is the faction boss, used ONLY for rendering style, material vocabulary and restrained palette, never its anatomy or scale. Design: A slender bark gecko with six adhesive twig toes per foot, flat leaflike tail, pale peeling trunk-pattern skin and glowing amber sap nodules down its neck; low lateral crawling pose. Faction ecology: Dead orchard ecology; thornwood, split fruit stones, rust leaves, pale bark, amber sap, no universal spider anatomy. This is a weaker encountered creature, not a boss or a miniature replica. Detailed hand-painted dark watercolor and fine ink hatching, tactile materials, readable distinctive silhouette. Full body, three-quarter view facing left, entire anatomy including tail, toes and wings visible with 5% empty margin; square canvas. Isolated on a genuinely transparent alpha PNG background. No environment, floor, cast shadow, aura, text, labels, borders, watermark or additional creatures.",
+      "relative_asset_path": "dice-and-destiny-client/assets/battle/minions/root_widow/sapwick_gecko.png",
+      "source_reference_paths": [
+        "/Users/daddymere/games/Dice-and-Destiny-v2/dice-and-destiny-client/assets/battle/fighters/root_widow.png"
+      ],
+      "generated_source_path": "/Users/daddymere/.codex/generated_images/01a077cd-7da1-7e53-8836-ee884c7866fd/exec-a9b170ed-2e8c-4586-bec4-c36451e95020.png",
+      "status": "completed",
+      "review": {
+        "alpha_empty_fraction": 0.6797,
+        "width": 1254,
+        "height": 1254,
+        "visual": "Full creature, distinct silhouette, faction style; reviewed."
+      }
+    },
+    {
+      "id": "pome_husk",
+      "name": "Pome Husk",
+      "role": "Trap",
+      "description": "An animated rotten apple husk split vertically into four thick leathery jaws, pale seed teeth inside, six wiry root feet and a curled dry leaf crest; distinct fruit-shaped compact silhouette.",
+      "prompt": "Use case: stylized-concept. Create ONE original dark-fantasy game minion sprite named Pome Husk. Reference image is the faction boss, used ONLY for rendering style, material vocabulary and restrained palette, never its anatomy or scale. Design: An animated rotten apple husk split vertically into four thick leathery jaws, pale seed teeth inside, six wiry root feet and a curled dry leaf crest; distinct fruit-shaped compact silhouette. Faction ecology: Dead orchard ecology; thornwood, split fruit stones, rust leaves, pale bark, amber sap, no universal spider anatomy. This is a weaker encountered creature, not a boss or a miniature replica. Detailed hand-painted dark watercolor and fine ink hatching, tactile materials, readable distinctive silhouette. Full body, three-quarter view facing left, entire anatomy including tail, toes and wings visible with 5% empty margin; square canvas. Isolated on a genuinely transparent alpha PNG background. No environment, floor, cast shadow, aura, text, labels, borders, watermark or additional creatures.",
+      "relative_asset_path": "dice-and-destiny-client/assets/battle/minions/root_widow/pome_husk.png",
+      "source_reference_paths": [
+        "/Users/daddymere/games/Dice-and-Destiny-v2/dice-and-destiny-client/assets/battle/fighters/root_widow.png"
+      ],
+      "generated_source_path": "/Users/daddymere/.codex/generated_images/01a077cd-7da1-7e53-8836-ee884c7866fd/exec-b128ef98-5f57-40b2-92aa-658164636fc8.png",
+      "status": "completed",
+      "review": {
+        "alpha_empty_fraction": 0.6431,
+        "width": 1254,
+        "height": 1254,
+        "visual": "Full creature, distinct silhouette, faction style; reviewed."
+      }
+    },
+    {
+      "id": "pruning_wasp",
+      "name": "Pruning Wasp",
+      "role": "Harrier",
+      "description": "A single predatory wasp with a wooden abdomen shaped like pruning shears, narrow ivory thorax, four ragged rust-colored leaf wings, six fine black legs and tiny amber eyes.",
+      "prompt": "Use case: stylized-concept. Create ONE original dark-fantasy game minion sprite named Pruning Wasp. Reference image is the faction boss, used ONLY for rendering style, material vocabulary and restrained palette, never its anatomy or scale. Design: A single predatory wasp with a wooden abdomen shaped like pruning shears, narrow ivory thorax, four ragged rust-colored leaf wings, six fine black legs and tiny amber eyes. Faction ecology: Dead orchard ecology; thornwood, split fruit stones, rust leaves, pale bark, amber sap, no universal spider anatomy. This is a weaker encountered creature, not a boss or a miniature replica. Detailed hand-painted dark watercolor and fine ink hatching, tactile materials, readable distinctive silhouette. Full body, three-quarter view facing left, entire anatomy including tail, toes and wings visible with 5% empty margin; square canvas. Isolated on a genuinely transparent alpha PNG background. No environment, floor, cast shadow, aura, text, labels, borders, watermark or additional creatures.",
+      "relative_asset_path": "dice-and-destiny-client/assets/battle/minions/root_widow/pruning_wasp.png",
+      "source_reference_paths": [
+        "/Users/daddymere/games/Dice-and-Destiny-v2/dice-and-destiny-client/assets/battle/fighters/root_widow.png"
+      ],
+      "generated_source_path": "/Users/daddymere/.codex/generated_images/01a077cd-7da1-7e53-8836-ee884c7866fd/exec-3e313148-a387-4145-b0cb-b92a63a94405.png",
+      "status": "completed",
+      "review": {
+        "alpha_empty_fraction": 0.653,
+        "width": 1254,
+        "height": 1254,
+        "visual": "Full creature, distinct silhouette, faction style; reviewed."
+      }
+    },
+    {
+      "id": "rootbound_hare",
+      "name": "Rootbound Hare",
+      "role": "Trickster",
+      "description": "A lean hare with long curled bark ears, hollow amber eye sockets, tangled root hindquarters and two oversized thorn-spiked front paws, gray fur interwoven with dead orchard leaves.",
+      "prompt": "Use case: stylized-concept. Create ONE original dark-fantasy game minion sprite named Rootbound Hare. Reference image is the faction boss, used ONLY for rendering style, material vocabulary and restrained palette, never its anatomy or scale. Design: A lean hare with long curled bark ears, hollow amber eye sockets, tangled root hindquarters and two oversized thorn-spiked front paws, gray fur interwoven with dead orchard leaves. Faction ecology: Dead orchard ecology; thornwood, split fruit stones, rust leaves, pale bark, amber sap, no universal spider anatomy. This is a weaker encountered creature, not a boss or a miniature replica. Detailed hand-painted dark watercolor and fine ink hatching, tactile materials, readable distinctive silhouette. Full body, three-quarter view facing left, entire anatomy including tail, toes and wings visible with 5% empty margin; square canvas. Isolated on a genuinely transparent alpha PNG background. No environment, floor, cast shadow, aura, text, labels, borders, watermark or additional creatures.",
+      "relative_asset_path": "dice-and-destiny-client/assets/battle/minions/root_widow/rootbound_hare.png",
+      "source_reference_paths": [
+        "/Users/daddymere/games/Dice-and-Destiny-v2/dice-and-destiny-client/assets/battle/fighters/root_widow.png"
+      ],
+      "generated_source_path": "/Users/daddymere/.codex/generated_images/01a077cd-7da1-7e53-8836-ee884c7866fd/exec-8e328a99-2e50-41fb-9716-a2f93656abb8.png",
+      "status": "completed",
+      "review": {
+        "alpha_empty_fraction": 0.5233,
+        "width": 1254,
+        "height": 1254,
+        "visual": "Full creature, distinct silhouette, faction style; reviewed."
+      }
+    },
+    {
+      "id": "gallows_gourd",
+      "name": "Gallows Gourd",
+      "role": "Snarer",
+      "description": "A hanging-gourd-shaped creature walking on two bent vine stilts, a dry ivory squash skull, a large looped vine arm for snaring and a tassel of small dark seed pods; self-contained no tree.",
+      "prompt": "Use case: stylized-concept. Create ONE original dark-fantasy game minion sprite named Gallows Gourd. Reference image is the faction boss, used ONLY for rendering style, material vocabulary and restrained palette, never its anatomy or scale. Design: A hanging-gourd-shaped creature walking on two bent vine stilts, a dry ivory squash skull, a large looped vine arm for snaring and a tassel of small dark seed pods; self-contained no tree. Faction ecology: Dead orchard ecology; thornwood, split fruit stones, rust leaves, pale bark, amber sap, no universal spider anatomy. This is a weaker encountered creature, not a boss or a miniature replica. Detailed hand-painted dark watercolor and fine ink hatching, tactile materials, readable distinctive silhouette. Full body, three-quarter view facing left, entire anatomy including tail, toes and wings visible with 5% empty margin; square canvas. Isolated on a genuinely transparent alpha PNG background. No environment, floor, cast shadow, aura, text, labels, borders, watermark or additional creatures.",
+      "relative_asset_path": "dice-and-destiny-client/assets/battle/minions/root_widow/gallows_gourd.png",
+      "source_reference_paths": [
+        "/Users/daddymere/games/Dice-and-Destiny-v2/dice-and-destiny-client/assets/battle/fighters/root_widow.png"
+      ],
+      "generated_source_path": "/Users/daddymere/.codex/generated_images/01a077cd-7da1-7e53-8836-ee884c7866fd/exec-f390bc3f-d6ec-403e-ab75-e71f8ac321f5.png",
+      "status": "completed",
+      "review": {
+        "alpha_empty_fraction": 0.6354,
+        "width": 1254,
+        "height": 1254,
+        "visual": "Full creature, distinct silhouette, faction style; reviewed."
+      }
+    }
+  ]
+}

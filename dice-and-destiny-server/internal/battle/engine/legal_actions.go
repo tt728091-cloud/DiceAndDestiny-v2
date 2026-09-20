@@ -33,7 +33,7 @@ func (e Engine) LegalActions(battle *state.Battle, viewerActorID string) []comma
 
 func settledLegalActions(battle *state.Battle, library content.BattleLibrary, actorID string, pending state.PendingInput) []command.Command {
 	window := battle.Settled.Window
-	if window == nil {
+	if window == nil || battle.Actors[actorID].DefeatState == state.ActorDefeated {
 		return nil
 	}
 	var actions []command.Command
@@ -108,14 +108,14 @@ func settledLegalActions(battle *state.Battle, library content.BattleLibrary, ac
 		runtime := battle.Settled.Actors[actorID]
 		for _, abilityID := range runtime.DefensiveAbilityIDs {
 			ability := library.Abilities[abilityID]
-			if ability.Usage.MaximumPerSegment > 0 && runtime.UsedAbilities[abilityID] >= ability.Usage.MaximumPerSegment {
+			if ability.Usage.MaximumPerSegment > 0 && defenseUses(battle, actorID, abilityID) >= ability.Usage.MaximumPerSegment {
 				continue
 			}
 			if battle.Actors[actorID].Resources.EnergyPoints < ability.Cost.Energy {
 				continue
 			}
 			for _, source := range battle.Settled.OffensiveSources {
-				if source.TargetActorID == actorID {
+				if source.TargetActorID == actorID && !defenseSourceChosen(battle, source.ID) {
 					if abilityID == "barbed_mantle" && library.Abilities[source.SourceContentID].Type != "offensive" {
 						continue
 					}
@@ -338,7 +338,7 @@ func actorTargetChoices(battle *state.Battle, actorID string, targeting *content
 func otherActorIDs(battle *state.Battle, actorID string) []string {
 	var result []string
 	for targetID, actor := range battle.Actors {
-		if targetID != actorID && actor.DefeatState != state.ActorDefeated {
+		if targetID != actorID && actor.DefeatState != state.ActorDefeated && (actor.TeamID == "" || actor.TeamID != battle.Actors[actorID].TeamID) {
 			result = append(result, targetID)
 		}
 	}

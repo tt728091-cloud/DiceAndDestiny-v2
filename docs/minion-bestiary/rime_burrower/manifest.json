@@ -1,0 +1,149 @@
+{
+  "boss_id": "rime_burrower",
+  "boss_name": "Rime Burrower",
+  "theme": "midnight glacier chasm, vertical blue ice walls, hanging icicles, broad flat frozen lake and snowbanks",
+  "minions": [
+    {
+      "id": "hoarfang_shrew",
+      "name": "Hoarfang Shrew",
+      "role": "crevice scout",
+      "description": "Gaunt arctic shrew, oversized black incisors, matted white whiskers, ice blisters, narrow feet, naked curled tail",
+      "prompt": "Use case: stylized-concept. Asset: standalone full-body dark fantasy battle minion sprite, ONE creature. Subject: Hoarfang Shrew: Gaunt arctic shrew, oversized black incisors, matted white whiskers, ice blisters, narrow feet, naked curled tail. A weaker crevice scout from midnight glacier chasm, vertical blue ice walls, hanging icicles, broad flat frozen lake and snowbanks, associated with Rime Burrower but a distinct species, never a miniature boss. Highly detailed desaturated dark watercolor with granular pigment and layered washes within creature, broken ink contours, rich tactile anatomy and charcoal shadows, restrained theme accents. Full body centered facing LEFT in three-quarter view, ALL extremities completely visible with ample empty margin. GENUINELY TRANSPARENT PNG ALPHA CHANNEL everywhere outside creature. No background, no scenery, no paper rectangle, no ground patch, no floor, NO SHADOW, no cast/drop shadow, no aura, no haze, no text, no label, no frame, no UI. Finished production game asset.",
+      "relative_asset_path": "dice-and-destiny-client/assets/battle/minions/rime_burrower/hoarfang_shrew.png",
+      "source_reference_paths": [
+        "dice-and-destiny-client/assets/battle/fighters/rime_burrower.png",
+        "dice-and-destiny-client/assets/battle/habitats/fractured_glacier.png"
+      ],
+      "generated_source_path": "/Users/daddymere/.codex/generated_images/01a0ba2d-5cc7-7070-96c9-d262aeade317/exec-eb8dc8e0-0677-47eb-9f02-1f25a9632ebb.png",
+      "status": "completed"
+    },
+    {
+      "id": "icicle_stilt",
+      "name": "Icicle Stilt",
+      "role": "ambush wader",
+      "description": "Skeletal cave bird, two extremely long blue-black legs, dagger beak, ragged white feathers, vestigial wings edged with ice",
+      "prompt": "Use case: stylized-concept. Asset: standalone full-body dark fantasy battle minion sprite, ONE creature. Subject: Icicle Stilt: Skeletal cave bird, two extremely long blue-black legs, dagger beak, ragged white feathers, vestigial wings edged with ice. A weaker ambush wader from midnight glacier chasm, vertical blue ice walls, hanging icicles, broad flat frozen lake and snowbanks, associated with Rime Burrower but a distinct species, never a miniature boss. Highly detailed desaturated dark watercolor with granular pigment and layered washes within creature, broken ink contours, rich tactile anatomy and charcoal shadows, restrained theme accents. Full body centered facing LEFT in three-quarter view, ALL extremities completely visible with ample empty margin. GENUINELY TRANSPARENT PNG ALPHA CHANNEL everywhere outside creature. No background, no scenery, no paper rectangle, no ground patch, no floor, NO SHADOW, no cast/drop shadow, no aura, no haze, no text, no label, no frame, no UI. Finished production game asset.",
+      "relative_asset_path": "dice-and-destiny-client/assets/battle/minions/rime_burrower/icicle_stilt.png",
+      "source_reference_paths": [
+        "dice-and-destiny-client/assets/battle/fighters/rime_burrower.png",
+        "dice-and-destiny-client/assets/battle/habitats/fractured_glacier.png"
+      ],
+      "generated_source_path": "/Users/daddymere/.codex/generated_images/01a0ba2d-5cc7-7070-96c9-d262aeade317/exec-6a7a064c-6fdc-4590-86f2-70a65915fdc4.png",
+      "status": "completed"
+    },
+    {
+      "id": "glassback_mite",
+      "name": "Glassback Mite",
+      "role": "ice grazer",
+      "description": "Flattened eight-legged mite, single cloudy ice dome revealing dark organs, tiny scraping mouth, black toes, snow crust patches",
+      "prompt": "Use case: stylized-concept. Asset: standalone full-body dark fantasy battle minion sprite, ONE creature. Subject: Glassback Mite: Flattened eight-legged mite, single cloudy ice dome revealing dark organs, tiny scraping mouth, black toes, snow crust patches. A weaker ice grazer from midnight glacier chasm, vertical blue ice walls, hanging icicles, broad flat frozen lake and snowbanks, associated with Rime Burrower but a distinct species, never a miniature boss. Highly detailed desaturated dark watercolor with granular pigment and layered washes within creature, broken ink contours, rich tactile anatomy and charcoal shadows, restrained theme accents. Full body centered facing LEFT in three-quarter view, ALL extremities completely visible with ample empty margin. GENUINELY TRANSPARENT PNG ALPHA CHANNEL everywhere outside creature. No background, no scenery, no paper rectangle, no ground patch, no floor, NO SHADOW, no cast/drop shadow, no aura, no haze, no text, no label, no frame, no UI. Finished production game asset.",
+      "relative_asset_path": "dice-and-destiny-client/assets/battle/minions/rime_burrower/glassback_mite.png",
+      "source_reference_paths": [
+        "dice-and-destiny-client/assets/battle/fighters/rime_burrower.png",
+        "dice-and-destiny-client/assets/battle/habitats/fractured_glacier.png"
+      ],
+      "generated_source_path": "/Users/daddymere/.codex/generated_images/01a0ba2d-5cc7-7070-96c9-d262aeade317/exec-aacc2916-a791-4bea-a303-1721288c40d7.png",
+      "status": "completed"
+    },
+    {
+      "id": "snowblind_loper",
+      "name": "Snowblind Loper",
+      "role": "pack harrier",
+      "description": "Eyeless predatory hare, swept-back frozen ears, huge hind legs, split fanged lip, smoke-gray fur, small forearms",
+      "prompt": "Use case: stylized-concept. Asset: standalone full-body dark fantasy battle minion sprite, ONE creature. Subject: Snowblind Loper: Eyeless predatory hare, swept-back frozen ears, huge hind legs, split fanged lip, smoke-gray fur, small forearms. A weaker pack harrier from midnight glacier chasm, vertical blue ice walls, hanging icicles, broad flat frozen lake and snowbanks, associated with Rime Burrower but a distinct species, never a miniature boss. Highly detailed desaturated dark watercolor with granular pigment and layered washes within creature, broken ink contours, rich tactile anatomy and charcoal shadows, restrained theme accents. Full body centered facing LEFT in three-quarter view, ALL extremities completely visible with ample empty margin. GENUINELY TRANSPARENT PNG ALPHA CHANNEL everywhere outside creature. No background, no scenery, no paper rectangle, no ground patch, no floor, NO SHADOW, no cast/drop shadow, no aura, no haze, no text, no label, no frame, no UI. Finished production game asset.",
+      "relative_asset_path": "dice-and-destiny-client/assets/battle/minions/rime_burrower/snowblind_loper.png",
+      "source_reference_paths": [
+        "dice-and-destiny-client/assets/battle/fighters/rime_burrower.png",
+        "dice-and-destiny-client/assets/battle/habitats/fractured_glacier.png"
+      ],
+      "generated_source_path": "/Users/daddymere/.codex/generated_images/01a0ba2d-5cc7-7070-96c9-d262aeade317/exec-623add32-32dc-4a0c-a325-43b807521c08.png",
+      "status": "completed"
+    },
+    {
+      "id": "sleet_sail",
+      "name": "Sleet Sail",
+      "role": "aerial skirmisher",
+      "description": "Batlike ray with diamond translucent membrane wings, four bony spars, blunt toothed face, dangling claws, ribbon tail, slate veins",
+      "prompt": "Use case: stylized-concept. Asset: standalone full-body dark fantasy battle minion sprite, ONE creature. Subject: Sleet Sail: Batlike ray with diamond translucent membrane wings, four bony spars, blunt toothed face, dangling claws, ribbon tail, slate veins. A weaker aerial skirmisher from midnight glacier chasm, vertical blue ice walls, hanging icicles, broad flat frozen lake and snowbanks, associated with Rime Burrower but a distinct species, never a miniature boss. Highly detailed desaturated dark watercolor with granular pigment and layered washes within creature, broken ink contours, rich tactile anatomy and charcoal shadows, restrained theme accents. Full body centered facing LEFT in three-quarter view, ALL extremities completely visible with ample empty margin. GENUINELY TRANSPARENT PNG ALPHA CHANNEL everywhere outside creature. No background, no scenery, no paper rectangle, no ground patch, no floor, NO SHADOW, no cast/drop shadow, no aura, no haze, no text, no label, no frame, no UI. Finished production game asset.",
+      "relative_asset_path": "dice-and-destiny-client/assets/battle/minions/rime_burrower/sleet_sail.png",
+      "source_reference_paths": [
+        "dice-and-destiny-client/assets/battle/fighters/rime_burrower.png",
+        "dice-and-destiny-client/assets/battle/habitats/fractured_glacier.png"
+      ],
+      "generated_source_path": "/Users/daddymere/.codex/generated_images/01a0ba2d-5cc7-7070-96c9-d262aeade317/exec-55ed4a2e-3652-455d-aae3-d84da531001f.png",
+      "status": "completed"
+    },
+    {
+      "id": "frostbell_polyp",
+      "name": "Frostbell Polyp",
+      "role": "slowing support",
+      "description": "Walking jellyfish polyp, opaque ivory bell, black frilled underside, five hooked walking tentacles, frozen bead fringe, dim blue organ",
+      "prompt": "Use case: stylized-concept. Asset: standalone full-body dark fantasy battle minion sprite, ONE creature. Subject: Frostbell Polyp: Walking jellyfish polyp, opaque ivory bell, black frilled underside, five hooked walking tentacles, frozen bead fringe, dim blue organ. A weaker slowing support from midnight glacier chasm, vertical blue ice walls, hanging icicles, broad flat frozen lake and snowbanks, associated with Rime Burrower but a distinct species, never a miniature boss. Highly detailed desaturated dark watercolor with granular pigment and layered washes within creature, broken ink contours, rich tactile anatomy and charcoal shadows, restrained theme accents. Full body centered facing LEFT in three-quarter view, ALL extremities completely visible with ample empty margin. GENUINELY TRANSPARENT PNG ALPHA CHANNEL everywhere outside creature. No background, no scenery, no paper rectangle, no ground patch, no floor, NO SHADOW, no cast/drop shadow, no aura, no haze, no text, no label, no frame, no UI. Finished production game asset.",
+      "relative_asset_path": "dice-and-destiny-client/assets/battle/minions/rime_burrower/frostbell_polyp.png",
+      "source_reference_paths": [
+        "dice-and-destiny-client/assets/battle/fighters/rime_burrower.png",
+        "dice-and-destiny-client/assets/battle/habitats/fractured_glacier.png"
+      ],
+      "generated_source_path": "/Users/daddymere/.codex/generated_images/01a0ba2d-5cc7-7070-96c9-d262aeade317/exec-8ce304c3-6991-4d77-8d76-09cd0ad89f0b.png",
+      "status": "completed"
+    },
+    {
+      "id": "cracktooth_mole",
+      "name": "Cracktooth Mole",
+      "role": "tunnel sapper",
+      "description": "Blind charcoal velvet mole, immense shovel palms, porcelain incisors, tiny gray nose, frozen whiskers, short stout tail",
+      "prompt": "Use case: stylized-concept. Asset: standalone full-body dark fantasy battle minion sprite, ONE creature. Subject: Cracktooth Mole: Blind charcoal velvet mole, immense shovel palms, porcelain incisors, tiny gray nose, frozen whiskers, short stout tail. A weaker tunnel sapper from midnight glacier chasm, vertical blue ice walls, hanging icicles, broad flat frozen lake and snowbanks, associated with Rime Burrower but a distinct species, never a miniature boss. Highly detailed desaturated dark watercolor with granular pigment and layered washes within creature, broken ink contours, rich tactile anatomy and charcoal shadows, restrained theme accents. Full body centered facing LEFT in three-quarter view, ALL extremities completely visible with ample empty margin. GENUINELY TRANSPARENT PNG ALPHA CHANNEL everywhere outside creature. No background, no scenery, no paper rectangle, no ground patch, no floor, NO SHADOW, no cast/drop shadow, no aura, no haze, no text, no label, no frame, no UI. Finished production game asset.",
+      "relative_asset_path": "dice-and-destiny-client/assets/battle/minions/rime_burrower/cracktooth_mole.png",
+      "source_reference_paths": [
+        "dice-and-destiny-client/assets/battle/fighters/rime_burrower.png",
+        "dice-and-destiny-client/assets/battle/habitats/fractured_glacier.png"
+      ],
+      "generated_source_path": "/Users/daddymere/.codex/generated_images/01a0ba2d-5cc7-7070-96c9-d262aeade317/exec-38e81383-dac5-4d9e-b4b3-a9fd64928b93.png",
+      "status": "completed"
+    },
+    {
+      "id": "shard_quill",
+      "name": "Shard Quill",
+      "role": "ranged defender",
+      "description": "Porcupine reptile, wrinkled blue-gray hide, uneven needle ice quills on shoulders, narrow beak mouth, four splayed feet, little club tail",
+      "prompt": "Use case: stylized-concept. Asset: standalone full-body dark fantasy battle minion sprite, ONE creature. Subject: Shard Quill: Porcupine reptile, wrinkled blue-gray hide, uneven needle ice quills on shoulders, narrow beak mouth, four splayed feet, little club tail. A weaker ranged defender from midnight glacier chasm, vertical blue ice walls, hanging icicles, broad flat frozen lake and snowbanks, associated with Rime Burrower but a distinct species, never a miniature boss. Highly detailed desaturated dark watercolor with granular pigment and layered washes within creature, broken ink contours, rich tactile anatomy and charcoal shadows, restrained theme accents. Full body centered facing LEFT in three-quarter view, ALL extremities completely visible with ample empty margin. GENUINELY TRANSPARENT PNG ALPHA CHANNEL everywhere outside creature. No background, no scenery, no paper rectangle, no ground patch, no floor, NO SHADOW, no cast/drop shadow, no aura, no haze, no text, no label, no frame, no UI. Finished production game asset.",
+      "relative_asset_path": "dice-and-destiny-client/assets/battle/minions/rime_burrower/shard_quill.png",
+      "source_reference_paths": [
+        "dice-and-destiny-client/assets/battle/fighters/rime_burrower.png",
+        "dice-and-destiny-client/assets/battle/habitats/fractured_glacier.png"
+      ],
+      "generated_source_path": "/Users/daddymere/.codex/generated_images/01a0ba2d-5cc7-7070-96c9-d262aeade317/exec-23fc9752-0fdb-4a56-b718-06a02a15980d.png",
+      "status": "completed"
+    },
+    {
+      "id": "brine_lantern",
+      "name": "Brine Lantern",
+      "role": "lure hunter",
+      "description": "Crawling ice sculpin fish, paired muscular fin legs, serrated dorsal sail, milky eyes, thin forehead lure with dim cyan bead",
+      "prompt": "Use case: stylized-concept. Asset: standalone full-body dark fantasy battle minion sprite, ONE creature. Subject: Brine Lantern: Crawling ice sculpin fish, paired muscular fin legs, serrated dorsal sail, milky eyes, thin forehead lure with dim cyan bead. A weaker lure hunter from midnight glacier chasm, vertical blue ice walls, hanging icicles, broad flat frozen lake and snowbanks, associated with Rime Burrower but a distinct species, never a miniature boss. Highly detailed desaturated dark watercolor with granular pigment and layered washes within creature, broken ink contours, rich tactile anatomy and charcoal shadows, restrained theme accents. Full body centered facing LEFT in three-quarter view, ALL extremities completely visible with ample empty margin. GENUINELY TRANSPARENT PNG ALPHA CHANNEL everywhere outside creature. No background, no scenery, no paper rectangle, no ground patch, no floor, NO SHADOW, no cast/drop shadow, no aura, no haze, no text, no label, no frame, no UI. Finished production game asset.",
+      "relative_asset_path": "dice-and-destiny-client/assets/battle/minions/rime_burrower/brine_lantern.png",
+      "source_reference_paths": [
+        "dice-and-destiny-client/assets/battle/fighters/rime_burrower.png",
+        "dice-and-destiny-client/assets/battle/habitats/fractured_glacier.png"
+      ],
+      "generated_source_path": "/Users/daddymere/.codex/generated_images/01a0ba2d-5cc7-7070-96c9-d262aeade317/exec-ff445985-38c7-4047-8225-96f000ce77e7.png",
+      "status": "completed"
+    },
+    {
+      "id": "rime_spindle",
+      "name": "Rime Spindle",
+      "role": "pursuit crawler",
+      "description": "Tall slender mantis insect, vertical thorax, folded black sickle forelegs, four hair-thin walking legs, triangular head, translucent fan abdomen",
+      "prompt": "Use case: stylized-concept. Asset: standalone full-body dark fantasy battle minion sprite, ONE creature. Subject: Rime Spindle: Tall slender mantis insect, vertical thorax, folded black sickle forelegs, four hair-thin walking legs, triangular head, translucent fan abdomen. A weaker pursuit crawler from midnight glacier chasm, vertical blue ice walls, hanging icicles, broad flat frozen lake and snowbanks, associated with Rime Burrower but a distinct species, never a miniature boss. Highly detailed desaturated dark watercolor with granular pigment and layered washes within creature, broken ink contours, rich tactile anatomy and charcoal shadows, restrained theme accents. Full body centered facing LEFT in three-quarter view, ALL extremities completely visible with ample empty margin. GENUINELY TRANSPARENT PNG ALPHA CHANNEL everywhere outside creature. No background, no scenery, no paper rectangle, no ground patch, no floor, NO SHADOW, no cast/drop shadow, no aura, no haze, no text, no label, no frame, no UI. Finished production game asset.",
+      "relative_asset_path": "dice-and-destiny-client/assets/battle/minions/rime_burrower/rime_spindle.png",
+      "source_reference_paths": [
+        "dice-and-destiny-client/assets/battle/fighters/rime_burrower.png",
+        "dice-and-destiny-client/assets/battle/habitats/fractured_glacier.png"
+      ],
+      "generated_source_path": "/Users/daddymere/.codex/generated_images/01a0ba2d-5cc7-7070-96c9-d262aeade317/exec-215330f0-9f5c-4703-bc4e-5e7268d1e0a7.png",
+      "status": "completed",
+      "previous_generated_source_path": "/Users/daddymere/.codex/generated_images/01a0ba2d-5cc7-7070-96c9-d262aeade317/exec-b126f990-edb2-4de1-84fc-a08a899be369.png",
+      "final_prompt": "Use case: stylized-concept. Asset: standalone full-body dark fantasy battle minion sprite, ONE creature. Subject: Rime Spindle: Tall slender mantis insect, vertical thorax, folded black sickle forelegs, four hair-thin walking legs, triangular head, translucent fan abdomen. A weaker pursuit crawler from midnight glacier chasm, vertical blue ice walls, hanging icicles, broad flat frozen lake and snowbanks, associated with Rime Burrower but a distinct species, never a miniature boss. Highly detailed desaturated dark watercolor with granular pigment and layered washes within creature, broken ink contours, rich tactile anatomy and charcoal shadows, restrained theme accents. Full body centered facing LEFT in three-quarter view, ALL extremities completely visible with ample empty margin. GENUINELY TRANSPARENT PNG ALPHA CHANNEL everywhere outside creature. No background, no scenery, no paper rectangle, no ground patch, no floor, NO SHADOW, no cast/drop shadow, no aura, no haze, no text, no label, no frame, no UI. Finished production game asset. FRAMING CORRECTION: SHORT curved antennae folded inward over the head, compact stance. Creature occupies ONLY CENTER 70 PERCENT of canvas. Wide empty transparent padding on every side. Absolutely zero body parts or wing/antenna tips touching any image edge. Zoom out."
+    }
+  ]
+}

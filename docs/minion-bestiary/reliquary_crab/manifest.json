@@ -1,0 +1,197 @@
+{
+  "boss_id": "reliquary_crab",
+  "boss_name": "Reliquary Crab",
+  "theme": "Ruined reliquary scavengers and lesser guardians, weathered pale stone, bronze fittings, muted amber.",
+  "minions": [
+    {
+      "id": "votive_scorpion",
+      "name": "Votive Scorpion",
+      "role": "stinger guard",
+      "description": "Small stone-plated scorpion with slender bronze pincers, many fine legs and a curled segmented tail ending in a hollow unlit candle-socket stinger.",
+      "prompt": "Use case: stylized-concept. Asset type: individual dark fantasy combat minion sprite. Create ONLY ONE original lesser monster, full body, clear distinctive silhouette and detailed anatomy, facing screen-left or left three-quarter, centered with comfortable transparent padding. Highly detailed desaturated dark watercolor and fine rough ink edges, textured pigment inside the creature only, worn materials, ominous grounded naturalistic creature design. Backdrop MUST be genuinely transparent alpha, not a painted solid color, gradient or checkerboard. Absolutely no environment, floor, ground patch, cast shadow, haze, border, text, UI, labels or detached accessories. Keep all anatomy in frame. This is a weaker ecological follower of the named boss, not a miniature boss clone. Do not depict the boss. Output a high quality transparent PNG.\nBoss family context: Reliquary Crab. Ruined reliquary scavengers and lesser guardians, weathered pale stone, bronze fittings, muted amber.\nCreature name (metadata only, do not render text): Votive Scorpion. Ecological role: stinger guard.\nSubject design: Small stone-plated scorpion with slender bronze pincers, many fine legs and a curled segmented tail ending in a hollow unlit candle-socket stinger.\nRestrained dark palette, readable highlights, modest ornament, no heroic boss regalia.",
+      "relative_asset_path": "dice-and-destiny-client/assets/battle/minions/reliquary_crab/votive_scorpion.png",
+      "source_reference_paths": [
+        "dice-and-destiny-client/assets/battle/fighters/reliquary_crab.png"
+      ],
+      "generated_source_path": "/Users/daddymere/.codex/generated_images/01a0ba2e-83e8-7e52-b7fc-570065c3b1dd/exec-e3c05ecb-c495-4599-bba6-c11d39d6c9a6.png",
+      "status": "completed",
+      "review": "Visual review passed; distinct full-body creature, transparent alpha verified.",
+      "dimensions": [
+        1312,
+        1199
+      ],
+      "alpha_verified": true
+    },
+    {
+      "id": "urnback_snail",
+      "name": "Urnback Snail",
+      "role": "relic carrier",
+      "description": "Grey snail sheltering inside a chipped squat funerary urn, faint worn carvings and bronze repair staples, two long soft eye stalks and a wrinkled broad foot.",
+      "prompt": "Use case: stylized-concept. Asset type: individual dark fantasy combat minion sprite. Create ONLY ONE original lesser monster, full body, clear distinctive silhouette and detailed anatomy, facing screen-left or left three-quarter, centered with comfortable transparent padding. Highly detailed desaturated dark watercolor and fine rough ink edges, textured pigment inside the creature only, worn materials, ominous grounded naturalistic creature design. Backdrop MUST be genuinely transparent alpha, not a painted solid color, gradient or checkerboard. Absolutely no environment, floor, ground patch, cast shadow, haze, border, text, UI, labels or detached accessories. Keep all anatomy in frame. This is a weaker ecological follower of the named boss, not a miniature boss clone. Do not depict the boss. Output a high quality transparent PNG.\nBoss family context: Reliquary Crab. Ruined reliquary scavengers and lesser guardians, weathered pale stone, bronze fittings, muted amber.\nCreature name (metadata only, do not render text): Urnback Snail. Ecological role: relic carrier.\nSubject design: Grey snail sheltering inside a chipped squat funerary urn, faint worn carvings and bronze repair staples, two long soft eye stalks and a wrinkled broad foot.\nRestrained dark palette, readable highlights, modest ornament, no heroic boss regalia.",
+      "relative_asset_path": "dice-and-destiny-client/assets/battle/minions/reliquary_crab/urnback_snail.png",
+      "source_reference_paths": [
+        "dice-and-destiny-client/assets/battle/fighters/reliquary_crab.png"
+      ],
+      "generated_source_path": "/Users/daddymere/.codex/generated_images/01a0ba2e-83e8-7e52-b7fc-570065c3b1dd/exec-3b214231-2c0c-420d-9970-e6e145ef8f98.png",
+      "status": "completed",
+      "review": "Visual review passed; distinct full-body creature, transparent alpha verified.",
+      "dimensions": [
+        1230,
+        1278
+      ],
+      "alpha_verified": true
+    },
+    {
+      "id": "crypt_key_weasel",
+      "name": "Crypt Key Weasel",
+      "role": "lock thief",
+      "description": "Long lean ash-furred weasel with a crooked bronze keylike tail tip, stone-crusted shoulders, sharp pale paws and a tiny dull amber eye.",
+      "prompt": "Use case: stylized-concept. Asset type: individual dark fantasy combat minion sprite. Create ONLY ONE original lesser monster, full body, clear distinctive silhouette and detailed anatomy, facing screen-left or left three-quarter, centered with comfortable transparent padding. Highly detailed desaturated dark watercolor and fine rough ink edges, textured pigment inside the creature only, worn materials, ominous grounded naturalistic creature design. Backdrop MUST be genuinely transparent alpha, not a painted solid color, gradient or checkerboard. Absolutely no environment, floor, ground patch, cast shadow, haze, border, text, UI, labels or detached accessories. Keep all anatomy in frame. This is a weaker ecological follower of the named boss, not a miniature boss clone. Do not depict the boss. Output a high quality transparent PNG.\nBoss family context: Reliquary Crab. Ruined reliquary scavengers and lesser guardians, weathered pale stone, bronze fittings, muted amber.\nCreature name (metadata only, do not render text): Crypt Key Weasel. Ecological role: lock thief.\nSubject design: Long lean ash-furred weasel with a crooked bronze keylike tail tip, stone-crusted shoulders, sharp pale paws and a tiny dull amber eye.\nRestrained dark palette, readable highlights, modest ornament, no heroic boss regalia.",
+      "relative_asset_path": "dice-and-destiny-client/assets/battle/minions/reliquary_crab/crypt_key_weasel.png",
+      "source_reference_paths": [
+        "dice-and-destiny-client/assets/battle/fighters/reliquary_crab.png"
+      ],
+      "generated_source_path": "/Users/daddymere/.codex/generated_images/01a0ba2e-83e8-7e52-b7fc-570065c3b1dd/exec-e1ad1b95-601c-4332-87d4-cc9c0c6cc2d6.png",
+      "status": "completed",
+      "review": "Visual review passed; distinct full-body creature, transparent alpha verified.",
+      "dimensions": [
+        1226,
+        1283
+      ],
+      "alpha_verified": true
+    },
+    {
+      "id": "mortar_mite",
+      "name": "Mortar Mite",
+      "role": "masonry parasite",
+      "description": "Flattened mite with six chunky stone-white legs, soft charcoal joints, porous mortar carapace with a single moss-dark seam and tiny bronze-colored mandibles.",
+      "prompt": "Use case: stylized-concept. Asset type: individual dark fantasy combat minion sprite. Create ONLY ONE original lesser monster, full body, clear distinctive silhouette and detailed anatomy, facing screen-left or left three-quarter, centered with comfortable transparent padding. Highly detailed desaturated dark watercolor and fine rough ink edges, textured pigment inside the creature only, worn materials, ominous grounded naturalistic creature design. Backdrop MUST be genuinely transparent alpha, not a painted solid color, gradient or checkerboard. Absolutely no environment, floor, ground patch, cast shadow, haze, border, text, UI, labels or detached accessories. Keep all anatomy in frame. This is a weaker ecological follower of the named boss, not a miniature boss clone. Do not depict the boss. Output a high quality transparent PNG.\nBoss family context: Reliquary Crab. Ruined reliquary scavengers and lesser guardians, weathered pale stone, bronze fittings, muted amber.\nCreature name (metadata only, do not render text): Mortar Mite. Ecological role: masonry parasite.\nSubject design: Flattened mite with six chunky stone-white legs, soft charcoal joints, porous mortar carapace with a single moss-dark seam and tiny bronze-colored mandibles.\nRestrained dark palette, readable highlights, modest ornament, no heroic boss regalia.",
+      "relative_asset_path": "dice-and-destiny-client/assets/battle/minions/reliquary_crab/mortar_mite.png",
+      "source_reference_paths": [
+        "dice-and-destiny-client/assets/battle/fighters/reliquary_crab.png"
+      ],
+      "generated_source_path": "/Users/daddymere/.codex/generated_images/01a0ba2e-83e8-7e52-b7fc-570065c3b1dd/exec-61d32a90-746a-4a90-adf1-6292f5f52d82.png",
+      "status": "completed",
+      "review": "Visual review passed; distinct full-body creature, transparent alpha verified.",
+      "dimensions": [
+        1536,
+        1024
+      ],
+      "alpha_verified": true
+    },
+    {
+      "id": "lantern_gnat",
+      "name": "Lantern Gnat",
+      "role": "light lure",
+      "description": "Delicate long-legged gnat with a translucent amber abdominal sac held inside fine bronze rib struts, two smoky veined wings and a sharp small ivory head.",
+      "prompt": "Use case: stylized-concept. Asset type: individual dark fantasy combat minion sprite. Create ONLY ONE original lesser monster, full body, clear distinctive silhouette and detailed anatomy, facing screen-left or left three-quarter, centered with comfortable transparent padding. Highly detailed desaturated dark watercolor and fine rough ink edges, textured pigment inside the creature only, worn materials, ominous grounded naturalistic creature design. Backdrop MUST be genuinely transparent alpha, not a painted solid color, gradient or checkerboard. Absolutely no environment, floor, ground patch, cast shadow, haze, border, text, UI, labels or detached accessories. Keep all anatomy in frame. This is a weaker ecological follower of the named boss, not a miniature boss clone. Do not depict the boss. Output a high quality transparent PNG.\nBoss family context: Reliquary Crab. Ruined reliquary scavengers and lesser guardians, weathered pale stone, bronze fittings, muted amber.\nCreature name (metadata only, do not render text): Lantern Gnat. Ecological role: light lure.\nSubject design: Delicate long-legged gnat with a translucent amber abdominal sac held inside fine bronze rib struts, two smoky veined wings and a sharp small ivory head.\nRestrained dark palette, readable highlights, modest ornament, no heroic boss regalia.",
+      "relative_asset_path": "dice-and-destiny-client/assets/battle/minions/reliquary_crab/lantern_gnat.png",
+      "source_reference_paths": [
+        "dice-and-destiny-client/assets/battle/fighters/reliquary_crab.png"
+      ],
+      "generated_source_path": "/Users/daddymere/.codex/generated_images/01a0ba2e-83e8-7e52-b7fc-570065c3b1dd/exec-70cf172d-f37a-416e-9fa4-e1db7f6e2ed2.png",
+      "status": "completed",
+      "review": "Visual review passed; distinct full-body creature, transparent alpha verified.",
+      "dimensions": [
+        1312,
+        1199
+      ],
+      "alpha_verified": true
+    },
+    {
+      "id": "ossuary_toad",
+      "name": "Ossuary Toad",
+      "role": "threshold ambusher",
+      "description": "Wide squat toad with cracked limestone skin, bone-white wart knobs, a dark cavernous mouth and short strong forelegs bound by corroded bronze natural bands.",
+      "prompt": "Use case: stylized-concept. Asset type: individual dark fantasy combat minion sprite. Create ONLY ONE original lesser monster, full body, clear distinctive silhouette and detailed anatomy, facing screen-left or left three-quarter, centered with comfortable transparent padding. Highly detailed desaturated dark watercolor and fine rough ink edges, textured pigment inside the creature only, worn materials, ominous grounded naturalistic creature design. Backdrop MUST be genuinely transparent alpha, not a painted solid color, gradient or checkerboard. Absolutely no environment, floor, ground patch, cast shadow, haze, border, text, UI, labels or detached accessories. Keep all anatomy in frame. This is a weaker ecological follower of the named boss, not a miniature boss clone. Do not depict the boss. Output a high quality transparent PNG.\nBoss family context: Reliquary Crab. Ruined reliquary scavengers and lesser guardians, weathered pale stone, bronze fittings, muted amber.\nCreature name (metadata only, do not render text): Ossuary Toad. Ecological role: threshold ambusher.\nSubject design: Wide squat toad with cracked limestone skin, bone-white wart knobs, a dark cavernous mouth and short strong forelegs bound by corroded bronze natural bands.\nRestrained dark palette, readable highlights, modest ornament, no heroic boss regalia.",
+      "relative_asset_path": "dice-and-destiny-client/assets/battle/minions/reliquary_crab/ossuary_toad.png",
+      "source_reference_paths": [
+        "dice-and-destiny-client/assets/battle/fighters/reliquary_crab.png"
+      ],
+      "generated_source_path": "/Users/daddymere/.codex/generated_images/01a0ba2e-83e8-7e52-b7fc-570065c3b1dd/exec-232dfe15-4ec9-4a40-9e8d-dc58f56397db.png",
+      "status": "completed",
+      "review": "Visual review passed; distinct full-body creature, transparent alpha verified.",
+      "dimensions": [
+        1374,
+        1145
+      ],
+      "alpha_verified": true
+    },
+    {
+      "id": "tileback_pangolin",
+      "name": "Tileback Pangolin",
+      "role": "armored forager",
+      "description": "Small pangolin with overlapping chipped pale funerary tiles instead of scales, bronze repair pins, narrow black snout, heavy digging claws and curled tapering tail.",
+      "prompt": "Use case: stylized-concept. Asset type: individual dark fantasy combat minion sprite. Create ONLY ONE original lesser monster, full body, clear distinctive silhouette and detailed anatomy, facing screen-left or left three-quarter, centered with comfortable transparent padding. Highly detailed desaturated dark watercolor and fine rough ink edges, textured pigment inside the creature only, worn materials, ominous grounded naturalistic creature design. Backdrop MUST be genuinely transparent alpha, not a painted solid color, gradient or checkerboard. Absolutely no environment, floor, ground patch, cast shadow, haze, border, text, UI, labels or detached accessories. Keep all anatomy in frame. This is a weaker ecological follower of the named boss, not a miniature boss clone. Do not depict the boss. Output a high quality transparent PNG.\nBoss family context: Reliquary Crab. Ruined reliquary scavengers and lesser guardians, weathered pale stone, bronze fittings, muted amber.\nCreature name (metadata only, do not render text): Tileback Pangolin. Ecological role: armored forager.\nSubject design: Small pangolin with overlapping chipped pale funerary tiles instead of scales, bronze repair pins, narrow black snout, heavy digging claws and curled tapering tail.\nRestrained dark palette, readable highlights, modest ornament, no heroic boss regalia.",
+      "relative_asset_path": "dice-and-destiny-client/assets/battle/minions/reliquary_crab/tileback_pangolin.png",
+      "source_reference_paths": [
+        "dice-and-destiny-client/assets/battle/fighters/reliquary_crab.png"
+      ],
+      "generated_source_path": "/Users/daddymere/.codex/generated_images/01a0ba2e-83e8-7e52-b7fc-570065c3b1dd/exec-582a330d-cab9-47cf-b2c5-b19905757bb4.png",
+      "status": "completed",
+      "review": "Visual review passed; distinct full-body creature, transparent alpha verified.",
+      "dimensions": [
+        1536,
+        1024
+      ],
+      "alpha_verified": true
+    },
+    {
+      "id": "cenotaph_limpet",
+      "name": "Cenotaph Limpet",
+      "role": "stationary sentinel",
+      "description": "Low limpet beast with a peaked weathered stone shell like a broken grave marker, irregular bronze edge brackets, radial grey gripping tentacles and a hidden amber eye.",
+      "prompt": "Use case: stylized-concept. Asset type: individual dark fantasy combat minion sprite. Create ONLY ONE original lesser monster, full body, clear distinctive silhouette and detailed anatomy, facing screen-left or left three-quarter, centered with comfortable transparent padding. Highly detailed desaturated dark watercolor and fine rough ink edges, textured pigment inside the creature only, worn materials, ominous grounded naturalistic creature design. Backdrop MUST be genuinely transparent alpha, not a painted solid color, gradient or checkerboard. Absolutely no environment, floor, ground patch, cast shadow, haze, border, text, UI, labels or detached accessories. Keep all anatomy in frame. This is a weaker ecological follower of the named boss, not a miniature boss clone. Do not depict the boss. Output a high quality transparent PNG.\nBoss family context: Reliquary Crab. Ruined reliquary scavengers and lesser guardians, weathered pale stone, bronze fittings, muted amber.\nCreature name (metadata only, do not render text): Cenotaph Limpet. Ecological role: stationary sentinel.\nSubject design: Low limpet beast with a peaked weathered stone shell like a broken grave marker, irregular bronze edge brackets, radial grey gripping tentacles and a hidden amber eye.\nRestrained dark palette, readable highlights, modest ornament, no heroic boss regalia.",
+      "relative_asset_path": "dice-and-destiny-client/assets/battle/minions/reliquary_crab/cenotaph_limpet.png",
+      "source_reference_paths": [
+        "dice-and-destiny-client/assets/battle/fighters/reliquary_crab.png"
+      ],
+      "generated_source_path": "/Users/daddymere/.codex/generated_images/01a0ba2e-83e8-7e52-b7fc-570065c3b1dd/exec-59605710-1190-4571-8d6a-97405f18784b.png",
+      "status": "completed",
+      "review": "Visual review passed; distinct full-body creature, transparent alpha verified.",
+      "dimensions": [
+        1536,
+        1024
+      ],
+      "alpha_verified": true
+    },
+    {
+      "id": "relic_pecker",
+      "name": "Relic Pecker",
+      "role": "masonry scavenger",
+      "description": "Ragged long-necked bird with a chisel stone beak, dusty charcoal feathers, narrow bronze brow ridge and powerful gripping ivory claws, perched pose without perch.",
+      "prompt": "Use case: stylized-concept. Asset type: individual dark fantasy combat minion sprite. Create ONLY ONE original lesser monster, full body, clear distinctive silhouette and detailed anatomy, facing screen-left or left three-quarter, centered with comfortable transparent padding. Highly detailed desaturated dark watercolor and fine rough ink edges, textured pigment inside the creature only, worn materials, ominous grounded naturalistic creature design. Backdrop MUST be genuinely transparent alpha, not a painted solid color, gradient or checkerboard. Absolutely no environment, floor, ground patch, cast shadow, haze, border, text, UI, labels or detached accessories. Keep all anatomy in frame. This is a weaker ecological follower of the named boss, not a miniature boss clone. Do not depict the boss. Output a high quality transparent PNG.\nBoss family context: Reliquary Crab. Ruined reliquary scavengers and lesser guardians, weathered pale stone, bronze fittings, muted amber.\nCreature name (metadata only, do not render text): Relic Pecker. Ecological role: masonry scavenger.\nSubject design: Ragged long-necked bird with a chisel stone beak, dusty charcoal feathers, narrow bronze brow ridge and powerful gripping ivory claws, perched pose without perch.\nRestrained dark palette, readable highlights, modest ornament, no heroic boss regalia.",
+      "relative_asset_path": "dice-and-destiny-client/assets/battle/minions/reliquary_crab/relic_pecker.png",
+      "source_reference_paths": [
+        "dice-and-destiny-client/assets/battle/fighters/reliquary_crab.png"
+      ],
+      "generated_source_path": "/Users/daddymere/.codex/generated_images/01a0ba2e-83e8-7e52-b7fc-570065c3b1dd/exec-5a52b70e-d367-4fd3-8fcb-cc27cfaf3d30.png",
+      "status": "completed",
+      "review": "Visual review passed; distinct full-body creature, transparent alpha verified.",
+      "dimensions": [
+        1199,
+        1312
+      ],
+      "alpha_verified": true
+    },
+    {
+      "id": "bronze_writhe",
+      "name": "Bronze Writhe",
+      "role": "crevice guardian",
+      "description": "Legless twisting worm armored in loose irregular bronze rings, a pale soft head with four small stone teeth, soot-colored folds and a blunt curled tail.",
+      "prompt": "Use case: stylized-concept. Asset type: individual dark fantasy combat minion sprite. Create ONLY ONE original lesser monster, full body, clear distinctive silhouette and detailed anatomy, facing screen-left or left three-quarter, centered with comfortable transparent padding. Highly detailed desaturated dark watercolor and fine rough ink edges, textured pigment inside the creature only, worn materials, ominous grounded naturalistic creature design. Backdrop MUST be genuinely transparent alpha, not a painted solid color, gradient or checkerboard. Absolutely no environment, floor, ground patch, cast shadow, haze, border, text, UI, labels or detached accessories. Keep all anatomy in frame. This is a weaker ecological follower of the named boss, not a miniature boss clone. Do not depict the boss. Output a high quality transparent PNG.\nBoss family context: Reliquary Crab. Ruined reliquary scavengers and lesser guardians, weathered pale stone, bronze fittings, muted amber.\nCreature name (metadata only, do not render text): Bronze Writhe. Ecological role: crevice guardian.\nSubject design: Legless twisting worm armored in loose irregular bronze rings, a pale soft head with four small stone teeth, soot-colored folds and a blunt curled tail.\nRestrained dark palette, readable highlights, modest ornament, no heroic boss regalia.",
+      "relative_asset_path": "dice-and-destiny-client/assets/battle/minions/reliquary_crab/bronze_writhe.png",
+      "source_reference_paths": [
+        "dice-and-destiny-client/assets/battle/fighters/reliquary_crab.png"
+      ],
+      "generated_source_path": "/Users/daddymere/.codex/generated_images/01a0ba2e-83e8-7e52-b7fc-570065c3b1dd/exec-c8b767ab-9e08-4519-bbf2-038e3228f3db.png",
+      "status": "completed",
+      "review": "Visual review passed; distinct full-body creature, transparent alpha verified.",
+      "dimensions": [
+        1205,
+        1305
+      ],
+      "alpha_verified": true
+    }
+  ]
+}

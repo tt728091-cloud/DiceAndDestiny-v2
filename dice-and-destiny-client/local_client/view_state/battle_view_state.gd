@@ -14,6 +14,7 @@ var origin: Dictionary = {}
 var damage_sources: Array = []
 var settled_damage: Dictionary = {}
 var events: Array = []
+var combat_log := preload("res://local_client/view_state/combat_log.gd").new()
 var legal_actions: Array = []
 var defense_rolls: Dictionary = {}
 var defense_selections: Dictionary = {}
@@ -38,6 +39,8 @@ func apply_result(result: Dictionary) -> bool:
 			return false
 	var incoming_round := int(snapshot.get("round", 0))
 	var incoming_segment := str(snapshot.get("segment", ""))
+	if incoming_round != round_number or str(snapshot.get("battle_id", "")) != battle_id:
+		max_rolls_by_actor.clear()
 	if incoming_round != round_number or incoming_segment in ["ongoing_effects", "income", "offensive"]:
 		defense_rolls.clear(); defense_selections.clear()
 	if incoming_round != round_number: offensive_reveals.clear()
@@ -60,14 +63,6 @@ func apply_result(result: Dictionary) -> bool:
 	effect_rolls = snapshot.get("effect_rolls", []).duplicate(true)
 	events = result.get("events", []).duplicate(true)
 	legal_actions = result.get("legal_actions", []).duplicate(true)
-	var incoming_defenses = snapshot.get("defense_selections", {})
-	if incoming_defenses is Dictionary and not incoming_defenses.is_empty():
-		defense_selections = incoming_defenses.duplicate(true)
-		for actor_id in defense_selections:
-			var selection: Dictionary = defense_selections[actor_id]
-			var face := int(selection.get("rolled_face", 0))
-			if face > 0:
-				defense_rolls[str(actor_id)] = {"actor_id": str(actor_id), "ability_id": str(selection.get("ability_id", "")), "source_id": str(selection.get("source_id", "")), "face": face, "rolled_faces": selection.get("rolled_faces", [face]), "catalyst_paid": selection.get("catalyst_paid", false)}
 	for battle_event in events:
 		if battle_event.get("type") == "dice_rolled" and int(battle_event.get("max_rolls", 0)) > 0:
 			max_rolls_by_actor[str(battle_event.get("actor_id", "blade"))] = int(battle_event.max_rolls)
@@ -95,7 +90,23 @@ func apply_result(result: Dictionary) -> bool:
 			for revealed_actor_id in commitments:
 				var commitment_value = commitments[revealed_actor_id]
 				if commitment_value is Dictionary: offensive_reveals[str(revealed_actor_id)] = commitment_value.duplicate(true)
-	return not battle_id.is_empty() and viewer_actor_id == "blade"
+	# Events describe steps leading to this snapshot. The complete final defense
+	# must win: dice_rolled lacks the damage-source ID and Catalyst payment, and
+	# replacing it would change playback identity on the next priority handoff.
+	var incoming_defenses = snapshot.get("defense_selections", {})
+	if snapshot.get("stage") == "defense_selection":
+		defense_selections.clear(); defense_rolls.clear()
+	if incoming_defenses is Dictionary and not incoming_defenses.is_empty():
+		defense_selections = incoming_defenses.duplicate(true)
+		for actor_id in defense_selections:
+			var selection: Dictionary = defense_selections[actor_id]
+			var face := int(selection.get("rolled_face", 0))
+			if face > 0:
+				defense_rolls[str(actor_id)] = {"actor_id": str(actor_id), "ability_id": str(selection.get("ability_id", "")), "source_id": str(selection.get("source_id", "")), "face": face, "rolled_faces": selection.get("rolled_faces", [face]), "catalyst_paid": selection.get("catalyst_paid", false)}
+	if not battle_id.is_empty() and viewer_actor_id == "blade":
+		combat_log.receive(result)
+		return true
+	return false
 
 func viewer_pending() -> Dictionary:
 	var value = pending_input.get("blade", {})
@@ -156,9 +167,12 @@ func rolled_dice(actor_id: String) -> Array:
 	return dice if dice is Array else []
 
 func offensive_reveal(actor_id: String) -> Dictionary:
+	var actor_state := actor(actor_id)
+	# An offensive-phase defeat clears the authoritative selection. Do not
+	# resurrect its old attack from a reveal cached before the lethal toxin.
+	if actor_state.get("defeat_state") == "defeated" and str(actor_state.get("selected_ability", "")).is_empty(): return {}
 	var value = offensive_reveals.get(actor_id, {})
 	if value is Dictionary and not value.is_empty(): return value
-	var actor_state := actor(actor_id)
 	var outcome = actor_state.get("offensive_outcome", {})
 	if not outcome is Dictionary or outcome.is_empty(): return {}
 	return {
@@ -185,11 +199,16 @@ func _array(value) -> Array:
 	return value if value is Array else []
 
 func rolls_used(actor_id: String) -> int:
+	var current := _offensive_dice_state(actor(actor_id))
+	if current.has("rolls_used"): return int(current.rolls_used)
 	return actor(actor_id).get("roll_history", []).size()
 
 func max_rolls(actor_id: String) -> int:
-	var used := rolls_used(actor_id)
-	if actor_id == "blade" and used > 0 and not allowed("planning_reroll"): return used
+	# Entry effects are already resolved in the snapshot, even before any dice
+	# are rolled. Past roll events and temporary permissions cannot define the
+	# current round's budget (Entangle is consumed when the round begins).
+	var current := _offensive_dice_state(actor(actor_id))
+	if int(current.get("max_rolls", 0)) > 0: return int(current.max_rolls)
 	return int(max_rolls_by_actor.get(actor_id, 3))
 
 func incoming_sources(target_id: String = "blade") -> Array:

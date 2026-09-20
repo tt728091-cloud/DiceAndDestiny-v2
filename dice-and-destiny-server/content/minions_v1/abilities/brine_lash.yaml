@@ -1,0 +1,119 @@
+{
+  "schema_version": 1,
+  "id": "brine_lash",
+  "name": "Brine Lash",
+  "type": "offensive",
+  "presentation": {
+    "rules_text": "Keep every 3 and reroll the other dice up to twice. Deal 2 damage per Brine (3). No Brine means a miss."
+  },
+  "cost": {
+    "energy": 0
+  },
+  "usage": {
+    "maximum_per_segment": 1
+  },
+  "targeting": {
+    "selector": "one_enemy",
+    "minimum": 1,
+    "maximum": 1
+  },
+  "qualification": {
+    "activation_tiers": [
+      {
+        "id": "brine_5",
+        "requirements": {
+          "all": [
+            {
+              "type": "symbol_count",
+              "symbol_id": "brine",
+              "minimum": 5
+            }
+          ]
+        },
+        "operations": [
+          {
+            "type": "deal_damage",
+            "target": "selected_targets",
+            "amount": 10
+          }
+        ]
+      },
+      {
+        "id": "brine_4",
+        "requirements": {
+          "all": [
+            {
+              "type": "symbol_count",
+              "symbol_id": "brine",
+              "minimum": 4
+            }
+          ]
+        },
+        "operations": [
+          {
+            "type": "deal_damage",
+            "target": "selected_targets",
+            "amount": 8
+          }
+        ]
+      },
+      {
+        "id": "brine_3",
+        "requirements": {
+          "all": [
+            {
+              "type": "symbol_count",
+              "symbol_id": "brine",
+              "minimum": 3
+            }
+          ]
+        },
+        "operations": [
+          {
+            "type": "deal_damage",
+            "target": "selected_targets",
+            "amount": 6
+          }
+        ]
+      },
+      {
+        "id": "brine_2",
+        "requirements": {
+          "all": [
+            {
+              "type": "symbol_count",
+              "symbol_id": "brine",
+              "minimum": 2
+            }
+          ]
+        },
+        "operations": [
+          {
+            "type": "deal_damage",
+            "target": "selected_targets",
+            "amount": 4
+          }
+        ]
+      },
+      {
+        "id": "brine_1",
+        "requirements": {
+          "all": [
+            {
+              "type": "symbol_count",
+              "symbol_id": "brine",
+              "minimum": 1
+            }
+          ]
+        },
+        "operations": [
+          {
+            "type": "deal_damage",
+            "target": "selected_targets",
+            "amount": 2
+          }
+        ]
+      }
+    ]
+  }
+}

@@ -1,0 +1,197 @@
+{
+  "boss_id": "bellback_pilgrim",
+  "boss_name": "Bellback Pilgrim",
+  "theme": "Wasteland procession followers, old iron, bone charms, tarnished brass, faded wine cloth.",
+  "minions": [
+    {
+      "id": "clapper_hound",
+      "name": "Clapper Hound",
+      "role": "tracker",
+      "description": "Lean mangy hound with a heavy old iron clapper fused beneath its jaw, small bone collar charms, long ivory forelegs and scraps of dark red cloth at the neck.",
+      "prompt": "Use case: stylized-concept. Asset type: individual dark fantasy combat minion sprite. Create ONLY ONE original lesser monster, full body, clear distinctive silhouette and detailed anatomy, facing screen-left or left three-quarter, centered with comfortable transparent padding. Highly detailed desaturated dark watercolor and fine rough ink edges, textured pigment inside the creature only, worn materials, ominous grounded naturalistic creature design. Backdrop MUST be genuinely transparent alpha, not a painted solid color, gradient or checkerboard. Absolutely no environment, floor, ground patch, cast shadow, haze, border, text, UI, labels or detached accessories. Keep all anatomy in frame. This is a weaker ecological follower of the named boss, not a miniature boss clone. Do not depict the boss. Output a high quality transparent PNG.\nBoss family context: Bellback Pilgrim. Wasteland procession followers, old iron, bone charms, tarnished brass, faded wine cloth.\nCreature name (metadata only, do not render text): Clapper Hound. Ecological role: tracker.\nSubject design: Lean mangy hound with a heavy old iron clapper fused beneath its jaw, small bone collar charms, long ivory forelegs and scraps of dark red cloth at the neck.\nRestrained dark palette, readable highlights, modest ornament, no heroic boss regalia.",
+      "relative_asset_path": "dice-and-destiny-client/assets/battle/minions/bellback_pilgrim/clapper_hound.png",
+      "source_reference_paths": [
+        "dice-and-destiny-client/assets/battle/fighters/bellback_pilgrim.png"
+      ],
+      "generated_source_path": "/Users/daddymere/.codex/generated_images/01a0ba2e-83e8-7e52-b7fc-570065c3b1dd/exec-f592532e-071e-4f43-a709-ab104928464d.png",
+      "status": "completed",
+      "review": "Visual review passed; distinct full-body creature, transparent alpha verified.",
+      "dimensions": [
+        1374,
+        1145
+      ],
+      "alpha_verified": true
+    },
+    {
+      "id": "tollwing_crow",
+      "name": "Tollwing Crow",
+      "role": "omen scout",
+      "description": "Hunched crow with sparse soot feathers, a small tarnished bronze throat resonator, bone beak tip and a single broken chain loop around one claw.",
+      "prompt": "Use case: stylized-concept. Asset type: individual dark fantasy combat minion sprite. Create ONLY ONE original lesser monster, full body, clear distinctive silhouette and detailed anatomy, facing screen-left or left three-quarter, centered with comfortable transparent padding. Highly detailed desaturated dark watercolor and fine rough ink edges, textured pigment inside the creature only, worn materials, ominous grounded naturalistic creature design. Backdrop MUST be genuinely transparent alpha, not a painted solid color, gradient or checkerboard. Absolutely no environment, floor, ground patch, cast shadow, haze, border, text, UI, labels or detached accessories. Keep all anatomy in frame. This is a weaker ecological follower of the named boss, not a miniature boss clone. Do not depict the boss. Output a high quality transparent PNG.\nBoss family context: Bellback Pilgrim. Wasteland procession followers, old iron, bone charms, tarnished brass, faded wine cloth.\nCreature name (metadata only, do not render text): Tollwing Crow. Ecological role: omen scout.\nSubject design: Hunched crow with sparse soot feathers, a small tarnished bronze throat resonator, bone beak tip and a single broken chain loop around one claw.\nRestrained dark palette, readable highlights, modest ornament, no heroic boss regalia.",
+      "relative_asset_path": "dice-and-destiny-client/assets/battle/minions/bellback_pilgrim/tollwing_crow.png",
+      "source_reference_paths": [
+        "dice-and-destiny-client/assets/battle/fighters/bellback_pilgrim.png"
+      ],
+      "generated_source_path": "/Users/daddymere/.codex/generated_images/01a0ba2e-83e8-7e52-b7fc-570065c3b1dd/exec-40382dbe-de58-47c7-8e8b-0c9123d74a63.png",
+      "status": "completed",
+      "review": "Visual review passed; distinct full-body creature, transparent alpha verified.",
+      "dimensions": [
+        1310,
+        1201
+      ],
+      "alpha_verified": true
+    },
+    {
+      "id": "chainback_rolypoly",
+      "name": "Chainback Roly-poly",
+      "role": "scrap scavenger",
+      "description": "Broad low woodlouse with overlapping rust iron links forming its armor, many tiny ivory feet, short feelers and a frayed burgundy cloth scrap caught at its rear.",
+      "prompt": "Use case: stylized-concept. Asset type: individual dark fantasy combat minion sprite. Create ONLY ONE original lesser monster, full body, clear distinctive silhouette and detailed anatomy, facing screen-left or left three-quarter, centered with comfortable transparent padding. Highly detailed desaturated dark watercolor and fine rough ink edges, textured pigment inside the creature only, worn materials, ominous grounded naturalistic creature design. Backdrop MUST be genuinely transparent alpha, not a painted solid color, gradient or checkerboard. Absolutely no environment, floor, ground patch, cast shadow, haze, border, text, UI, labels or detached accessories. Keep all anatomy in frame. This is a weaker ecological follower of the named boss, not a miniature boss clone. Do not depict the boss. Output a high quality transparent PNG.\nBoss family context: Bellback Pilgrim. Wasteland procession followers, old iron, bone charms, tarnished brass, faded wine cloth.\nCreature name (metadata only, do not render text): Chainback Roly-poly. Ecological role: scrap scavenger.\nSubject design: Broad low woodlouse with overlapping rust iron links forming its armor, many tiny ivory feet, short feelers and a frayed burgundy cloth scrap caught at its rear.\nRestrained dark palette, readable highlights, modest ornament, no heroic boss regalia.",
+      "relative_asset_path": "dice-and-destiny-client/assets/battle/minions/bellback_pilgrim/chainback_rolypoly.png",
+      "source_reference_paths": [
+        "dice-and-destiny-client/assets/battle/fighters/bellback_pilgrim.png"
+      ],
+      "generated_source_path": "/Users/daddymere/.codex/generated_images/01a0ba2e-83e8-7e52-b7fc-570065c3b1dd/exec-cb86b5fe-5567-4d64-8817-29f3d4470e60.png",
+      "status": "completed",
+      "review": "Visual review passed; distinct full-body creature, transparent alpha verified.",
+      "dimensions": [
+        1536,
+        1024
+      ],
+      "alpha_verified": true
+    },
+    {
+      "id": "cinder_censer_imp",
+      "name": "Cinder Censer Imp",
+      "role": "incense bearer",
+      "description": "Small hunched two-legged soot creature with a perforated iron chest cage holding dim embers, long wiry arms, blank bone face and a short chain tail; no loose smoke.",
+      "prompt": "Use case: stylized-concept. Asset type: individual dark fantasy combat minion sprite. Create ONLY ONE original lesser monster, full body, clear distinctive silhouette and detailed anatomy, facing screen-left or left three-quarter, centered with comfortable transparent padding. Highly detailed desaturated dark watercolor and fine rough ink edges, textured pigment inside the creature only, worn materials, ominous grounded naturalistic creature design. Backdrop MUST be genuinely transparent alpha, not a painted solid color, gradient or checkerboard. Absolutely no environment, floor, ground patch, cast shadow, haze, border, text, UI, labels or detached accessories. Keep all anatomy in frame. This is a weaker ecological follower of the named boss, not a miniature boss clone. Do not depict the boss. Output a high quality transparent PNG.\nBoss family context: Bellback Pilgrim. Wasteland procession followers, old iron, bone charms, tarnished brass, faded wine cloth.\nCreature name (metadata only, do not render text): Cinder Censer Imp. Ecological role: incense bearer.\nSubject design: Small hunched two-legged soot creature with a perforated iron chest cage holding dim embers, long wiry arms, blank bone face and a short chain tail; no loose smoke.\nRestrained dark palette, readable highlights, modest ornament, no heroic boss regalia.",
+      "relative_asset_path": "dice-and-destiny-client/assets/battle/minions/bellback_pilgrim/cinder_censer_imp.png",
+      "source_reference_paths": [
+        "dice-and-destiny-client/assets/battle/fighters/bellback_pilgrim.png"
+      ],
+      "generated_source_path": "/Users/daddymere/.codex/generated_images/01a0ba2e-83e8-7e52-b7fc-570065c3b1dd/exec-f07ff9c9-ab58-4ff8-8c5a-63743a9709c7.png",
+      "status": "completed",
+      "review": "Visual review passed; distinct full-body creature, transparent alpha verified.",
+      "dimensions": [
+        1191,
+        1321
+      ],
+      "alpha_verified": true
+    },
+    {
+      "id": "knucklebone_hopper",
+      "name": "Knucklebone Hopper",
+      "role": "flank skirmisher",
+      "description": "Odd flightless locust built from weathered ivory chitin resembling knucklebones, massive folded hind legs, dull brass abdomen rings and short broken antennae.",
+      "prompt": "Use case: stylized-concept. Asset type: individual dark fantasy combat minion sprite. Create ONLY ONE original lesser monster, full body, clear distinctive silhouette and detailed anatomy, facing screen-left or left three-quarter, centered with comfortable transparent padding. Highly detailed desaturated dark watercolor and fine rough ink edges, textured pigment inside the creature only, worn materials, ominous grounded naturalistic creature design. Backdrop MUST be genuinely transparent alpha, not a painted solid color, gradient or checkerboard. Absolutely no environment, floor, ground patch, cast shadow, haze, border, text, UI, labels or detached accessories. Keep all anatomy in frame. This is a weaker ecological follower of the named boss, not a miniature boss clone. Do not depict the boss. Output a high quality transparent PNG.\nBoss family context: Bellback Pilgrim. Wasteland procession followers, old iron, bone charms, tarnished brass, faded wine cloth.\nCreature name (metadata only, do not render text): Knucklebone Hopper. Ecological role: flank skirmisher.\nSubject design: Odd flightless locust built from weathered ivory chitin resembling knucklebones, massive folded hind legs, dull brass abdomen rings and short broken antennae.\nRestrained dark palette, readable highlights, modest ornament, no heroic boss regalia.",
+      "relative_asset_path": "dice-and-destiny-client/assets/battle/minions/bellback_pilgrim/knucklebone_hopper.png",
+      "source_reference_paths": [
+        "dice-and-destiny-client/assets/battle/fighters/bellback_pilgrim.png"
+      ],
+      "generated_source_path": "/Users/daddymere/.codex/generated_images/01a0ba2e-83e8-7e52-b7fc-570065c3b1dd/exec-3caed80c-7fb0-4ebd-8d35-f219d990b9df.png",
+      "status": "completed",
+      "review": "Visual review passed; distinct full-body creature, transparent alpha verified.",
+      "dimensions": [
+        1536,
+        1024
+      ],
+      "alpha_verified": true
+    },
+    {
+      "id": "rusthorn_snail",
+      "name": "Rusthorn Snail",
+      "role": "procession follower",
+      "description": "Snail with a worn spiral iron shell, two antlerlike rusted horn feelers, wrinkled grey foot and a pair of tiny dangling bone beads attached to the shell rim.",
+      "prompt": "Use case: stylized-concept. Asset type: individual dark fantasy combat minion sprite. Create ONLY ONE original lesser monster, full body, clear distinctive silhouette and detailed anatomy, facing screen-left or left three-quarter, centered with comfortable transparent padding. Highly detailed desaturated dark watercolor and fine rough ink edges, textured pigment inside the creature only, worn materials, ominous grounded naturalistic creature design. Backdrop MUST be genuinely transparent alpha, not a painted solid color, gradient or checkerboard. Absolutely no environment, floor, ground patch, cast shadow, haze, border, text, UI, labels or detached accessories. Keep all anatomy in frame. This is a weaker ecological follower of the named boss, not a miniature boss clone. Do not depict the boss. Output a high quality transparent PNG.\nBoss family context: Bellback Pilgrim. Wasteland procession followers, old iron, bone charms, tarnished brass, faded wine cloth.\nCreature name (metadata only, do not render text): Rusthorn Snail. Ecological role: procession follower.\nSubject design: Snail with a worn spiral iron shell, two antlerlike rusted horn feelers, wrinkled grey foot and a pair of tiny dangling bone beads attached to the shell rim.\nRestrained dark palette, readable highlights, modest ornament, no heroic boss regalia.",
+      "relative_asset_path": "dice-and-destiny-client/assets/battle/minions/bellback_pilgrim/rusthorn_snail.png",
+      "source_reference_paths": [
+        "dice-and-destiny-client/assets/battle/fighters/bellback_pilgrim.png"
+      ],
+      "generated_source_path": "/Users/daddymere/.codex/generated_images/01a0ba2e-83e8-7e52-b7fc-570065c3b1dd/exec-10e088ba-3df4-4819-a0d3-ea2b3cce5526.png",
+      "status": "completed",
+      "review": "Visual review passed; distinct full-body creature, transparent alpha verified.",
+      "dimensions": [
+        1243,
+        1266
+      ],
+      "alpha_verified": true
+    },
+    {
+      "id": "mourning_kite",
+      "name": "Mourning Kite",
+      "role": "aerial harrier",
+      "description": "Small ray-shaped flying beast made of leathery soot skin and ragged wine-colored membranes, a pointed bone face and trailing segmented chainlike tail; no bells.",
+      "prompt": "Use case: stylized-concept. Asset type: individual dark fantasy combat minion sprite. Create ONLY ONE original lesser monster, full body, clear distinctive silhouette and detailed anatomy, facing screen-left or left three-quarter, centered with comfortable transparent padding. Highly detailed desaturated dark watercolor and fine rough ink edges, textured pigment inside the creature only, worn materials, ominous grounded naturalistic creature design. Backdrop MUST be genuinely transparent alpha, not a painted solid color, gradient or checkerboard. Absolutely no environment, floor, ground patch, cast shadow, haze, border, text, UI, labels or detached accessories. Keep all anatomy in frame. This is a weaker ecological follower of the named boss, not a miniature boss clone. Do not depict the boss. Output a high quality transparent PNG.\nBoss family context: Bellback Pilgrim. Wasteland procession followers, old iron, bone charms, tarnished brass, faded wine cloth.\nCreature name (metadata only, do not render text): Mourning Kite. Ecological role: aerial harrier.\nSubject design: Small ray-shaped flying beast made of leathery soot skin and ragged wine-colored membranes, a pointed bone face and trailing segmented chainlike tail; no bells.\nRestrained dark palette, readable highlights, modest ornament, no heroic boss regalia.",
+      "relative_asset_path": "dice-and-destiny-client/assets/battle/minions/bellback_pilgrim/mourning_kite.png",
+      "source_reference_paths": [
+        "dice-and-destiny-client/assets/battle/fighters/bellback_pilgrim.png"
+      ],
+      "generated_source_path": "/Users/daddymere/.codex/generated_images/01a0ba2e-83e8-7e52-b7fc-570065c3b1dd/exec-bf991f4d-eebb-4a90-9ff9-6a0c8096726c.png",
+      "status": "completed",
+      "review": "Visual review passed; distinct full-body creature, transparent alpha verified.",
+      "dimensions": [
+        1242,
+        1266
+      ],
+      "alpha_verified": true
+    },
+    {
+      "id": "chime_throat_gecko",
+      "name": "Chime-throat Gecko",
+      "role": "wall scout",
+      "description": "Splayed-foot gecko with pale leathery skin, swollen translucent throat containing tiny dull brass nodules, a curled tail and rust-colored scale patches.",
+      "prompt": "Use case: stylized-concept. Asset type: individual dark fantasy combat minion sprite. Create ONLY ONE original lesser monster, full body, clear distinctive silhouette and detailed anatomy, facing screen-left or left three-quarter, centered with comfortable transparent padding. Highly detailed desaturated dark watercolor and fine rough ink edges, textured pigment inside the creature only, worn materials, ominous grounded naturalistic creature design. Backdrop MUST be genuinely transparent alpha, not a painted solid color, gradient or checkerboard. Absolutely no environment, floor, ground patch, cast shadow, haze, border, text, UI, labels or detached accessories. Keep all anatomy in frame. This is a weaker ecological follower of the named boss, not a miniature boss clone. Do not depict the boss. Output a high quality transparent PNG.\nBoss family context: Bellback Pilgrim. Wasteland procession followers, old iron, bone charms, tarnished brass, faded wine cloth.\nCreature name (metadata only, do not render text): Chime-throat Gecko. Ecological role: wall scout.\nSubject design: Splayed-foot gecko with pale leathery skin, swollen translucent throat containing tiny dull brass nodules, a curled tail and rust-colored scale patches.\nRestrained dark palette, readable highlights, modest ornament, no heroic boss regalia.",
+      "relative_asset_path": "dice-and-destiny-client/assets/battle/minions/bellback_pilgrim/chime_throat_gecko.png",
+      "source_reference_paths": [
+        "dice-and-destiny-client/assets/battle/fighters/bellback_pilgrim.png"
+      ],
+      "generated_source_path": "/Users/daddymere/.codex/generated_images/01a0ba2e-83e8-7e52-b7fc-570065c3b1dd/exec-b4becc9e-d4d9-4b50-8398-3ce3f19ee915.png",
+      "status": "completed",
+      "review": "Visual review passed; distinct full-body creature, transparent alpha verified.",
+      "dimensions": [
+        1536,
+        1024
+      ],
+      "alpha_verified": true
+    },
+    {
+      "id": "ash_pannier_beetle",
+      "name": "Ash Pannier Beetle",
+      "role": "offering carrier",
+      "description": "Compact six-legged dung beetle with two uneven woven bone baskets grown along its back, matte iron shell, shovel head and a few frayed faded cloth ties.",
+      "prompt": "Use case: stylized-concept. Asset type: individual dark fantasy combat minion sprite. Create ONLY ONE original lesser monster, full body, clear distinctive silhouette and detailed anatomy, facing screen-left or left three-quarter, centered with comfortable transparent padding. Highly detailed desaturated dark watercolor and fine rough ink edges, textured pigment inside the creature only, worn materials, ominous grounded naturalistic creature design. Backdrop MUST be genuinely transparent alpha, not a painted solid color, gradient or checkerboard. Absolutely no environment, floor, ground patch, cast shadow, haze, border, text, UI, labels or detached accessories. Keep all anatomy in frame. This is a weaker ecological follower of the named boss, not a miniature boss clone. Do not depict the boss. Output a high quality transparent PNG.\nBoss family context: Bellback Pilgrim. Wasteland procession followers, old iron, bone charms, tarnished brass, faded wine cloth.\nCreature name (metadata only, do not render text): Ash Pannier Beetle. Ecological role: offering carrier.\nSubject design: Compact six-legged dung beetle with two uneven woven bone baskets grown along its back, matte iron shell, shovel head and a few frayed faded cloth ties.\nRestrained dark palette, readable highlights, modest ornament, no heroic boss regalia.",
+      "relative_asset_path": "dice-and-destiny-client/assets/battle/minions/bellback_pilgrim/ash_pannier_beetle.png",
+      "source_reference_paths": [
+        "dice-and-destiny-client/assets/battle/fighters/bellback_pilgrim.png"
+      ],
+      "generated_source_path": "/Users/daddymere/.codex/generated_images/01a0ba2e-83e8-7e52-b7fc-570065c3b1dd/exec-4b602e8b-84fd-486c-ac61-9957b8648c88.png",
+      "status": "completed",
+      "review": "Visual review passed; distinct full-body creature, transparent alpha verified.",
+      "dimensions": [
+        1374,
+        1145
+      ],
+      "alpha_verified": true
+    },
+    {
+      "id": "rattlejaw_vagrant",
+      "name": "Rattlejaw Vagrant",
+      "role": "rear guard",
+      "description": "Short stooped bipedal scavenger with oversized bone jaw, narrow wrapped charcoal torso, long clawed arms and rusted ankle rings, carrying a simple crooked staff.",
+      "prompt": "Use case: stylized-concept. Asset type: individual dark fantasy combat minion sprite. Create ONLY ONE original lesser monster, full body, clear distinctive silhouette and detailed anatomy, facing screen-left or left three-quarter, centered with comfortable transparent padding. Highly detailed desaturated dark watercolor and fine rough ink edges, textured pigment inside the creature only, worn materials, ominous grounded naturalistic creature design. Backdrop MUST be genuinely transparent alpha, not a painted solid color, gradient or checkerboard. Absolutely no environment, floor, ground patch, cast shadow, haze, border, text, UI, labels or detached accessories. Keep all anatomy in frame. This is a weaker ecological follower of the named boss, not a miniature boss clone. Do not depict the boss. Output a high quality transparent PNG.\nBoss family context: Bellback Pilgrim. Wasteland procession followers, old iron, bone charms, tarnished brass, faded wine cloth.\nCreature name (metadata only, do not render text): Rattlejaw Vagrant. Ecological role: rear guard.\nSubject design: Short stooped bipedal scavenger with oversized bone jaw, narrow wrapped charcoal torso, long clawed arms and rusted ankle rings, carrying a simple crooked staff.\nRestrained dark palette, readable highlights, modest ornament, no heroic boss regalia.",
+      "relative_asset_path": "dice-and-destiny-client/assets/battle/minions/bellback_pilgrim/rattlejaw_vagrant.png",
+      "source_reference_paths": [
+        "dice-and-destiny-client/assets/battle/fighters/bellback_pilgrim.png"
+      ],
+      "generated_source_path": "/Users/daddymere/.codex/generated_images/01a0ba2e-83e8-7e52-b7fc-570065c3b1dd/exec-fc026153-0dbe-47ae-9944-3e7c52d6d17c.png",
+      "status": "completed",
+      "review": "Visual review passed; distinct full-body creature, transparent alpha verified.",
+      "dimensions": [
+        1222,
+        1287
+      ],
+      "alpha_verified": true
+    }
+  ]
+}

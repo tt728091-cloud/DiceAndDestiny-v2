@@ -1,0 +1,24 @@
+[gd_resource type="Resource" script_class="BattleEncounterVisual" load_steps=6 format=3]
+
+[ext_resource type="Script" path="res://content/battle_visuals/encounter_visual.gd" id="1"]
+[ext_resource type="Script" path="res://content/battle_visuals/fighter_placement.gd" id="2"]
+[ext_resource type="Resource" path="res://content/battle_visuals/habitats/wasteland.tres" id="3"]
+
+[sub_resource type="Resource" id="Player"]
+script = ExtResource("2")
+instance_id = "player"
+actor_id = "blade"
+ground_position = Vector2(720, 700)
+face_left = false
+draw_order = 1
+
+[sub_resource type="Resource" id="Enemy"]
+script = ExtResource("2")
+instance_id = "enemy"
+actor_id = "goblin"
+ground_position = Vector2(1435, 585)
+
+[resource]
+script = ExtResource("1")
+habitat = ExtResource("3")
+fighters = Array[ExtResource("2")]([SubResource("Player"), SubResource("Enemy")])

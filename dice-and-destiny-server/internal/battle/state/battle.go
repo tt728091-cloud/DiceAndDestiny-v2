@@ -94,6 +94,7 @@ type RuntimeStatusTrigger struct {
 }
 
 type ActorState struct {
+	TeamID       string `json:"team_id,omitempty"`
 	DefinitionID string
 	Controller   ControllerType
 	Character    CharacterMetadata
@@ -252,6 +253,7 @@ type BattleSetup struct {
 }
 
 type ActorSetup struct {
+	TeamID          string `json:"team_id,omitempty"`
 	ID              string
 	DefinitionID    string
 	ControllerType  ControllerType
@@ -376,6 +378,7 @@ func NewBattleFromSetup(id string, setup BattleSetup) (Battle, error) {
 
 		actors[actor.ID] = ActorState{
 			DefinitionID:    actor.DefinitionID,
+			TeamID:          actor.TeamID,
 			Controller:      controller,
 			Character:       actor.Character,
 			Resources:       actor.Resources,

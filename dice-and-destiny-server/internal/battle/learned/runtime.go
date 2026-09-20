@@ -8,20 +8,22 @@ import (
 )
 
 type runtimeRequest struct {
-	Op              string `json:"op"`
-	ReplaceSession  bool   `json:"replace_session,omitempty"`
-	ModelPath       string `json:"model_path,omitempty"`
-	ModelSHA256     string `json:"model_sha256,omitempty"`
-	ContentRoot     string `json:"content_root,omitempty"`
-	RunStateRoot    string `json:"run_state_root,omitempty"`
-	DiagnosticsPath string `json:"diagnostics_path,omitempty"`
-	TimeoutMS       int    `json:"timeout_ms,omitempty"`
-	BattleID        string `json:"battle_id,omitempty"`
-	Seed            uint64 `json:"seed,omitempty"`
-	HumanSeat       string `json:"human_seat,omitempty"`
-	Character       string `json:"character,omitempty"`
-	Rematch         bool   `json:"rematch,omitempty"`
-	CommandJSON     string `json:"command_json,omitempty"`
+	OpponentDefinition string `json:"opponent_definition,omitempty"`
+	OpponentCount      int    `json:"opponent_count,omitempty"`
+	Op                 string `json:"op"`
+	ReplaceSession     bool   `json:"replace_session,omitempty"`
+	ModelPath          string `json:"model_path,omitempty"`
+	ModelSHA256        string `json:"model_sha256,omitempty"`
+	ContentRoot        string `json:"content_root,omitempty"`
+	RunStateRoot       string `json:"run_state_root,omitempty"`
+	DiagnosticsPath    string `json:"diagnostics_path,omitempty"`
+	TimeoutMS          int    `json:"timeout_ms,omitempty"`
+	BattleID           string `json:"battle_id,omitempty"`
+	Seed               uint64 `json:"seed,omitempty"`
+	HumanSeat          string `json:"human_seat,omitempty"`
+	Character          string `json:"character,omitempty"`
+	Rematch            bool   `json:"rematch,omitempty"`
+	CommandJSON        string `json:"command_json,omitempty"`
 }
 
 var learnedRuntime struct {
@@ -39,16 +41,18 @@ func HandleRuntimeRequest(requestJSON string) string {
 	defer learnedRuntime.Unlock()
 	if request.Op == "initialize" {
 		config := SessionConfig{
-			ContentRoot:      request.ContentRoot,
-			RunStateRoot:     request.RunStateRoot,
-			ModelPath:        request.ModelPath,
-			ModelSHA256:      request.ModelSHA256,
-			DiagnosticsPath:  request.DiagnosticsPath,
-			InferenceTimeout: time.Duration(request.TimeoutMS) * time.Millisecond,
+			OpponentDefinition: request.OpponentDefinition,
+			OpponentCount:      request.OpponentCount,
+			ContentRoot:        request.ContentRoot,
+			RunStateRoot:       request.RunStateRoot,
+			ModelPath:          request.ModelPath,
+			ModelSHA256:        request.ModelSHA256,
+			DiagnosticsPath:    request.DiagnosticsPath,
+			InferenceTimeout:   time.Duration(request.TimeoutMS) * time.Millisecond,
 		}
 		differentConfig := learnedRuntime.session != nil && (config.ModelPath != learnedRuntime.config.ModelPath ||
 			config.ModelSHA256 != learnedRuntime.config.ModelSHA256 ||
-			config.ContentRoot != learnedRuntime.config.ContentRoot)
+			config.ContentRoot != learnedRuntime.config.ContentRoot || config.OpponentDefinition != learnedRuntime.config.OpponentDefinition || config.OpponentCount != learnedRuntime.config.OpponentCount)
 		if differentConfig && !request.ReplaceSession {
 			return runtimeError(fmt.Errorf("learned runtime is already initialized with a different model or content root"))
 		}

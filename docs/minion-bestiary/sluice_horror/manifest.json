@@ -1,0 +1,157 @@
+{
+  "boss_id": "sluice_horror",
+  "boss_name": "Sluice Horror",
+  "theme": "collapsed aqueduct reservoir, broken arches, rusted gates, shallow dark water, broad pale silt-covered dry embankment",
+  "minions": [
+    {
+      "id": "grate_gnawer",
+      "name": "Grate Gnawer",
+      "role": "scavenger",
+      "description": "Hunched sewer rat, slick charcoal fur, huge pale incisors, long hairless rust-stained tail, splayed toes, blind eyes, shoulder lime scale",
+      "prompt": "Use case: stylized-concept. Asset: standalone full-body dark fantasy battle minion sprite, ONE creature. Subject: Grate Gnawer: Hunched sewer rat, slick charcoal fur, huge pale incisors, long hairless rust-stained tail, splayed toes, blind eyes, shoulder lime scale. A weaker scavenger from collapsed aqueduct reservoir, broken arches, rusted gates, shallow dark water, broad pale silt-covered dry embankment, associated with Sluice Horror but a distinct species, never a miniature boss. Highly detailed desaturated dark watercolor with granular pigment and layered washes within creature, broken ink contours, rich tactile anatomy and charcoal shadows, restrained theme accents. Full body centered facing LEFT in three-quarter view, ALL extremities completely visible with ample empty margin. GENUINELY TRANSPARENT PNG ALPHA CHANNEL everywhere outside creature. No background, no scenery, no paper rectangle, no ground patch, no floor, NO SHADOW, no cast/drop shadow, no aura, no haze, no text, no label, no frame, no UI. Finished production game asset.",
+      "relative_asset_path": "dice-and-destiny-client/assets/battle/minions/sluice_horror/grate_gnawer.png",
+      "source_reference_paths": [
+        "dice-and-destiny-client/assets/battle/fighters/sluice_horror.png",
+        "dice-and-destiny-client/assets/battle/habitats/flooded_aqueduct.png"
+      ],
+      "generated_source_path": "/Users/daddymere/.codex/generated_images/01a0ba2d-5cc7-7070-96c9-d262aeade317/exec-e4c7767a-13d7-475e-abf4-959a27c647d4.png",
+      "status": "completed",
+      "final_prompt": "Use case: stylized-concept. Asset: standalone full-body dark fantasy battle minion sprite, ONE creature. Subject: Grate Gnawer: Hunched sewer rat, slick charcoal fur, huge pale incisors, long hairless rust-stained tail, splayed toes, blind eyes, shoulder lime scale. A weaker scavenger from collapsed aqueduct reservoir, broken arches, rusted gates, shallow dark water, broad pale silt-covered dry embankment, associated with Sluice Horror but a distinct species, never a miniature boss. Highly detailed desaturated dark watercolor with granular pigment and layered washes within creature, broken ink contours, rich tactile anatomy and charcoal shadows, restrained theme accents. Full body centered facing LEFT in three-quarter view, ALL extremities completely visible with ample empty margin. GENUINELY TRANSPARENT PNG ALPHA CHANNEL everywhere outside creature. No background, no scenery, no paper rectangle, no ground patch, no floor, NO SHADOW, no cast/drop shadow, no aura, no haze, no text, no label, no frame, no UI. Finished production game asset. Keep long appendages curled inward to preserve all tips. Leave 10% clear transparent margin."
+    },
+    {
+      "id": "silt_lantern",
+      "name": "Silt Lantern",
+      "role": "lure support",
+      "description": "Small catfish amphibian, wide flat head, long ivory barbels, four muscular fin legs, narrow tail fin, dim greenish throat bladder, olive-gray skin",
+      "prompt": "Use case: stylized-concept. Asset: standalone full-body dark fantasy battle minion sprite, ONE creature. Subject: Silt Lantern: Small catfish amphibian, wide flat head, long ivory barbels, four muscular fin legs, narrow tail fin, dim greenish throat bladder, olive-gray skin. A weaker lure support from collapsed aqueduct reservoir, broken arches, rusted gates, shallow dark water, broad pale silt-covered dry embankment, associated with Sluice Horror but a distinct species, never a miniature boss. Highly detailed desaturated dark watercolor with granular pigment and layered washes within creature, broken ink contours, rich tactile anatomy and charcoal shadows, restrained theme accents. Full body centered facing LEFT in three-quarter view, ALL extremities completely visible with ample empty margin. GENUINELY TRANSPARENT PNG ALPHA CHANNEL everywhere outside creature. No background, no scenery, no paper rectangle, no ground patch, no floor, NO SHADOW, no cast/drop shadow, no aura, no haze, no text, no label, no frame, no UI. Finished production game asset.",
+      "relative_asset_path": "dice-and-destiny-client/assets/battle/minions/sluice_horror/silt_lantern.png",
+      "source_reference_paths": [
+        "dice-and-destiny-client/assets/battle/fighters/sluice_horror.png",
+        "dice-and-destiny-client/assets/battle/habitats/flooded_aqueduct.png"
+      ],
+      "generated_source_path": "/Users/daddymere/.codex/generated_images/01a0ba2d-5cc7-7070-96c9-d262aeade317/exec-b2b1719c-a979-4dc5-be82-b6a93f3e7551.png",
+      "status": "completed",
+      "final_prompt": "Use case: stylized-concept. Asset: standalone full-body dark fantasy battle minion sprite, ONE creature. Subject: Silt Lantern: Small catfish amphibian, wide flat head, long ivory barbels, four muscular fin legs, narrow tail fin, dim greenish throat bladder, olive-gray skin. A weaker lure support from collapsed aqueduct reservoir, broken arches, rusted gates, shallow dark water, broad pale silt-covered dry embankment, associated with Sluice Horror but a distinct species, never a miniature boss. Highly detailed desaturated dark watercolor with granular pigment and layered washes within creature, broken ink contours, rich tactile anatomy and charcoal shadows, restrained theme accents. Full body centered facing LEFT in three-quarter view, ALL extremities completely visible with ample empty margin. GENUINELY TRANSPARENT PNG ALPHA CHANNEL everywhere outside creature. No background, no scenery, no paper rectangle, no ground patch, no floor, NO SHADOW, no cast/drop shadow, no aura, no haze, no text, no label, no frame, no UI. Finished production game asset. Keep long appendages curled inward to preserve all tips. Leave 10% clear transparent margin."
+    },
+    {
+      "id": "pipe_limpet",
+      "name": "Pipe Limpet",
+      "role": "armored blocker",
+      "description": "Low mollusk with long half-cylinder shell like mineral-encrusted clay pipe, dark crawling foot, curled sensory stalks, pale rasping mouth",
+      "prompt": "Use case: stylized-concept. Asset: standalone full-body dark fantasy battle minion sprite, ONE creature. Subject: Pipe Limpet: Low mollusk with long half-cylinder shell like mineral-encrusted clay pipe, dark crawling foot, curled sensory stalks, pale rasping mouth. A weaker armored blocker from collapsed aqueduct reservoir, broken arches, rusted gates, shallow dark water, broad pale silt-covered dry embankment, associated with Sluice Horror but a distinct species, never a miniature boss. Highly detailed desaturated dark watercolor with granular pigment and layered washes within creature, broken ink contours, rich tactile anatomy and charcoal shadows, restrained theme accents. Full body centered facing LEFT in three-quarter view, ALL extremities completely visible with ample empty margin. GENUINELY TRANSPARENT PNG ALPHA CHANNEL everywhere outside creature. No background, no scenery, no paper rectangle, no ground patch, no floor, NO SHADOW, no cast/drop shadow, no aura, no haze, no text, no label, no frame, no UI. Finished production game asset.",
+      "relative_asset_path": "dice-and-destiny-client/assets/battle/minions/sluice_horror/pipe_limpet.png",
+      "source_reference_paths": [
+        "dice-and-destiny-client/assets/battle/fighters/sluice_horror.png",
+        "dice-and-destiny-client/assets/battle/habitats/flooded_aqueduct.png"
+      ],
+      "generated_source_path": "/Users/daddymere/.codex/generated_images/01a0ba2d-5cc7-7070-96c9-d262aeade317/exec-860de4cd-e3a8-480b-a81c-b9db8002cacc.png",
+      "status": "completed",
+      "final_prompt": "Use case: stylized-concept. Asset: standalone full-body dark fantasy battle minion sprite, ONE creature. Subject: Pipe Limpet: Low mollusk with long half-cylinder shell like mineral-encrusted clay pipe, dark crawling foot, curled sensory stalks, pale rasping mouth. A weaker armored blocker from collapsed aqueduct reservoir, broken arches, rusted gates, shallow dark water, broad pale silt-covered dry embankment, associated with Sluice Horror but a distinct species, never a miniature boss. Highly detailed desaturated dark watercolor with granular pigment and layered washes within creature, broken ink contours, rich tactile anatomy and charcoal shadows, restrained theme accents. Full body centered facing LEFT in three-quarter view, ALL extremities completely visible with ample empty margin. GENUINELY TRANSPARENT PNG ALPHA CHANNEL everywhere outside creature. No background, no scenery, no paper rectangle, no ground patch, no floor, NO SHADOW, no cast/drop shadow, no aura, no haze, no text, no label, no frame, no UI. Finished production game asset. Keep long appendages curled inward to preserve all tips. Leave 10% clear transparent margin."
+    },
+    {
+      "id": "rustwing_caddis",
+      "name": "Rustwing Caddis",
+      "role": "aerial scout",
+      "description": "Large caddisfly, two tentlike narrow rust-mottled veined wings, six spindly pale legs, long antennae, blind head, silt-encrusted abdomen",
+      "prompt": "Use case: stylized-concept. Asset: standalone full-body dark fantasy battle minion sprite, ONE creature. Subject: Rustwing Caddis: Large caddisfly, two tentlike narrow rust-mottled veined wings, six spindly pale legs, long antennae, blind head, silt-encrusted abdomen. A weaker aerial scout from collapsed aqueduct reservoir, broken arches, rusted gates, shallow dark water, broad pale silt-covered dry embankment, associated with Sluice Horror but a distinct species, never a miniature boss. Highly detailed desaturated dark watercolor with granular pigment and layered washes within creature, broken ink contours, rich tactile anatomy and charcoal shadows, restrained theme accents. Full body centered facing LEFT in three-quarter view, ALL extremities completely visible with ample empty margin. GENUINELY TRANSPARENT PNG ALPHA CHANNEL everywhere outside creature. No background, no scenery, no paper rectangle, no ground patch, no floor, NO SHADOW, no cast/drop shadow, no aura, no haze, no text, no label, no frame, no UI. Finished production game asset.",
+      "relative_asset_path": "dice-and-destiny-client/assets/battle/minions/sluice_horror/rustwing_caddis.png",
+      "source_reference_paths": [
+        "dice-and-destiny-client/assets/battle/fighters/sluice_horror.png",
+        "dice-and-destiny-client/assets/battle/habitats/flooded_aqueduct.png"
+      ],
+      "generated_source_path": "/Users/daddymere/.codex/generated_images/01a0ba2d-5cc7-7070-96c9-d262aeade317/exec-d07cf754-bcc7-424a-9099-af545691ff52.png",
+      "status": "completed",
+      "final_prompt": "Use case: stylized-concept. Asset: standalone full-body dark fantasy battle minion sprite, ONE creature. Subject: Rustwing Caddis: Large caddisfly, two tentlike narrow rust-mottled veined wings, six spindly pale legs, long antennae, blind head, silt-encrusted abdomen. A weaker aerial scout from collapsed aqueduct reservoir, broken arches, rusted gates, shallow dark water, broad pale silt-covered dry embankment, associated with Sluice Horror but a distinct species, never a miniature boss. Highly detailed desaturated dark watercolor with granular pigment and layered washes within creature, broken ink contours, rich tactile anatomy and charcoal shadows, restrained theme accents. Full body centered facing LEFT in three-quarter view, ALL extremities completely visible with ample empty margin. GENUINELY TRANSPARENT PNG ALPHA CHANNEL everywhere outside creature. No background, no scenery, no paper rectangle, no ground patch, no floor, NO SHADOW, no cast/drop shadow, no aura, no haze, no text, no label, no frame, no UI. Finished production game asset. Keep long appendages curled inward to preserve all tips. Leave 10% clear transparent margin."
+    },
+    {
+      "id": "weir_stilt",
+      "name": "Weir Stilt",
+      "role": "skirmisher",
+      "description": "Gaunt heronlike sewer bird, bent long neck, needle beak, two tall scaly legs, vestigial gray wings, milky eyes, wet moss-green breast fringe",
+      "prompt": "Use case: stylized-concept. Asset: standalone full-body dark fantasy battle minion sprite, ONE creature. Subject: Weir Stilt: Gaunt heronlike sewer bird, bent long neck, needle beak, two tall scaly legs, vestigial gray wings, milky eyes, wet moss-green breast fringe. A weaker skirmisher from collapsed aqueduct reservoir, broken arches, rusted gates, shallow dark water, broad pale silt-covered dry embankment, associated with Sluice Horror but a distinct species, never a miniature boss. Highly detailed desaturated dark watercolor with granular pigment and layered washes within creature, broken ink contours, rich tactile anatomy and charcoal shadows, restrained theme accents. Full body centered facing LEFT in three-quarter view, ALL extremities completely visible with ample empty margin. GENUINELY TRANSPARENT PNG ALPHA CHANNEL everywhere outside creature. No background, no scenery, no paper rectangle, no ground patch, no floor, NO SHADOW, no cast/drop shadow, no aura, no haze, no text, no label, no frame, no UI. Finished production game asset.",
+      "relative_asset_path": "dice-and-destiny-client/assets/battle/minions/sluice_horror/weir_stilt.png",
+      "source_reference_paths": [
+        "dice-and-destiny-client/assets/battle/fighters/sluice_horror.png",
+        "dice-and-destiny-client/assets/battle/habitats/flooded_aqueduct.png"
+      ],
+      "generated_source_path": "/Users/daddymere/.codex/generated_images/01a0ba2d-5cc7-7070-96c9-d262aeade317/exec-86774a72-26ac-41f7-9a89-044d24dec2f9.png",
+      "status": "completed",
+      "final_prompt": "Use case: stylized-concept. Asset: standalone full-body dark fantasy battle minion sprite, ONE creature. Subject: Weir Stilt: Gaunt heronlike sewer bird, bent long neck, needle beak, two tall scaly legs, vestigial gray wings, milky eyes, wet moss-green breast fringe. A weaker skirmisher from collapsed aqueduct reservoir, broken arches, rusted gates, shallow dark water, broad pale silt-covered dry embankment, associated with Sluice Horror but a distinct species, never a miniature boss. Highly detailed desaturated dark watercolor with granular pigment and layered washes within creature, broken ink contours, rich tactile anatomy and charcoal shadows, restrained theme accents. Full body centered facing LEFT in three-quarter view, ALL extremities completely visible with ample empty margin. GENUINELY TRANSPARENT PNG ALPHA CHANNEL everywhere outside creature. No background, no scenery, no paper rectangle, no ground patch, no floor, NO SHADOW, no cast/drop shadow, no aura, no haze, no text, no label, no frame, no UI. Finished production game asset. Keep long appendages curled inward to preserve all tips. Leave 10% clear transparent margin."
+    },
+    {
+      "id": "sluice_sowbug",
+      "name": "Sluice Sowbug",
+      "role": "debris grazer",
+      "description": "Broad flat woodlouse, seven limestone-white back segments, many short rust-dark legs, forked antennae, black head, algae in plate cracks",
+      "prompt": "Use case: stylized-concept. Asset: standalone full-body dark fantasy battle minion sprite, ONE creature. Subject: Sluice Sowbug: Broad flat woodlouse, seven limestone-white back segments, many short rust-dark legs, forked antennae, black head, algae in plate cracks. A weaker debris grazer from collapsed aqueduct reservoir, broken arches, rusted gates, shallow dark water, broad pale silt-covered dry embankment, associated with Sluice Horror but a distinct species, never a miniature boss. Highly detailed desaturated dark watercolor with granular pigment and layered washes within creature, broken ink contours, rich tactile anatomy and charcoal shadows, restrained theme accents. Full body centered facing LEFT in three-quarter view, ALL extremities completely visible with ample empty margin. GENUINELY TRANSPARENT PNG ALPHA CHANNEL everywhere outside creature. No background, no scenery, no paper rectangle, no ground patch, no floor, NO SHADOW, no cast/drop shadow, no aura, no haze, no text, no label, no frame, no UI. Finished production game asset.",
+      "relative_asset_path": "dice-and-destiny-client/assets/battle/minions/sluice_horror/sluice_sowbug.png",
+      "source_reference_paths": [
+        "dice-and-destiny-client/assets/battle/fighters/sluice_horror.png",
+        "dice-and-destiny-client/assets/battle/habitats/flooded_aqueduct.png"
+      ],
+      "generated_source_path": "/Users/daddymere/.codex/generated_images/01a0ba2d-5cc7-7070-96c9-d262aeade317/exec-bdc21e90-0443-405f-9038-da5b32fbd624.png",
+      "status": "completed",
+      "final_prompt": "Use case: stylized-concept. Asset: standalone full-body dark fantasy battle minion sprite, ONE creature. Subject: Sluice Sowbug: Broad flat woodlouse, seven limestone-white back segments, many short rust-dark legs, forked antennae, black head, algae in plate cracks. A weaker debris grazer from collapsed aqueduct reservoir, broken arches, rusted gates, shallow dark water, broad pale silt-covered dry embankment, associated with Sluice Horror but a distinct species, never a miniature boss. Highly detailed desaturated dark watercolor with granular pigment and layered washes within creature, broken ink contours, rich tactile anatomy and charcoal shadows, restrained theme accents. Full body centered facing LEFT in three-quarter view, ALL extremities completely visible with ample empty margin. GENUINELY TRANSPARENT PNG ALPHA CHANNEL everywhere outside creature. No background, no scenery, no paper rectangle, no ground patch, no floor, NO SHADOW, no cast/drop shadow, no aura, no haze, no text, no label, no frame, no UI. Finished production game asset. Keep long appendages curled inward to preserve all tips. Leave 10% clear transparent margin."
+    },
+    {
+      "id": "drainbell_jelly",
+      "name": "Drainbell Jelly",
+      "role": "slowing support",
+      "description": "Translucent gray bell polyp, rusty iron veins, four short thick crawling tentacles, thread sensory tassels, internal silt granules, dim pale green core",
+      "prompt": "Use case: stylized-concept. Asset: standalone full-body dark fantasy battle minion sprite, ONE creature. Subject: Drainbell Jelly: Translucent gray bell polyp, rusty iron veins, four short thick crawling tentacles, thread sensory tassels, internal silt granules, dim pale green core. A weaker slowing support from collapsed aqueduct reservoir, broken arches, rusted gates, shallow dark water, broad pale silt-covered dry embankment, associated with Sluice Horror but a distinct species, never a miniature boss. Highly detailed desaturated dark watercolor with granular pigment and layered washes within creature, broken ink contours, rich tactile anatomy and charcoal shadows, restrained theme accents. Full body centered facing LEFT in three-quarter view, ALL extremities completely visible with ample empty margin. GENUINELY TRANSPARENT PNG ALPHA CHANNEL everywhere outside creature. No background, no scenery, no paper rectangle, no ground patch, no floor, NO SHADOW, no cast/drop shadow, no aura, no haze, no text, no label, no frame, no UI. Finished production game asset.",
+      "relative_asset_path": "dice-and-destiny-client/assets/battle/minions/sluice_horror/drainbell_jelly.png",
+      "source_reference_paths": [
+        "dice-and-destiny-client/assets/battle/fighters/sluice_horror.png",
+        "dice-and-destiny-client/assets/battle/habitats/flooded_aqueduct.png"
+      ],
+      "generated_source_path": "/Users/daddymere/.codex/generated_images/01a0ba2d-5cc7-7070-96c9-d262aeade317/exec-ae708ef5-49b9-4184-9417-72fc37da0c6b.png",
+      "status": "completed",
+      "final_prompt": "Use case: stylized-concept. Asset: standalone full-body dark fantasy battle minion sprite, ONE creature. Subject: Drainbell Jelly: Translucent gray bell polyp, rusty iron veins, four short thick crawling tentacles, thread sensory tassels, internal silt granules, dim pale green core. A weaker slowing support from collapsed aqueduct reservoir, broken arches, rusted gates, shallow dark water, broad pale silt-covered dry embankment, associated with Sluice Horror but a distinct species, never a miniature boss. Highly detailed desaturated dark watercolor with granular pigment and layered washes within creature, broken ink contours, rich tactile anatomy and charcoal shadows, restrained theme accents. Full body centered facing LEFT in three-quarter view, ALL extremities completely visible with ample empty margin. GENUINELY TRANSPARENT PNG ALPHA CHANNEL everywhere outside creature. No background, no scenery, no paper rectangle, no ground patch, no floor, NO SHADOW, no cast/drop shadow, no aura, no haze, no text, no label, no frame, no UI. Finished production game asset. Keep long appendages curled inward to preserve all tips. Leave 10% clear transparent margin."
+    },
+    {
+      "id": "limejaw_frog",
+      "name": "Limejaw Frog",
+      "role": "ambush striker",
+      "description": "Lean blind long-limbed frog, squared calcified ivory lower jaw, olive-black wrinkled skin, oversized webbed rear feet, cloudy eyes, rust blotches",
+      "prompt": "Use case: stylized-concept. Asset: standalone full-body dark fantasy battle minion sprite, ONE creature. Subject: Limejaw Frog: Lean blind long-limbed frog, squared calcified ivory lower jaw, olive-black wrinkled skin, oversized webbed rear feet, cloudy eyes, rust blotches. A weaker ambush striker from collapsed aqueduct reservoir, broken arches, rusted gates, shallow dark water, broad pale silt-covered dry embankment, associated with Sluice Horror but a distinct species, never a miniature boss. Highly detailed desaturated dark watercolor with granular pigment and layered washes within creature, broken ink contours, rich tactile anatomy and charcoal shadows, restrained theme accents. Full body centered facing LEFT in three-quarter view, ALL extremities completely visible with ample empty margin. GENUINELY TRANSPARENT PNG ALPHA CHANNEL everywhere outside creature. No background, no scenery, no paper rectangle, no ground patch, no floor, NO SHADOW, no cast/drop shadow, no aura, no haze, no text, no label, no frame, no UI. Finished production game asset.",
+      "relative_asset_path": "dice-and-destiny-client/assets/battle/minions/sluice_horror/limejaw_frog.png",
+      "source_reference_paths": [
+        "dice-and-destiny-client/assets/battle/fighters/sluice_horror.png",
+        "dice-and-destiny-client/assets/battle/habitats/flooded_aqueduct.png"
+      ],
+      "generated_source_path": "/Users/daddymere/.codex/generated_images/01a0ba2d-5cc7-7070-96c9-d262aeade317/exec-53f1c92a-df8c-4abd-b2e7-3e6bd6eac3be.png",
+      "status": "completed",
+      "final_prompt": "Use case: stylized-concept. Asset: standalone full-body dark fantasy battle minion sprite, ONE creature. Subject: Limejaw Frog: Lean blind long-limbed frog, squared calcified ivory lower jaw, olive-black wrinkled skin, oversized webbed rear feet, cloudy eyes, rust blotches. A weaker ambush striker from collapsed aqueduct reservoir, broken arches, rusted gates, shallow dark water, broad pale silt-covered dry embankment, associated with Sluice Horror but a distinct species, never a miniature boss. Highly detailed desaturated dark watercolor with granular pigment and layered washes within creature, broken ink contours, rich tactile anatomy and charcoal shadows, restrained theme accents. Full body centered facing LEFT in three-quarter view, ALL extremities completely visible with ample empty margin. GENUINELY TRANSPARENT PNG ALPHA CHANNEL everywhere outside creature. No background, no scenery, no paper rectangle, no ground patch, no floor, NO SHADOW, no cast/drop shadow, no aura, no haze, no text, no label, no frame, no UI. Finished production game asset. Keep long appendages curled inward to preserve all tips. Leave 10% clear transparent margin."
+    },
+    {
+      "id": "chain_tuft",
+      "name": "Chain Tuft",
+      "role": "entangling pest",
+      "description": "Knotted aquatic worm colony forming one creature, dark ribbon body loops around one corroded broken iron link, pale bristled feeding crown, three trailing feelers",
+      "prompt": "Use case: stylized-concept. Asset: standalone full-body dark fantasy battle minion sprite, ONE creature. Subject: Chain Tuft: Knotted aquatic worm colony forming one creature, dark ribbon body loops around one corroded broken iron link, pale bristled feeding crown, three trailing feelers. A weaker entangling pest from collapsed aqueduct reservoir, broken arches, rusted gates, shallow dark water, broad pale silt-covered dry embankment, associated with Sluice Horror but a distinct species, never a miniature boss. Highly detailed desaturated dark watercolor with granular pigment and layered washes within creature, broken ink contours, rich tactile anatomy and charcoal shadows, restrained theme accents. Full body centered facing LEFT in three-quarter view, ALL extremities completely visible with ample empty margin. GENUINELY TRANSPARENT PNG ALPHA CHANNEL everywhere outside creature. No background, no scenery, no paper rectangle, no ground patch, no floor, NO SHADOW, no cast/drop shadow, no aura, no haze, no text, no label, no frame, no UI. Finished production game asset.",
+      "relative_asset_path": "dice-and-destiny-client/assets/battle/minions/sluice_horror/chain_tuft.png",
+      "source_reference_paths": [
+        "dice-and-destiny-client/assets/battle/fighters/sluice_horror.png",
+        "dice-and-destiny-client/assets/battle/habitats/flooded_aqueduct.png"
+      ],
+      "generated_source_path": "/Users/daddymere/.codex/generated_images/01a0ba2d-5cc7-7070-96c9-d262aeade317/exec-9c6ef858-19f8-4ae2-b1ff-d6e43ad3a589.png",
+      "status": "completed",
+      "final_prompt": "Use case: stylized-concept. Asset: standalone full-body dark fantasy battle minion sprite, ONE creature. Subject: Chain Tuft: Knotted aquatic worm colony forming one creature, dark ribbon body loops around one corroded broken iron link, pale bristled feeding crown, three trailing feelers. A weaker entangling pest from collapsed aqueduct reservoir, broken arches, rusted gates, shallow dark water, broad pale silt-covered dry embankment, associated with Sluice Horror but a distinct species, never a miniature boss. Highly detailed desaturated dark watercolor with granular pigment and layered washes within creature, broken ink contours, rich tactile anatomy and charcoal shadows, restrained theme accents. Full body centered facing LEFT in three-quarter view, ALL extremities completely visible with ample empty margin. GENUINELY TRANSPARENT PNG ALPHA CHANNEL everywhere outside creature. No background, no scenery, no paper rectangle, no ground patch, no floor, NO SHADOW, no cast/drop shadow, no aura, no haze, no text, no label, no frame, no UI. Finished production game asset. Keep long appendages curled inward to preserve all tips. Leave 10% clear transparent margin."
+    },
+    {
+      "id": "reservoir_shear",
+      "name": "Reservoir Shear",
+      "role": "flanking hunter",
+      "description": "Freshwater prawn, narrow translucent limestone-gray abdomen, mismatched long scissor claws, six fine walking legs, thread antennae, folded fan tail",
+      "prompt": "Use case: stylized-concept. Asset: standalone full-body dark fantasy battle minion sprite, ONE creature. Subject: Reservoir Shear: Freshwater prawn, narrow translucent limestone-gray abdomen, mismatched long scissor claws, six fine walking legs, thread antennae, folded fan tail. A weaker flanking hunter from collapsed aqueduct reservoir, broken arches, rusted gates, shallow dark water, broad pale silt-covered dry embankment, associated with Sluice Horror but a distinct species, never a miniature boss. Highly detailed desaturated dark watercolor with granular pigment and layered washes within creature, broken ink contours, rich tactile anatomy and charcoal shadows, restrained theme accents. Full body centered facing LEFT in three-quarter view, ALL extremities completely visible with ample empty margin. GENUINELY TRANSPARENT PNG ALPHA CHANNEL everywhere outside creature. No background, no scenery, no paper rectangle, no ground patch, no floor, NO SHADOW, no cast/drop shadow, no aura, no haze, no text, no label, no frame, no UI. Finished production game asset.",
+      "relative_asset_path": "dice-and-destiny-client/assets/battle/minions/sluice_horror/reservoir_shear.png",
+      "source_reference_paths": [
+        "dice-and-destiny-client/assets/battle/fighters/sluice_horror.png",
+        "dice-and-destiny-client/assets/battle/habitats/flooded_aqueduct.png"
+      ],
+      "generated_source_path": "/Users/daddymere/.codex/generated_images/01a0ba2d-5cc7-7070-96c9-d262aeade317/exec-2423a146-c7f9-4c8e-b753-2c497db3c94f.png",
+      "status": "completed",
+      "final_prompt": "Use case: stylized-concept. Asset: standalone full-body dark fantasy battle minion sprite, ONE creature. Subject: Reservoir Shear: Freshwater prawn, narrow translucent limestone-gray abdomen, mismatched long scissor claws, six fine walking legs, thread antennae, folded fan tail. A weaker flanking hunter from collapsed aqueduct reservoir, broken arches, rusted gates, shallow dark water, broad pale silt-covered dry embankment, associated with Sluice Horror but a distinct species, never a miniature boss. Highly detailed desaturated dark watercolor with granular pigment and layered washes within creature, broken ink contours, rich tactile anatomy and charcoal shadows, restrained theme accents. Full body centered facing LEFT in three-quarter view, ALL extremities completely visible with ample empty margin. GENUINELY TRANSPARENT PNG ALPHA CHANNEL everywhere outside creature. No background, no scenery, no paper rectangle, no ground patch, no floor, NO SHADOW, no cast/drop shadow, no aura, no haze, no text, no label, no frame, no UI. Finished production game asset. Keep long appendages curled inward to preserve all tips. Leave 10% clear transparent margin."
+    }
+  ]
+}

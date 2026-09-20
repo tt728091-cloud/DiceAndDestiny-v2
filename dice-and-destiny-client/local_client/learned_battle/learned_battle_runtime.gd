@@ -18,6 +18,8 @@ const MODEL_OPTIMIZED_V3 := "optimized-v3"
 const MODEL_GLOBAL_CHAMPION := "global-champion"
 const MODEL_PRIOR_GLOBAL_CP38 := "prior-global-cp38"
 const MODEL_PRIOR_GLOBAL_CP480 := "prior-global-cp480"
+const MODEL_BRINE_MASK := "brine-mask"
+const MODEL_BRINE_PAIR := "brine-mask-pair"
 const INFERENCE_TIMEOUT_MS := 2000
 
 var _native_authority: Object
@@ -35,7 +37,7 @@ func _ready() -> void:
 		_initialization_error = "NativeBattleAuthority GDExtension class is unavailable."
 
 func select_model(model_key: String) -> Dictionary:
-	if model_key not in [MODEL_ACCEPTED_V1, MODEL_DECISION_V2, MODEL_OPTIMIZED_V3, MODEL_GLOBAL_CHAMPION, MODEL_PRIOR_GLOBAL_CP38, MODEL_PRIOR_GLOBAL_CP480]:
+	if model_key not in [MODEL_ACCEPTED_V1, MODEL_DECISION_V2, MODEL_OPTIMIZED_V3, MODEL_GLOBAL_CHAMPION, MODEL_PRIOR_GLOBAL_CP38, MODEL_PRIOR_GLOBAL_CP480, MODEL_BRINE_MASK, MODEL_BRINE_PAIR]:
 		return {"ok": false, "error": "Unknown learned model selection: %s" % model_key}
 	_selected_model_key = model_key
 	_initialized = _initialized_model_key == model_key
@@ -53,7 +55,9 @@ func ensure_initialized() -> Dictionary:
 	var result := _request({
 		"op": "initialize",
 		"replace_session": not _initialized_model_key.is_empty() and _initialized_model_key != _selected_model_key,
-		"model_path": ProjectSettings.globalize_path(_selected_model_path()),
+		"model_path": "" if _selected_model_key in [MODEL_BRINE_MASK, MODEL_BRINE_PAIR] else ProjectSettings.globalize_path(_selected_model_path()),
+		"opponent_count": 2 if _selected_model_key == MODEL_BRINE_PAIR else 1,
+		"opponent_definition": "drowned_oracle_brine_mask" if _selected_model_key in [MODEL_BRINE_MASK, MODEL_BRINE_PAIR] else "",
 		"model_sha256": _selected_model_sha256(),
 		"content_root": ProjectSettings.globalize_path("res://../dice-and-destiny-server/content"),
 		"run_state_root": ProjectSettings.globalize_path("res://../dice-and-destiny-server/save/run_players"),

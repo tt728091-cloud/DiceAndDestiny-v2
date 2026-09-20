@@ -67,6 +67,10 @@ func TestExactPairAndPairOrBetterRemainIndependentlyAuthorable(t *testing.T) {
 func TestSharpenBladeStacksWithSwordCutThreeOfAKind(t *testing.T) {
 	library := settledTestLibrary(t)
 	battle := settledStatusBattle(t, library, "", 0)
+	for id, actor := range battle.Actors {
+		actor.Cards.Deck = []string{id + "-health"}
+		battle.Actors[id] = actor
+	}
 	runtime := battle.Settled.Actors["player"]
 	runtime.OffensiveAbilityIDs = []string{"sword_cut"}
 	runtime.FinalDice = rolledFaces(library, "standard_d6", []int{3, 2, 2, 4, 2})

@@ -1,0 +1,9 @@
+[gd_resource type="Resource" script_class="BattleHabitatProfile" load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://content/battle_visuals/habitat_profile.gd" id="1"]
+[ext_resource type="Texture2D" path="res://assets/battle/habitats/ash_caldera.png" id="2"]
+
+[resource]
+script = ExtResource("1")
+id = "ash_caldera"
+background = ExtResource("2")

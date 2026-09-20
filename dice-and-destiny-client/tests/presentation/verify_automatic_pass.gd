@@ -42,7 +42,7 @@ func _run() -> void:
 				_expect(fake.commands.is_empty(), "defense cannot auto-pass before three seconds")
 				await create_timer(0.6).timeout
 			else:
-				await create_timer(3.0).timeout
+				await create_timer(preload("res://presentation/battle/combat_timing.gd").review_seconds() + 0.5).timeout
 		_expect(fake.commands.size() == 1, "sole pass progresses automatically during " + phase[1])
 		if fake.commands.size() == 1:
 			_expect(fake.commands[0] == JSON.stringify(fixture.legal_actions[0]), "submits exact current authority command")
@@ -108,9 +108,9 @@ func _run() -> void:
 		screen = _screen(handoff, fake)
 		screen._auto_pass_disabled = true
 		screen._auto_pass_if_only_action()
-		if phase == "defense_reaction":
+		if phase in ["defense_reaction", "damage_reaction"]:
 			_expect(fake.commands.is_empty(), "defense handoff first preserves visible results")
-			screen._auto_pass_preview_started_ms = Time.get_ticks_msec() - int(screen.DEFENSE_TIMING.total_seconds() * 1000)
+			screen._auto_pass_preview_started_ms = Time.get_ticks_msec() - ceili((screen.DEFENSE_TIMING.total_seconds() if phase == "defense_reaction" else screen.COMBAT_TIMING.review_seconds()) * 1000.0)
 			screen._auto_pass_if_only_action()
 			screen._auto_pass_highlight_ms = Time.get_ticks_msec() - screen.DAMAGE_AUTO_PASS_CLICK_MS
 			screen._auto_pass_if_only_action()
@@ -127,7 +127,7 @@ func _run() -> void:
 	screen = _screen(_fixture("damage-preview", "damage_resolution", "damage_reaction"), fake)
 	screen._auto_pass_if_only_action()
 	_expect(fake.commands.is_empty() and not screen._auto_pass_button.button_pressed, "damage review starts without pressing pass")
-	screen._auto_pass_preview_started_ms = Time.get_ticks_msec() - screen.DAMAGE_AUTO_PASS_REVIEW_MS
+	screen._auto_pass_preview_started_ms = Time.get_ticks_msec() - ceili(screen.COMBAT_TIMING.review_seconds() * 1000.0)
 	screen._auto_pass_if_only_action()
 	_expect(fake.commands.is_empty() and screen._auto_pass_button.button_pressed, "pass visibly presses before advancing")
 	_expect(screen._auto_pass_button.has_theme_stylebox_override("pressed"), "automatic press has a visible highlight")
@@ -148,7 +148,7 @@ func _run() -> void:
 		fake.enqueue(_fixture("after-manual", "offensive", "planning", "planning_roll"))
 		screen = _screen(_fixture("cancel-preview", "damage_resolution", "damage_reaction"), fake)
 		screen._auto_pass_if_only_action()
-		screen._auto_pass_preview_started_ms = Time.get_ticks_msec() - screen.DAMAGE_AUTO_PASS_REVIEW_MS
+		screen._auto_pass_preview_started_ms = Time.get_ticks_msec() - ceili(screen.COMBAT_TIMING.review_seconds() * 1000.0)
 		screen._auto_pass_if_only_action()
 		screen._auto_pass_highlight_ms = Time.get_ticks_msec() - screen.DAMAGE_AUTO_PASS_CLICK_MS
 		match change:
@@ -189,7 +189,7 @@ func _run() -> void:
 	screen = _screen(_fixture("chain-1"), fake)
 	screen.set_process(true)
 	for frame in 8: await process_frame
-	await create_timer(6.3).timeout
+	await create_timer(9.5).timeout
 	_expect(fake.commands.size() == 3, "consecutive passes stop at a real choice")
 	await _close(screen)
 	fake = FakeBattleAuthority.new()

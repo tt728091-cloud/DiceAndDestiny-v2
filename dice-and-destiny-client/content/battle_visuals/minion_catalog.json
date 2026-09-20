@@ -1,0 +1,2946 @@
+{
+  "version": 1,
+  "kind": "visual_concepts",
+  "factions": [
+    {
+      "boss_id": "mire_crown",
+      "boss_name": "Mire Crown",
+      "theme": "Peat-bog scavengers and drowned marsh predators; black wet hide, hollow ivory reeds, moss and muted green.",
+      "minions": [
+        {
+          "id": "mire_crown_reedjaw_newt",
+          "name": "Reedjaw Newt",
+          "role": "Ambusher",
+          "description": "A low four-legged marsh newt with a shovel-shaped skull, pale hollow reed teeth projecting from its hinged jaw, slick black skin and a moss-fringed paddle tail; crouched, narrow and nimble.",
+          "texture": "res://assets/battle/minions/mire_crown/reedjaw_newt.png",
+          "profile": "res://content/battle_visuals/minions/mire_crown/reedjaw_newt.tres",
+          "width": 1254,
+          "height": 1254,
+          "ground_anchor": [
+            0.5,
+            0.848485
+          ]
+        },
+        {
+          "id": "mire_crown_peatbell_toad",
+          "name": "Peatbell Toad",
+          "role": "Caller",
+          "description": "A squat eyeless toad with a translucent amber throat sac shaped like a cracked bell, warty peat-black hide, long webbed front fingers and a few ivory reed stubs on its back.",
+          "texture": "res://assets/battle/minions/mire_crown/peatbell_toad.png",
+          "profile": "res://content/battle_visuals/minions/mire_crown/peatbell_toad.tres",
+          "width": 1254,
+          "height": 1254,
+          "ground_anchor": [
+            0.5,
+            0.953748
+          ]
+        },
+        {
+          "id": "mire_crown_fen_lantern_snail",
+          "name": "Fen Lantern Snail",
+          "role": "Lure",
+          "description": "A predatory snail with a broken spiral shell made of peat-stained bone, a dim green organ visible in the shell aperture, two forked tactile stalks and an elongated muscular black foot.",
+          "texture": "res://assets/battle/minions/mire_crown/fen_lantern_snail.png",
+          "profile": "res://content/battle_visuals/minions/mire_crown/fen_lantern_snail.tres",
+          "width": 1254,
+          "height": 1254,
+          "ground_anchor": [
+            0.5,
+            0.880383
+          ]
+        },
+        {
+          "id": "mire_crown_willow_knuckle",
+          "name": "Willow Knuckle",
+          "role": "Grappler",
+          "description": "A hunched root homunculus assembled from a willow stump; two oversized knotted root fists, two short root feet, a hollow vertical face slit with green sap and a sparse mantle of damp moss.",
+          "texture": "res://assets/battle/minions/mire_crown/willow_knuckle.png",
+          "profile": "res://content/battle_visuals/minions/mire_crown/willow_knuckle.tres",
+          "width": 1254,
+          "height": 1254,
+          "ground_anchor": [
+            0.5,
+            0.987241
+          ]
+        },
+        {
+          "id": "mire_crown_sedge_raker",
+          "name": "Sedge Raker",
+          "role": "Skirmisher",
+          "description": "A gaunt marsh rail bird with four stilt legs, an ivory serrated bill, ragged black sedge feathers and a narrow hunched torso; one foot lifted as if stalking through shallow water.",
+          "texture": "res://assets/battle/minions/mire_crown/sedge_raker.png",
+          "profile": "res://content/battle_visuals/minions/mire_crown/sedge_raker.tres",
+          "width": 1254,
+          "height": 1254,
+          "ground_anchor": [
+            0.5,
+            0.994418
+          ]
+        },
+        {
+          "id": "mire_crown_bogglass_midge",
+          "name": "Bogglass Midge",
+          "role": "Harrier",
+          "description": "A single large predatory midge with four cracked transparent smoky wings, a long ivory piercing proboscis, six delicate hooked legs and a moss-green swollen abdomen; wings fully spread.",
+          "texture": "res://assets/battle/minions/mire_crown/bogglass_midge.png",
+          "profile": "res://content/battle_visuals/minions/mire_crown/bogglass_midge.tres",
+          "width": 1254,
+          "height": 1254,
+          "ground_anchor": [
+            0.5,
+            0.973684
+          ]
+        },
+        {
+          "id": "mire_crown_silt_mantle",
+          "name": "Silt Mantle",
+          "role": "Constrictor",
+          "description": "A flat slug-like scavenger whose leathery black mantle folds into an angular hood over a small lamprey mouth, six short sucker-ended feelers and pale grit embedded along the rim; no spiral shell.",
+          "texture": "res://assets/battle/minions/mire_crown/silt_mantle.png",
+          "profile": "res://content/battle_visuals/minions/mire_crown/silt_mantle.tres",
+          "width": 1254,
+          "height": 1254,
+          "ground_anchor": [
+            0.5,
+            0.839713
+          ]
+        },
+        {
+          "id": "mire_crown_mossback_mole",
+          "name": "Mossback Mole",
+          "role": "Burrower",
+          "description": "A compact eyeless bog mole with enormous ivory digging palms, sparse dark whiskers, matted moss coat and damp black fur, a blunt rubbery snout and stubby tail.",
+          "texture": "res://assets/battle/minions/mire_crown/mossback_mole.png",
+          "profile": "res://content/battle_visuals/minions/mire_crown/mossback_mole.tres",
+          "width": 1254,
+          "height": 1254,
+          "ground_anchor": [
+            0.5,
+            0.948963
+          ]
+        },
+        {
+          "id": "mire_crown_rushbone_crake",
+          "name": "Rushbone Crake",
+          "role": "Sentry",
+          "description": "A thin flightless skeletal crane with reed-bundle legs, a crooked split beak and ragged peat-cloth plumage, three green seedlike eyes across its narrow skull and a fan of broken reed quills.",
+          "texture": "res://assets/battle/minions/mire_crown/rushbone_crake.png",
+          "profile": "res://content/battle_visuals/minions/mire_crown/rushbone_crake.tres",
+          "width": 1254,
+          "height": 1254,
+          "ground_anchor": [
+            0.5,
+            0.995215
+          ]
+        },
+        {
+          "id": "mire_crown_drowned_purse",
+          "name": "Drowned Purse",
+          "role": "Trap",
+          "description": "A fist-sized animate seed purse inflated into a leathery bladder, four tiny hooked legs, a stitched-looking natural mouth seam lined with ivory barbs, trailing root tassels and a dim green heart visible through wet hide.",
+          "texture": "res://assets/battle/minions/mire_crown/drowned_purse.png",
+          "profile": "res://content/battle_visuals/minions/mire_crown/drowned_purse.tres",
+          "width": 1254,
+          "height": 1254,
+          "ground_anchor": [
+            0.5,
+            0.949761
+          ]
+        }
+      ]
+    },
+    {
+      "boss_id": "rime_burrower",
+      "boss_name": "Rime Burrower",
+      "theme": "midnight glacier chasm, vertical blue ice walls, hanging icicles, broad flat frozen lake and snowbanks",
+      "minions": [
+        {
+          "id": "rime_burrower_hoarfang_shrew",
+          "name": "Hoarfang Shrew",
+          "role": "crevice scout",
+          "description": "Gaunt arctic shrew, oversized black incisors, matted white whiskers, ice blisters, narrow feet, naked curled tail",
+          "texture": "res://assets/battle/minions/rime_burrower/hoarfang_shrew.png",
+          "profile": "res://content/battle_visuals/minions/rime_burrower/hoarfang_shrew.tres",
+          "width": 1245,
+          "height": 1263,
+          "ground_anchor": [
+            0.5,
+            0.839272
+          ]
+        },
+        {
+          "id": "rime_burrower_icicle_stilt",
+          "name": "Icicle Stilt",
+          "role": "ambush wader",
+          "description": "Skeletal cave bird, two extremely long blue-black legs, dagger beak, ragged white feathers, vestigial wings edged with ice",
+          "texture": "res://assets/battle/minions/rime_burrower/icicle_stilt.png",
+          "profile": "res://content/battle_visuals/minions/rime_burrower/icicle_stilt.tres",
+          "width": 1024,
+          "height": 1536,
+          "ground_anchor": [
+            0.5,
+            0.994792
+          ]
+        },
+        {
+          "id": "rime_burrower_glassback_mite",
+          "name": "Glassback Mite",
+          "role": "ice grazer",
+          "description": "Flattened eight-legged mite, single cloudy ice dome revealing dark organs, tiny scraping mouth, black toes, snow crust patches",
+          "texture": "res://assets/battle/minions/rime_burrower/glassback_mite.png",
+          "profile": "res://content/battle_visuals/minions/rime_burrower/glassback_mite.tres",
+          "width": 1536,
+          "height": 1024,
+          "ground_anchor": [
+            0.5,
+            0.936523
+          ]
+        },
+        {
+          "id": "rime_burrower_snowblind_loper",
+          "name": "Snowblind Loper",
+          "role": "pack harrier",
+          "description": "Eyeless predatory hare, swept-back frozen ears, huge hind legs, split fanged lip, smoke-gray fur, small forearms",
+          "texture": "res://assets/battle/minions/rime_burrower/snowblind_loper.png",
+          "profile": "res://content/battle_visuals/minions/rime_burrower/snowblind_loper.tres",
+          "width": 1145,
+          "height": 1373,
+          "ground_anchor": [
+            0.5,
+            0.984705
+          ]
+        },
+        {
+          "id": "rime_burrower_sleet_sail",
+          "name": "Sleet Sail",
+          "role": "aerial skirmisher",
+          "description": "Batlike ray with diamond translucent membrane wings, four bony spars, blunt toothed face, dangling claws, ribbon tail, slate veins",
+          "texture": "res://assets/battle/minions/rime_burrower/sleet_sail.png",
+          "profile": "res://content/battle_visuals/minions/rime_burrower/sleet_sail.tres",
+          "width": 1240,
+          "height": 1269,
+          "ground_anchor": [
+            0.5,
+            0.982664
+          ]
+        },
+        {
+          "id": "rime_burrower_frostbell_polyp",
+          "name": "Frostbell Polyp",
+          "role": "slowing support",
+          "description": "Walking jellyfish polyp, opaque ivory bell, black frilled underside, five hooked walking tentacles, frozen bead fringe, dim blue organ",
+          "texture": "res://assets/battle/minions/rime_burrower/frostbell_polyp.png",
+          "profile": "res://content/battle_visuals/minions/rime_burrower/frostbell_polyp.tres",
+          "width": 1214,
+          "height": 1295,
+          "ground_anchor": [
+            0.5,
+            0.949035
+          ]
+        },
+        {
+          "id": "rime_burrower_cracktooth_mole",
+          "name": "Cracktooth Mole",
+          "role": "tunnel sapper",
+          "description": "Blind charcoal velvet mole, immense shovel palms, porcelain incisors, tiny gray nose, frozen whiskers, short stout tail",
+          "texture": "res://assets/battle/minions/rime_burrower/cracktooth_mole.png",
+          "profile": "res://content/battle_visuals/minions/rime_burrower/cracktooth_mole.tres",
+          "width": 1231,
+          "height": 1278,
+          "ground_anchor": [
+            0.5,
+            0.847418
+          ]
+        },
+        {
+          "id": "rime_burrower_shard_quill",
+          "name": "Shard Quill",
+          "role": "ranged defender",
+          "description": "Porcupine reptile, wrinkled blue-gray hide, uneven needle ice quills on shoulders, narrow beak mouth, four splayed feet, little club tail",
+          "texture": "res://assets/battle/minions/rime_burrower/shard_quill.png",
+          "profile": "res://content/battle_visuals/minions/rime_burrower/shard_quill.tres",
+          "width": 1225,
+          "height": 1284,
+          "ground_anchor": [
+            0.5,
+            0.974299
+          ]
+        },
+        {
+          "id": "rime_burrower_brine_lantern",
+          "name": "Brine Lantern",
+          "role": "lure hunter",
+          "description": "Crawling ice sculpin fish, paired muscular fin legs, serrated dorsal sail, milky eyes, thin forehead lure with dim cyan bead",
+          "texture": "res://assets/battle/minions/rime_burrower/brine_lantern.png",
+          "profile": "res://content/battle_visuals/minions/rime_burrower/brine_lantern.tres",
+          "width": 1536,
+          "height": 1024,
+          "ground_anchor": [
+            0.5,
+            0.984375
+          ]
+        },
+        {
+          "id": "rime_burrower_rime_spindle",
+          "name": "Rime Spindle",
+          "role": "pursuit crawler",
+          "description": "Tall slender mantis insect, vertical thorax, folded black sickle forelegs, four hair-thin walking legs, triangular head, translucent fan abdomen",
+          "texture": "res://assets/battle/minions/rime_burrower/rime_spindle.png",
+          "profile": "res://content/battle_visuals/minions/rime_burrower/rime_spindle.tres",
+          "width": 1536,
+          "height": 1024,
+          "ground_anchor": [
+            0.5,
+            0.869141
+          ]
+        }
+      ]
+    },
+    {
+      "boss_id": "dune_sieve",
+      "boss_name": "Dune Sieve",
+      "theme": "moonlit pale salt dunes, wind-eroded sandstone fins at edges, broad smooth sand basin, smoky violet shadows",
+      "minions": [
+        {
+          "id": "dune_sieve_saltglass_gecko",
+          "name": "Saltglass Gecko",
+          "role": "wall scout",
+          "description": "Lean gecko, flattened triangular head, huge salt-crusted toe pads, ivory scales, violet-gray belly, thick forked crystalline tail",
+          "texture": "res://assets/battle/minions/dune_sieve/saltglass_gecko.png",
+          "profile": "res://content/battle_visuals/minions/dune_sieve/saltglass_gecko.tres",
+          "width": 1536,
+          "height": 1024,
+          "ground_anchor": [
+            0.5,
+            0.953125
+          ]
+        },
+        {
+          "id": "dune_sieve_sievejaw_antlion",
+          "name": "Sievejaw Antlion",
+          "role": "pit ambusher",
+          "description": "Squat hairy antlion larva, bulbous wrinkled sand-gray abdomen, six tiny legs, two thin toothed jaws, black eyes, bristle fringe",
+          "texture": "res://assets/battle/minions/dune_sieve/sievejaw_antlion.png",
+          "profile": "res://content/battle_visuals/minions/dune_sieve/sievejaw_antlion.tres",
+          "width": 1536,
+          "height": 1024,
+          "ground_anchor": [
+            0.5,
+            0.941406
+          ]
+        },
+        {
+          "id": "dune_sieve_moonspine_jerboa",
+          "name": "Moonspine Jerboa",
+          "role": "leaping harrier",
+          "description": "Emaciated jerboa, enormous hind feet, tiny grasping forepaws, long black-tipped tail, torn funnel ears, salt-stiffened spinal quills",
+          "texture": "res://assets/battle/minions/dune_sieve/moonspine_jerboa.png",
+          "profile": "res://content/battle_visuals/minions/dune_sieve/moonspine_jerboa.tres",
+          "width": 1226,
+          "height": 1283,
+          "ground_anchor": [
+            0.5,
+            0.993765
+          ]
+        },
+        {
+          "id": "dune_sieve_brine_blister",
+          "name": "Brine Blister",
+          "role": "corrosive support",
+          "description": "Inflated desert toad, charcoal leather skin, translucent brine sacs, ivory nodules, crooked limbs, heavy throat pouch, broad flat face",
+          "texture": "res://assets/battle/minions/dune_sieve/brine_blister.png",
+          "profile": "res://content/battle_visuals/minions/dune_sieve/brine_blister.tres",
+          "width": 1374,
+          "height": 1145,
+          "ground_anchor": [
+            0.5,
+            0.945852
+          ]
+        },
+        {
+          "id": "dune_sieve_dune_needlewing",
+          "name": "Dune Needlewing",
+          "role": "aerial striker",
+          "description": "Predatory lacewing, four narrow dusty translucent sail wings, needle proboscis, knotted abdomen, feathery antennae, smoky violet veins",
+          "texture": "res://assets/battle/minions/dune_sieve/dune_needlewing.png",
+          "profile": "res://content/battle_visuals/minions/dune_sieve/dune_needlewing.tres",
+          "width": 1536,
+          "height": 1024,
+          "ground_anchor": [
+            0.5,
+            0.993164
+          ]
+        },
+        {
+          "id": "dune_sieve_chalkcoil_viper",
+          "name": "Chalkcoil Viper",
+          "role": "venom striker",
+          "description": "Small horned viper, low loose coil, flattened spade snout, chalk granular scales, black hornlets, hooked fangs, broken umber bands",
+          "texture": "res://assets/battle/minions/dune_sieve/chalkcoil_viper.png",
+          "profile": "res://content/battle_visuals/minions/dune_sieve/chalkcoil_viper.tres",
+          "width": 1536,
+          "height": 1024,
+          "ground_anchor": [
+            0.5,
+            0.93457
+          ]
+        },
+        {
+          "id": "dune_sieve_saltroot_strider",
+          "name": "Saltroot Strider",
+          "role": "forage sentinel",
+          "description": "Rootlike walking stick insect, four bent stilt legs, two twig forearms, hollow seedpod thorax, papery head crest, salt crystals on bark joints",
+          "texture": "res://assets/battle/minions/dune_sieve/saltroot_strider.png",
+          "profile": "res://content/battle_visuals/minions/dune_sieve/saltroot_strider.tres",
+          "width": 1536,
+          "height": 1024,
+          "ground_anchor": [
+            0.5,
+            0.910156
+          ]
+        },
+        {
+          "id": "dune_sieve_crust_peeler",
+          "name": "Crust Peeler",
+          "role": "shieldbreaker",
+          "description": "Pangolin-mollusk, chalk limpet shell over shoulders, leathery snout, long black scraping tongue, four low clawed legs, ridged tail",
+          "texture": "res://assets/battle/minions/dune_sieve/crust_peeler.png",
+          "profile": "res://content/battle_visuals/minions/dune_sieve/crust_peeler.tres",
+          "width": 1536,
+          "height": 1024,
+          "ground_anchor": [
+            0.5,
+            0.936523
+          ]
+        },
+        {
+          "id": "dune_sieve_hollow_puff",
+          "name": "Hollow Puff",
+          "role": "spore nuisance",
+          "description": "Spherical fungal animal, cracked parchment skin, dark pores, ivory fibrous ruff, six root feet, bent tubular siphon, no emitted cloud",
+          "texture": "res://assets/battle/minions/dune_sieve/hollow_puff.png",
+          "profile": "res://content/battle_visuals/minions/dune_sieve/hollow_puff.tres",
+          "width": 1312,
+          "height": 1199,
+          "ground_anchor": [
+            0.5,
+            0.961635
+          ]
+        },
+        {
+          "id": "dune_sieve_flint_carrionling",
+          "name": "Flint Carrionling",
+          "role": "carrion feeder",
+          "description": "Hunched flightless vulture runt, bald charcoal neck, chipped flint beak, ragged ivory wing feathers, strong taloned feet",
+          "texture": "res://assets/battle/minions/dune_sieve/flint_carrionling.png",
+          "profile": "res://content/battle_visuals/minions/dune_sieve/flint_carrionling.tres",
+          "width": 1222,
+          "height": 1287,
+          "ground_anchor": [
+            0.5,
+            0.989122
+          ]
+        }
+      ]
+    },
+    {
+      "boss_id": "spore_cantor",
+      "boss_name": "Spore Cantor",
+      "theme": "Subterranean fungal ecology, dusty mauve caps, ivory gills, black damp chitin and muted sickly green spores.",
+      "minions": [
+        {
+          "id": "spore_cantor_gillmask_prowler",
+          "name": "Gillmask Prowler",
+          "role": "Stalker",
+          "description": "A lean ferret-like cavern predator with four long paws, bare dark velvet skin, an oval ivory mushroom-gill mask instead of eyes, and a low ridge of mauve shelf fungi along its flexible spine.",
+          "texture": "res://assets/battle/minions/spore_cantor/gillmask_prowler.png",
+          "profile": "res://content/battle_visuals/minions/spore_cantor/gillmask_prowler.tres",
+          "width": 1254,
+          "height": 1254,
+          "ground_anchor": [
+            0.5,
+            0.931419
+          ]
+        },
+        {
+          "id": "spore_cantor_pufflung_hopper",
+          "name": "Pufflung Hopper",
+          "role": "Spore carrier",
+          "description": "A round puffball creature on two powerful jointed hopping legs, cracked parchment skin, a small dark toothed breathing opening and several purple-brown spore vents; two tiny balancing claws.",
+          "texture": "res://assets/battle/minions/spore_cantor/pufflung_hopper.png",
+          "profile": "res://content/battle_visuals/minions/spore_cantor/pufflung_hopper.tres",
+          "width": 1254,
+          "height": 1254,
+          "ground_anchor": [
+            0.5,
+            0.991228
+          ]
+        },
+        {
+          "id": "spore_cantor_mycelial_mason",
+          "name": "Mycelial Mason",
+          "role": "Builder",
+          "description": "A squat six-legged fungal worker with a bricklike stack of chalky porous mycelium for a torso, chitin pincers, fine white root whiskers and a single asymmetrical mauve shelf cap as a shoulder shield.",
+          "texture": "res://assets/battle/minions/spore_cantor/mycelial_mason.png",
+          "profile": "res://content/battle_visuals/minions/spore_cantor/mycelial_mason.tres",
+          "width": 1254,
+          "height": 1254,
+          "ground_anchor": [
+            0.5,
+            0.966507
+          ]
+        },
+        {
+          "id": "spore_cantor_morel_listener",
+          "name": "Morel Listener",
+          "role": "Scout",
+          "description": "A tiny upright salamander-like creature with two huge honeycombed morel ears, blind pinhole face, cream translucent skin, three grasping digits on each hand and a long curled tail.",
+          "texture": "res://assets/battle/minions/spore_cantor/morel_listener.png",
+          "profile": "res://content/battle_visuals/minions/spore_cantor/morel_listener.tres",
+          "width": 1254,
+          "height": 1254,
+          "ground_anchor": [
+            0.5,
+            0.99681
+          ]
+        },
+        {
+          "id": "spore_cantor_velvet_sporebat",
+          "name": "Velvet Sporebat",
+          "role": "Harrier",
+          "description": "A small cavern bat with ragged mauve suede wings, ivory gill ridges along the wing fingers, dark eyeless face and tiny hooked feet; hanging-free flying pose with full wings visible.",
+          "texture": "res://assets/battle/minions/spore_cantor/velvet_sporebat.png",
+          "profile": "res://content/battle_visuals/minions/spore_cantor/velvet_sporebat.tres",
+          "width": 1254,
+          "height": 1254,
+          "ground_anchor": [
+            0.5,
+            0.939394
+          ]
+        },
+        {
+          "id": "spore_cantor_truffle_grinder",
+          "name": "Truffle Grinder",
+          "role": "Forager",
+          "description": "A broad beetle with a ridged black truffle-like shell split into uneven lobes, cream grinding mandibles, six stout legs and a small crown of branching white fungal threads.",
+          "texture": "res://assets/battle/minions/spore_cantor/truffle_grinder.png",
+          "profile": "res://content/battle_visuals/minions/spore_cantor/truffle_grinder.tres",
+          "width": 1254,
+          "height": 1254,
+          "ground_anchor": [
+            0.5,
+            0.970494
+          ]
+        },
+        {
+          "id": "spore_cantor_inkcap_drudge",
+          "name": "Inkcap Drudge",
+          "role": "Shambler",
+          "description": "A short stooped humanoid made of black ink-like mycelial cords with an elongated dripping inkcap hood, two thick feet, one shovel-shaped hand and one delicate root hand; face entirely hidden by pale gills.",
+          "texture": "res://assets/battle/minions/spore_cantor/inkcap_drudge.png",
+          "profile": "res://content/battle_visuals/minions/spore_cantor/inkcap_drudge.tres",
+          "width": 1254,
+          "height": 1254,
+          "ground_anchor": [
+            0.5,
+            0.984848
+          ]
+        },
+        {
+          "id": "spore_cantor_lichen_shepherd",
+          "name": "Lichen Shepherd",
+          "role": "Support",
+          "description": "A deerlike cave grazer with a low bony body, four narrow hooves, broad fan-shaped lichen growths replacing antlers, a fungal blindfold and a coat of peeling gray barklike scales.",
+          "texture": "res://assets/battle/minions/spore_cantor/lichen_shepherd.png",
+          "profile": "res://content/battle_visuals/minions/spore_cantor/lichen_shepherd.tres",
+          "width": 1254,
+          "height": 1254,
+          "ground_anchor": [
+            0.5,
+            0.988836
+          ]
+        },
+        {
+          "id": "spore_cantor_cordyceps_lancer",
+          "name": "Cordyceps Lancer",
+          "role": "Striker",
+          "description": "A slender mantis-nymph infected by one long crooked ivory cordyceps spear growing forward from its head, charcoal jointed limbs, a small mauve abdomen and stubby vestigial wings; six limbs.",
+          "texture": "res://assets/battle/minions/spore_cantor/cordyceps_lancer.png",
+          "profile": "res://content/battle_visuals/minions/spore_cantor/cordyceps_lancer.tres",
+          "width": 1254,
+          "height": 1254,
+          "ground_anchor": [
+            0.5,
+            0.994418
+          ]
+        },
+        {
+          "id": "spore_cantor_sponge_whelp",
+          "name": "Sponge Whelp",
+          "role": "Tank",
+          "description": "A squat amphibian with thick stubby legs, a porous ivory sponge hide, dark open nostril pits, scattered violet fungal bruises and a broad blunt head with tiny moss-green eyes.",
+          "texture": "res://assets/battle/minions/spore_cantor/sponge_whelp.png",
+          "profile": "res://content/battle_visuals/minions/spore_cantor/sponge_whelp.tres",
+          "width": 1254,
+          "height": 1254,
+          "ground_anchor": [
+            0.5,
+            0.922648
+          ]
+        }
+      ]
+    },
+    {
+      "boss_id": "reef_breaker",
+      "boss_name": "Reef Breaker",
+      "theme": "storm-beaten black sand shore, distant surf and sea stacks, wet sand and tide pools, rust seaweed",
+      "minions": [
+        {
+          "id": "reef_breaker_kelp_snatcher",
+          "name": "Kelp Snatcher",
+          "role": "tidepool ambusher",
+          "description": "Lean octopus, six curling muscular arms, ragged rust-red kelp skin frills, slit eyes, pale sucker rows, mottled slate mantle",
+          "texture": "res://assets/battle/minions/reef_breaker/kelp_snatcher.png",
+          "profile": "res://content/battle_visuals/minions/reef_breaker/kelp_snatcher.tres",
+          "width": 1227,
+          "height": 1282,
+          "ground_anchor": [
+            0.5,
+            0.964119
+          ]
+        },
+        {
+          "id": "reef_breaker_barnacle_hopper",
+          "name": "Barnacle Hopper",
+          "role": "close harrier",
+          "description": "Amphibious blenny with two long muscular pelvic legs, short fin arms, blunt ugly fish face, ivory spinal barnacles, ragged dorsal fin",
+          "texture": "res://assets/battle/minions/reef_breaker/barnacle_hopper.png",
+          "profile": "res://content/battle_visuals/minions/reef_breaker/barnacle_hopper.tres",
+          "width": 1223,
+          "height": 1286,
+          "ground_anchor": [
+            0.5,
+            0.956454
+          ]
+        },
+        {
+          "id": "reef_breaker_brinecomb_urchin",
+          "name": "Brinecomb Urchin",
+          "role": "area defender",
+          "description": "Flattened urchin, varied ivory needles, five thick articulated walking spines, small front black mouth, purple-gray test, sparse rusty algae",
+          "texture": "res://assets/battle/minions/reef_breaker/brinecomb_urchin.png",
+          "profile": "res://content/battle_visuals/minions/reef_breaker/brinecomb_urchin.tres",
+          "width": 1374,
+          "height": 1145,
+          "ground_anchor": [
+            0.5,
+            0.972052
+          ]
+        },
+        {
+          "id": "reef_breaker_wrack_hound",
+          "name": "Wrack Hound",
+          "role": "pack hunter",
+          "description": "Small lean seal-dog, wet slate fur, webbed clawed paws, whiskered muzzle, short tail, seaweed around one shoulder, narrow ivory tusks",
+          "texture": "res://assets/battle/minions/reef_breaker/wrack_hound.png",
+          "profile": "res://content/battle_visuals/minions/reef_breaker/wrack_hound.tres",
+          "width": 1536,
+          "height": 1024,
+          "ground_anchor": [
+            0.5,
+            0.942383
+          ]
+        },
+        {
+          "id": "reef_breaker_razorshell_skate",
+          "name": "Razorshell Skate",
+          "role": "flanking swimmer",
+          "description": "Diamond ray, abrasive shell plates only on wing edges, short clawed pelvic feet, whip tail, folded cephalic lobes and small toothed mouth",
+          "texture": "res://assets/battle/minions/reef_breaker/razorshell_skate.png",
+          "profile": "res://content/battle_visuals/minions/reef_breaker/razorshell_skate.tres",
+          "width": 1536,
+          "height": 1024,
+          "ground_anchor": [
+            0.5,
+            0.939453
+          ]
+        },
+        {
+          "id": "reef_breaker_tide_chisel",
+          "name": "Tide Chisel",
+          "role": "armor picker",
+          "description": "Thin long-necked shorebird, knobbly webbed legs, hooked chisel beak, charcoal salt-edged feathers, ragged hunched back, folded wings",
+          "texture": "res://assets/battle/minions/reef_breaker/tide_chisel.png",
+          "profile": "res://content/battle_visuals/minions/reef_breaker/tide_chisel.tres",
+          "width": 1222,
+          "height": 1287,
+          "ground_anchor": [
+            0.5,
+            0.979798
+          ]
+        },
+        {
+          "id": "reef_breaker_mussel_maw",
+          "name": "Mussel Maw",
+          "role": "stationary snapper",
+          "description": "Upright elongated black mussel, hinged shell slightly open with pale internal tooth ridges and fleshy tongue, three thick tendril feet, barnacle scars",
+          "texture": "res://assets/battle/minions/reef_breaker/mussel_maw.png",
+          "profile": "res://content/battle_visuals/minions/reef_breaker/mussel_maw.tres",
+          "width": 1214,
+          "height": 1295,
+          "ground_anchor": [
+            0.5,
+            0.977606
+          ]
+        },
+        {
+          "id": "reef_breaker_spray_skitter",
+          "name": "Spray Skitter",
+          "role": "scout",
+          "description": "Amphipod sand hopper, curved shrimp body, seven delicate running legs, translucent fan tail, long sensory antennae, no large claws",
+          "texture": "res://assets/battle/minions/reef_breaker/spray_skitter.png",
+          "profile": "res://content/battle_visuals/minions/reef_breaker/spray_skitter.tres",
+          "width": 1536,
+          "height": 1024,
+          "ground_anchor": [
+            0.5,
+            0.833008
+          ]
+        },
+        {
+          "id": "reef_breaker_saltpurse_slug",
+          "name": "Saltpurse Slug",
+          "role": "healing grazer",
+          "description": "Thick low sea slug, folded charcoal mantle lobes, ivory rear gill branches, two blunt rhinophores, pearly mouth flap, restrained teal spots",
+          "texture": "res://assets/battle/minions/reef_breaker/saltpurse_slug.png",
+          "profile": "res://content/battle_visuals/minions/reef_breaker/saltpurse_slug.tres",
+          "width": 1536,
+          "height": 1024,
+          "ground_anchor": [
+            0.5,
+            0.908203
+          ]
+        },
+        {
+          "id": "reef_breaker_breakwater_bristle",
+          "name": "Breakwater Bristle",
+          "role": "burrowing striker",
+          "description": "Short thick bristleworm in shallow S, pale stiff bristles, dark maroon wet segments, four mouth palps, small black hook jaws, no armor",
+          "texture": "res://assets/battle/minions/reef_breaker/breakwater_bristle.png",
+          "profile": "res://content/battle_visuals/minions/reef_breaker/breakwater_bristle.tres",
+          "width": 1536,
+          "height": 1024,
+          "ground_anchor": [
+            0.5,
+            0.921875
+          ]
+        }
+      ]
+    },
+    {
+      "boss_id": "ember_gullet",
+      "boss_name": "Ember Gullet",
+      "theme": "volcanic caldera, stable ash platform, distant lava seams and basalt walls, smoke and falling ash",
+      "minions": [
+        {
+          "id": "ember_gullet_cinder_tick",
+          "name": "Furnace Tick",
+          "role": "heat parasite",
+          "description": "Flat engorged tick, eight angular charcoal legs, leathery ash-gray abdomen with three faint ember creases, tiny hook mouth, ivory nodules",
+          "texture": "res://assets/battle/minions/ember_gullet/cinder_tick.png",
+          "profile": "res://content/battle_visuals/minions/ember_gullet/cinder_tick.tres",
+          "width": 1536,
+          "height": 1024,
+          "ground_anchor": [
+            0.5,
+            0.942383
+          ]
+        },
+        {
+          "id": "ember_gullet_ashwing_moth",
+          "name": "Ashwing Moth",
+          "role": "blinding flier",
+          "description": "Broad moth with ragged soot-black wings and dusty ivory streaks, fuzzy gray body, comb antennae, dim copper abdomen segment",
+          "texture": "res://assets/battle/minions/ember_gullet/ashwing_moth.png",
+          "profile": "res://content/battle_visuals/minions/ember_gullet/ashwing_moth.tres",
+          "width": 1536,
+          "height": 1024,
+          "ground_anchor": [
+            0.5,
+            0.888672
+          ]
+        },
+        {
+          "id": "ember_gullet_pumice_hare",
+          "name": "Pumice Hare",
+          "role": "leaping scout",
+          "description": "Lean monstrous hare, porous stone-gray hide, long torn ears, angular hind legs, tiny forepaws, ash fur patches, muted orange eye",
+          "texture": "res://assets/battle/minions/ember_gullet/pumice_hare.png",
+          "profile": "res://content/battle_visuals/minions/ember_gullet/pumice_hare.tres",
+          "width": 1208,
+          "height": 1302,
+          "ground_anchor": [
+            0.5,
+            0.974654
+          ]
+        },
+        {
+          "id": "ember_gullet_kilnback_snail",
+          "name": "Kilnback Snail",
+          "role": "armored grazer",
+          "description": "Black slug with tall irregular spiral ceramic shell, flaking matte chalk glaze, thick eye stalks, wide rasping mouth, tiny warm seam inside shell",
+          "texture": "res://assets/battle/minions/ember_gullet/kilnback_snail.png",
+          "profile": "res://content/battle_visuals/minions/ember_gullet/kilnback_snail.tres",
+          "width": 1223,
+          "height": 1286,
+          "ground_anchor": [
+            0.5,
+            0.967341
+          ]
+        },
+        {
+          "id": "ember_gullet_coalspit_toad",
+          "name": "Coalspit Toad",
+          "role": "ranged nuisance",
+          "description": "Squat warty toad, large dark inflated throat sac dimly glowing within, short muscular limbs, ash-encrusted knuckles, tiny black eyes",
+          "texture": "res://assets/battle/minions/ember_gullet/coalspit_toad.png",
+          "profile": "res://content/battle_visuals/minions/ember_gullet/coalspit_toad.tres",
+          "width": 1374,
+          "height": 1145,
+          "ground_anchor": [
+            0.5,
+            0.89607
+          ]
+        },
+        {
+          "id": "ember_gullet_slag_beak",
+          "name": "Slag Beak",
+          "role": "carrion scout",
+          "description": "Thin bipedal volcanic crow, long chipped obsidian beak, folded ragged charcoal wings, long ivory talons, ash-white neck hackles",
+          "texture": "res://assets/battle/minions/ember_gullet/slag_beak.png",
+          "profile": "res://content/battle_visuals/minions/ember_gullet/slag_beak.tres",
+          "width": 1199,
+          "height": 1312,
+          "ground_anchor": [
+            0.5,
+            0.977896
+          ]
+        },
+        {
+          "id": "ember_gullet_furnace_weasel",
+          "name": "Furnace Weasel",
+          "role": "pack harrier",
+          "description": "Long low sinuous weasel, charcoal bristly fur, tiny hooked paws, whip tail, pale toothy muzzle, rust-orange throat patches",
+          "texture": "res://assets/battle/minions/ember_gullet/furnace_weasel.png",
+          "profile": "res://content/battle_visuals/minions/ember_gullet/furnace_weasel.tres",
+          "width": 1536,
+          "height": 1024,
+          "ground_anchor": [
+            0.5,
+            0.870117
+          ]
+        },
+        {
+          "id": "ember_gullet_glass_lancet",
+          "name": "Glass Lancet",
+          "role": "precision striker",
+          "description": "Slender smoky obsidian mantis, six articulated limbs, two narrow glass-sickle arms, pale triangular face, fan-folded abdomen, dull copper joints",
+          "texture": "res://assets/battle/minions/ember_gullet/glass_lancet.png",
+          "profile": "res://content/battle_visuals/minions/ember_gullet/glass_lancet.tres",
+          "width": 1217,
+          "height": 1293,
+          "ground_anchor": [
+            0.5,
+            0.986852
+          ]
+        },
+        {
+          "id": "ember_gullet_scoria_tortoise",
+          "name": "Scoria Tortoise",
+          "role": "blocking defender",
+          "description": "Small tortoise, high porous pumice shell, blunt ash-gray head, thick wrinkled legs, black flint claws, few dull red shell pinholes",
+          "texture": "res://assets/battle/minions/ember_gullet/scoria_tortoise.png",
+          "profile": "res://content/battle_visuals/minions/ember_gullet/scoria_tortoise.tres",
+          "width": 1376,
+          "height": 1143,
+          "ground_anchor": [
+            0.5,
+            0.942257
+          ]
+        },
+        {
+          "id": "ember_gullet_vent_siphon",
+          "name": "Vent Siphon",
+          "role": "hazard feeder",
+          "description": "Walking anemone, squat charcoal leathery bulb, six thick fleshy support lobes, crown of short curled ivory siphon tubes around tiny warm red mouth",
+          "texture": "res://assets/battle/minions/ember_gullet/vent_siphon.png",
+          "profile": "res://content/battle_visuals/minions/ember_gullet/vent_siphon.tres",
+          "width": 1318,
+          "height": 1193,
+          "ground_anchor": [
+            0.5,
+            0.937133
+          ]
+        }
+      ]
+    },
+    {
+      "boss_id": "root_widow",
+      "boss_name": "Root Widow",
+      "theme": "Dead orchard ecology; thornwood, split fruit stones, rust leaves, pale bark, amber sap, no universal spider anatomy.",
+      "minions": [
+        {
+          "id": "root_widow_pip_gnawer",
+          "name": "Pip Gnawer",
+          "role": "Scavenger",
+          "description": "A ratlike orchard scavenger with a split peach-stone skull, chisel seed teeth, a coat of rust-colored dead leaves, thin black paws and a long fibrous root tail.",
+          "texture": "res://assets/battle/minions/root_widow/pip_gnawer.png",
+          "profile": "res://content/battle_visuals/minions/root_widow/pip_gnawer.tres",
+          "width": 1254,
+          "height": 1254,
+          "ground_anchor": [
+            0.5,
+            0.945774
+          ]
+        },
+        {
+          "id": "root_widow_bramble_fawn",
+          "name": "Bramble Fawn",
+          "role": "Runner",
+          "description": "A small fawn with thornwood ribs, four delicate root hooves, a smooth pale pear-shaped wooden face and antlers formed by two crooked thorn twigs; amber sap beads at joints.",
+          "texture": "res://assets/battle/minions/root_widow/bramble_fawn.png",
+          "profile": "res://content/battle_visuals/minions/root_widow/bramble_fawn.tres",
+          "width": 1254,
+          "height": 1254,
+          "ground_anchor": [
+            0.5,
+            0.983254
+          ]
+        },
+        {
+          "id": "root_widow_graft_stump",
+          "name": "Graft Stump",
+          "role": "Bruiser",
+          "description": "A low walking orchard stump on three gnarled root legs, a graft scar forming an angry slit face, one heavy branch club arm and one claw of pruning-thorn growth; dry lichen bark.",
+          "texture": "res://assets/battle/minions/root_widow/graft_stump.png",
+          "profile": "res://content/battle_visuals/minions/root_widow/graft_stump.tres",
+          "width": 1254,
+          "height": 1254,
+          "ground_anchor": [
+            0.5,
+            0.984848
+          ]
+        },
+        {
+          "id": "root_widow_orchard_mourner",
+          "name": "Orchard Mourner",
+          "role": "Caller",
+          "description": "A hunched crow made of curled rust leaves and black bark, with an ivory seed-husk beak, one swollen amber throat gourd and two wiry root legs; folded ragged wings.",
+          "texture": "res://assets/battle/minions/root_widow/orchard_mourner.png",
+          "profile": "res://content/battle_visuals/minions/root_widow/orchard_mourner.tres",
+          "width": 1254,
+          "height": 1254,
+          "ground_anchor": [
+            0.5,
+            0.979266
+          ]
+        },
+        {
+          "id": "root_widow_burr_roller",
+          "name": "Burr Roller",
+          "role": "Charger",
+          "description": "A spherical burdock husk beast with layered hooked burr plates, four tiny jointed legs, a narrow toothless face opening and amber seed eyes; one side unfolded showing pale fibrous inner rind.",
+          "texture": "res://assets/battle/minions/root_widow/burr_roller.png",
+          "profile": "res://content/battle_visuals/minions/root_widow/burr_roller.tres",
+          "width": 1254,
+          "height": 1254,
+          "ground_anchor": [
+            0.5,
+            0.976874
+          ]
+        },
+        {
+          "id": "root_widow_sapwick_gecko",
+          "name": "Sapwick Gecko",
+          "role": "Climber",
+          "description": "A slender bark gecko with six adhesive twig toes per foot, flat leaflike tail, pale peeling trunk-pattern skin and glowing amber sap nodules down its neck; low lateral crawling pose.",
+          "texture": "res://assets/battle/minions/root_widow/sapwick_gecko.png",
+          "profile": "res://content/battle_visuals/minions/root_widow/sapwick_gecko.tres",
+          "width": 1254,
+          "height": 1254,
+          "ground_anchor": [
+            0.5,
+            0.961722
+          ]
+        },
+        {
+          "id": "root_widow_pome_husk",
+          "name": "Pome Husk",
+          "role": "Trap",
+          "description": "An animated rotten apple husk split vertically into four thick leathery jaws, pale seed teeth inside, six wiry root feet and a curled dry leaf crest; distinct fruit-shaped compact silhouette.",
+          "texture": "res://assets/battle/minions/root_widow/pome_husk.png",
+          "profile": "res://content/battle_visuals/minions/root_widow/pome_husk.tres",
+          "width": 1254,
+          "height": 1254,
+          "ground_anchor": [
+            0.5,
+            0.989633
+          ]
+        },
+        {
+          "id": "root_widow_pruning_wasp",
+          "name": "Pruning Wasp",
+          "role": "Harrier",
+          "description": "A single predatory wasp with a wooden abdomen shaped like pruning shears, narrow ivory thorax, four ragged rust-colored leaf wings, six fine black legs and tiny amber eyes.",
+          "texture": "res://assets/battle/minions/root_widow/pruning_wasp.png",
+          "profile": "res://content/battle_visuals/minions/root_widow/pruning_wasp.tres",
+          "width": 1254,
+          "height": 1254,
+          "ground_anchor": [
+            0.5,
+            0.981659
+          ]
+        },
+        {
+          "id": "root_widow_rootbound_hare",
+          "name": "Rootbound Hare",
+          "role": "Trickster",
+          "description": "A lean hare with long curled bark ears, hollow amber eye sockets, tangled root hindquarters and two oversized thorn-spiked front paws, gray fur interwoven with dead orchard leaves.",
+          "texture": "res://assets/battle/minions/root_widow/rootbound_hare.png",
+          "profile": "res://content/battle_visuals/minions/root_widow/rootbound_hare.tres",
+          "width": 1254,
+          "height": 1254,
+          "ground_anchor": [
+            0.5,
+            0.984051
+          ]
+        },
+        {
+          "id": "root_widow_gallows_gourd",
+          "name": "Gallows Gourd",
+          "role": "Snarer",
+          "description": "A hanging-gourd-shaped creature walking on two bent vine stilts, a dry ivory squash skull, a large looped vine arm for snaring and a tassel of small dark seed pods; self-contained no tree.",
+          "texture": "res://assets/battle/minions/root_widow/gallows_gourd.png",
+          "profile": "res://content/battle_visuals/minions/root_widow/gallows_gourd.tres",
+          "width": 1254,
+          "height": 1254,
+          "ground_anchor": [
+            0.5,
+            0.988836
+          ]
+        }
+      ]
+    },
+    {
+      "boss_id": "prism_devourer",
+      "boss_name": "Prism Devourer",
+      "theme": "Smoky quartz cavern scavengers, fractured mineral armor, tiny muted amethyst and amber accents.",
+      "minions": [
+        {
+          "id": "prism_devourer_shardmuzzle_mole",
+          "name": "Shardmuzzle Mole",
+          "role": "burrower",
+          "description": "Blind compact mole with powerful slate digging paws, a blunt quartz chisel muzzle, sparse silver whiskers and a few cloudy crystal plates in its charcoal fur; low broad rounded silhouette.",
+          "texture": "res://assets/battle/minions/prism_devourer/shardmuzzle_mole.png",
+          "profile": "res://content/battle_visuals/minions/prism_devourer/shardmuzzle_mole.tres",
+          "width": 1536,
+          "height": 1024,
+          "ground_anchor": [
+            0.5,
+            0.973633
+          ]
+        },
+        {
+          "id": "prism_devourer_geode_slug",
+          "name": "Geode Slug",
+          "role": "mineral grazer",
+          "description": "Heavy eyeless slug whose split stony back exposes a narrow amethyst geode cavity; fleshy charcoal foot, two tiny pale feelers, folded mineral wrinkles and no legs.",
+          "texture": "res://assets/battle/minions/prism_devourer/geode_slug.png",
+          "profile": "res://content/battle_visuals/minions/prism_devourer/geode_slug.tres",
+          "width": 1536,
+          "height": 1024,
+          "ground_anchor": [
+            0.5,
+            0.922852
+          ]
+        },
+        {
+          "id": "prism_devourer_cleftwing_bat",
+          "name": "Cleftwing Bat",
+          "role": "aerial scout",
+          "description": "Small long-eared cavern bat, angular torn membrane wings with delicate crystalline veins, velvet ash fur, one quartz fang and folded hooked feet; hovering with wings asymmetric.",
+          "texture": "res://assets/battle/minions/prism_devourer/cleftwing_bat.png",
+          "profile": "res://content/battle_visuals/minions/prism_devourer/cleftwing_bat.tres",
+          "width": 1241,
+          "height": 1268,
+          "ground_anchor": [
+            0.5,
+            0.992114
+          ]
+        },
+        {
+          "id": "prism_devourer_mica_urchin",
+          "name": "Mica Urchin",
+          "role": "passage guard",
+          "description": "Low spherical cave urchin on five short fleshy tube feet, layered mica scales among irregular smoky quartz needles, an offset ivory rasp mouth underneath.",
+          "texture": "res://assets/battle/minions/prism_devourer/mica_urchin.png",
+          "profile": "res://content/battle_visuals/minions/prism_devourer/mica_urchin.tres",
+          "width": 1312,
+          "height": 1199,
+          "ground_anchor": [
+            0.5,
+            0.973311
+          ]
+        },
+        {
+          "id": "prism_devourer_flintjaw_newt",
+          "name": "Flintjaw Newt",
+          "role": "ambush skirmisher",
+          "description": "Lean six-toed cave newt with blunt flint jaws, matte charcoal skin and isolated translucent spine fins, long curling paddle tail, crouching alert.",
+          "texture": "res://assets/battle/minions/prism_devourer/flintjaw_newt.png",
+          "profile": "res://content/battle_visuals/minions/prism_devourer/flintjaw_newt.tres",
+          "width": 1536,
+          "height": 1024,
+          "ground_anchor": [
+            0.5,
+            0.96875
+          ]
+        },
+        {
+          "id": "prism_devourer_hollowstone_tick",
+          "name": "Hollowstone Tick",
+          "role": "parasite",
+          "description": "Flattened eight-legged tick with a hollow pebble carapace, delicate hooked legs, tiny sucking proboscis and translucent grey belly with one dim amber inclusion.",
+          "texture": "res://assets/battle/minions/prism_devourer/hollowstone_tick.png",
+          "profile": "res://content/battle_visuals/minions/prism_devourer/hollowstone_tick.tres",
+          "width": 1536,
+          "height": 1024,
+          "ground_anchor": [
+            0.5,
+            0.942383
+          ]
+        },
+        {
+          "id": "prism_devourer_quartz_rib_eel",
+          "name": "Quartz Rib Eel",
+          "role": "crevice hunter",
+          "description": "Coiling eyeless terrestrial eel with exposed-looking translucent mineral rib hoops, leathery soot skin, two vestigial front flippers and a needle mouth; tall S-shaped pose.",
+          "texture": "res://assets/battle/minions/prism_devourer/quartz_rib_eel.png",
+          "profile": "res://content/battle_visuals/minions/prism_devourer/quartz_rib_eel.tres",
+          "width": 1024,
+          "height": 1536,
+          "ground_anchor": [
+            0.5,
+            0.990885
+          ]
+        },
+        {
+          "id": "prism_devourer_splintercrest_roach",
+          "name": "Splintercrest Roach",
+          "role": "debris scavenger",
+          "description": "Broad armored cave cockroach with asymmetrical chipped slate wing cases, short blunt quartz crest, comb antennae, six low scuttling legs and dusty abdomen.",
+          "texture": "res://assets/battle/minions/prism_devourer/splintercrest_roach.png",
+          "profile": "res://content/battle_visuals/minions/prism_devourer/splintercrest_roach.tres",
+          "width": 1536,
+          "height": 1024,
+          "ground_anchor": [
+            0.5,
+            0.97168
+          ]
+        },
+        {
+          "id": "prism_devourer_veinglass_moth",
+          "name": "Veinglass Moth",
+          "role": "light lure",
+          "description": "Fragile cave moth with four smoky translucent glasslike wings, cloudy mineral vein patterns, fuzzy narrow charcoal body, feathery antennae and one muted violet eye spot.",
+          "texture": "res://assets/battle/minions/prism_devourer/veinglass_moth.png",
+          "profile": "res://content/battle_visuals/minions/prism_devourer/veinglass_moth.tres",
+          "width": 1214,
+          "height": 1295,
+          "ground_anchor": [
+            0.5,
+            0.993822
+          ]
+        },
+        {
+          "id": "prism_devourer_gravelback_hare",
+          "name": "Gravelback Hare",
+          "role": "lookout",
+          "description": "Gaunt cave hare with long folded ears tipped in tiny quartz splinters, heavily muscled hind legs, ash fur interrupted by pebble scales and dim amber eyes.",
+          "texture": "res://assets/battle/minions/prism_devourer/gravelback_hare.png",
+          "profile": "res://content/battle_visuals/minions/prism_devourer/gravelback_hare.tres",
+          "width": 1243,
+          "height": 1266,
+          "ground_anchor": [
+            0.5,
+            0.992101
+          ]
+        }
+      ]
+    },
+    {
+      "boss_id": "silk_regent",
+      "boss_name": "Silk Regent",
+      "theme": "Silk-shrouded ravine brood and scavengers, ivory thread, soot chitin, faded burgundy.",
+      "minions": [
+        {
+          "id": "silk_regent_shroud_grub",
+          "name": "Shroud Grub",
+          "role": "silk producer",
+          "description": "Plump segmented pale grub partly clothed in its own frayed ivory cocoon, small black mandibles, six tiny gripping feet, burgundy veins and soft ring folds.",
+          "texture": "res://assets/battle/minions/silk_regent/shroud_grub.png",
+          "profile": "res://content/battle_visuals/minions/silk_regent/shroud_grub.tres",
+          "width": 1246,
+          "height": 1262,
+          "ground_anchor": [
+            0.5,
+            0.858162
+          ]
+        },
+        {
+          "id": "silk_regent_lacewing_mourner",
+          "name": "Lacewing Mourner",
+          "role": "flying herald",
+          "description": "Long delicate lacewing insect with ragged netted ivory wings and a narrow burgundy thorax, threadlike antennae and dangling slender hooked legs.",
+          "texture": "res://assets/battle/minions/silk_regent/lacewing_mourner.png",
+          "profile": "res://content/battle_visuals/minions/silk_regent/lacewing_mourner.tres",
+          "width": 1226,
+          "height": 1283,
+          "ground_anchor": [
+            0.5,
+            0.982853
+          ]
+        },
+        {
+          "id": "silk_regent_cocoon_rat",
+          "name": "Cocoon Rat",
+          "role": "forager",
+          "description": "Hunched naked ravine rat wearing scraps of abandoned silk around its shoulders, long bare ringed tail, oversized incisors, sharp paws and dull burgundy eyes.",
+          "texture": "res://assets/battle/minions/silk_regent/cocoon_rat.png",
+          "profile": "res://content/battle_visuals/minions/silk_regent/cocoon_rat.tres",
+          "width": 1246,
+          "height": 1262,
+          "ground_anchor": [
+            0.5,
+            0.950872
+          ]
+        },
+        {
+          "id": "silk_regent_webshoe_toad",
+          "name": "Webshoe Toad",
+          "role": "trap tender",
+          "description": "Squat pale toad with enlarged splayed feet entangled in tough silk mitts, porous grey skin, swollen thread glands behind the eyes and a small burgundy throat.",
+          "texture": "res://assets/battle/minions/silk_regent/webshoe_toad.png",
+          "profile": "res://content/battle_visuals/minions/silk_regent/webshoe_toad.tres",
+          "width": 1312,
+          "height": 1199,
+          "ground_anchor": [
+            0.5,
+            0.979149
+          ]
+        },
+        {
+          "id": "silk_regent_spindle_centipede",
+          "name": "Spindle Centipede",
+          "role": "thread carrier",
+          "description": "Elongated many-legged centipede with alternating soot and ivory chitin segments, two silk bobbin growths at its tail, delicate small mandibles and a low serpentine posture.",
+          "texture": "res://assets/battle/minions/silk_regent/spindle_centipede.png",
+          "profile": "res://content/battle_visuals/minions/silk_regent/spindle_centipede.tres",
+          "width": 1536,
+          "height": 1024,
+          "ground_anchor": [
+            0.5,
+            0.976562
+          ]
+        },
+        {
+          "id": "silk_regent_veil_mite",
+          "name": "Veil Mite",
+          "role": "cocoon cleaner",
+          "description": "Tiny round velvet mite enlarged for detail, eight short plush legs, pale masklike face and torn translucent silk veil trailing from its domed burgundy abdomen.",
+          "texture": "res://assets/battle/minions/silk_regent/veil_mite.png",
+          "profile": "res://content/battle_visuals/minions/silk_regent/veil_mite.tres",
+          "width": 1374,
+          "height": 1145,
+          "ground_anchor": [
+            0.5,
+            0.939738
+          ]
+        },
+        {
+          "id": "silk_regent_ravine_hookbird",
+          "name": "Ravine Hookbird",
+          "role": "silk thief",
+          "description": "Small hunched flightless cliff bird with hooked ivory beak, long grasping toes, ragged charcoal feathers and silk strands tied around its short vestigial wings.",
+          "texture": "res://assets/battle/minions/silk_regent/ravine_hookbird.png",
+          "profile": "res://content/battle_visuals/minions/silk_regent/ravine_hookbird.tres",
+          "width": 1246,
+          "height": 1262,
+          "ground_anchor": [
+            0.5,
+            0.989699
+          ]
+        },
+        {
+          "id": "silk_regent_threadbelly_leech",
+          "name": "Threadbelly Leech",
+          "role": "snare parasite",
+          "description": "Flattened pale leech with puckered circular mouth, translucent belly containing loops of burgundy thread, tiny edge hooks and a curling tapering body.",
+          "texture": "res://assets/battle/minions/silk_regent/threadbelly_leech.png",
+          "profile": "res://content/battle_visuals/minions/silk_regent/threadbelly_leech.tres",
+          "width": 1536,
+          "height": 1024,
+          "ground_anchor": [
+            0.5,
+            0.930664
+          ]
+        },
+        {
+          "id": "silk_regent_cowl_cricket",
+          "name": "Cowl Cricket",
+          "role": "alarm caller",
+          "description": "Cricket with towering bent jumping legs, ragged ivory silk cowl over a small dark head, ribbed burgundy abdomen and asymmetrical folded wings.",
+          "texture": "res://assets/battle/minions/silk_regent/cowl_cricket.png",
+          "profile": "res://content/battle_visuals/minions/silk_regent/cowl_cricket.tres",
+          "width": 1536,
+          "height": 1024,
+          "ground_anchor": [
+            0.5,
+            0.959961
+          ]
+        },
+        {
+          "id": "silk_regent_cocoon_hermit",
+          "name": "Cocoon Hermit",
+          "role": "mobile nest guard",
+          "description": "Small land hermit creature with two unequal fine pincers and six short black legs, occupying a sideways broken silk cocoon reinforced by splinters and worn red fibers.",
+          "texture": "res://assets/battle/minions/silk_regent/cocoon_hermit.png",
+          "profile": "res://content/battle_visuals/minions/silk_regent/cocoon_hermit.tres",
+          "width": 1374,
+          "height": 1145,
+          "ground_anchor": [
+            0.5,
+            0.979913
+          ]
+        }
+      ]
+    },
+    {
+      "boss_id": "sluice_horror",
+      "boss_name": "Sluice Horror",
+      "theme": "collapsed aqueduct reservoir, broken arches, rusted gates, shallow dark water, broad pale silt-covered dry embankment",
+      "minions": [
+        {
+          "id": "sluice_horror_grate_gnawer",
+          "name": "Grate Gnawer",
+          "role": "scavenger",
+          "description": "Hunched sewer rat, slick charcoal fur, huge pale incisors, long hairless rust-stained tail, splayed toes, blind eyes, shoulder lime scale",
+          "texture": "res://assets/battle/minions/sluice_horror/grate_gnawer.png",
+          "profile": "res://content/battle_visuals/minions/sluice_horror/grate_gnawer.tres",
+          "width": 1536,
+          "height": 1024,
+          "ground_anchor": [
+            0.5,
+            0.948242
+          ]
+        },
+        {
+          "id": "sluice_horror_silt_lantern",
+          "name": "Silt Lantern",
+          "role": "lure support",
+          "description": "Small catfish amphibian, wide flat head, long ivory barbels, four muscular fin legs, narrow tail fin, dim greenish throat bladder, olive-gray skin",
+          "texture": "res://assets/battle/minions/sluice_horror/silt_lantern.png",
+          "profile": "res://content/battle_visuals/minions/sluice_horror/silt_lantern.tres",
+          "width": 1536,
+          "height": 1024,
+          "ground_anchor": [
+            0.5,
+            0.896484
+          ]
+        },
+        {
+          "id": "sluice_horror_pipe_limpet",
+          "name": "Pipe Limpet",
+          "role": "armored blocker",
+          "description": "Low mollusk with long half-cylinder shell like mineral-encrusted clay pipe, dark crawling foot, curled sensory stalks, pale rasping mouth",
+          "texture": "res://assets/battle/minions/sluice_horror/pipe_limpet.png",
+          "profile": "res://content/battle_visuals/minions/sluice_horror/pipe_limpet.tres",
+          "width": 1536,
+          "height": 1024,
+          "ground_anchor": [
+            0.5,
+            0.850586
+          ]
+        },
+        {
+          "id": "sluice_horror_rustwing_caddis",
+          "name": "Rustwing Caddis",
+          "role": "aerial scout",
+          "description": "Large caddisfly, two tentlike narrow rust-mottled veined wings, six spindly pale legs, long antennae, blind head, silt-encrusted abdomen",
+          "texture": "res://assets/battle/minions/sluice_horror/rustwing_caddis.png",
+          "profile": "res://content/battle_visuals/minions/sluice_horror/rustwing_caddis.tres",
+          "width": 1536,
+          "height": 1024,
+          "ground_anchor": [
+            0.5,
+            0.949219
+          ]
+        },
+        {
+          "id": "sluice_horror_weir_stilt",
+          "name": "Weir Stilt",
+          "role": "skirmisher",
+          "description": "Gaunt heronlike sewer bird, bent long neck, needle beak, two tall scaly legs, vestigial gray wings, milky eyes, wet moss-green breast fringe",
+          "texture": "res://assets/battle/minions/sluice_horror/weir_stilt.png",
+          "profile": "res://content/battle_visuals/minions/sluice_horror/weir_stilt.tres",
+          "width": 1024,
+          "height": 1536,
+          "ground_anchor": [
+            0.5,
+            0.979818
+          ]
+        },
+        {
+          "id": "sluice_horror_sluice_sowbug",
+          "name": "Sluice Sowbug",
+          "role": "debris grazer",
+          "description": "Broad flat woodlouse, seven limestone-white back segments, many short rust-dark legs, forked antennae, black head, algae in plate cracks",
+          "texture": "res://assets/battle/minions/sluice_horror/sluice_sowbug.png",
+          "profile": "res://content/battle_visuals/minions/sluice_horror/sluice_sowbug.tres",
+          "width": 1536,
+          "height": 1024,
+          "ground_anchor": [
+            0.5,
+            0.817383
+          ]
+        },
+        {
+          "id": "sluice_horror_drainbell_jelly",
+          "name": "Drainbell Jelly",
+          "role": "slowing support",
+          "description": "Translucent gray bell polyp, rusty iron veins, four short thick crawling tentacles, thread sensory tassels, internal silt granules, dim pale green core",
+          "texture": "res://assets/battle/minions/sluice_horror/drainbell_jelly.png",
+          "profile": "res://content/battle_visuals/minions/sluice_horror/drainbell_jelly.tres",
+          "width": 1218,
+          "height": 1292,
+          "ground_anchor": [
+            0.5,
+            0.864551
+          ]
+        },
+        {
+          "id": "sluice_horror_limejaw_frog",
+          "name": "Limejaw Frog",
+          "role": "ambush striker",
+          "description": "Lean blind long-limbed frog, squared calcified ivory lower jaw, olive-black wrinkled skin, oversized webbed rear feet, cloudy eyes, rust blotches",
+          "texture": "res://assets/battle/minions/sluice_horror/limejaw_frog.png",
+          "profile": "res://content/battle_visuals/minions/sluice_horror/limejaw_frog.tres",
+          "width": 1334,
+          "height": 1179,
+          "ground_anchor": [
+            0.5,
+            0.932146
+          ]
+        },
+        {
+          "id": "sluice_horror_chain_tuft",
+          "name": "Chain Tuft",
+          "role": "entangling pest",
+          "description": "Knotted aquatic worm colony forming one creature, dark ribbon body loops around one corroded broken iron link, pale bristled feeding crown, three trailing feelers",
+          "texture": "res://assets/battle/minions/sluice_horror/chain_tuft.png",
+          "profile": "res://content/battle_visuals/minions/sluice_horror/chain_tuft.tres",
+          "width": 1374,
+          "height": 1145,
+          "ground_anchor": [
+            0.5,
+            0.943231
+          ]
+        },
+        {
+          "id": "sluice_horror_reservoir_shear",
+          "name": "Reservoir Shear",
+          "role": "flanking hunter",
+          "description": "Freshwater prawn, narrow translucent limestone-gray abdomen, mismatched long scissor claws, six fine walking legs, thread antennae, folded fan tail",
+          "texture": "res://assets/battle/minions/sluice_horror/reservoir_shear.png",
+          "profile": "res://content/battle_visuals/minions/sluice_horror/reservoir_shear.tres",
+          "width": 1536,
+          "height": 1024,
+          "ground_anchor": [
+            0.5,
+            0.922852
+          ]
+        }
+      ]
+    },
+    {
+      "boss_id": "bellback_pilgrim",
+      "boss_name": "Bellback Pilgrim",
+      "theme": "Wasteland procession followers, old iron, bone charms, tarnished brass, faded wine cloth.",
+      "minions": [
+        {
+          "id": "bellback_pilgrim_clapper_hound",
+          "name": "Clapper Hound",
+          "role": "tracker",
+          "description": "Lean mangy hound with a heavy old iron clapper fused beneath its jaw, small bone collar charms, long ivory forelegs and scraps of dark red cloth at the neck.",
+          "texture": "res://assets/battle/minions/bellback_pilgrim/clapper_hound.png",
+          "profile": "res://content/battle_visuals/minions/bellback_pilgrim/clapper_hound.tres",
+          "width": 1374,
+          "height": 1145,
+          "ground_anchor": [
+            0.5,
+            0.980786
+          ]
+        },
+        {
+          "id": "bellback_pilgrim_tollwing_crow",
+          "name": "Tollwing Crow",
+          "role": "omen scout",
+          "description": "Hunched crow with sparse soot feathers, a small tarnished bronze throat resonator, bone beak tip and a single broken chain loop around one claw.",
+          "texture": "res://assets/battle/minions/bellback_pilgrim/tollwing_crow.png",
+          "profile": "res://content/battle_visuals/minions/bellback_pilgrim/tollwing_crow.tres",
+          "width": 1310,
+          "height": 1201,
+          "ground_anchor": [
+            0.5,
+            0.990841
+          ]
+        },
+        {
+          "id": "bellback_pilgrim_chainback_rolypoly",
+          "name": "Chainback Roly-poly",
+          "role": "scrap scavenger",
+          "description": "Broad low woodlouse with overlapping rust iron links forming its armor, many tiny ivory feet, short feelers and a frayed burgundy cloth scrap caught at its rear.",
+          "texture": "res://assets/battle/minions/bellback_pilgrim/chainback_rolypoly.png",
+          "profile": "res://content/battle_visuals/minions/bellback_pilgrim/chainback_rolypoly.tres",
+          "width": 1536,
+          "height": 1024,
+          "ground_anchor": [
+            0.5,
+            0.887695
+          ]
+        },
+        {
+          "id": "bellback_pilgrim_cinder_censer_imp",
+          "name": "Cinder Censer Imp",
+          "role": "incense bearer",
+          "description": "Small hunched two-legged soot creature with a perforated iron chest cage holding dim embers, long wiry arms, blank bone face and a short chain tail; no loose smoke.",
+          "texture": "res://assets/battle/minions/bellback_pilgrim/cinder_censer_imp.png",
+          "profile": "res://content/battle_visuals/minions/bellback_pilgrim/cinder_censer_imp.tres",
+          "width": 1191,
+          "height": 1321,
+          "ground_anchor": [
+            0.5,
+            0.987888
+          ]
+        },
+        {
+          "id": "bellback_pilgrim_knucklebone_hopper",
+          "name": "Knucklebone Hopper",
+          "role": "flank skirmisher",
+          "description": "Odd flightless locust built from weathered ivory chitin resembling knucklebones, massive folded hind legs, dull brass abdomen rings and short broken antennae.",
+          "texture": "res://assets/battle/minions/bellback_pilgrim/knucklebone_hopper.png",
+          "profile": "res://content/battle_visuals/minions/bellback_pilgrim/knucklebone_hopper.tres",
+          "width": 1536,
+          "height": 1024,
+          "ground_anchor": [
+            0.5,
+            0.981445
+          ]
+        },
+        {
+          "id": "bellback_pilgrim_rusthorn_snail",
+          "name": "Rusthorn Snail",
+          "role": "procession follower",
+          "description": "Snail with a worn spiral iron shell, two antlerlike rusted horn feelers, wrinkled grey foot and a pair of tiny dangling bone beads attached to the shell rim.",
+          "texture": "res://assets/battle/minions/bellback_pilgrim/rusthorn_snail.png",
+          "profile": "res://content/battle_visuals/minions/bellback_pilgrim/rusthorn_snail.tres",
+          "width": 1243,
+          "height": 1266,
+          "ground_anchor": [
+            0.5,
+            0.964455
+          ]
+        },
+        {
+          "id": "bellback_pilgrim_mourning_kite",
+          "name": "Mourning Kite",
+          "role": "aerial harrier",
+          "description": "Small ray-shaped flying beast made of leathery soot skin and ragged wine-colored membranes, a pointed bone face and trailing segmented chainlike tail; no bells.",
+          "texture": "res://assets/battle/minions/bellback_pilgrim/mourning_kite.png",
+          "profile": "res://content/battle_visuals/minions/bellback_pilgrim/mourning_kite.tres",
+          "width": 1242,
+          "height": 1266,
+          "ground_anchor": [
+            0.5,
+            0.941548
+          ]
+        },
+        {
+          "id": "bellback_pilgrim_chime_throat_gecko",
+          "name": "Chime-throat Gecko",
+          "role": "wall scout",
+          "description": "Splayed-foot gecko with pale leathery skin, swollen translucent throat containing tiny dull brass nodules, a curled tail and rust-colored scale patches.",
+          "texture": "res://assets/battle/minions/bellback_pilgrim/chime_throat_gecko.png",
+          "profile": "res://content/battle_visuals/minions/bellback_pilgrim/chime_throat_gecko.tres",
+          "width": 1536,
+          "height": 1024,
+          "ground_anchor": [
+            0.5,
+            0.953125
+          ]
+        },
+        {
+          "id": "bellback_pilgrim_ash_pannier_beetle",
+          "name": "Ash Pannier Beetle",
+          "role": "offering carrier",
+          "description": "Compact six-legged dung beetle with two uneven woven bone baskets grown along its back, matte iron shell, shovel head and a few frayed faded cloth ties.",
+          "texture": "res://assets/battle/minions/bellback_pilgrim/ash_pannier_beetle.png",
+          "profile": "res://content/battle_visuals/minions/bellback_pilgrim/ash_pannier_beetle.tres",
+          "width": 1374,
+          "height": 1145,
+          "ground_anchor": [
+            0.5,
+            0.986026
+          ]
+        },
+        {
+          "id": "bellback_pilgrim_rattlejaw_vagrant",
+          "name": "Rattlejaw Vagrant",
+          "role": "rear guard",
+          "description": "Short stooped bipedal scavenger with oversized bone jaw, narrow wrapped charcoal torso, long clawed arms and rusted ankle rings, carrying a simple crooked staff.",
+          "texture": "res://assets/battle/minions/bellback_pilgrim/rattlejaw_vagrant.png",
+          "profile": "res://content/battle_visuals/minions/bellback_pilgrim/rattlejaw_vagrant.tres",
+          "width": 1222,
+          "height": 1287,
+          "ground_anchor": [
+            0.5,
+            0.998446
+          ]
+        }
+      ]
+    },
+    {
+      "boss_id": "ashwing_matriarch",
+      "boss_name": "Ashwing Matriarch",
+      "theme": "Soot-stained nocturnal wasteland ecology: scorched vellum, charcoal fur, dusty burgundy, pale silk.",
+      "minions": [
+        {
+          "id": "ashwing_matriarch_soot_snout",
+          "name": "Soot Snout",
+          "role": "burrowing skirmisher",
+          "description": "A hunched mole with split ivory digging claws, soot-matted black fur, a blind stitched-looking muzzle and pale silk sacs strapped naturally among dorsal quills. Broad forequarters, short rear legs, no wings.",
+          "texture": "res://assets/battle/minions/ashwing_matriarch/soot_snout.png",
+          "profile": "res://content/battle_visuals/minions/ashwing_matriarch/soot_snout.tres",
+          "width": 1254,
+          "height": 1254,
+          "ground_anchor": [
+            0.5,
+            0.964912
+          ]
+        },
+        {
+          "id": "ashwing_matriarch_vellum_hound",
+          "name": "Vellum Hound",
+          "role": "flanking hunter",
+          "description": "A gaunt six-legged jackal, long ivory muzzle and charcoal pelt, with torn parchment-like membranes only between its rear limbs, ragged burgundy ear edges and cocoon silk caught around its narrow waist.",
+          "texture": "res://assets/battle/minions/ashwing_matriarch/vellum_hound.png",
+          "profile": "res://content/battle_visuals/minions/ashwing_matriarch/vellum_hound.tres",
+          "width": 1254,
+          "height": 1254,
+          "ground_anchor": [
+            0.5,
+            0.992823
+          ]
+        },
+        {
+          "id": "ashwing_matriarch_cocoon_porter",
+          "name": "Cocoon Porter",
+          "role": "armored carrier",
+          "description": "A squat hermit beetle with four heavy walking legs and two fine mouth palps, carrying one huge broken ivory cocoon as a spiral shell, its exposed charcoal chitin and rust-red seam contrasting the soft silk lining.",
+          "texture": "res://assets/battle/minions/ashwing_matriarch/cocoon_porter.png",
+          "profile": "res://content/battle_visuals/minions/ashwing_matriarch/cocoon_porter.tres",
+          "width": 1254,
+          "height": 1254,
+          "ground_anchor": [
+            0.5,
+            0.964115
+          ]
+        },
+        {
+          "id": "ashwing_matriarch_ashcomb_toad",
+          "name": "Ashcomb Toad",
+          "role": "debilitating spitter",
+          "description": "A broad low toad with a ridged honeycomb of dry seedlike ash blisters on its back, pale craggy throat pouch, charcoal warted skin and long delicate insectlike finger tips; one small burgundy eye.",
+          "texture": "res://assets/battle/minions/ashwing_matriarch/ashcomb_toad.png",
+          "profile": "res://content/battle_visuals/minions/ashwing_matriarch/ashcomb_toad.tres",
+          "width": 1254,
+          "height": 1254,
+          "ground_anchor": [
+            0.5,
+            0.927432
+          ]
+        },
+        {
+          "id": "ashwing_matriarch_shroud_mantis",
+          "name": "Shroud Mantis",
+          "role": "ambush striker",
+          "description": "A thin tall mantis with praying serrated forearms, knobby black limbs and a torn ivory cocoon veil draped over its triangular head, abdomen rolled under, no grand wings.",
+          "texture": "res://assets/battle/minions/ashwing_matriarch/shroud_mantis.png",
+          "profile": "res://content/battle_visuals/minions/ashwing_matriarch/shroud_mantis.tres",
+          "width": 1254,
+          "height": 1254,
+          "ground_anchor": [
+            0.5,
+            0.991228
+          ]
+        },
+        {
+          "id": "ashwing_matriarch_wicktail_rat",
+          "name": "Wicktail Rat",
+          "role": "harrying scavenger",
+          "description": "A wiry long-legged rat with dense black fur, a split lash tail ending in pale silk tassels, bony cheek plates and paired small burgundy throat sacs, crouched in an alert pounce.",
+          "texture": "res://assets/battle/minions/ashwing_matriarch/wicktail_rat.png",
+          "profile": "res://content/battle_visuals/minions/ashwing_matriarch/wicktail_rat.tres",
+          "width": 1254,
+          "height": 1254,
+          "ground_anchor": [
+            0.5,
+            0.948166
+          ]
+        },
+        {
+          "id": "ashwing_matriarch_embergill_slug",
+          "name": "Embergill Slug",
+          "role": "area denial",
+          "description": "A heavy elongated ash-gray slug rearing its small pointed head, with folded ivory gill fans down its back, clotted burgundy slime contained on its skin and tiny black rasp teeth, no emitted trail.",
+          "texture": "res://assets/battle/minions/ashwing_matriarch/embergill_slug.png",
+          "profile": "res://content/battle_visuals/minions/ashwing_matriarch/embergill_slug.tres",
+          "width": 1254,
+          "height": 1254,
+          "ground_anchor": [
+            0.5,
+            0.927432
+          ]
+        },
+        {
+          "id": "ashwing_matriarch_pallid_lanternfly",
+          "name": "Pallid Lanternfly",
+          "role": "aerial spotter",
+          "description": "A strange long-snouted lanternfly with only two narrow horizontal translucent ivory wings, a swollen soot-gray abdomen, six hooked feet tucked in flight and a burgundy ceramic-looking forehead bulb.",
+          "texture": "res://assets/battle/minions/ashwing_matriarch/pallid_lanternfly.png",
+          "profile": "res://content/battle_visuals/minions/ashwing_matriarch/pallid_lanternfly.tres",
+          "width": 1254,
+          "height": 1254,
+          "ground_anchor": [
+            0.5,
+            0.935407
+          ]
+        },
+        {
+          "id": "ashwing_matriarch_funeral_puff",
+          "name": "Funeral Puff",
+          "role": "spore support",
+          "description": "A mobile puffball fungus with a cracked parchment bulb, narrow black root legs and an open burgundy throatlike spore aperture; several tattered silk filaments tied around its neck, no airborne cloud.",
+          "texture": "res://assets/battle/minions/ashwing_matriarch/funeral_puff.png",
+          "profile": "res://content/battle_visuals/minions/ashwing_matriarch/funeral_puff.tres",
+          "width": 1254,
+          "height": 1254,
+          "ground_anchor": [
+            0.5,
+            0.986443
+          ]
+        },
+        {
+          "id": "ashwing_matriarch_cinder_tick",
+          "name": "Cinder Tick",
+          "role": "draining grappler",
+          "description": "An oval armored tick with eight compact grappling legs, a flattened ash-black shell divided by fine pale vellum seams and an underslung ivory rasping jaw; restrained burgundy joints, broad low silhouette.",
+          "texture": "res://assets/battle/minions/ashwing_matriarch/cinder_tick.png",
+          "profile": "res://content/battle_visuals/minions/ashwing_matriarch/cinder_tick.tres",
+          "width": 1254,
+          "height": 1254,
+          "ground_anchor": [
+            0.5,
+            0.839713
+          ]
+        }
+      ]
+    },
+    {
+      "boss_id": "reliquary_crab",
+      "boss_name": "Reliquary Crab",
+      "theme": "Ruined reliquary scavengers and lesser guardians, weathered pale stone, bronze fittings, muted amber.",
+      "minions": [
+        {
+          "id": "reliquary_crab_votive_scorpion",
+          "name": "Votive Scorpion",
+          "role": "stinger guard",
+          "description": "Small stone-plated scorpion with slender bronze pincers, many fine legs and a curled segmented tail ending in a hollow unlit candle-socket stinger.",
+          "texture": "res://assets/battle/minions/reliquary_crab/votive_scorpion.png",
+          "profile": "res://content/battle_visuals/minions/reliquary_crab/votive_scorpion.tres",
+          "width": 1312,
+          "height": 1199,
+          "ground_anchor": [
+            0.5,
+            0.982485
+          ]
+        },
+        {
+          "id": "reliquary_crab_urnback_snail",
+          "name": "Urnback Snail",
+          "role": "relic carrier",
+          "description": "Grey snail sheltering inside a chipped squat funerary urn, faint worn carvings and bronze repair staples, two long soft eye stalks and a wrinkled broad foot.",
+          "texture": "res://assets/battle/minions/reliquary_crab/urnback_snail.png",
+          "profile": "res://content/battle_visuals/minions/reliquary_crab/urnback_snail.tres",
+          "width": 1230,
+          "height": 1278,
+          "ground_anchor": [
+            0.5,
+            0.899061
+          ]
+        },
+        {
+          "id": "reliquary_crab_crypt_key_weasel",
+          "name": "Crypt Key Weasel",
+          "role": "lock thief",
+          "description": "Long lean ash-furred weasel with a crooked bronze keylike tail tip, stone-crusted shoulders, sharp pale paws and a tiny dull amber eye.",
+          "texture": "res://assets/battle/minions/reliquary_crab/crypt_key_weasel.png",
+          "profile": "res://content/battle_visuals/minions/reliquary_crab/crypt_key_weasel.tres",
+          "width": 1226,
+          "height": 1283,
+          "ground_anchor": [
+            0.5,
+            0.947779
+          ]
+        },
+        {
+          "id": "reliquary_crab_mortar_mite",
+          "name": "Mortar Mite",
+          "role": "masonry parasite",
+          "description": "Flattened mite with six chunky stone-white legs, soft charcoal joints, porous mortar carapace with a single moss-dark seam and tiny bronze-colored mandibles.",
+          "texture": "res://assets/battle/minions/reliquary_crab/mortar_mite.png",
+          "profile": "res://content/battle_visuals/minions/reliquary_crab/mortar_mite.tres",
+          "width": 1536,
+          "height": 1024,
+          "ground_anchor": [
+            0.5,
+            0.966797
+          ]
+        },
+        {
+          "id": "reliquary_crab_lantern_gnat",
+          "name": "Lantern Gnat",
+          "role": "light lure",
+          "description": "Delicate long-legged gnat with a translucent amber abdominal sac held inside fine bronze rib struts, two smoky veined wings and a sharp small ivory head.",
+          "texture": "res://assets/battle/minions/reliquary_crab/lantern_gnat.png",
+          "profile": "res://content/battle_visuals/minions/reliquary_crab/lantern_gnat.tres",
+          "width": 1312,
+          "height": 1199,
+          "ground_anchor": [
+            0.5,
+            0.970809
+          ]
+        },
+        {
+          "id": "reliquary_crab_ossuary_toad",
+          "name": "Ossuary Toad",
+          "role": "threshold ambusher",
+          "description": "Wide squat toad with cracked limestone skin, bone-white wart knobs, a dark cavernous mouth and short strong forelegs bound by corroded bronze natural bands.",
+          "texture": "res://assets/battle/minions/reliquary_crab/ossuary_toad.png",
+          "profile": "res://content/battle_visuals/minions/reliquary_crab/ossuary_toad.tres",
+          "width": 1374,
+          "height": 1145,
+          "ground_anchor": [
+            0.5,
+            0.981659
+          ]
+        },
+        {
+          "id": "reliquary_crab_tileback_pangolin",
+          "name": "Tileback Pangolin",
+          "role": "armored forager",
+          "description": "Small pangolin with overlapping chipped pale funerary tiles instead of scales, bronze repair pins, narrow black snout, heavy digging claws and curled tapering tail.",
+          "texture": "res://assets/battle/minions/reliquary_crab/tileback_pangolin.png",
+          "profile": "res://content/battle_visuals/minions/reliquary_crab/tileback_pangolin.tres",
+          "width": 1536,
+          "height": 1024,
+          "ground_anchor": [
+            0.5,
+            0.888672
+          ]
+        },
+        {
+          "id": "reliquary_crab_cenotaph_limpet",
+          "name": "Cenotaph Limpet",
+          "role": "stationary sentinel",
+          "description": "Low limpet beast with a peaked weathered stone shell like a broken grave marker, irregular bronze edge brackets, radial grey gripping tentacles and a hidden amber eye.",
+          "texture": "res://assets/battle/minions/reliquary_crab/cenotaph_limpet.png",
+          "profile": "res://content/battle_visuals/minions/reliquary_crab/cenotaph_limpet.tres",
+          "width": 1536,
+          "height": 1024,
+          "ground_anchor": [
+            0.5,
+            0.982422
+          ]
+        },
+        {
+          "id": "reliquary_crab_relic_pecker",
+          "name": "Relic Pecker",
+          "role": "masonry scavenger",
+          "description": "Ragged long-necked bird with a chisel stone beak, dusty charcoal feathers, narrow bronze brow ridge and powerful gripping ivory claws, perched pose without perch.",
+          "texture": "res://assets/battle/minions/reliquary_crab/relic_pecker.png",
+          "profile": "res://content/battle_visuals/minions/reliquary_crab/relic_pecker.tres",
+          "width": 1199,
+          "height": 1312,
+          "ground_anchor": [
+            0.5,
+            0.992378
+          ]
+        },
+        {
+          "id": "reliquary_crab_bronze_writhe",
+          "name": "Bronze Writhe",
+          "role": "crevice guardian",
+          "description": "Legless twisting worm armored in loose irregular bronze rings, a pale soft head with four small stone teeth, soot-colored folds and a blunt curled tail.",
+          "texture": "res://assets/battle/minions/reliquary_crab/bronze_writhe.png",
+          "profile": "res://content/battle_visuals/minions/reliquary_crab/bronze_writhe.tres",
+          "width": 1205,
+          "height": 1305,
+          "ground_anchor": [
+            0.5,
+            0.981609
+          ]
+        }
+      ]
+    },
+    {
+      "boss_id": "thorn_seamstress",
+      "boss_name": "Thorn Seamstress",
+      "theme": "Cursed sewing familiars and thornwoven constructs, weathered linen, bone needles, restrained red thread.",
+      "minions": [
+        {
+          "id": "thorn_seamstress_pincushion_hog",
+          "name": "Pincushion Hog",
+          "role": "needle guard",
+          "description": "Low squat hedgehog with faded linen patches sewn across its back, uneven thorn and bone-needle spines, small charcoal snout, short paws and sparse dark red stitches.",
+          "texture": "res://assets/battle/minions/thorn_seamstress/pincushion_hog.png",
+          "profile": "res://content/battle_visuals/minions/thorn_seamstress/pincushion_hog.tres",
+          "width": 1374,
+          "height": 1145,
+          "ground_anchor": [
+            0.5,
+            0.970306
+          ]
+        },
+        {
+          "id": "thorn_seamstress_hem_rat",
+          "name": "Hem Rat",
+          "role": "thread thief",
+          "description": "Long-tailed scruffy rat made partly of patched ash linen, real dark paws and whiskers, frayed red thread tail strands and a tiny button-like black eye.",
+          "texture": "res://assets/battle/minions/thorn_seamstress/hem_rat.png",
+          "profile": "res://content/battle_visuals/minions/thorn_seamstress/hem_rat.tres",
+          "width": 1536,
+          "height": 1024,
+          "ground_anchor": [
+            0.5,
+            0.967773
+          ]
+        },
+        {
+          "id": "thorn_seamstress_shearjaw_mantis",
+          "name": "Shearjaw Mantis",
+          "role": "cutting skirmisher",
+          "description": "Small lean mantis with crooked thorn legs and paired tarnished shear blades as jaws, folded grey leaf wings, narrow ivory torso and one red thread binding at the neck.",
+          "texture": "res://assets/battle/minions/thorn_seamstress/shearjaw_mantis.png",
+          "profile": "res://content/battle_visuals/minions/thorn_seamstress/shearjaw_mantis.tres",
+          "width": 1212,
+          "height": 1298,
+          "ground_anchor": [
+            0.5,
+            0.996148
+          ]
+        },
+        {
+          "id": "thorn_seamstress_bobbin_snail",
+          "name": "Bobbin Snail",
+          "role": "thread carrier",
+          "description": "Wrinkled charcoal snail carrying an old wooden spool shell wound with faded red thread, frayed linen apron-like skin folds and two slender bone feelers.",
+          "texture": "res://assets/battle/minions/thorn_seamstress/bobbin_snail.png",
+          "profile": "res://content/battle_visuals/minions/thorn_seamstress/bobbin_snail.tres",
+          "width": 1374,
+          "height": 1145,
+          "ground_anchor": [
+            0.5,
+            0.959825
+          ]
+        },
+        {
+          "id": "thorn_seamstress_thimble_beetle",
+          "name": "Thimble Beetle",
+          "role": "armored tender",
+          "description": "Round six-legged beetle whose punctured tarnished thimble carapace sits over a soft stitched linen abdomen, thorn feet and small dark red mandibles.",
+          "texture": "res://assets/battle/minions/thorn_seamstress/thimble_beetle.png",
+          "profile": "res://content/battle_visuals/minions/thorn_seamstress/thimble_beetle.tres",
+          "width": 1374,
+          "height": 1145,
+          "ground_anchor": [
+            0.5,
+            0.981659
+          ]
+        },
+        {
+          "id": "thorn_seamstress_ragwing_bat",
+          "name": "Ragwing Bat",
+          "role": "aerial scout",
+          "description": "Small skeletal bat with tattered grey patchwork linen wings held by bone spars and visibly uneven red stitches, dark furry chest, folded ears and tiny clawed feet.",
+          "texture": "res://assets/battle/minions/thorn_seamstress/ragwing_bat.png",
+          "profile": "res://content/battle_visuals/minions/thorn_seamstress/ragwing_bat.tres",
+          "width": 1536,
+          "height": 1024,
+          "ground_anchor": [
+            0.5,
+            0.961914
+          ]
+        },
+        {
+          "id": "thorn_seamstress_briar_dolly",
+          "name": "Briar Dolly",
+          "role": "decoy construct",
+          "description": "Child-sized crude nonhuman twig doll with a bulbous stuffed linen head, two mismatched button eyes, crooked single-jointed branch limbs and sparse red seam stitches; eerie not cute.",
+          "texture": "res://assets/battle/minions/thorn_seamstress/briar_dolly.png",
+          "profile": "res://content/battle_visuals/minions/thorn_seamstress/briar_dolly.tres",
+          "width": 1024,
+          "height": 1536,
+          "ground_anchor": [
+            0.5,
+            0.97526
+          ]
+        },
+        {
+          "id": "thorn_seamstress_seam_ripper_worm",
+          "name": "Seam Ripper Worm",
+          "role": "burrowing saboteur",
+          "description": "Long pale cloth-skinned worm with a forked bone seam-ripper mouth, tight segmented red thread sutures, thorn barbs along its underside and curled muscular tail.",
+          "texture": "res://assets/battle/minions/thorn_seamstress/seam_ripper_worm.png",
+          "profile": "res://content/battle_visuals/minions/thorn_seamstress/seam_ripper_worm.tres",
+          "width": 1536,
+          "height": 1024,
+          "ground_anchor": [
+            0.5,
+            0.957031
+          ]
+        },
+        {
+          "id": "thorn_seamstress_pattern_hare",
+          "name": "Pattern Hare",
+          "role": "lookout",
+          "description": "Gaunt long-eared hare assembled from irregular grey linen pattern scraps, thin exposed twig hindlegs, thorn whiskers and one small dark red stitch line on its flank.",
+          "texture": "res://assets/battle/minions/thorn_seamstress/pattern_hare.png",
+          "profile": "res://content/battle_visuals/minions/thorn_seamstress/pattern_hare.tres",
+          "width": 1223,
+          "height": 1286,
+          "ground_anchor": [
+            0.5,
+            0.986003
+          ]
+        },
+        {
+          "id": "thorn_seamstress_knot_spider",
+          "name": "Knot Spider",
+          "role": "snare tender",
+          "description": "Low broad eight-legged spider whose abdomen is a tangled knot of faded red thread around a dark seed pod, needle-thin ivory legs, tiny thorn jaws and ragged linen tufts.",
+          "texture": "res://assets/battle/minions/thorn_seamstress/knot_spider.png",
+          "profile": "res://content/battle_visuals/minions/thorn_seamstress/knot_spider.tres",
+          "width": 1536,
+          "height": 1024,
+          "ground_anchor": [
+            0.5,
+            0.985352
+          ]
+        }
+      ]
+    },
+    {
+      "boss_id": "cinder_colossus",
+      "boss_name": "Cinder Colossus",
+      "theme": "Abandoned kiln servants and volcanic fauna: charcoal basalt, rust iron, chalk fragments, restrained ember seams.",
+      "minions": [
+        {
+          "id": "cinder_colossus_slag_jackal",
+          "name": "Slag Jackal",
+          "role": "pursuit hunter",
+          "description": "A lean quadruped jackal built from layered clinker scales, a narrow iron muzzle, hooked scrap-metal claws and a long articulated tail; tiny ember seams at throat and knees.",
+          "texture": "res://assets/battle/minions/cinder_colossus/slag_jackal.png",
+          "profile": "res://content/battle_visuals/minions/cinder_colossus/slag_jackal.tres",
+          "width": 1254,
+          "height": 1254,
+          "ground_anchor": [
+            0.5,
+            0.99681
+          ]
+        },
+        {
+          "id": "cinder_colossus_kiln_crab",
+          "name": "Kiln Crab",
+          "role": "shield guard",
+          "description": "A squat six-legged crab with a rounded cracked kiln-pot shell, one flat shovel-like rust-iron pincer and one delicate coal-tong claw, a small furnace slit beneath its shell.",
+          "texture": "res://assets/battle/minions/cinder_colossus/kiln_crab.png",
+          "profile": "res://content/battle_visuals/minions/cinder_colossus/kiln_crab.tres",
+          "width": 1254,
+          "height": 1254,
+          "ground_anchor": [
+            0.5,
+            0.924242
+          ]
+        },
+        {
+          "id": "cinder_colossus_bellows_bat",
+          "name": "Bellows Bat",
+          "role": "aerial disrupter",
+          "description": "A leathery bat-shaped animated bellows with pleated soot-black ribbed wings, rusty hinge bones, short hooked feet and a narrow nozzle snout, a dim coal glow visible inside the mouth.",
+          "texture": "res://assets/battle/minions/cinder_colossus/bellows_bat.png",
+          "profile": "res://content/battle_visuals/minions/cinder_colossus/bellows_bat.tres",
+          "width": 1254,
+          "height": 1254,
+          "ground_anchor": [
+            0.5,
+            0.963317
+          ]
+        },
+        {
+          "id": "cinder_colossus_clinker_urchin",
+          "name": "Clinker Urchin",
+          "role": "rolling blocker",
+          "description": "A low round mineral beast on five stubby stone feet, armored in uneven charcoal clinker spikes and chalky shards, small ember-red eyes set beneath a rusted iron rim.",
+          "texture": "res://assets/battle/minions/cinder_colossus/clinker_urchin.png",
+          "profile": "res://content/battle_visuals/minions/cinder_colossus/clinker_urchin.tres",
+          "width": 1254,
+          "height": 1254,
+          "ground_anchor": [
+            0.5,
+            0.937799
+          ]
+        },
+        {
+          "id": "cinder_colossus_forge_newt",
+          "name": "Forge Newt",
+          "role": "burn skirmisher",
+          "description": "A long squat salamander with black pumice skin, white mineral barnacles across its shoulders, paddle toes and a heavy curling tail, three restrained orange slits along its flank.",
+          "texture": "res://assets/battle/minions/cinder_colossus/forge_newt.png",
+          "profile": "res://content/battle_visuals/minions/cinder_colossus/forge_newt.tres",
+          "width": 1254,
+          "height": 1254,
+          "ground_anchor": [
+            0.5,
+            0.908293
+          ]
+        },
+        {
+          "id": "cinder_colossus_chain_gnawer",
+          "name": "Chain Gnawer",
+          "role": "snaring bruiser",
+          "description": "A stocky hyena-sized rodent with broken anvil-like incisors, soot-matted fur threaded with short rusty chain loops and stout iron-capped paws, a lumpy charcoal growth across its spine.",
+          "texture": "res://assets/battle/minions/cinder_colossus/chain_gnawer.png",
+          "profile": "res://content/battle_visuals/minions/cinder_colossus/chain_gnawer.tres",
+          "width": 1254,
+          "height": 1254,
+          "ground_anchor": [
+            0.5,
+            0.902711
+          ]
+        },
+        {
+          "id": "cinder_colossus_shard_stilt",
+          "name": "Shard Stilt",
+          "role": "ranged sentinel",
+          "description": "A narrow tripod automaton on three spindly rust-iron legs, a tilted cracked crucible torso filled with ivory furnace shards and one small ember eye behind a slotted mask, no humanoid arms.",
+          "texture": "res://assets/battle/minions/cinder_colossus/shard_stilt.png",
+          "profile": "res://content/battle_visuals/minions/cinder_colossus/shard_stilt.tres",
+          "width": 1254,
+          "height": 1254,
+          "ground_anchor": [
+            0.5,
+            0.983254
+          ]
+        },
+        {
+          "id": "cinder_colossus_coal_borer",
+          "name": "Coal Borer",
+          "role": "burrowing striker",
+          "description": "A segmented black basalt larva with a blunt circular iron drill mouth, six small hooked ivory digging claws near its head and ember pinholes between rear plates, coiled low and menacing.",
+          "texture": "res://assets/battle/minions/cinder_colossus/coal_borer.png",
+          "profile": "res://content/battle_visuals/minions/cinder_colossus/coal_borer.tres",
+          "width": 1254,
+          "height": 1254,
+          "ground_anchor": [
+            0.5,
+            0.862839
+          ]
+        },
+        {
+          "id": "cinder_colossus_cinder_sack",
+          "name": "Cinder Sack",
+          "role": "volatile support",
+          "description": "A hunched sack-bodied imp stitched from scorched hide around a compact coal belly, knobby twiglike iron legs and long mitten hands, a rusty chimney collar and dim amber cracks, no flame plume.",
+          "texture": "res://assets/battle/minions/cinder_colossus/cinder_sack.png",
+          "profile": "res://content/battle_visuals/minions/cinder_colossus/cinder_sack.tres",
+          "width": 1254,
+          "height": 1254,
+          "ground_anchor": [
+            0.5,
+            0.9689
+          ]
+        },
+        {
+          "id": "cinder_colossus_tongs_widow",
+          "name": "Tongs Widow",
+          "role": "precision grappler",
+          "description": "An agile four-legged foundry spider with a tiny rusted brazier abdomen, two long opposing coal-tong forelimbs, chalk encrusted joints and a recessed orange eye, silhouette delicate rather than massive.",
+          "texture": "res://assets/battle/minions/cinder_colossus/tongs_widow.png",
+          "profile": "res://content/battle_visuals/minions/cinder_colossus/tongs_widow.tres",
+          "width": 1254,
+          "height": 1254,
+          "ground_anchor": [
+            0.5,
+            0.897927
+          ]
+        }
+      ]
+    },
+    {
+      "boss_id": "wax_revenant",
+      "boss_name": "Wax Revenant",
+      "theme": "Funerary waxcraft and abandoned chapel vermin: warm ivory wax, black cloth, tarnished brass, tiny amber wicks.",
+      "minions": [
+        {
+          "id": "wax_revenant_tallow_hound",
+          "name": "Tallow Hound",
+          "role": "tracking hunter",
+          "description": "A thin black burial-cloth hound whose back is armored with lumpy melted ivory wax, bare brass jaw hinges, narrow claw feet and a single unlit wick at its forehead, ears like torn shrouds.",
+          "texture": "res://assets/battle/minions/wax_revenant/tallow_hound.png",
+          "profile": "res://content/battle_visuals/minions/wax_revenant/tallow_hound.tres",
+          "width": 1254,
+          "height": 1254,
+          "ground_anchor": [
+            0.5,
+            0.949761
+          ]
+        },
+        {
+          "id": "wax_revenant_candle_crab",
+          "name": "Candle Crab",
+          "role": "defensive crawler",
+          "description": "A squat crab made of hardened ivory candle drips around a tarnished brass votive cup, six black jointed legs, asymmetric wax pincers and a tiny burning wick recessed in its cup.",
+          "texture": "res://assets/battle/minions/wax_revenant/candle_crab.png",
+          "profile": "res://content/battle_visuals/minions/wax_revenant/candle_crab.tres",
+          "width": 1254,
+          "height": 1254,
+          "ground_anchor": [
+            0.5,
+            0.870016
+          ]
+        },
+        {
+          "id": "wax_revenant_wick_stitcher",
+          "name": "Wick Stitcher",
+          "role": "binding support",
+          "description": "A spindly humanoid wax puppet with an oversized featureless oval head sewn shut by black wick, two short brass needle arms, bent skinny legs and a small ragged funeral apron, no hood.",
+          "texture": "res://assets/battle/minions/wax_revenant/wick_stitcher.png",
+          "profile": "res://content/battle_visuals/minions/wax_revenant/wick_stitcher.tres",
+          "width": 1254,
+          "height": 1254,
+          "ground_anchor": [
+            0.5,
+            0.990431
+          ]
+        },
+        {
+          "id": "wax_revenant_pew_maggot",
+          "name": "Pew Maggot",
+          "role": "devouring crawler",
+          "description": "A fat pale wax-coated larva with black cloth rings between its segments, a round brass jaw and four tiny hooked front limbs, a stubby soot-dark tail and a small amber eye.",
+          "texture": "res://assets/battle/minions/wax_revenant/pew_maggot.png",
+          "profile": "res://content/battle_visuals/minions/wax_revenant/pew_maggot.tres",
+          "width": 1254,
+          "height": 1254,
+          "ground_anchor": [
+            0.5,
+            0.838118
+          ]
+        },
+        {
+          "id": "wax_revenant_votive_snail",
+          "name": "Votive Snail",
+          "role": "ward bearer",
+          "description": "A broad charcoal snail carrying a cracked ivory wax spiral shell pierced by three short spent candle sockets, antennae tipped with tarnished brass beads, hanging wax scallops confined to its body.",
+          "texture": "res://assets/battle/minions/wax_revenant/votive_snail.png",
+          "profile": "res://content/battle_visuals/minions/wax_revenant/votive_snail.tres",
+          "width": 1254,
+          "height": 1254,
+          "ground_anchor": [
+            0.5,
+            0.950558
+          ]
+        },
+        {
+          "id": "wax_revenant_mourning_bat",
+          "name": "Mourning Bat",
+          "role": "aerial harrier",
+          "description": "A small black-furred bat with ragged funeral-lace wing membranes, dripping ivory wax plates over its shoulders and a brass bell clapper for a lower jaw, wings swept upward and claws curled.",
+          "texture": "res://assets/battle/minions/wax_revenant/mourning_bat.png",
+          "profile": "res://content/battle_visuals/minions/wax_revenant/mourning_bat.tres",
+          "width": 1254,
+          "height": 1254,
+          "ground_anchor": [
+            0.5,
+            0.966507
+          ]
+        },
+        {
+          "id": "wax_revenant_sealmouth_acolyte",
+          "name": "Sealmouth Acolyte",
+          "role": "silencing caster",
+          "description": "A short stooped undead attendant with face entirely sealed by a thick round ivory wax disk, knotted black robes above visible thin shins, carrying a narrow brass candle snuffer across its body.",
+          "texture": "res://assets/battle/minions/wax_revenant/sealmouth_acolyte.png",
+          "profile": "res://content/battle_visuals/minions/wax_revenant/sealmouth_acolyte.tres",
+          "width": 1254,
+          "height": 1254,
+          "ground_anchor": [
+            0.5,
+            0.988836
+          ]
+        },
+        {
+          "id": "wax_revenant_dripjaw_toad",
+          "name": "Dripjaw Toad",
+          "role": "slowing spitter",
+          "description": "A heavy squat toad sculpted from gray tallow with ivory stalactite wax teeth around an open black mouth, coarse funeral-thread sutures and stout bent legs, one tiny amber wick eye.",
+          "texture": "res://assets/battle/minions/wax_revenant/dripjaw_toad.png",
+          "profile": "res://content/battle_visuals/minions/wax_revenant/dripjaw_toad.tres",
+          "width": 1254,
+          "height": 1254,
+          "ground_anchor": [
+            0.5,
+            0.92823
+          ]
+        },
+        {
+          "id": "wax_revenant_censer_tick",
+          "name": "Censer Tick",
+          "role": "draining parasite",
+          "description": "A large flattened six-legged tick whose body is an oval tarnished brass incense cage filled with solidified ivory wax, black hook feet and small opposing needle jaws, no smoke.",
+          "texture": "res://assets/battle/minions/wax_revenant/censer_tick.png",
+          "profile": "res://content/battle_visuals/minions/wax_revenant/censer_tick.tres",
+          "width": 1254,
+          "height": 1254,
+          "ground_anchor": [
+            0.5,
+            0.944179
+          ]
+        },
+        {
+          "id": "wax_revenant_pallbearer_hand",
+          "name": "Pallbearer Hand",
+          "role": "grappling servant",
+          "description": "A severed animated giant wax hand walking on four long blackened fingers, thumb raised as a hook, a brass funeral ring and fraying black ribbon tied around its capped wrist, clearly hand-shaped.",
+          "texture": "res://assets/battle/minions/wax_revenant/pallbearer_hand.png",
+          "profile": "res://content/battle_visuals/minions/wax_revenant/pallbearer_hand.tres",
+          "width": 1254,
+          "height": 1254,
+          "ground_anchor": [
+            0.5,
+            0.988038
+          ]
+        }
+      ]
+    },
+    {
+      "boss_id": "flint_tusk",
+      "boss_name": "Flint Tusk",
+      "theme": "Rugged wasteland pack ecology; chipped flint, dark bristles, ivory scrimshaw bone, weathered hide and restrained burgundy ties.",
+      "minions": [
+        {
+          "id": "flint_tusk_shale_jackal",
+          "name": "Shale Jackal",
+          "role": "Pack hunter",
+          "description": "A lean jackal with angular shale plates down its back, oversize chipped ivory canine teeth, dark wiry fur, narrow brindled legs and a torn burgundy cord around one foreleg.",
+          "texture": "res://assets/battle/minions/flint_tusk/shale_jackal.png",
+          "profile": "res://content/battle_visuals/minions/flint_tusk/shale_jackal.tres",
+          "width": 1254,
+          "height": 1254,
+          "ground_anchor": [
+            0.5,
+            0.933014
+          ]
+        },
+        {
+          "id": "flint_tusk_knap_claw",
+          "name": "Knap Claw",
+          "role": "Digger",
+          "description": "A squat badgerlike creature with huge flint foreclaws, a blunt bone snout mask, dark bristled shoulders and small unarmored rear legs; asymmetrical chipped stone elbow plates.",
+          "texture": "res://assets/battle/minions/flint_tusk/knap_claw.png",
+          "profile": "res://content/battle_visuals/minions/flint_tusk/knap_claw.tres",
+          "width": 1254,
+          "height": 1254,
+          "ground_anchor": [
+            0.5,
+            0.897129
+          ]
+        },
+        {
+          "id": "flint_tusk_scree_hopper",
+          "name": "Scree Hopper",
+          "role": "Skirmisher",
+          "description": "A two-legged rock locust with oversized springing flint hind legs, a compact black chitin body, blunt bone head crest, folded cracked gray wings and short ivory feelers.",
+          "texture": "res://assets/battle/minions/flint_tusk/scree_hopper.png",
+          "profile": "res://content/battle_visuals/minions/flint_tusk/scree_hopper.tres",
+          "width": 1254,
+          "height": 1254,
+          "ground_anchor": [
+            0.5,
+            0.99362
+          ]
+        },
+        {
+          "id": "flint_tusk_tuskroot_marmot",
+          "name": "Tuskroot Marmot",
+          "role": "Forager",
+          "description": "A stout marmot with two downward ivory shovel incisors, dark bristles braided with burgundy fiber, wide bare digging palms and a low ridge of chipped stone scales.",
+          "texture": "res://assets/battle/minions/flint_tusk/tuskroot_marmot.png",
+          "profile": "res://content/battle_visuals/minions/flint_tusk/tuskroot_marmot.tres",
+          "width": 1254,
+          "height": 1254,
+          "ground_anchor": [
+            0.5,
+            0.91866
+          ]
+        },
+        {
+          "id": "flint_tusk_cairn_beetle",
+          "name": "Cairn Beetle",
+          "role": "Tank",
+          "description": "A six-legged beetle with three stacked flat flint slabs for its shell, thick bone pincers, a narrow crimson underside and chalk-white scratch marks in the stone; no massive boss armor.",
+          "texture": "res://assets/battle/minions/flint_tusk/cairn_beetle.png",
+          "profile": "res://content/battle_visuals/minions/flint_tusk/cairn_beetle.tres",
+          "width": 1254,
+          "height": 1254,
+          "ground_anchor": [
+            0.5,
+            0.897927
+          ]
+        },
+        {
+          "id": "flint_tusk_splinter_owl",
+          "name": "Splinter Owl",
+          "role": "Watcher",
+          "description": "A small ground owl with a jagged flint facial disc, deep amber eyes, black bristly feathers, ivory talons and uneven slate shoulder quills; wings partly lifted.",
+          "texture": "res://assets/battle/minions/flint_tusk/splinter_owl.png",
+          "profile": "res://content/battle_visuals/minions/flint_tusk/splinter_owl.tres",
+          "width": 1254,
+          "height": 1254,
+          "ground_anchor": [
+            0.5,
+            0.95614
+          ]
+        },
+        {
+          "id": "flint_tusk_knuckle_ram",
+          "name": "Knuckle Ram",
+          "role": "Charger",
+          "description": "A compact rocky ram with one broken flint horn and one curled ivory horn, a slablike forehead, patchy charcoal wool, thick jointed legs and a short ragged burgundy tether.",
+          "texture": "res://assets/battle/minions/flint_tusk/knuckle_ram.png",
+          "profile": "res://content/battle_visuals/minions/flint_tusk/knuckle_ram.tres",
+          "width": 1254,
+          "height": 1254,
+          "ground_anchor": [
+            0.5,
+            0.923445
+          ]
+        },
+        {
+          "id": "flint_tusk_quarry_skink",
+          "name": "Quarry Skink",
+          "role": "Ambusher",
+          "description": "A flat wasteland skink with overlapping chipped flint scales, broad spade tail, six short legs, pale ridged jaw and tiny orange eyes; camouflaged charcoal-gray matte texture.",
+          "texture": "res://assets/battle/minions/flint_tusk/quarry_skink.png",
+          "profile": "res://content/battle_visuals/minions/flint_tusk/quarry_skink.tres",
+          "width": 1254,
+          "height": 1254,
+          "ground_anchor": [
+            0.5,
+            0.879585
+          ]
+        },
+        {
+          "id": "flint_tusk_bonepick_scrounger",
+          "name": "Bonepick Scrounger",
+          "role": "Scavenger",
+          "description": "A small hunched imp with dark hide, long pointed ears, an ivory jaw-guard, a bundle of chipped flint tools strapped to its back and one crooked bone pick held in a thin clawed hand.",
+          "texture": "res://assets/battle/minions/flint_tusk/bonepick_scrounger.png",
+          "profile": "res://content/battle_visuals/minions/flint_tusk/bonepick_scrounger.tres",
+          "width": 1254,
+          "height": 1254,
+          "ground_anchor": [
+            0.5,
+            0.967305
+          ]
+        },
+        {
+          "id": "flint_tusk_bristleback_shrew",
+          "name": "Bristleback Shrew",
+          "role": "Harrier",
+          "description": "An aggressive elongated shrew with fine needle teeth, a fan of black quills tipped with tiny flint chips, sinewy paws, a narrow ivory snout shield and a whipping naked tail.",
+          "texture": "res://assets/battle/minions/flint_tusk/bristleback_shrew.png",
+          "profile": "res://content/battle_visuals/minions/flint_tusk/bristleback_shrew.tres",
+          "width": 1254,
+          "height": 1254,
+          "ground_anchor": [
+            0.5,
+            0.899522
+          ]
+        }
+      ]
+    },
+    {
+      "boss_id": "drowned_oracle",
+      "boss_name": "Drowned Oracle",
+      "theme": "Drowned divination cult and abyssal familiars: charcoal wet cloth, cracked ivory ceramic, aged brass, muted sea-green organs.",
+      "minions": [
+        {
+          "id": "drowned_oracle_brine_mask",
+          "name": "Brine Mask",
+          "role": "deceiving familiar",
+          "description": "A hovering broken ivory porcelain face mask with asymmetrical eye holes, a charcoal jellyfish body behind it and eight thin ribbon tentacles with tiny brass beads, a dim sea-green throat.",
+          "texture": "res://assets/battle/minions/drowned_oracle/brine_mask.png",
+          "profile": "res://content/battle_visuals/minions/drowned_oracle/brine_mask.tres",
+          "width": 1254,
+          "height": 1254,
+          "ground_anchor": [
+            0.5,
+            0.987241
+          ]
+        },
+        {
+          "id": "drowned_oracle_silt_hound",
+          "name": "Silt Hound",
+          "role": "tracking hunter",
+          "description": "An emaciated amphibious hound with slate-gray skin, webbed claw feet, a cracked ivory muzzle plate and small brass divination charms tangled in short kelp-like neck fringes.",
+          "texture": "res://assets/battle/minions/drowned_oracle/silt_hound.png",
+          "profile": "res://content/battle_visuals/minions/drowned_oracle/silt_hound.tres",
+          "width": 1254,
+          "height": 1254,
+          "ground_anchor": [
+            0.5,
+            0.968102
+          ]
+        },
+        {
+          "id": "drowned_oracle_augur_crab",
+          "name": "Augur Crab",
+          "role": "guarding interpreter",
+          "description": "A squat four-legged crab carrying a shallow cracked ceramic divining dish as its shell, two small hooked claws, worn brass seams and a muted green living pearl inside its body.",
+          "texture": "res://assets/battle/minions/drowned_oracle/augur_crab.png",
+          "profile": "res://content/battle_visuals/minions/drowned_oracle/augur_crab.tres",
+          "width": 1254,
+          "height": 1254,
+          "ground_anchor": [
+            0.5,
+            0.919458
+          ]
+        },
+        {
+          "id": "drowned_oracle_bell_diver",
+          "name": "Bell Diver",
+          "role": "armored bruiser",
+          "description": "A short hunched drowned diver creature with an oversized tarnished brass bell helmet, dark eel-like arms, ceramic knee plates and broad flipper feet, one dim green window and no human face.",
+          "texture": "res://assets/battle/minions/drowned_oracle/bell_diver.png",
+          "profile": "res://content/battle_visuals/minions/drowned_oracle/bell_diver.tres",
+          "width": 1254,
+          "height": 1254,
+          "ground_anchor": [
+            0.5,
+            0.989633
+          ]
+        },
+        {
+          "id": "drowned_oracle_ribbon_eel",
+          "name": "Ribbon Eel",
+          "role": "snaring striker",
+          "description": "A long floating eel with a pale cracked ceramic skull, charcoal translucent body tapering into three wet cloth ribbons, a row of tiny brass vertebral rings and muted green gills, curled in an S shape.",
+          "texture": "res://assets/battle/minions/drowned_oracle/ribbon_eel.png",
+          "profile": "res://content/battle_visuals/minions/drowned_oracle/ribbon_eel.tres",
+          "width": 1254,
+          "height": 1254,
+          "ground_anchor": [
+            0.5,
+            0.986443
+          ]
+        },
+        {
+          "id": "drowned_oracle_blind_pool_newt",
+          "name": "Blind Pool Newt",
+          "role": "poison skirmisher",
+          "description": "A low broad blind salamander with smooth stone-gray skin, pale lidless eye scars, delicate black external gills and porcelain-like armor spots, long flat tail and restrained sea-green throat.",
+          "texture": "res://assets/battle/minions/drowned_oracle/blind_pool_newt.png",
+          "profile": "res://content/battle_visuals/minions/drowned_oracle/blind_pool_newt.tres",
+          "width": 1254,
+          "height": 1254,
+          "ground_anchor": [
+            0.5,
+            0.921053
+          ]
+        },
+        {
+          "id": "drowned_oracle_lot_caster",
+          "name": "Lot Caster",
+          "role": "support diviner",
+          "description": "A small bent cult imp with a dark conical reed mask, long pale fingers holding three blank chipped ceramic counters, wet ragged shawl, narrow bare feet and a brass weight on its belt.",
+          "texture": "res://assets/battle/minions/drowned_oracle/lot_caster.png",
+          "profile": "res://content/battle_visuals/minions/drowned_oracle/lot_caster.tres",
+          "width": 1254,
+          "height": 1254,
+          "ground_anchor": [
+            0.5,
+            0.986443
+          ]
+        },
+        {
+          "id": "drowned_oracle_pearl_leech",
+          "name": "Pearl Leech",
+          "role": "draining parasite",
+          "description": "A thick upright leech curled into a hooked posture, charcoal ringed skin, an open ivory circular mouth surrounding a muted green pearl and a few tarnished brass loops embedded down its back.",
+          "texture": "res://assets/battle/minions/drowned_oracle/pearl_leech.png",
+          "profile": "res://content/battle_visuals/minions/drowned_oracle/pearl_leech.tres",
+          "width": 1254,
+          "height": 1254,
+          "ground_anchor": [
+            0.5,
+            0.980064
+          ]
+        },
+        {
+          "id": "drowned_oracle_undertow_urchin",
+          "name": "Undertow Urchin",
+          "role": "blocking sentinel",
+          "description": "A squat sea-urchin creature walking on five long jointed pale tube feet, black stubby spines around a cracked ivory ceramic core and a tiny green eye, no watery scenery.",
+          "texture": "res://assets/battle/minions/drowned_oracle/undertow_urchin.png",
+          "profile": "res://content/battle_visuals/minions/drowned_oracle/undertow_urchin.tres",
+          "width": 1254,
+          "height": 1254,
+          "ground_anchor": [
+            0.5,
+            0.99362
+          ]
+        },
+        {
+          "id": "drowned_oracle_tideglass_ray",
+          "name": "Tideglass Ray",
+          "role": "aerial curse bearer",
+          "description": "A narrow diamond-bodied ray floating with folded smoky gray translucent fins, a cracked ivory crest, pale underside with one soft sea-green organ and a thin tail ending in a brass plummet.",
+          "texture": "res://assets/battle/minions/drowned_oracle/tideglass_ray.png",
+          "profile": "res://content/battle_visuals/minions/drowned_oracle/tideglass_ray.tres",
+          "width": 1254,
+          "height": 1254,
+          "ground_anchor": [
+            0.5,
+            0.974482
+          ]
+        }
+      ]
+    },
+    {
+      "boss_id": "carrion_harp",
+      "boss_name": "Carrion Harp",
+      "theme": "Ossuary scavengers that answer a death-song: weathered bone, ragged charcoal feathers, gut strings, tarnished brass bells.",
+      "minions": [
+        {
+          "id": "carrion_harp_rattlejack",
+          "name": "Rattlejack",
+          "role": "skirmishing scavenger",
+          "description": "A lean skeletal jackal with short ragged black feather tufts along its spine, bone jaw slightly open, a few brass rattles suspended beneath its ribs and taut sinew binding its narrow legs.",
+          "texture": "res://assets/battle/minions/carrion_harp/rattlejack.png",
+          "profile": "res://content/battle_visuals/minions/carrion_harp/rattlejack.tres",
+          "width": 1254,
+          "height": 1254,
+          "ground_anchor": [
+            0.5,
+            0.99681
+          ]
+        },
+        {
+          "id": "carrion_harp_rib_cricket",
+          "name": "Rib Cricket",
+          "role": "sonic disrupter",
+          "description": "A large hunched cricket with curved ivory rib armor over a charcoal body, immense bent jumping legs, short ragged wings and a pair of taut gut strings across its forelimbs.",
+          "texture": "res://assets/battle/minions/carrion_harp/rib_cricket.png",
+          "profile": "res://content/battle_visuals/minions/carrion_harp/rib_cricket.tres",
+          "width": 1254,
+          "height": 1254,
+          "ground_anchor": [
+            0.5,
+            0.992026
+          ]
+        },
+        {
+          "id": "carrion_harp_bell_vulture",
+          "name": "Bell Vulture",
+          "role": "aerial scout",
+          "description": "A hunched vulture with a small weathered bone skull, ragged black wing feathers, a bare sinewy neck and a single tarnished brass bell tied below its breast; wings half opened, full legs visible.",
+          "texture": "res://assets/battle/minions/carrion_harp/bell_vulture.png",
+          "profile": "res://content/battle_visuals/minions/carrion_harp/bell_vulture.tres",
+          "width": 1254,
+          "height": 1254,
+          "ground_anchor": [
+            0.5,
+            0.985646
+          ]
+        },
+        {
+          "id": "carrion_harp_marrow_rat",
+          "name": "Marrow Rat",
+          "role": "gnawing parasite",
+          "description": "A large bony rat with patchy charcoal fur, exposed ivory spinal knobs, a long naked segmented tail threaded through two small brass rings and thin clawed feet, nose tilted toward the left.",
+          "texture": "res://assets/battle/minions/carrion_harp/marrow_rat.png",
+          "profile": "res://content/battle_visuals/minions/carrion_harp/marrow_rat.tres",
+          "width": 1254,
+          "height": 1254,
+          "ground_anchor": [
+            0.5,
+            0.863636
+          ]
+        },
+        {
+          "id": "carrion_harp_dirge_toad",
+          "name": "Dirge Toad",
+          "role": "sonic debuffer",
+          "description": "A broad squat black toad with an inflated pale throat sac braced by curved rib-like struts, tiny brass studs along its jaw, coarse featherlike back warts and long spread finger bones.",
+          "texture": "res://assets/battle/minions/carrion_harp/dirge_toad.png",
+          "profile": "res://content/battle_visuals/minions/carrion_harp/dirge_toad.tres",
+          "width": 1254,
+          "height": 1254,
+          "ground_anchor": [
+            0.5,
+            0.935407
+          ]
+        },
+        {
+          "id": "carrion_harp_ossuary_snail",
+          "name": "Ossuary Snail",
+          "role": "armored ward",
+          "description": "A charcoal snail bearing a shell assembled from overlapping weathered vertebrae in a spiral, two thin bone antennae and a dangling brass chime tucked close beneath the shell.",
+          "texture": "res://assets/battle/minions/carrion_harp/ossuary_snail.png",
+          "profile": "res://content/battle_visuals/minions/carrion_harp/ossuary_snail.tres",
+          "width": 1254,
+          "height": 1254,
+          "ground_anchor": [
+            0.5,
+            0.909091
+          ]
+        },
+        {
+          "id": "carrion_harp_sinew_walker",
+          "name": "Sinew Walker",
+          "role": "ensnaring sentinel",
+          "description": "A strange animated bone tripod with a small raven skull suspended between three long jointed legs by taut gut strings, sparse black feathers around its central knot and tiny brass tuning pegs.",
+          "texture": "res://assets/battle/minions/carrion_harp/sinew_walker.png",
+          "profile": "res://content/battle_visuals/minions/carrion_harp/sinew_walker.tres",
+          "width": 1254,
+          "height": 1254,
+          "ground_anchor": [
+            0.5,
+            0.986443
+          ]
+        },
+        {
+          "id": "carrion_harp_grave_marten",
+          "name": "Grave Marten",
+          "role": "fast flanker",
+          "description": "A sinuous long-bodied marten with four low limbs, charcoal pelt, ivory skull-mask face and a fan of tattered black tail feathers threaded with one dull brass ring, spine arched in motion.",
+          "texture": "res://assets/battle/minions/carrion_harp/grave_marten.png",
+          "profile": "res://content/battle_visuals/minions/carrion_harp/grave_marten.tres",
+          "width": 1254,
+          "height": 1254,
+          "ground_anchor": [
+            0.5,
+            0.979266
+          ]
+        },
+        {
+          "id": "carrion_harp_knell_beetle",
+          "name": "Knell Beetle",
+          "role": "rolling bruiser",
+          "description": "A stocky six-legged beetle with an ivory skull-like carapace over black chitin, broad shovel mandibles and a round tarnished bell chamber integrated into its abdomen, no bird wings.",
+          "texture": "res://assets/battle/minions/carrion_harp/knell_beetle.png",
+          "profile": "res://content/battle_visuals/minions/carrion_harp/knell_beetle.tres",
+          "width": 1254,
+          "height": 1254,
+          "ground_anchor": [
+            0.5,
+            0.949761
+          ]
+        },
+        {
+          "id": "carrion_harp_mute_cantor",
+          "name": "Mute Cantor",
+          "role": "support chanter",
+          "description": "A short crouched bone-faced scavenger imp with a stitched shut beaklike mouth, ragged black feather cloak, long pale arms cradling a tiny rib-and-sinew lyre, thin bent legs and brass ankle rings.",
+          "texture": "res://assets/battle/minions/carrion_harp/mute_cantor.png",
+          "profile": "res://content/battle_visuals/minions/carrion_harp/mute_cantor.tres",
+          "width": 1254,
+          "height": 1254,
+          "ground_anchor": [
+            0.5,
+            0.964912
+          ]
+        }
+      ]
+    },
+    {
+      "boss_id": "glass_centipede",
+      "boss_name": "Glass Centipede",
+      "theme": "Alchemical wasteland vermin; smoky green glass, tarnished brass ribs, bone masks, contained dim green reagents; no centipede copies.",
+      "minions": [
+        {
+          "id": "glass_centipede_retort_tick",
+          "name": "Retort Tick",
+          "role": "Parasite",
+          "description": "A broad eight-legged tick whose swollen abdomen is one cracked smoky-green glass retort held in brass ribs, a small bone needle-mouth and hooked jointed black legs; contained reagent inside.",
+          "texture": "res://assets/battle/minions/glass_centipede/retort_tick.png",
+          "profile": "res://content/battle_visuals/minions/glass_centipede/retort_tick.tres",
+          "width": 1254,
+          "height": 1254,
+          "ground_anchor": [
+            0.5,
+            0.941786
+          ]
+        },
+        {
+          "id": "glass_centipede_ampoule_skate",
+          "name": "Ampoule Skate",
+          "role": "Glider",
+          "description": "A small floating ray-shaped creature with a thin smoky glass body, two wide translucent membrane fins reinforced with brass veins, an ivory faceplate and a segmented whip tail; no scenery.",
+          "texture": "res://assets/battle/minions/glass_centipede/ampoule_skate.png",
+          "profile": "res://content/battle_visuals/minions/glass_centipede/ampoule_skate.tres",
+          "width": 1254,
+          "height": 1254,
+          "ground_anchor": [
+            0.5,
+            0.988836
+          ]
+        },
+        {
+          "id": "glass_centipede_verdigris_mole",
+          "name": "Verdigris Mole",
+          "role": "Burrower",
+          "description": "A compact eyeless mole with tarnished brass digging claws, gray leathery skin, two rounded green-glass cheek reservoirs and a flexible plated tail, pale bone whisker sockets.",
+          "texture": "res://assets/battle/minions/glass_centipede/verdigris_mole.png",
+          "profile": "res://content/battle_visuals/minions/glass_centipede/verdigris_mole.tres",
+          "width": 1254,
+          "height": 1254,
+          "ground_anchor": [
+            0.5,
+            0.901914
+          ]
+        },
+        {
+          "id": "glass_centipede_phial_mantis",
+          "name": "Phial Mantis",
+          "role": "Striker",
+          "description": "A fragile praying mantis with two long glass scalpel forearms, a brass cage thorax enclosing a single green phial, black wiry walking limbs and a tiny pale skull-shaped insect head.",
+          "texture": "res://assets/battle/minions/glass_centipede/phial_mantis.png",
+          "profile": "res://content/battle_visuals/minions/glass_centipede/phial_mantis.tres",
+          "width": 1254,
+          "height": 1254,
+          "ground_anchor": [
+            0.5,
+            0.988836
+          ]
+        },
+        {
+          "id": "glass_centipede_crucible_hatchling",
+          "name": "Crucible Hatchling",
+          "role": "Spitter",
+          "description": "A squat amphibian with a cracked black ceramic bowl-shaped back containing a dim green organ, brass-lipped jaws, stubby webbed feet and tiny uneven smoky glass horns.",
+          "texture": "res://assets/battle/minions/glass_centipede/crucible_hatchling.png",
+          "profile": "res://content/battle_visuals/minions/glass_centipede/crucible_hatchling.tres",
+          "width": 1254,
+          "height": 1254,
+          "ground_anchor": [
+            0.5,
+            0.889952
+          ]
+        },
+        {
+          "id": "glass_centipede_lens_louse",
+          "name": "Lens Louse",
+          "role": "Scout",
+          "description": "A flattened armored louse with one large cloudy green convex lens as its head, six short brass-hook legs, a smoky glass shield over pale organs and delicate ivory feelers.",
+          "texture": "res://assets/battle/minions/glass_centipede/lens_louse.png",
+          "profile": "res://content/battle_visuals/minions/glass_centipede/lens_louse.tres",
+          "width": 1254,
+          "height": 1254,
+          "ground_anchor": [
+            0.5,
+            0.818979
+          ]
+        },
+        {
+          "id": "glass_centipede_siphon_wren",
+          "name": "Siphon Wren",
+          "role": "Harrier",
+          "description": "A skeletal wren with a long curved glass siphon beak, a ribbed brass breast cage, ragged charcoal feathers, pale bone legs and a small green reagent sac beneath its throat.",
+          "texture": "res://assets/battle/minions/glass_centipede/siphon_wren.png",
+          "profile": "res://content/battle_visuals/minions/glass_centipede/siphon_wren.tres",
+          "width": 1254,
+          "height": 1254,
+          "ground_anchor": [
+            0.5,
+            0.988836
+          ]
+        },
+        {
+          "id": "glass_centipede_alembic_slug",
+          "name": "Alembic Slug",
+          "role": "Corroder",
+          "description": "An elongated black slug with three unequal green glass alembic bulbs growing from its back, tiny brass clamps, a broad ivory scraping mouth and a few short fleshy feelers; clean isolated silhouette.",
+          "texture": "res://assets/battle/minions/glass_centipede/alembic_slug.png",
+          "profile": "res://content/battle_visuals/minions/glass_centipede/alembic_slug.tres",
+          "width": 1254,
+          "height": 1254,
+          "ground_anchor": [
+            0.5,
+            0.859649
+          ]
+        },
+        {
+          "id": "glass_centipede_shardhand_homunculus",
+          "name": "Shardhand Homunculus",
+          "role": "Manipulator",
+          "description": "A small stooped humanoid made from stitched gray hide and brass wire, asymmetrical smoky-glass shard hands, a blank ivory doll face and one green glass chest window revealing a coiled organ.",
+          "texture": "res://assets/battle/minions/glass_centipede/shardhand_homunculus.png",
+          "profile": "res://content/battle_visuals/minions/glass_centipede/shardhand_homunculus.tres",
+          "width": 1254,
+          "height": 1254,
+          "ground_anchor": [
+            0.5,
+            0.973684
+          ]
+        },
+        {
+          "id": "glass_centipede_bottlejaw_weasel",
+          "name": "Bottlejaw Weasel",
+          "role": "Raider",
+          "description": "A slender weasel with articulated brass spinal braces, dark velvet fur, a transparent green-glass lower jaw with tiny ivory teeth, four swift clawed feet and a thin curled tail.",
+          "texture": "res://assets/battle/minions/glass_centipede/bottlejaw_weasel.png",
+          "profile": "res://content/battle_visuals/minions/glass_centipede/bottlejaw_weasel.tres",
+          "width": 1254,
+          "height": 1254,
+          "ground_anchor": [
+            0.5,
+            0.948166
+          ]
+        }
+      ]
+    }
+  ]
+}

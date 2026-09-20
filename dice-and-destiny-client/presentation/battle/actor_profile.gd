@@ -6,6 +6,7 @@ var title: Label
 var health: ProgressBar
 var stats: Label
 var statuses: Label
+var pending_statuses: Label
 var _health_text: Label
 var _stat_labels: Dictionary = {}
 var _income_markers: Dictionary = {}
@@ -17,6 +18,7 @@ var _defense_status_preview: Dictionary = {}
 
 const NORMAL_STAT_COLOR := Color("e6e8ec")
 const INCOME_HIGHLIGHT_COLOR := Color("ffd36a")
+const VISUALS := preload("res://content/battle_visuals/library.tres")
 
 func _ready() -> void:
 	custom_minimum_size = Vector2(300, 150)
@@ -44,7 +46,10 @@ func _ready() -> void:
 	# the combined stats label. The visible profile now uses individual values so
 	# income changes can be highlighted without moving the profile.
 	stats = Label.new(); stats.visible = false; info.add_child(stats)
-	statuses = Label.new(); statuses.add_theme_font_size_override("font_size", 18); statuses.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART; info.add_child(statuses)
+	statuses = preload("res://presentation/battle/status_tooltip_label.gd").new(); statuses.add_theme_font_size_override("font_size", 18); statuses.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART; info.add_child(statuses)
+	pending_statuses = Label.new(); pending_statuses.add_theme_font_size_override("font_size", 18)
+	pending_statuses.add_theme_color_override("font_color", Color("c1eca0"))
+	pending_statuses.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART; pending_statuses.visible = false; info.add_child(pending_statuses)
 
 func _add_stat_cell(parent: HBoxContainer, key: String, caption: String, font_size: int = 15) -> void:
 	var cell := VBoxContainer.new(); cell.alignment = BoxContainer.ALIGNMENT_CENTER; cell.size_flags_horizontal = Control.SIZE_EXPAND_FILL; parent.add_child(cell)
@@ -55,11 +60,11 @@ func _add_stat_cell(parent: HBoxContainer, key: String, caption: String, font_si
 
 func display(actor_id: String, actor: Dictionary, is_player: bool) -> void:
 	_defense_status_preview.clear()
+	pending_statuses.text = ""; pending_statuses.hide(); statuses.show()
 	statuses.remove_theme_color_override("font_color")
 	var definition := str(actor.get("definition_id", actor_id))
-	title.text = BattlePresentationCatalog.ability(definition).get("name", definition.replace("_", " ").capitalize())
-	if definition == "blade_warden": title.text = "Blade Warden"
-	if definition == "venom_goblin": title.text = "Venom Goblin"
+	var visual: FighterVisualProfile = VISUALS.fighter(definition)
+	title.text = visual.display_name if visual != null else definition.replace("_", " ").capitalize()
 	var current := int(actor.get("current_health", 0)); var maximum := maxi(1, int(actor.get("max_health", current)))
 	health.max_value = maximum; health.value = current
 	_health_text.text = "Health %d/%d" % [current, maximum]
@@ -78,11 +83,7 @@ func display(actor_id: String, actor: Dictionary, is_player: bool) -> void:
 		var id := str(entry.get("definition_id", entry.get("id", "status")))
 		status_text.append("%s %s ×%d" % [BattlePresentationCatalog.status(id).glyph, BattlePresentationCatalog.status(id).name, int(entry.get("stacks", 1))])
 	statuses.text = "No active statuses" if status_text.is_empty() else "\n".join(status_text)
-	var path := "res://assets/battle/portraits/blade_warden.png" if definition == "blade_warden" else "res://assets/battle/portraits/venom_goblin.png"
-	if definition == "venom":
-		path = "res://assets/battle/portraits/venom.svg"
-		title.text = "Venom"
-	if ResourceLoader.exists(path): portrait.texture = load(path)
+	portrait.texture = visual.portrait if visual != null else null
 	tooltip_text = "%s
 %s" % [title.text, stats.text]
 	var rules: Array[String] = []
@@ -92,8 +93,21 @@ func display(actor_id: String, actor: Dictionary, is_player: bool) -> void:
 	statuses.tooltip_text = "\n\n".join(rules)
 	statuses.mouse_filter = Control.MOUSE_FILTER_STOP
 
-func animate_card_cleanse(status_id: String, before: int, duration: float) -> void:
-	# Only the removed status fades; unrelated statuses remain readable.
+func show_pending_applications(applications: Dictionary) -> void:
+	# These are queued additions, separate from stacks already on the character.
+	# A separate label also keeps card/status animations from erasing the preview.
+	var lines: Array[String] = []
+	for id in applications:
+		var count := int(applications[id])
+		if count <= 0: continue
+		var data := BattlePresentationCatalog.status(str(id))
+		lines.append("%s %s ×%d · pending" % [data.glyph, data.name, count])
+	pending_statuses.text = "\n".join(lines)
+	pending_statuses.visible = not lines.is_empty()
+	statuses.visible = not _status_entries.is_empty() or lines.is_empty()
+
+func prepare_card_cleanse(status_id: String, before: int) -> Label:
+	# Keep the actual final text for settlement; only the affected row fades.
 	var final_text := statuses.text
 	var other_statuses: Array[String] = []
 	for entry in _status_entries:
@@ -103,19 +117,21 @@ func animate_card_cleanse(status_id: String, before: int, duration: float) -> vo
 		other_statuses.append("%s %s ×%d" % [data.glyph, data.name, int(entry.get("stacks", 1))])
 	statuses.text = "\n".join(other_statuses)
 	statuses.visible = not other_statuses.is_empty()
-	var status_data := BattlePresentationCatalog.status(status_id)
+	var data := BattlePresentationCatalog.status(status_id)
 	var fading := Label.new(); fading.name = "CleansedStatus"
-	fading.text = "%s %s ×%d" % [status_data.glyph, status_data.name, before]
+	fading.text = "%s %s ×%d" % [data.glyph, data.name, before]
+	fading.add_theme_font_size_override("font_size", 18)
 	fading.add_theme_color_override("font_color", Color("afe079"))
+	fading.set_meta("final_text", final_text)
 	statuses.get_parent().add_child(fading)
-	var tween := create_tween()
-	tween.tween_interval(duration * 0.3)
-	tween.tween_property(fading, "modulate:a", 0.0, duration * 0.4)
-	tween.tween_callback(func():
-		fading.queue_free()
-		statuses.text = final_text
-		statuses.visible = true
-	)
+	return fading
+
+func finish_card_cleanse(fading: Label) -> void:
+	# Keep the invisible row alive until the card leaves, so its trail retains
+	# a stable destination and the profile does not resize during the effect.
+	statuses.text = str(fading.get_meta("final_text", "No active statuses"))
+	statuses.show()
+	fading.modulate.a = 0.0
 
 func show_defense_status_preview(status_id: String, count: int) -> void:
 	_defense_status_preview[status_id] = count
@@ -224,6 +240,14 @@ func show_effects_progress(before: Dictionary, after: Dictionary, phase: String,
 	statuses.text = "No active statuses" if lines.is_empty() else "\n".join(lines)
 	statuses.modulate = Color.WHITE.lerp(Color("b5e591"), sin(progress * PI)) if phase == "statuses" else Color.WHITE
 
+func show_resource_gain(data: Dictionary, progress: float) -> void:
+	var key := str(data.get("stat", ""))
+	var label: Label = _stat_labels.get(key)
+	if label == null or int(_display_values.get(key, -1)) != int(data.get("after", -2)): return
+	var amount := roundi(lerpf(float(data.before), float(data.after), progress))
+	label.text = "%s %d" % [str(label.get_meta("caption", "")), amount]
+	label.add_theme_color_override("font_color", NORMAL_STAT_COLOR.lerp(INCOME_HIGHLIGHT_COLOR, sin(progress * PI)))
+
 func show_status_transition(update: Dictionary, progress: float) -> void:
 	var counts := {}
 	for entry in _status_entries:
@@ -246,3 +270,17 @@ func show_status_transition(update: Dictionary, progress: float) -> void:
 		lines.append("%s %s ×%d" % [status.glyph, status.name, int(counts[id])])
 	statuses.text = "No active statuses" if lines.is_empty() else "\n".join(lines)
 	statuses.modulate = Color.WHITE.lerp(Color("d5afff") if update.kind == "conversion" else Color("b7e39a"), sin(progress * PI))
+
+func status_anchor(status_id: String) -> Vector2:
+	# Statuses share a multiline label. Locate the displayed row rather than
+	# pointing to the center of the entire list (or to stale snapshot ordering).
+	var data := BattlePresentationCatalog.status(status_id)
+	var lines := statuses.text.split("\n")
+	var font := statuses.get_theme_font("font")
+	var font_size := statuses.get_theme_font_size("font_size")
+	var line_height := font.get_height(font_size) + statuses.get_theme_constant("line_spacing")
+	for index in lines.size():
+		if not lines[index].begins_with("%s %s ×" % [data.glyph, data.name]): continue
+		var width := minf(statuses.size.x, font.get_string_size(lines[index], HORIZONTAL_ALIGNMENT_LEFT, -1, font_size).x)
+		return statuses.get_global_transform_with_canvas() * Vector2(width * 0.5, line_height * (index + 0.5))
+	return statuses.get_global_rect().get_center()

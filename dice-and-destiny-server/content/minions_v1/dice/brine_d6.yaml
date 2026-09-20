@@ -1,0 +1,33 @@
+{
+  "schema_version": 1,
+  "id": "brine_d6",
+  "name": "Brine Die",
+  "die_type": "combat",
+  "side_count": 6,
+  "faces": [
+    {
+      "number": 1,
+      "symbol": "salt"
+    },
+    {
+      "number": 2,
+      "symbol": "salt"
+    },
+    {
+      "number": 3,
+      "symbol": "brine"
+    },
+    {
+      "number": 4,
+      "symbol": "salt"
+    },
+    {
+      "number": 5,
+      "symbol": "salt"
+    },
+    {
+      "number": 6,
+      "symbol": "salt"
+    }
+  ]
+}

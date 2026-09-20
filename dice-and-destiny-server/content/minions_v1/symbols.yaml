@@ -1,0 +1,17 @@
+{
+  "schema_version": 1,
+  "symbols": [
+    {
+      "id": "brine",
+      "name": "Brine",
+      "presentation_key": "symbol_brine",
+      "glyph": "\u2248"
+    },
+    {
+      "id": "salt",
+      "name": "Salt",
+      "presentation_key": "symbol_salt",
+      "glyph": "\u00b7"
+    }
+  ]
+}

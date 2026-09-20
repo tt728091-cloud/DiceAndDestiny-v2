@@ -113,6 +113,7 @@ func (e Engine) nextVenomWork(b *state.Battle, lib content.BattleLibrary) ([]eve
 		b.Flow = resume.Flow
 		b.Settled.TriggerBatch = resume.Trigger
 		b.Settled.PendingDamage = resume.Damage
+		pruneDefeatedWindowActors(b)
 		if resume.Advance {
 			return e.advanceSettledSegment(b)
 		}
@@ -164,11 +165,20 @@ func (e Engine) handleVenomStatus(b *state.Battle, lib content.BattleLibrary, cm
 		if err := command.DecodePayload(cmd, &payload); err != nil {
 			return nil, err
 		}
+		cardID := ""
+		if len(payload.Commitment.CardIDs) == 1 {
+			cardID = payload.Commitment.CardIDs[0]
+		}
+		definitionID := settledCardDefinitionID(b, cmd.ActorID, cardID)
+		before := stacks(b, cmd.ActorID, payload.Commitment.ChoiceID)
 		if err := e.playSettledReactionCard(b, lib, cmd.ActorID, payload.Commitment); err != nil {
 			return nil, err
 		}
+		refreshPlanningPublicCounts(b)
 		advanceSettledReactionPriority(b, cmd.ActorID, true)
-		return nil, nil
+		data := map[string]any{"card_instance_id": cardID, "card_definition_id": definitionID, "choice_id": payload.Commitment.ChoiceID}
+		addCardCleanseOutcome(data, b, lib, cmd.ActorID, definitionID, payload.Commitment.ChoiceID, before)
+		return []event.Event{settledEvent(event.TypeCardPlayed, b, cmd.ActorID, data)}, nil
 	}
 	if advanceSettledReactionPriority(b, cmd.ActorID, false) {
 		return nil, nil
@@ -434,4 +444,46 @@ func commitMoltRewards(b *state.Battle, lib content.BattleLibrary, batch *state.
 		}
 	}
 	v.MoltRewards = nil
+}
+
+// A card can defeat one enemy while another keeps the encounter alive. A
+// suspended planning/reaction window must not restore input for that corpse.
+func pruneDefeatedWindowActors(b *state.Battle) {
+	w := b.Settled.Window
+	if w == nil {
+		return
+	}
+	alive := func(ids []string) []string {
+		var out []string
+		for _, id := range ids {
+			if b.Actors[id].DefeatState != state.ActorDefeated {
+				out = append(out, id)
+			}
+		}
+		return out
+	}
+	for id, a := range b.Actors {
+		if a.DefeatState == state.ActorDefeated {
+			delete(b.Flow.PendingInput, id)
+			delete(w.Passes, id)
+			r := b.Settled.Actors[id]
+			r.PlanningCommitted = true
+			b.Settled.Actors[id] = r
+			flow := b.Flow.Actors[id]
+			flow.Status = state.ActorResolved
+			b.Flow.Actors[id] = flow
+		}
+	}
+	w.RequiredActorIDs = alive(w.RequiredActorIDs)
+	w.PriorityActorIDs = alive(w.PriorityActorIDs)
+	if w.RequiredActorID != "" && b.Actors[w.RequiredActorID].DefeatState == state.ActorDefeated {
+		w.RequiredActorID = ""
+		w.PendingInputID = ""
+		for _, id := range w.PriorityActorIDs {
+			if !w.Passes[id] {
+				moveSettledWindowToActor(b, id)
+				break
+			}
+		}
+	}
 }

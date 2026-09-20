@@ -1,0 +1,149 @@
+{
+  "boss_id": "dune_sieve",
+  "boss_name": "Dune Sieve",
+  "theme": "moonlit pale salt dunes, wind-eroded sandstone fins at edges, broad smooth sand basin, smoky violet shadows",
+  "minions": [
+    {
+      "id": "saltglass_gecko",
+      "name": "Saltglass Gecko",
+      "role": "wall scout",
+      "description": "Lean gecko, flattened triangular head, huge salt-crusted toe pads, ivory scales, violet-gray belly, thick forked crystalline tail",
+      "prompt": "Use case: stylized-concept. Asset: standalone full-body dark fantasy battle minion sprite, ONE creature. Subject: Saltglass Gecko: Lean gecko, flattened triangular head, huge salt-crusted toe pads, ivory scales, violet-gray belly, thick forked crystalline tail. A weaker wall scout from moonlit pale salt dunes, wind-eroded sandstone fins at edges, broad smooth sand basin, smoky violet shadows, associated with Dune Sieve but a distinct species, never a miniature boss. Highly detailed desaturated dark watercolor with granular pigment and layered washes within creature, broken ink contours, rich tactile anatomy and charcoal shadows, restrained theme accents. Full body centered facing LEFT in three-quarter view, ALL extremities completely visible with ample empty margin. GENUINELY TRANSPARENT PNG ALPHA CHANNEL everywhere outside creature. No background, no scenery, no paper rectangle, no ground patch, no floor, NO SHADOW, no cast/drop shadow, no aura, no haze, no text, no label, no frame, no UI. Finished production game asset.",
+      "relative_asset_path": "dice-and-destiny-client/assets/battle/minions/dune_sieve/saltglass_gecko.png",
+      "source_reference_paths": [
+        "dice-and-destiny-client/assets/battle/fighters/dune_sieve.png",
+        "dice-and-destiny-client/assets/battle/habitats/salt_dunes.png"
+      ],
+      "generated_source_path": "/Users/daddymere/.codex/generated_images/01a0ba2d-5cc7-7070-96c9-d262aeade317/exec-7582020a-6a0f-43f5-b71b-06a06ed640e2.png",
+      "status": "completed"
+    },
+    {
+      "id": "sievejaw_antlion",
+      "name": "Sievejaw Antlion",
+      "role": "pit ambusher",
+      "description": "Squat hairy antlion larva, bulbous wrinkled sand-gray abdomen, six tiny legs, two thin toothed jaws, black eyes, bristle fringe",
+      "prompt": "Use case: stylized-concept. Asset: standalone full-body dark fantasy battle minion sprite, ONE creature. Subject: Sievejaw Antlion: Squat hairy antlion larva, bulbous wrinkled sand-gray abdomen, six tiny legs, two thin toothed jaws, black eyes, bristle fringe. A weaker pit ambusher from moonlit pale salt dunes, wind-eroded sandstone fins at edges, broad smooth sand basin, smoky violet shadows, associated with Dune Sieve but a distinct species, never a miniature boss. Highly detailed desaturated dark watercolor with granular pigment and layered washes within creature, broken ink contours, rich tactile anatomy and charcoal shadows, restrained theme accents. Full body centered facing LEFT in three-quarter view, ALL extremities completely visible with ample empty margin. GENUINELY TRANSPARENT PNG ALPHA CHANNEL everywhere outside creature. No background, no scenery, no paper rectangle, no ground patch, no floor, NO SHADOW, no cast/drop shadow, no aura, no haze, no text, no label, no frame, no UI. Finished production game asset.",
+      "relative_asset_path": "dice-and-destiny-client/assets/battle/minions/dune_sieve/sievejaw_antlion.png",
+      "source_reference_paths": [
+        "dice-and-destiny-client/assets/battle/fighters/dune_sieve.png",
+        "dice-and-destiny-client/assets/battle/habitats/salt_dunes.png"
+      ],
+      "generated_source_path": "/Users/daddymere/.codex/generated_images/01a0ba2d-5cc7-7070-96c9-d262aeade317/exec-28954486-80a5-4549-8421-efdc9c7d4fe3.png",
+      "status": "completed"
+    },
+    {
+      "id": "moonspine_jerboa",
+      "name": "Moonspine Jerboa",
+      "role": "leaping harrier",
+      "description": "Emaciated jerboa, enormous hind feet, tiny grasping forepaws, long black-tipped tail, torn funnel ears, salt-stiffened spinal quills",
+      "prompt": "Use case: stylized-concept. Asset: standalone full-body dark fantasy battle minion sprite, ONE creature. Subject: Moonspine Jerboa: Emaciated jerboa, enormous hind feet, tiny grasping forepaws, long black-tipped tail, torn funnel ears, salt-stiffened spinal quills. A weaker leaping harrier from moonlit pale salt dunes, wind-eroded sandstone fins at edges, broad smooth sand basin, smoky violet shadows, associated with Dune Sieve but a distinct species, never a miniature boss. Highly detailed desaturated dark watercolor with granular pigment and layered washes within creature, broken ink contours, rich tactile anatomy and charcoal shadows, restrained theme accents. Full body centered facing LEFT in three-quarter view, ALL extremities completely visible with ample empty margin. GENUINELY TRANSPARENT PNG ALPHA CHANNEL everywhere outside creature. No background, no scenery, no paper rectangle, no ground patch, no floor, NO SHADOW, no cast/drop shadow, no aura, no haze, no text, no label, no frame, no UI. Finished production game asset.",
+      "relative_asset_path": "dice-and-destiny-client/assets/battle/minions/dune_sieve/moonspine_jerboa.png",
+      "source_reference_paths": [
+        "dice-and-destiny-client/assets/battle/fighters/dune_sieve.png",
+        "dice-and-destiny-client/assets/battle/habitats/salt_dunes.png"
+      ],
+      "generated_source_path": "/Users/daddymere/.codex/generated_images/01a0ba2d-5cc7-7070-96c9-d262aeade317/exec-dd89ae5e-46ed-4169-b5b2-58ffd3aa1733.png",
+      "status": "completed"
+    },
+    {
+      "id": "brine_blister",
+      "name": "Brine Blister",
+      "role": "corrosive support",
+      "description": "Inflated desert toad, charcoal leather skin, translucent brine sacs, ivory nodules, crooked limbs, heavy throat pouch, broad flat face",
+      "prompt": "Use case: stylized-concept. Asset: standalone full-body dark fantasy battle minion sprite, ONE creature. Subject: Brine Blister: Inflated desert toad, charcoal leather skin, translucent brine sacs, ivory nodules, crooked limbs, heavy throat pouch, broad flat face. A weaker corrosive support from moonlit pale salt dunes, wind-eroded sandstone fins at edges, broad smooth sand basin, smoky violet shadows, associated with Dune Sieve but a distinct species, never a miniature boss. Highly detailed desaturated dark watercolor with granular pigment and layered washes within creature, broken ink contours, rich tactile anatomy and charcoal shadows, restrained theme accents. Full body centered facing LEFT in three-quarter view, ALL extremities completely visible with ample empty margin. GENUINELY TRANSPARENT PNG ALPHA CHANNEL everywhere outside creature. No background, no scenery, no paper rectangle, no ground patch, no floor, NO SHADOW, no cast/drop shadow, no aura, no haze, no text, no label, no frame, no UI. Finished production game asset.",
+      "relative_asset_path": "dice-and-destiny-client/assets/battle/minions/dune_sieve/brine_blister.png",
+      "source_reference_paths": [
+        "dice-and-destiny-client/assets/battle/fighters/dune_sieve.png",
+        "dice-and-destiny-client/assets/battle/habitats/salt_dunes.png"
+      ],
+      "generated_source_path": "/Users/daddymere/.codex/generated_images/01a0ba2d-5cc7-7070-96c9-d262aeade317/exec-fa24cf78-3943-4a85-accd-a3fd089b8a03.png",
+      "status": "completed"
+    },
+    {
+      "id": "dune_needlewing",
+      "name": "Dune Needlewing",
+      "role": "aerial striker",
+      "description": "Predatory lacewing, four narrow dusty translucent sail wings, needle proboscis, knotted abdomen, feathery antennae, smoky violet veins",
+      "prompt": "Use case: stylized-concept. Asset: standalone full-body dark fantasy battle minion sprite, ONE creature. Subject: Dune Needlewing: Predatory lacewing, four narrow dusty translucent sail wings, needle proboscis, knotted abdomen, feathery antennae, smoky violet veins. A weaker aerial striker from moonlit pale salt dunes, wind-eroded sandstone fins at edges, broad smooth sand basin, smoky violet shadows, associated with Dune Sieve but a distinct species, never a miniature boss. Highly detailed desaturated dark watercolor with granular pigment and layered washes within creature, broken ink contours, rich tactile anatomy and charcoal shadows, restrained theme accents. Full body centered facing LEFT in three-quarter view, ALL extremities completely visible with ample empty margin. GENUINELY TRANSPARENT PNG ALPHA CHANNEL everywhere outside creature. No background, no scenery, no paper rectangle, no ground patch, no floor, NO SHADOW, no cast/drop shadow, no aura, no haze, no text, no label, no frame, no UI. Finished production game asset.",
+      "relative_asset_path": "dice-and-destiny-client/assets/battle/minions/dune_sieve/dune_needlewing.png",
+      "source_reference_paths": [
+        "dice-and-destiny-client/assets/battle/fighters/dune_sieve.png",
+        "dice-and-destiny-client/assets/battle/habitats/salt_dunes.png"
+      ],
+      "generated_source_path": "/Users/daddymere/.codex/generated_images/01a0ba2d-5cc7-7070-96c9-d262aeade317/exec-f66d8015-1509-4904-89ca-d9c76cc539ba.png",
+      "status": "completed"
+    },
+    {
+      "id": "chalkcoil_viper",
+      "name": "Chalkcoil Viper",
+      "role": "venom striker",
+      "description": "Small horned viper, low loose coil, flattened spade snout, chalk granular scales, black hornlets, hooked fangs, broken umber bands",
+      "prompt": "Use case: stylized-concept. Asset: standalone full-body dark fantasy battle minion sprite, ONE creature. Subject: Chalkcoil Viper: Small horned viper, low loose coil, flattened spade snout, chalk granular scales, black hornlets, hooked fangs, broken umber bands. A weaker venom striker from moonlit pale salt dunes, wind-eroded sandstone fins at edges, broad smooth sand basin, smoky violet shadows, associated with Dune Sieve but a distinct species, never a miniature boss. Highly detailed desaturated dark watercolor with granular pigment and layered washes within creature, broken ink contours, rich tactile anatomy and charcoal shadows, restrained theme accents. Full body centered facing LEFT in three-quarter view, ALL extremities completely visible with ample empty margin. GENUINELY TRANSPARENT PNG ALPHA CHANNEL everywhere outside creature. No background, no scenery, no paper rectangle, no ground patch, no floor, NO SHADOW, no cast/drop shadow, no aura, no haze, no text, no label, no frame, no UI. Finished production game asset.",
+      "relative_asset_path": "dice-and-destiny-client/assets/battle/minions/dune_sieve/chalkcoil_viper.png",
+      "source_reference_paths": [
+        "dice-and-destiny-client/assets/battle/fighters/dune_sieve.png",
+        "dice-and-destiny-client/assets/battle/habitats/salt_dunes.png"
+      ],
+      "generated_source_path": "/Users/daddymere/.codex/generated_images/01a0ba2d-5cc7-7070-96c9-d262aeade317/exec-4a566ecb-604d-4a07-952a-ed67878ec714.png",
+      "status": "completed"
+    },
+    {
+      "id": "saltroot_strider",
+      "name": "Saltroot Strider",
+      "role": "forage sentinel",
+      "description": "Rootlike walking stick insect, four bent stilt legs, two twig forearms, hollow seedpod thorax, papery head crest, salt crystals on bark joints",
+      "prompt": "Use case: stylized-concept. Asset: standalone full-body dark fantasy battle minion sprite, ONE creature. Subject: Saltroot Strider: Rootlike walking stick insect, four bent stilt legs, two twig forearms, hollow seedpod thorax, papery head crest, salt crystals on bark joints. A weaker forage sentinel from moonlit pale salt dunes, wind-eroded sandstone fins at edges, broad smooth sand basin, smoky violet shadows, associated with Dune Sieve but a distinct species, never a miniature boss. Highly detailed desaturated dark watercolor with granular pigment and layered washes within creature, broken ink contours, rich tactile anatomy and charcoal shadows, restrained theme accents. Full body centered facing LEFT in three-quarter view, ALL extremities completely visible with ample empty margin. GENUINELY TRANSPARENT PNG ALPHA CHANNEL everywhere outside creature. No background, no scenery, no paper rectangle, no ground patch, no floor, NO SHADOW, no cast/drop shadow, no aura, no haze, no text, no label, no frame, no UI. Finished production game asset.",
+      "relative_asset_path": "dice-and-destiny-client/assets/battle/minions/dune_sieve/saltroot_strider.png",
+      "source_reference_paths": [
+        "dice-and-destiny-client/assets/battle/fighters/dune_sieve.png",
+        "dice-and-destiny-client/assets/battle/habitats/salt_dunes.png"
+      ],
+      "generated_source_path": "/Users/daddymere/.codex/generated_images/01a0ba2d-5cc7-7070-96c9-d262aeade317/exec-fe1cfb3f-3ad0-4c9f-a7b3-96f784ee68b4.png",
+      "status": "completed",
+      "previous_generated_source_path": "/Users/daddymere/.codex/generated_images/01a0ba2d-5cc7-7070-96c9-d262aeade317/exec-86161cc7-8ebf-47d4-ba98-bd8f8c0998ef.png",
+      "final_prompt": "Use case: stylized-concept. Asset: standalone full-body dark fantasy battle minion sprite, ONE creature. Subject: Saltroot Strider: Rootlike walking stick insect, four bent stilt legs, two twig forearms, hollow seedpod thorax, papery head crest, salt crystals on bark joints. A weaker forage sentinel from moonlit pale salt dunes, wind-eroded sandstone fins at edges, broad smooth sand basin, smoky violet shadows, associated with Dune Sieve but a distinct species, never a miniature boss. Highly detailed desaturated dark watercolor with granular pigment and layered washes within creature, broken ink contours, rich tactile anatomy and charcoal shadows, restrained theme accents. Full body centered facing LEFT in three-quarter view, ALL extremities completely visible with ample empty margin. GENUINELY TRANSPARENT PNG ALPHA CHANNEL everywhere outside creature. No background, no scenery, no paper rectangle, no ground patch, no floor, NO SHADOW, no cast/drop shadow, no aura, no haze, no text, no label, no frame, no UI. Finished production game asset. FRAMING CORRECTION: SHORT curved antennae folded inward over the head, compact stance. Creature occupies ONLY CENTER 70 PERCENT of canvas. Wide empty transparent padding on every side. Absolutely zero body parts or wing/antenna tips touching any image edge. Zoom out."
+    },
+    {
+      "id": "crust_peeler",
+      "name": "Crust Peeler",
+      "role": "shieldbreaker",
+      "description": "Pangolin-mollusk, chalk limpet shell over shoulders, leathery snout, long black scraping tongue, four low clawed legs, ridged tail",
+      "prompt": "Use case: stylized-concept. Asset: standalone full-body dark fantasy battle minion sprite, ONE creature. Subject: Crust Peeler: Pangolin-mollusk, chalk limpet shell over shoulders, leathery snout, long black scraping tongue, four low clawed legs, ridged tail. A weaker shieldbreaker from moonlit pale salt dunes, wind-eroded sandstone fins at edges, broad smooth sand basin, smoky violet shadows, associated with Dune Sieve but a distinct species, never a miniature boss. Highly detailed desaturated dark watercolor with granular pigment and layered washes within creature, broken ink contours, rich tactile anatomy and charcoal shadows, restrained theme accents. Full body centered facing LEFT in three-quarter view, ALL extremities completely visible with ample empty margin. GENUINELY TRANSPARENT PNG ALPHA CHANNEL everywhere outside creature. No background, no scenery, no paper rectangle, no ground patch, no floor, NO SHADOW, no cast/drop shadow, no aura, no haze, no text, no label, no frame, no UI. Finished production game asset.",
+      "relative_asset_path": "dice-and-destiny-client/assets/battle/minions/dune_sieve/crust_peeler.png",
+      "source_reference_paths": [
+        "dice-and-destiny-client/assets/battle/fighters/dune_sieve.png",
+        "dice-and-destiny-client/assets/battle/habitats/salt_dunes.png"
+      ],
+      "generated_source_path": "/Users/daddymere/.codex/generated_images/01a0ba2d-5cc7-7070-96c9-d262aeade317/exec-821b8c2e-c7cf-4f7d-b449-9d09e4610e16.png",
+      "status": "completed"
+    },
+    {
+      "id": "hollow_puff",
+      "name": "Hollow Puff",
+      "role": "spore nuisance",
+      "description": "Spherical fungal animal, cracked parchment skin, dark pores, ivory fibrous ruff, six root feet, bent tubular siphon, no emitted cloud",
+      "prompt": "Use case: stylized-concept. Asset: standalone full-body dark fantasy battle minion sprite, ONE creature. Subject: Hollow Puff: Spherical fungal animal, cracked parchment skin, dark pores, ivory fibrous ruff, six root feet, bent tubular siphon, no emitted cloud. A weaker spore nuisance from moonlit pale salt dunes, wind-eroded sandstone fins at edges, broad smooth sand basin, smoky violet shadows, associated with Dune Sieve but a distinct species, never a miniature boss. Highly detailed desaturated dark watercolor with granular pigment and layered washes within creature, broken ink contours, rich tactile anatomy and charcoal shadows, restrained theme accents. Full body centered facing LEFT in three-quarter view, ALL extremities completely visible with ample empty margin. GENUINELY TRANSPARENT PNG ALPHA CHANNEL everywhere outside creature. No background, no scenery, no paper rectangle, no ground patch, no floor, NO SHADOW, no cast/drop shadow, no aura, no haze, no text, no label, no frame, no UI. Finished production game asset.",
+      "relative_asset_path": "dice-and-destiny-client/assets/battle/minions/dune_sieve/hollow_puff.png",
+      "source_reference_paths": [
+        "dice-and-destiny-client/assets/battle/fighters/dune_sieve.png",
+        "dice-and-destiny-client/assets/battle/habitats/salt_dunes.png"
+      ],
+      "generated_source_path": "/Users/daddymere/.codex/generated_images/01a0ba2d-5cc7-7070-96c9-d262aeade317/exec-58b5e885-d346-4818-a45b-99bf2702fa51.png",
+      "status": "completed"
+    },
+    {
+      "id": "flint_carrionling",
+      "name": "Flint Carrionling",
+      "role": "carrion feeder",
+      "description": "Hunched flightless vulture runt, bald charcoal neck, chipped flint beak, ragged ivory wing feathers, strong taloned feet",
+      "prompt": "Use case: stylized-concept. Asset: standalone full-body dark fantasy battle minion sprite, ONE creature. Subject: Flint Carrionling: Hunched flightless vulture runt, bald charcoal neck, chipped flint beak, ragged ivory wing feathers, strong taloned feet. A weaker carrion feeder from moonlit pale salt dunes, wind-eroded sandstone fins at edges, broad smooth sand basin, smoky violet shadows, associated with Dune Sieve but a distinct species, never a miniature boss. Highly detailed desaturated dark watercolor with granular pigment and layered washes within creature, broken ink contours, rich tactile anatomy and charcoal shadows, restrained theme accents. Full body centered facing LEFT in three-quarter view, ALL extremities completely visible with ample empty margin. GENUINELY TRANSPARENT PNG ALPHA CHANNEL everywhere outside creature. No background, no scenery, no paper rectangle, no ground patch, no floor, NO SHADOW, no cast/drop shadow, no aura, no haze, no text, no label, no frame, no UI. Finished production game asset.",
+      "relative_asset_path": "dice-and-destiny-client/assets/battle/minions/dune_sieve/flint_carrionling.png",
+      "source_reference_paths": [
+        "dice-and-destiny-client/assets/battle/fighters/dune_sieve.png",
+        "dice-and-destiny-client/assets/battle/habitats/salt_dunes.png"
+      ],
+      "generated_source_path": "/Users/daddymere/.codex/generated_images/01a0ba2d-5cc7-7070-96c9-d262aeade317/exec-4a956819-4592-4766-a841-d593acc75543.png",
+      "status": "completed"
+    }
+  ]
+}

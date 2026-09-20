@@ -7,10 +7,11 @@ var _income_glow: Panel
 var _effect_plaque: PanelContainer
 var _plaque_bottom := 16.0
 
-func configure(instance: String, definition: String, enabled: bool, pending_removal: bool = false, compact: bool = false) -> void:
+func configure(instance: String, definition: String, enabled: bool, pending_removal: bool = false, compact: bool = false, removed: bool = false) -> void:
+	pending_removal = pending_removal or removed
 	instance_id = instance; definition_id = definition
 	var data := BattlePresentationCatalog.card(definition)
-	text = "%s  %d✦%s" % [data.name, int(data.cost), "\n⚔ PENDING" if pending_removal else ""]
+	text = "%s  %d✦%s" % [data.name, int(data.cost), "\n× REMOVED" if removed else "\n⚔ PENDING" if pending_removal else ""]
 	clip_text = true
 	tooltip_text = "%s (%s) — %s" % [data.name, instance, data.text]
 	custom_minimum_size = Vector2(132, 144) if pending_removal or compact else Vector2(185, 248)
@@ -36,7 +37,7 @@ func configure(instance: String, definition: String, enabled: bool, pending_remo
 	var cost := Label.new(); cost.text = str(int(data.cost)); cost.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER; cost.vertical_alignment = VERTICAL_ALIGNMENT_CENTER; cost.add_theme_font_size_override("font_size", 18); cost.add_theme_stylebox_override("normal", cinematic.panel(Color("204f67"), Color("b6a679"), 2)); cost.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(cost); cost.set_anchors_and_offsets_preset(Control.PRESET_TOP_RIGHT); cost.offset_left = -33; cost.offset_right = -5; cost.offset_top = 6; cost.offset_bottom = 34
 	_build_effect_plaque(str(data.effect_summary), pending_removal, compact)
-	var state := Label.new(); state.text = "× PENDING REMOVAL" if pending_removal else "✦ PLAY" if enabled else "—"; state.add_theme_font_size_override("font_size", 10 if pending_removal else 12); state.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER; state.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var state := Label.new(); state.name = "RemovalState"; state.text = "× REMOVED" if removed else "× PENDING REMOVAL" if pending_removal else "✦ PLAY" if enabled else "—"; state.add_theme_font_size_override("font_size", 10 if pending_removal else 12); state.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER; state.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	state.visible = pending_removal; state.add_theme_color_override("font_color", Color("ffb9a0")); state.add_theme_stylebox_override("normal", cinematic.panel(Color("291716e8"), Color.TRANSPARENT, 0))
 	add_child(state); state.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_WIDE); state.offset_top = -25; state.offset_bottom = -4
 	disabled = not enabled

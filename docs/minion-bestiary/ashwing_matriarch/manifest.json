@@ -1,0 +1,238 @@
+{
+  "boss_id": "ashwing_matriarch",
+  "boss_name": "Ashwing Matriarch",
+  "theme": "Soot-stained nocturnal wasteland ecology: scorched vellum, charcoal fur, dusty burgundy, pale silk.",
+  "minions": [
+    {
+      "id": "soot_snout",
+      "name": "Soot Snout",
+      "role": "burrowing skirmisher",
+      "description": "A hunched mole with split ivory digging claws, soot-matted black fur, a blind stitched-looking muzzle and pale silk sacs strapped naturally among dorsal quills. Broad forequarters, short rear legs, no wings.",
+      "prompt": "Use case: stylized-concept. Asset type: standalone transparent PNG battle enemy sprite for a dark fantasy game. Create ONE unique lesser minion, clearly modest compared with its boss. Subject: Soot Snout. A hunched mole with split ivory digging claws, soot-matted black fur, a blind stitched-looking muzzle and pale silk sacs strapped naturally among dorsal quills. Broad forequarters, short rear legs, no wings. Faction materials: Soot-stained nocturnal wasteland ecology: scorched vellum, charcoal fur, dusty burgundy, pale silk. Style: highly detailed desaturated dark watercolor washes inside forms, fine expressive black ink contours, weathered tactile material detail and restrained highlights; solemn eerie handmade bestiary painting, consistent with grim watercolor RPG enemies. Full body in left-facing three-quarter battle stance, entire silhouette within canvas with small transparent safety margin. TRUE transparent RGBA background, all pixels outside creature alpha zero, including between limbs. No environment, ground, platform, cast shadow, surrounding smoke, aura, paper background, checkerboard, text, letters, UI, frame or other creatures. Not a boss clone. Use square canvas.",
+      "relative_asset_path": "dice-and-destiny-client/assets/battle/minions/ashwing_matriarch/soot_snout.png",
+      "source_reference_paths": [
+        "dice-and-destiny-client/assets/battle/fighters/ashwing_matriarch.png"
+      ],
+      "generated_source_path": "/Users/daddymere/.codex/generated_images/01a0ba30-7da5-7522-9728-234de4f720f5/exec-ad69f707-a72c-4703-a912-52a75275aec5.png",
+      "status": "completed",
+      "validation": {
+        "size": [
+          1254,
+          1254
+        ],
+        "mode": "RGBA",
+        "transparent_fraction": 0.4753,
+        "sha256": "9f8ecc36e106bba7abc94816afffc143800951baa50539bed8b985d406382894",
+        "visual_review": "Distinct full-body design, desaturated watercolor/ink rendering, no scenery or text; real transparency verified."
+      }
+    },
+    {
+      "id": "vellum_hound",
+      "name": "Vellum Hound",
+      "role": "flanking hunter",
+      "description": "A gaunt six-legged jackal, long ivory muzzle and charcoal pelt, with torn parchment-like membranes only between its rear limbs, ragged burgundy ear edges and cocoon silk caught around its narrow waist.",
+      "prompt": "Use case: stylized-concept. Asset type: standalone transparent PNG battle enemy sprite for a dark fantasy game. Create ONE unique lesser minion, clearly modest compared with its boss. Subject: Vellum Hound. A gaunt six-legged jackal, long ivory muzzle and charcoal pelt, with torn parchment-like membranes only between its rear limbs, ragged burgundy ear edges and cocoon silk caught around its narrow waist. Faction materials: Soot-stained nocturnal wasteland ecology: scorched vellum, charcoal fur, dusty burgundy, pale silk. Style: highly detailed desaturated dark watercolor washes inside forms, fine expressive black ink contours, weathered tactile material detail and restrained highlights; solemn eerie handmade bestiary painting, consistent with grim watercolor RPG enemies. Full body in left-facing three-quarter battle stance, entire silhouette within canvas with small transparent safety margin. TRUE transparent RGBA background, all pixels outside creature alpha zero, including between limbs. No environment, ground, platform, cast shadow, surrounding smoke, aura, paper background, checkerboard, text, letters, UI, frame or other creatures. Not a boss clone. Use square canvas.",
+      "relative_asset_path": "dice-and-destiny-client/assets/battle/minions/ashwing_matriarch/vellum_hound.png",
+      "source_reference_paths": [
+        "dice-and-destiny-client/assets/battle/fighters/ashwing_matriarch.png"
+      ],
+      "generated_source_path": "/Users/daddymere/.codex/generated_images/01a0ba30-7da5-7522-9728-234de4f720f5/exec-ed116419-ca58-4c9e-8d2f-0db869607a0f.png",
+      "status": "completed",
+      "validation": {
+        "size": [
+          1254,
+          1254
+        ],
+        "mode": "RGBA",
+        "transparent_fraction": 0.5845,
+        "sha256": "e1aa84611e233a2bb647b7f3907864d51979f7d7bd0658bc0e38519210b639f5",
+        "visual_review": "Distinct full-body design, desaturated watercolor/ink rendering, no scenery or text; real transparency verified."
+      }
+    },
+    {
+      "id": "cocoon_porter",
+      "name": "Cocoon Porter",
+      "role": "armored carrier",
+      "description": "A squat hermit beetle with four heavy walking legs and two fine mouth palps, carrying one huge broken ivory cocoon as a spiral shell, its exposed charcoal chitin and rust-red seam contrasting the soft silk lining.",
+      "prompt": "Use case: stylized-concept. Asset type: standalone transparent PNG battle enemy sprite for a dark fantasy game. Create ONE unique lesser minion, clearly modest compared with its boss. Subject: Cocoon Porter. A squat hermit beetle with four heavy walking legs and two fine mouth palps, carrying one huge broken ivory cocoon as a spiral shell, its exposed charcoal chitin and rust-red seam contrasting the soft silk lining. Faction materials: Soot-stained nocturnal wasteland ecology: scorched vellum, charcoal fur, dusty burgundy, pale silk. Style: highly detailed desaturated dark watercolor washes inside forms, fine expressive black ink contours, weathered tactile material detail and restrained highlights; solemn eerie handmade bestiary painting, consistent with grim watercolor RPG enemies. Full body in left-facing three-quarter battle stance, entire silhouette within canvas with small transparent safety margin. TRUE transparent RGBA background, all pixels outside creature alpha zero, including between limbs. No environment, ground, platform, cast shadow, surrounding smoke, aura, paper background, checkerboard, text, letters, UI, frame or other creatures. Not a boss clone. Use square canvas.",
+      "relative_asset_path": "dice-and-destiny-client/assets/battle/minions/ashwing_matriarch/cocoon_porter.png",
+      "source_reference_paths": [
+        "dice-and-destiny-client/assets/battle/fighters/ashwing_matriarch.png"
+      ],
+      "generated_source_path": "/Users/daddymere/.codex/generated_images/01a0ba30-7da5-7522-9728-234de4f720f5/exec-a16760f5-dabc-4c63-a61c-d9f7e2c328ed.png",
+      "status": "completed",
+      "validation": {
+        "size": [
+          1254,
+          1254
+        ],
+        "mode": "RGBA",
+        "transparent_fraction": 0.5283,
+        "sha256": "704a758400d93da019d3b1e35e5985b38121efa679b0fddb86e064476c51cc97",
+        "visual_review": "Distinct full-body design, desaturated watercolor/ink rendering, no scenery or text; real transparency verified."
+      }
+    },
+    {
+      "id": "ashcomb_toad",
+      "name": "Ashcomb Toad",
+      "role": "debilitating spitter",
+      "description": "A broad low toad with a ridged honeycomb of dry seedlike ash blisters on its back, pale craggy throat pouch, charcoal warted skin and long delicate insectlike finger tips; one small burgundy eye.",
+      "prompt": "Use case: stylized-concept. Asset type: standalone transparent PNG battle enemy sprite for a dark fantasy game. Create ONE unique lesser minion, clearly modest compared with its boss. Subject: Ashcomb Toad. A broad low toad with a ridged honeycomb of dry seedlike ash blisters on its back, pale craggy throat pouch, charcoal warted skin and long delicate insectlike finger tips; one small burgundy eye. Faction materials: Soot-stained nocturnal wasteland ecology: scorched vellum, charcoal fur, dusty burgundy, pale silk. Style: highly detailed desaturated dark watercolor washes inside forms, fine expressive black ink contours, weathered tactile material detail and restrained highlights; solemn eerie handmade bestiary painting, consistent with grim watercolor RPG enemies. Full body in left-facing three-quarter battle stance, entire silhouette within canvas with small transparent safety margin. TRUE transparent RGBA background, all pixels outside creature alpha zero, including between limbs. No environment, ground, platform, cast shadow, surrounding smoke, aura, paper background, checkerboard, text, letters, UI, frame or other creatures. Not a boss clone. Use square canvas.",
+      "relative_asset_path": "dice-and-destiny-client/assets/battle/minions/ashwing_matriarch/ashcomb_toad.png",
+      "source_reference_paths": [
+        "dice-and-destiny-client/assets/battle/fighters/ashwing_matriarch.png"
+      ],
+      "generated_source_path": "/Users/daddymere/.codex/generated_images/01a0ba30-7da5-7522-9728-234de4f720f5/exec-65dcd6a0-bff0-47f8-ac90-3195dff83abb.png",
+      "status": "completed",
+      "validation": {
+        "size": [
+          1254,
+          1254
+        ],
+        "mode": "RGBA",
+        "transparent_fraction": 0.5555,
+        "sha256": "2ae83ed87bdfc540fc36489b34e562f462d121766714f61acd27d91a939a487f",
+        "visual_review": "Distinct full-body design, desaturated watercolor/ink rendering, no scenery or text; real transparency verified."
+      }
+    },
+    {
+      "id": "shroud_mantis",
+      "name": "Shroud Mantis",
+      "role": "ambush striker",
+      "description": "A thin tall mantis with praying serrated forearms, knobby black limbs and a torn ivory cocoon veil draped over its triangular head, abdomen rolled under, no grand wings.",
+      "prompt": "Use case: stylized-concept. Asset type: standalone transparent PNG battle enemy sprite for a dark fantasy game. Create ONE unique lesser minion, clearly modest compared with its boss. Subject: Shroud Mantis. A thin tall mantis with praying serrated forearms, knobby black limbs and a torn ivory cocoon veil draped over its triangular head, abdomen rolled under, no grand wings. Faction materials: Soot-stained nocturnal wasteland ecology: scorched vellum, charcoal fur, dusty burgundy, pale silk. Style: highly detailed desaturated dark watercolor washes inside forms, fine expressive black ink contours, weathered tactile material detail and restrained highlights; solemn eerie handmade bestiary painting, consistent with grim watercolor RPG enemies. Full body in left-facing three-quarter battle stance, entire silhouette within canvas with small transparent safety margin. TRUE transparent RGBA background, all pixels outside creature alpha zero, including between limbs. No environment, ground, platform, cast shadow, surrounding smoke, aura, paper background, checkerboard, text, letters, UI, frame or other creatures. Not a boss clone. Use square canvas.",
+      "relative_asset_path": "dice-and-destiny-client/assets/battle/minions/ashwing_matriarch/shroud_mantis.png",
+      "source_reference_paths": [
+        "dice-and-destiny-client/assets/battle/fighters/ashwing_matriarch.png"
+      ],
+      "generated_source_path": "/Users/daddymere/.codex/generated_images/01a0ba30-7da5-7522-9728-234de4f720f5/exec-ce10ffe0-85bb-446e-a87e-ec548f1855f7.png",
+      "status": "completed",
+      "validation": {
+        "size": [
+          1254,
+          1254
+        ],
+        "mode": "RGBA",
+        "transparent_fraction": 0.7214,
+        "sha256": "7183ad3668b2f0a69461383700d2947c50d326363db8416e2445e611d01120a1",
+        "visual_review": "Distinct full-body design, desaturated watercolor/ink rendering, no scenery or text; real transparency verified."
+      }
+    },
+    {
+      "id": "wicktail_rat",
+      "name": "Wicktail Rat",
+      "role": "harrying scavenger",
+      "description": "A wiry long-legged rat with dense black fur, a split lash tail ending in pale silk tassels, bony cheek plates and paired small burgundy throat sacs, crouched in an alert pounce.",
+      "prompt": "Use case: stylized-concept. Asset type: standalone transparent PNG battle enemy sprite for a dark fantasy game. Create ONE unique lesser minion, clearly modest compared with its boss. Subject: Wicktail Rat. A wiry long-legged rat with dense black fur, a split lash tail ending in pale silk tassels, bony cheek plates and paired small burgundy throat sacs, crouched in an alert pounce. Faction materials: Soot-stained nocturnal wasteland ecology: scorched vellum, charcoal fur, dusty burgundy, pale silk. Style: highly detailed desaturated dark watercolor washes inside forms, fine expressive black ink contours, weathered tactile material detail and restrained highlights; solemn eerie handmade bestiary painting, consistent with grim watercolor RPG enemies. Full body in left-facing three-quarter battle stance, entire silhouette within canvas with small transparent safety margin. TRUE transparent RGBA background, all pixels outside creature alpha zero, including between limbs. No environment, ground, platform, cast shadow, surrounding smoke, aura, paper background, checkerboard, text, letters, UI, frame or other creatures. Not a boss clone. Use square canvas.",
+      "relative_asset_path": "dice-and-destiny-client/assets/battle/minions/ashwing_matriarch/wicktail_rat.png",
+      "source_reference_paths": [
+        "dice-and-destiny-client/assets/battle/fighters/ashwing_matriarch.png"
+      ],
+      "generated_source_path": "/Users/daddymere/.codex/generated_images/01a0ba30-7da5-7522-9728-234de4f720f5/exec-3c29751f-3505-418a-8c4f-066881eaca54.png",
+      "status": "completed",
+      "validation": {
+        "size": [
+          1254,
+          1254
+        ],
+        "mode": "RGBA",
+        "transparent_fraction": 0.6422,
+        "sha256": "41fa4fef37fb9e7016fdc9415acea98b8211d7783bafa636027c422ada715ed2",
+        "visual_review": "Distinct full-body design, desaturated watercolor/ink rendering, no scenery or text; real transparency verified."
+      }
+    },
+    {
+      "id": "embergill_slug",
+      "name": "Embergill Slug",
+      "role": "area denial",
+      "description": "A heavy elongated ash-gray slug rearing its small pointed head, with folded ivory gill fans down its back, clotted burgundy slime contained on its skin and tiny black rasp teeth, no emitted trail.",
+      "prompt": "Use case: stylized-concept. Asset type: standalone transparent PNG battle enemy sprite for a dark fantasy game. Create ONE unique lesser minion, clearly modest compared with its boss. Subject: Embergill Slug. A heavy elongated ash-gray slug rearing its small pointed head, with folded ivory gill fans down its back, clotted burgundy slime contained on its skin and tiny black rasp teeth, no emitted trail. Faction materials: Soot-stained nocturnal wasteland ecology: scorched vellum, charcoal fur, dusty burgundy, pale silk. Style: highly detailed desaturated dark watercolor washes inside forms, fine expressive black ink contours, weathered tactile material detail and restrained highlights; solemn eerie handmade bestiary painting, consistent with grim watercolor RPG enemies. Full body in left-facing three-quarter battle stance, entire silhouette within canvas with small transparent safety margin. TRUE transparent RGBA background, all pixels outside creature alpha zero, including between limbs. No environment, ground, platform, cast shadow, surrounding smoke, aura, paper background, checkerboard, text, letters, UI, frame or other creatures. Not a boss clone. Use square canvas.",
+      "relative_asset_path": "dice-and-destiny-client/assets/battle/minions/ashwing_matriarch/embergill_slug.png",
+      "source_reference_paths": [
+        "dice-and-destiny-client/assets/battle/fighters/ashwing_matriarch.png"
+      ],
+      "generated_source_path": "/Users/daddymere/.codex/generated_images/01a0ba30-7da5-7522-9728-234de4f720f5/exec-fb45fef9-ff02-4cd7-b225-e077f3fea019.png",
+      "status": "completed",
+      "validation": {
+        "size": [
+          1254,
+          1254
+        ],
+        "mode": "RGBA",
+        "transparent_fraction": 0.6307,
+        "sha256": "6143f83e3c10651d61ff9da983e73082986e130080c05f439bc83df0d172d588",
+        "visual_review": "Distinct full-body design, desaturated watercolor/ink rendering, no scenery or text; real transparency verified."
+      }
+    },
+    {
+      "id": "pallid_lanternfly",
+      "name": "Pallid Lanternfly",
+      "role": "aerial spotter",
+      "description": "A strange long-snouted lanternfly with only two narrow horizontal translucent ivory wings, a swollen soot-gray abdomen, six hooked feet tucked in flight and a burgundy ceramic-looking forehead bulb.",
+      "prompt": "Use case: stylized-concept. Asset type: standalone transparent PNG battle enemy sprite for a dark fantasy game. Create ONE unique lesser minion, clearly modest compared with its boss. Subject: Pallid Lanternfly. A strange long-snouted lanternfly with only two narrow horizontal translucent ivory wings, a swollen soot-gray abdomen, six hooked feet tucked in flight and a burgundy ceramic-looking forehead bulb. Faction materials: Soot-stained nocturnal wasteland ecology: scorched vellum, charcoal fur, dusty burgundy, pale silk. Style: highly detailed desaturated dark watercolor washes inside forms, fine expressive black ink contours, weathered tactile material detail and restrained highlights; solemn eerie handmade bestiary painting, consistent with grim watercolor RPG enemies. Full body in left-facing three-quarter battle stance, entire silhouette within canvas with small transparent safety margin. TRUE transparent RGBA background, all pixels outside creature alpha zero, including between limbs. No environment, ground, platform, cast shadow, surrounding smoke, aura, paper background, checkerboard, text, letters, UI, frame or other creatures. Not a boss clone. Use square canvas.",
+      "relative_asset_path": "dice-and-destiny-client/assets/battle/minions/ashwing_matriarch/pallid_lanternfly.png",
+      "source_reference_paths": [
+        "dice-and-destiny-client/assets/battle/fighters/ashwing_matriarch.png"
+      ],
+      "generated_source_path": "/Users/daddymere/.codex/generated_images/01a0ba30-7da5-7522-9728-234de4f720f5/exec-11966bd9-4f69-4da1-856e-600cb6a75e83.png",
+      "status": "completed",
+      "validation": {
+        "size": [
+          1254,
+          1254
+        ],
+        "mode": "RGBA",
+        "transparent_fraction": 0.653,
+        "sha256": "828b0b84ec1f47d7c0d94ee17726ea65544d63731e10342af862d7216ca35995",
+        "visual_review": "Distinct full-body design, desaturated watercolor/ink rendering, no scenery or text; real transparency verified."
+      }
+    },
+    {
+      "id": "funeral_puff",
+      "name": "Funeral Puff",
+      "role": "spore support",
+      "description": "A mobile puffball fungus with a cracked parchment bulb, narrow black root legs and an open burgundy throatlike spore aperture; several tattered silk filaments tied around its neck, no airborne cloud.",
+      "prompt": "Use case: stylized-concept. Asset type: standalone transparent PNG battle enemy sprite for a dark fantasy game. Create ONE unique lesser minion, clearly modest compared with its boss. Subject: Funeral Puff. A mobile puffball fungus with a cracked parchment bulb, narrow black root legs and an open burgundy throatlike spore aperture; several tattered silk filaments tied around its neck, no airborne cloud. Faction materials: Soot-stained nocturnal wasteland ecology: scorched vellum, charcoal fur, dusty burgundy, pale silk. Style: highly detailed desaturated dark watercolor washes inside forms, fine expressive black ink contours, weathered tactile material detail and restrained highlights; solemn eerie handmade bestiary painting, consistent with grim watercolor RPG enemies. Full body in left-facing three-quarter battle stance, entire silhouette within canvas with small transparent safety margin. TRUE transparent RGBA background, all pixels outside creature alpha zero, including between limbs. No environment, ground, platform, cast shadow, surrounding smoke, aura, paper background, checkerboard, text, letters, UI, frame or other creatures. Not a boss clone. Use square canvas.",
+      "relative_asset_path": "dice-and-destiny-client/assets/battle/minions/ashwing_matriarch/funeral_puff.png",
+      "source_reference_paths": [
+        "dice-and-destiny-client/assets/battle/fighters/ashwing_matriarch.png"
+      ],
+      "generated_source_path": "/Users/daddymere/.codex/generated_images/01a0ba30-7da5-7522-9728-234de4f720f5/exec-9b3c597d-f942-4ffb-84cb-a45d6dcc6f10.png",
+      "status": "completed",
+      "validation": {
+        "size": [
+          1254,
+          1254
+        ],
+        "mode": "RGBA",
+        "transparent_fraction": 0.6118,
+        "sha256": "f1c115e4fd12b006818f320bdc59e0b4d9123ce0fb208166e178acd5259e2657",
+        "visual_review": "Distinct full-body design, desaturated watercolor/ink rendering, no scenery or text; real transparency verified."
+      }
+    },
+    {
+      "id": "cinder_tick",
+      "name": "Cinder Tick",
+      "role": "draining grappler",
+      "description": "An oval armored tick with eight compact grappling legs, a flattened ash-black shell divided by fine pale vellum seams and an underslung ivory rasping jaw; restrained burgundy joints, broad low silhouette.",
+      "prompt": "Use case: stylized-concept. Asset type: standalone transparent PNG battle enemy sprite for a dark fantasy game. Create ONE unique lesser minion, clearly modest compared with its boss. Subject: Cinder Tick. An oval armored tick with eight compact grappling legs, a flattened ash-black shell divided by fine pale vellum seams and an underslung ivory rasping jaw; restrained burgundy joints, broad low silhouette. Faction materials: Soot-stained nocturnal wasteland ecology: scorched vellum, charcoal fur, dusty burgundy, pale silk. Style: highly detailed desaturated dark watercolor washes inside forms, fine expressive black ink contours, weathered tactile material detail and restrained highlights; solemn eerie handmade bestiary painting, consistent with grim watercolor RPG enemies. Full body in left-facing three-quarter battle stance, entire silhouette within canvas with small transparent safety margin. TRUE transparent RGBA background, all pixels outside creature alpha zero, including between limbs. No environment, ground, platform, cast shadow, surrounding smoke, aura, paper background, checkerboard, text, letters, UI, frame or other creatures. Not a boss clone. Use square canvas.",
+      "relative_asset_path": "dice-and-destiny-client/assets/battle/minions/ashwing_matriarch/cinder_tick.png",
+      "source_reference_paths": [
+        "dice-and-destiny-client/assets/battle/fighters/ashwing_matriarch.png"
+      ],
+      "generated_source_path": "/Users/daddymere/.codex/generated_images/01a0ba30-7da5-7522-9728-234de4f720f5/exec-9d1d6c5a-f71d-4520-93ed-af9247920b06.png",
+      "status": "completed",
+      "validation": {
+        "size": [
+          1254,
+          1254
+        ],
+        "mode": "RGBA",
+        "transparent_fraction": 0.6448,
+        "sha256": "c83617c5119f73ed7f69b3592e2f772869df41eb8dd3609338d9eed9fc059c32",
+        "visual_review": "Distinct full-body design, desaturated watercolor/ink rendering, no scenery or text; real transparency verified."
+      }
+    }
+  ],
+  "generation_mode": "built-in image_gen; one independently prompted image per minion; original pixels preserved"
+}

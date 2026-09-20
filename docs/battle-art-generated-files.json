@@ -1,0 +1,142 @@
+[
+  {
+    "key": "mire_crown",
+    "path": "/Users/daddymere/.codex/generated_images/01a077cd-7da1-7e53-8836-ee884c7866fd/exec-c89e87e4-5a6c-4e6b-b150-7651e077f195.png",
+    "dest": "dice-and-destiny-client/assets/battle/fighters/mire_crown.png"
+  },
+  {
+    "key": "rime_burrower",
+    "path": "/Users/daddymere/.codex/generated_images/01a077cd-7da1-7e53-8836-ee884c7866fd/exec-9d1fafc2-fe14-40d6-ae03-dab2fa7feb75.png",
+    "dest": "dice-and-destiny-client/assets/battle/fighters/rime_burrower.png"
+  },
+  {
+    "key": "dune_sieve",
+    "path": "/Users/daddymere/.codex/generated_images/01a077cd-7da1-7e53-8836-ee884c7866fd/exec-96632cac-af64-4f49-b9ac-15604a39be13.png",
+    "dest": "dice-and-destiny-client/assets/battle/fighters/dune_sieve.png"
+  },
+  {
+    "key": "reef_breaker",
+    "path": "/Users/daddymere/.codex/generated_images/01a077cd-7da1-7e53-8836-ee884c7866fd/exec-98714152-0edc-444d-bf3e-19ca167abdd0.png",
+    "dest": "dice-and-destiny-client/assets/battle/fighters/reef_breaker.png"
+  },
+  {
+    "key": "ember_gullet",
+    "path": "/Users/daddymere/.codex/generated_images/01a077cd-7da1-7e53-8836-ee884c7866fd/exec-4d04886b-a2e1-4f5c-93b6-7194e99ba805.png",
+    "dest": "dice-and-destiny-client/assets/battle/fighters/ember_gullet.png"
+  },
+  {
+    "key": "root_widow",
+    "path": "/Users/daddymere/.codex/generated_images/01a077cd-7da1-7e53-8836-ee884c7866fd/exec-7717613c-6a89-4ab5-be8e-9f48b0cf2c10.png",
+    "dest": "dice-and-destiny-client/assets/battle/fighters/root_widow.png"
+  },
+  {
+    "key": "prism_devourer",
+    "path": "/Users/daddymere/.codex/generated_images/01a077cd-7da1-7e53-8836-ee884c7866fd/exec-622447c1-7ab5-4fc9-a3a1-f82182c69675.png",
+    "dest": "dice-and-destiny-client/assets/battle/fighters/prism_devourer.png"
+  },
+  {
+    "key": "silk_regent",
+    "path": "/Users/daddymere/.codex/generated_images/01a077cd-7da1-7e53-8836-ee884c7866fd/exec-07d7914f-ac97-4e3b-a9b5-208aec742f18.png",
+    "dest": "dice-and-destiny-client/assets/battle/fighters/silk_regent.png"
+  },
+  {
+    "key": "sluice_horror",
+    "path": "/Users/daddymere/.codex/generated_images/01a077cd-7da1-7e53-8836-ee884c7866fd/exec-07cacad9-0a54-4b18-a821-7cf4309ecaa1.png",
+    "dest": "dice-and-destiny-client/assets/battle/fighters/sluice_horror.png"
+  },
+  {
+    "key": "bellback_pilgrim",
+    "path": "/Users/daddymere/.codex/generated_images/01a077cd-7da1-7e53-8836-ee884c7866fd/exec-ee70de5a-6ff7-473f-b145-a6448a3e510b.png",
+    "dest": "dice-and-destiny-client/assets/battle/fighters/bellback_pilgrim.png"
+  },
+  {
+    "key": "ashwing_matriarch",
+    "path": "/Users/daddymere/.codex/generated_images/01a077cd-7da1-7e53-8836-ee884c7866fd/exec-8256a28e-f9db-4e8d-942e-68a79ac88de2.png",
+    "dest": "dice-and-destiny-client/assets/battle/fighters/ashwing_matriarch.png"
+  },
+  {
+    "key": "reliquary_crab",
+    "path": "/Users/daddymere/.codex/generated_images/01a077cd-7da1-7e53-8836-ee884c7866fd/exec-50f8140a-a80f-4e23-8ea7-c9a5ff7b6aee.png",
+    "dest": "dice-and-destiny-client/assets/battle/fighters/reliquary_crab.png"
+  },
+  {
+    "key": "thorn_seamstress",
+    "path": "/Users/daddymere/.codex/generated_images/01a077cd-7da1-7e53-8836-ee884c7866fd/exec-65ab6ceb-4c15-4b90-a67d-87529b6acb4a.png",
+    "dest": "dice-and-destiny-client/assets/battle/fighters/thorn_seamstress.png"
+  },
+  {
+    "key": "cinder_colossus",
+    "path": "/Users/daddymere/.codex/generated_images/01a077cd-7da1-7e53-8836-ee884c7866fd/exec-2d2896eb-5b6c-492f-bee3-a20d82ed23ac.png",
+    "dest": "dice-and-destiny-client/assets/battle/fighters/cinder_colossus.png"
+  },
+  {
+    "key": "wax_revenant",
+    "path": "/Users/daddymere/.codex/generated_images/01a077cd-7da1-7e53-8836-ee884c7866fd/exec-dd4f4ce1-1feb-4de2-9d9d-29c073f32a7e.png",
+    "dest": "dice-and-destiny-client/assets/battle/fighters/wax_revenant.png"
+  },
+  {
+    "key": "flint_tusk",
+    "path": "/Users/daddymere/.codex/generated_images/01a077cd-7da1-7e53-8836-ee884c7866fd/exec-ca1ad192-3336-4e65-8523-c3e6d34b6e3a.png",
+    "dest": "dice-and-destiny-client/assets/battle/fighters/flint_tusk.png"
+  },
+  {
+    "key": "drowned_oracle",
+    "path": "/Users/daddymere/.codex/generated_images/01a077cd-7da1-7e53-8836-ee884c7866fd/exec-89e213ec-aec8-4428-b55e-a1f36f0e7684.png",
+    "dest": "dice-and-destiny-client/assets/battle/fighters/drowned_oracle.png"
+  },
+  {
+    "key": "carrion_harp",
+    "path": "/Users/daddymere/.codex/generated_images/01a077cd-7da1-7e53-8836-ee884c7866fd/exec-af091a05-0a89-47be-baec-b62d03b34603.png",
+    "dest": "dice-and-destiny-client/assets/battle/fighters/carrion_harp.png"
+  },
+  {
+    "key": "glass_centipede",
+    "path": "/Users/daddymere/.codex/generated_images/01a077cd-7da1-7e53-8836-ee884c7866fd/exec-197798c5-ad74-4794-91ed-7132ab51f136.png",
+    "dest": "dice-and-destiny-client/assets/battle/fighters/glass_centipede.png"
+  },
+  {
+    "key": "peat_bog",
+    "path": "/Users/daddymere/.codex/generated_images/01a077cd-7da1-7e53-8836-ee884c7866fd/exec-f63c082a-ae6e-4d68-9bab-90c383b04e0a.png",
+    "dest": "dice-and-destiny-client/assets/battle/habitats/peat_bog.png"
+  },
+  {
+    "key": "fractured_glacier",
+    "path": "/Users/daddymere/.codex/generated_images/01a077cd-7da1-7e53-8836-ee884c7866fd/exec-ffb759fc-941c-4f25-ae5e-f1a78aef1863.png",
+    "dest": "dice-and-destiny-client/assets/battle/habitats/fractured_glacier.png"
+  },
+  {
+    "key": "salt_dunes",
+    "path": "/Users/daddymere/.codex/generated_images/01a077cd-7da1-7e53-8836-ee884c7866fd/exec-919301c3-61a5-4cd8-a415-2f3b523ed296.png",
+    "dest": "dice-and-destiny-client/assets/battle/habitats/salt_dunes.png"
+  },
+  {
+    "key": "storm_shore",
+    "path": "/Users/daddymere/.codex/generated_images/01a077cd-7da1-7e53-8836-ee884c7866fd/exec-94ebd458-7106-48aa-8cfd-0c1c00880ed7.png",
+    "dest": "dice-and-destiny-client/assets/battle/habitats/storm_shore.png"
+  },
+  {
+    "key": "ash_caldera",
+    "path": "/Users/daddymere/.codex/generated_images/01a077cd-7da1-7e53-8836-ee884c7866fd/exec-5c47085b-3df0-4e8f-9441-2d9f53b645a3.png",
+    "dest": "dice-and-destiny-client/assets/battle/habitats/ash_caldera.png"
+  },
+  {
+    "key": "dead_orchard",
+    "path": "/Users/daddymere/.codex/generated_images/01a077cd-7da1-7e53-8836-ee884c7866fd/exec-954fcc6a-3c12-440f-b836-a16f926f6777.png",
+    "dest": "dice-and-destiny-client/assets/battle/habitats/dead_orchard.png"
+  },
+  {
+    "key": "crystal_cavern",
+    "path": "/Users/daddymere/.codex/generated_images/01a077cd-7da1-7e53-8836-ee884c7866fd/exec-a5a07068-25b4-4d6a-a7c6-6e709f004ee8.png",
+    "dest": "dice-and-destiny-client/assets/battle/habitats/crystal_cavern.png"
+  },
+  {
+    "key": "shrouded_ravine",
+    "path": "/Users/daddymere/.codex/generated_images/01a077cd-7da1-7e53-8836-ee884c7866fd/exec-bc4574e9-e482-40d9-b7b4-6a1b24415e9c.png",
+    "dest": "dice-and-destiny-client/assets/battle/habitats/shrouded_ravine.png"
+  },
+  {
+    "key": "flooded_aqueduct",
+    "path": "/Users/daddymere/.codex/generated_images/01a077cd-7da1-7e53-8836-ee884c7866fd/exec-e4570309-2994-4f0a-9b4c-104533ace1b4.png",
+    "dest": "dice-and-destiny-client/assets/battle/habitats/flooded_aqueduct.png"
+  }
+]

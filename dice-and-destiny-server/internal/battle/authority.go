@@ -356,8 +356,8 @@ func validateStartBattle(
 		if payload.Player.InstanceID != "" || payload.Player.DefinitionID != "" || len(payload.Enemies) != 0 {
 			return nil, errors.New("external seats cannot be combined with player or enemies")
 		}
-		if len(payload.Seats) != 2 {
-			return nil, errors.New("external battle requires exactly two seats")
+		if len(payload.Seats) < 2 || len(payload.Seats) > 4 {
+			return nil, errors.New("external battle requires two to four seats")
 		}
 		participants := make([]Participant, 0, len(payload.Seats))
 		seen := make(map[string]struct{}, len(payload.Seats))
@@ -374,6 +374,7 @@ func validateStartBattle(
 			seen[seat.InstanceID] = struct{}{}
 			participants = append(participants, Participant{
 				InstanceID:   seat.InstanceID,
+				TeamID:       seat.TeamID,
 				DefinitionID: seat.DefinitionID,
 				Controller:   state.ControllerExternal,
 				Source:       participant.SourceCharacterDefinition,

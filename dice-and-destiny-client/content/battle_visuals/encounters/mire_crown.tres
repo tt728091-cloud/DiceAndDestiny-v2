@@ -1,0 +1,26 @@
+[gd_resource type="Resource" script_class="BattleEncounterVisual" load_steps=8 format=3]
+
+[ext_resource type="Script" path="res://content/battle_visuals/encounter_visual.gd" id="1"]
+[ext_resource type="Script" path="res://content/battle_visuals/fighter_placement.gd" id="2"]
+[ext_resource type="Resource" path="res://content/battle_visuals/habitats/peat_bog.tres" id="3"]
+[ext_resource type="Resource" path="res://content/battle_visuals/fighters/venom.tres" id="venom"]
+[ext_resource type="Resource" path="res://content/battle_visuals/fighters/mire_crown.tres" id="enemy"]
+
+[sub_resource type="Resource" id="Player"]
+script = ExtResource("2")
+instance_id = "Player"
+profile = ExtResource("venom")
+ground_position = Vector2(720, 700)
+face_left = false
+draw_order = 1
+
+[sub_resource type="Resource" id="Enemy"]
+script = ExtResource("2")
+instance_id = "Enemy"
+profile = ExtResource("enemy")
+ground_position = Vector2(1435, 585)
+
+[resource]
+script = ExtResource("1")
+habitat = ExtResource("3")
+fighters = Array[ExtResource("2")]([SubResource("Player"), SubResource("Enemy")])

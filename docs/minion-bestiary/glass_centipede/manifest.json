@@ -1,0 +1,199 @@
+{
+  "boss_id": "glass_centipede",
+  "boss_name": "Glass Centipede",
+  "theme": "Alchemical wasteland vermin; smoky green glass, tarnished brass ribs, bone masks, contained dim green reagents; no centipede copies.",
+  "minions": [
+    {
+      "id": "retort_tick",
+      "name": "Retort Tick",
+      "role": "Parasite",
+      "description": "A broad eight-legged tick whose swollen abdomen is one cracked smoky-green glass retort held in brass ribs, a small bone needle-mouth and hooked jointed black legs; contained reagent inside.",
+      "prompt": "Use case: stylized-concept. Create ONE original dark-fantasy game minion sprite named Retort Tick. Reference image is the faction boss, used ONLY for rendering style, material vocabulary and restrained palette, never its anatomy or scale. Design: A broad eight-legged tick whose swollen abdomen is one cracked smoky-green glass retort held in brass ribs, a small bone needle-mouth and hooked jointed black legs; contained reagent inside. Faction ecology: Alchemical wasteland vermin; smoky green glass, tarnished brass ribs, bone masks, contained dim green reagents; no centipede copies. This is a weaker encountered creature, not a boss or a miniature replica. Detailed hand-painted dark watercolor and fine ink hatching, tactile materials, readable distinctive silhouette. Full body, three-quarter view facing left, entire anatomy including tail, toes and wings visible with 5% empty margin; square canvas. Isolated on a genuinely transparent alpha PNG background. No environment, floor, cast shadow, aura, text, labels, borders, watermark or additional creatures.",
+      "relative_asset_path": "dice-and-destiny-client/assets/battle/minions/glass_centipede/retort_tick.png",
+      "source_reference_paths": [
+        "/Users/daddymere/games/Dice-and-Destiny-v2/dice-and-destiny-client/assets/battle/fighters/glass_centipede.png"
+      ],
+      "generated_source_path": "/Users/daddymere/.codex/generated_images/01a077cd-7da1-7e53-8836-ee884c7866fd/exec-6a2194c1-5fe7-4177-bca6-ad08e7ea8e8a.png",
+      "status": "completed",
+      "review": {
+        "alpha_empty_fraction": 0.6293,
+        "width": 1254,
+        "height": 1254,
+        "visual": "Full creature, distinct silhouette, faction style; reviewed."
+      }
+    },
+    {
+      "id": "ampoule_skate",
+      "name": "Ampoule Skate",
+      "role": "Glider",
+      "description": "A small floating ray-shaped creature with a thin smoky glass body, two wide translucent membrane fins reinforced with brass veins, an ivory faceplate and a segmented whip tail; no scenery.",
+      "prompt": "Use case: stylized-concept. Create ONE original dark-fantasy game minion sprite named Ampoule Skate. Reference image is the faction boss, used ONLY for rendering style, material vocabulary and restrained palette, never its anatomy or scale. Design: A small floating ray-shaped creature with a thin smoky glass body, two wide translucent membrane fins reinforced with brass veins, an ivory faceplate and a segmented whip tail; no scenery. Faction ecology: Alchemical wasteland vermin; smoky green glass, tarnished brass ribs, bone masks, contained dim green reagents; no centipede copies. This is a weaker encountered creature, not a boss or a miniature replica. Detailed hand-painted dark watercolor and fine ink hatching, tactile materials, readable distinctive silhouette. Full body, three-quarter view facing left, entire anatomy including tail, toes and wings visible with 5% empty margin; square canvas. Isolated on a genuinely transparent alpha PNG background. No environment, floor, cast shadow, aura, text, labels, borders, watermark or additional creatures.",
+      "relative_asset_path": "dice-and-destiny-client/assets/battle/minions/glass_centipede/ampoule_skate.png",
+      "source_reference_paths": [
+        "/Users/daddymere/games/Dice-and-Destiny-v2/dice-and-destiny-client/assets/battle/fighters/glass_centipede.png"
+      ],
+      "generated_source_path": "/Users/daddymere/.codex/generated_images/01a077cd-7da1-7e53-8836-ee884c7866fd/exec-b1ea7cc4-91a2-4b5e-8d3b-f96fb3930357.png",
+      "status": "completed",
+      "review": {
+        "alpha_empty_fraction": 0.674,
+        "width": 1254,
+        "height": 1254,
+        "visual": "Full creature, distinct silhouette, faction style; reviewed."
+      }
+    },
+    {
+      "id": "verdigris_mole",
+      "name": "Verdigris Mole",
+      "role": "Burrower",
+      "description": "A compact eyeless mole with tarnished brass digging claws, gray leathery skin, two rounded green-glass cheek reservoirs and a flexible plated tail, pale bone whisker sockets.",
+      "prompt": "Use case: stylized-concept. Create ONE original dark-fantasy game minion sprite named Verdigris Mole. Reference image is the faction boss, used ONLY for rendering style, material vocabulary and restrained palette, never its anatomy or scale. Design: A compact eyeless mole with tarnished brass digging claws, gray leathery skin, two rounded green-glass cheek reservoirs and a flexible plated tail, pale bone whisker sockets. Faction ecology: Alchemical wasteland vermin; smoky green glass, tarnished brass ribs, bone masks, contained dim green reagents; no centipede copies. This is a weaker encountered creature, not a boss or a miniature replica. Detailed hand-painted dark watercolor and fine ink hatching, tactile materials, readable distinctive silhouette. Full body, three-quarter view facing left, entire anatomy including tail, toes and wings visible with 5% empty margin; square canvas. Isolated on a genuinely transparent alpha PNG background. No environment, floor, cast shadow, aura, text, labels, borders, watermark or additional creatures.",
+      "relative_asset_path": "dice-and-destiny-client/assets/battle/minions/glass_centipede/verdigris_mole.png",
+      "source_reference_paths": [
+        "/Users/daddymere/games/Dice-and-Destiny-v2/dice-and-destiny-client/assets/battle/fighters/glass_centipede.png"
+      ],
+      "generated_source_path": "/Users/daddymere/.codex/generated_images/01a077cd-7da1-7e53-8836-ee884c7866fd/exec-44d9423a-bb41-4878-b4aa-458d0034a6d4.png",
+      "status": "completed",
+      "review": {
+        "alpha_empty_fraction": 0.6311,
+        "width": 1254,
+        "height": 1254,
+        "visual": "Regenerated with inward tail. Complete silhouette and generous margin reviewed."
+      },
+      "previous_generated_source_path": "/Users/daddymere/.codex/generated_images/01a077cd-7da1-7e53-8836-ee884c7866fd/exec-f688ae06-b36a-4da2-a764-8b2f399b650d.png",
+      "revision_prompt": "Use case: stylized-concept. Create ONE original dark-fantasy game minion sprite named Verdigris Mole. Reference image is the faction boss, used ONLY for rendering style, material vocabulary and restrained palette, never its anatomy or scale. Design: A compact eyeless mole with tarnished brass digging claws, gray leathery skin, two rounded green-glass cheek reservoirs and a flexible plated tail, pale bone whisker sockets. Faction ecology: Alchemical wasteland vermin; smoky green glass, tarnished brass ribs, bone masks, contained dim green reagents; no centipede copies. This is a weaker encountered creature, not a boss or a miniature replica. Detailed hand-painted dark watercolor and fine ink hatching, tactile materials, readable distinctive silhouette. Full body, three-quarter view facing left, entire anatomy including tail, toes and wings visible with 5% empty margin; square canvas. Isolated on a genuinely transparent alpha PNG background. No environment, floor, cast shadow, aura, text, labels, borders, watermark or additional creatures. FRAMING REVISION: the prior tail bulged out of the right edge. Coil the tail INWARD above the back, keep body and whiskers compact, use generous 12% blank transparent margin on ALL four sides. Entire silhouette must fit inside the canvas; no anatomy touching the border."
+    },
+    {
+      "id": "phial_mantis",
+      "name": "Phial Mantis",
+      "role": "Striker",
+      "description": "A fragile praying mantis with two long glass scalpel forearms, a brass cage thorax enclosing a single green phial, black wiry walking limbs and a tiny pale skull-shaped insect head.",
+      "prompt": "Use case: stylized-concept. Create ONE original dark-fantasy game minion sprite named Phial Mantis. Reference image is the faction boss, used ONLY for rendering style, material vocabulary and restrained palette, never its anatomy or scale. Design: A fragile praying mantis with two long glass scalpel forearms, a brass cage thorax enclosing a single green phial, black wiry walking limbs and a tiny pale skull-shaped insect head. Faction ecology: Alchemical wasteland vermin; smoky green glass, tarnished brass ribs, bone masks, contained dim green reagents; no centipede copies. This is a weaker encountered creature, not a boss or a miniature replica. Detailed hand-painted dark watercolor and fine ink hatching, tactile materials, readable distinctive silhouette. Full body, three-quarter view facing left, entire anatomy including tail, toes and wings visible with 5% empty margin; square canvas. Isolated on a genuinely transparent alpha PNG background. No environment, floor, cast shadow, aura, text, labels, borders, watermark or additional creatures.",
+      "relative_asset_path": "dice-and-destiny-client/assets/battle/minions/glass_centipede/phial_mantis.png",
+      "source_reference_paths": [
+        "/Users/daddymere/games/Dice-and-Destiny-v2/dice-and-destiny-client/assets/battle/fighters/glass_centipede.png"
+      ],
+      "generated_source_path": "/Users/daddymere/.codex/generated_images/01a077cd-7da1-7e53-8836-ee884c7866fd/exec-c0a00859-ebda-4d19-a186-112093423803.png",
+      "status": "completed",
+      "review": {
+        "alpha_empty_fraction": 0.6859,
+        "width": 1254,
+        "height": 1254,
+        "visual": "Full creature, distinct silhouette, faction style; reviewed."
+      }
+    },
+    {
+      "id": "crucible_hatchling",
+      "name": "Crucible Hatchling",
+      "role": "Spitter",
+      "description": "A squat amphibian with a cracked black ceramic bowl-shaped back containing a dim green organ, brass-lipped jaws, stubby webbed feet and tiny uneven smoky glass horns.",
+      "prompt": "Use case: stylized-concept. Create ONE original dark-fantasy game minion sprite named Crucible Hatchling. Reference image is the faction boss, used ONLY for rendering style, material vocabulary and restrained palette, never its anatomy or scale. Design: A squat amphibian with a cracked black ceramic bowl-shaped back containing a dim green organ, brass-lipped jaws, stubby webbed feet and tiny uneven smoky glass horns. Faction ecology: Alchemical wasteland vermin; smoky green glass, tarnished brass ribs, bone masks, contained dim green reagents; no centipede copies. This is a weaker encountered creature, not a boss or a miniature replica. Detailed hand-painted dark watercolor and fine ink hatching, tactile materials, readable distinctive silhouette. Full body, three-quarter view facing left, entire anatomy including tail, toes and wings visible with 5% empty margin; square canvas. Isolated on a genuinely transparent alpha PNG background. No environment, floor, cast shadow, aura, text, labels, borders, watermark or additional creatures.",
+      "relative_asset_path": "dice-and-destiny-client/assets/battle/minions/glass_centipede/crucible_hatchling.png",
+      "source_reference_paths": [
+        "/Users/daddymere/games/Dice-and-Destiny-v2/dice-and-destiny-client/assets/battle/fighters/glass_centipede.png"
+      ],
+      "generated_source_path": "/Users/daddymere/.codex/generated_images/01a077cd-7da1-7e53-8836-ee884c7866fd/exec-045b2487-1b71-407d-ae33-01c027b0d975.png",
+      "status": "completed",
+      "review": {
+        "alpha_empty_fraction": 0.5971,
+        "width": 1254,
+        "height": 1254,
+        "visual": "Full creature, distinct silhouette, faction style; reviewed."
+      }
+    },
+    {
+      "id": "lens_louse",
+      "name": "Lens Louse",
+      "role": "Scout",
+      "description": "A flattened armored louse with one large cloudy green convex lens as its head, six short brass-hook legs, a smoky glass shield over pale organs and delicate ivory feelers.",
+      "prompt": "Use case: stylized-concept. Create ONE original dark-fantasy game minion sprite named Lens Louse. Reference image is the faction boss, used ONLY for rendering style, material vocabulary and restrained palette, never its anatomy or scale. Design: A flattened armored louse with one large cloudy green convex lens as its head, six short brass-hook legs, a smoky glass shield over pale organs and delicate ivory feelers. Faction ecology: Alchemical wasteland vermin; smoky green glass, tarnished brass ribs, bone masks, contained dim green reagents; no centipede copies. This is a weaker encountered creature, not a boss or a miniature replica. Detailed hand-painted dark watercolor and fine ink hatching, tactile materials, readable distinctive silhouette. Full body, three-quarter view facing left, entire anatomy including tail, toes and wings visible with 5% empty margin; square canvas. Isolated on a genuinely transparent alpha PNG background. No environment, floor, cast shadow, aura, text, labels, borders, watermark or additional creatures.",
+      "relative_asset_path": "dice-and-destiny-client/assets/battle/minions/glass_centipede/lens_louse.png",
+      "source_reference_paths": [
+        "/Users/daddymere/games/Dice-and-Destiny-v2/dice-and-destiny-client/assets/battle/fighters/glass_centipede.png"
+      ],
+      "generated_source_path": "/Users/daddymere/.codex/generated_images/01a077cd-7da1-7e53-8836-ee884c7866fd/exec-abd6ed32-d1ae-423e-a3ee-f502cd5fc851.png",
+      "status": "completed",
+      "review": {
+        "alpha_empty_fraction": 0.6966,
+        "width": 1254,
+        "height": 1254,
+        "visual": "Full creature, distinct silhouette, faction style; reviewed."
+      }
+    },
+    {
+      "id": "siphon_wren",
+      "name": "Siphon Wren",
+      "role": "Harrier",
+      "description": "A skeletal wren with a long curved glass siphon beak, a ribbed brass breast cage, ragged charcoal feathers, pale bone legs and a small green reagent sac beneath its throat.",
+      "prompt": "Use case: stylized-concept. Create ONE original dark-fantasy game minion sprite named Siphon Wren. Reference image is the faction boss, used ONLY for rendering style, material vocabulary and restrained palette, never its anatomy or scale. Design: A skeletal wren with a long curved glass siphon beak, a ribbed brass breast cage, ragged charcoal feathers, pale bone legs and a small green reagent sac beneath its throat. Faction ecology: Alchemical wasteland vermin; smoky green glass, tarnished brass ribs, bone masks, contained dim green reagents; no centipede copies. This is a weaker encountered creature, not a boss or a miniature replica. Detailed hand-painted dark watercolor and fine ink hatching, tactile materials, readable distinctive silhouette. Full body, three-quarter view facing left, entire anatomy including tail, toes and wings visible with 5% empty margin; square canvas. Isolated on a genuinely transparent alpha PNG background. No environment, floor, cast shadow, aura, text, labels, borders, watermark or additional creatures.",
+      "relative_asset_path": "dice-and-destiny-client/assets/battle/minions/glass_centipede/siphon_wren.png",
+      "source_reference_paths": [
+        "/Users/daddymere/games/Dice-and-Destiny-v2/dice-and-destiny-client/assets/battle/fighters/glass_centipede.png"
+      ],
+      "generated_source_path": "/Users/daddymere/.codex/generated_images/01a077cd-7da1-7e53-8836-ee884c7866fd/exec-c17098aa-8084-4225-8b7f-12e9f0313e7f.png",
+      "status": "completed",
+      "review": {
+        "alpha_empty_fraction": 0.6307,
+        "width": 1254,
+        "height": 1254,
+        "visual": "Full creature, distinct silhouette, faction style; reviewed."
+      }
+    },
+    {
+      "id": "alembic_slug",
+      "name": "Alembic Slug",
+      "role": "Corroder",
+      "description": "An elongated black slug with three unequal green glass alembic bulbs growing from its back, tiny brass clamps, a broad ivory scraping mouth and a few short fleshy feelers; clean isolated silhouette.",
+      "prompt": "Use case: stylized-concept. Create ONE original dark-fantasy game minion sprite named Alembic Slug. Reference image is the faction boss, used ONLY for rendering style, material vocabulary and restrained palette, never its anatomy or scale. Design: An elongated black slug with three unequal green glass alembic bulbs growing from its back, tiny brass clamps, a broad ivory scraping mouth and a few short fleshy feelers; clean isolated silhouette. Faction ecology: Alchemical wasteland vermin; smoky green glass, tarnished brass ribs, bone masks, contained dim green reagents; no centipede copies. This is a weaker encountered creature, not a boss or a miniature replica. Detailed hand-painted dark watercolor and fine ink hatching, tactile materials, readable distinctive silhouette. Full body, three-quarter view facing left, entire anatomy including tail, toes and wings visible with 5% empty margin; square canvas. Isolated on a genuinely transparent alpha PNG background. No environment, floor, cast shadow, aura, text, labels, borders, watermark or additional creatures.",
+      "relative_asset_path": "dice-and-destiny-client/assets/battle/minions/glass_centipede/alembic_slug.png",
+      "source_reference_paths": [
+        "/Users/daddymere/games/Dice-and-Destiny-v2/dice-and-destiny-client/assets/battle/fighters/glass_centipede.png"
+      ],
+      "generated_source_path": "/Users/daddymere/.codex/generated_images/01a077cd-7da1-7e53-8836-ee884c7866fd/exec-f1d9af23-71ef-44be-9412-e5888e352ce3.png",
+      "status": "completed",
+      "review": {
+        "alpha_empty_fraction": 0.6449,
+        "width": 1254,
+        "height": 1254,
+        "visual": "Full creature, distinct silhouette, faction style; reviewed."
+      }
+    },
+    {
+      "id": "shardhand_homunculus",
+      "name": "Shardhand Homunculus",
+      "role": "Manipulator",
+      "description": "A small stooped humanoid made from stitched gray hide and brass wire, asymmetrical smoky-glass shard hands, a blank ivory doll face and one green glass chest window revealing a coiled organ.",
+      "prompt": "Use case: stylized-concept. Create ONE original dark-fantasy game minion sprite named Shardhand Homunculus. Reference image is the faction boss, used ONLY for rendering style, material vocabulary and restrained palette, never its anatomy or scale. Design: A small stooped humanoid made from stitched gray hide and brass wire, asymmetrical smoky-glass shard hands, a blank ivory doll face and one green glass chest window revealing a coiled organ. Faction ecology: Alchemical wasteland vermin; smoky green glass, tarnished brass ribs, bone masks, contained dim green reagents; no centipede copies. This is a weaker encountered creature, not a boss or a miniature replica. Detailed hand-painted dark watercolor and fine ink hatching, tactile materials, readable distinctive silhouette. Full body, three-quarter view facing left, entire anatomy including tail, toes and wings visible with 5% empty margin; square canvas. Isolated on a genuinely transparent alpha PNG background. No environment, floor, cast shadow, aura, text, labels, borders, watermark or additional creatures.",
+      "relative_asset_path": "dice-and-destiny-client/assets/battle/minions/glass_centipede/shardhand_homunculus.png",
+      "source_reference_paths": [
+        "/Users/daddymere/games/Dice-and-Destiny-v2/dice-and-destiny-client/assets/battle/fighters/glass_centipede.png"
+      ],
+      "generated_source_path": "/Users/daddymere/.codex/generated_images/01a077cd-7da1-7e53-8836-ee884c7866fd/exec-7a959d66-0aa4-4ec2-afa0-dc117ee674bd.png",
+      "status": "completed",
+      "review": {
+        "alpha_empty_fraction": 0.6259,
+        "width": 1254,
+        "height": 1254,
+        "visual": "Full creature, distinct silhouette, faction style; reviewed."
+      }
+    },
+    {
+      "id": "bottlejaw_weasel",
+      "name": "Bottlejaw Weasel",
+      "role": "Raider",
+      "description": "A slender weasel with articulated brass spinal braces, dark velvet fur, a transparent green-glass lower jaw with tiny ivory teeth, four swift clawed feet and a thin curled tail.",
+      "prompt": "Use case: stylized-concept. Create ONE original dark-fantasy game minion sprite named Bottlejaw Weasel. Reference image is the faction boss, used ONLY for rendering style, material vocabulary and restrained palette, never its anatomy or scale. Design: A slender weasel with articulated brass spinal braces, dark velvet fur, a transparent green-glass lower jaw with tiny ivory teeth, four swift clawed feet and a thin curled tail. Faction ecology: Alchemical wasteland vermin; smoky green glass, tarnished brass ribs, bone masks, contained dim green reagents; no centipede copies. This is a weaker encountered creature, not a boss or a miniature replica. Detailed hand-painted dark watercolor and fine ink hatching, tactile materials, readable distinctive silhouette. Full body, three-quarter view facing left, entire anatomy including tail, toes and wings visible with 5% empty margin; square canvas. Isolated on a genuinely transparent alpha PNG background. No environment, floor, cast shadow, aura, text, labels, borders, watermark or additional creatures.",
+      "relative_asset_path": "dice-and-destiny-client/assets/battle/minions/glass_centipede/bottlejaw_weasel.png",
+      "source_reference_paths": [
+        "/Users/daddymere/games/Dice-and-Destiny-v2/dice-and-destiny-client/assets/battle/fighters/glass_centipede.png"
+      ],
+      "generated_source_path": "/Users/daddymere/.codex/generated_images/01a077cd-7da1-7e53-8836-ee884c7866fd/exec-f4d4fb53-dc5e-4bc3-9e9f-0767a90469ac.png",
+      "status": "completed",
+      "review": {
+        "alpha_empty_fraction": 0.6554,
+        "width": 1254,
+        "height": 1254,
+        "visual": "Full creature, distinct silhouette, faction style; reviewed."
+      }
+    }
+  ]
+}

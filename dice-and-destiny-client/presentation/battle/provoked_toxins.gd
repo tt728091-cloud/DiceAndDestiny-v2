@@ -13,7 +13,7 @@ func configure(rolls: Array, names: Dictionary, outcomes: Array[String], events:
 	_label(self, "PROVOKED TOXINS", 26)
 	var sides := HBoxContainer.new(); sides.add_theme_constant_override("separation", 20); add_child(sides)
 	var rows := {}
-	for actor in ["blade", "goblin"]:
+	for actor in names:
 		var has_roll := false
 		for roll in rolls:
 			if roll.get("actor_id") == actor: has_roll = true

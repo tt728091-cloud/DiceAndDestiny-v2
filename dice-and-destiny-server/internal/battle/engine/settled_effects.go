@@ -47,6 +47,7 @@ type effectResult struct {
 }
 
 type effectAbilityModifier struct {
+	Duration           string
 	ActorID, AbilityID string
 	Modifier           *content.AbilityModifier
 }
@@ -239,7 +240,7 @@ func (e Engine) executeEffect(battle *state.Battle, library content.BattleLibrar
 		if abilityID == "" {
 			return result, errors.New("ability target is required")
 		}
-		result.AbilityModifiers = append(result.AbilityModifiers, effectAbilityModifier{ActorID: ctx.SourceActorID, AbilityID: abilityID, Modifier: op.Modifier})
+		result.AbilityModifiers = append(result.AbilityModifiers, effectAbilityModifier{ActorID: ctx.SourceActorID, AbilityID: abilityID, Duration: op.Duration, Modifier: op.Modifier})
 	case "modify_die":
 		actorID := ctx.SelectedDieActorID
 		if actorID == "" {
@@ -384,7 +385,11 @@ func (e Engine) applyEffectMutations(battle *state.Battle, library content.Battl
 		if !containsString(runtime.OffensiveAbilityIDs, modifier.AbilityID) {
 			return fmt.Errorf("ability modifier target %q is invalid", modifier.AbilityID)
 		}
-		runtime.AbilityModifiers = append(runtime.AbilityModifiers, state.RuntimeAbilityModifier{SourceCardInstanceID: sourceCardInstanceID, AbilityID: modifier.AbilityID, BonusID: modifier.Modifier.AddConditionalBonus.ID})
+		expires := 0
+		if modifier.Duration == "round" {
+			expires = battle.Segment.Round
+		}
+		runtime.AbilityModifiers = append(runtime.AbilityModifiers, state.RuntimeAbilityModifier{ExpiresAfterRound: expires, SourceCardInstanceID: sourceCardInstanceID, AbilityID: modifier.AbilityID, BonusID: modifier.Modifier.AddConditionalBonus.ID})
 		battle.Settled.Actors[modifier.ActorID] = runtime
 	}
 	for _, change := range result.DieChanges {

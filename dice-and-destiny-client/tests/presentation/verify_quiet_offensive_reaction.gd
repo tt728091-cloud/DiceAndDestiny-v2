@@ -25,7 +25,8 @@ func _run() -> void:
 	var board: Control = screen._root
 	var response := _fixture("empty")
 	screen._view.apply_result(response); screen._render()
-	_expect(screen._quiet_offensive_reaction() and screen._root == board, "empty reaction keeps prior board")
+	_expect(screen._quiet_offensive_reaction() and screen._root != board, "empty reaction uses continuous transition")
+	while Time.get_ticks_msec() <= screen._flow_until: await process_frame
 	fake.enqueue(_fixture("defense", "defensive", "defense_selection", "planning_select_ability"))
 	screen._auto_pass_if_only_action()
 	_expect(fake.commands.size() == 1 and screen._view.stage == "defense_selection", "empty final reaction skips even with debug toggle")
