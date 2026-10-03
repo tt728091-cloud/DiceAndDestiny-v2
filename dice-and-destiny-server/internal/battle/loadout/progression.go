@@ -167,14 +167,20 @@ func readProgress(root, character string, e Economy, lib content.BattleLibrary) 
 	if p.Character != character {
 		return p, fmt.Errorf("progression character mismatch")
 	}
+	if p.Deck == nil {
+		p.Deck = []Entry{}
+	}
 	return p, validateProgress(p, lib)
 }
 func validateProgress(p Progress, lib content.BattleLibrary) error {
 	if p.Version != 1 || p.Revision < 1 || p.XP < 0 {
 		return fmt.Errorf("invalid progression state")
 	}
-	if _, err := Validate(p.Deck, lib.Cards); err != nil {
-		return err
+	// An empty progression deck is valid between battles while rebuilding.
+	if len(p.Deck) > 0 {
+		if _, err := Validate(p.Deck, lib.Cards); err != nil {
+			return err
+		}
 	}
 	return ValidateAbilities(p.Abilities, lib)
 }
@@ -218,7 +224,7 @@ func Buy(root, character string, e Economy, lib content.BattleLibrary, request P
 		return p, err
 	}
 	if request.Revision != p.Revision {
-		return p, fmt.Errorf("loadout changed; refresh before purchasing")
+		return p, fmt.Errorf("loadout changed; refresh before trading")
 	}
 	cost := 0
 	cfg := e.Characters[character]
@@ -229,6 +235,12 @@ func Buy(root, character string, e Economy, lib content.BattleLibrary, request P
 		}
 		cost = e.Price(character, request.ID)
 		p.Deck = changeCount(p.Deck, request.ID, 1)
+	case "sell_card":
+		if _, ok := lib.Cards[request.ID]; !ok || deckCount(p.Deck, request.ID) < 1 {
+			return p, fmt.Errorf("no owned copy to sell")
+		}
+		cost = e.Price(character, request.ID)
+		p.Deck = changeCount(p.Deck, request.ID, -1)
 	case "upgrade_card":
 		upgrade, ok := cfg.CardUpgrades[request.ID]
 		if !ok || deckCount(p.Deck, request.ID) < 1 {
@@ -259,15 +271,19 @@ func Buy(root, character string, e Economy, lib content.BattleLibrary, request P
 			return p, fmt.Errorf("ability is not equipped")
 		}
 	default:
-		return p, fmt.Errorf("unknown purchase kind")
+		return p, fmt.Errorf("unknown transaction kind")
 	}
 	if cost != request.ExpectedCost {
-		return p, fmt.Errorf("price changed; refresh before purchasing")
+		return p, fmt.Errorf("price changed; refresh before trading")
 	}
-	if p.XP < cost {
+	if request.Kind != "sell_card" && p.XP < cost {
 		return p, fmt.Errorf("not enough XP")
 	}
-	p.XP -= cost
+	if request.Kind == "sell_card" {
+		p.XP += cost
+	} else {
+		p.XP -= cost
+	}
 	p.Revision++
 	if err = validateProgress(p, lib); err != nil {
 		return p, err

@@ -227,3 +227,138 @@ func totalProgress(deck []loadout.Entry) int {
 	}
 	return n
 }
+
+func TestProgressionSellEntireStarterDeckAndRebuild(t *testing.T) {
+	root := filepath.Join(testServerRoot(t), "content")
+	catalogs, _ := CharacterCatalogs(root)
+	economy, err := loadout.LoadEconomy(root, catalogs)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for character, lib := range catalogs {
+		t.Run(character, func(t *testing.T) {
+			dir := t.TempDir()
+			p, err := loadout.ReadProgress(dir, character, economy, lib)
+			if err != nil {
+				t.Fatal(err)
+			}
+			budget := p.XP
+			starter := append([]loadout.Entry(nil), p.Deck...)
+			for _, entry := range starter {
+				budget += entry.Count * economy.Price(character, entry.CardID)
+			}
+			for _, entry := range starter {
+				for copy := 0; copy < entry.Count; copy++ {
+					p, err = loadout.Buy(dir, character, economy, lib, loadout.Purchase{Kind: "sell_card", ID: entry.CardID, Revision: p.Revision, ExpectedCost: economy.Price(character, entry.CardID)})
+					if err != nil {
+						t.Fatal(err)
+					}
+				}
+			}
+			if len(p.Deck) != 0 || p.XP != budget {
+				t.Fatalf("liquidation mismatch: %+v budget %d", p, budget)
+			}
+			if character == "adventurer" && budget != 220 {
+				t.Fatal("Adventurer's 120 XP starter plus 100 XP allowance must equal 220")
+			}
+			reopened, err := loadout.ReadProgress(dir, character, economy, lib)
+			if err != nil || !reflect.DeepEqual(p, reopened) {
+				t.Fatal("empty deck did not persist")
+			}
+			filename := filepath.Join(dir, "progression", character+".json")
+			before, _ := os.ReadFile(filename)
+			if _, err = loadout.Buy(dir, character, economy, lib, loadout.Purchase{Kind: "sell_card", ID: starter[0].CardID, Revision: p.Revision, ExpectedCost: economy.Price(character, starter[0].CardID)}); err == nil {
+				t.Fatal("sold an unowned card")
+			}
+			after, _ := os.ReadFile(filename)
+			if string(before) != string(after) {
+				t.Fatal("rejected sale changed balance")
+			}
+			s, err := NewSession(SessionConfig{ContentRoot: root, RunStateRoot: t.TempDir(), LoadoutRoot: dir, OpponentDefinition: "drowned_oracle_brine_mask"})
+			if err != nil {
+				t.Fatal(err)
+			}
+			if _, err = s.ResetCharacter("existing", 191, "seat-a", false, character, true); err != nil {
+				t.Fatal(err)
+			}
+			previous := s.current.Result.Snapshot
+			if _, err = s.ResetCharacterLoadout("empty", 192, "seat-b", false, character, true, "progression"); err == nil {
+				t.Fatal("empty progression battle accepted")
+			}
+			if s.current.Result.Snapshot != previous {
+				t.Fatal("rejected empty start replaced current battle")
+			}
+			p, err = loadout.Buy(dir, character, economy, lib, loadout.Purchase{Kind: "buy_card", ID: "tip_it", Revision: p.Revision, ExpectedCost: economy.Price(character, "tip_it")})
+			if err != nil {
+				t.Fatal(err)
+			}
+			if p.XP != budget-economy.Price(character, "tip_it") {
+				t.Fatal("rebuy price differs")
+			}
+			if _, err = s.ResetCharacterLoadout("rebuilt", 193, "seat-a", false, character, true, "progression"); err != nil {
+				t.Fatal(err)
+			}
+			if s.current.Result.Snapshot.Actors["seat-a"].MaxHealth != 1 {
+				t.Fatal("rebuilt deck not used")
+			}
+			finishOwnedBattle(t, s)
+		})
+	}
+}
+
+func TestProgressionSalePriceOverridesAndStaleRequests(t *testing.T) {
+	root := filepath.Join(testServerRoot(t), "content")
+	catalogs, _ := CharacterCatalogs(root)
+	economy, _ := loadout.LoadEconomy(root, catalogs)
+	dir := t.TempDir()
+	lib := catalogs["adventurer"]
+	p, _ := loadout.ReadProgress(dir, "adventurer", economy, lib)
+	p, err := loadout.Buy(dir, "adventurer", economy, lib, loadout.Purchase{Kind: "upgrade_card", ID: "brace", Revision: p.Revision, ExpectedCost: 10})
+	if err != nil {
+		t.Fatal(err)
+	}
+	revision := p.Revision
+	sale := loadout.Purchase{Kind: "sell_card", ID: "brace_plus", Revision: revision, ExpectedCost: 20}
+	bad := sale
+	bad.ExpectedCost = 10
+	if _, err = loadout.Buy(dir, "adventurer", economy, lib, bad); err == nil {
+		t.Fatal("wrong sale quote accepted")
+	}
+	p, err = loadout.Buy(dir, "adventurer", economy, lib, sale)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if p.XP != 110 || countProgress(p.Deck, "brace_plus") != 0 {
+		t.Fatal("upgraded card did not sell at its configured purchase price")
+	}
+	if _, err = loadout.Buy(dir, "adventurer", economy, lib, sale); err == nil {
+		t.Fatal("duplicate sale credited twice")
+	}
+	p, err = loadout.Buy(dir, "adventurer", economy, lib, loadout.Purchase{Kind: "buy_card", ID: "brace_plus", Revision: p.Revision, ExpectedCost: 20})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if p.XP != 90 || countProgress(p.Deck, "brace_plus") != 1 {
+		t.Fatal("sale and rebuy must cancel out")
+	}
+	// Concurrent sales of one owned copy can only credit once.
+	var wg sync.WaitGroup
+	var mu sync.Mutex
+	success := 0
+	for i := 0; i < 2; i++ {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			_, err := loadout.Buy(dir, "adventurer", economy, lib, loadout.Purchase{Kind: "sell_card", ID: "brace_plus", Revision: p.Revision, ExpectedCost: 20})
+			if err == nil {
+				mu.Lock()
+				success++
+				mu.Unlock()
+			}
+		}()
+	}
+	wg.Wait()
+	if success != 1 {
+		t.Fatal("concurrent sale was duplicated")
+	}
+}

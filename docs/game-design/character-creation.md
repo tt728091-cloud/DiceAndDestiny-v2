@@ -72,6 +72,18 @@ loadout overrides. It does not import a freely edited Sandbox deck.
   refill it. Victory rewards are still the next phase.
 - The default card price is **10 XP**; per-character overrides are supported.
   Buying a copy immediately equips it and increases maximum health by one.
+- **Sell a copy** removes one equipped card and refunds its current configured
+  purchase price. Starter cards and upgraded cards can both be sold; Brace+
+  currently sells for 20 XP. Buying and selling use the same price configuration.
+- Starter cards represent an already invested card budget, in addition to the
+  initial XP allowance. A fresh Adventurer has **100 available XP + 120 XP in
+  starter cards = 220 XP**. The summary displays available XP, current deck value,
+  and their combined card budget. Selling all starter cards makes all 220 XP
+  available; this does not grant extra XP or reset an existing balance.
+- An empty Progression deck can be saved while rebuilding. Battle setup disables
+  Start Battle and explains that at least one card is required. The authority
+  also rejects an empty deck without replacing the current battle. Sandbox keeps
+  its existing minimum of one card when applying a deck.
 - Upgrading a card replaces exactly one owned copy and preserves health.
   The Adventurer example is **Brace → Brace+ for 10 XP**. Buying an additional
   Brace+ directly costs **20 XP**.
@@ -80,12 +92,12 @@ loadout overrides. It does not import a freely edited Sandbox deck.
   with three base Braces and only base Guard so these upgrades can be tested.
   Its Sandbox starter remains unchanged. Other characters can buy cards; they
   show no further upgrade until paths are authored for their abilities/cards.
-- Selecting a purchase opens a preview of XP before/after, health before/after,
-  and full before/after rules for upgrades. Cancel spends nothing. Confirm saves
-  immediately; there is no Apply or refund in Progression.
-- Purchases validate ownership, source/target definitions, ability type, count
+- Selecting a purchase or sale opens a preview of XP before/after, health
+  before/after, and full before/after rules for upgrades. Cancel changes nothing.
+  Confirm saves immediately; there is no Apply step in Progression.
+- Transactions validate ownership, source/target definitions, ability type, count
   limits, XP, quoted price, and save revision in the authority. A stale or repeated
-  purchase cannot spend twice. XP, deck, ability board, and revision are stored in
+  transaction cannot spend or refund twice. XP, deck, ability board, and revision are stored in
   one atomic save. Errors never partially spend or equip an upgrade.
 - Progression saves live under `user/character_loadouts/progression/<character>.json`
   in the launcher-isolated runtime root. The separate file includes XP, deck,
@@ -115,14 +127,14 @@ characters:
 Optional `starting_decklist` and `starting_abilities` override the initial
 Progression loadout. Starting values apply only when the save is first created;
 changing them never overwrites existing progression. Prices/paths are reread for
-catalog reads and purchases. Use Reload definitions to refresh the UI. A purchase
+catalog reads, purchases, and sales. Use Reload definitions to refresh the UI. A transaction
 quoted before a price change is rejected until refreshed. Unknown configuration
 keys, missing definitions, invalid prices, and mismatched ability types are errors.
 New mechanical effects still need engine support; links between existing authored
 cards/abilities and economy values are configuration-only.
 
 This phase exposes the character's supported card catalog. Discovery-based
-availability, reward XP, unequipped inventory, selling/removal, and branching run
+availability, reward XP, unequipped inventory, and branching run
 progression remain future work.
 
 ## Next phases
@@ -165,3 +177,11 @@ requests, configuration-only price changes, both human seats, complete battles,
 and replayed upgraded ability boards. `verify_xp_progression.gd` tests purchase
 previews/cancellation, pointer purchases, XP/health updates, persisted mode changes,
 insufficient XP, three viewport sizes, and a real menu-launched progression battle.
+
+Sales tests cover selling every starter card for all four characters, empty-deck
+persistence, rebuilding and completing battles, configured upgraded-card prices,
+unowned-card rejection, stale quotes/revisions, and concurrent sale requests.
+`verify_xp_sales.gd` validates sale previews/cancellation, pointer sales and
+buybacks, the full 220 XP Adventurer budget, empty-deck menu restrictions,
+Sandbox/other-character isolation, reopening, three viewport sizes, and buying
+back a card before starting a real battle.

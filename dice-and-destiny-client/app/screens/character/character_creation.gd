@@ -189,7 +189,7 @@ func _build_purchase_overlay() -> void:
 	var dim := ColorRect.new(); dim.color = Color(0, 0, 0, 0.8); dim.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT); _purchase_overlay.add_child(dim)
 	var center := CenterContainer.new(); center.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT); _purchase_overlay.add_child(center)
 	var panel := _panel(center, 900); panel.get_parent().custom_minimum_size.y = 650
-	_label(panel, "Review XP purchase", 30, GOLD)
+	_label(panel, "Review XP transaction", 30, GOLD)
 	_purchase_details = _scroll(panel)
 	var actions := HBoxContainer.new(); actions.add_theme_constant_override("separation", 14); panel.add_child(actions)
 	_purchase_cancel = _button(actions, "Cancel", func(): _purchase_overlay.hide(), "purchase.cancel")
@@ -247,7 +247,12 @@ func _refresh_summary() -> void:
 	var stats := HBoxContainer.new(); stats.add_theme_constant_override("separation", 20); _summary.add_child(stats)
 	_label(stats, "%d  HEALTH" % health, 26, Color("f1ad9f")).autowrap_mode = TextServer.AUTOWRAP_OFF
 	_label(stats, "%d cards · %d unique" % [health, character.decklist.size()], 18, MUTED).autowrap_mode = TextServer.AUTOWRAP_OFF
-	if loadout_mode == "progression": _label(stats, "%d XP" % int(catalogs[character_id].progression.xp), 26, GOLD).autowrap_mode = TextServer.AUTOWRAP_OFF
+	if loadout_mode == "progression":
+		var xp := int(catalogs[character_id].progression.xp)
+		_label(stats, "%d XP" % xp, 26, GOLD).autowrap_mode = TextServer.AUTOWRAP_OFF
+		var deck_value := 0
+		for entry in character.decklist: deck_value += int(entry.count) * _card_price(str(entry.card_id))
+		_label(_summary, "Card budget: %d XP available + %d XP in deck = %d XP" % [xp, deck_value, xp + deck_value], 15, GOLD)
 	_label(_summary, "Opening hand %d  ·  Starting energy %d  ·  Hand limit %d" % [character.resources.starting_hand_size, character.resources.starting_energy, character.resources.hand_limit], 14, MUTED)
 	_label(_summary, "Each round: draw %d  ·  gain %d energy" % [character.income.cards, character.income.energy], 14, MUTED)
 
@@ -410,10 +415,11 @@ func _health() -> int:
 func _refresh_actions() -> void:
 	var progression := loadout_mode == "progression"
 	_apply.visible = not progression; _revert.visible = not progression; _reset.visible = not progression
-	_mode_note.text = "Progression purchases save immediately and equip your next battle. Battle rewards and discovery come next." if progression else "Sandbox: freely edit and apply a test deck. Progression has a separate deck and XP balance."
+	_mode_note.text = "Buying and selling save immediately for your next battle. Cards sell for their current purchase price. Battle rewards and discovery come next." if progression else "Sandbox: freely edit and apply a test deck. Progression has a separate deck and XP balance."
 	if progression:
-		_save_status.text = "%d XP available · purchases are permanent" % int(catalogs[character_id].progression.xp)
+		_save_status.text = "%d XP available · buy and sell cards at equal prices" % int(catalogs[character_id].progression.xp)
 		_save_status.add_theme_color_override("font_color", GOLD)
+		if _health() == 0: _save_status.text = "Deck empty · buy at least one card before starting a battle."
 		return
 	var dirty := _dirty(character_id)
 	var valid := _health() >= 1 and _health() <= int(catalogs[character_id].deck_limits.max_cards)
@@ -470,13 +476,18 @@ func _economy_map(key: String) -> Dictionary:
 	var value = catalogs[character_id].economy.get(key)
 	return value if value is Dictionary else {}
 
+func _card_price(id: String) -> int:
+	return int(_economy_map("card_prices").get(id, catalogs[character_id].economy.default_card_price))
+
 func _progression_actions(kind: String, id: String) -> void:
 	var progress: Dictionary = catalogs[character_id].progression
 	if kind == "cards":
 		_label(_details, "%d %s equipped" % [_card_count(id), "copy" if _card_count(id) == 1 else "copies"], 16, MUTED)
-		var price := int(_economy_map("card_prices").get(id, catalogs[character_id].economy.default_card_price))
+		var price := _card_price(id)
 		var buy := _button(_details, "Buy a copy · %d XP" % price, func(): _review_purchase("buy_card", id, price), "buy." + id)
 		buy.disabled = int(progress.xp) < price or _card_count(id) >= int(catalogs[character_id].deck_limits.max_copies) or _health() >= int(catalogs[character_id].deck_limits.max_cards)
+		var sell := _button(_details, "Sell a copy · +%d XP" % price, func(): _review_purchase("sell_card", id, price), "sell." + id)
+		sell.disabled = _card_count(id) < 1
 		if int(progress.xp) < price: _label(_details, "Need %d more XP to buy a copy." % (price - int(progress.xp)), 14, MUTED)
 	var upgrades := _economy_map("card_upgrades" if kind == "cards" else "ability_upgrades")
 	if upgrades.has(id):
@@ -493,20 +504,26 @@ func _review_purchase(kind: String, id: String, cost: int) -> void:
 	_clear(_purchase_details)
 	var collection := "abilities" if kind == "upgrade_ability" else "cards"
 	var current: Dictionary = catalogs[character_id][collection][id]
-	var target_id := id if kind == "buy_card" else str(_economy_map("ability_upgrades" if collection == "abilities" else "card_upgrades")[id].to)
+	var upgrade := kind in ["upgrade_card", "upgrade_ability"]
+	var selling := kind == "sell_card"
+	var target_id := str(_economy_map("ability_upgrades" if collection == "abilities" else "card_upgrades")[id].to) if upgrade else id
 	_pending_purchase.target_id = target_id
 	var target: Dictionary = catalogs[character_id][collection][target_id]
-	_label(_purchase_details, "%s → %s" % [current.name, target.name] if kind != "buy_card" else "Add one %s" % target.name, 24, GOLD)
-	_label(_purchase_details, "XP: %d → %d    ·    Health: %d → %d" % [int(progress.xp), int(progress.xp) - cost, _health(), _health() + (1 if kind == "buy_card" else 0)], 22)
+	var card_delta := -1 if selling else 1 if kind == "buy_card" else 0
+	_label(_purchase_details, "%s → %s" % [current.name, target.name] if upgrade else ("Sell one %s" if selling else "Add one %s") % target.name, 24, GOLD)
+	_label(_purchase_details, "XP: %d → %d    ·    Health: %d → %d" % [int(progress.xp), int(progress.xp) + (cost if selling else -cost), _health(), _health() + card_delta], 22)
 	if kind == "upgrade_card": _label(_purchase_details, "Replaces one owned copy. Other copies remain unchanged.", 16, MUTED)
 	elif kind == "upgrade_ability": _label(_purchase_details, "Replaces the equipped ability in its slot.", 16, MUTED)
-	else: _label(_purchase_details, "Equipped copies: %d → %d" % [_card_count(id), _card_count(id) + 1], 16, MUTED)
-	if kind != "buy_card":
+	else: _label(_purchase_details, "Equipped copies: %d → %d" % [_card_count(id), _card_count(id) + card_delta], 16, MUTED)
+	if selling:
+		_label(_purchase_details, "Returns the current purchase price to your XP balance. You can buy this card again from the library.", 18, MUTED)
+		if _health() == 1: _label(_purchase_details, "This empties your deck. Buy at least one card before starting a battle.", 18, GOLD)
+	if upgrade:
 		_label(_purchase_details, "BEFORE", 14, GOLD)
 		_label(_purchase_details, str(current.presentation.rules_text), 18)
-	_label(_purchase_details, "AFTER" if kind != "buy_card" else "CARD RULES", 14, GOLD)
+	_label(_purchase_details, "AFTER" if upgrade else "CARD RULES", 14, GOLD)
 	_label(_purchase_details, str(target.presentation.rules_text), 18)
-	_purchase_confirm.text = "Spend %d XP" % cost
+	_purchase_confirm.text = ("Receive %d XP" if selling else "Spend %d XP") % cost
 	_purchase_confirm.disabled = false
 	_purchase_overlay.show(); _purchase_cancel.grab_focus()
 
@@ -518,7 +535,7 @@ func _confirm_purchase() -> void:
 	var response: Dictionary = get_node("/root/LearnedBattleRuntime").purchase_progression(str(p.character), str(p.kind), str(p.id), int(p.revision), int(p.cost))
 	_purchase_overlay.hide()
 	if not response.get("ok", false):
-		_error.text = "Purchase not completed: " + str(response.get("error", "Unknown error")) + ". Reload definitions to refresh."; _error.show(); return
+		_error.text = "Transaction not completed: " + str(response.get("error", "Unknown error")) + ". Reload definitions to refresh."; _error.show(); return
 	_error.hide()
 	var progress: Dictionary = response.result
 	catalogs[character_id].progression = progress

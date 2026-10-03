@@ -11,6 +11,8 @@ var store: ActiveBattleStore
 var _message: Label
 var _buttons: VBoxContainer
 var _mode_panel: PanelContainer
+var _empty_progression_decks: Dictionary = {}
+var _loadout_hint: Label
 var _loadout_choice: OptionButton
 var _character_choice: OptionButton
 var _model_choice: OptionButton
@@ -77,6 +79,7 @@ func _build_mode_menu() -> void:
 	var selected_mode: String = get_node("/root/LearnedBattleRuntime").selected_loadout_mode
 	_loadout_choice.select(1 if selected_mode == "progression" else 0)
 	_loadout_choice.item_selected.connect(func(_index): get_node("/root/LearnedBattleRuntime").selected_loadout_mode = str(_loadout_choice.get_selected_metadata()); _refresh_character_loadouts())
+	_character_choice.item_selected.connect(func(_index): _update_start_availability())
 	_character_choice.select(3)
 	_refresh_character_loadouts()
 	_model_choice = _add_selection("OPPONENT", [
@@ -105,6 +108,10 @@ func _build_mode_menu() -> void:
 	_message.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	_message.add_theme_color_override("font_color", Color("9fb3c8"))
 	content.add_child(_message)
+	_loadout_hint = Label.new(); _loadout_hint.text = "Your deck is empty. Add cards in Character Creation before starting a battle."
+	_loadout_hint.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART; _loadout_hint.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_loadout_hint.add_theme_color_override("font_color", Color("f5c963")); content.add_child(_loadout_hint)
+	_update_start_availability()
 
 func _update_opponent_description() -> void:
 	if _model_choice.get_selected_metadata() == "brine-mask-pair":
@@ -130,6 +137,7 @@ func _add_selection(caption: String, choices: Array, control_id: String) -> Opti
 	return select
 
 func _start_selected() -> void:
+	if _progression_deck_empty(): return
 	_start_learned(str(_seat_choice.get_selected_metadata()), str(_model_choice.get_selected_metadata()))
 
 func _add_mode_button(text: String, callback: Callable, control_id: String) -> void:
@@ -225,6 +233,8 @@ func _set_buttons_disabled(disabled: bool) -> void:
 		if child is Button:
 			child.disabled = disabled
 
+	if not disabled: _update_start_availability()
+
 func _show_error(message: String, result: Dictionary) -> void:
 	_message.text = "BATTLE START ERROR\n%s\n\n%s" % [message, JSON.stringify(result)]
 	_message.add_theme_color_override("font_color", Color("ff8a78"))
@@ -241,10 +251,24 @@ func _open_character_creation() -> void:
 func _refresh_character_loadouts() -> void:
 	var response: Dictionary = get_node("/root/LearnedBattleRuntime").character_catalogs(str(_loadout_choice.get_selected_metadata()))
 	if not response.get("ok", false): return
+	_empty_progression_decks.clear()
 	for index in _character_choice.item_count:
 		var id := str(_character_choice.get_item_metadata(index))
 		var catalog: Dictionary = response.result.get(id, {})
 		if catalog.is_empty(): continue
 		var health := 0
 		for entry in catalog.get("owned_decklist", catalog.combatants[id].decklist): health += int(entry.count)
+		_empty_progression_decks[id] = catalog.has("progression") and health == 0
 		_character_choice.set_item_text(index, "%s · %d health · %s" % [catalog.combatants[id].name, health, "Progression · %d XP" % int(catalog.progression.xp) if catalog.has("progression") else "Saved deck" if catalog.has("owned_decklist") else "Starter deck"])
+
+	_update_start_availability()
+
+func _progression_deck_empty() -> bool:
+	return _loadout_choice != null and str(_loadout_choice.get_selected_metadata()) == "progression" and bool(_empty_progression_decks.get(str(_character_choice.get_selected_metadata()), false))
+
+func _update_start_availability() -> void:
+	var empty := _progression_deck_empty()
+	if not _menu_actions.is_empty():
+		_menu_actions[0].disabled = empty
+		_menu_actions[0].tooltip_text = "Buy at least one card in Character Creation." if empty else ""
+	if _loadout_hint != null: _loadout_hint.visible = empty
