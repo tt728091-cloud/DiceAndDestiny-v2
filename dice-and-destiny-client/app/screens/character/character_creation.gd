@@ -330,6 +330,10 @@ func _entry(kind: String, id: String, title: String, subtitle: String, badge: St
 	var v := VBoxContainer.new(); v.size_flags_horizontal = Control.SIZE_EXPAND_FILL; row.add_child(v); v.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	var name_label := _label(v, title, 17); name_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	var sub := _label(v, subtitle, 13, MUTED); sub.max_lines_visible = 1; sub.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS; sub.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	if loadout_mode == "progression" and kind in ["cards", "abilities"]:
+		var value := _label(v, _entry_xp_text(kind, id), 14, GOLD); value.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		b.custom_minimum_size.y = 94
+		m.minimum_size_changed.connect(func(): b.custom_minimum_size.y = maxf(94, m.get_combined_minimum_size().y))
 	var tag := _label(row, badge, 18, GOLD); tag.autowrap_mode = TextServer.AUTOWRAP_OFF; tag.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	if selected_id == id: b.add_theme_stylebox_override("normal", _style("253a46", "b99a60"))
 	b.set_meta("entry_kind", kind); b.set_meta("entry_id", id); _entry_buttons.append(b)
@@ -366,8 +370,7 @@ func _populate_card_lists() -> void:
 	for id in ids:
 		var info := BattlePresentationCatalog.card(str(id))
 		if not _matches_card(info, _library_search.text): continue
-		var price_prefix := "%d XP · " % int(_economy_map("card_prices").get(str(id), catalogs[character_id].economy.default_card_price)) if loadout_mode == "progression" else ""
-		_entry("cards", str(id), info.name, price_prefix + "%d energy · %s" % [info.cost, info.effect_summary], "×%d" % _card_count(str(id)), _library_list, "library")
+		_entry("cards", str(id), info.name, "%d energy · %s" % [info.cost, info.effect_summary], "×%d" % _card_count(str(id)), _library_list, "library")
 	for entry in character.get("decklist", []):
 		var info := BattlePresentationCatalog.card(str(entry.card_id))
 		if not _matches_card(info, _deck_search.text): continue
@@ -389,6 +392,7 @@ func inspect_entry(kind: String, id: String) -> void:
 	_quantity = null
 	var definition: Dictionary = catalogs[character_id][kind][id]
 	_label(_details, str(definition.name), 24, GOLD)
+	if loadout_mode == "progression" and kind in ["cards", "abilities"]: _label(_details, _entry_xp_text(kind, id), 15, GOLD)
 	if kind == "cards":
 		if loadout_mode == "progression":
 			_progression_actions(kind, id)
@@ -757,3 +761,26 @@ func _comparison_rules(kind: String, id: String) -> String:
 	if definition.has("saved_card_destination"):
 		parts.append("Saved cards: " + ("return to their original piles." if definition.saved_card_destination == "original" else "go to discard."))
 	return "\n\n".join(parts)
+
+func _entry_xp_text(kind: String, id: String) -> String:
+	if kind == "cards":
+		var unit := _card_price(id); var count := _card_count(id)
+		return "%d XP × %d = %d XP total" % [unit, count, unit * count]
+	var value := _ability_xp_value(id)
+	return "%d XP total · %s" % [value, "included starter ability" if value == 0 else "configured upgrade investment"]
+
+func _ability_xp_value(id: String, visited: Array[String] = []) -> int:
+	# Abilities currently have no base purchase cost. Sum the configured tier path;
+	# use the cheapest authored path if future upgrades converge on the same tier.
+	if id in visited: return -1
+	var path: Array[String] = visited.duplicate(); path.append(id)
+	var best := -1; var has_parent := false
+	var upgrades := _economy_map("ability_upgrades")
+	for previous in upgrades:
+		if str(upgrades[previous].to) != id: continue
+		has_parent = true
+		var parent := _ability_xp_value(str(previous), path)
+		if parent < 0: continue
+		var total := parent + int(upgrades[previous].xp)
+		if best < 0 or total < best: best = total
+	return best if has_parent else 0

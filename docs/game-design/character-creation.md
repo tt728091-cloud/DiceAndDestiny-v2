@@ -70,6 +70,14 @@ loadout overrides. It does not import a freely edited Sandbox deck.
   allowance is **100 XP**, granted once on initial progression creation. Reopening
   the screen, reloading definitions, changing modes, and restarting battles do not
   refill it. Victory rewards are still the next phase.
+- Progression deck/library rows and the inspector show each card's unit price,
+  owned quantity, and total value, for example **10 XP × 3 = 30 XP total**.
+  Unowned library cards show the unit price with a zero owned total. Values refresh
+  after trades, upgrades, and admin price changes. Ability rows show their total
+  configured upgrade-path cost; starter abilities currently have no base XP charge
+  and are labeled **0 XP total · included starter ability**. Guard+ shows 25 XP.
+  For converging future upgrade paths, the displayed configured value is the least
+  expensive path, rather than a historical spending receipt. Sandbox stays free.
 - The default card price is **10 XP**; per-character overrides are supported.
   Buying a copy immediately equips it and increases maximum health by one.
 - **Sell a copy** removes one equipped card and refunds its current configured
@@ -267,3 +275,7 @@ full before/after rules, reopening, and three viewport sizes.
 changed-word highlighting, full card/ability rules, disabled buttons, placement
 at three sizes, mouse scrolling, stale-preview dismissal, and successful card
 and ability purchases after hovering. Hover comparisons are read-only.
+
+`verify_entry_xp_totals.gd` validates per-copy and quantity totals in the deck,
+library, and inspector, zero-owned cards, updated prices after admin edits,
+upgrade/downgrade values, and containment of the added labels at three sizes.
