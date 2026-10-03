@@ -14,6 +14,11 @@ var _purchase_details: VBoxContainer
 var _purchase_confirm: Button
 var _purchase_cancel: Button
 var _pending_purchase: Dictionary = {}
+var _skip_prompt: CheckBox
+var _confirmation_options: HBoxContainer
+var _confirm_buy: CheckBox
+var _confirm_sell: CheckBox
+var _transaction_preferences := ConfigFile.new()
 var character_id := ""
 var catalogs: Dictionary = {}
 var character: Dictionary = {}
@@ -58,6 +63,7 @@ func _ready() -> void:
 	name = "CharacterCreation"
 	set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	_previous_catalog = BattlePresentationCatalog._catalog.duplicate(true)
+	_transaction_preferences.load(WorkspacePaths.persistent_file("character_preferences.cfg"))
 	_build()
 	reload_catalogs()
 
@@ -158,6 +164,9 @@ func _build() -> void:
 	_details = _scroll(right)
 	var footer := HBoxContainer.new(); footer.add_theme_constant_override("separation", 12); body.add_child(footer)
 	_save_status = _label(footer, "", 15, MUTED); _save_status.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_confirmation_options = HBoxContainer.new(); footer.add_child(_confirmation_options)
+	_confirm_buy = _confirmation_toggle(_confirmation_options, "Confirm buys", "buy_card")
+	_confirm_sell = _confirmation_toggle(_confirmation_options, "Confirm sales", "sell_card")
 	_reset = _button(footer, "Reset to template", _reset_draft, "reset")
 	_revert = _button(footer, "Revert", _revert_draft, "revert")
 	_apply = _button(footer, "Apply deck", _apply_draft, "apply")
@@ -191,11 +200,32 @@ func _build_purchase_overlay() -> void:
 	var panel := _panel(center, 900); panel.get_parent().custom_minimum_size.y = 650
 	_label(panel, "Review XP transaction", 30, GOLD)
 	_purchase_details = _scroll(panel)
+	_skip_prompt = CheckBox.new(); _skip_prompt.text = "Do not show again"; panel.add_child(_skip_prompt)
+	_skip_prompt.add_theme_font_size_override("font_size", 18)
 	var actions := HBoxContainer.new(); actions.add_theme_constant_override("separation", 14); panel.add_child(actions)
 	_purchase_cancel = _button(actions, "Cancel", func(): _purchase_overlay.hide(), "purchase.cancel")
 	_purchase_confirm = _button(actions, "Confirm purchase", _confirm_purchase, "purchase.confirm")
 	_focus_pair(_purchase_cancel, _purchase_confirm)
 	_purchase_overlay.hide()
+
+func _confirmation_enabled(kind: String) -> bool:
+	return bool(_transaction_preferences.get_value("confirmations", kind, true))
+
+func _confirmation_toggle(parent: Node, caption: String, kind: String) -> CheckBox:
+	var toggle := CheckBox.new(); toggle.text = caption
+	toggle.button_pressed = _confirmation_enabled(kind)
+	toggle.tooltip_text = "Show a review before each card purchase." if kind == "buy_card" else "Show a review before each card sale."
+	toggle.toggled.connect(func(enabled): _set_confirmation(kind, enabled))
+	parent.add_child(toggle)
+	return toggle
+
+func _set_confirmation(kind: String, enabled: bool) -> void:
+	_transaction_preferences.set_value("confirmations", kind, enabled)
+	_confirm_buy.set_pressed_no_signal(_confirmation_enabled("buy_card"))
+	_confirm_sell.set_pressed_no_signal(_confirmation_enabled("sell_card"))
+	if _transaction_preferences.save(WorkspacePaths.persistent_file("character_preferences.cfg")) != OK:
+		_error.text = "Could not save confirmation preferences. This setting will last only while this screen is open."
+		_error.show()
 
 func _focus_pair(first: Button, second: Button) -> void:
 	for button in [first, second]:
@@ -414,6 +444,7 @@ func _health() -> int:
 
 func _refresh_actions() -> void:
 	var progression := loadout_mode == "progression"
+	_confirmation_options.visible = progression
 	_apply.visible = not progression; _revert.visible = not progression; _reset.visible = not progression
 	_mode_note.text = "Buying and selling save immediately for your next battle. Cards sell for their current purchase price. Battle rewards and discovery come next." if progression else "Sandbox: freely edit and apply a test deck. Progression has a separate deck and XP balance."
 	if progression:
@@ -508,6 +539,18 @@ func _review_purchase(kind: String, id: String, cost: int) -> void:
 	var selling := kind == "sell_card"
 	var target_id := str(_economy_map("ability_upgrades" if collection == "abilities" else "card_upgrades")[id].to) if upgrade else id
 	_pending_purchase.target_id = target_id
+	_skip_prompt.set_pressed_no_signal(false)
+	_skip_prompt.visible = not upgrade
+	_focus_pair(_purchase_cancel, _purchase_confirm)
+	if not upgrade:
+		_skip_prompt.tooltip_text = "Skip future sale prompts. Turn Confirm sales back on below the deck lists." if selling else "Skip future buy prompts. Turn Confirm buys back on below the deck lists."
+		var cycle: Array[Button] = [_skip_prompt, _purchase_cancel, _purchase_confirm]
+		for index in cycle.size():
+			cycle[index].focus_next = cycle[index].get_path_to(cycle[(index + 1) % cycle.size()])
+			cycle[index].focus_previous = cycle[index].get_path_to(cycle[(index + cycle.size() - 1) % cycle.size()])
+		if not _confirmation_enabled(kind):
+			_confirm_purchase()
+			return
 	var target: Dictionary = catalogs[character_id][collection][target_id]
 	var card_delta := -1 if selling else 1 if kind == "buy_card" else 0
 	_label(_purchase_details, "%s → %s" % [current.name, target.name] if upgrade else ("Sell one %s" if selling else "Add one %s") % target.name, 24, GOLD)
@@ -546,3 +589,5 @@ func _confirm_purchase() -> void:
 	selected_kind = "abilities" if p.kind == "upgrade_ability" else "cards"; selected_id = str(p.target_id)
 	_refresh_draft()
 	inspect_entry(selected_kind, selected_id)
+	if str(p.kind) in ["buy_card", "sell_card"] and _skip_prompt.button_pressed:
+		_set_confirmation(str(p.kind), false)

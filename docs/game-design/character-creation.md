@@ -95,6 +95,13 @@ loadout overrides. It does not import a freely edited Sandbox deck.
 - Selecting a purchase or sale opens a preview of XP before/after, health
   before/after, and full before/after rules for upgrades. Cancel changes nothing.
   Confirm saves immediately; there is no Apply step in Progression.
+- Card buy and sell previews each offer **Do not show again**. After a successful
+  confirmation, future transactions of that type happen directly. **Confirm buys**
+  and **Confirm sales** below the deck lists independently restore or skip these
+  prompts. Preferences apply across characters and persist in the workspace's
+  `character_preferences.cfg`; cancelling a preview does not change them. Upgrade
+  reviews remain enabled. Direct trades use the same authority validation and
+  immediate saves as reviewed trades.
 - Transactions validate ownership, source/target definitions, ability type, count
   limits, XP, quoted price, and save revision in the authority. A stale or repeated
   transaction cannot spend or refund twice. XP, deck, ability board, and revision are stored in
@@ -185,3 +192,8 @@ unowned-card rejection, stale quotes/revisions, and concurrent sale requests.
 buybacks, the full 220 XP Adventurer budget, empty-deck menu restrictions,
 Sandbox/other-character isolation, reopening, three viewport sizes, and buying
 back a card before starting a real battle.
+
+`verify_transaction_preferences.gd` covers independent buy/sell opt-outs,
+cancellation, disk persistence, restoring prompts, retained upgrade reviews,
+direct trades with fresh revisions, XP/ownership limits, and dialog/toggle layout
+at 1024, 1280, and 1920 widths.
