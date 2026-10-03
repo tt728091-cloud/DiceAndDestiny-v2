@@ -132,3 +132,6 @@ func animate_income_draw(duration_seconds: float) -> void:
 	if is_instance_valid(_income_glow):
 		_income_glow.modulate = Color.WHITE
 		tween.tween_property(_income_glow, "modulate:a", 0.0, duration * 0.42).set_delay(duration * 0.48).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
+
+func _make_custom_tooltip(for_text: String) -> Object:
+	return preload("res://presentation/cards/card_rules_tooltip.gd").create(self, for_text)

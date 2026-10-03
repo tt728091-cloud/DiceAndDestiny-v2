@@ -88,3 +88,7 @@ func _gui_input(event: InputEvent) -> void:
 			if card.toggle_mode: card.button_pressed = not card.button_pressed
 			card.pressed.emit()
 	accept_event()
+
+func _make_custom_tooltip(for_text: String) -> Object:
+	var card: Control = cards[hovered] if hovered >= 0 and hovered < cards.size() else self
+	return preload("res://presentation/cards/card_rules_tooltip.gd").create(self, for_text, card)
