@@ -265,6 +265,14 @@ and budgets through the UI, checks previews, cancellation and reopening, trades
 at the updated prices, verifies global overrides and persistence, and captures
 layouts at three window widths.
 
+The admin dialog uses a viewport-bounded scroll container so content height
+changes cannot push the dialog off-screen behind its dimmer. Each opening
+detaches the previous dialog before rebuilding controls from current settings.
+`verify_admin_reopening.gd` checks 24 consecutive save/reopen cycles across four
+window sizes (including 3456×2048), with Guard+ equipped and Brace prices
+alternating between 10 and 11 XP. It also checks layout after validation content
+grows and clears, closing/canceling, and keyboard dismissal.
+
 Ability downgrade checks cover refunds with zero available XP, repeated/invalid
 refund rejection, persisted boards and budget totals, repurchasing, unchanged
 active battles, and completed battles using the restored tier from both seats.

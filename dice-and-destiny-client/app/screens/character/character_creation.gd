@@ -639,8 +639,19 @@ func _confirm_purchase() -> void:
 func _build_admin_overlay() -> void:
 	_admin_overlay = Control.new(); _admin_overlay.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT); add_child(_admin_overlay)
 	var dim := ColorRect.new(); dim.color = Color(0, 0, 0, 0.85); dim.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT); _admin_overlay.add_child(dim)
-	var center := CenterContainer.new(); center.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT); _admin_overlay.add_child(center)
-	_admin_content = _panel(center, 1150); _admin_content.get_parent().custom_minimum_size.y = 850
+	# Keep the modal's bounds independent of wrapped labels' temporary minimum
+	# heights. A CenterContainer can retain an inflated height after a relayout
+	# and center the whole dialog below the viewport, leaving only the dimmer.
+	var viewport := ScrollContainer.new(); viewport.name = "AdminDialogViewport"
+	viewport.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	viewport.follow_focus = true; _admin_overlay.add_child(viewport)
+	var fit := func():
+		viewport.size = Vector2(1150, 850).min((_admin_overlay.size - Vector2(48, 48)).max(Vector2.ONE))
+		viewport.position = (_admin_overlay.size - viewport.size) / 2.0
+	_admin_overlay.resized.connect(fit); fit.call()
+	_admin_content = _panel(viewport)
+	_admin_content.get_parent().size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_admin_content.get_parent().custom_minimum_size.y = 850
 	_admin_overlay.hide()
 
 func _open_admin() -> void:
@@ -655,8 +666,8 @@ func _open_admin() -> void:
 	if not _admin_draft.get("card_prices") is Dictionary: _admin_draft.card_prices = {}
 	for id in _admin_draft.card_prices: _admin_draft.card_prices[id] = int(_admin_draft.card_prices[id])
 	_admin_draft.budgets = {}
-	# Recreate the modal so discarded scroll contents cannot inflate its centering container.
-	_admin_overlay.queue_free(); _build_admin_overlay()
+	# Retire the old controls before registering the replacement dialog.
+	remove_child(_admin_overlay); _admin_overlay.queue_free(); _build_admin_overlay()
 	_admin_prices.clear(); _admin_budgets.clear()
 	_label(_admin_content, "Admin · XP economy", 30, GOLD)
 	_label(_admin_content, "Card prices apply to every character. Total budgets include available XP, the equipped deck, and upgrade investment. Changes save together after all characters are checked.", 17, MUTED)
