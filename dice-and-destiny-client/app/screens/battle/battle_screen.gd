@@ -392,7 +392,9 @@ func _style_auto_pass_button(highlight: bool) -> void:
 		style.set_corner_radius_all(4)
 		_auto_pass_button.add_theme_stylebox_override("pressed", style)
 	else:
-		_auto_pass_button.remove_theme_stylebox_override("pressed")
+		if _auto_pass_button.has_meta("compact_pressed_style"):
+			_auto_pass_button.add_theme_stylebox_override("pressed", _auto_pass_button.get_meta("compact_pressed_style"))
+		else: _auto_pass_button.remove_theme_stylebox_override("pressed")
 
 func _exit_tree() -> void:
 	if _model_thread != null and _model_thread.is_started():
@@ -2324,33 +2326,29 @@ func _add_action(parent: Container, text: String, command: String, callback: Cal
 func _compact_action_button(button: Button) -> void:
 	if button.has_node("CompactCaption"): return
 	button.custom_minimum_size = Vector2(96 if button.has_meta("compact_caption") else 54, 42)
-	var is_skip := "Skip" in button.text
-	if is_skip:
-		CINEMATIC.paper_button(button)
-		for state in ["normal", "hover", "pressed", "disabled"]:
-			var style := button.get_theme_stylebox(state)
-			style.content_margin_left = 5; style.content_margin_right = 5
-			style.content_margin_top = 4; style.content_margin_bottom = 4
+	# Every footer action needs the same solid parchment backing as Roll/Skip.
+	# Transparent Pass controls disappear against the battlefield scenery.
+	CINEMATIC.paper_button(button)
+	for state in ["normal", "hover", "pressed", "disabled"]:
+		var style := button.get_theme_stylebox(state)
+		style.content_margin_left = 5; style.content_margin_right = 5
+		style.content_margin_top = 4; style.content_margin_bottom = 4
+	button.set_meta("compact_pressed_style", button.get_theme_stylebox("pressed"))
 	button.add_theme_font_size_override("font_size", 15)
 	button.autowrap_mode = TextServer.AUTOWRAP_OFF; button.clip_text = true
-	for key in ["font_color", "font_hover_color", "font_pressed_color", "font_disabled_color", "font_focus_color"]:
+	for key in ["font_color", "font_hover_color", "font_pressed_color", "font_hover_pressed_color", "font_disabled_color", "font_focus_color"]:
 		button.add_theme_color_override(key, Color.TRANSPARENT)
 	var caption := Label.new(); caption.name = "CompactCaption"
 	caption.text = str(button.get_meta("compact_caption", "Skip" if "Skip" in button.text else "Apply" if button.text == "Apply Defense" else "Next" if "Continue" in button.text else "Pass"))
 	caption.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER; caption.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	caption.add_theme_font_size_override("font_size", 17 if is_skip else 15)
-	if is_skip:
-		caption.add_theme_font_override("font", CINEMATIC.roll_control_font())
-		caption.add_theme_color_override("font_color", CINEMATIC.INK)
-		caption.add_theme_color_override("font_shadow_color", Color.TRANSPARENT)
-	else: CINEMATIC.hud_lettering(caption)
+	caption.add_theme_font_size_override("font_size", 17)
+	caption.add_theme_font_override("font", CINEMATIC.roll_control_font())
+	caption.add_theme_color_override("font_color", CINEMATIC.INK)
+	caption.add_theme_color_override("font_shadow_color", Color.TRANSPARENT)
 	caption.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	button.add_child(caption); caption.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	# Preserve the full action label for inspection and assistive text.
 	button.tooltip_text = button.text
-	if not is_skip:
-		for state in ["normal", "disabled", "hover"]:
-			button.add_theme_stylebox_override(state, CINEMATIC.panel(Color("ddbd6925") if state == "hover" else Color.TRANSPARENT, Color.TRANSPARENT, 2))
 
 func _pass_planning() -> void:
 	if _submitting or _history_review or not _view.allowed("planning_pass"): return
