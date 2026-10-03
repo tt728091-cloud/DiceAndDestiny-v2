@@ -162,3 +162,6 @@ func save_character_deck(character: String, decklist: Array) -> Dictionary:
 func purchase_progression(character: String, kind: String, id: String, revision: int, cost: int) -> Dictionary:
 	if _native_authority == null: return {"ok": false, "error": _initialization_error}
 	return _request({"op": "progression_purchase", "content_root": ProjectSettings.globalize_path("res://../dice-and-destiny-server/content"), "loadout_root": WorkspacePaths.runtime_dir("user/character_loadouts"), "character": character, "purchase": {"kind": kind, "id": id, "revision": revision, "expected_cost": cost}})
+
+func save_economy_admin(settings: Dictionary) -> Dictionary:
+	return _request({"op": "save_economy_admin", "admin_settings": settings, "loadout_root": WorkspacePaths.runtime_dir("user/character_loadouts"), "content_root": ProjectSettings.globalize_path("res://../dice-and-destiny-server/content")})

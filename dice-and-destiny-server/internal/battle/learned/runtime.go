@@ -10,27 +10,28 @@ import (
 )
 
 type runtimeRequest struct {
-	LoadoutMode        string           `json:"loadout_mode,omitempty"`
-	Purchase           loadout.Purchase `json:"purchase,omitempty"`
-	LoadoutRoot        string           `json:"loadout_root,omitempty"`
-	Decklist           []loadout.Entry  `json:"decklist,omitempty"`
-	UnifiedDefense     bool             `json:"unified_defense"`
-	OpponentDefinition string           `json:"opponent_definition,omitempty"`
-	OpponentCount      int              `json:"opponent_count,omitempty"`
-	Op                 string           `json:"op"`
-	ReplaceSession     bool             `json:"replace_session,omitempty"`
-	ModelPath          string           `json:"model_path,omitempty"`
-	ModelSHA256        string           `json:"model_sha256,omitempty"`
-	ContentRoot        string           `json:"content_root,omitempty"`
-	RunStateRoot       string           `json:"run_state_root,omitempty"`
-	DiagnosticsPath    string           `json:"diagnostics_path,omitempty"`
-	TimeoutMS          int              `json:"timeout_ms,omitempty"`
-	BattleID           string           `json:"battle_id,omitempty"`
-	Seed               uint64           `json:"seed,omitempty"`
-	HumanSeat          string           `json:"human_seat,omitempty"`
-	Character          string           `json:"character,omitempty"`
-	Rematch            bool             `json:"rematch,omitempty"`
-	CommandJSON        string           `json:"command_json,omitempty"`
+	AdminSettings      loadout.AdminSettings `json:"admin_settings,omitempty"`
+	LoadoutMode        string                `json:"loadout_mode,omitempty"`
+	Purchase           loadout.Purchase      `json:"purchase,omitempty"`
+	LoadoutRoot        string                `json:"loadout_root,omitempty"`
+	Decklist           []loadout.Entry       `json:"decklist,omitempty"`
+	UnifiedDefense     bool                  `json:"unified_defense"`
+	OpponentDefinition string                `json:"opponent_definition,omitempty"`
+	OpponentCount      int                   `json:"opponent_count,omitempty"`
+	Op                 string                `json:"op"`
+	ReplaceSession     bool                  `json:"replace_session,omitempty"`
+	ModelPath          string                `json:"model_path,omitempty"`
+	ModelSHA256        string                `json:"model_sha256,omitempty"`
+	ContentRoot        string                `json:"content_root,omitempty"`
+	RunStateRoot       string                `json:"run_state_root,omitempty"`
+	DiagnosticsPath    string                `json:"diagnostics_path,omitempty"`
+	TimeoutMS          int                   `json:"timeout_ms,omitempty"`
+	BattleID           string                `json:"battle_id,omitempty"`
+	Seed               uint64                `json:"seed,omitempty"`
+	HumanSeat          string                `json:"human_seat,omitempty"`
+	Character          string                `json:"character,omitempty"`
+	Rematch            bool                  `json:"rematch,omitempty"`
+	CommandJSON        string                `json:"command_json,omitempty"`
 }
 
 var learnedRuntime struct {
@@ -44,12 +45,12 @@ func HandleRuntimeRequest(requestJSON string) string {
 	if err := json.Unmarshal([]byte(requestJSON), &request); err != nil {
 		return runtimeError(fmt.Errorf("decode learned runtime request: %w", err))
 	}
-	if request.Op == "character_catalogs" || request.Op == "save_character_deck" || request.Op == "progression_catalogs" || request.Op == "progression_purchase" {
+	if request.Op == "character_catalogs" || request.Op == "save_character_deck" || request.Op == "progression_catalogs" || request.Op == "progression_purchase" || request.Op == "save_economy_admin" {
 		catalogs, err := CharacterCatalogs(request.ContentRoot)
 		if err != nil {
 			return runtimeError(err)
 		}
-		if request.Op == "progression_catalogs" || request.Op == "progression_purchase" {
+		if request.Op == "progression_catalogs" || request.Op == "progression_purchase" || request.Op == "save_economy_admin" {
 			economy, err := loadout.LoadEconomy(request.ContentRoot, catalogs)
 			if err != nil {
 				return runtimeError(err)
@@ -65,15 +66,22 @@ func HandleRuntimeRequest(requestJSON string) string {
 				}
 				return runtimeSuccess(progress)
 			}
-			view := characterCatalogView(catalogs)
-			for id, lib := range catalogs {
-				progress, err := loadout.ReadProgress(request.LoadoutRoot, id, economy, lib)
-				if err != nil {
-					return runtimeError(fmt.Errorf("%s progression: %w", id, err))
+			if request.Op == "save_economy_admin" {
+				if err := loadout.SaveAdmin(request.LoadoutRoot, economy, catalogs, request.AdminSettings); err != nil {
+					return runtimeError(err)
 				}
+			}
+			all, economy, admin, err := loadout.ProgressSnapshot(request.LoadoutRoot, economy, catalogs)
+			if err != nil {
+				return runtimeError(err)
+			}
+			view := characterCatalogView(catalogs)
+			for id := range catalogs {
+				progress := all[id]
 				entry := view[id].(map[string]any)
 				entry["progression"] = progress
 				entry["economy"] = economy.Offers(id)
+				entry["admin_settings"] = admin
 				entry["owned_decklist"] = progress.Deck
 				entry["combatants"].(map[string]any)[id].(map[string]any)["ability_board"] = progress.Abilities
 				entry["deck_limits"] = map[string]int{"max_cards": loadout.MaxCards, "max_copies": loadout.MaxCopies}

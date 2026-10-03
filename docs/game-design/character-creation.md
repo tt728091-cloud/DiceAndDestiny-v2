@@ -113,6 +113,40 @@ loadout overrides. It does not import a freely edited Sandbox deck.
   affect only the human participant and are recorded in replays. Existing battles
   retain their starting loadout. Free Sandbox edits cannot fund Progression.
 
+### Admin economy controls
+
+In Progression mode, **Admin settings** opens a searchable card-price list and
+editable total budgets for all four characters. Card overrides apply globally by
+card ID, with the same price for buying and selling. The panel previews each
+character's deck value, upgrade investment, and available XP. **Apply economy
+changes** validates every character and saves the changes together; closing the
+panel discards its edits.
+
+The invariant is **total budget = available XP + current deck value + upgrade
+investment**. Repricing cards preserves the total budget and changes available
+XP by the opposite amount. For example, setting Adventurer's budget to 260 and
+its three starter Braces to 12 XP yields 126 XP in the deck and 134 XP available.
+A price reduction releases XP; increasing a budget from 220 to 260 adds 40 XP.
+Ability upgrade spending remains invested. Card upgrade costs are at least the
+increase in card value, or the authored upgrade price if higher, so repricing
+cannot create free XP through upgrading and selling.
+
+Changes that would leave any character with negative available XP are rejected
+before settings are committed. Raise the affected budget in the same edit, or
+close and sell cards first. Cards and abilities are never silently removed.
+Existing active battles keep their pinned loadouts.
+
+These are local administrator tools for this workspace. Overrides persist in
+`user/character_loadouts/economy_admin.json`, separate from authored YAML and
+Sandbox decks. A single atomic settings replacement is the commit point; every
+progression read, trade, and battle start reconciles its ledger against that
+settings revision. The response refreshes all characters immediately, and an
+interrupted refresh is safely completed on the next read. Stale admin edits and
+stale trades are rejected. Existing saves acquire a budget ledger while preserving
+their current XP and cards; authored ability-upgrade costs are recovered for older
+saves without spending history. The admin budget can explicitly correct historical
+balances. Reloading never reapplies the same budget adjustment twice.
+
 ### Configuring the economy
 
 Edit `dice-and-destiny-server/content/progression_v1/economy.yaml`. No code changes
@@ -197,3 +231,10 @@ back a card before starting a real battle.
 cancellation, disk persistence, restoring prompts, retained upgrade reviews,
 direct trades with fresh revisions, XP/ownership limits, and dialog/toggle layout
 at 1024, 1280, and 1920 widths.
+
+Admin economy tests cover all-character revaluation, higher/lower prices, budget
+increases/reductions, stale commands, invalid/over-budget updates, migration with
+an upgraded ability, and repeated reads. `verify_economy_admin.gd` enters prices
+and budgets through the UI, checks previews, cancellation and reopening, trades
+at the updated prices, verifies global overrides and persistence, and captures
+layouts at three window widths.

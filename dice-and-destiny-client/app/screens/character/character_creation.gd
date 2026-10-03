@@ -14,6 +14,16 @@ var _purchase_details: VBoxContainer
 var _purchase_confirm: Button
 var _purchase_cancel: Button
 var _pending_purchase: Dictionary = {}
+var _admin_button: Button
+var _admin_overlay: Control
+var _admin_content: VBoxContainer
+var _admin_prices: Dictionary = {}
+var _admin_budgets: Dictionary = {}
+var _admin_draft: Dictionary = {}
+var _admin_preview: Label
+var _admin_error: Label
+var _admin_save: Button
+var _admin_search: LineEdit
 var _skip_prompt: CheckBox
 var _confirmation_options: HBoxContainer
 var _confirm_buy: CheckBox
@@ -167,6 +177,7 @@ func _build() -> void:
 	_confirmation_options = HBoxContainer.new(); footer.add_child(_confirmation_options)
 	_confirm_buy = _confirmation_toggle(_confirmation_options, "Confirm buys", "buy_card")
 	_confirm_sell = _confirmation_toggle(_confirmation_options, "Confirm sales", "sell_card")
+	_admin_button = _button(footer, "Admin settings", _open_admin, "admin.open")
 	_reset = _button(footer, "Reset to template", _reset_draft, "reset")
 	_revert = _button(footer, "Revert", _revert_draft, "revert")
 	_apply = _button(footer, "Apply deck", _apply_draft, "apply")
@@ -183,6 +194,7 @@ func _build() -> void:
 	_focus_pair(_cancel_changes, _discard_changes)
 	_confirm.hide()
 	_build_purchase_overlay()
+	_build_admin_overlay()
 
 func _change_mode(index: int) -> void:
 	_mode_choice.select(1 if loadout_mode == "progression" else 0)
@@ -283,6 +295,9 @@ func _refresh_summary() -> void:
 		var deck_value := 0
 		for entry in character.decklist: deck_value += int(entry.count) * _card_price(str(entry.card_id))
 		_label(_summary, "Card budget: %d XP available + %d XP in deck = %d XP" % [xp, deck_value, xp + deck_value], 15, GOLD)
+		var progress: Dictionary = catalogs[character_id].progression
+		if int(progress.get("upgrade_spent", 0)) != 0:
+			_label(_summary, "Total budget: %d XP · %d XP invested in upgrades" % [int(progress.total_budget), int(progress.upgrade_spent)], 14, MUTED)
 	_label(_summary, "Opening hand %d  ·  Starting energy %d  ·  Hand limit %d" % [character.resources.starting_hand_size, character.resources.starting_energy, character.resources.hand_limit], 14, MUTED)
 	_label(_summary, "Each round: draw %d  ·  gain %d energy" % [character.income.cards, character.income.energy], 14, MUTED)
 
@@ -411,6 +426,8 @@ func inspect_entry(kind: String, id: String) -> void:
 		_label(_details, "Go to discard." if definition.saved_card_destination == "discard" else "Return to their piles. Played cards stay played.", 14)
 
 func _unhandled_key_input(event: InputEvent) -> void:
+	if event.is_action_pressed("ui_cancel") and _admin_overlay.visible:
+		_admin_overlay.hide(); get_viewport().set_input_as_handled(); return
 	if event.is_action_pressed("ui_cancel"):
 		if _purchase_overlay.visible: _purchase_overlay.hide()
 		elif _confirm.visible: _confirm.hide()
@@ -444,6 +461,7 @@ func _health() -> int:
 
 func _refresh_actions() -> void:
 	var progression := loadout_mode == "progression"
+	_admin_button.visible = progression
 	_confirmation_options.visible = progression
 	_apply.visible = not progression; _revert.visible = not progression; _reset.visible = not progression
 	_mode_note.text = "Buying and selling save immediately for your next battle. Cards sell for their current purchase price. Battle rewards and discovery come next." if progression else "Sandbox: freely edit and apply a test deck. Progression has a separate deck and XP balance."
@@ -591,3 +609,98 @@ func _confirm_purchase() -> void:
 	inspect_entry(selected_kind, selected_id)
 	if str(p.kind) in ["buy_card", "sell_card"] and _skip_prompt.button_pressed:
 		_set_confirmation(str(p.kind), false)
+
+func _build_admin_overlay() -> void:
+	_admin_overlay = Control.new(); _admin_overlay.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT); add_child(_admin_overlay)
+	var dim := ColorRect.new(); dim.color = Color(0, 0, 0, 0.85); dim.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT); _admin_overlay.add_child(dim)
+	var center := CenterContainer.new(); center.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT); _admin_overlay.add_child(center)
+	_admin_content = _panel(center, 1150); _admin_content.get_parent().custom_minimum_size.y = 850
+	_admin_overlay.hide()
+
+func _open_admin() -> void:
+	# Read every character before presenting a coherent economy snapshot.
+	var response: Dictionary = get_node("/root/LearnedBattleRuntime").character_catalogs("progression")
+	if not response.get("ok", false):
+		_error.text = str(response.get("error", "Could not load admin settings")); _error.show(); return
+	catalogs = response.result
+	_admin_draft = catalogs[character_id].admin_settings.duplicate(true)
+	_admin_draft.revision = int(_admin_draft.revision)
+	if not _admin_draft.get("card_prices") is Dictionary: _admin_draft.card_prices = {}
+	for id in _admin_draft.card_prices: _admin_draft.card_prices[id] = int(_admin_draft.card_prices[id])
+	_admin_draft.budgets = {}
+	# Recreate the modal so discarded scroll contents cannot inflate its centering container.
+	_admin_overlay.queue_free(); _build_admin_overlay()
+	_admin_prices.clear(); _admin_budgets.clear()
+	_label(_admin_content, "Admin · XP economy", 30, GOLD)
+	_label(_admin_content, "Card prices apply to every character. Total budgets include available XP, the equipped deck, and upgrade investment. Changes save together after all characters are checked.", 17, MUTED)
+	var columns := HBoxContainer.new(); columns.add_theme_constant_override("separation", 24); columns.size_flags_vertical = Control.SIZE_EXPAND_FILL; _admin_content.add_child(columns)
+	var left := VBoxContainer.new(); left.custom_minimum_size.x = 490; left.size_flags_horizontal = Control.SIZE_EXPAND_FILL; columns.add_child(left)
+	_label(left, "CARD BUY / SELL PRICE", 16, GOLD)
+	_admin_search = LineEdit.new(); _admin_search.placeholder_text = "Search cards…"; left.add_child(_admin_search)
+	var prices := _scroll(left)
+	var cards: Dictionary = {}
+	for catalog in catalogs.values(): cards.merge(catalog.cards)
+	var ids: Array = cards.keys(); ids.sort_custom(func(a, b): return str(cards[a].name) < str(cards[b].name))
+	for id in ids:
+		var row := HBoxContainer.new(); prices.add_child(row)
+		_label(row, str(cards[id].name), 17).size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		var value := int(_admin_draft.card_prices.get(id, _admin_base_price(id)))
+		var spin := _admin_spin(row, value, 1); _admin_prices[id] = spin
+		spin.value_changed.connect(func(amount): _admin_draft.card_prices[id] = int(amount); _refresh_admin_preview())
+		row.set_meta("search_name", str(cards[id].name).to_lower())
+	_admin_search.text_changed.connect(func(query):
+		for row in prices.get_children(): row.visible = query.to_lower() in str(row.get_meta("search_name"))
+	)
+	var right := _scroll(columns); right.get_parent().custom_minimum_size.x = 500
+	_label(right, "CHARACTER TOTAL BUDGETS", 16, GOLD)
+	for id in ROSTER:
+		var row := HBoxContainer.new(); right.add_child(row)
+		_label(row, str(catalogs[id].combatants[id].name), 17).size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		var budget := int(catalogs[id].progression.total_budget); _admin_draft.budgets[id] = budget
+		var spin := _admin_spin(row, budget, 0); _admin_budgets[id] = spin
+		spin.value_changed.connect(func(amount): _admin_draft.budgets[id] = int(amount); _refresh_admin_preview())
+	_label(right, "AFTER APPLYING", 16, GOLD)
+	_admin_preview = _label(right, "", 17); _admin_preview.custom_minimum_size.x = 470
+	_admin_error = _label(_admin_content, "", 16, Color("ffae9f")); _admin_error.custom_minimum_size.x = 1080; _admin_error.hide()
+	var actions := HBoxContainer.new(); _admin_content.add_child(actions)
+	_button(actions, "Close · discard edits", func(): _admin_overlay.hide(), "admin.close")
+	_admin_save = _button(actions, "Apply economy changes", _save_admin, "admin.save")
+	_refresh_admin_preview(); _admin_overlay.show(); _admin_search.grab_focus()
+
+func _admin_base_price(id: String) -> int:
+	var catalog: Dictionary = catalogs[character_id]
+	if not catalog.cards.has(id):
+		for candidate in catalogs.values():
+			if candidate.cards.has(id): catalog = candidate; break
+	var prices = catalog.economy.get("card_prices")
+	return int(prices.get(id, catalog.economy.default_card_price)) if prices is Dictionary else int(catalog.economy.default_card_price)
+
+func _admin_spin(parent: Node, amount: int, minimum: int) -> SpinBox:
+	var spin := SpinBox.new(); spin.min_value = minimum; spin.max_value = 1000000; spin.step = 1; spin.value = amount
+	spin.custom_minimum_size.x = 150; spin.suffix = "XP"; parent.add_child(spin); return spin
+
+func _refresh_admin_preview() -> void:
+	var lines: PackedStringArray = []; var valid := true
+	for id in ROSTER:
+		var catalog: Dictionary = catalogs[id]; var progress: Dictionary = catalog.progression
+		var value := 0
+		var prices = catalog.economy.get("card_prices")
+		for entry in progress.decklist:
+			var base := int(prices.get(entry.card_id, catalog.economy.default_card_price)) if prices is Dictionary else int(catalog.economy.default_card_price)
+			value += int(entry.count) * int(_admin_draft.card_prices.get(entry.card_id, base))
+		var spent := int(progress.get("upgrade_spent", 0)); var budget := int(_admin_draft.budgets[id]); var available := budget - value - spent
+		lines.append("%s · %d XP total\n%d in deck + %d in upgrades · %d XP available" % [catalog.combatants[id].name, budget, value, spent, available])
+		if available < 0: valid = false
+	_admin_preview.text = "\n\n".join(lines)
+	_admin_error.text = "A character is over budget. Increase its budget here, or close and sell cards before changing prices."
+	_admin_error.visible = not valid; _admin_save.disabled = not valid
+
+func _save_admin() -> void:
+	_admin_save.disabled = true
+	var response: Dictionary = get_node("/root/LearnedBattleRuntime").save_economy_admin(_admin_draft)
+	if not response.get("ok", false):
+		_admin_error.text = str(response.get("error", "Could not save economy")); _admin_error.show(); _admin_save.disabled = false; return
+	_admin_overlay.hide()
+	var kind := selected_kind; var id := selected_id
+	reload_catalogs()
+	if not id.is_empty(): inspect_entry(kind, id)

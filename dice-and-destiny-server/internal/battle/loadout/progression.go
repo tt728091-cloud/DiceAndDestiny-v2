@@ -24,18 +24,25 @@ type CharacterEconomy struct {
 	AbilityUpgrades   map[string]Upgrade    `yaml:"ability_upgrades" json:"ability_upgrades"`
 }
 type Economy struct {
+	GlobalPrices     map[string]int              `yaml:"-"`
+	Budgets          map[string]int              `yaml:"-"`
+	AdminRevision    int                         `yaml:"-"`
 	Version          int                         `yaml:"schema_version"`
 	StartingXP       int                         `yaml:"starting_xp"`
 	DefaultCardPrice int                         `yaml:"default_card_price"`
 	Characters       map[string]CharacterEconomy `yaml:"characters"`
 }
 type Progress struct {
-	Version   int                  `json:"version"`
-	Character string               `json:"character"`
-	Revision  int                  `json:"revision"`
-	XP        int                  `json:"xp"`
-	Deck      []Entry              `json:"decklist"`
-	Abilities content.AbilityBoard `json:"ability_board"`
+	Budget        *int                 `json:"total_budget,omitempty"`
+	DeckValue     int                  `json:"deck_value"`
+	UpgradeSpent  int                  `json:"upgrade_spent"`
+	AdminRevision int                  `json:"admin_revision"`
+	Version       int                  `json:"version"`
+	Character     string               `json:"character"`
+	Revision      int                  `json:"revision"`
+	XP            int                  `json:"xp"`
+	Deck          []Entry              `json:"decklist"`
+	Abilities     content.AbilityBoard `json:"ability_board"`
 }
 type Purchase struct {
 	Kind         string `json:"kind"`
@@ -114,14 +121,35 @@ func ValidateAbilities(board content.AbilityBoard, lib content.BattleLibrary) er
 	return nil
 }
 func (e Economy) Price(character, id string) int {
+	if p, ok := e.GlobalPrices[id]; ok {
+		return p
+	}
 	if p, ok := e.Characters[character].CardPrices[id]; ok {
 		return p
 	}
 	return e.DefaultCardPrice
 }
+func (e Economy) CardUpgrades(character string) map[string]Upgrade {
+	upgrades := map[string]Upgrade{}
+	for id, u := range e.Characters[character].CardUpgrades {
+		// An upgrade must fund the value added to the deck, even after repricing.
+		if difference := e.Price(character, u.To) - e.Price(character, id); difference > u.XP {
+			u.XP = difference
+		}
+		upgrades[id] = u
+	}
+	return upgrades
+}
 func (e Economy) Offers(character string) map[string]any {
 	c := e.Characters[character]
-	return map[string]any{"default_card_price": e.DefaultCardPrice, "card_prices": c.CardPrices, "card_upgrades": c.CardUpgrades, "ability_upgrades": c.AbilityUpgrades}
+	prices := map[string]int{}
+	for id, price := range c.CardPrices {
+		prices[id] = price
+	}
+	for id, price := range e.GlobalPrices {
+		prices[id] = price
+	}
+	return map[string]any{"default_card_price": e.DefaultCardPrice, "card_prices": prices, "card_upgrades": e.CardUpgrades(character), "ability_upgrades": c.AbilityUpgrades}
 }
 
 // Progression files have their own namespace: sandbox edits never grant XP or cards.
@@ -154,6 +182,10 @@ func readProgress(root, character string, e Economy, lib content.BattleLibrary) 
 		if err = validateProgress(p, lib); err != nil {
 			return p, err
 		}
+		initializeBudget(&p, e)
+		if err = reconcileBudget(&p, e); err != nil {
+			return p, err
+		}
 		err = writeProgress(filename, p)
 		return p, err
 	}
@@ -170,7 +202,27 @@ func readProgress(root, character string, e Economy, lib content.BattleLibrary) 
 	if p.Deck == nil {
 		p.Deck = []Entry{}
 	}
-	return p, validateProgress(p, lib)
+	if err = validateProgress(p, lib); err != nil {
+		return p, err
+	}
+	before, _ := json.Marshal(p)
+	if p.Budget == nil {
+		// Older saves have no spending ledger. Recover authored ability upgrade costs.
+		for _, ids := range [][]string{p.Abilities.Offensive, p.Abilities.Defensive} {
+			for _, id := range ids {
+				p.UpgradeSpent += legacyAbilitySpend(id, e.Characters[character].AbilityUpgrades, map[string]bool{})
+			}
+		}
+		initializeBudget(&p, e)
+	}
+	if err = reconcileBudget(&p, e); err != nil {
+		return p, err
+	}
+	after, _ := json.Marshal(p)
+	if !bytes.Equal(before, after) {
+		err = writeProgress(filename, p)
+	}
+	return p, err
 }
 func validateProgress(p Progress, lib content.BattleLibrary) error {
 	if p.Version != 1 || p.Revision < 1 || p.XP < 0 {
@@ -184,7 +236,8 @@ func validateProgress(p Progress, lib content.BattleLibrary) error {
 	}
 	return ValidateAbilities(p.Abilities, lib)
 }
-func writeProgress(filename string, p Progress) error {
+func writeProgress(filename string, p Progress) error { return writeJSON(filename, p) }
+func writeJSON(filename string, p any) error {
 	data, err := json.MarshalIndent(p, "", "  ")
 	if err != nil {
 		return err
@@ -214,11 +267,20 @@ func writeProgress(filename string, p Progress) error {
 func ReadProgress(root, character string, e Economy, lib content.BattleLibrary) (Progress, error) {
 	progressMu.Lock()
 	defer progressMu.Unlock()
+	var err error
+	e, _, err = effectiveEconomy(root, e)
+	if err != nil {
+		return Progress{}, err
+	}
 	return readProgress(root, character, e, lib)
 }
 func Buy(root, character string, e Economy, lib content.BattleLibrary, request Purchase) (Progress, error) {
 	progressMu.Lock()
 	defer progressMu.Unlock()
+	e, _, err := effectiveEconomy(root, e)
+	if err != nil {
+		return Progress{}, err
+	}
 	p, err := readProgress(root, character, e, lib)
 	if err != nil {
 		return p, err
@@ -242,7 +304,7 @@ func Buy(root, character string, e Economy, lib content.BattleLibrary, request P
 		cost = e.Price(character, request.ID)
 		p.Deck = changeCount(p.Deck, request.ID, -1)
 	case "upgrade_card":
-		upgrade, ok := cfg.CardUpgrades[request.ID]
+		upgrade, ok := e.CardUpgrades(character)[request.ID]
 		if !ok || deckCount(p.Deck, request.ID) < 1 {
 			return p, fmt.Errorf("no owned copy or upgrade path")
 		}
@@ -284,6 +346,8 @@ func Buy(root, character string, e Economy, lib content.BattleLibrary, request P
 	} else {
 		p.XP -= cost
 	}
+	p.DeckValue = deckValue(p.Deck, character, e)
+	p.UpgradeSpent = *p.Budget - p.XP - p.DeckValue
 	p.Revision++
 	if err = validateProgress(p, lib); err != nil {
 		return p, err
