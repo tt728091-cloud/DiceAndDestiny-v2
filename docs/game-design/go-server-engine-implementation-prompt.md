@@ -137,10 +137,10 @@ At minimum, the implementation must support the following as reusable rules:
 - Spent resources stay spent when an effect is canceled or collides, unless an
   explicit reusable rule says otherwise.
 - Reveals still show what was played even though the card is already discarded.
-- Damage prevention that releases revealed removal cards sends those saved cards
-  to discard immediately, preserving health. It does not return them to deck or
-  hand. Already-discarded cards stay there once; future upgraded effects must
-  explicitly declare any different destination.
+- Damage-prevention cards release saved cards in their current pile, preserving
+  health and never undoing a draw or play. A played Brace still goes to discard,
+  even if it saves itself. Different destinations require an explicit effect;
+  Protect retains its authored saved-to-discard status rule.
 
 ### Statuses
 
@@ -227,8 +227,9 @@ At minimum, the implementation must support the following as reusable rules:
 - Revealed cards remain in their zones until played, saved by prevention, or removed at commit.
 - Only after all required passes/responses and batch commit do those exact cards
   move to `removed`.
-- If prevention reduces damage, release excess proposed removals and move those
-  saved cards to discard immediately, preserving health.
+- If prevention reduces damage, release excess proposed removals and retain those
+  saved cards in their current piles, preserving health (unless an effect explicitly
+  specifies another destination).
 - Overage is provisional and shown before commit; prevention consumes overage
   before saving proposed card removals.
 - Status application can commit with damage but does not activate until its

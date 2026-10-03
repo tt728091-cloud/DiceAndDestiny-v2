@@ -21,7 +21,7 @@ func damage(id: String, remaining: int) -> Dictionary:
 	var value := _fixture(id, "damage_resolution", "damage_reaction")
 	value.snapshot.settled_damage = {"id": "batch-1", "sources": [{"id": "incoming", "source_actor_id": "blade", "target_actor_id": "goblin", "source_content_id": "needlefang", "base_amount": 5, "final_amount": remaining, "reaction_prevention": 5 - remaining}], "removals": []}
 	for i in 5:
-		value.snapshot.settled_damage.removals.append({"id": "r%d" % i, "card_id": "lost%d" % i, "card_definition_id": "tip_it", "target_actor_id": "goblin", "original_zone": ["deck", "hand", "hand", "deck", "discard"][i], "accepted": i < remaining, "released": i >= remaining})
+		value.snapshot.settled_damage.removals.append({"id": "r%d" % i, "card_id": "lost%d" % i, "card_definition_id": "tip_it", "target_actor_id": "goblin", "original_zone": ["deck", "hand", "hand", "deck", "discard"][i], "released_destination": ["deck", "hand", "hand", "deck", "discard"][i], "accepted": i < remaining, "released": i >= remaining})
 	return value
 
 func _run() -> void:
@@ -118,8 +118,8 @@ func _check_saved_animation(screen) -> void:
 		var actual: Rect2 = feedback.get_global_transform_with_canvas().affine_inverse() * profile.anchor_rect(str(pile.zone))
 		var profile_rect: Rect2 = feedback.get_global_transform_with_canvas().affine_inverse() * profile.get_global_rect()
 		_expect(pile.label.position.y >= profile_rect.end.y, "saved count avoids health and status text")
-		_expect(pile.zone == "discard", "prevention defaults to discard for every original zone")
-		_expect(pile.rect.is_equal_approx(actual), "saved cards arrive at the discard anchor")
+		_expect(pile.zone in ["deck", "hand", "discard"], "saved cards use their published pile")
+		_expect(pile.rect.is_equal_approx(actual), "saved cards arrive at their destination pile anchor")
 		_expect(pile.label.modulate.a > 0.9 and "saved" in pile.label.text, "destination names saved count")
 	_expect(screen._view.actors == original, "animation never invents pile count changes")
 	feedback.present_progress(2.6)
@@ -149,14 +149,14 @@ func _check_native_ward() -> void:
 		if not after.is_empty(): break
 	_expect(after.get("accepted", false), "native Spiteful Ward was legally played")
 	if after.is_empty(): return
-	var saved_from_deck := 0
 	for removal in after.snapshot.settled_damage.get("removals", []):
 		if removal.get("released", false):
-			_expect(removal.get("released_destination") == "discard", "native authority publishes saved-card discard destination")
-			if removal.get("target_actor_id") == "blade" and removal.get("original_zone") == "deck": saved_from_deck += 1
+			var expected_zone: String = str(removal.get("original_zone"))
+			if removal.get("card_definition_id") == "spiteful_ward" and expected_zone == "hand": expected_zone = "discard"
+			_expect(removal.get("released_destination") == expected_zone, "native authority publishes saved-card live destination")
 	_expect(after.snapshot.actors.blade.current_health == before.snapshot.actors.blade.current_health, "native prevention preserves health")
-	_expect(after.snapshot.actors.blade.deck_count == before.snapshot.actors.blade.deck_count - saved_from_deck, "native draw pile loses the saved deck cards")
-	_expect(after.snapshot.actors.blade.discard_count >= before.snapshot.actors.blade.discard_count + saved_from_deck + 1, "native discard includes saved deck cards and played ward")
+	_expect(after.snapshot.actors.blade.deck_count == before.snapshot.actors.blade.deck_count, "native saved deck cards remain in draw pile")
+	_expect(after.snapshot.actors.blade.discard_count == before.snapshot.actors.blade.discard_count + 1, "native discard gains only the played ward")
 	for width in [1920, 1280]:
 		root.size = Vector2i(width, int(width * 9 / 16.0))
 		var initial: Dictionary = before.duplicate(true)

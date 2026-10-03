@@ -176,7 +176,7 @@ func ReconcileCards(
 			index := activeIndices[len(activeIndices)-1]
 			resolution.CardProposals[index].Accepted = false
 			resolution.CardProposals[index].Released = true
-			DiscardPreventedCard(battle, &resolution.CardProposals[index])
+			RetainPreventedCard(battle, &resolution.CardProposals[index])
 			activeIndices = activeIndices[:len(activeIndices)-1]
 		}
 		if len(activeIndices) >= desired {
@@ -677,6 +677,8 @@ func cardCountInZone(zones state.CardZones, zone operation.CardZone, cardID stri
 		cards = zones.Discard
 	case operation.ZoneHand:
 		cards = zones.Hand
+	case operation.ZoneRemoved:
+		cards = zones.Removed
 	}
 	count := 0
 	for _, candidate := range cards {
@@ -797,6 +799,19 @@ func min(left, right int) int {
 		return left
 	}
 	return right
+}
+
+// RetainPreventedCard releases a reservation without moving the saved card.
+// Follow its live pile so prevention never undoes a card play or draw.
+// OriginalZone remains the reveal provenance, not a command to rewind movement.
+func RetainPreventedCard(battle *state.Battle, proposal *state.ProposedCardRemoval) {
+	actor := battle.Actors[proposal.TargetActorID]
+	for _, zone := range []operation.CardZone{operation.ZoneDeck, operation.ZoneHand, operation.ZoneDiscard, operation.ZoneRemoved} {
+		if cardCountInZone(actor.Cards, zone, proposal.CardID) > 0 {
+			proposal.ReleasedDestination = zone
+			return
+		}
+	}
 }
 
 // DiscardPreventedCard preserves health while making a saved damage card

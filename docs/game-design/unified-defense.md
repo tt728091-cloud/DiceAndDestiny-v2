@@ -42,8 +42,10 @@ work still run. The engine does not open a second Damage segment.
   currently are; they do not undo a play or draw.
 - Reductions apply in play order. Preventing three from seven and then halving
   leaves two; halving seven (rounded down) before preventing three leaves zero.
-- Brace, Protect, and other prevention cards/statuses save cards to discard.
-  Discard still counts as health and never automatically reshuffles.
+- Brace and other prevention cards leave saved cards in their live pile. A played
+  Brace still goes to discard, even if it saves itself; protecting another source
+  does not clear Brace's own outstanding reservation. Protect retains its explicit
+  saved-to-discard status rule. Discard counts as health and never reshuffles.
 - Repainting, reopening a save, or reconciling unchanged damage never rerolls
   existing reservations. Saved proposals remain released.
 - Damage beyond available health has no duplicate card reservation. If later

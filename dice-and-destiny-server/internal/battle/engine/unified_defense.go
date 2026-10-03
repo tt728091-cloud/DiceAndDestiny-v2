@@ -150,8 +150,8 @@ func (e Engine) reconcileUnifiedDamage(b *state.Battle, restoreOriginal bool) er
 				count++
 			}
 		}
-		// Ability defense protects live hand first, then draw, then discard. Card
-		// prevention uses the same preference but sends the saved instances to discard.
+		// Defense and card prevention protect live hand first, then draw, then
+		// discard. Explicit status effects may send saved instances to discard.
 		for _, zone := range []operation.CardZone{operation.ZoneHand, operation.ZoneDeck, operation.ZoneDiscard} {
 			var candidates []int
 			for j, r := range batch.Removals {
@@ -167,7 +167,7 @@ func (e Engine) reconcileUnifiedDamage(b *state.Battle, restoreOriginal bool) er
 				r := &batch.Removals[candidates[index]]
 				candidates = append(candidates[:index], candidates[index+1:]...)
 				if restoreOriginal {
-					r.ReleasedDestination = currentRemovalZone(b, *r)
+					damage.RetainPreventedCard(b, r)
 				} else {
 					damage.DiscardPreventedCard(b, r)
 				}

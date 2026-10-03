@@ -50,7 +50,7 @@ func TestDamageRemovesMarkedReactionCardFromItsCurrentZone(t *testing.T) {
 		t.Fatal(err)
 	}
 	player := b.Actors["player"]
-	if player.CurrentHealth() != 3 || len(player.Cards.Removed) != 1 || player.Cards.Removed[0] != "molt" || len(player.Cards.Discard) != 2 || !containsString(player.Cards.Discard, "shock") || !containsString(player.Cards.Discard, "reserve") || len(player.Cards.Hand) != 1 {
+	if player.CurrentHealth() != 3 || len(player.Cards.Removed) != 1 || player.Cards.Removed[0] != "molt" || len(player.Cards.Discard) != 0 || !containsString(player.Cards.Hand, "shock") || !containsString(player.Cards.Hand, "reserve") || len(player.Cards.Hand) != 3 {
 		t.Fatalf("one damage must remove the marked card exactly once from discard: %+v (health %d)", player.Cards, player.CurrentHealth())
 	}
 	if batch.Removals[0].OriginalZone != operation.ZoneDiscard {

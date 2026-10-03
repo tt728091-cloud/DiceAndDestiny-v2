@@ -109,14 +109,15 @@ Use `./scripts/godot.sh` for every additional Godot test.
 
 ## Default damage prevention destination
 
-- A revealed damage card saved by prevention moves from its current zone to discard immediately when released. This preserves health but does not make it available to draw. Apply this shared default to every damage-prevention card and status, including Brace and Protect.
-- Keep already-discarded cards in discard without duplication, follow cards played from hand to their live zone, and never move a permanently removed card back. Repeated reconciliation must not move a saved card twice.
-- Publish the saved card's destination for animations; saved-card flights and pile counts must agree with authority. A future upgraded effect returning cards to deck must explicitly author that exception.
+- Damage-prevention cards, including Brace, release saved cards in their current piles by default: draw stays draw, hand stays hand, discard stays discard. Reservations do not move cards, so prevention must not rewind a draw or play.
+- A played prevention card goes to its normal play destination (usually discard), even if it saves itself. If it remains threatened by an unprotected source, removal still follows it into that destination. Protect retains its explicitly authored saved-to-discard status rule.
+- Never duplicate cards or resurrect permanently removed cards. Repeated reconciliation and save/reload must preserve pile membership and health.
+- Publish the saved card's live destination for animations, including the played card's final destination after its effects resolve. Saved-card flights and pile counts must agree with authority. Any different destination requires an explicit effect.
 
 ## Default damage-card selection order
 
 - For every actor and ordinary damage source, select cards from discard first, then draw pile, then hand. Exhaust each pile before sampling the next; never combine discard and draw into one random pool.
-- Random selection stays without replacement within each pile. Preserve reveal-before-commit, prevention-to-discard, health totals, and overage behavior. Different pile targeting requires an explicitly authored effect; do not infer exceptions from character or card names.
+- Random selection stays without replacement within each pile. Preserve reveal-before-commit, prevention destination rules, health totals, and overage behavior. Different pile targeting requires an explicitly authored effect; do not infer exceptions from character or card names.
 
 ## Damage-prevention card targeting
 
@@ -128,6 +129,6 @@ Use `./scripts/godot.sh` for every additional Godot test.
 
 - New battles launched from the game menu use the pinned `unified_defense` rule. Legacy saves/replays retain their original flow. See `docs/game-design/unified-defense.md`.
 - Reveal pending removals when attacks enter Defense, before rolling defenses. Each attack owns separate, stable card reservations; never pool attacks for source-specific prevention or display the same card in two attack lists.
-- Rolled defensive abilities release cards in hand → draw → discard priority, randomly within each live pile, leaving saved cards in their current pile. Prevention cards/statuses retain the default saved-to-discard rule above. Never undo a card play or draw when releasing a reservation.
+- Rolled defensive abilities release cards in hand → draw → discard priority, randomly within each live pile, leaving saved cards in their current pile. Prevention cards use the same live-pile destination default; statuses follow their explicitly authored rule above. Never undo a card play or draw when releasing a reservation.
 - The main Pass ends that participant's remaining defenses and card opportunities. Applying a completed defensive roll returns to the same segment; it must not act as the main Pass. Auto-complete when only Pass remains, after the usual review time.
 - Commit remaining damage and queued attack statuses once at the end. Do not open a second damage-response phase or reselect the already revealed cards.

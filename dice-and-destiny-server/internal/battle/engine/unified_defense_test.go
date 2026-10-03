@@ -117,7 +117,7 @@ func TestUnifiedDefenseRestoresHandThenDeckThenDiscard(t *testing.T) {
 		t.Fatal("rolled defense moved cards")
 	}
 }
-func TestUnifiedCardPreventionDiscardsAndFollowsPlayedCard(t *testing.T) {
+func TestUnifiedCardPreventionRetainsAndFollowsPlayedCard(t *testing.T) {
 	b, _, e := unifiedFixture(t, 10)
 	// A threatened hand card is played before protection. Saving it must not
 	// undo that play by returning it to hand.
@@ -141,12 +141,12 @@ func TestUnifiedCardPreventionDiscardsAndFollowsPlayedCard(t *testing.T) {
 	b, _, e = unifiedFixture(t, 10)
 	batchSourceByID(b.Settled.PendingDamage, "a").ReactionPrevention = 5
 	hp := b.Actors["player"].CurrentHealth()
-	if err := e.reconcileUnifiedDamage(&b, false); err != nil {
+	if err := e.reconcileUnifiedDamage(&b, true); err != nil {
 		t.Fatal(err)
 	}
 	for _, r := range b.Settled.PendingDamage.Removals {
-		if r.Released && (r.ReleasedDestination != operation.ZoneDiscard || !containsString(b.Actors["player"].Cards.Discard, r.CardID)) {
-			t.Fatal("card prevention didn't discard")
+		if r.Released && (r.ReleasedDestination != r.OriginalZone || !containsString(zoneCards(b.Actors["player"].Cards, r.OriginalZone), r.CardID)) {
+			t.Fatal("card prevention changed pile")
 		}
 	}
 	if b.Actors["player"].CurrentHealth() != hp {

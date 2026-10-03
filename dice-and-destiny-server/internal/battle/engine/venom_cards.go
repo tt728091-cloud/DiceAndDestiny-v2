@@ -304,7 +304,7 @@ func (e Engine) playVenomCard(b *state.Battle, lib content.BattleLibrary, actor,
 			removeStatus(b, actor, key, 1)
 		}
 		if unifiedDefense(b) {
-			if err := e.reconcileUnifiedDamage(b, false); err != nil {
+			if err := e.reconcileUnifiedDamage(b, true); err != nil {
 				return err
 			}
 		} else {

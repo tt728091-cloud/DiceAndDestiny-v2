@@ -123,7 +123,7 @@ func _native() -> void:
 		_expect(int(after.current_health) == int(before.current_health), "prevention preserves health")
 		_expect(not screen._damage_feedback.is_empty(), "real play starts saved-card feedback")
 		if not screen._damage_feedback.is_empty(): _expect(screen._damage_feedback.saved.size() == 3, "Brace saves three revealed damage cards")
-		_expect(int(after.discard_count) > int(before.discard_count), "played and saved cards reach discard")
+		_expect(int(after.discard_count) > int(before.discard_count), "played Brace reaches discard")
 	screen.queue_free(); await process_frame
 func _expect(ok: bool, message: String) -> void:
 	if not ok: failed = true; push_error("BRACE TARGETING: " + message)

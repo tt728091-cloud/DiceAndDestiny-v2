@@ -458,7 +458,7 @@ func (random *recordingRandom) Intn(maxExclusive int) (int, error) {
 	return value % maxExclusive, nil
 }
 
-func TestPreventionMovesSavedCardsToDiscardWithoutHealthLoss(t *testing.T) {
+func TestPreventionRetainsSavedCardsWithoutHealthLoss(t *testing.T) {
 	for _, zone := range []operation.CardZone{operation.ZoneDeck, operation.ZoneHand, operation.ZoneDiscard} {
 		t.Run(string(zone), func(t *testing.T) {
 			zones := state.CardZones{Removed: []string{"old-loss"}}
@@ -489,8 +489,8 @@ func TestPreventionMovesSavedCardsToDiscardWithoutHealthLoss(t *testing.T) {
 				t.Fatal(err)
 			}
 			a := b.Actors["target"]
-			if a.CurrentHealth() != 1 || len(a.Cards.Deck) != 0 || len(a.Cards.Hand) != 0 || !reflect.DeepEqual(a.Cards.Discard, []string{"saved"}) || !reflect.DeepEqual(a.Cards.Removed, []string{"old-loss"}) || r.CardProposals[0].ReleasedDestination != operation.ZoneDiscard {
-				t.Fatalf("saved card must be discarded exactly once: %+v", a.Cards)
+			if a.CurrentHealth() != 1 || !reflect.DeepEqual(a.Cards, zones) || r.CardProposals[0].ReleasedDestination != zone {
+				t.Fatalf("saved card must remain in its pile exactly once: %+v", a.Cards)
 			}
 		})
 	}

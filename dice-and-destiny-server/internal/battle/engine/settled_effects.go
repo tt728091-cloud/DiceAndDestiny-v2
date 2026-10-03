@@ -500,7 +500,7 @@ func (e Engine) applyEffectMutations(battle *state.Battle, library content.Battl
 	}
 	if len(result.Preventions) > 0 || len(result.Scales) > 0 {
 		if unifiedDefense(battle) {
-			if err := e.reconcileUnifiedDamage(battle, sourceCardInstanceID == ""); err != nil {
+			if err := e.reconcileUnifiedDamage(battle, true); err != nil {
 				return err
 			}
 		} else {

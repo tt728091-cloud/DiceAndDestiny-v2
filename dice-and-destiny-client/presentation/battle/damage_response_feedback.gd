@@ -1,7 +1,7 @@
 extends Control
 
-# Authority moves saved damage cards to discard. Animate to its published
-# destination without applying a second mutation to the pile counts.
+# Animate saved cards to their authority-published live pile (or explicit
+# effect destination), without applying a second mutation to pile counts.
 const GREEN := Color("a5edce")
 const CARD_SIZE := Vector2(132, 144)
 var _started := 0

@@ -61,7 +61,7 @@ func (e Engine) spendRoundPrevention(b *state.Battle, lib content.BattleLibrary,
 			return nil, err
 		}
 	} else {
-		reconcileSettledDamage(b.Settled.PendingDamage, b)
+		reconcileSettledDamageDestination(b.Settled.PendingDamage, b, true)
 	}
 	if !unifiedDefense(b) {
 		advanceSettledReactionPriority(b, actor, true)

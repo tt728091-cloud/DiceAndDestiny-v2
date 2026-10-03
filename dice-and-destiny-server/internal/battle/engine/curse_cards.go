@@ -327,7 +327,7 @@ func (e Engine) playCurseCard(b *state.Battle, lib content.BattleLibrary, actor,
 		s.ReactionPrevention += 2
 		setUnifiedSourceAmount(b, s, max(0, before-2))
 		if unifiedDefense(b) {
-			if err := e.reconcileUnifiedDamage(b, false); err != nil {
+			if err := e.reconcileUnifiedDamage(b, true); err != nil {
 				return err
 			}
 		} else {

@@ -2480,6 +2480,16 @@ func (e Engine) playSettledCard(battle *state.Battle, library content.BattleLibr
 	actor := battle.Actors[actorID]
 	moveCard(&actor.Cards, instanceID, operation.ZoneHand, operation.CardZone(definition.Play.Destination))
 	battle.Actors[actorID] = actor
+	// Effects resolve before the play destination. A saved Brace still pays its
+	// normal discard; publish that live destination for saved-card feedback.
+	if batch := battle.Settled.PendingDamage; batch != nil {
+		for i := range batch.Removals {
+			r := &batch.Removals[i]
+			if r.TargetActorID == actorID && r.CardID == instanceID && r.Released {
+				damage.RetainPreventedCard(battle, r)
+			}
+		}
+	}
 	return nil
 }
 
@@ -2845,6 +2855,10 @@ func gainEnergy(battle *state.Battle, actorID string, amount int) {
 	battle.Actors[actorID] = actor
 }
 func reconcileSettledDamage(batch *state.SettledDamageBatch, battle *state.Battle) {
+	reconcileSettledDamageDestination(batch, battle, false)
+}
+
+func reconcileSettledDamageDestination(batch *state.SettledDamageBatch, battle *state.Battle, discardSaved bool) {
 	if batch == nil {
 		return
 	}
@@ -2875,7 +2889,11 @@ func reconcileSettledDamage(batch *state.SettledDamageBatch, battle *state.Battl
 			count++
 			if count > cards {
 				if !batch.Removals[i].Released {
-					damage.DiscardPreventedCard(battle, &batch.Removals[i])
+					if discardSaved {
+						damage.DiscardPreventedCard(battle, &batch.Removals[i])
+					} else {
+						damage.RetainPreventedCard(battle, &batch.Removals[i])
+					}
 				}
 				batch.Removals[i].Accepted = false
 				batch.Removals[i].Released = true
