@@ -84,6 +84,14 @@ loadout overrides. It does not import a freely edited Sandbox deck.
   Start Battle and explains that at least one card is required. The authority
   also rejects an empty deck without replacing the current battle. Sandbox keeps
   its existing minimum of one card when applying a deck.
+- Hovering an upgrade button (or focusing it with the keyboard) opens a
+  side-by-side comparison beside the inspector. Current wording is marked in
+  gold where it changes; upgraded wording is marked in green. Unchanged wording
+  stays neutral. Full rules, energy, card timing/destination, ability qualification
+  tiers and usage limits are included. Each column scrolls independently for long
+  definitions. Disabled upgrades still show the comparison. Downgrade buttons
+  also compare both tiers. Clicking opens the existing transaction review and
+  dismisses the hover; changing entries clears it. Hovering never changes a save.
 - Upgrading a card replaces exactly one owned copy and preserves health.
   The Adventurer example is **Brace → Brace+ for 10 XP**. Buying an additional
   Brace+ directly costs **20 XP**.
@@ -254,3 +262,8 @@ refund rejection, persisted boards and budget totals, repurchasing, unchanged
 active battles, and completed battles using the restored tier from both seats.
 `verify_ability_downgrades.gd` exercises pointer upgrade/downgrade/cancellation,
 full before/after rules, reopening, and three viewport sizes.
+
+`verify_upgrade_comparisons.gd` validates pointer hover and keyboard focus,
+changed-word highlighting, full card/ability rules, disabled buttons, placement
+at three sizes, mouse scrolling, stale-preview dismissal, and successful card
+and ability purchases after hovering. Hover comparisons are read-only.

@@ -1,6 +1,8 @@
 extends Control
 
 signal closed
+const UpgradeComparison := preload("res://app/screens/character/upgrade_comparison.gd")
+var _comparison: PanelContainer
 const GOLD := Color("e6c17c")
 const MUTED := Color("9cabb7")
 const ROSTER := ["adventurer", "venom", "curse", "blade_warden"]
@@ -195,6 +197,7 @@ func _build() -> void:
 	_confirm.hide()
 	_build_purchase_overlay()
 	_build_admin_overlay()
+	_comparison = UpgradeComparison.new(); add_child(_comparison)
 
 func _change_mode(index: int) -> void:
 	_mode_choice.select(1 if loadout_mode == "progression" else 0)
@@ -266,6 +269,7 @@ func _clear(parent: Node) -> void:
 	for child in parent.get_children(): parent.remove_child(child); child.queue_free()
 
 func select_character(id: String) -> void:
+	_comparison.dismiss()
 	if not catalogs.has(id): return
 	character_id = id; character = catalogs[id].combatants[id].duplicate(true)
 	character.decklist = _drafts[id]
@@ -377,6 +381,7 @@ func _matches_card(info: Dictionary, query: String) -> bool:
 	return query.strip_edges().is_empty() or (str(info.name) + " " + str(info.text)).to_lower().contains(query.strip_edges().to_lower())
 
 func inspect_entry(kind: String, id: String) -> void:
+	_comparison.dismiss()
 	selected_kind = kind; selected_id = id
 	for b in _entry_buttons:
 		b.add_theme_stylebox_override("normal", _style("253a46", "b99a60") if b.get_meta("entry_id") == id else _style("14222d"))
@@ -431,6 +436,7 @@ func _unhandled_key_input(event: InputEvent) -> void:
 	if event.is_action_pressed("ui_cancel"):
 		if _purchase_overlay.visible: _purchase_overlay.hide()
 		elif _confirm.visible: _confirm.hide()
+		elif _comparison.visible: _comparison.dismiss()
 		else: _close()
 		get_viewport().set_input_as_handled()
 
@@ -544,6 +550,7 @@ func _progression_actions(kind: String, id: String) -> void:
 		var target: Dictionary = catalogs[character_id][kind][upgrade.to]
 		var action := "upgrade_card" if kind == "cards" else "upgrade_ability"
 		var button := _button(_details, "Upgrade → %s · %d XP" % [target.name, int(upgrade.xp)], func(): _review_purchase(action, id, int(upgrade.xp)), "upgrade." + id)
+		_bind_comparison(button, kind, id, str(upgrade.to), int(upgrade.xp))
 		button.disabled = int(progress.xp) < int(upgrade.xp) or (kind == "cards" and (_card_count(id) < 1 or _card_count(str(upgrade.to)) >= int(catalogs[character_id].deck_limits.max_copies))) or (kind == "abilities" and str(upgrade.to) in (character.ability_board.offensive + character.ability_board.defensive))
 	if kind == "abilities":
 		var has_downgrade := false
@@ -554,10 +561,12 @@ func _progression_actions(kind: String, id: String) -> void:
 			var previous: Dictionary = catalogs[character_id].abilities[previous_id]
 			var refund := int(path.xp)
 			var button := _button(_details, "Downgrade → %s · +%d XP" % [previous.name, refund], func(): _review_purchase("downgrade_ability", id, refund, str(previous_id)), "downgrade." + id + "." + str(previous_id))
+			_bind_comparison(button, kind, id, str(previous_id), refund, true)
 			button.disabled = int(progress.get("upgrade_spent", 0)) < refund or str(previous_id) in (character.ability_board.offensive + character.ability_board.defensive)
 		if not upgrades.has(id) and not has_downgrade: _label(_details, "No upgrade or downgrade configured.", 14, MUTED)
 
 func _review_purchase(kind: String, id: String, cost: int, downgrade_target: String = "") -> void:
+	_comparison.dismiss()
 	var progress: Dictionary = catalogs[character_id].progression
 	_pending_purchase = {"character": character_id, "kind": kind, "id": id, "cost": cost, "revision": int(progress.revision)}
 	_clear(_purchase_details)
@@ -631,6 +640,7 @@ func _build_admin_overlay() -> void:
 	_admin_overlay.hide()
 
 func _open_admin() -> void:
+	_comparison.dismiss()
 	# Read every character before presenting a coherent economy snapshot.
 	var response: Dictionary = get_node("/root/LearnedBattleRuntime").character_catalogs("progression")
 	if not response.get("ok", false):
@@ -717,3 +727,33 @@ func _save_admin() -> void:
 	var kind := selected_kind; var id := selected_id
 	reload_catalogs()
 	if not id.is_empty(): inspect_entry(kind, id)
+
+func _bind_comparison(button: Button, kind: String, id: String, target_id: String, cost: int, downgrade: bool = false) -> void:
+	var show_preview := func():
+		if _purchase_overlay.visible or _admin_overlay.visible or _confirm.visible: return
+		var definitions: Dictionary = catalogs[character_id][kind]
+		_comparison.present(button, str(definitions[id].name), str(definitions[target_id].name), _comparison_rules(kind, id), _comparison_rules(kind, target_id), cost, downgrade)
+	button.mouse_entered.connect(show_preview)
+	button.focus_entered.connect(show_preview)
+
+func _comparison_rules(kind: String, id: String) -> String:
+	var definition: Dictionary = catalogs[character_id][kind][id]
+	var parts: PackedStringArray = []
+	parts.append("%d energy · %s" % [int(definition.cost.energy), str(definition.type).replace("_", " ").capitalize()])
+	parts.append(str(definition.presentation.rules_text))
+	if kind == "cards":
+		var timing: PackedStringArray = []
+		for window in definition.play.playable_during:
+			var segment := str(window.segment)
+			var caption := "Defense / damage response" if segment == "damage_resolution" else segment.replace("_", " ").capitalize()
+			if caption not in timing: timing.append(caption)
+		parts.append("Play window: " + ", ".join(timing))
+		if definition.play.get("before_first_roll", false): parts.append("Before your first offensive roll only.")
+		parts.append("After play: " + str(definition.play.destination).capitalize())
+	else:
+		for tier in BattlePresentationCatalog.offensive_tier_summaries(id): parts.append(str(tier.recipe) + "\n" + str(tier.summary))
+		var uses := int(definition.get("usage", {}).get("maximum_per_segment", 0))
+		if uses > 0: parts.append("Up to %d use(s) per segment." % uses)
+	if definition.has("saved_card_destination"):
+		parts.append("Saved cards: " + ("return to their original piles." if definition.saved_card_destination == "original" else "go to discard."))
+	return "\n\n".join(parts)
