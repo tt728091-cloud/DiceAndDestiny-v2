@@ -22,6 +22,7 @@ const MODEL_BRINE_MASK := "brine-mask"
 const MODEL_BRINE_PAIR := "brine-mask-pair"
 const INFERENCE_TIMEOUT_MS := 2000
 
+var selected_loadout_mode := "sandbox"
 var _native_authority: Object
 var _initialized := false
 var _initialized_model_key := ""
@@ -102,12 +103,13 @@ func _selected_model_sha256() -> String:
 		_:
 			return ""
 
-func start_battle(battle_id: String, human_seat: String, seed: int, rematch: bool = false, character: String = "blade_warden", unified_defense: bool = false) -> Dictionary:
+func start_battle(battle_id: String, human_seat: String, seed: int, rematch: bool = false, character: String = "blade_warden", unified_defense: bool = false, loadout_mode: String = "sandbox") -> Dictionary:
 	var initialized := ensure_initialized()
 	if initialized.get("ok") != true:
 		return {"accepted": false, "error": initialized.get("error", _initialization_error)}
 	return _request({
 		"op": "reset",
+		"loadout_mode": loadout_mode,
 		"battle_id": battle_id,
 		"human_seat": human_seat,
 		"character": character,
@@ -147,12 +149,16 @@ func _exit_tree() -> void:
 		_native_authority = null
 
 # Read-only: does not initialize, replace, or advance the active battle session.
-func character_catalogs() -> Dictionary:
+func character_catalogs(mode: String = "sandbox") -> Dictionary:
 	if _native_authority == null: return {"ok": false, "error": _initialization_error}
-	return _request({"op": "character_catalogs", "loadout_root": WorkspacePaths.runtime_dir("user/character_loadouts"), "content_root": ProjectSettings.globalize_path("res://../dice-and-destiny-server/content")})
+	return _request({"op": "progression_catalogs" if mode == "progression" else "character_catalogs", "loadout_root": WorkspacePaths.runtime_dir("user/character_loadouts"), "content_root": ProjectSettings.globalize_path("res://../dice-and-destiny-server/content")})
 
 func save_character_deck(character: String, decklist: Array) -> Dictionary:
 	if _native_authority == null: return {"ok": false, "error": _initialization_error}
 	var entries: Array = []
 	for entry in decklist: entries.append({"card_id": str(entry.card_id), "count": int(entry.count)})
 	return _request({"op": "save_character_deck", "content_root": ProjectSettings.globalize_path("res://../dice-and-destiny-server/content"), "loadout_root": WorkspacePaths.runtime_dir("user/character_loadouts"), "character": character, "decklist": entries})
+
+func purchase_progression(character: String, kind: String, id: String, revision: int, cost: int) -> Dictionary:
+	if _native_authority == null: return {"ok": false, "error": _initialization_error}
+	return _request({"op": "progression_purchase", "content_root": ProjectSettings.globalize_path("res://../dice-and-destiny-server/content"), "loadout_root": WorkspacePaths.runtime_dir("user/character_loadouts"), "character": character, "purchase": {"kind": kind, "id": id, "revision": revision, "expected_cost": cost}})

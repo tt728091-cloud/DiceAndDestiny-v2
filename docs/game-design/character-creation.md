@@ -57,15 +57,77 @@ unchanged; the viewer endpoint has an explicit client-facing loadout envelope.
   retain their pinned setup. Replay records include the starting deck, so later
   edits cannot change a replay. Sessions without a loadout root keep templates.
 
-Abilities and dice remain inspectable but are not editable. XP, upgrade purchases,
-and reward unlocks remain future work.
+The Sandbox mode retains free deck editing. Dice remain inspection-only.
+
+## Phase 3: XP purchases and upgrades (implemented)
+
+Choose **Progression · XP** at the top of Character Creation, or **Progression · XP
+purchases** in battle setup. Sandbox and Progression have independent loadouts.
+Progression begins with the character template plus any configured starter
+loadout overrides. It does not import a freely edited Sandbox deck.
+
+- Each character has an authoritative XP balance. The current development
+  allowance is **100 XP**, granted once on initial progression creation. Reopening
+  the screen, reloading definitions, changing modes, and restarting battles do not
+  refill it. Victory rewards are still the next phase.
+- The default card price is **10 XP**; per-character overrides are supported.
+  Buying a copy immediately equips it and increases maximum health by one.
+- Upgrading a card replaces exactly one owned copy and preserves health.
+  The Adventurer example is **Brace → Brace+ for 10 XP**. Buying an additional
+  Brace+ directly costs **20 XP**.
+- Upgrading an ability replaces its existing offensive/defensive slot. The first
+  configured example is **Guard → Guard+ for 25 XP**. Progression Adventurer starts
+  with three base Braces and only base Guard so these upgrades can be tested.
+  Its Sandbox starter remains unchanged. Other characters can buy cards; they
+  show no further upgrade until paths are authored for their abilities/cards.
+- Selecting a purchase opens a preview of XP before/after, health before/after,
+  and full before/after rules for upgrades. Cancel spends nothing. Confirm saves
+  immediately; there is no Apply or refund in Progression.
+- Purchases validate ownership, source/target definitions, ability type, count
+  limits, XP, quoted price, and save revision in the authority. A stale or repeated
+  purchase cannot spend twice. XP, deck, ability board, and revision are stored in
+  one atomic save. Errors never partially spend or equip an upgrade.
+- Progression saves live under `user/character_loadouts/progression/<character>.json`
+  in the launcher-isolated runtime root. The separate file includes XP, deck,
+  ability board, and revision. Existing Sandbox saves need no migration.
+- New battles/rematches use the selected mode. Deck and ability-board overrides
+  affect only the human participant and are recorded in replays. Existing battles
+  retain their starting loadout. Free Sandbox edits cannot fund Progression.
+
+### Configuring the economy
+
+Edit `dice-and-destiny-server/content/progression_v1/economy.yaml`. No code changes
+are needed for supported prices, allowances, and upgrade paths:
+
+```yaml
+schema_version: 1
+starting_xp: 100
+default_card_price: 10
+characters:
+  adventurer:
+    card_prices: {brace_plus: 20}
+    card_upgrades:
+      brace: {to: brace_plus, xp: 10}
+    ability_upgrades:
+      adventurer_guard: {to: adventurer_guard_plus, xp: 25}
+```
+
+Optional `starting_decklist` and `starting_abilities` override the initial
+Progression loadout. Starting values apply only when the save is first created;
+changing them never overwrites existing progression. Prices/paths are reread for
+catalog reads and purchases. Use Reload definitions to refresh the UI. A purchase
+quoted before a price change is rejected until refreshed. Unknown configuration
+keys, missing definitions, invalid prices, and mismatched ability types are errors.
+New mechanical effects still need engine support; links between existing authored
+cards/abilities and economy values are configuration-only.
+
+This phase exposes the character's supported card catalog. Discovery-based
+availability, reward XP, unequipped inventory, selling/removal, and branching run
+progression remain future work.
 
 ## Next phases
 
-1. **Spend experience.** Add an authoritative XP balance, configured prices, and
-   explicit upgrade links. Purchases consume XP and change card instances or
-   ability slots atomically. Preview the before/after result before purchase.
-2. **Battle rewards and discovery.** Victory awards XP and unlocks potential
+1. **Battle rewards and discovery.** Victory awards XP and unlocks potential
    cards/abilities. Discovery adds a choice to the available library; equipping
    it remains a separate purchase. Open this same screen between battles with
    the run's loadout and balance.
@@ -96,3 +158,10 @@ The split-view checks exercise simultaneous visibility, separate searches and
 scrolling, inspection from either pane, live quantity updates in both lists,
 swapping without losing context, pointer dragging of the divider, and keeping
 both panes and the inspector inside the viewport at all three tested widths.
+
+Phase 3 native tests cover one-time grants for all characters, sandbox isolation,
+card and ability upgrades, atomic failures, stale prices/revisions, concurrent
+requests, configuration-only price changes, both human seats, complete battles,
+and replayed upgraded ability boards. `verify_xp_progression.gd` tests purchase
+previews/cancellation, pointer purchases, XP/health updates, persisted mode changes,
+insufficient XP, three viewport sizes, and a real menu-launched progression battle.

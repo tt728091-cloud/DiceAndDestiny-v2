@@ -7,6 +7,7 @@ var model_key := "accepted-v1"
 var seed := 0
 var character := "blade_warden"
 var unified_defense := false
+var loadout_mode := "sandbox"
 var _configuration_error := ""
 
 func _init(runtime: Node, selected_human_seat: String = "seat-a", selected_model_key: String = "accepted-v1", selected_character: String = "blade_warden") -> void:
@@ -22,7 +23,7 @@ func start_battle(battle_id: String, selected_seed: int, rematch: bool = false) 
 	if not _configuration_error.is_empty():
 		return {"accepted": false, "error": _configuration_error}
 	seed = selected_seed
-	return _runtime.start_battle(battle_id, human_seat, seed, rematch, character, unified_defense)
+	return _runtime.start_battle(battle_id, human_seat, seed, rematch, character, unified_defense, loadout_mode)
 
 func submit(command_json: String) -> Dictionary:
 	return _runtime.submit_human(command_json)

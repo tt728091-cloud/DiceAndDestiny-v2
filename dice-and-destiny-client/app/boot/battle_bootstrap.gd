@@ -11,6 +11,7 @@ var store: ActiveBattleStore
 var _message: Label
 var _buttons: VBoxContainer
 var _mode_panel: PanelContainer
+var _loadout_choice: OptionButton
 var _character_choice: OptionButton
 var _model_choice: OptionButton
 var _seat_choice: OptionButton
@@ -72,6 +73,10 @@ func _build_mode_menu() -> void:
 		["Curse · cursed dice, Entombment, and misfortune", "curse"],
 		["Adventurer · swords, shields, and coins", "adventurer"],
 	], "battle.setup.character")
+	_loadout_choice = _add_selection("LOADOUT", [["Sandbox · free deck editing", "sandbox"], ["Progression · XP purchases", "progression"]], "battle.setup.loadout")
+	var selected_mode: String = get_node("/root/LearnedBattleRuntime").selected_loadout_mode
+	_loadout_choice.select(1 if selected_mode == "progression" else 0)
+	_loadout_choice.item_selected.connect(func(_index): get_node("/root/LearnedBattleRuntime").selected_loadout_mode = str(_loadout_choice.get_selected_metadata()); _refresh_character_loadouts())
 	_character_choice.select(3)
 	_refresh_character_loadouts()
 	_model_choice = _add_selection("OPPONENT", [
@@ -179,6 +184,7 @@ func _start_learned(human_seat: String, model_key: String) -> void:
 	var learned_gateway: RefCounted = LEARNED_GATEWAY.new(runtime, human_seat, model_key, str(_character_choice.get_selected_metadata()) if _character_choice != null else "blade_warden")
 	var seed := int(Time.get_unix_time_from_system() * 1000000.0) ^ Time.get_ticks_usec()
 	learned_gateway.unified_defense = true
+	learned_gateway.loadout_mode = str(_loadout_choice.get_selected_metadata())
 	var result: Dictionary = learned_gateway.start_battle(_new_battle_id("learned"), seed)
 	if result.get("accepted") != true:
 		_show_error(str(result.get("error", "The learned battle could not start.")), result)
@@ -227,12 +233,13 @@ func _show_error(message: String, result: Dictionary) -> void:
 func _open_character_creation() -> void:
 	var screen = preload("res://app/screens/character/character_creation.gd").new()
 	screen.initial_character = str(_character_choice.get_selected_metadata())
-	screen.closed.connect(func(): show(); _refresh_character_loadouts(); _character_choice.grab_focus())
+	screen.loadout_mode = str(_loadout_choice.get_selected_metadata())
+	screen.closed.connect(func(): show(); _loadout_choice.select(1 if get_node("/root/LearnedBattleRuntime").selected_loadout_mode == "progression" else 0); _refresh_character_loadouts(); _character_choice.grab_focus())
 	get_tree().root.add_child(screen)
 	hide()
 
 func _refresh_character_loadouts() -> void:
-	var response: Dictionary = get_node("/root/LearnedBattleRuntime").character_catalogs()
+	var response: Dictionary = get_node("/root/LearnedBattleRuntime").character_catalogs(str(_loadout_choice.get_selected_metadata()))
 	if not response.get("ok", false): return
 	for index in _character_choice.item_count:
 		var id := str(_character_choice.get_item_metadata(index))
@@ -240,4 +247,4 @@ func _refresh_character_loadouts() -> void:
 		if catalog.is_empty(): continue
 		var health := 0
 		for entry in catalog.get("owned_decklist", catalog.combatants[id].decklist): health += int(entry.count)
-		_character_choice.set_item_text(index, "%s · %d health · %s" % [catalog.combatants[id].name, health, "Saved deck" if catalog.has("owned_decklist") else "Starter deck"])
+		_character_choice.set_item_text(index, "%s · %d health · %s" % [catalog.combatants[id].name, health, "Progression · %d XP" % int(catalog.progression.xp) if catalog.has("progression") else "Saved deck" if catalog.has("owned_decklist") else "Starter deck"])

@@ -15,8 +15,8 @@ const MaxCards = 100
 const MaxCopies = 20
 
 type Entry struct {
-	CardID string `json:"card_id"`
-	Count  int    `json:"count"`
+	CardID string `json:"card_id" yaml:"card_id"`
+	Count  int    `json:"count" yaml:"count"`
 }
 
 type Saved struct {

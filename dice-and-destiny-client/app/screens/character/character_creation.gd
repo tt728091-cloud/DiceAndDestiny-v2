@@ -5,6 +5,15 @@ const GOLD := Color("e6c17c")
 const MUTED := Color("9cabb7")
 const ROSTER := ["adventurer", "venom", "curse", "blade_warden"]
 var initial_character := "adventurer"
+var loadout_mode := "sandbox"
+var _catalog_mode := "sandbox"
+var _mode_choice: OptionButton
+var _mode_note: Label
+var _purchase_overlay: Control
+var _purchase_details: VBoxContainer
+var _purchase_confirm: Button
+var _purchase_cancel: Button
+var _pending_purchase: Dictionary = {}
 var character_id := ""
 var catalogs: Dictionary = {}
 var character: Dictionary = {}
@@ -101,6 +110,9 @@ func _build() -> void:
 	var titles := VBoxContainer.new(); titles.size_flags_horizontal = Control.SIZE_EXPAND_FILL; header.add_child(titles)
 	_label(titles, "DICE & DESTINY  /  CHARACTERS", 12, GOLD)
 	_label(titles, "Character Creation", 36)
+	_mode_choice = OptionButton.new(); _mode_choice.add_item("Sandbox · free editing"); _mode_choice.add_item("Progression · XP")
+	_mode_choice.select(1 if loadout_mode == "progression" else 0); header.add_child(_mode_choice)
+	_mode_choice.item_selected.connect(_change_mode)
 	_button(header, "Reload definitions", func(): _guard_unsaved(reload_catalogs), "reload")
 	_button(header, "Back to battle setup", _close, "back")
 	_error = _label(body, "", 16, Color("ffae9f")); _error.hide()
@@ -149,7 +161,7 @@ func _build() -> void:
 	_reset = _button(footer, "Reset to template", _reset_draft, "reset")
 	_revert = _button(footer, "Revert", _revert_draft, "revert")
 	_apply = _button(footer, "Apply deck", _apply_draft, "apply")
-	_label(body, "Apply saves this character’s deck for new battles. Abilities and dice remain configured by the template. XP and unlocks come next.", 13, MUTED)
+	_mode_note = _label(body, "", 13, MUTED)
 	_confirm = Control.new(); _confirm.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT); add_child(_confirm)
 	var dim := ColorRect.new(); dim.color = Color(0, 0, 0, 0.75); dim.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT); _confirm.add_child(dim)
 	var center := CenterContainer.new(); center.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT); _confirm.add_child(center)
@@ -159,14 +171,49 @@ func _build() -> void:
 	var choices := HBoxContainer.new(); choices.add_theme_constant_override("separation", 12); dialog.add_child(choices)
 	_cancel_changes = _button(choices, "Keep editing", func(): _confirm.hide(), "keep_editing")
 	_discard_changes = _button(choices, "Discard changes", func(): _confirm.hide(); _pending_action.call(), "discard_changes")
+	_focus_pair(_cancel_changes, _discard_changes)
 	_confirm.hide()
+	_build_purchase_overlay()
+
+func _change_mode(index: int) -> void:
+	_mode_choice.select(1 if loadout_mode == "progression" else 0)
+	_guard_unsaved(func():
+		loadout_mode = "progression" if index == 1 else "sandbox"
+		_mode_choice.select(index)
+		get_node("/root/LearnedBattleRuntime").selected_loadout_mode = loadout_mode
+		reload_catalogs()
+	)
+
+func _build_purchase_overlay() -> void:
+	_purchase_overlay = Control.new(); _purchase_overlay.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT); add_child(_purchase_overlay)
+	var dim := ColorRect.new(); dim.color = Color(0, 0, 0, 0.8); dim.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT); _purchase_overlay.add_child(dim)
+	var center := CenterContainer.new(); center.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT); _purchase_overlay.add_child(center)
+	var panel := _panel(center, 900); panel.get_parent().custom_minimum_size.y = 650
+	_label(panel, "Review XP purchase", 30, GOLD)
+	_purchase_details = _scroll(panel)
+	var actions := HBoxContainer.new(); actions.add_theme_constant_override("separation", 14); panel.add_child(actions)
+	_purchase_cancel = _button(actions, "Cancel", func(): _purchase_overlay.hide(), "purchase.cancel")
+	_purchase_confirm = _button(actions, "Confirm purchase", _confirm_purchase, "purchase.confirm")
+	_focus_pair(_purchase_cancel, _purchase_confirm)
+	_purchase_overlay.hide()
+
+func _focus_pair(first: Button, second: Button) -> void:
+	for button in [first, second]:
+		var other: Button = second if button == first else first
+		for property in ["focus_next", "focus_previous", "focus_neighbor_left", "focus_neighbor_right", "focus_neighbor_top", "focus_neighbor_bottom"]:
+			button.set(property, button.get_path_to(other))
 
 func reload_catalogs() -> void:
 	var runtime = get_node_or_null("/root/LearnedBattleRuntime")
-	var response: Dictionary = runtime.character_catalogs() if runtime != null else {"ok": false, "error": "Character catalog unavailable."}
+	var response: Dictionary = runtime.character_catalogs(loadout_mode) if runtime != null else {"ok": false, "error": "Character catalog unavailable."}
 	if not response.get("ok", false):
+		if not catalogs.is_empty():
+			loadout_mode = _catalog_mode
+			_mode_choice.select(1 if loadout_mode == "progression" else 0)
+			runtime.selected_loadout_mode = loadout_mode
 		_error.text = "Could not load characters: " + str(response.get("error", "Unknown error")); _error.show(); return
 	_error.hide(); catalogs = response.get("result", {})
+	_catalog_mode = loadout_mode
 	_drafts.clear(); _saved.clear()
 	for id in catalogs:
 		_saved[id] = catalogs[id].get("owned_decklist", catalogs[id].combatants[id].decklist).duplicate(true)
@@ -200,6 +247,7 @@ func _refresh_summary() -> void:
 	var stats := HBoxContainer.new(); stats.add_theme_constant_override("separation", 20); _summary.add_child(stats)
 	_label(stats, "%d  HEALTH" % health, 26, Color("f1ad9f")).autowrap_mode = TextServer.AUTOWRAP_OFF
 	_label(stats, "%d cards · %d unique" % [health, character.decklist.size()], 18, MUTED).autowrap_mode = TextServer.AUTOWRAP_OFF
+	if loadout_mode == "progression": _label(stats, "%d XP" % int(catalogs[character_id].progression.xp), 26, GOLD).autowrap_mode = TextServer.AUTOWRAP_OFF
 	_label(_summary, "Opening hand %d  ·  Starting energy %d  ·  Hand limit %d" % [character.resources.starting_hand_size, character.resources.starting_energy, character.resources.hand_limit], 14, MUTED)
 	_label(_summary, "Each round: draw %d  ·  gain %d energy" % [character.income.cards, character.income.energy], 14, MUTED)
 
@@ -264,7 +312,8 @@ func _populate_card_lists() -> void:
 	for id in ids:
 		var info := BattlePresentationCatalog.card(str(id))
 		if not _matches_card(info, _library_search.text): continue
-		_entry("cards", str(id), info.name, "%d energy · %s" % [info.cost, info.effect_summary], "×%d" % _card_count(str(id)), _library_list, "library")
+		var price_prefix := "%d XP · " % int(_economy_map("card_prices").get(str(id), catalogs[character_id].economy.default_card_price)) if loadout_mode == "progression" else ""
+		_entry("cards", str(id), info.name, price_prefix + "%d energy · %s" % [info.cost, info.effect_summary], "×%d" % _card_count(str(id)), _library_list, "library")
 	for entry in character.get("decklist", []):
 		var info := BattlePresentationCatalog.card(str(entry.card_id))
 		if not _matches_card(info, _deck_search.text): continue
@@ -286,14 +335,17 @@ func inspect_entry(kind: String, id: String) -> void:
 	var definition: Dictionary = catalogs[character_id][kind][id]
 	_label(_details, str(definition.name), 24, GOLD)
 	if kind == "cards":
-		var quantity_row := HBoxContainer.new(); quantity_row.add_theme_constant_override("separation", 8); _details.add_child(quantity_row)
-		_label(quantity_row, "Copies in deck", 16, MUTED).size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		_quantity = SpinBox.new(); _quantity.min_value = 0; _quantity.max_value = int(catalogs[character_id].deck_limits.max_copies)
-		_quantity.step = 1; _quantity.value = _card_count(id); _quantity.custom_minimum_size = Vector2(100, 44); quantity_row.add_child(_quantity)
-		_quantity.value_changed.connect(func(value): _set_card_count(id, int(value)))
-		_add_copy = _button(_details, "Add a copy", func(): _set_card_count(id, _card_count(id) + 1), "add." + id)
-		_add_copy.disabled = _card_count(id) >= int(catalogs[character_id].deck_limits.max_copies)
-		_label(_details, "Set to 0 to remove · up to %d copies" % int(catalogs[character_id].deck_limits.max_copies), 13, MUTED)
+		if loadout_mode == "progression":
+			_progression_actions(kind, id)
+		else:
+			var quantity_row := HBoxContainer.new(); quantity_row.add_theme_constant_override("separation", 8); _details.add_child(quantity_row)
+			_label(quantity_row, "Copies in deck", 16, MUTED).size_flags_horizontal = Control.SIZE_EXPAND_FILL
+			_quantity = SpinBox.new(); _quantity.min_value = 0; _quantity.max_value = int(catalogs[character_id].deck_limits.max_copies)
+			_quantity.step = 1; _quantity.value = _card_count(id); _quantity.custom_minimum_size = Vector2(100, 44); quantity_row.add_child(_quantity)
+			_quantity.value_changed.connect(func(value): _set_card_count(id, int(value)))
+			_add_copy = _button(_details, "Add a copy", func(): _set_card_count(id, _card_count(id) + 1), "add." + id)
+			_add_copy.disabled = _card_count(id) >= int(catalogs[character_id].deck_limits.max_copies)
+			_label(_details, "Set to 0 to remove · up to %d copies" % int(catalogs[character_id].deck_limits.max_copies), 13, MUTED)
 		var frame := CenterContainer.new(); _details.add_child(frame)
 		var card := BattleCard.new(); frame.add_child(card); card.configure("preview", id, false)
 		card.mouse_filter = Control.MOUSE_FILTER_IGNORE; card.tooltip_text = ""
@@ -308,6 +360,7 @@ func inspect_entry(kind: String, id: String) -> void:
 		if definition.play.get("before_first_roll", false): _label(_details, "Before your first offensive roll only.", 14, MUTED)
 		_label(_details, "After play → " + str(definition.play.destination).capitalize(), 14, MUTED)
 	elif kind == "abilities":
+		if loadout_mode == "progression": _progression_actions(kind, id)
 		_label(_details, "%s  ·  %d energy" % [str(definition.type).capitalize(), int(definition.cost.energy)], 14, MUTED)
 		_label(_details, BattlePresentationCatalog.ability(id).text)
 		for tier in BattlePresentationCatalog.offensive_tier_summaries(id):
@@ -324,7 +377,8 @@ func inspect_entry(kind: String, id: String) -> void:
 
 func _unhandled_key_input(event: InputEvent) -> void:
 	if event.is_action_pressed("ui_cancel"):
-		if _confirm.visible: _confirm.hide()
+		if _purchase_overlay.visible: _purchase_overlay.hide()
+		elif _confirm.visible: _confirm.hide()
 		else: _close()
 		get_viewport().set_input_as_handled()
 
@@ -354,6 +408,13 @@ func _health() -> int:
 	return total
 
 func _refresh_actions() -> void:
+	var progression := loadout_mode == "progression"
+	_apply.visible = not progression; _revert.visible = not progression; _reset.visible = not progression
+	_mode_note.text = "Progression purchases save immediately and equip your next battle. Battle rewards and discovery come next." if progression else "Sandbox: freely edit and apply a test deck. Progression has a separate deck and XP balance."
+	if progression:
+		_save_status.text = "%d XP available · purchases are permanent" % int(catalogs[character_id].progression.xp)
+		_save_status.add_theme_color_override("font_color", GOLD)
+		return
 	var dirty := _dirty(character_id)
 	var valid := _health() >= 1 and _health() <= int(catalogs[character_id].deck_limits.max_cards)
 	_apply.disabled = (not dirty and not catalogs[character_id].has("loadout_error")) or not valid
@@ -404,3 +465,67 @@ func _apply_draft() -> void:
 
 func _exit_tree() -> void:
 	BattlePresentationCatalog.configure(_previous_catalog)
+
+func _economy_map(key: String) -> Dictionary:
+	var value = catalogs[character_id].economy.get(key)
+	return value if value is Dictionary else {}
+
+func _progression_actions(kind: String, id: String) -> void:
+	var progress: Dictionary = catalogs[character_id].progression
+	if kind == "cards":
+		_label(_details, "%d %s equipped" % [_card_count(id), "copy" if _card_count(id) == 1 else "copies"], 16, MUTED)
+		var price := int(_economy_map("card_prices").get(id, catalogs[character_id].economy.default_card_price))
+		var buy := _button(_details, "Buy a copy · %d XP" % price, func(): _review_purchase("buy_card", id, price), "buy." + id)
+		buy.disabled = int(progress.xp) < price or _card_count(id) >= int(catalogs[character_id].deck_limits.max_copies) or _health() >= int(catalogs[character_id].deck_limits.max_cards)
+		if int(progress.xp) < price: _label(_details, "Need %d more XP to buy a copy." % (price - int(progress.xp)), 14, MUTED)
+	var upgrades := _economy_map("card_upgrades" if kind == "cards" else "ability_upgrades")
+	if upgrades.has(id):
+		var upgrade: Dictionary = upgrades[id]
+		var target: Dictionary = catalogs[character_id][kind][upgrade.to]
+		var action := "upgrade_card" if kind == "cards" else "upgrade_ability"
+		var button := _button(_details, "Upgrade → %s · %d XP" % [target.name, int(upgrade.xp)], func(): _review_purchase(action, id, int(upgrade.xp)), "upgrade." + id)
+		button.disabled = int(progress.xp) < int(upgrade.xp) or (kind == "cards" and (_card_count(id) < 1 or _card_count(str(upgrade.to)) >= int(catalogs[character_id].deck_limits.max_copies))) or (kind == "abilities" and str(upgrade.to) in (character.ability_board.offensive + character.ability_board.defensive))
+	elif kind == "abilities": _label(_details, "No further upgrade configured.", 14, MUTED)
+
+func _review_purchase(kind: String, id: String, cost: int) -> void:
+	var progress: Dictionary = catalogs[character_id].progression
+	_pending_purchase = {"character": character_id, "kind": kind, "id": id, "cost": cost, "revision": int(progress.revision)}
+	_clear(_purchase_details)
+	var collection := "abilities" if kind == "upgrade_ability" else "cards"
+	var current: Dictionary = catalogs[character_id][collection][id]
+	var target_id := id if kind == "buy_card" else str(_economy_map("ability_upgrades" if collection == "abilities" else "card_upgrades")[id].to)
+	_pending_purchase.target_id = target_id
+	var target: Dictionary = catalogs[character_id][collection][target_id]
+	_label(_purchase_details, "%s → %s" % [current.name, target.name] if kind != "buy_card" else "Add one %s" % target.name, 24, GOLD)
+	_label(_purchase_details, "XP: %d → %d    ·    Health: %d → %d" % [int(progress.xp), int(progress.xp) - cost, _health(), _health() + (1 if kind == "buy_card" else 0)], 22)
+	if kind == "upgrade_card": _label(_purchase_details, "Replaces one owned copy. Other copies remain unchanged.", 16, MUTED)
+	elif kind == "upgrade_ability": _label(_purchase_details, "Replaces the equipped ability in its slot.", 16, MUTED)
+	else: _label(_purchase_details, "Equipped copies: %d → %d" % [_card_count(id), _card_count(id) + 1], 16, MUTED)
+	if kind != "buy_card":
+		_label(_purchase_details, "BEFORE", 14, GOLD)
+		_label(_purchase_details, str(current.presentation.rules_text), 18)
+	_label(_purchase_details, "AFTER" if kind != "buy_card" else "CARD RULES", 14, GOLD)
+	_label(_purchase_details, str(target.presentation.rules_text), 18)
+	_purchase_confirm.text = "Spend %d XP" % cost
+	_purchase_confirm.disabled = false
+	_purchase_overlay.show(); _purchase_cancel.grab_focus()
+
+func _confirm_purchase() -> void:
+	_purchase_confirm.disabled = true
+	var p := _pending_purchase
+	if loadout_mode != "progression" or character_id != str(p.character):
+		_purchase_overlay.hide(); return
+	var response: Dictionary = get_node("/root/LearnedBattleRuntime").purchase_progression(str(p.character), str(p.kind), str(p.id), int(p.revision), int(p.cost))
+	_purchase_overlay.hide()
+	if not response.get("ok", false):
+		_error.text = "Purchase not completed: " + str(response.get("error", "Unknown error")) + ". Reload definitions to refresh."; _error.show(); return
+	_error.hide()
+	var progress: Dictionary = response.result
+	catalogs[character_id].progression = progress
+	catalogs[character_id].owned_decklist = progress.decklist.duplicate(true)
+	catalogs[character_id].combatants[character_id].ability_board = progress.ability_board.duplicate(true)
+	character.ability_board = progress.ability_board.duplicate(true)
+	_saved[character_id] = progress.decklist.duplicate(true); _drafts[character_id] = _saved[character_id].duplicate(true)
+	selected_kind = "abilities" if p.kind == "upgrade_ability" else "cards"; selected_id = str(p.target_id)
+	_refresh_draft()
+	inspect_entry(selected_kind, selected_id)

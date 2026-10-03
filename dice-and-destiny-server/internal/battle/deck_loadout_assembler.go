@@ -54,3 +54,40 @@ func WithDeckLoadouts(base ParticipantAssembler, decks map[string][]loadout.Entr
 		return setup, nil
 	})
 }
+
+// Ability slots are pinned per participant, just like the starting deck.
+func WithAbilityLoadouts(base ParticipantAssembler, boards map[string]content.AbilityBoard) ParticipantAssembler {
+	return ParticipantAssemblerFunc(func(participants []participant.Participant) (state.BattleSetup, error) {
+		setup, err := base.AssembleParticipants(participants)
+		if err != nil || len(boards) == 0 {
+			return setup, err
+		}
+		var catalog content.BattleLibrary
+		if err = json.Unmarshal(setup.SettledCatalog, &catalog); err != nil {
+			return state.BattleSetup{}, err
+		}
+		seen := map[string]bool{}
+		for i := range setup.Actors {
+			actor := &setup.Actors[i]
+			board, ok := boards[actor.ID]
+			if !ok {
+				continue
+			}
+			seen[actor.ID] = true
+			if err = loadout.ValidateAbilities(board, catalog); err != nil {
+				return state.BattleSetup{}, err
+			}
+			actor.AbilityIDs = append(append([]string(nil), board.Offensive...), board.Defensive...)
+			runtime := setup.SettledActors[actor.ID]
+			runtime.OffensiveAbilityIDs = append([]string(nil), board.Offensive...)
+			runtime.DefensiveAbilityIDs = append([]string(nil), board.Defensive...)
+			setup.SettledActors[actor.ID] = runtime
+		}
+		for seat := range boards {
+			if !seen[seat] {
+				return state.BattleSetup{}, fmt.Errorf("unknown ability loadout seat %q", seat)
+			}
+		}
+		return setup, nil
+	})
+}

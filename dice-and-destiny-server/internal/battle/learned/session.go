@@ -15,6 +15,7 @@ import (
 	"diceanddestiny/server/internal/battle/engine"
 	"diceanddestiny/server/internal/battle/loadout"
 	"diceanddestiny/server/internal/battle/mlsim"
+	"diceanddestiny/server/internal/content"
 )
 
 const (
@@ -174,6 +175,16 @@ func (s *Session) Reset(battleID string, seed uint64, humanSeat string, rematch 
 }
 
 func (s *Session) ResetCharacter(battleID string, seed uint64, humanSeat string, rematch bool, character string, unified ...bool) (map[string]any, error) {
+	return s.ResetCharacterLoadout(battleID, seed, humanSeat, rematch, character, len(unified) > 0 && unified[0], "sandbox")
+}
+func (s *Session) ResetCharacterLoadout(battleID string, seed uint64, humanSeat string, rematch bool, character string, unified bool, mode string) (map[string]any, error) {
+	if mode != "" && mode != "sandbox" && mode != "progression" {
+		return nil, fmt.Errorf("invalid loadout mode")
+	}
+	if mode == "progression" && s.config.LoadoutRoot == "" {
+		return nil, fmt.Errorf("progression requires loadout storage")
+	}
+
 	if character == "" {
 		character = "blade_warden"
 	}
@@ -189,17 +200,31 @@ func (s *Session) ResetCharacter(battleID string, seed uint64, humanSeat string,
 		return nil, fmt.Errorf("multiple opponents require a scripted minion")
 	}
 	var decks map[string][]loadout.Entry
+	var abilityBoards map[string]content.AbilityBoard
 	if s.config.LoadoutRoot != "" {
 		catalogs, err := CharacterCatalogs(s.config.ContentRoot)
 		if err != nil {
 			return nil, err
 		}
-		deck, err := loadout.Read(s.config.LoadoutRoot, character, catalogs[character].Cards)
-		if err != nil {
-			return nil, fmt.Errorf("load %s deck: %w", character, err)
-		}
-		if deck != nil {
-			decks = map[string][]loadout.Entry{humanSeat: deck}
+		if mode == "progression" {
+			economy, err := loadout.LoadEconomy(s.config.ContentRoot, catalogs)
+			if err != nil {
+				return nil, err
+			}
+			progress, err := loadout.ReadProgress(s.config.LoadoutRoot, character, economy, catalogs[character])
+			if err != nil {
+				return nil, err
+			}
+			decks = map[string][]loadout.Entry{humanSeat: progress.Deck}
+			abilityBoards = map[string]content.AbilityBoard{humanSeat: progress.Abilities}
+		} else {
+			deck, err := loadout.Read(s.config.LoadoutRoot, character, catalogs[character].Cards)
+			if err != nil {
+				return nil, err
+			}
+			if deck != nil {
+				decks = map[string][]loadout.Entry{humanSeat: deck}
+			}
 		}
 	}
 	s.humanSeat = humanSeat
@@ -217,11 +242,12 @@ func (s *Session) ResetCharacter(battleID string, seed uint64, humanSeat string,
 		teams = map[string]string{s.humanSeat: "heroes", s.modelSeat: "minions", "seat-c": "minions"}
 	}
 	transition, err := s.environment.Reset(mlsim.ResetRequest{
-		SeatDecklists:   decks,
-		UnifiedDefense:  len(unified) > 0 && unified[0],
-		Seed:            seed,
-		BattleID:        battleID,
-		SeatDefinitions: definitions, SeatModels: models, SeatTeams: teams,
+		SeatDecklists:     decks,
+		SeatAbilityBoards: abilityBoards,
+		UnifiedDefense:    unified,
+		Seed:              seed,
+		BattleID:          battleID,
+		SeatDefinitions:   definitions, SeatModels: models, SeatTeams: teams,
 	})
 	if err != nil {
 		s.lifetime.Errors++
