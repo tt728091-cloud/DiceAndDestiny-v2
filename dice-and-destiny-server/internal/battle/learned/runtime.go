@@ -38,6 +38,13 @@ func HandleRuntimeRequest(requestJSON string) string {
 	if err := json.Unmarshal([]byte(requestJSON), &request); err != nil {
 		return runtimeError(fmt.Errorf("decode learned runtime request: %w", err))
 	}
+	if request.Op == "character_catalogs" {
+		catalogs, err := CharacterCatalogs(request.ContentRoot)
+		if err != nil {
+			return runtimeError(err)
+		}
+		return runtimeSuccess(characterCatalogView(catalogs))
+	}
 	learnedRuntime.Lock()
 	defer learnedRuntime.Unlock()
 	if request.Op == "initialize" {

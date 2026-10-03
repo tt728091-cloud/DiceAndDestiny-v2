@@ -56,7 +56,7 @@ func _run() -> void:
 					await create_timer(0.6).timeout
 					await _capture("adventurer-defense.png")
 					screen._auto_pass_disabled = false
-		saw_damage = saw_damage or screen._view.stage == "damage_reaction"
+		saw_damage = saw_damage or (screen._unified_defense() and not screen._damage_grids.is_empty()) or screen._view.stage == "damage_reaction"
 		if not screen._submitting and not screen._model_thinking and not screen._director.has_beats() and not screen._player_roll_active() and screen._selection_morph.is_empty() and Time.get_ticks_msec() >= screen._interaction_deadline(true) and not bool(screen._view.learned_policy.get("model_turn", false)):
 			active_round = screen._view.round_number
 			var action := _choose(screen._view.legal_actions)

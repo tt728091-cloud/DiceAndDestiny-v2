@@ -14,6 +14,7 @@ var _mode_panel: PanelContainer
 var _character_choice: OptionButton
 var _model_choice: OptionButton
 var _seat_choice: OptionButton
+var _menu_actions: Array[Button] = []
 
 func _ready() -> void:
 	gateway = BattleGateway.new() if gateway == null else gateway
@@ -84,6 +85,13 @@ func _build_mode_menu() -> void:
 	], "battle.setup.model")
 	_seat_choice = _add_selection("YOUR SEAT", [["Seat A", "seat-a"], ["Seat B", "seat-b"]], "battle.setup.seat")
 	_add_mode_button("Start Battle", _start_selected, "battle.setup.start")
+	var start: Button = _buttons.get_child(_buttons.get_child_count() - 1)
+	_add_mode_button("Character Creation", _open_character_creation, "battle.setup.characters")
+	var creation: Button = _buttons.get_child(_buttons.get_child_count() - 1)
+	var actions := HBoxContainer.new(); actions.add_theme_constant_override("separation", 12); content.add_child(actions)
+	for action in [start, creation]:
+		action.reparent(actions); action.custom_minimum_size.y = 54; action.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		_menu_actions.append(action)
 	_message = Label.new()
 	_model_choice.item_selected.connect(func(_index: int): _update_opponent_description())
 	_update_opponent_description()
@@ -205,6 +213,7 @@ func _handoff_classic(result: Dictionary, last_sequence: int, snapshot_name: Str
 	queue_free()
 
 func _set_buttons_disabled(disabled: bool) -> void:
+	for button in _menu_actions: button.disabled = disabled
 	for child in _buttons.get_children():
 		if child is Button:
 			child.disabled = disabled
@@ -213,3 +222,10 @@ func _show_error(message: String, result: Dictionary) -> void:
 	_message.text = "BATTLE START ERROR\n%s\n\n%s" % [message, JSON.stringify(result)]
 	_message.add_theme_color_override("font_color", Color("ff8a78"))
 	_set_buttons_disabled(false)
+
+func _open_character_creation() -> void:
+	var screen = preload("res://app/screens/character/character_creation.gd").new()
+	screen.initial_character = str(_character_choice.get_selected_metadata())
+	screen.closed.connect(func(): show(); _character_choice.grab_focus())
+	get_tree().root.add_child(screen)
+	hide()

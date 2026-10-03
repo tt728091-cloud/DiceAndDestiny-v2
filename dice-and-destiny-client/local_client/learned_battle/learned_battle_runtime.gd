@@ -144,3 +144,8 @@ func _exit_tree() -> void:
 	if is_instance_valid(_native_authority):
 		_native_authority.free()
 		_native_authority = null
+
+# Read-only: does not initialize, replace, or advance the active battle session.
+func character_catalogs() -> Dictionary:
+	if _native_authority == null: return {"ok": false, "error": _initialization_error}
+	return _request({"op": "character_catalogs", "content_root": ProjectSettings.globalize_path("res://../dice-and-destiny-server/content")})
