@@ -21,7 +21,7 @@ func _run() -> void:
 			for tab in range(3):
 				screen._tabs.current_tab = tab
 				for frame in 4: await process_frame
-				var expected: int = screen.character.ability_board.offensive.size() + screen.character.ability_board.defensive.size() if tab == 0 else screen.character.decklist.size() if tab == 1 else screen.character.dice_loadout.size()
+				var expected: int = screen.character.ability_board.offensive.size() + screen.character.ability_board.defensive.size() if tab == 0 else (screen.character.decklist.size() + screen.catalogs[id].cards.size()) if tab == 1 else screen.character.dice_loadout.size()
 				_expect(screen._entry_buttons.size() == expected, "every configured entry appears")
 				if not screen._entry_buttons.is_empty():
 					screen.selected_id = ""
@@ -37,9 +37,9 @@ func _run() -> void:
 				_expect(screen.size.x <= root.get_visible_rect().size.x, "screen fits viewport")
 				_expect(screen._details.get_global_rect().end.x <= root.get_visible_rect().size.x - 20, "inspection remains inside right edge")
 				if tab == 1:
-					screen._search.text = "zz-no-match"; screen._search.text_changed.emit(screen._search.text)
-					_expect(screen._entry_buttons.is_empty(), "deck search empty state")
-					screen._search.text = ""; screen._search.text_changed.emit("")
+					screen._deck_search.text = "zz-no-match"; screen._deck_search.text_changed.emit(screen._deck_search.text)
+					_expect(screen._deck_buttons.is_empty(), "deck search empty state")
+					screen._deck_search.text = ""; screen._deck_search.text_changed.emit("")
 				_expect(JSON.stringify(screen.catalogs) == original, "viewer never modifies character definitions")
 			screen._tabs.current_tab = 0
 			screen.inspect_entry("abilities", str(screen.character.ability_board.offensive[0]))

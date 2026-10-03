@@ -27,9 +27,14 @@ unchanged; the viewer endpoint has an explicit client-facing loadout envelope.
 
 ## Phase 2: owned deck editing (implemented)
 
-- **Deck** shows equipped cards and quantities. Select a card and edit **Copies in
+- **Deck & Library** opens by default, with the card library on the left and
+  the current deck on the right. Both lists remain visible, have independent
+  searches and scroll positions, and share the inspector. **Swap sides** exchanges
+  their positions without losing filters, scrolling, selection, or draft changes.
+  Drag the middle divider to change their widths.
+- The deck pane shows equipped cards and quantities. Select a card and edit **Copies in
   deck**, or use **Add a copy**. Zero removes it from the draft.
-- **Card library** searches all cards in the selected character’s validated content
+- The library pane searches all cards in the selected character’s validated content
   catalog, including cards absent from its starter deck. The catalog is the same
   base/extension composition used by battle assembly; this is not a global library
   across incompatible content packs and is not yet an unlock system.
@@ -86,3 +91,8 @@ replay after saved-deck changes, and same-character opponent isolation.
 card, type quantities, apply, revert, reset, protect unsaved changes, reopen the
 saved deck, verify menu health, and start a real battle with the added copies.
 It also captures editor layouts at 1024, 1280, and 1920 widths.
+
+The split-view checks exercise simultaneous visibility, separate searches and
+scrolling, inspection from either pane, live quantity updates in both lists,
+swapping without losing context, pointer dragging of the divider, and keeping
+both panes and the inspector inside the viewport at all three tested widths.

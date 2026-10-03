@@ -16,7 +16,19 @@ var _details: VBoxContainer
 var _summary: VBoxContainer
 var _portrait: TextureRect
 var _tabs: TabBar
-var _search: LineEdit
+var _card_workspace: VBoxContainer
+var _card_split: HSplitContainer
+var _library_pane: VBoxContainer
+var _deck_pane: VBoxContainer
+var _library_search: LineEdit
+var _deck_search: LineEdit
+var _library_list: VBoxContainer
+var _deck_list: VBoxContainer
+var _library_heading: Label
+var _deck_heading: Label
+var _swap: Button
+var _library_buttons: Array[Button] = []
+var _deck_buttons: Array[Button] = []
 var _roster_buttons: Dictionary = {}
 var _entry_buttons: Array[Button] = []
 var _error: Label
@@ -106,12 +118,29 @@ func _build() -> void:
 	_label(left, "Every card is a point of health.", 14, MUTED)
 	var middle := _panel(columns); middle.get_parent().size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_summary = VBoxContainer.new(); _summary.add_theme_constant_override("separation", 6); middle.add_child(_summary)
-	_tabs = TabBar.new(); _tabs.add_tab("Abilities"); _tabs.add_tab("Deck"); _tabs.add_tab("Dice"); _tabs.add_tab("Card library")
+	_tabs = TabBar.new(); _tabs.add_tab("Abilities"); _tabs.add_tab("Deck & Library"); _tabs.add_tab("Dice"); _tabs.current_tab = 1
 	_tabs.add_theme_font_size_override("font_size", 17); middle.add_child(_tabs)
-	_tabs.tab_changed.connect(func(_tab): _search.text = ""; _populate())
-	_search = LineEdit.new(); _search.placeholder_text = "Find a card in this deck…"; _search.custom_minimum_size.y = 38
-	middle.add_child(_search); _search.text_changed.connect(func(_text): _populate_entries())
+	_tabs.tab_changed.connect(func(_tab): _populate())
 	_list = _scroll(middle)
+	_card_workspace = VBoxContainer.new(); _card_workspace.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	_card_workspace.add_theme_constant_override("separation", 10); middle.add_child(_card_workspace)
+	var card_toolbar := HBoxContainer.new(); _card_workspace.add_child(card_toolbar)
+	_label(card_toolbar, "Browse either list. Select a card to edit its copies.", 14, MUTED).size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_swap = _button(card_toolbar, "Swap sides  ⇄", _swap_card_sides, "swap_sides")
+	_card_split = HSplitContainer.new(); _card_split.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	_card_split.add_theme_constant_override("separation", 16); _card_workspace.add_child(_card_split)
+	_library_pane = VBoxContainer.new(); _library_pane.custom_minimum_size.x = 300
+	_library_pane.size_flags_horizontal = Control.SIZE_EXPAND_FILL; _library_pane.add_theme_constant_override("separation", 10); _card_split.add_child(_library_pane)
+	_library_heading = _label(_library_pane, "CARD LIBRARY", 16, GOLD)
+	_library_search = LineEdit.new(); _library_search.placeholder_text = "Search library…"; _library_search.custom_minimum_size.y = 38
+	_library_pane.add_child(_library_search); _library_search.text_changed.connect(func(_text): _populate_entries())
+	_library_list = _scroll(_library_pane)
+	_deck_pane = VBoxContainer.new(); _deck_pane.custom_minimum_size.x = 300
+	_deck_pane.size_flags_horizontal = Control.SIZE_EXPAND_FILL; _deck_pane.add_theme_constant_override("separation", 10); _card_split.add_child(_deck_pane)
+	_deck_heading = _label(_deck_pane, "YOUR DECK", 16, GOLD)
+	_deck_search = LineEdit.new(); _deck_search.placeholder_text = "Search deck…"; _deck_search.custom_minimum_size.y = 38
+	_deck_pane.add_child(_deck_search); _deck_search.text_changed.connect(func(_text): _populate_entries())
+	_deck_list = _scroll(_deck_pane)
 	var right := _panel(columns, 390)
 	_label(right, "INSPECT & CONFIGURE", 12, GOLD)
 	_details = _scroll(right)
@@ -159,7 +188,7 @@ func select_character(id: String) -> void:
 	_refresh_summary()
 	_error.visible = catalogs[id].has("loadout_error")
 	if _error.visible: _error.text = "Saved deck could not be loaded: " + str(catalogs[id].loadout_error) + ". Apply a valid deck to repair it."
-	_search.text = ""; selected_id = ""; selected_kind = ""
+	_deck_search.text = ""; _library_search.text = ""; selected_id = ""; selected_kind = ""
 	_populate()
 	_refresh_actions()
 
@@ -175,14 +204,20 @@ func _refresh_summary() -> void:
 	_label(_summary, "Each round: draw %d  ·  gain %d energy" % [character.income.cards, character.income.energy], 14, MUTED)
 
 func _populate() -> void:
-	_search.visible = _tabs.current_tab in [1, 3]
-	_search.placeholder_text = "Search available cards by name or rules…" if _tabs.current_tab == 3 else "Find a card in this deck…"
+	_card_workspace.visible = _tabs.current_tab == 1
+	_list.get_parent().visible = _tabs.current_tab != 1
 	_populate_entries()
-	if _entry_buttons.size() > 0: _entry_buttons[0].pressed.emit()
+	var choices := _deck_buttons if _tabs.current_tab == 1 and not _deck_buttons.is_empty() else _entry_buttons
+	if not choices.is_empty(): choices[0].pressed.emit()
 	else: _clear(_details); _label(_details, "Nothing in this category yet.", 16, MUTED)
 
-func _entry(kind: String, id: String, title: String, subtitle: String, badge: String = "") -> void:
-	var b := _button(_list, title, func(): inspect_entry(kind, id), "entry." + kind + "." + id)
+func _swap_card_sides() -> void:
+	_card_split.move_child(_card_split.get_child(0), 1)
+	# Preserve the pane widths as well as each pane's own search and scroll.
+	_card_split.split_offset = -_card_split.split_offset
+
+func _entry(kind: String, id: String, title: String, subtitle: String, badge: String = "", target: VBoxContainer = null, source: String = "") -> void:
+	var b := _button(_list if target == null else target, title, func(): inspect_entry(kind, id), "entry." + (source + "." if not source.is_empty() else "") + kind + "." + id)
 	for state in ["font_color", "font_hover_color", "font_pressed_color", "font_focus_color", "font_hover_pressed_color"]: b.add_theme_color_override(state, Color.TRANSPARENT)
 	b.custom_minimum_size.y = 70; b.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	b.tooltip_text = title; b.clip_text = true
@@ -196,9 +231,11 @@ func _entry(kind: String, id: String, title: String, subtitle: String, badge: St
 	var tag := _label(row, badge, 18, GOLD); tag.autowrap_mode = TextServer.AUTOWRAP_OFF; tag.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	if selected_id == id: b.add_theme_stylebox_override("normal", _style("253a46", "b99a60"))
 	b.set_meta("entry_kind", kind); b.set_meta("entry_id", id); _entry_buttons.append(b)
+	if source == "library": _library_buttons.append(b)
+	elif source == "deck": _deck_buttons.append(b)
 
 func _populate_entries() -> void:
-	_clear(_list); _entry_buttons.clear()
+	_clear(_list); _entry_buttons.clear(); _library_buttons.clear(); _deck_buttons.clear()
 	match _tabs.current_tab:
 		0:
 			for group in ["offensive", "defensive"]:
@@ -208,25 +245,37 @@ func _populate_entries() -> void:
 					var info := BattlePresentationCatalog.ability(str(id))
 					_entry("abilities", str(id), info.name, info.recipe, "ATK" if group == "offensive" else "DEF")
 		1:
-			for entry in character.get("decklist", []):
-				var info := BattlePresentationCatalog.card(str(entry.card_id))
-				if not _search.text.is_empty() and not (str(info.name) + " " + str(info.text)).to_lower().contains(_search.text.to_lower()): continue
-				_entry("cards", str(entry.card_id), info.name, "%d energy · %s" % [info.cost, info.effect_summary], "×%d" % int(entry.count))
-			if _entry_buttons.is_empty(): _label(_list, "No cards match your search.", 16, MUTED)
-		3:
-			_label(_list, "AVAILABLE CARDS  /  %d" % catalogs[character_id].cards.size(), 12, GOLD)
-			_label(_list, "Cards supported by this character’s catalog. Select one to add copies to your deck.", 14, MUTED)
-			var ids: Array = catalogs[character_id].cards.keys()
-			ids.sort_custom(func(a, b): return str(catalogs[character_id].cards[a].name).naturalnocasecmp_to(str(catalogs[character_id].cards[b].name)) < 0)
-			for id in ids:
-				var info := BattlePresentationCatalog.card(str(id))
-				if not _search.text.is_empty() and not (str(info.name) + " " + str(info.text)).to_lower().contains(_search.text.to_lower()): continue
-				_entry("cards", str(id), info.name, "%d energy · %s" % [info.cost, info.effect_summary], "×%d" % _card_count(str(id)))
-			if _entry_buttons.is_empty(): _label(_list, "No available cards match your search.", 16, MUTED)
+			_populate_card_lists()
 		2:
 			for entry in character.get("dice_loadout", []):
 				var die: Dictionary = catalogs[character_id].dice[entry.dice_id]
 				_entry("dice", str(entry.dice_id), die.name, "%d faces" % int(die.side_count), "×%d" % int(entry.count))
+
+func _populate_card_lists() -> void:
+	var library_scroll: ScrollContainer = _library_list.get_parent()
+	var deck_scroll: ScrollContainer = _deck_list.get_parent()
+	var library_position := library_scroll.scroll_vertical
+	var deck_position := deck_scroll.scroll_vertical
+	_clear(_library_list); _clear(_deck_list)
+	_library_heading.text = "CARD LIBRARY · %d" % catalogs[character_id].cards.size()
+	_deck_heading.text = "YOUR DECK · %d cards" % _health()
+	var ids: Array = catalogs[character_id].cards.keys()
+	ids.sort_custom(func(a, b): return str(catalogs[character_id].cards[a].name).naturalnocasecmp_to(str(catalogs[character_id].cards[b].name)) < 0)
+	for id in ids:
+		var info := BattlePresentationCatalog.card(str(id))
+		if not _matches_card(info, _library_search.text): continue
+		_entry("cards", str(id), info.name, "%d energy · %s" % [info.cost, info.effect_summary], "×%d" % _card_count(str(id)), _library_list, "library")
+	for entry in character.get("decklist", []):
+		var info := BattlePresentationCatalog.card(str(entry.card_id))
+		if not _matches_card(info, _deck_search.text): continue
+		_entry("cards", str(entry.card_id), info.name, "%d energy · %s" % [info.cost, info.effect_summary], "×%d" % int(entry.count), _deck_list, "deck")
+	if _library_buttons.is_empty(): _label(_library_list, "No library cards match your search.", 16, MUTED)
+	if _deck_buttons.is_empty(): _label(_deck_list, "Your deck is empty. Add cards from the library." if character.decklist.is_empty() else "No deck cards match your search.", 16, MUTED)
+	library_scroll.set_deferred("scroll_vertical", library_position)
+	deck_scroll.set_deferred("scroll_vertical", deck_position)
+
+func _matches_card(info: Dictionary, query: String) -> bool:
+	return query.strip_edges().is_empty() or (str(info.name) + " " + str(info.text)).to_lower().contains(query.strip_edges().to_lower())
 
 func inspect_entry(kind: String, id: String) -> void:
 	selected_kind = kind; selected_id = id
