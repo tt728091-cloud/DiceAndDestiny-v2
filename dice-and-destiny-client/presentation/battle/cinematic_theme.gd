@@ -33,6 +33,7 @@ static func create() -> Theme:
 	result.default_font_size = 20
 	var serif := SystemFont.new(); serif.font_names = PackedStringArray(["Georgia", "Noto Serif", "DejaVu Serif", "serif"])
 	result.set_font("font", "Label", serif)
+	result.set_font("font", "TooltipLabel", serif)
 	result.set_font("font", "Button", serif)
 	result.set_font("normal_font", "RichTextLabel", serif)
 	result.set_font("bold_font", "RichTextLabel", serif)

@@ -1,6 +1,8 @@
 extends PanelContainer
 signal source_selected(source_id: String)
 signal damage_settled
+const TOOLTIP_BUTTON := preload("res://presentation/battle/tooltip_button.gd")
+const TOOLTIP_LABEL := preload("res://presentation/battle/tooltip_label.gd")
 
 var _damage_settled := false
 
@@ -27,12 +29,12 @@ func configure(result: Dictionary, start: int, compact: bool = false) -> void:
 	add_theme_stylebox_override("panel", style)
 	_body = VBoxContainer.new(); _body.add_theme_constant_override("separation", 4 if compact else 10); add_child(_body)
 	if not compact: _label(str(data.actor_name).to_upper(), 16, Color("a7cbd6"))
-	var attack := Button.new(); attack.text = str(data.attack_name) + " → " + str(data.actor_name); attack.flat = true; attack.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART; attack.disabled = bool(data.read_only); attack.pressed.connect(func(): source_selected.emit(str(data.source_id))); attack.set_meta("inspection_id", "battle.source." + str(data.source_id)); _body.add_child(attack); attack.set_meta("flow_part", "attack")
+	var attack := TOOLTIP_BUTTON.new(); attack.text = str(data.attack_name) + " → " + str(data.actor_name); attack.flat = true; attack.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART; attack.disabled = bool(data.read_only); attack.pressed.connect(func(): source_selected.emit(str(data.source_id))); attack.set_meta("inspection_id", "battle.source." + str(data.source_id)); _body.add_child(attack); attack.set_meta("flow_part", "attack")
 	attack_origin = attack
 	damage = _label(str(data.before), 32 if compact else 46, Color("ffd19a")); damage.set_meta("flow_part", "damage"); damage.set_meta("inspection_id", "battle.defense_damage." + str(data.actor_id))
 	_label("DAMAGE INCOMING", 12, Color("96a6b5")).set_meta("flow_part", "damage_caption")
 	var block_area := Control.new(); block_area.custom_minimum_size.y = 28 if compact else 40; _body.add_child(block_area); block_area.set_meta("flow_part", "prevention")
-	block = Label.new(); block.text = "PREVENT %d" % int(data.prevented) if int(data.prevented) > 0 else ""; block.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER; block.add_theme_font_size_override("font_size", 23); block.add_theme_color_override("font_color", Color("81e2e9")); block_area.add_child(block); block.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	block = TOOLTIP_LABEL.new(); block.text = "PREVENT %d" % int(data.prevented) if int(data.prevented) > 0 else ""; block.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER; block.add_theme_font_size_override("font_size", 23); block.add_theme_color_override("font_color", Color("81e2e9")); block_area.add_child(block); block.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	var attack_statuses := _label(str(data.attack_statuses), 15, Color("c4a8ef")); attack_statuses.set_meta("flow_part", "statuses"); attack_statuses.custom_minimum_size.y = 0 if compact else 22
 	var title := _label(str(data.ability_name), 18 if compact else 20); title.tooltip_text = str(data.rules); title.set_meta("flow_part", "defense")
 	effect_origin = title
@@ -40,12 +42,12 @@ func configure(result: Dictionary, start: int, compact: bool = false) -> void:
 	for index in data.dice.size():
 		var face: Dictionary = data.dice[index]
 		var cell := VBoxContainer.new(); dice.add_child(cell)
-		var die := Button.new(); die.disabled = true; die.custom_minimum_size = Vector2(54, 54) if compact else Vector2(72, 72); die.add_theme_font_size_override("font_size", 24)
+		var die := TOOLTIP_BUTTON.new(); die.disabled = true; die.custom_minimum_size = Vector2(54, 54) if compact else Vector2(72, 72); die.add_theme_font_size_override("font_size", 24)
 		die.text = "%s\n%d" % [BattlePresentationCatalog.symbol_for_die_face(str(data.die_id), int(face.face)), int(face.face)]
 		dice_controls.append(die)
 		die.tooltip_text = str(face.benefit); die.set_meta("inspection_id", "battle.defense_die.%s%s" % [data.actor_id, "" if index == 0 else ".%d" % index])
 		var die_style := StyleBoxFlat.new(); die_style.bg_color = Color("232321"); die_style.border_color = Color("a6987e"); die_style.set_border_width_all(2); die_style.set_corner_radius_all(10); die.add_theme_stylebox_override("disabled", die_style); die.add_theme_color_override("font_disabled_color", Color("e2f3fb")); cell.add_child(die)
-		var benefit := Label.new(); benefit.text = str(face.benefit); benefit.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER; benefit.add_theme_font_size_override("font_size", 14); benefit.add_theme_color_override("font_color", Color("9de0d6")); cell.add_child(benefit); benefit_labels.append(benefit)
+		var benefit := TOOLTIP_LABEL.new(); benefit.text = str(face.benefit); benefit.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER; benefit.add_theme_font_size_override("font_size", 14); benefit.add_theme_color_override("font_color", Color("9de0d6")); cell.add_child(benefit); benefit_labels.append(benefit)
 	for gain in data.gains:
 		var die_index := int(gain.get("die_index", -1))
 		if die_index >= 0 and die_index < benefit_labels.size():
@@ -69,13 +71,13 @@ func configure(result: Dictionary, start: int, compact: bool = false) -> void:
 	_update()
 
 func _label(text: String, font_size: int, color: Color = Color("e9edf2")) -> Label:
-	var label := Label.new(); label.text = text; label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER; label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART; label.add_theme_font_size_override("font_size", font_size); label.add_theme_color_override("font_color", color); _body.add_child(label); return label
+	var label := TOOLTIP_LABEL.new(); label.text = text; label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER; label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART; label.add_theme_font_size_override("font_size", font_size); label.add_theme_color_override("font_color", color); _body.add_child(label); return label
 
 func highlight_card_target(description: String) -> Button:
 	# A transparent button covers the whole attack, including the damage number.
 	# Authority legality, rather than historical defense read-only state, decides
 	# whether an already-defended attack can receive a reaction card.
-	var target := Button.new(); target.name = "CardTarget"; target.tooltip_text = description
+	var target := TOOLTIP_BUTTON.new(); target.name = "CardTarget"; target.tooltip_text = description
 	target.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
 	for state in ["normal", "hover", "pressed", "focus"]:
 		var style := StyleBoxFlat.new(); style.bg_color = Color("eec25a12") if state == "normal" else Color("eec25a30"); style.border_color = Color("f2ce75"); style.set_border_width_all(2); style.set_corner_radius_all(4)

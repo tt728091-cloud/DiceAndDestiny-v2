@@ -26,3 +26,6 @@ func animate() -> void:
 	tween.parallel().tween_property(_volatile, "modulate:a", 1.0, 0.65)
 	tween.tween_interval(DURATION - 1.0)
 	tween.tween_callback(func(): finished.emit())
+
+func _make_custom_tooltip(for_text: String) -> Object:
+	return preload("res://presentation/battle/wrapped_tooltip.gd").create(self, for_text)

@@ -230,6 +230,21 @@ Regression: `tests/presentation/verify_attack_ability_tooltips.gd` covers shared
 catalog rules, tiers, dice changes, viewport placement, and offensive/defensive
 hover behavior, alongside `verify_attack_intents.gd` for source selection.
 
+## Wrapped rules tooltips
+
+Ability tiles (including their info buttons, tier controls, and defense choices),
+card explanations, defense result labels, and status/pile hints use the shared
+`wrapped_tooltip.gd` presenter via the tooltip button/label helpers. Text is
+word-wrapped to at most 440 logical pixels, with room for popup padding and
+viewport edges. Short hints keep their natural width. Measure the wrapped height
+before opening the popup so Godot can position it above bottom-edge controls.
+Preserve the complete rules; do not truncate them to make a tooltip fit.
+
+Use these helpers for new text-only battle hover controls. Revealed attack
+intents retain the richer `attack_intent_button.gd` presenter described above.
+`verify_wrapped_rule_tooltips.gd` checks all authored card/ability rules and actual
+Guard+, info-button, card, and status hovers at both edges and multiple sizes.
+
 ## Defense choices beside the selected attack
 
 The player's existing defensive ability controls appear immediately left of the

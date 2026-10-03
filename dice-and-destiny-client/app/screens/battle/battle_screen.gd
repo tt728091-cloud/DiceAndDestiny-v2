@@ -1,4 +1,5 @@
 extends Control
+const TOOLTIP_BUTTON := preload("res://presentation/battle/tooltip_button.gd")
 
 const SEGMENTS := [["ongoing_effects", "Effects"], ["income", "Income"], ["offensive", "Offensive"], ["defensive", "Defensive"], ["damage_resolution", "Damage"]]
 const INCOME_DURATION_SETTING := "dice_and_destiny/presentation/income_animation_seconds"
@@ -778,7 +779,7 @@ func _build_cinematic_utilities() -> void:
 	if _history_tools_enabled(): entries.append(["history", "History"])
 	for entry in entries:
 		var id := str(entry[0])
-		var button := Button.new(); button.text = str(entry[1]); button.custom_minimum_size.y = 48; button.size_flags_horizontal = Control.SIZE_EXPAND_FILL; button.add_theme_font_size_override("font_size", 16); button.toggle_mode = true; button.button_pressed = _open_utility == id
+		var button := TOOLTIP_BUTTON.new(); button.text = str(entry[1]); button.custom_minimum_size.y = 48; button.size_flags_horizontal = Control.SIZE_EXPAND_FILL; button.add_theme_font_size_override("font_size", 16); button.toggle_mode = true; button.button_pressed = _open_utility == id
 		for style_name in ["normal", "hover", "pressed", "disabled"]:
 			button.add_theme_stylebox_override(style_name, CINEMATIC.panel(Color("292d25ef") if style_name in ["hover", "pressed"] else Color("11171def"), CINEMATIC.GOLD, 7))
 		button.pressed.connect(func():
@@ -792,7 +793,7 @@ func _build_cinematic_utilities() -> void:
 		var frame := VBoxContainer.new(); panel.add_child(frame)
 		var heading := HBoxContainer.new(); frame.add_child(heading)
 		var title := Label.new(); title.text = "Combat log" if id == "log" else str(entry[1]); title.add_theme_font_size_override("font_size", 24 if id == "log" else 28); title.size_flags_horizontal = Control.SIZE_EXPAND_FILL; heading.add_child(title)
-		var close := Button.new(); close.set_meta("battle_utility", true); close.text = "Close"; close.pressed.connect(func(): _open_utility = ""; panel.hide(); button.set_pressed_no_signal(false)); heading.add_child(close)
+		var close := TOOLTIP_BUTTON.new(); close.set_meta("battle_utility", true); close.text = "Close"; close.pressed.connect(func(): _open_utility = ""; panel.hide(); button.set_pressed_no_signal(false)); heading.add_child(close)
 		var content := VBoxContainer.new(); content.size_flags_horizontal = Control.SIZE_EXPAND_FILL; content.add_theme_constant_override("separation", 12)
 		if id == "log":
 			# RichTextLabel owns scrolling and fills the side panel; nesting it in
@@ -801,7 +802,7 @@ func _build_cinematic_utilities() -> void:
 		else:
 			var scroll := ScrollContainer.new(); scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL; scroll.follow_focus = true; frame.add_child(scroll); scroll.add_child(content)
 		_utility_panels[id] = panel; _utility_contents[id] = content
-	_auto_pass_toggle = CheckBox.new(); _auto_pass_toggle.text = "Disable auto-pass"; _auto_pass_toggle.set_pressed_no_signal(_auto_pass_disabled)
+	_auto_pass_toggle = preload("res://presentation/battle/tooltip_check_box.gd").new(); _auto_pass_toggle.text = "Disable auto-pass"; _auto_pass_toggle.set_pressed_no_signal(_auto_pass_disabled)
 	_auto_pass_toggle.tooltip_text = "Debug: pause before the final acknowledgement. Empty Offensive reactions, no-choice handoffs to the opponent, Effects, and status applications remain automatic. Real card choices always wait for you."
 	_auto_pass_toggle.toggled.connect(_set_auto_pass_disabled); _utility_contents.settings.add_child(_auto_pass_toggle)
 	_inspect(_auto_pass_toggle, "battle.disable_auto_pass", _auto_pass_toggle.tooltip_text)
@@ -840,7 +841,7 @@ func _build_header(parent: VBoxContainer) -> void:
 	var rule := HSeparator.new(); parent.add_child(rule)
 	var round := Label.new(); round.text = "Round %d · %s" % [display_round, display_stage.replace("_", " ").capitalize()]; round.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER; round.add_theme_color_override("font_color", CINEMATIC.INK); round.add_theme_color_override("font_shadow_color", Color.TRANSPARENT); round.add_theme_font_size_override("font_size", 27); round.add_theme_stylebox_override("normal", CINEMATIC.paper()); round.size_flags_horizontal = Control.SIZE_SHRINK_CENTER; parent.add_child(round); parent.move_child(round, 0)
 	if learned_battle_mode:
-		var policy_badge := Label.new()
+		var policy_badge := preload("res://presentation/battle/tooltip_label.gd").new()
 		var policy_schema := str(_view.learned_policy.get("observation_schema", ""))
 		var policy_label := "NEW V2" if policy_schema == "dice-and-destiny-observation-v2" else "OLD V1"
 		policy_badge.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
@@ -850,10 +851,10 @@ func _build_header(parent: VBoxContainer) -> void:
 		_utility_contents.inspect.add_child(policy_badge)
 		_inspect(policy_badge, "battle.learned_policy.badge", policy_badge.tooltip_text)
 	if _snapshot_tools_enabled():
-		var snapshots := Button.new(); snapshots.text = "DEV SNAPSHOTS"; snapshots.pressed.connect(_toggle_snapshot_panel); _utility_contents.inspect.add_child(snapshots)
+		var snapshots := TOOLTIP_BUTTON.new(); snapshots.text = "DEV SNAPSHOTS"; snapshots.pressed.connect(_toggle_snapshot_panel); _utility_contents.inspect.add_child(snapshots)
 		_inspect(snapshots, "battle.dev_snapshots.toggle", "Open the developer snapshot controls")
 	if is_instance_valid(_transcript_panel):
-		var transcript := Button.new(); transcript.text = "DEV TRANSCRIPT"; transcript.pressed.connect(_transcript_panel.toggle_panel); _utility_contents.inspect.add_child(transcript)
+		var transcript := TOOLTIP_BUTTON.new(); transcript.text = "DEV TRANSCRIPT"; transcript.pressed.connect(_transcript_panel.toggle_panel); _utility_contents.inspect.add_child(transcript)
 		_inspect(transcript, "battle.dev_transcript.toggle", "Open the read-only authority transcript panel")
 
 func _profile_actor(actor_id: String) -> Dictionary:
@@ -916,7 +917,7 @@ func _build_player_column(_parent: HBoxContainer) -> void:
 		# planning, so a skipped offense cannot look like a missing character UI.
 		var initial_roll := _view.rolls_used("blade") == 0
 		var command := "planning_roll" if initial_roll else "planning_reroll"
-		var roll := Button.new(); roll.custom_minimum_size = Vector2(102, 42)
+		var roll := TOOLTIP_BUTTON.new(); roll.custom_minimum_size = Vector2(102, 42)
 		roll.text = "Roll · %d/%d" % [maxi(0, _view.max_rolls("blade") - _view.rolls_used("blade")), _view.max_rolls("blade")]
 		roll.add_theme_font_override("font", CINEMATIC.roll_control_font())
 		roll.add_theme_font_size_override("font_size", 17)
@@ -1027,8 +1028,8 @@ func _build_model_error_recovery() -> void:
 	var title := Label.new(); title.text = "LEARNED OPPONENT NEEDS ATTENTION"; title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER; title.add_theme_font_size_override("font_size", 26); title.add_theme_color_override("font_color", Color("ff8a78")); _center.add_child(title)
 	var detail := Label.new(); detail.text = "No fallback action was submitted. Retry the same authoritative decision or return to the mode menu."; detail.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER; detail.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART; _center.add_child(detail)
 	var actions := HBoxContainer.new(); actions.alignment = BoxContainer.ALIGNMENT_CENTER; _center.add_child(actions)
-	var retry := Button.new(); retry.text = "Retry Learned Decision"; retry.pressed.connect(_retry_model_decision); actions.add_child(retry); _inspect(retry, "battle.learned_policy.retry", "Retry inference for the unchanged current authority decision")
-	var leave := Button.new(); leave.text = "Return to Mode Menu"; leave.pressed.connect(_return_to_mode_menu); actions.add_child(leave); _inspect(leave, "battle.learned_policy.return_to_menu", "Leave this stopped learned battle without submitting a fallback")
+	var retry := TOOLTIP_BUTTON.new(); retry.text = "Retry Learned Decision"; retry.pressed.connect(_retry_model_decision); actions.add_child(retry); _inspect(retry, "battle.learned_policy.retry", "Retry inference for the unchanged current authority decision")
+	var leave := TOOLTIP_BUTTON.new(); leave.text = "Return to Mode Menu"; leave.pressed.connect(_return_to_mode_menu); actions.add_child(leave); _inspect(leave, "battle.learned_policy.return_to_menu", "Leave this stopped learned battle without submitting a fallback")
 	var spacer2 := Control.new(); spacer2.size_flags_vertical = Control.SIZE_EXPAND_FILL; _center.add_child(spacer2)
 
 func _retry_model_decision() -> void:
@@ -1053,7 +1054,7 @@ func _build_offensive() -> void:
 	if _selected_card_selector() == "selected_die":
 		if _view.stage == "offensive_reaction": _build_enemy_die_targets()
 		elif _view.stage == "blind_reaction":
-			var tip := Button.new(); tip.text = "Tip Blind die to face 5"; tip.disabled = _history_review; tip.pressed.connect(_play_blind_tip); _center.add_child(tip); _inspect(tip, "battle.tip_target.blind", "Use Tip It on the current blind-roll die")
+			var tip := TOOLTIP_BUTTON.new(); tip.text = "Tip Blind die to face 5"; tip.disabled = _history_review; tip.pressed.connect(_play_blind_tip); _center.add_child(tip); _inspect(tip, "battle.tip_target.blind", "Use Tip It on the current blind-roll die")
 
 func _build_defensive() -> void:
 	if _unified_defense():
@@ -1429,7 +1430,7 @@ func _build_defense_panel(parent: VBoxContainer, actor_id: String, revealed: boo
 	dice_row.alignment = BoxContainer.ALIGNMENT_CENTER
 	dice_row.add_theme_constant_override("separation", 12)
 	parent.add_child(dice_row)
-	var die := Button.new(); die.custom_minimum_size = Vector2(120, 105); die.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	var die := TOOLTIP_BUTTON.new(); die.custom_minimum_size = Vector2(120, 105); die.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 	_style_defense_die(die)
 	if face > 0:
 		var die_data := _as_dictionary(roll.get("die", {})); var die_id := str(die_data.get("die_id", "standard_d6"))
@@ -1449,7 +1450,7 @@ func _build_defense_panel(parent: VBoxContainer, actor_id: String, revealed: boo
 	if not revealed: return
 	var faces: Array = selection.get("rolled_faces", roll.get("rolled_faces", [face]))
 	for extra_index in range(1, faces.size()):
-		var extra := Button.new()
+		var extra := TOOLTIP_BUTTON.new()
 		var extra_face := int(faces[extra_index])
 		extra.text = "%s\n%d" % [BattlePresentationCatalog.symbol_for_die_face("venom_d6", extra_face), extra_face]
 		extra.disabled = true
@@ -1482,7 +1483,7 @@ func _build_damage() -> void:
 	_build_damage_lanes(_view.settled_damage)
 	var protection: Array = _view.legal_actions.filter(func(action): return action.get("payload", {}).get("commitment", {}).get("choice_id") == "spend_round_prevention")
 	if not protection.is_empty():
-		var button := Button.new()
+		var button := TOOLTIP_BUTTON.new()
 		button.text = "Use Guarded Strike protection"
 		button.set_meta("compact_caption", "Protect %d" % int(_status_counts().get(viewer_actor_id, {}).get("protect", 0)))
 		button.disabled = _submitting or _director.has_beats() or _history_review
@@ -1525,7 +1526,7 @@ func _build_damage_lanes(batch: Dictionary, committed: bool = false, followup_on
 			_root.add_child(dock); dock.configure(self, target); _damage_stack_docks[target] = dock
 		var stack_dock: ScrollContainer = _damage_stack_docks[target]
 		var group := VBoxContainer.new(); group.add_theme_constant_override("separation", 3); stack_dock.body.add_child(group)
-		var heading := Button.new(); heading.text = str(amount); heading.icon = preload("res://presentation/battle/battle_icons.gd").texture("attack"); heading.expand_icon = true; heading.add_theme_constant_override("icon_max_width", 20); heading.tooltip_text = data.attack_name + " · " + attack_statuses
+		var heading := TOOLTIP_BUTTON.new(); heading.text = str(amount); heading.icon = preload("res://presentation/battle/battle_icons.gd").texture("attack"); heading.expand_icon = true; heading.add_theme_constant_override("icon_max_width", 20); heading.tooltip_text = data.attack_name + " · " + attack_statuses
 		heading.alignment = HORIZONTAL_ALIGNMENT_LEFT; heading.flat = true; heading.add_theme_font_size_override("font_size", 18)
 		for state in ["normal", "hover", "pressed", "focus"]: heading.add_theme_stylebox_override(state, StyleBoxEmpty.new())
 		CINEMATIC.hud_lettering(heading, true); group.add_child(heading)
@@ -1682,7 +1683,7 @@ func _build_pending_statuses() -> void:
 			var parts := str(key).split("|", false, 1)
 			if parts.size() != 2 or parts[0] != target_id: continue
 			var status_id := str(parts[1]); var status_data := BattlePresentationCatalog.status(status_id); var target_name := _actor_display_name(target_id).to_upper()
-			var pending := Label.new(); pending.custom_minimum_size = Vector2(260, 48); pending.text = "%s  %s %s ×%d" % [target_name, status_data.glyph, status_data.name, int(grouped[key])]; pending.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER; pending.add_theme_font_size_override("font_size", 18); pending.add_theme_color_override("font_color", Color("e5a07e")); pending.tooltip_text = "%s will receive %s ×%d when this damage batch is acknowledged." % [target_name.capitalize(), status_data.name, int(grouped[key])]; row.add_child(pending); _inspect(pending, "battle.pending_status.%s.%s" % [target_id, status_id], pending.tooltip_text)
+			var pending := preload("res://presentation/battle/tooltip_label.gd").new(); pending.custom_minimum_size = Vector2(260, 48); pending.text = "%s  %s %s ×%d" % [target_name, status_data.glyph, status_data.name, int(grouped[key])]; pending.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER; pending.add_theme_font_size_override("font_size", 18); pending.add_theme_color_override("font_color", Color("e5a07e")); pending.tooltip_text = "%s will receive %s ×%d when this damage batch is acknowledged." % [target_name.capitalize(), status_data.name, int(grouped[key])]; row.add_child(pending); _inspect(pending, "battle.pending_status.%s.%s" % [target_id, status_id], pending.tooltip_text)
 
 func _provoked_toxin_reaction() -> bool:
 	return _view.segment != "ongoing_effects" and _view.stage == "status_roll_reaction" and not _view.effect_rolls.is_empty()
@@ -1727,7 +1728,7 @@ func _build_effects() -> void:
 		response_hint.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 		panel.add_child(response_hint)
 	if _selected_card_selector() == "selected_die" and _view.stage == "blind_reaction":
-		var tip := Button.new(); tip.text = "Tip Blind die to face 5"; tip.pressed.connect(_play_blind_tip); panel.add_child(tip); _inspect(tip, "battle.tip_target.blind", "Use Tip It on the current blind-roll die")
+		var tip := TOOLTIP_BUTTON.new(); tip.text = "Tip Blind die to face 5"; tip.pressed.connect(_play_blind_tip); panel.add_child(tip); _inspect(tip, "battle.tip_target.blind", "Use Tip It on the current blind-roll die")
 
 func _build_effects_mat(parent: VBoxContainer) -> void:
 	var revealed := _view.stage == "status_roll_reaction"
@@ -1764,7 +1765,7 @@ func _build_effects_panel(parent: VBoxContainer, actor_id: String, revealed: boo
 	for index in rolls.size():
 		var roll: Dictionary = _as_dictionary(rolls[index]); var die_data: Dictionary = _as_dictionary(roll.get("die", {})); var face := int(die_data.get("face", 0)); var secretly_rolled := bool(roll.get("resolved", false)) and face == 0
 		var die_id := str(die_data.get("die_id", "standard_d6")); var status_id := str(roll.get("source_content_id", roll.get("status_id", "")))
-		var die := Button.new(); die.custom_minimum_size = Vector2(96, 96); die.size_flags_horizontal = Control.SIZE_SHRINK_CENTER; _style_defense_die(die)
+		var die := TOOLTIP_BUTTON.new(); die.custom_minimum_size = Vector2(96, 96); die.size_flags_horizontal = Control.SIZE_SHRINK_CENTER; _style_defense_die(die)
 		if face > 0:
 			die.text = "%s\n%d" % [BattlePresentationCatalog.symbol_for_die_face(die_id, face), face]; die.disabled = true; die.add_theme_font_size_override("font_size", 24)
 			die.tooltip_text = "%s %s die: face %d, %s." % [actor_name.capitalize(), BattlePresentationCatalog.status(status_id).name, face, BattlePresentationCatalog.symbol_name_for_die_face(die_id, face)]
@@ -1830,12 +1831,12 @@ func _build_hand(income_drawn_ids: Array = []) -> void:
 		_inspect(card, "battle.card.%s" % str(entry.instance_id), card.tooltip_text)
 	if hand_limit:
 		var need := maxi(0, _view.actor("blade").get("hand_count", 0) - _view.actor("blade").get("max_hand_size", 6))
-		var commit := Button.new(); commit.text = "Discard selected cards (%d/%d)" % [_hand_limit_selection.size(), need]; commit.disabled = _hand_limit_selection.size() != need or _submitting or _history_review; commit.pressed.connect(func(): _send(BattleCommandBuilder.commit_interaction(_view.battle_id, "blade", _pending(), _hand_limit_selection))); _center.add_child(commit); _inspect(commit, "battle.hand_limit.commit", "Commit the selected hand-limit discards")
+		var commit := TOOLTIP_BUTTON.new(); commit.text = "Discard selected cards (%d/%d)" % [_hand_limit_selection.size(), need]; commit.disabled = _hand_limit_selection.size() != need or _submitting or _history_review; commit.pressed.connect(func(): _send(BattleCommandBuilder.commit_interaction(_view.battle_id, "blade", _pending(), _hand_limit_selection))); _center.add_child(commit); _inspect(commit, "battle.hand_limit.commit", "Commit the selected hand-limit discards")
 
 func _build_card_target_choices() -> void:
 	if _selected_card.get("source_targeting", false):
 		var instruction := Label.new(); instruction.text = str(BattlePresentationCatalog.card(str(_selected_card.definition_id)).name) + "\nClick a highlighted incoming attack."; instruction.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART; instruction.add_theme_color_override("font_color", Color("f0cf7c")); _ability_dock.add_child(instruction)
-		var cancel := Button.new(); cancel.text = "Cancel targeting"; cancel.pressed.connect(func(): _selected_card.clear(); _render()); _ability_dock.add_child(cancel)
+		var cancel := TOOLTIP_BUTTON.new(); cancel.text = "Cancel targeting"; cancel.pressed.connect(func(): _selected_card.clear(); _render()); _ability_dock.add_child(cancel)
 		_inspect(cancel, "battle.card_target.cancel", "Cancel without playing the card or spending energy")
 		return
 	if _selected_card_selector() != "one_negative_status_on_self": return
@@ -1852,7 +1853,7 @@ func _build_card_target_choices() -> void:
 		if status_id.is_empty() or str(_view.content_definition("statuses", status_id).get("polarity", "")) != "negative": continue
 		found = true
 		var status_data := BattlePresentationCatalog.status(status_id)
-		var button := Button.new(); button.text = "Remove %s %s ×%d" % [status_data.glyph, status_data.name, int(status.get("stacks", 1))]
+		var button := TOOLTIP_BUTTON.new(); button.text = "Remove %s %s ×%d" % [status_data.glyph, status_data.name, int(status.get("stacks", 1))]
 		button.disabled = _submitting or _history_review; button.tooltip_text = "Play %s to remove all %s stacks from %s." % [card_name, status_data.name, _actor_display_name("blade")]
 		button.pressed.connect(_play_selected_status_card.bind(status_id)); row.add_child(button)
 		_inspect(button, "battle.status_target.%s" % status_id, button.tooltip_text)
@@ -1951,7 +1952,7 @@ func _build_sources(caption: String) -> void:
 	for source in sources:
 		if not _source_in_focus(source): continue
 		if _view.segment == "defensive" and str(source.get("target_actor_id", "")) != "blade": continue
-		var button := Button.new(); var id := str(source.get("id", "")); var data := BattlePresentationCatalog.ability(str(source.get("source_content_id", "")))
+		var button := TOOLTIP_BUTTON.new(); var id := str(source.get("id", "")); var data := BattlePresentationCatalog.ability(str(source.get("source_content_id", "")))
 		var base := int(source.get("base_amount", 0)); var final := int(source.get("final_amount", 0)); var prevented := maxi(0, base - final) if using_settled_batch else int(source.get("prevention", 0)) + int(source.get("reaction_prevention", 0))
 		if using_settled_batch:
 			button.text = "%s → %s\nBase %d · Prevented %d · Final %d" % [data.name, _actor_display_name(str(source.get("target_actor_id", ""))), base, prevented, final]
@@ -2137,7 +2138,7 @@ func _build_enemy_die_targets() -> void:
 	for i in _view.rolled_dice(_focused_enemy).size():
 		var die: Dictionary = _view.rolled_dice(_focused_enemy)[i]
 		if int(die.get("face", 0)) != 6: continue
-		var button := Button.new(); button.text = "Tip enemy die %d: 6 → 5" % (i + 1); button.disabled = _history_review; button.pressed.connect(func(): _play_tip_it(i)); row.add_child(button); _inspect(button, "battle.tip_target.goblin.%d" % i, "Use Tip It on this revealed face-6 die")
+		var button := TOOLTIP_BUTTON.new(); button.text = "Tip enemy die %d: 6 → 5" % (i + 1); button.disabled = _history_review; button.pressed.connect(func(): _play_tip_it(i)); row.add_child(button); _inspect(button, "battle.tip_target.goblin.%d" % i, "Use Tip It on this revealed face-6 die")
 
 func _build_presentation_beat() -> void:
 	var beat := _director.peek()
@@ -2148,13 +2149,13 @@ func _build_presentation_beat() -> void:
 	if beat.get("type") == "curse_retry":
 		_build_hand()
 		if _history_review or _history_replay:
-			var next := Button.new(); next.text = "Continue Presentation"; next.pressed.connect(_advance_beat); _action_footer.add_child(next)
+			var next := TOOLTIP_BUTTON.new(); next.text = "Continue Presentation"; next.pressed.connect(_advance_beat); _action_footer.add_child(next)
 		return
 	if beat.get("type") == "attack_curse":
 		_build_damage_lanes(beat.get("batch", {}), true, true)
 		_build_hand()
 		if _history_review or _history_replay:
-			var next := Button.new(); next.text = "Continue Presentation"; next.pressed.connect(_advance_beat); _action_footer.add_child(next)
+			var next := TOOLTIP_BUTTON.new(); next.text = "Continue Presentation"; next.pressed.connect(_advance_beat); _action_footer.add_child(next)
 		return
 	if beat.get("type") == "combat_damage":
 		_build_damage_lanes(beat.get("event", {}).get("data", {}), true)
@@ -2179,7 +2180,7 @@ func _build_presentation_beat() -> void:
 		var cards: Array = _as_array(beat.get("event", {}).get("cards", []))
 		if not cards.is_empty():
 			var instance_id := str(cards[0]); var definition_id := str(_view.actor("blade").get("card_instances", {}).get(instance_id, {}).get("definition_id", "unknown")); var card := BattleCard.new(); card.configure(instance_id, definition_id, false); card.custom_minimum_size = Vector2(250, 170); _center.add_child(card)
-	var button := Button.new(); button.text = "Continue Presentation"; button.tooltip_text = "Continue the visual presentation only; this sends no gameplay command."; button.custom_minimum_size = Vector2(133, 72); button.add_theme_font_size_override("font_size", 18); button.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART; button.pressed.connect(_advance_beat); _action_footer.add_child(button); _inspect(button, "battle.presentation.continue", button.tooltip_text)
+	var button := TOOLTIP_BUTTON.new(); button.text = "Continue Presentation"; button.tooltip_text = "Continue the visual presentation only; this sends no gameplay command."; button.custom_minimum_size = Vector2(133, 72); button.add_theme_font_size_override("font_size", 18); button.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART; button.pressed.connect(_advance_beat); _action_footer.add_child(button); _inspect(button, "battle.presentation.continue", button.tooltip_text)
 	var spacer2 := Control.new(); spacer2.size_flags_vertical = Control.SIZE_EXPAND_FILL; _center.add_child(spacer2)
 	if beat.get("type") == "segment_entered":
 		_center.set_meta("flow_key", "empty-segment")
@@ -2285,14 +2286,14 @@ func _build_completion() -> void:
 		for id in _enemy_ids(): health.append("%s %d/%d" % [_actor_display_name(id), int(_view.actor(id).get("current_health", 0)), int(_view.actor(id).get("max_health", 0))])
 		final.text = " · ".join(health)
 	final.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER; _center.add_child(final)
-	var again := Button.new(); again.text = "Rematch · Same Seats" if learned_battle_mode else "Play Again"; again.disabled = _history_review; again.pressed.connect(_play_again); _center.add_child(again); _inspect(again, "battle.complete.play_again", "Reset this learned matchup without reloading the model" if learned_battle_mode else "Start a new real-random battle")
+	var again := TOOLTIP_BUTTON.new(); again.text = "Rematch · Same Seats" if learned_battle_mode else "Play Again"; again.disabled = _history_review; again.pressed.connect(_play_again); _center.add_child(again); _inspect(again, "battle.complete.play_again", "Reset this learned matchup without reloading the model" if learned_battle_mode else "Start a new real-random battle")
 	if learned_battle_mode:
-		var new_battle := Button.new(); new_battle.text = "New Battle · Change Seat or Mode"; new_battle.pressed.connect(_return_to_mode_menu); _center.add_child(new_battle); _inspect(new_battle, "battle.complete.new_battle", "Return to the graphical battle-mode menu")
+		var new_battle := TOOLTIP_BUTTON.new(); new_battle.text = "New Battle · Change Seat or Mode"; new_battle.pressed.connect(_return_to_mode_menu); _center.add_child(new_battle); _inspect(new_battle, "battle.complete.new_battle", "Return to the graphical battle-mode menu")
 	var spacer2 := Control.new(); spacer2.size_flags_vertical = Control.SIZE_EXPAND_FILL; _center.add_child(spacer2)
 
 func _add_action(parent: Container, text: String, command: String, callback: Callable) -> void:
 	if not _view.allowed(command): return
-	var button := Button.new(); button.text = text; button.disabled = _submitting or _director.has_beats() or _history_review; button.pressed.connect(callback); parent.add_child(button)
+	var button := TOOLTIP_BUTTON.new(); button.text = text; button.disabled = _submitting or _director.has_beats() or _history_review; button.pressed.connect(callback); parent.add_child(button)
 	if parent == _action_footer: _compact_action_button(button)
 	_inspect(button, "battle.command.%s" % command, "Submit the authority command %s" % command)
 	_lock_button_until(button, _interaction_deadline(command == "pass" or (_unified_defense() and command == "planning_pass")))
@@ -2757,8 +2758,8 @@ func _build_history_bar(parent: VBoxContainer) -> void:
 		for index in _history_entries.size():
 			var entry: Dictionary = _as_dictionary(_history_entries[index])
 			var point_id := str(entry.get("id", ""))
-			var point := Button.new(); point.text = "%d · %s" % [index + 1, str(entry.get("label", "Point"))]; point.toggle_mode = true; point.button_pressed = point_id == _history_point_id; point.disabled = _submitting or point_id.is_empty(); point.tooltip_text = "Round %d · %s · %s · %s" % [int(entry.get("round", 0)), _segment_name(str(entry.get("segment", ""))), str(entry.get("stage", "")).replace("_", " "), str(entry.get("kind", ""))]; point.pressed.connect(func(): _jump_history(point_id)); points.add_child(point); _inspect(point, "battle.history.point.%s" % point_id, point.tooltip_text)
-	var refresh := Button.new(); refresh.text = "↻"; refresh.tooltip_text = "Refresh history"; refresh.disabled = _submitting; refresh.pressed.connect(func(): _refresh_history(); _render()); content.add_child(refresh); _inspect(refresh, "battle.history.refresh", "Refresh the developer history timeline")
+			var point := TOOLTIP_BUTTON.new(); point.text = "%d · %s" % [index + 1, str(entry.get("label", "Point"))]; point.toggle_mode = true; point.button_pressed = point_id == _history_point_id; point.disabled = _submitting or point_id.is_empty(); point.tooltip_text = "Round %d · %s · %s · %s" % [int(entry.get("round", 0)), _segment_name(str(entry.get("segment", ""))), str(entry.get("stage", "")).replace("_", " "), str(entry.get("kind", ""))]; point.pressed.connect(func(): _jump_history(point_id)); points.add_child(point); _inspect(point, "battle.history.point.%s" % point_id, point.tooltip_text)
+	var refresh := TOOLTIP_BUTTON.new(); refresh.text = "↻"; refresh.tooltip_text = "Refresh history"; refresh.disabled = _submitting; refresh.pressed.connect(func(): _refresh_history(); _render()); content.add_child(refresh); _inspect(refresh, "battle.history.refresh", "Refresh the developer history timeline")
 	var horizontal_bar := scroll.get_h_scroll_bar()
 	_history_scroll_adjusting = true
 	horizontal_bar.value_changed.connect(func(value): _history_scroll_changed(scroll, int(value)))
@@ -2800,9 +2801,9 @@ func _build_history_review_controls() -> void:
 	var title := Label.new(); title.text = "HISTORY REVIEW · READ ONLY"; title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER; title.add_theme_font_size_override("font_size", 22); title.add_theme_color_override("font_color", Color("f0bc58")); content.add_child(title)
 	var detail := Label.new(); detail.text = "You are viewing an earlier authority checkpoint. Inspect it or capture a developer snapshot before choosing how to continue."; detail.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER; detail.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART; content.add_child(detail)
 	var choices := VBoxContainer.new(); choices.alignment = BoxContainer.ALIGNMENT_CENTER; content.add_child(choices)
-	var preserve := Button.new(); preserve.text = "Resume Here · Keep Existing Future"; preserve.disabled = _submitting; preserve.pressed.connect(func(): _commit_history("preserve")); choices.add_child(preserve); _inspect(preserve, "battle.history.preserve", "Replay from this cursor while retaining every later history point")
-	var replace := Button.new(); replace.text = "Resume Here · Replace Existing Future"; replace.disabled = _submitting; replace.pressed.connect(func(): _commit_history("replace")); choices.add_child(replace); _inspect(replace, "battle.history.replace", "Resume here and archive the previous future")
-	var latest := Button.new(); latest.text = "Return to Latest"; latest.disabled = _submitting; latest.pressed.connect(_return_history_latest); choices.add_child(latest); _inspect(latest, "battle.history.latest", "Leave review and return to the prior latest battle state")
+	var preserve := TOOLTIP_BUTTON.new(); preserve.text = "Resume Here · Keep Existing Future"; preserve.disabled = _submitting; preserve.pressed.connect(func(): _commit_history("preserve")); choices.add_child(preserve); _inspect(preserve, "battle.history.preserve", "Replay from this cursor while retaining every later history point")
+	var replace := TOOLTIP_BUTTON.new(); replace.text = "Resume Here · Replace Existing Future"; replace.disabled = _submitting; replace.pressed.connect(func(): _commit_history("replace")); choices.add_child(replace); _inspect(replace, "battle.history.replace", "Resume here and archive the previous future")
+	var latest := TOOLTIP_BUTTON.new(); latest.text = "Return to Latest"; latest.disabled = _submitting; latest.pressed.connect(_return_history_latest); choices.add_child(latest); _inspect(latest, "battle.history.latest", "Leave review and return to the prior latest battle state")
 
 func _record_history_point(label: String, kind: String, action: Dictionary) -> bool:
 	if not _history_tools_enabled() or _history_review or _history_replay: return true
@@ -2899,8 +2900,8 @@ func _build_history_divergence_panel() -> void:
 	var title := Label.new(); title.text = "THIS CHANGES THE RECORDED FUTURE"; title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER; title.add_theme_font_size_override("font_size", 26); title.add_theme_color_override("font_color", Color("f0bc58")); content.add_child(title)
 	var expected := str(_history_pending_divergence.get("expected_label", "the recorded action")); var attempted := str(_history_pending_divergence.get("attempted_label", "the new action")); var count := int(_history_pending_divergence.get("future_point_count", 1))
 	var detail := Label.new(); detail.text = "Recorded next action: %s\nYour new action: %s\n\nContinuing will replace %d history point%s from this position forward. The preserved source branch remains available for diagnostics." % [expected, attempted, count, "s" if count != 1 else ""]; detail.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER; detail.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART; content.add_child(detail)
-	var replace := Button.new(); replace.text = "Replace Future and Continue"; replace.disabled = _submitting; replace.pressed.connect(_confirm_history_divergence); content.add_child(replace); _inspect(replace, "battle.history.divergence.confirm", "Confirm replacing future history with the new action")
-	var cancel := Button.new(); cancel.text = "Cancel · Keep Existing Future"; cancel.disabled = _submitting; cancel.pressed.connect(func(): _history_pending_divergence.clear(); _render()); content.add_child(cancel); _inspect(cancel, "battle.history.divergence.cancel", "Cancel the changed action and keep all recorded future points")
+	var replace := TOOLTIP_BUTTON.new(); replace.text = "Replace Future and Continue"; replace.disabled = _submitting; replace.pressed.connect(_confirm_history_divergence); content.add_child(replace); _inspect(replace, "battle.history.divergence.confirm", "Confirm replacing future history with the new action")
+	var cancel := TOOLTIP_BUTTON.new(); cancel.text = "Cancel · Keep Existing Future"; cancel.disabled = _submitting; cancel.pressed.connect(func(): _history_pending_divergence.clear(); _render()); content.add_child(cancel); _inspect(cancel, "battle.history.divergence.cancel", "Cancel the changed action and keep all recorded future points")
 
 func _confirm_history_divergence() -> void:
 	if _history_pending_divergence.is_empty() or _submitting: return
@@ -3007,7 +3008,7 @@ func _build_snapshot_panel() -> void:
 	var name_label := Label.new(); name_label.text = "Snapshot name (letters, numbers, . _ -)"; content.add_child(name_label)
 	var name_edit := LineEdit.new(); name_edit.text = _snapshot_name; name_edit.placeholder_text = "round-2-effects"; content.add_child(name_edit); _inspect(name_edit, "battle.dev_snapshots.name", "Name for the checkpoint snapshot")
 	var overwrite := CheckBox.new(); overwrite.text = "Replace an existing snapshot with this name"; overwrite.button_pressed = _snapshot_overwrite; overwrite.toggled.connect(func(value): _snapshot_overwrite = value); content.add_child(overwrite); _inspect(overwrite, "battle.dev_snapshots.overwrite", overwrite.text)
-	var capture := Button.new(); capture.text = "Capture Current Authority State"; capture.disabled = _submitting or not _valid_snapshot_name(_snapshot_name); capture.pressed.connect(_capture_dev_snapshot); content.add_child(capture); _inspect(capture, "battle.dev_snapshots.capture", "Capture the current authoritative battle checkpoint and exact presentation cursor")
+	var capture := TOOLTIP_BUTTON.new(); capture.text = "Capture Current Authority State"; capture.disabled = _submitting or not _valid_snapshot_name(_snapshot_name); capture.pressed.connect(_capture_dev_snapshot); content.add_child(capture); _inspect(capture, "battle.dev_snapshots.capture", "Capture the current authoritative battle checkpoint and exact presentation cursor")
 	name_edit.text_changed.connect(func(value): _snapshot_name = value.strip_edges(); capture.disabled = _submitting or not _valid_snapshot_name(_snapshot_name))
 	if _director.has_beats():
 		var presentation_note := Label.new(); presentation_note.text = "The currently visible presentation will resume when this snapshot is loaded."; presentation_note.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART; presentation_note.add_theme_color_override("font_color", Color("9fd69f")); content.add_child(presentation_note)
@@ -3019,17 +3020,17 @@ func _build_snapshot_panel() -> void:
 		var title := "%s · R%d %s/%s · %d events%s" % [str(entry.get("name", "")), int(entry.get("round", 0)), str(entry.get("segment", "")).replace("_", " "), str(entry.get("stage", "")).replace("_", " "), int(entry.get("event_count", 0)), history_summary]
 		list.add_item(title)
 		if str(entry.get("name", "")) == _selected_snapshot_name: list.select(list.item_count - 1)
-	var load := Button.new(); load.text = "Load Selected as New Battle"; load.disabled = _selected_snapshot_name.is_empty() or _submitting; load.pressed.connect(func(): _load_dev_snapshot(_selected_snapshot_name)); content.add_child(load); _inspect(load, "battle.dev_snapshots.load", "Clone the selected snapshot into a new active battle")
+	var load := TOOLTIP_BUTTON.new(); load.text = "Load Selected as New Battle"; load.disabled = _selected_snapshot_name.is_empty() or _submitting; load.pressed.connect(func(): _load_dev_snapshot(_selected_snapshot_name)); content.add_child(load); _inspect(load, "battle.dev_snapshots.load", "Clone the selected snapshot into a new active battle")
 	list.item_selected.connect(func(index):
 		if index >= 0 and index < _snapshot_entries.size():
 			_selected_snapshot_name = str(_snapshot_entries[index].get("name", ""))
 		load.disabled = _selected_snapshot_name.is_empty() or _submitting
 	)
-	var restart := Button.new(); restart.text = "Restart Loaded Snapshot" if not loaded_snapshot_name.is_empty() else "Restart Loaded Snapshot (none loaded)"; restart.disabled = loaded_snapshot_name.is_empty() or _submitting; restart.pressed.connect(func(): _load_dev_snapshot(loaded_snapshot_name)); content.add_child(restart); _inspect(restart, "battle.dev_snapshots.restart", "Create another fresh battle from the snapshot that launched this battle")
+	var restart := TOOLTIP_BUTTON.new(); restart.text = "Restart Loaded Snapshot" if not loaded_snapshot_name.is_empty() else "Restart Loaded Snapshot (none loaded)"; restart.disabled = loaded_snapshot_name.is_empty() or _submitting; restart.pressed.connect(func(): _load_dev_snapshot(loaded_snapshot_name)); content.add_child(restart); _inspect(restart, "battle.dev_snapshots.restart", "Create another fresh battle from the snapshot that launched this battle")
 	if not loaded_snapshot_name.is_empty():
 		var origin := Label.new(); origin.text = "Current battle came from: %s" % loaded_snapshot_name; content.add_child(origin)
 	var status := Label.new(); status.text = _snapshot_message; status.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART; status.add_theme_color_override("font_color", Color("9fd69f") if not _snapshot_message.begins_with("Error:") else Color("ff8a78")); content.add_child(status)
-	var close := Button.new(); close.text = "Close"; close.pressed.connect(func(): _snapshot_panel_open = false; _render()); content.add_child(close); _inspect(close, "battle.dev_snapshots.close", "Close developer snapshot controls")
+	var close := TOOLTIP_BUTTON.new(); close.text = "Close"; close.pressed.connect(func(): _snapshot_panel_open = false; _render()); content.add_child(close); _inspect(close, "battle.dev_snapshots.close", "Close developer snapshot controls")
 
 func _refresh_snapshot_entries() -> bool:
 	var result: Dictionary = gateway.list_dev_snapshots(_view.battle_id, viewer_actor_id)
@@ -3381,7 +3382,7 @@ func _show_venom_choices(actions: Array, heading: String) -> void:
 		description.custom_minimum_size.x = 480
 		list.add_child(description)
 	for action in actions:
-		var button := Button.new()
+		var button := TOOLTIP_BUTTON.new()
 		button.text = _venom_choice_label(action)
 		button.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 		button.custom_minimum_size.y = 48
@@ -3730,7 +3731,7 @@ func _build_enemy_selector(_scenery: Control) -> void:
 	for id in _enemy_ids():
 		var profile: ActorProfile = _actor_profiles.get(id)
 		if profile == null: continue
-		var button := Button.new(); button.name = "SelectEnemy_" + str(id)
+		var button := TOOLTIP_BUTTON.new(); button.name = "SelectEnemy_" + str(id)
 		profile.title.add_child(button); button.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 		button.flat = true; button.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
 		var incoming := _incoming_from(str(id))
@@ -3850,7 +3851,7 @@ func _build_source_defense_choices(panel: Control, source_id: String) -> void:
 		var payload: Dictionary = action.get("payload", {})
 		if action.get("type") != "planning_select_ability" or source_id not in payload.get("target_ids", []): continue
 		var ability := BattlePresentationCatalog.ability(str(payload.get("ability_id", "")))
-		var button := Button.new(); button.size_flags_horizontal = Control.SIZE_EXPAND_FILL; button.custom_minimum_size.y = 44
+		var button := TOOLTIP_BUTTON.new(); button.size_flags_horizontal = Control.SIZE_EXPAND_FILL; button.custom_minimum_size.y = 44
 		button.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART; button.add_theme_font_size_override("font_size", 16)
 		button.text = ability.name
 		if payload.get("ability_id") == "shedskin": button.text += " · 1 Catalyst (+2 block)" if payload.get("spend_catalyst", false) else " · No Catalyst"
@@ -3902,7 +3903,7 @@ func _build_curse_choice() -> void:
 	_center.add_child(detail)
 	for action in _view.legal_actions:
 		if action.get("type") != "commit_interaction": continue
-		var button := Button.new()
+		var button := TOOLTIP_BUTTON.new()
 		button.text = _curse_work_label(str(action.get("payload", {}).get("commitment", {}).get("choice_id", "")))
 		button.custom_minimum_size.y = 48
 		button.disabled = _submitting or _history_review or _model_thinking
@@ -4020,7 +4021,7 @@ func _build_blind_check(beat: Dictionary) -> void:
 		if str(data.get("ability_id", "")).is_empty(): data["ability_id"] = _view.offensive_reveal(str(data.actor_id)).get("ability_id", "")
 	panel.configure(self, data, str(beat.get("type", "pending")), str(beat.get("event", {}).get("sequence", "pending")))
 	if not beat.is_empty() and (_history_review or _history_replay):
-		var next := Button.new(); next.text = "Continue Presentation"; next.pressed.connect(_advance_beat); _action_footer.add_child(next)
+		var next := TOOLTIP_BUTTON.new(); next.text = "Continue Presentation"; next.pressed.connect(_advance_beat); _action_footer.add_child(next)
 
 
 # Number-only choices retain the exact legal command and enemy identity.

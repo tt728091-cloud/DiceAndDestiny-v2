@@ -1,5 +1,5 @@
 class_name BattleCard
-extends Button
+extends "res://presentation/battle/tooltip_button.gd"
 
 const STANDARD_SIZE := Vector2(185, 248)
 

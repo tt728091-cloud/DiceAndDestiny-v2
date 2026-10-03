@@ -66,3 +66,6 @@ func _draw() -> void:
 	draw_line(start, tip, Color(0.55, 0.94, 0.48, alpha * 0.18), 9.0, true)
 	draw_line(start, tip, Color(0.69, 1.0, 0.58, alpha), 2.0, true)
 	draw_circle(tip, 4.0, Color(0.80, 1.0, 0.68, alpha))
+
+func _make_custom_tooltip(for_text: String) -> Object:
+	return preload("res://presentation/battle/wrapped_tooltip.gd").create(self, for_text)

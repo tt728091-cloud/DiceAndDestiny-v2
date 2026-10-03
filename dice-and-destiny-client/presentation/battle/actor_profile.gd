@@ -58,7 +58,7 @@ func _ready() -> void:
 	stats = Label.new(); stats.hide(); info.add_child(stats)
 
 func _add_stat_cell(parent: HBoxContainer, key: String, caption: String, font_size: int = 19) -> void:
-	var cell := HBoxContainer.new(); cell.alignment = BoxContainer.ALIGNMENT_CENTER; cell.add_theme_constant_override("separation", 4); cell.tooltip_text = caption; parent.add_child(cell)
+	var cell := STATUS_STRIP.StatusCell.new(); cell.alignment = BoxContainer.ALIGNMENT_CENTER; cell.add_theme_constant_override("separation", 4); cell.tooltip_text = caption; parent.add_child(cell)
 	cell.gui_input.connect(_pile_input.bind(key))
 	var icon := TextureRect.new(); icon.texture = ICONS.texture(key); icon.custom_minimum_size = Vector2(18, 22) if compact else Vector2(24, 24); icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE; icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED; icon.mouse_filter = Control.MOUSE_FILTER_IGNORE; cell.add_child(icon)
 	var value := Label.new(); value.add_theme_font_size_override("font_size", 16 if compact else font_size); value.set_meta("caption", ""); value.mouse_filter = Control.MOUSE_FILTER_IGNORE; cell.add_child(value)
@@ -286,3 +286,6 @@ func show_status_transition(update: Dictionary, progress: float) -> void:
 
 func status_anchor(status_id: String) -> Vector2:
 	return anchor_rect("status", status_id).get_center()
+
+func _make_custom_tooltip(for_text: String) -> Object:
+	return preload("res://presentation/battle/wrapped_tooltip.gd").create(self, for_text)

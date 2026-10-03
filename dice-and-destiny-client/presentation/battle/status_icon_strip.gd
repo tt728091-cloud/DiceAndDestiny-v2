@@ -68,7 +68,4 @@ func _read_legacy_text(value: String) -> void:
 
 class StatusCell extends HBoxContainer:
 	func _make_custom_tooltip(for_text: String) -> Object:
-		var label := Label.new(); label.text = for_text; label.theme_type_variation = &"TooltipLabel"
-		label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-		label.custom_minimum_size.x = minf(420, maxf(1, get_viewport_rect().size.x - 48))
-		return label
+		return preload("res://presentation/battle/wrapped_tooltip.gd").create(self, for_text)

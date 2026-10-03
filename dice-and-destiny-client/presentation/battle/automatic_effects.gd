@@ -1,4 +1,5 @@
 extends VBoxContainer
+const TOOLTIP_LABEL := preload("res://presentation/battle/tooltip_label.gd")
 
 const TIMING := preload("res://presentation/battle/combat_timing.gd")
 const CARD_GRID := preload("res://presentation/cards/damage_card_grid.gd")
@@ -196,7 +197,7 @@ func _damages_on_face(status_id: String, face: int) -> bool:
 	return false
 
 func _label(parent: Node, text: String, font_size: int) -> Label:
-	var label := Label.new(); label.text = text; label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER; label.add_theme_font_size_override("font_size", font_size); parent.add_child(label); return label
+	var label := TOOLTIP_LABEL.new(); label.text = text; label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER; label.add_theme_font_size_override("font_size", font_size); parent.add_child(label); return label
 
 func set_paused(value: bool) -> void:
 	if value == paused: return
