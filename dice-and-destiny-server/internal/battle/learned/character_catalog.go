@@ -19,13 +19,7 @@ func CharacterCatalogs(root string) (map[string]content.BattleLibrary, error) {
 		if err != nil {
 			return nil, err
 		}
-		packs := []string{"venom_v1"}
-		if id == "adventurer" {
-			packs = append(packs, "adventurer_v1")
-		}
-		if id == "curse" {
-			packs = append(packs, "curse_v1")
-		}
+		packs := []string{"venom_v1", "curse_v1", "adventurer_v1"}
 		for _, pack := range packs {
 			lib, err = content.LoadBattleExtension(lib, filepath.Join(root, pack))
 			if err != nil {

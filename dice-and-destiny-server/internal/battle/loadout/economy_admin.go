@@ -12,9 +12,12 @@ import (
 // One atomic settings file is the commit point. Progress ledgers reconcile against
 // it before every read or trade, including recovery after an interrupted refresh.
 type AdminSettings struct {
-	Revision   int            `json:"revision"`
-	CardPrices map[string]int `json:"card_prices"`
-	Budgets    map[string]int `json:"budgets"`
+	CardTypes      map[string]string `json:"card_types"`
+	AbilityTypes   map[string]string `json:"ability_types"`
+	CharacterTypes map[string]string `json:"character_types"`
+	Revision       int               `json:"revision"`
+	CardPrices     map[string]int    `json:"card_prices"`
+	Budgets        map[string]int    `json:"budgets"`
 }
 
 func deckValue(deck []Entry, character string, e Economy) int {
@@ -87,6 +90,7 @@ func effectiveEconomy(root string, e Economy) (Economy, AdminSettings, error) {
 			return e, a, fmt.Errorf("invalid admin budget")
 		}
 	}
+	e.Access = e.Access.withOverrides(a)
 	e.GlobalPrices = a.CardPrices
 	e.Budgets = a.Budgets
 	e.AdminRevision = a.Revision
@@ -141,6 +145,9 @@ func SaveAdmin(root string, base Economy, catalogs map[string]content.BattleLibr
 		if _, ok := catalogs[id]; !ok || budget < 0 || budget > 1000000 {
 			return fmt.Errorf("invalid admin budget for %q", id)
 		}
+	}
+	if err := base.Access.withOverrides(proposed).validate(catalogs); err != nil {
+		return err
 	}
 	proposed.Revision++
 	next := base

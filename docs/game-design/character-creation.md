@@ -141,8 +141,9 @@ loadout overrides. It does not import a freely edited Sandbox deck.
 
 ### Admin economy controls
 
-In Progression mode, **Admin settings** opens a searchable card-price list and
-editable total budgets for all four characters. Card overrides apply globally by
+In Progression mode, **Admin settings** opens searchable Cards and
+Abilities tabs with pool-type selectors, card prices, and editable character
+types and total Progression budgets for all four characters. Card overrides apply globally by
 card ID, with the same price for buying and selling. The panel previews each
 character's deck value, upgrade investment, and available XP. **Apply economy
 changes** validates every character and saves the changes together; closing the
@@ -172,6 +173,50 @@ stale trades are rejected. Existing saves acquire a budget ledger while preservi
 their current XP and cards; authored ability-upgrade costs are recovered for older
 saves without spending history. The admin budget can explicitly correct historical
 balances. Reloading never reapplies the same budget adjustment twice.
+
+### Character and item pool types
+
+Every character has one configured type, and every card and ability belongs to
+one pool. **General** is always available; other pools require the character's
+matching type. The initial types are General (Adventurer), Venom, Curse, and
+Blade Warden. Venom/Curse pack cards and abilities use their respective types;
+Alchemist's Gamble is Venom. Existing Blade Warden abilities retain the Blade
+Warden type (including its authored Venom Strike). Generic cards and Adventurer
+abilities are General. Pool type is distinct from card timing or offensive /
+defensive ability kind.
+
+The library shows eligible cards, while owned decks retain incompatible items
+with a visible warning. Buying and upgrading check the target type in the native
+authority. Sandbox deck saves and new battles also enforce types. Existing
+battles keep their pinned definitions. Admin reassignment never deletes owned
+items or changes their XP value: a conflicting card remains sellable, and a
+conflicting ability or card blocks battle until its type/character type is
+corrected (or the card removed). Admin previews show affected item counts.
+
+In **Admin settings**, use **Cards · price & type** or **Abilities · type** to
+search for an item and select its pool. Character selectors appear beside their
+budgets. **Apply economy changes** saves all overrides atomically; Close discards
+them. Changes affect both Sandbox and Progression eligibility. Changing an item
+to General makes it available to every character regardless of its source pack;
+custom battles load and pin all required character-pack definitions.
+
+Authored assignments live in the same `progression_v1/economy.yaml` configuration:
+
+```yaml
+access:
+  types: {general: General, venom: Venom, curse: Curse, blade_warden: Blade Warden}
+  character_types: {adventurer: general, venom: venom, curse: curse, blade_warden: blade_warden}
+  card_types: {pinprick: venom, black_fingerprint: curse}
+  ability_types: {needlefang: venom, hexbrand: curse}
+```
+
+Omitted assignments default to General. New types can be added to `access.types`
+and assigned here without code changes. Admin dropdowns use that registry;
+overrides are stored in `economy_admin.json` under `card_types`, `ability_types`,
+and `character_types`, and take precedence over authored values. Unknown types
+and definition IDs are rejected on save. This adds eligibility rules to the
+existing ability upgrade system; a general-purpose ability library/equipment
+editor remains a later feature.
 
 ### Configuring the economy
 
@@ -287,3 +332,9 @@ and ability purchases after hovering. Hover comparisons are read-only.
 `verify_entry_xp_totals.gd` validates per-copy and quantity totals in the deck,
 library, and inspector, zero-owned cards, updated prices after admin edits,
 upgrade/downgrade values, and containment of the added labels at three sizes.
+
+`verify_access_types.gd` validates library filtering, moving cards between pools,
+General access, character-type overrides, ability upgrade restrictions, preserved
+owned conflicts, cancellation, persistence, and admin layouts at three sizes.
+Native tests also reject forged purchases/Sandbox saves, validate battle-start
+restrictions, and load cross-pack General cards into real battles.

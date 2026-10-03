@@ -20,3 +20,82 @@ characters:
       brace: {to: brace_plus, xp: 10}
     ability_upgrades:
       adventurer_guard: {to: adventurer_guard_plus, xp: 25}
+
+# Pool assignments; omitted items are General. Admin overrides persist separately.
+access:
+  types: {general: General, venom: Venom, curse: Curse, blade_warden: Blade Warden}
+  character_types: {adventurer: general, venom: venom, curse: curse, blade_warden: blade_warden}
+  card_types:
+    alchemists_gamble: venom
+    accelerant: venom
+    agitate: venom
+    antivenom_draught: venom
+    bitter_reagent: venom
+    coagulate: venom
+    culture_flask: venom
+    deep_puncture: venom
+    distill: venom
+    emergency_molt: venom
+    extract: venom
+    fever_cycle: venom
+    forked_tongue: venom
+    incubate: venom
+    measured_dose: venom
+    pinprick: venom
+    repurpose: venom
+    shock_dose: venom
+    slow_release: venom
+    spined_rebuttal: venom
+    steady_hand: venom
+    terminal_formula: venom
+    twin_puncture: venom
+    venom_lens: venom
+    venom_reserve: venom
+    black_dividend: curse
+    black_fingerprint: curse
+    black_tax: curse
+    blind_omen: curse
+    call_the_mark: curse
+    chosen_instrument: curse
+    curse_bloom: curse
+    curse_eater: curse
+    grave_interest: curse
+    hexward_retort: curse
+    maledictions_refusal: curse
+    mark_the_number: curse
+    misfortunes_choice: curse
+    no_safe_keep: curse
+    rotten_numeral: curse
+    ruin_made_flesh: curse
+    second_knell: curse
+    shared_misfortune: curse
+    spiteful_ward: curse
+    stored_calamity: curse
+    three_knocks: curse
+    tombs_choice: curse
+    unquiet_hands: curse
+    widen_the_crack: curse
+  ability_types:
+    barbed_mantle: venom
+    fever_spike: venom
+    needlefang: venom
+    shedskin: venom
+    terminal_bite: venom
+    venom_gland: venom
+    eclipse_of_the_black_star: curse
+    funeral_rattle: curse
+    grasp_of_the_sarcophagus: curse
+    hexbrand: curse
+    hexward_rebuttal: curse
+    misfortune_repaid: curse
+    basic_defense: blade_warden
+    crushing_advance: blade_warden
+    fateful_strike: blade_warden
+    golden_edge: blade_warden
+    greedy_blow: blade_warden
+    jagged_slash: blade_warden
+    perfect_form: blade_warden
+    protect: blade_warden
+    shield_bash: blade_warden
+    sword_cut: blade_warden
+    venom_strike: blade_warden

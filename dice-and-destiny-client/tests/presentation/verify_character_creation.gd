@@ -21,7 +21,7 @@ func _run() -> void:
 			for tab in range(3):
 				screen._tabs.current_tab = tab
 				for frame in 4: await process_frame
-				var expected: int = screen.character.ability_board.offensive.size() + screen.character.ability_board.defensive.size() if tab == 0 else (screen.character.decklist.size() + screen.catalogs[id].cards.size()) if tab == 1 else screen.character.dice_loadout.size()
+				var expected: int = screen.character.ability_board.offensive.size() + screen.character.ability_board.defensive.size() if tab == 0 else (screen.character.decklist.size() + screen._eligible_card_ids().size()) if tab == 1 else screen.character.dice_loadout.size()
 				_expect(screen._entry_buttons.size() == expected, "every configured entry appears")
 				if not screen._entry_buttons.is_empty():
 					screen.selected_id = ""

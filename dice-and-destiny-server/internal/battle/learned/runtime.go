@@ -50,11 +50,16 @@ func HandleRuntimeRequest(requestJSON string) string {
 		if err != nil {
 			return runtimeError(err)
 		}
+		baseEconomy, err := loadout.LoadEconomy(request.ContentRoot, catalogs)
+		if err != nil {
+			return runtimeError(err)
+		}
+		access, err := loadout.ReadAccess(request.LoadoutRoot, baseEconomy)
+		if err != nil {
+			return runtimeError(err)
+		}
 		if request.Op == "progression_catalogs" || request.Op == "progression_purchase" || request.Op == "save_economy_admin" {
-			economy, err := loadout.LoadEconomy(request.ContentRoot, catalogs)
-			if err != nil {
-				return runtimeError(err)
-			}
+			economy := baseEconomy
 			if request.Op == "progression_purchase" {
 				lib, ok := catalogs[request.Character]
 				if !ok {
@@ -79,6 +84,8 @@ func HandleRuntimeRequest(requestJSON string) string {
 			for id := range catalogs {
 				progress := all[id]
 				entry := view[id].(map[string]any)
+				entry["access"] = economy.Access
+				entry["type_conflicts"] = economy.Access.Problems(id, progress.Deck, progress.Abilities)
 				entry["progression"] = progress
 				entry["economy"] = economy.Offers(id)
 				entry["admin_settings"] = admin
@@ -93,6 +100,9 @@ func HandleRuntimeRequest(requestJSON string) string {
 			catalog, ok := catalogs[request.Character]
 			if !ok {
 				return runtimeError(fmt.Errorf("unknown playable character %q", request.Character))
+			}
+			if err := access.ValidateDeck(request.Character, request.Decklist); err != nil {
+				return runtimeError(err)
 			}
 			deck, err := loadout.Write(request.LoadoutRoot, request.Character, request.Decklist, catalog.Cards)
 			if err != nil {
@@ -109,6 +119,14 @@ func HandleRuntimeRequest(requestJSON string) string {
 			} else if deck != nil {
 				entry["owned_decklist"] = deck
 			}
+			effectiveDeck := deck
+			if effectiveDeck == nil {
+				for _, card := range catalog.Combatants[id].Decklist {
+					effectiveDeck = append(effectiveDeck, loadout.Entry{CardID: card.CardID, Count: card.Count})
+				}
+			}
+			entry["access"] = access
+			entry["type_conflicts"] = access.Problems(id, effectiveDeck, catalog.Combatants[id].AbilityBoard)
 			entry["deck_limits"] = map[string]int{"max_cards": loadout.MaxCards, "max_copies": loadout.MaxCopies}
 		}
 		return runtimeSuccess(view)

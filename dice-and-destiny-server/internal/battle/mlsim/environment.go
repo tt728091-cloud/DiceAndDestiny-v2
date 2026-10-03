@@ -238,7 +238,7 @@ func (e *Environment) Reset(request ResetRequest) (Transition, error) {
 	e.authority = battle.NewAuthority(
 		simulationEngine,
 		repo,
-		battle.WithAbilityLoadouts(battle.WithDeckLoadouts(e.assembler, request.SeatDecklists), request.SeatAbilityBoards),
+		battle.WithAbilityLoadouts(battle.WithDeckLoadouts(e.loadoutAssembler(request), request.SeatDecklists), request.SeatAbilityBoards),
 	)
 	humanSeat, modelSeat := transcriptSeats(request.SeatModels)
 	e.authority.ConfigureTranscriptBattle(battle.TranscriptBattleContext{
@@ -747,4 +747,13 @@ func cloneAbilityBoards(source map[string]content.AbilityBoard) map[string]conte
 		result[id] = content.AbilityBoard{Offensive: append([]string(nil), board.Offensive...), Defensive: append([]string(nil), board.Defensive...)}
 	}
 	return result
+}
+
+func (e *Environment) loadoutAssembler(request ResetRequest) battle.ParticipantAssembler {
+	if len(request.SeatDecklists) == 0 && len(request.SeatAbilityBoards) == 0 {
+		return e.assembler
+	}
+	assembler := battle.NewCachedFileParticipantAssembler(e.config.ContentRoot, e.config.RunStateRoot)
+	assembler.IncludeCharacterPools = true
+	return assembler
 }

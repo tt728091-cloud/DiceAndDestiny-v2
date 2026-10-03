@@ -24,6 +24,7 @@ type CharacterEconomy struct {
 	AbilityUpgrades   map[string]Upgrade    `yaml:"ability_upgrades" json:"ability_upgrades"`
 }
 type Economy struct {
+	Access           AccessRules                 `yaml:"access"`
 	GlobalPrices     map[string]int              `yaml:"-"`
 	Budgets          map[string]int              `yaml:"-"`
 	AdminRevision    int                         `yaml:"-"`
@@ -102,6 +103,12 @@ func LoadEconomy(root string, catalogs map[string]content.BattleLibrary) (Econom
 				return e, fmt.Errorf("invalid ability upgrade %q", from)
 			}
 		}
+	}
+	if e.Access.Types == nil {
+		e.Access.Types = map[string]string{"general": "General"}
+	}
+	if err := e.Access.validate(catalogs); err != nil {
+		return e, err
 	}
 	return e, nil
 }
@@ -293,6 +300,9 @@ func Buy(root, character string, e Economy, lib content.BattleLibrary, request P
 	cfg := e.Characters[character]
 	switch request.Kind {
 	case "buy_card":
+		if err := e.Access.Check(character, "cards", request.ID); err != nil {
+			return p, err
+		}
 		if _, ok := lib.Cards[request.ID]; !ok {
 			return p, fmt.Errorf("card unavailable")
 		}
@@ -309,6 +319,9 @@ func Buy(root, character string, e Economy, lib content.BattleLibrary, request P
 		if !ok || deckCount(p.Deck, request.ID) < 1 {
 			return p, fmt.Errorf("no owned copy or upgrade path")
 		}
+		if err := e.Access.Check(character, "cards", upgrade.To); err != nil {
+			return p, err
+		}
 		cost = upgrade.XP
 		p.Deck = changeCount(p.Deck, request.ID, -1)
 		p.Deck = changeCount(p.Deck, upgrade.To, 1)
@@ -316,6 +329,9 @@ func Buy(root, character string, e Economy, lib content.BattleLibrary, request P
 		upgrade, ok := cfg.AbilityUpgrades[request.TargetID]
 		if !ok || upgrade.To != request.ID {
 			return p, fmt.Errorf("no matching ability downgrade path")
+		}
+		if err := e.Access.Check(character, "abilities", request.TargetID); err != nil {
+			return p, err
 		}
 		cost = upgrade.XP
 		if p.UpgradeSpent < cost {
@@ -340,6 +356,9 @@ func Buy(root, character string, e Economy, lib content.BattleLibrary, request P
 		upgrade, ok := cfg.AbilityUpgrades[request.ID]
 		if !ok {
 			return p, fmt.Errorf("no ability upgrade path")
+		}
+		if err := e.Access.Check(character, "abilities", upgrade.To); err != nil {
+			return p, err
 		}
 		cost = upgrade.XP
 		replaced := false

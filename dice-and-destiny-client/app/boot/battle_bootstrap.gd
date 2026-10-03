@@ -108,7 +108,7 @@ func _build_mode_menu() -> void:
 	_message.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	_message.add_theme_color_override("font_color", Color("9fb3c8"))
 	content.add_child(_message)
-	_loadout_hint = Label.new(); _loadout_hint.text = "Your deck is empty. Add cards in Character Creation before starting a battle."
+	_loadout_hint = Label.new(); _loadout_hint.text = "Review your deck in Character Creation: equip at least one card and resolve any type conflicts."
 	_loadout_hint.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART; _loadout_hint.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_loadout_hint.add_theme_color_override("font_color", Color("f5c963")); content.add_child(_loadout_hint)
 	_update_start_availability()
@@ -258,17 +258,17 @@ func _refresh_character_loadouts() -> void:
 		if catalog.is_empty(): continue
 		var health := 0
 		for entry in catalog.get("owned_decklist", catalog.combatants[id].decklist): health += int(entry.count)
-		_empty_progression_decks[id] = catalog.has("progression") and health == 0
+		_empty_progression_decks[id] = (catalog.has("progression") and health == 0) or not catalog.get("type_conflicts", []).is_empty()
 		_character_choice.set_item_text(index, "%s · %d health · %s" % [catalog.combatants[id].name, health, "Progression · %d XP" % int(catalog.progression.xp) if catalog.has("progression") else "Saved deck" if catalog.has("owned_decklist") else "Starter deck"])
 
 	_update_start_availability()
 
 func _progression_deck_empty() -> bool:
-	return _loadout_choice != null and str(_loadout_choice.get_selected_metadata()) == "progression" and bool(_empty_progression_decks.get(str(_character_choice.get_selected_metadata()), false))
+	return _loadout_choice != null and bool(_empty_progression_decks.get(str(_character_choice.get_selected_metadata()), false))
 
 func _update_start_availability() -> void:
 	var empty := _progression_deck_empty()
 	if not _menu_actions.is_empty():
 		_menu_actions[0].disabled = empty
-		_menu_actions[0].tooltip_text = "Buy at least one card in Character Creation." if empty else ""
+		_menu_actions[0].tooltip_text = "Review your deck and character type in Character Creation before battle." if empty else ""
 	if _loadout_hint != null: _loadout_hint.visible = empty

@@ -25,6 +25,8 @@ var _admin_draft: Dictionary = {}
 var _admin_preview: Label
 var _admin_error: Label
 var _admin_save: Button
+var _admin_types: Dictionary = {}
+var _admin_tabs: TabBar
 var _admin_search: LineEdit
 var _skip_prompt: CheckBox
 var _confirmation_options: HBoxContainer
@@ -302,6 +304,7 @@ func _refresh_summary() -> void:
 		var progress: Dictionary = catalogs[character_id].progression
 		if int(progress.get("upgrade_spent", 0)) != 0:
 			_label(_summary, "Total budget: %d XP · %d XP invested in upgrades" % [int(progress.total_budget), int(progress.upgrade_spent)], 14, MUTED)
+	_label(_summary, "Type: " + _type_name(_character_type()) + " · General pool" + (" + " + _type_name(_character_type()) if _character_type() != "general" else ""), 14, GOLD)
 	_label(_summary, "Opening hand %d  ·  Starting energy %d  ·  Hand limit %d" % [character.resources.starting_hand_size, character.resources.starting_energy, character.resources.hand_limit], 14, MUTED)
 	_label(_summary, "Each round: draw %d  ·  gain %d energy" % [character.income.cards, character.income.energy], 14, MUTED)
 
@@ -329,7 +332,7 @@ func _entry(kind: String, id: String, title: String, subtitle: String, badge: St
 	var row := HBoxContainer.new(); m.add_child(row); row.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	var v := VBoxContainer.new(); v.size_flags_horizontal = Control.SIZE_EXPAND_FILL; row.add_child(v); v.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	var name_label := _label(v, title, 17); name_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	var sub := _label(v, subtitle, 13, MUTED); sub.max_lines_visible = 1; sub.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS; sub.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var sub := _label(v, (_type_caption(kind, id) + " · " if kind in ["cards", "abilities"] else "") + subtitle, 13, MUTED); sub.max_lines_visible = 1; sub.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS; sub.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	if loadout_mode == "progression" and kind in ["cards", "abilities"]:
 		var value := _label(v, _entry_xp_text(kind, id), 14, GOLD); value.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		b.custom_minimum_size.y = 94
@@ -363,9 +366,9 @@ func _populate_card_lists() -> void:
 	var library_position := library_scroll.scroll_vertical
 	var deck_position := deck_scroll.scroll_vertical
 	_clear(_library_list); _clear(_deck_list)
-	_library_heading.text = "CARD LIBRARY · %d" % catalogs[character_id].cards.size()
+	_library_heading.text = "CARD LIBRARY · %d" % _eligible_card_ids().size()
 	_deck_heading.text = "YOUR DECK · %d cards" % _health()
-	var ids: Array = catalogs[character_id].cards.keys()
+	var ids: Array = _eligible_card_ids()
 	ids.sort_custom(func(a, b): return str(catalogs[character_id].cards[a].name).naturalnocasecmp_to(str(catalogs[character_id].cards[b].name)) < 0)
 	for id in ids:
 		var info := BattlePresentationCatalog.card(str(id))
@@ -393,17 +396,21 @@ func inspect_entry(kind: String, id: String) -> void:
 	var definition: Dictionary = catalogs[character_id][kind][id]
 	_label(_details, str(definition.name), 24, GOLD)
 	if loadout_mode == "progression" and kind in ["cards", "abilities"]: _label(_details, _entry_xp_text(kind, id), 15, GOLD)
+	if kind in ["cards", "abilities"]:
+		_label(_details, "Type: " + _type_caption(kind, id), 15, GOLD)
+		if not _type_allowed(kind, id):
+			_label(_details, "Unavailable for this character type. " + ("Sell/remove this card or change its type in Admin settings before battle." if kind == "cards" else "Choose an eligible downgrade or change the ability/character type in Admin settings before battle."), 15, Color("ffae9f"))
 	if kind == "cards":
 		if loadout_mode == "progression":
 			_progression_actions(kind, id)
 		else:
 			var quantity_row := HBoxContainer.new(); quantity_row.add_theme_constant_override("separation", 8); _details.add_child(quantity_row)
 			_label(quantity_row, "Copies in deck", 16, MUTED).size_flags_horizontal = Control.SIZE_EXPAND_FILL
-			_quantity = SpinBox.new(); _quantity.min_value = 0; _quantity.max_value = int(catalogs[character_id].deck_limits.max_copies)
+			_quantity = SpinBox.new(); _quantity.min_value = 0; _quantity.max_value = int(catalogs[character_id].deck_limits.max_copies) if _type_allowed("cards", id) else _card_count(id)
 			_quantity.step = 1; _quantity.value = _card_count(id); _quantity.custom_minimum_size = Vector2(100, 44); quantity_row.add_child(_quantity)
 			_quantity.value_changed.connect(func(value): _set_card_count(id, int(value)))
 			_add_copy = _button(_details, "Add a copy", func(): _set_card_count(id, _card_count(id) + 1), "add." + id)
-			_add_copy.disabled = _card_count(id) >= int(catalogs[character_id].deck_limits.max_copies)
+			_add_copy.disabled = not _type_allowed("cards", id) or _card_count(id) >= int(catalogs[character_id].deck_limits.max_copies)
 			_label(_details, "Set to 0 to remove · up to %d copies" % int(catalogs[character_id].deck_limits.max_copies), 13, MUTED)
 		var frame := CenterContainer.new(); _details.add_child(frame)
 		var card := BattleCard.new(); frame.add_child(card); card.configure("preview", id, false)
@@ -479,19 +486,22 @@ func _refresh_actions() -> void:
 		_save_status.text = "%d XP available · buy and sell cards at equal prices" % int(catalogs[character_id].progression.xp)
 		_save_status.add_theme_color_override("font_color", GOLD)
 		if _health() == 0: _save_status.text = "Deck empty · buy at least one card before starting a battle."
+		if _has_type_conflicts(): _save_status.text = "Type conflict · sell/remove incompatible cards or update Admin types before battle."
 		return
 	var dirty := _dirty(character_id)
-	var valid := _health() >= 1 and _health() <= int(catalogs[character_id].deck_limits.max_cards)
+	var valid := not _has_type_conflicts() and _health() >= 1 and _health() <= int(catalogs[character_id].deck_limits.max_cards)
 	_apply.disabled = (not dirty and not catalogs[character_id].has("loadout_error")) or not valid
 	_revert.disabled = not dirty
 	_reset.disabled = _deck_counts(_drafts[character_id]) == _deck_counts(catalogs[character_id].combatants[character_id].decklist)
 	_save_status.text = "Unsaved changes · %d health" % _health() if dirty else "Saved deck · ready for a new battle"
 	_save_status.add_theme_color_override("font_color", GOLD if dirty else MUTED)
 	if not valid: _save_status.text = "Deck needs 1–%d cards before applying." % int(catalogs[character_id].deck_limits.max_cards)
+	if _has_type_conflicts(): _save_status.text = "Type conflict · remove incompatible cards or update Admin types before battle."
 	for id in _roster_buttons: _roster_buttons[id].text = str(catalogs[id].combatants[id].name) + (" *" if _dirty(id) else "")
 
 func _set_card_count(id: String, count: int) -> void:
 	count = clampi(count, 0, int(catalogs[character_id].deck_limits.max_copies))
+	if count > _card_count(id) and not _type_allowed("cards", id): return
 	var found := false
 	var deck: Array = _drafts[character_id]
 	for index in range(deck.size() - 1, -1, -1):
@@ -502,7 +512,7 @@ func _set_card_count(id: String, count: int) -> void:
 	if not found and count > 0: deck.append({"card_id": id, "count": count})
 	character.decklist = deck
 	if is_instance_valid(_quantity): _quantity.set_value_no_signal(count)
-	if is_instance_valid(_add_copy): _add_copy.disabled = count >= int(catalogs[character_id].deck_limits.max_copies)
+	if is_instance_valid(_add_copy): _add_copy.disabled = not _type_allowed("cards", id) or count >= int(catalogs[character_id].deck_limits.max_copies)
 	_refresh_summary(); _populate_entries(); _refresh_actions()
 
 func _refresh_draft() -> void:
@@ -544,7 +554,7 @@ func _progression_actions(kind: String, id: String) -> void:
 		_label(_details, "%d %s equipped" % [_card_count(id), "copy" if _card_count(id) == 1 else "copies"], 16, MUTED)
 		var price := _card_price(id)
 		var buy := _button(_details, "Buy a copy · %d XP" % price, func(): _review_purchase("buy_card", id, price), "buy." + id)
-		buy.disabled = int(progress.xp) < price or _card_count(id) >= int(catalogs[character_id].deck_limits.max_copies) or _health() >= int(catalogs[character_id].deck_limits.max_cards)
+		buy.disabled = not _type_allowed("cards", id) or int(progress.xp) < price or _card_count(id) >= int(catalogs[character_id].deck_limits.max_copies) or _health() >= int(catalogs[character_id].deck_limits.max_cards)
 		var sell := _button(_details, "Sell a copy · +%d XP" % price, func(): _review_purchase("sell_card", id, price), "sell." + id)
 		sell.disabled = _card_count(id) < 1
 		if int(progress.xp) < price: _label(_details, "Need %d more XP to buy a copy." % (price - int(progress.xp)), 14, MUTED)
@@ -555,7 +565,8 @@ func _progression_actions(kind: String, id: String) -> void:
 		var action := "upgrade_card" if kind == "cards" else "upgrade_ability"
 		var button := _button(_details, "Upgrade → %s · %d XP" % [target.name, int(upgrade.xp)], func(): _review_purchase(action, id, int(upgrade.xp)), "upgrade." + id)
 		_bind_comparison(button, kind, id, str(upgrade.to), int(upgrade.xp))
-		button.disabled = int(progress.xp) < int(upgrade.xp) or (kind == "cards" and (_card_count(id) < 1 or _card_count(str(upgrade.to)) >= int(catalogs[character_id].deck_limits.max_copies))) or (kind == "abilities" and str(upgrade.to) in (character.ability_board.offensive + character.ability_board.defensive))
+		if not _type_allowed(kind, str(upgrade.to)): _label(_details, "Upgrade type: " + _type_caption(kind, str(upgrade.to)), 14, Color("ffae9f"))
+		button.disabled = not _type_allowed(kind, str(upgrade.to)) or int(progress.xp) < int(upgrade.xp) or (kind == "cards" and (_card_count(id) < 1 or _card_count(str(upgrade.to)) >= int(catalogs[character_id].deck_limits.max_copies))) or (kind == "abilities" and str(upgrade.to) in (character.ability_board.offensive + character.ability_board.defensive))
 	if kind == "abilities":
 		var has_downgrade := false
 		for previous_id in upgrades:
@@ -566,7 +577,7 @@ func _progression_actions(kind: String, id: String) -> void:
 			var refund := int(path.xp)
 			var button := _button(_details, "Downgrade → %s · +%d XP" % [previous.name, refund], func(): _review_purchase("downgrade_ability", id, refund, str(previous_id)), "downgrade." + id + "." + str(previous_id))
 			_bind_comparison(button, kind, id, str(previous_id), refund, true)
-			button.disabled = int(progress.get("upgrade_spent", 0)) < refund or str(previous_id) in (character.ability_board.offensive + character.ability_board.defensive)
+			button.disabled = not _type_allowed(kind, str(previous_id)) or int(progress.get("upgrade_spent", 0)) < refund or str(previous_id) in (character.ability_board.offensive + character.ability_board.defensive)
 		if not upgrades.has(id) and not has_downgrade: _label(_details, "No upgrade or downgrade configured.", 14, MUTED)
 
 func _review_purchase(kind: String, id: String, cost: int, downgrade_target: String = "") -> void:
@@ -666,37 +677,36 @@ func _open_admin() -> void:
 	if not _admin_draft.get("card_prices") is Dictionary: _admin_draft.card_prices = {}
 	for id in _admin_draft.card_prices: _admin_draft.card_prices[id] = int(_admin_draft.card_prices[id])
 	_admin_draft.budgets = {}
+	for key in ["card_types", "ability_types", "character_types"]:
+		if not _admin_draft.get(key) is Dictionary: _admin_draft[key] = {}
 	# Retire the old controls before registering the replacement dialog.
 	remove_child(_admin_overlay); _admin_overlay.queue_free(); _build_admin_overlay()
-	_admin_prices.clear(); _admin_budgets.clear()
-	_label(_admin_content, "Admin · XP economy", 30, GOLD)
-	_label(_admin_content, "Card prices apply to every character. Total budgets include available XP, the equipped deck, and upgrade investment. Changes save together after all characters are checked.", 17, MUTED)
+	_admin_prices.clear(); _admin_budgets.clear(); _admin_types = {"cards": {}, "abilities": {}, "characters": {}}
+	_label(_admin_content, "Admin · XP & types", 30, GOLD)
+	_label(_admin_content, "General items are available to everyone; other items require a matching character type. Type changes keep owned items and XP, but incompatible loadouts cannot enter battle. Prices and budgets save together.", 17, MUTED)
 	var columns := HBoxContainer.new(); columns.add_theme_constant_override("separation", 24); columns.size_flags_vertical = Control.SIZE_EXPAND_FILL; _admin_content.add_child(columns)
 	var left := VBoxContainer.new(); left.custom_minimum_size.x = 490; left.size_flags_horizontal = Control.SIZE_EXPAND_FILL; columns.add_child(left)
-	_label(left, "CARD BUY / SELL PRICE", 16, GOLD)
-	_admin_search = LineEdit.new(); _admin_search.placeholder_text = "Search cards…"; left.add_child(_admin_search)
+	_admin_tabs = TabBar.new(); _admin_tabs.add_tab("Cards · price & type"); _admin_tabs.add_tab("Abilities · type"); left.add_child(_admin_tabs)
+	_admin_search = LineEdit.new(); _admin_search.placeholder_text = "Search cards or abilities…"; left.add_child(_admin_search)
 	var prices := _scroll(left)
-	var cards: Dictionary = {}
-	for catalog in catalogs.values(): cards.merge(catalog.cards)
-	var ids: Array = cards.keys(); ids.sort_custom(func(a, b): return str(cards[a].name) < str(cards[b].name))
-	for id in ids:
-		var row := HBoxContainer.new(); prices.add_child(row)
-		_label(row, str(cards[id].name), 17).size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		var value := int(_admin_draft.card_prices.get(id, _admin_base_price(id)))
-		var spin := _admin_spin(row, value, 1); _admin_prices[id] = spin
-		spin.value_changed.connect(func(amount): _admin_draft.card_prices[id] = int(amount); _refresh_admin_preview())
-		row.set_meta("search_name", str(cards[id].name).to_lower())
+	_populate_admin_items(prices, "cards")
+	_admin_tabs.tab_changed.connect(func(tab):
+		_admin_search.text = ""
+		_populate_admin_items(prices, "cards" if tab == 0 else "abilities")
+	)
 	_admin_search.text_changed.connect(func(query):
 		for row in prices.get_children(): row.visible = query.to_lower() in str(row.get_meta("search_name"))
 	)
 	var right := _scroll(columns); right.get_parent().custom_minimum_size.x = 500
-	_label(right, "CHARACTER TOTAL BUDGETS", 16, GOLD)
+	_label(right, "CHARACTER BUDGETS & TYPES", 16, GOLD)
 	for id in ROSTER:
-		var row := HBoxContainer.new(); right.add_child(row)
-		_label(row, str(catalogs[id].combatants[id].name), 17).size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		var group := VBoxContainer.new(); right.add_child(group)
+		_label(group, str(catalogs[id].combatants[id].name), 17)
+		var row := HBoxContainer.new(); group.add_child(row)
 		var budget := int(catalogs[id].progression.total_budget); _admin_draft.budgets[id] = budget
 		var spin := _admin_spin(row, budget, 0); _admin_budgets[id] = spin
 		spin.value_changed.connect(func(amount): _admin_draft.budgets[id] = int(amount); _refresh_admin_preview())
+		_admin_type_choice(row, "characters", id)
 	_label(right, "AFTER APPLYING", 16, GOLD)
 	_admin_preview = _label(right, "", 17); _admin_preview.custom_minimum_size.x = 470
 	_admin_error = _label(_admin_content, "", 16, Color("ffae9f")); _admin_error.custom_minimum_size.x = 1080; _admin_error.hide()
@@ -727,7 +737,12 @@ func _refresh_admin_preview() -> void:
 			var base := int(prices.get(entry.card_id, catalog.economy.default_card_price)) if prices is Dictionary else int(catalog.economy.default_card_price)
 			value += int(entry.count) * int(_admin_draft.card_prices.get(entry.card_id, base))
 		var spent := int(progress.get("upgrade_spent", 0)); var budget := int(_admin_draft.budgets[id]); var available := budget - value - spent
-		lines.append("%s · %d XP total\n%d in deck + %d in upgrades · %d XP available" % [catalog.combatants[id].name, budget, value, spent, available])
+		var conflicts := 0
+		for entry in progress.decklist:
+			if not _draft_type_allowed(id, "cards", str(entry.card_id)): conflicts += int(entry.count)
+		for ability in progress.ability_board.offensive + progress.ability_board.defensive:
+			if not _draft_type_allowed(id, "abilities", str(ability)): conflicts += 1
+		lines.append("%s · %d XP total\n%d in deck + %d in upgrades · %d XP available%s" % [catalog.combatants[id].name, budget, value, spent, available, "\n%d incompatible equipped items · battle blocked" % conflicts if conflicts > 0 else ""])
 		if available < 0: valid = false
 	_admin_preview.text = "\n\n".join(lines)
 	_admin_error.text = "A character is over budget. Increase its budget here, or close and sell cards before changing prices."
@@ -754,6 +769,7 @@ func _bind_comparison(button: Button, kind: String, id: String, target_id: Strin
 func _comparison_rules(kind: String, id: String) -> String:
 	var definition: Dictionary = catalogs[character_id][kind][id]
 	var parts: PackedStringArray = []
+	parts.append("Type: " + _type_caption(kind, id))
 	parts.append("%d energy · %s" % [int(definition.cost.energy), str(definition.type).replace("_", " ").capitalize()])
 	parts.append(str(definition.presentation.rules_text))
 	if kind == "cards":
@@ -795,3 +811,64 @@ func _ability_xp_value(id: String, visited: Array[String] = []) -> int:
 		var total := parent + int(upgrades[previous].xp)
 		if best < 0 or total < best: best = total
 	return best if has_parent else 0
+
+func _type_key(kind: String) -> String:
+	return {"cards": "card_types", "abilities": "ability_types", "characters": "character_types"}[kind]
+
+func _character_type() -> String:
+	return str(catalogs[character_id].access.character_types.get(character_id, "general"))
+
+func _type_name(id: String) -> String:
+	return str(catalogs[character_id].access.types.get(id, id))
+
+func _type_caption(kind: String, id: String) -> String:
+	return _type_name(str(catalogs[character_id].access[_type_key(kind)].get(id, "general"))) + (" · incompatible" if not _type_allowed(kind, id) else "")
+
+func _type_allowed(kind: String, id: String) -> bool:
+	var required := str(catalogs[character_id].access[_type_key(kind)].get(id, "general"))
+	return required == "general" or required == _character_type()
+
+func _eligible_card_ids() -> Array:
+	return catalogs[character_id].cards.keys().filter(func(id): return _type_allowed("cards", str(id)))
+
+func _has_type_conflicts() -> bool:
+	for entry in character.decklist:
+		if not _type_allowed("cards", str(entry.card_id)): return true
+	for id in character.ability_board.offensive + character.ability_board.defensive:
+		if not _type_allowed("abilities", str(id)): return true
+	return false
+
+func _draft_type(kind: String, id: String) -> String:
+	var key := _type_key(kind)
+	return str(_admin_draft[key].get(id, catalogs[character_id].access[key].get(id, "general")))
+
+func _draft_type_allowed(owner: String, kind: String, id: String) -> bool:
+	var required := _draft_type(kind, id)
+	return required == "general" or required == _draft_type("characters", owner)
+
+func _admin_type_choice(parent: Node, kind: String, id: String) -> void:
+	var choice := OptionButton.new(); choice.custom_minimum_size.x = 180
+	choice.tooltip_text = "Pool type" if kind != "characters" else "Character type"
+	parent.add_child(choice); _admin_types[kind][id] = choice
+	for type_id in catalogs[character_id].access.types:
+		choice.add_item(_type_name(str(type_id))); choice.set_item_metadata(choice.item_count - 1, type_id)
+		if str(type_id) == _draft_type(kind, id): choice.select(choice.item_count - 1)
+	choice.item_selected.connect(func(index):
+		_admin_draft[_type_key(kind)][id] = str(choice.get_item_metadata(index))
+		_refresh_admin_preview()
+	)
+
+func _populate_admin_items(list: VBoxContainer, kind: String) -> void:
+	_clear(list); _admin_types[kind].clear()
+	var definitions: Dictionary = catalogs[character_id][kind]
+	var ids: Array = definitions.keys(); ids.sort_custom(func(a, b): return str(definitions[a].name) < str(definitions[b].name))
+	for id in ids:
+		var group := VBoxContainer.new(); list.add_child(group)
+		group.set_meta("search_name", str(definitions[id].name).to_lower())
+		_label(group, str(definitions[id].name), 17)
+		var row := HBoxContainer.new(); group.add_child(row)
+		if kind == "cards":
+			var value := int(_admin_draft.card_prices.get(id, _admin_base_price(id)))
+			var spin := _admin_spin(row, value, 1); _admin_prices[id] = spin
+			spin.value_changed.connect(func(amount): _admin_draft.card_prices[id] = int(amount); _refresh_admin_preview())
+		_admin_type_choice(row, kind, str(id))

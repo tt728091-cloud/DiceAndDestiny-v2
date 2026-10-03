@@ -20,8 +20,9 @@ import (
 )
 
 type FileParticipantAssembler struct {
-	ContentRoot  string
-	RunStateRoot string
+	IncludeCharacterPools bool
+	ContentRoot           string
+	RunStateRoot          string
 
 	cacheSettledContent bool
 	settledOnce         sync.Once
@@ -83,7 +84,7 @@ func (assembler *FileParticipantAssembler) AssembleParticipants(
 			break
 		}
 		for _, requested := range participants {
-			if requested.DefinitionID != "curse" {
+			if requested.DefinitionID != "curse" && !assembler.IncludeCharacterPools {
 				continue
 			}
 			library = content.BattleLibrary{Symbols: maps.Clone(library.Symbols), Dice: maps.Clone(library.Dice), Cards: maps.Clone(library.Cards), Abilities: maps.Clone(library.Abilities), Statuses: maps.Clone(library.Statuses), Combatants: maps.Clone(library.Combatants)}
@@ -98,7 +99,7 @@ func (assembler *FileParticipantAssembler) AssembleParticipants(
 			break
 		}
 		for _, requested := range participants {
-			if requested.DefinitionID != "adventurer" {
+			if requested.DefinitionID != "adventurer" && !assembler.IncludeCharacterPools {
 				continue
 			}
 			library = content.BattleLibrary{Symbols: maps.Clone(library.Symbols), Dice: maps.Clone(library.Dice), Cards: maps.Clone(library.Cards), Abilities: maps.Clone(library.Abilities), Statuses: maps.Clone(library.Statuses), Combatants: maps.Clone(library.Combatants)}

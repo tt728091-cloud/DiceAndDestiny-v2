@@ -42,7 +42,7 @@ func _run() -> void:
 	_expect(screen._deck_buttons.size() == 2, "deck filter finds both Brace versions")
 	screen._tabs.current_tab = 1
 	for frame in 4: await process_frame
-	_expect(screen._library_buttons.size() == screen.catalogs.adventurer.cards.size(), "library includes all supported cards")
+	_expect(screen._library_buttons.size() == screen._eligible_card_ids().size(), "library includes all cards allowed for the character type")
 	screen._library_search.text = "Tip It"; screen._library_search.text_changed.emit("Tip It")
 	for frame in 4: await process_frame
 	_expect(screen._library_buttons.size() == 1, "library search finds a card not in the starter deck")

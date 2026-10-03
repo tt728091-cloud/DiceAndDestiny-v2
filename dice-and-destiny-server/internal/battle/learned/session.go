@@ -206,11 +206,15 @@ func (s *Session) ResetCharacterLoadout(battleID string, seed uint64, humanSeat 
 		if err != nil {
 			return nil, err
 		}
+		economy, err := loadout.LoadEconomy(s.config.ContentRoot, catalogs)
+		if err != nil {
+			return nil, err
+		}
+		access, err := loadout.ReadAccess(s.config.LoadoutRoot, economy)
+		if err != nil {
+			return nil, err
+		}
 		if mode == "progression" {
-			economy, err := loadout.LoadEconomy(s.config.ContentRoot, catalogs)
-			if err != nil {
-				return nil, err
-			}
 			progress, err := loadout.ReadProgress(s.config.LoadoutRoot, character, economy, catalogs[character])
 			if err != nil {
 				return nil, err
@@ -228,6 +232,22 @@ func (s *Session) ResetCharacterLoadout(battleID string, seed uint64, humanSeat 
 			if deck != nil {
 				decks = map[string][]loadout.Entry{humanSeat: deck}
 			}
+		}
+		deck := decks[humanSeat]
+		if deck == nil {
+			for _, entry := range catalogs[character].Combatants[character].Decklist {
+				deck = append(deck, loadout.Entry{CardID: entry.CardID, Count: entry.Count})
+			}
+		}
+		board, ok := abilityBoards[humanSeat]
+		if !ok {
+			board = catalogs[character].Combatants[character].AbilityBoard
+		}
+		if err := access.ValidateDeck(character, deck); err != nil {
+			return nil, err
+		}
+		if err := access.ValidateBoard(character, board); err != nil {
+			return nil, err
 		}
 	}
 	s.humanSeat = humanSeat
