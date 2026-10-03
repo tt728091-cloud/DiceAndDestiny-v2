@@ -1,0 +1,81 @@
+{
+  "schema_version": 1,
+  "id": "adventurer_strike",
+  "name": "Strike",
+  "type": "offensive",
+  "presentation": {
+    "rules_text": "Choose a qualified tier: 3 Swords: 4 damage; 4 Swords: 5 damage; 5 Swords: 6 damage. Faces 1, 2, and 3 are Swords; numbers need not match. Misses with fewer than 3 Swords."
+  },
+  "cost": {
+    "energy": 0
+  },
+  "usage": {
+    "maximum_per_segment": 1
+  },
+  "targeting": {
+    "selector": "one_enemy",
+    "minimum": 1,
+    "maximum": 1
+  },
+  "qualification": {
+    "activation_tiers": [
+      {
+        "id": "5_swords",
+        "requirements": {
+          "all": [
+            {
+              "type": "symbol_count",
+              "symbol_id": "sword",
+              "minimum": 5
+            }
+          ]
+        },
+        "operations": [
+          {
+            "type": "deal_damage",
+            "target": "selected_targets",
+            "amount": 6
+          }
+        ]
+      },
+      {
+        "id": "4_swords",
+        "requirements": {
+          "all": [
+            {
+              "type": "symbol_count",
+              "symbol_id": "sword",
+              "minimum": 4
+            }
+          ]
+        },
+        "operations": [
+          {
+            "type": "deal_damage",
+            "target": "selected_targets",
+            "amount": 5
+          }
+        ]
+      },
+      {
+        "id": "3_swords",
+        "requirements": {
+          "all": [
+            {
+              "type": "symbol_count",
+              "symbol_id": "sword",
+              "minimum": 3
+            }
+          ]
+        },
+        "operations": [
+          {
+            "type": "deal_damage",
+            "target": "selected_targets",
+            "amount": 4
+          }
+        ]
+      }
+    ]
+  }
+}

@@ -22,7 +22,7 @@ import (
 // a round boundary, and resolves a status. The three definitions are YAML-only
 // proof content and all share roll_dice/outcomes without source-specific code.
 func TestYAMLOnlyCardAbilityAndStatusComposeThroughAuthority(t *testing.T) {
-	script := &battlerandom.Scripted{Values: []battlerandom.ScriptedValue{
+	script := &ownedSelectionScript{Values: []battlerandom.ScriptedValue{
 		{Stream: "card_draw", Bound: 21, Value: 0},
 		{Stream: "ai_d100", Bound: 100, Value: 0},
 		{Stream: "effect_dice", Bound: 6, Value: 0}, // card applies Volatile Poison

@@ -137,6 +137,10 @@ At minimum, the implementation must support the following as reusable rules:
 - Spent resources stay spent when an effect is canceled or collides, unless an
   explicit reusable rule says otherwise.
 - Reveals still show what was played even though the card is already discarded.
+- Damage prevention that releases revealed removal cards sends those saved cards
+  to discard immediately, preserving health. It does not return them to deck or
+  hand. Already-discarded cards stay there once; future upgraded effects must
+  explicitly declare any different destination.
 
 ### Statuses
 
@@ -158,6 +162,11 @@ At minimum, the implementation must support the following as reusable rules:
 ### Income and resources
 
 - Default Income draws one card and gains one energy.
+- All ordinary draws use only the draw pile. Draw as many cards as remain, then
+  stop; an empty draw pile does not refill from discard or cause health loss.
+  Income still grants energy when no card can be drawn.
+- Discarded cards remain health and remain eligible for damage removal. They
+  return to the draw pile only through an explicitly authored recovery effect.
 - Energy accumulates and has no hard cap for this target rule set.
 - Hand limit is six.
 - Going over the limit is allowed temporarily; discard-to-six is enforced near
@@ -165,6 +174,13 @@ At minimum, the implementation must support the following as reusable rules:
 
 ### Offensive
 
+- Strong Swing is a pre-roll preparation: before the actor's first offensive
+  roll, choose any owned offensive ability and attach +2 damage. It becomes
+  unplayable after that first roll. The bonus requires the chosen ability to
+  qualify and be selected; it never creates a hit from a miss.
+- Strong Swing uses a visible positive preparation status and a persistent
+  temporary-damage marker on the targeted ability. Its modifiers and status
+  expire at Offensive Exit, used or unused, after attack damage is finalized.
 - A human player rolls its configured pool, keeps dice, rerolls only unkept dice,
   and has the configured maximum number of roll batches.
 - Roll history preserves every batch, kept dice, final number, and final symbol.
@@ -205,14 +221,14 @@ At minimum, the implementation must support the following as reusable rules:
 - Damage is tracked as distinct sources.
 - Prevention applies to its selected source, not automatically to total damage.
 - Randomly select cards without replacement using zone priority:
-  deck -> discard -> hand.
+  discard -> deck -> hand.
 - Reveal the exact card instance IDs and definitions proposed for permanent loss,
   including their current zones and damage source, before removal.
-- Revealed cards remain in their zones throughout the reaction window.
+- Revealed cards remain in their zones until played, saved by prevention, or removed at commit.
 - Only after all required passes/responses and batch commit do those exact cards
   move to `removed`.
-- If prevention reduces damage, release excess proposed removals without moving
-  those cards.
+- If prevention reduces damage, release excess proposed removals and move those
+  saved cards to discard immediately, preserving health.
 - Overage is provisional and shown before commit; prevention consumes overage
   before saving proposed card removals.
 - Status application can commit with damage but does not activate until its

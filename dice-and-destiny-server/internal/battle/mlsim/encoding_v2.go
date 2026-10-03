@@ -47,7 +47,7 @@ func encodeDecisionV2(transition Transition) (EncodedDecision, error) {
 	symbols := sortedKeys(snap.ContentCatalog.Symbols)
 	baseSymbols := symbols[:0]
 	for _, symbol := range symbols {
-		if !content.IsVenomIdentifier(symbol) {
+		if !(content.IsVenomIdentifier(symbol) || content.IsCurseIdentifier(symbol)) {
 			baseSymbols = append(baseSymbols, symbol)
 		}
 	}
@@ -263,7 +263,7 @@ func encodeV2Dice(values []float32, offset int, dice []state.RolledDie, kept map
 		for _, symbol := range die.Symbols {
 			index := indexOf(symbols, symbol)
 			if index < 0 {
-				if content.IsVenomIdentifier(symbol) {
+				if content.IsVenomIdentifier(symbol) || content.IsCurseIdentifier(symbol) {
 					continue
 				}
 				return fmt.Errorf("rolled die references unknown symbol %q", symbol)

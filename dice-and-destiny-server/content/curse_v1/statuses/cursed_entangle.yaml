@@ -1,0 +1,20 @@
+{
+  "schema_version": 1,
+  "id": "cursed_entangle",
+  "name": "Cursed Entangle",
+  "presentation": {
+    "rules_text": "Before next offense, roll all five owned dice for marks only. Discard results; then take one fewer normal roll. Does not add to ordinary Entangle.",
+    "glyph": "\u2301"
+  },
+  "activation_mode": "automatic",
+  "polarity": "negative",
+  "stacking": {
+    "stack_limit": 1,
+    "uncapped": false,
+    "overflow_policy": "reject_additional_stacks"
+  },
+  "lifecycle": {
+    "persistent": true
+  },
+  "triggers": []
+}

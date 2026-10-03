@@ -28,9 +28,9 @@ func _run() -> void:
 		var screen = SCREEN.instantiate(); screen.initial_result = fixture; screen.gateway = BattleGateway.new(fake); screen._auto_pass_disabled = true
 		screen.active_store = ActiveBattleStore.new(WorkspacePaths.persistent_file("automatic-defense.json")); root.add_child(screen)
 		for i in 4: await process_frame
-		var panels := screen.find_children("*", "VBoxContainer", true, false).filter(func(n): return n.get_script() == preload("res://presentation/battle/defense_roll.gd"))
-		_expect(panels.size() == 1 and panels[0].dice.size() == (2 if ability == "shedskin" else 1), "correct defense dice animate")
-		_expect(fake.commands.is_empty(), "animation before roll result")
+		var panels: Array = screen._defense_result_panels
+		_expect(panels.size() == 1 and panels[0].dice_controls.size() == (2 if ability == "shedskin" else 1), "correct defense dice animate")
+		_expect(fake.commands.size() == 1, "authority resolves the automatic roll once before its visual playback")
 		var path := OS.get_environment("DICE_AND_DESTINY_DEFENSE_ROLL_SCREENSHOT")
 		if choice == "shedskin" and not path.is_empty() and DisplayServer.get_name() != "headless":
 			await RenderingServer.frame_post_draw
@@ -43,7 +43,7 @@ func _run() -> void:
 		screen._set_auto_pass_disabled(false)
 		await create_timer(2.8).timeout
 		_expect(screen._view.stage == "defense_reaction", "results remain for at least three seconds")
-		await create_timer(0.6).timeout
+		await create_timer(preload("res://presentation/battle/defense_timing.gd").total_seconds() - 2.8 + 0.5).timeout
 		_expect(screen._view.stage == "damage_reaction", "normal review then continues")
 		screen.active_store.clear(); screen.queue_free(); await process_frame
 	print("AUTOMATIC DEFENSE ROLL: " + ("FAILED" if failed else "PASSED"))

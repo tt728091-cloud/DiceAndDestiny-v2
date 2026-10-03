@@ -1,73 +1,102 @@
 class_name ActorProfile
 extends PanelContainer
 
+signal pile_requested(zone: String)
+var _player_piles := false
+
 var portrait: TextureRect
 var title: Label
 var health: ProgressBar
 var stats: Label
-var statuses: Label
-var pending_statuses: Label
+var statuses
+var pending_statuses
 var _health_text: Label
 var _stat_labels: Dictionary = {}
+var _stat_cells: Dictionary = {}
+const ICONS := preload("res://presentation/battle/battle_icons.gd")
+const STATUS_STRIP := preload("res://presentation/battle/status_icon_strip.gd")
+const HUD_THEME := preload("res://presentation/battle/cinematic_theme.gd")
 var _income_markers: Dictionary = {}
 var _display_values: Dictionary = {}
 var _income_start_values: Dictionary = {}
 var _income_final_values: Dictionary = {}
 var _status_entries: Array = []
 var _defense_status_preview: Dictionary = {}
+var compact := false
 
-const NORMAL_STAT_COLOR := Color("e6e8ec")
+const NORMAL_STAT_COLOR := HUD_THEME.HUD_IVORY
 const INCOME_HIGHLIGHT_COLOR := Color("ffd36a")
+const STAT_HINTS := {"energy": "Available to spend on cards and abilities.", "deck": "Cards available to draw. Damage uses these after discard. No automatic refill.", "hand": "Cards currently held.", "discard": "Still counts as health. Damage takes these first, then draw, then hand. No automatic redraw.", "removed": "Cards permanently removed from this battle."}
 const VISUALS := preload("res://content/battle_visuals/library.tres")
 
 func _ready() -> void:
-	custom_minimum_size = Vector2(300, 150)
-	add_theme_stylebox_override("panel", preload("res://presentation/battle/cinematic_theme.gd").panel(Color("08080860"), Color("00000000"), 10))
-	var row := HBoxContainer.new()
-	add_child(row)
-	portrait = TextureRect.new()
-	portrait.custom_minimum_size = Vector2.ZERO
-	portrait.visible = false
-	portrait.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-	portrait.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-	row.add_child(portrait)
-	var info := VBoxContainer.new()
-	info.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	row.add_child(info)
-	title = Label.new(); title.add_theme_font_size_override("font_size", 28); title.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT; title.clip_text = true; info.add_child(title)
-	health = ProgressBar.new(); health.show_percentage = false; health.custom_minimum_size.y = 18; info.add_child(health)
-	var primary_stats := HBoxContainer.new(); primary_stats.add_theme_constant_override("separation", 10); info.add_child(primary_stats)
-	_health_text = Label.new(); _health_text.size_flags_horizontal = Control.SIZE_EXPAND_FILL; primary_stats.add_child(_health_text)
-	_add_stat_cell(primary_stats, "energy", "✦ Energy")
-	var zone_stats := HBoxContainer.new(); zone_stats.add_theme_constant_override("separation", 6); info.add_child(zone_stats)
-	for entry in [["deck", "Deck"], ["hand", "Hand"], ["discard", "Discard"], ["removed", "Removed"]]:
-		_add_stat_cell(zone_stats, str(entry[0]), str(entry[1]), 13)
-	# Kept as a public compatibility field for callers that previously inspected
-	# the combined stats label. The visible profile now uses individual values so
-	# income changes can be highlighted without moving the profile.
-	stats = Label.new(); stats.visible = false; info.add_child(stats)
-	statuses = preload("res://presentation/battle/status_tooltip_label.gd").new(); statuses.add_theme_font_size_override("font_size", 18); statuses.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART; info.add_child(statuses)
-	pending_statuses = Label.new(); pending_statuses.add_theme_font_size_override("font_size", 18)
-	pending_statuses.add_theme_color_override("font_color", Color("c1eca0"))
-	pending_statuses.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART; pending_statuses.visible = false; info.add_child(pending_statuses)
+	compact = get_parent() is Control and get_parent().size.x < 270
+	mouse_filter = Control.MOUSE_FILTER_PASS
+	add_theme_stylebox_override("panel", preload("res://presentation/battle/cinematic_theme.gd").panel(Color.TRANSPARENT, Color.TRANSPARENT, 6))
+	var info := VBoxContainer.new(); info.add_theme_constant_override("separation", 3); add_child(info)
+	portrait = TextureRect.new(); portrait.hide(); info.add_child(portrait)
+	var heading := HBoxContainer.new(); heading.alignment = BoxContainer.ALIGNMENT_CENTER; info.add_child(heading)
+	title = Label.new(); title.add_theme_font_size_override("font_size", 18 if compact else 24); title.clip_text = true
+	HUD_THEME.hud_lettering(title, true)
+	title.size_flags_horizontal = Control.SIZE_EXPAND_FILL; title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER; heading.add_child(title)
+	_add_stat_cell(heading, "energy", "Energy", 20)
+	health = ProgressBar.new(); health.show_percentage = false; health.custom_minimum_size.y = 24; info.add_child(health)
+	var style := StyleBoxFlat.new(); style.bg_color = Color("211923"); style.border_color = Color("100e13"); style.set_border_width_all(3); style.set_corner_radius_all(6)
+	style.shadow_color = Color("09080ccc"); style.shadow_size = 3; style.shadow_offset = Vector2(0, 2)
+	health.add_theme_stylebox_override("background", style)
+	var fill := StyleBoxFlat.new(); fill.bg_color = Color("cf424f"); fill.border_color = Color("f48279"); fill.set_border_width_all(2); fill.set_corner_radius_all(4)
+	# Leave the dark outer frame visible even at full health.
+	fill.expand_margin_left = -3; fill.expand_margin_right = -3; fill.expand_margin_top = -3; fill.expand_margin_bottom = -3
+	health.add_theme_stylebox_override("fill", fill)
+	_health_text = Label.new(); _health_text.add_theme_font_size_override("font_size", 21); _health_text.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	HUD_THEME.hud_lettering(_health_text, true)
+	_health_text.mouse_filter = Control.MOUSE_FILTER_IGNORE; health.add_child(_health_text); _health_text.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	statuses = STATUS_STRIP.new(); info.add_child(statuses)
+	pending_statuses = STATUS_STRIP.new(); pending_statuses.hide(); info.add_child(pending_statuses)
+	var zones := HBoxContainer.new(); zones.alignment = BoxContainer.ALIGNMENT_CENTER; zones.add_theme_constant_override("separation", 7 if compact else 12); info.add_child(zones)
+	for key in ["deck", "hand", "discard", "removed"]: _add_stat_cell(zones, key, key.capitalize(), 19)
+	stats = Label.new(); stats.hide(); info.add_child(stats)
 
-func _add_stat_cell(parent: HBoxContainer, key: String, caption: String, font_size: int = 15) -> void:
-	var cell := VBoxContainer.new(); cell.alignment = BoxContainer.ALIGNMENT_CENTER; cell.size_flags_horizontal = Control.SIZE_EXPAND_FILL; parent.add_child(cell)
-	var value := Label.new(); value.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER; value.add_theme_font_size_override("font_size", font_size); value.set_meta("caption", caption); cell.add_child(value)
-	var marker := Label.new(); marker.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER; marker.add_theme_font_size_override("font_size", 11); marker.add_theme_color_override("font_color", INCOME_HIGHLIGHT_COLOR); marker.visible = false; cell.add_child(marker)
-	_stat_labels[key] = value
-	_income_markers[key] = marker
+func _add_stat_cell(parent: HBoxContainer, key: String, caption: String, font_size: int = 19) -> void:
+	var cell := HBoxContainer.new(); cell.alignment = BoxContainer.ALIGNMENT_CENTER; cell.add_theme_constant_override("separation", 4); cell.tooltip_text = caption; parent.add_child(cell)
+	cell.gui_input.connect(_pile_input.bind(key))
+	var icon := TextureRect.new(); icon.texture = ICONS.texture(key); icon.custom_minimum_size = Vector2(18, 22) if compact else Vector2(24, 24); icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE; icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED; icon.mouse_filter = Control.MOUSE_FILTER_IGNORE; cell.add_child(icon)
+	var value := Label.new(); value.add_theme_font_size_override("font_size", 16 if compact else font_size); value.set_meta("caption", ""); value.mouse_filter = Control.MOUSE_FILTER_IGNORE; cell.add_child(value)
+	HUD_THEME.hud_lettering(value, true)
+	# Floating deltas never change the size or position of the HUD's anchors.
+	var marker := Label.new(); marker.position = Vector2(0, -24); marker.add_theme_font_size_override("font_size", 14); marker.mouse_filter = Control.MOUSE_FILTER_IGNORE; marker.hide(); value.add_child(marker)
+	HUD_THEME.hud_lettering(marker, true)
+	_stat_labels[key] = value; _stat_cells[key] = cell; _income_markers[key] = marker
+
+## All rectangles are in canvas coordinates. Callers convert to their own
+## canvas once, at draw time; never cache a pixel endpoint across frames.
+func anchor_rect(kind: String, status_id: String = "") -> Rect2:
+	if kind == "status": return statuses.bounds(status_id)
+	if kind == "pending_status": return pending_statuses.bounds(status_id)
+	if kind == "health": return health.get_global_rect()
+	if kind == "name": return title.get_global_rect()
+	if _stat_cells.has(kind): return _stat_cells[kind].get_global_rect()
+	return get_global_rect()
+
+func _pile_input(event: InputEvent, zone: String) -> void:
+	if not _player_piles or zone not in ["deck", "discard", "removed"]: return
+	if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT and event.pressed:
+		_stat_cells[zone].accept_event()
+		pile_requested.emit(zone)
 
 func display(actor_id: String, actor: Dictionary, is_player: bool) -> void:
+	_player_piles = is_player
+	for zone in ["deck", "discard", "removed"]:
+		_stat_cells[zone].mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND if is_player else Control.CURSOR_ARROW
 	_defense_status_preview.clear()
-	pending_statuses.text = ""; pending_statuses.hide(); statuses.show()
+	pending_statuses.set_counts({}); pending_statuses.hide(); statuses.show()
 	statuses.remove_theme_color_override("font_color")
 	var definition := str(actor.get("definition_id", actor_id))
 	var visual: FighterVisualProfile = VISUALS.fighter(definition)
 	title.text = visual.display_name if visual != null else definition.replace("_", " ").capitalize()
 	var current := int(actor.get("current_health", 0)); var maximum := maxi(1, int(actor.get("max_health", current)))
 	health.max_value = maximum; health.value = current
-	_health_text.text = "Health %d/%d" % [current, maximum]
+	_health_text.text = "%d/%d" % [current, maximum]
 	_display_values = {
 		"energy": int(actor.get("energy_points", 0)),
 		"deck": int(actor.get("deck_count", 0)),
@@ -77,12 +106,10 @@ func display(actor_id: String, actor: Dictionary, is_player: bool) -> void:
 	}
 	_refresh_stat_labels()
 	stats.text = "Health %d/%d    ✦ Energy %d\nDeck %d  Hand %d  Discard %d  Removed %d" % [current, maximum, int(_display_values.energy), int(_display_values.deck), int(_display_values.hand), int(_display_values.discard), int(_display_values.removed)]
-	var status_text: Array[String] = []
 	_status_entries = actor.get("statuses", []).duplicate(true)
-	for entry in actor.get("statuses", []):
-		var id := str(entry.get("definition_id", entry.get("id", "status")))
-		status_text.append("%s %s ×%d" % [BattlePresentationCatalog.status(id).glyph, BattlePresentationCatalog.status(id).name, int(entry.get("stacks", 1))])
-	statuses.text = "No active statuses" if status_text.is_empty() else "\n".join(status_text)
+	var values := {}
+	for entry in _status_entries: values[str(entry.get("definition_id", entry.get("id", "status")))] = int(entry.get("stacks", 1))
+	statuses.set_counts(values)
 	portrait.texture = visual.portrait if visual != null else null
 	tooltip_text = "%s
 %s" % [title.text, stats.text]
@@ -91,61 +118,48 @@ func display(actor_id: String, actor: Dictionary, is_player: bool) -> void:
 		var data := BattlePresentationCatalog.status(str(entry.get("definition_id", "")))
 		rules.append("%s — %s" % [data.name, data.text])
 	statuses.tooltip_text = "\n\n".join(rules)
-	statuses.mouse_filter = Control.MOUSE_FILTER_STOP
+	statuses.mouse_filter = Control.MOUSE_FILTER_PASS
 
 func show_pending_applications(applications: Dictionary) -> void:
-	# These are queued additions, separate from stacks already on the character.
-	# A separate label also keeps card/status animations from erasing the preview.
-	var lines: Array[String] = []
-	for id in applications:
-		var count := int(applications[id])
-		if count <= 0: continue
-		var data := BattlePresentationCatalog.status(str(id))
-		lines.append("%s %s ×%d · pending" % [data.glyph, data.name, count])
-	pending_statuses.text = "\n".join(lines)
-	pending_statuses.visible = not lines.is_empty()
-	statuses.visible = not _status_entries.is_empty() or lines.is_empty()
+	pending_statuses.set_counts(applications, true)
+	pending_statuses.visible = applications.values().any(func(count): return int(count) > 0)
+	statuses.show()
 
 func prepare_card_cleanse(status_id: String, before: int) -> Label:
-	# Keep the actual final text for settlement; only the affected row fades.
-	var final_text := statuses.text
-	var other_statuses: Array[String] = []
-	for entry in _status_entries:
-		var id := str(entry.get("definition_id", entry.get("id", "")))
-		if id == status_id: continue
-		var data := BattlePresentationCatalog.status(id)
-		other_statuses.append("%s %s ×%d" % [data.glyph, data.name, int(entry.get("stacks", 1))])
-	statuses.text = "\n".join(other_statuses)
-	statuses.visible = not other_statuses.is_empty()
-	var data := BattlePresentationCatalog.status(status_id)
-	var fading := Label.new(); fading.name = "CleansedStatus"
-	fading.text = "%s %s ×%d" % [data.glyph, data.name, before]
-	fading.add_theme_font_size_override("font_size", 18)
-	fading.add_theme_color_override("font_color", Color("afe079"))
-	fading.set_meta("final_text", final_text)
-	statuses.get_parent().add_child(fading)
+	var final_counts: Dictionary = statuses.counts.duplicate()
+	var shown := final_counts.duplicate(); shown[status_id] = before; statuses.set_counts(shown)
+	var slot: Control = statuses.ensure_slot(status_id)
+	var count: Label = slot.get_node("Count")
+	var fading := Label.new(); fading.name = "CleansedStatus"; fading.text = str(before)
+	HUD_THEME.hud_lettering(fading, true)
+	fading.add_theme_font_size_override("font_size", 20); fading.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	count.add_child(fading); fading.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT); count.self_modulate.a = 0
+	fading.set_meta("final_counts", final_counts); fading.set_meta("status_id", status_id)
+	fading.set_meta("fading", true)
 	return fading
 
+func _process(_delta: float) -> void:
+	for slot in statuses.cells.values():
+		var count: Label = slot.get_node("Count")
+		var ghost := count.get_node_or_null("CleansedStatus") as Label
+		if is_instance_valid(ghost) and ghost.get_meta("fading", false): slot.get_child(0).modulate.a = ghost.modulate.a
+
 func finish_card_cleanse(fading: Label) -> void:
-	# Keep the invisible row alive until the card leaves, so its trail retains
-	# a stable destination and the profile does not resize during the effect.
-	statuses.text = str(fading.get_meta("final_text", "No active statuses"))
-	statuses.show()
-	fading.modulate.a = 0.0
+	statuses.set_counts(fading.get_meta("final_counts", {}))
+	fading.set_meta("fading", false); fading.modulate.a = 0
+	var slot: Control = statuses.ensure_slot(str(fading.get_meta("status_id")))
+	slot.get_node("Count").self_modulate.a = 1; slot.get_child(0).modulate.a = 1
+
+func show_resource_preview(stat: String, value: int) -> void:
+	_display_values[stat] = value
+	_refresh_stat_labels()
 
 func show_defense_status_preview(status_id: String, count: int) -> void:
 	_defense_status_preview[status_id] = count
-	var lines: Array[String] = []
-	for entry in _status_entries:
-		var id := str(entry.get("definition_id", entry.get("id", "")))
-		if _defense_status_preview.has(id): continue
-		var data := BattlePresentationCatalog.status(id)
-		lines.append("%s %s ×%d" % [data.glyph, data.name, int(entry.get("stacks", 1))])
-	for id in _defense_status_preview:
-		var data := BattlePresentationCatalog.status(str(id))
-		lines.append("%s %s ×%d · pending" % [data.glyph, data.name, int(_defense_status_preview[id])])
-	statuses.text = "\n".join(lines)
-	statuses.add_theme_color_override("font_color", Color("c1eca0"))
+	var values := {}
+	for entry in _status_entries: values[str(entry.get("definition_id", ""))] = int(entry.get("stacks", 1))
+	values.merge(_defense_status_preview, true)
+	statuses.set_counts(values, false, _defense_status_preview)
 
 func prepare_income(actor_income: Dictionary) -> void:
 	_income_final_values = _display_values.duplicate(true)
@@ -154,6 +168,10 @@ func prepare_income(actor_income: Dictionary) -> void:
 	var energy_gain := int(actor_income.get("energy_gain", 1 if actor_income.has("energy_points") else 0))
 	if energy_gain > 0:
 		_show_income_marker("energy", "+%d" % energy_gain)
+	if actor_income.get("grave_debt", false):
+		_show_income_marker("energy", "Grave Debt −%d\n+%d Energy · consumed" % [int(actor_income.get("energy_prevented", 0)), energy_gain])
+		_income_markers.energy.text = _income_markers.energy.text.trim_prefix("▲ ")
+		_income_markers.energy.add_theme_color_override("font_color", Color("e2b2ff"))
 	if card_count > 0:
 		_show_income_marker("deck", "−%d" % card_count)
 		_show_income_marker("hand", "+%d" % card_count)
@@ -189,6 +207,7 @@ func _show_income_marker(key: String, change: String) -> void:
 	var value: Label = _stat_labels.get(key)
 	if marker == null or value == null: return
 	marker.text = "▲ %s" % change; marker.visible = true; marker.modulate = Color.WHITE
+	marker.add_theme_color_override("font_color", INCOME_HIGHLIGHT_COLOR)
 	value.add_theme_color_override("font_color", INCOME_HIGHLIGHT_COLOR)
 
 func _apply_income_progress(progress: float) -> void:
@@ -218,12 +237,14 @@ func _finish_income_animation() -> void:
 func _refresh_stat_labels() -> void:
 	for key in _stat_labels:
 		var label: Label = _stat_labels[key]
-		label.text = "%s %d" % [str(label.get_meta("caption", key.capitalize())), int(_display_values.get(key, 0))]
+		label.text = str(int(_display_values.get(key, 0)))
+		_stat_cells[key].tooltip_text = "%s · %s\n%s" % [key.capitalize(), label.text, STAT_HINTS[key]]
+		if _player_piles and key in ["deck", "discard", "removed"]: _stat_cells[key].tooltip_text += "\nClick to view cards."
 
 func show_effects_progress(before: Dictionary, after: Dictionary, phase: String, progress: float) -> void:
 	var cards_progress := progress if phase == "cards" else 1.0
 	var current := roundi(lerpf(float(before.get("health", 0)), float(after.get("health", 0)), cards_progress))
-	health.value = current; _health_text.text = "Health %d/%d" % [current, int(health.max_value)]
+	health.value = current; _health_text.text = "%d/%d" % [current, int(health.max_value)]
 	for key in ["deck", "hand", "discard", "removed"]:
 		_display_values[key] = roundi(lerpf(float(before.get(key + "_count", 0)), float(after.get(key + "_count", 0)), cards_progress))
 	_display_values.energy = int(before.get("energy", _display_values.energy)); _refresh_stat_labels()
@@ -232,12 +253,9 @@ func show_effects_progress(before: Dictionary, after: Dictionary, phase: String,
 	for status in after.get("statuses", []) if after.get("statuses") is Array else []: final[str(status.definition_id)] = int(status.stacks)
 	for id in final:
 		if not initial.has(id): initial[id] = 0
-	var lines: Array[String] = []
-	for id in initial:
-		var count := roundi(lerpf(float(initial[id]), float(final.get(id, 0)), progress if phase == "statuses" else 0.0))
-		if count <= 0: continue
-		var data := BattlePresentationCatalog.status(str(id)); lines.append("%s %s ×%d" % [data.glyph, data.name, count])
-	statuses.text = "No active statuses" if lines.is_empty() else "\n".join(lines)
+	var values := {}
+	for id in initial: values[id] = roundi(lerpf(float(initial[id]), float(final.get(id, 0)), progress if phase == "statuses" else 0.0))
+	statuses.set_counts(values)
 	statuses.modulate = Color.WHITE.lerp(Color("b5e591"), sin(progress * PI)) if phase == "statuses" else Color.WHITE
 
 func show_resource_gain(data: Dictionary, progress: float) -> void:
@@ -245,7 +263,7 @@ func show_resource_gain(data: Dictionary, progress: float) -> void:
 	var label: Label = _stat_labels.get(key)
 	if label == null or int(_display_values.get(key, -1)) != int(data.get("after", -2)): return
 	var amount := roundi(lerpf(float(data.before), float(data.after), progress))
-	label.text = "%s %d" % [str(label.get_meta("caption", "")), amount]
+	label.text = str(amount)
 	label.add_theme_color_override("font_color", NORMAL_STAT_COLOR.lerp(INCOME_HIGHLIGHT_COLOR, sin(progress * PI)))
 
 func show_status_transition(update: Dictionary, progress: float) -> void:
@@ -263,24 +281,8 @@ func show_status_transition(update: Dictionary, progress: float) -> void:
 	else:
 		counts.poison = roundi(lerpf(float(data.poison_before), float(data.poison_after), progress))
 		counts.volatile_poison = roundi(lerpf(float(data.volatile_before), float(data.volatile_after), progress))
-	var lines: Array[String] = []
-	for id in counts:
-		if int(counts[id]) <= 0: continue
-		var status := BattlePresentationCatalog.status(str(id))
-		lines.append("%s %s ×%d" % [status.glyph, status.name, int(counts[id])])
-	statuses.text = "No active statuses" if lines.is_empty() else "\n".join(lines)
+	statuses.set_counts(counts)
 	statuses.modulate = Color.WHITE.lerp(Color("d5afff") if update.kind == "conversion" else Color("b7e39a"), sin(progress * PI))
 
 func status_anchor(status_id: String) -> Vector2:
-	# Statuses share a multiline label. Locate the displayed row rather than
-	# pointing to the center of the entire list (or to stale snapshot ordering).
-	var data := BattlePresentationCatalog.status(status_id)
-	var lines := statuses.text.split("\n")
-	var font := statuses.get_theme_font("font")
-	var font_size := statuses.get_theme_font_size("font_size")
-	var line_height := font.get_height(font_size) + statuses.get_theme_constant("line_spacing")
-	for index in lines.size():
-		if not lines[index].begins_with("%s %s ×" % [data.glyph, data.name]): continue
-		var width := minf(statuses.size.x, font.get_string_size(lines[index], HORIZONTAL_ALIGNMENT_LEFT, -1, font_size).x)
-		return statuses.get_global_transform_with_canvas() * Vector2(width * 0.5, line_height * (index + 0.5))
-	return statuses.get_global_rect().get_center()
+	return anchor_rect("status", status_id).get_center()

@@ -39,8 +39,8 @@ func refresh() -> void:
 		if sibling == self: break
 		if sibling.get_script() == get_script() and sibling.update.data.target_actor_id == update.data.target_actor_id: lane += 1
 	if is_instance_valid(profile):
-		var bounds := profile.statuses.get_global_rect()
-		position = screen.get_global_transform_with_canvas().affine_inverse() * (bounds.position + Vector2(0, bounds.size.y + 10 + lane * 52 - minf(_elapsed, 1.0) * 10))
+		var bounds := profile.anchor_rect(str(update.data.get("stat", "energy"))) if update.kind == "resource" else profile.anchor_rect("status", str(update.data.get("status_id", "volatile_poison" if update.kind == "conversion" else "incubation")))
+		position = screen.get_global_transform_with_canvas().affine_inverse() * (bounds.position + Vector2(0, -34 - lane * 36 - minf(_elapsed, 1.0) * 10))
 		if update.kind == "resource": profile.show_resource_gain(update.data, clampf(_elapsed / 0.85, 0, 1))
 		else: profile.show_status_transition(update, clampf(_elapsed / 0.85, 0, 1))
 	_label.modulate.a = clampf(_elapsed / 0.15, 0, 1) * clampf((DURATION - _elapsed) / 0.45, 0, 1)

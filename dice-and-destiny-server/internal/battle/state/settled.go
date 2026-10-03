@@ -6,6 +6,7 @@ import "diceanddestiny/server/internal/battle/command"
 // immutable compiled catalog is pinned separately on Battle as JSON so engine
 // commands never need to reload files.
 type SettledRuntime struct {
+	Curse              *CurseRuntime `json:",omitempty"`
 	ReactionReplanning bool
 	Initialized        bool
 	CompletedRounds    int
@@ -71,10 +72,12 @@ type RollBatch struct {
 }
 
 type RuntimeAbilityModifier struct {
-	ExpiresAfterRound    int    `json:"expires_after_round,omitempty"`
-	SourceCardInstanceID string `json:"source_card_instance_id"`
-	AbilityID            string `json:"ability_id"`
-	BonusID              string `json:"bonus_id"`
+	ExpiresAfterOffensive bool   `json:"expires_after_offensive,omitempty"`
+	StatusID              string `json:"status_id,omitempty"`
+	ExpiresAfterRound     int    `json:"expires_after_round,omitempty"`
+	SourceCardInstanceID  string `json:"source_card_instance_id"`
+	AbilityID             string `json:"ability_id"`
+	BonusID               string `json:"bonus_id"`
 }
 
 type SettledWindow struct {
@@ -194,6 +197,9 @@ func cloneSettledRuntime(value *SettledRuntime) *SettledRuntime {
 		return nil
 	}
 	cloned := *value
+	if value.Curse != nil {
+		cloned.Curse = CloneCurse(value.Curse)
+	}
 	if value.Venom != nil {
 		cloned.Venom = CloneVenom(value.Venom)
 	}

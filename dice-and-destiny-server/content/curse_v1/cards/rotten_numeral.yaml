@@ -1,0 +1,41 @@
+{
+  "schema_version": 1,
+  "id": "rotten_numeral",
+  "name": "Rotten Numeral",
+  "type": "curse_action",
+  "presentation": {
+    "rules_text": "Choose a number. Mark it on up to 3 different random enemy dice missing that mark, including partly cursed dice. No replacement effect for missing eligible dice. Each named Curse card may be played once per player per round.",
+    "art_key": "card_rotten_numeral",
+    "effect_summary": "Curse one number on up to 3 dice."
+  },
+  "cost": {
+    "energy": 2
+  },
+  "play": {
+    "source_zones": [
+      "hand"
+    ],
+    "destination": "discard",
+    "playable_during": [
+      {
+        "segment": "offensive",
+        "phase": "main",
+        "window_purpose": "planning"
+      }
+    ]
+  },
+  "targeting": {
+    "selector": "curse_choice",
+    "minimum": 0,
+    "maximum": 1
+  },
+  "reaction_window": {
+    "opens": false
+  },
+  "operations": [
+    {
+      "type": "curse_card",
+      "target": "self"
+    }
+  ]
+}

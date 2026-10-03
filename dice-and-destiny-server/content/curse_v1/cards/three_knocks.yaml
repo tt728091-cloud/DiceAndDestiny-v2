@@ -1,0 +1,41 @@
+{
+  "schema_version": 1,
+  "id": "three_knocks",
+  "name": "Three Knocks",
+  "type": "curse_action",
+  "presentation": {
+    "rules_text": "Apply Three Knocks, a negative status with a stack limit of 1. At the next Effects, every group of 3 Curse Count converted to damage deals 2 instead of 1. Expires then, even if conversion is skipped or fewer than 3 Count remain. Each named Curse card may be played once per player per round.",
+    "art_key": "card_three_knocks",
+    "effect_summary": "Next Effects: 2 damage per 3 Count."
+  },
+  "cost": {
+    "energy": 1
+  },
+  "play": {
+    "source_zones": [
+      "hand"
+    ],
+    "destination": "discard",
+    "playable_during": [
+      {
+        "segment": "offensive",
+        "phase": "main",
+        "window_purpose": "planning"
+      }
+    ]
+  },
+  "targeting": {
+    "selector": "curse_choice",
+    "minimum": 0,
+    "maximum": 1
+  },
+  "reaction_window": {
+    "opens": false
+  },
+  "operations": [
+    {
+      "type": "curse_card",
+      "target": "self"
+    }
+  ]
+}

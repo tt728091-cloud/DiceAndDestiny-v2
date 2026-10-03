@@ -3,6 +3,7 @@ package engine
 import (
 	"encoding/json"
 	"sort"
+	"strconv"
 
 	"diceanddestiny/server/internal/battle/command"
 	"diceanddestiny/server/internal/battle/segment"
@@ -38,6 +39,8 @@ func settledLegalActions(battle *state.Battle, library content.BattleLibrary, ac
 	}
 	var actions []command.Command
 	switch window.Stage {
+	case stageCurseChoice:
+		return curseCardActions(battle, library, actorID, pending)
 	case stageOffensivePlan:
 		actions = append(actions, planningCardActions(battle, library, actorID, pending)...)
 		runtime := battle.Settled.Actors[actorID]
@@ -46,6 +49,15 @@ func settledLegalActions(battle *state.Battle, library content.BattleLibrary, ac
 		}
 		if containsCommand(window.AllowedCommands, command.TypePlanningKeep) && runtime.RollsUsed > 0 {
 			for _, indices := range indexSubsets(allDieIndices(len(runtime.FinalDice)), true) {
+				valid := true
+				for _, i := range entombedIndices(battle, actorID) {
+					if containsInt(indices, i) {
+						valid = false
+					}
+				}
+				if !valid {
+					continue
+				}
 				actions = append(actions, legalCommand(battle.ID, actorID, command.TypePlanningKeep, command.PlanningKeepPayload{PendingInputID: pending.ID, Checkpoint: planningCheckpoint(pending), KeptIndices: indices}))
 			}
 		}
@@ -57,6 +69,15 @@ func settledLegalActions(battle *state.Battle, library content.BattleLibrary, ac
 				}
 			}
 			for _, indices := range indexSubsets(available, false) {
+				valid := true
+				for _, i := range entombedIndices(battle, actorID) {
+					if !containsInt(indices, i) {
+						valid = false
+					}
+				}
+				if !valid {
+					continue
+				}
 				actions = append(actions, legalCommand(battle.ID, actorID, command.TypePlanningReroll, command.PlanningRerollPayload{PendingInputID: pending.ID, Checkpoint: planningCheckpoint(pending), RerollIndices: indices}))
 			}
 		}
@@ -68,7 +89,7 @@ func settledLegalActions(battle *state.Battle, library content.BattleLibrary, ac
 				}
 				for _, targets := range actorTargetChoices(battle, actorID, ability.Targeting) {
 					tiers := []string{""}
-					if abilityID == "needlefang" {
+					if abilityID == "needlefang" || abilityID == "hexbrand" || abilityID == "adventurer_strike" {
 						tiers = nil
 						for _, tier := range ability.Qualification.ActivationTiers {
 							if requirementsMet(tier.Requirements, runtime.FinalDice) {
@@ -116,7 +137,7 @@ func settledLegalActions(battle *state.Battle, library content.BattleLibrary, ac
 			}
 			for _, source := range battle.Settled.OffensiveSources {
 				if source.TargetActorID == actorID && !defenseSourceChosen(battle, source.ID) {
-					if abilityID == "barbed_mantle" && library.Abilities[source.SourceContentID].Type != "offensive" {
+					if !defenseAffordable(battle, library, actorID, abilityID, source.SourceContentID) {
 						continue
 					}
 					actions = append(actions, legalCommand(battle.ID, actorID, command.TypePlanningAbility, command.PlanningAbilityPayload{PendingInputID: pending.ID, Checkpoint: planningCheckpoint(pending), AbilityID: abilityID, TargetIDs: []string{source.ID}}))
@@ -158,6 +179,8 @@ func settledLegalActions(battle *state.Battle, library content.BattleLibrary, ac
 			actions = append(actions, legalCommand(battle.ID, actorID, command.TypePass, command.PassPayload{PendingInputID: pending.ID, Checkpoint: interactionCheckpoint(pending)}))
 		}
 	}
+	actions = append(actions, roundPreventionActions(battle, library, actorID, pending)...)
+	actions = append(actions, curseCardActions(battle, library, actorID, pending)...)
 	actions = append(actions, venomCardActions(battle, library, actorID, pending)...)
 	return actions
 }
@@ -171,7 +194,7 @@ func planningCardActions(battle *state.Battle, library content.BattleLibrary, ac
 	var actions []command.Command
 	for _, instanceID := range actor.Cards.Hand {
 		definition := library.Cards[runtime.CardInstances[instanceID].DefinitionID]
-		if actor.Resources.EnergyPoints < definition.Cost.Energy || !cardPlayableDuring(definition, battle, "planning") {
+		if actor.Resources.EnergyPoints < definition.Cost.Energy || !cardPlayableDuring(definition, battle, "planning", actorID) {
 			continue
 		}
 		base := command.PlanningCardsPayload{PendingInputID: pending.ID, Checkpoint: planningCheckpoint(pending), CardIDs: []string{instanceID}}
@@ -190,10 +213,23 @@ func planningCardActions(battle *state.Battle, library content.BattleLibrary, ac
 			for index := range runtime.FinalDice {
 				payload := base
 				payload.DieIndex = index
-				actions = append(actions, legalCommand(battle.ID, actorID, command.TypePlanningCards, payload))
+				if adjacentDiceCard(definition) {
+					for _, face := range []int{runtime.FinalDice[index].Face - 1, runtime.FinalDice[index].Face + 1} {
+						if face < 1 || face > 5 {
+							continue
+						}
+						payload.StatusID = strconv.Itoa(face)
+						actions = append(actions, legalCommand(battle.ID, actorID, command.TypePlanningCards, payload))
+					}
+				} else {
+					actions = append(actions, legalCommand(battle.ID, actorID, command.TypePlanningCards, payload))
+				}
 			}
 		case "one_owned_offensive_ability":
 			for _, abilityID := range runtime.OffensiveAbilityIDs {
+				if definition.Targeting.RequiresQualified && !containsString(runtime.QualifiedAbilityIDs, abilityID) {
+					continue
+				}
 				payload := base
 				payload.AbilityID = abilityID
 				actions = append(actions, legalCommand(battle.ID, actorID, command.TypePlanningCards, payload))
@@ -209,7 +245,7 @@ func reactionCardActions(battle *state.Battle, library content.BattleLibrary, ac
 	var actions []command.Command
 	for _, instanceID := range actor.Cards.Hand {
 		definition := library.Cards[runtime.CardInstances[instanceID].DefinitionID]
-		if actor.Resources.EnergyPoints < definition.Cost.Energy || (!cardPlayableDuring(definition, battle, "reaction") && !(battle.Settled.Stage == stageVenomStatus && definition.Targeting.Selector == "one_negative_status_on_self")) {
+		if actor.Resources.EnergyPoints < definition.Cost.Energy || (!cardPlayableDuring(definition, battle, "reaction", actorID) && !(battle.Settled.Stage == stageVenomStatus && definition.Targeting.Selector == "one_negative_status_on_self")) {
 			continue
 		}
 		if !reactionSelectorSupported(battle.Settled.Window.Stage, definition.Targeting.Selector) {
@@ -241,6 +277,9 @@ func reactionCardActions(battle *state.Battle, library content.BattleLibrary, ac
 			}
 		case "one_owned_offensive_ability":
 			for _, abilityID := range runtime.OffensiveAbilityIDs {
+				if definition.Targeting.RequiresQualified && !containsString(runtime.QualifiedAbilityIDs, abilityID) {
+					continue
+				}
 				payload := base
 				payload.Commitment.ChoiceID = abilityID
 				actions = append(actions, legalCommand(battle.ID, actorID, command.TypeCommitInteraction, payload))
@@ -346,7 +385,10 @@ func otherActorIDs(battle *state.Battle, actorID string) []string {
 	return result
 }
 
-func cardPlayableDuring(definition content.BattleCardDefinition, battle *state.Battle, purpose string) bool {
+func cardPlayableDuring(definition content.BattleCardDefinition, battle *state.Battle, purpose string, actors ...string) bool {
+	if definition.Play.BeforeFirstRoll && (len(actors) != 1 || battle.Settled == nil || battle.Settled.Actors[actors[0]].RollsUsed != 0) {
+		return false
+	}
 	if battle.Segment.Current == segment.OngoingEffects {
 		return false
 	}

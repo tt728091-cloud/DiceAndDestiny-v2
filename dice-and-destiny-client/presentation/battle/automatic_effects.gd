@@ -16,6 +16,8 @@ var paused := false
 var _pause_started := 0
 var _names: Dictionary
 var _has_conversion := false
+var _grave_triggers: Array[Dictionary] = []
+var _grave_labels: Array[Dictionary] = []
 var visible_actor_ids: Array = ["blade", "goblin"]
 
 func configure(data: Dictionary, names: Dictionary) -> void:
@@ -36,7 +38,19 @@ func configure(data: Dictionary, names: Dictionary) -> void:
 		var actors_entries: Array = []
 		for entry in entries:
 			if entry.actor_id == actor: actors_entries.append(entry)
-		if actors_entries.is_empty(): _label(column, "No damaging effects", 15)
+		var has_grave := false
+		for trigger in _grave_triggers:
+			if str(trigger.actor_id) != str(actor): continue
+			has_grave = true
+			var panel := PanelContainer.new(); column.add_child(panel)
+			panel.add_theme_stylebox_override("panel", preload("res://presentation/battle/cinematic_theme.gd").panel(Color("201526f5"), Color("c38ce5"), 6))
+			var body := VBoxContainer.new(); panel.add_child(body)
+			var cue := _label(body, "⌁ Grave Interest ×1", 20)
+			cue.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+			cue.custom_minimum_size.y = 95
+			groups[str(actor) + ":grave_interest"] = cue
+			_grave_labels.append({"label": cue, "trigger": trigger})
+		if actors_entries.is_empty() and not has_grave: _label(column, "No damaging effects", 15)
 		# Each enemy owns a full-width row. Its toxin groups share that row,
 		# so both enemies' rolls and losses remain on screen together.
 		var group_parent: BoxContainer = column
@@ -50,6 +64,13 @@ func configure(data: Dictionary, names: Dictionary) -> void:
 				var body := VBoxContainer.new(); panel.add_child(body)
 				var count := int(_counts(summary.get("actors_before", {}).get(actor, {})).get(entry.status_id, 0))
 				var status := BattlePresentationCatalog.status(str(entry.status_id)); var title := _label(body, "%s %s ×%d" % [status.glyph, status.name, count], 17); title.tooltip_text = str(status.get("text", ""))
+				if entry.status_id == "curse_count":
+					for step in _array(summary.get("steps", [])):
+						var conversion: Dictionary = step.get("data", {})
+						if step.get("type") == "curse_resolved" and step.get("actor_id") == actor and conversion.get("kind") == "conversion":
+							var detail := _label(body, "%d Count · %d damage · %d retained" % [int(conversion.get("count_before", 0)), int(conversion.get("damage", 0)), int(conversion.get("count_after", 0))], 14)
+							detail.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+							detail.name = "CurseConversion"
 				var row := HBoxContainer.new(); row.alignment = BoxContainer.ALIGNMENT_CENTER; row.add_theme_constant_override("separation", 8); body.add_child(row); groups[key] = row
 			var cell := VBoxContainer.new(); cell.size_flags_horizontal = Control.SIZE_EXPAND_FILL; groups[key].add_child(cell)
 			entry.cell = cell
@@ -98,17 +119,35 @@ func configure(data: Dictionary, names: Dictionary) -> void:
 		var before := _counts(summary.actors_before[actor]); var after := _counts(summary.actors_after.get(actor, {}))
 		if int(before.get("incubation", 0)) > int(after.get("incubation", 0)) and int(after.get("volatile_poison", 0)) > int(before.get("volatile_poison", 0)):
 			_has_conversion = true
-	if entries.is_empty(): duration = 3.0 if _has_conversion else 1.3
+	if entries.is_empty(): duration = 3.0 if _has_conversion or not _grave_triggers.is_empty() else 1.3
+	elif _only_curse_damage():
+		# Conversion is fixed damage, not a roll or a second counter phase.
+		# Finish as soon as the last removed card has dissolved.
+		duration = 5.2
+		for entry in entries: duration = maxf(duration, 5.1 + maxf(0, entry.cards_ui.size() - 1) * 0.08)
 	_started = Time.get_ticks_msec()
 
 func _array(value) -> Array:
 	return value if value is Array else []
 
 func _parse() -> void:
+	# Older saved battles publish the conversion mode but no dedicated trigger.
+	# Explain that outcome too; spending Count on a penalty is not lost damage.
+	var explicit_grave := {}
+	for step in _array(summary.get("steps", [])):
+		if step.get("type") == "curse_resolved" and step.get("data", {}).get("kind") == "grave_interest_trigger": explicit_grave[str(step.get("actor_id", ""))] = true
+	for step in _array(summary.get("steps", [])):
+		var conversion: Dictionary = step.get("data", {})
+		var actor := str(step.get("actor_id", ""))
+		if step.get("type") != "curse_resolved" or conversion.get("kind") != "conversion" or conversion.get("mode") != "grave_interest": continue
+		if explicit_grave.has(actor): continue
+		_grave_triggers.append({"actor_id": actor, "triggered": int(conversion.get("count_before", 0)) >= 3, "legacy": true, "count_before": int(conversion.get("count_before", 0)), "count_after": int(conversion.get("count_after", 0)), "damage": int(conversion.get("damage", 0))})
 	var sources: Array = []; var removals: Array = []; var rolls: Array = []; var catalysts: Array = []
 	var excess_by_actor := {}
 	for step in _array(summary.get("steps", [])):
 		var data: Dictionary = step.get("data", {})
+		if step.get("type") == "curse_resolved" and data.get("kind") == "grave_interest_trigger":
+			var trigger := data.duplicate(true); trigger["actor_id"] = str(step.get("actor_id", "")); _grave_triggers.append(trigger)
 		if step.get("type") == "proposal_batch_committed" and data.has("rolls"): rolls.append_array(_array(data.rolls))
 		if step.get("type") == "dice_rolled" and data.get("source_type") == "catalyst": catalysts.append(data)
 		if step.get("type") == "damage_committed":
@@ -182,9 +221,20 @@ func present_progress() -> void:
 	var elapsed := _visual_timeline(maxf(0.0, playback_elapsed()))
 	var gathering := clampf(1.0 + playback_elapsed() / maxf(0.01, preload("res://presentation/battle/combat_timing.gd").effects_gather()), 0.0, 1.0)
 	for group in groups.values(): group.get_parent().get_parent().modulate.a = gathering
-	_phase.text = ("Rolling effects" if _has_dice() else "Bleed") if elapsed < 1.6 else "Catalyst" if elapsed < 2.9 and _has_catalyst() else "Damage" if elapsed < 4.8 else "Effects settle"
+	for item in _grave_labels:
+		var cue: Label = item.label
+		cue.text = "⌁ Grave Interest ×1"
+		if elapsed >= 0.8:
+			if item.trigger.get("triggered", false):
+				cue.text += "\n3 Curse Count consumed"
+				cue.text += "\n−1 Energy next Income instead of damage" if item.trigger.get("legacy", false) else "\n⌁ Grave Debt ×1 · −1 Energy next Income"
+				if item.trigger.has("count_after"): cue.text += "\n%d → %d Count · %d damage" % [int(item.trigger.count_before), int(item.trigger.count_after), int(item.trigger.get("damage", 0))]
+			else: cue.text += "\nFewer than 3 Curse Count\nExpired · no Energy penalty"
+		cue.modulate = Color.WHITE.lerp(Color("d9a6ff"), sin(clampf((elapsed - 0.8) / 1.2, 0, 1) * PI))
+	_phase.text = ("Rolling effects" if _has_dice() else "Effects activate") if elapsed < 1.6 else "Catalyst" if elapsed < 2.9 and _has_catalyst() else "Damage" if elapsed < 4.8 else "Effects settle"
 	for entry in entries:
 		if not entry.has("die"): continue
+		if entry.status_id == "curse_count": entry.die.text = str(entry.damage)
 		if entry.face > 0:
 			var rolling: bool = elapsed < 0.9 or (entry.catalyst and elapsed >= 2.1 and elapsed < 2.65)
 			entry.die.text = str(1 + int(elapsed * 19) % 6) if rolling else str(entry.original_face if elapsed < 2.1 else entry.face)
@@ -201,7 +251,7 @@ func present_progress() -> void:
 			var reveal := clampf((elapsed - 3.0 - index * 0.12) / 0.4, 0, 1)
 			var dissolve := clampf((elapsed - 4.5 - index * 0.08) / 0.6, 0, 1)
 			card.modulate = Color(1, 1 - dissolve * 0.6, 1 - dissolve * 0.6, reveal * (1 - dissolve))
-		if elapsed > 5.2 and entry.face == 0:
+		if elapsed > 5.2 and entry.face == 0 and entry.status_id != "curse_count":
 			var before := _counts(summary.get("actors_before", {}).get(entry.actor_id, {}))
 			var after := _counts(summary.get("actors_after", {}).get(entry.actor_id, {}))
 			entry.die.text = str(roundi(lerpf(float(before.get(entry.status_id, 0)), float(after.get(entry.status_id, 0)), clampf((elapsed - 5.2) / 0.7, 0, 1))))
@@ -210,13 +260,19 @@ func present_progress() -> void:
 		if elapsed > 5.2 and _clears(entry): entry.die.modulate.a = 1 - clampf((elapsed - 5.2) / 0.65, 0, 1)
 	if playback_elapsed() < 0: _phase.text = "Effects activate"
 	_present_profile_progress(elapsed)
-	if entries.is_empty(): _phase.text = "Effects settle"
+	if entries.is_empty(): _phase.text = "Grave Interest" if not _grave_triggers.is_empty() else "Effects settle"
 
 func _present_profile_progress(elapsed: float) -> void:
-	if entries.is_empty():
-		phase_changed.emit("statuses", clampf(elapsed / 0.7, 0, 1))
+	if _only_curse_damage():
+		# Apply the retained Count once, alongside completion of the card loss.
+		phase_changed.emit("statuses" if elapsed >= duration else "cards", 1.0 if elapsed >= duration else clampf((elapsed - 4.5) / 0.7, 0, 1))
+	elif entries.is_empty():
+		phase_changed.emit("statuses", clampf((elapsed - (0.8 if not _grave_triggers.is_empty() else 0.0)) / 0.7, 0, 1))
 	else:
 		phase_changed.emit("cards" if elapsed < 5.2 else "statuses", clampf((elapsed - (4.5 if elapsed < 5.2 else 5.2)) / 0.7, 0, 1))
+
+func _only_curse_damage() -> bool:
+	return not entries.is_empty() and not _has_conversion and entries.all(func(entry): return entry.status_id == "curse_count" and entry.face == 0)
 
 func catalyst_cue_seconds() -> float:
 	return maxf(0.1, TIMING.seconds("catalyst_cue_seconds", 0.9))

@@ -1,0 +1,41 @@
+{
+  "schema_version": 1,
+  "id": "widen_the_crack",
+  "name": "Widen the Crack",
+  "type": "curse_action",
+  "presentation": {
+    "rules_text": "Choose a partly cursed enemy die and roll it. Resolve existing marks, then choose an adjacent unmarked number to curse. Numbers do not wrap between 1 and 6. No expansion if neither adjacent face is unmarked. Each named Curse card may be played once per player per round.",
+    "art_key": "card_widen_the_crack",
+    "effect_summary": "Roll a cursed die, then curse an adjacent face."
+  },
+  "cost": {
+    "energy": 1
+  },
+  "play": {
+    "source_zones": [
+      "hand"
+    ],
+    "destination": "discard",
+    "playable_during": [
+      {
+        "segment": "offensive",
+        "phase": "main",
+        "window_purpose": "planning"
+      }
+    ]
+  },
+  "targeting": {
+    "selector": "curse_choice",
+    "minimum": 0,
+    "maximum": 1
+  },
+  "reaction_window": {
+    "opens": false
+  },
+  "operations": [
+    {
+      "type": "curse_card",
+      "target": "self"
+    }
+  ]
+}

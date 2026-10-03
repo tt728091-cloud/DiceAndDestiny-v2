@@ -344,11 +344,13 @@ type RollState struct {
 }
 
 type RolledDie struct {
-	Index   int      `json:"index"`
-	DieID   string   `json:"die_id"`
-	Face    int      `json:"face"`
-	Value   int      `json:"value"`
-	Symbols []string `json:"symbols"`
+	OwnedID       string   `json:"owned_id,omitempty"`
+	EffectRetried bool     `json:"effect_retried,omitempty"`
+	Index         int      `json:"index"`
+	DieID         string   `json:"die_id"`
+	Face          int      `json:"face"`
+	Value         int      `json:"value"`
+	Symbols       []string `json:"symbols"`
 }
 
 func NewBattle(id string) (Battle, error) {

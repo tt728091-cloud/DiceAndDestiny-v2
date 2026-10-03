@@ -49,7 +49,7 @@ func TestCollectAccumulatesSourcesAppliesDefenseAndKeepsCounterDamageIndependent
 	}
 }
 
-func TestCardSelectionUsesCombinedDeckDiscardThenHandWithoutMutation(t *testing.T) {
+func TestCardSelectionExhaustsDiscardThenDeckThenHandWithoutMutation(t *testing.T) {
 	battle := testBattle(t, map[string]state.CardZones{
 		"target": {
 			Deck:    []string{"deck-a", "deck-b"},
@@ -65,7 +65,7 @@ func TestCardSelectionUsesCombinedDeckDiscardThenHandWithoutMutation(t *testing.
 	}
 	damage.Recalculate(resolution)
 
-	random := &recordingRandom{values: []int{2, 0, 1, 0, 1}}
+	random := &recordingRandom{values: []int{0, 0, 1, 0, 1}}
 	selected, err := damage.ReconcileCards(&battle, resolution, random)
 	if err != nil {
 		t.Fatalf("ReconcileCards() returned error: %v", err)
@@ -90,10 +90,15 @@ func TestCardSelectionUsesCombinedDeckDiscardThenHandWithoutMutation(t *testing.
 		t.Fatalf("selected zones = %#v, want all four draw/discard before one hand", selected)
 	}
 	if selected[0].CardID != "discard-a" {
-		t.Fatalf("first combined-population selection = %#v, want discard-a from index 2", selected[0])
+		t.Fatalf("first selection = %#v, want discard-a", selected[0])
 	}
-	if len(random.maximums) == 0 || random.maximums[0] != 4 {
-		t.Fatalf("first random population size = %#v, want combined draw+discard size 4", random.maximums)
+	if !reflect.DeepEqual(random.maximums, []int{2, 1, 2, 1, 2}) {
+		t.Fatalf("random pile sizes = %#v, want discard 2/1, deck 2/1, hand 2", random.maximums)
+	}
+	for i, want := range []operation.CardZone{operation.ZoneDiscard, operation.ZoneDiscard, operation.ZoneDeck, operation.ZoneDeck, operation.ZoneHand} {
+		if selected[i].OriginalZone != want {
+			t.Fatalf("selection %d = %s want %s", i, selected[i].OriginalZone, want)
+		}
 	}
 	if !reflect.DeepEqual(selected[0].DamageProposalIDs, []string{"source"}) ||
 		!reflect.DeepEqual(selected[0].SourceActorIDs, []string{"attacker"}) {
@@ -101,7 +106,7 @@ func TestCardSelectionUsesCombinedDeckDiscardThenHandWithoutMutation(t *testing.
 	}
 }
 
-func TestDrawAndDiscardSelectionIsUniformPerCardNotPerZone(t *testing.T) {
+func TestDamageSamplesEveryDiscardCardBeforeDrawing(t *testing.T) {
 	zones := state.CardZones{
 		Deck:    []string{"deck-only"},
 		Discard: []string{"discard-one", "discard-two", "discard-three"},
@@ -110,7 +115,6 @@ func TestDrawAndDiscardSelectionIsUniformPerCardNotPerZone(t *testing.T) {
 		cardID string
 		zone   operation.CardZone
 	}{
-		{cardID: "deck-only", zone: operation.ZoneDeck},
 		{cardID: "discard-one", zone: operation.ZoneDiscard},
 		{cardID: "discard-two", zone: operation.ZoneDiscard},
 		{cardID: "discard-three", zone: operation.ZoneDiscard},
@@ -131,13 +135,13 @@ func TestDrawAndDiscardSelectionIsUniformPerCardNotPerZone(t *testing.T) {
 			if err != nil {
 				t.Fatalf("ReconcileCards() returned error: %v", err)
 			}
-			if !reflect.DeepEqual(random.maximums, []int{4}) {
-				t.Fatalf("random population sizes = %#v, want one four-card population", random.maximums)
+			if !reflect.DeepEqual(random.maximums, []int{3}) {
+				t.Fatalf("random population sizes = %#v, want the three-card discard population", random.maximums)
 			}
 			if len(selected) != 1 ||
 				selected[0].CardID != want.cardID ||
 				selected[0].OriginalZone != want.zone {
-				t.Fatalf("selection at combined index %d = %#v, want %s from %s", index, selected, want.cardID, want.zone)
+				t.Fatalf("selection at discard index %d = %#v, want %s from %s", index, selected, want.cardID, want.zone)
 			}
 		})
 	}
@@ -452,4 +456,42 @@ func (random *recordingRandom) Intn(maxExclusive int) (int, error) {
 	value := random.values[random.next%len(random.values)]
 	random.next++
 	return value % maxExclusive, nil
+}
+
+func TestPreventionMovesSavedCardsToDiscardWithoutHealthLoss(t *testing.T) {
+	for _, zone := range []operation.CardZone{operation.ZoneDeck, operation.ZoneHand, operation.ZoneDiscard} {
+		t.Run(string(zone), func(t *testing.T) {
+			zones := state.CardZones{Removed: []string{"old-loss"}}
+			switch zone {
+			case operation.ZoneDeck:
+				zones.Deck = []string{"saved"}
+			case operation.ZoneHand:
+				zones.Hand = []string{"saved"}
+			case operation.ZoneDiscard:
+				zones.Discard = []string{"saved"}
+			}
+			b := testBattle(t, map[string]state.CardZones{"target": zones})
+			r := &state.DamageResolutionState{SourceProposals: []state.DamageSourceProposal{{ID: "hit", TargetActorID: "target", BaseAmount: 1}}}
+			damage.Recalculate(r)
+			if _, err := damage.ReconcileCards(&b, r, dice.NewSequenceRandomSource(0)); err != nil {
+				t.Fatal(err)
+			}
+			damage.RevealCards(r)
+			if err := damage.ApplyReactions(&b, r, []state.DamageReaction{{Type: state.DamageReactionPreventSource, ProposalID: "hit", Amount: 1}}); err != nil {
+				t.Fatal(err)
+			}
+			for i := 0; i < 2; i++ {
+				if _, err := damage.ReconcileCards(&b, r, dice.NewSequenceRandomSource(0)); err != nil {
+					t.Fatal(err)
+				}
+			}
+			if _, err := damage.Commit(&b, r); err != nil {
+				t.Fatal(err)
+			}
+			a := b.Actors["target"]
+			if a.CurrentHealth() != 1 || len(a.Cards.Deck) != 0 || len(a.Cards.Hand) != 0 || !reflect.DeepEqual(a.Cards.Discard, []string{"saved"}) || !reflect.DeepEqual(a.Cards.Removed, []string{"old-loss"}) || r.CardProposals[0].ReleasedDestination != operation.ZoneDiscard {
+				t.Fatalf("saved card must be discarded exactly once: %+v", a.Cards)
+			}
+		})
+	}
 }

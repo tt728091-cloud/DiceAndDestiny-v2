@@ -1,0 +1,57 @@
+{
+  "schema_version": 1,
+  "id": "funeral_rattle",
+  "name": "Funeral Rattle",
+  "type": "offensive",
+  "presentation": {
+    "rules_text": "2 Skulls + 1 Shroud + 1 Omen. Deal 4 damage, then roll up to 3 distinct randomly selected cursed enemy dice for marks. If the enemy then has at least 6 Curse Count, apply Blind without spending Count. Blind applies at their next normal checkpoint."
+  },
+  "cost": {
+    "energy": 0
+  },
+  "usage": {
+    "maximum_per_segment": 1
+  },
+  "targeting": {
+    "selector": "one_enemy",
+    "minimum": 1,
+    "maximum": 1
+  },
+  "qualification": {
+    "activation_tiers": [
+      {
+        "id": "base",
+        "requirements": {
+          "all": [
+            {
+              "type": "symbol_count",
+              "symbol_id": "curse_skull",
+              "minimum": 2
+            },
+            {
+              "type": "symbol_count",
+              "symbol_id": "curse_shroud",
+              "minimum": 1
+            },
+            {
+              "type": "symbol_count",
+              "symbol_id": "curse_omen",
+              "minimum": 1
+            }
+          ]
+        },
+        "operations": [
+          {
+            "type": "deal_damage",
+            "target": "selected_targets",
+            "amount": 4
+          },
+          {
+            "type": "curse_action",
+            "target": "selected_targets"
+          }
+        ]
+      }
+    ]
+  }
+}

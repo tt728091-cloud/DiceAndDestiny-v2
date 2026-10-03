@@ -62,5 +62,5 @@ func SettledPlanningPrivate(b Battle) bool {
 	if b.Settled == nil || b.Settled.ReactionReplanning {
 		return false
 	}
-	return b.Settled.Stage == "planning" || (b.Settled.Venom != nil && b.Settled.Venom.Resume != nil && b.Settled.Venom.Resume.Stage == "planning")
+	return b.Settled.Stage == "planning" || (b.Settled.Curse != nil && b.Settled.Curse.Resume != nil && b.Settled.Curse.Resume.Stage == "planning") || (b.Settled.Venom != nil && b.Settled.Venom.Resume != nil && b.Settled.Venom.Resume.Stage == "planning")
 }

@@ -48,7 +48,7 @@ func TestMinionAttackTiersAndRoundBonus(t *testing.T) {
 		b.Settled.Actors["enemy"] = runtime
 		ops, ok := resolvedOffensiveOperations(&b, lib, "enemy")
 		if n == 0 {
-			if ok || len(ops) > 0 {
+			if ok || len(ops) > 0 || len(offensiveCardDamageBonuses(&b, lib, "enemy")) != 0 {
 				t.Fatal("zero-target miss must not deal bonus damage")
 			}
 			continue
@@ -63,6 +63,10 @@ func TestMinionAttackTiersAndRoundBonus(t *testing.T) {
 				damage += amount
 			}
 		}
+		feedback := offensiveCardDamageBonuses(&b, lib, "enemy")
+		if len(feedback) != 1 || feedback[0]["card_definition_id"] != "brine_surge" || feedback[0]["before"] != 2*n || feedback[0]["after"] != 2*n+1 {
+			t.Fatalf("incorrect card contribution for %d targets: %+v", n, feedback)
+		}
 		if damage != 2*n+1 {
 			t.Fatalf("%d targets dealt %d", n, damage)
 		}
@@ -76,6 +80,9 @@ func TestMinionAttackTiersAndRoundBonus(t *testing.T) {
 			amount, _ := operationAmount(op, 0)
 			damage += amount
 		}
+	}
+	if len(offensiveCardDamageBonuses(&b, lib, "enemy")) != 0 {
+		t.Fatal("expired card feedback persisted")
 	}
 	if damage != 10 {
 		t.Fatalf("round bonus persisted: %d", damage)

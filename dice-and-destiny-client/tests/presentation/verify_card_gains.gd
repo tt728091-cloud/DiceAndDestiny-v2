@@ -132,7 +132,7 @@ func _check_enemy_burst(base: Dictionary) -> void:
 	_expect(notice._label.text == "+1 Energy · +1 card", "short combined benefit, correct singular card label")
 	var card_bounds: Rect2 = notice._cards[0].get_global_rect()
 	var profile_bounds: Rect2 = screen._actor_profiles.goblin.get_global_rect()
-	_expect(card_bounds.end.x < profile_bounds.position.x and root.get_visible_rect().encloses(card_bounds), "card is beside enemy profile, not over its stats or dice")
+	_expect(not card_bounds.intersects(profile_bounds) and root.get_visible_rect().encloses(card_bounds), "card is beside enemy profile, not over its stats or dice")
 	var dice_bounds: Rect2 = screen._enemy_dice_dock.get_global_rect()
 	_expect(not notice._label.get_global_rect().intersects(dice_bounds), "benefit label does not overlap enemy dice")
 	_expect(notice._destinations.size() == 2, "trails connect to both affected resource values")

@@ -1,0 +1,70 @@
+{
+  "schema_version": 1,
+  "id": "adventurer",
+  "name": "Adventurer",
+  "class": "adventurer",
+  "controller_defaults": {
+    "type": "human"
+  },
+  "resources": {
+    "starting_hand_size": 4,
+    "starting_energy": 2,
+    "hand_limit": 6
+  },
+  "income": {
+    "cards": 1,
+    "energy": 1
+  },
+  "decklist": [
+    {
+      "card_id": "brace",
+      "count": 3
+    },
+    {
+      "card_id": "nudge",
+      "count": 2
+    },
+    {
+      "card_id": "try_again",
+      "count": 2
+    },
+    {
+      "card_id": "strong_swing",
+      "count": 2
+    },
+    {
+      "card_id": "take_stock",
+      "count": 2
+    },
+    {
+      "card_id": "second_wind",
+      "count": 1
+    }
+  ],
+  "dice_loadout": [
+    {
+      "dice_id": "standard_d6",
+      "count": 5
+    }
+  ],
+  "ability_board": {
+    "offensive": [
+      "adventurer_strike",
+      "guarded_strike",
+      "measured_strike",
+      "adventurer_small_straight",
+      "adventurer_large_straight",
+      "decisive_blow"
+    ],
+    "defensive": [
+      "adventurer_guard"
+    ]
+  },
+  "starting_statuses": [],
+  "starting_tokens": [],
+  "roll_preferences": {
+    "status_effects": "automatic",
+    "offensive": "manual",
+    "ability_effects": "manual"
+  }
+}

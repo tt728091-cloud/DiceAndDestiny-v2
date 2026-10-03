@@ -1,0 +1,20 @@
+{
+  "schema_version": 1,
+  "id": "curse_bloom",
+  "name": "Curse Bloom Status",
+  "presentation": {
+    "rules_text": "At your next Curse Count conversion, consume this status. If Curse damage removes health, make 3 Lesser Expand attempts afterward; fully cursed dice Surge instead. No cursed dice means no expansion. New Count waits for the following Effects. Expires after the next Effects. Removing this status prevents its trigger.",
+    "glyph": "\u2301"
+  },
+  "activation_mode": "automatic",
+  "polarity": "negative",
+  "stacking": {
+    "stack_limit": 1,
+    "uncapped": false,
+    "overflow_policy": "reject_additional_stacks"
+  },
+  "lifecycle": {
+    "persistent": true
+  },
+  "triggers": []
+}

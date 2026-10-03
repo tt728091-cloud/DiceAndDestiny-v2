@@ -60,8 +60,8 @@ func _run() -> void:
 				flight.arrived = false
 				flight._process(0)
 				_expect(not flight.arrived and flight.badge.modulate.a > 0, "Catalyst travels before arriving")
-				var endpoint: Vector2 = flight.get_global_transform_with_canvas() * flight._local_center(flight.profile.statuses)
-				_expect(endpoint.distance_to(flight.profile.statuses.get_global_rect().get_center()) < 0.1, "scaled trail lands on the actual status counter")
+				var endpoint: Vector2 = flight.get_global_transform_with_canvas() * flight.destination()
+				_expect(endpoint.distance_to(flight.profile.status_anchor(str(flight.gain.status_id))) < 0.1, "scaled trail lands on the actual status counter")
 		_expect(saw_flight, "visible status flight exists")
 		await _capture("flight-%d" % size.x)
 		await create_timer(1.0).timeout

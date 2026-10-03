@@ -1,0 +1,42 @@
+{
+  "schema_version": 1,
+  "id": "adventurer_small_straight",
+  "name": "Small Straight",
+  "type": "offensive",
+  "presentation": {
+    "rules_text": "Any four consecutive numbers (1-4, 2-5, or 3-6); the fifth die may be anything. Deal 6 damage. Misses without the required straight."
+  },
+  "cost": {
+    "energy": 0
+  },
+  "usage": {
+    "maximum_per_segment": 1
+  },
+  "targeting": {
+    "selector": "one_enemy",
+    "minimum": 1,
+    "maximum": 1
+  },
+  "qualification": {
+    "activation_tiers": [
+      {
+        "id": "straight",
+        "requirements": {
+          "all": [
+            {
+              "type": "number_pattern",
+              "pattern": "small_straight"
+            }
+          ]
+        },
+        "operations": [
+          {
+            "type": "deal_damage",
+            "target": "selected_targets",
+            "amount": 6
+          }
+        ]
+      }
+    ]
+  }
+}

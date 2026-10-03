@@ -1,0 +1,55 @@
+{
+  "schema_version": 1,
+  "id": "guarded_strike",
+  "name": "Guarded Strike",
+  "type": "offensive",
+  "presentation": {
+    "rules_text": "2 Swords + 3 Shields: deal 5 damage and gain 2 Protect (positive status) before defense. During damage reaction, spend all Protect to prevent that much damage from one incoming attack. Unused Protect expires during the next round\u2019s ongoing effects. Faces 1-3 are Swords; 4-5 are Shields. Misses without the required symbols."
+  },
+  "cost": {
+    "energy": 0
+  },
+  "usage": {
+    "maximum_per_segment": 1
+  },
+  "targeting": {
+    "selector": "one_enemy",
+    "minimum": 1,
+    "maximum": 1
+  },
+  "qualification": {
+    "activation_tiers": [
+      {
+        "id": "base",
+        "requirements": {
+          "all": [
+            {
+              "type": "symbol_count",
+              "symbol_id": "sword",
+              "minimum": 2
+            },
+            {
+              "type": "symbol_count",
+              "symbol_id": "shield",
+              "minimum": 3
+            }
+          ]
+        },
+        "operations": [
+          {
+            "type": "deal_damage",
+            "target": "selected_targets",
+            "amount": 5
+          },
+          {
+            "type": "apply_status",
+            "target": "self",
+            "status_id": "protect",
+            "stack_count": 2,
+            "application_timing": "immediate"
+          }
+        ]
+      }
+    ]
+  }
+}

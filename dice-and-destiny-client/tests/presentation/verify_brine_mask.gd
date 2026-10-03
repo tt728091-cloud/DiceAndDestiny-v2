@@ -12,7 +12,8 @@ func _run() -> void:
 		ProjectSettings.set_setting("dice_and_destiny/presentation/" + key, 0.1)
 	var menu := MENU.new(); root.add_child(menu)
 	await process_frame
-	_expect(menu._character_choice.get_selected_metadata() == "venom", "Venom is ready to fight")
+	_expect(menu._character_choice.get_selected_metadata() == "adventurer", "Adventurer is the starter default")
+	menu._character_choice.select(1)
 	_expect(menu._model_choice.get_selected_metadata() == "brine-mask", "minion is selectable in opponent dropdown")
 	menu._model_choice.select(1); menu._update_opponent_description()
 	_expect("trained Blade Warden" in menu._message.text, "description follows opponent selection")

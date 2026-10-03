@@ -16,7 +16,7 @@ func _run() -> void:
 		fixture.events = []; fixture.learned_policy = {}
 		fixture.snapshot.segment = "defensive"; fixture.snapshot.stage = "defense_reaction"
 		var ability := "shedskin" if character == "venom" else "basic_defense"
-		fixture.snapshot.damage_sources = [{"id": "incoming", "source_content_id": "sword_cut", "target_actor_id": "blade", "base_amount": 6}]
+		fixture.snapshot.damage_sources = [{"id": "incoming", "source_content_id": "sword_cut", "source_actor_id": "goblin", "target_actor_id": "blade", "base_amount": 6}]
 		fixture.snapshot.defense_selections = {"blade": {"actor_id": "blade", "ability_id": ability, "source_id": "incoming", "rolled_face": 3, "rolled_faces": [3, 2] if character == "venom" else [3]}}
 		fixture.pending_input = {"blade": {"id": "review", "segment": "defensive", "stage": "defense_reaction", "allowed_commands": ["pass"]}}
 		fixture.legal_actions = [{"battle_id": fixture.snapshot.battle_id, "actor_id": "blade", "type": "pass", "payload": {"pending_input_id": "review"}}]
@@ -51,7 +51,7 @@ func _run() -> void:
 		await process_frame
 		await create_timer(2.8).timeout
 		_expect(fake.commands.is_empty() and screen._view.stage == "defense_reaction", "results stay visible for at least three seconds after resuming")
-		await create_timer(0.6).timeout
+		await create_timer(preload("res://presentation/battle/defense_timing.gd").total_seconds() - 2.8 + 0.5).timeout
 		_expect(fake.commands.size() == 1 and screen._view.stage == "damage_reaction", "automatically advances to damage after review")
 		screen.active_store.clear(); screen.queue_free()
 		await process_frame

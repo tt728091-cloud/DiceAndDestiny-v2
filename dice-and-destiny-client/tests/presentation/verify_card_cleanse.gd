@@ -75,11 +75,11 @@ func _check(actor: String, status: String, after: int = 0) -> void:
 		_expect(root.get_visible_rect().encloses(panel._card.get_global_rect()), "played card fits viewport")
 		var profile_bounds: Rect2 = screen._actor_profiles[actor].get_global_rect()
 		var card_bounds: Rect2 = panel._card.get_global_rect()
-		_expect(card_bounds.end.x < profile_bounds.position.x if actor == "goblin" else card_bounds.position.x > profile_bounds.end.x, "card sits beside its owner profile")
+		_expect(not card_bounds.intersects(profile_bounds), "card leaves compact fighter HUD unobstructed")
 		_expect(card_bounds.position.y < profile_bounds.end.y, "card stays in the upper corner")
 	var profile: ActorProfile = screen._actor_profiles[actor]
 	var ghost := profile.find_child("CleansedStatus", true, false) as Label
-	_expect(ghost != null and ghost.text.contains(status_name + " ×3"), "removed status visible beside its owner")
+	_expect(ghost != null and ghost.text == "3", "removed status visible beside its owner")
 	_expect(profile.statuses.text.contains("Bleed ×1"), "other status stays visible")
 	_expect(fake.commands.is_empty(), "automatic pass waits for card animation")
 	# The scheduler must not cover an opponent card with its next thinking screen.

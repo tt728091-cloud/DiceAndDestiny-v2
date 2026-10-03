@@ -1,11 +1,21 @@
 class_name BattleCard
 extends Button
 
+const STANDARD_SIZE := Vector2(185, 248)
+
 var instance_id := ""
 var definition_id := ""
 var _income_glow: Panel
 var _effect_plaque: PanelContainer
 var _plaque_bottom := 16.0
+var _summary_font_size := 14
+
+## Draw targeting feedback in card-local coordinates so fan rotation, hover
+## lift, pivots and draw-animation scaling all follow the visible paper edge.
+func draw_targeting_outline(canvas: CanvasItem) -> void:
+	canvas.draw_set_transform_matrix(canvas.get_global_transform_with_canvas().affine_inverse() * get_global_transform_with_canvas())
+	canvas.draw_rect(Rect2(Vector2.ZERO, size).grow(-2), Color("e2b2ff"), false, 3, true)
+	canvas.draw_set_transform_matrix(Transform2D.IDENTITY)
 
 func configure(instance: String, definition: String, enabled: bool, pending_removal: bool = false, compact: bool = false, removed: bool = false) -> void:
 	pending_removal = pending_removal or removed
@@ -14,7 +24,7 @@ func configure(instance: String, definition: String, enabled: bool, pending_remo
 	text = "%s  %d✦%s" % [data.name, int(data.cost), "\n× REMOVED" if removed else "\n⚔ PENDING" if pending_removal else ""]
 	clip_text = true
 	tooltip_text = "%s (%s) — %s" % [data.name, instance, data.text]
-	custom_minimum_size = Vector2(132, 144) if pending_removal or compact else Vector2(185, 248)
+	custom_minimum_size = Vector2(132, 144) if pending_removal or compact else STANDARD_SIZE
 	var cinematic := preload("res://presentation/battle/cinematic_theme.gd")
 	for style_name in ["normal", "hover", "pressed", "disabled"]:
 		var border := Color("a38b5c") if enabled else Color("696657")
@@ -27,15 +37,16 @@ func configure(instance: String, definition: String, enabled: bool, pending_remo
 	add_theme_color_override("font_hover_pressed_color", Color.TRANSPARENT)
 	add_theme_color_override("font_focus_color", Color.TRANSPARENT)
 	var illustration := TextureRect.new(); illustration.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	illustration.texture = cinematic.art(cinematic.card_art_index(definition))
+	illustration.texture = preload("res://assets/battle/fighters/curse.png") if data.targeting.get("selector") == "curse_choice" else cinematic.art(cinematic.card_art_index(definition))
+	if not str(data.illustration_path).is_empty() and ResourceLoader.exists(str(data.illustration_path)): illustration.texture = load(str(data.illustration_path))
 	if illustration.texture == null and ResourceLoader.exists(str(data.art)): illustration.texture = load(str(data.art))
 	illustration.expand_mode = TextureRect.EXPAND_IGNORE_SIZE; illustration.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
 	add_child(illustration); illustration.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT); illustration.offset_left = 5; illustration.offset_right = -5; illustration.offset_top = 43; illustration.offset_bottom = -9
 	illustration.modulate = Color.WHITE if enabled else Color("a6aba8")
-	var title := Label.new(); title.text = str(data.name); title.add_theme_font_size_override("font_size", 14 if pending_removal or compact else 16); title.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART; title.vertical_alignment = VERTICAL_ALIGNMENT_CENTER; title.mouse_filter = Control.MOUSE_FILTER_IGNORE; title.add_theme_color_override("font_color", cinematic.INK); title.add_theme_color_override("font_shadow_color", Color.TRANSPARENT)
-	add_child(title); title.set_anchors_and_offsets_preset(Control.PRESET_TOP_WIDE); title.offset_left = 9; title.offset_right = -32; title.offset_top = 3; title.offset_bottom = 41
-	var cost := Label.new(); cost.text = str(int(data.cost)); cost.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER; cost.vertical_alignment = VERTICAL_ALIGNMENT_CENTER; cost.add_theme_font_size_override("font_size", 18); cost.add_theme_stylebox_override("normal", cinematic.panel(Color("204f67"), Color("b6a679"), 2)); cost.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	add_child(cost); cost.set_anchors_and_offsets_preset(Control.PRESET_TOP_RIGHT); cost.offset_left = -33; cost.offset_right = -5; cost.offset_top = 6; cost.offset_bottom = 34
+	var title := Label.new(); title.name = "CardTitle"; title.text = str(data.name); title.add_theme_font_size_override("font_size", 14 if pending_removal or compact else 16); title.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART; title.vertical_alignment = VERTICAL_ALIGNMENT_CENTER; title.mouse_filter = Control.MOUSE_FILTER_IGNORE; title.add_theme_color_override("font_color", cinematic.INK); title.add_theme_color_override("font_shadow_color", Color.TRANSPARENT)
+	add_child(title); title.set_anchors_and_offsets_preset(Control.PRESET_TOP_WIDE); title.offset_left = 39; title.offset_right = -7; title.offset_top = 3; title.offset_bottom = 41
+	var cost := Label.new(); cost.name = "EnergyCost"; cost.text = str(int(data.cost)); cost.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER; cost.vertical_alignment = VERTICAL_ALIGNMENT_CENTER; cost.add_theme_font_size_override("font_size", 18); cost.add_theme_stylebox_override("normal", cinematic.panel(Color("204f67"), Color("b6a679"), 2)); cost.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	add_child(cost); cost.set_anchors_and_offsets_preset(Control.PRESET_TOP_LEFT); cost.offset_left = 5; cost.offset_right = 33; cost.offset_top = 6; cost.offset_bottom = 34
 	_build_effect_plaque(str(data.effect_summary), pending_removal, compact)
 	var state := Label.new(); state.name = "RemovalState"; state.text = "× REMOVED" if removed else "× PENDING REMOVAL" if pending_removal else "✦ PLAY" if enabled else "—"; state.add_theme_font_size_override("font_size", 10 if pending_removal else 12); state.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER; state.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	state.visible = pending_removal; state.add_theme_color_override("font_color", Color("ffb9a0")); state.add_theme_stylebox_override("normal", cinematic.panel(Color("291716e8"), Color.TRANSPARENT, 0))
@@ -63,7 +74,8 @@ func _build_effect_plaque(summary: String, pending_removal: bool, compact: bool)
 	label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	label.add_theme_font_override("font", cinematic.roll_control_font())
-	label.add_theme_font_size_override("font_size", 10 if compact or pending_removal else 14)
+	_summary_font_size = 10 if compact or pending_removal else 14
+	label.add_theme_font_size_override("font_size", _summary_font_size)
 	label.add_theme_color_override("font_color", cinematic.INK)
 	label.add_theme_color_override("font_shadow_color", Color.TRANSPARENT)
 	label.mouse_filter = Control.MOUSE_FILTER_IGNORE; paper.add_child(label)
@@ -74,8 +86,23 @@ func _build_effect_plaque(summary: String, pending_removal: bool, compact: bool)
 func _layout_effect_plaque() -> void:
 	if not is_instance_valid(_effect_plaque): return
 	_effect_plaque.size.x = maxf(60.0, size.x - 24.0)
+	var summary := _effect_plaque.find_child("EffectSummary", true, false) as Label
+	# Measure at the final card width, not a provisional Container width. A
+	# long compact summary may shrink; normal hand cards retain their font.
+	if size.x >= custom_minimum_size.x and size.y >= custom_minimum_size.y:
+		var font := summary.get_theme_font("font")
+		var point_size := _summary_font_size
+		var available := maxf(1, size.y - _plaque_bottom - 43 - 16)
+		while point_size > 8 and _summary_height(summary, font, size.x - 40, point_size) > available:
+			point_size -= 1
+		if summary.get_theme_font_size("font_size") != point_size: summary.add_theme_font_size_override("font_size", point_size)
 	_effect_plaque.size.y = _effect_plaque.get_combined_minimum_size().y
 	_effect_plaque.position = Vector2(12, size.y - _plaque_bottom - _effect_plaque.size.y)
+
+func _summary_height(label: Label, font: Font, width: float, point_size: int) -> float:
+	var measured := font.get_multiline_string_size(label.text, HORIZONTAL_ALIGNMENT_CENTER, width, point_size)
+	var lines := ceili(measured.y / font.get_height(point_size))
+	return measured.y + maxi(0, lines - 1) * label.get_theme_constant("line_spacing")
 
 func prepare_income_draw() -> void:
 	modulate = Color(1, 1, 1, 0)

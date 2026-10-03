@@ -1,0 +1,41 @@
+{
+  "schema_version": 1,
+  "id": "tombs_choice",
+  "name": "Tomb\u2019s Choice",
+  "type": "curse_action",
+  "presentation": {
+    "rules_text": "An enemy with at least one cursed die chooses now: receive 3 Curse Count, or roll all five owned dice for their marks. These extra results cannot be kept or qualify an ability. Each named Curse card may be played once per player per round.",
+    "art_key": "card_tombs_choice",
+    "effect_summary": "Enemy chooses: 3 Count or roll all five dice."
+  },
+  "cost": {
+    "energy": 1
+  },
+  "play": {
+    "source_zones": [
+      "hand"
+    ],
+    "destination": "discard",
+    "playable_during": [
+      {
+        "segment": "offensive",
+        "phase": "main",
+        "window_purpose": "planning"
+      }
+    ]
+  },
+  "targeting": {
+    "selector": "curse_choice",
+    "minimum": 0,
+    "maximum": 1
+  },
+  "reaction_window": {
+    "opens": false
+  },
+  "operations": [
+    {
+      "type": "curse_card",
+      "target": "self"
+    }
+  ]
+}

@@ -36,7 +36,7 @@ func _run() -> void:
 	var menu = BOOTSTRAP.instantiate()
 	root.add_child(menu)
 	await process_frame
-	_expect(menu._character_choice.item_count == 2, "character selector is missing")
+	_expect(menu._character_choice.item_count == 4, "character selector is missing")
 	_expect(menu._seat_choice.item_count == 2, "both human seats are missing")
 	# The retired goblin route remains callable for regression coverage, but is
 	# intentionally absent from the player's learned-opponent selection.

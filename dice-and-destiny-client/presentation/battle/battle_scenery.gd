@@ -48,6 +48,7 @@ func display(layout: BattleEncounterVisual, actors: Dictionary = {}) -> void:
 		fighter.size = Vector2(actor_height * profile.texture.get_width() / profile.texture.get_height(), actor_height)
 		var anchor := profile.ground_anchor
 		if fighter.flip_h: anchor.x = 1.0 - anchor.x
+		fighter.set_meta("ground_anchor", anchor)
 		fighter.position = placement.ground_position - fighter.size * anchor
 	if layout.habitat != null:
 		var shade := ColorRect.new()

@@ -10,15 +10,16 @@ import (
 )
 
 type Result struct {
-	Accepted     bool                             `json:"accepted"`
-	Status       ProgressStatus                   `json:"status,omitempty"`
-	BattleResult state.BattleStatus               `json:"battle_result,omitempty"`
-	Events       []event.Event                    `json:"events,omitempty"`
-	PendingInput map[string]snapshot.PendingInput `json:"pending_input,omitempty"`
-	LegalActions []command.Command                `json:"legal_actions,omitempty"`
-	Snapshot     *snapshot.Battle                 `json:"snapshot,omitempty"`
-	Error        string                           `json:"error,omitempty"`
-	Data         any                              `json:"data,omitempty"`
+	DefensePreviews []DefensePreview                 `json:"defense_previews,omitempty"`
+	Accepted        bool                             `json:"accepted"`
+	Status          ProgressStatus                   `json:"status,omitempty"`
+	BattleResult    state.BattleStatus               `json:"battle_result,omitempty"`
+	Events          []event.Event                    `json:"events,omitempty"`
+	PendingInput    map[string]snapshot.PendingInput `json:"pending_input,omitempty"`
+	LegalActions    []command.Command                `json:"legal_actions,omitempty"`
+	Snapshot        *snapshot.Battle                 `json:"snapshot,omitempty"`
+	Error           string                           `json:"error,omitempty"`
+	Data            any                              `json:"data,omitempty"`
 }
 
 func (e Engine) OpenResult(battle *state.Battle, viewerActorID string) Result {
@@ -153,12 +154,13 @@ func (e Engine) ResultForViewer(
 		}
 	}
 	result := Result{
-		Accepted:     true,
-		Status:       progressed.Status,
-		Events:       event.ForViewer(progressed.Events, viewerActorID),
-		PendingInput: snapshot.PendingInputForViewer(*battle, viewerActorID),
-		LegalActions: e.LegalActions(battle, viewerActorID),
-		Snapshot:     snap,
+		Accepted:        true,
+		Status:          progressed.Status,
+		Events:          event.ForViewer(progressed.Events, viewerActorID),
+		PendingInput:    snapshot.PendingInputForViewer(*battle, viewerActorID),
+		LegalActions:    e.LegalActions(battle, viewerActorID),
+		DefensePreviews: e.defensePreviews(battle, viewerActorID),
+		Snapshot:        snap,
 	}
 	if state.IsTerminalBattleStatus(battle.Status) {
 		result.Status = ProgressBattleComplete

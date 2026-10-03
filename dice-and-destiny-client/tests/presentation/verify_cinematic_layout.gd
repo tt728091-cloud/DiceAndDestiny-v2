@@ -38,9 +38,9 @@ func _run() -> void:
 			_expect(control != null and root.get_visible_rect().encloses(control.get_global_rect()), "%s fits %s" % [id, viewport])
 		var dice_rect: Rect2 = screen._player_dice_dock.get_global_rect()
 		var roll_rect: Rect2 = screen._roll_dock.get_global_rect()
-		_expect(is_equal_approx(dice_rect.position.y, screen._enemy_dice_dock.get_global_rect().position.y), "player and opponent dice share one horizontal baseline")
+		_expect(is_equal_approx(screen._ability_dock.get_parent().position.y + screen._ability_dock.get_parent().size.y, 1055), "abilities anchored to lower left")
 		var ability_rect: Rect2 = screen._ability_dock.get_parent().get_global_rect()
-		_expect(dice_rect.end.y <= roll_rect.position.y and roll_rect.end.y <= ability_rect.position.y, "left dice, roll controls and abilities never overlap: %s / %s / %s" % [dice_rect, roll_rect, ability_rect])
+		_expect(roll_rect.end.y <= dice_rect.position.y and dice_rect.end.y <= ability_rect.position.y, "left dice, roll controls and abilities never overlap: %s / %s / %s" % [dice_rect, roll_rect, ability_rect])
 		_expect(not screen._roll_dock.get_global_rect().intersects(screen._action_footer.get_global_rect()), "roll and skip remain separate click targets")
 		var roll_button := _control(screen, "battle.command.planning_reroll")
 		var skip_button := _control(screen, "battle.command.planning_pass")
@@ -48,8 +48,8 @@ func _run() -> void:
 		for die in screen._player_dice_dock.find_children("*", "Button", true, false):
 			for state in ["normal", "hover", "pressed", "disabled"]:
 				_expect(die.get_theme_stylebox(state).bg_color == Color("242423"), "dice retain uniform black faces in every interaction state")
-		var hand_scroll: ScrollContainer = screen._hand_dock.find_child("HandScroll", true, false)
-		_expect(hand_scroll != null and hand_scroll.get_child(0).get_child_count() == 5, "all hand cards retained")
+		var hand_fan: Control = screen._hand_dock
+		_expect(hand_fan.cards.size() == 5, "all hand cards retained")
 		_expect(screen._ability_dock.find_children("*", "BattleAbilityTile", true, false).size() == 4, "four compact ability tiles retained")
 		_expect(screen.find_children("*", "BattleDiceTray", true, false).size() == 2, "both live dice trays retained")
 		var log_button := _control(screen, "battle.utility.log")
@@ -57,10 +57,11 @@ func _run() -> void:
 		await process_frame; await process_frame
 		var log_panel: Control = screen._utility_panels.log
 		var log_rect := log_panel.get_global_rect()
-		var enemy_rect: Rect2 = screen._enemy_dice_dock.get_global_rect()
+		var enemy_rect: Rect2 = screen._root.get_global_transform_with_canvas() * Rect2(1510, 245, 380, 740)
+		_expect(not screen._root.has_node("EnemyAttackRail"), "unused enemy rail cannot intercept HUD hover")
 		var utilities: Control = screen._root.find_child("BattleUtilities", true, false)
-		_expect(log_panel.visible and is_equal_approx(log_rect.position.x, enemy_rect.position.x) and is_equal_approx(log_rect.size.x, enemy_rect.size.x), "Log opens aligned under enemy dice")
-		_expect(log_rect.position.y > enemy_rect.end.y and log_rect.end.y < utilities.get_global_rect().position.y, "Log leaves gaps below dice and above utility buttons")
+		_expect(log_panel.visible and is_equal_approx(log_rect.position.x, enemy_rect.position.x) and is_equal_approx(log_rect.size.x, enemy_rect.size.x), "Log stays aligned to the independent right utility rail")
+		_expect(log_rect.position.y == enemy_rect.position.y and log_rect.end.y < utilities.get_global_rect().position.y, "Log leaves space above utility buttons")
 		_expect(screen._log.size.y > log_panel.size.y * 0.75, "combat log fills the tall side panel")
 		_expect(not log_rect.intersects(screen._hand_dock.get_global_rect()), "Log leaves hand and center unobstructed")
 		await _click(log_button)
@@ -74,20 +75,19 @@ func _run() -> void:
 		_expect(not screen._utility_panels.settings.is_visible_in_tree(), "Settings closes without a gameplay command")
 		for tile in screen._ability_dock.find_children("*", "BattleAbilityTile", true, false):
 			_expect(screen._ability_dock.get_parent().get_global_rect().encloses(tile.get_global_rect()), "all four ability tiles fit without scrolling")
-		var expected_benefits := {"venom_gland": ["Apply 1" + str(BattlePresentationCatalog.status("poison").glyph) + " · Gain 2 Catalyst"], "fever_spike": ["4 DMG · Provoke 2", "3 DMG · Provoke 1"], "terminal_bite": ["Gain 1 Catalyst · 4 DMG · Provoke 2"]}
 		for tile in screen._ability_dock.find_children("*", "BattleAbilityTile", true, false):
-			if not expected_benefits.has(tile.ability_id): continue
-			var benefits: Array[String] = []
+			_expect(tile._minimal and tile.size.y == 48, "minimal 48px ability row")
 			for label in tile.find_children("*", "Label", true, false):
-				if label.name != "AbilityOutcome": continue
-				benefits.append(label.text)
-				_expect(label.is_visible_in_tree() and tile.get_global_rect().encloses(label.get_global_rect()), "always-visible outcome stays inside " + tile.ability_id)
-				_expect(label.get_minimum_size().x <= label.size.x + 1, "effect text fits without clipping")
-				_expect(label.mouse_filter == Control.MOUSE_FILTER_IGNORE, "summary leaves ability click target intact")
-			_expect(benefits == expected_benefits[tile.ability_id], "all tier outcomes match current rules for " + tile.ability_id)
-			_expect(tile.size.y == 66, "inline outcomes preserve compact tile height")
-			for recipe in tile._offensive_summary.find_children("*", "RichTextLabel", true, false):
-				_expect(tile.get_global_rect().encloses(recipe.get_global_rect()) and recipe.get_content_height() <= recipe.size.y + 1, "requirements remain readable inside tile")
+				if label.name in ["AbilityOutcome", "TierOutcome"]: _expect(not label.is_visible_in_tree(), "rules moved out of live rail")
+			_expect(tile.tooltip_text.contains(BattlePresentationCatalog.ability(tile.ability_id).text), "full rules retained in popup")
+			var info: Button
+			for child in tile.get_children():
+				if child is Button and child.get_meta("battle_utility", false): info = child
+			_expect(info != null, "detail popup remains accessible while ability disabled")
+			await _click(info); await process_frame
+			var dialogs: Array = tile.find_children("*", "AcceptDialog", true, false)
+			_expect(dialogs.size() == 1 and dialogs[0].visible and not dialogs[0].dialog_text.is_empty(), "info click opens full rules")
+			for dialog in dialogs: dialog.hide(); dialog.queue_free()
 		var three := _control(screen, "battle.ability.blade.needlefang.fang_3")
 		var four := _control(screen, "battle.ability.blade.needlefang.fang_4")
 		var five := _control(screen, "battle.ability.blade.needlefang.fang_5")
@@ -108,10 +108,10 @@ func _run() -> void:
 		var original_statuses: String = profile.statuses.text
 		profile.statuses.text = "Poison ×3\nVolatile Poison ×3\nCatalyst ×3\nBleed ×3\nIncubation ×1\nEntangle ×1\nAdditional status\nAdditional status"
 		await process_frame; await process_frame; await process_frame
-		_expect(screen._player_dice_dock.position.y >= screen._player_profile_dock.position.y + screen._player_profile_dock.get_combined_minimum_size().y + 48, "expanded status HUD retains breathing room above dice")
-		_expect(is_equal_approx(screen._roll_dock.position.y - screen._player_dice_dock.position.y, 113), "status growth moves the controls together")
-		_expect(is_equal_approx(screen._player_dice_dock.position.y, screen._enemy_dice_dock.position.y), "status growth preserves dice symmetry")
-		_expect(screen._utility_panels.log.position.y == screen._enemy_dice_dock.position.y + screen._enemy_dice_dock.size.y + 18.0, "log follows dice when statuses grow")
+		_expect(not screen._player_profile_dock.get_global_rect().intersects(screen._hand_dock.get_global_rect()), "expanded status HUD retains breathing room above hand")
+		_expect(is_equal_approx(screen._player_dice_dock.position.y - screen._roll_dock.position.y, 52), "status growth moves the controls together")
+		_expect(screen._player_dice_dock.get_global_rect().position.is_equal_approx(dice_rect.position), "status growth leaves player dice anchored to the ability rail")
+		_expect(screen._utility_panels.log.position.y == 245, "log stays in the utility rail when status HUDs grow")
 		profile.statuses.text = original_statuses
 		await process_frame; await process_frame; await process_frame
 		# Long content must never move the docked action controls or hand.
@@ -123,7 +123,8 @@ func _run() -> void:
 		_expect(screen._action_footer.get_global_rect() == footer_rect, "long results cannot push actions off screen")
 		await _click(three)
 		_expect(fake.commands.size() == 1 and JSON.parse_string(fake.commands[0]).payload.tier_id == "fang_3", "inline tier pointer click submits exactly the chosen tier")
-		# Chosen attacks stay with their owner through reactions, defense and damage.
+		# Chosen attacks and actor HUDs remain readable through each combat phase.
+		screen._selection_morph.clear()
 		screen._view.actors.blade.selected_ability = "needlefang"
 		screen._view.actors.goblin.selected_ability = "sword_cut"
 		screen._view.offensive_reveals = {
@@ -139,19 +140,15 @@ func _run() -> void:
 				screen._view.defense_selections = {"blade": {"ability_id": "shedskin", "source_id": "enemy-attack", "rolled_faces": [1, 4]}, "goblin": {"ability_id": "basic_defense", "source_id": "player-attack", "rolled_faces": [6]}}
 			screen._render()
 			for frame in 5: await process_frame
-			var player_attack: BattleAbilityTile
-			for tile in screen._ability_dock.find_children("*", "BattleAbilityTile", true, false):
-				if tile.ability_id == "needlefang": player_attack = tile
-			var enemy_attack := _control(screen, "battle.outcome.goblin")
-			_expect(player_attack != null and "3 damage" in player_attack.text and "Poison ×2" in player_attack.text, "player attack replaces requirements with outcome during " + stage)
-			_expect(enemy_attack != null and "6 damage" in enemy_attack.text and "Bleed ×1" in enemy_attack.text, "enemy attack shows live prevention during " + stage)
-			_expect(screen._enemy_attack_dock.get_global_rect().position.x >= screen._enemy_dice_dock.get_global_rect().position.x, "enemy attack stays under enemy dice")
-			_expect(screen._center.find_children("*", "BattleAbilityTile", true, false).is_empty(), "attack summaries stay out of center")
-			for label in screen._center.find_children("*", "Label", true, false):
-				_expect(not label.visible or label.text not in ["INCOMING SOURCES", "Defense Selection", "Offensive Reaction"], "duplicate center headings removed")
-			if stage == "defense_selection":
-				await _click(_control(screen, "battle.source.enemy-attack"))
-				_expect(screen._selected_source == "enemy-attack", "side attack source remains selectable")
+			for actor_id in ["blade", "goblin"]:
+				var actor_hud: ActorProfile = screen._actor_profiles[actor_id]
+				_expect(not actor_hud.get_global_rect().intersects(screen._center_scroll.get_global_rect()), "combat results leave fighter HUD visible during " + stage)
+				_expect(not actor_hud.get_global_rect().intersects(screen._hand_dock.get_global_rect()), "hand leaves fighter HUD visible during " + stage)
+				_expect(actor_hud.get_global_rect().encloses(screen.actor_anchor_rect(actor_id, "health")), "health endpoint stays inside owner in " + stage)
+			if stage == "offensive_reaction":
+				_expect(screen._selected_attack("blade").get("ability_id") == "needlefang" and screen._selected_attack("goblin").get("ability_id") == "sword_cut", "revealed attack identities remain unchanged")
+			else:
+				_expect(not screen._combat_columns.is_empty(), "defense and damage retain central attack lanes")
 			if stage == "defense_reaction":
 				for panel in screen._defense_result_panels:
 					_expect(root.get_visible_rect().encloses(panel.get_global_rect()), "side defense results fit viewport")

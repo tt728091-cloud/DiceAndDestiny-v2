@@ -59,8 +59,8 @@ func _draw() -> void:
 	if not is_instance_valid(_target) or _progress < 0.23 or _progress >= 0.70: return
 	var inverse := get_global_transform_with_canvas().affine_inverse()
 	var start := _card.position + Vector2(_card.size.x if _enemy else 0.0, _card.size.y * 0.55)
-	var bounds := _target.get_global_rect()
-	var target := inverse * (bounds.position + Vector2(8, bounds.size.y * 0.5))
+	var bounds := _profile.anchor_rect("status", _status_id)
+	var target := inverse * bounds.get_center()
 	var tip := start.lerp(target, clampf((_progress - 0.23) / 0.20, 0.0, 1.0))
 	var alpha := clampf((0.70 - _progress) / 0.14, 0.0, 1.0)
 	draw_line(start, tip, Color(0.55, 0.94, 0.48, alpha * 0.18), 9.0, true)

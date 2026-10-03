@@ -1,0 +1,41 @@
+{
+  "schema_version": 1,
+  "id": "black_dividend",
+  "name": "Black Dividend",
+  "type": "curse_action",
+  "presentation": {
+    "rules_text": "Apply Black Dividend to the enemy. Through the end of the next Effects, gain 1 Energy from this enemy\u2019s first physical cursed result each round. Maximum 2 Energy total. Each named Curse card may be played once per player per round.",
+    "art_key": "card_black_dividend",
+    "effect_summary": "Apply Black Dividend: first cursed roll each round grants you 1 Energy; max 2."
+  },
+  "cost": {
+    "energy": 0
+  },
+  "play": {
+    "source_zones": [
+      "hand"
+    ],
+    "destination": "discard",
+    "playable_during": [
+      {
+        "segment": "offensive",
+        "phase": "main",
+        "window_purpose": "planning"
+      }
+    ]
+  },
+  "targeting": {
+    "selector": "curse_choice",
+    "minimum": 0,
+    "maximum": 1
+  },
+  "reaction_window": {
+    "opens": false
+  },
+  "operations": [
+    {
+      "type": "curse_card",
+      "target": "self"
+    }
+  ]
+}

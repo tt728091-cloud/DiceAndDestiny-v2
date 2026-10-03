@@ -22,7 +22,7 @@ The script controls:
 - enemy Basic Defense dice
 - Poison dice
 - random damage-card selections
-- random draws and reshuffles
+- random draws from the remaining draw pile (discard never automatically refills it)
 - enemy fallback ability choices
 
 The enemy's scripted Defensive selections intentionally override its default
@@ -138,7 +138,7 @@ Both pass the Basic Defense reaction window.
 ### Damage Resolution
 
 The engine randomly selects the specific cards that are at risk, following the
-deck -> discard -> hand zone priority. It reveals these proposed losses before
+discard -> deck -> hand zone priority. It reveals these proposed losses before
 removing anything:
 
 ```text
@@ -571,7 +571,7 @@ Sharpen Blade's ability modifier is battle-duration only and clears after victor
 - automatic Poison and Bleed triggers
 - status removal by a card
 - fixed trigger batches despite mid-window status removal
-- deck -> discard -> hand damage priority
+- discard -> deck -> hand damage priority
 - overage presentation
 - pending defeat and segment-exit battle completion
 - cleanup of battle-only ability modifiers

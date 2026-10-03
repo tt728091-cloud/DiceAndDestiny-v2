@@ -1,0 +1,20 @@
+{
+  "schema_version": 1,
+  "symbols": [
+    {
+      "id": "curse_skull",
+      "name": "Skull",
+      "glyph": "\u2620"
+    },
+    {
+      "id": "curse_shroud",
+      "name": "Shroud",
+      "glyph": "\u25a7"
+    },
+    {
+      "id": "curse_omen",
+      "name": "Omen",
+      "glyph": "\u2726"
+    }
+  ]
+}

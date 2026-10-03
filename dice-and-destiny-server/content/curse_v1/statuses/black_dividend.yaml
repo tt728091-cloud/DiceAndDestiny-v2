@@ -1,0 +1,14 @@
+{
+  "schema_version": 1,
+  "id": "black_dividend",
+  "name": "Black Dividend Status",
+  "presentation": {
+    "rules_text": "Your first physical cursed result each round grants the caster 1 Energy. Maximum 2 Energy total. Remains after the first reward; consumed after the second. Expires at the end of the next Effects. Removing this status stops its rewards.",
+    "glyph": "⌁"
+  },
+  "activation_mode": "automatic",
+  "polarity": "negative",
+  "stacking": {"stack_limit": 1, "uncapped": false, "overflow_policy": "reject_additional_stacks"},
+  "lifecycle": {"persistent": true},
+  "triggers": []
+}

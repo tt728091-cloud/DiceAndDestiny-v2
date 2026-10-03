@@ -1,0 +1,41 @@
+{
+  "schema_version": 1,
+  "id": "no_safe_keep",
+  "name": "No Safe Keep",
+  "type": "curse_action",
+  "presentation": {
+    "rules_text": "Force a kept, cursed enemy offensive die to reroll. Unkeep it and replace its offensive result. Recheck the owner\u2019s ability selection. Uses that result\u2019s one effect retry; cannot target an already-retried result. Grants no extra ordinary roll attempts. Each named Curse card may be played once per player per round.",
+    "art_key": "card_no_safe_keep",
+    "effect_summary": "Force a kept cursed offensive die to reroll."
+  },
+  "cost": {
+    "energy": 1
+  },
+  "play": {
+    "source_zones": [
+      "hand"
+    ],
+    "destination": "discard",
+    "playable_during": [
+      {
+        "segment": "offensive",
+        "phase": "main",
+        "window_purpose": "reaction"
+      }
+    ]
+  },
+  "targeting": {
+    "selector": "curse_choice",
+    "minimum": 0,
+    "maximum": 1
+  },
+  "reaction_window": {
+    "opens": false
+  },
+  "operations": [
+    {
+      "type": "curse_card",
+      "target": "self"
+    }
+  ]
+}

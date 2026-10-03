@@ -13,21 +13,9 @@ var (
 	ErrMissingCardState = errors.New("missing actor card state")
 )
 
-type DrawOption func(*drawOptions)
-
-type drawOptions struct {
-	discardShuffleSource    ShuffleSource
-	hasDiscardShuffleSource bool
-}
-
-func WithDiscardShuffleSource(source ShuffleSource) DrawOption {
-	return func(options *drawOptions) {
-		options.discardShuffleSource = source
-		options.hasDiscardShuffleSource = true
-	}
-}
-
-func DrawCards(battle *state.Battle, actorID string, count int, opts ...DrawOption) ([]event.Event, error) {
+// DrawCards draws only from the deck. Discard remains health, but is never
+// recycled by ordinary draws; returning it requires an explicit effect.
+func DrawCards(battle *state.Battle, actorID string, count int) ([]event.Event, error) {
 	switch {
 	case battle == nil:
 		return nil, fmt.Errorf("%w: battle is nil", ErrInvalidDraw)
@@ -42,56 +30,17 @@ func DrawCards(battle *state.Battle, actorID string, count int, opts ...DrawOpti
 		return nil, fmt.Errorf("%w: %q", ErrMissingCardState, actorID)
 	}
 
-	options := drawOptions{}
-	for _, opt := range opts {
-		if opt == nil {
-			continue
-		}
-		opt(&options)
-	}
-
 	zones := actor.Cards
-	remaining := count
-	var events []event.Event
+	drawCount := min(count, len(zones.Deck))
 	var drawn []string
-
-	for remaining > 0 {
-		if len(zones.Deck) > 0 {
-			drawCount := remaining
-			if drawCount > len(zones.Deck) {
-				drawCount = len(zones.Deck)
-			}
-
-			drawn = append(drawn, zones.Deck[:drawCount]...)
-			zones.Deck = append([]string(nil), zones.Deck[drawCount:]...)
-			remaining -= drawCount
-			continue
-		}
-
-		if len(zones.Discard) == 0 {
-			break
-		}
-
-		zones.Deck = append([]string(nil), zones.Discard...)
-		if err := ShuffleDeck(zones.Deck, discardShuffleSource(options)); err != nil {
-			return nil, err
-		}
-		zones.Discard = nil
-		events = append(events, event.NewDiscardReshuffled(actorID, len(zones.Deck)))
+	if drawCount > 0 {
+		drawn = append(drawn, zones.Deck[:drawCount]...)
+		zones.Deck = append([]string(nil), zones.Deck[drawCount:]...)
 	}
 
 	zones.Hand = append(zones.Hand, drawn...)
 	actor.Cards = zones
 	battle.Actors[actorID] = actor
 
-	events = append(events, event.NewCardsDrawn(actorID, drawn, remaining > 0))
-	return events, nil
-}
-
-func discardShuffleSource(options drawOptions) ShuffleSource {
-	if options.hasDiscardShuffleSource {
-		return options.discardShuffleSource
-	}
-
-	return NewSeededShuffleSource(1)
+	return []event.Event{event.NewCardsDrawn(actorID, drawn, drawCount < count)}, nil
 }

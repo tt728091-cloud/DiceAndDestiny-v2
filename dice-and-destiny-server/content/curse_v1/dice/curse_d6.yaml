@@ -1,0 +1,33 @@
+{
+  "schema_version": 1,
+  "id": "curse_d6",
+  "name": "Curse D6",
+  "die_type": "combat",
+  "side_count": 6,
+  "faces": [
+    {
+      "number": 1,
+      "symbol": "curse_skull"
+    },
+    {
+      "number": 2,
+      "symbol": "curse_skull"
+    },
+    {
+      "number": 3,
+      "symbol": "curse_skull"
+    },
+    {
+      "number": 4,
+      "symbol": "curse_shroud"
+    },
+    {
+      "number": 5,
+      "symbol": "curse_shroud"
+    },
+    {
+      "number": 6,
+      "symbol": "curse_omen"
+    }
+  ]
+}

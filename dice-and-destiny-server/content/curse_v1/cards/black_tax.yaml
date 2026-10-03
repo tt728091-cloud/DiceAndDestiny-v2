@@ -1,0 +1,41 @@
+{
+  "schema_version": 1,
+  "id": "black_tax",
+  "name": "Black Tax",
+  "type": "curse_action",
+  "presentation": {
+    "rules_text": "Prepare a conversion mode: at the next Effects, spend the first 3 enemy Count on \u22121 card drawn at their next Income, minimum 0, instead of damage. Convert all remaining groups normally. One conversion mode per target. Each named Curse card may be played once per player per round.",
+    "art_key": "card_black_tax",
+    "effect_summary": "Spend first 3 Count on \u22121 card next Income."
+  },
+  "cost": {
+    "energy": 1
+  },
+  "play": {
+    "source_zones": [
+      "hand"
+    ],
+    "destination": "discard",
+    "playable_during": [
+      {
+        "segment": "offensive",
+        "phase": "main",
+        "window_purpose": "planning"
+      }
+    ]
+  },
+  "targeting": {
+    "selector": "curse_choice",
+    "minimum": 0,
+    "maximum": 1
+  },
+  "reaction_window": {
+    "opens": false
+  },
+  "operations": [
+    {
+      "type": "curse_card",
+      "target": "self"
+    }
+  ]
+}

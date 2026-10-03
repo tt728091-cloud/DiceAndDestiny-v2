@@ -18,7 +18,7 @@ import (
 )
 
 func TestAuthorityRunsBladeWardenVsVenomGoblinFullBattle(t *testing.T) {
-	script := &battlerandom.Scripted{Values: []battlerandom.ScriptedValue{
+	script := &ownedSelectionScript{Values: []battlerandom.ScriptedValue{
 		// Opening hands: Blade Warden then Venom Goblin.
 		{Stream: "card_draw", Bound: 20, Value: 8}, {Stream: "card_draw", Bound: 19, Value: 0}, {Stream: "card_draw", Bound: 18, Value: 8}, {Stream: "card_draw", Bound: 17, Value: 5},
 		{Stream: "card_draw", Bound: 12, Value: 4}, {Stream: "card_draw", Bound: 11, Value: 6},
@@ -30,23 +30,23 @@ func TestAuthorityRunsBladeWardenVsVenomGoblinFullBattle(t *testing.T) {
 		// Both Basic Defenses.
 		{Stream: "ai_defense", Bound: 2, Value: 0}, {Stream: "defense_dice", Bound: 6, Value: 1}, {Stream: "defense_dice", Bound: 6, Value: 2},
 		// Round 1 exact damage-card reveals and enemy pass.
-		{Stream: "damage_selection", Bound: 15, Value: 2}, {Stream: "damage_selection", Bound: 9, Value: 0}, {Stream: "damage_selection", Bound: 8, Value: 2}, {Stream: "damage_selection", Bound: 7, Value: 3}, {Stream: "ai_damage_response", Bound: 2, Value: 0},
+		{Stream: "damage_selection", Bound: 1, Value: 0}, {Stream: "damage_selection", Bound: 9, Value: 0}, {Stream: "damage_selection", Bound: 8, Value: 2}, {Stream: "damage_selection", Bound: 7, Value: 3}, {Stream: "ai_damage_response", Bound: 2, Value: 0},
 		// Round 2 Poison dice rolled by the player after Round 1 damage acknowledgment.
 		{Stream: "status_effect_dice", Bound: 6, Value: 1}, {Stream: "status_effect_dice", Bound: 6, Value: 5},
 		// Round 2 Ongoing child damage, Income, AI plan, and player dice.
-		{Stream: "damage_selection", Bound: 14, Value: 9}, {Stream: "damage_selection", Bound: 6, Value: 1},
-		{Stream: "card_draw", Bound: 13, Value: 2}, {Stream: "card_draw", Bound: 5, Value: 2}, {Stream: "ai_d100", Bound: 100, Value: 51},
+		{Stream: "damage_selection", Bound: 15, Value: 10}, {Stream: "damage_selection", Bound: 6, Value: 1},
+		{Stream: "card_draw", Bound: 14, Value: 3}, {Stream: "card_draw", Bound: 5, Value: 2}, {Stream: "ai_d100", Bound: 100, Value: 51},
 		{Stream: "combat_dice", Bound: 6, Value: 0}, {Stream: "combat_dice", Bound: 6, Value: 3}, {Stream: "combat_dice", Bound: 6, Value: 4}, {Stream: "combat_dice", Bound: 6, Value: 5}, {Stream: "combat_dice", Bound: 6, Value: 1},
 		{Stream: "combat_dice", Bound: 6, Value: 0}, {Stream: "combat_dice", Bound: 6, Value: 2}, {Stream: "combat_dice", Bound: 6, Value: 0},
 		{Stream: "ai_defense", Bound: 2, Value: 1}, {Stream: "damage_selection", Bound: 4, Value: 0}, {Stream: "damage_selection", Bound: 3, Value: 1}, {Stream: "ai_damage_response", Bound: 2, Value: 1},
-		// Round 3 Bleed, Income, AI plan, combat and defenses.
-		{Stream: "damage_selection", Bound: 4, Value: 1}, {Stream: "damage_selection", Bound: 3, Value: 0}, {Stream: "card_draw", Bound: 12, Value: 5}, {Stream: "card_draw", Bound: 2, Value: 0}, {Stream: "ai_d100", Bound: 100, Value: 32},
+		// Round 3 Bleed consumes discard first, preserving a deck card for Income.
+		{Stream: "damage_selection", Bound: 3, Value: 1}, {Stream: "damage_selection", Bound: 2, Value: 0}, {Stream: "card_draw", Bound: 13, Value: 6}, {Stream: "card_draw", Bound: 2, Value: 0}, {Stream: "ai_d100", Bound: 100, Value: 32},
 		{Stream: "combat_dice", Bound: 6, Value: 0}, {Stream: "combat_dice", Bound: 6, Value: 2}, {Stream: "combat_dice", Bound: 6, Value: 3}, {Stream: "combat_dice", Bound: 6, Value: 4}, {Stream: "combat_dice", Bound: 6, Value: 5},
 		{Stream: "combat_dice", Bound: 6, Value: 0}, {Stream: "combat_dice", Bound: 6, Value: 1}, {Stream: "combat_dice", Bound: 6, Value: 4}, {Stream: "combat_dice", Bound: 6, Value: 2},
 		{Stream: "ai_defense", Bound: 2, Value: 0}, {Stream: "defense_dice", Bound: 6, Value: 2}, {Stream: "defense_dice", Bound: 6, Value: 3},
-		{Stream: "damage_selection", Bound: 11, Value: 0}, {Stream: "damage_selection", Bound: 10, Value: 6}, {Stream: "damage_selection", Bound: 1, Value: 0}, {Stream: "damage_selection", Bound: 1, Value: 0}, {Stream: "damage_selection", Bound: 4, Value: 1}, {Stream: "ai_damage_response", Bound: 2, Value: 0},
+		{Stream: "damage_selection", Bound: 2, Value: 0}, {Stream: "damage_selection", Bound: 1, Value: 0}, {Stream: "damage_selection", Bound: 1, Value: 0}, {Stream: "damage_selection", Bound: 1, Value: 0}, {Stream: "damage_selection", Bound: 4, Value: 1}, {Stream: "ai_damage_response", Bound: 2, Value: 0},
 		// Round 4 Bleed, Income, AI miss, player dice, enemy defense, final overage.
-		{Stream: "damage_selection", Bound: 3, Value: 1}, {Stream: "damage_selection", Bound: 2, Value: 1}, {Stream: "card_draw", Bound: 9, Value: 6}, {Stream: "ai_d100", Bound: 100, Value: 89},
+		{Stream: "damage_selection", Bound: 3, Value: 1}, {Stream: "damage_selection", Bound: 2, Value: 1}, {Stream: "card_draw", Bound: 12, Value: 6}, {Stream: "ai_d100", Bound: 100, Value: 89},
 		{Stream: "combat_dice", Bound: 6, Value: 0}, {Stream: "combat_dice", Bound: 6, Value: 3}, {Stream: "combat_dice", Bound: 6, Value: 4}, {Stream: "combat_dice", Bound: 6, Value: 5}, {Stream: "combat_dice", Bound: 6, Value: 5},
 		{Stream: "combat_dice", Bound: 6, Value: 0}, {Stream: "combat_dice", Bound: 6, Value: 1}, {Stream: "combat_dice", Bound: 6, Value: 4}, {Stream: "combat_dice", Bound: 6, Value: 2},
 		{Stream: "ai_defense", Bound: 2, Value: 0}, {Stream: "defense_dice", Bound: 6, Value: 0}, {Stream: "damage_selection", Bound: 1, Value: 0}, {Stream: "ai_damage_response", Bound: 2, Value: 0},
@@ -124,7 +124,7 @@ func TestAuthorityRunsBladeWardenVsVenomGoblinFullBattle(t *testing.T) {
 	}
 	result = sendPassFull(t, authority, result)
 	assertFullBattleWait(t, result, "damage_resolution", 1, "damage_reaction")
-	assertDamageDefinitions(t, result, []string{"loaded_die", "tip_it", "emergency_ward", "battle_focus"})
+	assertDamageDefinitions(t, result, []string{"sharpen_blade", "tip_it", "emergency_ward", "battle_focus"})
 	result = sendPassFull(t, authority, result)
 	assertFullBattleWait(t, result, "offensive", 2, "planning")
 	assertEffectsDamageDefinitions(t, result, []string{"battle_focus", "loaded_die"})
@@ -132,7 +132,7 @@ func TestAuthorityRunsBladeWardenVsVenomGoblinFullBattle(t *testing.T) {
 	antidote := cardInHand(t, result.Snapshot.Actors["blade"], "antidote")
 	p := pendingFull(t, result)
 	result = fullBattleSend(t, authority, envelopeFull(result, command.TypePlanningCards, command.PlanningCardsPayload{PendingInputID: p.ID, Checkpoint: planningCheckpointFull(p), CardIDs: []string{antidote}, StatusID: "poison"}))
-	assertZones(t, result, "blade", 12, 4, 2, 2, 2)
+	assertZones(t, result, "blade", 13, 4, 1, 2, 2)
 	assertZones(t, result, "goblin", 4, 4, 0, 4, 3)
 	result = sendPlanningRollFull(t, authority, result)
 	result = sendPlanningKeepFull(t, authority, result, []int{0, 1, 2})
@@ -153,8 +153,8 @@ func TestAuthorityRunsBladeWardenVsVenomGoblinFullBattle(t *testing.T) {
 	}
 	result = sendPassFull(t, authority, result)
 	assertFullBattleWait(t, result, "damage_resolution", 2, "damage_reaction")
-	// Emergency Ward has already paid and moved to discard before this human wait.
-	assertZones(t, result, "goblin", 4, 3, 1, 4, 1)
+	// Emergency Ward and the two damage cards it saved are already in discard.
+	assertZones(t, result, "goblin", 2, 3, 3, 4, 1)
 	for _, removal := range result.Snapshot.SettledDamage.Removals {
 		if removal.Accepted && !removal.Released {
 			t.Fatalf("prevention did not release %#v", removal)
@@ -167,10 +167,10 @@ func TestAuthorityRunsBladeWardenVsVenomGoblinFullBattle(t *testing.T) {
 	if statuses := result.Snapshot.Actors["goblin"].Statuses; len(statuses) != 1 || statuses[0].DefinitionID != "bleed" || statuses[0].Stacks != 1 {
 		t.Fatalf("post-trigger Bleed=%#v, want one stack after two-stack damage and one-stack decay", statuses)
 	}
-	assertEffectsDamageDefinitions(t, result, []string{"emergency_ward", "tip_it"})
+	assertEffectsDamageDefinitions(t, result, []string{"battle_focus", "tip_it"})
 
 	// Round 3: five-Sword Sword Cut, paired bonus, two Basic Defenses, and
-	// deck/discard/hand damage selection in one revealed batch.
+	// discard/deck/hand damage selection in one revealed batch.
 	assertFullBattleWait(t, result, "offensive", 3, "planning")
 	result = sendPlanningRollFull(t, authority, result)
 	result = sendPlanningKeepFull(t, authority, result, []int{0, 1})
@@ -185,11 +185,11 @@ func TestAuthorityRunsBladeWardenVsVenomGoblinFullBattle(t *testing.T) {
 	result = sendRollDiceFull(t, authority, result)
 	result = sendPassFull(t, authority, result)
 	assertFullBattleWait(t, result, "damage_resolution", 3, "damage_reaction")
-	assertDamageDefinitions(t, result, []string{"tip_it", "battle_focus", "battle_focus", "emergency_ward", "loaded_die"})
+	assertDamageDefinitions(t, result, []string{"antidote", "tip_it", "emergency_ward", "battle_focus", "loaded_die"})
 	result = sendPassFull(t, authority, result)
 	assertFullBattleWait(t, result, "offensive", 4, "planning")
-	assertEffectsDamageDefinitions(t, result, []string{"battle_focus", "battle_focus"})
-	assertZones(t, result, "blade", 8, 5, 3, 4, 3)
+	assertEffectsDamageDefinitions(t, result, []string{"battle_focus", "emergency_ward"})
+	assertZones(t, result, "blade", 11, 5, 0, 4, 3)
 	assertZones(t, result, "goblin", 0, 1, 0, 11, 3)
 	result = sendPlanningRollFull(t, authority, result)
 	result = sendPlanningKeepFull(t, authority, result, []int{0, 1})
@@ -212,7 +212,7 @@ func TestAuthorityRunsBladeWardenVsVenomGoblinFullBattle(t *testing.T) {
 	if result.Status != engine.ProgressBattleComplete || result.BattleResult != state.BattleVictory {
 		t.Fatalf("final result=%#v", result)
 	}
-	assertZones(t, result, "blade", 8, 5, 3, 4, 3)
+	assertZones(t, result, "blade", 11, 5, 0, 4, 3)
 	assertZones(t, result, "goblin", 0, 0, 0, 12, 3)
 	if result.Snapshot.CompletedRounds != 4 {
 		t.Fatalf("completed rounds=%d", result.Snapshot.CompletedRounds)

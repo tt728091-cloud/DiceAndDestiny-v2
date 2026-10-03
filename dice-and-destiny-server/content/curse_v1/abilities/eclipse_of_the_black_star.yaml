@@ -1,0 +1,70 @@
+{
+  "schema_version": 1,
+  "id": "eclipse_of_the_black_star",
+  "name": "Eclipse of the Black Star",
+  "type": "offensive",
+  "presentation": {
+    "rules_text": "Large straight (1\u20135 or 2\u20136). Choose a number missing its Curse mark somewhere on the enemy\u2019s dice. Mark that number on every enemy die missing it. If all 30 faces are cursed, roll all five owned dice instead. Deals no damage."
+  },
+  "cost": {
+    "energy": 0
+  },
+  "usage": {
+    "maximum_per_segment": 1
+  },
+  "targeting": {
+    "selector": "one_enemy",
+    "minimum": 1,
+    "maximum": 1
+  },
+  "qualification": {
+    "activation_tiers": [
+      {
+        "id": "low_straight",
+        "requirements": {
+          "all": [
+            {
+              "type": "exact_faces",
+              "faces": [
+                1,
+                2,
+                3,
+                4,
+                5
+              ]
+            }
+          ]
+        },
+        "operations": [
+          {
+            "type": "curse_action",
+            "target": "selected_targets"
+          }
+        ]
+      },
+      {
+        "id": "high_straight",
+        "requirements": {
+          "all": [
+            {
+              "type": "exact_faces",
+              "faces": [
+                2,
+                3,
+                4,
+                5,
+                6
+              ]
+            }
+          ]
+        },
+        "operations": [
+          {
+            "type": "curse_action",
+            "target": "selected_targets"
+          }
+        ]
+      }
+    ]
+  }
+}

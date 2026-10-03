@@ -1,0 +1,41 @@
+{
+  "schema_version": 1,
+  "id": "spiteful_ward",
+  "name": "Spiteful Ward",
+  "type": "curse_action",
+  "presentation": {
+    "rules_text": "Against one incoming enemy Offensive ability, prevent 2 damage. If this card actually prevents at least 1 damage, apply 1 ordinary Curse to that attacker after prevention is finalized. Cannot protect against status or card damage. Each named Curse card may be played once per player per round.",
+    "art_key": "card_spiteful_ward",
+    "effect_summary": "Prevent 2 attack damage; Curse if prevention helps."
+  },
+  "cost": {
+    "energy": 1
+  },
+  "play": {
+    "source_zones": [
+      "hand"
+    ],
+    "destination": "discard",
+    "playable_during": [
+      {
+        "segment": "damage_resolution",
+        "phase": "main",
+        "window_purpose": "reaction"
+      }
+    ]
+  },
+  "targeting": {
+    "selector": "curse_choice",
+    "minimum": 0,
+    "maximum": 1
+  },
+  "reaction_window": {
+    "opens": false
+  },
+  "operations": [
+    {
+      "type": "curse_card",
+      "target": "self"
+    }
+  ]
+}

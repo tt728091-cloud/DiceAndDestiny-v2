@@ -57,7 +57,7 @@ func TestProvokedLethalDamageCancelsOffense(t *testing.T) {
 				applyStatus(&b, lib, "enemy2", "volatile_poison", 1)
 				openSettledWindow(&b, "offense", stage, "planning", []command.Type{command.TypePass, command.TypePlanningCards})
 				e := NewEngine()
-				e.namedRandom = &battlerandom.Scripted{Values: []battlerandom.ScriptedValue{
+				e.namedRandom = &ownedSelectionScript{Values: []battlerandom.ScriptedValue{
 					{Stream: "status_effect_dice", Bound: 6, Value: 0},
 					{Stream: "damage_selection", Bound: health, Value: 0},
 					{Stream: "damage_selection", Bound: health - 1, Value: 0},

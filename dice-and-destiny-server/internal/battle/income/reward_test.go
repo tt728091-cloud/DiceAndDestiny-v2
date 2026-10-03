@@ -174,3 +174,19 @@ func battleWithPlayerCards(cards state.CardZones) state.Battle {
 		},
 	}
 }
+
+func TestIncomeWithEmptyDeckStillGrantsEnergyWithoutRecycling(t *testing.T) {
+	b := battleWithPlayerCards(state.CardZones{Discard: []string{"spent"}})
+	events, err := income.ApplyRewards(&b, []income.Reward{{ActorID: "player", DrawCards: 1, EnergyPoints: 2}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	want := []event.Event{event.NewCardsDrawn("player", nil, true), event.NewEnergyPointsGained("player", 2)}
+	if !reflect.DeepEqual(events, want) {
+		t.Fatalf("events = %#v, want %#v", events, want)
+	}
+	a := b.Actors["player"]
+	if a.Resources.EnergyPoints != 2 || a.CurrentHealth() != 1 || len(a.Cards.Deck) != 0 || len(a.Cards.Hand) != 0 || !reflect.DeepEqual(a.Cards.Discard, []string{"spent"}) {
+		t.Fatalf("income state: %+v", a)
+	}
+}

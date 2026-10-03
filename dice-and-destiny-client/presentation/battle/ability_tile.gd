@@ -4,6 +4,9 @@ extends Button
 var ability_id := ""
 var _upgrade_notice: Label
 var _compact := false
+var _minimal := false
+var _selected_summary := ""
+var _actor: Dictionary = {}
 var _recipe_label: RichTextLabel
 var _offensive_summary: VBoxContainer
 const CINEMATIC := preload("res://presentation/battle/cinematic_theme.gd")
@@ -16,6 +19,7 @@ signal choice_pressed(action: Dictionary)
 func configure_tiers(options: Array[Dictionary], selected_tier: String) -> void:
 	text = ""
 	if is_instance_valid(_recipe_label): _recipe_label.hide()
+	if is_instance_valid(_offensive_summary): _offensive_summary.hide()
 	disabled = true
 	focus_mode = Control.FOCUS_NONE
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -23,7 +27,7 @@ func configure_tiers(options: Array[Dictionary], selected_tier: String) -> void:
 	var any_available := false
 	for option in options: any_available = any_available or bool(option.get("enabled", false))
 	_style_availability(any_available)
-	var content := HBoxContainer.new()
+	var content := HBoxContainer.new(); content.name = "TierControls"
 	add_child(content)
 	content.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	content.offset_left = 12 if _compact else 6; content.offset_right = -32
@@ -44,11 +48,12 @@ func configure_tiers(options: Array[Dictionary], selected_tier: String) -> void:
 		if row.get_child_count() > 0:
 			var slash := Label.new(); slash.text = "/"; slash.add_theme_color_override("font_color", CINEMATIC.INK); row.add_child(slash)
 		var button := Button.new()
-		button.text = str(option.label).get_slice(" ", 0); button.icon = preload("res://assets/battle/wasteland/fang.svg"); button.expand_icon = true; button.custom_minimum_size = Vector2(64, 36); button.add_theme_constant_override("icon_max_width", 22)
+		button.text = str(option.get("button_label", option.label)); button.expand_icon = true; button.custom_minimum_size = Vector2(64, 36); button.add_theme_constant_override("icon_max_width", 22)
+		if option.has("icon"): button.icon = load(str(option.icon))
 		button.add_theme_font_size_override("font_size", 20); button.add_theme_color_override("font_color", CINEMATIC.INK); button.add_theme_color_override("font_hover_color", Color("715216"))
 		for style_name in ["normal", "hover", "pressed", "disabled"]:
 			var style := CINEMATIC.panel(Color.TRANSPARENT if style_name == "disabled" else Color("ffefc980") if style_name == "normal" else Color("fff1c6"), Color.TRANSPARENT if style_name == "disabled" else Color("ad7b29"), 3)
-			style.content_margin_bottom = 20
+			style.content_margin_bottom = 20 + str(option.get("summary", "")).count("\n") * 14
 			button.add_theme_stylebox_override(style_name, style)
 		button.tooltip_text = str(option.text)
 		button.disabled = not bool(option.get("enabled", false))
@@ -60,7 +65,7 @@ func configure_tiers(options: Array[Dictionary], selected_tier: String) -> void:
 		button.pressed.connect(func(): tier_pressed.emit(str(option.id)))
 		row.add_child(button)
 		var outcome := Label.new(); outcome.name = "TierOutcome"
-		outcome.text = "%d DMG +%d%s" % [int(option.get("damage", 0)), int(option.get("poison", 0)), BattlePresentationCatalog.status("poison").glyph]
+		outcome.text = str(option.get("summary", "%d DMG +%d%s" % [int(option.get("damage", 0)), int(option.get("poison", 0)), BattlePresentationCatalog.status("poison").glyph]))
 		outcome.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		outcome.add_theme_font_override("font", CINEMATIC.roll_control_font())
 		outcome.add_theme_font_size_override("font_size", 11)
@@ -69,7 +74,7 @@ func configure_tiers(options: Array[Dictionary], selected_tier: String) -> void:
 		outcome.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		button.add_child(outcome)
 		outcome.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_WIDE)
-		outcome.offset_top = -19; outcome.offset_bottom = -3
+		outcome.offset_top = -19 - outcome.text.count("\n") * 14; outcome.offset_bottom = -3
 	_upgrade_notice = Label.new()
 	_upgrade_notice.name = "UpgradeNotice"
 	_upgrade_notice.position = Vector2(5, -22)
@@ -79,7 +84,7 @@ func configure_tiers(options: Array[Dictionary], selected_tier: String) -> void:
 	_upgrade_notice.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_upgrade_notice.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(_upgrade_notice)
-	custom_minimum_size = Vector2(370, 66) if _compact else content.get_combined_minimum_size() + Vector2(12, 12)
+	custom_minimum_size = Vector2(370, maxf(66, content.get_combined_minimum_size().y + 6)) if _compact else content.get_combined_minimum_size() + Vector2(12, 12)
 
 # All non-Needlefang action variants share an inline row. The ability's rules
 # remain above it; the outer tile cannot accidentally choose a paid alternative.
@@ -92,7 +97,7 @@ func configure_choices(options: Array[Dictionary]) -> void:
 	if ability_id == "shedskin":
 		# Payment is explicit in the two buttons, so don't repeat that line.
 		_recipe_label.text = _recipe_label.text.get_slice("\nOptional:", 0)
-		body_height -= 25
+		body_height -= 23
 	if is_instance_valid(_recipe_label):
 		_recipe_label.anchor_bottom = 0; _recipe_label.offset_bottom = body_height - 5
 	if is_instance_valid(_offensive_summary):
@@ -147,6 +152,7 @@ func show_upgrade(amount: int, elapsed: float) -> void:
 
 func configure(id: String, qualified: bool, selected: bool, enabled: bool, actor: Dictionary = {}) -> void:
 	ability_id = id
+	_actor = actor
 	var data := BattlePresentationCatalog.ability(id, actor)
 	text = "%s\n%s" % [data.name, data.recipe]
 	tooltip_text = "%s — %s" % [data.name, data.text]
@@ -158,7 +164,7 @@ func configure(id: String, qualified: bool, selected: bool, enabled: bool, actor
 func cinematic_compact() -> void:
 	_compact = true
 	custom_minimum_size = Vector2(370, 66)
-	var data := BattlePresentationCatalog.ability(ability_id)
+	var data := BattlePresentationCatalog.ability(ability_id, _actor)
 	var recipe := str(data.recipe).replace("Fang", "✧").replace("Gland", "⚗").replace("Coil", "◉").replace(" / ", "\n")
 	text = "%s   %s" % [data.name, recipe]
 	add_theme_font_size_override("font_size", 17)
@@ -173,8 +179,8 @@ func cinematic_compact() -> void:
 	_recipe_label.text = "[b]%s[/b]   %s" % [data.name, illustrated]
 	_recipe_label.add_theme_color_override("default_color", CINEMATIC.INK if not disabled else Color("4e4b46")); _recipe_label.add_theme_font_size_override("normal_font_size", 18); _recipe_label.add_theme_font_size_override("bold_font_size", 18)
 	add_child(_recipe_label); _recipe_label.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT); _recipe_label.offset_left = 12; _recipe_label.offset_right = -32; _recipe_label.offset_top = 15; _recipe_label.offset_bottom = -5
-	if ability_id in ["shedskin", "barbed_mantle"]: _show_defense_recipe(data)
-	elif ability_id in ["venom_gland", "fever_spike", "terminal_bite"]: _show_offensive_recipe(data)
+	if data.type == "defensive": _show_defense_recipe(data)
+	else: _show_offensive_recipe(data)
 	var info := Button.new(); info.set_meta("battle_utility", true); info.text = "ⓘ"; info.tooltip_text = tooltip_text; info.flat = true; info.add_theme_font_size_override("font_size", 22); info.add_theme_color_override("font_color", CINEMATIC.INK); info.add_theme_color_override("font_hover_color", Color("715216"))
 	for style_name in ["normal", "disabled", "hover", "pressed"]: info.add_theme_stylebox_override(style_name, CINEMATIC.panel(Color("00000000"), Color("00000000"), 0))
 	add_child(info); info.set_anchors_and_offsets_preset(Control.PRESET_TOP_RIGHT); info.offset_left = -29; info.offset_right = -4; info.offset_top = 4; info.offset_bottom = 30
@@ -211,11 +217,19 @@ func show_selected_attack(summary: String) -> void:
 	update_selected_attack_summary(summary)
 	_recipe_label.add_theme_color_override("default_color", CINEMATIC.INK)
 	_recipe_label.offset_top = 10
+	if not _recipe_label.resized.is_connected(_fit_rules): _recipe_label.resized.connect(_fit_rules, CONNECT_DEFERRED)
+	_fit_rules.call_deferred()
 	text = BattlePresentationCatalog.ability(ability_id).name + "\n" + summary
 
 func _show_offensive_recipe(data: Dictionary) -> void:
-	var tiers := BattlePresentationCatalog.offensive_tier_summaries(ability_id)
-	if tiers.is_empty(): return
+	var tiers := BattlePresentationCatalog.offensive_tier_summaries(ability_id, _actor)
+	if tiers.is_empty():
+		_show_rules(data)
+		return
+	if tiers.size() > 1 and tiers.all(func(tier): return tier.summary == tiers[0].summary):
+		var recipes: Array[String] = []
+		for tier in tiers: recipes.append(str(tier.recipe))
+		tiers = [{"id": tiers[0].id, "recipe": " or ".join(recipes), "summary": tiers[0].summary}]
 	_recipe_label.hide()
 	text = str(data.name)
 	_offensive_summary = VBoxContainer.new(); _offensive_summary.name = "OffensiveSummary"
@@ -224,7 +238,8 @@ func _show_offensive_recipe(data: Dictionary) -> void:
 	add_child(_offensive_summary); _offensive_summary.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	_offensive_summary.offset_left = 12; _offensive_summary.offset_right = -32
 	_offensive_summary.offset_top = 4 if tiers.size() > 1 else 10; _offensive_summary.offset_bottom = -4
-	if tiers.size() > 1:
+	var split_title := tiers.size() > 1 or str(data.name).length() + str(tiers[0].recipe).length() > 30
+	if split_title:
 		var title := Label.new(); title.text = str(data.name); title.add_theme_font_size_override("font_size", 18); title.add_theme_color_override("font_color", CINEMATIC.INK if not disabled else Color("4e4b46")); title.add_theme_color_override("font_shadow_color", Color.TRANSPARENT); title.mouse_filter = Control.MOUSE_FILTER_IGNORE; _offensive_summary.add_child(title)
 	var row := HBoxContainer.new(); row.mouse_filter = Control.MOUSE_FILTER_IGNORE; row.add_theme_constant_override("separation", 10); _offensive_summary.add_child(row)
 	for tier in tiers:
@@ -232,29 +247,24 @@ func _show_offensive_recipe(data: Dictionary) -> void:
 		var recipe := RichTextLabel.new(); recipe.bbcode_enabled = true; recipe.fit_content = true; recipe.scroll_active = false; recipe.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		var illustrated := str(tier.recipe)
 		for token in ["Fang", "Gland", "Coil"]: illustrated = illustrated.replace(token, "[img=%d]res://assets/battle/wasteland/%s.svg[/img]" % [16 if tiers.size() > 1 else 23, token.to_lower()])
-		recipe.text = illustrated if tiers.size() > 1 else "[b]%s[/b]   %s" % [data.name, illustrated]
+		recipe.text = illustrated if split_title else "[b]%s[/b]   %s" % [data.name, illustrated]
 		recipe.add_theme_font_size_override("normal_font_size", 14 if tiers.size() > 1 else 18); recipe.add_theme_font_size_override("bold_font_size", 18)
 		recipe.add_theme_color_override("default_color", CINEMATIC.INK if not disabled else Color("4e4b46")); column.add_child(recipe)
 		var outcome := Label.new(); outcome.name = "AbilityOutcome"; outcome.text = str(tier.summary); outcome.set_meta("tier_id", str(tier.id)); outcome.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		outcome.add_theme_font_override("font", CINEMATIC.roll_control_font()); outcome.add_theme_font_size_override("font_size", 11)
-		outcome.add_theme_color_override("font_color", CINEMATIC.INK if not disabled else Color("686257")); outcome.add_theme_color_override("font_shadow_color", Color.TRANSPARENT); column.add_child(outcome)
+		outcome.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		outcome.add_theme_font_override("font", CINEMATIC.roll_control_font()); outcome.add_theme_font_size_override("font_size", 13 if str(tier.summary).length() > 55 else 11)
+		outcome.add_theme_color_override("font_color", CINEMATIC.INK if not disabled else Color("4e4b46")); outcome.add_theme_color_override("font_shadow_color", Color.TRANSPARENT); column.add_child(outcome)
+
+	_offensive_summary.minimum_size_changed.connect(_fit_offensive_summary, CONNECT_DEFERRED)
+	_fit_offensive_summary.call_deferred()
 
 func _show_defense_recipe(data: Dictionary) -> void:
-	var lines: Array[String]
-	if ability_id == "shedskin":
-		lines = ["[b]%s[/b] · 2d6" % data.name,
-			"Each Fang  Prevent 1",
-			"Each Gland  Gain 1 Catalyst",
-			"Any Coil  Apply 1 Incubation",
-			"Optional: pay 1 Catalyst → prevent 2 more"]
-	else:
-		lines = ["[b]%s[/b] · 1d6 · 1 Energy" % data.name,
-			"Fang  Prevent 2 · Apply 1 Poison",
-			"Gland  Prevent 3 · Gain 1 Catalyst",
-			"Coil  Prevent 1 · Apply 1 Incubation",
-			"  if poisoned, no Incubation;",
-			"  otherwise apply 1 Poison"]
-	var summary := "\n".join(lines)
+	var lines: Array[String] = ["[b]%s[/b]" % data.name]
+	lines.append_array(BattlePresentationCatalog.defense_lines(ability_id))
+	_show_rules(data, "\n".join(lines))
+
+func _show_rules(data: Dictionary, summary: String = "") -> void:
+	if summary.is_empty(): summary = "[b]%s[/b]\n%s\n%s" % [data.name, data.recipe, data.text]
 	text = summary.replace("[b]", "").replace("[/b]", "")
 	for token in ["Fang", "Gland", "Coil"]:
 		summary = summary.replace(token, "[img=19]res://assets/battle/wasteland/%s.svg[/img]" % token.to_lower())
@@ -262,9 +272,134 @@ func _show_defense_recipe(data: Dictionary) -> void:
 	_recipe_label.add_theme_font_size_override("normal_font_size", 17)
 	_recipe_label.add_theme_font_size_override("bold_font_size", 18)
 	_recipe_label.offset_top = 9
-	_recipe_label.offset_right = -12
-	custom_minimum_size.y = 18 + lines.size() * 25
+	custom_minimum_size.y = 18 + (summary.count("\n") + 1) * 23
+	_recipe_label.resized.connect(_fit_rules, CONNECT_DEFERRED)
+	_fit_rules.call_deferred()
+
+func _set_body_height(height: float) -> void:
+	var choices := get_node_or_null("AbilityChoices") as GridContainer
+	if choices != null:
+		_recipe_label.offset_bottom = height - 5
+		if is_instance_valid(_offensive_summary): _offensive_summary.offset_bottom = height - 4
+		choices.offset_top = height
+		custom_minimum_size.y = height + ceili(choices.get_child_count() / 3.0) * 53 + 8
+	else: custom_minimum_size.y = height
+
+func _fit_rules() -> void:
+	if _minimal: return
+	if not is_instance_valid(_recipe_label) or not _recipe_label.visible: return
+	_set_body_height(maxf(66, _recipe_label.get_content_height() + _recipe_label.offset_top + 8))
+
+func _fit_offensive_summary() -> void:
+	if _minimal: return
+	if not is_instance_valid(_offensive_summary) or not _offensive_summary.visible: return
+	_set_body_height(maxf(66, _offensive_summary.get_combined_minimum_size().y + _offensive_summary.offset_top + 8))
 
 func update_selected_attack_summary(summary: String) -> void:
+	_selected_summary = summary
+	if _minimal:
+		tooltip_text = "%s\n%s" % [BattlePresentationCatalog.ability(ability_id).name, summary]
+		return
 	_recipe_label.text = "[b]%s · SELECTED[/b]\n%s" % [BattlePresentationCatalog.ability(ability_id).name, summary]
 	text = BattlePresentationCatalog.ability(ability_id).name + "\n" + summary
+
+## Minimal live action rail; detailed inspection and combat results retain their
+## full presentation. Legality and action signals remain on the original buttons.
+func minimal_rail() -> void:
+	_minimal = true
+	var data := BattlePresentationCatalog.ability(ability_id, _actor)
+	tooltip_text = "%s\n%s\n\n%s" % [data.name, data.recipe, data.text]
+	if not _selected_summary.is_empty(): tooltip_text += "\n\nSelected outcome\n" + _selected_summary
+	if is_instance_valid(_recipe_label): _recipe_label.hide()
+	if is_instance_valid(_offensive_summary): _offensive_summary.hide()
+	text = ""
+	var outline := get_node_or_null("AvailableOutline")
+	var available := outline != null
+	if outline != null: remove_child(outline); outline.queue_free()
+	_minimal_styles(self, available)
+	var tier_controls := get_node_or_null("TierControls") as HBoxContainer
+	if tier_controls != null:
+		tier_controls.offset_left = 8; tier_controls.offset_right = -31
+		tier_controls.alignment = BoxContainer.ALIGNMENT_BEGIN
+		tier_controls.add_theme_constant_override("separation", 8)
+		var title := tier_controls.get_child(0) as Label
+		title.text = _short_name(str(data.name)); CINEMATIC.hud_lettering(title, true)
+		title.name = "MinimalTitle"; title.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		var icon := _rail_icon(); tier_controls.add_child(icon); tier_controls.move_child(icon, 0)
+		for button in tier_controls.find_children("*", "Button", true, false):
+			_minimal_styles(button, not button.disabled)
+			button.custom_minimum_size = Vector2(57, 36)
+			if ability_id == "hexbrand":
+				button.text = str(button.get_meta("tier_id")).trim_prefix("skull_")
+				button.icon = preload("res://presentation/battle/battle_icons.gd").texture("curse_count")
+				button.icon_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+				button.add_theme_constant_override("icon_max_width", 20)
+				button.add_theme_color_override("icon_disabled_color", Color("c4bbd0"))
+			var outcome := button.get_node_or_null("TierOutcome")
+			if outcome != null: outcome.hide()
+		for label in tier_controls.find_children("*", "Label", true, false):
+			if label.text == "/": label.hide()
+	else:
+		var row := HBoxContainer.new(); row.name = "MinimalAbility"; row.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		add_child(row); row.set_anchors_and_offsets_preset(Control.PRESET_TOP_WIDE)
+		row.offset_left = 8; row.offset_right = -31; row.offset_top = 4; row.offset_bottom = 44
+		row.add_theme_constant_override("separation", 8); row.add_child(_rail_icon())
+		var title := Label.new(); title.text = _short_name(str(data.name)); title.add_theme_font_size_override("font_size", 18)
+		title.name = "MinimalTitle"; CINEMATIC.hud_lettering(title, true)
+		title.size_flags_horizontal = Control.SIZE_EXPAND_FILL; title.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART; title.mouse_filter = Control.MOUSE_FILTER_IGNORE; row.add_child(title)
+		var recipe := Label.new(); recipe.name = "MinimalRequirement"; recipe.text = _symbol_recipe(str(data.recipe))
+		recipe.add_theme_font_size_override("font_size", 18); recipe.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+		recipe.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+		CINEMATIC.hud_lettering(recipe, true)
+		recipe.mouse_filter = Control.MOUSE_FILTER_IGNORE; row.add_child(recipe)
+	var choices := get_node_or_null("AbilityChoices") as GridContainer
+	custom_minimum_size = Vector2(370, 48)
+	if choices != null:
+		choices.offset_top = 48
+		custom_minimum_size.y += ceili(choices.get_child_count() / 3.0) * 53 + 8
+		for button in choices.get_children(): _minimal_styles(button, not button.disabled)
+	var temporary := BattlePresentationCatalog.temporary_ability_damage(ability_id, _actor)
+	if temporary > 0:
+		var badge := Label.new(); badge.name = "TemporaryDamageBonus"
+		badge.text = "+%d DMG · THIS OFFENSE" % temporary
+		badge.position = Vector2(40, 43); badge.size = Vector2(300, 20)
+		badge.add_theme_font_size_override("font_size", 14); CINEMATIC.hud_lettering(badge, true)
+		badge.add_theme_color_override("font_color", Color("a5edce")); badge.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		add_child(badge); custom_minimum_size.y += 22
+		if tier_controls != null: tier_controls.offset_bottom = -25
+		for button in find_children("*", "Button", true, false):
+			button.tooltip_text += "\n+%d temporary damage. Expires at Offensive Exit, even if unused." % temporary
+	for child in get_children():
+		if child is Button and child.get_meta("battle_utility", false):
+			CINEMATIC.hud_lettering(child)
+			child.add_theme_color_override("font_color", Color("e5d5ae")); child.add_theme_color_override("font_hover_color", Color("ffe7a1"))
+			child.tooltip_text = tooltip_text
+
+func _short_name(full_name: String) -> String:
+	return {"grasp_of_the_sarcophagus": "Grasp", "funeral_rattle": "Rattle", "eclipse_of_the_black_star": "Eclipse"}.get(ability_id, full_name)
+
+func _symbol_recipe(recipe: String) -> String:
+	var known := {"grasp_of_the_sarcophagus": "2 ▧ + 1 ✦", "funeral_rattle": "2 ☠ + ▧ + ✦", "eclipse_of_the_black_star": "1–5 / 2–6"}
+	if known.has(ability_id): return known[ability_id]
+	for id in BattlePresentationCatalog._catalog.get("symbols", {}):
+		var symbol := BattlePresentationCatalog.definition("symbols", str(id))
+		var name := str(symbol.get("name", "")); var glyph := str(symbol.get("glyph", ""))
+		if not name.is_empty() and not glyph.is_empty(): recipe = recipe.replace(name, glyph)
+	return recipe.replace(" / ", "\n")
+
+func _rail_icon() -> TextureRect:
+	var icon := TextureRect.new(); icon.custom_minimum_size = Vector2(25, 28)
+	icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE; icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED; icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var key: String = {"hexbrand": "curse_count", "grasp_of_the_sarcophagus": "grave_debt", "funeral_rattle": "second_knell", "eclipse_of_the_black_star": "blind", "needlefang": "bleed", "venom_gland": "poison", "fever_spike": "catalyst", "terminal_bite": "incubation"}.get(ability_id, "energy")
+	icon.texture = preload("res://presentation/battle/battle_icons.gd").texture(key)
+	return icon
+
+func _minimal_styles(button: Button, available: bool) -> void:
+	CINEMATIC.hud_lettering(button, true)
+	for state in ["normal", "hover", "pressed", "disabled"]:
+		var lit: bool = available and state != "disabled"
+		var fill := Color("ddbd6925") if lit and state in ["hover", "pressed"] else Color("ddbd6910") if lit else Color.TRANSPARENT
+		button.add_theme_stylebox_override(state, CINEMATIC.panel(fill, Color("bfa16c") if lit else Color.TRANSPARENT, 3))
+		button.add_theme_color_override("font_" + state + "_color" if state != "normal" else "font_color", Color("ffe4a0") if lit else Color("c9c0b0"))
+	button.add_theme_color_override("font_hover_pressed_color", Color("ffe4a0"))
+	button.add_theme_color_override("font_focus_color", Color("ffe4a0"))

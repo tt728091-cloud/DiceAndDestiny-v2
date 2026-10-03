@@ -1,0 +1,20 @@
+{
+  "schema_version": 1,
+  "id": "grave_interest",
+  "name": "Grave Interest Status",
+  "presentation": {
+    "rules_text": "At the next Effects, consume the first 3 Curse Count to apply Grave Debt instead of dealing damage. Remaining groups convert normally. Expires at that Effects even with fewer than 3 Count. Only one Curse conversion mode per target.",
+    "glyph": "\u2301"
+  },
+  "activation_mode": "automatic",
+  "polarity": "negative",
+  "stacking": {
+    "stack_limit": 1,
+    "uncapped": false,
+    "overflow_policy": "reject_additional_stacks"
+  },
+  "lifecycle": {
+    "persistent": true
+  },
+  "triggers": []
+}

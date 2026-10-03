@@ -97,9 +97,13 @@ func _event(event: Dictionary) -> void:
 			# Even if a malformed event includes enemy card IDs, never print them.
 			var count := int(event.get("count", event.get("cards", []).size()))
 			_add("%s drew %d card(s)%s" % [_name(actor), count, _draw_names(actor, event.get("cards", []))])
-		"energy_points_gained": _add("%s: Energy now %d" % [_name(actor), int(event.get("energy_points", 0))])
+		"energy_points_gained":
+			_add("%s: Energy now %d" % [_name(actor), int(event.get("energy_points", 0))])
+			if data.get("status_id") == "grave_debt": _add("%s: Grave Debt consumed · %d less Energy this Income" % [_name(actor), int(data.get("energy_prevented", 0))])
 		"discard_reshuffled": _add("%s shuffled their discard into their deck" % _name(actor))
 		"ability_selected": _add("%s selected %s" % [_name(actor), _content("ability", str(data.get("ability_id", event.get("source_id", ""))))])
+		"blind_resolved":
+			_add("%s: Blind rolled %d · %s · Blind consumed" % [_name(actor), int(data.get("face", 0)), "selected ability cancelled" if data.get("cancelled", false) else "attack remains"])
 		"defense_selected":
 			_add("%s defended with %s; rolled %s" % [_name(actor), _content("ability", str(data.get("ability_id", ""))), str(data.get("rolled_faces", [data.get("rolled_face", 0)]))])
 		"dice_rolled":
@@ -109,13 +113,15 @@ func _event(event: Dictionary) -> void:
 			if data.get("source_type") == "catalyst":
 				_add("%s spent 1 Catalyst to reroll %s's %s die: %d → %s" % [_name(str(data.get("holder", ""))), _name(actor), _content("status", str(data.get("status_id", "poison"))), int(data.get("face_before", 0)), _faces(event.get("dice", []))])
 			elif not event.get("dice", []).is_empty(): _add("%s rolled %s" % [_name(actor), _faces(event.dice)])
-			_rolls(data.get("rolls", []))
+			_rolls(_array(data.get("rolls", [])))
 		"interaction_revealed":
 			for owner in data.get("commitments", {}):
 				var selection: Dictionary = data.commitments[owner]
-				_add("%s revealed %s; dice %s" % [_name(owner), _content("ability", str(selection.get("ability_id", ""))), _faces(selection.get("dice", []))])
+				_add("%s revealed %s; dice %s" % [_name(owner), _content("ability", str(selection.get("ability_id", ""))), _faces(_array(selection.get("dice")))])
 				var outcome: Dictionary = selection.get("outcome", {})
 				if outcome.has("base_damage"): _add("%s: %d attack damage" % [_name(owner), int(outcome.base_damage)])
+				for bonus in _array(selection.get("damage_bonuses")):
+					_add("%s: %s adds %d damage to %s (%d → %d)" % [_name(owner), _content("card", str(bonus.card_definition_id)), int(bonus.amount), _content("ability", str(bonus.ability_id)), int(bonus.before), int(bonus.after)])
 		"damage_prevented_or_modified":
 			_add("%s: incoming damage %d → %d" % [_name(actor), int(data.get("damage_before", 0)), int(data.get("damage_after", 0))])
 		"damage_proposed": _add("%s: %d damage pending from %s" % [_name(str(event.get("target_actor_id", ""))), int(event.get("amount", 0)), _content("ability", str(event.get("source_id", "")))])
@@ -129,8 +135,29 @@ func _event(event: Dictionary) -> void:
 			for owner in overage:
 				if int(data.overage[owner]) > 0:
 					_add("%s: %d excess damage; no cards left to remove" % [_name(owner), int(data.overage[owner])])
+		"curse_resolved":
+			match str(data.get("kind", "")):
+				"face_marked": _add("%s: die %s cursed on face %d" % [_name(actor), str(data.get("die_id", "")).get_slice("/", 2), int(data.get("face", 0))])
+				"entombed": _add("%s: die %s Entombed" % [_name(actor), str(data.get("die_id", "")).get_slice("/", 2)])
+				"count":
+					_add("%s: Curse Count → %d%s" % [_name(actor), int(data.get("count", 0)), " · Entombment released" if data.get("released_entombment", false) else ""])
+				"owned_roll": _add("%s: owned die %d rolled %d%s" % [_name(actor), int(data.get("die", {}).get("index", 0)) + 1, int(data.get("die", {}).get("face", 0)), " · cursed" if data.get("cursed", false) else ""])
+				"conversion":
+					if data.get("mode") == "grave_interest" and int(data.get("count_before", 0)) >= 3: _add("%s: Grave Interest spends 3 Count on −1 Energy next Income instead of Curse damage" % _name(actor))
+					_add("%s: %d Curse Count → %d damage; %d Count retained" % [_name(actor), int(data.get("count_before", 0)), int(data.get("damage", 0)), int(data.get("count_after", 0))])
+				"second_knell_trigger": _add("%s: Second Knell consumed · die %d: cursed %d → rerolled %d · Count %d → %d" % [_name(actor), int(data.get("die", {}).get("index", 0)) + 1, int(data.get("die", {}).get("face", 0)), int(data.get("retry_die", {}).get("face", 0)), int(data.get("count_before", 0)), int(data.get("count_after", 0))])
+				"refusal_trigger": _add("%s: Malediction’s Refusal consumed · face %d · %s · Count %d → %d" % [_name(actor), int(data.get("die", {}).get("face", 0)), "cleanse blocked" if data.get("blocked", false) else "cleanse succeeds", int(data.get("count_before", 0)), int(data.get("count_after", 0))])
+				"refusal_expired": _add("%s: Malediction’s Refusal expired at Income without a cleanse attempt" % _name(actor))
+				"second_knell_expired": _add("%s: Second Knell expired without a cursed result" % _name(actor))
+				"grave_interest_trigger": _add("%s: Grave Interest %s" % [_name(actor), "consumes 3 Curse Count → Grave Debt (−1 Energy next Income)" if data.get("triggered", false) else "expires with fewer than 3 Curse Count"])
+				"bloom_trigger": _add("%s: Curse Bloom consumed · %d Curse damage removed health · %d expansion attempts" % [_name(actor), int(data.damage), int(data.attempts)])
+				"bloom_expired": _add("%s: Curse Bloom expired after Effects without a damaging conversion" % _name(actor))
+				"dividend_trigger": _add("%s: Black Dividend · die %d cursed face %d → %s gains 1 Energy (%d → %d) · %s" % [_name(actor), int(data.die.index) + 1, int(data.die.face), _name(str(data.source_actor_id)), int(data.energy_before), int(data.energy_after), "status consumed (2/2)" if data.get("consumed", false) else "remains until next round (1/2)"])
+				"dividend_expired": _add("%s: Black Dividend expired after Effects · %d/2 Energy awarded" % [_name(actor), int(data.rewards)])
+				"dividend": _add("%s: Black Dividend grants 1 Energy" % _name(actor))
+
 		"proposal_batch_committed":
-			_rolls(data.get("rolls", []))
+			_rolls(_array(data.get("rolls", [])))
 			for key in ["status_application", "incubation_application"]:
 				var application: Dictionary = data.get(key, {})
 				if not application.is_empty(): _add_change("%s: %s %d → %d" % [_name(str(application.get("target_actor_id", ""))), _content("status", str(application.get("status_id", "incubation"))), int(application.get("before", 0)), int(application.get("after", 0))])

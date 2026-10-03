@@ -1,0 +1,42 @@
+{
+  "schema_version": 1,
+  "id": "nudge",
+  "name": "Nudge",
+  "type": "planning",
+  "presentation": {
+    "rules_text": "After your first offensive roll, increase or decrease one of your dice by 1. No wrapping. Cannot change a die into a 6. Does not consume a roll attempt.",
+    "effect_summary": "Change one of your dice by +1 or \u22121. No wrapping; cannot create a 6.",
+    "illustration_path": "res://assets/battle/cards/tip_it.png"
+  },
+  "cost": {
+    "energy": 1
+  },
+  "play": {
+    "source_zones": [
+      "hand"
+    ],
+    "destination": "discard",
+    "playable_during": [
+      {
+        "segment": "offensive",
+        "phase": "main",
+        "window_purpose": "planning"
+      }
+    ]
+  },
+  "targeting": {
+    "selector": "one_owned_combat_die",
+    "minimum": 1,
+    "maximum": 1
+  },
+  "reaction_window": {
+    "opens": false
+  },
+  "operations": [
+    {
+      "type": "modify_die",
+      "target": "selected_die",
+      "modification": "adjacent_non_six"
+    }
+  ]
+}

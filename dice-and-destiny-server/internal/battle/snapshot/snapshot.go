@@ -12,6 +12,9 @@ import (
 // Battle is the read-only view returned after events have been applied.
 // It is safe for presentation or future network clients to render from.
 type Battle struct {
+	BlindCheck           map[string]any                  `json:"blind_check,omitempty"`
+	CurseChoice          *state.CurseWork                `json:"curse_choice,omitempty"`
+	CursePreparations    []state.CursePreparation        `json:"curse_preparations,omitempty"`
 	OffensiveReselection bool                            `json:"offensive_reselection,omitempty"`
 	PassHandsOffPriority bool                            `json:"pass_hands_off_priority,omitempty"`
 	PresentationStage    string                          `json:"presentation_stage,omitempty"`
@@ -55,6 +58,7 @@ type ContentCatalog struct {
 }
 
 type Actor struct {
+	OwnedDice             []state.OwnedDie               `json:"owned_dice,omitempty"`
 	TeamID                string                         `json:"team_id,omitempty"`
 	NeedlefangDamageBonus int                            `json:"needlefang_damage_bonus,omitempty"`
 	DefinitionID          string                         `json:"definition_id,omitempty"`
@@ -335,6 +339,13 @@ func fromBattleForViewer(battle state.Battle, viewerActorID string, includeConte
 				snapshotActor.SelectedTargets = copyStrings(runtime.SelectedTargetIDs)
 			}
 		}
+		if battle.Settled != nil && battle.Settled.Curse != nil {
+			for _, die := range battle.Settled.Curse.Dice[id] {
+				d := die
+				d.CursedFaces = append([]int(nil), die.CursedFaces...)
+				snapshotActor.OwnedDice = append(snapshotActor.OwnedDice, d)
+			}
+		}
 		actors[id] = snapshotActor
 	}
 	if len(actors) == 0 {
@@ -356,12 +367,25 @@ func fromBattleForViewer(battle state.Battle, viewerActorID string, includeConte
 		DefensiveProposals: planningProposalsForViewer(battle.DefensiveProposals, viewerActorID),
 		Origin:             originSnapshot(battle.Origin),
 	}
+	if battle.Settled != nil && battle.Settled.PendingBlind != nil {
+		p := battle.Settled.PendingBlind
+		result.BlindCheck = map[string]any{"actor_id": p.ActorID, "status_id": p.StatusID, "die_id": p.DieID, "face": p.Face, "ability_id": battle.Settled.Actors[p.ActorID].SelectedAbilityID}
+	}
 	if battle.Settled != nil && battle.Settled.Venom != nil && battle.Settled.Venom.Active != nil {
 		work := *battle.Settled.Venom.Active
 		work.Rolls = nil
 		result.VenomWork = &work
 		if work.Kind == "application" && battle.Settled.Venom.Resume != nil {
 			result.PresentationStage = battle.Settled.Venom.Resume.Stage
+		}
+	}
+	if battle.Settled != nil && battle.Settled.Curse != nil {
+		c := battle.Settled.Curse
+		result.CursePreparations = append([]state.CursePreparation(nil), c.Preparations...)
+		if c.Active != nil {
+			w := *c.Active
+			w.Options = append([]string(nil), w.Options...)
+			result.CurseChoice = &w
 		}
 	}
 	if includeContentCatalog {

@@ -1,0 +1,47 @@
+{
+  "schema_version": 1,
+  "id": "grasp_of_the_sarcophagus",
+  "name": "Grasp of the Sarcophagus",
+  "type": "offensive",
+  "presentation": {
+    "rules_text": "2 Shroud + 1 Omen. Apply 2 ordinary Curse applications, then choose a cursed, unbound enemy die to Entomb. Maximum 2 Entombed dice per owner. Entombed dice have subset priority and must join ordinary rerolls until they physically roll Curse. Deals no damage."
+  },
+  "cost": {
+    "energy": 0
+  },
+  "usage": {
+    "maximum_per_segment": 1
+  },
+  "targeting": {
+    "selector": "one_enemy",
+    "minimum": 1,
+    "maximum": 1
+  },
+  "qualification": {
+    "activation_tiers": [
+      {
+        "id": "base",
+        "requirements": {
+          "all": [
+            {
+              "type": "symbol_count",
+              "symbol_id": "curse_shroud",
+              "minimum": 2
+            },
+            {
+              "type": "symbol_count",
+              "symbol_id": "curse_omen",
+              "minimum": 1
+            }
+          ]
+        },
+        "operations": [
+          {
+            "type": "curse_action",
+            "target": "selected_targets"
+          }
+        ]
+      }
+    ]
+  }
+}

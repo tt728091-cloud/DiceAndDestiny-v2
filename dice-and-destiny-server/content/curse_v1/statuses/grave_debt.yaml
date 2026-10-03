@@ -1,0 +1,20 @@
+{
+  "schema_version": 1,
+  "id": "grave_debt",
+  "name": "Grave Debt",
+  "presentation": {
+    "rules_text": "At the next Income, gain 1 less Energy (minimum 0), then remove this status. Stack limit 1.",
+    "glyph": "\u2301"
+  },
+  "activation_mode": "automatic",
+  "polarity": "negative",
+  "stacking": {
+    "stack_limit": 1,
+    "uncapped": false,
+    "overflow_policy": "reject_additional_stacks"
+  },
+  "lifecycle": {
+    "persistent": true
+  },
+  "triggers": []
+}

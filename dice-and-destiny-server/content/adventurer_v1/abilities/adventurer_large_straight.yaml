@@ -1,0 +1,42 @@
+{
+  "schema_version": 1,
+  "id": "adventurer_large_straight",
+  "name": "Large Straight",
+  "type": "offensive",
+  "presentation": {
+    "rules_text": "Five consecutive numbers (1-5 or 2-6). Deal 8 damage. Misses without the required straight."
+  },
+  "cost": {
+    "energy": 0
+  },
+  "usage": {
+    "maximum_per_segment": 1
+  },
+  "targeting": {
+    "selector": "one_enemy",
+    "minimum": 1,
+    "maximum": 1
+  },
+  "qualification": {
+    "activation_tiers": [
+      {
+        "id": "straight",
+        "requirements": {
+          "all": [
+            {
+              "type": "number_pattern",
+              "pattern": "large_straight"
+            }
+          ]
+        },
+        "operations": [
+          {
+            "type": "deal_damage",
+            "target": "selected_targets",
+            "amount": 8
+          }
+        ]
+      }
+    ]
+  }
+}

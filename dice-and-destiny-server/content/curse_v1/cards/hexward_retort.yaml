@@ -1,0 +1,41 @@
+{
+  "schema_version": 1,
+  "id": "hexward_retort",
+  "name": "Hexward Retort",
+  "type": "curse_action",
+  "presentation": {
+    "rules_text": "After your defense against an enemy Offensive ability is revealed, apply 1 ordinary Curse to that attacker. Grants no additional prevention. Each named Curse card may be played once per player per round.",
+    "art_key": "card_hexward_retort",
+    "effect_summary": "After defense, apply 1 Curse to the attacker."
+  },
+  "cost": {
+    "energy": 0
+  },
+  "play": {
+    "source_zones": [
+      "hand"
+    ],
+    "destination": "discard",
+    "playable_during": [
+      {
+        "segment": "defensive",
+        "phase": "main",
+        "window_purpose": "reaction"
+      }
+    ]
+  },
+  "targeting": {
+    "selector": "curse_choice",
+    "minimum": 0,
+    "maximum": 1
+  },
+  "reaction_window": {
+    "opens": false
+  },
+  "operations": [
+    {
+      "type": "curse_card",
+      "target": "self"
+    }
+  ]
+}

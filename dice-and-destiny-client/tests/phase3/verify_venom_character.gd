@@ -11,7 +11,7 @@ func _run() -> void:
 	var menu = BOOTSTRAP.instantiate()
 	root.add_child(menu)
 	await process_frame
-	_expect(menu._character_choice.item_count == 2, "two playable characters")
+	_expect(menu._character_choice.item_count == 4, "four playable characters")
 	_expect(menu._model_choice.item_count == 6, "six preserved opponents")
 	menu._character_choice.select(1)
 	_expect(str(menu._character_choice.get_selected_metadata()) == "venom", "Venom selection")

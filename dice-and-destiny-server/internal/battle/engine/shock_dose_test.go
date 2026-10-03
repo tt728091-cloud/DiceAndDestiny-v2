@@ -50,7 +50,7 @@ func TestShockDoseResolvesDuringPlanning(t *testing.T) {
 			window := b.Settled.Window.ID
 			health := b.Actors["enemy"].CurrentHealth()
 			bound := len(b.Actors["enemy"].Cards.Deck)
-			e := Engine{namedRandom: &battlerandom.Scripted{Values: []battlerandom.ScriptedValue{{Stream: "damage_selection", Bound: bound, Value: 0}, {Stream: "damage_selection", Bound: bound - 1, Value: 0}, {Stream: "damage_selection", Bound: bound - 2, Value: 0}}}}
+			e := Engine{namedRandom: &ownedSelectionScript{Values: []battlerandom.ScriptedValue{{Stream: "damage_selection", Bound: bound, Value: 0}, {Stream: "damage_selection", Bound: bound - 1, Value: 0}, {Stream: "damage_selection", Bound: bound - 2, Value: 0}}}}
 			if err := e.playVenomCard(&b, lib, "player", "dose", lib.Cards["shock_dose"], []string{"enemy"}, "spend"); err != nil {
 				t.Fatal(err)
 			}

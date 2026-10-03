@@ -63,9 +63,13 @@ func (assembler *FileParticipantAssembler) AssembleParticipants(
 		if settledErr != nil {
 			return state.BattleSetup{}, settledErr
 		}
+
 		// Minion definitions are an opt-in pack. Keep the frozen learned
 		// opponents' vocabulary byte-for-byte unchanged in existing matchups.
 		for _, requested := range participants {
+			if requested.DefinitionID == "curse" || requested.DefinitionID == "adventurer" {
+				continue
+			}
 			if _, ok := library.Combatants[requested.DefinitionID]; ok {
 				continue
 			}
@@ -73,6 +77,36 @@ func (assembler *FileParticipantAssembler) AssembleParticipants(
 				break
 			}
 			library, catalog, settledErr = assembler.loadMinionContent(library)
+			if settledErr != nil {
+				return state.BattleSetup{}, settledErr
+			}
+			break
+		}
+		for _, requested := range participants {
+			if requested.DefinitionID != "curse" {
+				continue
+			}
+			library = content.BattleLibrary{Symbols: maps.Clone(library.Symbols), Dice: maps.Clone(library.Dice), Cards: maps.Clone(library.Cards), Abilities: maps.Clone(library.Abilities), Statuses: maps.Clone(library.Statuses), Combatants: maps.Clone(library.Combatants)}
+			library, settledErr = content.LoadBattleExtension(library, filepath.Join(assembler.ContentRoot, "curse_v1"))
+			if settledErr != nil {
+				return state.BattleSetup{}, settledErr
+			}
+			catalog, settledErr = json.Marshal(library)
+			if settledErr != nil {
+				return state.BattleSetup{}, settledErr
+			}
+			break
+		}
+		for _, requested := range participants {
+			if requested.DefinitionID != "adventurer" {
+				continue
+			}
+			library = content.BattleLibrary{Symbols: maps.Clone(library.Symbols), Dice: maps.Clone(library.Dice), Cards: maps.Clone(library.Cards), Abilities: maps.Clone(library.Abilities), Statuses: maps.Clone(library.Statuses), Combatants: maps.Clone(library.Combatants)}
+			library, settledErr = content.LoadBattleExtension(library, filepath.Join(assembler.ContentRoot, "adventurer_v1"))
+			if settledErr != nil {
+				return state.BattleSetup{}, settledErr
+			}
+			catalog, settledErr = json.Marshal(library)
 			if settledErr != nil {
 				return state.BattleSetup{}, settledErr
 			}

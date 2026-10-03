@@ -1,0 +1,35 @@
+{
+  "schema_version": 1,
+  "id": "protect",
+  "name": "Protect Status",
+  "presentation": {
+    "rules_text": "Positive status. During damage reaction, spend all Protect to prevent that much damage from one incoming attack. Guarded Strike grants 2 Protect; cap 2. Unused Protect expires automatically during the next round\u2019s ongoing effects. Using it costs no energy. Saved damage cards go to discard and still count as health.",
+    "glyph": "\u25c7"
+  },
+  "activation_mode": "hybrid",
+  "polarity": "positive",
+  "stacking": {
+    "stack_limit": 2,
+    "overflow_policy": "reject_additional_stacks"
+  },
+  "lifecycle": {
+    "persistent": false,
+    "consume_on_play": true
+  },
+  "triggers": [
+    {
+      "id": "protect_expiry",
+      "segment": "ongoing_effects",
+      "phase": "entry",
+      "stage": "collect_statuses",
+      "priority": -1000,
+      "operations": [
+        {
+          "type": "remove_status",
+          "target": "self",
+          "status_id": "protect"
+        }
+      ]
+    }
+  ]
+}

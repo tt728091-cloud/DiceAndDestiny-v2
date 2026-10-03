@@ -138,16 +138,9 @@ func (e Engine) nextVenomWork(b *state.Battle, lib content.BattleLibrary) ([]eve
 		b.Settled.Sequence++
 		batch := &state.SettledTriggerBatch{ID: fmt.Sprintf("provoke-%d", b.Settled.Sequence), Rolls: work.Rolls, Reactable: true}
 		for i := range batch.Rolls {
-			die := lib.Dice[batch.Rolls[i].Die.DieID]
-			n, err := e.namedIntn(b, "status_effect_dice", die.SideCount)
-			if err != nil {
+			if err := e.rollOwnedEffect(b, lib, &batch.Rolls[i], batch.ID, "status_effect_dice", false); err != nil {
 				return nil, err
 			}
-			face := die.Faces[n]
-			batch.Rolls[i].Die.Face = face.Number
-			batch.Rolls[i].Die.Value = face.Number
-			batch.Rolls[i].Die.Symbols = []string{face.Symbol}
-			batch.Rolls[i].Resolved = true
 		}
 		b.Settled.TriggerBatch = batch
 		openStatusEffectReveal(b, true)
@@ -349,16 +342,9 @@ func (e Engine) automaticCatalyst(b *state.Battle, lib content.BattleLibrary) ([
 		removeStatus(b, holder, "catalyst", 1)
 		roll := &batch.Rolls[chosen]
 		previousFace := roll.Die.Face
-		die := lib.Dice[roll.Die.DieID]
-		n, err := e.namedIntn(b, "status_effect_dice", die.SideCount)
-		if err != nil {
+		if err := e.rollOwnedEffect(b, lib, roll, batch.ID, "status_effect_dice", true); err != nil {
 			return nil, false, err
 		}
-		face := die.Faces[n]
-		roll.Die.Face = face.Number
-		roll.Die.Value = face.Number
-		roll.Die.Symbols = []string{face.Symbol}
-		roll.Rerolled = true
 		events = append(events, settledEvent(event.TypeDiceRolled, b, roll.ActorID, map[string]any{
 			"source_type": "catalyst", "holder": holder, "forced": true,
 			"die_index": chosen, "face_before": previousFace, "status_id": roll.SourceContentID,

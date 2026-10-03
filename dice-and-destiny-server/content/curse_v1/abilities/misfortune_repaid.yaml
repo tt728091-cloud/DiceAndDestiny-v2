@@ -1,0 +1,81 @@
+{
+  "schema_version": 1,
+  "id": "misfortune_repaid",
+  "name": "Misfortune Repaid",
+  "type": "defensive",
+  "presentation": {
+    "rules_text": "Pay 1 Energy and roll 2 owned dice. Each Skull prevents 1; each Shroud prevents 2; Omen prevents 0. If either result is Omen, apply 2 Curse Count to the attacker once. If at least 1 damage was prevented, choose one attacker die: seed face 1 if clean, Lesser Expand if partly cursed, or Surge if full."
+  },
+  "cost": {
+    "energy": 1
+  },
+  "usage": {
+    "maximum_per_segment": 1
+  },
+  "selection": {
+    "requires_incoming_proposal": true,
+    "allowed_proposal_types": [
+      "damage_source"
+    ],
+    "target_count": 1
+  },
+  "resolution": {
+    "operations": [
+      {
+        "type": "roll_dice",
+        "id": "misfortune_repaid_roll",
+        "target": "self",
+        "dice_id": "curse_d6",
+        "dice_count": 2,
+        "reaction_window": {
+          "opens": true,
+          "pass_required": true
+        },
+        "outcomes": [
+          {
+            "faces": [
+              1,
+              2,
+              3
+            ],
+            "operations": [
+              {
+                "type": "prevent_damage",
+                "target": "selected_proposal",
+                "amount": 1
+              }
+            ]
+          },
+          {
+            "faces": [
+              4,
+              5
+            ],
+            "operations": [
+              {
+                "type": "prevent_damage",
+                "target": "selected_proposal",
+                "amount": 2
+              }
+            ]
+          },
+          {
+            "faces": [
+              6
+            ],
+            "operations": [
+              {
+                "type": "curse_action",
+                "target": "self"
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "reaction_window": {
+      "opens": true,
+      "pass_required": true
+    }
+  }
+}

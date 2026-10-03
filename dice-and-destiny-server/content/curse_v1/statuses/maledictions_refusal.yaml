@@ -1,0 +1,20 @@
+{
+  "schema_version": 1,
+  "id": "maledictions_refusal",
+  "name": "Malediction\u2019s Refusal Status",
+  "presentation": {
+    "rules_text": "Before the next effect cleanses your Curse Count, consume this status and roll one random owned die. A final cursed result cancels the cleanse; otherwise the cleanse succeeds. Expires at the next Income. Does not affect Count costs, conversion, or face-mark removal.",
+    "glyph": "\u2301"
+  },
+  "activation_mode": "automatic",
+  "polarity": "negative",
+  "stacking": {
+    "stack_limit": 1,
+    "uncapped": false,
+    "overflow_policy": "reject_additional_stacks"
+  },
+  "lifecycle": {
+    "persistent": true
+  },
+  "triggers": []
+}

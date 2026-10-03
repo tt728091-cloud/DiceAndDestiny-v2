@@ -1,0 +1,20 @@
+{
+  "schema_version": 1,
+  "id": "second_knell",
+  "name": "Second Knell Status",
+  "presentation": {
+    "rules_text": "After your next physical cursed result, consume this status and reroll that same die once. Both cursed results add Curse Count; use the final result. Resolves before Catalyst and shares its one-retry limit. Expires after the next Effects.",
+    "glyph": "\u2301"
+  },
+  "activation_mode": "automatic",
+  "polarity": "negative",
+  "stacking": {
+    "stack_limit": 1,
+    "uncapped": false,
+    "overflow_policy": "reject_additional_stacks"
+  },
+  "lifecycle": {
+    "persistent": true
+  },
+  "triggers": []
+}

@@ -1,0 +1,93 @@
+{
+  "schema_version": 1,
+  "id": "hexbrand",
+  "name": "Hexbrand",
+  "type": "offensive",
+  "presentation": {
+    "rules_text": "3 / 4 / 5 Skulls: deal 3 / 4 / 5 damage, then apply 1 / 2 / 3 ordinary Curse applications. Choose any qualified tier. Applications resolve sequentially after damage, even if all damage is prevented. Each Curse: choose a random clean die and mark face 1. Once all five dice are cursed, roll an eligible owned die and mark its result. An already cursed result adds Count but no new mark."
+  },
+  "cost": {
+    "energy": 0
+  },
+  "usage": {
+    "maximum_per_segment": 1
+  },
+  "targeting": {
+    "selector": "one_enemy",
+    "minimum": 1,
+    "maximum": 1
+  },
+  "qualification": {
+    "activation_tiers": [
+      {
+        "id": "skull_5",
+        "requirements": {
+          "all": [
+            {
+              "type": "symbol_count",
+              "symbol_id": "curse_skull",
+              "minimum": 5
+            }
+          ]
+        },
+        "operations": [
+          {
+            "type": "deal_damage",
+            "target": "selected_targets",
+            "amount": 5
+          },
+          {
+            "type": "curse_action",
+            "target": "selected_targets"
+          }
+        ]
+      },
+      {
+        "id": "skull_4",
+        "requirements": {
+          "all": [
+            {
+              "type": "symbol_count",
+              "symbol_id": "curse_skull",
+              "minimum": 4
+            }
+          ]
+        },
+        "operations": [
+          {
+            "type": "deal_damage",
+            "target": "selected_targets",
+            "amount": 4
+          },
+          {
+            "type": "curse_action",
+            "target": "selected_targets"
+          }
+        ]
+      },
+      {
+        "id": "skull_3",
+        "requirements": {
+          "all": [
+            {
+              "type": "symbol_count",
+              "symbol_id": "curse_skull",
+              "minimum": 3
+            }
+          ]
+        },
+        "operations": [
+          {
+            "type": "deal_damage",
+            "target": "selected_targets",
+            "amount": 3
+          },
+          {
+            "type": "curse_action",
+            "target": "selected_targets"
+          }
+        ]
+      }
+    ]
+  }
+}

@@ -41,10 +41,10 @@ func _run() -> void:
 	_expect(panel.damage.text == "3", "animation starts at three incoming damage")
 	_expect(panel.block.text == "PREVENT 3" and panel.is_visible_in_tree(), "block feedback is visible")
 	var found_die := false
-	for button in panel.find_children("*", "Button", true, false):
+	for button in panel.roll_area.find_children("*", "Button", true, false):
 		if button.get_meta("inspection_id", "") == "battle.defense_die.goblin":
 			found_die = true
-	_expect(found_die, "enemy defense die has a stable slot while rolling")
+	_expect(found_die, "enemy defense die exists on the battlefield while rolling")
 	await create_timer(1.5).timeout
 	_expect(fake.commands.is_empty() and panel.damage.text == "0", "damage animates to zero before any handoff")
 	_expect(root.get_visible_rect().encloses(panel.get_global_rect()), "result panel remains inside viewport")

@@ -3,6 +3,22 @@ extends RefCounted
 const GOLD := Color("a6987e")
 const INK := Color("211e19")
 const IVORY := Color("e9e1d1")
+const HUD_IVORY := Color("fff3d9")
+
+## Local ink keylines keep floating HUD lettering readable over scenery.
+## Apply to foreground controls only; parchment text keeps its own treatment.
+static func hud_lettering(control: Control, bold: bool = false) -> void:
+	control.add_theme_color_override("font_color", HUD_IVORY)
+	control.add_theme_color_override("font_outline_color", Color("100e13"))
+	control.add_theme_constant_override("outline_size", 6)
+	control.add_theme_color_override("font_shadow_color", Color("09080ce6"))
+	control.add_theme_constant_override("shadow_offset_x", 0)
+	control.add_theme_constant_override("shadow_offset_y", 2)
+	if bold:
+		var font := SystemFont.new()
+		font.font_names = PackedStringArray(["Georgia", "Noto Serif", "DejaVu Serif", "serif"])
+		font.font_weight = 700
+		control.add_theme_font_override("font", font)
 
 static func panel(fill: Color = Color("171714ed"), edge: Color = Color("756446"), padding: int = 12) -> StyleBoxFlat:
 	var style := StyleBoxFlat.new()

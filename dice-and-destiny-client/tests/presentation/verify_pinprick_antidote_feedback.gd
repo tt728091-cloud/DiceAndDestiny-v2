@@ -40,7 +40,7 @@ func _run() -> void:
 	for frame in 4: await process_frame
 	_expect(screen._director.peek().get("type") == "card_cleanse", "opponent response immediately presents Antidote without player input")
 	var ghost := screen._actor_profiles.goblin.find_child("CleansedStatus", true, false) as Label
-	_expect(ghost != null and "Poison ×2" in ghost.text, "original two Poison stay visible for cleanse animation")
+	_expect(ghost != null and ghost.text == "2", "original two Poison stay visible for cleanse animation")
 	await create_timer(1.6).timeout
 	_expect(fake.commands.is_empty(), "Pinprick waits until Antidote is shown")
 	var capture := OS.get_environment("DICE_AND_DESTINY_PINPRICK_SCREENSHOT")

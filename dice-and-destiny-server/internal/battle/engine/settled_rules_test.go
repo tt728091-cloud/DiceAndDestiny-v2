@@ -159,7 +159,7 @@ func TestBlindConsumesWithoutAbilityAndCompletesReactableRollWithAbility(t *test
 		runtime.SelectedAbilityID = "sword_cut"
 		battle.Settled.Actors["player"] = runtime
 		battle.Settled.OffensiveSources = []state.SettledDamageSource{{ID: "source", SourceActorID: "player"}}
-		script := &battlerandom.Scripted{Values: []battlerandom.ScriptedValue{{Stream: "effect_dice", Bound: 6, Value: 0}}}
+		script := &ownedSelectionScript{Values: []battlerandom.ScriptedValue{{Stream: "effect_dice", Bound: 6, Value: 0}}}
 		eng, err := NewEngineWithConfig(Config{NamedRandom: script}, DefaultFlows()...)
 		if err != nil {
 			t.Fatal(err)
@@ -194,7 +194,7 @@ func TestOngoingEffectsAutomaticallyRollAndPublishResults(t *testing.T) {
 	enemy := battle.Actors["enemy"]
 	enemy.Statuses = []state.StatusState{{InstanceID: "enemy-poison", DefinitionID: "poison", Stacks: 1}}
 	battle.Actors["enemy"] = enemy
-	script := &battlerandom.Scripted{Values: []battlerandom.ScriptedValue{
+	script := &ownedSelectionScript{Values: []battlerandom.ScriptedValue{
 		{Stream: "status_effect_dice", Bound: 6, Value: 5}, // Enemy rolls automatically.
 		{Stream: "status_effect_dice", Bound: 6, Value: 1}, // Player clicks once to roll its batch.
 		{Stream: "status_effect_dice", Bound: 6, Value: 3},
@@ -242,7 +242,7 @@ func TestAIDamageResponsePassesWhenEmergencyWardIsUnavailable(t *testing.T) {
 			ID: "removal-1", TargetActorID: "enemy", CardID: "enemy-card", Accepted: true,
 		}},
 	}
-	script := &battlerandom.Scripted{Values: []battlerandom.ScriptedValue{{
+	script := &ownedSelectionScript{Values: []battlerandom.ScriptedValue{{
 		Stream: "ai_damage_response", Bound: 2, Value: 1,
 	}}}
 	eng, err := NewEngineWithConfig(Config{NamedRandom: script}, DefaultFlows()...)
@@ -281,7 +281,7 @@ func TestAIDamageResponsePassesWhenEmergencyWardIsUnaffordable(t *testing.T) {
 			ID: "removal-1", TargetActorID: "enemy", CardID: "enemy-ward", Accepted: true,
 		}},
 	}
-	script := &battlerandom.Scripted{Values: []battlerandom.ScriptedValue{{
+	script := &ownedSelectionScript{Values: []battlerandom.ScriptedValue{{
 		Stream: "ai_damage_response", Bound: 2, Value: 1,
 	}}}
 	eng, err := NewEngineWithConfig(Config{NamedRandom: script}, DefaultFlows()...)
@@ -370,7 +370,7 @@ func TestAIDefenseFallsBackToAffordableAbility(t *testing.T) {
 	enemyRuntime.DefensiveAbilityIDs = []string{"basic_defense", "protect"}
 	battle.Settled.Actors["enemy"] = enemyRuntime
 	battle.Settled.OffensiveSources = []state.SettledDamageSource{{ID: "player-source", SourceActorID: "player", TargetActorID: "enemy", BaseAmount: 5}}
-	script := &battlerandom.Scripted{Values: []battlerandom.ScriptedValue{{Stream: "ai_defense", Bound: 2, Value: 1}}}
+	script := &ownedSelectionScript{Values: []battlerandom.ScriptedValue{{Stream: "ai_defense", Bound: 2, Value: 1}}}
 	engine := Engine{namedRandom: script}
 
 	if err := engine.selectAIDefenses(&battle, library); err != nil {
@@ -403,7 +403,7 @@ func settledStatusBattle(t *testing.T, library content.BattleLibrary, statusID s
 	if statusID != "" {
 		statuses = []state.StatusState{{InstanceID: "status-1", DefinitionID: statusID, Stacks: stacks}}
 	}
-	battle, err := state.NewBattleFromSetup("status-test", state.BattleSetup{Actors: []state.ActorSetup{{ID: "player", ControllerType: state.ControllerHuman, Statuses: statuses}, {ID: "enemy", ControllerType: state.ControllerAI}}, SettledCatalog: catalog, SettledActors: map[string]state.SettledActorRuntime{"player": {MaxRolls: 3}, "enemy": {MaxRolls: 3}}})
+	battle, err := state.NewBattleFromSetup("status-test", state.BattleSetup{Actors: []state.ActorSetup{{ID: "player", DiceLoadout: []state.DiceLoadoutEntry{{DiceID: "standard_d6", Count: 5}}, ControllerType: state.ControllerHuman, Statuses: statuses}, {ID: "enemy", DiceLoadout: []state.DiceLoadoutEntry{{DiceID: "standard_d6", Count: 5}}, ControllerType: state.ControllerAI}}, SettledCatalog: catalog, SettledActors: map[string]state.SettledActorRuntime{"player": {MaxRolls: 3}, "enemy": {MaxRolls: 3}}})
 	if err != nil {
 		t.Fatal(err)
 	}

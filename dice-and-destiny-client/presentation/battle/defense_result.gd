@@ -8,6 +8,8 @@ var data: Dictionary
 var started_ms: int
 var damage: Label
 var block: Label
+var attack_origin: Control
+var effect_origin: Label
 var gain_origins: Array[Label] = []
 const TIMING := preload("res://presentation/battle/defense_timing.gd")
 var dice_controls: Array[Button] = []
@@ -26,12 +28,14 @@ func configure(result: Dictionary, start: int, compact: bool = false) -> void:
 	_body = VBoxContainer.new(); _body.add_theme_constant_override("separation", 4 if compact else 10); add_child(_body)
 	if not compact: _label(str(data.actor_name).to_upper(), 16, Color("a7cbd6"))
 	var attack := Button.new(); attack.text = str(data.attack_name) + " → " + str(data.actor_name); attack.flat = true; attack.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART; attack.disabled = bool(data.read_only); attack.pressed.connect(func(): source_selected.emit(str(data.source_id))); attack.set_meta("inspection_id", "battle.source." + str(data.source_id)); _body.add_child(attack); attack.set_meta("flow_part", "attack")
+	attack_origin = attack
 	damage = _label(str(data.before), 32 if compact else 46, Color("ffd19a")); damage.set_meta("flow_part", "damage"); damage.set_meta("inspection_id", "battle.defense_damage." + str(data.actor_id))
 	_label("DAMAGE INCOMING", 12, Color("96a6b5")).set_meta("flow_part", "damage_caption")
 	var block_area := Control.new(); block_area.custom_minimum_size.y = 28 if compact else 40; _body.add_child(block_area); block_area.set_meta("flow_part", "prevention")
 	block = Label.new(); block.text = "PREVENT %d" % int(data.prevented) if int(data.prevented) > 0 else ""; block.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER; block.add_theme_font_size_override("font_size", 23); block.add_theme_color_override("font_color", Color("81e2e9")); block_area.add_child(block); block.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	var attack_statuses := _label(str(data.attack_statuses), 15, Color("c4a8ef")); attack_statuses.set_meta("flow_part", "statuses"); attack_statuses.custom_minimum_size.y = 0 if compact else 22
 	var title := _label(str(data.ability_name), 18 if compact else 20); title.tooltip_text = str(data.rules); title.set_meta("flow_part", "defense")
+	effect_origin = title
 	var dice := HBoxContainer.new(); dice.alignment = BoxContainer.ALIGNMENT_CENTER; dice.add_theme_constant_override("separation", 12); _body.add_child(dice); dice.set_meta("flow_part", "dice")
 	for index in data.dice.size():
 		var face: Dictionary = data.dice[index]
@@ -50,7 +54,9 @@ func configure(result: Dictionary, start: int, compact: bool = false) -> void:
 		var caption := _label("+%d %s %s" % [int(gain.amount), status.glyph, status.name], 20, Color("b8e889"))
 		caption.tooltip_text = "Pending until defense responses finish."
 		gain_origins.append(caption)
-	if not str(data.note).is_empty(): _label(str(data.note), 14, Color("a3b5c2")).set_meta("flow_part", "note")
+	if not str(data.note).is_empty():
+		effect_origin = _label(str(data.note), 14, Color("a3b5c2"))
+		effect_origin.set_meta("flow_part", "note")
 	if bool(data.get("selection_only", false)):
 		block_area.hide(); title.hide(); dice.hide()
 	if data.get("stacked", false):
@@ -121,7 +127,7 @@ func _draw() -> void:
 	for index in _prevention_progress.size():
 		var t := _prevention_progress[index]
 		if t <= 0.0 or t >= 1.0 or int(data.dice[index].get("prevention", 0)) <= 0: continue
-		var start: Vector2 = inverse * benefit_labels[index].get_global_rect().get_center()
+		var start: Vector2 = inverse * dice_controls[index].get_global_rect().get_center()
 		var end: Vector2 = inverse * damage.get_global_rect().get_center()
 		var points := PackedVector2Array()
 		for step in 20:

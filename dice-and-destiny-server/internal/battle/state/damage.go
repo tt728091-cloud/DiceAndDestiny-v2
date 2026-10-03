@@ -84,6 +84,7 @@ type ProposedCardRemoval struct {
 	Revealed                 bool               `json:"revealed"`
 	Accepted                 bool               `json:"accepted"`
 	Released                 bool               `json:"released,omitempty"`
+	ReleasedDestination      operation.CardZone `json:"released_destination,omitempty"`
 	ReplacementForProposalID string             `json:"replacement_for_proposal_id,omitempty"`
 }
 

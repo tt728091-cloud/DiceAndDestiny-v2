@@ -68,8 +68,10 @@ func _build_mode_menu() -> void:
 	_character_choice = _add_selection("YOUR CHARACTER", [
 		["Blade Warden · sword, shields, and bleed", "blade_warden"],
 		["Venom · Poison, Incubation, and Catalyst", "venom"],
+		["Curse · cursed dice, Entombment, and misfortune", "curse"],
+		["Adventurer · 12-card starter, swords, shields, and coins", "adventurer"],
 	], "battle.setup.character")
-	_character_choice.select(1)
+	_character_choice.select(3)
 	_model_choice = _add_selection("OPPONENT", [
 		["Brine Mask · minion · keeps every 3", "brine-mask"],
 		["Blade Warden · Global Champion CP193", "global-champion"],

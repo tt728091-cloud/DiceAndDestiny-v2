@@ -75,7 +75,7 @@ func _run() -> void:
 		_expect(mode_scroll.vertical_scroll_mode == ScrollContainer.SCROLL_MODE_AUTO, "battle-mode list does not auto-scroll vertically")
 		_expect(mode_scroll.horizontal_scroll_mode == ScrollContainer.SCROLL_MODE_DISABLED, "battle-mode list unexpectedly scrolls horizontally")
 		_expect(mode_scroll.follow_focus, "battle-mode list does not follow keyboard focus")
-	_expect(menu._character_choice.item_count == 2, "playable character selection missing")
+	_expect(menu._character_choice.item_count == 4, "playable character selection missing")
 	_expect(menu._model_choice.item_count == 6, "six preserved model choices missing")
 	var keys: Array[String] = []
 	for index in range(menu._model_choice.item_count):

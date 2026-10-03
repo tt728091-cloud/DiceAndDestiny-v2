@@ -1,0 +1,141 @@
+{
+  "schema_version": 1,
+  "id": "curse",
+  "name": "Curse",
+  "class": "mummy",
+  "controller_defaults": {
+    "type": "human"
+  },
+  "resources": {
+    "starting_hand_size": 4,
+    "starting_energy": 2,
+    "hand_limit": 6
+  },
+  "income": {
+    "cards": 1,
+    "energy": 1
+  },
+  "decklist": [
+    {
+      "card_id": "mark_the_number",
+      "count": 1
+    },
+    {
+      "card_id": "black_fingerprint",
+      "count": 1
+    },
+    {
+      "card_id": "shared_misfortune",
+      "count": 1
+    },
+    {
+      "card_id": "widen_the_crack",
+      "count": 1
+    },
+    {
+      "card_id": "rotten_numeral",
+      "count": 1
+    },
+    {
+      "card_id": "maledictions_refusal",
+      "count": 1
+    },
+    {
+      "card_id": "unquiet_hands",
+      "count": 1
+    },
+    {
+      "card_id": "no_safe_keep",
+      "count": 1
+    },
+    {
+      "card_id": "chosen_instrument",
+      "count": 1
+    },
+    {
+      "card_id": "call_the_mark",
+      "count": 1
+    },
+    {
+      "card_id": "tombs_choice",
+      "count": 1
+    },
+    {
+      "card_id": "second_knell",
+      "count": 1
+    },
+    {
+      "card_id": "three_knocks",
+      "count": 1
+    },
+    {
+      "card_id": "grave_interest",
+      "count": 1
+    },
+    {
+      "card_id": "curse_eater",
+      "count": 1
+    },
+    {
+      "card_id": "black_dividend",
+      "count": 1
+    },
+    {
+      "card_id": "curse_bloom",
+      "count": 1
+    },
+    {
+      "card_id": "ruin_made_flesh",
+      "count": 1
+    },
+    {
+      "card_id": "black_tax",
+      "count": 1
+    },
+    {
+      "card_id": "stored_calamity",
+      "count": 1
+    },
+    {
+      "card_id": "misfortunes_choice",
+      "count": 1
+    },
+    {
+      "card_id": "spiteful_ward",
+      "count": 1
+    },
+    {
+      "card_id": "hexward_retort",
+      "count": 1
+    },
+    {
+      "card_id": "blind_omen",
+      "count": 1
+    }
+  ],
+  "dice_loadout": [
+    {
+      "dice_id": "curse_d6",
+      "count": 5
+    }
+  ],
+  "ability_board": {
+    "offensive": [
+      "hexbrand",
+      "grasp_of_the_sarcophagus",
+      "funeral_rattle",
+      "eclipse_of_the_black_star"
+    ],
+    "defensive": [
+      "hexward_rebuttal",
+      "misfortune_repaid"
+    ]
+  },
+  "starting_statuses": [],
+  "starting_tokens": [],
+  "roll_preferences": {
+    "status_effects": "automatic",
+    "offensive": "manual",
+    "ability_effects": "manual"
+  }
+}

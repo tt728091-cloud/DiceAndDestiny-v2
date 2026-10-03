@@ -60,9 +60,9 @@ func _check(scenario: String) -> void:
 	await process_frame
 	var dialogs := screen.find_children("*", "AcceptDialog", false, false)
 	_expect(dialogs.is_empty() and fake.commands.is_empty(), "card selects highlighted targets without a popup or immediate spend")
-	_expect(screen._defense_result_panels[-1].get_node_or_null("CardTarget") == null, "outgoing damage cannot be targeted")
+	_expect(not str(screen._defense_result_panels[-1].intent.get_meta("inspection_id", "")).begins_with("battle.card_target."), "outgoing damage cannot be targeted")
 	for index in fixture.legal_actions.size():
-		_expect(screen._defense_result_panels[index].get_node_or_null("CardTarget") != null, "every legal incoming attack is highlighted")
+		_expect(str(screen._defense_result_panels[index].intent.get_meta("inspection_id", "")).begins_with("battle.card_target."), "every legal incoming attack is highlighted")
 	if scenario.begins_with("multiple"):
 		_expect(screen._venom_choice_label(fixture.legal_actions[0]) != screen._venom_choice_label(fixture.legal_actions[1]), "fallback labels distinguish identical abilities by attacker")
 	# Cancel leaves the hand and authority untouched, and targeting can restart.
@@ -73,7 +73,7 @@ func _check(scenario: String) -> void:
 	for node in screen.find_children("*", "Button", true, false):
 		if node is BattleCard and node.definition_id == "spined_rebuttal": node.pressed.emit(); break
 	await process_frame
-	var target: Button = screen._defense_result_panels[chosen].get_node("CardTarget")
+	var target: Button = screen._defense_result_panels[chosen].intent
 	await process_frame
 	var point: Vector2 = screen._defense_result_panels[chosen].damage.get_global_rect().get_center()
 	_expect(target.get_global_rect().has_point(point), "damage number is inside the clickable target")

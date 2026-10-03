@@ -28,3 +28,9 @@ func _process(_delta: float) -> void:
 	var fit := minf(1.0, size.y / maxf(1.0, body.get_combined_minimum_size().y))
 	body.scale = Vector2.ONE * fit
 	body.size = size / fit
+
+func restore_layout(previous: Dictionary) -> void:
+	# A same-phase redraw retains the settled fit before its first draw. This
+	# matters when a compact results area requires the lane to scale down.
+	size = previous.size; body.scale = previous.scale; _measured_size = size
+	_layout_body()

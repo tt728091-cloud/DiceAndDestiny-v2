@@ -54,9 +54,11 @@ type BattleCost struct {
 }
 
 type Presentation struct {
-	RulesText string `yaml:"rules_text" json:"rules_text"`
-	ArtKey    string `yaml:"art_key" json:"art_key"`
-	Glyph     string `yaml:"glyph,omitempty" json:"glyph,omitempty"`
+	IllustrationPath string `yaml:"illustration_path,omitempty" json:"illustration_path,omitempty"`
+	EffectSummary    string `yaml:"effect_summary,omitempty" json:"effect_summary,omitempty"`
+	RulesText        string `yaml:"rules_text" json:"rules_text"`
+	ArtKey           string `yaml:"art_key" json:"art_key"`
+	Glyph            string `yaml:"glyph,omitempty" json:"glyph,omitempty"`
 }
 
 type ReactionWindowDefinition struct {
@@ -65,10 +67,11 @@ type ReactionWindowDefinition struct {
 }
 
 type TargetingDefinition struct {
-	Selector     string `yaml:"selector" json:"selector"`
-	Minimum      int    `yaml:"minimum" json:"minimum"`
-	Maximum      int    `yaml:"maximum" json:"maximum"`
-	RequiredFace int    `yaml:"required_face,omitempty" json:"required_face,omitempty"`
+	RequiresQualified bool   `yaml:"requires_qualified,omitempty" json:"requires_qualified,omitempty"`
+	Selector          string `yaml:"selector" json:"selector"`
+	Minimum           int    `yaml:"minimum" json:"minimum"`
+	Maximum           int    `yaml:"maximum" json:"maximum"`
+	RequiredFace      int    `yaml:"required_face,omitempty" json:"required_face,omitempty"`
 }
 
 type PlayTiming struct {
@@ -79,9 +82,10 @@ type PlayTiming struct {
 }
 
 type CardPlayDefinition struct {
-	SourceZones    []string     `yaml:"source_zones" json:"source_zones"`
-	Destination    string       `yaml:"destination" json:"destination"`
-	PlayableDuring []PlayTiming `yaml:"playable_during" json:"playable_during"`
+	BeforeFirstRoll bool         `yaml:"before_first_roll,omitempty" json:"before_first_roll,omitempty"`
+	SourceZones     []string     `yaml:"source_zones" json:"source_zones"`
+	Destination     string       `yaml:"destination" json:"destination"`
+	PlayableDuring  []PlayTiming `yaml:"playable_during" json:"playable_during"`
 }
 
 type BattleCardDefinition struct {
@@ -138,9 +142,10 @@ type RollDefinition struct {
 }
 
 type DefenseResolution struct {
-	Roll           *RollDefinition          `yaml:"roll,omitempty" json:"roll,omitempty"`
-	ReactionWindow ReactionWindowDefinition `yaml:"reaction_window" json:"reaction_window"`
-	Operations     []BattleOperation        `yaml:"operations" json:"operations"`
+	EnergyGainLimit int                      `yaml:"energy_gain_limit,omitempty" json:"energy_gain_limit,omitempty"`
+	Roll            *RollDefinition          `yaml:"roll,omitempty" json:"roll,omitempty"`
+	ReactionWindow  ReactionWindowDefinition `yaml:"reaction_window" json:"reaction_window"`
+	Operations      []BattleOperation        `yaml:"operations" json:"operations"`
 }
 
 type BattleAbilityDefinition struct {
@@ -158,6 +163,7 @@ type BattleAbilityDefinition struct {
 }
 
 type StatusStacking struct {
+	Uncapped       bool   `yaml:"uncapped,omitempty" json:"uncapped,omitempty"`
 	StackLimit     int    `yaml:"stack_limit" json:"stack_limit"`
 	OverflowPolicy string `yaml:"overflow_policy" json:"overflow_policy"`
 }
@@ -201,6 +207,7 @@ type BattleStatusDefinition struct {
 type BattleOperation struct {
 	ID                string                    `yaml:"id,omitempty" json:"id,omitempty"`
 	Type              string                    `yaml:"type" json:"type"`
+	ApplicationTiming string                    `yaml:"application_timing,omitempty" json:"application_timing,omitempty"`
 	Target            string                    `yaml:"target,omitempty" json:"target,omitempty"`
 	Amount            any                       `yaml:"amount,omitempty" json:"amount,omitempty"`
 	Resource          string                    `yaml:"resource,omitempty" json:"resource,omitempty"`
@@ -443,7 +450,7 @@ func validateBattleLibrary(lib BattleLibrary) error {
 		if err := reserveContentName(contentNames, "status", id, status.Name); err != nil {
 			return err
 		}
-		if status.Stacking.StackLimit < 1 || status.Stacking.OverflowPolicy != "reject_additional_stacks" {
+		if (status.Stacking.StackLimit < 1 && !status.Stacking.Uncapped) || status.Stacking.OverflowPolicy != "reject_additional_stacks" {
 			return fmt.Errorf("%w: status %q has invalid stacking", ErrInvalidContent, id)
 		}
 		if status.ActivationMode != "automatic" && status.ActivationMode != "player_activated" && status.ActivationMode != "hybrid" {
@@ -581,7 +588,7 @@ func validateBattleLibrary(lib BattleLibrary) error {
 		}
 		for _, s := range combatant.StartingStatuses {
 			d, ok := lib.Statuses[s.DefinitionID]
-			if !ok || s.Stacks < 1 || s.Stacks > d.Stacking.StackLimit {
+			if !ok || s.Stacks < 1 || (!d.Stacking.Uncapped && s.Stacks > d.Stacking.StackLimit) {
 				return fmt.Errorf("%w: combatant %q has invalid status %q", ErrInvalidContent, id, s.DefinitionID)
 			}
 		}
@@ -637,7 +644,7 @@ func validateTargeting(targeting *TargetingDefinition) error {
 		return nil
 	}
 	selectors := map[string]bool{
-		"venom_choice": true, "self": true, "one_enemy": true, "one_owned_combat_die": true,
+		"curse_choice": true, "venom_choice": true, "self": true, "one_enemy": true, "one_owned_combat_die": true,
 		"selected_die": true, "one_negative_status_on_self": true,
 		"one_incoming_damage_source": true, "one_owned_offensive_ability": true,
 	}
@@ -681,7 +688,7 @@ func validateTier(tier AbilityTier, lib BattleLibrary) error {
 				return fmt.Errorf("symbol_count needs a bound")
 			}
 		case "number_pattern":
-			if r.Pattern != "three_of_a_kind" && r.Pattern != "exact_pair" && r.Pattern != "pair_or_better" {
+			if r.Pattern != "three_of_a_kind" && r.Pattern != "exact_pair" && r.Pattern != "pair_or_better" && r.Pattern != "small_straight" && r.Pattern != "large_straight" {
 				return fmt.Errorf("unknown number pattern %q", r.Pattern)
 			}
 		case "exact_faces":
@@ -695,7 +702,7 @@ func validateTier(tier AbilityTier, lib BattleLibrary) error {
 	return validateBattleOperations(tier.Operations, lib)
 }
 func validateBattleOperations(ops []BattleOperation, lib BattleLibrary) error {
-	supported := map[string]bool{"provoke": true, "apply_incubation": true, "incubation_or_poison": true, "venom_card": true, "noop": true, "deal_damage": true, "prevent_damage": true, "scale_damage": true, "apply_status": true, "remove_status": true, "remove_status_stack": true, "gain_resource": true, "draw_cards": true, "modify_die": true, "apply_ability_modifier": true, "adjust_max_rolls": true, "cancel_source": true, "roll_dice": true}
+	supported := map[string]bool{"curse_card": true, "curse_action": true, "provoke": true, "apply_incubation": true, "incubation_or_poison": true, "venom_card": true, "reroll_die": true, "noop": true, "deal_damage": true, "prevent_damage": true, "scale_damage": true, "apply_status": true, "remove_status": true, "remove_status_stack": true, "gain_resource": true, "draw_cards": true, "modify_die": true, "apply_ability_modifier": true, "adjust_max_rolls": true, "cancel_source": true, "roll_dice": true}
 	for _, op := range ops {
 		if !supported[op.Type] {
 			return fmt.Errorf("unsupported operation type %q", op.Type)
@@ -714,8 +721,14 @@ func validateBattleOperations(ops []BattleOperation, lib BattleLibrary) error {
 				return fmt.Errorf("operation references unknown dice %q", op.DiceID)
 			}
 		}
-		if op.Type == "apply_ability_modifier" && ((op.Duration != "battle" && op.Duration != "round") || op.Modifier == nil || op.Modifier.AddConditionalBonus == nil) {
-			return fmt.Errorf("ability modifier must be a battle- or round-duration conditional bonus")
+		if op.ApplicationTiming != "" && (op.Type != "apply_status" || op.ApplicationTiming != "immediate" || op.Target != "self" || lib.Statuses[op.StatusID].Polarity != "positive") {
+			return fmt.Errorf("immediate status application requires a positive self status")
+		}
+		if op.Type == "apply_ability_modifier" && ((op.Duration != "battle" && op.Duration != "round" && op.Duration != "offensive") || op.Modifier == nil || op.Modifier.AddConditionalBonus == nil) {
+			return fmt.Errorf("ability modifier must be a battle-, round-, or offensive-duration conditional bonus")
+		}
+		if op.Type == "apply_ability_modifier" && op.Duration == "offensive" && (op.StatusID == "" || lib.Statuses[op.StatusID].Polarity != "positive") {
+			return fmt.Errorf("offensive ability modifier requires a positive status")
 		}
 		switch op.Type {
 		case "deal_damage", "prevent_damage", "draw_cards":
@@ -742,7 +755,7 @@ func validateBattleOperations(ops []BattleOperation, lib BattleLibrary) error {
 				return fmt.Errorf("remove_status_stack requires positive stack_count")
 			}
 		case "modify_die":
-			if op.Modification != "set_face" || op.Face < 1 {
+			if op.Modification != "adjacent_non_six" && (op.Modification != "set_face" || op.Face < 1) {
 				return fmt.Errorf("modify_die requires set_face and a positive face")
 			}
 		case "scale_damage":
@@ -763,7 +776,17 @@ func validateBattleOperations(ops []BattleOperation, lib BattleLibrary) error {
 			_ = die
 		}
 		if op.Modifier != nil && op.Modifier.AddConditionalBonus != nil {
-			if err := validateTier(*op.Modifier.AddConditionalBonus, lib); err != nil {
+			bonus := *op.Modifier.AddConditionalBonus
+			// An empty condition adds a bonus to any qualified activation of
+			// the selected ability; it never supplies its own activation.
+			if len(bonus.Requirements.All) == 0 {
+				if bonus.ID == "" || len(bonus.Operations) == 0 {
+					return fmt.Errorf("ability bonus requires id and operations")
+				}
+				if err := validateBattleOperations(bonus.Operations, lib); err != nil {
+					return err
+				}
+			} else if err := validateTier(bonus, lib); err != nil {
 				return err
 			}
 		}

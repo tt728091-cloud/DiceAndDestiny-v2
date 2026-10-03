@@ -1,0 +1,84 @@
+{
+  "schema_version": 1,
+  "id": "adventurer_guard",
+  "name": "Guard",
+  "type": "defensive",
+  "presentation": {
+    "rules_text": "Once per defensive segment, choose one incoming attack and roll 3 dice. Each Sword (1-3) prevents 1 damage; each Shield (4-5) prevents 2 damage. If any Coin (6) is rolled, gain 1 energy total. Coins prevent no damage. Three Coins prevent 0 damage and still grant only 1 energy."
+  },
+  "cost": {
+    "energy": 0
+  },
+  "usage": {
+    "maximum_per_segment": 1
+  },
+  "selection": {
+    "requires_incoming_proposal": true,
+    "allowed_proposal_types": [
+      "damage_source"
+    ],
+    "target_count": 1
+  },
+  "resolution": {
+    "energy_gain_limit": 1,
+    "reaction_window": {
+      "opens": true,
+      "pass_required": true
+    },
+    "operations": [
+      {
+        "type": "roll_dice",
+        "id": "guard_roll",
+        "target": "self",
+        "dice_id": "standard_d6",
+        "dice_count": 3,
+        "reaction_window": {
+          "opens": true,
+          "pass_required": true
+        },
+        "outcomes": [
+          {
+            "faces": [
+              1,
+              2,
+              3
+            ],
+            "operations": [
+              {
+                "type": "prevent_damage",
+                "target": "selected_proposal",
+                "amount": 1
+              }
+            ]
+          },
+          {
+            "faces": [
+              4,
+              5
+            ],
+            "operations": [
+              {
+                "type": "prevent_damage",
+                "target": "selected_proposal",
+                "amount": 2
+              }
+            ]
+          },
+          {
+            "faces": [
+              6
+            ],
+            "operations": [
+              {
+                "type": "gain_resource",
+                "target": "self",
+                "amount": 1,
+                "resource": "energy"
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}

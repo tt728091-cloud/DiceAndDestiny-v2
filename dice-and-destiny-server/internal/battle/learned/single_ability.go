@@ -42,11 +42,15 @@ func (p *singleAbilityPolicy) Select(t mlsim.Transition) (int, time.Duration, er
 	own := t.Result.Snapshot.Actors[t.ActorID]
 	actions := t.Result.LegalActions
 	config := p.definition.SingleAbilityPolicy
+	bound := map[int]bool{}
+	for _, d := range own.OwnedDice {
+		bound[d.Index] = d.Entombed
+	}
 	attack := p.definition.AbilityBoard.Offensive[0]
 	defense := p.definition.AbilityBoard.Defensive[0]
 	// Identical minion cards need no discard evaluation. Only choose a
 	// mandatory hand-limit commitment, never an optional reaction card.
-	if t.Result.Snapshot.Stage == "discard_to_hand_limit" {
+	if t.Result.Snapshot.Stage == "discard_to_hand_limit" || t.Result.Snapshot.Stage == "curse_choice" {
 		for i, action := range actions {
 			if action.Type == command.TypeCommitInteraction {
 				return i, 0, nil
@@ -63,13 +67,13 @@ func (p *singleAbilityPolicy) Select(t mlsim.Transition) (int, time.Duration, er
 	if own.Dice != nil && own.Dice.RollsUsed < own.Dice.MaxRolls {
 		reroll := []int{}
 		for _, die := range own.Dice.Dice {
-			if die.Face != config.TargetFace {
+			if die.Face != config.TargetFace || bound[die.Index] {
 				reroll = append(reroll, die.Index)
 			}
 		}
 		keep := []int{}
 		for _, die := range own.Dice.Dice {
-			if die.Face == config.TargetFace {
+			if die.Face == config.TargetFace && !bound[die.Index] {
 				keep = append(keep, die.Index)
 			}
 		}

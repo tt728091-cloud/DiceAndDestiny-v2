@@ -1,0 +1,54 @@
+{
+  "schema_version": 1,
+  "id": "measured_strike",
+  "name": "Measured Strike",
+  "type": "offensive",
+  "presentation": {
+    "rules_text": "2 Swords + 2 Coins: deal 4 damage and gain 1 energy. Faces 1-3 are Swords; 6 is Coin. The fifth die may be anything. Misses without the required symbols."
+  },
+  "cost": {
+    "energy": 0
+  },
+  "usage": {
+    "maximum_per_segment": 1
+  },
+  "targeting": {
+    "selector": "one_enemy",
+    "minimum": 1,
+    "maximum": 1
+  },
+  "qualification": {
+    "activation_tiers": [
+      {
+        "id": "base",
+        "requirements": {
+          "all": [
+            {
+              "type": "symbol_count",
+              "symbol_id": "sword",
+              "minimum": 2
+            },
+            {
+              "type": "symbol_count",
+              "symbol_id": "gold_coin",
+              "minimum": 2
+            }
+          ]
+        },
+        "operations": [
+          {
+            "type": "deal_damage",
+            "target": "selected_targets",
+            "amount": 4
+          },
+          {
+            "type": "gain_resource",
+            "target": "self",
+            "amount": 1,
+            "resource": "energy"
+          }
+        ]
+      }
+    ]
+  }
+}

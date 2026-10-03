@@ -1,0 +1,41 @@
+{
+  "schema_version": 1,
+  "id": "grave_interest",
+  "name": "Grave Interest",
+  "type": "curse_action",
+  "presentation": {
+    "rules_text": "Apply Grave Interest (maximum 1) to the enemy. At the next Effects, it consumes the first 3 Curse Count to apply Grave Debt: gain 1 less Energy at the next Income, then remove Grave Debt. Remaining Count groups deal damage normally. Grave Interest expires at that Effects even with fewer than 3 Count. One Curse conversion mode per target. Each named Curse card may be played once per player per round.",
+    "art_key": "card_grave_interest",
+    "effect_summary": "Apply Grave Interest: next Effects, spend 3 Count for \u22121 Energy next Income."
+  },
+  "cost": {
+    "energy": 0
+  },
+  "play": {
+    "source_zones": [
+      "hand"
+    ],
+    "destination": "discard",
+    "playable_during": [
+      {
+        "segment": "offensive",
+        "phase": "main",
+        "window_purpose": "planning"
+      }
+    ]
+  },
+  "targeting": {
+    "selector": "curse_choice",
+    "minimum": 0,
+    "maximum": 1
+  },
+  "reaction_window": {
+    "opens": false
+  },
+  "operations": [
+    {
+      "type": "curse_card",
+      "target": "self"
+    }
+  ]
+}

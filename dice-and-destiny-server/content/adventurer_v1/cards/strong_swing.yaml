@@ -1,0 +1,60 @@
+{
+  "schema_version": 1,
+  "id": "strong_swing",
+  "name": "Strong Swing",
+  "type": "planning",
+  "presentation": {
+    "rules_text": "Before your first offensive roll only, choose any ability on your offensive board. Give it +2 damage for this offensive segment if you qualify for and select it. Multiple copies stack. The bonus expires at Offensive Exit even if unused; it cannot turn a miss into a hit.",
+    "effect_summary": "Before rolling: give one offensive ability +2 damage this segment.",
+    "illustration_path": "res://assets/battle/cards/sharpen_blade.png"
+  },
+  "cost": {
+    "energy": 1
+  },
+  "play": {
+    "source_zones": [
+      "hand"
+    ],
+    "destination": "discard",
+    "playable_during": [
+      {
+        "segment": "offensive",
+        "phase": "main",
+        "window_purpose": "planning"
+      }
+    ],
+    "before_first_roll": true
+  },
+  "targeting": {
+    "selector": "one_owned_offensive_ability",
+    "minimum": 1,
+    "maximum": 1,
+    "requires_qualified": false
+  },
+  "reaction_window": {
+    "opens": false
+  },
+  "operations": [
+    {
+      "type": "apply_ability_modifier",
+      "target": "selected_ability",
+      "duration": "offensive",
+      "modifier": {
+        "add_conditional_bonus": {
+          "id": "strong_swing",
+          "requirements": {
+            "all": []
+          },
+          "operations": [
+            {
+              "type": "deal_damage",
+              "target": "selected_targets",
+              "amount": 2
+            }
+          ]
+        }
+      },
+      "status_id": "strong_swing_ready"
+    }
+  ]
+}

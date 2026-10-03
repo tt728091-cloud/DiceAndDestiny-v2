@@ -53,7 +53,7 @@ func _check(ability: String, scenario: String) -> void:
 	await process_frame
 	await process_frame
 	_expect(screen._ability_dock.get_child_count() == 0, "choose an incoming attack before a defense")
-	screen._combat_columns.blade.get_child(0).source_selected.emit("source-1")
+	screen._attack_intents["source-1"].intent.pressed.emit()
 	await process_frame
 	if scenario == "history": screen._history_review = true
 	var tile: Button

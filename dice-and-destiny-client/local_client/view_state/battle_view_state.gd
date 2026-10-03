@@ -16,6 +16,7 @@ var settled_damage: Dictionary = {}
 var events: Array = []
 var combat_log := preload("res://local_client/view_state/combat_log.gd").new()
 var legal_actions: Array = []
+var defense_previews: Array = []
 var defense_rolls: Dictionary = {}
 var defense_selections: Dictionary = {}
 var effect_rolls: Array = []
@@ -63,6 +64,7 @@ func apply_result(result: Dictionary) -> bool:
 	effect_rolls = snapshot.get("effect_rolls", []).duplicate(true)
 	events = result.get("events", []).duplicate(true)
 	legal_actions = result.get("legal_actions", []).duplicate(true)
+	defense_previews = result.get("defense_previews", []).duplicate(true)
 	for battle_event in events:
 		if battle_event.get("type") == "dice_rolled" and int(battle_event.get("max_rolls", 0)) > 0:
 			max_rolls_by_actor[str(battle_event.get("actor_id", "blade"))] = int(battle_event.max_rolls)

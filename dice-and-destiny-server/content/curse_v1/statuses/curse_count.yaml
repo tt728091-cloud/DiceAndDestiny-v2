@@ -1,0 +1,20 @@
+{
+  "schema_version": 1,
+  "id": "curse_count",
+  "name": "Curse Count",
+  "presentation": {
+    "rules_text": "Every physical cursed result adds 1 Count. During Effects, spend each group of 3 for 1 damage; retain the remainder. Uncapped. Cleansing Count does not erase die marks.",
+    "glyph": "\u2301"
+  },
+  "activation_mode": "automatic",
+  "polarity": "negative",
+  "stacking": {
+    "stack_limit": 0,
+    "uncapped": true,
+    "overflow_policy": "reject_additional_stacks"
+  },
+  "lifecycle": {
+    "persistent": true
+  },
+  "triggers": []
+}

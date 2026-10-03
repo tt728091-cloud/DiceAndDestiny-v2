@@ -1,0 +1,19 @@
+{
+  "schema_version": 1,
+  "id": "strong_swing_ready",
+  "name": "Strong Swing Ready",
+  "presentation": {
+    "rules_text": "Positive preparation. Each stack gives +2 damage to the offensive ability chosen when Strong Swing was played; the ability board marks each target. You must still qualify for and select that ability. All stacks expire at the end of the offensive segment, used or unused.",
+    "glyph": "\u2694"
+  },
+  "activation_mode": "automatic",
+  "polarity": "positive",
+  "stacking": {
+    "uncapped": true,
+    "overflow_policy": "reject_additional_stacks"
+  },
+  "lifecycle": {
+    "persistent": false
+  },
+  "triggers": []
+}

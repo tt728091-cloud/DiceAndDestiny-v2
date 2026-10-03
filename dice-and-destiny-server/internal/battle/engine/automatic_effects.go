@@ -76,6 +76,7 @@ func (e Engine) progressAutomaticEffects(b *state.Battle, lib content.BattleLibr
 		if err != nil {
 			return nil, err
 		}
+		next = append(next, flushCurseEvents(b)...)
 		// Freeze event payloads now: collected roll slices can be changed by a later
 		// Catalyst reroll. Animation must retain the original and final faces.
 		frozen, err := json.Marshal(next)
@@ -89,7 +90,7 @@ func (e Engine) progressAutomaticEffects(b *state.Battle, lib content.BattleLibr
 		events = append(events, copied...)
 		for _, ev := range copied {
 			switch ev.Type {
-			case event.TypeDiceRolled, event.TypeInteractionWindowOpened, event.TypeProposalBatchCommitted, event.TypeDamageCommitted:
+			case event.Type("curse_resolved"), event.TypeDiceRolled, event.TypeInteractionWindowOpened, event.TypeProposalBatchCommitted, event.TypeDamageCommitted:
 				steps = append(steps, ev)
 			}
 		}

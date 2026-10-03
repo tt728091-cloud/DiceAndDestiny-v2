@@ -23,23 +23,23 @@ func _run() -> void:
 	await process_frame; await process_frame
 	_expect(multi._player_dice_dock.get_rect() == player_rect, "player dice retain original coordinates")
 	_expect(multi._hand_dock.get_rect() == hand_rect and multi._ability_dock.get_parent().get_rect() == ability_rect and multi._center.get_rect() == center_rect, "hand, ability rail, and central battle retain original layout")
-	_expect(multi._enemy_profile_dock.get_rect() == enemy_rect and multi._enemy_dice_dock.get_rect() == enemy_dice_rect, "enemy HUD retains original alignment")
-	_expect(multi._player_dice_dock.position.y == multi._enemy_dice_dock.position.y, "both dice rows share a baseline")
-	_expect(multi._player_dice_dock.get_child(0)._buttons[0].global_position.y == multi._enemy_dice_dock.get_child(0)._buttons[0].global_position.y, "actual dice faces align, including caption spacing")
-	_expect(multi._enemy_profile_dock.get_child_count() == 1, "no selector above enemy profile")
+	_expect(multi._enemy_profile_dock.size.x <= enemy_rect.size.x and multi._enemy_dice_docks.size() == 2, "enemy HUDs compact and each has its own dice")
+	_expect(multi._enemy_dice_dock.get_global_rect().position.y >= multi._actor_profiles[multi._focused_enemy].get_global_rect().end.y, "enemy dice sit below their own profile")
+	_expect(multi._enemy_dice_dock.get_child(0)._buttons[0].size == BattleDiceTray.HUD_DIE_SIZE, "enemy dice match the compact player dice size")
+	_expect(multi._enemy_profile_dock.get_child_count() == 2, "no selector above enemy profile")
 	var scenery: Control = multi._root.get_node("BattleScenery")
 	var right: TextureRect = scenery.get_node("Fighter_enemy")
 	var left: TextureRect = scenery.get_node("Fighter_enemy_2")
-	_expect(right.get_index() > left.get_index() and right.position.y > left.position.y, "right mask is drawn in foreground")
+	_expect(right.get_index() > left.get_index() and right.position.x < left.position.x, "enemy fighters occupy separate footprints")
 	for button in multi._enemy_buttons.values():
-		_expect(button.get_node("Health").show_percentage == false, "nameplate health has no numeric caption")
-		_expect(button.find_children("*", "Label", true, false).size() == 1, "nameplate contains only name and health bar")
+		_expect(multi._actor_profiles[str(button.get_meta("actor_id"))].health.show_percentage == false, "nameplate health has no numeric caption")
+		_expect(button.get_parent() == multi._actor_profiles[str(button.get_meta("actor_id"))].title, "name itself is the focus selector")
 	await _capture("brine-field-selection.png")
 	var fake: FakeBattleAuthority = multi.gateway._authority
 	multi._selected_indices = [0, 2]
 	await _click(multi._enemy_buttons["goblin-2"]); await process_frame
 	_expect(multi._selected_indices == [0, 2], "switching enemy preserves kept dice")
-	_expect(multi._actor_profiles.keys().size() == 2 and multi._actor_profiles.has("goblin-2"), "selected enemy occupies original profile")
+	_expect(multi._actor_profiles.keys().size() == 3 and multi._actor_profiles.has("goblin-2"), "all actor profiles remain available after selection")
 	_expect(fake.commands.is_empty(), "selection is local until an action is committed")
 	var second := {"type": "planning_select_ability", "payload": {"ability_id": "needlefang", "target_ids": ["goblin-2"]}}
 	var first := second.duplicate(true); first.payload.target_ids = ["goblin"]
@@ -51,14 +51,14 @@ func _run() -> void:
 	var five := base.duplicate(true)
 	for index in range(3, 6): five.snapshot.actors["goblin-" + str(index)] = base.snapshot.actors.goblin.duplicate(true)
 	multi = _screen(five); await process_frame; await process_frame
-	_expect(multi._enemy_buttons.size() == 5 and multi._actor_profiles.size() == 2, "five nameplates still use two actor panels")
-	_expect(multi._enemy_profile_dock.size.x == width and multi._player_dice_dock.get_rect() == player_rect, "five enemies cannot expand original HUD geometry")
+	_expect(multi._enemy_buttons.size() == 5 and multi._actor_profiles.size() == 6, "all five enemies have their own panel")
+	_expect(multi._enemy_profile_dock.size.x <= width and multi._player_dice_dock.get_rect() == player_rect, "five enemies cannot expand original HUD geometry")
 	multi._enemy_buttons["goblin-5"].pressed.emit(); await process_frame; await process_frame
 	_expect(multi._focused_enemy == "goblin-5", "fifth nameplate selects enemy")
 	for id in multi._enemy_buttons:
 		for other in multi._enemy_buttons:
 			if id == other: continue
-			_expect(not multi._enemy_buttons[id].get_rect().intersects(multi._enemy_buttons[other].get_rect()), "nameplates stay separately clickable")
+			_expect(not multi._enemy_buttons[id].get_global_rect().intersects(multi._enemy_buttons[other].get_global_rect()), "nameplates stay separately clickable")
 	_expect(multi._actor_profiles["goblin-5"].title.text == "Brine Mask 5", "profile identifies the selected duplicate")
 	_expect(multi._root.get_node("BattleScenery").has_node("Fighter_enemy_5"), "all five enemy sprites in central battlefield")
 	await _capture("brine-five-selector.png")
@@ -86,16 +86,18 @@ func _defense() -> void:
 	fixture.snapshot.damage_sources.append({"id": "outgoing", "source_actor_id": "blade", "target_actor_id": "goblin-2", "source_content_id": "needlefang", "base_amount": 4})
 	var screen = _screen(fixture)
 	await process_frame; await process_frame
-	_expect(screen._combat_columns.blade.get_child_count() == 2, "both incoming attacks stay visible during selection")
-	_expect(not screen._enemy_selector.visible, "no enemy switching controls during defense")
+	_expect(screen._attack_intents.values().filter(func(panel): return panel.data.actor_id == "blade").size() == 2, "both incoming attacks stay visible during selection")
+	_expect(screen._enemy_buttons.values().all(func(button): return button.disabled), "no enemy switching controls during defense")
 	var fake: FakeBattleAuthority = screen.gateway._authority
 	fake.enqueue(fixture)
+	await _click(screen._attack_intents["source-2"].intent)
+	await process_frame; await process_frame
 	var choose: Button
 	for button in screen.find_children("*", "Button", true, false):
-		if button.get_meta("inspection_id", "") == "battle.defense.choose.source-2.barbed_mantle.false": choose = button
+		if button.get_meta("inspection_id", "") == "battle.ability.blade.barbed_mantle": choose = button
 	_expect(choose != null, "second attack owns a defense button")
 	if choose != null: await _click(choose)
-	_expect(fake.commands.size() == 1 and JSON.parse_string(fake.commands[0]).payload.target_ids == ["source-2"], "inline defense sends exact source without changing enemy view")
+	_expect(fake.commands.size() == 1 and JSON.parse_string(fake.commands[0]).payload.target_ids == ["source-2"], "selected defense sends the exact incoming source")
 	_expect(screen._display_damage_sources(fixture.snapshot.damage_sources).size() == 3, "both attacks retained")
 	await _capture("brine-stacked-selection.png")
 	# Completed first defense must not leak into the next source or be repeated.
@@ -104,12 +106,12 @@ func _defense() -> void:
 	fixture.legal_actions = [fixture.legal_actions[0]]
 	screen._view.apply_result(fixture); screen._render(); await process_frame
 	_expect(screen._focused_enemy == "goblin" and screen._selected_source == "source-1", "next defense selects remaining attacker")
-	_expect(screen._combat_columns.blade.get_child_count() == 2, "completed defense remains visible beside remaining choice")
+	_expect(screen._attack_intents.values().filter(func(panel): return panel.data.actor_id == "blade").size() == 2, "completed defense remains visible beside remaining choice")
 	var data: Dictionary = screen._compact_defense_data("blade", screen._status_counts(), fixture.snapshot.damage_sources[1])
 	_expect(data.gains.is_empty() and data.read_only, "historical defense does not replay status gains")
 	fixture.snapshot.damage_sources = [fixture.snapshot.damage_sources[0]]
 	screen._view.apply_result(fixture); screen._render(); await process_frame
-	_expect("Miss" in screen._enemy_buttons["goblin-2"].tooltip_text and screen._combat_columns.blade.get_child_count() == 1, "miss has no defendable source")
+	_expect("Miss" in screen._enemy_buttons["goblin-2"].tooltip_text and screen._attack_intents.values().filter(func(panel): return panel.data.actor_id == "blade").size() == 1, "miss has no defendable source")
 	screen.queue_free(); await process_frame
 
 func _effects() -> void:
@@ -136,7 +138,7 @@ func _effects() -> void:
 	if is_instance_valid(screen._effects_panel):
 		screen._effects_panel.resume_at(3.2); screen._effects_panel.present_progress()
 		_expect(screen._effects_panel.visible_actor_ids == ["blade", "goblin", "goblin-2"], "all actor effects share one timeline")
-		_expect(not screen._enemy_selector.visible, "no switching required for effects")
+		_expect(screen._enemy_buttons.values().all(func(button): return button.disabled), "no switching required for effects")
 		for entry in screen._effects_panel.entries:
 			_expect(entry.has("die") and entry.die.is_visible_in_tree(), "every effect has a visible die")
 		screen._effects_panel.set_paused(true)
@@ -172,7 +174,7 @@ func _damage() -> void:
 	_expect(panel.data.attack_name == "Brine Mask 1" and panel.data.after == 3, "first attack shows three damage, not sum")
 	_expect(screen._damage_grids[0].get_child_count() == 3, "first attack shows its three cards")
 	var first_cards: Array = screen._damage_grids[0].get_children().map(func(card): return card.instance_id)
-	_expect(screen._combat_columns.blade.get_child_count() == 2, "both damage panels shown simultaneously")
+	_expect(screen._attack_intents.values().filter(func(panel): return panel.data.actor_id == "blade").size() == 2, "both damage panels shown simultaneously")
 	panel = screen._combat_columns.blade.get_child(1)
 	_expect(panel.data.attack_name == "Brine Mask 2" and panel.data.after == 5, "second panel shows its own five damage")
 	_expect(screen._damage_grids[1].get_child_count() == 5, "second attack shows its five cards")
@@ -195,7 +197,7 @@ func _damage() -> void:
 	fixture.snapshot.damage_sources = [sources[0]]; fixture.snapshot.settled_damage.sources = [sources[0]]
 	screen._view.apply_result(fixture); screen._render(); await process_frame
 	panel = screen._combat_columns.blade.get_child(0)
-	_expect(screen._combat_columns.blade.get_child_count() == 1 and panel.data.after == 3, "miss adds no extra attack")
+	_expect(screen._attack_intents.values().filter(func(panel): return panel.data.actor_id == "blade").size() == 1 and panel.data.after == 3, "miss adds no extra attack")
 	screen.queue_free(); await process_frame
 
 func _defense_plan_review() -> void:
@@ -211,7 +213,7 @@ func _defense_plan_review() -> void:
 	await process_frame; await process_frame
 	_expect(screen._focused_enemy == "goblin-2" and screen._selected_source == "second", "queued first defense selects remaining decision")
 	_expect(screen._sole_pass_action().is_empty(), "sole pass is never automatically chosen during defense selection")
-	_expect("Queued" in screen._combat_columns.blade.get_child(0).data.note and "Needs defense" in screen._combat_columns.blade.get_child(1).data.note, "both decision states are visible")
+	_expect("Queued" in screen._attack_intents["first"].data.note and "Needs defense" in screen._attack_intents["second"].data.note, "both decision states are visible")
 	var fake: FakeBattleAuthority = screen.gateway._authority
 	fake.enqueue(fixture); screen._pass_planning()
 	_expect(fake.commands.size() == 1 and JSON.parse_string(fake.commands[0]).payload.get("source_id", "").is_empty(), "Pass All Remaining sends global pass explicitly")
@@ -254,7 +256,7 @@ func _offensive_defeat() -> void:
 	screen._render(true)
 	await process_frame
 	_expect(screen._selected_attack("goblin-2").is_empty(), "canceled enemy attack cannot reappear from a cached reveal")
-	_expect(screen._combat_columns.blade.get_child_count() == 1 and screen._combat_columns.blade.get_child(0).data.source_id == "survivor", "only the surviving enemy needs a defense")
+	_expect(screen._attack_intents.values().filter(func(panel): return panel.data.actor_id == "blade").size() == 1 and screen._attack_intents.has("survivor"), "only the surviving enemy needs a defense")
 	screen.queue_free(); await process_frame
 
 func _screen(fixture: Dictionary) -> Control:

@@ -1,0 +1,353 @@
+[
+  {
+    "type": "damage_committed",
+    "sequence": 162,
+    "round": 3,
+    "segment": "damage_resolution",
+    "data": {
+      "batch_id": "damage-r3-114",
+      "overage": {
+        "blade": 0,
+        "goblin": 0
+      },
+      "removals": [
+        {
+          "accepted": true,
+          "card_definition_id": "curse_eater",
+          "card_id": "blade-card-015",
+          "damage_proposal_ids": [
+            "source-r3-brine_lash-103"
+          ],
+          "id": "damage-r3-114-removal-1",
+          "original_zone": "deck",
+          "revealed": true,
+          "sequence": 1,
+          "source_actor_ids": [
+            "goblin"
+          ],
+          "target_actor_id": "blade"
+        },
+        {
+          "accepted": true,
+          "card_definition_id": "black_tax",
+          "card_id": "blade-card-019",
+          "damage_proposal_ids": [
+            "source-r3-brine_lash-103"
+          ],
+          "id": "damage-r3-114-removal-2",
+          "original_zone": "deck",
+          "revealed": true,
+          "sequence": 2,
+          "source_actor_ids": [
+            "goblin"
+          ],
+          "target_actor_id": "blade"
+        },
+        {
+          "accepted": false,
+          "card_definition_id": "misfortunes_choice",
+          "card_id": "blade-card-021",
+          "damage_proposal_ids": [
+            "source-r3-brine_lash-103"
+          ],
+          "id": "damage-r3-114-removal-3",
+          "original_zone": "deck",
+          "released": true,
+          "revealed": true,
+          "sequence": 3,
+          "source_actor_ids": [
+            "goblin"
+          ],
+          "target_actor_id": "blade"
+        },
+        {
+          "accepted": false,
+          "card_definition_id": "second_knell",
+          "card_id": "blade-card-012",
+          "damage_proposal_ids": [
+            "source-r3-brine_lash-103"
+          ],
+          "id": "damage-r3-114-removal-4",
+          "original_zone": "deck",
+          "released": true,
+          "revealed": true,
+          "sequence": 4,
+          "source_actor_ids": [
+            "goblin"
+          ],
+          "target_actor_id": "blade"
+        },
+        {
+          "accepted": true,
+          "card_definition_id": "brine_surge",
+          "card_id": "goblin-card-005",
+          "damage_proposal_ids": [
+            "source-r3-hexbrand-102"
+          ],
+          "id": "damage-r3-114-removal-5",
+          "original_zone": "deck",
+          "revealed": true,
+          "sequence": 1,
+          "source_actor_ids": [
+            "blade"
+          ],
+          "target_actor_id": "goblin"
+        },
+        {
+          "accepted": true,
+          "card_definition_id": "brine_surge",
+          "card_id": "goblin-card-014",
+          "damage_proposal_ids": [
+            "source-r3-hexbrand-102"
+          ],
+          "id": "damage-r3-114-removal-6",
+          "original_zone": "deck",
+          "revealed": true,
+          "sequence": 2,
+          "source_actor_ids": [
+            "blade"
+          ],
+          "target_actor_id": "goblin"
+        },
+        {
+          "accepted": true,
+          "card_definition_id": "brine_surge",
+          "card_id": "goblin-card-015",
+          "damage_proposal_ids": [
+            "source-r3-hexbrand-102"
+          ],
+          "id": "damage-r3-114-removal-7",
+          "original_zone": "deck",
+          "revealed": true,
+          "sequence": 3,
+          "source_actor_ids": [
+            "blade"
+          ],
+          "target_actor_id": "goblin"
+        }
+      ],
+      "sources": [
+        {
+          "base_amount": 4,
+          "final_amount": 3,
+          "id": "source-r3-hexbrand-102",
+          "prevention": 1,
+          "source_actor_id": "blade",
+          "source_content_id": "hexbrand",
+          "target_actor_id": "goblin"
+        },
+        {
+          "base_amount": 5,
+          "final_amount": 2,
+          "id": "source-r3-brine_lash-103",
+          "prevention": 1,
+          "reaction_prevention": 2,
+          "source_actor_id": "goblin",
+          "source_content_id": "brine_lash",
+          "target_actor_id": "blade"
+        }
+      ],
+      "status_applications": null
+    }
+  },
+  {
+    "type": "curse_resolved",
+    "sequence": 165,
+    "round": 3,
+    "segment": "damage_resolution",
+    "actor_id": "goblin",
+    "data": {
+      "cursed": false,
+      "die": {
+        "die_id": "brine_d6",
+        "face": 4,
+        "index": 4,
+        "owned_id": "goblin/die/5",
+        "symbols": [
+          "salt"
+        ],
+        "value": 4
+      },
+      "kind": "owned_roll",
+      "roll_context": "curse_dice"
+    }
+  },
+  {
+    "type": "curse_resolved",
+    "sequence": 166,
+    "round": 3,
+    "segment": "damage_resolution",
+    "actor_id": "goblin",
+    "data": {
+      "cursed_faces": [
+        1,
+        4
+      ],
+      "die_id": "goblin/die/5",
+      "face": 4,
+      "kind": "face_marked"
+    }
+  },
+  {
+    "type": "curse_resolved",
+    "sequence": 167,
+    "round": 3,
+    "segment": "damage_resolution",
+    "actor_id": "goblin",
+    "data": {
+      "cursed": false,
+      "die": {
+        "die_id": "brine_d6",
+        "face": 6,
+        "index": 2,
+        "owned_id": "goblin/die/3",
+        "symbols": [
+          "salt"
+        ],
+        "value": 6
+      },
+      "kind": "owned_roll",
+      "roll_context": "curse_dice"
+    }
+  },
+  {
+    "type": "curse_resolved",
+    "sequence": 168,
+    "round": 3,
+    "segment": "damage_resolution",
+    "actor_id": "goblin",
+    "data": {
+      "cursed_faces": [
+        1,
+        5,
+        6
+      ],
+      "die_id": "goblin/die/3",
+      "face": 6,
+      "kind": "face_marked"
+    }
+  },
+  {
+    "type": "curse_resolved",
+    "sequence": 169,
+    "round": 3,
+    "segment": "damage_resolution",
+    "actor_id": "goblin",
+    "data": {
+      "count": 4,
+      "die_id": "goblin/die/5",
+      "kind": "count",
+      "released_entombment": false
+    }
+  },
+  {
+    "type": "curse_resolved",
+    "sequence": 170,
+    "round": 3,
+    "segment": "damage_resolution",
+    "actor_id": "goblin",
+    "data": {
+      "cursed": true,
+      "die": {
+        "die_id": "brine_d6",
+        "face": 4,
+        "index": 4,
+        "owned_id": "goblin/die/5",
+        "symbols": [
+          "salt"
+        ],
+        "value": 4
+      },
+      "kind": "owned_roll",
+      "roll_context": "curse_dice"
+    }
+  },
+  {
+    "type": "effects_resolved",
+    "sequence": 171,
+    "round": 4,
+    "segment": "ongoing_effects",
+    "data": {
+      "actors_after": {
+        "blade": {
+          "deck_count": 14,
+          "discard_count": 6,
+          "energy": 1,
+          "hand_count": 1,
+          "health": 21,
+          "removed_count": 3,
+          "statuses": []
+        },
+        "goblin": {
+          "deck_count": 2,
+          "discard_count": 3,
+          "energy": 0,
+          "hand_count": 1,
+          "health": 6,
+          "removed_count": 10,
+          "statuses": [
+            {
+              "definition_id": "curse_count",
+              "instance_id": "goblin-status-curse_count-13",
+              "stacks": 1
+            }
+          ]
+        }
+      },
+      "actors_before": {
+        "blade": {
+          "deck_count": 14,
+          "discard_count": 6,
+          "energy": 1,
+          "hand_count": 1,
+          "health": 21,
+          "removed_count": 3,
+          "statuses": []
+        },
+        "goblin": {
+          "deck_count": 2,
+          "discard_count": 3,
+          "energy": 0,
+          "hand_count": 1,
+          "health": 6,
+          "removed_count": 10,
+          "statuses": [
+            {
+              "definition_id": "curse_count",
+              "instance_id": "goblin-status-curse_count-13",
+              "stacks": 4
+            }
+          ]
+        }
+      },
+      "steps": [
+        {
+          "actor_id": "blade",
+          "data": {
+            "count_after": 0,
+            "count_before": 0,
+            "damage": 0,
+            "kind": "conversion",
+            "mode": ""
+          },
+          "round": 4,
+          "segment": "ongoing_effects",
+          "type": "curse_resolved"
+        },
+        {
+          "actor_id": "goblin",
+          "data": {
+            "count_after": 1,
+            "count_before": 4,
+            "damage": 0,
+            "kind": "conversion",
+            "mode": "grave_interest"
+          },
+          "round": 4,
+          "segment": "ongoing_effects",
+          "type": "curse_resolved"
+        }
+      ]
+    }
+  }
+]

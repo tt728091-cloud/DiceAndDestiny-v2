@@ -176,6 +176,7 @@ func ReconcileCards(
 			index := activeIndices[len(activeIndices)-1]
 			resolution.CardProposals[index].Accepted = false
 			resolution.CardProposals[index].Released = true
+			DiscardPreventedCard(battle, &resolution.CardProposals[index])
 			activeIndices = activeIndices[:len(activeIndices)-1]
 		}
 		if len(activeIndices) >= desired {
@@ -183,7 +184,7 @@ func ReconcileCards(
 		}
 		needed := desired - len(activeIndices)
 		selected, err := selectAdditionalCards(
-			actor.Cards,
+			battle.Actors[total.TargetActorID].Cards,
 			resolution.CardProposals,
 			total,
 			sourceActorsForTotal(resolution.SourceProposals, total),
@@ -435,18 +436,17 @@ func selectAdditionalCards(
 	random RandomSource,
 ) ([]state.ProposedCardRemoval, error) {
 	excluded := acceptedCardCounts(existing, total.TargetActorID)
-	primary := availableCandidates(zones, []operation.CardZone{operation.ZoneDeck, operation.ZoneDiscard}, excluded)
-	selected, err := selectCandidates(primary, min(count, len(primary)), random)
-	if err != nil {
-		return nil, err
-	}
-	if len(selected) < count {
-		hand := availableCandidates(zones, []operation.CardZone{operation.ZoneHand}, excluded)
-		more, err := selectCandidates(hand, min(count-len(selected), len(hand)), random)
+	var selected []cardCandidate
+	for _, zone := range DefaultSelectionOrder() {
+		candidates := availableCandidates(zones, []operation.CardZone{zone}, excluded)
+		more, err := selectCandidates(candidates, min(count-len(selected), len(candidates)), random)
 		if err != nil {
 			return nil, err
 		}
 		selected = append(selected, more...)
+		if len(selected) == count {
+			break
+		}
 	}
 
 	nextSequence := nextCardSequence(existing, total.TargetActorID)
@@ -797,4 +797,34 @@ func min(left, right int) int {
 		return left
 	}
 	return right
+}
+
+// DiscardPreventedCard preserves health while making a saved damage card
+// unavailable to ordinary draws. OriginalZone remains the reveal provenance.
+func DiscardPreventedCard(battle *state.Battle, proposal *state.ProposedCardRemoval) {
+	actor := battle.Actors[proposal.TargetActorID]
+	for _, zone := range []operation.CardZone{proposal.OriginalZone, operation.ZoneDeck, operation.ZoneHand, operation.ZoneDiscard} {
+		if zone == operation.ZoneRemoved {
+			continue
+		}
+		if zone == operation.ZoneDiscard {
+			for _, id := range actor.Cards.Discard {
+				if id == proposal.CardID {
+					proposal.ReleasedDestination = operation.ZoneDiscard
+					return
+				}
+			}
+		} else if removeOneFromZone(&actor.Cards, zone, proposal.CardID) {
+			actor.Cards.Discard = append(actor.Cards.Discard, proposal.CardID)
+			battle.Actors[proposal.TargetActorID] = actor
+			proposal.ReleasedDestination = operation.ZoneDiscard
+			return
+		}
+	}
+}
+
+// DefaultSelectionOrder exhausts each pile before sampling the next. Explicit
+// future targeting effects may override this rule; ordinary damage never does.
+func DefaultSelectionOrder() []operation.CardZone {
+	return []operation.CardZone{operation.ZoneDiscard, operation.ZoneDeck, operation.ZoneHand}
 }

@@ -1,0 +1,41 @@
+{
+  "schema_version": 1,
+  "id": "curse_eater",
+  "name": "Curse-Eater",
+  "type": "curse_action",
+  "presentation": {
+    "rules_text": "Spend 3 enemy Curse Count. Choose: draw 2 cards or gain 2 Energy. Each named Curse card may be played once per player per round.",
+    "art_key": "card_curse_eater",
+    "effect_summary": "Spend 3 enemy Count: draw 2 or gain 2 Energy."
+  },
+  "cost": {
+    "energy": 0
+  },
+  "play": {
+    "source_zones": [
+      "hand"
+    ],
+    "destination": "discard",
+    "playable_during": [
+      {
+        "segment": "offensive",
+        "phase": "main",
+        "window_purpose": "planning"
+      }
+    ]
+  },
+  "targeting": {
+    "selector": "curse_choice",
+    "minimum": 0,
+    "maximum": 1
+  },
+  "reaction_window": {
+    "opens": false
+  },
+  "operations": [
+    {
+      "type": "curse_card",
+      "target": "self"
+    }
+  ]
+}

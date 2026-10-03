@@ -50,7 +50,7 @@ func _run() -> void:
 	screen._apply_model_result(update)
 	await process_frame
 	_expect(screen._director.peek().get("type") == "combat_damage", "live model response holds the Damage presentation")
-	_expect(not screen._enemy_selector.visible, "battlefield nameplates do not cover queued damage panels")
+	_expect(screen._enemy_buttons.values().all(func(button): return button.disabled), "battlefield nameplates cannot retarget during queued damage")
 	_expect(_has_label(screen, "No cards lost"), "blocked damage visibly reports no cards lost")
 	screen._show_damage_counts(1.0)
 	_expect(screen._actor_profiles.blade.health.value == 8, "combat playback leaves player health unchanged")

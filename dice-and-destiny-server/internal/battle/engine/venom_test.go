@@ -21,6 +21,9 @@ func venomFixture(t *testing.T) (state.Battle, content.BattleLibrary) {
 		t.Fatal(err)
 	}
 	b := settledStatusBattle(t, lib, "", 0)
+	a := b.Actors["player"]
+	a.DiceLoadout = []state.DiceLoadoutEntry{{DiceID: "venom_d6", Count: 5}}
+	b.Actors["player"] = a
 	r := b.Settled.Actors["player"]
 	r.OffensiveAbilityIDs = lib.Combatants["venom"].AbilityBoard.Offensive
 	r.DefensiveAbilityIDs = lib.Combatants["venom"].AbilityBoard.Defensive
@@ -135,7 +138,7 @@ func TestCatalystAutomaticPriorityAndOneRetry(t *testing.T) {
 			rolls[0].Die.Face = tc.vf
 			rolls[1].Die.Face = tc.pf
 			b.Settled.TriggerBatch = &state.SettledTriggerBatch{ID: "test", Rolls: rolls}
-			script := &battlerandom.Scripted{Values: []battlerandom.ScriptedValue{{Stream: "status_effect_dice", Bound: 6, Value: 5}}}
+			script := &ownedSelectionScript{Values: []battlerandom.ScriptedValue{{Stream: "status_effect_dice", Bound: 6, Value: 5}}}
 			e := Engine{namedRandom: script}
 			_, opened, err := e.automaticCatalyst(&b, lib)
 			if err != nil {
@@ -186,7 +189,11 @@ func TestCatalystResolvesCollectedRollsAfterCleanse(t *testing.T) {
 				runtime := b.Settled.Actors["enemy"]
 				runtime.CardInstances = map[string]state.CardInstance{"antidote-card": {InstanceID: "antidote-card", DefinitionID: "antidote"}}
 				b.Settled.Actors["enemy"] = runtime
-				e := Engine{namedRandom: &battlerandom.Scripted{Values: []battlerandom.ScriptedValue{{Stream: "status_effect_dice", Bound: 6, Value: retryFace - 1}, {Stream: "damage_selection", Bound: 3, Value: 0}, {Stream: "damage_selection", Bound: 2, Value: 0}}}}
+				firstPile, secondPile := 3, 2
+				if cleansed {
+					firstPile, secondPile = 1, 3
+				} // Spent Antidote is damaged before the deck.
+				e := Engine{namedRandom: &ownedSelectionScript{Values: []battlerandom.ScriptedValue{{Stream: "status_effect_dice", Bound: 6, Value: retryFace - 1}, {Stream: "damage_selection", Bound: firstPile, Value: 0}, {Stream: "damage_selection", Bound: secondPile, Value: 0}}}}
 				openStatusEffectReveal(&b, true)
 				if cleansed {
 					removeStatus(&b, "enemy", "poison", 0)
@@ -251,7 +258,7 @@ func TestAgitateRevealsAllVolatileRollsDealsDamageAndResumesPlanning(t *testing.
 	applyStatus(&b, lib, "enemy", "volatile_poison", 2)
 	openSettledWindow(&b, "planning", stageOffensivePlan, "planning", []command.Type{command.TypePlanningCards, command.TypePlanningRoll})
 	planningWindow := b.Settled.Window.ID
-	e := Engine{namedRandom: &battlerandom.Scripted{Values: []battlerandom.ScriptedValue{
+	e := Engine{namedRandom: &ownedSelectionScript{Values: []battlerandom.ScriptedValue{
 		{Stream: "status_effect_dice", Bound: 6, Value: 0},
 		{Stream: "status_effect_dice", Bound: 6, Value: 0},
 		{Stream: "damage_selection", Bound: 6, Value: 0},

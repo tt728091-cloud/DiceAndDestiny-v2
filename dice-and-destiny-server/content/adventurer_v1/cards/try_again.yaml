@@ -1,0 +1,41 @@
+{
+  "schema_version": 1,
+  "id": "try_again",
+  "name": "Try Again",
+  "type": "planning",
+  "presentation": {
+    "rules_text": "After your first offensive roll, reroll one of your dice without consuming a normal roll attempt.",
+    "effect_summary": "Reroll one of your dice. Does not use a normal roll attempt.",
+    "illustration_path": "res://assets/battle/cards/loaded_die.png"
+  },
+  "cost": {
+    "energy": 1
+  },
+  "play": {
+    "source_zones": [
+      "hand"
+    ],
+    "destination": "discard",
+    "playable_during": [
+      {
+        "segment": "offensive",
+        "phase": "main",
+        "window_purpose": "planning"
+      }
+    ]
+  },
+  "targeting": {
+    "selector": "one_owned_combat_die",
+    "minimum": 1,
+    "maximum": 1
+  },
+  "reaction_window": {
+    "opens": false
+  },
+  "operations": [
+    {
+      "type": "reroll_die",
+      "target": "selected_die"
+    }
+  ]
+}

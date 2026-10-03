@@ -24,7 +24,7 @@ func _process(_delta: float) -> void:
 	for key in badges:
 		var actor: String = str(key).get_slice(":", 0)
 		if not profiles.has(actor): continue
-		var start: Vector2 = inverse * profiles[actor].statuses.get_global_rect().get_center()
+		var start: Vector2 = inverse * profiles[actor].status_anchor(str(key).get_slice(":", 1))
 		var destination: Control = panel.groups[key]
 		var end: Vector2 = inverse * destination.get_global_rect().get_center()
 		badges[key].position = start.lerp(end, t) - Vector2(badges[key].size.x / 2, 25 + sin(t * PI) * 40)
@@ -40,7 +40,7 @@ func _draw() -> void:
 	for key in panel.groups:
 		var actor: String = str(key).get_slice(":", 0)
 		if not profiles.has(actor): continue
-		var start: Vector2 = inverse * profiles[actor].statuses.get_global_rect().get_center()
+		var start: Vector2 = inverse * profiles[actor].status_anchor(str(key).get_slice(":", 1))
 		var destination: Control = panel.groups[key]
 		var end: Vector2 = inverse * destination.get_global_rect().get_center()
 		var points := PackedVector2Array()

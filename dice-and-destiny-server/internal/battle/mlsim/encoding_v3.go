@@ -202,7 +202,7 @@ func encodeV3Dice(values []float32, actor snapshot.Actor, ownerSlot int, own boo
 		for _, symbol := range die.Symbols {
 			symbolIndex := indexOf(manifest.SymbolVocabulary, symbol)
 			if symbolIndex < 0 {
-				if content.IsVenomIdentifier(symbol) {
+				if content.IsVenomIdentifier(symbol) || content.IsCurseIdentifier(symbol) {
 					continue
 				}
 				return fmt.Errorf("visible die references unknown symbol %q", symbol)
@@ -476,7 +476,7 @@ func encodeV3OperationTypes(output []float32, offset int, operations []content.B
 		if operation.Type != "" {
 			index := indexOf(manifest.OperationVocabulary, operation.Type)
 			if index < 0 {
-				if content.IsVenomIdentifier(operation.Type) {
+				if content.IsVenomIdentifier(operation.Type) || content.IsCurseIdentifier(operation.Type) {
 					continue
 				}
 				return fmt.Errorf("unsupported operation in frozen v3 content: %q", operation.Type)
@@ -508,7 +508,7 @@ func auditV3Catalog(catalog snapshot.ContentCatalog, manifest *observationManife
 	}
 	for _, group := range groups {
 		for _, id := range group.actual {
-			if indexOf(group.frozen, id) < 0 && !content.IsVenomIdentifier(id) {
+			if indexOf(group.frozen, id) < 0 && !(content.IsVenomIdentifier(id) || content.IsCurseIdentifier(id)) {
 				return fmt.Errorf("runtime catalog has content outside frozen v3 %s vocabulary: %q", group.name, id)
 			}
 		}
@@ -535,7 +535,7 @@ func v3VocabularyIndex(id string, vocabulary []string, allowEmpty bool) (float32
 	}
 	index := indexOf(vocabulary, id)
 	if index < 0 {
-		if content.IsVenomIdentifier(id) {
+		if content.IsVenomIdentifier(id) || content.IsCurseIdentifier(id) {
 			return 0, nil
 		}
 		return 0, fmt.Errorf("identifier %q is outside frozen v3 vocabulary", id)

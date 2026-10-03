@@ -3,6 +3,7 @@ package engine
 import (
 	"errors"
 	"fmt"
+	"strconv"
 
 	"diceanddestiny/server/internal/battle/state"
 	"diceanddestiny/server/internal/content"
@@ -31,22 +32,24 @@ type effectContext struct {
 }
 
 type effectResult struct {
-	Damage             []state.SettledDamageSource
-	StatusApplications []state.SettledStatusApplication
-	StatusRemovals     []state.SettledStatusRemoval
-	Rolls              []state.SettledEffectRoll
-	ResourceDeltas     map[string]int
-	DrawCounts         map[string]int
-	MaxRollDeltas      map[string]int
-	AbilityModifiers   []effectAbilityModifier
-	DieChanges         []effectDieChange
-	Preventions        []effectPrevention
-	Scales             []effectScale
-	CanceledActors     []string
-	Reactable          bool
+	Damage                      []state.SettledDamageSource
+	StatusApplications          []state.SettledStatusApplication
+	StatusRemovals              []state.SettledStatusRemoval
+	Rolls                       []state.SettledEffectRoll
+	ImmediateStatusApplications []state.SettledStatusApplication
+	ResourceDeltas              map[string]int
+	DrawCounts                  map[string]int
+	MaxRollDeltas               map[string]int
+	AbilityModifiers            []effectAbilityModifier
+	DieChanges                  []effectDieChange
+	Preventions                 []effectPrevention
+	Scales                      []effectScale
+	CanceledActors              []string
+	Reactable                   bool
 }
 
 type effectAbilityModifier struct {
+	StatusID           string
 	Duration           string
 	ActorID, AbilityID string
 	Modifier           *content.AbilityModifier
@@ -79,6 +82,7 @@ func (r *effectResult) merge(other effectResult) {
 	r.Scales = append(r.Scales, other.Scales...)
 	r.CanceledActors = append(r.CanceledActors, other.CanceledActors...)
 	r.Reactable = r.Reactable || other.Reactable
+	r.ImmediateStatusApplications = append(r.ImmediateStatusApplications, other.ImmediateStatusApplications...)
 	mergeIntMap(&r.ResourceDeltas, other.ResourceDeltas)
 	mergeIntMap(&r.DrawCounts, other.DrawCounts)
 	mergeIntMap(&r.MaxRollDeltas, other.MaxRollDeltas)
@@ -185,7 +189,12 @@ func (e Engine) executeEffect(battle *state.Battle, library content.BattleLibrar
 			return result, nil
 		}
 		for _, targetID := range targets {
-			result.StatusApplications = append(result.StatusApplications, state.SettledStatusApplication{SourceActorID: ctx.SourceActorID, TargetActorID: targetID, StatusID: op.StatusID, Stacks: max(1, op.StackCount)})
+			application := state.SettledStatusApplication{SourceActorID: ctx.SourceActorID, TargetActorID: targetID, StatusID: op.StatusID, Stacks: max(1, op.StackCount)}
+			if op.ApplicationTiming == "immediate" {
+				result.ImmediateStatusApplications = append(result.ImmediateStatusApplications, application)
+			} else {
+				result.StatusApplications = append(result.StatusApplications, application)
+			}
 		}
 	case "remove_status", "remove_status_stack":
 		statusID := op.StatusID
@@ -240,13 +249,27 @@ func (e Engine) executeEffect(battle *state.Battle, library content.BattleLibrar
 		if abilityID == "" {
 			return result, errors.New("ability target is required")
 		}
-		result.AbilityModifiers = append(result.AbilityModifiers, effectAbilityModifier{ActorID: ctx.SourceActorID, AbilityID: abilityID, Duration: op.Duration, Modifier: op.Modifier})
+		result.AbilityModifiers = append(result.AbilityModifiers, effectAbilityModifier{ActorID: ctx.SourceActorID, AbilityID: abilityID, Duration: op.Duration, StatusID: op.StatusID, Modifier: op.Modifier})
+	case "reroll_die":
+		rt := battle.Settled.Actors[ctx.SourceActorID]
+		if ctx.SelectedDieIndex < 0 || ctx.SelectedDieIndex >= len(rt.FinalDice) {
+			return result, errors.New("roll before choosing a die")
+		}
+		rolled, err := e.rollCombatDice(battle, library, ctx.SourceActorID, []int{ctx.SelectedDieIndex})
+		if err != nil {
+			return result, err
+		}
+		result.DieChanges = append(result.DieChanges, effectDieChange{ActorID: ctx.SourceActorID, Index: ctx.SelectedDieIndex, Face: rolled[ctx.SelectedDieIndex].Face})
 	case "modify_die":
 		actorID := ctx.SelectedDieActorID
 		if actorID == "" {
 			actorID = ctx.SourceActorID
 		}
-		result.DieChanges = append(result.DieChanges, effectDieChange{ActorID: actorID, Index: ctx.SelectedDieIndex, Face: op.Face})
+		face := op.Face
+		if op.Modification == "adjacent_non_six" {
+			face, _ = strconv.Atoi(ctx.SelectedStatusID)
+		}
+		result.DieChanges = append(result.DieChanges, effectDieChange{ActorID: actorID, Index: ctx.SelectedDieIndex, Face: face})
 	case "prevent_damage":
 		amount, err := operationAmount(op, ctx.RolledFace)
 		if err != nil {
@@ -277,6 +300,7 @@ func (e Engine) executeEffect(battle *state.Battle, library content.BattleLibrar
 		if len(rollActors) == 0 {
 			rollActors = []string{ctx.SourceActorID}
 		}
+		rollKey := fmt.Sprintf("%s:%s:%d", ctx.SourceContentID, op.ID, battle.Settled.Sequence)
 		for _, rollActorID := range rollActors {
 			for rollIndex := 0; rollIndex < count; rollIndex++ {
 				roll := state.SettledEffectRoll{
@@ -297,15 +321,10 @@ func (e Engine) executeEffect(battle *state.Battle, library content.BattleLibrar
 				if stream == "" {
 					stream = "effect_dice"
 				}
-				value, err := e.namedIntn(battle, stream, die.SideCount)
-				if err != nil {
+				if err := e.rollOwnedEffect(battle, library, &roll, rollKey, stream, false); err != nil {
 					return result, err
 				}
-				face := die.Faces[value]
-				roll.Die.Face = face.Number
-				roll.Die.Value = face.Number
-				roll.Die.Symbols = []string{face.Symbol}
-				roll.Resolved = true
+				face := dieFace(library, roll.Die.DieID, roll.Die.Face)
 				result.Rolls = append(result.Rolls, roll)
 				if ctx.DeferRollResolution || (result.Reactable && ctx.DeferReactableRoll) {
 					continue
@@ -324,6 +343,7 @@ func (e Engine) executeEffect(battle *state.Battle, library content.BattleLibrar
 				}
 			}
 		}
+	case "curse_action", "curse_card": // Resolved by authoritative Curse work, after Blind/damage.
 	default:
 		return result, fmt.Errorf("unsupported operation type %q", op.Type)
 	}
@@ -362,6 +382,9 @@ func effectTargets(battle *state.Battle, ctx effectContext, target string) ([]st
 }
 
 func (e Engine) applyEffectMutations(battle *state.Battle, library content.BattleLibrary, sourceCardInstanceID string, result effectResult) error {
+	for _, application := range result.ImmediateStatusApplications {
+		applyVenomStatus(battle, library, application.SourceActorID, application)
+	}
 	for actorID, delta := range result.ResourceDeltas {
 		gainEnergy(battle, actorID, delta)
 	}
@@ -386,11 +409,14 @@ func (e Engine) applyEffectMutations(battle *state.Battle, library content.Battl
 			return fmt.Errorf("ability modifier target %q is invalid", modifier.AbilityID)
 		}
 		expires := 0
-		if modifier.Duration == "round" {
+		if modifier.Duration == "round" || modifier.Duration == "offensive" {
 			expires = battle.Segment.Round
 		}
-		runtime.AbilityModifiers = append(runtime.AbilityModifiers, state.RuntimeAbilityModifier{ExpiresAfterRound: expires, SourceCardInstanceID: sourceCardInstanceID, AbilityID: modifier.AbilityID, BonusID: modifier.Modifier.AddConditionalBonus.ID})
+		runtime.AbilityModifiers = append(runtime.AbilityModifiers, state.RuntimeAbilityModifier{StatusID: modifier.StatusID, ExpiresAfterOffensive: modifier.Duration == "offensive", ExpiresAfterRound: expires, SourceCardInstanceID: sourceCardInstanceID, AbilityID: modifier.AbilityID, BonusID: modifier.Modifier.AddConditionalBonus.ID})
 		battle.Settled.Actors[modifier.ActorID] = runtime
+		if modifier.StatusID != "" {
+			applyStatus(battle, library, modifier.ActorID, modifier.StatusID, 1)
+		}
 	}
 	for _, change := range result.DieChanges {
 		if battle.Settled.Stage == stageBlindReact && battle.Settled.PendingBlind != nil {
@@ -409,7 +435,9 @@ func (e Engine) applyEffectMutations(battle *state.Battle, library content.Battl
 		if face.Number == 0 {
 			return errors.New("die face is invalid")
 		}
-		runtime.FinalDice[change.Index] = state.RolledDie{Index: change.Index, DieID: runtime.FinalDice[change.Index].DieID, Face: face.Number, Value: face.Number, Symbols: []string{face.Symbol}}
+		runtime.FinalDice[change.Index].Face = face.Number
+		runtime.FinalDice[change.Index].Value = face.Number
+		runtime.FinalDice[change.Index].Symbols = []string{face.Symbol}
 		runtime.QualifiedAbilityIDs = qualifiedAbilities(library, runtime.OffensiveAbilityIDs, runtime.FinalDice, runtime.AbilityModifiers)
 		battle.Settled.Actors[change.ActorID] = runtime
 	}
@@ -432,7 +460,13 @@ func (e Engine) applyEffectMutations(battle *state.Battle, library content.Battl
 		}
 	}
 	for _, removal := range result.StatusRemovals {
-		removeStatus(battle, removal.ActorID, removal.StatusID, removal.Stacks)
+		if removal.StatusID == "curse_count" {
+			if err := e.cleanseCurseCount(battle, library, removal.ActorID, removal.Stacks); err != nil {
+				return err
+			}
+		} else {
+			removeStatus(battle, removal.ActorID, removal.StatusID, removal.Stacks)
+		}
 	}
 	for _, prevention := range result.Preventions {
 		source := effectDamageSourceByID(battle, prevention.ProposalID)

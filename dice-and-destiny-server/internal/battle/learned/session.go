@@ -175,7 +175,7 @@ func (s *Session) ResetCharacter(battleID string, seed uint64, humanSeat string,
 	if character == "" {
 		character = "blade_warden"
 	}
-	if character != "blade_warden" && character != "venom" {
+	if character != "blade_warden" && character != "venom" && character != "curse" && character != "adventurer" {
 		return nil, fmt.Errorf("unknown playable character %q", character)
 	}
 	s.mu.Lock()
@@ -400,6 +400,7 @@ func (s *Session) present(result engine.Result) map[string]any {
 	if modelTurn {
 		delete(view, "pending_input")
 		delete(view, "legal_actions")
+		delete(view, "defense_previews")
 	}
 	if s.current.Terminal {
 		view["battle_result"] = humanResult(s.current.Winner, s.current.Metrics.Status, s.humanSeat)

@@ -1,0 +1,41 @@
+{
+  "schema_version": 1,
+  "id": "ruin_made_flesh",
+  "name": "Ruin Made Flesh",
+  "type": "curse_action",
+  "presentation": {
+    "rules_text": "Spend 3 or 6 enemy Curse Count to add 2 or 4 damage to your selected damaging Offensive ability against that enemy. Damage remains defendable. No refund if the ability is canceled. Each named Curse card may be played once per player per round.",
+    "art_key": "card_ruin_made_flesh",
+    "effect_summary": "Spend 3 or 6 Count for +2 or +4 attack damage."
+  },
+  "cost": {
+    "energy": 1
+  },
+  "play": {
+    "source_zones": [
+      "hand"
+    ],
+    "destination": "discard",
+    "playable_during": [
+      {
+        "segment": "offensive",
+        "phase": "main",
+        "window_purpose": "reaction"
+      }
+    ]
+  },
+  "targeting": {
+    "selector": "curse_choice",
+    "minimum": 0,
+    "maximum": 1
+  },
+  "reaction_window": {
+    "opens": false
+  },
+  "operations": [
+    {
+      "type": "curse_card",
+      "target": "self"
+    }
+  ]
+}
