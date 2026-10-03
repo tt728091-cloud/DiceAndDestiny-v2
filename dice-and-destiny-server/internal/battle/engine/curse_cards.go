@@ -326,12 +326,8 @@ func (e Engine) playCurseCard(b *state.Battle, lib content.BattleLibrary, actor,
 		before := settledSourceAmount(*s)
 		s.ReactionPrevention += 2
 		setUnifiedSourceAmount(b, s, max(0, before-2))
-		if unifiedDefense(b) {
-			if err := e.reconcileUnifiedDamage(b, true); err != nil {
-				return err
-			}
-		} else {
-			reconcileSettledDamage(b.Settled.PendingDamage, b)
+		if err := e.reconcilePreventionDestination(b, def.SavedCardDestination); err != nil {
+			return err
 		}
 	}
 	curseLog(b, actor, "card", map[string]any{"card_id": def.ID, "choice": key, "targets": targets})

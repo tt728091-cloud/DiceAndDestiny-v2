@@ -38,13 +38,15 @@ work still run. The engine does not open a second Damage segment.
 - Reducing one source only releases that source's cards. For attacks of four and
   six, halving the six leaves four plus three; it never halves the combined ten.
 - Rolled defensive abilities save in reverse live-pile priority: hand → draw →
-  discard, randomly within the preferred pile. They leave saved cards where they
-  currently are; they do not undo a play or draw.
+  discard, randomly within the preferred pile. The `saved_card_destination` setting
+  controls their destination; `original` never undoes a play or draw.
 - Reductions apply in play order. Preventing three from seven and then halving
   leaves two; halving seven (rounded down) before preventing three leaves zero.
-- Brace and other prevention cards leave saved cards in their live pile. A played
-  Brace still goes to discard, even if it saves itself; protecting another source
-  does not clear Brace's own outstanding reservation. Protect retains its explicit
+- Cards and defensive abilities use the shared `saved_card_destination` setting:
+  `original` (default) or `discard`. Brace/Guard explicitly use discard and
+  Brace+/Guard+ use original. A played Brace still goes to discard, even if it saves
+  itself; protecting another source does not clear Brace's own outstanding
+  reservation. Protect retains its explicit
   saved-to-discard status rule. Discard counts as health and never reshuffles.
 - Repainting, reopening a save, or reconciling unchanged damage never rerolls
   existing reservations. Saved proposals remain released.

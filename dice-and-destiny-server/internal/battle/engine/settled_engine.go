@@ -763,6 +763,7 @@ func (e Engine) finalizeDefenses(battle *state.Battle, library content.BattleLib
 		if source := batchSourceByID(battle.Settled.PendingDamage, selection.SourceID); source != nil {
 			before = settledSourceAmount(*source)
 		}
+		result.SavedCardDestination = ability.SavedCardDestination
 		if err := e.applyEffectMutations(battle, library, "", result); err != nil {
 			return nil, err
 		}
@@ -2470,6 +2471,7 @@ func (e Engine) playSettledCard(battle *state.Battle, library content.BattleLibr
 	if err != nil {
 		return err
 	}
+	result.SavedCardDestination = definition.SavedCardDestination
 	if err := e.applyEffectMutations(battle, library, instanceID, result); err != nil {
 		return err
 	}

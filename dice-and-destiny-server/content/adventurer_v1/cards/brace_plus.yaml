@@ -1,11 +1,11 @@
 {
   "schema_version": 1,
-  "id": "brace",
-  "name": "Brace",
+  "id": "brace_plus",
+  "name": "Brace+",
   "type": "damage_response",
   "presentation": {
-    "rules_text": "Prevent 3 damage from one incoming source. Saved cards go to discard and still count as health. Playing Brace sends it to discard, even if it saves itself.",
-    "effect_summary": "Prevent 3 damage from one incoming source. Saved cards go to discard.",
+    "rules_text": "Prevent 3 damage from one incoming source. Saved cards remain in their current piles and still count as health. Playing Brace+ sends it to discard, even if it saves itself.",
+    "effect_summary": "Prevent 3 damage from one incoming source. Return saved cards to their piles.",
     "illustration_path": "res://assets/battle/cards/emergency_ward.png"
   },
   "cost": {
@@ -39,5 +39,5 @@
       "amount": 3
     }
   ],
-  "saved_card_destination": "discard"
+  "saved_card_destination": "original"
 }

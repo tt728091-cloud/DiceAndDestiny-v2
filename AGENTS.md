@@ -109,7 +109,8 @@ Use `./scripts/godot.sh` for every additional Godot test.
 
 ## Default damage prevention destination
 
-- Damage-prevention cards, including Brace, release saved cards in their current piles by default: draw stays draw, hand stays hand, discard stays discard. Reservations do not move cards, so prevention must not rewind a draw or play.
+- Cards and defensive abilities configure `saved_card_destination` in their catalog definition: `original` preserves the live pile; `discard` moves newly saved cards to discard. Omission defaults to `original`. Never decide this by card/ability ID or upgrade name. See `docs/game-design/prevention-configuration.md`.
+- The Adventurer test loadout explicitly uses discard for Brace/Guard and original for Brace+/Guard+. Reservations do not move cards, so original-pile prevention must not rewind a draw or play.
 - A played prevention card goes to its normal play destination (usually discard), even if it saves itself. If it remains threatened by an unprotected source, removal still follows it into that destination. Protect retains its explicitly authored saved-to-discard status rule.
 - Never duplicate cards or resurrect permanently removed cards. Repeated reconciliation and save/reload must preserve pile membership and health.
 - Publish the saved card's live destination for animations, including the played card's final destination after its effects resolve. Saved-card flights and pile counts must agree with authority. Any different destination requires an explicit effect.
@@ -129,6 +130,6 @@ Use `./scripts/godot.sh` for every additional Godot test.
 
 - New battles launched from the game menu use the pinned `unified_defense` rule. Legacy saves/replays retain their original flow. See `docs/game-design/unified-defense.md`.
 - Reveal pending removals when attacks enter Defense, before rolling defenses. Each attack owns separate, stable card reservations; never pool attacks for source-specific prevention or display the same card in two attack lists.
-- Rolled defensive abilities release cards in hand → draw → discard priority, randomly within each live pile, leaving saved cards in their current pile. Prevention cards use the same live-pile destination default; statuses follow their explicitly authored rule above. Never undo a card play or draw when releasing a reservation.
+- Rolled defensive abilities release cards in hand → draw → discard priority, randomly within each live pile. Cards and defensive abilities send released cards to their configured destination; statuses follow their explicitly authored rule above. Never undo a card play or draw when releasing a reservation.
 - The main Pass ends that participant's remaining defenses and card opportunities. Applying a completed defensive roll returns to the same segment; it must not act as the main Pass. Auto-complete when only Pass remains, after the usual review time.
 - Commit remaining damage and queued attack statuses once at the end. Do not open a second damage-response phase or reselect the already revealed cards.

@@ -32,6 +32,7 @@ type effectContext struct {
 }
 
 type effectResult struct {
+	SavedCardDestination        string
 	Damage                      []state.SettledDamageSource
 	StatusApplications          []state.SettledStatusApplication
 	StatusRemovals              []state.SettledStatusRemoval
@@ -499,12 +500,8 @@ func (e Engine) applyEffectMutations(battle *state.Battle, library content.Battl
 		removeSourcesByActor(battle, actorID)
 	}
 	if len(result.Preventions) > 0 || len(result.Scales) > 0 {
-		if unifiedDefense(battle) {
-			if err := e.reconcileUnifiedDamage(battle, true); err != nil {
-				return err
-			}
-		} else {
-			reconcileSettledDamage(battle.Settled.PendingDamage, battle)
+		if err := e.reconcilePreventionDestination(battle, result.SavedCardDestination); err != nil {
+			return err
 		}
 	}
 	return nil

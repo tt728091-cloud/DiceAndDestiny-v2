@@ -18,7 +18,11 @@
   "decklist": [
     {
       "card_id": "brace",
-      "count": 3
+      "count": 2
+    },
+    {
+      "card_id": "brace_plus",
+      "count": 1
     },
     {
       "card_id": "nudge",
@@ -57,7 +61,8 @@
       "decisive_blow"
     ],
     "defensive": [
-      "adventurer_guard"
+      "adventurer_guard",
+      "adventurer_guard_plus"
     ]
   },
   "starting_statuses": [],

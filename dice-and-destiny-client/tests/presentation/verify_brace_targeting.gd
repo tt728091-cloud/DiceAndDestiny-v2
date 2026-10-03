@@ -12,15 +12,16 @@ func _run() -> void:
 	for width in [1280, 1920]:
 		canvas.size = Vector2i(width, width * 9 / 16)
 		for unified in [false, true]:
-			for scenario in ["single", "same_enemy", "multiple_enemies", "one_viable", "none"]: await _scenario(scenario, unified)
+			for definition in ["brace", "brace_plus"]:
+				for scenario in ["single", "same_enemy", "multiple_enemies", "one_viable", "none"]: await _scenario(scenario, unified, definition)
 	await _native()
 	print("BRACE TARGETING: " + ("FAILED" if failed else "PASSED")); quit(1 if failed else 0)
-func _scenario(scenario: String, unified: bool = false) -> void:
+func _scenario(scenario: String, unified: bool = false, definition: String = "brace") -> void:
 	var fixture := base.duplicate(true); fixture.events = []; fixture.learned_policy = {}
 	fixture.snapshot.unified_defense = unified
 	fixture.snapshot.segment = "defensive" if unified else "damage_resolution"; fixture.snapshot.stage = "defense_selection" if unified else "damage_reaction"
 	fixture.snapshot.actors.blade.hand = ["brace-card"]; fixture.snapshot.actors.blade.hand_count = 1
-	fixture.snapshot.actors.blade.card_instances = {"brace-card": {"instance_id": "brace-card", "definition_id": "brace"}}
+	fixture.snapshot.actors.blade.card_instances = {"brace-card": {"instance_id": "brace-card", "definition_id": definition}}
 	fixture.snapshot.actors.blade.energy_points = 3
 	fixture.pending_input = {"blade": {"id": "damage-input", "segment": fixture.snapshot.segment, "stage": fixture.snapshot.stage, "allowed_commands": ["commit_interaction", "pass"]}}
 	fixture.legal_actions = []; fixture.snapshot.damage_sources = []
@@ -110,7 +111,7 @@ func _native() -> void:
 	await _ready_hand(screen)
 	var card_index := -1
 	for i in screen._hand_dock.cards.size():
-		if screen._hand_dock.cards[i].definition_id == "brace": card_index = i; break
+		if screen._hand_dock.cards[i].definition_id in ["brace", "brace_plus"]: card_index = i; break
 	_expect(card_index >= 0, "native trace reaches playable Brace")
 	if card_index >= 0:
 		var before: Dictionary = screen._view.actor("blade").duplicate(true)

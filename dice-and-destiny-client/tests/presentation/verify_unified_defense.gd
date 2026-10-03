@@ -92,6 +92,25 @@ func _inspect_hub(result: Dictionary, mode: String) -> void:
 		var id: String = str(cards[0].payload.commitment.card_ids[0])
 		var entry: Dictionary = fixture.snapshot.actors.blade.card_instances[id]
 		_expect(screen._card_legal(str(entry.definition_id)), "prevention playable in Defense hub")
+	var defenses: Array = fixture.legal_actions.filter(func(a): return a.type == "planning_select_ability")
+	for ability_id in ["adventurer_guard", "adventurer_guard_plus"]:
+		_expect(defenses.any(func(a): return a.payload.ability_id == ability_id), "both Guard versions available")
+		var definition: Dictionary = screen._view.content_definition("abilities", ability_id)
+		_expect(definition.get("saved_card_destination") == ("original" if ability_id.ends_with("_plus") else "discard"), "native pinned ability carries destination")
+	if not defenses.is_empty():
+		screen._selected_source = str(defenses[0].payload.target_ids[0])
+		screen._render()
+		for frame in 12: await process_frame
+		for ability_id in ["adventurer_guard", "adventurer_guard_plus"]:
+			var found := false
+			for button in screen._root.find_children("*", "Button", true, false):
+				var inspection := str(button.get_meta("inspection_id", ""))
+				if ability_id + "." in inspection or inspection.ends_with("." + ability_id):
+					found = true
+					_expect(button.is_visible_in_tree(), "defense choice visible")
+					_expect(Rect2(Vector2.ZERO, Vector2(canvas.size)).encloses(button.get_global_rect()), "defense choice inside viewport")
+					_expect("Saved cards" in button.tooltip_text, "defense hover explains destination")
+			_expect(found, ability_id + " has a rendered choice")
 	var all_actions: Array = screen._view.legal_actions
 	var passes: Array = all_actions.filter(func(action): return action.type == "planning_pass")
 	screen._auto_pass_disabled = false

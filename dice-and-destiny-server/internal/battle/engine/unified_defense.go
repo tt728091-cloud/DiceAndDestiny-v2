@@ -188,3 +188,17 @@ func unifiedContinueCommand(b *state.Battle, actor string, pending state.Pending
 	payload, _ := json.Marshal(command.PlanningPassPayload{PendingInputID: pending.ID, Checkpoint: planningCheckpoint(pending)})
 	return command.Command{BattleID: b.ID, ActorID: actor, Type: command.TypePlanningPass, Payload: payload}
 }
+
+// All card and defensive-ability definitions share this destination setting.
+// Omitted values preserve the live pile; explicitly authored discard moves only
+// newly saved cards, never a prior effect's already released reservations.
+func (e Engine) reconcilePreventionDestination(b *state.Battle, destination string) error {
+	if destination != "" && destination != content.SavedCardsOriginal && destination != content.SavedCardsDiscard {
+		return fmt.Errorf("invalid saved_card_destination %q", destination)
+	}
+	if unifiedDefense(b) {
+		return e.reconcileUnifiedDamage(b, destination != content.SavedCardsDiscard)
+	}
+	reconcileSettledDamageDestination(b.Settled.PendingDamage, b, destination == content.SavedCardsDiscard)
+	return nil
+}

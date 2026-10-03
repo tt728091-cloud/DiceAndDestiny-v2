@@ -89,16 +89,17 @@ type CardPlayDefinition struct {
 }
 
 type BattleCardDefinition struct {
-	SchemaVersion  int                      `yaml:"schema_version" json:"schema_version"`
-	ID             string                   `yaml:"id" json:"id"`
-	Name           string                   `yaml:"name" json:"name"`
-	Type           string                   `yaml:"type" json:"type"`
-	Presentation   Presentation             `yaml:"presentation" json:"presentation"`
-	Cost           BattleCost               `yaml:"cost" json:"cost"`
-	Play           CardPlayDefinition       `yaml:"play" json:"play"`
-	Targeting      TargetingDefinition      `yaml:"targeting" json:"targeting"`
-	ReactionWindow ReactionWindowDefinition `yaml:"reaction_window" json:"reaction_window"`
-	Operations     []BattleOperation        `yaml:"operations" json:"operations"`
+	SavedCardDestination string                   `yaml:"saved_card_destination,omitempty" json:"saved_card_destination,omitempty"`
+	SchemaVersion        int                      `yaml:"schema_version" json:"schema_version"`
+	ID                   string                   `yaml:"id" json:"id"`
+	Name                 string                   `yaml:"name" json:"name"`
+	Type                 string                   `yaml:"type" json:"type"`
+	Presentation         Presentation             `yaml:"presentation" json:"presentation"`
+	Cost                 BattleCost               `yaml:"cost" json:"cost"`
+	Play                 CardPlayDefinition       `yaml:"play" json:"play"`
+	Targeting            TargetingDefinition      `yaml:"targeting" json:"targeting"`
+	ReactionWindow       ReactionWindowDefinition `yaml:"reaction_window" json:"reaction_window"`
+	Operations           []BattleOperation        `yaml:"operations" json:"operations"`
 }
 
 type BattleUsage struct {
@@ -149,17 +150,18 @@ type DefenseResolution struct {
 }
 
 type BattleAbilityDefinition struct {
-	SchemaVersion int                   `yaml:"schema_version" json:"schema_version"`
-	ID            string                `yaml:"id" json:"id"`
-	Name          string                `yaml:"name" json:"name"`
-	Type          string                `yaml:"type" json:"type"`
-	Presentation  Presentation          `yaml:"presentation" json:"presentation"`
-	Cost          BattleCost            `yaml:"cost" json:"cost"`
-	Usage         BattleUsage           `yaml:"usage" json:"usage"`
-	Targeting     *TargetingDefinition  `yaml:"targeting,omitempty" json:"targeting,omitempty"`
-	Qualification *AbilityQualification `yaml:"qualification,omitempty" json:"qualification,omitempty"`
-	Selection     *DefenseSelection     `yaml:"selection,omitempty" json:"selection,omitempty"`
-	Resolution    *DefenseResolution    `yaml:"resolution,omitempty" json:"resolution,omitempty"`
+	SavedCardDestination string                `yaml:"saved_card_destination,omitempty" json:"saved_card_destination,omitempty"`
+	SchemaVersion        int                   `yaml:"schema_version" json:"schema_version"`
+	ID                   string                `yaml:"id" json:"id"`
+	Name                 string                `yaml:"name" json:"name"`
+	Type                 string                `yaml:"type" json:"type"`
+	Presentation         Presentation          `yaml:"presentation" json:"presentation"`
+	Cost                 BattleCost            `yaml:"cost" json:"cost"`
+	Usage                BattleUsage           `yaml:"usage" json:"usage"`
+	Targeting            *TargetingDefinition  `yaml:"targeting,omitempty" json:"targeting,omitempty"`
+	Qualification        *AbilityQualification `yaml:"qualification,omitempty" json:"qualification,omitempty"`
+	Selection            *DefenseSelection     `yaml:"selection,omitempty" json:"selection,omitempty"`
+	Resolution           *DefenseResolution    `yaml:"resolution,omitempty" json:"resolution,omitempty"`
 }
 
 type StatusStacking struct {
@@ -475,6 +477,9 @@ func validateBattleLibrary(lib BattleLibrary) error {
 		}
 	}
 	for id, card := range lib.Cards {
+		if err := validateSavedCardDestination(card.SavedCardDestination); err != nil {
+			return fmt.Errorf("%w: card %q: %v", ErrInvalidContent, id, err)
+		}
 		if card.SchemaVersion != 1 {
 			return fmt.Errorf("%w: card %q schema_version must be 1", ErrInvalidContent, id)
 		}
@@ -503,6 +508,9 @@ func validateBattleLibrary(lib BattleLibrary) error {
 		}
 	}
 	for id, ability := range lib.Abilities {
+		if err := validateSavedCardDestination(ability.SavedCardDestination); err != nil {
+			return fmt.Errorf("%w: ability %q: %v", ErrInvalidContent, id, err)
+		}
 		if ability.SchemaVersion != 1 {
 			return fmt.Errorf("%w: ability %q schema_version must be 1", ErrInvalidContent, id)
 		}
@@ -913,4 +921,19 @@ func SortedCombatantIDs(lib BattleLibrary) []string {
 	}
 	sort.Strings(ids)
 	return ids
+}
+
+// Saved-card destinations apply to prevention, independently of a card's play destination.
+const (
+	SavedCardsOriginal = "original"
+	SavedCardsDiscard  = "discard"
+)
+
+func validateSavedCardDestination(destination string) error {
+	switch destination {
+	case "", SavedCardsOriginal, SavedCardsDiscard:
+		return nil
+	default:
+		return fmt.Errorf("saved_card_destination must be original or discard, got %q", destination)
+	}
 }
