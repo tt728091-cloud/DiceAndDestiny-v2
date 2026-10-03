@@ -11,16 +11,18 @@ func _run() -> void:
 	base = gateway.start_battle("brace-targeting", 43)
 	for width in [1280, 1920]:
 		canvas.size = Vector2i(width, width * 9 / 16)
-		for scenario in ["single", "same_enemy", "multiple_enemies", "one_viable", "none"]: await _scenario(scenario)
+		for unified in [false, true]:
+			for scenario in ["single", "same_enemy", "multiple_enemies", "one_viable", "none"]: await _scenario(scenario, unified)
 	await _native()
 	print("BRACE TARGETING: " + ("FAILED" if failed else "PASSED")); quit(1 if failed else 0)
-func _scenario(scenario: String) -> void:
+func _scenario(scenario: String, unified: bool = false) -> void:
 	var fixture := base.duplicate(true); fixture.events = []; fixture.learned_policy = {}
-	fixture.snapshot.segment = "damage_resolution"; fixture.snapshot.stage = "damage_reaction"
+	fixture.snapshot.unified_defense = unified
+	fixture.snapshot.segment = "defensive" if unified else "damage_resolution"; fixture.snapshot.stage = "defense_selection" if unified else "damage_reaction"
 	fixture.snapshot.actors.blade.hand = ["brace-card"]; fixture.snapshot.actors.blade.hand_count = 1
 	fixture.snapshot.actors.blade.card_instances = {"brace-card": {"instance_id": "brace-card", "definition_id": "brace"}}
 	fixture.snapshot.actors.blade.energy_points = 3
-	fixture.pending_input = {"blade": {"id": "damage-input", "segment": "damage_resolution", "stage": "damage_reaction", "allowed_commands": ["commit_interaction", "pass"]}}
+	fixture.pending_input = {"blade": {"id": "damage-input", "segment": fixture.snapshot.segment, "stage": fixture.snapshot.stage, "allowed_commands": ["commit_interaction", "pass"]}}
 	fixture.legal_actions = []; fixture.snapshot.damage_sources = []
 	for i in (1 if scenario == "single" or scenario == "none" else 2):
 		var amount := 0 if scenario == "none" or (scenario == "one_viable" and i == 0) else 3

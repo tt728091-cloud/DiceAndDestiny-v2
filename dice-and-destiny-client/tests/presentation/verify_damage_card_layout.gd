@@ -15,7 +15,8 @@ func _run() -> void:
 				fixture.events = []; fixture.learned_policy = {}; fixture.legal_actions = []; fixture.pending_input = {}
 				fixture.snapshot.actors.erase("goblin-2")
 				for i in range(2, enemies + 1): fixture.snapshot.actors["goblin-" + str(i)] = fixture.snapshot.actors.goblin.duplicate(true)
-				fixture.snapshot.segment = "damage_resolution"; fixture.snapshot.stage = "damage_reaction"
+				fixture.snapshot.unified_defense = OS.get_environment("DICE_AND_DESTINY_UNIFIED_LAYOUT") == "1"
+				fixture.snapshot.segment = "defensive" if fixture.snapshot.unified_defense else "damage_resolution"; fixture.snapshot.stage = "defense_selection" if fixture.snapshot.unified_defense else "damage_reaction"
 				var sources: Array = []; var removals: Array = []
 				for actor in fixture.snapshot.actors:
 					var amounts: Array = [4, 2, 3] if actor == "blade" else [5]
@@ -27,6 +28,7 @@ func _run() -> void:
 							removals.append({"card_id": id + "-" + str(index), "card_definition_id": ["black_dividend", "curse_bloom", "three_knocks", "grave_interest"][index % 4], "target_actor_id": actor, "original_zone": ["discard", "deck", "hand"][index % 3], "accepted": true, "released": false, "damage_proposal_ids": [id]})
 				removals.append({"card_id": "saved", "card_definition_id": "curse_bloom", "target_actor_id": "blade", "accepted": true, "released": true})
 				fixture.snapshot.settled_damage = {"id": "stacks", "sources": sources, "removals": removals}
+				if fixture.snapshot.unified_defense: fixture.snapshot.damage_sources = sources.duplicate(true)
 				var screen = SCREEN.instantiate(); screen.initial_result = fixture; screen.gateway = BattleGateway.new(FakeBattleAuthority.new()); screen._auto_pass_disabled = true
 				screen.active_store = ActiveBattleStore.new(WorkspacePaths.persistent_file("damage-stacks.json"))
 				root.add_child(screen); screen.set_process(false)

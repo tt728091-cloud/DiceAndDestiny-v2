@@ -101,7 +101,7 @@ func _selected_model_sha256() -> String:
 		_:
 			return ""
 
-func start_battle(battle_id: String, human_seat: String, seed: int, rematch: bool = false, character: String = "blade_warden") -> Dictionary:
+func start_battle(battle_id: String, human_seat: String, seed: int, rematch: bool = false, character: String = "blade_warden", unified_defense: bool = false) -> Dictionary:
 	var initialized := ensure_initialized()
 	if initialized.get("ok") != true:
 		return {"accepted": false, "error": initialized.get("error", _initialization_error)}
@@ -110,6 +110,7 @@ func start_battle(battle_id: String, human_seat: String, seed: int, rematch: boo
 		"battle_id": battle_id,
 		"human_seat": human_seat,
 		"character": character,
+		"unified_defense": unified_defense,
 		"seed": seed,
 		"rematch": rematch,
 	})

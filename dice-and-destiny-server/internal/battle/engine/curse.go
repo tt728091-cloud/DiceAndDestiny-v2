@@ -452,6 +452,7 @@ func removeCursePreparation(b *state.Battle, p state.CursePreparation) {
 }
 func expireCursePreparations(b *state.Battle) {
 	c := curseRuntime(b)
+	damageExit := b.Segment.Current == segment.DamageResolution || (b.Settled.UnifiedDefense && b.Segment.Current == segment.Defensive && b.Settled.Stage == "complete")
 	if b.Segment.Current == segment.OngoingEffects {
 		expireBlackDividends(b)
 		for _, actor := range sortedSettledActorIDs(b) {
@@ -474,11 +475,11 @@ func expireCursePreparations(b *state.Battle) {
 		}
 	}
 	for _, p := range append([]state.CursePreparation(nil), c.Preparations...) {
-		if b.Segment.Current == segment.OngoingEffects && p.ExpiresEffects <= b.Segment.Round || b.Segment.Current == segment.DamageResolution && p.CardID == "black_fingerprint" && p.Round <= b.Segment.Round || b.Segment.Current == segment.Income && p.CardID == "maledictions_refusal" {
+		if b.Segment.Current == segment.OngoingEffects && p.ExpiresEffects <= b.Segment.Round || damageExit && p.CardID == "black_fingerprint" && p.Round <= b.Segment.Round || b.Segment.Current == segment.Income && p.CardID == "maledictions_refusal" {
 			removeCursePreparation(b, p)
 		}
 	}
-	if b.Segment.Current == segment.DamageResolution {
+	if damageExit {
 		c.Bags = map[string][]int{}
 	}
 }

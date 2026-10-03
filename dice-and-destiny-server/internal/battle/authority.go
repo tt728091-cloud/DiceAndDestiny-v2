@@ -315,6 +315,9 @@ func (authority *Authority) startBattle(cmd command.Command) engine.Result {
 	if err != nil {
 		return authorityRejected(err.Error())
 	}
+	if battleState.Settled != nil {
+		battleState.Settled.UnifiedDefense = payload.UnifiedDefense
+	}
 	if payload.Seed != nil {
 		battleState.Random = state.RandomState{
 			Mode:      state.RandomModeReproducible,

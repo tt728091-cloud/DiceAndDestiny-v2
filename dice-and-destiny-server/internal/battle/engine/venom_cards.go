@@ -154,15 +154,15 @@ func venomCardChoicesForEnemy(b *state.Battle, lib content.BattleLibrary, actor,
 			add("gain", actor)
 		}
 	case "coagulate", "emergency_molt", "antivenom_draught", "spined_rebuttal":
-		isDamage := stage == stageOngoingDamage || stage == stageDamageReact
+		isDamage := stage == stageOngoingDamage || stage == stageDamageReact || (unifiedDefense(b) && stage == stageDefenseSelect)
 		if id == "spined_rebuttal" {
-			isDamage = stage == stageDefenseReact
+			isDamage = stage == stageDefenseReact || (unifiedDefense(b) && stage == stageDefenseSelect)
 		}
 		if !isDamage || (id == "coagulate" && p == 0) {
 			break
 		}
 		for _, source := range reactionDamageSources(b) {
-			if source.TargetActorID != actor {
+			if source.TargetActorID != actor || (unifiedDefense(b) && settledSourceAmount(source) == 0) {
 				continue
 			}
 			if id == "spined_rebuttal" && lib.Abilities[source.SourceContentID].Type != "offensive" {
@@ -291,6 +291,7 @@ func (e Engine) playVenomCard(b *state.Battle, lib content.BattleLibrary, actor,
 		}
 		before := settledSourceAmount(*source)
 		source.ReactionPrevention += amount
+		setUnifiedSourceAmount(b, source, max(0, before-amount))
 		after := settledSourceAmount(*source)
 		if id == "emergency_molt" && before > after {
 			v.MoltRewards = append(v.MoltRewards, state.VenomMoltReward{ActorID: actor, SourceID: source.ID, PriorPrevention: source.ReactionPrevention - amount})
@@ -302,7 +303,13 @@ func (e Engine) playVenomCard(b *state.Battle, lib content.BattleLibrary, actor,
 			removeStatus(b, actor, "catalyst", 1)
 			removeStatus(b, actor, key, 1)
 		}
-		reconcileSettledDamage(b.Settled.PendingDamage, b)
+		if unifiedDefense(b) {
+			if err := e.reconcileUnifiedDamage(b, false); err != nil {
+				return err
+			}
+		} else {
+			reconcileSettledDamage(b.Settled.PendingDamage, b)
+		}
 	}
 	return nil
 }
@@ -311,7 +318,7 @@ func settledSourceAmount(s state.SettledDamageSource) int {
 	if s.ScaleDenominator > 0 {
 		n = n * s.ScaleNumerator / s.ScaleDenominator
 	}
-	return max(0, n-s.ReactionPrevention)
+	return max(0, max(0, n-s.ReactionPrevention)+s.ResolutionAdjustment)
 }
 
 func venomCardActions(b *state.Battle, lib content.BattleLibrary, actor string, pending state.PendingInput) []command.Command {

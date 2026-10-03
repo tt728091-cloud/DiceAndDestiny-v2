@@ -54,6 +54,7 @@ type Config struct {
 }
 
 type ResetRequest struct {
+	UnifiedDefense  bool              `json:"unified_defense,omitempty"`
 	SeatTeams       map[string]string `json:"seat_teams,omitempty"`
 	Seed            uint64            `json:"seed"`
 	BattleID        string            `json:"battle_id,omitempty"`
@@ -68,6 +69,7 @@ type ActionRecord struct {
 }
 
 type ReplayRecord struct {
+	UnifiedDefense    bool               `json:"unified_defense,omitempty"`
 	SeatTeams         map[string]string  `json:"seat_teams,omitempty"`
 	EnvironmentSchema string             `json:"environment_schema"`
 	ObservationSchema string             `json:"observation_schema"`
@@ -245,6 +247,7 @@ func (e *Environment) Reset(request ResetRequest) (Transition, error) {
 	})
 	environmentSchema, observationSchema, actionSchema := e.SchemaVersions()
 	e.replay = ReplayRecord{
+		UnifiedDefense:    request.UnifiedDefense,
 		EnvironmentSchema: environmentSchema,
 		ObservationSchema: observationSchema,
 		ActionSchema:      actionSchema,
@@ -265,8 +268,9 @@ func (e *Environment) Reset(request ResetRequest) (Transition, error) {
 		seats = append(seats, command.ParticipantDescriptor{InstanceID: id, DefinitionID: request.SeatDefinitions[id], TeamID: request.SeatTeams[id]})
 	}
 	payload, err := json.Marshal(command.StartBattlePayload{
-		Seats: seats,
-		Seed:  &request.Seed,
+		UnifiedDefense: request.UnifiedDefense,
+		Seats:          seats,
+		Seed:           &request.Seed,
 	})
 	if err != nil {
 		return Transition{}, err
@@ -513,7 +517,7 @@ func (e *Environment) Metrics() EpisodeMetrics {
 
 func (e *Environment) Replay(record ReplayRecord) (Transition, error) {
 	transition, err := e.Reset(ResetRequest{
-		Seed: record.Seed, BattleID: record.BattleID,
+		Seed: record.Seed, BattleID: record.BattleID, UnifiedDefense: record.UnifiedDefense,
 		SeatModels: record.SeatModels, SeatDefinitions: record.SeatDefinitions, SeatTeams: record.SeatTeams,
 	})
 	if err != nil {

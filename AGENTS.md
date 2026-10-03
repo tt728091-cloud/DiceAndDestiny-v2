@@ -123,3 +123,11 @@ Use `./scripts/godot.sh` for every additional Godot test.
 - Start with the card click. If exactly one incoming source has remaining damage and a current legal card action, play against it immediately; do not require the player to preselect an attack.
 - With multiple viable sources, select the card and highlight each eligible attack and its damage-list control. Let the player choose the source next or cancel without spending. Count sources, not enemies; one enemy can have multiple attacks.
 - Never target outgoing or fully prevented damage, reuse an earlier source selection, or submit stale target commands. Preserve the full ability tooltip and existing prevention/saved-card animations.
+
+## Unified defense experiment
+
+- New battles launched from the game menu use the pinned `unified_defense` rule. Legacy saves/replays retain their original flow. See `docs/game-design/unified-defense.md`.
+- Reveal pending removals when attacks enter Defense, before rolling defenses. Each attack owns separate, stable card reservations; never pool attacks for source-specific prevention or display the same card in two attack lists.
+- Rolled defensive abilities release cards in hand → draw → discard priority, randomly within each live pile, leaving saved cards in their current pile. Prevention cards/statuses retain the default saved-to-discard rule above. Never undo a card play or draw when releasing a reservation.
+- The main Pass ends that participant's remaining defenses and card opportunities. Applying a completed defensive roll returns to the same segment; it must not act as the main Pass. Auto-complete when only Pass remains, after the usual review time.
+- Commit remaining damage and queued attack statuses once at the end. Do not open a second damage-response phase or reselect the already revealed cards.

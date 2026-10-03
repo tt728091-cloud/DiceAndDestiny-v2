@@ -136,7 +136,7 @@ func settledLegalActions(battle *state.Battle, library content.BattleLibrary, ac
 				continue
 			}
 			for _, source := range battle.Settled.OffensiveSources {
-				if source.TargetActorID == actorID && !defenseSourceChosen(battle, source.ID) {
+				if source.TargetActorID == actorID && (!unifiedDefense(battle) || settledSourceAmount(source) > 0) && !defenseSourceChosen(battle, source.ID) {
 					if !defenseAffordable(battle, library, actorID, abilityID, source.SourceContentID) {
 						continue
 					}
@@ -148,6 +148,9 @@ func settledLegalActions(battle *state.Battle, library content.BattleLibrary, ac
 			}
 		}
 		actions = append(actions, legalCommand(battle.ID, actorID, command.TypePlanningPass, command.PlanningPassPayload{PendingInputID: pending.ID, Checkpoint: planningCheckpoint(pending)}))
+		if unifiedDefense(battle) {
+			actions = append(actions, reactionCardActions(battle, library, actorID, pending)...)
+		}
 	case stageOngoingRoll:
 		var unresolved []int
 		ordinal := 0
@@ -178,6 +181,9 @@ func settledLegalActions(battle *state.Battle, library content.BattleLibrary, ac
 		if containsCommand(window.AllowedCommands, command.TypePass) {
 			actions = append(actions, legalCommand(battle.ID, actorID, command.TypePass, command.PassPayload{PendingInputID: pending.ID, Checkpoint: interactionCheckpoint(pending)}))
 		}
+	}
+	if unifiedDefense(battle) && window.Stage == stageDefenseReact {
+		actions = append(actions, unifiedContinueCommand(battle, actorID, pending))
 	}
 	actions = append(actions, roundPreventionActions(battle, library, actorID, pending)...)
 	actions = append(actions, curseCardActions(battle, library, actorID, pending)...)
@@ -248,7 +254,7 @@ func reactionCardActions(battle *state.Battle, library content.BattleLibrary, ac
 		if actor.Resources.EnergyPoints < definition.Cost.Energy || (!cardPlayableDuring(definition, battle, "reaction", actorID) && !(battle.Settled.Stage == stageVenomStatus && definition.Targeting.Selector == "one_negative_status_on_self")) {
 			continue
 		}
-		if !reactionSelectorSupported(battle.Settled.Window.Stage, definition.Targeting.Selector) {
+		if !reactionSelectorSupported(battle.Settled.Window.Stage, definition.Targeting.Selector) && !(unifiedDefense(battle) && battle.Settled.Stage == stageDefenseSelect && (definition.Targeting.Selector == "one_incoming_damage_source" || definition.Targeting.Selector == "self" || definition.Targeting.Selector == "one_negative_status_on_self")) {
 			continue
 		}
 		base := command.CommitInteractionPayload{PendingInputID: pending.ID, Checkpoint: interactionCheckpoint(pending), Commitment: command.InteractionCommitmentData{CardIDs: []string{instanceID}}}
@@ -268,7 +274,7 @@ func reactionCardActions(battle *state.Battle, library content.BattleLibrary, ac
 			}
 		case "one_incoming_damage_source":
 			for _, source := range reactionDamageSources(battle) {
-				if source.TargetActorID != actorID {
+				if source.TargetActorID != actorID || (unifiedDefense(battle) && settledSourceAmount(source) == 0) {
 					continue
 				}
 				payload := base
@@ -394,7 +400,7 @@ func cardPlayableDuring(definition content.BattleCardDefinition, battle *state.B
 	}
 	for _, timing := range definition.Play.PlayableDuring {
 		immediateDamage := battle.Settled != nil && battle.Settled.Stage == stageOngoingDamage && battle.Settled.Venom != nil && battle.Settled.Venom.Active != nil && battle.Settled.Venom.Active.Kind == "damage"
-		if (timing.Segment == string(battle.Segment.Current) || (immediateDamage && timing.Segment == "damage_resolution" && definition.Targeting.Selector == "one_incoming_damage_source")) && timing.Phase == "main" && timing.WindowPurpose == purpose {
+		if ((unifiedDefense(battle) && battle.Settled.Stage == stageDefenseSelect && timing.Segment == "damage_resolution") || timing.Segment == string(battle.Segment.Current) || (immediateDamage && timing.Segment == "damage_resolution" && definition.Targeting.Selector == "one_incoming_damage_source")) && timing.Phase == "main" && timing.WindowPurpose == purpose {
 			return true
 		}
 	}

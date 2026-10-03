@@ -171,7 +171,7 @@ func (s *Session) Reset(battleID string, seed uint64, humanSeat string, rematch 
 	return s.ResetCharacter(battleID, seed, humanSeat, rematch, "blade_warden")
 }
 
-func (s *Session) ResetCharacter(battleID string, seed uint64, humanSeat string, rematch bool, character string) (map[string]any, error) {
+func (s *Session) ResetCharacter(battleID string, seed uint64, humanSeat string, rematch bool, character string, unified ...bool) (map[string]any, error) {
 	if character == "" {
 		character = "blade_warden"
 	}
@@ -201,6 +201,7 @@ func (s *Session) ResetCharacter(battleID string, seed uint64, humanSeat string,
 		teams = map[string]string{s.humanSeat: "heroes", s.modelSeat: "minions", "seat-c": "minions"}
 	}
 	transition, err := s.environment.Reset(mlsim.ResetRequest{
+		UnifiedDefense:  len(unified) > 0 && unified[0],
 		Seed:            seed,
 		BattleID:        battleID,
 		SeatDefinitions: definitions, SeatModels: models, SeatTeams: teams,

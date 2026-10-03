@@ -6,6 +6,8 @@ import "diceanddestiny/server/internal/battle/command"
 // immutable compiled catalog is pinned separately on Battle as JSON so engine
 // commands never need to reload files.
 type SettledRuntime struct {
+	UnifiedDefense     bool
+	DefensePassed      map[string]bool
 	Curse              *CurseRuntime `json:",omitempty"`
 	ReactionReplanning bool
 	Initialized        bool
@@ -97,17 +99,20 @@ type SettledWindow struct {
 }
 
 type SettledDamageSource struct {
-	ID                 string                     `json:"id"`
-	SourceActorID      string                     `json:"source_actor_id"`
-	SourceContentID    string                     `json:"source_content_id"`
-	TargetActorID      string                     `json:"target_actor_id"`
-	BaseAmount         int                        `json:"base_amount"`
-	Prevention         int                        `json:"prevention"`
-	ReactionPrevention int                        `json:"reaction_prevention,omitempty"`
-	ScaleNumerator     int                        `json:"scale_numerator,omitempty"`
-	ScaleDenominator   int                        `json:"scale_denominator,omitempty"`
-	FinalAmount        int                        `json:"final_amount"`
-	StatusApplications []SettledStatusApplication `json:"status_applications,omitempty"`
+	// Keeps sequential reductions equivalent to the published final amount
+	// when card prevention can precede a multiplicative defensive ability.
+	ResolutionAdjustment int                        `json:"resolution_adjustment,omitempty"`
+	ID                   string                     `json:"id"`
+	SourceActorID        string                     `json:"source_actor_id"`
+	SourceContentID      string                     `json:"source_content_id"`
+	TargetActorID        string                     `json:"target_actor_id"`
+	BaseAmount           int                        `json:"base_amount"`
+	Prevention           int                        `json:"prevention"`
+	ReactionPrevention   int                        `json:"reaction_prevention,omitempty"`
+	ScaleNumerator       int                        `json:"scale_numerator,omitempty"`
+	ScaleDenominator     int                        `json:"scale_denominator,omitempty"`
+	FinalAmount          int                        `json:"final_amount"`
+	StatusApplications   []SettledStatusApplication `json:"status_applications,omitempty"`
 }
 
 type SettledStatusApplication struct {
@@ -197,6 +202,10 @@ func cloneSettledRuntime(value *SettledRuntime) *SettledRuntime {
 		return nil
 	}
 	cloned := *value
+	cloned.DefensePassed = make(map[string]bool, len(value.DefensePassed))
+	for id, passed := range value.DefensePassed {
+		cloned.DefensePassed[id] = passed
+	}
 	if value.Curse != nil {
 		cloned.Curse = CloneCurse(value.Curse)
 	}

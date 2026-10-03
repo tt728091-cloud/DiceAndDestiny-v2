@@ -15,8 +15,8 @@ func validate_named_scenario(scenario_id: String, actor_id: String = "player") -
 func start_named_scenario(scenario_id: String, actor_id: String = "player") -> Dictionary:
 	return _submit(ScenarioCommandBuilder.start_named(scenario_id, actor_id))
 
-func start_battle(battle_id: String, actor_id: String = "blade") -> Dictionary:
-	return _submit(BattleCommandBuilder.start_battle(battle_id, actor_id))
+func start_battle(battle_id: String, actor_id: String = "blade", unified_defense: bool = false) -> Dictionary:
+	return _submit(BattleCommandBuilder.start_battle(battle_id, actor_id, unified_defense))
 
 func open_battle(battle_id: String, actor_id: String = "blade") -> Dictionary:
 	return _submit(BattleCommandBuilder.open_battle(battle_id, actor_id))

@@ -71,10 +71,11 @@ type ParticipantDescriptor struct {
 }
 
 type StartBattlePayload struct {
-	Player  ParticipantDescriptor   `json:"player"`
-	Enemies []ParticipantDescriptor `json:"enemies"`
-	Seats   []ParticipantDescriptor `json:"seats,omitempty"`
-	Seed    *uint64                 `json:"seed,omitempty"`
+	UnifiedDefense bool                    `json:"unified_defense,omitempty"`
+	Player         ParticipantDescriptor   `json:"player"`
+	Enemies        []ParticipantDescriptor `json:"enemies"`
+	Seats          []ParticipantDescriptor `json:"seats,omitempty"`
+	Seed           *uint64                 `json:"seed,omitempty"`
 }
 
 type OpenBattlePayload struct{}

@@ -128,7 +128,7 @@ func curseCardChoices(b *state.Battle, lib content.BattleLibrary, actor string, 
 				}
 			}
 		case "spiteful_ward":
-			if stage == stageDamageReact || stage == stageOngoingDamage {
+			if stage == stageDamageReact || stage == stageOngoingDamage || (unifiedDefense(b) && stage == stageDefenseSelect) {
 				for _, s := range reactionDamageSources(b) {
 					if s.TargetActorID == actor && s.SourceActorID == enemy && lib.Abilities[s.SourceContentID].Type == "offensive" && settledSourceAmount(s) > 0 {
 						add("prevent", s.ID)
@@ -323,8 +323,16 @@ func (e Engine) playCurseCard(b *state.Battle, lib content.BattleLibrary, actor,
 			return errors.New("incoming damage source is missing")
 		}
 		c.Preparations = append(c.Preparations, state.CursePreparation{CardID: def.ID, Source: actor, Target: s.SourceActorID, SourceID: s.ID, Die: s.ReactionPrevention, Round: b.Segment.Round, ExpiresEffects: b.Segment.Round + 1})
+		before := settledSourceAmount(*s)
 		s.ReactionPrevention += 2
-		reconcileSettledDamage(b.Settled.PendingDamage, b)
+		setUnifiedSourceAmount(b, s, max(0, before-2))
+		if unifiedDefense(b) {
+			if err := e.reconcileUnifiedDamage(b, false); err != nil {
+				return err
+			}
+		} else {
+			reconcileSettledDamage(b.Settled.PendingDamage, b)
+		}
 	}
 	curseLog(b, actor, "card", map[string]any{"card_id": def.ID, "choice": key, "targets": targets})
 	return nil

@@ -1,0 +1,81 @@
+# Unified Defense experiment
+
+Baseline: `de0ed80` on `codex/battle-ui-and-gameplay-update`.
+Experiment: `codex/unified-defense-experiment`.
+
+## Player flow
+
+Effects → Income → Offensive → Defense → next round.
+
+When attacks are finalized, Defense immediately displays each incoming attack,
+its pending status effects, and its own threatened-card list under the defender.
+The list retains pile-origin icons and the existing hand-sized card hover preview.
+Card identities are revealed in this first version. Hidden identities and
+foreknowledge upgrades are deferred.
+
+The player can play a prevention card before rolling a defense or between
+completed defenses. Card targeting remains card-first: one viable source is
+automatic; multiple sources highlight choices. Defense selection still targets
+one attack, pays its existing cost, and follows its existing usage rules.
+
+A defense roll retains its atomic reaction/animation checkpoint. **Apply** finishes
+that roll and returns to the same Defense screen; it automatically applies after
+the review animation if there is no playable reaction. **Pass** finishes all of
+that participant's remaining choices, including unused defenses and cards. It
+does not take away another participant's turn. When Pass is the sole legal action,
+the normal automatic review-and-pass behavior finishes the segment.
+
+After all participants finish, remaining removals and queued attack statuses
+commit once. Normal hand-limit cleanup, defeat checks, and authored follow-up
+work still run. The engine does not open a second Damage segment.
+
+## Card ownership and prevention
+
+- Each damage source reserves distinct card instances, selecting discard → draw
+  → hand, without replacement, randomly within a pile.
+- Reservations do not move cards. Playing a threatened hand card or drawing a
+  threatened deck card leaves that instance threatened in its new pile.
+- Reducing one source only releases that source's cards. For attacks of four and
+  six, halving the six leaves four plus three; it never halves the combined ten.
+- Rolled defensive abilities save in reverse live-pile priority: hand → draw →
+  discard, randomly within the preferred pile. They leave saved cards where they
+  currently are; they do not undo a play or draw.
+- Reductions apply in play order. Preventing three from seven and then halving
+  leaves two; halving seven (rounded down) before preventing three leaves zero.
+- Brace, Protect, and other prevention cards/statuses save cards to discard.
+  Discard still counts as health and never automatically reshuffles.
+- Repainting, reopening a save, or reconciling unchanged damage never rerolls
+  existing reservations. Saved proposals remain released.
+- Damage beyond available health has no duplicate card reservation. If later
+  prevention frees cards while another attack still has unfilled excess damage,
+  that excess may reserve available cards. Existing reservations stay attached
+  to their original source; total outstanding damage is not silently lost.
+- Unconditional attack statuses still apply if the attack is fully blocked.
+  Immediate defense effects retain their existing timing.
+
+## Compatibility and testing
+
+The experiment is a persisted battle rule passed through native startup and ML
+simulation/replay. New battles from the menu enable it. Older saved battles and
+recorded fixtures keep the old flow. Starting a new battle is required to try it;
+opening an old save deliberately does not migrate its in-progress checkpoint.
+
+Relevant checks:
+
+```bash
+cd dice-and-destiny-server && go test ./...
+cd ..
+./scripts/godot.sh --headless --script res://scripts/verify_battle_authority.gd
+./scripts/godot.sh --headless --script res://tests/presentation/verify_unified_defense.gd
+./scripts/godot.sh --headless --script res://tests/presentation/verify_brace_targeting.gd
+DICE_AND_DESTINY_UNIFIED_LAYOUT=1 ./scripts/godot.sh --headless --script res://tests/presentation/verify_damage_card_layout.gd
+```
+
+The unified tests cover separate sources, reverse restoration priority, card and
+Protect destinations, stable saves, excess damage, blocked attack statuses,
+specialized prevention, complete encounters, frozen policies, native pointer
+Pass, and automatic completion eligibility. Layout tests cover 720p/1080p and
+one through four enemies. The normal launcher isolates all script-test state.
+
+To abandon the experiment, switch back to the baseline branch after preserving
+any later local work. The baseline branch and its pushed commit are unchanged.

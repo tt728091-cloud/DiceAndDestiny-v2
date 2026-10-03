@@ -329,7 +329,7 @@ func _defense_review_key() -> String:
 	return "%s:%d:%s" % [_view.battle_id, _view.round_number, JSON.stringify(rolls)]
 
 func _sole_pass_action() -> Dictionary:
-	if _view.stage == "defense_selection": return {}
+	if _view.stage == "defense_selection" and not _unified_defense(): return {}
 	if _selected_card.get("source_targeting", false) or _selected_card.get("die_targeting", false): return {}
 	if _card_gain_active(): return {}
 	if _auto_pass_disabled and not _provoked_toxin_reaction() and not _inline_status_application() and not _pass_hands_off_priority() and _view.stage != "offensive_reaction": return {}
@@ -339,8 +339,13 @@ func _sole_pass_action() -> Dictionary:
 	if _director.has_beats() or _view.is_complete() or bool(_view.learned_policy.get("model_turn", false)): return {}
 	# Allowed command categories are too broad: a reaction may allow cards even
 	# when none can actually be played. Use the authority's concrete legal list.
-	if _view.legal_actions.size() != 1: return {}
-	var action: Dictionary = _view.legal_actions[0]
+	var candidates := _view.legal_actions
+	# Applying a finished roll returns to the same Defense hub. The separate
+	# Pass button ends all remaining choices, so never auto-click that here.
+	if _unified_defense() and _view.stage == "defense_reaction":
+		candidates = candidates.filter(func(item): return item.get("type") != "pass")
+	if candidates.size() != 1: return {}
+	var action: Dictionary = candidates[0]
 	var command_type := str(action.get("type", ""))
 	if command_type not in ["pass", "planning_pass"] or not _view.allowed(command_type): return {}
 	if str(action.get("actor_id", "")) != viewer_actor_id: return {}
@@ -826,7 +831,10 @@ func _build_header(parent: VBoxContainer) -> void:
 		elif beat.get("type") == "poison_conversion": display_stage = "poison_upgraded"
 		elif beat.get("type") == "segment_entered": display_stage = "presentation"
 	if not _selection_morph.is_empty(): display_segment = "offensive"; display_stage = "attack_selected"
+	if bool(_view.raw_snapshot.get("unified_defense", false)) and display_segment == "damage_resolution": display_segment = "defensive"
+	if bool(_view.raw_snapshot.get("unified_defense", false)) and display_segment == "defensive": display_stage = "defense"
 	for pair in SEGMENTS:
+		if bool(_view.raw_snapshot.get("unified_defense", false)) and pair[0] == "damage_resolution": continue
 		var label := Label.new(); label.text = "●\n%s" % pair[1]; label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER; label.add_theme_font_size_override("font_size", 18)
 		label.add_theme_color_override("font_color", Color("ffe3a0") if display_segment == pair[0] else Color("b4ab9b")); bar.add_child(label)
 	var rule := HSeparator.new(); parent.add_child(rule)
@@ -1007,8 +1015,10 @@ func _build_center() -> void:
 	if _selected_card.get("source_targeting", false): return
 	var pass_row := _action_footer
 	var planning_pass_label := ("Pass All Remaining" if _multiple_enemies() else "Pass Defense") if _view.segment == "defensive" else "Skip Offensive Ability"
+	if _unified_defense(): planning_pass_label = "Apply Defense" if _view.stage == "defense_reaction" else "Pass"
 	_add_action(pass_row, planning_pass_label, "planning_pass", _pass_planning)
 	var pass_label := "Continue" if _defense_final_review() else "Continue Without Playing a Card" if _view.stage == "status_roll_reaction" else "Pass / Acknowledge"
+	if _unified_defense(): pass_label = "Pass"
 	if (_inline_status_application() or _provoked_toxin_reaction()) and _view.legal_actions.size() == 1 and _view.legal_actions[0].get("type") == "pass": return
 	_add_action(pass_row, pass_label, "pass", func(): _send(BattleCommandBuilder.pass_command(_view.battle_id, "blade", _pending())))
 
@@ -1046,6 +1056,15 @@ func _build_offensive() -> void:
 			var tip := Button.new(); tip.text = "Tip Blind die to face 5"; tip.disabled = _history_review; tip.pressed.connect(_play_blind_tip); _center.add_child(tip); _inspect(tip, "battle.tip_target.blind", "Use Tip It on the current blind-roll die")
 
 func _build_defensive() -> void:
+	if _unified_defense():
+		if _view.stage == "defense_roll": _build_automatic_defense_roll()
+		elif _board_stage() == "defense_reaction": _build_compact_defense_results()
+		else:
+			_build_incoming_selection()
+			if not _selected_source.is_empty() and not _defense_source_chosen(_selected_source):
+				_build_ability_row("DEFENSIVE ABILITIES", _as_array(_view.actor(viewer_actor_id).get("defensive_abilities", [])), viewer_actor_id)
+		_build_damage()
+		return
 	if _view.stage == "defense_roll":
 		_build_automatic_defense_roll()
 		return
@@ -1130,7 +1149,7 @@ func _build_incoming_selection() -> void:
 		var target := str(source.get("target_actor_id", ""))
 		if not sides.has(target): continue
 		var data := _compact_defense_data(target, _status_counts(), source)
-		var handled := _source_handled(str(source.get("id", "")))
+		var handled := _source_handled(str(source.get("id", ""))) or (_unified_defense() and int(source.get("final_amount", 0)) == 0)
 		var start := Time.get_ticks_msec()
 		if handled:
 			data["note"] = "Defense complete"; data["read_only"] = true
@@ -1139,6 +1158,7 @@ func _build_incoming_selection() -> void:
 			var planned: Dictionary = _view.raw_snapshot.get("defense_plans", {}).get(str(source.get("id", "")), {})
 			var prompt: String = "Queued: " + BattlePresentationCatalog.ability(str(planned.get("ability_id", ""))).name if not planned.is_empty() else "Needs defense" if _multiple_enemies() else "Select this attack to defend"
 			data.merge({"selection_only": true, "dice": [], "gains": [], "prevented": 0, "after": data.before, "ability_name": "", "note": prompt if target == viewer_actor_id else "Opponent defending", "read_only": target != viewer_actor_id or _defense_source_chosen(str(source.id)) or _submitting or _history_review}, true)
+		if _unified_defense(): data["note"] = ""
 		if _view.stage == "offensive_reaction": data["read_only"] = not _early_source_available(str(source.id))
 		var panel = DEFENSE_RESULT.new(); sides[target].add_child(panel); panel.configure(data, start, true); _source_flow(panel, source)
 		panel.source_selected.connect(func(id: String): _select_attack_intent(id))
@@ -1238,12 +1258,13 @@ func _compact_defense_data(actor_id: String, counts: Dictionary, shown_source: D
 	var enemy := _focused_enemy if actor_id == "blade" else "blade"
 	var attacker := str(source.get("source_actor_id", enemy))
 	var before := maxi(0, int(source.get("base_amount", 0)) - int(source.get("prevention", 0)) - int(source.get("reaction_prevention", 0)))
+	if _unified_defense(): before = int(source.get("final_amount", before))
 	var pending := before
 	var finalized := bool(selection.get("finalized", false))
 	# Completed gains are already in the authoritative status counts. Queued
 	# rolls are only previews. Neither may inflate another source's live gains.
 	if finalized or not queued.is_empty(): counts = counts.duplicate(true)
-	if finalized: before = maxi(0, int(source.get("base_amount", 0)) - int(source.get("reaction_prevention", 0)) - (2 if selection.get("catalyst_paid", false) else 0)); pending = before
+	if finalized and not _unified_defense(): before = maxi(0, int(source.get("base_amount", 0)) - int(source.get("reaction_prevention", 0)) - (2 if selection.get("catalyst_paid", false) else 0)); pending = before
 	var prevented := 0
 	var faces: Array = selection.get("rolled_faces", roll.get("rolled_faces", [int(selection.get("rolled_face", roll.get("face", 0)))]))
 	var operations := _as_array(_view.content_definition("abilities", ability_id).get("resolution", {}).get("operations", []))
@@ -1289,11 +1310,13 @@ func _compact_defense_data(actor_id: String, counts: Dictionary, shown_source: D
 		var omen_index := faces.find(6)
 		_defense_status_gain(gains, counts, attacker, "curse_count", 2)
 		if omen_index < dice.size(): dice[omen_index].benefit = "Apply 2 Count\n(once per defense)"
-	if int(source.get("scale_denominator", 0)) > 0:
+	if not _unified_defense() and int(source.get("scale_denominator", 0)) > 0:
 		var denominator := int(source.scale_denominator)
 		var numerator := int(source.get("scale_numerator", 1))
 		before = floori(float(before * numerator) / denominator)
 		pending = floori(float(pending * numerator) / denominator)
+	if _unified_defense() and finalized:
+		before = int(source.get("final_amount", pending)); pending = before
 	# An attack's status applications are independent of its blocked damage.
 	var reveal := _view.offensive_reveal(attacker)
 	var attack_statuses := _attack_source_effect_text(source, _as_array(reveal.get("outcome", {}).get("status_applications", [])))
@@ -1489,12 +1512,14 @@ func _build_damage_lanes(batch: Dictionary, committed: bool = false, followup_on
 		var attack_statuses := _attack_source_effect_text(source, applications, _as_dictionary(batch.get("actors_before", {})))
 		var data := {"source_id": str(source.get("id", "")), "stacked": _multiple_enemies(), "actor_id": target, "actor_name": _actor_display_name(target), "attack_name": _actor_display_name(str(source.get("source_actor_id", _focused_enemy))) if target == viewer_actor_id and _multiple_enemies() else BattlePresentationCatalog.ability(str(source.get("source_content_id", ""))).name, "before": amount, "after": amount, "prevented": 0, "dice": [], "gains": [], "die_id": "standard_d6", "ability_name": "", "rules": "", "attack_statuses": attack_statuses, "note": "", "read_only": committed or _submitting or _history_review, "selection_only": true}
 		data["reveal_cards"] = true
-		var panel = DEFENSE_RESULT.new(); panel.name = "DamageSource_" + str(source.get("id", "")); sides[target].add_child(panel); panel.configure(data, 0, true); _source_flow(panel, source)
+		var panel: Control = _attack_intents.get(str(source.get("id", ""))) if _unified_defense() and not committed else null
+		if not is_instance_valid(panel):
+			panel = DEFENSE_RESULT.new(); panel.name = "DamageSource_" + str(source.get("id", "")); sides[target].add_child(panel); panel.configure(data, 0, true); _source_flow(panel, source)
+			panel.source_selected.connect(func(id: String): _select_attack_intent(id))
 		panel.size_flags_vertical = Control.SIZE_EXPAND_FILL
 		_curse_attack_origins[str(source.get("id", ""))] = panel.attack_origin
 		if _multiple_enemies() and not committed and target == viewer_actor_id and str(source.get("id", "")) == _selected_source: panel.self_modulate = Color("fff0bd")
 
-		panel.source_selected.connect(func(id: String): _select_attack_intent(id))
 		if not _damage_stack_docks.has(target):
 			var dock := preload("res://presentation/battle/damage_stack_dock.gd").new()
 			_root.add_child(dock); dock.configure(self, target); _damage_stack_docks[target] = dock
@@ -1624,8 +1649,8 @@ func _show_pending_damage_statuses() -> void:
 	var batch := _view.settled_damage
 	if _director.peek().get("type") == "combat_damage": batch = _director.peek().get("event", {}).get("data", {})
 	else:
-		if _director.has_beats() or _view.segment != "damage_resolution": return
-		if _view.stage not in ["damage_reaction", "status_damage_reaction"] or bool(batch.get("committed", false)): return
+		if _director.has_beats() or (_view.segment != "damage_resolution" and not _unified_defense()): return
+		if (_view.stage not in ["damage_reaction", "status_damage_reaction"] and not _unified_defense()) or bool(batch.get("committed", false)): return
 	var grouped := {}
 	# Use the actual pending batch, not the attack's old reveal. Statuses still
 	# apply when damage is fully blocked, and reactions may change this batch.
@@ -2270,8 +2295,8 @@ func _add_action(parent: Container, text: String, command: String, callback: Cal
 	var button := Button.new(); button.text = text; button.disabled = _submitting or _director.has_beats() or _history_review; button.pressed.connect(callback); parent.add_child(button)
 	if parent == _action_footer: _compact_action_button(button)
 	_inspect(button, "battle.command.%s" % command, "Submit the authority command %s" % command)
-	_lock_button_until(button, _interaction_deadline(command == "pass"))
-	if command == "pass":
+	_lock_button_until(button, _interaction_deadline(command == "pass" or (_unified_defense() and command == "planning_pass")))
+	if (command == "pass" and not _unified_defense()) or (_unified_defense() and command == "planning_pass"):
 		_auto_pass_button = button
 		_style_auto_pass_button(_auto_pass_highlight_ms >= 0)
 
@@ -2290,7 +2315,7 @@ func _compact_action_button(button: Button) -> void:
 	for key in ["font_color", "font_hover_color", "font_pressed_color", "font_disabled_color", "font_focus_color"]:
 		button.add_theme_color_override(key, Color.TRANSPARENT)
 	var caption := Label.new(); caption.name = "CompactCaption"
-	caption.text = str(button.get_meta("compact_caption", "Skip" if "Skip" in button.text else "Next" if "Continue" in button.text else "Pass"))
+	caption.text = str(button.get_meta("compact_caption", "Skip" if "Skip" in button.text else "Apply" if button.text == "Apply Defense" else "Next" if "Continue" in button.text else "Pass"))
 	caption.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER; caption.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	caption.add_theme_font_size_override("font_size", 17 if is_skip else 15)
 	if is_skip:
@@ -3510,8 +3535,11 @@ func _build_automatic_defense_roll() -> void:
 	# Used only when opening a saved roll checkpoint. Never show a second mat.
 	_build_compact_defense_results()
 
+func _unified_defense() -> bool:
+	return bool(_view.raw_snapshot.get("unified_defense", false)) and _view.segment == "defensive" and _view.stage in ["defense_selection", "defense_roll", "defense_reaction"] and not _view.settled_damage.is_empty()
+
 func _continuous_damage_response() -> bool:
-	return _view.stage in ["damage_reaction", "status_damage_reaction"]
+	return _view.stage in ["damage_reaction", "status_damage_reaction"] or (_unified_defense() and _view.stage == "defense_selection")
 
 func _damage_batch_key() -> String:
 	return _view.battle_id + ":" + str(_view.settled_damage.get("id", "%s:%d" % [_view.stage, _view.round_number]))
@@ -3522,7 +3550,7 @@ func _capture_damage_feedback(result: Dictionary, previous_damage: Dictionary) -
 		if emitted.get("type") != "damage_prevented_or_modified": continue
 		var data: Dictionary = emitted.get("data", {})
 		var card_id := str(data.get("card_definition_id", ""))
-		if card_id.is_empty() and data.get("ability_id") != "guarded_strike": continue
+		if card_id.is_empty() and not data.has("ability_id"): continue
 		var feedback_key := "%s:%s:%s" % [_view.battle_id, emitted.get("sequence", 0), data.get("card_instance_id", "")]
 		if _damage_feedback_seen.has(feedback_key): continue
 		_damage_feedback_seen[feedback_key] = true
@@ -3786,7 +3814,8 @@ func _display_damage_sources(sources: Array) -> Array:
 	return sources
 
 func _damage_cards_by_source(sources: Array, removals: Array) -> Dictionary:
-	# The authority supplies a shared ordered removal batch for each defender.
+	# Unified batches carry exactly one source ID per card. Legacy saved battles
+	# supply a shared ordered removal batch for each defender.
 	# Partition that batch by the individual final damage amounts, independent
 	# of UI focus, so toggling never duplicates cards or shows another hit's loss.
 	var cards := {}; var remaining := {}

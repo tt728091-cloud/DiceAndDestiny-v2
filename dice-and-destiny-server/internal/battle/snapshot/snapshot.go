@@ -36,6 +36,7 @@ type Battle struct {
 	Stage                string                          `json:"stage,omitempty"`
 	PriorityActorID      string                          `json:"priority_actor_id,omitempty"`
 	ReactionPriority     []string                        `json:"reaction_priority,omitempty"`
+	UnifiedDefense       bool                            `json:"unified_defense,omitempty"`
 	SettledSources       []state.SettledDamageSource     `json:"damage_sources,omitempty"`
 	DefenseHistory       map[string]state.SettledDefense `json:"defense_history,omitempty"`
 	DefensePlans         map[string]state.SettledDefense `json:"defense_plans,omitempty"`
@@ -422,6 +423,7 @@ func fromBattleForViewer(battle state.Battle, viewerActorID string, includeConte
 			defense.RolledFaces = append([]int(nil), defense.RolledFaces...)
 			result.DefenseHistory[id] = defense
 		}
+		result.UnifiedDefense = battle.Settled.UnifiedDefense
 		result.SettledSources = append([]state.SettledDamageSource(nil), battle.Settled.OffensiveSources...)
 		if battle.Segment.Current == segment.Defensive && (battle.Settled.Stage == "defense_reaction" || result.PresentationStage == "defense_reaction") {
 			result.SettledDefenses = make(map[string]state.SettledDefense, len(battle.Settled.DefenseSelections))

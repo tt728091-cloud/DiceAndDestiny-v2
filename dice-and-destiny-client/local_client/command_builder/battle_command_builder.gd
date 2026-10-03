@@ -1,8 +1,9 @@
 class_name BattleCommandBuilder
 extends RefCounted
 
-static func start_battle(battle_id: String, actor_id: String = "blade") -> String:
+static func start_battle(battle_id: String, actor_id: String = "blade", unified_defense: bool = false) -> String:
 	return _json(battle_id, actor_id, "start_battle", {
+		"unified_defense": unified_defense,
 		"player": {"instance_id": "blade", "definition_id": "blade_warden"},
 		"enemies": [{"instance_id": "goblin", "definition_id": "venom_goblin"}],
 	})

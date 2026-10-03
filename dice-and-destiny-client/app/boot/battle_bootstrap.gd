@@ -153,7 +153,7 @@ func _start_classic() -> void:
 			return
 		store.clear()
 	var battle_id := _new_battle_id("classic")
-	var started := gateway.start_battle(battle_id, VIEWER)
+	var started := gateway.start_battle(battle_id, VIEWER, true)
 	if started.get("accepted") != true:
 		_show_error(str(started.get("error", "The battle could not start.")), started)
 		return
@@ -169,6 +169,7 @@ func _start_learned(human_seat: String, model_key: String) -> void:
 		return
 	var learned_gateway: RefCounted = LEARNED_GATEWAY.new(runtime, human_seat, model_key, str(_character_choice.get_selected_metadata()) if _character_choice != null else "blade_warden")
 	var seed := int(Time.get_unix_time_from_system() * 1000000.0) ^ Time.get_ticks_usec()
+	learned_gateway.unified_defense = true
 	var result: Dictionary = learned_gateway.start_battle(_new_battle_id("learned"), seed)
 	if result.get("accepted") != true:
 		_show_error(str(result.get("error", "The learned battle could not start.")), result)

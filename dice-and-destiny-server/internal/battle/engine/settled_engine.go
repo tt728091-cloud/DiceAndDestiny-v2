@@ -539,6 +539,17 @@ func (e Engine) progressSettledDefensive(battle *state.Battle, library content.B
 	if battle.Settled.Stage == "" {
 		battle.Settled.DefenseHistory = map[string]state.SettledDefense{}
 		battle.Settled.DefensePlans = map[string]state.SettledDefense{}
+		if battle.Settled.UnifiedDefense {
+			battle.Settled.DefensePassed = map[string]bool{}
+			batch, err := e.buildDamageBatch(battle, battle.Settled.OffensiveSources)
+			if err != nil {
+				return nil, err
+			}
+			battle.Settled.PendingDamage = batch
+			battle.Settled.OffensiveSources = append([]state.SettledDamageSource(nil), batch.Sources...)
+			events, err := e.unifiedDefenseHub(battle, library)
+			return append([]event.Event{damageRevealEvent(battle, batch)}, events...), err
+		}
 		return e.beginDefenseWave(battle, library)
 	}
 	return nil, fmt.Errorf("settled defensive stalled at %q", battle.Settled.Stage)
@@ -546,6 +557,9 @@ func (e Engine) progressSettledDefensive(battle *state.Battle, library content.B
 
 // Each incoming source receives its own selection, roll and reaction window.
 func (e Engine) beginDefenseWave(battle *state.Battle, library content.BattleLibrary) ([]event.Event, error) {
+	if unifiedDefense(battle) {
+		return e.unifiedDefenseHub(battle, library)
+	}
 	battle.Settled.Stage = stageDefenseSelect
 	battle.Flow.Stage = stageDefenseSelect
 	battle.Settled.DefenseSelections = map[string]state.SettledDefense{}
@@ -690,6 +704,20 @@ func (e Engine) resolveDefenseRollsAndOpenReaction(battle *state.Battle, library
 			reactable = true
 		}
 	}
+	if unifiedDefense(battle) {
+		var actors []string
+		for _, id := range externalSettledActorIDs(battle) {
+			if _, active := battle.Settled.DefenseSelections[id]; active && !battle.Settled.DefensePassed[id] {
+				actors = append(actors, id)
+			}
+		}
+		if len(actors) == 0 {
+			finalized, err := e.finalizeDefenses(battle, library)
+			return append(events, finalized...), err
+		}
+		openSettledWindowForActors(battle, "defense-react", stageDefenseReact, "reaction", []command.Type{command.TypeCommitInteraction, command.TypePass, command.TypePlanningPass}, actors, false)
+		return events, nil
+	}
 	if reactable || len(battle.Settled.OffensiveSources) > 0 {
 		battle.Settled.Stage = stageDefenseReact
 		openSettledWindow(battle, "defense-react", stageDefenseReact, "reaction", []command.Type{command.TypeCommitInteraction, command.TypePass})
@@ -731,8 +759,17 @@ func (e Engine) finalizeDefenses(battle *state.Battle, library content.BattleLib
 		if ability.Resolution.EnergyGainLimit > 0 && result.ResourceDeltas != nil {
 			result.ResourceDeltas[actorID] = min(result.ResourceDeltas[actorID], ability.Resolution.EnergyGainLimit)
 		}
+		before := 0
+		if source := batchSourceByID(battle.Settled.PendingDamage, selection.SourceID); source != nil {
+			before = settledSourceAmount(*source)
+		}
 		if err := e.applyEffectMutations(battle, library, "", result); err != nil {
 			return nil, err
+		}
+		if unifiedDefense(battle) {
+			if source := batchSourceByID(battle.Settled.PendingDamage, selection.SourceID); source != nil && before != settledSourceAmount(*source) {
+				events = append(events, settledEvent(event.TypeDamageModified, battle, actorID, map[string]any{"source_id": source.ID, "ability_id": ability.ID, "damage_before": before, "damage_after": settledSourceAmount(*source), "target_actor_id": source.TargetActorID}))
+			}
 		}
 		if err := e.curseDefenseCompleted(battle, library, selection); err != nil {
 			return nil, err
@@ -748,6 +785,10 @@ func (e Engine) finalizeDefenses(battle *state.Battle, library content.BattleLib
 				skipRemainingDefenses(battle, actorID)
 			}
 		}
+	}
+	if unifiedDefense(battle) {
+		next, err := e.unifiedDefenseHub(battle, library)
+		return append(events, next...), err
 	}
 	for _, actorID := range sortedSettledActorIDs(battle) {
 		if hasIncoming(battle, actorID) {
@@ -794,6 +835,16 @@ func (e Engine) buildDamageBatch(battle *state.Battle, sources []state.SettledDa
 		}
 		batch.Sources = append(batch.Sources, source)
 		batch.Applications = append(batch.Applications, source.StatusApplications...)
+	}
+	if battle.Settled.UnifiedDefense && battle.Segment.Current == segment.Defensive {
+		for i := range batch.Sources {
+			batch.Sources[i].FinalAmount = settledSourceAmount(batch.Sources[i])
+		}
+		if err := e.fillUnifiedReservations(battle, batch); err != nil {
+			return nil, err
+		}
+		batch.Revealed = true
+		return batch, nil
 	}
 	byTarget := map[string]int{}
 	sourceIDs := map[string][]string{}
@@ -852,6 +903,15 @@ func (e Engine) autoAIDamageResponse(battle *state.Battle, library content.Battl
 			continue
 		}
 		source := firstBatchSourceForTarget(batch, actorID)
+		if unifiedDefense(battle) {
+			source = nil
+			for i := range batch.Sources {
+				if batch.Sources[i].TargetActorID == actorID && settledSourceAmount(batch.Sources[i]) > 0 {
+					source = &batch.Sources[i]
+					break
+				}
+			}
+		}
 		if source == nil {
 			return nil
 		}
@@ -1045,6 +1105,14 @@ func (e Engine) advanceSettledSegment(battle *state.Battle) ([]event.Event, erro
 	next, advance, err := e.manager.Advance(battle.Segment)
 	if err != nil {
 		return nil, err
+	}
+	if battle.Settled.UnifiedDefense && battle.Segment.Current == segment.Defensive {
+		// Damage has already committed inside Defense. Keep the internal round
+		// boundary, but do not open another damage segment or reveal a new batch.
+		next, advance, err = e.manager.Advance(next)
+		if err != nil {
+			return nil, err
+		}
 	}
 	if advance.CompletedTurn {
 		battle.Settled.CompletedRounds = battle.Segment.Round
@@ -1813,6 +1881,20 @@ func (e Engine) playSettledReactionCard(battle *state.Battle, library content.Ba
 }
 
 func (e Engine) handleDefenseReactionCommand(battle *state.Battle, library content.BattleLibrary, cmd command.Command) ([]event.Event, error) {
+	if unifiedDefense(battle) {
+		if cmd.Type == command.TypeCommitInteraction {
+			return e.handleUnifiedCard(battle, library, cmd)
+		}
+		if cmd.Type == command.TypePass {
+			battle.Settled.DefensePassed[cmd.ActorID] = true
+			skipRemainingDefenses(battle, cmd.ActorID)
+		}
+		if advanceSettledSequentialChoice(battle, cmd.ActorID) {
+			return nil, nil
+		}
+		closeSettledWindow(battle)
+		return e.finalizeDefenses(battle, library)
+	}
 	if cmd.Type == command.TypePass {
 		if advanceSettledReactionPriority(battle, cmd.ActorID, false) {
 			return nil, nil
@@ -1901,6 +1983,14 @@ func (e Engine) handleDamageReactionCommand(battle *state.Battle, library conten
 }
 
 func (e Engine) handleDefenseSelectionCommand(battle *state.Battle, library content.BattleLibrary, cmd command.Command) ([]event.Event, error) {
+	if unifiedDefense(battle) {
+		if cmd.Type == command.TypeCommitInteraction {
+			return e.handleUnifiedCard(battle, library, cmd)
+		}
+		if cmd.Type == command.TypePlanningPass {
+			return e.passUnifiedDefense(battle, library, cmd.ActorID)
+		}
+	}
 	if cmd.Type == command.TypePlanningPass {
 		var payload command.PlanningPassPayload
 		if err := command.DecodePayload(cmd, &payload); err != nil {
@@ -1936,8 +2026,8 @@ func (e Engine) handleDefenseSelectionCommand(battle *state.Battle, library cont
 		return nil, errors.New("select one legal defense and incoming source")
 	}
 	source := sourceBySettledID(battle, payload.TargetIDs[0])
-	if source == nil || source.TargetActorID != cmd.ActorID || defenseSourceChosen(battle, source.ID) {
-		return nil, errors.New("defense target is not an incoming source")
+	if source == nil || source.TargetActorID != cmd.ActorID || defenseSourceChosen(battle, source.ID) || (unifiedDefense(battle) && settledSourceAmount(*source) == 0) {
+		return nil, errors.New("defense target is not a remaining incoming source")
 	}
 	ability := library.Abilities[payload.AbilityID]
 	if ability.ID == "barbed_mantle" && library.Abilities[source.SourceContentID].Type != "offensive" {
@@ -1955,12 +2045,27 @@ func (e Engine) handleDefenseSelectionCommand(battle *state.Battle, library cont
 		}
 		removeStatus(battle, cmd.ActorID, "catalyst", 1)
 		source.Prevention += 2
+		if unifiedDefense(battle) {
+			if pending := batchSourceByID(battle.Settled.PendingDamage, source.ID); pending != nil {
+				before := settledSourceAmount(*pending)
+				pending.Prevention += 2
+				setUnifiedSourceAmount(battle, pending, max(0, before-2))
+			}
+			if err := e.reconcileUnifiedDamage(battle, true); err != nil {
+				return nil, err
+			}
+		}
 	}
 	spendEnergy(battle, cmd.ActorID, ability.Cost.Energy)
 	runtime.UsedAbilities[payload.AbilityID]++
 	battle.Settled.Actors[cmd.ActorID] = runtime
 	if battle.Settled.DefensePlans == nil {
 		battle.Settled.DefensePlans = map[string]state.SettledDefense{}
+	}
+	if unifiedDefense(battle) {
+		battle.Settled.DefenseSelections = map[string]state.SettledDefense{cmd.ActorID: {ActorID: cmd.ActorID, AbilityID: payload.AbilityID, SourceID: source.ID, CatalystPaid: payload.SpendCatalyst}}
+		closeSettledWindow(battle)
+		return e.afterDefenseSelections(battle, library)
 	}
 	battle.Settled.DefensePlans[source.ID] = state.SettledDefense{ActorID: cmd.ActorID, AbilityID: payload.AbilityID, SourceID: source.ID, CatalystPaid: payload.SpendCatalyst}
 	if hasUnplannedDefense(battle, cmd.ActorID) {
@@ -2334,10 +2439,10 @@ func (e Engine) playSettledCard(battle *state.Battle, library content.BattleLibr
 	if battle.Settled.Window != nil {
 		purpose = battle.Settled.Window.Purpose
 	}
-	if purpose == "damage_response" || purpose == "status_response" {
+	if purpose == "damage_response" || purpose == "status_response" || (unifiedDefense(battle) && purpose == "defense_selection") {
 		purpose = "reaction"
 	}
-	if purpose == "" && battle.Segment.Current == segment.DamageResolution {
+	if purpose == "" && (battle.Segment.Current == segment.DamageResolution || unifiedDefense(battle)) {
 		purpose = "reaction"
 	}
 	legal := cardPlayableDuring(definition, battle, purpose, actorID)
@@ -2434,8 +2539,8 @@ func validateCardTargets(battle *state.Battle, library content.BattleLibrary, ac
 			return errors.New("card requires one incoming damage source")
 		}
 		source := effectDamageSourceByID(battle, targetIDs[0])
-		if source == nil || source.TargetActorID != actorID {
-			return errors.New("selected damage source is not incoming to the actor")
+		if source == nil || source.TargetActorID != actorID || (unifiedDefense(battle) && settledSourceAmount(*source) == 0) {
+			return errors.New("selected damage source is not incoming to the actor or has no remaining damage")
 		}
 	case "one_owned_offensive_ability":
 		if abilityID == "" && len(targetIDs) == 1 {
@@ -2816,7 +2921,7 @@ func hasIncoming(battle *state.Battle, actorID string) bool {
 }
 func firstIncoming(battle *state.Battle, actorID string) *state.SettledDamageSource {
 	for i := range battle.Settled.OffensiveSources {
-		if battle.Settled.OffensiveSources[i].TargetActorID == actorID && !defenseSourceHandled(battle, battle.Settled.OffensiveSources[i].ID) {
+		if battle.Settled.OffensiveSources[i].TargetActorID == actorID && (!unifiedDefense(battle) || settledSourceAmount(battle.Settled.OffensiveSources[i]) > 0) && !defenseSourceHandled(battle, battle.Settled.OffensiveSources[i].ID) {
 			return &battle.Settled.OffensiveSources[i]
 		}
 	}

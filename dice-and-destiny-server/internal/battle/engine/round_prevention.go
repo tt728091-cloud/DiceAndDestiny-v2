@@ -26,12 +26,12 @@ func validAdjacentFace(before int, choice string) bool {
 
 func roundPreventionEligible(b *state.Battle, lib content.BattleLibrary, actor, sourceID string) bool {
 	source := batchSourceByID(b.Settled.PendingDamage, sourceID)
-	return b.Settled.Stage == stageDamageReact && stacks(b, actor, "protect") > 0 &&
+	return (b.Settled.Stage == stageDamageReact || (unifiedDefense(b) && b.Settled.Stage == stageDefenseSelect)) && stacks(b, actor, "protect") > 0 &&
 		source != nil && source.TargetActorID == actor && lib.Abilities[source.SourceContentID].Type == "offensive" && settledSourceAmount(*source) > 0
 }
 
 func roundPreventionActions(b *state.Battle, lib content.BattleLibrary, actor string, pending state.PendingInput) []command.Command {
-	if b.Settled.Stage != stageDamageReact || b.Settled.PendingDamage == nil {
+	if (b.Settled.Stage != stageDamageReact && !(unifiedDefense(b) && b.Settled.Stage == stageDefenseSelect)) || b.Settled.PendingDamage == nil {
 		return nil
 	}
 	var actions []command.Command
@@ -54,9 +54,18 @@ func (e Engine) spendRoundPrevention(b *state.Battle, lib content.BattleLibrary,
 	before := settledSourceAmount(*source)
 	amount := stacks(b, actor, "protect")
 	source.ReactionPrevention += amount
+	setUnifiedSourceAmount(b, source, max(0, before-amount))
 	removeStatus(b, actor, "protect", 0)
-	reconcileSettledDamage(b.Settled.PendingDamage, b)
-	advanceSettledReactionPriority(b, actor, true)
+	if unifiedDefense(b) {
+		if err := e.reconcileUnifiedDamage(b, false); err != nil {
+			return nil, err
+		}
+	} else {
+		reconcileSettledDamage(b.Settled.PendingDamage, b)
+	}
+	if !unifiedDefense(b) {
+		advanceSettledReactionPriority(b, actor, true)
+	}
 	return []event.Event{settledEvent(event.TypeDamageModified, b, actor, map[string]any{
 		"source_id": source.ID, "ability_id": "guarded_strike", "status_id": "protect", "status_before": amount, "status_after": 0, "prevention": source.ReactionPrevention,
 		"damage_before": before, "damage_after": settledSourceAmount(*source), "target_actor_id": actor,

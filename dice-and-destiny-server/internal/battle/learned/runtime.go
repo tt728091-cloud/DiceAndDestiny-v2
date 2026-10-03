@@ -8,6 +8,7 @@ import (
 )
 
 type runtimeRequest struct {
+	UnifiedDefense     bool   `json:"unified_defense"`
 	OpponentDefinition string `json:"opponent_definition,omitempty"`
 	OpponentCount      int    `json:"opponent_count,omitempty"`
 	Op                 string `json:"op"`
@@ -77,7 +78,7 @@ func HandleRuntimeRequest(requestJSON string) string {
 	var err error
 	switch request.Op {
 	case "reset":
-		value, err = learnedRuntime.session.ResetCharacter(request.BattleID, request.Seed, request.HumanSeat, request.Rematch, request.Character)
+		value, err = learnedRuntime.session.ResetCharacter(request.BattleID, request.Seed, request.HumanSeat, request.Rematch, request.Character, request.UnifiedDefense)
 	case "submit_human":
 		value, err = learnedRuntime.session.SubmitHuman(request.CommandJSON)
 	case "advance_model":

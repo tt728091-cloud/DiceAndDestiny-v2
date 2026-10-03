@@ -473,18 +473,24 @@ func (e Engine) applyEffectMutations(battle *state.Battle, library content.Battl
 		if source == nil {
 			return fmt.Errorf("damage source %q was not found", prevention.ProposalID)
 		}
+		before := settledSourceAmount(*source)
 		if sourceCardInstanceID != "" {
 			source.ReactionPrevention += prevention.Amount
 		} else {
 			source.Prevention += prevention.Amount
 		}
+		setUnifiedSourceAmount(battle, source, max(0, before-prevention.Amount))
 	}
 	for _, scale := range result.Scales {
 		source := effectDamageSourceByID(battle, scale.ProposalID)
 		if source == nil {
 			return fmt.Errorf("damage source %q was not found", scale.ProposalID)
 		}
+		before := settledSourceAmount(*source)
 		source.ScaleNumerator, source.ScaleDenominator = scale.Numerator, scale.Denominator
+		if scale.Denominator > 0 {
+			setUnifiedSourceAmount(battle, source, before*scale.Numerator/scale.Denominator)
+		}
 	}
 	for _, actorID := range result.CanceledActors {
 		runtime := battle.Settled.Actors[actorID]
@@ -493,7 +499,13 @@ func (e Engine) applyEffectMutations(battle *state.Battle, library content.Battl
 		removeSourcesByActor(battle, actorID)
 	}
 	if len(result.Preventions) > 0 || len(result.Scales) > 0 {
-		reconcileSettledDamage(battle.Settled.PendingDamage, battle)
+		if unifiedDefense(battle) {
+			if err := e.reconcileUnifiedDamage(battle, sourceCardInstanceID == ""); err != nil {
+				return err
+			}
+		} else {
+			reconcileSettledDamage(battle.Settled.PendingDamage, battle)
+		}
 	}
 	return nil
 }
