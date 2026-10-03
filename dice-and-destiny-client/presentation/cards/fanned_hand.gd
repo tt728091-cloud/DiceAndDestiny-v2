@@ -7,6 +7,7 @@ var slots: Array[Control] = []
 var base_transforms: Array[Transform2D] = []
 var reveal := 0.0
 var held_open := false
+var keep_visible := false
 var hovered := -1
 var _pressed := -1
 var _keyboard := false
@@ -40,7 +41,7 @@ func _input(event: InputEvent) -> void:
 func _process(delta: float) -> void:
 	var pointer := get_local_mouse_position() if _pointer == Vector2.INF else get_global_transform_with_canvas().affine_inverse() * _pointer
 	var focused := cards.any(func(card): return card.has_focus())
-	var open := not cards.is_empty() and (Rect2(Vector2.ZERO, size).has_point(pointer) or held_open or (_keyboard and focused))
+	var open := not cards.is_empty() and (Rect2(Vector2.ZERO, size).has_point(pointer) or held_open or keep_visible or (_keyboard and focused))
 	reveal = move_toward(reveal, 1.0 if open else 0.0, delta / (0.24 if open else 0.30))
 	if not _keyboard: hovered = card_at(pointer) if open and reveal > 0.85 else -1
 	tooltip_text = cards[hovered].tooltip_text if hovered >= 0 else ""

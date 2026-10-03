@@ -108,6 +108,9 @@ var _damage_commit_started := {}
 const DEFENSE_TIMING := preload("res://presentation/battle/defense_timing.gd")
 const DAMAGE_AUTO_PASS_CLICK_MS := 250
 var _auto_pass_disabled := false
+var _battle_preferences := ConfigFile.new()
+var _keep_hand_visible := false
+var _hand_visibility_toggle: CheckBox
 var _damage_reviewed_batch := ""
 var _defense_reviewed_result := ""
 var _damage_feedback_seen: Dictionary = {}
@@ -139,6 +142,8 @@ func _reaction_feedback_active() -> bool:
 	return _reaction_card_feedback.get("battle_id") == _view.battle_id and Time.get_ticks_msec() < int(_reaction_card_feedback.get("expires_ms", 0))
 
 func _ready() -> void:
+	_battle_preferences.load(WorkspacePaths.persistent_file("battle_preferences.cfg"))
+	_keep_hand_visible = bool(_battle_preferences.get_value("presentation", "keep_hand_visible", false))
 	theme = CINEMATIC.create()
 	add_to_group("inspectable_battle_screen")
 	resized.connect(_layout_cinematic_root)
@@ -362,6 +367,13 @@ func _set_auto_pass_disabled(disabled: bool) -> void:
 	# fresh review period; manual acknowledgement is always available.
 	_reset_auto_pass_preview()
 
+func _set_keep_hand_visible(enabled: bool) -> void:
+	_keep_hand_visible = enabled
+	if is_instance_valid(_hand_dock): _hand_dock.keep_visible = enabled
+	_battle_preferences.set_value("presentation", "keep_hand_visible", enabled)
+	if _battle_preferences.save(WorkspacePaths.persistent_file("battle_preferences.cfg")) != OK:
+		push_warning("Could not save hand visibility preference; it remains active for this battle.")
+
 func _reset_auto_pass_preview() -> void:
 	_auto_pass_preview_input = ""
 	_auto_pass_preview_started_ms = 0
@@ -526,6 +538,7 @@ func _render(force: bool = false) -> void:
 	_hand_dock = preload("res://presentation/cards/fanned_hand.gd").new(); _hand_dock.name = "HandDock"
 	_root.add_child(_hand_dock); _place_cinematic(_hand_dock, Rect2(475, 790, 965, 290))
 	_hand_dock.reveal = hand_reveal
+	_hand_dock.keep_visible = _keep_hand_visible
 	_roll_dock = _cinematic_box("RollControls", Rect2(36, 358, 102, 42))
 	var footer := _cinematic_box("BattleActionFooter", Rect2(146, 358, 54, 42))
 	_action_footer = HBoxContainer.new(); _action_footer.alignment = BoxContainer.ALIGNMENT_CENTER; footer.add_child(_action_footer)
@@ -806,7 +819,14 @@ func _build_cinematic_utilities() -> void:
 	_auto_pass_toggle.tooltip_text = "Debug: pause before the final acknowledgement. Empty Offensive reactions, no-choice handoffs to the opponent, Effects, and status applications remain automatic. Real card choices always wait for you."
 	_auto_pass_toggle.toggled.connect(_set_auto_pass_disabled); _utility_contents.settings.add_child(_auto_pass_toggle)
 	_inspect(_auto_pass_toggle, "battle.disable_auto_pass", _auto_pass_toggle.tooltip_text)
-	var hint := Label.new(); hint.text = "Hover cards, abilities, dice, or status counters for their details.\nVenom symbols: ✧ Fang · ⚗ Gland · ◉ Coil\nKept dice glow gold. Scroll your hand to see additional cards.\nDefense and damage results keep their existing review timing."; hint.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART; _utility_contents.settings.add_child(hint)
+	_hand_visibility_toggle = preload("res://presentation/battle/tooltip_check_box.gd").new()
+	_hand_visibility_toggle.text = "Keep hand visible"
+	_hand_visibility_toggle.set_pressed_no_signal(_keep_hand_visible)
+	_hand_visibility_toggle.tooltip_text = "Keep your cards raised when the cursor leaves the hand. Turn off to automatically hide the hand until you hover over it. Saved for future battles."
+	_hand_visibility_toggle.toggled.connect(_set_keep_hand_visible)
+	_utility_contents.settings.add_child(_hand_visibility_toggle)
+	_inspect(_hand_visibility_toggle, "battle.keep_hand_visible", _hand_visibility_toggle.tooltip_text)
+	var hint := Label.new(); hint.text = "Hover cards, abilities, dice, or status counters for their details.\nVenom symbols: ✧ Fang · ⚗ Gland · ◉ Coil\nKept dice glow gold. Hover the hand to raise it, or enable Keep hand visible.\nDefense and damage results keep their existing review timing."; hint.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART; _utility_contents.settings.add_child(hint)
 	var details := Label.new(); details.text = "Battle %s\nRound %d · %s\n%s\n\nCard and ability descriptions use this battle’s active rules, including upgrades." % [_view.battle_id, _view.round_number, _segment_name(_view.segment), _view.stage.replace("_", " ").capitalize()]; details.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART; _utility_contents.inspect.add_child(details)
 
 func _build_header(parent: VBoxContainer) -> void:
