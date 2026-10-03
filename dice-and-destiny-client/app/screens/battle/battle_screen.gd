@@ -2308,10 +2308,25 @@ func _build_completion() -> void:
 		for id in _enemy_ids(): health.append("%s %d/%d" % [_actor_display_name(id), int(_view.actor(id).get("current_health", 0)), int(_view.actor(id).get("max_health", 0))])
 		final.text = " · ".join(health)
 	final.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER; _center.add_child(final)
+	var review := TOOLTIP_BUTTON.new(); review.name = "ReviewBattle"; review.text = "Review · Wounds"; review.pressed.connect(_open_wound_review); _center.add_child(review)
+	_inspect(review, "battle.complete.review", "Review each wound and the cards lost after prevention")
 	var again := TOOLTIP_BUTTON.new(); again.text = "Rematch · Same Seats" if learned_battle_mode else "Play Again"; again.disabled = _history_review; again.pressed.connect(_play_again); _center.add_child(again); _inspect(again, "battle.complete.play_again", "Reset this learned matchup without reloading the model" if learned_battle_mode else "Start a new real-random battle")
 	if learned_battle_mode:
 		var new_battle := TOOLTIP_BUTTON.new(); new_battle.text = "New Battle · Change Seat or Mode"; new_battle.pressed.connect(_return_to_mode_menu); _center.add_child(new_battle); _inspect(new_battle, "battle.complete.new_battle", "Return to the graphical battle-mode menu")
 	var spacer2 := Control.new(); spacer2.size_flags_vertical = Control.SIZE_EXPAND_FILL; _center.add_child(spacer2)
+
+func _open_wound_review() -> void:
+	if _root.has_node("WoundReview"): return
+	var review := preload("res://presentation/battle/wound_review.gd").new()
+	var names := {}
+	for id in [viewer_actor_id] + _enemy_ids(): names[id] = _actor_display_name(id)
+	review.configure(_view.raw_snapshot, names, viewer_actor_id)
+	_root.add_child(review)
+	review.closed.connect(func():
+		_root.remove_child(review); review.queue_free()
+		var button := _center.get_node_or_null("ReviewBattle")
+		if button != null: button.grab_focus()
+	)
 
 func _add_action(parent: Container, text: String, command: String, callback: Callable) -> void:
 	if not _view.allowed(command): return

@@ -299,6 +299,11 @@ func Commit(battle *state.Battle, resolution *state.DamageResolutionState) (Comm
 		working.PendingOperations,
 		cloneFinalizedOperations(resolution.PendingOperations)...,
 	)
+	sources := make([]state.SettledDamageSource, len(resolution.SourceProposals))
+	for i, source := range resolution.SourceProposals {
+		sources[i] = state.SettledDamageSource{ID: source.ID, SourceActorID: source.SourceActorID, SourceContentID: source.SourceContentID, TargetActorID: source.TargetActorID, FinalAmount: source.FinalAmount}
+	}
+	working.RecordDamageWounds(resolution.ID, sources, accepted)
 	*battle = working
 	return result, nil
 }

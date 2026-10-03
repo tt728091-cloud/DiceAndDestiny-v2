@@ -987,6 +987,7 @@ func (e Engine) finishDamageBatch(battle *state.Battle, library content.BattleLi
 	if err := e.curseDamageCompleted(battle, library, batch); err != nil {
 		return nil, err
 	}
+	battle.RecordDamageWounds(batch.ID, batch.Sources, batch.Removals)
 	batch.Committed = true
 	events = append(events, settledEvent(event.TypeDamageCommitted, battle, "", map[string]any{"batch_id": batch.ID, "sources": batch.Sources, "removals": batch.Removals, "overage": batch.Overage, "status_applications": batch.Applications}))
 	if battle.Settled.Venom != nil {

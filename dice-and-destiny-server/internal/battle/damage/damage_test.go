@@ -221,6 +221,9 @@ func TestCommitUsesPreviewPathMovesOnceAndFailsAtomically(t *testing.T) {
 		len(battle.Actors["target"].Cards.Removed) != preview {
 		t.Fatalf("preview/commit mismatch: preview=%d result=%#v actor=%#v", preview, result, battle.Actors["target"])
 	}
+	if len(battle.Wounds) != 1 || len(battle.Wounds[0].Cards) != preview || battle.Wounds[0].SourceID != "source" {
+		t.Fatalf("legacy commit must also retain damage wounds: %+v", battle.Wounds)
+	}
 	afterFirstCommit := battle.Clone()
 	if _, err := damage.Commit(&battle, resolution); err == nil {
 		t.Fatal("second Commit() permanently removed the same proposed cards again")

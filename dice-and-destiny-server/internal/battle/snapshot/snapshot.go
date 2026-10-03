@@ -12,6 +12,7 @@ import (
 // Battle is the read-only view returned after events have been applied.
 // It is safe for presentation or future network clients to render from.
 type Battle struct {
+	Wounds               []state.Wound                   `json:"wounds,omitempty"`
 	BlindCheck           map[string]any                  `json:"blind_check,omitempty"`
 	CurseChoice          *state.CurseWork                `json:"curse_choice,omitempty"`
 	CursePreparations    []state.CursePreparation        `json:"curse_preparations,omitempty"`
@@ -367,6 +368,10 @@ func fromBattleForViewer(battle state.Battle, viewerActorID string, includeConte
 		OffensiveProposals: planningProposalsForViewer(battle.OffensiveProposals, viewerActorID),
 		DefensiveProposals: planningProposalsForViewer(battle.DefensiveProposals, viewerActorID),
 		Origin:             originSnapshot(battle.Origin),
+	}
+	// The full cross-character loss ledger is an end-of-battle review only.
+	if state.IsTerminalBattleStatus(battle.Status) {
+		result.Wounds = state.CloneWounds(battle.Wounds)
 	}
 	if battle.Settled != nil && battle.Settled.PendingBlind != nil {
 		p := battle.Settled.PendingBlind

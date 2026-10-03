@@ -9,6 +9,7 @@ import (
 )
 
 type Battle struct {
+	Wounds             []Wound `json:"wounds,omitempty"`
 	ID                 string
 	Status             BattleStatus
 	WinnerActorID      string
@@ -464,6 +465,7 @@ func IsValidActorProgressStatus(status ActorProgressStatus) bool {
 
 func (battle Battle) Clone() Battle {
 	cloned := battle
+	cloned.Wounds = CloneWounds(battle.Wounds)
 	cloned.Actors = cloneActors(battle.Actors)
 	cloned.Resolutions = cloneResolutions(battle.Resolutions)
 	cloned.DiceDefinitions = copyDiceDefinitionMap(battle.DiceDefinitions)
