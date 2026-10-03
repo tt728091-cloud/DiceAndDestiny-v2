@@ -45,6 +45,7 @@ type Progress struct {
 	Abilities     content.AbilityBoard `json:"ability_board"`
 }
 type Purchase struct {
+	TargetID     string `json:"target_id,omitempty"`
 	Kind         string `json:"kind"`
 	ID           string `json:"id"`
 	Revision     int    `json:"revision"`
@@ -311,6 +312,30 @@ func Buy(root, character string, e Economy, lib content.BattleLibrary, request P
 		cost = upgrade.XP
 		p.Deck = changeCount(p.Deck, request.ID, -1)
 		p.Deck = changeCount(p.Deck, upgrade.To, 1)
+	case "downgrade_ability":
+		upgrade, ok := cfg.AbilityUpgrades[request.TargetID]
+		if !ok || upgrade.To != request.ID {
+			return p, fmt.Errorf("no matching ability downgrade path")
+		}
+		cost = upgrade.XP
+		if p.UpgradeSpent < cost {
+			return p, fmt.Errorf("not enough invested upgrade XP to refund this tier")
+		}
+		replaced := false
+		for _, ids := range [][]string{p.Abilities.Offensive, p.Abilities.Defensive} {
+			for i, id := range ids {
+				if id == request.TargetID {
+					return p, fmt.Errorf("previous ability tier already equipped")
+				}
+				if id == request.ID {
+					ids[i] = request.TargetID
+					replaced = true
+				}
+			}
+		}
+		if !replaced {
+			return p, fmt.Errorf("ability is not equipped")
+		}
 	case "upgrade_ability":
 		upgrade, ok := cfg.AbilityUpgrades[request.ID]
 		if !ok {
@@ -338,10 +363,11 @@ func Buy(root, character string, e Economy, lib content.BattleLibrary, request P
 	if cost != request.ExpectedCost {
 		return p, fmt.Errorf("price changed; refresh before trading")
 	}
-	if request.Kind != "sell_card" && p.XP < cost {
+	refund := request.Kind == "sell_card" || request.Kind == "downgrade_ability"
+	if !refund && p.XP < cost {
 		return p, fmt.Errorf("not enough XP")
 	}
-	if request.Kind == "sell_card" {
+	if refund {
 		p.XP += cost
 	} else {
 		p.XP -= cost

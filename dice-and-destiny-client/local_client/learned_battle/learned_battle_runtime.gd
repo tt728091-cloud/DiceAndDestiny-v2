@@ -159,9 +159,9 @@ func save_character_deck(character: String, decklist: Array) -> Dictionary:
 	for entry in decklist: entries.append({"card_id": str(entry.card_id), "count": int(entry.count)})
 	return _request({"op": "save_character_deck", "content_root": ProjectSettings.globalize_path("res://../dice-and-destiny-server/content"), "loadout_root": WorkspacePaths.runtime_dir("user/character_loadouts"), "character": character, "decklist": entries})
 
-func purchase_progression(character: String, kind: String, id: String, revision: int, cost: int) -> Dictionary:
+func purchase_progression(character: String, kind: String, id: String, revision: int, cost: int, target_id: String = "") -> Dictionary:
 	if _native_authority == null: return {"ok": false, "error": _initialization_error}
-	return _request({"op": "progression_purchase", "content_root": ProjectSettings.globalize_path("res://../dice-and-destiny-server/content"), "loadout_root": WorkspacePaths.runtime_dir("user/character_loadouts"), "character": character, "purchase": {"kind": kind, "id": id, "revision": revision, "expected_cost": cost}})
+	return _request({"op": "progression_purchase", "content_root": ProjectSettings.globalize_path("res://../dice-and-destiny-server/content"), "loadout_root": WorkspacePaths.runtime_dir("user/character_loadouts"), "character": character, "purchase": {"kind": kind, "id": id, "revision": revision, "expected_cost": cost, "target_id": target_id}})
 
 func save_economy_admin(settings: Dictionary) -> Dictionary:
 	return _request({"op": "save_economy_admin", "admin_settings": settings, "loadout_root": WorkspacePaths.runtime_dir("user/character_loadouts"), "content_root": ProjectSettings.globalize_path("res://../dice-and-destiny-server/content")})

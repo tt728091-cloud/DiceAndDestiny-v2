@@ -545,17 +545,29 @@ func _progression_actions(kind: String, id: String) -> void:
 		var action := "upgrade_card" if kind == "cards" else "upgrade_ability"
 		var button := _button(_details, "Upgrade → %s · %d XP" % [target.name, int(upgrade.xp)], func(): _review_purchase(action, id, int(upgrade.xp)), "upgrade." + id)
 		button.disabled = int(progress.xp) < int(upgrade.xp) or (kind == "cards" and (_card_count(id) < 1 or _card_count(str(upgrade.to)) >= int(catalogs[character_id].deck_limits.max_copies))) or (kind == "abilities" and str(upgrade.to) in (character.ability_board.offensive + character.ability_board.defensive))
-	elif kind == "abilities": _label(_details, "No further upgrade configured.", 14, MUTED)
+	if kind == "abilities":
+		var has_downgrade := false
+		for previous_id in upgrades:
+			var path: Dictionary = upgrades[previous_id]
+			if str(path.to) != id: continue
+			has_downgrade = true
+			var previous: Dictionary = catalogs[character_id].abilities[previous_id]
+			var refund := int(path.xp)
+			var button := _button(_details, "Downgrade → %s · +%d XP" % [previous.name, refund], func(): _review_purchase("downgrade_ability", id, refund, str(previous_id)), "downgrade." + id + "." + str(previous_id))
+			button.disabled = int(progress.get("upgrade_spent", 0)) < refund or str(previous_id) in (character.ability_board.offensive + character.ability_board.defensive)
+		if not upgrades.has(id) and not has_downgrade: _label(_details, "No upgrade or downgrade configured.", 14, MUTED)
 
-func _review_purchase(kind: String, id: String, cost: int) -> void:
+func _review_purchase(kind: String, id: String, cost: int, downgrade_target: String = "") -> void:
 	var progress: Dictionary = catalogs[character_id].progression
 	_pending_purchase = {"character": character_id, "kind": kind, "id": id, "cost": cost, "revision": int(progress.revision)}
 	_clear(_purchase_details)
-	var collection := "abilities" if kind == "upgrade_ability" else "cards"
+	var collection := "abilities" if kind in ["upgrade_ability", "downgrade_ability"] else "cards"
 	var current: Dictionary = catalogs[character_id][collection][id]
-	var upgrade := kind in ["upgrade_card", "upgrade_ability"]
+	var upgrade := kind in ["upgrade_card", "upgrade_ability", "downgrade_ability"]
+	var downgrade := kind == "downgrade_ability"
 	var selling := kind == "sell_card"
-	var target_id := str(_economy_map("ability_upgrades" if collection == "abilities" else "card_upgrades")[id].to) if upgrade else id
+	var target_id := str(_economy_map("ability_upgrades" if collection == "abilities" else "card_upgrades")[id].to) if upgrade and not downgrade else id
+	if downgrade: target_id = downgrade_target
 	_pending_purchase.target_id = target_id
 	_skip_prompt.set_pressed_no_signal(false)
 	_skip_prompt.visible = not upgrade
@@ -572,9 +584,10 @@ func _review_purchase(kind: String, id: String, cost: int) -> void:
 	var target: Dictionary = catalogs[character_id][collection][target_id]
 	var card_delta := -1 if selling else 1 if kind == "buy_card" else 0
 	_label(_purchase_details, "%s → %s" % [current.name, target.name] if upgrade else ("Sell one %s" if selling else "Add one %s") % target.name, 24, GOLD)
-	_label(_purchase_details, "XP: %d → %d    ·    Health: %d → %d" % [int(progress.xp), int(progress.xp) + (cost if selling else -cost), _health(), _health() + card_delta], 22)
+	_label(_purchase_details, "XP: %d → %d    ·    Health: %d → %d" % [int(progress.xp), int(progress.xp) + (cost if selling or downgrade else -cost), _health(), _health() + card_delta], 22)
 	if kind == "upgrade_card": _label(_purchase_details, "Replaces one owned copy. Other copies remain unchanged.", 16, MUTED)
 	elif kind == "upgrade_ability": _label(_purchase_details, "Replaces the equipped ability in its slot.", 16, MUTED)
+	elif downgrade: _label(_purchase_details, "Returns the previous ability tier to the same slot and refunds %d XP. You can buy this upgrade again." % cost, 16, MUTED)
 	else: _label(_purchase_details, "Equipped copies: %d → %d" % [_card_count(id), _card_count(id) + card_delta], 16, MUTED)
 	if selling:
 		_label(_purchase_details, "Returns the current purchase price to your XP balance. You can buy this card again from the library.", 18, MUTED)
@@ -584,7 +597,7 @@ func _review_purchase(kind: String, id: String, cost: int) -> void:
 		_label(_purchase_details, str(current.presentation.rules_text), 18)
 	_label(_purchase_details, "AFTER" if upgrade else "CARD RULES", 14, GOLD)
 	_label(_purchase_details, str(target.presentation.rules_text), 18)
-	_purchase_confirm.text = ("Receive %d XP" if selling else "Spend %d XP") % cost
+	_purchase_confirm.text = ("Receive %d XP" if selling or downgrade else "Spend %d XP") % cost
 	_purchase_confirm.disabled = false
 	_purchase_overlay.show(); _purchase_cancel.grab_focus()
 
@@ -593,7 +606,7 @@ func _confirm_purchase() -> void:
 	var p := _pending_purchase
 	if loadout_mode != "progression" or character_id != str(p.character):
 		_purchase_overlay.hide(); return
-	var response: Dictionary = get_node("/root/LearnedBattleRuntime").purchase_progression(str(p.character), str(p.kind), str(p.id), int(p.revision), int(p.cost))
+	var response: Dictionary = get_node("/root/LearnedBattleRuntime").purchase_progression(str(p.character), str(p.kind), str(p.id), int(p.revision), int(p.cost), str(p.target_id) if p.kind == "downgrade_ability" else "")
 	_purchase_overlay.hide()
 	if not response.get("ok", false):
 		_error.text = "Transaction not completed: " + str(response.get("error", "Unknown error")) + ". Reload definitions to refresh."; _error.show(); return
@@ -604,7 +617,7 @@ func _confirm_purchase() -> void:
 	catalogs[character_id].combatants[character_id].ability_board = progress.ability_board.duplicate(true)
 	character.ability_board = progress.ability_board.duplicate(true)
 	_saved[character_id] = progress.decklist.duplicate(true); _drafts[character_id] = _saved[character_id].duplicate(true)
-	selected_kind = "abilities" if p.kind == "upgrade_ability" else "cards"; selected_id = str(p.target_id)
+	selected_kind = "abilities" if p.kind in ["upgrade_ability", "downgrade_ability"] else "cards"; selected_id = str(p.target_id)
 	_refresh_draft()
 	inspect_entry(selected_kind, selected_id)
 	if str(p.kind) in ["buy_card", "sell_card"] and _skip_prompt.button_pressed:

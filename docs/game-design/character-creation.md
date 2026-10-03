@@ -92,6 +92,16 @@ loadout overrides. It does not import a freely edited Sandbox deck.
   with three base Braces and only base Guard so these upgrades can be tested.
   Its Sandbox starter remains unchanged. Other characters can buy cards; they
   show no further upgrade until paths are authored for their abilities/cards.
+- Upgraded abilities also offer **Downgrade → previous tier · +N XP**. This
+  reverses a configured ability-upgrade edge, restores the previous ability in
+  the same slot, and refunds that edge's configured XP cost. Guard+ → Guard
+  currently returns 25 XP. The preview shows both rules and the resulting balance;
+  cancelling changes nothing. Health and total budget stay unchanged, while
+  upgrade investment becomes available XP again. The restored tier can be
+  upgraded again. Every downgrade requires an equipped upgraded tier, a valid
+  configured reverse path, sufficient invested upgrade XP, and a current quote
+  and revision. It cannot remove an ability slot or refund twice. Ability tier
+  changes retain their review prompt, independently of card buy/sell preferences.
 - Selecting a purchase or sale opens a preview of XP before/after, health
   before/after, and full before/after rules for upgrades. Cancel changes nothing.
   Confirm saves immediately; there is no Apply step in Progression.
@@ -238,3 +248,9 @@ an upgraded ability, and repeated reads. `verify_economy_admin.gd` enters prices
 and budgets through the UI, checks previews, cancellation and reopening, trades
 at the updated prices, verifies global overrides and persistence, and captures
 layouts at three window widths.
+
+Ability downgrade checks cover refunds with zero available XP, repeated/invalid
+refund rejection, persisted boards and budget totals, repurchasing, unchanged
+active battles, and completed battles using the restored tier from both seats.
+`verify_ability_downgrades.gd` exercises pointer upgrade/downgrade/cancellation,
+full before/after rules, reopening, and three viewport sizes.
