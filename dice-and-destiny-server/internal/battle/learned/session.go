@@ -13,6 +13,7 @@ import (
 	"diceanddestiny/server/internal/battle"
 	"diceanddestiny/server/internal/battle/command"
 	"diceanddestiny/server/internal/battle/engine"
+	"diceanddestiny/server/internal/battle/loadout"
 	"diceanddestiny/server/internal/battle/mlsim"
 )
 
@@ -22,6 +23,7 @@ const (
 )
 
 type SessionConfig struct {
+	LoadoutRoot        string
 	OpponentDefinition string
 	OpponentCount      int
 
@@ -186,6 +188,20 @@ func (s *Session) ResetCharacter(battleID string, seed uint64, humanSeat string,
 	if s.config.OpponentCount > 1 && s.config.OpponentDefinition == "" {
 		return nil, fmt.Errorf("multiple opponents require a scripted minion")
 	}
+	var decks map[string][]loadout.Entry
+	if s.config.LoadoutRoot != "" {
+		catalogs, err := CharacterCatalogs(s.config.ContentRoot)
+		if err != nil {
+			return nil, err
+		}
+		deck, err := loadout.Read(s.config.LoadoutRoot, character, catalogs[character].Cards)
+		if err != nil {
+			return nil, fmt.Errorf("load %s deck: %w", character, err)
+		}
+		if deck != nil {
+			decks = map[string][]loadout.Entry{humanSeat: deck}
+		}
+	}
 	s.humanSeat = humanSeat
 	s.modelSeat = otherSeat(humanSeat)
 	opponent := "blade_warden"
@@ -201,6 +217,7 @@ func (s *Session) ResetCharacter(battleID string, seed uint64, humanSeat string,
 		teams = map[string]string{s.humanSeat: "heroes", s.modelSeat: "minions", "seat-c": "minions"}
 	}
 	transition, err := s.environment.Reset(mlsim.ResetRequest{
+		SeatDecklists:   decks,
 		UnifiedDefense:  len(unified) > 0 && unified[0],
 		Seed:            seed,
 		BattleID:        battleID,

@@ -1,6 +1,6 @@
 # Character Creation
 
-## Phase 1: inspect the configured loadout (implemented)
+## Inspect the configured loadout (implemented)
 
 Open **Character Creation** beside **Start Battle** in battle setup. Choose
 Adventurer, Venom, Curse, or Blade Warden in the left rail. The initial selection
@@ -25,18 +25,42 @@ The screen uses the existing presentation helpers and card renderer, and restore
 the previous presentation catalog when closed. Legacy persisted JSON shapes are
 unchanged; the viewer endpoint has an explicit client-facing loadout envelope.
 
-No quantities, XP, upgrades, unlocks, or template files are editable in this phase.
+## Phase 2: owned deck editing (implemented)
+
+- **Deck** shows equipped cards and quantities. Select a card and edit **Copies in
+  deck**, or use **Add a copy**. Zero removes it from the draft.
+- **Card library** searches all cards in the selected character’s validated content
+  catalog, including cards absent from its starter deck. The catalog is the same
+  base/extension composition used by battle assembly; this is not a global library
+  across incompatible content packs and is not yet an unlock system.
+- Health and unique/total card counts update immediately. Each character retains
+  its own draft when switching characters; an asterisk marks unsaved changes.
+- **Apply deck** validates and atomically saves the selected character. **Revert**
+  restores its saved deck. **Reset to template** restores the authored starter deck
+  in the draft; Apply is still required. Back/Escape and Reload protect unsaved work
+  with Keep editing / Discard changes.
+- Editor limits are 1–100 total cards and 1–20 copies per included card. A draft may
+  be empty or over the total limit, but cannot be applied. These are editor bounds,
+  not XP costs. IDs, integer counts, duplicates, bounds, and catalog availability
+  are checked by the Go authority. Invalid saves leave the last saved file intact.
+- Owned decks are versioned JSON under the launcher-isolated runtime directory
+  `user/character_loadouts/<character>.json`. Content YAML remains unchanged.
+  Corrupt/stale decks display an error and can be repaired by applying a valid deck.
+- Battle setup displays the saved health total. New battles and rematches read the
+  saved deck for the human seat only, even in a same-character mirror matchup.
+  Opening draws, card instances, and maximum health use that deck. Active battles
+  retain their pinned setup. Replay records include the starting deck, so later
+  edits cannot change a replay. Sessions without a loadout root keep templates.
+
+Abilities and dice remain inspectable but are not editable. XP, upgrade purchases,
+and reward unlocks remain future work.
 
 ## Next phases
 
-1. **Edit a draft loadout.** Add/remove copies and search a separate available-card
-   library. Recompute health immediately. Provide Apply, Revert, and reset to the
-   character template. Validate IDs/counts in the authority and persist an owned
-   loadout, rather than overwriting shared content definitions.
-2. **Spend experience.** Add an authoritative XP balance, configured prices, and
+1. **Spend experience.** Add an authoritative XP balance, configured prices, and
    explicit upgrade links. Purchases consume XP and change card instances or
    ability slots atomically. Preview the before/after result before purchase.
-3. **Battle rewards and discovery.** Victory awards XP and unlocks potential
+2. **Battle rewards and discovery.** Victory awards XP and unlocks potential
    cards/abilities. Discovery adds a choice to the available library; equipping
    it remains a separate purchase. Open this same screen between battles with
    the run's loadout and balance.
@@ -54,3 +78,11 @@ Map exploration is outside this feature's current scope.
 - Full Go suite, native authority smoke test, and Adventurer menu-to-battle test.
 
 Run Godot checks through `./scripts/godot.sh` from the repository root.
+
+Phase 2 validation additionally covers native invalid-input/atomic-save behavior,
+all four saved character decks in both seats, complete customized battles and
+replay after saved-deck changes, and same-character opponent isolation.
+`verify_character_deck_editing.gd` uses pointer/keyboard interactions to add a new
+card, type quantities, apply, revert, reset, protect unsaved changes, reopen the
+saved deck, verify menu health, and start a real battle with the added copies.
+It also captures editor layouts at 1024, 1280, and 1920 widths.

@@ -15,6 +15,7 @@ import (
 	"diceanddestiny/server/internal/battle/command"
 	"diceanddestiny/server/internal/battle/engine"
 	"diceanddestiny/server/internal/battle/event"
+	"diceanddestiny/server/internal/battle/loadout"
 	"diceanddestiny/server/internal/battle/repository"
 	"diceanddestiny/server/internal/battle/snapshot"
 	"diceanddestiny/server/internal/battle/state"
@@ -54,12 +55,13 @@ type Config struct {
 }
 
 type ResetRequest struct {
-	UnifiedDefense  bool              `json:"unified_defense,omitempty"`
-	SeatTeams       map[string]string `json:"seat_teams,omitempty"`
-	Seed            uint64            `json:"seed"`
-	BattleID        string            `json:"battle_id,omitempty"`
-	SeatModels      map[string]string `json:"seat_models,omitempty"`
-	SeatDefinitions map[string]string `json:"seat_definitions,omitempty"`
+	SeatDecklists   map[string][]loadout.Entry `json:"seat_decklists,omitempty"`
+	UnifiedDefense  bool                       `json:"unified_defense,omitempty"`
+	SeatTeams       map[string]string          `json:"seat_teams,omitempty"`
+	Seed            uint64                     `json:"seed"`
+	BattleID        string                     `json:"battle_id,omitempty"`
+	SeatModels      map[string]string          `json:"seat_models,omitempty"`
+	SeatDefinitions map[string]string          `json:"seat_definitions,omitempty"`
 }
 
 type ActionRecord struct {
@@ -69,19 +71,20 @@ type ActionRecord struct {
 }
 
 type ReplayRecord struct {
-	UnifiedDefense    bool               `json:"unified_defense,omitempty"`
-	SeatTeams         map[string]string  `json:"seat_teams,omitempty"`
-	EnvironmentSchema string             `json:"environment_schema"`
-	ObservationSchema string             `json:"observation_schema"`
-	ActionSchema      string             `json:"action_schema"`
-	BattleID          string             `json:"battle_id"`
-	Seed              uint64             `json:"seed"`
-	SeatModels        map[string]string  `json:"seat_models"`
-	SeatDefinitions   map[string]string  `json:"seat_definitions"`
-	Actions           []ActionRecord     `json:"actions"`
-	Winner            string             `json:"winner,omitempty"`
-	Status            state.BattleStatus `json:"status,omitempty"`
-	TruncationReason  string             `json:"truncation_reason,omitempty"`
+	SeatDecklists     map[string][]loadout.Entry `json:"seat_decklists,omitempty"`
+	UnifiedDefense    bool                       `json:"unified_defense,omitempty"`
+	SeatTeams         map[string]string          `json:"seat_teams,omitempty"`
+	EnvironmentSchema string                     `json:"environment_schema"`
+	ObservationSchema string                     `json:"observation_schema"`
+	ActionSchema      string                     `json:"action_schema"`
+	BattleID          string                     `json:"battle_id"`
+	Seed              uint64                     `json:"seed"`
+	SeatModels        map[string]string          `json:"seat_models"`
+	SeatDefinitions   map[string]string          `json:"seat_definitions"`
+	Actions           []ActionRecord             `json:"actions"`
+	Winner            string                     `json:"winner,omitempty"`
+	Status            state.BattleStatus         `json:"status,omitempty"`
+	TruncationReason  string                     `json:"truncation_reason,omitempty"`
 }
 
 type EpisodeMetrics struct {
@@ -232,7 +235,7 @@ func (e *Environment) Reset(request ResetRequest) (Transition, error) {
 	e.authority = battle.NewAuthority(
 		simulationEngine,
 		repo,
-		e.assembler,
+		battle.WithDeckLoadouts(e.assembler, request.SeatDecklists),
 	)
 	humanSeat, modelSeat := transcriptSeats(request.SeatModels)
 	e.authority.ConfigureTranscriptBattle(battle.TranscriptBattleContext{
@@ -247,6 +250,7 @@ func (e *Environment) Reset(request ResetRequest) (Transition, error) {
 	})
 	environmentSchema, observationSchema, actionSchema := e.SchemaVersions()
 	e.replay = ReplayRecord{
+		SeatDecklists:     cloneDecklists(request.SeatDecklists),
 		UnifiedDefense:    request.UnifiedDefense,
 		EnvironmentSchema: environmentSchema,
 		ObservationSchema: observationSchema,
@@ -517,7 +521,8 @@ func (e *Environment) Metrics() EpisodeMetrics {
 
 func (e *Environment) Replay(record ReplayRecord) (Transition, error) {
 	transition, err := e.Reset(ResetRequest{
-		Seed: record.Seed, BattleID: record.BattleID, UnifiedDefense: record.UnifiedDefense,
+		SeatDecklists: cloneDecklists(record.SeatDecklists),
+		Seed:          record.Seed, BattleID: record.BattleID, UnifiedDefense: record.UnifiedDefense,
 		SeatModels: record.SeatModels, SeatDefinitions: record.SeatDefinitions, SeatTeams: record.SeatTeams,
 	})
 	if err != nil {
@@ -713,6 +718,17 @@ func cloneStringsMap(source map[string]string) map[string]string {
 	result := make(map[string]string, len(source))
 	for key, value := range source {
 		result[key] = value
+	}
+	return result
+}
+
+func cloneDecklists(source map[string][]loadout.Entry) map[string][]loadout.Entry {
+	if source == nil {
+		return nil
+	}
+	result := map[string][]loadout.Entry{}
+	for id, deck := range source {
+		result[id] = append([]loadout.Entry(nil), deck...)
 	}
 	return result
 }

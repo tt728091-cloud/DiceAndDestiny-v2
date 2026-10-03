@@ -20,6 +20,18 @@ var _search: LineEdit
 var _roster_buttons: Dictionary = {}
 var _entry_buttons: Array[Button] = []
 var _error: Label
+var _drafts: Dictionary = {}
+var _saved: Dictionary = {}
+var _apply: Button
+var _revert: Button
+var _reset: Button
+var _save_status: Label
+var _quantity: SpinBox
+var _confirm: Control
+var _cancel_changes: Button
+var _discard_changes: Button
+var _add_copy: Button
+var _pending_action: Callable
 
 func _ready() -> void:
 	name = "CharacterCreation"
@@ -77,7 +89,7 @@ func _build() -> void:
 	var titles := VBoxContainer.new(); titles.size_flags_horizontal = Control.SIZE_EXPAND_FILL; header.add_child(titles)
 	_label(titles, "DICE & DESTINY  /  CHARACTERS", 12, GOLD)
 	_label(titles, "Character Creation", 36)
-	_button(header, "Reload definitions", reload_catalogs, "reload")
+	_button(header, "Reload definitions", func(): _guard_unsaved(reload_catalogs), "reload")
 	_button(header, "Back to battle setup", _close, "back")
 	_error = _label(body, "", 16, Color("ffae9f")); _error.hide()
 	var columns := HBoxContainer.new(); columns.add_theme_constant_override("separation", 16)
@@ -94,16 +106,31 @@ func _build() -> void:
 	_label(left, "Every card is a point of health.", 14, MUTED)
 	var middle := _panel(columns); middle.get_parent().size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_summary = VBoxContainer.new(); _summary.add_theme_constant_override("separation", 6); middle.add_child(_summary)
-	_tabs = TabBar.new(); _tabs.add_tab("Abilities"); _tabs.add_tab("Deck"); _tabs.add_tab("Dice")
+	_tabs = TabBar.new(); _tabs.add_tab("Abilities"); _tabs.add_tab("Deck"); _tabs.add_tab("Dice"); _tabs.add_tab("Card library")
 	_tabs.add_theme_font_size_override("font_size", 17); middle.add_child(_tabs)
 	_tabs.tab_changed.connect(func(_tab): _search.text = ""; _populate())
 	_search = LineEdit.new(); _search.placeholder_text = "Find a card in this deck…"; _search.custom_minimum_size.y = 38
 	middle.add_child(_search); _search.text_changed.connect(func(_text): _populate_entries())
 	_list = _scroll(middle)
 	var right := _panel(columns, 390)
-	_label(right, "INSPECT LOADOUT", 12, GOLD)
+	_label(right, "INSPECT & CONFIGURE", 12, GOLD)
 	_details = _scroll(right)
-	_label(body, "Loadout preview  ·  Select a card, ability, or die to inspect it. Deck editing and upgrades come next.", 13, MUTED)
+	var footer := HBoxContainer.new(); footer.add_theme_constant_override("separation", 12); body.add_child(footer)
+	_save_status = _label(footer, "", 15, MUTED); _save_status.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_reset = _button(footer, "Reset to template", _reset_draft, "reset")
+	_revert = _button(footer, "Revert", _revert_draft, "revert")
+	_apply = _button(footer, "Apply deck", _apply_draft, "apply")
+	_label(body, "Apply saves this character’s deck for new battles. Abilities and dice remain configured by the template. XP and unlocks come next.", 13, MUTED)
+	_confirm = Control.new(); _confirm.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT); add_child(_confirm)
+	var dim := ColorRect.new(); dim.color = Color(0, 0, 0, 0.75); dim.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT); _confirm.add_child(dim)
+	var center := CenterContainer.new(); center.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT); _confirm.add_child(center)
+	var dialog := _panel(center, 580)
+	_label(dialog, "Unsaved deck changes", 28, GOLD)
+	_label(dialog, "Discard your unsaved changes? Return to apply the decks you want to keep. Saved decks will stay unchanged.", 18)
+	var choices := HBoxContainer.new(); choices.add_theme_constant_override("separation", 12); dialog.add_child(choices)
+	_cancel_changes = _button(choices, "Keep editing", func(): _confirm.hide(), "keep_editing")
+	_discard_changes = _button(choices, "Discard changes", func(): _confirm.hide(); _pending_action.call(), "discard_changes")
+	_confirm.hide()
 
 func reload_catalogs() -> void:
 	var runtime = get_node_or_null("/root/LearnedBattleRuntime")
@@ -111,6 +138,10 @@ func reload_catalogs() -> void:
 	if not response.get("ok", false):
 		_error.text = "Could not load characters: " + str(response.get("error", "Unknown error")); _error.show(); return
 	_error.hide(); catalogs = response.get("result", {})
+	_drafts.clear(); _saved.clear()
+	for id in catalogs:
+		_saved[id] = catalogs[id].get("owned_decklist", catalogs[id].combatants[id].decklist).duplicate(true)
+		_drafts[id] = _saved[id].duplicate(true)
 	select_character(character_id if not character_id.is_empty() else initial_character)
 
 func _clear(parent: Node) -> void:
@@ -118,12 +149,21 @@ func _clear(parent: Node) -> void:
 
 func select_character(id: String) -> void:
 	if not catalogs.has(id): return
-	character_id = id; character = catalogs[id].combatants[id]
+	character_id = id; character = catalogs[id].combatants[id].duplicate(true)
+	character.decklist = _drafts[id]
 	BattlePresentationCatalog.configure(catalogs[id])
 	for key in _roster_buttons:
 		_roster_buttons[key].set_pressed_no_signal(key == id)
 		_roster_buttons[key].text = catalogs[key].combatants[key].name
 	_portrait.texture = load("res://assets/battle/fighters/%s.png" % ("blade_warden" if id == "adventurer" else id))
+	_refresh_summary()
+	_error.visible = catalogs[id].has("loadout_error")
+	if _error.visible: _error.text = "Saved deck could not be loaded: " + str(catalogs[id].loadout_error) + ". Apply a valid deck to repair it."
+	_search.text = ""; selected_id = ""; selected_kind = ""
+	_populate()
+	_refresh_actions()
+
+func _refresh_summary() -> void:
 	_clear(_summary)
 	_label(_summary, str(character.name), 28, GOLD)
 	var health := 0
@@ -133,11 +173,10 @@ func select_character(id: String) -> void:
 	_label(stats, "%d cards · %d unique" % [health, character.decklist.size()], 18, MUTED).autowrap_mode = TextServer.AUTOWRAP_OFF
 	_label(_summary, "Opening hand %d  ·  Starting energy %d  ·  Hand limit %d" % [character.resources.starting_hand_size, character.resources.starting_energy, character.resources.hand_limit], 14, MUTED)
 	_label(_summary, "Each round: draw %d  ·  gain %d energy" % [character.income.cards, character.income.energy], 14, MUTED)
-	_search.text = ""; selected_id = ""; selected_kind = ""
-	_populate()
 
 func _populate() -> void:
-	_search.visible = _tabs.current_tab == 1
+	_search.visible = _tabs.current_tab in [1, 3]
+	_search.placeholder_text = "Search available cards by name or rules…" if _tabs.current_tab == 3 else "Find a card in this deck…"
 	_populate_entries()
 	if _entry_buttons.size() > 0: _entry_buttons[0].pressed.emit()
 	else: _clear(_details); _label(_details, "Nothing in this category yet.", 16, MUTED)
@@ -155,6 +194,7 @@ func _entry(kind: String, id: String, title: String, subtitle: String, badge: St
 	var name_label := _label(v, title, 17); name_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	var sub := _label(v, subtitle, 13, MUTED); sub.max_lines_visible = 1; sub.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS; sub.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	var tag := _label(row, badge, 18, GOLD); tag.autowrap_mode = TextServer.AUTOWRAP_OFF; tag.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	if selected_id == id: b.add_theme_stylebox_override("normal", _style("253a46", "b99a60"))
 	b.set_meta("entry_kind", kind); b.set_meta("entry_id", id); _entry_buttons.append(b)
 
 func _populate_entries() -> void:
@@ -173,6 +213,16 @@ func _populate_entries() -> void:
 				if not _search.text.is_empty() and not (str(info.name) + " " + str(info.text)).to_lower().contains(_search.text.to_lower()): continue
 				_entry("cards", str(entry.card_id), info.name, "%d energy · %s" % [info.cost, info.effect_summary], "×%d" % int(entry.count))
 			if _entry_buttons.is_empty(): _label(_list, "No cards match your search.", 16, MUTED)
+		3:
+			_label(_list, "AVAILABLE CARDS  /  %d" % catalogs[character_id].cards.size(), 12, GOLD)
+			_label(_list, "Cards supported by this character’s catalog. Select one to add copies to your deck.", 14, MUTED)
+			var ids: Array = catalogs[character_id].cards.keys()
+			ids.sort_custom(func(a, b): return str(catalogs[character_id].cards[a].name).naturalnocasecmp_to(str(catalogs[character_id].cards[b].name)) < 0)
+			for id in ids:
+				var info := BattlePresentationCatalog.card(str(id))
+				if not _search.text.is_empty() and not (str(info.name) + " " + str(info.text)).to_lower().contains(_search.text.to_lower()): continue
+				_entry("cards", str(id), info.name, "%d energy · %s" % [info.cost, info.effect_summary], "×%d" % _card_count(str(id)))
+			if _entry_buttons.is_empty(): _label(_list, "No available cards match your search.", 16, MUTED)
 		2:
 			for entry in character.get("dice_loadout", []):
 				var die: Dictionary = catalogs[character_id].dice[entry.dice_id]
@@ -183,9 +233,18 @@ func inspect_entry(kind: String, id: String) -> void:
 	for b in _entry_buttons:
 		b.add_theme_stylebox_override("normal", _style("253a46", "b99a60") if b.get_meta("entry_id") == id else _style("14222d"))
 	_clear(_details)
+	_quantity = null
 	var definition: Dictionary = catalogs[character_id][kind][id]
 	_label(_details, str(definition.name), 24, GOLD)
 	if kind == "cards":
+		var quantity_row := HBoxContainer.new(); quantity_row.add_theme_constant_override("separation", 8); _details.add_child(quantity_row)
+		_label(quantity_row, "Copies in deck", 16, MUTED).size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		_quantity = SpinBox.new(); _quantity.min_value = 0; _quantity.max_value = int(catalogs[character_id].deck_limits.max_copies)
+		_quantity.step = 1; _quantity.value = _card_count(id); _quantity.custom_minimum_size = Vector2(100, 44); quantity_row.add_child(_quantity)
+		_quantity.value_changed.connect(func(value): _set_card_count(id, int(value)))
+		_add_copy = _button(_details, "Add a copy", func(): _set_card_count(id, _card_count(id) + 1), "add." + id)
+		_add_copy.disabled = _card_count(id) >= int(catalogs[character_id].deck_limits.max_copies)
+		_label(_details, "Set to 0 to remove · up to %d copies" % int(catalogs[character_id].deck_limits.max_copies), 13, MUTED)
 		var frame := CenterContainer.new(); _details.add_child(frame)
 		var card := BattleCard.new(); frame.add_child(card); card.configure("preview", id, false)
 		card.mouse_filter = Control.MOUSE_FILTER_IGNORE; card.tooltip_text = ""
@@ -215,10 +274,84 @@ func inspect_entry(kind: String, id: String) -> void:
 		_label(_details, "Go to discard." if definition.saved_card_destination == "discard" else "Return to their piles. Played cards stay played.", 14)
 
 func _unhandled_key_input(event: InputEvent) -> void:
-	if event.is_action_pressed("ui_cancel"): _close(); get_viewport().set_input_as_handled()
+	if event.is_action_pressed("ui_cancel"):
+		if _confirm.visible: _confirm.hide()
+		else: _close()
+		get_viewport().set_input_as_handled()
 
 func _close() -> void:
-	closed.emit(); queue_free()
+	_guard_unsaved(func(): closed.emit(); queue_free())
+
+func _guard_unsaved(action: Callable) -> void:
+	for id in _drafts:
+		if _dirty(id):
+			_pending_action = action; _confirm.show(); _cancel_changes.grab_focus(); return
+	action.call()
+
+func _deck_counts(deck: Array) -> Dictionary:
+	var counts := {}
+	for entry in deck: counts[str(entry.card_id)] = int(entry.count)
+	return counts
+
+func _dirty(id: String) -> bool:
+	return _deck_counts(_drafts[id]) != _deck_counts(_saved[id])
+
+func _card_count(id: String) -> int:
+	return int(_deck_counts(_drafts[character_id]).get(id, 0))
+
+func _health() -> int:
+	var total := 0
+	for entry in _drafts[character_id]: total += int(entry.count)
+	return total
+
+func _refresh_actions() -> void:
+	var dirty := _dirty(character_id)
+	var valid := _health() >= 1 and _health() <= int(catalogs[character_id].deck_limits.max_cards)
+	_apply.disabled = (not dirty and not catalogs[character_id].has("loadout_error")) or not valid
+	_revert.disabled = not dirty
+	_reset.disabled = _deck_counts(_drafts[character_id]) == _deck_counts(catalogs[character_id].combatants[character_id].decklist)
+	_save_status.text = "Unsaved changes · %d health" % _health() if dirty else "Saved deck · ready for a new battle"
+	_save_status.add_theme_color_override("font_color", GOLD if dirty else MUTED)
+	if not valid: _save_status.text = "Deck needs 1–%d cards before applying." % int(catalogs[character_id].deck_limits.max_cards)
+	for id in _roster_buttons: _roster_buttons[id].text = str(catalogs[id].combatants[id].name) + (" *" if _dirty(id) else "")
+
+func _set_card_count(id: String, count: int) -> void:
+	count = clampi(count, 0, int(catalogs[character_id].deck_limits.max_copies))
+	var found := false
+	var deck: Array = _drafts[character_id]
+	for index in range(deck.size() - 1, -1, -1):
+		if str(deck[index].card_id) != id: continue
+		found = true
+		if count == 0: deck.remove_at(index)
+		else: deck[index].count = count
+	if not found and count > 0: deck.append({"card_id": id, "count": count})
+	character.decklist = deck
+	if is_instance_valid(_quantity): _quantity.set_value_no_signal(count)
+	if is_instance_valid(_add_copy): _add_copy.disabled = count >= int(catalogs[character_id].deck_limits.max_copies)
+	_refresh_summary(); _populate_entries(); _refresh_actions()
+
+func _refresh_draft() -> void:
+	character.decklist = _drafts[character_id]
+	_refresh_summary(); _populate_entries(); _refresh_actions()
+	if selected_kind == "cards" and not selected_id.is_empty(): inspect_entry(selected_kind, selected_id)
+
+func _revert_draft() -> void:
+	_drafts[character_id] = _saved[character_id].duplicate(true); _refresh_draft()
+
+func _reset_draft() -> void:
+	_drafts[character_id] = catalogs[character_id].combatants[character_id].decklist.duplicate(true); _refresh_draft()
+
+func _apply_draft() -> void:
+	if is_instance_valid(_quantity): _quantity.apply()
+	var response: Dictionary = get_node("/root/LearnedBattleRuntime").save_character_deck(character_id, _drafts[character_id])
+	if not response.get("ok", false):
+		_error.text = "Could not save deck: " + str(response.get("error", "Unknown error")); _error.show(); return
+	_error.hide(); catalogs[character_id].erase("loadout_error")
+	_saved[character_id] = response.result.duplicate(true)
+	_drafts[character_id] = _saved[character_id].duplicate(true)
+	_refresh_draft()
+	_save_status.text = "Deck saved · used in your next battle"
+
 
 func _exit_tree() -> void:
 	BattlePresentationCatalog.configure(_previous_catalog)

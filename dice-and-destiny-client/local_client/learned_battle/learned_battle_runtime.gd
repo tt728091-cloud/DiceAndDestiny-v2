@@ -54,6 +54,7 @@ func ensure_initialized() -> Dictionary:
 		return {"ok": false, "error": _initialization_error}
 	var result := _request({
 		"op": "initialize",
+		"loadout_root": WorkspacePaths.runtime_dir("user/character_loadouts"),
 		"replace_session": not _initialized_model_key.is_empty() and _initialized_model_key != _selected_model_key,
 		"model_path": "" if _selected_model_key in [MODEL_BRINE_MASK, MODEL_BRINE_PAIR] else ProjectSettings.globalize_path(_selected_model_path()),
 		"opponent_count": 2 if _selected_model_key == MODEL_BRINE_PAIR else 1,
@@ -148,4 +149,10 @@ func _exit_tree() -> void:
 # Read-only: does not initialize, replace, or advance the active battle session.
 func character_catalogs() -> Dictionary:
 	if _native_authority == null: return {"ok": false, "error": _initialization_error}
-	return _request({"op": "character_catalogs", "content_root": ProjectSettings.globalize_path("res://../dice-and-destiny-server/content")})
+	return _request({"op": "character_catalogs", "loadout_root": WorkspacePaths.runtime_dir("user/character_loadouts"), "content_root": ProjectSettings.globalize_path("res://../dice-and-destiny-server/content")})
+
+func save_character_deck(character: String, decklist: Array) -> Dictionary:
+	if _native_authority == null: return {"ok": false, "error": _initialization_error}
+	var entries: Array = []
+	for entry in decklist: entries.append({"card_id": str(entry.card_id), "count": int(entry.count)})
+	return _request({"op": "save_character_deck", "content_root": ProjectSettings.globalize_path("res://../dice-and-destiny-server/content"), "loadout_root": WorkspacePaths.runtime_dir("user/character_loadouts"), "character": character, "decklist": entries})

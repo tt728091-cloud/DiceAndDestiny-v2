@@ -70,9 +70,10 @@ func _build_mode_menu() -> void:
 		["Blade Warden · sword, shields, and bleed", "blade_warden"],
 		["Venom · Poison, Incubation, and Catalyst", "venom"],
 		["Curse · cursed dice, Entombment, and misfortune", "curse"],
-		["Adventurer · 12-card starter, swords, shields, and coins", "adventurer"],
+		["Adventurer · swords, shields, and coins", "adventurer"],
 	], "battle.setup.character")
 	_character_choice.select(3)
+	_refresh_character_loadouts()
 	_model_choice = _add_selection("OPPONENT", [
 		["Brine Mask · minion · keeps every 3", "brine-mask"],
 		["Blade Warden · Global Champion CP193", "global-champion"],
@@ -226,6 +227,17 @@ func _show_error(message: String, result: Dictionary) -> void:
 func _open_character_creation() -> void:
 	var screen = preload("res://app/screens/character/character_creation.gd").new()
 	screen.initial_character = str(_character_choice.get_selected_metadata())
-	screen.closed.connect(func(): show(); _character_choice.grab_focus())
+	screen.closed.connect(func(): show(); _refresh_character_loadouts(); _character_choice.grab_focus())
 	get_tree().root.add_child(screen)
 	hide()
+
+func _refresh_character_loadouts() -> void:
+	var response: Dictionary = get_node("/root/LearnedBattleRuntime").character_catalogs()
+	if not response.get("ok", false): return
+	for index in _character_choice.item_count:
+		var id := str(_character_choice.get_item_metadata(index))
+		var catalog: Dictionary = response.result.get(id, {})
+		if catalog.is_empty(): continue
+		var health := 0
+		for entry in catalog.get("owned_decklist", catalog.combatants[id].decklist): health += int(entry.count)
+		_character_choice.set_item_text(index, "%s · %d health · %s" % [catalog.combatants[id].name, health, "Saved deck" if catalog.has("owned_decklist") else "Starter deck"])
