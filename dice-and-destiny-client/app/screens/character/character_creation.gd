@@ -28,6 +28,10 @@ var _admin_save: Button
 var _admin_types: Dictionary = {}
 var _admin_tabs: TabBar
 var _admin_search: LineEdit
+var _admin_item_details: VBoxContainer
+var _admin_item_context: Label
+var _admin_item_kind := ""
+var _admin_item_id := ""
 var _skip_prompt: CheckBox
 var _confirmation_options: HBoxContainer
 var _confirm_buy: CheckBox
@@ -412,34 +416,41 @@ func inspect_entry(kind: String, id: String) -> void:
 			_add_copy = _button(_details, "Add a copy", func(): _set_card_count(id, _card_count(id) + 1), "add." + id)
 			_add_copy.disabled = not _type_allowed("cards", id) or _card_count(id) >= int(catalogs[character_id].deck_limits.max_copies)
 			_label(_details, "Set to 0 to remove · up to %d copies" % int(catalogs[character_id].deck_limits.max_copies), 13, MUTED)
-		var frame := CenterContainer.new(); _details.add_child(frame)
+	elif kind == "abilities" and loadout_mode == "progression":
+		_progression_actions(kind, id)
+	_append_item_preview(_details, kind, id)
+
+# Shared read-only rendering keeps Admin and the character inspector identical.
+func _append_item_preview(parent: VBoxContainer, kind: String, id: String) -> void:
+	var definition: Dictionary = catalogs[character_id][kind][id]
+	if kind == "cards":
+		var frame := CenterContainer.new(); parent.add_child(frame)
 		var card := BattleCard.new(); frame.add_child(card); card.configure("preview", id, false)
 		card.mouse_filter = Control.MOUSE_FILTER_IGNORE; card.tooltip_text = ""
-		_label(_details, "%d energy  ·  %s" % [int(definition.cost.energy), str(definition.type).replace("_", " ")], 14, MUTED)
-		_label(_details, BattlePresentationCatalog.card(id).text)
+		_label(parent, "%d energy  ·  %s" % [int(definition.cost.energy), str(definition.type).replace("_", " ")], 14, MUTED)
+		_label(parent, BattlePresentationCatalog.card(id).text)
 		var timing: Array[String] = []
 		for window in definition.play.playable_during:
 			var label := str(window.segment).replace("_", " ").capitalize()
 			if str(window.segment) == "damage_resolution": label = "Defense / damage response"
 			if label not in timing: timing.append(label)
-		_label(_details, "PLAY WINDOW\n" + ", ".join(timing), 14, MUTED)
-		if definition.play.get("before_first_roll", false): _label(_details, "Before your first offensive roll only.", 14, MUTED)
-		_label(_details, "After play → " + str(definition.play.destination).capitalize(), 14, MUTED)
+		_label(parent, "PLAY WINDOW\n" + ", ".join(timing), 14, MUTED)
+		if definition.play.get("before_first_roll", false): _label(parent, "Before your first offensive roll only.", 14, MUTED)
+		_label(parent, "After play → " + str(definition.play.destination).capitalize(), 14, MUTED)
 	elif kind == "abilities":
-		if loadout_mode == "progression": _progression_actions(kind, id)
-		_label(_details, "%s  ·  %d energy" % [str(definition.type).capitalize(), int(definition.cost.energy)], 14, MUTED)
-		_label(_details, BattlePresentationCatalog.ability(id).text)
+		_label(parent, "%s  ·  %d energy" % [str(definition.type).capitalize(), int(definition.cost.energy)], 14, MUTED)
+		_label(parent, BattlePresentationCatalog.ability(id).text)
 		for tier in BattlePresentationCatalog.offensive_tier_summaries(id):
-			_label(_details, str(tier.recipe), 16, GOLD)
-			_label(_details, str(tier.summary), 14)
+			_label(parent, str(tier.recipe), 16, GOLD)
+			_label(parent, str(tier.summary), 14)
 		var uses := int(definition.get("usage", {}).get("maximum_per_segment", 0))
-		if uses > 0: _label(_details, "Up to %d use%s per segment." % [uses, "" if uses == 1 else "s"], 14, MUTED)
+		if uses > 0: _label(parent, "Up to %d use%s per segment." % [uses, "" if uses == 1 else "s"], 14, MUTED)
 	else:
 		for face in definition.faces:
-			_label(_details, "%d   %s   %s" % [int(face.number), BattlePresentationCatalog.symbol_for_die_face(id, int(face.number)), BattlePresentationCatalog.symbol_name_for_die_face(id, int(face.number))], 17)
+			_label(parent, "%d   %s   %s" % [int(face.number), BattlePresentationCatalog.symbol_for_die_face(id, int(face.number)), BattlePresentationCatalog.symbol_name_for_die_face(id, int(face.number))], 17)
 	if definition.has("saved_card_destination"):
-		_label(_details, "SAVED CARDS", 12, GOLD)
-		_label(_details, "Go to discard." if definition.saved_card_destination == "discard" else "Return to their piles. Played cards stay played.", 14)
+		_label(parent, "SAVED CARDS", 12, GOLD)
+		_label(parent, "Go to discard." if definition.saved_card_destination == "discard" else "Return to their piles. Played cards stay played.", 14)
 
 func _unhandled_key_input(event: InputEvent) -> void:
 	if event.is_action_pressed("ui_cancel") and _admin_overlay.visible:
@@ -657,7 +668,7 @@ func _build_admin_overlay() -> void:
 	viewport.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
 	viewport.follow_focus = true; _admin_overlay.add_child(viewport)
 	var fit := func():
-		viewport.size = Vector2(1150, 850).min((_admin_overlay.size - Vector2(48, 48)).max(Vector2.ONE))
+		viewport.size = Vector2(1450, 850).min((_admin_overlay.size - Vector2(48, 48)).max(Vector2.ONE))
 		viewport.position = (_admin_overlay.size - viewport.size) / 2.0
 	_admin_overlay.resized.connect(fit); fit.call()
 	_admin_content = _panel(viewport)
@@ -672,6 +683,7 @@ func _open_admin() -> void:
 	if not response.get("ok", false):
 		_error.text = str(response.get("error", "Could not load admin settings")); _error.show(); return
 	catalogs = response.result
+	BattlePresentationCatalog.configure(catalogs[character_id])
 	_admin_draft = catalogs[character_id].admin_settings.duplicate(true)
 	_admin_draft.revision = int(_admin_draft.revision)
 	if not _admin_draft.get("card_prices") is Dictionary: _admin_draft.card_prices = {}
@@ -684,20 +696,28 @@ func _open_admin() -> void:
 	_admin_prices.clear(); _admin_budgets.clear(); _admin_types = {"cards": {}, "abilities": {}, "characters": {}}
 	_label(_admin_content, "Admin · XP & types", 30, GOLD)
 	_label(_admin_content, "General items are available to everyone; other items require a matching character type. Type changes keep owned items and XP, but incompatible loadouts cannot enter battle. Prices and budgets save together.", 17, MUTED)
-	var columns := HBoxContainer.new(); columns.add_theme_constant_override("separation", 24); columns.size_flags_vertical = Control.SIZE_EXPAND_FILL; _admin_content.add_child(columns)
-	var left := VBoxContainer.new(); left.custom_minimum_size.x = 490; left.size_flags_horizontal = Control.SIZE_EXPAND_FILL; columns.add_child(left)
+	var columns := HBoxContainer.new(); columns.add_theme_constant_override("separation", 16); columns.size_flags_vertical = Control.SIZE_EXPAND_FILL; _admin_content.add_child(columns)
+	var left := VBoxContainer.new(); left.custom_minimum_size.x = 340; left.size_flags_horizontal = Control.SIZE_EXPAND_FILL; columns.add_child(left)
 	_admin_tabs = TabBar.new(); _admin_tabs.add_tab("Cards · price & type"); _admin_tabs.add_tab("Abilities · type"); left.add_child(_admin_tabs)
 	_admin_search = LineEdit.new(); _admin_search.placeholder_text = "Search cards or abilities…"; left.add_child(_admin_search)
 	var prices := _scroll(left)
-	_populate_admin_items(prices, "cards")
 	_admin_tabs.tab_changed.connect(func(tab):
 		_admin_search.text = ""
 		_populate_admin_items(prices, "cards" if tab == 0 else "abilities")
+		_clear_admin_item_preview()
 	)
 	_admin_search.text_changed.connect(func(query):
-		for row in prices.get_children(): row.visible = query.to_lower() in str(row.get_meta("search_name"))
+		for row in prices.get_children():
+			row.visible = query.to_lower() in str(row.get_meta("search_name"))
+			if not row.visible and row.get_meta("entry_id", "") == _admin_item_id: _clear_admin_item_preview()
 	)
-	var right := _scroll(columns); right.get_parent().custom_minimum_size.x = 500
+	var preview_panel := _panel(columns, 260)
+	preview_panel.get_parent().size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_label(preview_panel, "ITEM PREVIEW", 16, GOLD)
+	_admin_item_details = _scroll(preview_panel)
+	_clear_admin_item_preview()
+	_populate_admin_items(prices, "cards")
+	var right := _scroll(columns); right.get_parent().custom_minimum_size.x = 300
 	_label(right, "CHARACTER BUDGETS & TYPES", 16, GOLD)
 	for id in ROSTER:
 		var group := VBoxContainer.new(); right.add_child(group)
@@ -708,12 +728,13 @@ func _open_admin() -> void:
 		spin.value_changed.connect(func(amount): _admin_draft.budgets[id] = int(amount); _refresh_admin_preview())
 		_admin_type_choice(row, "characters", id)
 	_label(right, "AFTER APPLYING", 16, GOLD)
-	_admin_preview = _label(right, "", 17); _admin_preview.custom_minimum_size.x = 470
-	_admin_error = _label(_admin_content, "", 16, Color("ffae9f")); _admin_error.custom_minimum_size.x = 1080; _admin_error.hide()
+	_admin_preview = _label(right, "", 17); _admin_preview.custom_minimum_size.x = 280
+	_admin_error = _label(_admin_content, "", 16, Color("ffae9f")); _admin_error.custom_minimum_size.x = 0; _admin_error.hide()
 	var actions := HBoxContainer.new(); _admin_content.add_child(actions)
 	_button(actions, "Close · discard edits", func(): _admin_overlay.hide(), "admin.close")
 	_admin_save = _button(actions, "Apply economy changes", _save_admin, "admin.save")
 	_refresh_admin_preview(); _admin_overlay.show(); _admin_search.grab_focus()
+	if selected_kind == "cards" and catalogs[character_id].cards.has(selected_id): _show_admin_item_preview("cards", selected_id)
 
 func _admin_base_price(id: String) -> int:
 	var catalog: Dictionary = catalogs[character_id]
@@ -725,7 +746,7 @@ func _admin_base_price(id: String) -> int:
 
 func _admin_spin(parent: Node, amount: int, minimum: int) -> SpinBox:
 	var spin := SpinBox.new(); spin.min_value = minimum; spin.max_value = 1000000; spin.step = 1; spin.value = amount
-	spin.custom_minimum_size.x = 150; spin.suffix = "XP"; parent.add_child(spin); return spin
+	spin.custom_minimum_size.x = 120; spin.suffix = "XP"; parent.add_child(spin); return spin
 
 func _refresh_admin_preview() -> void:
 	var lines: PackedStringArray = []; var valid := true
@@ -747,6 +768,7 @@ func _refresh_admin_preview() -> void:
 	_admin_preview.text = "\n\n".join(lines)
 	_admin_error.text = "A character is over budget. Increase its budget here, or close and sell cards before changing prices."
 	_admin_error.visible = not valid; _admin_save.disabled = not valid
+	_refresh_admin_item_context()
 
 func _save_admin() -> void:
 	_admin_save.disabled = true
@@ -847,7 +869,7 @@ func _draft_type_allowed(owner: String, kind: String, id: String) -> bool:
 	return required == "general" or required == _draft_type("characters", owner)
 
 func _admin_type_choice(parent: Node, kind: String, id: String) -> void:
-	var choice := OptionButton.new(); choice.custom_minimum_size.x = 180
+	var choice := OptionButton.new(); choice.custom_minimum_size.x = 160
 	choice.tooltip_text = "Pool type" if kind != "characters" else "Character type"
 	parent.add_child(choice); _admin_types[kind][id] = choice
 	for type_id in catalogs[character_id].access.types:
@@ -864,7 +886,7 @@ func _populate_admin_items(list: VBoxContainer, kind: String) -> void:
 	var ids: Array = definitions.keys(); ids.sort_custom(func(a, b): return str(definitions[a].name) < str(definitions[b].name))
 	for id in ids:
 		var group := VBoxContainer.new(); list.add_child(group)
-		group.set_meta("search_name", str(definitions[id].name).to_lower())
+		group.set_meta("search_name", str(definitions[id].name).to_lower()); group.set_meta("entry_id", id)
 		_label(group, str(definitions[id].name), 17)
 		var row := HBoxContainer.new(); group.add_child(row)
 		if kind == "cards":
@@ -872,3 +894,37 @@ func _populate_admin_items(list: VBoxContainer, kind: String) -> void:
 			var spin := _admin_spin(row, value, 1); _admin_prices[id] = spin
 			spin.value_changed.connect(func(amount): _admin_draft.card_prices[id] = int(amount); _refresh_admin_preview())
 		_admin_type_choice(row, kind, str(id))
+		_connect_admin_item_hover(group, kind, str(id))
+
+func _connect_admin_item_hover(control: Control, kind: String, id: String) -> void:
+	if control is Label or control is Container: control.mouse_filter = Control.MOUSE_FILTER_PASS
+	control.mouse_entered.connect(_show_admin_item_preview.bind(kind, id))
+	control.focus_entered.connect(_show_admin_item_preview.bind(kind, id))
+	# SpinBox keeps its editable field as an internal child.
+	if control is SpinBox: _connect_admin_item_hover(control.get_line_edit(), kind, id)
+	for child in control.get_children():
+		if child is Control: _connect_admin_item_hover(child, kind, id)
+
+func _clear_admin_item_preview() -> void:
+	_admin_item_kind = ""; _admin_item_id = ""; _admin_item_context = null
+	_clear(_admin_item_details)
+	_label(_admin_item_details, "Hover a card or ability to inspect its artwork and full rules. You can also focus an edit control with the keyboard.", 16, MUTED)
+
+func _show_admin_item_preview(kind: String, id: String) -> void:
+	if _admin_item_kind == kind and _admin_item_id == id: return
+	_admin_item_kind = kind; _admin_item_id = id
+	_clear(_admin_item_details)
+	_label(_admin_item_details, str(catalogs[character_id][kind][id].name), 24, GOLD)
+	_admin_item_context = _label(_admin_item_details, "", 15, MUTED)
+	_refresh_admin_item_context()
+	_append_item_preview(_admin_item_details, kind, id)
+	var scroll: ScrollContainer = _admin_item_details.get_parent()
+	scroll.scroll_vertical = 0
+
+func _refresh_admin_item_context() -> void:
+	if not is_instance_valid(_admin_item_context) or _admin_item_id.is_empty(): return
+	var pool := _type_name(_draft_type(_admin_item_kind, _admin_item_id))
+	var context := "Type: " + pool
+	if _admin_item_kind == "cards": context += " · %d XP" % int(_admin_draft.card_prices.get(_admin_item_id, _admin_base_price(_admin_item_id)))
+	context += "\n" + str(character.name) + (" · Available" if _draft_type_allowed(character_id, _admin_item_kind, _admin_item_id) else " · Requires matching type")
+	_admin_item_context.text = context

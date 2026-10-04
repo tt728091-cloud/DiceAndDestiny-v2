@@ -163,6 +163,16 @@ before settings are committed. Raise the affected budget in the same edit, or
 close and sell cards first. Cards and abilities are never silently removed.
 Existing active battles keep their pinned loadouts.
 
+Admin also includes a central **Item preview** column. Hover an item name or
+its edit controls, or focus a control with the keyboard, to inspect it. Cards
+use the same standard-size artwork and full rules as the character inspector;
+abilities show rules, dice requirements, tier results, usage, and prevention
+destination. The preview remains available while reading or scrolling, updates
+with draft price/type changes, and identifies eligibility for the selected
+character. Previewing never changes the draft. Tab changes and searches clear
+hidden selections. `verify_admin_item_preview.gd` covers these interactions,
+all four characters, save/reopen, and three viewport sizes.
+
 These are local administrator tools for this workspace. Overrides persist in
 `user/character_loadouts/economy_admin.json`, separate from authored YAML and
 Sandbox decks. A single atomic settings replacement is the commit point; every
