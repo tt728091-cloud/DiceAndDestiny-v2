@@ -2466,7 +2466,7 @@ func _on_card_pressed(card: BattleCard) -> void:
 		_reset_auto_pass_preview()
 		_render(); return
 	if _selected_card.get("die_targeting", false): _selected_card.clear(); _render()
-	if str(BattlePresentationCatalog.card(card.definition_id).targeting.get("selector", "")) == "one_incoming_damage_source" and _view.stage != "discard_to_hand_limit":
+	if (str(BattlePresentationCatalog.card(card.definition_id).targeting.get("selector", "")) == "one_incoming_damage_source" or _general_source_card(card.definition_id)) and _view.stage != "discard_to_hand_limit":
 		if _selected_card.get("instance_id") == card.instance_id and _selected_card.get("source_targeting", false):
 			_selected_card.clear(); _render(); return
 		_error_message = ""
@@ -2477,8 +2477,15 @@ func _on_card_pressed(card: BattleCard) -> void:
 		if choices.size() == 1:
 			_send(JSON.stringify(choices[0]))
 		else:
-			if choices.is_empty(): _selected_card.clear()
-			_render()
+			var sources: Array = []
+			for action in choices:
+				for source in action.payload.commitment.proposal_ids:
+					if source not in sources: sources.append(source)
+			if sources.size() == 1:
+				_show_venom_choices(choices, BattlePresentationCatalog.card(card.definition_id).name)
+			else:
+				if choices.is_empty(): _selected_card.clear()
+				_render()
 		return
 	if card.definition_id == "spined_rebuttal" and _view.stage == "defense_reaction":
 		if _selected_card.get("instance_id") == card.instance_id and _selected_card.get("source_targeting", false):
@@ -2487,7 +2494,7 @@ func _on_card_pressed(card: BattleCard) -> void:
 			_selected_card = {"instance_id": card.instance_id, "definition_id": card.definition_id, "source_targeting": true}
 			if _source_card_actions().is_empty(): _selected_card.clear()
 		_render(); return
-	if str(BattlePresentationCatalog.card(card.definition_id).targeting.get("selector", "")) in ["venom_choice", "curse_choice"] and _view.stage != "discard_to_hand_limit":
+	if str(BattlePresentationCatalog.card(card.definition_id).targeting.get("selector", "")) in ["venom_choice", "curse_choice", "general_choice"] and _view.stage != "discard_to_hand_limit":
 		var was_targeting: bool = _selected_card.get("source_targeting", false)
 		_selected_card.clear()
 		if was_targeting: _render()
@@ -2535,6 +2542,11 @@ func _play_selected_status_card(status_id: String) -> void:
 	if _selected_card.is_empty() or status_id.is_empty(): return
 	_send(BattleCommandBuilder.commit_interaction(_view.battle_id, "blade", _pending(), [_selected_card.instance_id], [], [], status_id))
 
+func _general_source_card(definition: String) -> bool:
+	for op in _view.content_definition("cards", definition).get("operations", []):
+		if op.get("type") == "general_card" and op.get("modification") in ["boost_prevention", "save_threatened_card"]: return true
+	return false
+
 func _source_card_actions(source_id: String = "") -> Array:
 	var choices: Array = []
 	if not _selected_card.get("source_targeting", false) or _history_review or _history_replay or _submitting or _model_thinking or _director.has_beats() or not _error_message.is_empty() or not _view.allowed("commit_interaction"): return choices
@@ -2560,9 +2572,10 @@ func _card_source_viable(source_id: String, definition_id: String) -> bool:
 func _play_source_card(source_id: String) -> void:
 	# Resolve against the current legal list, never a cached target command.
 	var choices := _source_card_actions(source_id)
-	if choices.size() != 1: return
+	if choices.is_empty(): return
 	_selected_source = source_id
-	_send(JSON.stringify(choices[0]))
+	if choices.size() == 1: _send(JSON.stringify(choices[0]))
+	else: _show_venom_choices(choices, BattlePresentationCatalog.card(str(_selected_card.get("definition_id", ""))).name)
 
 func _start_player_roll(indices: Array) -> void:
 	if _history_review or _history_replay or indices.is_empty(): return
@@ -3135,7 +3148,7 @@ func _save_active() -> void:
 
 func _card_legal(definition: String) -> bool:
 	if not _queued_defense.is_empty() and _view.stage == "offensive_reaction": return false
-	if definition in ["nudge", "try_again", "strong_swing"] or str(BattlePresentationCatalog.card(definition).targeting.get("selector", "")) in ["venom_choice", "curse_choice"] or (_continuous_damage_response() and not _view.legal_actions.is_empty()):
+	if definition in ["nudge", "try_again", "strong_swing"] or str(BattlePresentationCatalog.card(definition).targeting.get("selector", "")) in ["venom_choice", "curse_choice", "general_choice"] or (_continuous_damage_response() and not _view.legal_actions.is_empty()):
 		for action in _view.legal_actions:
 			if not _action_in_focus(action): continue
 			var payload: Dictionary = action.get("payload", {})
@@ -3426,9 +3439,19 @@ func _show_venom_choices(actions: Array, heading: String) -> void:
 		)
 		list.add_child(button)
 		_inspect(button, "battle.venom.choice.%d" % list.get_child_count(), button.text)
-	dialog.confirmed.connect(dialog.queue_free)
-	dialog.canceled.connect(dialog.queue_free)
-	dialog.popup_centered(Vector2i(560, mini(560, 130 + actions.size() * 58)))
+	var cancel_choice := func():
+		dialog.hide()
+		dialog.queue_free()
+		if _selected_card.get("source_targeting", false):
+			_selected_card.clear()
+			_render()
+	dialog.confirmed.connect(cancel_choice)
+	dialog.canceled.connect(cancel_choice)
+	# Reserve room for wrapped rules as well as options; short choice lists
+	# should not need scrolling just because a card has detailed rules.
+	var rules_height := ceili(float(rules.length()) / 50.0) * 28
+	var height := mini(mini(620, int(get_viewport_rect().size.y) - 40), 130 + rules_height + actions.size() * 58)
+	dialog.popup_centered(Vector2i(560, height))
 
 func _venom_choice_label(action: Dictionary) -> String:
 	var payload: Dictionary = action.get("payload", {})
@@ -3436,6 +3459,9 @@ func _venom_choice_label(action: Dictionary) -> String:
 	var commitment: Dictionary = payload.get("commitment", {})
 	var targets: Array = payload.get("target_ids", commitment.get("proposal_ids", []))
 	var key := str(payload.get("status_id", commitment.get("choice_id", "")))
+	if key.begins_with("{"):
+		var choice: Variant = JSON.parse_string(key)
+		if choice is Dictionary and choice.has("kind"): return _general_choice_label(choice, action)
 	var text := "Confirm"
 	var card_ids: Array = payload.get("card_ids", commitment.get("card_ids", []))
 	for card in _view.hand_cards():
@@ -4116,3 +4142,31 @@ func _display_owned_dice(tray: BattleDiceTray, actor_id: String) -> void:
 		var index := int(die.get("index", 0))
 		var key := "%s:%s:%d" % [_view.battle_id, actor_id, index]
 		tray.animate_entombment(index, int(_entomb_visual_state.get(key, {}).get("started", -1)))
+
+func _general_choice_label(choice: Dictionary, action: Dictionary) -> String:
+	var actor := _actor_display_name(_display_actor_id(str(choice.get("actor", viewer_actor_id))))
+	var die := int(choice.get("die", 0)) + 1
+	match str(choice.get("kind", "")):
+		"copy_die": return "Die %d → face %d · copy die %d" % [die, int(choice.face), int(choice.copy) + 1]
+		"flip_die": return "Die %d → face %d" % [die, int(choice.face)]
+		"reroll_enemy_die": return "%s · reroll die %d (showing %d)" % [actor, die, int(choice.face)]
+		"reroll_defense_dice":
+			var numbers: Array[String] = []
+			for index in choice.get("indices", []): numbers.append(str(int(index) + 1))
+			return "Reroll defense dice " + ", ".join(numbers)
+		"recover_discard": return "Return %s to hand" % BattlePresentationCatalog.card(str(choice.definition)).name
+		"dispel_positive": return "%s · remove 1 %s" % [actor, BattlePresentationCatalog.status(str(choice.status)).name]
+		"save_threatened_card":
+			var zone := str(choice.get("zone", ""))
+			var pile: String = {"deck": "draw pile", "discard": "discard pile", "hand": "hand"}.get(zone, zone)
+			return "Save %s%s" % [BattlePresentationCatalog.card(str(choice.definition)).name, " · " + str(pile) if not zone.is_empty() else " from this attack"]
+		"boost_prevention":
+			var payload: Dictionary = action.get("payload", {})
+			var ids: Array = payload.get("card_ids", payload.get("commitment", {}).get("card_ids", []))
+			for card in _view.hand_cards():
+				if card.instance_id not in ids: continue
+				var def := _view.content_definition("cards", str(card.definition_id))
+				var op: Dictionary = def.operations[0]
+				var boost: bool = choice.get("boost", false)
+				return "Prevent %d damage · %d energy" % [int(op.amount) + (int(op.bonus_amount) if boost else 0), int(def.cost.energy) + (int(op.extra_energy) if boost else 0)]
+	return "Confirm"

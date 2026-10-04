@@ -189,6 +189,7 @@ type StatusTriggerDefinition struct {
 }
 
 type BattleStatusDefinition struct {
+	DispelImmune   bool                      `yaml:"dispel_immune,omitempty" json:"dispel_immune,omitempty"`
 	SchemaVersion  int                       `yaml:"schema_version" json:"schema_version"`
 	ID             string                    `yaml:"id" json:"id"`
 	Name           string                    `yaml:"name" json:"name"`
@@ -207,6 +208,8 @@ type BattleStatusDefinition struct {
 // BattleOperation is a closed, validated data language.  Fields are shared by
 // operation kinds so nested outcomes and ability modifiers remain declarative.
 type BattleOperation struct {
+	ExtraEnergy       int                       `yaml:"extra_energy,omitempty" json:"extra_energy,omitempty"`
+	BonusAmount       int                       `yaml:"bonus_amount,omitempty" json:"bonus_amount,omitempty"`
 	ID                string                    `yaml:"id,omitempty" json:"id,omitempty"`
 	Type              string                    `yaml:"type" json:"type"`
 	ApplicationTiming string                    `yaml:"application_timing,omitempty" json:"application_timing,omitempty"`
@@ -500,6 +503,14 @@ func validateBattleLibrary(lib BattleLibrary) error {
 				return fmt.Errorf("%w: card %q has invalid timing", ErrInvalidContent, id)
 			}
 		}
+		general := card.Targeting.Selector == "general_choice"
+		hasGeneral := false
+		for _, op := range card.Operations {
+			hasGeneral = hasGeneral || op.Type == "general_card"
+		}
+		if general != hasGeneral || (general && (len(card.Operations) != 1 || card.Operations[0].Type != "general_card")) {
+			return fmt.Errorf("card %s: general_choice requires exactly one general_card operation", card.ID)
+		}
 		if err := validateTargeting(&card.Targeting); err != nil {
 			return fmt.Errorf("%w: card %q: %v", ErrInvalidContent, id, err)
 		}
@@ -652,7 +663,7 @@ func validateTargeting(targeting *TargetingDefinition) error {
 		return nil
 	}
 	selectors := map[string]bool{
-		"curse_choice": true, "venom_choice": true, "self": true, "one_enemy": true, "one_owned_combat_die": true,
+		"general_choice": true, "curse_choice": true, "venom_choice": true, "self": true, "one_enemy": true, "one_owned_combat_die": true,
 		"selected_die": true, "one_negative_status_on_self": true,
 		"one_incoming_damage_source": true, "one_owned_offensive_ability": true,
 	}
@@ -710,7 +721,7 @@ func validateTier(tier AbilityTier, lib BattleLibrary) error {
 	return validateBattleOperations(tier.Operations, lib)
 }
 func validateBattleOperations(ops []BattleOperation, lib BattleLibrary) error {
-	supported := map[string]bool{"curse_card": true, "curse_action": true, "provoke": true, "apply_incubation": true, "incubation_or_poison": true, "venom_card": true, "reroll_die": true, "noop": true, "deal_damage": true, "prevent_damage": true, "scale_damage": true, "apply_status": true, "remove_status": true, "remove_status_stack": true, "gain_resource": true, "draw_cards": true, "modify_die": true, "apply_ability_modifier": true, "adjust_max_rolls": true, "cancel_source": true, "roll_dice": true}
+	supported := map[string]bool{"general_card": true, "curse_card": true, "curse_action": true, "provoke": true, "apply_incubation": true, "incubation_or_poison": true, "venom_card": true, "reroll_die": true, "noop": true, "deal_damage": true, "prevent_damage": true, "scale_damage": true, "apply_status": true, "remove_status": true, "remove_status_stack": true, "gain_resource": true, "draw_cards": true, "modify_die": true, "apply_ability_modifier": true, "adjust_max_rolls": true, "cancel_source": true, "roll_dice": true}
 	for _, op := range ops {
 		if !supported[op.Type] {
 			return fmt.Errorf("unsupported operation type %q", op.Type)
@@ -739,6 +750,10 @@ func validateBattleOperations(ops []BattleOperation, lib BattleLibrary) error {
 			return fmt.Errorf("offensive ability modifier requires a positive status")
 		}
 		switch op.Type {
+		case "general_card":
+			if err := validateGeneralCardOperation(op); err != nil {
+				return err
+			}
 		case "deal_damage", "prevent_damage", "draw_cards":
 			if err := validateOperationAmount(op.Amount, false); err != nil {
 				return fmt.Errorf("%s: %v", op.Type, err)

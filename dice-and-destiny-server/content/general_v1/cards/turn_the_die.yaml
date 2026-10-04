@@ -1,0 +1,41 @@
+{
+  "schema_version": 1,
+  "id": "turn_the_die",
+  "name": "Turn the Die",
+  "type": "planning",
+  "presentation": {
+    "rules_text": "After your first offensive roll, flip one of your dice to its opposite face: 1 ↔ 6, 2 ↔ 5, or 3 ↔ 4. Does not consume a roll attempt.",
+    "effect_summary": "Flip one die: 1 ↔ 6, 2 ↔ 5, 3 ↔ 4.",
+    "illustration_path": "res://assets/battle/cards/tip_it.png"
+  },
+  "cost": {
+    "energy": 1
+  },
+  "play": {
+    "source_zones": [
+      "hand"
+    ],
+    "destination": "discard",
+    "playable_during": [
+      {
+        "segment": "offensive",
+        "phase": "main",
+        "window_purpose": "planning"
+      }
+    ]
+  },
+  "targeting": {
+    "selector": "general_choice",
+    "minimum": 1,
+    "maximum": 1
+  },
+  "reaction_window": {
+    "opens": false
+  },
+  "operations": [
+    {
+      "type": "general_card",
+      "modification": "flip_die"
+    }
+  ]
+}

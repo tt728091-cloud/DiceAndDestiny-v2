@@ -1,0 +1,41 @@
+{
+  "schema_version": 1,
+  "id": "disrupt",
+  "name": "Disrupt",
+  "type": "action",
+  "presentation": {
+    "rules_text": "During offensive reaction, choose one revealed enemy offensive die and reroll it. The enemy’s ability is rechecked against the new result. Does not consume a normal roll attempt.",
+    "effect_summary": "Reroll one revealed enemy offensive die.",
+    "illustration_path": "res://assets/battle/cards/tip_it.png"
+  },
+  "cost": {
+    "energy": 1
+  },
+  "play": {
+    "source_zones": [
+      "hand"
+    ],
+    "destination": "discard",
+    "playable_during": [
+      {
+        "segment": "offensive",
+        "phase": "main",
+        "window_purpose": "reaction"
+      }
+    ]
+  },
+  "targeting": {
+    "selector": "general_choice",
+    "minimum": 1,
+    "maximum": 1
+  },
+  "reaction_window": {
+    "opens": false
+  },
+  "operations": [
+    {
+      "type": "general_card",
+      "modification": "reroll_enemy_die"
+    }
+  ]
+}

@@ -1,0 +1,41 @@
+{
+  "schema_version": 1,
+  "id": "reclaim",
+  "name": "Reclaim",
+  "type": "planning",
+  "presentation": {
+    "rules_text": "Return one chosen card from your discard pile to your hand. Cannot retrieve a card with a discard-recovery effect, including Reclaim. This does not heal or cancel pending damage reservations.",
+    "effect_summary": "Return a discard card to hand. Cannot retrieve recovery cards.",
+    "illustration_path": "res://assets/battle/cards/battle_focus.png"
+  },
+  "cost": {
+    "energy": 2
+  },
+  "play": {
+    "source_zones": [
+      "hand"
+    ],
+    "destination": "discard",
+    "playable_during": [
+      {
+        "segment": "offensive",
+        "phase": "main",
+        "window_purpose": "planning"
+      }
+    ]
+  },
+  "targeting": {
+    "selector": "general_choice",
+    "minimum": 1,
+    "maximum": 1
+  },
+  "reaction_window": {
+    "opens": false
+  },
+  "operations": [
+    {
+      "type": "general_card",
+      "modification": "recover_discard"
+    }
+  ]
+}

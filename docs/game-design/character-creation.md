@@ -358,3 +358,45 @@ General access, character-type overrides, ability upgrade restrictions, preserve
 owned conflicts, cancellation, persistence, and admin layouts at three sizes.
 Native tests also reject forged purchases/Sandbox saves, validate battle-start
 restrictions, and load cross-pack General cards into real battles.
+
+## General card expansion
+
+The `content/general_v1/cards` extension adds eight optional General cards to all
+four character libraries. Starter decks are unchanged. Add them with the existing
+Sandbox editor or buy them in Progression; each starts at the configured default
+price of 10 XP and can be repriced/retyped in Admin settings. Reload definitions
+refreshes the library; new battles pin the updated catalog and owned loadout.
+
+| Card | Energy | Play window | Effect |
+| --- | ---: | --- | --- |
+| Matchmaker | 1 | Offensive planning, after rolling | Set one owned offensive die to another owned die's face. |
+| Turn the Die | 1 | Offensive planning, after rolling | Flip one owned offensive die: 1↔6, 2↔5, 3↔4. |
+| Disrupt | 1 | Offensive reaction | Reroll one revealed enemy offensive die; recheck the selected attack's qualification. |
+| Second Guard | 1 | Defense reaction, before applying the roll | Reroll a chosen nonempty subset of that defense's physical dice. Apply the final defense rewards once. |
+| Reclaim | 2 | Offensive planning | Return one discarded non-recovery card to hand. Does not restore removed cards or heal. |
+| Reinforce | 1, optionally 2 | Defense / legacy damage response | Prevent 2 from one source, or pay 1 extra energy to prevent 4. |
+| Dispel | 1 | Offensive planning / Defense | Remove one enemy positive status stack, unless its definition is `dispel_immune`. |
+| Triage | 1 | Unified Defense | Prevent 1 from one source and save a specific revealed threatened card from that source, including against overage. Other sources can still threaten it. |
+
+Reinforce and Triage default to `saved_card_destination: original`, configurable
+like Brace. Playing the prevention card still sends it to its authored play
+destination; saving it never rewinds its play. Triage records the selected
+reservation as protected against that source for this damage batch, persisting
+through reconciliation and save/reload. It does not grant blanket immunity.
+Reclaim cannot recover another card using the `recover_discard` operation, avoiding
+repeatable recovery loops. It respects any existing pending damage reservation.
+
+The shared `general_choice` selector exposes complete legal commands with opaque
+choice IDs; the authority regenerates and validates those choices at play time.
+Effects use the configured `general_card` operation's `modification`, rather than
+card IDs. Reinforce authors `amount`, `extra_energy`, and `bonus_amount`; energy,
+play destinations, rules text, presentation, and saved-card destinations remain
+in the card definitions. New effect kinds require engine support, while variants
+of these effects can be authored as additional definitions.
+
+Validation covers all eight authority command paths, invalid/stale choices,
+source isolation, configurable saved destinations, Triage overage and self-save,
+Second Guard's single reward resolution, General access and XP buy/sell round
+trips for all four characters, plus card-click/choice/cancel UI at 1280 and 1920
+pixels (`tests/presentation/verify_general_cards.gd`). The pack is separate from
+frozen training content so existing AI content hashes remain compatible.

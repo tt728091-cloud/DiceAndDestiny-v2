@@ -115,7 +115,14 @@ func (e Engine) fillUnifiedReservations(b *state.Battle, batch *state.SettledDam
 		for _, zone := range damage.DefaultSelectionOrder() {
 			var available []string
 			for _, id := range zoneCards(b.Actors[source.TargetActorID].Cards, zone) {
-				if !reserved[id] {
+				protected := false
+				for _, r := range batch.Removals {
+					if r.ProtectedFromSource && r.CardID == id && containsString(r.DamageProposalIDs, source.ID) {
+						protected = true
+						break
+					}
+				}
+				if !reserved[id] && !protected {
 					available = append(available, id)
 				}
 			}

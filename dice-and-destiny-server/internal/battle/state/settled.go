@@ -124,13 +124,14 @@ type SettledStatusApplication struct {
 }
 
 type SettledDefense struct {
-	ActorID      string `json:"actor_id"`
-	AbilityID    string `json:"ability_id"`
-	SourceID     string `json:"source_id"`
-	RolledFace   int    `json:"rolled_face,omitempty"`
-	RolledFaces  []int  `json:"rolled_faces,omitempty"`
-	CatalystPaid bool   `json:"catalyst_paid,omitempty"`
-	Finalized    bool   `json:"finalized"`
+	RolledDice   []RolledDie `json:"rolled_dice,omitempty"`
+	ActorID      string      `json:"actor_id"`
+	AbilityID    string      `json:"ability_id"`
+	SourceID     string      `json:"source_id"`
+	RolledFace   int         `json:"rolled_face,omitempty"`
+	RolledFaces  []int       `json:"rolled_faces,omitempty"`
+	CatalystPaid bool        `json:"catalyst_paid,omitempty"`
+	Finalized    bool        `json:"finalized"`
 }
 
 type SettledDamageBatch struct {
@@ -228,16 +229,19 @@ func cloneSettledRuntime(value *SettledRuntime) *SettledRuntime {
 	cloned.DefensePlans = make(map[string]SettledDefense, len(value.DefensePlans))
 	for id, defense := range value.DefensePlans {
 		defense.RolledFaces = append([]int(nil), defense.RolledFaces...)
+		defense.RolledDice = copyRolledDice(defense.RolledDice)
 		cloned.DefensePlans[id] = defense
 	}
 	cloned.DefenseHistory = make(map[string]SettledDefense, len(value.DefenseHistory))
 	for id, defense := range value.DefenseHistory {
 		defense.RolledFaces = append([]int(nil), defense.RolledFaces...)
+		defense.RolledDice = copyRolledDice(defense.RolledDice)
 		cloned.DefenseHistory[id] = defense
 	}
 	cloned.DefenseSelections = make(map[string]SettledDefense, len(value.DefenseSelections))
 	for id, defense := range value.DefenseSelections {
 		defense.RolledFaces = append([]int(nil), defense.RolledFaces...)
+		defense.RolledDice = copyRolledDice(defense.RolledDice)
 		cloned.DefenseSelections[id] = defense
 	}
 	if value.Window != nil {

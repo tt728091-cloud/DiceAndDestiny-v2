@@ -189,6 +189,13 @@ func (assembler *FileParticipantAssembler) loadSettledContent(
 				return content.BattleLibrary{}, nil, err
 			}
 		}
+		generalRoot := filepath.Join(filepath.Dir(settledRoot), "general_v1")
+		if _, statErr := os.Stat(generalRoot); statErr == nil {
+			library, err = content.LoadBattleExtension(library, generalRoot)
+			if err != nil {
+				return content.BattleLibrary{}, nil, err
+			}
+		}
 		catalog, err := json.Marshal(library)
 		if err != nil {
 			return content.BattleLibrary{}, nil, fmt.Errorf("marshal settled content catalog: %w", err)

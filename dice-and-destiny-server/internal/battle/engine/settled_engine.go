@@ -1457,6 +1457,16 @@ func (e Engine) handleOffensiveReactionCommand(battle *state.Battle, library con
 	if err := command.DecodePayload(cmd, &payload); err != nil {
 		return nil, err
 	}
+	if len(payload.Commitment.CardIDs) == 1 && library.Cards[settledCardDefinitionID(battle, cmd.ActorID, payload.Commitment.CardIDs[0])].Targeting.Selector == "general_choice" {
+		if err := e.playSettledReactionCard(battle, library, cmd.ActorID, payload.Commitment); err != nil {
+			return nil, err
+		}
+		var choice generalCardChoice
+		_ = json.Unmarshal([]byte(payload.Commitment.ChoiceID), &choice)
+		advanceSettledReactionPriority(battle, cmd.ActorID, true)
+		e.reopenOffensiveAfterDiceChange(battle, choice.Actor)
+		return []event.Event{settledEvent(event.TypeCardPlayed, battle, cmd.ActorID, map[string]any{"card_instance_id": payload.Commitment.CardIDs[0], "card_definition_id": settledCardDefinitionID(battle, cmd.ActorID, payload.Commitment.CardIDs[0]), "choice_id": payload.Commitment.ChoiceID}), offensiveRevealEvent(battle, library)}, nil
+	}
 	if len(payload.Commitment.CardIDs) == 1 && library.Cards[settledCardDefinitionID(battle, cmd.ActorID, payload.Commitment.CardIDs[0])].Targeting.Selector == "venom_choice" || len(payload.Commitment.CardIDs) == 1 && library.Cards[settledCardDefinitionID(battle, cmd.ActorID, payload.Commitment.CardIDs[0])].Targeting.Selector == "curse_choice" {
 		if err := e.playSettledReactionCard(battle, library, cmd.ActorID, payload.Commitment); err != nil {
 			return nil, err
@@ -1856,6 +1866,9 @@ func (e Engine) playSettledReactionCard(battle *state.Battle, library content.Ba
 	}
 	targetIDs := append([]string(nil), commitment.TargetIDs...)
 	abilityID, statusID, dieIndex := "", "", -1
+	if definition.Targeting.Selector == "general_choice" {
+		return e.playGeneralCard(battle, library, actorID, instanceID, definition, commitment.ProposalIDs, commitment.ChoiceID)
+	}
 	if definition.Targeting.Selector == "curse_choice" {
 		return e.playCurseCard(battle, library, actorID, instanceID, definition, commitment.ProposalIDs, commitment.ChoiceID)
 	}
@@ -2133,6 +2146,7 @@ func (e Engine) rollSelectedDefense(battle *state.Battle, library content.Battle
 		}
 		dice = append(dice, d)
 		selection.RolledFaces = append(selection.RolledFaces, d.Face)
+		selection.RolledDice = append(selection.RolledDice, d)
 	}
 	selection.RolledFace = selection.RolledFaces[0]
 	return []event.Event{{Type: event.TypeDiceRolled, ActorID: selection.ActorID, Segment: segment.Defensive, Pool: state.RollPoolDefensive, SourceType: state.RollSourceAbility, SourceID: selection.AbilityID, Dice: dice, Data: map[string]any{"source_id": selection.SourceID}}}, nil
@@ -2431,6 +2445,9 @@ func (e Engine) playSettledCard(battle *state.Battle, library content.BattleLibr
 		return errors.New("card is not in hand")
 	}
 	definition := library.Cards[instance.DefinitionID]
+	if definition.Targeting.Selector == "general_choice" {
+		return e.playGeneralCard(battle, library, actorID, instanceID, definition, targetIDs, statusID)
+	}
 	if definition.Targeting.Selector == "curse_choice" {
 		return e.playCurseCard(battle, library, actorID, instanceID, definition, targetIDs, statusID)
 	}

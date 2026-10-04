@@ -188,6 +188,7 @@ func settledLegalActions(battle *state.Battle, library content.BattleLibrary, ac
 	actions = append(actions, roundPreventionActions(battle, library, actorID, pending)...)
 	actions = append(actions, curseCardActions(battle, library, actorID, pending)...)
 	actions = append(actions, venomCardActions(battle, library, actorID, pending)...)
+	actions = append(actions, generalCardActions(battle, library, actorID, pending)...)
 	return actions
 }
 

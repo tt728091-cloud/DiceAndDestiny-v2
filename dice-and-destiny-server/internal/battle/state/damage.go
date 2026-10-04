@@ -73,6 +73,7 @@ type AccumulatedDamageProposal struct {
 }
 
 type ProposedCardRemoval struct {
+	ProtectedFromSource      bool               `json:"protected_from_source,omitempty"`
 	ID                       string             `json:"id"`
 	TargetActorID            string             `json:"target_actor_id"`
 	CardID                   string             `json:"card_id"`

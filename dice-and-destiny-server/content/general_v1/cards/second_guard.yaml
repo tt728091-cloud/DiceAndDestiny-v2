@@ -1,0 +1,41 @@
+{
+  "schema_version": 1,
+  "id": "second_guard",
+  "name": "Second Guard",
+  "type": "action",
+  "presentation": {
+    "rules_text": "After rolling your defense, choose one or more of its dice to reroll. Replace those results before applying that defense. Prevention, energy and other defense rewards resolve only once.",
+    "effect_summary": "Reroll chosen defense dice before applying the defense.",
+    "illustration_path": "res://assets/battle/cards/emergency_ward.png"
+  },
+  "cost": {
+    "energy": 1
+  },
+  "play": {
+    "source_zones": [
+      "hand"
+    ],
+    "destination": "discard",
+    "playable_during": [
+      {
+        "segment": "defensive",
+        "phase": "main",
+        "window_purpose": "reaction"
+      }
+    ]
+  },
+  "targeting": {
+    "selector": "general_choice",
+    "minimum": 1,
+    "maximum": 1
+  },
+  "reaction_window": {
+    "opens": false
+  },
+  "operations": [
+    {
+      "type": "general_card",
+      "modification": "reroll_defense_dice"
+    }
+  ]
+}

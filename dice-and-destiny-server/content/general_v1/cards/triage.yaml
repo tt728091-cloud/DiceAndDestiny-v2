@@ -1,0 +1,42 @@
+{
+  "schema_version": 1,
+  "id": "triage",
+  "name": "Triage",
+  "type": "action",
+  "presentation": {
+    "rules_text": "During unified defense, choose one revealed threatened card from one incoming source. Prevent 1 damage and save that exact card from that source, even if it has excess damage. Other sources may still threaten it. Saved cards remain in their current piles; playing Triage sends it to discard even if it saves itself.",
+    "effect_summary": "Save one chosen threatened card from one incoming source.",
+    "illustration_path": "res://assets/battle/cards/emergency_ward.png"
+  },
+  "cost": {
+    "energy": 1
+  },
+  "play": {
+    "source_zones": [
+      "hand"
+    ],
+    "destination": "discard",
+    "playable_during": [
+      {
+        "segment": "defensive",
+        "phase": "main",
+        "window_purpose": "reaction"
+      }
+    ]
+  },
+  "targeting": {
+    "selector": "general_choice",
+    "minimum": 1,
+    "maximum": 1
+  },
+  "reaction_window": {
+    "opens": false
+  },
+  "operations": [
+    {
+      "type": "general_card",
+      "modification": "save_threatened_card"
+    }
+  ],
+  "saved_card_destination": "original"
+}

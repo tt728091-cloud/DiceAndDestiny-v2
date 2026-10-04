@@ -1,0 +1,41 @@
+{
+  "schema_version": 1,
+  "id": "matchmaker",
+  "name": "Matchmaker",
+  "type": "planning",
+  "presentation": {
+    "rules_text": "After your first offensive roll, change one of your dice to match the numbered face of a different one of your dice. Does not consume a roll attempt.",
+    "effect_summary": "Copy another of your dice’s face.",
+    "illustration_path": "res://assets/battle/cards/loaded_die.png"
+  },
+  "cost": {
+    "energy": 1
+  },
+  "play": {
+    "source_zones": [
+      "hand"
+    ],
+    "destination": "discard",
+    "playable_during": [
+      {
+        "segment": "offensive",
+        "phase": "main",
+        "window_purpose": "planning"
+      }
+    ]
+  },
+  "targeting": {
+    "selector": "general_choice",
+    "minimum": 1,
+    "maximum": 1
+  },
+  "reaction_window": {
+    "opens": false
+  },
+  "operations": [
+    {
+      "type": "general_card",
+      "modification": "copy_die"
+    }
+  ]
+}
