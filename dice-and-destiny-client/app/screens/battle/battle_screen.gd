@@ -3451,6 +3451,7 @@ func _show_venom_choices(actions: Array, heading: String) -> void:
 	# should not need scrolling just because a card has detailed rules.
 	var rules_height := ceili(float(rules.length()) / 50.0) * 28
 	var height := mini(mini(620, int(get_viewport_rect().size.y) - 40), 130 + rules_height + actions.size() * 58)
+	dialog.min_size.y = maxi(260, height)
 	dialog.popup_centered(Vector2i(560, height))
 
 func _venom_choice_label(action: Dictionary) -> String:

@@ -80,7 +80,7 @@ func _scenario(id: String, multiple: bool = false) -> void:
 		_expect(buttons.size() == 2, id + " shows both choices")
 		if buttons.size() == 2:
 			var scroll: ScrollContainer = buttons[1].get_parent().get_parent()
-			_expect(buttons[1].get_global_rect().end.y <= scroll.get_global_rect().end.y, id + " both options visible without scrolling")
+			_expect(buttons[1].get_global_rect().end.y <= scroll.get_global_rect().end.y, id + " both options visible without scrolling: option %s, scroll %s, dialog %s" % [buttons[1].get_global_rect(), scroll.get_global_rect(), dialog.size])
 			for button in buttons:
 				_expect(button.text != "Confirm" and "seat-" not in button.text and "{" not in button.text, id + " readable choice label")
 			if id == "reinforce":
