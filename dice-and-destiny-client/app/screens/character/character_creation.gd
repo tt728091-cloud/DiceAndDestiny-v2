@@ -386,7 +386,10 @@ func _populate_card_lists() -> void:
 		var info := BattlePresentationCatalog.card(str(id))
 		if not _matches_card(info, _library_search.text): continue
 		_entry("cards", str(id), info.name, "%d energy · %s" % [info.cost, info.effect_summary], "×%d" % _card_count(str(id)), _library_list, "library")
-	for entry in character.get("decklist", []):
+	# Sort a display copy so browsing never changes the configured deck order.
+	var deck: Array = character.get("decklist", []).duplicate()
+	deck.sort_custom(func(a, b): return str(catalogs[character_id].cards[a.card_id].name).naturalnocasecmp_to(str(catalogs[character_id].cards[b.card_id].name)) < 0)
+	for entry in deck:
 		var info := BattlePresentationCatalog.card(str(entry.card_id))
 		if not _matches_card(info, _deck_search.text): continue
 		_entry("cards", str(entry.card_id), info.name, "%d energy · %s" % [info.cost, info.effect_summary], "×%d" % int(entry.count), _deck_list, "deck")
