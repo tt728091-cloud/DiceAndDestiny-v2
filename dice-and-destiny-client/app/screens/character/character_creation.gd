@@ -28,6 +28,14 @@ var _admin_save: Button
 var _admin_types: Dictionary = {}
 var _admin_tabs: TabBar
 var _admin_search: LineEdit
+var _admin_sort: OptionButton
+var _admin_type_filter: OptionButton
+var _admin_sort_by_type := false
+var _admin_filter_type := ""
+var _admin_items: VBoxContainer
+var _admin_item_rows: Dictionary = {}
+var _admin_group_labels: Dictionary = {}
+var _admin_empty: Label
 var _admin_item_details: VBoxContainer
 var _admin_item_context: Label
 var _admin_item_kind := ""
@@ -700,17 +708,28 @@ func _open_admin() -> void:
 	var left := VBoxContainer.new(); left.custom_minimum_size.x = 340; left.size_flags_horizontal = Control.SIZE_EXPAND_FILL; columns.add_child(left)
 	_admin_tabs = TabBar.new(); _admin_tabs.add_tab("Cards · price & type"); _admin_tabs.add_tab("Abilities · type"); left.add_child(_admin_tabs)
 	_admin_search = LineEdit.new(); _admin_search.placeholder_text = "Search cards or abilities…"; left.add_child(_admin_search)
-	var prices := _scroll(left)
+	var browse := HBoxContainer.new(); browse.add_theme_constant_override("separation", 8); left.add_child(browse)
+	_admin_sort = OptionButton.new(); _admin_sort.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_admin_sort.add_item("Name · A–Z"); _admin_sort.add_item("Type → Name · A–Z"); _admin_sort.select(1 if _admin_sort_by_type else 0)
+	_admin_sort.tooltip_text = "Sort alphabetically, or group by type with alphabetical names within each group."; browse.add_child(_admin_sort)
+	_admin_type_filter = OptionButton.new(); _admin_type_filter.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_admin_type_filter.add_item("All types"); _admin_type_filter.set_item_metadata(0, ""); browse.add_child(_admin_type_filter)
+	var type_ids: Array = catalogs[character_id].access.types.keys()
+	type_ids.sort_custom(func(a, b): return _type_name(str(a)).naturalnocasecmp_to(_type_name(str(b))) < 0)
+	for type_id in type_ids:
+		_admin_type_filter.add_item(_type_name(str(type_id))); _admin_type_filter.set_item_metadata(_admin_type_filter.item_count - 1, type_id)
+		if str(type_id) == _admin_filter_type: _admin_type_filter.select(_admin_type_filter.item_count - 1)
+	_admin_filter_type = str(_admin_type_filter.get_selected_metadata())
+	_admin_type_filter.tooltip_text = "Filter cards and abilities by their current draft type. Works with search and either sort order."
+	var prices := _scroll(left); _admin_items = prices
+	_admin_sort.item_selected.connect(func(index): _admin_sort_by_type = index == 1; _arrange_admin_items(true))
+	_admin_type_filter.item_selected.connect(func(_index): _admin_filter_type = str(_admin_type_filter.get_selected_metadata()); _arrange_admin_items(true))
 	_admin_tabs.tab_changed.connect(func(tab):
 		_admin_search.text = ""
 		_populate_admin_items(prices, "cards" if tab == 0 else "abilities")
 		_clear_admin_item_preview()
 	)
-	_admin_search.text_changed.connect(func(query):
-		for row in prices.get_children():
-			row.visible = query.to_lower() in str(row.get_meta("search_name"))
-			if not row.visible and row.get_meta("entry_id", "") == _admin_item_id: _clear_admin_item_preview()
-	)
+	_admin_search.text_changed.connect(func(_query): _arrange_admin_items(true))
 	var preview_panel := _panel(columns, 260)
 	preview_panel.get_parent().size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_label(preview_panel, "ITEM PREVIEW", 16, GOLD)
@@ -734,7 +753,7 @@ func _open_admin() -> void:
 	_button(actions, "Close · discard edits", func(): _admin_overlay.hide(), "admin.close")
 	_admin_save = _button(actions, "Apply economy changes", _save_admin, "admin.save")
 	_refresh_admin_preview(); _admin_overlay.show(); _admin_search.grab_focus()
-	if selected_kind == "cards" and catalogs[character_id].cards.has(selected_id): _show_admin_item_preview("cards", selected_id)
+	if selected_kind == "cards" and _admin_item_rows.has(selected_id) and _admin_item_rows[selected_id].visible: _show_admin_item_preview("cards", selected_id)
 
 func _admin_base_price(id: String) -> int:
 	var catalog: Dictionary = catalogs[character_id]
@@ -878,15 +897,21 @@ func _admin_type_choice(parent: Node, kind: String, id: String) -> void:
 	choice.item_selected.connect(func(index):
 		_admin_draft[_type_key(kind)][id] = str(choice.get_item_metadata(index))
 		_refresh_admin_preview()
+		if kind != "characters": _arrange_admin_items.call_deferred(false)
 	)
 
 func _populate_admin_items(list: VBoxContainer, kind: String) -> void:
-	_clear(list); _admin_types[kind].clear()
+	_clear(list); _admin_types[kind].clear(); _admin_item_rows.clear(); _admin_group_labels.clear()
+	if kind == "cards": _admin_prices.clear()
+	for type_id in catalogs[character_id].access.types:
+		_admin_group_labels[str(type_id)] = _label(list, "", 15, GOLD)
+	_admin_empty = _label(list, "No cards or abilities match this type and search.", 16, MUTED)
 	var definitions: Dictionary = catalogs[character_id][kind]
 	var ids: Array = definitions.keys(); ids.sort_custom(func(a, b): return str(definitions[a].name) < str(definitions[b].name))
 	for id in ids:
 		var group := VBoxContainer.new(); list.add_child(group)
 		group.set_meta("search_name", str(definitions[id].name).to_lower()); group.set_meta("entry_id", id)
+		_admin_item_rows[str(id)] = group
 		_label(group, str(definitions[id].name), 17)
 		var row := HBoxContainer.new(); group.add_child(row)
 		if kind == "cards":
@@ -895,6 +920,40 @@ func _populate_admin_items(list: VBoxContainer, kind: String) -> void:
 			spin.value_changed.connect(func(amount): _admin_draft.card_prices[id] = int(amount); _refresh_admin_preview())
 		_admin_type_choice(row, kind, str(id))
 		_connect_admin_item_hover(group, kind, str(id))
+	_arrange_admin_items(true)
+
+# Move existing rows instead of recreating edit controls: sorting must not lose
+# pending prices/types, focus, or the selected preview.
+func _arrange_admin_items(reset_scroll: bool) -> void:
+	if not is_instance_valid(_admin_items): return
+	var kind := "cards" if _admin_tabs.current_tab == 0 else "abilities"
+	var definitions: Dictionary = catalogs[character_id][kind]
+	var ids: Array = _admin_item_rows.keys()
+	ids.sort_custom(func(a, b):
+		if _admin_sort_by_type:
+			var comparison := _type_name(_draft_type(kind, a)).naturalnocasecmp_to(_type_name(_draft_type(kind, b)))
+			if comparison != 0: return comparison < 0
+		var comparison := str(definitions[a].name).naturalnocasecmp_to(str(definitions[b].name))
+		return comparison < 0 if comparison != 0 else str(a) < str(b)
+	)
+	for label in _admin_group_labels.values(): label.hide()
+	var counts := {}; var position := 0; var visible_count := 0
+	var query := _admin_search.text.strip_edges().to_lower()
+	for id in ids:
+		var type_id := _draft_type(kind, id)
+		var row: Control = _admin_item_rows[id]
+		row.visible = (query.is_empty() or query in str(row.get_meta("search_name"))) and (_admin_filter_type.is_empty() or _admin_filter_type == type_id)
+		if not row.visible:
+			if _admin_item_id == id: _clear_admin_item_preview()
+			continue
+		if _admin_sort_by_type and not counts.has(type_id):
+			var heading: Label = _admin_group_labels[type_id]
+			heading.show(); _admin_items.move_child(heading, position); position += 1
+		counts[type_id] = int(counts.get(type_id, 0)) + 1
+		_admin_items.move_child(row, position); position += 1; visible_count += 1
+	for type_id in counts: _admin_group_labels[type_id].text = "%s · %d" % [_type_name(type_id).to_upper(), counts[type_id]]
+	_admin_empty.visible = visible_count == 0
+	if reset_scroll: _admin_items.get_parent().set_deferred("scroll_vertical", 0)
 
 func _connect_admin_item_hover(control: Control, kind: String, id: String) -> void:
 	if control is Label or control is Container: control.mouse_filter = Control.MOUSE_FILTER_PASS

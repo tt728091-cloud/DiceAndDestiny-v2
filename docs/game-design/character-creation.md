@@ -173,6 +173,16 @@ character. Previewing never changes the draft. Tab changes and searches clear
 hidden selections. `verify_admin_item_preview.gd` covers these interactions,
 all four characters, save/reopen, and three viewport sizes.
 
+Both Admin item tabs offer **Name · A–Z** and **Type → Name · A–Z** sorting.
+The latter groups items by their current draft type, with alphabetical names
+inside each labeled group. The adjacent type filter can show just Venom,
+Curse, General, or another configured type, and works together with search.
+Changing an item's type immediately updates its group/filter membership.
+Sorting and filtering preserve unsaved edits; browse choices survive tab
+changes and reopening Admin within the character screen.
+`verify_admin_sorting.gd` checks both lists, combined filtering/search,
+draft edits, save/reopen, previews, and three viewport sizes.
+
 These are local administrator tools for this workspace. Overrides persist in
 `user/character_loadouts/economy_admin.json`, separate from authored YAML and
 Sandbox decks. A single atomic settings replacement is the commit point; every
