@@ -1,0 +1,4 @@
+{
+  "tool": "Built-in image_gen",
+  "prompt": "Precise localized image edit: remove ONLY the small carved-bone 'Inspect enemy' button in the UPPER RIGHT corner of this full screenshot, including its info icon, text, dark fill and bone border. Seamlessly fill that small rectangular footprint with the surrounding dark cavern wall. Everything outside this upper-right button must remain unchanged: all monsters and their scale/positions, attack badges, raised enemy names/health/status groups, five hand cards, lower-left dice and abilities, lower-right Adventurer stats and the Log / Inspect / gear buttons, top-left title. In particular KEEP the lower-right Inspect button. No other modifications, no cropping, no reframing, same full image and aspect ratio. Produce one revised screenshot."
+}

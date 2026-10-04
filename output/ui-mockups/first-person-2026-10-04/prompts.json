@@ -1,0 +1,109 @@
+{
+  "tool": "Built-in image_gen",
+  "created": "2026-10-04",
+  "reference_images": [
+    "/var/folders/4t/pj73xlnd6bb8tt_6n97_xvn40000gn/T/codex-clipboard-56b8c69e-33fd-4798-ac36-0e0a4eb68885.png",
+    "/var/folders/4t/pj73xlnd6bb8tt_6n97_xvn40000gn/T/codex-clipboard-c8a37f3f-c979-4666-bcb6-069663c82725.png"
+  ],
+  "base_prompt": "Use case: ui-mockup. Redesign the attached Dice and Destiny screenshot into ONE polished widescreen 16:9 game UI concept screenshot, not a collage, no physical monitor. Image 1 is the art/material reference and game identity. Image 2 is only the FIRST-PERSON composition and minimalist information-hierarchy reference from Shroom and Gloom. Preserve the first image's sophisticated Kingdom Death Monster-like dark fantasy art direction: detailed painterly sculptural bone masks, weathered ivory, dark leather, torn cloth, muted desaturated teal, charcoal cavern, sparse amber lanterns, understated crimson health bars and aged parchment cards. NOT the cartoon mushroom art or vivid blue palette of reference 2. Remove the adventurer entirely; player is behind the camera with no visible body, hands, portrait or weapon. Monsters face the viewer and are strong readable silhouettes with generous negative space. Include a Brine Mask creature recognizable from image 1, with a pale elongated mask and trailing black-green robes. Additional enemies are original eerie mask/bone creatures of varied heights from the same visual world.\nUI common rules: beautifully legible restrained ivory serif text; opaque charcoal backing behind important data; thin bone/brass edges, few ornaments. Compact round/phase at top. Separate individually clickable attack badges above EACH monster; at least one enemy has TWO separate vertically stacked sword-number badges, never combine its attacks into a sum. Slim health with current/max beneath each enemy and tiny visible active status icons/counts. No persistent enemy card inventory or rows of enemy dice; a subtle inspect affordance on attack badge can reveal the full selected ability rules/tier and revealed dice. Unrevealed offensive choices must use '?' rather than invented known results. Player health and energy always visible near lower left, status icon counts remain visible. Five parchment hand cards use image 1's visual identity with names 'Nudge', 'Strong Swing', 'Brace', 'Brace', 'Try Again', ink titles, small energy squares, art and only brief text. Exactly FIVE readable player dice, compact but not tiny. All six abilities remain reachable through an 'All abilities' control even when only contextual choices are shown. Make a distinct coherent usable game screenshot with clear alignment, UI not covering monster faces. Small top-left concept number/title. No browser controls, no video player, no watermarks, no marketing logos. Numbers are illustrative. ",
+  "variants": [
+    {
+      "id": "01",
+      "slug": "central-dice-ribbon",
+      "title": "Central dice ribbon",
+      "detail": "Show three enemies evenly spaced at mid distance, tall center creature flanked by Brine Masks. Phase 'Round 2 · Offensive Reaction'. Centered five dice in a horizontal ribbon directly above a shallow five-card fan at bottom center. Immediately above dice put three slim ability pills 'Strike', 'Guarded Strike', 'Small Straight' and 'All abilities'. Active revealed player attack chip 'Strike · 5' aligned beside dice. Player health '12/12' and energy '3' in lower-left compact medallion. A small right-side 'Pass' button. Enemy overhead badges compact, red and bone, one enemy has sword 3 and sword 3 stacked. Minimal UI takes lower quarter; monsters own upper 70%. Title '01 · Central dice ribbon'.",
+      "note": "Centered dice keep rolls and cards in one focal area; compact ability choices sit immediately above.",
+      "file": "01-central-dice-ribbon.png"
+    },
+    {
+      "id": "02",
+      "slug": "left-dice-dock",
+      "title": "Left dice dock",
+      "detail": "Four enemies in an intimate shallow arc fill center/right, each has isolated overhead attack badges and health, middle enemy has two attacks. Phase 'Round 2 · Offensive Reaction'. Player controls form a narrow lower-left charcoal dock: '12/12', energy '3', exactly five dice in ONE horizontal row, 'Roll · 2/3' and three compact ability rows plus 'All abilities'. Five-card fan is lower center/right, low enough that creatures stay visible. Revealed player attack 'Strike · 5' near dice. Right edge 'Pass'. Keep left dock below monsters, no player figure. Title '02 · Left dice dock'.",
+      "note": "A familiar left-side control dock preserves room for four enemies and a broad hand.",
+      "file": "02-left-dice-dock.png"
+    },
+    {
+      "id": "03",
+      "slug": "right-ability-rail",
+      "title": "Right ability rail",
+      "detail": "Show three enemies across left and center of the arena, strongly silhouetted, their overhead multi-attack stacks immediately readable. Phase 'Round 1 · Offensive'. Slim vertical ability rail at far RIGHT occupies only 18% width; all six readable rows 'Strike', 'Guarded Strike', 'Measured Strike', 'Small Straight', 'Large Straight', 'Decisive Blow', with tiny dice requirement glyphs, selected row gold and unavailable rows subdued but readable. Exactly five dice directly below this rail with 'Roll · 2/3'. Five cards in low broad fan along bottom center-left. Enemies have '?' overhead choices because offensive selection not yet revealed. Health and energy in lower left. 'Confirm' bottom right. Title '03 · Right ability rail'.",
+      "note": "All six abilities remain visible in a right rail; this trades some encounter width for discoverability.",
+      "file": "03-right-ability-rail.png"
+    },
+    {
+      "id": "04",
+      "slug": "four-enemy-panorama",
+      "title": "Four enemy panorama",
+      "detail": "Four enemies shown at equal importance, evenly spread in four spacious lanes across full width, different tall/short silhouettes, no card panels or enclosing lane boxes. Phase 'Round 3 · Offensive Reaction'. Each enemy has compact name, narrow health and one or two vertical attack badges. Bottom command band only 22% high: five dice left of center, three contextual ability pills above dice plus 'All abilities', shallow FIVE-card hand fan right of center. Player health '10/12', energy '3', status 'Shield 1' at far lower left. Small player revealed attack 'Strike · 5'. 'Pass' far right. Remove bulky phase tracker, use only phase title and four tiny dots. Title '04 · Four enemy panorama'.",
+      "note": "A shallow command band makes four enemy silhouettes and their independent attack stacks easy to scan.",
+      "file": "04-four-enemy-panorama.png"
+    },
+    {
+      "id": "05",
+      "slug": "boss-focus",
+      "title": "Boss focus",
+      "detail": "One huge grotesque masked bone-and-cloth boss dominates center, two small masked minions flank it farther back. First-person view, cavern with great negative space and pale rock. Phase 'Round 3 · Offensive Reaction'. Boss has THREE independently spaced vertical attack badges above its head: sword 6, sword 3, curse 1; not a damage total. Minions each have sword 2. Health bars short beneath creatures, boss '24/32'. Low five-card fan centered bottom. Five dice in a small lower-left horizontal tray, three compact ability options and 'All abilities', health/energy at far bottom-left. Player revealed attack 'Strike · 5'. 'Pass' small at lower right. Make the boss imposing without being covered by UI. Title '05 · Boss focus'.",
+      "note": "A large central boss and smaller flanking minions demonstrate how the same HUD can scale.",
+      "file": "05-boss-focus.png"
+    },
+    {
+      "id": "06",
+      "slug": "health-inspection-drawer",
+      "title": "Health inspection drawer",
+      "detail": "Three creatures, phase 'Round 2 · Offensive Reaction'. Center five dice and shallow five-card hand fan below monsters. Compact abilities strip with 'All abilities'. Player health at bottom-left '10/12' is being hovered/clicked, visible cursor and a small elegant parchment INSPECTION DRAWER above it, kept in empty left margin away from creatures. Drawer text: 'Your cards', tabs 'Deck 5', 'Discard 0', 'Removed 2'; active Removed. Two modest card-name rows 'Take Stock' and 'Second Wind', small close X. Below: 'Health = deck + hand + discard'. This is private player historical removed-card inspection, not enemy hidden cards or pending removals. Active statuses stay beside player health. Overhead enemy sword badges, center enemy two stacked. Title '06 · Health inspection drawer'.",
+      "note": "Clicking player health opens historical removed-card inspection. Current status icons stay visible.",
+      "file": "06-health-inspection-drawer.png"
+    },
+    {
+      "id": "07",
+      "slug": "intent-hover",
+      "title": "Intent hover",
+      "detail": "Three enemies with player HUD compact at bottom, phase 'Round 2 · Offensive Reaction'. The RIGHT Brine Mask has overhead sword '4' and separate second sword '3'. Visible mouse cursor hovers the 4 attack. ONE elegant dark wrapped tooltip opens inward to the LEFT of right enemy's badges, staying inside viewport and not obscuring faces. Readable tooltip content: 'Brine Lash', 'Qualification: at least one 3', 'Revealed dice: 2 5 1 3 3', 'Deal 2 damage per Brine (3).', 'Keep threes during rerolls.', 'Miss if no Brine is rolled.', 'Target: You', 'Current attack: 4'. Use only this modest full-rules tooltip; all other intent stacks compact. Exactly five PLAYER dice in bottom-center ribbon, contextual ability pills and 'All abilities', five-card hand below. Player attack chip 'Strike · 5'. Title '07 · Intent hover'.",
+      "note": "An attack hover supplies full rules, qualification, revealed offensive dice and current attack result.",
+      "file": "07-intent-hover.png"
+    },
+    {
+      "id": "08",
+      "slug": "source-specific-defense",
+      "title": "Source-specific defense",
+      "detail": "Defense phase mockup, three front-facing monsters. Top 'Round 2 · Defense'. Above left enemy sword 2, above middle enemy TWO separate badges sword 3 and sword 2; right enemy shield 2. Each incoming attack has a small source label A, B, C. Selected B is outlined gold. Bottom left dice tray EXACTLY five defense dice with readable icons, button 'Roll defense'; beside selected overhead B show very compact choices 'Guard', 'Guard+', 'All defenses'. Bottom center above shallow hand a narrow threat tray with three distinct columns 'A · 2 threatened', 'B · 3 threatened', 'C · 2 threatened'. Tiny but readable card-name rows distinct across sources: A 'Take Stock', 'Second Wind'; B 'Nudge', 'Brace+', 'Strong Swing'; C 'Try Again', 'Brace'. Source B column highlighted, all stay separate; no permanent loss yet. Hand is FIVE cards, prevention Brace subtly highlighted as selectable. Player health '12/12', energy '3', status visible. Main 'Pass' lower right separate from roll. Title '08 · Source-specific defense'.",
+      "note": "Defense shows separate threatened-card groups per incoming source; B and C both belong to the middle enemy.",
+      "file": "08-source-specific-defense.png"
+    },
+    {
+      "id": "09",
+      "slug": "expanded-ability-tray",
+      "title": "Expanded ability tray",
+      "detail": "Phase 'Round 1 · Offensive'. Three enemies facing player at top/middle. Enemy intents hidden as '?' before reveal. Bottom left health '12/12' and energy '3'. Exactly five large ivory dice centered at 65% height above a transient dark ability tray with TWO rows of THREE compact readable option tiles: 'Strike', 'Guarded Strike', 'Measured Strike', 'Small Straight', 'Large Straight', 'Decisive Blow'. Each shows a tiny dice-pattern qualification row; highlight feasible Strike in pale brass and dim infeasible choices. Header 'Choose an ability' and small collapse chevron. Five-card hand is temporarily collapsed to five clear title tabs along very bottom, preserving visibility and access; no large card art during this expanded ability-selection state. 'Roll · 2/3' and 'Confirm' to right of tray. Keep creatures unobscured above tray. Title '09 · Expanded ability tray'.",
+      "note": "Expanded ability selection temporarily collapses the hand to card titles, keeping the monsters visible.",
+      "file": "09-expanded-ability-tray.png"
+    },
+    {
+      "id": "10",
+      "slug": "balanced-first-person",
+      "title": "Balanced first-person",
+      "detail": "Best-balanced complete default HUD: FOUR distinct monsters, two tall and two shorter, front-facing in a shallow arc. Atmospheric cavern, readable detailed bone masks matching reference. Phase 'Round 2 · Offensive Reaction' with four tiny progress dots. Above each monster separate compact sword badges; second monster has two attacks sword 3 and sword 3, others 2, 5, 2. Slim health and compact visible status icons under monsters. Player health '12/12', energy '3', status 'Shield 1' in lower-left anchor with tiny inspect chevron. Exactly five dice in a centered horizontal ribbon at 73% screen height. Above them contextual slim pills 'Strike · 5', 'Guarded Strike', 'All abilities'; first is revealed player attack with subtle inspect glyph. Low five-card fan below ribbon takes bottom 22%, clearly parchment cards matching current game. 'Pass' lower right; tiny log/settings icons in corner, no big utility buttons. No drawers or tooltips open in this default state. Clear hierarchy monster > overhead attack > dice > hand, abundant empty cavern space between enemy health and player commands. Title '10 · Balanced first-person'.",
+      "note": "The recommended baseline: four enemies, central five-die ribbon, shallow hand and compact player resources.",
+      "file": "10-balanced-first-person.png"
+    }
+  ],
+  "correction_prompts": [
+    {
+      "id": "04",
+      "path": "/Users/daddymere/.codex/generated_images/01a1068e-30de-71d2-9d56-2ae3db6db42e/exec-689c0429-35ea-466e-b26f-41005c4827d2.png",
+      "prompt": "Edit this UI mockup with ONLY a small correction to the overhead enemy attack numbers. Preserve the entire artwork, UI layout, five dice, cards and all other pixels as closely as possible. These attacks are revealed: replace the TWO question marks above the LEFT Brine Mask with the numbers 3 and 3; replace the question mark over Carrion Wretch with 2, over Hollow Prelate with 5, over Bone Lurker with 2. Keep sword icons, frames, sizes, positions. Do not change phase or anything else."
+    },
+    {
+      "id": "07",
+      "path": "/Users/daddymere/.codex/generated_images/01a1068e-30de-71d2-9d56-2ae3db6db42e/exec-12750c6b-cc68-44b7-94f9-edba003ddcbb.png",
+      "prompt": "Edit only the tooltip of this existing first-person dark-fantasy UI screenshot. Preserve ALL monster art, layout, cards, bottom player dice and other controls. In Brine Lash tooltip replace the revealed dice row currently showing four boxes with exactly FIVE boxes: 2, 5, 1, 3, 3. Fit within existing tooltip width by making boxes slightly smaller. Keep current attack 4 and all other rules text unchanged. Add a small button labeled 'Pass' in the empty space at bottom right immediately ABOVE the Log / Inspect buttons. No other changes."
+    },
+    {
+      "id": "08",
+      "path": "/Users/daddymere/.codex/generated_images/01a1068e-30de-71d2-9d56-2ae3db6db42e/exec-ed405368-911f-4e7c-b7f4-6ea3fc4e31a6.png",
+      "prompt": "Edit only source labels in this dark fantasy first-person defense UI. Preserve all creatures, dice, cards, text, sizes and layout. The overhead gold diamond C label currently above the RIGHT enemy shield 2 is WRONG: remove it from above that shield, and place a small C source marker immediately LEFT of the CENTER enemy's SECOND attack badge (the lower sword 2). Keep B marker on center upper sword 3. A stays above left sword 2. This links the three bottom threatened-card columns to left attack A and center attacks B and C. Right enemy shield has no attack-source letter. Also replace heading 'Incoming Attacks & Available Cards' above threat columns with 'Incoming attacks · Threatened cards'. No other changes."
+    }
+  ],
+  "final_tooltip_correction": "Replace boxed revealed dice with plain text: Revealed dice: 2, 5, 1, 3, 3"
+}

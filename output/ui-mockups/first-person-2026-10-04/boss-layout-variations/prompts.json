@@ -1,0 +1,37 @@
+{
+  "tool": "Built-in image_gen",
+  "reference": "/Users/daddymere/games/Dice-and-Destiny-v2/output/ui-mockups/first-person-2026-10-04/05-boss-focus-revised.png",
+  "base": "Use case: ui-mockup / precise-object-edit. Create ONE full widescreen variation of the attached approved Dice and Destiny battle screenshot, preserving its layout and art. This is a SMALL visual refinement, not a new composition.\nHARD INVARIANTS: Preserve all three enemies in exactly the same positions, scale, poses and designs, including the immense central Drowned Regent. Preserve cavern lighting and painterly Kingdom Death Monster-like bone, leather, charcoal, tarnished metal, muted teal and crimson aesthetic. No visible player character or portrait. Keep five centered parchment hand cards, same size, placement, names and art: Nudge, Strong Swing, Brace, Brace, Try Again. Keep enemy names, health bars and visible status icons under the creatures. Keep separate overhead attack badges: left sword 2, boss sword 6 / sword 3 / purple curse 1, right sword 2. Never aggregate boss attacks. Top center MUST stay empty cavern, no round/turn/phase tracker. Preserve Inspect enemy at top right.\nLayout: lower LEFT has Roll 3/3 and Skip, exactly five dark square dice slots showing dashes, and ALL SIX ability rows beneath: Strike, Guarded Strike, Measured Strike, Small Straight, Large Straight, Decisive Blow. Retain qualification glyphs and circled info affordances, match reference text. Lower RIGHT has Adventurer, energy gold star 3, red health 12/12, four pile symbols/counts (deck 7, hand 5, discard 0, removed 0), and Pass below. Do not move those blocks to different screen regions. All UI remains inside canvas, readable and uncluttered, never obscuring monster faces or overlapping hand. Preserve gameplay data.\nChange top-left label to the exact variation number/title specified below. Do not include annotations or comparison insets. Single polished usable game screenshot, same aspect ratio as reference.\nVARIATION: ",
+  "variants": [
+    {
+      "id": "01",
+      "slug": "quiet-ivory",
+      "title": "Quiet ivory",
+      "detail": "Title '01 · Quiet ivory'. Refine toward the most minimal treatment: slim warm-ivory outlines, near-black softly translucent backing only behind the lower-left controls and lower-right stats. Subtly increase breathing room between ability rows while preserving footprint. Small parchment Roll/Skip buttons, quiet gold stars, flat compact enemy intent badges with thin warm ivory edges. Player health bar shallow and refined, card borders slightly cleaner. Avoid extra decoration. Almost identical geometry to the approved reference."
+    },
+    {
+      "id": "02",
+      "slug": "carved-bone",
+      "title": "Carved bone",
+      "detail": "Title '02 · Carved bone'. Give only the HUD an understated hand-carved bone identity: narrow ivory bone rails around dice tray, tiny joint-like corners around health bars, lightly engraved bone frames around separate overhead attack badges. Lower-left six ability rows sit on a faint charcoal leather backing with restrained bone corner anchors; bottom-right stats use matching small frame. Card fan unchanged, add only slight ivory edging. Roll/Skip and Pass framed in aged ivory. Keep details delicate, not bulky skull ornamentation, maintain readability."
+    },
+    {
+      "id": "03",
+      "slug": "weathered-parchment",
+      "title": "Weathered parchment",
+      "detail": "Title '03 · Weathered parchment'. Explore warm parchment utility panels confined to the lower corners: lower-left dice/abilities dock on one darkened tan aged-paper sheet, dark ink ability labels and clear gold-brown glyphs, dice remain charcoal squares with ivory edges. Bottom-right player stats on a matching small parchment sheet with dark ink Adventurer and counters, crimson health. Very subtle torn edges, low-contrast paper texture, never bright white. Overhead enemy attack badges stay dark charcoal with readable cream sword numbers, boss curse purple. Cards and all monsters identical. Slightly tighten player-stat rows, preserving all counts and Pass."
+    },
+    {
+      "id": "04",
+      "slug": "tarnished-brass",
+      "title": "Tarnished brass",
+      "detail": "Title '04 · Tarnished brass'. Refine HUD to dark smoked-metal panels with hairline tarnished brass rules. Clearly separated but compact six ability rows in lower-left; thin horizontal dividers and restrained muted gold left icons. Exactly five dice slots in one aligned brass-edged tray. Adventurer stats lower-right in matching smoked-metal block, energy star in small circular inset beside name, health and four counters below. Overhead attacks become compact square-cut charcoal plaques with hairline brass edges, still separate vertical boss badges. Roll/Skip and Pass are compact dark metal buttons with ivory text. No glowing sci-fi panels, no excessive ornament. Preserve card fan and scene."
+    },
+    {
+      "id": "05",
+      "slug": "soft-floating-hud",
+      "title": "Soft floating HUD",
+      "detail": "Title '05 · Soft floating HUD'. Keep original positions but minimize visible framing: softly feathered dark scrims behind lower-left controls and bottom-right stats, no large rectangular panel borders. Five dark dice slots have gently rounded corners and a thin ivory edge; ability rows slightly wider and aligned, muted gold stars, pale ivory labels. Player name/energy aligned on one baseline, a slim red health bar with centered 12/12, evenly spaced four counters under it, small Pass below. Enemy overhead intent chips become softly rounded black capsules with crimson sword icon and ivory number; boss's three distinct chips separated by a little more vertical air, never obscure face. Health/status rows are neat and compact. Tiny subtle parchment Roll/Skip buttons. Monsters, enemy scale and five-card fan unchanged."
+    }
+  ]
+}
