@@ -39,7 +39,7 @@ func programAction(t *testing.T, b *state.Battle, lib content.BattleLibrary, ver
 		id, key := programPayload(a)
 		var c programChoice
 		_ = json.Unmarshal([]byte(key), &c)
-		if c.Verb != verb {
+		if c.Verb != verb || c.Then != "" {
 			continue
 		}
 		if verb != "start" || len(hand) == 0 || id == hand[len(hand)-1] {
@@ -72,7 +72,7 @@ func playProgramCard(e Engine, b *state.Battle, lib content.BattleLibrary, actor
 		}
 		return command.Command{}, false
 	}
-	start, ok := find(func(id string, c programChoice) bool { return id == instance && c.Verb == "start" })
+	start, ok := find(func(id string, c programChoice) bool { return id == instance && c.Verb == "start" && c.Then == "" })
 	if !ok {
 		return fmt.Errorf("%s is not playable now", instance)
 	}

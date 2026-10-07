@@ -78,15 +78,20 @@ static func ability_tooltip(id: String, actor: Dictionary = {}) -> String:
 static func temporary_ability_damage_rules(id: String, actor: Dictionary = {}) -> String:
 	var lines: Array[String] = []
 	var legacy_damage := 0
+	# Program bonuses are summed per playing card and duration, so stacked
+	# copies read as one "Card: +N damage" line.
+	var program_damage := {}
 	for modifier in _array(actor.get("ability_modifiers", [])):
 		if modifier.get("ability_id") != id: continue
 		var status_id := str(modifier.get("status_id", ""))
 		if not _array(actor.get("statuses", [])).any(func(status): return status.get("definition_id") == status_id and int(status.get("stacks", 0)) > 0): continue
 		var program := _dictionary(modifier.get("program_bonus", {}))
 		if not program.is_empty():
-			var status := definition("statuses", status_id)
-			var rules := str(_dictionary(status.get("presentation", {})).get("rules_text", ""))
-			if not rules.is_empty() and rules not in lines: lines.append(str(status.get("name", "Preparation")) + ": " + rules)
+			var params := _dictionary(program.get("params", {}))
+			var instance := _dictionary(_dictionary(actor.get("card_instances", {})).get(str(modifier.get("source_card_instance_id", "")), {}))
+			var name := str(card(str(instance.get("definition_id", ""))).name) if not str(instance.get("definition_id", "")).is_empty() else str(definition("statuses", status_id).get("name", "Preparation"))
+			var key := "%s|%s" % [name, str(params.get("duration", "offensive"))]
+			program_damage[key] = int(program_damage.get(key, 0)) + int(params.get("damage", 0))
 		else:
 			for card in _dictionary(_catalog.get("cards", {})).values():
 				for operation in _array(card.get("operations", [])):
@@ -95,6 +100,9 @@ static func temporary_ability_damage_rules(id: String, actor: Dictionary = {}) -
 					for effect in _array(bonus.get("operations", [])):
 						if effect.get("type") == "deal_damage": legacy_damage += int(effect.get("amount", 0))
 	if legacy_damage > 0: lines.append("Strong Swing: +%d damage if this ability qualifies and is selected. Expires at the end of the offensive segment, even if unused." % legacy_damage)
+	var expiry := {"offensive": "Expires at the end of the offensive segment, even if unused.", "round": "Expires at the end of the round, even if unused.", "next_use": "Used by the next qualifying attack.", "rounds": "Lasts for its authored number of rounds.", "battle": "Lasts for the rest of the battle."}
+	for key in program_damage:
+		if int(program_damage[key]) > 0: lines.append("%s: +%d damage if this ability qualifies and is selected. %s" % [str(key).get_slice("|", 0), int(program_damage[key]), expiry.get(str(key).get_slice("|", 1), "")])
 	return "\n".join(lines)
 
 # Every attack hover uses the pinned ability, never a separate short rules copy.

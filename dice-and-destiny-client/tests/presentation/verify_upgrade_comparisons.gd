@@ -20,8 +20,10 @@ func _run() -> void:
 			await _hover(button)
 			var comparison = screen._comparison
 			_expect(comparison.visible, "pointer hover opens " + pair[0] + " comparison")
-			_expect("Saved cards go to discard" in comparison.before_text and "return" in comparison.after_text, "both full rules are shown")
-			_expect(not comparison.changed_after.is_empty() and "return" in comparison.changed_after, "changed words highlighted")
+			# Brace+ (program) says saved cards "stay"; Guard+ says they "return".
+			var kept_word := "stay" if "stay" in comparison.after_text else "return"
+			_expect("Saved cards go to discard" in comparison.before_text and kept_word in comparison.after_text, "both full rules are shown")
+			_expect(not comparison.changed_after.is_empty() and kept_word in comparison.changed_after, "changed words highlighted")
 			_expect("energy" not in comparison.changed_after, "unchanged wording stays neutral")
 			_expect("energy" in comparison.after_text, "cost metadata included")
 			_expect(comparison.get_global_rect().position.x >= 0 and comparison.get_global_rect().end.x <= root.get_visible_rect().size.x and comparison.get_global_rect().end.y <= root.get_visible_rect().size.y, "comparison fits viewport")

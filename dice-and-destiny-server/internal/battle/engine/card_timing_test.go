@@ -44,7 +44,7 @@ func startActions(e Engine, b *state.Battle) map[string]command.Command {
 	for _, a := range e.LegalActions(b, "player") {
 		id, key := programPayload(a)
 		var c programChoice
-		if id != "" && json.Unmarshal([]byte(key), &c) == nil && c.Verb == "start" {
+		if id != "" && json.Unmarshal([]byte(key), &c) == nil && c.Verb == "start" && c.Then == "" {
 			out[id] = a
 		}
 	}
@@ -428,5 +428,52 @@ func TestOffenseAnyTimeIncludesReaction(t *testing.T) {
 	}
 	if !programOffers(&b, lib, "nudge-0") {
 		t.Fatal("After die card unavailable during the reaction")
+	}
+}
+
+// Card-first targeting: when starting would ask for a target, start actions
+// also carry each first-step target, so a client chooses before any authority
+// call. One viable target needs no composite start.
+func TestProgramStartCarriesFirstTargets(t *testing.T) {
+	b, lib, e := unifiedFixture(t, 4, 3)
+	starts := func() map[string]command.Command {
+		out := map[string]command.Command{}
+		for _, a := range e.LegalActions(&b, "player") {
+			id, key := programPayload(a)
+			var c programChoice
+			if id == "brace-0" && json.Unmarshal([]byte(key), &c) == nil && c.Verb == "start" {
+				out[c.Source] = a
+			}
+		}
+		return out
+	}
+	a := b.Actors["player"]
+	if !containsString(a.Cards.Hand, "brace-0") {
+		a.Cards.Hand = append(a.Cards.Hand, "brace-0")
+		a.Cards.Deck = removeString(a.Cards.Deck, "brace-0")
+		a.Cards.Discard = removeString(a.Cards.Discard, "brace-0")
+		b.Actors["player"] = a
+	}
+	got := starts()
+	if _, ok := got[""]; !ok || got["a"].Type == "" || got["b"].Type == "" || len(got) != 3 {
+		t.Fatalf("want plain start plus one start per attack, got %v", len(got))
+	}
+	if _, err := e.ApplyBattleCommand(&b, got["b"]); err != nil {
+		t.Fatal(err)
+	}
+	if b.Settled.Actors["player"].CardExecution != nil || settledSourceAmount(b.Settled.PendingDamage.Sources[1]) != 0 || settledSourceAmount(b.Settled.PendingDamage.Sources[0]) != 4 {
+		t.Fatal("start-and-target must prevent only the chosen attack in one command")
+	}
+	b, lib, e = unifiedFixture(t, 4)
+	_ = lib
+	a = b.Actors["player"]
+	if !containsString(a.Cards.Hand, "brace-0") {
+		a.Cards.Hand = append(a.Cards.Hand, "brace-0")
+		a.Cards.Deck = removeString(a.Cards.Deck, "brace-0")
+		a.Cards.Discard = removeString(a.Cards.Discard, "brace-0")
+		b.Actors["player"] = a
+	}
+	if got := starts(); len(got) != 1 {
+		t.Fatalf("a single viable attack needs only the plain start, got %d", len(got))
 	}
 }

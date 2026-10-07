@@ -19,7 +19,8 @@
         "params": {
           "damage": 2,
           "duration": "offensive",
-          "stack_limit": 100
+          "stack_limit": 100,
+          "preparation_status": "strong_swing_ready"
         },
         "condition": {
           "all": []

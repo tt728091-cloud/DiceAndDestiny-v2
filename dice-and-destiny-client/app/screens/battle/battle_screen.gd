@@ -375,7 +375,7 @@ func _defense_review_key() -> String:
 
 func _sole_pass_action() -> Dictionary:
 	if _view.stage == "defense_selection" and not _unified_defense(): return {}
-	if _selected_card.get("source_targeting", false) or _selected_card.get("die_targeting", false): return {}
+	if _selected_card.get("source_targeting", false) or _selected_card.get("die_targeting", false) or _selected_card.get("program_targeting", false): return {}
 	if _card_gain_active(): return {}
 	if _auto_pass_disabled and not _automatic_defense_completion() and not _provoked_toxin_reaction() and not _inline_status_application() and not _pass_hands_off_priority() and _view.stage != "offensive_reaction": return {}
 	if _reaction_feedback_active(): return {}
@@ -2095,6 +2095,8 @@ func _ability_card_bonus_caption() -> String:
 	for operation in definition.get("operations", []):
 		for bonus in operation.get("modifier", {}).get("add_conditional_bonus", {}).get("operations", []):
 			if bonus.get("type") == "deal_damage" and (bonus.get("amount") is int or bonus.get("amount") is float): amount += int(bonus.amount)
+	for step in _as_dictionary(definition.get("program", {})).get("steps", []):
+		if step.get("effect") == "ability_bonus": amount += int(step.get("params", {}).get("damage", 0))
 	return "+%d damage" % amount if amount > 0 else "Select target"
 
 func _build_card_target_choices() -> void:
@@ -2151,7 +2153,7 @@ func _build_ability_row(caption: String, abilities: Array, actor_id: String) -> 
 		if actor_id == "blade": tile.set_meta("flow_key", "ability:%s:%s" % [actor_id, ability_id])
 		var defense_ready := choosing_defense and not _defense_actions(str(ability_id)).is_empty()
 		var can_select := actor_id == "blade" and (_view.allowed("planning_select_ability") or _early_defense_available()) and (defense_ready if choosing_defense else str(ability_id) in qualified and _view.legal_actions.any(func(action): return action.get("type") == "planning_select_ability" and action.get("payload", {}).get("ability_id") == ability_id)) and not _submitting and not _history_review
-		if _selected_card_selector() == "one_owned_offensive_ability": can_select = actor_id == "blade" and _view.stage == "planning" and not _history_review and _view.legal_actions.any(func(action): return action.get("payload", {}).get("ability_id") == ability_id and _selected_card.get("instance_id") in action.get("payload", {}).get("card_ids", []))
+		if _selected_card_selector() == "one_owned_offensive_ability": can_select = actor_id == "blade" and _view.stage == "planning" and not _history_review and not _card_ability_action(str(ability_id)).is_empty()
 		tile.configure(str(ability_id), str(ability_id) in qualified, selected == str(ability_id), can_select, actor)
 		tile.cinematic_compact()
 		var attack := _selected_attack(actor_id)
@@ -2771,6 +2773,10 @@ func _build_offensive_targets() -> void:
 func _on_ability_pressed(ability_id: String) -> void:
 	if _history_review or _submitting or _model_thinking or _director.has_beats(): return
 	if _selected_card_selector() == "one_owned_offensive_ability":
+		var card_action := _card_ability_action(ability_id)
+		if _selected_card.get("program_targeting", false):
+			if not card_action.is_empty(): _selected_card.clear(); _send(JSON.stringify(card_action))
+			return
 		if _selected_card.get("definition_id") == "strong_swing":
 			for action in _view.legal_actions:
 				var payload: Dictionary = action.get("payload", {})
@@ -2788,11 +2794,13 @@ func _on_card_pressed(card: BattleCard) -> void:
 	if _selected_card_selector() == "one_owned_offensive_ability" and _selected_card.get("instance_id") == card.instance_id:
 		_selected_card.clear(); _render(); return
 	if str(BattlePresentationCatalog.card(card.definition_id).targeting.get("selector", "")) == "card_program" and _view.stage != "discard_to_hand_limit":
-		for action in _view.legal_actions:
-			var payload: Dictionary = action.get("payload", {})
-			if card.instance_id in payload.get("card_ids", payload.get("commitment", {}).get("card_ids", [])):
-				var choice = _program_choice(payload)
-				if choice is Dictionary and choice.get("verb") == "start": _send(JSON.stringify(action)); return
+		if _selected_card.get("instance_id") == card.instance_id and _selected_card.get("program_targeting", false):
+			_cancel_program_targeting(); return
+		var targets := _program_targets(str(card.instance_id))
+		if targets.size() == 1: _send(JSON.stringify(targets[0].action)); return
+		if targets.size() > 1: _begin_program_targeting(card, targets); return
+		var start := _program_plain_start(str(card.instance_id))
+		if not start.is_empty(): _send(JSON.stringify(start))
 		return
 	if BattlePresentationCatalog.card_mechanic(card.definition_id) in ["nudge", "try_again", "call_the_mark", "steady_hand", "forked_tongue", "unquiet_hands", "widen_the_crack", "chosen_instrument", "no_safe_keep", "shared_misfortune", "rotten_numeral"] and _view.stage != "discard_to_hand_limit":
 		if _selected_card.get("instance_id") == card.instance_id and _selected_card.get("die_targeting", false):
@@ -2885,6 +2893,10 @@ func _general_source_card(definition: String) -> bool:
 func _source_card_actions(source_id: String = "") -> Array:
 	var choices: Array = []
 	if not _selected_card.get("source_targeting", false) or _history_review or _history_replay or _submitting or _model_thinking or _director.has_beats() or not _error_message.is_empty() or not _view.allowed("commit_interaction"): return choices
+	if _selected_card.get("program_targeting", false):
+		for entry in _program_targets(str(_selected_card.get("instance_id", ""))):
+			if entry.choice.get("kind") == "source" and (source_id.is_empty() or str(entry.choice.get("source", "")) == source_id): choices.append(entry.action)
+		return choices
 	for action in _view.legal_actions:
 		if action.get("type") != "commit_interaction" or action.get("actor_id") != viewer_actor_id: continue
 		var payload: Dictionary = action.get("payload", {})
@@ -3537,6 +3549,7 @@ func _configured_amount(value, rolled_face: int) -> int:
 
 func _selected_card_selector() -> String:
 	if _selected_card.is_empty(): return ""
+	if _selected_card.get("ability_targeting", false): return "one_owned_offensive_ability"
 	var definition := _view.content_definition("cards", str(_selected_card.get("definition_id", "")))
 	return str(_as_dictionary(definition.get("targeting", {})).get("selector", ""))
 
@@ -3798,6 +3811,8 @@ func _venom_choice_label(action: Dictionary) -> String:
 	var key := str(payload.get("status_id", commitment.get("choice_id", "")))
 	if key.begins_with("{"):
 		var choice: Variant = JSON.parse_string(key)
+		# Program cards carry their own readable label.
+		if choice is Dictionary and choice.has("verb"): return str(choice.get("label", "Choose"))
 		if choice is Dictionary and choice.has("kind"): return _general_choice_label(choice, action)
 	var text := "Confirm"
 	var mechanic_params: Dictionary = {}
@@ -4355,6 +4370,9 @@ func _show_curse_preparations(_parent: Control, actor_id: String) -> void:
 func _mark_choice(action: Dictionary) -> String:
 	var payload: Dictionary = action.get("payload", {})
 	var key := str(payload.get("status_id", payload.get("choice_id", payload.get("commitment", {}).get("choice_id", ""))))
+	var program := _program_choice(payload)
+	if program.has("verb") and _board_curse_actions().is_empty():
+		return "%s:%d:%d" % [_program_actor_id(str(program.get("actor", viewer_actor_id))), int(program.get("die", 0)), int(program.get("face", 0))]
 	if not _board_curse_actions().is_empty():
 		var work: Dictionary = _view.raw_snapshot.curse_choice
 		return "%s:%s:0" % [_display_actor_id(str(work.target)), key]
@@ -4372,6 +4390,10 @@ func _mark_actions() -> Array:
 	var pending := _board_curse_actions()
 	if not pending.is_empty() and _view.raw_snapshot.curse_choice.kind in ["grasp", "repaid"]: return pending
 	if not _selected_card.get("die_targeting", false) or _history_review or _history_replay or _snapshot_panel_open or _director.has_beats(): return result
+	if _selected_card.get("program_targeting", false):
+		for entry in _program_targets(str(_selected_card.get("instance_id", ""))):
+			if entry.choice.get("kind") == "offensive_die" and dice_dock(_program_actor_id(str(entry.choice.get("actor", viewer_actor_id)))) != null: result.append(entry.action)
+		return result
 	var extra_check: bool = BattlePresentationCatalog.card_mechanic(str(_selected_card.get("definition_id", ""))) in ["unquiet_hands", "widen_the_crack", "chosen_instrument"]
 	if not extra_check and _view.stage != ("planning" if BattlePresentationCatalog.card_mechanic(str(_selected_card.get("definition_id", ""))) in ["steady_hand", "nudge", "try_again"] else "offensive_reaction"): return result
 	for action in _view.legal_actions:
@@ -4432,6 +4454,7 @@ func _commit_mark_face(action: Dictionary) -> void:
 	_selected_card.clear(); _send(JSON.stringify(action))
 
 func _cancel_mark_targeting() -> void:
+	if _selected_card.get("program_targeting", false): _cancel_program_targeting(); return
 	_selected_card.clear(); _reset_auto_pass_preview(); _render()
 
 func _build_blind_check(beat: Dictionary) -> void:
@@ -4565,6 +4588,10 @@ func _build_program_choices() -> void:
 		_ability_dock.add_child(button)
 
 func _sync_program_card_selection() -> void:
+	if _selected_card.get("program_local", false):
+		# Card-first targeting lasts while its start choices remain legal.
+		if _program_targets(str(_selected_card.instance_id)).is_empty(): _selected_card.clear()
+		return
 	if _selected_card.get("program_targeting", false): _selected_card.clear()
 	for action in _view.legal_actions:
 		var payload: Dictionary = action.get("payload", {})
@@ -4574,7 +4601,82 @@ func _sync_program_card_selection() -> void:
 		for card in _view.hand_cards():
 			if str(card.instance_id) in ids:
 				_selected_card = {"instance_id": card.instance_id, "definition_id": card.definition_id, "program_targeting": true}
+				_apply_program_target_mode(_program_targets(str(card.instance_id)))
 				return
+
+# Program cards use the same board targeting as built-in cards: attacks for
+# prevention sources, dice for die effects, ability tiles for ability bonuses,
+# and a chooser for statuses, cards and options. Before a card starts, its
+# start actions carry each first target ("then"), so the player chooses or
+# cancels locally; once it has started, its live target choices are used.
+# Program choices name authority seats inside their JSON, which the gateway's
+# alias pass does not rewrite; map them with the battle's own seat record.
+func _program_actor_id(id: String) -> String:
+	var policy: Dictionary = _view.learned_policy if _view.learned_policy is Dictionary else {}
+	if id == str(policy.get("human_seat", "")): return viewer_actor_id
+	if id == str(policy.get("model_seat", "")) and _view.actors.has("goblin"): return "goblin"
+	if id == "seat-c" and _view.actors.has("goblin-2"): return "goblin-2"
+	return _display_actor_id(id)
+
+func _program_card_entries(instance_id: String) -> Array:
+	var entries: Array = []
+	for action in _view.legal_actions:
+		var payload: Dictionary = action.get("payload", {})
+		if instance_id not in payload.get("card_ids", payload.get("commitment", {}).get("card_ids", [])): continue
+		var choice := _program_choice(payload)
+		if choice.has("verb"): entries.append({"action": action, "choice": choice})
+	return entries
+
+func _program_targets(instance_id: String) -> Array:
+	var entries := _program_card_entries(instance_id)
+	var live := entries.filter(func(entry): return entry.choice.verb in ["target", "option"])
+	if not live.is_empty(): return live
+	return entries.filter(func(entry): return entry.choice.verb == "start" and not str(entry.choice.get("then", "")).is_empty())
+
+func _program_plain_start(instance_id: String) -> Dictionary:
+	for entry in _program_card_entries(instance_id):
+		if entry.choice.verb == "start" and str(entry.choice.get("then", "")).is_empty(): return entry.action
+	return {}
+
+func _program_target_mode(entries: Array) -> String:
+	for kind in ["source", "offensive_die", "ability"]:
+		if entries.any(func(entry): return entry.choice.get("kind") == kind): return kind
+	return "list"
+
+func _apply_program_target_mode(entries: Array) -> void:
+	match _program_target_mode(entries):
+		"source": _selected_card["source_targeting"] = true
+		"offensive_die": _selected_card["die_targeting"] = true
+		"ability": _selected_card["ability_targeting"] = true
+
+func _begin_program_targeting(card: BattleCard, entries: Array) -> void:
+	_error_message = ""; _selected_source = ""
+	if _program_target_mode(entries) == "list":
+		_selected_card.clear()
+		_show_venom_choices(entries.map(func(entry): return entry.action), BattlePresentationCatalog.card(card.definition_id).name)
+		return
+	_selected_card = {"instance_id": card.instance_id, "definition_id": card.definition_id, "program_targeting": true, "program_local": true}
+	_apply_program_target_mode(entries)
+	_reset_auto_pass_preview(); _render()
+
+func _cancel_program_targeting() -> void:
+	var local: bool = _selected_card.get("program_local", false)
+	var instance_id := str(_selected_card.get("instance_id", ""))
+	_selected_card.clear(); _selected_source = ""
+	if not local:
+		for entry in _program_card_entries(instance_id):
+			if entry.choice.verb == "cancel": _send(JSON.stringify(entry.action)); return
+	_reset_auto_pass_preview(); _render()
+
+func _card_ability_action(ability_id: String) -> Dictionary:
+	if _selected_card.get("program_targeting", false):
+		for entry in _program_targets(str(_selected_card.get("instance_id", ""))):
+			if entry.choice.get("kind") == "ability" and str(entry.choice.get("ability", "")) == ability_id: return entry.action
+		return {}
+	for action in _view.legal_actions:
+		var payload: Dictionary = action.get("payload", {})
+		if payload.get("ability_id") == ability_id and _selected_card.get("instance_id") in payload.get("card_ids", []): return action
+	return {}
 
 func _program_choice(payload: Dictionary) -> Dictionary:
 	var raw := str(payload.get("status_id", payload.get("commitment", {}).get("choice_id", "")))

@@ -23,6 +23,12 @@ type programChoice struct {
 	Die     int    `json:"die"`
 	Face    int    `json:"face,omitempty"`
 	Option  int    `json:"option,omitempty"`
+	// Then makes a start also choose the first step's target or option, so a
+	// client can target card-first before contacting the authority.
+	Then string `json:"then,omitempty"`
+	// Kind is the effect's target kind (source, offensive_die, ability, ...),
+	// so clients can route a choice to the matching board targeting.
+	Kind string `json:"kind,omitempty"`
 }
 
 func (c programChoice) key() string { b, _ := json.Marshal(c); return string(b) }
@@ -171,6 +177,10 @@ func programActions(b *state.Battle, lib content.BattleLibrary, actor string, p 
 			start := programCommand(b, actor, id, p, programChoice{Verb: "start", Label: "Play " + lib.Cards[b.Settled.Actors[actor].CardInstances[id].DefinitionID].Name})
 			if commandAllowed(p.AllowedCommands, start.Type) {
 				actions = append(actions, start)
+				for _, c := range programStartTargets(b, lib, actor, id) {
+					c.Then, c.Verb = c.Verb, "start"
+					actions = append(actions, programCommand(b, actor, id, p, c))
+				}
 			}
 			continue
 		}
@@ -200,6 +210,45 @@ func programActions(b *state.Battle, lib content.BattleLibrary, actor string, p 
 	}
 	return actions
 }
+
+// programSourceName is a readable "attacker · ability" for an incoming source.
+func programSourceName(b *state.Battle, lib content.BattleLibrary, src state.SettledDamageSource) string {
+	attacker := lib.Combatants[b.Actors[src.SourceActorID].DefinitionID].Name
+	if attacker == "" {
+		attacker = src.SourceActorID
+	}
+	name := lib.Abilities[src.SourceContentID].Name
+	if name == "" {
+		name = lib.Cards[src.SourceContentID].Name
+	}
+	if name == "" {
+		name = src.SourceContentID
+	}
+	return attacker + " · " + name
+}
+
+// programStartTargets lists the first step's choices when starting the card
+// would immediately ask the player to choose: an unconditional first step that
+// is not a sacrifice cost and offers more candidates than it needs.
+func programStartTargets(b *state.Battle, lib content.BattleLibrary, actor, id string) []programChoice {
+	p := lib.Cards[b.Settled.Actors[actor].CardInstances[id].DefinitionID].Program
+	if p == nil || len(p.Steps) == 0 {
+		return nil
+	}
+	s := p.Steps[0]
+	if s.Condition != nil && s.Effect != "ability_bonus" || s.Effect == "sacrifice" || s.Target.Mode == "all" {
+		return nil
+	}
+	candidates := programCandidates(b, lib, actor, id, s, nil)
+	n := 1
+	if s.Effect != "choice" && (s.Target.Mode == "exact" || s.Target.Mode == "up_to") {
+		n = s.Target.Count
+	}
+	if s.Target.Mode != "up_to" && programUniqueCount(candidates) <= n {
+		return nil
+	}
+	return candidates
+}
 func programCandidates(b *state.Battle, lib content.BattleLibrary, actor, card string, s content.CardStep, x *state.CardExecution) []programChoice {
 	if s.Effect == "choice" {
 		var out []programChoice
@@ -212,7 +261,8 @@ func programCandidates(b *state.Battle, lib content.BattleLibrary, actor, card s
 				continue
 			}
 			if b.Actors[actor].Resources.EnergyPoints >= o.Energy+baseCost {
-				out = append(out, programChoice{Verb: "option", Option: i, Label: fmt.Sprintf("%s · %d energy", o.Name, o.Energy)})
+				// Labels show the total energy this choice costs now.
+				out = append(out, programChoice{Verb: "option", Option: i, Kind: "option", Label: fmt.Sprintf("%s · %d energy", o.Name, o.Energy+baseCost)})
 			}
 		}
 		return out
@@ -228,7 +278,7 @@ func programCandidates(b *state.Battle, lib content.BattleLibrary, actor, card s
 		if name == "" {
 			name = a
 		}
-		base := programChoice{Verb: "target", Actor: a, Label: name}
+		base := programChoice{Verb: "target", Actor: a, Label: name, Kind: kind}
 		switch kind {
 		case "actor":
 			out = append(out, base)
@@ -319,7 +369,7 @@ func programCandidates(b *state.Battle, lib content.BattleLibrary, actor, card s
 				}
 				c := base
 				c.Source = src.ID
-				c.Label = fmt.Sprintf("%s · %s · %d damage", src.SourceActorID, src.SourceContentID, settledSourceAmount(src))
+				c.Label = fmt.Sprintf("%s · %d damage", programSourceName(b, lib, src), settledSourceAmount(src))
 				out = append(out, c)
 			}
 		case "threatened_card":
@@ -332,7 +382,12 @@ func programCandidates(b *state.Battle, lib content.BattleLibrary, actor, card s
 						c := base
 						c.Card = r.CardID
 						c.Source = source
-						c.Label = lib.Cards[rt.CardInstances[r.CardID].DefinitionID].Name + " · " + source
+						c.Label = "Save " + lib.Cards[rt.CardInstances[r.CardID].DefinitionID].Name
+						for _, src := range reactionDamageSources(b) {
+							if src.ID == source {
+								c.Label += " from " + programSourceName(b, lib, src)
+							}
+						}
 						out = append(out, c)
 					}
 				}
@@ -413,6 +468,13 @@ func (e Engine) handleProgramCommand(b *state.Battle, lib content.BattleLibrary,
 		}
 	}
 	id, key := programPayload(cmd)
+	// Record attack damage so prevention publishes the shared feedback event.
+	amounts := map[string]int{}
+	if batch := b.Settled.PendingDamage; batch != nil {
+		for _, s := range batch.Sources {
+			amounts[s.ID] = settledSourceAmount(s)
+		}
+	}
 	pending := b.Flow.PendingInput[actor]
 	legal := false
 	for _, action := range programActions(b, lib, actor, pending) {
@@ -444,7 +506,12 @@ func (e Engine) handleProgramCommand(b *state.Battle, lib content.BattleLibrary,
 		programSetQueue(x, def.Program.Steps)
 		rt.CardExecution = x
 		b.Settled.Actors[actor] = rt
-	} else {
+		if c.Then != "" {
+			c.Verb, c.Then = c.Then, ""
+			key = c.key()
+		}
+	}
+	if c.Verb != "start" {
 		queue := programQueue(x)
 		s := queue[0]
 		if c.Verb == "option" {
@@ -561,12 +628,36 @@ func (e Engine) handleProgramCommand(b *state.Battle, lib content.BattleLibrary,
 	}
 	b.Settled.Actors[actor] = rt
 	refreshPlanningPublicCounts(b)
-	rotateSettledPending(b, actor)
+	// A completed card is a played response: reaction windows with a priority
+	// order hand priority on, as for any other reaction card.
+	reaction := b.Settled.Stage == stageOffensiveReact || b.Settled.Stage == stageDefenseReact || b.Settled.Stage == stageDamageReact
+	if !done || !reaction || !advanceSettledReactionPriority(b, actor, true) {
+		rotateSettledPending(b, actor)
+	}
 	kind := event.Type("card_program_choice")
 	if done {
 		kind = event.TypeCardPlayed
 	}
-	events := []event.Event{settledEvent(kind, b, actor, map[string]any{"card_instance_id": id, "card_definition_id": def.ID, "program": true, "complete": done, "program_dice_changes": x.Feedback})}
+	data := map[string]any{"card_instance_id": id, "card_definition_id": def.ID, "program": true, "complete": done, "program_dice_changes": x.Feedback}
+	// Ability bonuses name their target so presentation can follow it.
+	if c.Ability != "" {
+		data["ability_id"] = c.Ability
+	}
+	var events []event.Event
+	if batch := b.Settled.PendingDamage; batch != nil {
+		for _, s := range batch.Sources {
+			if before, ok := amounts[s.ID]; ok && before != settledSourceAmount(s) {
+				prevented := map[string]any{"source_id": s.ID, "damage_before": before, "damage_after": settledSourceAmount(s), "target_actor_id": s.TargetActorID}
+				for k, v := range data {
+					prevented[k] = v
+				}
+				events = append(events, settledEvent(event.TypeDamageModified, b, actor, prevented))
+			}
+		}
+	}
+	if len(events) == 0 {
+		events = []event.Event{settledEvent(kind, b, actor, data)}
+	}
 	defeated := false
 	for actorID, a := range b.Actors {
 		cards := []state.WoundCard{}
@@ -726,7 +817,7 @@ func programRerollFace(s content.CardStep, old, next int) int {
 func applyProgramBonus(b *state.Battle, lib content.BattleLibrary, actor, id string, t programChoice, s content.CardStep) error {
 	rt := b.Settled.Actors[t.Actor]
 	def := lib.Cards[b.Settled.Actors[actor].CardInstances[id].DefinitionID]
-	statusID := content.ProgramStatusID(def.ID, s)
+	statusID := content.ProgramPreparationStatus(def.ID, s)
 	duration := content.ProgramString(s, "duration")
 	if content.ProgramString(s, "stacking") == "refresh" {
 		found := false

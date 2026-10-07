@@ -37,9 +37,9 @@ func _run() -> void:
 					await _hover(child, child.get_global_rect().get_center(), "guard-info-%d-%s" % [viewport.x, right])
 			tile.queue_free(); await process_frame
 			for boosted in [false, true]:
-				var actor := {"ability_modifiers": [], "statuses": []}
+				var actor := {"ability_modifiers": [], "statuses": [], "card_instances": {"swing-1": {"instance_id": "swing-1", "definition_id": "strong_swing"}}}
 				if boosted:
-					actor.ability_modifiers = [{"ability_id": "adventurer_small_straight", "bonus_id": "strong_swing", "status_id": "strong_swing_ready", "expires_after_offensive": true}]
+					actor.ability_modifiers = [{"ability_id": "adventurer_small_straight", "bonus_id": "strong_swing_ready", "status_id": "strong_swing_ready", "source_card_instance_id": "swing-1", "expires_after_offensive": true, "program_bonus": {"effect": "ability_bonus", "params": {"damage": 2, "duration": "offensive"}}}]
 					actor.statuses = [{"definition_id": "strong_swing_ready", "stacks": 1}]
 				var straight := BattleAbilityTile.new(); stage.add_child(straight)
 				straight.configure("adventurer_small_straight", true, false, true, actor); straight.cinematic_compact(); straight.minimal_rail()

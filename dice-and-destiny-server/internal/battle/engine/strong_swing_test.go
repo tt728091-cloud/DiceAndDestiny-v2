@@ -1,28 +1,29 @@
 package engine
 
 import (
+	"diceanddestiny/server/internal/battle/command"
 	"diceanddestiny/server/internal/battle/segment"
 	"diceanddestiny/server/internal/content"
 	"encoding/json"
 	"testing"
 )
 
-// strongSwingStatus is the visible preparation status the Strong Swing program
-// card applies; its ID is derived from the card's ability-bonus effect.
+// strongSwingStatus is the authored preparation status the Strong Swing
+// program card applies.
 func strongSwingStatus(lib content.BattleLibrary) string {
-	return content.ProgramStatusID("strong_swing", lib.Cards["strong_swing"].Program.Steps[0])
+	return content.ProgramPreparationStatus("strong_swing", lib.Cards["strong_swing"].Program.Steps[0])
 }
 func strikeChoice(c programChoice) bool { return c.Ability == "adventurer_strike" }
 
 func TestStrongSwingBeforeRollActionsAndRejection(t *testing.T) {
 	b, lib := adventurerFixture(t)
 	e := NewEngine()
-	forged := programAction(t, &b, lib, "start")
-	if id, _ := programPayload(forged); id != "strong_swing-0" {
-		for _, a := range programActions(&b, lib, "player", b.Flow.PendingInput["player"]) {
-			if id, _ := programPayload(a); id == "strong_swing-0" {
-				forged = a
-			}
+	var forged command.Command
+	for _, a := range programActions(&b, lib, "player", b.Flow.PendingInput["player"]) {
+		id, key := programPayload(a)
+		var c programChoice
+		if id == "strong_swing-0" && json.Unmarshal([]byte(key), &c) == nil && c.Verb == "start" && c.Then == "" {
+			forged = a
 		}
 	}
 	if _, err := e.handleProgramCommand(&b, lib, forged); err != nil {

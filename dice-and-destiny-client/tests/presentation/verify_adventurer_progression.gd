@@ -12,6 +12,21 @@ func _run() -> void:
 		for protect in [false, true]: await _scenario(protect)
 	print("ADVENTURER DAMAGE PROGRESSION: " + ("FAILED" if failed else "PASSED"))
 	quit(1 if failed else 0)
+func _program_equivalent(actions: Array, recorded: Dictionary) -> Array:
+	var commitment: Dictionary = recorded.get("payload", {}).get("commitment", {})
+	var cards: Array = commitment.get("card_ids", [])
+	var sources: Array = commitment.get("proposal_ids", [])
+	if cards.size() != 1 or sources.size() != 1: return []
+	var plain: Array = []
+	for action in actions:
+		var payload: Dictionary = action.get("payload", {})
+		if payload.get("commitment", {}).get("card_ids", []) != cards: continue
+		var raw := str(payload.get("commitment", {}).get("choice_id", ""))
+		var choice = JSON.parse_string(raw) if raw.begins_with("{") else null
+		if not choice is Dictionary or choice.get("verb") != "start": continue
+		if _semantic(str(choice.get("source", ""))) == _semantic(str(sources[0])): return [action]
+		if str(choice.get("then", "")).is_empty(): plain.append(action)
+	return plain
 func _scenario(protect: bool) -> void:
 	# Replay the reported battle: Guarded Strike, Guard, Brace, then enemy pass.
 	# The old full-battle tests submitted commands directly and missed GUI occlusion.
@@ -23,9 +38,19 @@ func _scenario(protect: bool) -> void:
 		if step.controller == "human":
 			var recorded: Dictionary = JSON.parse_string(JSON.stringify(step.command).replace('"seat-a"', '"blade"').replace('"seat-b"', '"goblin"'))
 			var choices: Array = result.legal_actions.filter(func(action): return _semantic(action) == _semantic(recorded))
+			# Brace is now a program card: replay its recorded play as the
+			# program start for the same card and attack.
+			if choices.is_empty(): choices = _program_equivalent(result.legal_actions, recorded)
 			if choices.size() != 1: _expect(false, "replay has one current legal match for " + str(recorded)); return
 			result = gateway.submit(JSON.stringify(choices[0]))
-		else: result = gateway.advance_model()
+		else:
+			# Any-time starter cards can now answer the offensive reaction, a
+			# decision the recording predates; decline it and let the model act.
+			while not bool(result.get("learned_policy", {}).get("model_turn", true)) and result.get("accepted", false):
+				var passes: Array = result.get("legal_actions", []).filter(func(action): return action.get("type") in ["pass", "planning_pass"])
+				if passes.is_empty(): break
+				result = gateway.submit(JSON.stringify(passes[0]))
+			result = gateway.advance_model()
 		if result.get("snapshot", {}).get("segment") == "defensive":
 			_expect(_protect_count(result.snapshot.actors.blade) == 2, "Protect is public before defense")
 		if not result.get("accepted", false): _expect(false, "replay command accepted: " + str(result.get("error"))); return

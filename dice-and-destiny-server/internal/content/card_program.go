@@ -103,7 +103,7 @@ func CardCapabilities() map[string]CardEffectSpec {
 		"reroll_defense":     {"Reroll defensive dice", "defensive_die", map[string]CardParameter{"result": choice("replace", "replace", "higher", "lower")}, []string{"defense_reaction"}},
 		"remove_status":      {"Remove statuses", "status", map[string]CardParameter{"stacks": number(0, 0, 100)}, all},
 		"apply_status":       {"Apply status", "actor", map[string]CardParameter{"status_id": {Type: "status", Default: ""}, "stacks": number(1, 1, 100)}, all},
-		"ability_bonus":      {"Add an ability bonus", "ability", map[string]CardParameter{"damage": number(2, 0, 100), "status_id": {Type: "status_optional", Default: ""}, "stacks": number(1, 1, 100), "duration": choice("offensive", "offensive", "round", "next_use", "rounds", "battle"), "rounds": number(1, 1, 100), "stack_limit": number(1, 1, 100), "stacking": choice("stack", "stack", "replace", "refresh")}, []string{"offensive_before_roll", "offensive_planning", "offensive_after_roll"}},
+		"ability_bonus":      {"Add an ability bonus", "ability", map[string]CardParameter{"damage": number(2, 0, 100), "status_id": {Type: "status_optional", Default: ""}, "stacks": number(1, 1, 100), "duration": choice("offensive", "offensive", "round", "next_use", "rounds", "battle"), "rounds": number(1, 1, 100), "stack_limit": number(1, 1, 100), "stacking": choice("stack", "stack", "replace", "refresh"), "preparation_status": {Type: "status_optional", Default: ""}}, []string{"offensive_before_roll", "offensive_planning", "offensive_after_roll"}},
 		"choice":             {"Choose an option", "none", map[string]CardParameter{}, all},
 	}
 }
@@ -343,8 +343,13 @@ func validateProgramSteps(steps []CardStep, windows []string, lib BattleLibrary,
 			return fmt.Errorf("invalid polarity")
 		}
 		for _, id := range t.StatusIDs {
-			if _, ok := lib.Statuses[id]; !ok {
+			def, ok := lib.Statuses[id]
+			if !ok {
 				return fmt.Errorf("unknown status filter %s", id)
+			}
+			// A filter outside the chosen polarity could never be targeted.
+			if (t.Polarity == "positive" || t.Polarity == "negative") && def.Polarity != t.Polarity {
+				return fmt.Errorf("status filter %s is %s, but this effect only targets %s statuses", def.Name, def.Polarity, t.Polarity)
 			}
 		}
 		for _, id := range t.ExcludeCards {
@@ -379,7 +384,7 @@ func ProgramDurationRules(s CardStep) string {
 	}
 	return ""
 }
-func programTargetWords(t CardTarget, noun string) string {
+func programTargetWords(t CardTarget, noun string, statuses map[string]BattleStatusDefinition) string {
 	count := "one"
 	switch t.Mode {
 	case "exact":
@@ -419,7 +424,15 @@ func programTargetWords(t CardTarget, noun string) string {
 		text += " with " + t.Polarity + " polarity"
 	}
 	if len(t.StatusIDs) > 0 {
-		text += " matching " + strings.Join(t.StatusIDs, ", ")
+		names := make([]string, 0, len(t.StatusIDs))
+		for _, id := range t.StatusIDs {
+			if def, ok := statuses[id]; ok && def.Name != "" {
+				names = append(names, def.Name)
+			} else {
+				names = append(names, id)
+			}
+		}
+		text += " matching " + strings.Join(names, ", ")
 	}
 	if t.Qualified {
 		text += " that currently qualify"
@@ -462,6 +475,12 @@ func ProgramConditionRules(g *RequirementGroup) string {
 	return strings.Join(parts, " and ")
 }
 func CardProgramRules(p *CardProgram) string {
+	return CardProgramRulesWithStatuses(p, nil)
+}
+
+// CardProgramRulesWithStatuses names status filters from the library; without
+// one, filters fall back to their IDs.
+func CardProgramRulesWithStatuses(p *CardProgram, statuses map[string]BattleStatusDefinition) string {
 	if p == nil {
 		return ""
 	}
@@ -469,7 +488,7 @@ func CardProgramRules(p *CardProgram) string {
 	var describe func([]CardStep, string)
 	describe = func(steps []CardStep, prefix string) {
 		for _, s := range steps {
-			target := func(noun string) string { return programTargetWords(s.Target, noun) }
+			target := func(noun string) string { return programTargetWords(s.Target, noun, statuses) }
 			text := ""
 			switch s.Effect {
 			case "curse":
@@ -571,6 +590,16 @@ func CardProgramRules(p *CardProgram) string {
 	return strings.Join(lines, "\n")
 }
 
+// ProgramPreparationStatus is the visible status an ability bonus applies: an
+// authored status when the effect names one (with its own rules and expiry
+// text), otherwise a generated per-card preparation status.
+func ProgramPreparationStatus(card string, step CardStep) string {
+	if id := ProgramString(step, "preparation_status"); id != "" {
+		return id
+	}
+	return ProgramStatusID(card, step)
+}
+
 // ProgramStatusID includes the effect parameters, avoiding collisions when a
 // card has several independently configured preparations.
 func ProgramStatusID(card string, step CardStep) string {
@@ -588,12 +617,12 @@ func PrepareProgramCard(card BattleCardDefinition, lib *BattleLibrary) BattleCar
 	if card.Play.PlayableDuring == nil {
 		card.Play.PlayableDuring = []PlayTiming{}
 	}
-	card.Presentation.RulesText = CardProgramRules(card.Program)
+	card.Presentation.RulesText = CardProgramRulesWithStatuses(card.Program, lib.Statuses)
 	card.Presentation.EffectSummary = card.Presentation.RulesText
 	var walk func([]CardStep)
 	walk = func(steps []CardStep) {
 		for _, s := range steps {
-			if s.Effect == "ability_bonus" {
+			if s.Effect == "ability_bonus" && ProgramString(s, "preparation_status") == "" {
 				id := ProgramStatusID(card.ID, s)
 				lib.Statuses[id] = BattleStatusDefinition{SchemaVersion: 1, ID: id, Name: card.Name + " preparation", Presentation: Presentation{RulesText: CardProgramRules(&CardProgram{Steps: []CardStep{s}}) + " Requires a qualified, selected ability.", Glyph: "⚔"}, ActivationMode: "automatic", Polarity: "positive", Stacking: StatusStacking{Uncapped: true, OverflowPolicy: "reject_additional_stacks"}}
 			}

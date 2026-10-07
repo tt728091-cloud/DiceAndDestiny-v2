@@ -43,7 +43,8 @@ func _scenario(base: Dictionary, count: int) -> void:
 	var actor: Dictionary = before.snapshot.actors.blade
 	actor.hand = ["left", "played", "right"]; actor.hand_count = 3; actor.deck_count = count; actor.discard_count = 4
 	actor.card_instances = {"left":{"definition_id":"brace"}, "played":{"definition_id":"take_stock"}, "right":{"definition_id":"nudge"}}
-	var action := {"type":"planning_commit_cards", "actor_id":"blade", "battle_id":before.snapshot.battle_id, "payload":{"card_ids":["played"], "pending_input_id":"draw-input"}}
+	# Take Stock is a program card with no choices: one plain start plays it.
+	var action := {"type":"planning_commit_cards", "actor_id":"blade", "battle_id":before.snapshot.battle_id, "payload":{"card_ids":["played"], "pending_input_id":"draw-input", "status_id": JSON.stringify({"verb": "start", "label": "Play Take Stock", "die": 0})}}
 	before.legal_actions = [action]; before.pending_input = {"blade":{"id":"draw-input", "input_type":"planning", "allowed_commands":["planning_commit_cards"]}}
 	var after := before.duplicate(true); after.accepted = true; after.legal_actions = []
 	after.snapshot.actors.blade.hand = ["left", "right"]; after.snapshot.actors.blade.hand_count = 2 + count

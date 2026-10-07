@@ -23,7 +23,10 @@ func _scenario(width: int) -> void:
 		var card := {}
 		for action in result.get("legal_actions", []):
 			var ids: Array = action.get("payload",{}).get("card_ids",[])
-			if ids.size() == 1 and result.snapshot.actors.blade.card_instances.get(ids[0],{}).get("definition_id") == "strong_swing" and action.payload.get("ability_id") == "adventurer_strike": card = action; break
+			# Strong Swing is a program card: its start can also choose the ability.
+			var raw := str(action.payload.get("status_id", ""))
+			var choice = JSON.parse_string(raw) if raw.begins_with("{") else null
+			if ids.size() == 1 and result.snapshot.actors.blade.card_instances.get(ids[0],{}).get("definition_id") == "strong_swing" and choice is Dictionary and choice.get("ability") == "adventurer_strike": card = action; break
 		if card.is_empty(): continue
 		result = gateway.submit(JSON.stringify(card))
 		var roll := {}

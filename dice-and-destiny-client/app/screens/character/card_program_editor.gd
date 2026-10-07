@@ -112,8 +112,18 @@ static func _filters(ui: Control, box: VBoxContainer, step: Dictionary, filters:
 		_id_filter(ui, box, target, "exclude_cards", ui.catalog.get("card_names", ui.catalog.templates).keys(), "Exclude specific cards", key)
 	if "faces" in filters: _numbers(ui, box, "Only dice showing these faces · empty = any", target.get("faces", []), func(v): target.faces = v; ui._changed(), key + ".faces", true)
 	if "polarity" in filters:
-		ui._select(box, "Status polarity", ["any", "positive", "negative"], str(target.get("polarity", "any")), func(v): target.polarity = v; ui._changed(), key + ".polarity")
-		_id_filter(ui, box, target, "status_ids", ui.catalog.statuses.keys(), "Limit to specific statuses · empty = any", key)
+		ui._select(box, "Status polarity", ["any", "positive", "negative"], str(target.get("polarity", "any")), func(v):
+			target.polarity = v
+			# Drop chosen statuses the new polarity could never target.
+			if target.has("status_ids"): target.status_ids = target.status_ids.filter(func(id): return _status_matches(ui, str(id), v))
+			ui._changed(true), key + ".polarity")
+		var polarity := str(target.get("polarity", "any"))
+		var statuses: Array = ui.catalog.statuses.keys().filter(func(id): return _status_matches(ui, str(id), polarity))
+		var names := {}
+		for id in ui.catalog.statuses: names[id] = str(ui.catalog.statuses[id].get("name", id))
+		for id in names:
+			if names.values().count(names[id]) > 1: names[id] = "%s (%s)" % [names[id], id]
+		_id_filter(ui, box, target, "status_ids", statuses, "Limit to specific statuses · empty = any", key, names)
 	if "qualified" in filters: ui._check(box, "Only abilities that currently qualify", bool(target.get("qualified", false)), func(v): target.qualified = v; ui._reconcile_windows(); ui._changed(true), key + ".qualified")
 static func _numbers(ui: Control, box: Control, title: String, value: Variant, changed: Callable, key: String, allow_empty: bool = false) -> void:
 	var text := str(value) if not value is Array else ", ".join(value.map(func(v): return str(v)))
@@ -124,14 +134,20 @@ static func _numbers(ui: Control, box: Control, title: String, value: Variant, c
 			if not part.strip_edges().is_valid_int(): changed.call(v); return
 			numbers.append(int(part.strip_edges()))
 		changed.call(numbers), key)
-static func _id_filter(ui: Control, box: VBoxContainer, target: Dictionary, field: String, values: Array, title: String, key: String) -> void:
+static func _status_matches(ui: Control, id: String, polarity: String) -> bool:
+	return polarity not in ["positive", "negative"] or str(ui.catalog.statuses.get(id, {}).get("polarity", "")) == polarity
+## labels maps IDs to display names; unlabeled IDs are shown humanized.
+static func _id_filter(ui: Control, box: VBoxContainer, target: Dictionary, field: String, values: Array, title: String, key: String, labels: Dictionary = {}) -> void:
 	var selected: Array = target.get(field, [])
 	ui._label(box, title, 14)
 	for id in selected:
-		ui._button(box, "Remove filter: " + str(id), func(): selected.erase(id); target[field] = selected; ui._changed(true), key + "." + field + ".remove." + str(id))
-	var options: Array = values.filter(func(id): return id not in selected); options.sort()
+		ui._button(box, "Remove filter: " + str(labels.get(id, id)), func(): selected.erase(id); target[field] = selected; ui._changed(true), key + "." + field + ".remove." + str(id))
+	var options: Array = values.filter(func(id): return id not in selected)
+	options.sort_custom(func(a, b): return str(labels.get(a, a)).naturalnocasecmp_to(str(labels.get(b, b))) < 0)
 	if options.is_empty(): return
 	var pick = ui._select(box, "Add filter", options, str(options[0]), func(_v): pass, key + "." + field + ".pick")
+	for i in pick.item_count:
+		if labels.has(pick.get_item_metadata(i)): pick.set_item_text(i, str(labels[pick.get_item_metadata(i)]))
 	ui._button(box, "Add selected filter", func(): selected.append(pick.get_selected_metadata()); target[field] = selected; ui._changed(true), key + "." + field + ".add")
 static func _conditions(ui: Control, box: VBoxContainer, step: Dictionary, key: String) -> void:
 	var condition: Dictionary = step.get("condition", {})

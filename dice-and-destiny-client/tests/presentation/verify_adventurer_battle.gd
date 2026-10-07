@@ -85,9 +85,21 @@ func _run() -> void:
 	print("ADVENTURER UI FULL BATTLE: " + ("FAILED" if failed else "PASSED"))
 	quit(1 if failed else 0)
 
+func _program_choice(action: Dictionary) -> Dictionary:
+	var payload: Dictionary = action.get("payload", {})
+	var raw := str(payload.get("status_id", payload.get("commitment", {}).get("choice_id", "")))
+	var parsed = JSON.parse_string(raw) if raw.begins_with("{") else null
+	return parsed if parsed is Dictionary and parsed.has("verb") else {}
 func _choose(actions: Array) -> Dictionary:
+	# Program cards: never cancel; finish a started card; prefer a start that
+	# also chooses its first target so one command completes the card.
+	var usable := actions.filter(func(action): return _program_choice(action).get("verb", "") != "cancel")
+	for action in usable:
+		if _program_choice(action).get("verb", "") in ["target", "option", "confirm"]: return action
+	for action in usable:
+		if not str(_program_choice(action).get("then", "")).is_empty() and int(card_plays.get(active_round, 0)) < 3: return action
 	for kind in ["planning_commit_cards", "commit_interaction", "planning_roll", "planning_select_ability", "roll_dice", "pass", "planning_pass"]:
-		for action in actions:
+		for action in usable:
 			if kind == "planning_commit_cards" and int(card_plays.get(active_round, 0)) >= 3: continue
 			if action.get("type") == kind: return action
 	return {}

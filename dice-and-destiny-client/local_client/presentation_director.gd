@@ -157,6 +157,8 @@ func _queue_attack_card_feedback(events: Array, snapshot: Dictionary) -> void:
 				# Revealing the attack uses its full authoritative total once.
 				var definition := BattlePresentationCatalog.definition("cards", str(bonus.get("card_definition_id", "")))
 				if _array(definition.get("operations")).any(func(operation): return operation.get("type") == "apply_ability_modifier" and operation.get("duration") == "offensive"): continue
+				var program: Dictionary = definition.get("program", {}) if definition.get("program") is Dictionary else {}
+				if _array(program.get("steps")).any(func(step): return step.get("effect") == "ability_bonus" and str(step.get("params", {}).get("duration", "offensive")) == "offensive"): continue
 				var key := "%s:%s:%s:%s" % [snapshot.get("battle_id", ""), snapshot.get("round", 0), actor_id, bonus.card_instance_id]
 				if _shown_attack_cards.has(key): continue
 				_shown_attack_cards[key] = true

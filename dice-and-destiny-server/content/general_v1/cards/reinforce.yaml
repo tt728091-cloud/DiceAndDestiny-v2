@@ -21,7 +21,7 @@
         "params": {},
         "choices": [
           {
-            "name": "Prevent 2",
+            "name": "Prevent 2 damage",
             "energy": 0,
             "steps": [
               {
@@ -40,7 +40,7 @@
             ]
           },
           {
-            "name": "Prevent 4",
+            "name": "Prevent 4 damage",
             "energy": 1,
             "steps": [
               {
@@ -68,8 +68,8 @@
   "type": "action",
   "presentation": {
     "illustration_path": "res://assets/battle/cards/emergency_ward.png",
-    "effect_summary": "Choose one option:\nPrevent 2 (+0 energy):\n  Prevent 2 damage from one of your incoming attacks. Saved cards stay in their current piles.\nPrevent 4 (+1 energy):\n  Prevent 4 damage from one of your incoming attacks. Saved cards stay in their current piles.\nPlay: Defense, any time.",
-    "rules_text": "Choose one option:\nPrevent 2 (+0 energy):\n  Prevent 2 damage from one of your incoming attacks. Saved cards stay in their current piles.\nPrevent 4 (+1 energy):\n  Prevent 4 damage from one of your incoming attacks. Saved cards stay in their current piles.\nPlay: Defense, any time.",
+    "effect_summary": "Choose one option:\nPrevent 2 damage (+0 energy):\n  Prevent 2 damage from one of your incoming attacks. Saved cards stay in their current piles.\nPrevent 4 damage (+1 energy):\n  Prevent 4 damage from one of your incoming attacks. Saved cards stay in their current piles.\nPlay: Defense, any time.",
+    "rules_text": "Choose one option:\nPrevent 2 damage (+0 energy):\n  Prevent 2 damage from one of your incoming attacks. Saved cards stay in their current piles.\nPrevent 4 damage (+1 energy):\n  Prevent 4 damage from one of your incoming attacks. Saved cards stay in their current piles.\nPlay: Defense, any time.",
     "art_key": ""
   },
   "cost": {

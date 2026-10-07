@@ -2,6 +2,7 @@ extends SceneTree
 const SCREEN = preload("res://app/screens/battle/battle_screen.tscn")
 const GATEWAY = preload("res://local_client/learned_battle/learned_battle_gateway.gd")
 const NOTICE = preload("res://presentation/battle/curse_notice.gd")
+const SELECTOR = preload("res://presentation/battle/die_face_targeting.gd")
 var failed := false
 var canvas: SubViewport
 func _initialize() -> void: call_deferred("_run")
@@ -34,11 +35,13 @@ func _run() -> void:
 	await _click_point(point); await _settle(screen)
 	_expect(screen._selected_card.get("instance_id") == id, "pointer click keeps authored card selected in hand")
 	_expect(not screen._roll_dock.visible and not screen._action_footer.get_parent().visible, "other actions hidden during card choice")
-	var buttons := screen.find_children("*", "Button", true, false).filter(func(button): return button.get_meta("program_choice", {}).get("verb") == "target")
-	_expect(buttons.size() == 5, "five actual dice offered")
-	if buttons.is_empty(): quit(1); return
+	# Program die effects target the dice on the board, card-first.
+	var selectors: Array = screen._root.get_children().filter(func(node): return node.get_script() == SELECTOR)
+	_expect(selectors.size() == 1 and selectors[0].targets.size() == 5, "five actual dice offered on the board")
+	if selectors.is_empty() or selectors[0].targets.is_empty(): quit(1); return
 	var rolls_before: int = screen._view.rolls_used("blade")
-	await _click_point(buttons[0].get_global_rect().get_center())
+	var target: Control = selectors[0].targets.values()[0]
+	await _click_point(target.get_global_rect().get_center())
 	for frame in 6: await process_frame
 	_expect(id not in screen._view.actor("blade").hand, "only selected card resolves and leaves hand")
 	_expect(screen._view.rolls_used("blade") == rolls_before, "custom reroll preserves normal attempts")

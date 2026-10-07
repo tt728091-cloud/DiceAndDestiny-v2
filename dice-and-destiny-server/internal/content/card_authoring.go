@@ -283,6 +283,10 @@ func EditableGeneralCard(c BattleCardDefinition) (BattleCardDefinition, error) {
 			s.Params["damage"] = 0
 			s.Params["duration"] = op.Duration
 			s.Params["stack_limit"] = 100
+			// Keep an authored preparation status (its rules and expiry text).
+			if op.StatusID != "" {
+				s.Params["preparation_status"] = op.StatusID
+			}
 			if op.Modifier == nil || op.Modifier.AddConditionalBonus == nil {
 				return c, fmt.Errorf("unsupported modifier")
 			}
@@ -337,7 +341,7 @@ func EditableGeneralCard(c BattleCardDefinition) (BattleCardDefinition, error) {
 				raw, _ := json.Marshal(op.Amount)
 				_ = json.Unmarshal(raw, &amount)
 				for i := 0; i < 2; i++ {
-					s.Choices = append(s.Choices, CardOption{Name: fmt.Sprintf("Prevent %d", amount+i*op.BonusAmount), Energy: i * op.ExtraEnergy, Steps: []CardStep{{Effect: "prevent", Target: target, Params: map[string]any{"amount": amount + i*op.BonusAmount, "destination": destination}}}})
+					s.Choices = append(s.Choices, CardOption{Name: fmt.Sprintf("Prevent %d damage", amount+i*op.BonusAmount), Energy: i * op.ExtraEnergy, Steps: []CardStep{{Effect: "prevent", Target: target, Params: map[string]any{"amount": amount + i*op.BonusAmount, "destination": destination}}}})
 				}
 				p.Windows = []string{"defense_selection", "defense_reaction", "damage_reaction"}
 			default:

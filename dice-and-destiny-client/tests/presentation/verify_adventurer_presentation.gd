@@ -48,8 +48,9 @@ func _targeting(size: Vector2i) -> void:
 	fixture.snapshot.stage = "planning"; fixture.snapshot.segment = "offensive"
 	fixture.snapshot.actors.blade.dice = {"pool": "offensive", "dice": _dice([1, 3, 4, 5, 6])}
 	fixture.snapshot.actors.blade.roll_history = [{"dice": _dice([1, 3, 4, 5, 6])}]
-	for choice in [2, 4]: fixture.legal_actions.append({"type": "planning_commit_cards", "actor_id": "blade", "payload": {"card_ids": ["nudge-test"], "die_index": 1, "status_id": str(choice)}})
-	fixture.legal_actions.append({"type": "planning_commit_cards", "actor_id": "blade", "payload": {"card_ids": ["reroll-test"], "die_index": 4}})
+	# Program cards: start-and-target actions carry each first die choice.
+	for face in [2, 4]: fixture.legal_actions.append(_program_start("nudge-test", {"kind": "offensive_die", "actor": "blade", "die": 1, "face": face, "label": "Adventurer · die 2: 3 → %d" % face}))
+	for die in [3, 4]: fixture.legal_actions.append(_program_start("reroll-test", {"kind": "offensive_die", "actor": "blade", "die": die, "label": "Adventurer · die %d" % (die + 1)}))
 	var recorder := Recorder.new(); var screen = _screen(fixture, recorder)
 	for frame in 5: await process_frame
 	for id in ["brace", "nudge", "try_again", "strong_swing", "take_stock", "second_wind"]:
@@ -70,15 +71,16 @@ func _targeting(size: Vector2i) -> void:
 		_expect(root.get_visible_rect().encloses(selector.panel.get_global_rect()), "face foldout fits viewport")
 		await _capture("adventurer-nudge-%d" % size.x)
 		selector.faces[0].pressed.emit(); await process_frame
-		_expect(recorder.commands.size() == 1 and recorder.commands[0].payload.status_id == "2", "Nudge sends exact legal face command")
+		_expect(recorder.commands.size() == 1 and JSON.parse_string(recorder.commands[0].payload.status_id).face == 2, "Nudge sends exact legal face command")
 	screen._error_message = ""; screen._selected_card.clear(); screen._render(); await process_frame
 	card = BattleCard.new(); card.instance_id = "reroll-test"; card.definition_id = "try_again"
 	screen._on_card_pressed(card); card.free(); await process_frame
 	selector = _selector(screen)
 	_expect(selector != null, "Try Again highlights owned dice")
 	if selector != null:
+		_expect(selector.targets.size() == 2, "Try Again highlights each legal die")
 		selector.targets["blade:4"].pressed.emit(); await process_frame
-		_expect(recorder.commands.size() == 2 and recorder.commands[1].payload.die_index == 4, "Try Again submits selected die")
+		_expect(recorder.commands.size() == 2 and int(JSON.parse_string(recorder.commands[1].payload.status_id).die) == 4, "Try Again submits selected die")
 	screen.queue_free(); await process_frame
 func _guard(size: Vector2i) -> void:
 	for faces in [[1, 4, 6], [6, 6, 6]]:
@@ -168,9 +170,7 @@ func _native_cards(gateway) -> void:
 			for action in result.get("legal_actions", []):
 				if card_id != "strong_swing" and action.get("type") == "planning_roll": result = gateway.submit(JSON.stringify(action)); break
 			if result.get("learned_policy", {}).get("model_turn", false): result = gateway.advance_model()
-			for action in result.get("legal_actions", []):
-				var ids: Array = action.get("payload", {}).get("card_ids", [])
-				if ids.size() != 1 or result.snapshot.actors.blade.card_instances.get(ids[0], {}).get("definition_id") != card_id: continue
+			for action in _complete_card_actions(result, card_id):
 				var screen = _screen(result, gateway); await process_frame
 				screen._director.clear(); screen._send(JSON.stringify(action))
 				_expect(screen._error_message.is_empty(), card_id + " native play succeeds")
@@ -181,6 +181,20 @@ func _native_cards(gateway) -> void:
 				screen.queue_free(); await process_frame; tested = true; break
 			if tested: break
 		_expect(tested, card_id + " exercised through native gateway")
+func _program_start(card: String, choice: Dictionary) -> Dictionary:
+	var start := {"verb": "start", "then": "target", "die": 0}; start.merge(choice, true)
+	return {"type": "planning_commit_cards", "actor_id": "blade", "payload": {"card_ids": [card], "status_id": JSON.stringify(start)}}
+# Program cards: prefer a start that also chooses its first target, so one
+# command completes the card; cards without choices use the plain start.
+func _complete_card_actions(result: Dictionary, card_id: String) -> Array:
+	var plain: Array = []
+	for action in result.get("legal_actions", []):
+		var ids: Array = action.get("payload", {}).get("card_ids", [])
+		if ids.size() != 1 or result.snapshot.actors.blade.card_instances.get(ids[0], {}).get("definition_id") != card_id: continue
+		var choice = JSON.parse_string(str(action.payload.get("status_id", "")))
+		if choice is Dictionary and not str(choice.get("then", "")).is_empty(): return [action]
+		plain.append(action)
+	return plain
 func _capture(label: String) -> void:
 	var dir := OS.get_environment("DICE_AND_DESTINY_ADVENTURER_SCREENSHOTS")
 	if not dir.is_empty() and DisplayServer.get_name() != "headless":

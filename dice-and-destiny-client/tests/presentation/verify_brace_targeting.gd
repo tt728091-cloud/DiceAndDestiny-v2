@@ -27,10 +27,16 @@ func _scenario(scenario: String, unified: bool = false, definition: String = "br
 	fixture.snapshot.actors.blade.energy_points = 3
 	fixture.pending_input = {"blade": {"id": "damage-input", "segment": fixture.snapshot.segment, "stage": fixture.snapshot.stage, "allowed_commands": ["commit_interaction", "pass"]}}
 	fixture.legal_actions = []; fixture.snapshot.damage_sources = []
+	var viable := 0
 	for i in (1 if scenario == "single" or scenario == "none" else 2):
 		var amount := 0 if scenario == "none" or (scenario == "one_viable" and i == 0) else 3
 		fixture.snapshot.damage_sources.append({"id": "incoming-%d" % i, "source_actor_id": "goblin-2" if scenario == "multiple_enemies" and i == 1 else "goblin", "target_actor_id": "blade", "source_content_id": "brine_lash", "base_amount": 3, "final_amount": amount})
-		fixture.legal_actions.append({"battle_id": fixture.snapshot.battle_id, "actor_id": "blade", "type": "commit_interaction", "payload": {"pending_input_id": "damage-input", "commitment": {"card_ids": ["brace-card"], "proposal_ids": ["incoming-%d" % i]}}})
+		if amount > 0: viable += 1
+	# Program prevention: a plain start, plus start-and-target per viable attack
+	# when there is more than one (card-first targeting without an authority call).
+	if viable > 0: fixture.legal_actions.append(_start_action(fixture, {}))
+	if viable > 1:
+		for i in 2: fixture.legal_actions.append(_start_action(fixture, {"then": "target", "kind": "source", "actor": "blade", "source": "incoming-%d" % i}))
 	fixture.snapshot.damage_sources.append({"id": "outgoing", "source_actor_id": "blade", "target_actor_id": "goblin", "source_content_id": "adventurer_strike", "base_amount": 2, "final_amount": 2})
 	fixture.snapshot.settled_damage = {"id": "batch", "sources": fixture.snapshot.damage_sources.duplicate(true), "removals": []}
 	for source in fixture.snapshot.damage_sources:
@@ -88,10 +94,13 @@ func _scenario(scenario: String, unified: bool = false, definition: String = "br
 		var target: Control = _heading(screen, "incoming-1") if scenario == "same_enemy" else screen._attack_intents["incoming-1"].intent
 		await _click(target.get_global_rect().get_center())
 		_expect(fake.commands.size() == 1, "clicking highlighted stack or attack submits exactly once")
-		if fake.commands.size() == 1: _expect(fake.commands[0] == JSON.stringify(fixture.legal_actions[1]), "chosen source is preserved")
+		if fake.commands.size() == 1: _expect(fake.commands[0] == JSON.stringify(fixture.legal_actions[-1]), "chosen source is preserved")
 	_expect(screen._error_message.is_empty(), "no source-first instruction or command error")
 	if not fake.commands.is_empty(): await _verify_feedback(screen, clicked_pose, scenario + "-" + definition)
 	screen.queue_free(); await process_frame
+func _start_action(fixture: Dictionary, extra: Dictionary) -> Dictionary:
+	var choice := {"verb": "start", "label": "Play Brace", "die": 0}; choice.merge(extra)
+	return {"battle_id": fixture.snapshot.battle_id, "actor_id": "blade", "type": "commit_interaction", "payload": {"pending_input_id": "damage-input", "commitment": {"card_ids": ["brace-card"], "choice_id": JSON.stringify(choice)}}}
 func _ready_hand(screen) -> void:
 	for frame in 12: await process_frame
 	screen._flow_until = 0
