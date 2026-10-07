@@ -1,5 +1,6 @@
 extends RefCounted
 
+const DARK_SURFACE := Color("282728") # RGB 40, 39, 40; opaque battle panels and controls.
 const GOLD := Color("a6987e")
 const INK := Color("211e19")
 const IVORY := Color("e9e1d1")
@@ -20,7 +21,7 @@ static func hud_lettering(control: Control, bold: bool = false) -> void:
 		font.font_weight = 700
 		control.add_theme_font_override("font", font)
 
-static func panel(fill: Color = Color("171714ed"), edge: Color = Color("756446"), padding: int = 12) -> StyleBoxFlat:
+static func panel(fill: Color = DARK_SURFACE, edge: Color = Color("756446"), padding: int = 12) -> StyleBoxFlat:
 	var style := StyleBoxFlat.new()
 	style.bg_color = fill; style.border_color = edge
 	style.set_border_width_all(1); style.set_corner_radius_all(3)
@@ -40,23 +41,23 @@ static func create() -> Theme:
 	result.set_color("font_color", "Label", IVORY)
 	result.set_color("font_shadow_color", "Label", Color("080b0f"))
 	result.set_constant("shadow_offset_x", "Label", 1); result.set_constant("shadow_offset_y", "Label", 2)
-	result.set_stylebox("panel", "PanelContainer", panel(Color("171714d9"), Color("75644650")))
+	result.set_stylebox("panel", "PanelContainer", panel(DARK_SURFACE, Color("75644650")))
 	for kind in ["Button", "CheckBox", "OptionButton"]:
 		result.set_color("font_color", kind, IVORY)
 		result.set_color("font_hover_color", kind, Color("fff0bf"))
 		result.set_color("font_pressed_color", kind, Color("fff0bf"))
 		result.set_color("font_disabled_color", kind, Color("9c9d97"))
-		result.set_stylebox("normal", kind, panel(Color("181816ef"), GOLD))
+		result.set_stylebox("normal", kind, panel(DARK_SURFACE, GOLD))
 		result.set_stylebox("hover", kind, panel(Color("34372eea"), Color("e5c47b")))
 		result.set_stylebox("pressed", kind, panel(Color("4a4230f2"), Color("f4d187")))
-		result.set_stylebox("disabled", kind, panel(Color("191917d8"), Color("625d4c")))
+		result.set_stylebox("disabled", kind, panel(DARK_SURFACE, Color("625d4c")))
 		result.set_stylebox("focus", kind, panel(Color("00000000"), Color("ffe3a0"), 0))
 	result.set_stylebox("background", "ProgressBar", panel(Color("0d1117"), GOLD, 0))
 	result.set_stylebox("fill", "ProgressBar", panel(Color("742d32"), Color("a96658"), 0))
 	var line := StyleBoxLine.new(); line.color = Color("9c855b90"); line.thickness = 1
 	result.set_stylebox("separator", "HSeparator", line)
 	result.set_stylebox("panel", "PopupPanel", panel())
-	result.set_stylebox("panel", "TooltipPanel", panel(Color("0e151afa"), GOLD, 14))
+	result.set_stylebox("panel", "TooltipPanel", panel(DARK_SURFACE, GOLD, 14))
 	result.set_font_size("font_size", "TooltipLabel", 18)
 	result.set_color("default_color", "RichTextLabel", IVORY)
 	result.set_font_size("normal_font_size", "RichTextLabel", 18)
@@ -106,3 +107,26 @@ static func roll_control_font() -> SystemFont:
 	var font := SystemFont.new()
 	font.font_names = PackedStringArray(["Times New Roman", "Noto Serif", "DejaVu Serif", "serif"])
 	return font
+
+# Tile complete bone pieces along the edges instead of stretching one shaft.
+# TILE_FIT adjusts the count to each control, keeping the corner joints fixed.
+static func bone_panel(tint: Color = Color.WHITE, padding: int = 14) -> StyleBoxTexture:
+	var style := StyleBoxTexture.new()
+	style.texture = preload("res://presentation/battle/bone_frame.svg")
+	style.axis_stretch_horizontal = StyleBoxTexture.AXIS_STRETCH_MODE_TILE_FIT
+	style.axis_stretch_vertical = StyleBoxTexture.AXIS_STRETCH_MODE_TILE_FIT
+	style.modulate_color = tint
+	for side in [SIDE_LEFT, SIDE_TOP, SIDE_RIGHT, SIDE_BOTTOM]:
+		style.set_texture_margin(side, 22)
+		style.set_content_margin(side, padding)
+	return style
+
+static func bone_health_frame() -> StyleBoxTexture:
+	var style := StyleBoxTexture.new()
+	style.texture = preload("res://presentation/battle/bone_health_frame.svg")
+	style.axis_stretch_horizontal = StyleBoxTexture.AXIS_STRETCH_MODE_TILE_FIT
+	for side in [SIDE_LEFT, SIDE_TOP, SIDE_RIGHT, SIDE_BOTTOM]:
+		style.set_texture_margin(side, 10)
+		style.set_expand_margin(side, 4)
+		style.set_content_margin(side, 0)
+	return style

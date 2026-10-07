@@ -1,41 +1,54 @@
 {
-  "schema_version": 1,
-  "id": "unquiet_hands",
-  "name": "Unquiet Hands",
-  "type": "curse_action",
-  "presentation": {
-    "rules_text": "Choose a cursed enemy die for a separate roll. A cursed face adds 1 Curse Count; a clean face adds none. No new faces are cursed. Keep its saved offensive result unchanged. Each named Curse card may be played once per player per round.",
-    "art_key": "card_unquiet_hands",
-    "effect_summary": "Choose an enemy die: Curse check → +1 Count on a cursed face. Offensive result unchanged."
-  },
+  "access_type": "curse",
   "cost": {
     "energy": 0
   },
-  "play": {
-    "source_zones": [
-      "hand"
+  "id": "unquiet_hands",
+  "mechanic": {
+    "kind": "unquiet_hands",
+    "params": {
+      "rolls": 1
+    },
+    "windows": [
+      "offensive_planning"
     ],
+    "uses_per_round": 1,
+    "uses_per_battle": 0
+  },
+  "name": "Unquiet Hands",
+  "operations": [
+    {
+      "id": "unquiet_hands",
+      "target": "self",
+      "type": "curse_card"
+    }
+  ],
+  "play": {
     "destination": "discard",
     "playable_during": [
       {
-        "segment": "offensive",
         "phase": "main",
+        "segment": "offensive",
         "window_purpose": "planning"
       }
+    ],
+    "source_zones": [
+      "hand"
     ]
   },
-  "targeting": {
-    "selector": "curse_choice",
-    "minimum": 0,
-    "maximum": 1
+  "presentation": {
+    "art_key": "card_unquiet_hands",
+    "effect_summary": "Choose an enemy die: Curse check → +1 Count on a cursed face. Offensive result unchanged.",
+    "rules_text": "Choose a cursed enemy die for a separate roll. A cursed face adds 1 Curse Count; a clean face adds none. No new faces are cursed. Keep its saved offensive result unchanged. Each named Curse card may be played once per player per round."
   },
   "reaction_window": {
     "opens": false
   },
-  "operations": [
-    {
-      "type": "curse_card",
-      "target": "self"
-    }
-  ]
+  "schema_version": 1,
+  "targeting": {
+    "maximum": 1,
+    "minimum": 0,
+    "selector": "curse_choice"
+  },
+  "type": "curse_action"
 }

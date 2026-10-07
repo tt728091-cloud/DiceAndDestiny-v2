@@ -71,8 +71,8 @@ func TestCommittedWoundsExcludeDefenseAndCardPrevention(t *testing.T) {
 		t.Fatal("clone shares wound cards")
 	}
 	restored.Status = state.BattleActive
-	if len(snapshot.FromBattleForViewer(restored, "player").Wounds) != 0 {
-		t.Fatal("full review published during ongoing battle")
+	if !reflect.DeepEqual(snapshot.FromBattleForViewer(restored, "player").Wounds, restored.Wounds) {
+		t.Fatal("committed wounds missing during ongoing battle")
 	}
 	restored.Status = state.BattleStatus("draw")
 	view := snapshot.FromBattleForViewer(restored, "player")

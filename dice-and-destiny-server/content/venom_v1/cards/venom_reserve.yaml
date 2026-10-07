@@ -1,39 +1,53 @@
 {
-  "schema_version": 1,
-  "id": "venom_reserve",
-  "name": "Venom Reserve",
-  "type": "action",
-  "presentation": {
-    "rules_text": "Pay 1 Catalyst. Gain 1 Energy. Once per round."
-  },
+  "access_type": "venom",
   "cost": {
     "energy": 0
   },
-  "play": {
-    "source_zones": [
-      "hand"
+  "id": "venom_reserve",
+  "mechanic": {
+    "kind": "venom_reserve",
+    "params": {
+      "amount": 1,
+      "cost_stacks": 1,
+      "cost_status": "catalyst"
+    },
+    "windows": [
+      "offensive_planning"
     ],
+    "uses_per_round": 1,
+    "uses_per_battle": 0
+  },
+  "name": "Venom Reserve",
+  "operations": [
+    {
+      "id": "venom_reserve",
+      "type": "venom_card"
+    }
+  ],
+  "play": {
     "destination": "discard",
     "playable_during": [
       {
-        "segment": "offensive",
         "phase": "main",
+        "segment": "offensive",
         "window_purpose": "planning"
       }
+    ],
+    "source_zones": [
+      "hand"
     ]
   },
-  "targeting": {
-    "selector": "venom_choice",
-    "minimum": 0,
-    "maximum": 1
+  "presentation": {
+    "rules_text": "Pay 1 Catalyst. Gain 1 Energy. Once per round."
   },
   "reaction_window": {
     "opens": false
   },
-  "operations": [
-    {
-      "type": "venom_card",
-      "id": "venom_reserve"
-    }
-  ]
+  "schema_version": 1,
+  "targeting": {
+    "maximum": 1,
+    "minimum": 0,
+    "selector": "venom_choice"
+  },
+  "type": "action"
 }

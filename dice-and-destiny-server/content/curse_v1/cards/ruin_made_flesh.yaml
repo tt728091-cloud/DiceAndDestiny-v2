@@ -1,41 +1,58 @@
 {
-  "schema_version": 1,
-  "id": "ruin_made_flesh",
-  "name": "Ruin Made Flesh",
-  "type": "curse_action",
-  "presentation": {
-    "rules_text": "Spend 3 or 6 enemy Curse Count to add 2 or 4 damage to your selected damaging Offensive ability against that enemy. Damage remains defendable. No refund if the ability is canceled. Each named Curse card may be played once per player per round.",
-    "art_key": "card_ruin_made_flesh",
-    "effect_summary": "Spend 3 or 6 Count for +2 or +4 attack damage."
-  },
+  "access_type": "curse",
   "cost": {
     "energy": 1
   },
-  "play": {
-    "source_zones": [
-      "hand"
+  "id": "ruin_made_flesh",
+  "mechanic": {
+    "kind": "ruin_made_flesh",
+    "params": {
+      "cost_count": 3,
+      "damage": 2,
+      "maximum_cost": 6
+    },
+    "windows": [
+      "offensive_reaction"
     ],
+    "uses_per_round": 1,
+    "uses_per_battle": 0,
+    "expiration": "offensive_exit",
+    "rounds": 1
+  },
+  "name": "Ruin Made Flesh",
+  "operations": [
+    {
+      "id": "ruin_made_flesh",
+      "target": "self",
+      "type": "curse_card"
+    }
+  ],
+  "play": {
     "destination": "discard",
     "playable_during": [
       {
-        "segment": "offensive",
         "phase": "main",
+        "segment": "offensive",
         "window_purpose": "reaction"
       }
+    ],
+    "source_zones": [
+      "hand"
     ]
   },
-  "targeting": {
-    "selector": "curse_choice",
-    "minimum": 0,
-    "maximum": 1
+  "presentation": {
+    "art_key": "card_ruin_made_flesh",
+    "effect_summary": "Spend 3 or 6 Count for +2 or +4 attack damage.",
+    "rules_text": "Spend 3 or 6 enemy Curse Count to add 2 or 4 damage to your selected damaging Offensive ability against that enemy. Damage remains defendable. No refund if the ability is canceled. Each named Curse card may be played once per player per round."
   },
   "reaction_window": {
     "opens": false
   },
-  "operations": [
-    {
-      "type": "curse_card",
-      "target": "self"
-    }
-  ]
+  "schema_version": 1,
+  "targeting": {
+    "maximum": 1,
+    "minimum": 0,
+    "selector": "curse_choice"
+  },
+  "type": "curse_action"
 }

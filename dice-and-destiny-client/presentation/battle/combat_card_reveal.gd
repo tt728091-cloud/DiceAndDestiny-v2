@@ -24,10 +24,19 @@ func _ready() -> void:
 	child_order_changed.connect(_layout_cards, CONNECT_DEFERRED)
 	resized.connect(_layout_cards)
 	mouse_exited.connect(func(): _pointer = Vector2(-99999, -99999); _clear_hover())
+func card_children() -> Array[BattleCard]:
+	# Native tooltips can attach a PopupPanel beneath this control. Only actual
+	# cards participate in ordering, reveal timing, hover, and damage feedback.
+	var cards: Array[BattleCard] = []
+	for child in get_children():
+		if child is BattleCard: cards.append(child)
+	return cards
+
 func _layout_cards() -> void:
-	custom_minimum_size.y = get_child_count() * STRIDE
-	for i in get_child_count():
-		var card: Control = get_child(i)
+	var cards := card_children()
+	custom_minimum_size.y = cards.size() * STRIDE
+	for i in cards.size():
+		var card := cards[i]
 		card.size = Vector2(maxf(106, (dock.column_width if is_instance_valid(dock) else maxf(132, size.x)) - ORIGIN_GUTTER), 248)
 		var title: Label = card.get_node("CardTitle")
 		title.autowrap_mode = TextServer.AUTOWRAP_OFF; title.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
@@ -47,12 +56,15 @@ func visible_card_rect(card: Control) -> Rect2:
 	if is_instance_valid(dock): rect = rect.intersection(dock.get_global_rect())
 	return rect
 func feedback_card_rect(card: Control) -> Rect2:
-	var rect := visible_card_rect(card)
-	if rect.has_area(): return rect
-	# Public cards outside a long stack's viewport return from its nearest edge.
-	var bounds := dock.get_global_rect()
-	var original := card.get_global_rect()
-	return Rect2(Vector2(bounds.position.x, clampf(original.position.y, bounds.position.y, bounds.end.y - STRIDE)), Vector2(original.size.x, STRIDE))
+	var rect := card.get_global_rect()
+	rect.size.y = STRIDE * get_global_transform_with_canvas().get_scale().y
+	# Animation copies always retain a whole header. Intersecting with the
+	# scroll viewport can leave only a few pixels and squash the text when that
+	# clipped rectangle is later used as the flight's scale.
+	if is_instance_valid(dock):
+		var bounds := dock.get_global_rect()
+		rect.position.y = clampf(rect.position.y, bounds.position.y, maxf(bounds.position.y, bounds.end.y - rect.size.y))
+	return rect
 
 func _gui_input(event: InputEvent) -> void:
 	if event is InputEventMouseMotion:
@@ -64,7 +76,7 @@ func _update_hover() -> void:
 	var wanted: BattleCard
 	if removal_started_ms == 0 and is_instance_valid(screen) and not screen._snapshot_panel_open:
 		var mouse := _pointer
-		for card in get_children():
+		for card in card_children():
 			var icon_rect := Rect2(get_global_transform_with_canvas() * origin_icon_rect(card).position, origin_icon_rect(card).size * get_global_transform_with_canvas().get_scale())
 			if card.modulate.a > 0.95 and icon_rect.has_point(mouse):
 				tooltip_text = "Pulled from " + {"deck": "draw pile", "discard": "discard pile", "hand": "hand"}.get(str(card.get_meta("removal_origin_zone", "")), "unknown pile")
@@ -117,9 +129,10 @@ func refresh_playback() -> void:
 		_clear_hover()
 		_tear = preload("res://presentation/battle/damage_stack_tear.gd").new()
 		screen._root.add_child(_tear); _tear.configure(self, screen, target_actor)
-	for i in get_child_count():
-		var card: Control = get_child(i)
-		var delay := 0.25 * float(i) / maxi(1, get_child_count() - 1)
+	var cards := card_children()
+	for i in cards.size():
+		var card := cards[i]
+		var delay := 0.25 * float(i) / maxi(1, cards.size() - 1)
 		var progress := clampf((elapsed - delay) / maxf(0.01, TIMING.reveal()), 0.0, 1.0)
 		card.modulate.a = 0.0 if tearing else progress
 	queue_redraw()
@@ -129,7 +142,7 @@ func origin_icon_rect(card: Control) -> Rect2:
 	return Rect2(Vector2(3, card.position.y + (STRIDE - ORIGIN_ICON_SIZE) * 0.5), Vector2.ONE * ORIGIN_ICON_SIZE)
 
 func _draw() -> void:
-	for card in get_children():
+	for card in card_children():
 		var zone := str(card.get_meta("removal_origin_zone", ""))
 		if zone not in ["deck", "discard", "hand"]: continue
 		draw_texture_rect(ICONS.texture(zone), origin_icon_rect(card), false, Color(1, 1, 1, card.modulate.a))

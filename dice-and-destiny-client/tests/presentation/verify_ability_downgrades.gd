@@ -7,6 +7,7 @@ func _run() -> void:
 	screen._tabs.current_tab = 0
 	screen.inspect_entry("abilities", "adventurer_guard")
 	for frame in 4: await process_frame
+	var starting_budget := int(screen.catalogs.adventurer.progression.total_budget)
 	await _click(_control(screen, "upgrade.adventurer_guard")); await _click(screen._purchase_confirm)
 	_expect(int(screen.catalogs.adventurer.progression.xp) == 75, "upgrade spends 25 XP")
 	var key := "downgrade.adventurer_guard_plus.adventurer_guard"
@@ -29,7 +30,7 @@ func _run() -> void:
 	_expect(screen.character.ability_board.defensive == ["adventurer_guard"], "downgrade restores base tier")
 	_expect(screen.selected_kind == "abilities" and screen.selected_id == "adventurer_guard", "inspector selects restored ability")
 	var p: Dictionary = screen.catalogs.adventurer.progression
-	_expect(int(p.xp) == 100 and int(p.upgrade_spent) == 0 and int(p.total_budget) == 220, "refund reconciles total budget")
+	_expect(int(p.xp) == 100 and int(p.upgrade_spent) == 0 and int(p.total_budget) == starting_budget, "refund reconciles total budget")
 	_expect(screen._health() == 12 and _control(screen, key) == null, "health unchanged and duplicate refund unavailable")
 	screen.queue_free(); await process_frame
 	screen = SCREEN.new(); screen.loadout_mode = "progression"; root.add_child(screen)

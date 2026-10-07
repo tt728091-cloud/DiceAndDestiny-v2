@@ -45,7 +45,7 @@ func hasVenomMechanics(b *state.Battle) bool {
 	return false
 }
 func venomActor(b *state.Battle, id string) bool {
-	return containsString(b.Settled.Actors[id].OffensiveAbilityIDs, "needlefang")
+	return b.Actors[id].Character.ID == "venom" || containsString(b.Settled.Actors[id].OffensiveAbilityIDs, "needlefang")
 }
 func stacks(b *state.Battle, actor, status string) int {
 	return statusStackCount(b.Actors[actor].Statuses, status)
@@ -196,16 +196,22 @@ func (e Engine) resolveVenomStatus(b *state.Battle, lib content.BattleLibrary) (
 			applyVenomStatus(b, lib, work.SourceActorID, state.SettledStatusApplication{TargetActorID: work.TargetActorID, StatusID: work.StatusID, Stacks: work.Stacks})
 		}
 	} else if work.Kind == "conversion" {
+		convert, gain := 1, 1
+		if work.SourceContentID != "" {
+			def := lib.Cards[work.SourceContentID]
+			convert = content.MechanicInt(def, "convert_stacks")
+			gain = content.MechanicInt(def, "gain_stacks")
+		}
 		original := true
 		if work.InstanceID != "" {
 			actor, status := findStatusInstance(b, work.InstanceID)
 			original = actor == work.TargetActorID && status == "incubation"
 		}
-		if original && stacks(b, work.TargetActorID, "poison") > 0 && stacks(b, work.TargetActorID, "volatile_poison") < 3 {
-			removeStatus(b, work.TargetActorID, "poison", 1)
-			applyStatus(b, lib, work.TargetActorID, "volatile_poison", 1)
+		if original && stacks(b, work.TargetActorID, "poison") >= convert && stacks(b, work.TargetActorID, "volatile_poison") < statusCap(lib, "volatile_poison") {
+			removeStatus(b, work.TargetActorID, "poison", convert)
+			applyStatus(b, lib, work.TargetActorID, "volatile_poison", gain)
 			if work.Accelerant {
-				rolls := captureToxins(b, lib, work.TargetActorID, []string{"volatile_poison"}, 1, false)
+				rolls := captureToxins(b, lib, work.TargetActorID, repeatStatus("volatile_poison", work.Checks), work.Checks, false)
 				if len(rolls) > 0 {
 					v.Queue = append(v.Queue, state.VenomWork{Kind: "provoke", Rolls: rolls})
 				}
@@ -229,7 +235,7 @@ func (e Engine) resolveVenomStatus(b *state.Battle, lib content.BattleLibrary) (
 			"target_actor_id": work.TargetActorID,
 			"poison_before":   poisonBefore, "poison_after": poisonAfter,
 			"volatile_before": volatileBefore, "volatile_after": volatileAfter,
-			"converted": poisonAfter == poisonBefore-1 && volatileAfter == volatileBefore+1,
+			"converted": poisonAfter < poisonBefore && volatileAfter > volatileBefore,
 		}
 	}
 	events := []event.Event{settledEvent(event.TypeProposalBatchCommitted, b, work.SourceActorID, data)}
@@ -358,15 +364,14 @@ func (e Engine) automaticCatalyst(b *state.Battle, lib content.BattleLibrary) ([
 	return nil, false, nil
 }
 
-func (e Engine) prepareVenomAttacks(b *state.Battle, lib content.BattleLibrary) {
-	if !hasVenomMechanics(b) {
-		return
-	}
+func (e Engine) prepareVenomAttacks(b *state.Battle, lib content.BattleLibrary) error {
 	v := venomRuntime(b)
 	for _, actor := range sortedSettledActorIDs(b) {
 		runtime := b.Settled.Actors[actor]
 		id := runtime.SelectedAbilityID
-		if id != "terminal_bite" && id != "fever_spike" {
+		ops, qualified := resolvedOffensiveOperations(b, lib, actor)
+		n := provokeCount(ops)
+		if !qualified || n == 0 {
 			continue
 		}
 		key := "attack:" + actor
@@ -384,25 +389,34 @@ func (e Engine) prepareVenomAttacks(b *state.Battle, lib content.BattleLibrary) 
 		if source == nil {
 			continue
 		}
-		n := 1
-		tier, _ := qualifiedTier(lib.Abilities[id], runtime.FinalDice)
-		if id == "terminal_bite" || tier.ID == "greater" {
-			n = 2
-		}
+
 		choices := runtime.SelectedToxins
 		if len(choices) == 0 {
 			choices = defaultToxins(b, source.TargetActorID, n)
 		}
 		rolls := captureToxins(b, lib, source.TargetActorID, choices, n, true)
 		v.AttackChecks[source.ID] = rolls
-		if id == "terminal_bite" {
+		if err := e.runAbilityHooks(b, lib, lib.Abilities[id], "after_provoke", actor, source.TargetActorID, source.ID, runtime.SelectedTierID, nil, false); err != nil {
+			return err
+		}
+		if id == "terminal_bite" && lib.Abilities[id].ConfigurationVersion == 0 {
 			applyStatus(b, lib, actor, "catalyst", 1)
 			if v.Used["formula:"+actor] {
 				source.BaseAmount += len(rolls)
 			}
+
+		}
+		if mechanicStacks(b, actor, "terminal_formula") > 0 {
+			def := rememberedMechanic(b, lib, actor, "terminal_formula")
+			if id == content.MechanicString(def, "ability_id") {
+				source.BaseAmount += len(rolls) * content.MechanicInt(def, "damage_per_check")
+				removeMechanicStatus(b, actor, "terminal_formula")
+			}
 		}
 	}
+	return nil
 }
+
 func venomChoiceKey(actor, choice string) string { return actor + ":" + choice }
 func parseDieChoice(choice string) (string, int, int) {
 	parts := strings.Split(choice, ":")
@@ -425,7 +439,13 @@ func commitMoltRewards(b *state.Battle, lib content.BattleLibrary, batch *state.
 			}
 			source.ReactionPrevention = reward.PriorPrevention
 			if settledSourceAmount(source) > 0 {
-				applyStatus(b, lib, reward.ActorID, "catalyst", 1)
+				status, amount := "catalyst", 1
+				if reward.CardID != "" {
+					def := lib.Cards[reward.CardID]
+					status = content.MechanicString(def, "reward_status")
+					amount = content.MechanicInt(def, "reward_stacks")
+				}
+				applyStatus(b, lib, reward.ActorID, status, amount)
 			}
 		}
 	}

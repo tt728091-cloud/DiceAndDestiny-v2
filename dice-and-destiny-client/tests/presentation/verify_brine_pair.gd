@@ -33,12 +33,12 @@ func _run() -> void:
 	screen.active_store = ActiveBattleStore.new(WorkspacePaths.persistent_file("pair-ui.json"))
 	root.add_child(screen); await process_frame; await process_frame
 	_expect(screen._view.actors.size() == 3, "three independent combatants")
-	_expect(screen._enemy_buttons.size() == 2 and screen._actor_profiles.size() == 2, "two portraits share original enemy profile")
+	_expect(screen._enemy_buttons.size() == 2 and screen._actor_profiles.size() == 3, "each combatant has an independent profile")
 	var scenery: Control = screen._root.get_node("BattleScenery")
 	var first := scenery.get_node("Fighter_enemy") as TextureRect
 	var second := scenery.get_node("Fighter_enemy_2") as TextureRect
 	_expect(first.texture == second.texture and first.texture.resource_path.ends_with("drowned_oracle/brine_mask.png"), "both requested mask sprites")
-	_expect(absf(first.position.x - second.position.x) < first.size.x and first.position != second.position, "enemies overlap in original battlefield")
+	_expect(not first.get_global_rect().intersects(second.get_global_rect()), "enemy portraits occupy distinct battlefield slots")
 	screen._enemy_buttons["goblin-2"].pressed.emit(); await process_frame
 	_expect(screen._focused_enemy == "goblin-2", "portrait selects second enemy")
 	await _capture("brine-pair-start.png")
@@ -69,7 +69,7 @@ func _run() -> void:
 					await _capture("brine-pair-defense.png")
 					screen._auto_pass_disabled = false
 		saw_damage = saw_damage or screen._view.stage == "damage_reaction"
-		if not screen._submitting and not screen._model_thinking and not screen._director.has_beats() and not screen._player_roll_active() and screen._selection_morph.is_empty() and Time.get_ticks_msec() >= screen._interaction_deadline(true) and not bool(screen._view.learned_policy.get("model_turn", false)):
+		if not screen._submitting and not screen._model_thinking and not screen._director.has_beats() and not screen._player_roll_active() and Time.get_ticks_msec() >= screen._interaction_deadline(true) and not bool(screen._view.learned_policy.get("model_turn", false)):
 			var action := _choose(screen._view.legal_actions, screen)
 			if screen._view.stage == "defense_selection":
 				var incoming: Array = screen._view.damage_sources.filter(func(source): return source.get("target_actor_id") == "blade")
@@ -79,7 +79,7 @@ func _run() -> void:
 					if not defended.has(round_id): defended[round_id] = []
 					var source_id := str(action.payload.target_ids[0])
 					_expect(source_id not in defended[round_id], "one defense per incoming attack")
-					_expect(screen._combat_columns.blade.get_children().any(func(panel): return panel.data.source_id == source_id), "defense targets one of the simultaneously visible attacks")
+					_expect(screen._incoming_attack_rows.has(source_id) and screen._incoming_attack_rows[source_id].is_visible_in_tree(), "defense targets one of the simultaneously visible attacks")
 					defended[round_id].append(source_id)
 					if defended[round_id].size() == 2: saw_two_defenses = true
 					await _capture("brine-pair-incoming.png")

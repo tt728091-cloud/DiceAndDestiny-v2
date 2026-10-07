@@ -140,6 +140,10 @@ func LoadAcceptedPolicy(path string) (*Policy, error) {
 // compatible; the exported models retain their original training metadata.
 const AutomaticEffectsContentVersion = "80449df424b039b7409372aa4f6bbb33c9f2143c72629372dda2cd2d7bbd3792"
 
+// Reviewed presentation-only update: Emergency Ward's rules text now states its
+// saved-card destination. Rules text is not a model input.
+const EmergencyWardRulesTextContentVersion = "1164005a457c69b61c3b74187671ecf8e88104580f1f5c8bbaf22fdcec0970a2"
+
 func VerifyContentVersion(contentRoot string) error {
 	paths := []string{}
 	err := filepath.Walk(filepath.Join(contentRoot, "battle_v1"), func(path string, info os.FileInfo, walkErr error) error {
@@ -170,7 +174,7 @@ func VerifyContentVersion(contentRoot string) error {
 		digest.Write(payload)
 	}
 	actual := fmt.Sprintf("%x", digest.Sum(nil))
-	if actual != AcceptedContentVersion && actual != AutomaticEffectsContentVersion {
+	if actual != AcceptedContentVersion && actual != AutomaticEffectsContentVersion && actual != EmergencyWardRulesTextContentVersion {
 		return fmt.Errorf("learned policy content version mismatch: got %s, want %s", actual, AcceptedContentVersion)
 	}
 	return nil

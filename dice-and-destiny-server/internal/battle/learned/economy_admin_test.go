@@ -105,7 +105,7 @@ func TestAdminEconomyPreservesUpgradeInvestmentAndMigrates(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if *p.Budget != 220 || p.UpgradeSpent != 25 {
+	if *p.Budget != 230 || p.UpgradeSpent != 25 {
 		t.Fatal("upgrade spending not recorded")
 	}
 	// Simulate a pre-ledger save: retain existing XP, deck and upgraded board.
@@ -121,7 +121,7 @@ func TestAdminEconomyPreservesUpgradeInvestmentAndMigrates(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if *p.Budget != 220 || p.XP != 75 || p.UpgradeSpent != 25 {
+	if *p.Budget != 230 || p.XP != 75 || p.UpgradeSpent != 25 {
 		t.Fatalf("migration changed investment: %+v", p)
 	}
 	settings := loadout.AdminSettings{CardPrices: map[string]int{"brace": 12}, Budgets: map[string]int{"adventurer": 260}}
@@ -132,12 +132,12 @@ func TestAdminEconomyPreservesUpgradeInvestmentAndMigrates(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if p.XP != 109 || p.DeckValue != 126 || p.UpgradeSpent != 25 || *p.Budget != 260 {
+	if p.XP != 101 || p.DeckValue != 134 || p.UpgradeSpent != 25 || *p.Budget != 260 {
 		t.Fatalf("upgrade revaluation failed: %+v", p)
 	}
 	// Budget reductions are also supported when all equipped investments fit.
 	settings.Revision = 1
-	settings.Budgets["adventurer"] = 151
+	settings.Budgets["adventurer"] = 159
 	if err := loadout.SaveAdmin(root, e, catalogs, settings); err != nil {
 		t.Fatal(err)
 	}
@@ -168,7 +168,7 @@ func TestAdminRepricingKeepsUpgradeAndNewCharacterBudgetConsistent(t *testing.T)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if upgraded.XP != 134 || upgraded.DeckValue != 126 || upgraded.UpgradeSpent != 0 {
+	if upgraded.XP != 122 || upgraded.DeckValue != 138 || upgraded.UpgradeSpent != 0 {
 		t.Fatalf("wrong upgraded ledger: %+v", upgraded)
 	}
 	// Simulate a newly created character while preserving the configured admin budget.
@@ -179,7 +179,7 @@ func TestAdminRepricingKeepsUpgradeAndNewCharacterBudgetConsistent(t *testing.T)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if *fresh.Budget != 260 || fresh.XP != 146 || fresh.DeckValue != 114 {
+	if *fresh.Budget != 260 || fresh.XP != 134 || fresh.DeckValue != 126 {
 		t.Fatalf("new character ignored budget: %+v", fresh)
 	}
 }

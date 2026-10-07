@@ -14,7 +14,7 @@ const TEXT := {
 	"deep_puncture": "Trade 1 attack damage\nfor +1 Poison",
 	"distill": "Poison → Volatile Poison\nSpend 1 Catalyst",
 	"emergency_molt": "Prevent 2 damage\nIf blocked, gain 1 Catalyst",
-	"emergency_ward": "Prevent 3 damage",
+	"emergency_ward": "Prevent 3 damage\nReturn saved cards to their piles",
 	"extract": "Spend 1 enemy Poison\nGain 2 Catalyst",
 	"fever_cycle": "Provoke up to 2\nenemy toxins",
 	"forked_tongue": "Change a combat die\nby +1 or −1",

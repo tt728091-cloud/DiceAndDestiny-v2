@@ -33,13 +33,10 @@ func _run() -> void:
 				var bounds := profile.get_global_rect()
 				if id != "blade":
 					var dock: Control = screen.dice_dock(id)
-					if enemies == 1:
-						var fighter: Control = profile.get_parent().fighter
-						var overlay_right: float = screen._center_scroll.get_global_rect().end.x
-						_expect(fighter.get_global_rect().position.x > overlay_right, "single enemy artwork clears defense panels")
-						_expect(bounds.position.x > overlay_right and dock.get_global_rect().position.x > overlay_right, "single enemy stats and dice clear defense panels")
-					_expect(dock.get_parent() == profile.get_parent(), "dice attach to their own fighter HUD")
-					_expect(dock.get_global_rect().position.y >= bounds.end.y, "dice sit below health, statuses and deck counts")
+					dock.expanded = true
+					for frame in 3: await process_frame
+					_expect(dock.get_parent() == screen._root, "dice have an independent fold-out dock")
+					_expect(dock.get_global_rect().end.y <= bounds.position.y, "dice sit above the enemy name")
 					_expect(root.get_visible_rect().encloses(dock.get_global_rect()), "enemy dice fit viewport")
 					_expect(not dock.get_global_rect().intersects(screen._hand_dock.get_global_rect()), "enemy dice leave room for expanded hand")
 					var tray: BattleDiceTray = dock.get_child(0)
@@ -50,7 +47,7 @@ func _run() -> void:
 						if other != id: _expect(not dock.get_global_rect().intersects(screen.dice_dock(other).get_global_rect()), "enemies keep distinct dice footprints")
 				_expect(root.get_visible_rect().encloses(bounds), "HUD fits " + str(viewport))
 				_expect(not bounds.intersects(screen._hand_dock.get_global_rect()), "HUD does not cover hand")
-				if enemies <= 4: _expect(not bounds.intersects(screen._center_scroll.get_global_rect()), "raised HUD clears combat result region")
+				_expect((screen._root.get_global_transform_with_canvas().affine_inverse() * bounds).position.y >= screen.PLAYER_ZONE_TOP if id == "blade" else (screen._root.get_global_transform_with_canvas().affine_inverse() * bounds).end.y <= screen.PLAYER_ZONE_TOP, "HUD stays in its owner zone")
 				for other in screen._actor_profiles:
 					if id != other: _expect(not bounds.intersects(screen._actor_profiles[other].get_global_rect()), "actor HUDs do not overlap: %s %s / %s %s" % [id, bounds, other, screen._actor_profiles[other].get_global_rect()])
 				for kind in ["health", "energy", "deck", "hand", "discard", "removed"]:
@@ -66,13 +63,13 @@ func _run() -> void:
 			for controls in [screen._roll_dock, screen._action_footer, screen._player_dice_dock, screen._ability_dock]:
 				_expect(not player_bounds.intersects(controls.get_global_rect()), "player HUD clears expanded cursed dice and controls")
 			var player_tray: BattleDiceTray = screen._player_dice_dock.get_child(0)
-			var player_ground: Vector2 = player_profile.get_parent().fighter.global_position
+			var player_ground: Vector2 = player_profile.get_parent().global_position
 			player_tray.display_owned([])
 			for frame in 6: await process_frame
 			_expect(player_profile.get_global_rect().is_equal_approx(player_bounds), "clearing curse grids does not move the player HUD")
 			player_tray.display_owned(fixture.snapshot.actors.blade.owned_dice)
 			for frame in 6: await process_frame
-			_expect(player_profile.get_parent().fighter.global_position.is_equal_approx(player_ground), "expanding curse grids does not move the player")
+			_expect(player_profile.get_parent().global_position.is_equal_approx(player_ground), "expanding curse grids does not move the player")
 			if enemies <= 4: await _capture("hud-%d-%dx%d" % [enemies, viewport.x, viewport.y])
 			# Movement, scaling, and a fresh root must all resolve the same actor ID.
 			var profile: ActorProfile = screen._actor_profiles.goblin

@@ -33,15 +33,13 @@ func _run() -> void:
 		for tile in screen._ability_dock.find_children("*", "Control", true, false):
 			if tile.get_meta("flow_key", "") == selected_key: original_rect = tile.get_global_rect()
 		screen._send(JSON.stringify(chosen))
-		_expect(screen._flow_transition.ghosts.has(selected_key), "selected tile retained during outcome change")
-		if screen._flow_transition.ghosts.has(selected_key):
-			_expect(screen._flow_transition.ghosts[selected_key].rect == original_rect, "transition captures the settled tile position, not an unlaid-out rebuild")
+		_expect(not screen._flow_transition.ghosts.has(selected_key), "selected tile is never detached for a flying animation")
 		_expect(screen._error_message.is_empty(), "authority accepts attack")
-		_expect(not screen._selection_morph.is_empty() and screen._selection_morph.get("text", "") not in ["Selected", "No offensive effect pending", ""], "native selected outcome is visible")
+		_expect(screen._selected_attack("blade").get("text", "") not in ["Selected", "No offensive effect pending", ""], "native selected outcome remains available")
 		var sampled := 0
 		var captured := false
 		var sampling_started := Time.get_ticks_msec()
-		while not screen._selection_morph.is_empty() or Time.get_ticks_msec() < screen._flow_until:
+		while Time.get_ticks_msec() < screen._flow_until:
 			_check_steady(screen); sampled += 1
 			if not captured and Time.get_ticks_msec() - sampling_started > 220:
 				captured = true
@@ -66,7 +64,7 @@ func _run() -> void:
 			saw_effects = saw_effects or beat == "effects_resolved"
 			if screen._view.round_number > 1 and stage == "planning" and not screen._director.has_beats(): break
 			if screen._model_error or not screen._error_message.is_empty(): break
-			if not screen._submitting and not screen._model_thinking and not screen._director.has_beats() and screen._selection_morph.is_empty() and Time.get_ticks_msec() >= screen._interaction_deadline(true):
+			if not screen._submitting and not screen._model_thinking and not screen._director.has_beats() and Time.get_ticks_msec() >= screen._interaction_deadline(true):
 				var action := {}
 				if stage == "defense_selection":
 					for legal in screen._view.legal_actions:

@@ -39,6 +39,7 @@ func capture(board: Control) -> void:
 		var rect: Rect2 = node.get_global_rect()
 		var original_size: Vector2 = node.size
 		var key := str(node.get_meta("flow_key"))
+		if key.begins_with("ability:"): continue
 		node.reparent(self, false)
 		node.set_anchors_preset(Control.PRESET_TOP_LEFT)
 		node.position = get_global_transform_with_canvas().affine_inverse() * rect.position
@@ -50,7 +51,7 @@ func capture(board: Control) -> void:
 		ghosts[key] = {"node": node, "rect": rect}
 
 func _steady_control(key: String) -> bool:
-	return key in ["HandDock", "PlayerDice", "EnemyDice", "RollControls", "BattleActionFooter"]
+	return key.begins_with("ability:") or key in ["HandDock", "PlayerDice", "EnemyDice", "RollControls", "BattleActionFooter"]
 
 func prepare(board: Control) -> void:
 	# Hide destinations before their first draw. Layout is measured next frame;
@@ -76,10 +77,6 @@ func present(board: Control) -> void:
 			if ghosts.has(key): ghosts[key].node.hide()
 			continued[key] = true
 			continue
-		if key.begins_with("ability:") and ghosts.has(key):
-			_continue_ability(ghosts[key].node, node, duration)
-			continued[key] = true
-			continue
 		if key.begins_with("source:") and ghosts.has(key) and node is PanelContainer:
 			_continue_panel(key, ghosts[key].node, node, duration)
 			continued[key] = true
@@ -99,18 +96,6 @@ func present(board: Control) -> void:
 		var tween := create_tween(); motions.append(tween)
 		tween.tween_property(item.node, "modulate:a", 0.0, duration * 0.65)
 		tween.tween_callback(item.node.queue_free)
-
-# Keep the chosen tile opaque while it moves to the top of the rail. Swap its
-# recipe for the selected result once, without overlapping two translucent tiles.
-func _continue_ability(old: Control, current: Control, duration: float) -> void:
-	current.modulate.a = 0.0
-	destinations.append({"node": current})
-	var motion := create_tween(); motions.append(motion)
-	motion.tween_property(old, "position", get_global_transform_with_canvas().affine_inverse() * current.get_global_rect().position, duration).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_IN_OUT)
-	motion.tween_callback(func():
-		if is_instance_valid(current): current.modulate.a = 1.0
-		if is_instance_valid(old): old.hide()
-	)
 
 # A source that survives a stage change keeps an opaque frame and uninterrupted
 # common text. Only outgoing/incoming contents fade. The layout can still be

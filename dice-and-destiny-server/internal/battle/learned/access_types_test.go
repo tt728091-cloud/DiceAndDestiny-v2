@@ -172,6 +172,7 @@ func TestTypeRestrictedUpgradeTargetsAndAbilityBattleConflict(t *testing.T) {
 	}
 	_, _, settings, _ = loadout.ProgressSnapshot(root, e, catalogs)
 	settings.AbilityTypes["adventurer_guard"] = "general"
+	settings.CardTypes["brace_plus"] = "general" // Shared starter now contains Brace+.
 	if err = loadout.SaveAdmin(root, e, catalogs, settings); err != nil {
 		t.Fatal(err)
 	}

@@ -848,3 +848,34 @@ func DiscardPreventedCard(battle *state.Battle, proposal *state.ProposedCardRemo
 func DefaultSelectionOrder() []operation.CardZone {
 	return []operation.CardZone{operation.ZoneDiscard, operation.ZoneDeck, operation.ZoneHand}
 }
+
+// MovePreventedCard follows live membership and never resurrects removed cards.
+func MovePreventedCard(battle *state.Battle, proposal *state.ProposedCardRemoval, destination string) {
+	if destination == "" || destination == "original" {
+		RetainPreventedCard(battle, proposal)
+		return
+	}
+	actor := battle.Actors[proposal.TargetActorID]
+	var target *[]string
+	switch destination {
+	case "hand":
+		target = &actor.Cards.Hand
+	case "deck":
+		target = &actor.Cards.Deck
+	case "discard":
+		target = &actor.Cards.Discard
+	case "removed":
+		target = &actor.Cards.Removed
+	default:
+		return
+	}
+	for _, zone := range []operation.CardZone{operation.ZoneHand, operation.ZoneDeck, operation.ZoneDiscard} {
+		if removeOneFromZone(&actor.Cards, zone, proposal.CardID) {
+			*target = append(*target, proposal.CardID)
+			battle.Actors[proposal.TargetActorID] = actor
+			proposal.ReleasedDestination = operation.CardZone(destination)
+			return
+		}
+	}
+	RetainPreventedCard(battle, proposal)
+}

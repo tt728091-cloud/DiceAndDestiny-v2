@@ -1,41 +1,63 @@
 {
-  "schema_version": 1,
-  "id": "rotten_numeral",
-  "name": "Rotten Numeral",
-  "type": "curse_action",
-  "presentation": {
-    "rules_text": "Choose a number. Mark it on up to 3 different random enemy dice missing that mark, including partly cursed dice. No replacement effect for missing eligible dice. Each named Curse card may be played once per player per round.",
-    "art_key": "card_rotten_numeral",
-    "effect_summary": "Curse one number on up to 3 dice."
-  },
+  "access_type": "curse",
   "cost": {
     "energy": 2
   },
-  "play": {
-    "source_zones": [
-      "hand"
+  "id": "rotten_numeral",
+  "mechanic": {
+    "kind": "rotten_numeral",
+    "params": {
+      "clean_only": false,
+      "dice": 3,
+      "faces": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6
+      ]
+    },
+    "windows": [
+      "offensive_planning"
     ],
+    "uses_per_round": 1,
+    "uses_per_battle": 0
+  },
+  "name": "Rotten Numeral",
+  "operations": [
+    {
+      "id": "rotten_numeral",
+      "target": "self",
+      "type": "curse_card"
+    }
+  ],
+  "play": {
     "destination": "discard",
     "playable_during": [
       {
-        "segment": "offensive",
         "phase": "main",
+        "segment": "offensive",
         "window_purpose": "planning"
       }
+    ],
+    "source_zones": [
+      "hand"
     ]
   },
-  "targeting": {
-    "selector": "curse_choice",
-    "minimum": 0,
-    "maximum": 1
+  "presentation": {
+    "art_key": "card_rotten_numeral",
+    "effect_summary": "Curse one number on up to 3 dice.",
+    "rules_text": "Choose a number. Mark it on up to 3 different random enemy dice missing that mark, including partly cursed dice. No replacement effect for missing eligible dice. Each named Curse card may be played once per player per round."
   },
   "reaction_window": {
     "opens": false
   },
-  "operations": [
-    {
-      "type": "curse_card",
-      "target": "self"
-    }
-  ]
+  "schema_version": 1,
+  "targeting": {
+    "maximum": 1,
+    "minimum": 0,
+    "selector": "curse_choice"
+  },
+  "type": "curse_action"
 }

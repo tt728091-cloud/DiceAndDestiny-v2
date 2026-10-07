@@ -94,6 +94,8 @@
           }
         ]
       }
-    ]
-  }
+    ],
+    "choose_tier": true
+  },
+  "configuration_version": 1
 }

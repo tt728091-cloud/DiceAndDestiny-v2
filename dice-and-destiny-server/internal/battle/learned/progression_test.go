@@ -12,7 +12,7 @@ import (
 	"diceanddestiny/server/internal/battle/mlsim"
 )
 
-func TestProgressionPurchasesPersistenceAndIsolation(t *testing.T) {
+func TestProgressionPurchasesPersistenceAndSharedDeck(t *testing.T) {
 	root := filepath.Join(testServerRoot(t), "content")
 	catalogs, err := CharacterCatalogs(root)
 	if err != nil {
@@ -31,15 +31,8 @@ func TestProgressionPurchasesPersistenceAndIsolation(t *testing.T) {
 		if p.XP != economy.StartingXP || p.Revision != 1 {
 			t.Fatal("missing starter allowance")
 		}
-		if id == "adventurer" && (!reflect.DeepEqual(p.Abilities.Defensive, []string{"adventurer_guard"}) || countProgress(p.Deck, "brace") != 3 || countProgress(p.Deck, "brace_plus") != 0) {
+		if id == "adventurer" && (!reflect.DeepEqual(p.Abilities.Defensive, []string{"adventurer_guard"}) || countProgress(p.Deck, "brace") != 2 || countProgress(p.Deck, "brace_plus") != 1) {
 			t.Fatalf("wrong progression starter: %+v", p)
-		}
-		if _, err = loadout.Write(dir, id, []loadout.Entry{{CardID: "tip_it", Count: 20}}, lib.Cards); err != nil {
-			t.Fatal(err)
-		}
-		same, _ := loadout.ReadProgress(dir, id, economy, lib)
-		if !reflect.DeepEqual(p, same) {
-			t.Fatal("sandbox overwrote progression")
 		}
 		p, err = loadout.Buy(dir, id, economy, lib, loadout.Purchase{Kind: "buy_card", ID: "tip_it", Revision: p.Revision, ExpectedCost: economy.Price(id, "tip_it")})
 		if err != nil {
@@ -66,7 +59,7 @@ func TestProgressionPurchasesPersistenceAndIsolation(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if countProgress(p.Deck, "brace") != 2 || countProgress(p.Deck, "brace_plus") != 1 || totalProgress(p.Deck) != beforeHealth {
+	if countProgress(p.Deck, "brace") != 1 || countProgress(p.Deck, "brace_plus") != 2 || totalProgress(p.Deck) != beforeHealth {
 		t.Fatal("upgrade did not replace exactly one card")
 	}
 	p, err = loadout.Buy(dir, "adventurer", economy, lib, loadout.Purchase{Kind: "upgrade_ability", ID: "adventurer_guard", Revision: p.Revision, ExpectedCost: 25})
@@ -258,8 +251,8 @@ func TestProgressionSellEntireStarterDeckAndRebuild(t *testing.T) {
 			if len(p.Deck) != 0 || p.XP != budget {
 				t.Fatalf("liquidation mismatch: %+v budget %d", p, budget)
 			}
-			if character == "adventurer" && budget != 220 {
-				t.Fatal("Adventurer's 120 XP starter plus 100 XP allowance must equal 220")
+			if character == "adventurer" && budget != 230 {
+				t.Fatal("Adventurer's 130 XP starter plus 100 XP allowance must equal 230")
 			}
 			reopened, err := loadout.ReadProgress(dir, character, economy, lib)
 			if err != nil || !reflect.DeepEqual(p, reopened) {
@@ -278,14 +271,14 @@ func TestProgressionSellEntireStarterDeckAndRebuild(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			if _, err = s.ResetCharacter("existing", 191, "seat-a", false, character, true); err != nil {
-				t.Fatal(err)
+			if _, err = s.ResetCharacter("empty-sandbox", 191, "seat-a", false, character, true); err == nil {
+				t.Fatal("empty sandbox battle accepted")
 			}
-			previous := s.current.Result.Snapshot
+			previous := s.current
 			if _, err = s.ResetCharacterLoadout("empty", 192, "seat-b", false, character, true, "progression"); err == nil {
 				t.Fatal("empty progression battle accepted")
 			}
-			if s.current.Result.Snapshot != previous {
+			if !reflect.DeepEqual(s.current, previous) {
 				t.Fatal("rejected empty start replaced current battle")
 			}
 			p, err = loadout.Buy(dir, character, economy, lib, loadout.Purchase{Kind: "buy_card", ID: "tip_it", Revision: p.Revision, ExpectedCost: economy.Price(character, "tip_it")})
@@ -328,7 +321,7 @@ func TestProgressionSalePriceOverridesAndStaleRequests(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if p.XP != 110 || countProgress(p.Deck, "brace_plus") != 0 {
+	if p.XP != 110 || countProgress(p.Deck, "brace_plus") != 1 {
 		t.Fatal("upgraded card did not sell at its configured purchase price")
 	}
 	if _, err = loadout.Buy(dir, "adventurer", economy, lib, sale); err == nil {
@@ -338,7 +331,7 @@ func TestProgressionSalePriceOverridesAndStaleRequests(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if p.XP != 90 || countProgress(p.Deck, "brace_plus") != 1 {
+	if p.XP != 90 || countProgress(p.Deck, "brace_plus") != 2 {
 		t.Fatal("sale and rebuy must cancel out")
 	}
 	// Concurrent sales of one owned copy can only credit once.

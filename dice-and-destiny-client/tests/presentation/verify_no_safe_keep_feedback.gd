@@ -8,7 +8,7 @@ func _initialize() -> void: call_deferred("_run")
 func _run() -> void:
 	var gateway = GATEWAY.new(root.get_node("LearnedBattleRuntime"), "seat-a", "brine-mask", "curse")
 	var before := {}; var after := {}
-	for seed_value in [153]:
+	for seed_value in range(1, 161):
 		var result: Dictionary = gateway.start_battle("no-safe-keep-%d" % seed_value, seed_value)
 		var marked := false
 		for step in 80:
@@ -67,6 +67,9 @@ func _check(before: Dictionary, after: Dictionary) -> void:
 	_expect(notice._target.size.x > 0, "trail targets actual die")
 	await _capture("flight-%d" % root.size.x)
 	notice._elapsed = notice.duration * 0.61; notice.refresh(); await process_frame
+	# This notice is manually clocked: reapply after the newly visible tray
+	# finishes its Container layout, just as its live process does each frame.
+	notice.refresh()
 	var first := tray._numbers[index].text
 	_expect("Rolling" in notice._label.text and absf(tray._buttons[index].rotation) > 0.001, "physical die tumbles")
 	await _capture("rolling-%d" % root.size.x)

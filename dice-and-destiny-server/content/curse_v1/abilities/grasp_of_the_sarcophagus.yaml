@@ -37,11 +37,28 @@
         },
         "operations": [
           {
-            "type": "curse_action",
-            "target": "selected_targets"
+            "type": "noop",
+            "target": "self"
           }
         ]
       }
     ]
-  }
+  },
+  "configuration_version": 1,
+  "hooks": [
+    {
+      "timing": "before_defense",
+      "operations": [
+        {
+          "type": "special_effect",
+          "target": "enemy",
+          "special": {
+            "kind": "entomb_choice",
+            "amount": 2,
+            "limit": 2
+          }
+        }
+      ]
+    }
+  ]
 }

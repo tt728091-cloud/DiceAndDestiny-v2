@@ -1,41 +1,63 @@
 {
-  "schema_version": 1,
-  "id": "shared_misfortune",
-  "name": "Shared Misfortune",
-  "type": "curse_action",
-  "presentation": {
-    "rules_text": "Choose a number. Mark it on up to 2 different random clean enemy dice. For each missing clean die, make one sequential Lesser Expand attempt instead. Each named Curse card may be played once per player per round.",
-    "art_key": "card_shared_misfortune",
-    "effect_summary": "Curse one number on 2 clean dice; expand for shortfalls."
-  },
+  "access_type": "curse",
   "cost": {
     "energy": 1
   },
-  "play": {
-    "source_zones": [
-      "hand"
+  "id": "shared_misfortune",
+  "mechanic": {
+    "kind": "shared_misfortune",
+    "params": {
+      "clean_only": true,
+      "dice": 2,
+      "faces": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6
+      ]
+    },
+    "windows": [
+      "offensive_planning"
     ],
+    "uses_per_round": 1,
+    "uses_per_battle": 0
+  },
+  "name": "Shared Misfortune",
+  "operations": [
+    {
+      "id": "shared_misfortune",
+      "target": "self",
+      "type": "curse_card"
+    }
+  ],
+  "play": {
     "destination": "discard",
     "playable_during": [
       {
-        "segment": "offensive",
         "phase": "main",
+        "segment": "offensive",
         "window_purpose": "planning"
       }
+    ],
+    "source_zones": [
+      "hand"
     ]
   },
-  "targeting": {
-    "selector": "curse_choice",
-    "minimum": 0,
-    "maximum": 1
+  "presentation": {
+    "art_key": "card_shared_misfortune",
+    "effect_summary": "Curse one number on 2 clean dice; expand for shortfalls.",
+    "rules_text": "Choose a number. Mark it on up to 2 different random clean enemy dice. For each missing clean die, make one sequential Lesser Expand attempt instead. Each named Curse card may be played once per player per round."
   },
   "reaction_window": {
     "opens": false
   },
-  "operations": [
-    {
-      "type": "curse_card",
-      "target": "self"
-    }
-  ]
+  "schema_version": 1,
+  "targeting": {
+    "maximum": 1,
+    "minimum": 0,
+    "selector": "curse_choice"
+  },
+  "type": "curse_action"
 }

@@ -1,39 +1,52 @@
 {
-  "schema_version": 1,
-  "id": "culture_flask",
-  "name": "Culture Flask",
-  "type": "action",
-  "presentation": {
-    "rules_text": "Gain 2 Catalyst, up to cap 3."
-  },
+  "access_type": "venom",
   "cost": {
     "energy": 1
   },
-  "play": {
-    "source_zones": [
-      "hand"
+  "id": "culture_flask",
+  "mechanic": {
+    "kind": "culture_flask",
+    "params": {
+      "stacks": 2,
+      "status_id": "catalyst"
+    },
+    "windows": [
+      "offensive_planning"
     ],
+    "uses_per_round": 0,
+    "uses_per_battle": 0
+  },
+  "name": "Culture Flask",
+  "operations": [
+    {
+      "id": "culture_flask",
+      "type": "venom_card"
+    }
+  ],
+  "play": {
     "destination": "discard",
     "playable_during": [
       {
-        "segment": "offensive",
         "phase": "main",
+        "segment": "offensive",
         "window_purpose": "planning"
       }
+    ],
+    "source_zones": [
+      "hand"
     ]
   },
-  "targeting": {
-    "selector": "venom_choice",
-    "minimum": 0,
-    "maximum": 1
+  "presentation": {
+    "rules_text": "Gain 2 Catalyst, up to cap 3."
   },
   "reaction_window": {
     "opens": false
   },
-  "operations": [
-    {
-      "type": "venom_card",
-      "id": "culture_flask"
-    }
-  ]
+  "schema_version": 1,
+  "targeting": {
+    "maximum": 1,
+    "minimum": 0,
+    "selector": "venom_choice"
+  },
+  "type": "action"
 }

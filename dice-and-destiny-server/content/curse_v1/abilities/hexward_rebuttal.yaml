@@ -78,5 +78,21 @@
       "opens": true,
       "pass_required": true
     }
-  }
+  },
+  "configuration_version": 1,
+  "hooks": [
+    {
+      "timing": "after_defense",
+      "operations": [
+        {
+          "type": "special_effect",
+          "target": "enemy",
+          "special": {
+            "kind": "curse",
+            "amount": 1
+          }
+        }
+      ]
+    }
+  ]
 }

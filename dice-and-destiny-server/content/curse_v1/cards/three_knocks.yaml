@@ -1,41 +1,56 @@
 {
-  "schema_version": 1,
-  "id": "three_knocks",
-  "name": "Three Knocks",
-  "type": "curse_action",
-  "presentation": {
-    "rules_text": "Apply Three Knocks, a negative status with a stack limit of 1. At the next Effects, every group of 3 Curse Count converted to damage deals 2 instead of 1. Expires then, even if conversion is skipped or fewer than 3 Count remain. Each named Curse card may be played once per player per round.",
-    "art_key": "card_three_knocks",
-    "effect_summary": "Next Effects: 2 damage per 3 Count."
-  },
+  "access_type": "curse",
   "cost": {
     "energy": 1
   },
-  "play": {
-    "source_zones": [
-      "hand"
+  "id": "three_knocks",
+  "mechanic": {
+    "kind": "three_knocks",
+    "params": {
+      "multiplier": 2
+    },
+    "windows": [
+      "offensive_planning"
     ],
+    "uses_per_round": 1,
+    "uses_per_battle": 0,
+    "expiration": "next_ongoing",
+    "rounds": 1
+  },
+  "name": "Three Knocks",
+  "operations": [
+    {
+      "id": "three_knocks",
+      "target": "self",
+      "type": "curse_card"
+    }
+  ],
+  "play": {
     "destination": "discard",
     "playable_during": [
       {
-        "segment": "offensive",
         "phase": "main",
+        "segment": "offensive",
         "window_purpose": "planning"
       }
+    ],
+    "source_zones": [
+      "hand"
     ]
   },
-  "targeting": {
-    "selector": "curse_choice",
-    "minimum": 0,
-    "maximum": 1
+  "presentation": {
+    "art_key": "card_three_knocks",
+    "effect_summary": "Next Effects: 2 damage per 3 Count.",
+    "rules_text": "Apply Three Knocks, a negative status with a stack limit of 1. At the next Effects, every group of 3 Curse Count converted to damage deals 2 instead of 1. Expires then, even if conversion is skipped or fewer than 3 Count remain. Each named Curse card may be played once per player per round."
   },
   "reaction_window": {
     "opens": false
   },
-  "operations": [
-    {
-      "type": "curse_card",
-      "target": "self"
-    }
-  ]
+  "schema_version": 1,
+  "targeting": {
+    "maximum": 1,
+    "minimum": 0,
+    "selector": "curse_choice"
+  },
+  "type": "curse_action"
 }

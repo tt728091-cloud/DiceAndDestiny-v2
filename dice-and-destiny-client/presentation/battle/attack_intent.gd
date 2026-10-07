@@ -16,6 +16,8 @@ var attacker_id := ""
 var fighter_target: Button
 var _tooltip_damage := ""
 var _card_target_hint := ""
+var target_heading: Button
+var incoming_row: Button
 
 func attach_to_battlefield(owner_screen: Control, attack_source: Dictionary) -> void:
 	screen = owner_screen; source = attack_source; attacker_id = str(source.get("source_actor_id", ""))
@@ -28,17 +30,21 @@ func attach_to_battlefield(owner_screen: Control, attack_source: Dictionary) -> 
 	add_theme_stylebox_override("panel", StyleBoxEmpty.new())
 	for child in _body.get_children(): child.hide()
 	intent = INTENT_BUTTON.new(); intent.name = "AttackIntent_" + str(data.source_id)
+	# Enemy profiles are attached later in the board rebuild. Never expose the
+	# default origin while waiting for that anchor, even for a single frame.
+	intent.hide()
 	screen._root.add_child(intent); intent.z_index = 8
 	intent.custom_minimum_size = Vector2(70, 44)
 	intent.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
-	intent.disabled = bool(data.read_only) or str(data.actor_id) != screen.viewer_actor_id
+	var can_protect: bool = not screen._source_protection_action(str(data.source_id)).is_empty() and not screen._submitting and not screen._history_review and not screen._model_thinking
+	intent.disabled = (bool(data.read_only) and not can_protect) or str(data.actor_id) != screen.viewer_actor_id
 	intent.tooltip_text = _ability_tooltip()
 	intent.set_meta("inspection_id", "battle.source." + str(data.source_id))
 	intent.pressed.connect(func():
 		if not screen._selected_card.get("source_targeting", false): source_selected.emit(str(data.source_id))
 	)
 	for state in ["normal", "hover", "pressed", "disabled", "focus"]:
-		var style := INK.panel(Color("17131d55") if state == "normal" else Color("67562b99") if state in ["hover", "pressed"] else Color.TRANSPARENT, Color("efcd80") if state == "focus" or screen._selected_source == str(data.source_id) else Color.TRANSPARENT, 4)
+		var style := INK.bone_panel(Color("ffe1a6") if state in ["hover", "pressed", "focus"] or screen._selected_source == str(data.source_id) else Color.WHITE, 8)
 		intent.add_theme_stylebox_override(state, style)
 	intent_row = HBoxContainer.new(); intent_row.add_theme_constant_override("separation", 5)
 	intent.add_child(intent_row); intent_row.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -75,25 +81,38 @@ func attach_to_battlefield(owner_screen: Control, attack_source: Dictionary) -> 
 	if int(data.prevented) > 0: _add_icon("block", "%s: prevents %d damage" % [data.ability_name, data.prevented])
 	attack_origin.remove_meta("inspection_id")
 	attack_origin = intent
-	if not intent.disabled and (screen._view.stage == "defense_selection" or screen._early_defense_available()) and not screen._attack_intents.values().any(func(other): return other.attacker_id == attacker_id and is_instance_valid(other.fighter_target)):
+	if not intent.disabled and (screen._view.stage == "defense_selection" or screen._early_defense_available() or can_protect) and not screen._attack_intents.values().any(func(other): return other.attacker_id == attacker_id and is_instance_valid(other.fighter_target)):
 		fighter_target = INTENT_BUTTON.new(); fighter_target.name = "SelectAttacker_" + attacker_id
 		screen._root.add_child(fighter_target); fighter_target.flat = true
 		fighter_target.tooltip_text = intent.tooltip_text
 		fighter_target.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
 		fighter_target.set_meta("inspection_id", "battle.attacker." + attacker_id)
-		fighter_target.pressed.connect(func(): source_selected.emit(str(data.source_id)))
+		fighter_target.pressed.connect(func():
+			if not intent.disabled: intent.pressed.emit()
+		)
+		screen._root.move_child(intent, -1)
 		for state in ["normal", "hover", "pressed", "focus"]: fighter_target.add_theme_stylebox_override(state, StyleBoxEmpty.new())
 	roll_area = Control.new(); roll_area.name = "DefenseRoll_" + str(data.source_id); roll_area.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	screen._root.add_child(roll_area); roll_area.z_index = 12
 	for i in dice_controls.size():
 		var cell: Control = dice_controls[i].get_parent()
 		cell.reparent(roll_area, false); cell.show(); roll_cells.append(cell)
-		cell.custom_minimum_size = Vector2(104, 104); cell.size = Vector2(104, 104)
-		dice_controls[i].custom_minimum_size = Vector2(64, 64)
-		dice_controls[i].size_flags_horizontal = Control.SIZE_SHRINK_CENTER
-		benefit_labels[i].custom_minimum_size.x = 104
+		var player_die: bool = str(data.actor_id) == screen.viewer_actor_id
+		cell.custom_minimum_size = Vector2(56, 94) if player_die else Vector2(104, 104)
+		dice_controls[i].custom_minimum_size = BattleDiceTray.HUD_DIE_SIZE if player_die else Vector2(64, 64)
+		if player_die: dice_controls[i].add_theme_font_size_override("font_size", 18)
+		dice_controls[i].size_flags_horizontal = Control.SIZE_SHRINK_BEGIN if player_die else Control.SIZE_SHRINK_CENTER
+		benefit_labels[i].custom_minimum_size.x = 56 if player_die else 104
+		if player_die:
+			benefit_labels[i].add_theme_font_size_override("font_size", 12)
+			benefit_labels[i].max_lines_visible = 2
+			benefit_labels[i].text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+			benefit_labels[i].tooltip_text = benefit_labels[i].text
 		benefit_labels[i].autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 		INK.hud_lettering(benefit_labels[i])
+		# Configure wrapping before sizing: an unwrapped benefit can otherwise
+		# impose its full sentence width, which Containers retain after it wraps.
+		cell.size = cell.custom_minimum_size
 	# Fixed benefits and Curse follow-ups originate at the same landing area.
 	effect_origin.reparent(roll_area, false); effect_origin.show()
 	effect_origin.text = str(data.ability_name) if not bool(data.get("selection_only", false)) else ""
@@ -103,6 +122,23 @@ func attach_to_battlefield(owner_screen: Control, attack_source: Dictionary) -> 
 		if origin == effect_origin: continue
 		origin.reparent(roll_area, false); origin.show(); INK.hud_lettering(origin)
 	_update()
+
+## The recipient's pending-loss heading replaces the player's duplicate badge.
+## Keep this presenter alive for its defense clocks, rules and effect anchors.
+func use_target_heading(heading: Button) -> void:
+	target_heading = heading
+	intent.hide()
+	attack_origin = heading
+	_refresh_target_heading()
+
+func _refresh_target_heading() -> void:
+	if not is_instance_valid(target_heading): return
+	target_heading.text = "%s · %s" % [damage.text, data.attack_name]
+	target_heading.tooltip_text = _ability_tooltip()
+
+func attack_damage_rect() -> Rect2:
+	if is_instance_valid(incoming_row): return incoming_row.damage_rect()
+	return target_heading.get_global_rect() if is_instance_valid(target_heading) else super.attack_damage_rect()
 
 func _add_icon(id: String, hint: String) -> void:
 	var icon := TextureRect.new(); icon.texture = ICONS.texture(id)
@@ -118,7 +154,7 @@ func _add_count(value: String, hint: String = "") -> void:
 func highlight_card_target(description: String) -> Button:
 	intent.disabled = false; _card_target_hint = description; intent.tooltip_text = _ability_tooltip()
 	intent.set_meta("inspection_id", "battle.card_target." + str(data.source_id))
-	intent.add_theme_stylebox_override("normal", INK.panel(Color("9a713366"), Color("ffe49c"), 4))
+	intent.add_theme_stylebox_override("normal", INK.bone_panel(Color("ffe49c"), 8))
 	# A separate signal connection is used by the screen for the card action.
 	return intent
 
@@ -145,19 +181,47 @@ func _update() -> void:
 		_tooltip_damage = damage.text
 		intent.tooltip_text = _ability_tooltip()
 		if is_instance_valid(fighter_target): fighter_target.tooltip_text = intent.tooltip_text
+	_refresh_target_heading()
+	if is_instance_valid(incoming_row): incoming_row.refresh()
 	var profile: ActorProfile = screen._actor_profiles.get(attacker_id)
-	if profile == null or not is_instance_valid(profile.get_parent().fighter): return
-	var fighter: Control = profile.get_parent().fighter
+	if profile == null:
+		intent.hide()
+		return
+	var fighter: Control = profile.get_parent().fighter if is_instance_valid(profile.get_parent().fighter) else profile
 	var inverse: Transform2D = screen._root.get_global_transform_with_canvas().affine_inverse()
 	var rect: Rect2 = inverse * fighter.get_global_rect()
-	var minimum := intent_row.get_combined_minimum_size() + Vector2(12, 8)
+	var minimum := intent_row.get_combined_minimum_size() + Vector2(24, 16)
 	intent.size = Vector2(maxf(70, minimum.x), maxf(44, minimum.y))
-	intent.position = Vector2(clampf(rect.get_center().x - intent.size.x * 0.5, 16, 1904 - intent.size.x), maxf(16, rect.position.y - intent.size.y - 12) + actor_slot * 48)
-	intent_row.position = Vector2(6, 4); intent_row.size = intent.size - Vector2(12, 8)
+	intent.position = Vector2(clampf(rect.get_center().x - intent.size.x * 0.5, 16, 1904 - intent.size.x), maxf(screen.TOP_HUD_BOTTOM, rect.position.y - intent.size.y - 12) + actor_slot * 58)
+	# Tall silhouettes use the space beside their head, keeping the compact
+	# top bar and the enemy artwork clear. Each source retains its own row.
+	if attacker_id != screen.viewer_actor_id and intent.position.y + intent.size.y > rect.position.y:
+		intent.position.x = maxf(16, rect.position.x - intent.size.x - 8)
+	intent_row.position = Vector2(12, 8); intent_row.size = intent.size - Vector2(24, 16)
 	if str(data.source_id) == screen._selected_source: screen._layout_defense_choices()
 	if is_instance_valid(fighter_target):
 		fighter_target.position = rect.position; fighter_target.size = rect.size
-	var landing := Vector2(570 + (slot % 4) * 225, (800 if screen._enemy_ids().size() >= 3 else 570) + (slot / 4) * 125)
+	# Only the latest defense for each actor occupies its dice station.
+	var selected: String = screen.defense_station_source(str(data.actor_id))
+	roll_area.visible = not bool(data.get("selection_only", false)) and selected == str(data.source_id)
+	var landing: Vector2 = screen.DEFENSE_DICE_ORIGIN
+	if str(data.actor_id) != screen.viewer_actor_id:
+		var defender: Control = screen._actor_profiles.get(str(data.actor_id))
+		if is_instance_valid(defender):
+			var defender_rect: Rect2 = inverse * defender.get_global_rect()
+			var dock: Control = screen.dice_dock(str(data.actor_id))
+			# Revealed defense rolls are always visible. The optional offensive
+			# tray gets its own row without moving the actor's name or health.
+			var bottom := (inverse * dock.get_global_rect()).position.y if is_instance_valid(dock) and dock.visible else defender_rect.position.y
+			var width := maxf(104, roll_cells.size() * 108 - 4)
+			landing = Vector2(defender_rect.get_center().x - width * 0.5, bottom - 112)
+	# Outgoing attacks stay beside the player's stats, without a player sprite.
+	if attacker_id == screen.viewer_actor_id:
+		intent.position = Vector2(478 + actor_slot * 230, 710)
+	# Only reveal an anchored enemy badge. Outgoing damage belongs exclusively
+	# to the recipient's pending-card heading throughout every phase handoff.
+	intent.visible = attacker_id != screen.viewer_actor_id and not is_instance_valid(target_heading)
+
 	# Card reveal containers stay in the open battlefield, never on the intent.
 	if not bool(data.get("reveal_cards", false)):
 		position = Vector2(570 + (slot % 2) * 460, 500 + (slot / 2) * 145)
@@ -167,27 +231,46 @@ func _update() -> void:
 	if bool(data.get("awaiting_roll", false)): t = fmod(t, 0.9)
 	for i in roll_cells.size():
 		var cell := roll_cells[i]
-		var finish := landing + Vector2(i * 108, 0)
-		var launch := Vector2(450 if str(data.actor_id) == screen.viewer_actor_id else 1420, 410 + (slot % 3) * 28)
-		cell.position = launch.lerp(finish, 1.0 - pow(1.0 - t, 2)) - Vector2(0, absf(sin(t * PI * 3)) * 65 * (1.0 - t))
-		dice_controls[i].rotation = (1.0 - t) * TAU * (1 if i % 2 == 0 else -1)
-		dice_controls[i].scale = Vector2.ONE * (1.0 + sin(t * PI) * 0.15)
-	effect_origin.position = landing + Vector2(0, -32)
-	effect_origin.modulate.a = 0.0 if t < 1.0 else 1.0
+		dice_controls[i].show()
+		cell.custom_minimum_size.y = 94 if str(data.actor_id) == screen.viewer_actor_id else 104
+		cell.size = cell.custom_minimum_size
+		var finish := landing + Vector2(i * (62 if str(data.actor_id) == screen.viewer_actor_id else 108), 0)
+		cell.position = finish
+		# The authoritative faces cycle in place; no travel, spin, or bounce.
+		dice_controls[i].rotation = 0
+		dice_controls[i].scale = Vector2.ONE
+
+	# Leave a gap below a two-line benefit, while keeping the name above the
+	# incoming-attack list. The old 94px offset overlapped wrapped captions.
+	effect_origin.size = Vector2(220, 22 if str(data.actor_id) == screen.viewer_actor_id else 28)
+	effect_origin.position = landing + Vector2(0, 101 if str(data.actor_id) == screen.viewer_actor_id else -32)
+	if str(data.actor_id) != screen.viewer_actor_id:
+		# Identify the defense while its faces cycle; per-die prevention stays
+		# hidden until landing on the shared roll/effects clock.
+		effect_origin.position.x += (maxf(104, roll_cells.size() * 108 - 4) - effect_origin.size.x) * 0.5
+		effect_origin.modulate.a = 1.0
+	else:
+		effect_origin.modulate.a = 0.0 if t < 1.0 else 1.0
 	for i in gain_origins.size():
 		var origin: Label = gain_origins[i]
-		if origin not in benefit_labels and origin != effect_origin: origin.position = landing + Vector2(0, 80 + i * 25)
+		if origin not in benefit_labels and origin != effect_origin: origin.position = landing + Vector2(0, (112 if str(data.actor_id) == screen.viewer_actor_id else -60) + i * 25)
+
+	if is_instance_valid(incoming_row): screen._layout_incoming_attack_list()
+
+func _prevention_origin(index: int) -> Control:
+	return dice_controls[index] if dice_controls[index].is_visible_in_tree() else benefit_labels[index]
 
 func _draw() -> void:
+	if is_instance_valid(roll_area) and not roll_area.visible: return
 	super._draw()
-	if not is_instance_valid(intent) or not dice_controls.is_empty() or int(data.get("prevented", 0)) <= 0 or data.get("effects_pending", false): return
+	if not is_instance_valid(intent) or not dice_controls.is_empty() or int(data.get("prevented", 0)) <= 0 or data.get("effects_pending", false) or data.get("damage_pending", false): return
 	var elapsed := (Time.get_ticks_msec() - started_ms) / 1000.0
 	var effects := maxf(0, elapsed - TIMING.roll_seconds()) / TIMING.effects_seconds()
 	var t := clampf((effects - 0.2) / 0.45, 0, 1)
 	if t <= 0 or t >= 1: return
 	var inverse := get_global_transform_with_canvas().affine_inverse()
 	var start := inverse * effect_origin.get_global_rect().get_center()
-	var end := inverse * damage.get_global_rect().get_center()
+	var end := inverse * attack_damage_rect().get_center()
 	var points := PackedVector2Array()
 	for step in 20:
 		var p := lerpf(maxf(0, t - 0.4), t, step / 19.0)

@@ -39,10 +39,14 @@ func (e Engine) nextCurseWork(b *state.Battle, lib content.BattleLibrary) ([]eve
 		c.Active = &w
 		switch w.Kind {
 		case "grasp":
-			if err := e.applyCurse(b, lib, w.Target, w.CardID, 2); err != nil {
+			amount, limit := 2, 2
+			if w.Configured {
+				amount, limit = w.Amount, w.Limit
+			}
+			if err := e.applyCurse(b, lib, w.Target, w.CardID, amount); err != nil {
 				return nil, err
 			}
-			if len(entombedIndices(b, w.Target)) < 2 {
+			if len(entombedIndices(b, w.Target)) < limit {
 				for _, i := range curseDice(b, w.Target, "unbound") {
 					w.Options = append(w.Options, fmt.Sprint(i))
 				}
@@ -57,7 +61,11 @@ func (e Engine) nextCurseWork(b *state.Battle, lib content.BattleLibrary) ([]eve
 				}
 			}
 			if len(w.Options) == 0 {
-				if _, err := e.rollOwnedSubset(b, lib, w.Target, w.CardID, allOwned(b, w.Target), 5); err != nil {
+				amount := 5
+				if w.Configured {
+					amount = w.Amount
+				}
+				if _, err := e.rollOwnedSubset(b, lib, w.Target, w.CardID, allOwned(b, w.Target), amount); err != nil {
 					return nil, err
 				}
 			}
@@ -67,7 +75,8 @@ func (e Engine) nextCurseWork(b *state.Battle, lib content.BattleLibrary) ([]eve
 				return nil, err
 			}
 			w.Face = d.Face
-			for _, face := range []int{d.Face - 1, d.Face + 1} {
+			for _, delta := range content.MechanicInts(lib.Cards[w.CardID], "deltas") {
+				face := d.Face + delta
 				if face >= 1 && face <= 6 && !containsInt(c.Dice[w.Target][w.Die].CursedFaces, face) {
 					w.Options = append(w.Options, fmt.Sprint(face))
 				}
@@ -80,7 +89,7 @@ func (e Engine) nextCurseWork(b *state.Battle, lib content.BattleLibrary) ([]eve
 			w.Options = []string{"count", "roll"}
 		case "misfortune":
 			w.Options = []string{"damage"}
-			if stacks(b, w.Target, "cursed_entangle") == 0 {
+			if stacks(b, w.Target, content.MechanicString(lib.Cards[w.CardID], "status_id")) == 0 {
 				w.Options = append(w.Options, "entangle")
 			}
 		default:
@@ -152,23 +161,27 @@ func (e Engine) resolveCurseChoice(b *state.Battle, lib content.BattleLibrary, k
 		markCurse(b, w.Target, w.Die, n)
 	case "repaid":
 		if len(curseRuntime(b).Dice[w.Target][n].CursedFaces) == 0 {
-			markCurse(b, w.Target, n, 1)
+			face := 1
+			if w.Configured {
+				face = w.Face
+			}
+			markCurse(b, w.Target, n, face)
 		} else {
 			return e.lesserCurse(b, lib, w.Target, w.CardID, n)
 		}
 	case "tomb":
 		if key == "count" {
-			applyStatus(b, lib, w.Target, "curse_count", 3)
+			applyStatus(b, lib, w.Target, "curse_count", content.MechanicInt(lib.Cards[w.CardID], "count"))
 		} else {
-			_, err := e.rollOwnedSubset(b, lib, w.Target, w.CardID, allOwned(b, w.Target), 5)
+			_, err := e.rollOwnedSubset(b, lib, w.Target, w.CardID, allOwned(b, w.Target), content.MechanicInt(lib.Cards[w.CardID], "rolls"))
 			return err
 		}
 	case "misfortune":
 		if key == "entangle" {
-			applyStatus(b, lib, w.Target, "cursed_entangle", 1)
+			applyStatus(b, lib, w.Target, content.MechanicString(lib.Cards[w.CardID], "status_id"), content.MechanicInt(lib.Cards[w.CardID], "stacks"))
 		} else {
 			v := venomRuntime(b)
-			v.Queue = append(v.Queue, state.VenomWork{Kind: "damage", SourceActorID: w.Source, TargetActorID: w.Target, SourceContentID: w.CardID, Damage: 2})
+			v.Queue = append(v.Queue, state.VenomWork{Kind: "damage", SourceActorID: w.Source, TargetActorID: w.Target, SourceContentID: w.CardID, Damage: content.MechanicInt(lib.Cards[w.CardID], "damage")})
 		}
 	}
 	return nil
@@ -182,6 +195,15 @@ func (e Engine) queueCurseAbilities(b *state.Battle, lib content.BattleLibrary) 
 	for _, id := range sortedSettledActorIDs(b) {
 		rt := b.Settled.Actors[id]
 		for _, target := range rt.SelectedTargetIDs {
+			a := lib.Abilities[rt.SelectedAbilityID]
+			if a.ConfigurationVersion > 0 {
+				if _, ok := resolvedOffensiveOperations(b, lib, id); ok {
+					if err := e.runAbilityHooks(b, lib, a, "before_defense", id, target, "", rt.SelectedTierID, nil, false); err != nil {
+						return err
+					}
+				}
+				continue
+			}
 			switch rt.SelectedAbilityID {
 			case "grasp_of_the_sarcophagus":
 				queueCurse(b, state.CurseWork{Kind: "grasp", Source: id, Target: target, CardID: rt.SelectedAbilityID})
@@ -192,11 +214,23 @@ func (e Engine) queueCurseAbilities(b *state.Battle, lib content.BattleLibrary) 
 	}
 	return nil
 }
-func (e Engine) curseDefenseCompleted(b *state.Battle, lib content.BattleLibrary, d state.SettledDefense) error {
+func (e Engine) curseDefenseCompleted(b *state.Battle, lib content.BattleLibrary, d state.SettledDefense, actualPrevention ...bool) error {
 	defer tagDefenseCurseEvents(b, len(curseRuntime(b).Logs), d.ActorID, d.AbilityID, d.SourceID)
 	s := sourceBySettledID(b, d.SourceID)
 	if s == nil {
 		return nil
+	}
+	if a := lib.Abilities[d.AbilityID]; a.ConfigurationVersion > 0 {
+		prevention := 0
+		for _, f := range defenseFaces(d) {
+			prevention += configuredPrevention(a.Resolution.Operations, f)
+		}
+
+		prevented := prevention > 0 && s.BaseAmount > max(0, s.Prevention-prevention)
+		if len(actualPrevention) > 0 {
+			prevented = actualPrevention[0]
+		}
+		return e.runAbilityHooks(b, lib, a, "after_defense", d.ActorID, s.SourceActorID, d.SourceID, "", defenseFaces(d), prevented)
 	}
 	switch d.AbilityID {
 	case "hexward_rebuttal":
@@ -237,10 +271,25 @@ func (e Engine) curseDamageCompleted(b *state.Battle, lib content.BattleLibrary,
 	}
 	c := curseRuntime(b)
 	for _, s := range batch.Sources {
+		if a := lib.Abilities[s.SourceContentID]; a.ConfigurationVersion > 0 {
+			start := len(c.Logs)
+			if err := e.runAbilityHooks(b, lib, a, "after_damage", s.SourceActorID, s.TargetActorID, s.ID, b.Settled.Actors[s.SourceActorID].SelectedTierID, nil, false); err != nil {
+				return err
+			}
+			for _, log := range c.Logs[start:] {
+				log.Data["source_actor_id"] = s.SourceActorID
+				log.Data["source_ability_id"] = s.SourceContentID
+				log.Data["attack_source_id"] = s.ID
+			}
+		}
 		if b.Actors[s.TargetActorID].CurrentHealth() == 0 {
 			continue
 		}
-		switch s.SourceContentID {
+		legacyID := s.SourceContentID
+		if lib.Abilities[legacyID].ConfigurationVersion > 0 {
+			legacyID = ""
+		}
+		switch legacyID {
 		case "hexbrand":
 			n := 1
 			switch b.Settled.Actors[s.SourceActorID].SelectedTierID {
@@ -269,12 +318,12 @@ func (e Engine) curseDamageCompleted(b *state.Battle, lib content.BattleLibrary,
 				applyStatus(b, lib, s.TargetActorID, "blind", 1)
 			}
 		}
-		if s.SourceContentID == "curse_count" && stacks(b, s.TargetActorID, "curse_bloom") > 0 {
-			removeStatus(b, s.TargetActorID, "curse_bloom", 0)
+		if s.SourceContentID == "curse_count" && mechanicStacks(b, s.TargetActorID, "curse_bloom") > 0 {
+			removeMechanicStatus(b, s.TargetActorID, "curse_bloom")
 			damage := actualCurseDamage(batch, s.ID)
 			attempts := 0
 			if damage > 0 && len(curseDice(b, s.TargetActorID, "cursed")) > 0 {
-				attempts = 3
+				attempts = content.MechanicInt(rememberedMechanic(b, lib, s.TargetActorID, "curse_bloom"), "curses")
 			}
 			start := len(c.Logs)
 			curseLog(b, s.TargetActorID, "bloom_trigger", map[string]any{"damage": damage, "attempts": attempts})
@@ -284,7 +333,7 @@ func (e Engine) curseDamageCompleted(b *state.Battle, lib content.BattleLibrary,
 				}
 			}
 			for _, log := range c.Logs[start:] {
-				log.Data["source_card_id"] = "curse_bloom"
+				log.Data["source_card_id"] = rememberedMechanicID(b, s.TargetActorID, "curse_bloom")
 				log.Data["source_actor_id"] = s.SourceActorID
 				log.Data["attack_source_id"] = s.ID
 			}
@@ -292,7 +341,11 @@ func (e Engine) curseDamageCompleted(b *state.Battle, lib content.BattleLibrary,
 		// Consume before rolling: a secondary Curse result cannot reuse this preparation.
 		pending := append([]state.CursePreparation(nil), c.Preparations...)
 		for _, p := range pending {
-			switch p.CardID {
+			if !activePreparation(b, p) {
+				removeCursePreparation(b, p)
+				continue
+			}
+			switch preparationKind(p) {
 			case "black_fingerprint":
 				if p.Source != s.SourceActorID || p.Target != s.TargetActorID || lib.Abilities[s.SourceContentID].Type != "offensive" {
 					continue
@@ -301,17 +354,22 @@ func (e Engine) curseDamageCompleted(b *state.Battle, lib content.BattleLibrary,
 				n := actualCurseDamage(batch, s.ID)
 				if n >= 1 && n <= 6 {
 					eligible := missingCurseFace(b, p.Target, n, false)
-					if len(eligible) > 0 {
-						i, err := e.namedIntn(b, "curse_target", len(eligible))
-						if err != nil {
+					def := lib.Cards[p.CardID]
+					if len(eligible) == 0 {
+						if _, err := e.rollOwnedSubset(b, lib, p.Target, s.ID, allOwned(b, p.Target), content.MechanicInt(def, "fallback_rolls")); err != nil {
 							return err
 						}
-						markCurse(b, p.Target, eligible[i], n)
 					} else {
-						if _, err := e.rollOwnedSubset(b, lib, p.Target, s.ID, allOwned(b, p.Target), 1); err != nil {
-							return err
+						for k := 0; k < content.MechanicInt(def, "dice") && len(eligible) > 0; k++ {
+							i, err := e.namedIntn(b, "curse_target", len(eligible))
+							if err != nil {
+								return err
+							}
+							markCurse(b, p.Target, eligible[i], n)
+							eligible = append(eligible[:i], eligible[i+1:]...)
 						}
 					}
+
 				}
 			case "curse_bloom":
 				if s.SourceContentID != "curse_count" || p.Target != s.TargetActorID {
@@ -319,7 +377,7 @@ func (e Engine) curseDamageCompleted(b *state.Battle, lib content.BattleLibrary,
 				}
 				removeCursePreparation(b, p)
 				if actualCurseDamage(batch, s.ID) > 0 {
-					for n := 0; n < 3; n++ {
+					for n := 0; n < content.MechanicInt(lib.Cards[p.CardID], "curses"); n++ {
 						if err := e.lesserCurse(b, lib, p.Target, s.ID, -1); err != nil {
 							return err
 						}
@@ -336,7 +394,7 @@ func (e Engine) curseDamageCompleted(b *state.Battle, lib content.BattleLibrary,
 				}
 				if base > p.Die {
 					start := len(c.Logs)
-					if err := e.applyCurse(b, lib, p.Target, s.ID, 1); err != nil {
+					if err := e.applyCurse(b, lib, p.Target, s.ID, content.MechanicInt(lib.Cards[p.CardID], "curses")); err != nil {
 						return err
 					}
 					for _, log := range c.Logs[start:] {
@@ -369,18 +427,18 @@ func (e Engine) convertCurse(b *state.Battle, lib content.BattleLibrary) ([]even
 		count := stacks(b, actor, "curse_count")
 		groups := count / 3
 		mult := 1
-		if stacks(b, actor, "three_knocks_status") > 0 {
-			mult = 2
+		if mechanicStacks(b, actor, "three_knocks") > 0 {
+			mult = content.MechanicInt(rememberedMechanic(b, lib, actor, "three_knocks"), "multiplier")
 		}
-		removeStatus(b, actor, "three_knocks_status", 0)
+		removeMechanicStatus(b, actor, "three_knocks")
 		mode := ""
-		if stacks(b, actor, "grave_interest") > 0 {
+		if mechanicStacks(b, actor, "grave_interest") > 0 {
 			mode = "grave_interest"
-			removeStatus(b, actor, "grave_interest", 0)
+			removeMechanicStatus(b, actor, "grave_interest")
 		}
 		for _, p := range append([]state.CursePreparation(nil), c.Preparations...) {
-			if p.Target == actor && isCurseMode(p.CardID) {
-				mode = p.CardID
+			if p.Target == actor && isCurseMode(preparationKind(p)) && activePreparation(b, p) {
+				mode = preparationKind(p)
 				removeCursePreparation(b, p)
 			}
 		}
@@ -392,15 +450,18 @@ func (e Engine) convertCurse(b *state.Battle, lib content.BattleLibrary) ([]even
 			removeStatus(b, actor, "curse_count", groups*3)
 		}
 		if groups > 0 && (mode == "grave_interest" || mode == "black_tax") {
-			groups--
+			def := rememberedMechanic(b, lib, actor, mode)
+			replaced := min(groups, content.MechanicInt(def, "groups"))
+			groups -= replaced
+			penalty := replaced * content.MechanicInt(def, "penalty")
 			if mode == "grave_interest" {
 				if _, ok := lib.Statuses["grave_debt"]; ok {
-					applyStatus(b, lib, actor, "grave_debt", 1)
+					applyStatus(b, lib, actor, "grave_debt", penalty)
 				} else {
-					c.TaxEnergy[actor]++
+					c.TaxEnergy[actor] += penalty
 				}
 			} else {
-				c.TaxCards[actor]++
+				c.TaxCards[actor] += penalty
 			}
 		}
 		if mode == "grave_interest" {
@@ -446,36 +507,46 @@ func removeCursePreparation(b *state.Battle, p state.CursePreparation) {
 	for i, v := range c.Preparations {
 		if v.CardID == p.CardID && v.Source == p.Source && v.Target == p.Target && v.Round == p.Round && v.SourceID == p.SourceID {
 			c.Preparations = append(c.Preparations[:i], c.Preparations[i+1:]...)
+			if p.StatusID != "" {
+				removeStatus(b, p.Target, p.StatusID, 0)
+			}
 			return
 		}
 	}
 }
 func expireCursePreparations(b *state.Battle) {
+	expireMechanicStatuses(b)
 	c := curseRuntime(b)
 	damageExit := b.Segment.Current == segment.DamageResolution || (b.Settled.UnifiedDefense && b.Segment.Current == segment.Defensive && b.Settled.Stage == "complete")
 	if b.Segment.Current == segment.OngoingEffects {
 		expireBlackDividends(b)
 		for _, actor := range sortedSettledActorIDs(b) {
-			if stacks(b, actor, "curse_bloom") > 0 {
-				removeStatus(b, actor, "curse_bloom", 0)
+			if !configuredExpiration(b, actor, "curse_bloom") && mechanicStacks(b, actor, "curse_bloom") > 0 {
+				removeMechanicStatus(b, actor, "curse_bloom")
 				curseLog(b, actor, "bloom_expired", nil)
 			}
-			if stacks(b, actor, "second_knell") > 0 {
-				removeStatus(b, actor, "second_knell", 0)
+			if !configuredExpiration(b, actor, "second_knell") && mechanicStacks(b, actor, "second_knell") > 0 {
+				removeMechanicStatus(b, actor, "second_knell")
 				curseLog(b, actor, "second_knell_expired", nil)
 			}
 		}
 	}
 	if b.Segment.Current == segment.Income {
 		for _, actor := range sortedSettledActorIDs(b) {
-			if stacks(b, actor, "maledictions_refusal") > 0 {
-				removeStatus(b, actor, "maledictions_refusal", 0)
+			if !configuredExpiration(b, actor, "maledictions_refusal") && mechanicStacks(b, actor, "maledictions_refusal") > 0 {
+				removeMechanicStatus(b, actor, "maledictions_refusal")
 				curseLog(b, actor, "refusal_expired", nil)
 			}
 		}
 	}
 	for _, p := range append([]state.CursePreparation(nil), c.Preparations...) {
-		if b.Segment.Current == segment.OngoingEffects && p.ExpiresEffects <= b.Segment.Round || damageExit && p.CardID == "black_fingerprint" && p.Round <= b.Segment.Round || b.Segment.Current == segment.Income && p.CardID == "maledictions_refusal" {
+		if p.StatusID != "" {
+			if !activePreparation(b, p) {
+				removeCursePreparation(b, p)
+			}
+			continue
+		}
+		if b.Segment.Current == segment.OngoingEffects && p.ExpiresEffects <= b.Segment.Round || damageExit && preparationKind(p) == "black_fingerprint" && p.Round <= b.Segment.Round || b.Segment.Current == segment.Income && preparationKind(p) == "maledictions_refusal" && activePreparation(b, p) {
 			removeCursePreparation(b, p)
 		}
 	}
@@ -484,10 +555,10 @@ func expireCursePreparations(b *state.Battle) {
 	}
 }
 func (e Engine) cleanseCurseCount(b *state.Battle, lib content.BattleLibrary, actor string, n int) error {
-	armed := stacks(b, actor, "maledictions_refusal") > 0
+	armed := mechanicStacks(b, actor, "maledictions_refusal") > 0
 	// Existing battles retain their pinned catalog and legacy guard.
 	for _, p := range append([]state.CursePreparation(nil), curseRuntime(b).Preparations...) {
-		if p.CardID == "maledictions_refusal" && p.Target == actor {
+		if preparationKind(p) == "maledictions_refusal" && activePreparation(b, p) && p.Target == actor {
 			removeCursePreparation(b, p)
 			armed = true
 		}
@@ -496,7 +567,7 @@ func (e Engine) cleanseCurseCount(b *state.Battle, lib content.BattleLibrary, ac
 		removeStatus(b, actor, "curse_count", n)
 		return nil
 	}
-	removeStatus(b, actor, "maledictions_refusal", 0)
+	removeMechanicStatus(b, actor, "maledictions_refusal")
 	before := stacks(b, actor, "curse_count")
 	start := len(curseRuntime(b).Logs)
 	dice, err := e.rollOwnedSubset(b, lib, actor, "maledictions_refusal", allOwned(b, actor), 1)
@@ -519,7 +590,7 @@ func (e Engine) cleanseCurseCount(b *state.Battle, lib content.BattleLibrary, ac
 	if !blocked {
 		removeStatus(b, actor, "curse_count", n)
 	}
-	curseLog(b, actor, "refusal_trigger", map[string]any{"die": d, "blocked": blocked, "count_before": before, "count_rolled": rolledCount, "count_after": stacks(b, actor, "curse_count"), "already_rolled": retried})
+	curseLog(b, actor, "refusal_trigger", map[string]any{"source_card_id": rememberedMechanicID(b, actor, "maledictions_refusal"), "die": d, "blocked": blocked, "count_before": before, "count_rolled": rolledCount, "count_after": stacks(b, actor, "curse_count"), "already_rolled": retried})
 	return nil
 }
 

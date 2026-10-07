@@ -47,7 +47,7 @@ func _run() -> void:
 		_expect(roll_button != null and skip_button != null and is_equal_approx(roll_button.get_global_rect().position.y, skip_button.get_global_rect().position.y) and is_equal_approx(roll_button.size.y, skip_button.size.y), "Roll and Skip have identical top and height")
 		for die in screen._player_dice_dock.find_children("*", "Button", true, false):
 			for state in ["normal", "hover", "pressed", "disabled"]:
-				_expect(die.get_theme_stylebox(state).bg_color == Color("242423"), "dice retain uniform black faces in every interaction state")
+				_expect(die.get_theme_stylebox(state).bg_color == Color("282728"), "dice retain uniform charcoal faces in every interaction state")
 		var hand_fan: Control = screen._hand_dock
 		_expect(hand_fan.cards.size() == 5, "all hand cards retained")
 		_expect(screen._ability_dock.find_children("*", "BattleAbilityTile", true, false).size() == 4, "four compact ability tiles retained")
@@ -61,7 +61,7 @@ func _run() -> void:
 		_expect(not screen._root.has_node("EnemyAttackRail"), "unused enemy rail cannot intercept HUD hover")
 		var utilities: Control = screen._root.find_child("BattleUtilities", true, false)
 		_expect(log_panel.visible and is_equal_approx(log_rect.position.x, enemy_rect.position.x) and is_equal_approx(log_rect.size.x, enemy_rect.size.x), "Log stays aligned to the independent right utility rail")
-		_expect(log_rect.position.y == enemy_rect.position.y and log_rect.end.y < utilities.get_global_rect().position.y, "Log leaves space above utility buttons")
+		_expect(log_rect.position.y == enemy_rect.position.y and log_rect.position.y > utilities.get_global_rect().end.y, "Log leaves top utility buttons accessible")
 		_expect(screen._log.size.y > log_panel.size.y * 0.75, "combat log fills the tall side panel")
 		_expect(not log_rect.intersects(screen._hand_dock.get_global_rect()), "Log leaves hand and center unobstructed")
 		await _click(log_button)
@@ -73,10 +73,16 @@ func _run() -> void:
 		_expect(screen._auto_pass_disabled, "debug auto-pass setting remains functional")
 		await _click(settings)
 		_expect(not screen._utility_panels.settings.is_visible_in_tree(), "Settings closes without a gameplay command")
+		for utility in ["enemy", "inspect"]:
+			var button := _control(screen, "battle.utility." + utility)
+			await _click(button)
+			_expect(screen._utility_panels[utility].is_visible_in_tree(), "top-right %s opens via pointer" % utility)
+			await _click(button)
+			_expect(not screen._utility_panels[utility].is_visible_in_tree(), "top-right %s closes via pointer" % utility)
 		for tile in screen._ability_dock.find_children("*", "BattleAbilityTile", true, false):
 			_expect(screen._ability_dock.get_parent().get_global_rect().encloses(tile.get_global_rect()), "all four ability tiles fit without scrolling")
 		for tile in screen._ability_dock.find_children("*", "BattleAbilityTile", true, false):
-			_expect(tile._minimal and tile.size.y == 48, "minimal 48px ability row")
+			_expect(tile._minimal and tile.size.y == 36, "minimal 36px ability row")
 			for label in tile.find_children("*", "Label", true, false):
 				if label.name in ["AbilityOutcome", "TierOutcome"]: _expect(not label.is_visible_in_tree(), "rules moved out of live rail")
 			_expect(tile.tooltip_text.contains(BattlePresentationCatalog.ability(tile.ability_id).text), "full rules retained in popup")
@@ -124,7 +130,6 @@ func _run() -> void:
 		await _click(three)
 		_expect(fake.commands.size() == 1 and JSON.parse_string(fake.commands[0]).payload.tier_id == "fang_3", "inline tier pointer click submits exactly the chosen tier")
 		# Chosen attacks and actor HUDs remain readable through each combat phase.
-		screen._selection_morph.clear()
 		screen._view.actors.blade.selected_ability = "needlefang"
 		screen._view.actors.goblin.selected_ability = "sword_cut"
 		screen._view.offensive_reveals = {
@@ -142,7 +147,7 @@ func _run() -> void:
 			for frame in 5: await process_frame
 			for actor_id in ["blade", "goblin"]:
 				var actor_hud: ActorProfile = screen._actor_profiles[actor_id]
-				_expect(not actor_hud.get_global_rect().intersects(screen._center_scroll.get_global_rect()), "combat results leave fighter HUD visible during " + stage)
+				_expect(screen._center_scroll.mouse_filter == Control.MOUSE_FILTER_IGNORE, "empty results region cannot intercept the actor HUD during " + stage)
 				_expect(not actor_hud.get_global_rect().intersects(screen._hand_dock.get_global_rect()), "hand leaves fighter HUD visible during " + stage)
 				_expect(actor_hud.get_global_rect().encloses(screen.actor_anchor_rect(actor_id, "health")), "health endpoint stays inside owner in " + stage)
 			if stage == "offensive_reaction":

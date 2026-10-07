@@ -70,12 +70,13 @@ func _check(base: Dictionary, defender: String, viewport: Vector2i, rolled: bool
 	panel.started_ms = screen._defense_outcome_start
 	panel.data.roll_started_ms = Time.get_ticks_msec() - 9000
 	panel._update(); notice._elapsed = 0.85; notice.refresh()
-	var origin: Vector2 = notice.get_global_transform_with_canvas().affine_inverse() * panel.dice_controls[0].get_global_rect().get_center()
-	_expect(notice._defense_start.distance_to(origin) < 1, "Curse green trail starts at the live landed defense die")
+	var origin: Vector2 = notice.get_global_transform_with_canvas().affine_inverse() * panel._prevention_origin(0).get_global_rect().get_center()
+	_expect(notice._defense_start.distance_to(origin) < 1, "Curse green trail starts at the live visible defense result")
 	_expect(not notice._ability_label.visible and not notice._label.visible, "no detached purple defense pop-ups")
 	_expect(notice._batch_dice.size() == 1 and notice._batch_targets.size() == 1, "Curse trail targets the exact die and numbered face")
 	_expect(notice._batch_rolls.is_empty() or not notice._batch_rolls[0].visible, "Curse roll waits for green trail arrival")
 	var tray: BattleDiceTray = screen.dice_dock(attacker).get_child(0)
+	_expect(tray.is_visible_in_tree(), "Curse reveals the affected actor's face maps during defense")
 	_expect(not tray._mark_faces[2][face - 1].get_meta("cursed"), "new mark stays hidden during launch")
 	_expect(tray._mark_faces[3][0].get_meta("cursed"), "existing marks remain visible")
 	await _capture("defense-together-%s-%d-%s" % [defender, viewport.x, str(rolled)])
@@ -89,8 +90,8 @@ func _check(base: Dictionary, defender: String, viewport: Vector2i, rolled: bool
 	await _capture("defense-complete-%s-%d-%s" % [defender, viewport.x, str(rolled)])
 	screen._render(); await process_frame; notice.refresh()
 	panel = screen._defense_result_panels[0]; panel._update(); notice.refresh()
-	origin = notice.get_global_transform_with_canvas().affine_inverse() * panel.dice_controls[0].get_global_rect().get_center()
-	_expect(notice._defense_start.distance_to(origin) < 1, "redraw reanchors to the defense die")
+	origin = notice.get_global_transform_with_canvas().affine_inverse() * panel._prevention_origin(0).get_global_rect().get_center()
+	_expect(notice._defense_start.distance_to(origin) < 1, "redraw reanchors to the visible defense result")
 	notice._elapsed = notice.duration - 0.01; notice._process(0.02); await process_frame
 	screen._defense_outcome_until = 0; screen._process(0); await process_frame
 	_expect(screen._held_defense_view == null and screen._view.stage == "damage_reaction", "Damage appears only after the complete defense outcome")

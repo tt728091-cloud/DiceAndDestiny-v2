@@ -20,6 +20,7 @@ import (
 )
 
 type FileParticipantAssembler struct {
+	AuthoredCardsRoot     string
 	IncludeCharacterPools bool
 	ContentRoot           string
 	RunStateRoot          string
@@ -112,6 +113,16 @@ func (assembler *FileParticipantAssembler) AssembleParticipants(
 				return state.BattleSetup{}, settledErr
 			}
 			break
+		}
+		if assembler.AuthoredCardsRoot != "" {
+			library, settledErr = content.OverlayAuthoredCards(library, assembler.AuthoredCardsRoot)
+			if settledErr != nil {
+				return state.BattleSetup{}, settledErr
+			}
+			catalog, settledErr = json.Marshal(library)
+			if settledErr != nil {
+				return state.BattleSetup{}, settledErr
+			}
 		}
 		allSettled := true
 		for _, requested := range participants {

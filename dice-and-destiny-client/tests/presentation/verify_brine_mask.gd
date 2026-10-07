@@ -31,7 +31,7 @@ func _run() -> void:
 	_expect(screen._actor_display_name("goblin") == "Brine Mask", "correct enemy name")
 	var fighter := screen._root.get_node("BattleScenery/Fighter_enemy") as TextureRect
 	_expect(fighter.texture.resource_path == "res://assets/battle/minions/drowned_oracle/brine_mask.png", "requested creature art is in battle")
-	_expect(fighter.size.y == 320.0, "creature uses minion scale")
+	_expect(is_equal_approx(fighter.size.y, 240.0), "creature uses compact battlefield minion scale: " + str(fighter.size))
 	_expect(BattlePresentationCatalog.symbol_for_die_face("brine_d6", 3) == "≈", "new dice symbols are published")
 	_expect(not screen._view.content_definition("abilities", "salt_veil").is_empty(), "new rules are published to the UI")
 	await _capture("brine-mask-start.png")
@@ -43,6 +43,7 @@ func _run() -> void:
 		for panel in screen._defense_result_panels:
 			if not saw_defense and panel.data.get("actor_id") == "goblin" and panel.data.get("ability_name") == "Salt Veil" and not panel.data.get("awaiting_roll", false) and not panel.data.dice.is_empty():
 				_expect(panel.data.dice.size() == 1 and panel.dice_controls.size() == 1, "Salt Veil displays one defense die")
+				_expect(panel.dice_controls[0].is_visible_in_tree(), "Salt Veil die is visible without opening offensive dice")
 				var face := int(panel.data.dice[0].face)
 				_expect(face >= 1 and face <= 6, "defense die has a valid result")
 				_expect(int(panel.data.prevented) == ceili(face / 2.0), "defense displays half the roll rounded up: " + JSON.stringify(panel.data))
@@ -52,8 +53,8 @@ func _run() -> void:
 					await create_timer(0.6).timeout
 					await _capture("brine-mask-defense.png")
 					screen._auto_pass_disabled = false
-		saw_damage = saw_damage or screen._view.stage == "damage_reaction"
-		if not screen._submitting and not screen._model_thinking and not screen._director.has_beats() and not screen._player_roll_active() and screen._selection_morph.is_empty() and Time.get_ticks_msec() >= screen._interaction_deadline(true) and not bool(screen._view.learned_policy.get("model_turn", false)):
+		saw_damage = saw_damage or screen._view.stage == "damage_reaction" or not screen._view.settled_damage.is_empty()
+		if not screen._submitting and not screen._model_thinking and not screen._director.has_beats() and not screen._player_roll_active() and Time.get_ticks_msec() >= screen._interaction_deadline(true) and not bool(screen._view.learned_policy.get("model_turn", false)):
 			var action := _choose(screen._view.legal_actions)
 			if not action.is_empty(): screen._send(JSON.stringify(action))
 		await process_frame

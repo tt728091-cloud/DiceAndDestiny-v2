@@ -1,41 +1,57 @@
 {
-  "schema_version": 1,
-  "id": "black_dividend",
-  "name": "Black Dividend",
-  "type": "curse_action",
-  "presentation": {
-    "rules_text": "Apply Black Dividend to the enemy. Through the end of the next Effects, gain 1 Energy from this enemy\u2019s first physical cursed result each round. Maximum 2 Energy total. Each named Curse card may be played once per player per round.",
-    "art_key": "card_black_dividend",
-    "effect_summary": "Apply Black Dividend: first cursed roll each round grants you 1 Energy; max 2."
-  },
+  "access_type": "curse",
   "cost": {
     "energy": 0
   },
-  "play": {
-    "source_zones": [
-      "hand"
+  "id": "black_dividend",
+  "mechanic": {
+    "kind": "black_dividend",
+    "params": {
+      "energy": 1,
+      "rewards": 2
+    },
+    "windows": [
+      "offensive_planning"
     ],
+    "uses_per_round": 1,
+    "uses_per_battle": 0,
+    "expiration": "next_ongoing",
+    "rounds": 1
+  },
+  "name": "Black Dividend",
+  "operations": [
+    {
+      "id": "black_dividend",
+      "target": "self",
+      "type": "curse_card"
+    }
+  ],
+  "play": {
     "destination": "discard",
     "playable_during": [
       {
-        "segment": "offensive",
         "phase": "main",
+        "segment": "offensive",
         "window_purpose": "planning"
       }
+    ],
+    "source_zones": [
+      "hand"
     ]
   },
-  "targeting": {
-    "selector": "curse_choice",
-    "minimum": 0,
-    "maximum": 1
+  "presentation": {
+    "art_key": "card_black_dividend",
+    "effect_summary": "Apply Black Dividend: first cursed roll each round grants you 1 Energy; max 2.",
+    "rules_text": "Apply Black Dividend to the enemy. Through the end of the next Effects, gain 1 Energy from this enemy’s first physical cursed result each round. Maximum 2 Energy total. Each named Curse card may be played once per player per round."
   },
   "reaction_window": {
     "opens": false
   },
-  "operations": [
-    {
-      "type": "curse_card",
-      "target": "self"
-    }
-  ]
+  "schema_version": 1,
+  "targeting": {
+    "maximum": 1,
+    "minimum": 0,
+    "selector": "curse_choice"
+  },
+  "type": "curse_action"
 }

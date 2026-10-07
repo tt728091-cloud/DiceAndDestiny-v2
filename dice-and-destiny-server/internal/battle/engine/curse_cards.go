@@ -2,7 +2,6 @@ package engine
 
 import (
 	"diceanddestiny/server/internal/battle/command"
-	"diceanddestiny/server/internal/battle/operation"
 	"diceanddestiny/server/internal/battle/state"
 	"diceanddestiny/server/internal/content"
 	"errors"
@@ -13,16 +12,17 @@ import (
 
 func isCurseDiceCard(id string) bool { return id == "call_the_mark" || id == "no_safe_keep" }
 func curseCardChoices(b *state.Battle, lib content.BattleLibrary, actor string, def content.BattleCardDefinition) []venomCardChoice {
-	if b.Settled.Stage == stageCurseChoice || b.Settled.Curse != nil && b.Settled.Curse.Used[actor+":"+def.ID] == b.Segment.Round || b.Actors[actor].Resources.EnergyPoints < def.Cost.Energy {
+	kind := content.MechanicKind(def)
+	if !mechanicAvailable(b, actor, def) || b.Settled.Stage == stageCurseChoice || def.Mechanic == nil && b.Settled.Curse != nil && b.Settled.Curse.Used[actor+":"+def.ID] == b.Segment.Round || b.Actors[actor].Resources.EnergyPoints < def.Cost.Energy {
 		return nil
 	}
 	c := curseRuntime(b)
 	var out []venomCardChoice
 	add := func(key, target string) { out = append(out, venomCardChoice{Key: key, Targets: []string{target}}) }
 	for _, enemy := range otherActorIDs(b, actor) {
-		duplicate := isCurseMode(def.ID) && stacks(b, enemy, "grave_interest") > 0 || (def.ID == "second_knell" || def.ID == "maledictions_refusal" || def.ID == "black_dividend" || def.ID == "curse_bloom") && stacks(b, enemy, def.ID) > 0
+		duplicate := isCurseMode(kind) && mechanicStacks(b, enemy, "grave_interest") > 0 || (kind == "second_knell" || kind == "maledictions_refusal" || kind == "black_dividend" || kind == "curse_bloom") && mechanicStacks(b, enemy, kind) > 0
 		for _, p := range c.Preparations {
-			if p.Target == enemy && (p.CardID == def.ID || isCurseMode(p.CardID) && isCurseMode(def.ID)) {
+			if p.Target == enemy && activePreparation(b, p) && (preparationKind(p) == kind || isCurseMode(preparationKind(p)) && isCurseMode(kind)) {
 				duplicate = true
 			}
 		}
@@ -32,13 +32,13 @@ func curseCardChoices(b *state.Battle, lib content.BattleLibrary, actor string, 
 		count := stacks(b, enemy, "curse_count")
 		stage := b.Settled.Stage
 		plan := stage == stageOffensivePlan && containsCommand(b.Settled.Window.AllowedCommands, command.TypePlanningCards)
-		switch def.ID {
+		switch kind {
 		case "mark_the_number", "black_fingerprint", "maledictions_refusal", "second_knell", "grave_interest", "black_dividend", "curse_bloom", "black_tax":
 			if plan {
 				add("apply", enemy)
 			}
 		case "three_knocks":
-			if plan && stacks(b, enemy, "three_knocks_status") == 0 {
+			if plan && mechanicStacks(b, enemy, "three_knocks") == 0 {
 				add("apply", enemy)
 			}
 		case "stored_calamity":
@@ -47,19 +47,19 @@ func curseCardChoices(b *state.Battle, lib content.BattleLibrary, actor string, 
 			}
 		case "shared_misfortune", "rotten_numeral":
 			if plan {
-				for f := 1; f <= 6; f++ {
-					if def.ID == "shared_misfortune" || len(missingCurseFace(b, enemy, f, false)) > 0 {
+				for _, f := range content.MechanicInts(def, "faces") {
+					if content.MechanicBool(def, "clean_only") || len(missingCurseFace(b, enemy, f, false)) > 0 {
 						add(fmt.Sprint(f), enemy)
 					}
 				}
 			}
 		case "widen_the_crack", "unquiet_hands", "chosen_instrument":
 			if plan {
-				kind := "cursed"
-				if def.ID == "widen_the_crack" {
-					kind = "partly"
+				filter := "cursed"
+				if kind == "widen_the_crack" {
+					filter = "partly"
 				}
-				for _, i := range curseDice(b, enemy, kind) {
+				for _, i := range curseDice(b, enemy, filter) {
 					add(fmt.Sprint(i), enemy)
 				}
 			}
@@ -68,12 +68,12 @@ func curseCardChoices(b *state.Battle, lib content.BattleLibrary, actor string, 
 				add("choose", enemy)
 			}
 		case "curse_eater":
-			if plan && count >= 3 {
+			if plan && count >= content.MechanicInt(def, "cost_count") {
 				add("draw", enemy)
 				add("energy", enemy)
 			}
 		case "misfortunes_choice":
-			if plan && count >= 3 {
+			if plan && count >= content.MechanicInt(def, "cost_count") {
 				add("choose", enemy)
 			}
 		case "call_the_mark":
@@ -98,25 +98,13 @@ func curseCardChoices(b *state.Battle, lib content.BattleLibrary, actor string, 
 				}
 			}
 		case "ruin_made_flesh":
-			if stage == stageOffensiveReact && containsString(b.Settled.Actors[actor].SelectedTargetIDs, enemy) {
-				ops, ok := resolvedOffensiveOperations(b, lib, actor)
-				damaging := false
-				for _, op := range ops {
-					if op.Type == "deal_damage" {
-						damaging = true
-					}
-				}
-				if ok && damaging {
-					if count >= 3 {
-						add("3", enemy)
-					}
-					if count >= 6 {
-						add("6", enemy)
-					}
+			if stage == stageOffensiveReact && containsString(b.Settled.Actors[actor].SelectedTargetIDs, enemy) && ownQualifiedDamage(b, lib, actor) {
+				for cost := content.MechanicInt(def, "cost_count"); cost <= min(count, content.MechanicInt(def, "maximum_cost")); cost += content.MechanicInt(def, "cost_count") {
+					add(strconv.Itoa(cost), enemy)
 				}
 			}
 		case "blind_omen":
-			if stage == stageOffensiveReact && count >= 6 && stacks(b, enemy, "blind") == 0 && b.Settled.Actors[enemy].SelectedAbilityID != "" {
+			if stage == stageOffensiveReact && count >= content.MechanicInt(def, "required_count") && stacks(b, enemy, content.MechanicString(def, "status_id")) == 0 && b.Settled.Actors[enemy].SelectedAbilityID != "" {
 				add("blind", enemy)
 			}
 		case "hexward_retort":
@@ -149,7 +137,8 @@ func missingCurseFace(b *state.Battle, actor string, face int, cleanOnly bool) [
 	return out
 }
 func (e Engine) playCurseCard(b *state.Battle, lib content.BattleLibrary, actor, instance string, def content.BattleCardDefinition, targets []string, key string) error {
-	if !containsString(b.Actors[actor].Cards.Hand, instance) {
+	kind := content.MechanicKind(def)
+	if !mechanicPlayable(b, actor, instance, def) {
 		return errors.New("card is not in hand")
 	}
 	legal := false
@@ -162,70 +151,70 @@ func (e Engine) playCurseCard(b *state.Battle, lib content.BattleLibrary, actor,
 	if !legal {
 		return fmt.Errorf("%s choice is no longer legal", def.Name)
 	}
-	spendEnergy(b, actor, def.Cost.Energy)
-	a := b.Actors[actor]
-	moveCard(&a.Cards, instance, operation.ZoneHand, operation.ZoneDiscard)
-	b.Actors[actor] = a
+	beforeCards := mechanicLiveCards(b)
+	defer recordMechanicRemovals(b, actor, def, beforeCards)
+	payMechanic(b, actor, instance, def)
 	c := curseRuntime(b)
 	c.Used[actor+":"+def.ID] = b.Segment.Round
 	enemy := first(targets)
 	n, _ := strconv.Atoi(key)
 	prep := func() {
-		c.Preparations = append(c.Preparations, state.CursePreparation{CardID: def.ID, Source: actor, Target: enemy, Die: n, Round: b.Segment.Round, ExpiresEffects: b.Segment.Round + 1})
+		statusID := ""
+		if def.Mechanic != nil {
+			applyMechanicStatus(b, lib, enemy, def)
+			statusID = mechanicStatus(b, enemy, kind)
+		}
+		c.Preparations = append(c.Preparations, state.CursePreparation{Kind: kind, StatusID: statusID, CardID: def.ID, Source: actor, Target: enemy, Die: n, Round: b.Segment.Round, ExpiresEffects: b.Segment.Round + 1})
 	}
-	switch def.ID {
+	switch kind {
 	case "mark_the_number", "hexward_retort":
-		return e.applyCurse(b, lib, enemy, def.ID, 1)
+		return e.applyCurse(b, lib, enemy, def.ID, content.MechanicInt(def, "curses"))
 	case "grave_interest":
 		if _, ok := lib.Statuses["grave_interest"]; ok {
-			applyStatus(b, lib, enemy, "grave_interest", 1)
+			applyMechanicStatus(b, lib, enemy, def)
 		} else {
 			prep()
 		}
 	case "second_knell":
 		if _, ok := lib.Statuses["second_knell"]; ok {
-			applyStatus(b, lib, enemy, "second_knell", 1)
+			applyMechanicStatus(b, lib, enemy, def)
 		} else {
 			prep() // Keep old pinned battles playable.
 		}
 	case "black_dividend":
-		if _, ok := lib.Statuses[def.ID]; ok {
-			applyStatus(b, lib, enemy, def.ID, 1)
+		if _, ok := lib.Statuses[kind]; ok {
+			applyMechanicStatus(b, lib, enemy, def)
 			if c.Dividends == nil {
 				c.Dividends = map[string]state.DividendState{}
 			}
 			for _, status := range b.Actors[enemy].Statuses {
-				if status.DefinitionID == def.ID {
-					c.Dividends[enemy] = state.DividendState{Source: actor, StatusInstance: status.InstanceID, ExpiresEffects: b.Segment.Round + 1}
+				if status.DefinitionID == mechanicStatus(b, enemy, kind) {
+					c.Dividends[enemy] = state.DividendState{StatusID: mechanicStatus(b, enemy, kind), Energy: content.MechanicInt(def, "energy"), Limit: content.MechanicInt(def, "rewards"), Source: actor, StatusInstance: status.InstanceID, ExpiresEffects: b.Segment.Round + 1}
 				}
 			}
 		} else {
 			prep()
 		} // Old pinned catalogs retain their original rules.
 	case "curse_bloom":
-		if _, ok := lib.Statuses[def.ID]; ok {
-			applyStatus(b, lib, enemy, def.ID, 1)
+		if _, ok := lib.Statuses[kind]; ok {
+			applyMechanicStatus(b, lib, enemy, def)
 		} else {
 			prep()
 		}
 	case "black_fingerprint", "chosen_instrument", "black_tax", "stored_calamity":
 		prep()
 	case "maledictions_refusal":
-		if err := e.applyCurse(b, lib, enemy, def.ID, 1); err != nil {
+		if err := e.applyCurse(b, lib, enemy, def.ID, content.MechanicInt(def, "curses")); err != nil {
 			return err
 		}
 		if _, ok := lib.Statuses["maledictions_refusal"]; ok {
-			applyStatus(b, lib, enemy, "maledictions_refusal", 1)
+			applyMechanicStatus(b, lib, enemy, def)
 		} else {
 			prep() // Preserve the rules of old pinned catalogs.
 		}
 	case "shared_misfortune", "rotten_numeral":
-		limit := 3
-		clean := false
-		if def.ID == "shared_misfortune" {
-			limit = 2
-			clean = true
-		}
+		limit := content.MechanicInt(def, "dice")
+		clean := content.MechanicBool(def, "clean_only")
 		eligible := missingCurseFace(b, enemy, n, clean)
 		placed := 0
 		for placed < limit && len(eligible) > 0 {
@@ -248,7 +237,13 @@ func (e Engine) playCurseCard(b *state.Battle, lib content.BattleLibrary, actor,
 		queueCurse(b, state.CurseWork{Kind: "adjacent", Source: actor, Target: enemy, CardID: def.ID, Die: n})
 	case "unquiet_hands":
 		start := len(curseRuntime(b).Logs)
-		_, err := e.ownedRoll(b, lib, enemy, n, "curse_dice", true)
+		var err error
+		for roll := 0; roll < content.MechanicInt(def, "rolls"); roll++ {
+			_, err = e.ownedRoll(b, lib, enemy, n, "curse_dice", true)
+			if err != nil {
+				return err
+			}
+		}
 		for i := start; i < len(curseRuntime(b).Logs); i++ {
 			log := &curseRuntime(b).Logs[i]
 			if log.Data["kind"] == "owned_roll" || log.Data["kind"] == "second_knell_trigger" {
@@ -260,20 +255,20 @@ func (e Engine) playCurseCard(b *state.Battle, lib content.BattleLibrary, actor,
 	case "tombs_choice":
 		queueCurse(b, state.CurseWork{Kind: "tomb", Source: actor, Target: enemy, CardID: def.ID})
 	case "three_knocks":
-		applyStatus(b, lib, enemy, "three_knocks_status", 1)
+		applyMechanicStatus(b, lib, enemy, def)
 	case "curse_eater":
-		removeStatus(b, enemy, "curse_count", 3)
+		removeStatus(b, enemy, "curse_count", content.MechanicInt(def, "cost_count"))
 		if key == "energy" {
-			gainEnergy(b, actor, 2)
+			gainEnergy(b, actor, content.MechanicInt(def, "energy"))
 		} else {
-			for i := 0; i < 2; i++ {
+			for i := 0; i < content.MechanicInt(def, "draw"); i++ {
 				if _, err := e.drawSettledCard(b, actor, "card_draw"); err != nil {
 					return err
 				}
 			}
 		}
 	case "misfortunes_choice":
-		removeStatus(b, enemy, "curse_count", 3)
+		removeStatus(b, enemy, "curse_count", content.MechanicInt(def, "cost_count"))
 		queueCurse(b, state.CurseWork{Kind: "misfortune", Source: actor, Target: enemy, CardID: def.ID})
 	case "call_the_mark":
 		target, index, face := parseDieChoice(key)
@@ -313,19 +308,27 @@ func (e Engine) playCurseCard(b *state.Battle, lib content.BattleLibrary, actor,
 		b.Settled.Actors[target] = rt
 	case "ruin_made_flesh":
 		removeStatus(b, enemy, "curse_count", n)
-		c.Bonus[curseBonusKey(b, actor)] = n / 3 * 2
+		if def.Mechanic != nil {
+			applyMechanicStatus(b, lib, actor, def)
+		}
+		c.Bonus[curseBonusKey(b, actor)] = n / content.MechanicInt(def, "cost_count") * content.MechanicInt(def, "damage")
 	case "blind_omen":
-		removeStatus(b, enemy, "curse_count", 3)
-		applyStatus(b, lib, enemy, "blind", 1)
+		removeStatus(b, enemy, "curse_count", content.MechanicInt(def, "cost_count"))
+		applyStatus(b, lib, enemy, content.MechanicString(def, "status_id"), content.MechanicInt(def, "stacks"))
 	case "spiteful_ward":
 		s := effectDamageSourceByID(b, enemy)
 		if s == nil {
 			return errors.New("incoming damage source is missing")
 		}
-		c.Preparations = append(c.Preparations, state.CursePreparation{CardID: def.ID, Source: actor, Target: s.SourceActorID, SourceID: s.ID, Die: s.ReactionPrevention, Round: b.Segment.Round, ExpiresEffects: b.Segment.Round + 1})
+		statusID := ""
+		if def.Mechanic != nil {
+			applyMechanicStatus(b, lib, s.SourceActorID, def)
+			statusID = mechanicStatus(b, s.SourceActorID, kind)
+		}
+		c.Preparations = append(c.Preparations, state.CursePreparation{Kind: kind, StatusID: statusID, CardID: def.ID, Source: actor, Target: s.SourceActorID, SourceID: s.ID, Die: s.ReactionPrevention, Round: b.Segment.Round, ExpiresEffects: b.Segment.Round + 1})
 		before := settledSourceAmount(*s)
-		s.ReactionPrevention += 2
-		setUnifiedSourceAmount(b, s, max(0, before-2))
+		s.ReactionPrevention += content.MechanicInt(def, "prevent")
+		setUnifiedSourceAmount(b, s, max(0, before-content.MechanicInt(def, "prevent")))
 		if err := e.reconcilePreventionDestination(b, def.SavedCardDestination); err != nil {
 			return err
 		}
@@ -343,9 +346,9 @@ func curseCardActions(b *state.Battle, lib content.BattleLibrary, actor string, 
 		}
 		return out
 	}
-	for _, instance := range b.Actors[actor].Cards.Hand {
+	for _, instance := range mechanicCards(b, actor) {
 		def := lib.Cards[b.Settled.Actors[actor].CardInstances[instance].DefinitionID]
-		if def.Targeting.Selector != "curse_choice" {
+		if def.Targeting.Selector != "curse_choice" || !mechanicPlayable(b, actor, instance, def) {
 			continue
 		}
 		for _, v := range curseCardChoices(b, lib, actor, def) {

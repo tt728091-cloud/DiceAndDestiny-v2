@@ -44,13 +44,15 @@ func _scenario(protect: bool) -> void:
 	var hover := InputEventMouseMotion.new(); hover.position = strip.cells.protect.get_global_rect().get_center()
 	canvas.push_input(hover, true); await process_frame
 	_expect(canvas.gui_get_hovered_control() == strip.cells.protect, "pointer reaches Protect status hover")
-	var protection: Button
-	for button in screen._action_footer.get_children():
-		if button is Button and button.text == "Use Guarded Strike protection": protection = button
-	_expect(protection != null and protection.get_node("CompactCaption").text == "Protect 2", "protection is visibly distinct from Pass")
+	_expect(screen._action_footer.get_children().all(func(button): return not button is Button or "Protect" not in button.text), "no standalone protection button")
+	var source_id := str(screen._view.legal_actions.filter(func(action): return action.type == "commit_interaction")[0].payload.commitment.proposal_ids[0])
+	await _click(screen._attack_intents[source_id].intent)
+	for frame in 6: await process_frame
+	var protection: Button = screen._ability_dock.get_node_or_null("ProtectChoice")
+	_expect(protection != null and protection.text == "Protect · Prevent 2 damage", "attack popup offers the available status")
+	if protection == null: screen.queue_free(); await process_frame; return
 	for button in [protection, screen._auto_pass_button]:
 		_expect(not button.disabled and Rect2(Vector2.ZERO, Vector2(canvas.size)).encloses(button.get_global_rect()), "action enabled and fits viewport")
-		_expect(not screen._damage_stack_docks.blade.get_global_rect().intersects(button.get_global_rect()), "damage scroller leaves action hit areas clear")
 	var capture_dir := OS.get_environment("DICE_AND_DESTINY_ADVENTURER_SCREENSHOTS")
 	if not capture_dir.is_empty() and DisplayServer.get_name() != "headless":
 		RenderingServer.force_draw(false)

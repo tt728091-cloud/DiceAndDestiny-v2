@@ -59,8 +59,7 @@ func _check(count: int, size: Vector2i, bonus: int) -> void:
 		if button == null: continue
 		_expect(button.disabled == (n > count), "%d Fangs: tier %d availability" % [count, n])
 		var outcome := button.get_node("TierOutcome") as Label
-		_expect(outcome.is_visible_in_tree() and outcome.text == "%d DMG +%d%s" % [7 - n + bonus, n - 2, BattlePresentationCatalog.status("poison").glyph], "visible tier summary includes damage upgrade and Poison")
-		_expect(outcome.get_minimum_size().x <= button.size.x, "compact summary fits within its tier button")
+		_expect(not outcome.is_visible_in_tree() and outcome.text == "%d DMG +%d%s" % [7 - n + bonus, n - 2, BattlePresentationCatalog.status("poison").glyph], "compact rail keeps damage and Poison in the hover summary")
 		_expect(button.tooltip_text.contains("%d damage + %d Poison" % [7 - n + bonus, n - 2]), "tier preview includes Lens")
 		_expect(root.get_visible_rect().encloses(button.get_global_rect()), "tier lies inside %s viewport" % size)
 	await _capture("fang-%d-bonus-%d-%d" % [count, bonus, size.x])
@@ -83,13 +82,21 @@ func _check(count: int, size: Vector2i, bonus: int) -> void:
 		release.pressed = false
 		root.push_input(release, true)
 		await process_frame
-		_expect(fake.commands.size() == before + 1, "one direct command per click")
+		_expect(fake.commands.size() == before and not screen._pending_attack.is_empty(), "tier click waits for explicit enemy selection")
+		var target := screen.find_child("OffensiveTarget_goblin", true, false) as Button
+		_expect(target != null, "enemy target is highlighted")
+		if target != null:
+			click.position = target.get_global_rect().get_center()
+			release.position = click.position
+			root.push_input(click, true); root.push_input(release, true)
+			await process_frame
+		_expect(fake.commands.size() == before + 1, "one command after the enemy click")
 		if fake.commands.size() > before:
 			var command: Dictionary = JSON.parse_string(fake.commands[-1])
 			_expect(command.payload.tier_id == "fang_%d" % chosen and command.payload.target_ids == ["goblin"], "exact offered tier and target submitted")
 		_expect(screen.find_children("*", "AcceptDialog", false, false).is_empty(), "no tier popup")
 		_expect(screen._view.actor("blade").get("selected_tier") == "fang_%d" % chosen, "selected tier retained while outcome replaces choices")
-		while not screen._selection_morph.is_empty() or Time.get_ticks_msec() <= screen._flow_until: await process_frame
+		while Time.get_ticks_msec() <= screen._flow_until: await process_frame
 	# Old callbacks and review mode must never send gameplay commands.
 	var before: int = fake.commands.size()
 	screen._view.legal_actions = []

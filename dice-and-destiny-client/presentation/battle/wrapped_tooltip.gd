@@ -4,7 +4,15 @@ extends RefCounted
 const MAX_WIDTH := 440.0
 const VIEWPORT_MARGIN := 64.0
 
+static func content(value: String) -> String:
+	# Suppress blank content before Godot starts a popup or falls back to its
+	# native tooltip after a custom builder returns null.
+	return "" if value.strip_edges().is_empty() else value
+
 static func create(owner: Control, value: String) -> Label:
+	# Godot calls custom tooltip builders even without tooltip text. Returning
+	# an empty Label still creates a visible popup frame.
+	if content(value).is_empty(): return null
 	var label := Label.new()
 	label.theme_type_variation = &"TooltipLabel"
 	label.text = value

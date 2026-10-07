@@ -1,41 +1,54 @@
 {
-  "schema_version": 1,
-  "id": "stored_calamity",
-  "name": "Stored Calamity",
-  "type": "curse_action",
-  "presentation": {
-    "rules_text": "Prepare a conversion mode: skip this enemy\u2019s next Curse conversion and retain all Count. Cannot skip consecutive Effects. Does not preserve Three Knocks or extend other preparations. One conversion mode per target. Each named Curse card may be played once per player per round.",
-    "art_key": "card_stored_calamity",
-    "effect_summary": "Skip next conversion; preserve Count."
-  },
+  "access_type": "curse",
   "cost": {
     "energy": 0
   },
-  "play": {
-    "source_zones": [
-      "hand"
+  "id": "stored_calamity",
+  "mechanic": {
+    "kind": "stored_calamity",
+    "params": {},
+    "windows": [
+      "offensive_planning"
     ],
+    "uses_per_round": 1,
+    "uses_per_battle": 0,
+    "expiration": "next_ongoing",
+    "rounds": 1
+  },
+  "name": "Stored Calamity",
+  "operations": [
+    {
+      "id": "stored_calamity",
+      "target": "self",
+      "type": "curse_card"
+    }
+  ],
+  "play": {
     "destination": "discard",
     "playable_during": [
       {
-        "segment": "offensive",
         "phase": "main",
+        "segment": "offensive",
         "window_purpose": "planning"
       }
+    ],
+    "source_zones": [
+      "hand"
     ]
   },
-  "targeting": {
-    "selector": "curse_choice",
-    "minimum": 0,
-    "maximum": 1
+  "presentation": {
+    "art_key": "card_stored_calamity",
+    "effect_summary": "Skip next conversion; preserve Count.",
+    "rules_text": "Prepare a conversion mode: skip this enemy’s next Curse conversion and retain all Count. Cannot skip consecutive Effects. Does not preserve Three Knocks or extend other preparations. One conversion mode per target. Each named Curse card may be played once per player per round."
   },
   "reaction_window": {
     "opens": false
   },
-  "operations": [
-    {
-      "type": "curse_card",
-      "target": "self"
-    }
-  ]
+  "schema_version": 1,
+  "targeting": {
+    "maximum": 1,
+    "minimum": 0,
+    "selector": "curse_choice"
+  },
+  "type": "curse_action"
 }

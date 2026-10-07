@@ -1,41 +1,57 @@
 {
-  "schema_version": 1,
-  "id": "widen_the_crack",
-  "name": "Widen the Crack",
-  "type": "curse_action",
-  "presentation": {
-    "rules_text": "Choose a partly cursed enemy die and roll it. Resolve existing marks, then choose an adjacent unmarked number to curse. Numbers do not wrap between 1 and 6. No expansion if neither adjacent face is unmarked. Each named Curse card may be played once per player per round.",
-    "art_key": "card_widen_the_crack",
-    "effect_summary": "Roll a cursed die, then curse an adjacent face."
-  },
+  "access_type": "curse",
   "cost": {
     "energy": 1
   },
-  "play": {
-    "source_zones": [
-      "hand"
+  "id": "widen_the_crack",
+  "mechanic": {
+    "kind": "widen_the_crack",
+    "params": {
+      "deltas": [
+        -1,
+        1
+      ]
+    },
+    "windows": [
+      "offensive_planning"
     ],
+    "uses_per_round": 1,
+    "uses_per_battle": 0
+  },
+  "name": "Widen the Crack",
+  "operations": [
+    {
+      "id": "widen_the_crack",
+      "target": "self",
+      "type": "curse_card"
+    }
+  ],
+  "play": {
     "destination": "discard",
     "playable_during": [
       {
-        "segment": "offensive",
         "phase": "main",
+        "segment": "offensive",
         "window_purpose": "planning"
       }
+    ],
+    "source_zones": [
+      "hand"
     ]
   },
-  "targeting": {
-    "selector": "curse_choice",
-    "minimum": 0,
-    "maximum": 1
+  "presentation": {
+    "art_key": "card_widen_the_crack",
+    "effect_summary": "Roll a cursed die, then curse an adjacent face.",
+    "rules_text": "Choose a partly cursed enemy die and roll it. Resolve existing marks, then choose an adjacent unmarked number to curse. Numbers do not wrap between 1 and 6. No expansion if neither adjacent face is unmarked. Each named Curse card may be played once per player per round."
   },
   "reaction_window": {
     "opens": false
   },
-  "operations": [
-    {
-      "type": "curse_card",
-      "target": "self"
-    }
-  ]
+  "schema_version": 1,
+  "targeting": {
+    "maximum": 1,
+    "minimum": 0,
+    "selector": "curse_choice"
+  },
+  "type": "curse_action"
 }

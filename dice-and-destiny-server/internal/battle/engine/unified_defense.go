@@ -200,12 +200,31 @@ func unifiedContinueCommand(b *state.Battle, actor string, pending state.Pending
 // Omitted values preserve the live pile; explicitly authored discard moves only
 // newly saved cards, never a prior effect's already released reservations.
 func (e Engine) reconcilePreventionDestination(b *state.Battle, destination string) error {
-	if destination != "" && destination != content.SavedCardsOriginal && destination != content.SavedCardsDiscard {
+	if destination != "" && !content.ProgramContains([]string{"original", "discard", "hand", "deck", "removed"}, destination) {
 		return fmt.Errorf("invalid saved_card_destination %q", destination)
 	}
-	if unifiedDefense(b) {
-		return e.reconcileUnifiedDamage(b, destination != content.SavedCardsDiscard)
+	released := map[string]bool{}
+	if b.Settled.PendingDamage != nil {
+		for _, r := range b.Settled.PendingDamage.Removals {
+			released[r.ID] = r.Released
+		}
 	}
-	reconcileSettledDamageDestination(b.Settled.PendingDamage, b, destination == content.SavedCardsDiscard)
+	var err error
+	if unifiedDefense(b) {
+		err = e.reconcileUnifiedDamage(b, destination != "discard")
+	} else {
+		reconcileSettledDamageDestination(b.Settled.PendingDamage, b, destination == "discard")
+	}
+	if err != nil {
+		return err
+	}
+	if destination != "" && destination != "original" && destination != "discard" && b.Settled.PendingDamage != nil {
+		for i := range b.Settled.PendingDamage.Removals {
+			r := &b.Settled.PendingDamage.Removals[i]
+			if r.Released && !released[r.ID] {
+				damage.MovePreventedCard(b, r, destination)
+			}
+		}
+	}
 	return nil
 }

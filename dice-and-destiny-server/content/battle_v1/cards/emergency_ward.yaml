@@ -2,7 +2,7 @@ schema_version: 1
 id: emergency_ward
 name: Emergency Ward
 type: damage_response
-presentation: {rules_text: Prevent 3 damage from one revealed source., art_key: card_emergency_ward}
+presentation: {rules_text: "Prevent 3 damage from one revealed source. Saved cards remain in their current piles and still count as health. Playing Emergency Ward sends it to discard, even if it saves itself.", art_key: card_emergency_ward}
 cost: {energy: 1}
 play: {source_zones: [hand], destination: discard, playable_during: [{segment: damage_resolution, phase: main, window_purpose: reaction}]}
 targeting: {selector: one_incoming_damage_source, minimum: 1, maximum: 1}

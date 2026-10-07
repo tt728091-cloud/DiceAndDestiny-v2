@@ -81,5 +81,6 @@
       }
     ]
   },
-  "saved_card_destination": "original"
+  "saved_card_destination": "original",
+  "configuration_version": 1
 }

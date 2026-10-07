@@ -39,13 +39,15 @@ func _run() -> void:
 	screen._tabs.current_tab = 1; screen.inspect_entry("cards", "brace")
 	for frame in 5: await process_frame
 	var disabled_button := _control(screen, "upgrade.brace"); disabled_button.disabled = true
+	var plus_before: int = screen._card_count("brace_plus")
+	var xp_before := int(screen.catalogs.adventurer.progression.xp)
 	await _hover(disabled_button)
 	_expect(screen._comparison.visible, "disabled upgrade still reveals comparison")
 	disabled_button.disabled = false
 	await _click(disabled_button)
 	_expect(screen._purchase_overlay.visible and not screen._comparison.visible, "click opens existing review without hover overlap")
 	await _click(screen._purchase_confirm)
-	_expect(screen._card_count("brace_plus") == 1 and int(screen.catalogs.adventurer.progression.xp) == 90, "card upgrade still purchases once")
+	_expect(screen._card_count("brace_plus") == plus_before + 1 and int(screen.catalogs.adventurer.progression.xp) == xp_before - 10, "card upgrade still purchases once")
 	screen._tabs.current_tab = 0; screen.inspect_entry("abilities", "adventurer_guard")
 	for frame in 5: await process_frame
 	await _click(_control(screen, "upgrade.adventurer_guard")); await _click(screen._purchase_confirm)

@@ -13,21 +13,53 @@ var _piles: Dictionary = {}
 var _pending: Array[Dictionary] = []
 var _hidden_grids: Array[Control] = []
 var _elapsed := 0.0
+var _source_id := ""
+var _ability_feedback := false
+var _before := 0
+var _after := 0
+var _original_count := 0
+var _held_groups: Array[Dictionary] = []
+var _hand_play := false
+var _held_hand: Control
+var _defense_timing := false
+const DEFENSE_TIMING := preload("res://presentation/battle/defense_timing.gd")
+
+static func reduction_progress(elapsed: float) -> float:
+	return clampf((elapsed - 0.1) / 0.8, 0, 1)
 
 func configure(data: Dictionary, screen: Control) -> void:
 	_screen = screen
+	process_priority = 20 # Publish the shared amount after the intent's preview clock.
+	_before = int(data.before); _after = int(data.after)
+	_original_count = int(data.get("original_count", data.get("saved", []).size() + data.get("pending", []).size()))
+	_source_id = str(data.get("source_id", ""))
+	_ability_feedback = str(data.get("card_id", "")).is_empty()
 	_started = int(data.started_ms)
+	_defense_timing = bool(data.get("defense_timing", false))
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
 	z_index = 30
+	_hand_play = not _ability_feedback and str(data.get("actor_id", "")) == screen.viewer_actor_id
 	_played = BattleCard.new(); add_child(_played)
-	_played.configure(str(data.instance_id), str(data.card_id), false, false, true)
+	_played.configure(str(data.instance_id), str(data.card_id), _hand_play, false, not _hand_play)
 	_played.size = CARD_SIZE
 	if str(data.card_id).is_empty(): _played.hide()
 	_played.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_played.focus_mode = Control.FOCUS_NONE
 	_played.position = Vector2(280, 490) if str(data.get("actor_id", "")) == screen.viewer_actor_id else Vector2(1510, 490)
+	if _hand_play:
+		var pose: Dictionary = data.get("hand_pose", {})
+		_played.size = pose.get("size", BattleCard.STANDARD_SIZE)
+		var transform: Transform2D = pose.get("transform", Transform2D(0, get_global_transform_with_canvas().affine_inverse() * screen._hand_dock.get_global_rect().get_center() - _played.size * 0.5))
+		_played.position = transform.origin
+		_played.rotation = transform.get_rotation()
+		_played.scale = transform.get_scale()
+		_held_hand = screen._hand_dock
 	_caption = _label("%d damage prevented" % maxi(0, int(data.before) - int(data.after)), 18)
 	_caption.position = _played.position + Vector2(-40, -52)
 	_caption.size = Vector2(215, 48)
+	# The incoming row already explains an ability's reduction. Do not float
+	# a duplicate caption or launch saved-card trails from an invisible card.
+	if _ability_feedback or _hand_play: _caption.hide()
 	for removal in data.get("saved", []):
 		var target := str(removal.get("target_actor_id", ""))
 		if not screen._actor_profiles.has(target): continue
@@ -55,6 +87,13 @@ func configure(data: Dictionary, screen: Control) -> void:
 	present_progress(maxf(0.0, (Time.get_ticks_msec() - _started) / 1000.0))
 
 func _prepare_header(card: BattleCard, width: float) -> void:
+	# The full card's invisible multiline Button text enforces a tall minimum.
+	# Headers need an actual 24px layout, never a vertically squashed full card.
+	card.text = ""
+	for state in ["normal", "hover", "pressed", "disabled"]:
+		var style := card.get_theme_stylebox(state).duplicate()
+		for side in [SIDE_LEFT, SIDE_TOP, SIDE_RIGHT, SIDE_BOTTOM]: style.set_content_margin(side, 0)
+		card.add_theme_stylebox_override(state, style)
 	card.custom_minimum_size = Vector2.ZERO; card.size = Vector2(maxf(132, width), 24); card.clip_contents = true
 	card._effect_plaque.hide(); card.get_node("RemovalState").hide()
 	var title: Label = card.get_node("CardTitle")
@@ -64,6 +103,9 @@ func _prepare_header(card: BattleCard, width: float) -> void:
 	cost.offset_left = 4; cost.offset_right = 24; cost.offset_top = 2; cost.offset_bottom = 22; cost.add_theme_font_size_override("font_size", 14)
 
 func _exit_tree() -> void:
+	if is_instance_valid(_held_hand): _held_hand.prevention_animation_active = false
+	for entry in _held_groups:
+		if is_instance_valid(entry.group): entry.group.custom_minimum_size = entry.minimum
 	for grid in _hidden_grids:
 		if is_instance_valid(grid): grid.modulate.a = 1
 
@@ -82,9 +124,23 @@ func _process(_delta: float) -> void:
 	present_progress(maxf(0.0, (Time.get_ticks_msec() - _started) / 1000.0))
 
 func present_progress(elapsed: float) -> void:
+	# Match the die-to-attack trail's 20–65% effects interval. Saved cards and
+	# the attack number must use this same clock before the next phase appears.
+	if _defense_timing:
+		var scale := DEFENSE_TIMING.effects_seconds() * 0.45 / 0.8
+		var delay := DEFENSE_TIMING.effects_seconds() * 0.2 - scale * 0.1
+		elapsed = maxf(0.0, (elapsed - delay) / scale)
 	_elapsed = elapsed
+	var presenter: Control = _screen._attack_intents.get(_source_id)
+	if is_instance_valid(presenter):
+		var progress := reduction_progress(elapsed)
+		presenter.damage.text = str(roundi(lerpf(_before, _after, progress)))
+		presenter.damage.modulate.a = 1.0 - 0.35 * sin(progress * PI)
+		presenter._refresh_target_heading()
+		if is_instance_valid(presenter.incoming_row): presenter.incoming_row.refresh()
 	modulate.a = 1.0 - clampf((elapsed - 2.25) / 0.35, 0, 1)
-	_played.modulate.a = 1.0 - clampf((elapsed - 1.35) / 0.35, 0, 1)
+	_played.modulate.a = 1.0 - smoothstep(0.1, 1.4, elapsed) if _hand_play else 1.0 - clampf((elapsed - 1.35) / 0.35, 0, 1)
+	if is_instance_valid(_held_hand): _held_hand.prevention_animation_active = elapsed < 2.25
 	_caption.modulate.a = _played.modulate.a
 	var inverse := get_global_transform_with_canvas().affine_inverse()
 	# Hold the unsaved cards in their original slots until the saved cards leave.
@@ -92,11 +148,19 @@ func present_progress(elapsed: float) -> void:
 	var held_ids := _pending.map(func(entry): return entry.card.instance_id)
 	for entry in _pending: entry.card.hide()
 	for grid in _screen._damage_grids:
-		if not is_instance_valid(grid): continue
-		if not grid.get_children().all(func(card): return card.instance_id in held_ids): continue
+		if not is_instance_valid(grid) or grid.source_id != _source_id: continue
+		var cards: Array[BattleCard] = grid.card_children()
+		var group: Control = grid.get_parent()
+		if not _held_groups.any(func(entry): return entry.group == group):
+			var natural_height := group.get_combined_minimum_size().y
+			_held_groups.append({"group": group, "minimum": group.custom_minimum_size, "natural_height": natural_height, "held_height": natural_height + maxi(0, _original_count - cards.size()) * grid.STRIDE})
+		for entry in _held_groups:
+			var closing := smoothstep(0, 1, clampf((elapsed - 1.95) / 0.25, 0, 1))
+			entry.group.custom_minimum_size.y = lerpf(entry.held_height, entry.natural_height, closing) if elapsed < 2.25 else entry.minimum.y
+		if cards.is_empty() or not cards.all(func(card: BattleCard): return card.instance_id in held_ids): continue
 		if grid not in _hidden_grids: _hidden_grids.append(grid)
 		grid.modulate.a = 1.0 if elapsed >= 2.25 else 0.0
-		for live in grid.get_children():
+		for live in cards:
 			for entry in _pending:
 				var card: BattleCard = entry.card
 				if live.instance_id != card.instance_id: continue
@@ -105,7 +169,8 @@ func present_progress(elapsed: float) -> void:
 				if not destination.has_area(): continue
 				var progress := smoothstep(0, 1, clampf((elapsed - 1.95) / 0.25, 0, 1))
 				card.position = origin.position.lerp(destination.position, progress)
-				card.scale = origin.size.lerp(destination.size, progress) / entry.native_size
+				card.size = origin.size.lerp(destination.size, progress)
+				card.scale = Vector2.ONE
 				card.visible = elapsed < 2.25
 	for pile in _piles.values():
 		var profile: ActorProfile = _screen._actor_profiles.get(pile.target)
@@ -124,7 +189,7 @@ func present_progress(elapsed: float) -> void:
 		var origin: Rect2 = entry.origin
 		var end: Vector2 = _piles[entry.pile].rect.get_center()
 		var delay := 0.15 * float(i) / maxi(1, _saved.size() - 1)
-		var progress := smoothstep(0, 1, clampf((elapsed - 0.9 - delay) / 0.85, 0, 1))
+		var progress := smoothstep(0, 1, clampf((elapsed - 0.3 - delay) / 0.85, 0, 1))
 		entry.progress = progress
 		var center := origin.get_center().lerp(end, progress) + Vector2(60 * sin(PI * progress), -45 * sin(PI * progress))
 		card.scale = (origin.size / entry.native_size).lerp(Vector2.ONE * 0.10, progress)
@@ -134,16 +199,26 @@ func present_progress(elapsed: float) -> void:
 		card.modulate.a = 1.0 - clampf((progress - 0.8) / 0.2, 0, 1)
 	queue_redraw()
 
+func prevention_origin() -> Vector2:
+	if _ability_feedback:
+		var anchor: Rect2 = _screen.attack_anchor_rect(_source_id)
+		if anchor.has_area(): return get_global_transform_with_canvas().affine_inverse() * anchor.get_center()
+	return _played.get_transform() * (_played.size * 0.5)
+
 func _draw() -> void:
 	if not is_instance_valid(_played): return
-	var start := _played.position + CARD_SIZE * 0.5
+	var start := prevention_origin()
+	if not _ability_feedback and _elapsed < 1.1:
+		var anchor: Rect2 = _screen.attack_anchor_rect(_source_id)
+		if anchor.has_area():
+			_trail(start, get_global_transform_with_canvas().affine_inverse() * anchor.get_center(), reduction_progress(_elapsed), 1.0 - clampf((_elapsed - 0.8) / 0.3, 0, 1))
 	for entry in _saved:
 		var origin: Rect2 = entry.origin
 		if _elapsed < 1.1:
-			_trail(start, origin.get_center(), clampf((_elapsed - 0.1) / 0.45, 0, 1), 1.0 - clampf((_elapsed - 0.8) / 0.3, 0, 1))
+			_trail(start, origin.get_center(), reduction_progress(_elapsed), 1.0 - clampf((_elapsed - 0.8) / 0.3, 0, 1))
 		if _elapsed > 0.25 and _elapsed < 0.95:
 			draw_rect(origin.grow(4), Color(GREEN, 0.75), false, 3, true)
-		if _elapsed >= 0.9:
+		if _elapsed >= 0.3:
 			var endpoint: Vector2 = _piles[entry.pile].rect.get_center()
 			_trail(origin.get_center(), endpoint, float(entry.progress), (1.0 - clampf((_elapsed - 1.8) / 0.35, 0, 1)) * 0.65)
 	for pile in _piles.values():

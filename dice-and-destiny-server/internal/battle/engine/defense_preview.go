@@ -19,7 +19,7 @@ type DefensePreview struct {
 func defenseAffordable(b *state.Battle, library content.BattleLibrary, actorID, abilityID, sourceContentID string) bool {
 	ability := library.Abilities[abilityID]
 	return b.Actors[actorID].Resources.EnergyPoints >= ability.Cost.Energy &&
-		(abilityID != "barbed_mantle" || library.Abilities[sourceContentID].Type == "offensive")
+		(!abilityOnlyDefense(ability) || library.Abilities[sourceContentID].Type == "offensive")
 }
 
 func (e Engine) defensePreviews(b *state.Battle, actorID string) []DefensePreview {
@@ -44,7 +44,7 @@ func (e Engine) defensePreviews(b *state.Battle, actorID string) []DefensePrevie
 			}
 			option := DefensePreview{SourceID: sourceID, SourceActorID: attacker, SourceContentID: contentID, TargetActorID: target, AbilityID: abilityID}
 			result = append(result, option)
-			if abilityID == "shedskin" && stacks(b, actorID, "catalyst") > 0 {
+			if canPayAbility(b, actorID, library.Abilities[abilityID]) {
 				option.SpendCatalyst = true
 				result = append(result, option)
 			}

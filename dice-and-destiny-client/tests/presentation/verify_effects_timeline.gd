@@ -39,7 +39,7 @@ func _run() -> void:
 	# Check synchronously as well as after frames: a one-frame health flash is a bug.
 	_expect(screen._director.peek().get("presentation_segment") == "defensive", "empty Defense remains the first beat")
 	_before(screen)
-	_expect(_has_text(screen, "Round 5 · Presentation"), "Defense header retains round 5")
+	_expect(_has_text(screen, "Round 5 · Defense"), "Defense header retains round 5")
 	for frame in 3: await process_frame
 	_before(screen)
 	await _capture("defense")

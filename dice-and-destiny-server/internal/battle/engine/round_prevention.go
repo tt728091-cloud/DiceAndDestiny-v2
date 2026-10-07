@@ -67,7 +67,7 @@ func (e Engine) spendRoundPrevention(b *state.Battle, lib content.BattleLibrary,
 		advanceSettledReactionPriority(b, actor, true)
 	}
 	return []event.Event{settledEvent(event.TypeDamageModified, b, actor, map[string]any{
-		"source_id": source.ID, "ability_id": "guarded_strike", "status_id": "protect", "status_before": amount, "status_after": 0, "prevention": source.ReactionPrevention,
+		"source_id": source.ID, "status_id": "protect", "status_before": amount, "status_after": 0, "prevention": source.ReactionPrevention,
 		"damage_before": before, "damage_after": settledSourceAmount(*source), "target_actor_id": actor,
 	})}, nil
 }

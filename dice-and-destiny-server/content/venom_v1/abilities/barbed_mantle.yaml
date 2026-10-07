@@ -17,7 +17,8 @@
     "allowed_proposal_types": [
       "damage_source"
     ],
-    "target_count": 1
+    "target_count": 1,
+    "offensive_abilities_only": true
   },
   "resolution": {
     "operations": [
@@ -82,8 +83,18 @@
                 "amount": 1
               },
               {
-                "type": "incubation_or_poison",
-                "target": "enemy"
+                "type": "special_effect",
+                "target": "enemy",
+                "special": {
+                  "kind": "conditional_status",
+                  "status_id": "poison",
+                  "threshold": 1,
+                  "result_status_id": "incubation",
+                  "limit": 1,
+                  "stacks": 1,
+                  "fallback_status_id": "poison",
+                  "fallback_stacks": 1
+                }
               }
             ]
           }
@@ -94,5 +105,6 @@
       "opens": true,
       "pass_required": true
     }
-  }
+  },
+  "configuration_version": 1
 }

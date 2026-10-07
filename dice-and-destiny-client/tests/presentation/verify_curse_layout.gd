@@ -70,7 +70,7 @@ func _planning(count: int, viewport: Vector2i) -> void:
 		var release := click.duplicate(); release.pressed = false; root.push_input(release, true)
 		await _frames()
 		_expect(fake.commands.size() == 1 and JSON.parse_string(fake.commands[0]).payload.tier_id == "skull_3", "real tier click submits exactly the chosen action")
-		while not screen._selection_morph.is_empty() or Time.get_ticks_msec() <= screen._flow_until: await process_frame
+		while Time.get_ticks_msec() <= screen._flow_until: await process_frame
 		f.snapshot.actors.blade.selected_ability = "hexbrand"; f.snapshot.actors.blade.selected_tier = "skull_%d" % count
 		f.legal_actions = []; screen._view.apply_result(f); screen._render(); await _frames()
 		var selected: Dictionary = screen._selected_attack("blade")

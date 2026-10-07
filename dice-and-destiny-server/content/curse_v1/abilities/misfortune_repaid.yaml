@@ -65,7 +65,7 @@
             ],
             "operations": [
               {
-                "type": "curse_action",
+                "type": "noop",
                 "target": "self"
               }
             ]
@@ -77,5 +77,36 @@
       "opens": true,
       "pass_required": true
     }
-  }
+  },
+  "configuration_version": 1,
+  "hooks": [
+    {
+      "timing": "after_defense",
+      "operations": [
+        {
+          "type": "apply_status",
+          "target": "enemy",
+          "status_id": "curse_count",
+          "stack_count": 2
+        }
+      ],
+      "faces_any": [
+        6
+      ]
+    },
+    {
+      "timing": "after_defense",
+      "operations": [
+        {
+          "type": "special_effect",
+          "target": "enemy",
+          "special": {
+            "kind": "curse_die_choice",
+            "face": 1
+          }
+        }
+      ],
+      "requires_prevention": true
+    }
+  ]
 }

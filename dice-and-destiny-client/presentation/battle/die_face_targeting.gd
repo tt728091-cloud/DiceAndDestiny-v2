@@ -17,6 +17,7 @@ func configure(owner_screen: Control) -> void:
 	var work: Dictionary = screen._view.raw_snapshot.get("curse_choice", {}) if mandatory else {}
 	var id := str(work.card_id) if mandatory else str(screen._selected_card.definition_id)
 	card_name = str(BattlePresentationCatalog.card(id).name) if not BattlePresentationCatalog.definition("cards", id).is_empty() else str(BattlePresentationCatalog.ability(id).name)
+	id = BattlePresentationCatalog.card_mechanic(id)
 	extra_check = id == "unquiet_hands"
 	mouse_filter = Control.MOUSE_FILTER_IGNORE; z_index = 25
 	for action in screen._mark_actions():
@@ -39,7 +40,7 @@ func configure(owner_screen: Control) -> void:
 	if id in ["steady_hand", "forked_tongue", "nudge"] and not selected.is_empty(): hint.text = "Die %d · choose a face" % (int(selected.get_slice(":", 1)) + 1)
 	if extra_check: hint.text = "Choose a highlighted die.\nSeparate Curse check: cursed face → +1 Count.\nOffensive result stays unchanged."
 	if id == "widen_the_crack": hint.text = "Choose a highlighted die. Roll it, then curse an available adjacent number."
-	if id == "chosen_instrument": hint.text = "Choose a highlighted die for Chosen Instrument."
+	if id == "chosen_instrument": hint.text = "Choose a highlighted die for %s." % card_name
 	if id == "try_again": hint.text = "Choose one of your highlighted dice to reroll. No normal roll attempt is consumed."
 	if id == "no_safe_keep": hint.text = "Choose a highlighted kept die to reroll. Its offensive result will change."
 	if mandatory: hint.text = "Choose a highlighted die to entomb." if work.kind == "grasp" else "Choose a highlighted die to apply Curse."

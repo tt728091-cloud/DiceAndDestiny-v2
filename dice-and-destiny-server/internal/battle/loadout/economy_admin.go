@@ -12,12 +12,13 @@ import (
 // One atomic settings file is the commit point. Progress ledgers reconcile against
 // it before every read or trade, including recovery after an interrupted refresh.
 type AdminSettings struct {
-	CardTypes      map[string]string `json:"card_types"`
-	AbilityTypes   map[string]string `json:"ability_types"`
-	CharacterTypes map[string]string `json:"character_types"`
-	Revision       int               `json:"revision"`
-	CardPrices     map[string]int    `json:"card_prices"`
-	Budgets        map[string]int    `json:"budgets"`
+	BudgetAllocations map[string]int    `json:"budget_allocations,omitempty"`
+	CardTypes         map[string]string `json:"card_types"`
+	AbilityTypes      map[string]string `json:"ability_types"`
+	CharacterTypes    map[string]string `json:"character_types"`
+	Revision          int               `json:"revision"`
+	CardPrices        map[string]int    `json:"card_prices"`
+	Budgets           map[string]int    `json:"budgets"`
 }
 
 func deckValue(deck []Entry, character string, e Economy) int {
@@ -29,7 +30,8 @@ func deckValue(deck []Entry, character string, e Economy) int {
 }
 func initializeBudget(p *Progress, e Economy) {
 	p.DeckValue = deckValue(p.Deck, p.Character, e)
-	budget := p.XP + p.DeckValue + p.UpgradeSpent
+	p.CollectionValue = deckValue(p.Collection, p.Character, e)
+	budget := p.XP + p.DeckValue + p.CollectionValue + p.UpgradeSpent
 	p.Budget = &budget
 }
 func legacyAbilitySpend(id string, paths map[string]Upgrade, seen map[string]bool) int {
@@ -47,18 +49,20 @@ func legacyAbilitySpend(id string, paths map[string]Upgrade, seen map[string]boo
 func reconcileBudget(p *Progress, e Economy) error {
 	budget := *p.Budget
 	if override, ok := e.Budgets[p.Character]; ok {
-		budget = override
+		budget = override + p.FreeDeckBudget - e.BudgetAllocations[p.Character]
 	}
 	value := deckValue(p.Deck, p.Character, e)
-	available := budget - value - p.UpgradeSpent
+	collectionValue := deckValue(p.Collection, p.Character, e)
+	available := budget - value - collectionValue - p.UpgradeSpent
 	if available < 0 {
-		return fmt.Errorf("%s needs a budget of at least %d XP (proposed %d XP); raise its budget or sell cards first", p.Character, value+p.UpgradeSpent, budget)
+		return fmt.Errorf("%s needs a budget of at least %d XP (proposed %d XP); raise its budget or sell cards first", p.Character, value+collectionValue+p.UpgradeSpent, budget)
 	}
-	if budget != *p.Budget || value != p.DeckValue || e.AdminRevision != p.AdminRevision {
+	if budget != *p.Budget || value != p.DeckValue || collectionValue != p.CollectionValue || e.AdminRevision != p.AdminRevision {
 		p.Revision++
 	}
 	p.Budget = &budget
 	p.DeckValue = value
+	p.CollectionValue = collectionValue
 	p.XP = available
 	p.AdminRevision = e.AdminRevision
 	return nil
@@ -80,6 +84,20 @@ func effectiveEconomy(root string, e Economy) (Economy, AdminSettings, error) {
 	if a.Revision < 0 {
 		return e, a, fmt.Errorf("invalid admin revision")
 	}
+	// Deleted definitions can leave harmless old overrides on disk. Exclude
+	// those from the editable snapshot and access rules; the next save drops them.
+	if e.KnownCards != nil {
+		for id := range a.CardPrices {
+			if owner, _, _ := content.TreeCardOwner(e.Trees, id); !e.KnownCards[id] || owner != "" {
+				delete(a.CardPrices, id)
+			}
+		}
+		for id := range a.CardTypes {
+			if !e.KnownCards[id] {
+				delete(a.CardTypes, id)
+			}
+		}
+	}
 	for _, price := range a.CardPrices {
 		if price < 1 || price > 1000000 {
 			return e, a, fmt.Errorf("invalid admin card price")
@@ -93,6 +111,7 @@ func effectiveEconomy(root string, e Economy) (Economy, AdminSettings, error) {
 	e.Access = e.Access.withOverrides(a)
 	e.GlobalPrices = a.CardPrices
 	e.Budgets = a.Budgets
+	e.BudgetAllocations = a.BudgetAllocations
 	e.AdminRevision = a.Revision
 	return e, a, nil
 }
@@ -131,6 +150,9 @@ func SaveAdmin(root string, base Economy, catalogs map[string]content.BattleLibr
 		return fmt.Errorf("admin settings changed; reopen Admin settings before saving")
 	}
 	for id, price := range proposed.CardPrices {
+		if owner, _, _ := content.TreeCardOwner(base.Trees, id); owner != "" && price != base.Authored[id].Buy {
+			return fmt.Errorf("change %s XP in its card tree %s", id, owner)
+		}
 		found := false
 		for _, lib := range catalogs {
 			if _, ok := lib.Cards[id]; ok {
@@ -149,10 +171,16 @@ func SaveAdmin(root string, base Economy, catalogs map[string]content.BattleLibr
 	if err := base.Access.withOverrides(proposed).validate(catalogs); err != nil {
 		return err
 	}
+	// Record the free allocation included in each explicit total-budget override.
+	proposed.BudgetAllocations = map[string]int{}
+	for id := range proposed.Budgets {
+		proposed.BudgetAllocations[id] = all[id].FreeDeckBudget
+	}
 	proposed.Revision++
 	next := base
 	next.GlobalPrices = proposed.CardPrices
 	next.Budgets = proposed.Budgets
+	next.BudgetAllocations = proposed.BudgetAllocations
 	next.AdminRevision = proposed.Revision
 	for _, p := range all {
 		if err := reconcileBudget(&p, next); err != nil {

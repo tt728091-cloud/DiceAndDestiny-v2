@@ -35,10 +35,6 @@
             "type": "deal_damage",
             "target": "selected_targets",
             "amount": 5
-          },
-          {
-            "type": "curse_action",
-            "target": "selected_targets"
           }
         ]
       },
@@ -58,10 +54,6 @@
             "type": "deal_damage",
             "target": "selected_targets",
             "amount": 4
-          },
-          {
-            "type": "curse_action",
-            "target": "selected_targets"
           }
         ]
       },
@@ -81,13 +73,55 @@
             "type": "deal_damage",
             "target": "selected_targets",
             "amount": 3
-          },
-          {
-            "type": "curse_action",
-            "target": "selected_targets"
           }
         ]
       }
-    ]
-  }
+    ],
+    "choose_tier": true
+  },
+  "configuration_version": 1,
+  "hooks": [
+    {
+      "timing": "after_damage",
+      "operations": [
+        {
+          "type": "special_effect",
+          "target": "enemy",
+          "special": {
+            "kind": "curse",
+            "amount": 3
+          }
+        }
+      ],
+      "tier_id": "skull_5"
+    },
+    {
+      "timing": "after_damage",
+      "operations": [
+        {
+          "type": "special_effect",
+          "target": "enemy",
+          "special": {
+            "kind": "curse",
+            "amount": 2
+          }
+        }
+      ],
+      "tier_id": "skull_4"
+    },
+    {
+      "timing": "after_damage",
+      "operations": [
+        {
+          "type": "special_effect",
+          "target": "enemy",
+          "special": {
+            "kind": "curse",
+            "amount": 1
+          }
+        }
+      ],
+      "tier_id": "skull_3"
+    }
+  ]
 }

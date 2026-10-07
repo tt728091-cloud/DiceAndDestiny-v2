@@ -1,41 +1,57 @@
 {
-  "schema_version": 1,
-  "id": "misfortunes_choice",
-  "name": "Misfortune\u2019s Choice",
-  "type": "curse_action",
-  "presentation": {
-    "rules_text": "Spend 3 enemy Curse Count. That enemy chooses: take 2 immediate damage with normal damage-card responses and no defense roll, or receive Cursed Entangle. If already Cursed Entangled, they must take damage. Cursed Entangle rolls all five owned dice for marks before their next offense, discards those results, then reduces ordinary maximum rolls by 1 (minimum 1). It does not add to ordinary Entangle. Each named Curse card may be played once per player per round.",
-    "art_key": "card_misfortunes_choice",
-    "effect_summary": "Spend 3 Count: enemy chooses 2 damage or Cursed Entangle."
-  },
+  "access_type": "curse",
   "cost": {
     "energy": 1
   },
-  "play": {
-    "source_zones": [
-      "hand"
+  "id": "misfortunes_choice",
+  "mechanic": {
+    "kind": "misfortunes_choice",
+    "params": {
+      "cost_count": 3,
+      "damage": 2,
+      "stacks": 1,
+      "status_id": "cursed_entangle"
+    },
+    "windows": [
+      "offensive_planning"
     ],
+    "uses_per_round": 1,
+    "uses_per_battle": 0
+  },
+  "name": "Misfortune’s Choice",
+  "operations": [
+    {
+      "id": "misfortunes_choice",
+      "target": "self",
+      "type": "curse_card"
+    }
+  ],
+  "play": {
     "destination": "discard",
     "playable_during": [
       {
-        "segment": "offensive",
         "phase": "main",
+        "segment": "offensive",
         "window_purpose": "planning"
       }
+    ],
+    "source_zones": [
+      "hand"
     ]
   },
-  "targeting": {
-    "selector": "curse_choice",
-    "minimum": 0,
-    "maximum": 1
+  "presentation": {
+    "art_key": "card_misfortunes_choice",
+    "effect_summary": "Spend 3 Count: enemy chooses 2 damage or Cursed Entangle.",
+    "rules_text": "Spend 3 enemy Curse Count. That enemy chooses: take 2 immediate damage with normal damage-card responses and no defense roll, or receive Cursed Entangle. If already Cursed Entangled, they must take damage. Cursed Entangle rolls all five owned dice for marks before their next offense, discards those results, then reduces ordinary maximum rolls by 1 (minimum 1). It does not add to ordinary Entangle. Each named Curse card may be played once per player per round."
   },
   "reaction_window": {
     "opens": false
   },
-  "operations": [
-    {
-      "type": "curse_card",
-      "target": "self"
-    }
-  ]
+  "schema_version": 1,
+  "targeting": {
+    "maximum": 1,
+    "minimum": 0,
+    "selector": "curse_choice"
+  },
+  "type": "curse_action"
 }

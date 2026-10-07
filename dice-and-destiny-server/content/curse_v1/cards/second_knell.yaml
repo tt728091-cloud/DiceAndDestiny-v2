@@ -1,41 +1,56 @@
 {
-  "schema_version": 1,
-  "id": "second_knell",
-  "name": "Second Knell",
-  "type": "curse_action",
-  "presentation": {
-    "rules_text": "Apply Second Knell (limit 1) to an enemy. After their next physical cursed result, consume this status and reroll that same die once. Both cursed results add Curse Count; use the final result. Resolves before Catalyst and shares its one-retry limit. Expires after the next Effects. Each named Curse card may be played once per player per round.",
-    "art_key": "card_second_knell",
-    "effect_summary": "Apply Second Knell: next Curse hit rerolls the same die once. Both hits add Count."
-  },
+  "access_type": "curse",
   "cost": {
     "energy": 0
   },
-  "play": {
-    "source_zones": [
-      "hand"
+  "id": "second_knell",
+  "mechanic": {
+    "kind": "second_knell",
+    "params": {
+      "retries": 1
+    },
+    "windows": [
+      "offensive_planning"
     ],
+    "uses_per_round": 1,
+    "uses_per_battle": 0,
+    "expiration": "next_ongoing",
+    "rounds": 1
+  },
+  "name": "Second Knell",
+  "operations": [
+    {
+      "id": "second_knell",
+      "target": "self",
+      "type": "curse_card"
+    }
+  ],
+  "play": {
     "destination": "discard",
     "playable_during": [
       {
-        "segment": "offensive",
         "phase": "main",
+        "segment": "offensive",
         "window_purpose": "planning"
       }
+    ],
+    "source_zones": [
+      "hand"
     ]
   },
-  "targeting": {
-    "selector": "curse_choice",
-    "minimum": 0,
-    "maximum": 1
+  "presentation": {
+    "art_key": "card_second_knell",
+    "effect_summary": "Apply Second Knell: next Curse hit rerolls the same die once. Both hits add Count.",
+    "rules_text": "Apply Second Knell (limit 1) to an enemy. After their next physical cursed result, consume this status and reroll that same die once. Both cursed results add Curse Count; use the final result. Resolves before Catalyst and shares its one-retry limit. Expires after the next Effects. Each named Curse card may be played once per player per round."
   },
   "reaction_window": {
     "opens": false
   },
-  "operations": [
-    {
-      "type": "curse_card",
-      "target": "self"
-    }
-  ]
+  "schema_version": 1,
+  "targeting": {
+    "maximum": 1,
+    "minimum": 0,
+    "selector": "curse_choice"
+  },
+  "type": "curse_action"
 }

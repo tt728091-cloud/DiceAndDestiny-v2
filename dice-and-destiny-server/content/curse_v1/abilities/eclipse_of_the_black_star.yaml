@@ -37,8 +37,8 @@
         },
         "operations": [
           {
-            "type": "curse_action",
-            "target": "selected_targets"
+            "type": "noop",
+            "target": "self"
           }
         ]
       },
@@ -60,11 +60,27 @@
         },
         "operations": [
           {
-            "type": "curse_action",
-            "target": "selected_targets"
+            "type": "noop",
+            "target": "self"
           }
         ]
       }
     ]
-  }
+  },
+  "configuration_version": 1,
+  "hooks": [
+    {
+      "timing": "before_defense",
+      "operations": [
+        {
+          "type": "special_effect",
+          "target": "enemy",
+          "special": {
+            "kind": "curse_face_choice",
+            "amount": 5
+          }
+        }
+      ]
+    }
+  ]
 }

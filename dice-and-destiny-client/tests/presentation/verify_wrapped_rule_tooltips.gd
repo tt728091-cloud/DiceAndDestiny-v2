@@ -36,6 +36,19 @@ func _run() -> void:
 				if child is Button and child.text == "ⓘ":
 					await _hover(child, child.get_global_rect().get_center(), "guard-info-%d-%s" % [viewport.x, right])
 			tile.queue_free(); await process_frame
+			for boosted in [false, true]:
+				var actor := {"ability_modifiers": [], "statuses": []}
+				if boosted:
+					actor.ability_modifiers = [{"ability_id": "adventurer_small_straight", "bonus_id": "strong_swing", "status_id": "strong_swing_ready", "expires_after_offensive": true}]
+					actor.statuses = [{"definition_id": "strong_swing_ready", "stacks": 1}]
+				var straight := BattleAbilityTile.new(); stage.add_child(straight)
+				straight.configure("adventurer_small_straight", true, false, true, actor); straight.cinematic_compact(); straight.minimal_rail()
+				straight.position = Vector2(viewport.x - 390 if right else 12, viewport.y - 110)
+				_expect(straight.tooltip_text.count("Small Straight") == 1, "one Small Straight heading")
+				_expect(straight.tooltip_text.count("Strong Swing:") == int(boosted) and straight.tooltip_text.count("even if unused") == int(boosted), "bonus and expiry shown once only when active")
+				for frame in 3: await process_frame
+				await _hover(straight, straight.get_global_rect().position + Vector2(40, 20), "straight-%d-%s-%s" % [viewport.x, right, boosted])
+				straight.queue_free(); await process_frame
 			var card := BattleCard.new(); stage.add_child(card); card.configure("test-card", "brace", true)
 			card.position = Vector2(viewport.x - 205 if right else 12, viewport.y - 270)
 			await process_frame

@@ -22,7 +22,7 @@ static func card(id: String) -> Dictionary:
 	var value := definition("cards", id)
 	var presentation := _dictionary(value.get("presentation", {})).duplicate()
 	# Clarify the same extra-roll rule for older pinned battles as well.
-	if id == "unquiet_hands":
+	if id == "unquiet_hands" and not value.has("mechanic"):
 		presentation["effect_summary"] = "Choose an enemy die: Curse check → +1 Count on a cursed face. Offensive result unchanged."
 		presentation["rules_text"] = "Choose a cursed enemy die for a separate roll. A cursed face adds 1 Curse Count; a clean face adds none. No new faces are cursed. Keep its saved offensive result unchanged. Each named Curse card may be played once per player per round."
 	return {
@@ -35,21 +35,27 @@ static func card(id: String) -> Dictionary:
 		"targeting": _dictionary(value.get("targeting", {})),
 		"play": _dictionary(value.get("play", {})),
 		"operations": _array(value.get("operations", [])),
+		"program": _dictionary(value.get("program", {})),
+		"mechanic": _dictionary(value.get("mechanic", {})),
 	}
+
+static func configured_ability_damage(id: String, actor: Dictionary) -> int:
+	return int(actor.get("configured_ability_damage", {}).get(id, actor.get("needlefang_damage_bonus", 0) if id == "needlefang" else 0))
 
 static func ability(id: String, actor: Dictionary = {}) -> Dictionary:
 	var value := definition("abilities", id)
 	var presentation := _dictionary(value.get("presentation", {}))
 	var rules := str(presentation.get("rules_text", ""))
-	if id == "hexbrand" and not rules.contains(ORDINARY_CURSE_RULES): rules += "\n" + ORDINARY_CURSE_RULES
-	var temporary := temporary_ability_damage(id, actor)
-	if temporary > 0: rules += "\n\n+%d temporary damage from Strong Swing. Only if this ability qualifies and is selected. Expires at the end of the offensive segment, even if unused." % temporary
-	var bonus := int(actor.get("needlefang_damage_bonus", 0))
-	if id == "needlefang" and bonus > 0:
-		var lines: Array[String] = ["Choose a qualified tier (Venom Lens +%d damage included):" % bonus]
+	if id == "hexbrand" and int(value.get("configuration_version", 0)) == 0 and not rules.contains(ORDINARY_CURSE_RULES): rules += "\n" + ORDINARY_CURSE_RULES
+	var bonus := configured_ability_damage(id, actor)
+	if id == "needlefang" and bonus > 0 and int(value.get("configuration_version", 0)) == 0:
+		var lines: Array[String] = ["Choose a qualified tier (+%d damage included):" % bonus]
 		for tier in needlefang_tiers(actor): lines.append(tier.text)
 		lines.append("Poison overflow applies Incubation if none exists.")
 		rules = "\n".join(lines)
+	if bonus > 0 and (id != "needlefang" or int(value.get("configuration_version", 0)) > 0): rules += "\n+%d damage from an active card preparation." % bonus
+	var temporary_rules := temporary_ability_damage_rules(id, actor)
+	if not temporary_rules.is_empty(): rules += "\n\n" + temporary_rules
 	return {
 		"name": str(value.get("name", _title(id))),
 		"recipe": _ability_recipe(value),
@@ -57,6 +63,39 @@ static func ability(id: String, actor: Dictionary = {}) -> Dictionary:
 		"targeting": _dictionary(value.get("targeting", {})),
 		"type": str(value.get("type", "")),
 	}
+
+# The recipe may itself be the ability name (Small/Large Straight). Its full
+# qualification is already explained in the rules, so don't repeat the heading.
+static func ability_tooltip(id: String, actor: Dictionary = {}) -> String:
+	var info := ability(id, actor)
+	var lines: Array[String] = [str(info.name)]
+	var recipe := str(info.recipe).strip_edges()
+	if not recipe.is_empty() and recipe.nocasecmp_to(str(info.name).strip_edges()) != 0:
+		lines.append("Requires: " + recipe)
+	if not str(info.text).is_empty(): lines.append("\n" + str(info.text))
+	return "\n".join(lines)
+
+static func temporary_ability_damage_rules(id: String, actor: Dictionary = {}) -> String:
+	var lines: Array[String] = []
+	var legacy_damage := 0
+	for modifier in _array(actor.get("ability_modifiers", [])):
+		if modifier.get("ability_id") != id: continue
+		var status_id := str(modifier.get("status_id", ""))
+		if not _array(actor.get("statuses", [])).any(func(status): return status.get("definition_id") == status_id and int(status.get("stacks", 0)) > 0): continue
+		var program := _dictionary(modifier.get("program_bonus", {}))
+		if not program.is_empty():
+			var status := definition("statuses", status_id)
+			var rules := str(_dictionary(status.get("presentation", {})).get("rules_text", ""))
+			if not rules.is_empty() and rules not in lines: lines.append(str(status.get("name", "Preparation")) + ": " + rules)
+		else:
+			for card in _dictionary(_catalog.get("cards", {})).values():
+				for operation in _array(card.get("operations", [])):
+					var bonus := _dictionary(_dictionary(operation.get("modifier", {})).get("add_conditional_bonus", {}))
+					if bonus.get("id", "") != modifier.get("bonus_id", ""): continue
+					for effect in _array(bonus.get("operations", [])):
+						if effect.get("type") == "deal_damage": legacy_damage += int(effect.get("amount", 0))
+	if legacy_damage > 0: lines.append("Strong Swing: +%d damage if this ability qualifies and is selected. Expires at the end of the offensive segment, even if unused." % legacy_damage)
+	return "\n".join(lines)
 
 # Every attack hover uses the pinned ability, never a separate short rules copy.
 # The selected tier comes from the reveal, not a guess from its damage total.
@@ -89,7 +128,7 @@ static func needlefang_tiers(actor: Dictionary = {}) -> Array[Dictionary]:
 		var damage := 0
 		var poison := 0
 		for operation in _array(tier.get("operations", [])):
-			if operation.get("type") == "deal_damage": damage += int(operation.get("amount", 0)) + int(actor.get("needlefang_damage_bonus", 0))
+			if operation.get("type") == "deal_damage": damage += int(operation.get("amount", 0)) + configured_ability_damage("needlefang", actor)
 			if operation.get("type") == "apply_status" and operation.get("status_id") == "poison": poison += int(operation.get("stack_count", 0))
 		var recipe := _ability_recipe({"qualification": {"activation_tiers": [tier]}})
 		result.append({"id": str(tier.get("id", "")), "label": recipe, "damage": damage, "poison": poison, "text": "%s: %d damage + %d Poison" % [recipe, damage, poison]})
@@ -105,7 +144,7 @@ static func offensive_tier_summaries(id: String, actor: Dictionary = {}) -> Arra
 		var needs_rules := false
 		for operation in _array(tier.get("operations", [])):
 			match str(operation.get("type", "")):
-				"deal_damage": benefits.append("%d DMG" % (int(operation.get("amount", 0)) + (int(actor.get("needlefang_damage_bonus", 0)) if id == "needlefang" else 0)))
+				"deal_damage": benefits.append("%d DMG" % (int(operation.get("amount", 0)) + configured_ability_damage(id, actor)))
 				"gain_resource": benefits.append("Gain %d %s" % [int(operation.get("amount", 0)), _title(str(operation.get("resource", "energy")))])
 				"curse_action":
 					var followup := ability_followup(id, str(tier.get("id", "")))
@@ -129,6 +168,15 @@ static func offensive_tier_summaries(id: String, actor: Dictionary = {}) -> Arra
 # Bespoke authority hooks need authored explanations; ordinary operations are
 # described above. Every tile and selected attack consumes this same wording.
 static func ability_followup(id: String, tier_id: String = "") -> String:
+	var value := definition("abilities", id)
+	if int(value.get("configuration_version", 0)) > 0:
+		var lines: Array[String] = []
+		for hook in value.get("hooks", []):
+			if not str(hook.get("tier_id", "")).is_empty() and str(hook.tier_id) != tier_id: continue
+			for op in hook.operations:
+				if op.type == "special_effect": lines.append(_special_words(op.special))
+				elif op.type == "apply_status": lines.append("Apply %d %s" % [int(op.stack_count), status(str(op.status_id)).name])
+		return " · ".join(lines)
 	match id:
 		"hexbrand": return "Then apply %d Curse" % maxi(1, int(tier_id.trim_prefix("skull_")) - 2)
 		"grasp_of_the_sarcophagus": return "Apply 2 Curse · Entomb 1 cursed die\nIf rerolling, bound dice must join until Curse"
@@ -139,6 +187,21 @@ static func ability_followup(id: String, tier_id: String = "") -> String:
 # Structured quantities for bespoke effects. Do not extract numbers from rules
 # prose: a roll limit, threshold, and actual status amount mean different things.
 static func ability_followup_intents(id: String, tier_id: String = "") -> Array[Dictionary]:
+	var value := definition("abilities", id)
+	if int(value.get("configuration_version", 0)) > 0:
+		var result: Array[Dictionary] = []
+		for hook in value.get("hooks", []):
+			if not str(hook.get("tier_id", "")).is_empty() and str(hook.tier_id) != tier_id: continue
+			for op in hook.operations:
+				if op.type == "special_effect":
+					var effect: Dictionary = op.special
+					var icon := "curse_count"; var count := str(effect.get("amount", 1))
+					if effect.kind == "roll_cursed": icon = "dice"; count = "≤" + count
+					elif effect.kind == "status_threshold": icon = str(effect.result_status_id); count = str(effect.stacks) + "?"
+					elif effect.kind == "curse_face_choice": count = "1/die"
+					result.append({"icon": icon, "count": count, "hint": _special_words(effect)})
+					if effect.kind == "entomb_choice": result.append({"icon": "entomb", "count": "1", "hint": _special_words(effect)})
+		return result
 	match id:
 		"hexbrand":
 			var count: int = {"skull_3": 1, "skull_4": 2, "skull_5": 3}.get(tier_id, 1)
@@ -151,8 +214,19 @@ static func ability_followup_intents(id: String, tier_id: String = "") -> Array[
 			return [{"icon": "curse_count", "count": "1/die", "hint": ability_followup(id, tier_id)}]
 	return []
 
+static func _needlefang_summary_fits(value: Dictionary) -> bool:
+	var qualification := _dictionary(value.get("qualification", {}))
+	if not _array(value.get("hooks", [])).is_empty() or not _array(qualification.get("conditional_bonuses", [])).is_empty(): return false
+	for tier in _array(qualification.get("activation_tiers", [])):
+		var requirements := _array(_dictionary(tier.get("requirements", {})).get("all", []))
+		if requirements.size() != 1 or requirements[0].get("symbol_id") != "fang": return false
+		for op in _array(tier.get("operations", [])):
+			if op.get("target") != "selected_targets": return false
+			if op.get("type") != "deal_damage" and not (op.get("type") == "apply_status" and op.get("status_id") == "poison"): return false
+	return true
+
 static func inline_tiers(id: String, actor: Dictionary = {}) -> Array[Dictionary]:
-	if id == "needlefang":
+	if id == "needlefang" and _needlefang_summary_fits(definition("abilities", id)):
 		var options := needlefang_tiers(actor)
 		for option in options:
 			option.summary = "%d DMG +%d%s" % [option.damage, option.poison, status("poison").glyph]
@@ -176,6 +250,8 @@ static func inline_tiers(id: String, actor: Dictionary = {}) -> Array[Dictionary
 	return options
 
 static func defense_lines(id: String) -> Array[String]:
+	var configured := definition("abilities", id)
+	if int(configured.get("configuration_version", 0)) > 0: return [str(ability(id).text)]
 	match id:
 		"shedskin": return ["2 owned dice · 0 Energy", "Each Fang  Prevent 1", "Each Gland  Gain 1 Catalyst", "Any Coil  Apply 1 Incubation", "Optional: pay 1 Catalyst → prevent 2 more"]
 		"barbed_mantle": return ["1 owned die · 1 Energy", "Fang  Prevent 2 · Apply 1 Poison", "Gland  Prevent 3 · Gain 1 Catalyst", "Coil  Prevent 1 · Apply 1 Incubation", "  if poisoned, no Incubation;", "  otherwise apply 1 Poison"]
@@ -262,9 +338,12 @@ static func _dictionary(value) -> Dictionary:
 static func temporary_ability_damage(id: String, actor: Dictionary) -> int:
 	var total := 0
 	for modifier in _array(actor.get("ability_modifiers", [])):
-		if modifier.get("ability_id") != id or not modifier.get("expires_after_offensive", false): continue
+		if modifier.get("ability_id") != id: continue
 		var status_id := str(modifier.get("status_id", ""))
 		if not _array(actor.get("statuses", [])).any(func(status): return status.get("definition_id") == status_id and int(status.get("stacks", 0)) > 0): continue
+		var program := _dictionary(modifier.get("program_bonus", {}))
+		if not program.is_empty():
+			total += int(_dictionary(program.get("params", {})).get("damage", 2)); continue
 		for value in _dictionary(_catalog.get("cards", {})).values():
 			for operation in _array(value.get("operations", [])):
 				var bonus := _dictionary(_dictionary(operation.get("modifier", {})).get("add_conditional_bonus", {}))
@@ -272,3 +351,18 @@ static func temporary_ability_damage(id: String, actor: Dictionary) -> int:
 				for effect in _array(bonus.get("operations", [])):
 					if effect.get("type") == "deal_damage": total += int(effect.get("amount", 0))
 	return total
+
+static func card_mechanic(id: String) -> String:
+	var value := definition("cards", id)
+	return str(value.get("mechanic", {}).get("kind", id))
+
+static func _special_words(effect: Dictionary) -> String:
+	match str(effect.get("kind", "")):
+		"curse": return "Apply %d Curse" % int(effect.amount)
+		"roll_cursed": return "Roll up to %d cursed dice for Count" % int(effect.amount)
+		"entomb_choice": return "Apply %d Curse; Entomb one die (limit %d)" % [int(effect.amount), int(effect.limit)]
+		"curse_face_choice": return "Curse one number across enemy dice; if full, roll up to %d dice" % int(effect.amount)
+		"curse_die_choice": return "Choose a die: seed face %d, expand, or Surge if full" % int(effect.face)
+		"conditional_status": return "If %s is at least %d and %s is below %d, apply %d %s; otherwise apply %d %s" % [status(str(effect.status_id)).name, int(effect.threshold), status(str(effect.result_status_id)).name, int(effect.limit), int(effect.stacks), status(str(effect.result_status_id)).name, int(effect.fallback_stacks), status(str(effect.fallback_status_id)).name]
+		"status_threshold": return "At %d %s, apply %d %s" % [int(effect.threshold), status(str(effect.status_id)).name, int(effect.stacks), status(str(effect.result_status_id)).name]
+	return ""

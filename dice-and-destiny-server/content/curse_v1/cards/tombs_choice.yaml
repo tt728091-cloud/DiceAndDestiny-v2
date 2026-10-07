@@ -1,41 +1,55 @@
 {
-  "schema_version": 1,
-  "id": "tombs_choice",
-  "name": "Tomb\u2019s Choice",
-  "type": "curse_action",
-  "presentation": {
-    "rules_text": "An enemy with at least one cursed die chooses now: receive 3 Curse Count, or roll all five owned dice for their marks. These extra results cannot be kept or qualify an ability. Each named Curse card may be played once per player per round.",
-    "art_key": "card_tombs_choice",
-    "effect_summary": "Enemy chooses: 3 Count or roll all five dice."
-  },
+  "access_type": "curse",
   "cost": {
     "energy": 1
   },
-  "play": {
-    "source_zones": [
-      "hand"
+  "id": "tombs_choice",
+  "mechanic": {
+    "kind": "tombs_choice",
+    "params": {
+      "count": 3,
+      "rolls": 5
+    },
+    "windows": [
+      "offensive_planning"
     ],
+    "uses_per_round": 1,
+    "uses_per_battle": 0
+  },
+  "name": "Tomb’s Choice",
+  "operations": [
+    {
+      "id": "tombs_choice",
+      "target": "self",
+      "type": "curse_card"
+    }
+  ],
+  "play": {
     "destination": "discard",
     "playable_during": [
       {
-        "segment": "offensive",
         "phase": "main",
+        "segment": "offensive",
         "window_purpose": "planning"
       }
+    ],
+    "source_zones": [
+      "hand"
     ]
   },
-  "targeting": {
-    "selector": "curse_choice",
-    "minimum": 0,
-    "maximum": 1
+  "presentation": {
+    "art_key": "card_tombs_choice",
+    "effect_summary": "Enemy chooses: 3 Count or roll all five dice.",
+    "rules_text": "An enemy with at least one cursed die chooses now: receive 3 Curse Count, or roll all five owned dice for their marks. These extra results cannot be kept or qualify an ability. Each named Curse card may be played once per player per round."
   },
   "reaction_window": {
     "opens": false
   },
-  "operations": [
-    {
-      "type": "curse_card",
-      "target": "self"
-    }
-  ]
+  "schema_version": 1,
+  "targeting": {
+    "maximum": 1,
+    "minimum": 0,
+    "selector": "curse_choice"
+  },
+  "type": "curse_action"
 }

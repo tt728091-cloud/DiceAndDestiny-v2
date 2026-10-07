@@ -37,6 +37,9 @@ func settledLegalActions(battle *state.Battle, library content.BattleLibrary, ac
 	if window == nil || battle.Actors[actorID].DefeatState == state.ActorDefeated {
 		return nil
 	}
+	if battle.Settled.Actors[actorID].CardExecution != nil {
+		return programActions(battle, library, actorID, pending)
+	}
 	var actions []command.Command
 	switch window.Stage {
 	case stageCurseChoice:
@@ -84,12 +87,15 @@ func settledLegalActions(battle *state.Battle, library content.BattleLibrary, ac
 		if containsCommand(window.AllowedCommands, command.TypePlanningAbility) {
 			for _, abilityID := range runtime.QualifiedAbilityIDs {
 				ability := library.Abilities[abilityID]
+				if ability.Cost.Energy > battle.Actors[actorID].Resources.EnergyPoints+runtime.PaidOffensiveEnergy {
+					continue
+				}
 				if ability.Usage.MaximumPerSegment > 0 && runtime.UsedAbilities[abilityID] >= ability.Usage.MaximumPerSegment {
 					continue
 				}
 				for _, targets := range actorTargetChoices(battle, actorID, ability.Targeting) {
 					tiers := []string{""}
-					if abilityID == "needlefang" || abilityID == "hexbrand" || abilityID == "adventurer_strike" {
+					if chooseAbilityTier(ability) {
 						tiers = nil
 						for _, tier := range ability.Qualification.ActivationTiers {
 							if requirementsMet(tier.Requirements, runtime.FinalDice) {
@@ -97,19 +103,20 @@ func settledLegalActions(battle *state.Battle, library content.BattleLibrary, ac
 							}
 						}
 					}
-					choices := [][]string{nil}
-					if abilityID == "terminal_bite" || abilityID == "fever_spike" {
-						n := 2
-						tier, _ := qualifiedTier(ability, runtime.FinalDice)
-						if abilityID == "fever_spike" && tier.ID == "base" {
-							n = 1
-						}
-						choices = toxinChoices(battle, first(targets), n)
-						if len(choices) == 0 {
-							choices = [][]string{nil}
-						}
-					}
 					for _, tierID := range tiers {
+						choices := [][]string{nil}
+						tier, _ := qualifiedTier(ability, runtime.FinalDice)
+						for _, candidate := range ability.Qualification.ActivationTiers {
+							if candidate.ID == tierID {
+								tier = candidate
+							}
+						}
+						if n := provokeCount(tier.Operations); n > 0 {
+							choices = toxinChoices(battle, first(targets), n)
+							if len(choices) == 0 {
+								choices = [][]string{nil}
+							}
+						}
 						for _, choice := range choices {
 							actions = append(actions, legalCommand(battle.ID, actorID, command.TypePlanningAbility, command.PlanningAbilityPayload{PendingInputID: pending.ID, Checkpoint: planningCheckpoint(pending), AbilityID: abilityID, TierID: tierID, ToxinChoices: choice, TargetIDs: targets}))
 						}
@@ -141,7 +148,7 @@ func settledLegalActions(battle *state.Battle, library content.BattleLibrary, ac
 						continue
 					}
 					actions = append(actions, legalCommand(battle.ID, actorID, command.TypePlanningAbility, command.PlanningAbilityPayload{PendingInputID: pending.ID, Checkpoint: planningCheckpoint(pending), AbilityID: abilityID, TargetIDs: []string{source.ID}}))
-					if abilityID == "shedskin" && stacks(battle, actorID, "catalyst") > 0 {
+					if canPayAbility(battle, actorID, ability) {
 						actions = append(actions, legalCommand(battle.ID, actorID, command.TypePlanningAbility, command.PlanningAbilityPayload{PendingInputID: pending.ID, Checkpoint: planningCheckpoint(pending), AbilityID: abilityID, TargetIDs: []string{source.ID}, SpendCatalyst: true}))
 					}
 				}
@@ -189,6 +196,7 @@ func settledLegalActions(battle *state.Battle, library content.BattleLibrary, ac
 	actions = append(actions, curseCardActions(battle, library, actorID, pending)...)
 	actions = append(actions, venomCardActions(battle, library, actorID, pending)...)
 	actions = append(actions, generalCardActions(battle, library, actorID, pending)...)
+	actions = append(actions, programActions(battle, library, actorID, pending)...)
 	return actions
 }
 
@@ -199,7 +207,12 @@ func planningCardActions(battle *state.Battle, library content.BattleLibrary, ac
 	actor := battle.Actors[actorID]
 	runtime := battle.Settled.Actors[actorID]
 	var actions []command.Command
-	for _, instanceID := range actor.Cards.Hand {
+	for _, instanceID := range mechanicCards(battle, actorID) {
+		zone := programCardZone(battle, actorID, instanceID)
+		def := library.Cards[runtime.CardInstances[instanceID].DefinitionID]
+		if def.Mechanic == nil && zone != "hand" || def.Mechanic != nil && !mechanicPlayable(battle, actorID, instanceID, def) {
+			continue
+		}
 		definition := library.Cards[runtime.CardInstances[instanceID].DefinitionID]
 		if actor.Resources.EnergyPoints < definition.Cost.Energy || !cardPlayableDuring(definition, battle, "planning", actorID) {
 			continue
@@ -393,6 +406,9 @@ func otherActorIDs(battle *state.Battle, actorID string) []string {
 }
 
 func cardPlayableDuring(definition content.BattleCardDefinition, battle *state.Battle, purpose string, actors ...string) bool {
+	if definition.Mechanic != nil {
+		return len(actors) == 1 && mechanicAvailable(battle, actors[0], definition)
+	}
 	if definition.Play.BeforeFirstRoll && (len(actors) != 1 || battle.Settled == nil || battle.Settled.Actors[actors[0]].RollsUsed != 0) {
 		return false
 	}

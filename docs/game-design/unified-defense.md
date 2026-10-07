@@ -18,12 +18,20 @@ completed defenses. Card targeting remains card-first: one viable source is
 automatic; multiple sources highlight choices. Defense selection still targets
 one attack, pays its existing cost, and follows its existing usage rules.
 
-A defense roll retains its atomic reaction/animation checkpoint. **Apply** finishes
-that roll and returns to the same Defense screen; it automatically applies after
-the review animation if there is no playable reaction. **Pass** finishes all of
+A defense roll retains its atomic reaction/animation checkpoint. It finishes
+automatically after the review animation and returns to the same Defense screen;
+there is no Apply button, even when automatic passing is disabled. Reaction cards
+can be used during review, and selecting a card target pauses completion. Cards
+and unused defenses remain available in the Defense hub. **Pass** finishes all of
 that participant's remaining choices, including unused defenses and cards. It
 does not take away another participant's turn. When Pass is the sole legal action,
 the normal automatic review-and-pass behavior finishes the segment.
+
+Damage reduction and released-card flights share one feedback clock after the
+roll finalizes. The roll preview holds the previous damage amount until the
+actual saved cards are known. Only the affected attack's list uses temporary
+headers; their text keeps its natural height, and the list reserves its space
+until the saved cards leave. Other attack lists remain live throughout.
 
 After all participants finish, remaining removals and queued attack statuses
 commit once. Normal hand-limit cleanup, defeat checks, and authored follow-up

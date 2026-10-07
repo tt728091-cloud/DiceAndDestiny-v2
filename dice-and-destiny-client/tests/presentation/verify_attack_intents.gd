@@ -33,7 +33,7 @@ func _run() -> void:
 				var panel = screen._attack_intents[id]
 				_expect(panel.get_parent() == screen._root and panel.get_theme_stylebox("panel") is StyleBoxEmpty, "no central attack box")
 				_expect(root.get_visible_rect().encloses(panel.intent.get_global_rect()), "intent fits viewport")
-				_expect(screen.attack_anchor_rect(id) == panel.damage.get_global_rect(), "source ID resolves exact live damage number")
+				_expect(screen.attack_anchor_rect(id) == (panel.incoming_row.damage_rect() if is_instance_valid(panel.incoming_row) else panel.damage.get_global_rect()), "source ID resolves exact live damage number")
 				if id != "outgoing":
 					_expect(panel.intent_row.get_children().any(func(child): return "Apply 2 Poison" in child.tooltip_text), "effect icon explains application on hover")
 			# Switching attackers moves the same choices without covering other intents.
@@ -69,7 +69,7 @@ func _run() -> void:
 			var fighter: Control = screen._actor_profiles[panel.attacker_id].get_parent().fighter
 			fighter.position += Vector2(-20, 12)
 			panel._update()
-			_expect(panel.intent.global_position.is_equal_approx(before + Vector2(-20, 12) * screen._root.scale), "intent follows fighter movement")
+			_expect(is_equal_approx(panel.intent.global_position.x, before.x - 20 * screen._root.scale.x) and panel.intent.global_position.y >= screen._root.global_position.y + screen.TOP_HUD_BOTTOM * screen._root.scale.y, "intent follows its fighter while clearing the phase header")
 			# Source-targeted cards use the same visible intent, never an old box.
 			fixture.legal_actions.append({"battle_id": fixture.snapshot.battle_id, "actor_id": "blade", "type": "commit_interaction", "payload": {"pending_input_id": "intent", "card_ids": ["ward"], "target_ids": [target]}})
 			screen._view.apply_result(fixture)
@@ -77,7 +77,7 @@ func _run() -> void:
 			screen._render()
 			for frame in 6: await process_frame
 			await _click(screen._attack_intents[target].intent)
-			_expect(fake.commands.size() == 1 and JSON.parse_string(fake.commands[0]).payload.target_ids == [target], "card click sends one command for the exact source")
+			_expect(fake.commands.size() == 1 and JSON.parse_string(fake.commands[0]).payload.target_ids == [target], "card click sends one command for the exact source: count=%d commands=%s" % [count, fake.commands])
 			# Roll + prevention + status gain use the same clock, but new endpoints.
 			fixture.snapshot.stage = "defense_reaction"; fixture.pending_input = {}; fixture.legal_actions = []
 			fixture.snapshot.defense_selections = {"blade": {"actor_id": "blade", "source_id": target, "ability_id": "shedskin", "rolled_faces": [1, 4]}}
@@ -95,7 +95,7 @@ func _run() -> void:
 				panel.data.roll_started_ms = panel.started_ms
 			panel.started_ms -= int((TIMING.roll_seconds() + 0.05) * 1000); panel.data.roll_started_ms = panel.started_ms
 			panel._update()
-			_expect(panel.dice_controls[0].global_position.distance_to(launch) > 50, "dice travel to a landing location")
+			_expect(panel.dice_controls[0].global_position.is_equal_approx(launch), "defense dice roll in their fixed station")
 			_expect(panel.dice_controls[0].rotation == 0 and panel.dice_controls[0].text.ends_with("1"), "landed die shows authoritative face")
 			_expect(panel.gain_origins[0] == panel.benefit_labels[1], "status trail originates at the die that granted it")
 			if count == 1 and viewport.x == 1920:
@@ -121,9 +121,9 @@ func _run() -> void:
 func _check_defense_position(screen: Control, source_id: String) -> void:
 	var rail: Control = screen._ability_dock.get_parent()
 	var bounds := rail.get_global_rect()
-	var target: Rect2 = screen._attack_intents[source_id].intent.get_global_rect()
+
 	_expect(screen._ability_dock.get_meta("defense_source", "") == source_id, "defense dock owns the selected source")
-	_expect(bounds.end.x < target.position.x and target.position.x - bounds.end.x < 20, "choices sit immediately to the left of selected attack")
+	_expect(bounds.grow(90 * screen._root.scale.x).intersects(screen._attack_intents[source_id].intent.get_global_rect()), "defense choices appear beside selected attack")
 	_expect(root.get_visible_rect().encloses(bounds), "defense choices fit the viewport")
 	for other in screen._attack_intents.values():
 		_expect(not bounds.intersects(other.intent.get_global_rect()), "choices leave every attack button exposed")

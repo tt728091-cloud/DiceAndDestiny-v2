@@ -1,41 +1,54 @@
 {
-  "schema_version": 1,
-  "id": "chosen_instrument",
-  "name": "Chosen Instrument",
-  "type": "curse_action",
-  "presentation": {
-    "rules_text": "Choose a cursed enemy die. The next eligible random subset roll selects it with priority after Entombed dice. Wait if no slot is available. Consumed when selected; expires after the next Effects. Each named Curse card may be played once per player per round.",
-    "art_key": "card_chosen_instrument",
-    "effect_summary": "Prioritize one chosen cursed die for an extra roll."
-  },
+  "access_type": "curse",
   "cost": {
     "energy": 0
   },
-  "play": {
-    "source_zones": [
-      "hand"
+  "id": "chosen_instrument",
+  "mechanic": {
+    "kind": "chosen_instrument",
+    "params": {},
+    "windows": [
+      "offensive_planning"
     ],
+    "uses_per_round": 1,
+    "uses_per_battle": 0,
+    "expiration": "next_ongoing",
+    "rounds": 1
+  },
+  "name": "Chosen Instrument",
+  "operations": [
+    {
+      "id": "chosen_instrument",
+      "target": "self",
+      "type": "curse_card"
+    }
+  ],
+  "play": {
     "destination": "discard",
     "playable_during": [
       {
-        "segment": "offensive",
         "phase": "main",
+        "segment": "offensive",
         "window_purpose": "planning"
       }
+    ],
+    "source_zones": [
+      "hand"
     ]
   },
-  "targeting": {
-    "selector": "curse_choice",
-    "minimum": 0,
-    "maximum": 1
+  "presentation": {
+    "art_key": "card_chosen_instrument",
+    "effect_summary": "Prioritize one chosen cursed die for an extra roll.",
+    "rules_text": "Choose a cursed enemy die. The next eligible random subset roll selects it with priority after Entombed dice. Wait if no slot is available. Consumed when selected; expires after the next Effects. Each named Curse card may be played once per player per round."
   },
   "reaction_window": {
     "opens": false
   },
-  "operations": [
-    {
-      "type": "curse_card",
-      "target": "self"
-    }
-  ]
+  "schema_version": 1,
+  "targeting": {
+    "maximum": 1,
+    "minimum": 0,
+    "selector": "curse_choice"
+  },
+  "type": "curse_action"
 }

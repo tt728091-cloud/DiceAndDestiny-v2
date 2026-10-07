@@ -32,13 +32,15 @@ func _run() -> void:
 		root.size = viewport
 		for frame in 8: await process_frame
 		await _capture("status-%d" % viewport.x)
-		for outcome in ["first", "second", "expired"]:
+		for outcome in ["first", "second", "expired", "configured"]:
 			var change := {"kind": "dividend_expired" if outcome == "expired" else "dividend_trigger", "actor_id": "goblin", "source_actor_id": "blade", "die": {"index": 2, "face": 6}, "energy_before": 1, "energy_after": 2, "rewards": 2 if outcome == "second" else 1, "consumed": outcome == "second"}
+			if outcome == "configured": change.merge({"energy_after": 4, "rewards": 1, "limit": 1, "consumed": true}, true)
 			var notice = NOTICE.new(); notice.configure(screen, {"card_id": "", "title": "Black Dividend", "changes": [change]}); screen.add_child(notice); notice.set_process(false)
 			notice._elapsed = notice.duration * 0.75; notice.refresh(); await process_frame
 			_expect(not notice._roll.visible and notice._batch_rolls.is_empty(), "status proc invents no roll")
 			_expect(root.get_visible_rect().encloses(notice._label.get_global_rect()), "caption fits viewport")
-			_expect(("expired" if outcome == "expired" else "consumed" if outcome == "second" else "waits for next round") in notice._label.text, "clear lifecycle outcome")
+			_expect(("expired" if outcome == "expired" else "consumed" if outcome in ["second", "configured"] else "waits for next round") in notice._label.text, "clear lifecycle outcome")
+			if outcome == "configured": _expect("gains 3 Energy" in notice._label.text and "1 / 1 rewards" in notice._label.text, "configured reward and limit shown")
 			if outcome != "expired": _expect(notice._count_target.size != Vector2.ZERO and notice._die_rect.size != Vector2.ZERO, "die and Energy endpoints are present")
 			await _capture("%s-%d" % [outcome, viewport.x])
 			notice.queue_free(); await process_frame

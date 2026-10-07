@@ -4,7 +4,16 @@ import "encoding/json"
 
 // Venom work is part of authoritative state, including interrupted windows, so
 // a rejected command, save/load, or history fork cannot lose a delayed effect.
+type MechanicExpiration struct {
+	Checkpoint string
+	Round      int
+	StatusID   string
+	ActorID    string
+	InstanceID string
+}
 type VenomRuntime struct {
+	Expirations    map[string]MechanicExpiration `json:",omitempty"`
+	Cards          map[string]string             `json:",omitempty"`
 	Round          int
 	Provoked       map[string]int
 	Used           map[string]bool
@@ -18,11 +27,13 @@ type VenomRuntime struct {
 	MoltRewards    []VenomMoltReward
 }
 type VenomMoltReward struct {
+	CardID          string `json:",omitempty"`
 	ActorID         string
 	SourceID        string
 	PriorPrevention int
 }
 type VenomWork struct {
+	Checks          int `json:",omitempty"`
 	SourceContentID string
 	Damage          int
 	RequirePoison   bool

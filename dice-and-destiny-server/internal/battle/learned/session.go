@@ -123,6 +123,7 @@ func NewSession(config SessionConfig) (*Session, error) {
 	environment, err := mlsim.New(mlsim.Config{
 		IncludeContentCatalog: config.OpponentDefinition != "",
 		ContentRoot:           config.ContentRoot,
+		AuthoredCardsRoot:     config.LoadoutRoot,
 		RunStateRoot:          config.RunStateRoot,
 		MaxActions:            mlsim.DefaultMaxActions,
 		SessionID:             "phase3-player",
@@ -202,7 +203,7 @@ func (s *Session) ResetCharacterLoadout(battleID string, seed uint64, humanSeat 
 	var decks map[string][]loadout.Entry
 	var abilityBoards map[string]content.AbilityBoard
 	if s.config.LoadoutRoot != "" {
-		catalogs, err := CharacterCatalogs(s.config.ContentRoot)
+		catalogs, err := CharacterCatalogs(s.config.ContentRoot, s.config.LoadoutRoot)
 		if err != nil {
 			return nil, err
 		}
@@ -225,9 +226,16 @@ func (s *Session) ResetCharacterLoadout(battleID string, seed uint64, humanSeat 
 			decks = map[string][]loadout.Entry{humanSeat: progress.Deck}
 			abilityBoards = map[string]content.AbilityBoard{humanSeat: progress.Abilities}
 		} else {
-			deck, err := loadout.Read(s.config.LoadoutRoot, character, catalogs[character].Cards)
+			progress, err := loadout.ReadProgress(s.config.LoadoutRoot, character, economy, catalogs[character])
+			deck := progress.Deck
+			if progress.AuthoredAbilityRevision > 0 {
+				abilityBoards = map[string]content.AbilityBoard{humanSeat: progress.Abilities}
+			}
 			if err != nil {
 				return nil, err
+			}
+			if len(deck) == 0 {
+				return nil, fmt.Errorf("deck is empty; add at least one card before starting a battle")
 			}
 			if deck != nil {
 				decks = map[string][]loadout.Entry{humanSeat: deck}

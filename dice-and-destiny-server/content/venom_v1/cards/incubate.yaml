@@ -1,39 +1,53 @@
 {
-  "schema_version": 1,
-  "id": "incubate",
-  "name": "Incubate",
-  "type": "action",
-  "presentation": {
-    "rules_text": "Pay 1 Catalyst. Apply 1 Incubation to an enemy with Poison and no Incubation; do not spend Poison."
-  },
+  "access_type": "venom",
   "cost": {
     "energy": 0
   },
-  "play": {
-    "source_zones": [
-      "hand"
+  "id": "incubate",
+  "mechanic": {
+    "kind": "incubate",
+    "params": {
+      "cost_stacks": 1,
+      "cost_status": "catalyst",
+      "stacks": 1
+    },
+    "windows": [
+      "offensive_planning"
     ],
+    "uses_per_round": 0,
+    "uses_per_battle": 0
+  },
+  "name": "Incubate",
+  "operations": [
+    {
+      "id": "incubate",
+      "type": "venom_card"
+    }
+  ],
+  "play": {
     "destination": "discard",
     "playable_during": [
       {
-        "segment": "offensive",
         "phase": "main",
+        "segment": "offensive",
         "window_purpose": "planning"
       }
+    ],
+    "source_zones": [
+      "hand"
     ]
   },
-  "targeting": {
-    "selector": "venom_choice",
-    "minimum": 0,
-    "maximum": 1
+  "presentation": {
+    "rules_text": "Pay 1 Catalyst. Apply 1 Incubation to an enemy with Poison and no Incubation; do not spend Poison."
   },
   "reaction_window": {
     "opens": false
   },
-  "operations": [
-    {
-      "type": "venom_card",
-      "id": "incubate"
-    }
-  ]
+  "schema_version": 1,
+  "targeting": {
+    "maximum": 1,
+    "minimum": 0,
+    "selector": "venom_choice"
+  },
+  "type": "action"
 }

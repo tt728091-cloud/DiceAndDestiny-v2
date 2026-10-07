@@ -4,6 +4,7 @@ var screen: Control
 var actor_id := ""
 var body: VBoxContainer
 var column_width := 314.0
+var _focused_source := ""
 func configure(owner_screen: Control, actor: String) -> void:
 	screen = owner_screen; actor_id = actor
 	name = "DamageStacks_" + actor
@@ -22,19 +23,21 @@ func _process(_delta: float) -> void:
 	if not is_instance_valid(profile): return
 	var inverse: Transform2D = screen._root.get_global_transform_with_canvas().affine_inverse()
 	var rect: Rect2 = inverse * profile.get_global_rect()
-	var top := rect.end.y + 10
-	var bottom := 990.0
+	# Pending cards share the owner's zone, with independent scrolling for
+	# many attacks. Hidden enemy dice never reserve lower-screen space.
+	var top := rect.end.y + 8
+	var bottom := 682.0
 	if actor_id == screen.viewer_actor_id:
-		bottom = minf(bottom, screen._player_dice_dock.position.y - 8)
-		# The action row sits above the dice. Reserve its hit area too: an
-		# empty portion of this higher-z scroll container still catches clicks.
-		if screen._action_footer.get_child_count() > 0:
-			bottom = minf(bottom, screen._action_footer.get_parent().position.y - 8)
-		if screen._roll_dock.get_combined_minimum_size().y > 0:
-			bottom = minf(bottom, screen._roll_dock.position.y - 8)
-	else:
-		var dice: Control = screen._enemy_dice_docks.get(actor_id)
-		if is_instance_valid(dice): top = maxf(top, (inverse * dice.get_global_rect()).end.y + 10)
+		top = 704
+		bottom = rect.position.y - 12
 	position = Vector2(clampf(rect.position.x, 16, 1904 - rect.size.x), top)
-	# Unused scroll space must not intercept clicks on the hand beneath it.
 	size = Vector2(rect.size.x, minf(body.get_combined_minimum_size().y, maxf(0, bottom - top)))
+
+	var selected := str(screen._selected_source)
+	if not selected.is_empty() and selected != _focused_source:
+		for group in body.get_children():
+			if group.get_meta("source_id", "") == selected:
+				# Wait for the body to lay out before scrolling to this attack.
+				if group.get_index() > 0 and group.position.y <= 0: return
+				scroll_vertical = int(group.position.y)
+				_focused_source = selected

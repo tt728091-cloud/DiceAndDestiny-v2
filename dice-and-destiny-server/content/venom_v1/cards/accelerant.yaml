@@ -1,39 +1,54 @@
 {
-  "schema_version": 1,
-  "id": "accelerant",
-  "name": "Accelerant",
-  "type": "action",
-  "presentation": {
-    "rules_text": "Pay 1 Catalyst. Convert 1 enemy Poison into Volatile Poison, then Provoke that stack if conversion succeeds. Uses 1 shared Provoke slot."
-  },
+  "access_type": "venom",
   "cost": {
     "energy": 2
   },
-  "play": {
-    "source_zones": [
-      "hand"
+  "id": "accelerant",
+  "mechanic": {
+    "kind": "accelerant",
+    "params": {
+      "convert_stacks": 1,
+      "cost_stacks": 1,
+      "cost_status": "catalyst",
+      "gain_stacks": 1
+    },
+    "windows": [
+      "offensive_planning"
     ],
+    "uses_per_round": 0,
+    "uses_per_battle": 0
+  },
+  "name": "Accelerant",
+  "operations": [
+    {
+      "id": "accelerant",
+      "type": "venom_card"
+    }
+  ],
+  "play": {
     "destination": "discard",
     "playable_during": [
       {
-        "segment": "offensive",
         "phase": "main",
+        "segment": "offensive",
         "window_purpose": "planning"
       }
+    ],
+    "source_zones": [
+      "hand"
     ]
   },
-  "targeting": {
-    "selector": "venom_choice",
-    "minimum": 0,
-    "maximum": 1
+  "presentation": {
+    "rules_text": "Pay 1 Catalyst. Convert 1 enemy Poison into Volatile Poison, then Provoke that stack if conversion succeeds. Uses 1 shared Provoke slot."
   },
   "reaction_window": {
     "opens": false
   },
-  "operations": [
-    {
-      "type": "venom_card",
-      "id": "accelerant"
-    }
-  ]
+  "schema_version": 1,
+  "targeting": {
+    "maximum": 1,
+    "minimum": 0,
+    "selector": "venom_choice"
+  },
+  "type": "action"
 }

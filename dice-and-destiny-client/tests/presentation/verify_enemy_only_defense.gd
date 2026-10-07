@@ -45,6 +45,16 @@ func _run() -> void:
 		if button.get_meta("inspection_id", "") == "battle.defense_die.goblin":
 			found_die = true
 	_expect(found_die, "enemy defense die exists on the battlefield while rolling")
+	for frame in 4: await process_frame
+	_expect(panel.dice_controls[0].is_visible_in_tree(), "enemy defense faces appear automatically")
+	screen.dice_dock("goblin").expanded = true
+	for frame in 4: await process_frame
+	_expect(panel.dice_controls[0].is_visible_in_tree(), "defense remains visible with offensive dice expanded")
+	_expect(panel.roll_cells[0].get_global_rect().end.y <= screen.dice_dock("goblin").get_global_rect().position.y, "defense and offensive dice occupy separate rows")
+	screen.dice_dock("goblin").expanded = false
+	for frame in 4: await process_frame
+	_expect(panel.dice_controls[0].is_visible_in_tree(), "closing offensive dice keeps defense visible")
+	_expect(panel._prevention_origin(0) == panel.dice_controls[0], "prevention lines originate at the visible defense die")
 	await create_timer(1.5).timeout
 	_expect(fake.commands.is_empty() and panel.damage.text == "0", "damage animates to zero before any handoff")
 	_expect(root.get_visible_rect().encloses(panel.get_global_rect()), "result panel remains inside viewport")

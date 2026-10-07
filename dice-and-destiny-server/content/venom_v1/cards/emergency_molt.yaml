@@ -1,44 +1,60 @@
 {
-  "schema_version": 1,
-  "id": "emergency_molt",
-  "name": "Emergency Molt",
-  "type": "reaction",
-  "presentation": {
-    "rules_text": "Prevent 2 from one incoming source. If at least 1 is actually prevented, gain 1 Catalyst after that damage batch."
-  },
+  "access_type": "venom",
   "cost": {
     "energy": 1
   },
-  "play": {
-    "source_zones": [
-      "hand"
+  "id": "emergency_molt",
+  "mechanic": {
+    "kind": "emergency_molt",
+    "params": {
+      "prevent": 2,
+      "reward_stacks": 1,
+      "reward_status": "catalyst"
+    },
+    "windows": [
+      "defense_selection",
+      "damage_reaction",
+      "ongoing_damage"
     ],
+    "uses_per_round": 0,
+    "uses_per_battle": 0
+  },
+  "name": "Emergency Molt",
+  "operations": [
+    {
+      "id": "emergency_molt",
+      "type": "venom_card"
+    }
+  ],
+  "play": {
     "destination": "discard",
     "playable_during": [
       {
-        "segment": "offensive",
         "phase": "main",
+        "segment": "offensive",
         "window_purpose": "reaction"
       },
       {
-        "segment": "damage_resolution",
         "phase": "main",
+        "segment": "damage_resolution",
         "window_purpose": "reaction"
       }
+    ],
+    "source_zones": [
+      "hand"
     ]
   },
-  "targeting": {
-    "selector": "venom_choice",
-    "minimum": 0,
-    "maximum": 1
+  "presentation": {
+    "rules_text": "Prevent 2 from one incoming source. If at least 1 is actually prevented, gain 1 Catalyst after that damage batch."
   },
   "reaction_window": {
     "opens": false
   },
-  "operations": [
-    {
-      "type": "venom_card",
-      "id": "emergency_molt"
-    }
-  ]
+  "schema_version": 1,
+  "targeting": {
+    "maximum": 1,
+    "minimum": 0,
+    "selector": "venom_choice"
+  },
+  "type": "reaction"
 }

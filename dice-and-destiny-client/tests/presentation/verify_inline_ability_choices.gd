@@ -70,7 +70,7 @@ func _check(ability: String, viewport_size: Vector2i) -> void:
 		_expect(fake.commands.size() == selected + 1, "one command per real inline click")
 		if fake.commands.size() > selected: _expect(fake.commands[selected] == JSON.stringify(fixture.legal_actions[selected]), "exact tier, toxin, source and cost preserved")
 		_expect(screen.find_children("*", "AcceptDialog", false, false).is_empty(), "no ability choice popup")
-		while not screen._selection_morph.is_empty() or Time.get_ticks_msec() <= screen._flow_until: await process_frame
+		while Time.get_ticks_msec() <= screen._flow_until: await process_frame
 	# Old controls must not submit a source or option that is no longer offered.
 	var count: int = fake.commands.size()
 	screen._view.legal_actions = []; screen._select_ability_action(fixture.legal_actions[0])

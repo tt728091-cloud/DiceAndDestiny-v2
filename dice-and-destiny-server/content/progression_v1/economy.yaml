@@ -4,14 +4,7 @@ starting_xp: 100
 default_card_price: 10
 characters:
   adventurer:
-    # Progression begins with the base versions; the sandbox template is unchanged.
-    starting_decklist:
-      - {card_id: brace, count: 3}
-      - {card_id: nudge, count: 2}
-      - {card_id: try_again, count: 2}
-      - {card_id: strong_swing, count: 2}
-      - {card_id: take_stock, count: 2}
-      - {card_id: second_wind, count: 1}
+    # Both editing modes use the character template and shared saved deck.
     starting_abilities:
       offensive: [adventurer_strike, guarded_strike, measured_strike, adventurer_small_straight, adventurer_large_straight, decisive_blow]
       defensive: [adventurer_guard]

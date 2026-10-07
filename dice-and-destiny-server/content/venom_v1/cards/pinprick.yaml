@@ -1,39 +1,52 @@
 {
-  "schema_version": 1,
-  "id": "pinprick",
-  "name": "Pinprick",
-  "type": "action",
-  "presentation": {
-    "rules_text": "Apply 1 Poison. Overflow adds Incubation if none exists."
-  },
+  "access_type": "venom",
   "cost": {
     "energy": 1
   },
-  "play": {
-    "source_zones": [
-      "hand"
+  "id": "pinprick",
+  "mechanic": {
+    "kind": "pinprick",
+    "params": {
+      "stacks": 1,
+      "status_id": "poison"
+    },
+    "windows": [
+      "offensive_planning"
     ],
+    "uses_per_round": 0,
+    "uses_per_battle": 0
+  },
+  "name": "Pinprick",
+  "operations": [
+    {
+      "id": "pinprick",
+      "type": "venom_card"
+    }
+  ],
+  "play": {
     "destination": "discard",
     "playable_during": [
       {
-        "segment": "offensive",
         "phase": "main",
+        "segment": "offensive",
         "window_purpose": "planning"
       }
+    ],
+    "source_zones": [
+      "hand"
     ]
   },
-  "targeting": {
-    "selector": "venom_choice",
-    "minimum": 0,
-    "maximum": 1
+  "presentation": {
+    "rules_text": "Apply 1 Poison. Overflow adds Incubation if none exists."
   },
   "reaction_window": {
     "opens": false
   },
-  "operations": [
-    {
-      "type": "venom_card",
-      "id": "pinprick"
-    }
-  ]
+  "schema_version": 1,
+  "targeting": {
+    "maximum": 1,
+    "minimum": 0,
+    "selector": "venom_choice"
+  },
+  "type": "action"
 }

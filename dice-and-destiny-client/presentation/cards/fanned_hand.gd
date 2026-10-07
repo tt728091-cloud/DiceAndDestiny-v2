@@ -7,7 +7,10 @@ var slots: Array[Control] = []
 var base_transforms: Array[Transform2D] = []
 var reveal := 0.0
 var held_open := false
+var gain_animation_active := false
+var prevention_animation_active := false
 var keep_visible := false
+var targeted_id := ""
 var hovered := -1
 var _pressed := -1
 var _keyboard := false
@@ -41,7 +44,7 @@ func _input(event: InputEvent) -> void:
 func _process(delta: float) -> void:
 	var pointer := get_local_mouse_position() if _pointer == Vector2.INF else get_global_transform_with_canvas().affine_inverse() * _pointer
 	var focused := cards.any(func(card): return card.has_focus())
-	var open := not cards.is_empty() and (Rect2(Vector2.ZERO, size).has_point(pointer) or held_open or keep_visible or (_keyboard and focused))
+	var open := not cards.is_empty() and (Rect2(Vector2.ZERO, size).has_point(pointer) or held_open or gain_animation_active or prevention_animation_active or keep_visible or (_keyboard and focused))
 	reveal = move_toward(reveal, 1.0 if open else 0.0, delta / (0.24 if open else 0.30))
 	if not _keyboard: hovered = card_at(pointer) if open and reveal > 0.85 else -1
 	tooltip_text = cards[hovered].tooltip_text if hovered >= 0 else ""
@@ -68,7 +71,7 @@ func _layout() -> void:
 		slot.rotation = deg_to_rad(t * 7.0)
 		slot.position = Vector2(left + i * step, 17 + t * t * 12 + (1 - eased) * (size.y - 92))
 		base_transforms.append(slot.get_transform())
-		if i == hovered and reveal > 0.85:
+		if (i == hovered or cards[i].instance_id == targeted_id) and reveal > 0.85:
 			slot.rotation = 0
 			slot.position.y -= 16
 			slot.z_index = 2
@@ -89,6 +92,9 @@ func _gui_input(event: InputEvent) -> void:
 			if card.toggle_mode: card.button_pressed = not card.button_pressed
 			card.pressed.emit()
 	accept_event()
+
+func _get_tooltip(_at_position: Vector2) -> String:
+	return preload("res://presentation/battle/wrapped_tooltip.gd").content(tooltip_text)
 
 func _make_custom_tooltip(for_text: String) -> Object:
 	var card: Control = cards[hovered] if hovered >= 0 and hovered < cards.size() else self

@@ -1,39 +1,56 @@
 {
-  "schema_version": 1,
-  "id": "forked_tongue",
-  "name": "Forked Tongue",
-  "type": "reaction",
-  "presentation": {
-    "rules_text": "Change one revealed combat die by +1 or \u22121, within 1\u20136. Revalidate abilities."
-  },
+  "access_type": "venom",
   "cost": {
     "energy": 1
   },
-  "play": {
-    "source_zones": [
-      "hand"
+  "id": "forked_tongue",
+  "mechanic": {
+    "kind": "forked_tongue",
+    "params": {
+      "deltas": [
+        -1,
+        1
+      ],
+      "maximum": 6,
+      "minimum": 1
+    },
+    "windows": [
+      "offensive_reaction"
     ],
+    "uses_per_round": 0,
+    "uses_per_battle": 0
+  },
+  "name": "Forked Tongue",
+  "operations": [
+    {
+      "id": "forked_tongue",
+      "type": "venom_card"
+    }
+  ],
+  "play": {
     "destination": "discard",
     "playable_during": [
       {
-        "segment": "offensive",
         "phase": "main",
+        "segment": "offensive",
         "window_purpose": "reaction"
       }
+    ],
+    "source_zones": [
+      "hand"
     ]
   },
-  "targeting": {
-    "selector": "venom_choice",
-    "minimum": 0,
-    "maximum": 1
+  "presentation": {
+    "rules_text": "Change one revealed combat die by +1 or −1, within 1–6. Revalidate abilities."
   },
   "reaction_window": {
     "opens": false
   },
-  "operations": [
-    {
-      "type": "venom_card",
-      "id": "forked_tongue"
-    }
-  ]
+  "schema_version": 1,
+  "targeting": {
+    "maximum": 1,
+    "minimum": 0,
+    "selector": "venom_choice"
+  },
+  "type": "reaction"
 }

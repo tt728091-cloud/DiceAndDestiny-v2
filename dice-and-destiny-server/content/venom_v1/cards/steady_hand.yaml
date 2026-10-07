@@ -1,39 +1,54 @@
 {
-  "schema_version": 1,
-  "id": "steady_hand",
-  "name": "Steady Hand",
-  "type": "action",
-  "presentation": {
-    "rules_text": "After your first roll, set one of your combat dice to 1 or 4."
-  },
+  "access_type": "venom",
   "cost": {
     "energy": 1
   },
-  "play": {
-    "source_zones": [
-      "hand"
+  "id": "steady_hand",
+  "mechanic": {
+    "kind": "steady_hand",
+    "params": {
+      "faces": [
+        1,
+        4
+      ]
+    },
+    "windows": [
+      "offensive_planning"
     ],
+    "uses_per_round": 0,
+    "uses_per_battle": 0
+  },
+  "name": "Steady Hand",
+  "operations": [
+    {
+      "id": "steady_hand",
+      "type": "venom_card"
+    }
+  ],
+  "play": {
     "destination": "discard",
     "playable_during": [
       {
-        "segment": "offensive",
         "phase": "main",
+        "segment": "offensive",
         "window_purpose": "planning"
       }
+    ],
+    "source_zones": [
+      "hand"
     ]
   },
-  "targeting": {
-    "selector": "venom_choice",
-    "minimum": 0,
-    "maximum": 1
+  "presentation": {
+    "rules_text": "After your first roll, set one of your combat dice to 1 or 4."
   },
   "reaction_window": {
     "opens": false
   },
-  "operations": [
-    {
-      "type": "venom_card",
-      "id": "steady_hand"
-    }
-  ]
+  "schema_version": 1,
+  "targeting": {
+    "maximum": 1,
+    "minimum": 0,
+    "selector": "venom_choice"
+  },
+  "type": "action"
 }

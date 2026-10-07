@@ -6,6 +6,14 @@ its round, segment, source actor, attack/card/status, and exact lost card copies
 Pile icons show where cards were removed; hovering or focusing a card previews it
 beside the list at normal hand-card size. Close or Escape returns to the result.
 
+During combat, player and enemy health bars show one muted gray segment per
+committed wound in the missing-health area. Segment width represents cards
+actually lost; adjacent segments use different gray tones. Oldest wounds stay
+at the right, with later wounds extending leftward. Hover shows the wound’s
+damage, round, cause, and lost cards (including their original piles). Segments
+appear only once displayed health reflects the hit, so queued damage animations
+do not expose future wounds. Unknown historical losses remain dark.
+
 ## Recording contract
 
 - Record only successfully committed damage removals, after prevention. One
@@ -22,7 +30,7 @@ beside the list at normal hand-card size. Close or Escape returns to the result.
   instance IDs; card definitions; round/segment; and the live removal zone.
   The ledger deep-clones and persists with the battle checkpoint. Recording the
   same batch again cannot add duplicate wounds.
-- The viewer snapshot exposes the complete ledger only at battle completion.
+- The viewer snapshot exposes the committed ledger throughout combat and at completion.
   Presentation does not derive wounds from animations, transient events, or the
   aggregate removed pile. Old saves cannot reconstruct exact historical hits;
   any removed cards without records are explicitly identified in the review.
@@ -40,6 +48,9 @@ reference individual wound and card-instance IDs without pooling distinct hits.
   ongoing effects, overkill, played-card zones, failed commits, deep clone,
   JSON persistence, snapshot visibility, duplicate recording.
 - `internal/battle/damage/damage_test.go`: legacy commitment and atomic retries.
+- `tests/presentation/verify_wound_health_bar.gd`: proportional segments, muted
+  colors, player/enemy pointer hovers, one/four enemies, 720p/1080p/4:3 layouts,
+  playback visibility, rebuild stability, and unrecorded historical losses.
 - `tests/presentation/verify_wound_review.gd`: real native battle against two
   Brine Masks, loss totals, pointer-open/close/reopen, keyboard close, actor tabs,
   card previews, viewport sizes, scrolling, four-enemy layout, and missing records.

@@ -66,7 +66,7 @@ func _retry(base: Dictionary, width: int, retry_hit: bool) -> void:
 	var notice = _notice(screen); _expect(notice != null, "trigger creates feedback")
 	if notice == null: screen.queue_free(); await process_frame; return
 	notice.set_process(false)
-	_expect(is_instance_valid(notice._card) == retry_hit, "initiating card remains visible when it caused the check")
+	_expect(not is_instance_valid(notice._card), "delayed feedback without a captured hand pose never spawns a floating card")
 	_expect(screen._director.peek().type == "curse_retry" and not notice._waiting(), "retry owns an uninterrupted presentation beat")
 	var tray: BattleDiceTray = screen._enemy_dice_dock.get_child(0)
 	var saved: Array = tray._dice.duplicate(true)

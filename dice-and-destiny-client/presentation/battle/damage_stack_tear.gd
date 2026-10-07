@@ -10,7 +10,7 @@ var origin := Vector2.ZERO
 func configure(source_stack: Control, owner_screen: Control, actor: String) -> void:
 	stack = source_stack; screen = owner_screen; target = actor
 	mouse_filter = Control.MOUSE_FILTER_IGNORE; z_index = 25
-	for card in stack.get_children():
+	for card in stack.card_children():
 		for half in 2:
 			var clip := Control.new(); clip.clip_contents = true; clip.mouse_filter = Control.MOUSE_FILTER_IGNORE; add_child(clip)
 			var copy := BattleCard.new(); clip.add_child(copy); copy.configure(card.instance_id, card.definition_id, false, true)

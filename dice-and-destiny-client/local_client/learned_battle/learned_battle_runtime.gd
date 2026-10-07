@@ -165,3 +165,17 @@ func purchase_progression(character: String, kind: String, id: String, revision:
 
 func save_economy_admin(settings: Dictionary) -> Dictionary:
 	return _request({"op": "save_economy_admin", "admin_settings": settings, "loadout_root": WorkspacePaths.runtime_dir("user/character_loadouts"), "content_root": ProjectSettings.globalize_path("res://../dice-and-destiny-server/content")})
+
+func card_admin(op: String, token: String = "", card_id: String = "", revision: int = 0) -> Dictionary:
+	return _request({"op": op, "admin_token": token, "card_id": card_id, "catalog_revision": revision, "loadout_root": WorkspacePaths.runtime_dir("user/character_loadouts"), "content_root": ProjectSettings.globalize_path("res://../dice-and-destiny-server/content")})
+
+func card_authoring(op: String = "card_authoring", card: Dictionary = {}, revision: int = 0) -> Dictionary:
+	if _native_authority == null: return {"ok": false, "error": _initialization_error}
+	return _request({"op": op, "card": card, "catalog_revision": revision, "loadout_root": WorkspacePaths.runtime_dir("user/character_loadouts"), "content_root": ProjectSettings.globalize_path("res://../dice-and-destiny-server/content")})
+
+func ability_authoring(op: String = "ability_authoring", ability: Dictionary = {}, revision: int = 0, character: String = "", board: Dictionary = {}) -> Dictionary:
+	if _native_authority == null: return {"ok": false, "error": _initialization_error}
+	return _request({"op": op, "ability": ability, "catalog_revision": revision, "character": character, "ability_board": board, "loadout_root": WorkspacePaths.runtime_dir("user/character_loadouts"), "content_root": ProjectSettings.globalize_path("res://../dice-and-destiny-server/content")})
+
+func card_trees(op: String = "card_trees", tree: Dictionary = {}, revision: int = 0, character: String = "adventurer", token: String = "") -> Dictionary:
+	return _request({"op": op, "card_tree": tree, "catalog_revision": revision, "character": character, "admin_token": token, "loadout_root": WorkspacePaths.runtime_dir("user/character_loadouts"), "content_root": ProjectSettings.globalize_path("res://../dice-and-destiny-server/content")})

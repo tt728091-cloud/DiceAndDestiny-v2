@@ -42,7 +42,7 @@ func configure_tiers(options: Array[Dictionary], selected_tier: String) -> void:
 	title.tooltip_text = tooltip_text
 	title.mouse_filter = Control.MOUSE_FILTER_PASS
 	content.add_child(title)
-	var row := HBoxContainer.new()
+	var row := HBoxContainer.new(); row.name = "MinimalTiers"
 	row.alignment = BoxContainer.ALIGNMENT_BEGIN
 	row.add_theme_constant_override("separation", 2)
 	content.add_child(row)
@@ -157,7 +157,7 @@ func configure(id: String, qualified: bool, selected: bool, enabled: bool, actor
 	_actor = actor
 	var data := BattlePresentationCatalog.ability(id, actor)
 	text = "%s\n%s" % [data.name, data.recipe]
-	tooltip_text = "%s — %s" % [data.name, data.text]
+	tooltip_text = BattlePresentationCatalog.ability_tooltip(id, actor)
 	custom_minimum_size = Vector2(130, 70)
 	disabled = not enabled
 	modulate = Color.WHITE
@@ -300,7 +300,8 @@ func _fit_offensive_summary() -> void:
 func update_selected_attack_summary(summary: String) -> void:
 	_selected_summary = summary
 	if _minimal:
-		tooltip_text = "%s\n%s" % [BattlePresentationCatalog.ability(ability_id).name, summary]
+		tooltip_text = BattlePresentationCatalog.ability_tooltip(ability_id, _actor)
+		if not summary.is_empty(): tooltip_text += "\n\nSelected outcome\n" + summary
 		return
 	_recipe_label.text = "[b]%s · SELECTED[/b]\n%s" % [BattlePresentationCatalog.ability(ability_id).name, summary]
 	text = BattlePresentationCatalog.ability(ability_id).name + "\n" + summary
@@ -310,7 +311,7 @@ func update_selected_attack_summary(summary: String) -> void:
 func minimal_rail() -> void:
 	_minimal = true
 	var data := BattlePresentationCatalog.ability(ability_id, _actor)
-	tooltip_text = "%s\n%s\n\n%s" % [data.name, data.recipe, data.text]
+	tooltip_text = BattlePresentationCatalog.ability_tooltip(ability_id, _actor)
 	if not _selected_summary.is_empty(): tooltip_text += "\n\nSelected outcome\n" + _selected_summary
 	if is_instance_valid(_recipe_label): _recipe_label.hide()
 	if is_instance_valid(_offensive_summary): _offensive_summary.hide()
@@ -322,6 +323,7 @@ func minimal_rail() -> void:
 	var tier_controls := get_node_or_null("TierControls") as HBoxContainer
 	if tier_controls != null:
 		tier_controls.offset_left = 8; tier_controls.offset_right = -31
+		tier_controls.anchor_bottom = 0; tier_controls.offset_bottom = 34
 		tier_controls.alignment = BoxContainer.ALIGNMENT_BEGIN
 		tier_controls.add_theme_constant_override("separation", 8)
 		var title := tier_controls.get_child(0) as Label
@@ -330,7 +332,7 @@ func minimal_rail() -> void:
 		var icon := _rail_icon(); tier_controls.add_child(icon); tier_controls.move_child(icon, 0)
 		for button in tier_controls.find_children("*", "Button", true, false):
 			_minimal_styles(button, not button.disabled)
-			button.custom_minimum_size = Vector2(57, 36)
+			button.custom_minimum_size = Vector2(57, 32)
 			if ability_id == "hexbrand":
 				button.text = str(button.get_meta("tier_id")).trim_prefix("skull_")
 				button.icon = preload("res://presentation/battle/battle_icons.gd").texture("curse_count")
@@ -344,38 +346,100 @@ func minimal_rail() -> void:
 	else:
 		var row := HBoxContainer.new(); row.name = "MinimalAbility"; row.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		add_child(row); row.set_anchors_and_offsets_preset(Control.PRESET_TOP_WIDE)
-		row.offset_left = 8; row.offset_right = -31; row.offset_top = 4; row.offset_bottom = 44
+		row.offset_left = 8; row.offset_right = -31; row.offset_top = 0; row.offset_bottom = 34
 		row.add_theme_constant_override("separation", 8); row.add_child(_rail_icon())
 		var title := TOOLTIP_LABEL.new(); title.text = _short_name(str(data.name)); title.add_theme_font_size_override("font_size", 18)
 		title.name = "MinimalTitle"; CINEMATIC.hud_lettering(title, true)
-		title.size_flags_horizontal = Control.SIZE_EXPAND_FILL; title.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART; title.mouse_filter = Control.MOUSE_FILTER_IGNORE; row.add_child(title)
-		var recipe := TOOLTIP_LABEL.new(); recipe.name = "MinimalRequirement"; recipe.text = _symbol_recipe(str(data.recipe))
+		title.size_flags_horizontal = Control.SIZE_EXPAND_FILL; title.autowrap_mode = TextServer.AUTOWRAP_OFF; title.mouse_filter = Control.MOUSE_FILTER_IGNORE; row.add_child(title)
+		var recipe := TOOLTIP_LABEL.new(); recipe.name = "MinimalRequirement"; recipe.text = _symbol_recipe(str(data.recipe)).replace("\n", " / ")
+		var tiers := BattlePresentationCatalog.inline_tiers(ability_id, _actor)
+		if not tiers.is_empty():
+			var requirements: Array[String] = []
+			for tier in tiers: requirements.append(str(tier.get("button_label", tier.label)))
+			recipe.text = "   ".join(requirements)
 		recipe.add_theme_font_size_override("font_size", 18); recipe.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 		recipe.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 		CINEMATIC.hud_lettering(recipe, true)
 		recipe.mouse_filter = Control.MOUSE_FILTER_IGNORE; row.add_child(recipe)
 	var choices := get_node_or_null("AbilityChoices") as GridContainer
-	custom_minimum_size = Vector2(370, 48)
+	custom_minimum_size = Vector2(370, 36)
 	if choices != null:
-		choices.offset_top = 48
+		choices.offset_top = 36
 		custom_minimum_size.y += ceili(choices.get_child_count() / 3.0) * 53 + 8
 		for button in choices.get_children(): _minimal_styles(button, not button.disabled)
 	var temporary := BattlePresentationCatalog.temporary_ability_damage(ability_id, _actor)
 	if temporary > 0:
 		var badge := TOOLTIP_LABEL.new(); badge.name = "TemporaryDamageBonus"
-		badge.text = "+%d DMG · THIS OFFENSE" % temporary
-		badge.position = Vector2(40, 43); badge.size = Vector2(300, 20)
+		badge.text = "+%d DMG" % temporary
 		badge.add_theme_font_size_override("font_size", 14); CINEMATIC.hud_lettering(badge, true)
 		badge.add_theme_color_override("font_color", Color("a5edce")); badge.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		add_child(badge); custom_minimum_size.y += 22
-		if tier_controls != null: tier_controls.offset_bottom = -25
+		var title := find_child("MinimalTitle", true, false) as Label
+		var row := title.get_parent() as HBoxContainer
+		var title_index := title.get_index()
+		row.remove_child(title)
+		var heading := HBoxContainer.new(); heading.name = "AbilityHeading"
+		heading.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		heading.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		heading.add_theme_constant_override("separation", 6)
+		row.add_child(heading); row.move_child(heading, title_index)
+		title.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
+		heading.add_child(title); heading.add_child(badge)
+		var bonus_rules := BattlePresentationCatalog.temporary_ability_damage_rules(ability_id, _actor)
 		for button in find_children("*", "Button", true, false):
-			button.tooltip_text += "\n+%d temporary damage. Expires at Offensive Exit, even if unused." % temporary
+			if not button.tooltip_text.contains(bonus_rules): button.tooltip_text += "\n\n" + bonus_rules
 	for child in get_children():
 		if child is Button and child.get_meta("battle_utility", false):
 			CINEMATIC.hud_lettering(child)
 			child.add_theme_color_override("font_color", Color("e5d5ae")); child.add_theme_color_override("font_hover_color", Color("ffe7a1"))
 			child.tooltip_text = tooltip_text
+
+	if not resized.is_connected(_fit_minimal_layout): resized.connect(_fit_minimal_layout)
+	_fit_minimal_layout()
+	_fit_minimal_layout.call_deferred()
+
+func _fit_minimal_layout() -> void:
+	var row := get_node_or_null("TierControls") as HBoxContainer
+	if row == null: row = get_node_or_null("MinimalAbility") as HBoxContainer
+	if row == null: return
+	var heading := find_child("AbilityHeading", true, false) as HBoxContainer
+	var badge := find_child("TemporaryDamageBonus", true, false) as Label
+	var requirement := find_child("MinimalRequirement", true, false) as Control
+	if requirement == null: requirement = find_child("MinimalTiers", true, false) as Control
+	var available_width := maxf(custom_minimum_size.x, size.x) - 39
+	var body_height := 36.0
+	# Use natural, unwrapped widths. Move whole pieces to another line rather
+	# than allowing a HBox to crush an ability name into individual letters.
+	if requirement != null:
+		var base_width := row.get_combined_minimum_size().x
+		if badge != null and badge.get_parent() == heading: base_width -= badge.get_combined_minimum_size().x + 6
+		if requirement.get_parent() != row: base_width += requirement.get_combined_minimum_size().x + 8
+		if base_width > available_width:
+			if requirement.get_parent() != self: requirement.reparent(self)
+			requirement.set_anchors_and_offsets_preset(Control.PRESET_TOP_WIDE)
+			requirement.offset_left = 8 if requirement is HBoxContainer else 41; requirement.offset_right = -31
+			var line_height := maxf(24, requirement.get_combined_minimum_size().y)
+			requirement.offset_top = 34; requirement.offset_bottom = 34 + line_height
+			body_height = 36 + line_height
+		elif requirement.get_parent() != row:
+			requirement.reparent(row)
+	if badge != null and heading != null:
+		var natural_width := row.get_combined_minimum_size().x
+		if badge.get_parent() != heading: natural_width += badge.get_combined_minimum_size().x + 6
+		if natural_width > available_width:
+			if badge.get_parent() != self: badge.reparent(self)
+			badge.set_anchors_and_offsets_preset(Control.PRESET_TOP_LEFT)
+			badge.position = Vector2(41, body_height - 2)
+			badge.size = badge.get_combined_minimum_size()
+			body_height += 20
+		elif badge.get_parent() != heading:
+			badge.reparent(heading)
+	# Clear stale container bounds after moving a child to a separate line.
+	row.set_deferred("size", Vector2(available_width, 34 - row.offset_top))
+	var choices := get_node_or_null("AbilityChoices") as GridContainer
+	if choices != null:
+		choices.offset_top = body_height
+		body_height += ceili(choices.get_child_count() / 3.0) * 53 + 8
+	custom_minimum_size.y = body_height
 
 func _short_name(full_name: String) -> String:
 	return {"grasp_of_the_sarcophagus": "Grasp", "funeral_rattle": "Rattle", "eclipse_of_the_black_star": "Eclipse"}.get(ability_id, full_name)

@@ -42,6 +42,7 @@ const (
 var SeatIDs = []string{"seat-a", "seat-b"}
 
 type Config struct {
+	AuthoredCardsRoot     string
 	IncludeContentCatalog bool
 
 	ContentRoot         string
@@ -750,10 +751,11 @@ func cloneAbilityBoards(source map[string]content.AbilityBoard) map[string]conte
 }
 
 func (e *Environment) loadoutAssembler(request ResetRequest) battle.ParticipantAssembler {
-	if len(request.SeatDecklists) == 0 && len(request.SeatAbilityBoards) == 0 {
+	if len(request.SeatDecklists) == 0 && len(request.SeatAbilityBoards) == 0 && e.config.AuthoredCardsRoot == "" {
 		return e.assembler
 	}
 	assembler := battle.NewCachedFileParticipantAssembler(e.config.ContentRoot, e.config.RunStateRoot)
 	assembler.IncludeCharacterPools = true
+	assembler.AuthoredCardsRoot = e.config.AuthoredCardsRoot
 	return assembler
 }

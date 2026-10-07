@@ -1,39 +1,53 @@
 {
-  "schema_version": 1,
-  "id": "shock_dose",
-  "name": "Shock Dose",
-  "type": "action",
-  "presentation": {
-    "rules_text": "Spend 1 enemy Volatile Poison as a cost. Deal 3 ordinary defendable damage."
-  },
+  "access_type": "venom",
   "cost": {
     "energy": 2
   },
-  "play": {
-    "source_zones": [
-      "hand"
+  "id": "shock_dose",
+  "mechanic": {
+    "kind": "shock_dose",
+    "params": {
+      "cost_stacks": 1,
+      "cost_status": "volatile_poison",
+      "damage": 3
+    },
+    "windows": [
+      "offensive_planning"
     ],
+    "uses_per_round": 0,
+    "uses_per_battle": 0
+  },
+  "name": "Shock Dose",
+  "operations": [
+    {
+      "id": "shock_dose",
+      "type": "venom_card"
+    }
+  ],
+  "play": {
     "destination": "discard",
     "playable_during": [
       {
-        "segment": "offensive",
         "phase": "main",
+        "segment": "offensive",
         "window_purpose": "planning"
       }
+    ],
+    "source_zones": [
+      "hand"
     ]
   },
-  "targeting": {
-    "selector": "venom_choice",
-    "minimum": 0,
-    "maximum": 1
+  "presentation": {
+    "rules_text": "Spend 1 enemy Volatile Poison as a cost. Deal 3 ordinary defendable damage."
   },
   "reaction_window": {
     "opens": false
   },
-  "operations": [
-    {
-      "type": "venom_card",
-      "id": "shock_dose"
-    }
-  ]
+  "schema_version": 1,
+  "targeting": {
+    "maximum": 1,
+    "minimum": 0,
+    "selector": "venom_choice"
+  },
+  "type": "action"
 }

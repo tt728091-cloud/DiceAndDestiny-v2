@@ -1,39 +1,56 @@
 {
-  "schema_version": 1,
-  "id": "deep_puncture",
-  "name": "Deep Puncture",
-  "type": "reaction",
-  "presentation": {
-    "rules_text": "Your attack with at least 2 damage and a Poison application: reduce damage by 1 and add 1 Poison. Once per source."
-  },
+  "access_type": "venom",
   "cost": {
     "energy": 0
   },
-  "play": {
-    "source_zones": [
-      "hand"
+  "id": "deep_puncture",
+  "mechanic": {
+    "kind": "deep_puncture",
+    "params": {
+      "damage_cost": 1,
+      "minimum_damage": 2,
+      "stacks": 1,
+      "status_id": "poison"
+    },
+    "windows": [
+      "offensive_reaction"
     ],
+    "uses_per_round": 1,
+    "uses_per_battle": 0,
+    "expiration": "offensive_exit",
+    "rounds": 1
+  },
+  "name": "Deep Puncture",
+  "operations": [
+    {
+      "id": "deep_puncture",
+      "type": "venom_card"
+    }
+  ],
+  "play": {
     "destination": "discard",
     "playable_during": [
       {
-        "segment": "offensive",
         "phase": "main",
+        "segment": "offensive",
         "window_purpose": "reaction"
       }
+    ],
+    "source_zones": [
+      "hand"
     ]
   },
-  "targeting": {
-    "selector": "venom_choice",
-    "minimum": 0,
-    "maximum": 1
+  "presentation": {
+    "rules_text": "Your attack with at least 2 damage and a Poison application: reduce damage by 1 and add 1 Poison. Once per source."
   },
   "reaction_window": {
     "opens": false
   },
-  "operations": [
-    {
-      "type": "venom_card",
-      "id": "deep_puncture"
-    }
-  ]
+  "schema_version": 1,
+  "targeting": {
+    "maximum": 1,
+    "minimum": 0,
+    "selector": "venom_choice"
+  },
+  "type": "reaction"
 }

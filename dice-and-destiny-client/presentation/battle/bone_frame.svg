@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="192" height="192" viewBox="0 0 192 192">
+<defs>
+ <linearGradient id="bone" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#f1dfb7"/><stop offset=".38" stop-color="#cfb98e"/><stop offset=".7" stop-color="#a88c62"/><stop offset="1" stop-color="#6a5135"/></linearGradient>
+ <g id="piece">
+ <path d="M1 0 Q-1 -5 4 -5 Q8 -7 11 -3 Q44.4 -1 74.0 -2 Q103.6 -2 137 -3 Q141 -7 145 -5 Q149 -5 147 0 Q149 5 144 5 Q140 7 137 3 Q103.6 1 74.0 2 Q44.4 2 11 3 Q7 7 3 5 Q-1 5 1 0Z" fill="url(#bone)" stroke="#30241a" stroke-width="1.1"/>
+ <path d="M12 -2 Q66.6 -1 136 -2" fill="none" stroke="#f9e8c8" stroke-width=".8" opacity=".75"/>
+ <path d="M4 -3L5 0L3 3 M144 -3L143 0L145 3" stroke="#806746" stroke-width="1" fill="none"/>
+ </g>
+ <g id="joint"><path d="M-5 0 Q-8 -5 -3 -6 Q0 -8 3 -4 Q8 -5 8 0 Q7 3 3 3 Q3 9 -2 7 Q-6 6 -4 2Z" fill="url(#bone)" stroke="#33271b" stroke-width="1.2"/><path d="M-3 -4 Q0 -6 2 -2 M-2 3L-2 5" fill="none" stroke="#f5e4c1" stroke-width="1.2"/><ellipse cx="0" cy="0" rx="1.4" ry="1.8" fill="#6b5135"/></g>
+ </defs>
+<rect x="10" y="10" width="172" height="172" rx="3" fill="#282728"/>
+<path d="M10 10H182V182H10Z" fill="none" stroke="#a88c62" stroke-width="2"/>
+<use href="#piece" transform="translate(22 10)"/><use href="#piece" transform="translate(170 182) rotate(180)"/>
+<use href="#piece" transform="translate(182 22) rotate(90)"/><use href="#piece" transform="translate(10 170) rotate(-90)"/>
+<use href="#joint" transform="translate(10 10) rotate(0) scale(1)"/><use href="#joint" transform="translate(182 10) rotate(90) scale(1)"/><use href="#joint" transform="translate(182 182) rotate(180) scale(1)"/><use href="#joint" transform="translate(10 182) rotate(270) scale(1)"/>
+</svg>

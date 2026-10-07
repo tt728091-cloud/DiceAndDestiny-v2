@@ -1,39 +1,53 @@
 {
-  "schema_version": 1,
-  "id": "slow_release",
-  "name": "Slow Release",
-  "type": "action",
-  "presentation": {
-    "rules_text": "Apply 1 Incubation to an enemy with Poison and no Incubation."
-  },
+  "access_type": "venom",
   "cost": {
     "energy": 1
   },
-  "play": {
-    "source_zones": [
-      "hand"
+  "id": "slow_release",
+  "mechanic": {
+    "kind": "slow_release",
+    "params": {
+      "cost_stacks": 0,
+      "cost_status": "catalyst",
+      "stacks": 1
+    },
+    "windows": [
+      "offensive_planning"
     ],
+    "uses_per_round": 0,
+    "uses_per_battle": 0
+  },
+  "name": "Slow Release",
+  "operations": [
+    {
+      "id": "slow_release",
+      "type": "venom_card"
+    }
+  ],
+  "play": {
     "destination": "discard",
     "playable_during": [
       {
-        "segment": "offensive",
         "phase": "main",
+        "segment": "offensive",
         "window_purpose": "planning"
       }
+    ],
+    "source_zones": [
+      "hand"
     ]
   },
-  "targeting": {
-    "selector": "venom_choice",
-    "minimum": 0,
-    "maximum": 1
+  "presentation": {
+    "rules_text": "Apply 1 Incubation to an enemy with Poison and no Incubation."
   },
   "reaction_window": {
     "opens": false
   },
-  "operations": [
-    {
-      "type": "venom_card",
-      "id": "slow_release"
-    }
-  ]
+  "schema_version": 1,
+  "targeting": {
+    "maximum": 1,
+    "minimum": 0,
+    "selector": "venom_choice"
+  },
+  "type": "action"
 }

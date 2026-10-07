@@ -11,7 +11,7 @@ var store: ActiveBattleStore
 var _message: Label
 var _buttons: VBoxContainer
 var _mode_panel: PanelContainer
-var _empty_progression_decks: Dictionary = {}
+var _unplayable_decks: Dictionary = {}
 var _loadout_hint: Label
 var _loadout_choice: OptionButton
 var _character_choice: OptionButton
@@ -137,7 +137,7 @@ func _add_selection(caption: String, choices: Array, control_id: String) -> Opti
 	return select
 
 func _start_selected() -> void:
-	if _progression_deck_empty(): return
+	if _deck_unplayable(): return
 	_start_learned(str(_seat_choice.get_selected_metadata()), str(_model_choice.get_selected_metadata()))
 
 func _add_mode_button(text: String, callback: Callable, control_id: String) -> void:
@@ -251,23 +251,23 @@ func _open_character_creation() -> void:
 func _refresh_character_loadouts() -> void:
 	var response: Dictionary = get_node("/root/LearnedBattleRuntime").character_catalogs(str(_loadout_choice.get_selected_metadata()))
 	if not response.get("ok", false): return
-	_empty_progression_decks.clear()
+	_unplayable_decks.clear()
 	for index in _character_choice.item_count:
 		var id := str(_character_choice.get_item_metadata(index))
 		var catalog: Dictionary = response.result.get(id, {})
 		if catalog.is_empty(): continue
 		var health := 0
 		for entry in catalog.get("owned_decklist", catalog.combatants[id].decklist): health += int(entry.count)
-		_empty_progression_decks[id] = (catalog.has("progression") and health == 0) or not catalog.get("type_conflicts", []).is_empty()
+		_unplayable_decks[id] = health == 0 or not catalog.get("type_conflicts", []).is_empty()
 		_character_choice.set_item_text(index, "%s · %d health · %s" % [catalog.combatants[id].name, health, "Progression · %d XP" % int(catalog.progression.xp) if catalog.has("progression") else "Saved deck" if catalog.has("owned_decklist") else "Starter deck"])
 
 	_update_start_availability()
 
-func _progression_deck_empty() -> bool:
-	return _loadout_choice != null and bool(_empty_progression_decks.get(str(_character_choice.get_selected_metadata()), false))
+func _deck_unplayable() -> bool:
+	return _loadout_choice != null and bool(_unplayable_decks.get(str(_character_choice.get_selected_metadata()), false))
 
 func _update_start_availability() -> void:
-	var empty := _progression_deck_empty()
+	var empty := _deck_unplayable()
 	if not _menu_actions.is_empty():
 		_menu_actions[0].disabled = empty
 		_menu_actions[0].tooltip_text = "Review your deck and character type in Character Creation before battle." if empty else ""

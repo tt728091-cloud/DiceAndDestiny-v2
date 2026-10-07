@@ -95,7 +95,7 @@ func (e Engine) selectOwned(b *state.Battle, actor, key string, eligible []int) 
 		candidates = priority
 	} else {
 		for i, p := range c.Preparations {
-			if p.CardID == "chosen_instrument" && p.Target == actor && containsInt(candidates, p.Die) {
+			if preparationKind(p) == "chosen_instrument" && activePreparation(b, p) && p.Target == actor && containsInt(candidates, p.Die) {
 				candidates = []int{p.Die}
 				instrument = i
 				break
@@ -109,14 +109,14 @@ func (e Engine) selectOwned(b *state.Battle, actor, key string, eligible []int) 
 	chosen := candidates[n]
 	if instrument < 0 {
 		for i, p := range c.Preparations {
-			if p.CardID == "chosen_instrument" && p.Target == actor && p.Die == chosen {
+			if preparationKind(p) == "chosen_instrument" && activePreparation(b, p) && p.Target == actor && p.Die == chosen {
 				instrument = i
 				break
 			}
 		}
 	}
 	if instrument >= 0 {
-		c.Preparations = append(c.Preparations[:instrument], c.Preparations[instrument+1:]...)
+		removeCursePreparation(b, c.Preparations[instrument])
 	}
 	next := []int{}
 	for _, i := range remaining {
@@ -151,7 +151,7 @@ func (e Engine) ownedRoll(b *state.Battle, lib content.BattleLibrary, actor stri
 		curseLog(b, actor, "count", map[string]any{"die_id": d.ID, "count": stacks(b, actor, "curse_count"), "released_entombment": d.Entombed})
 		for i := range c.Preparations {
 			p := &c.Preparations[i]
-			if p.CardID == "black_dividend" && p.Target == actor && p.LastRewardRound != b.Segment.Round && p.Rewards < 2 {
+			if preparationKind(*p) == "black_dividend" && activePreparation(b, *p) && p.Target == actor && p.LastRewardRound != b.Segment.Round && p.Rewards < 2 {
 				gainEnergy(b, p.Source, 1)
 				p.LastRewardRound = b.Segment.Round
 				p.Rewards++
@@ -167,19 +167,34 @@ func (e Engine) ownedRoll(b *state.Battle, lib content.BattleLibrary, actor stri
 		rewardBlackDividend(b, actor, result, stream)
 	}
 	if cursed && allowRetry {
-		armed := stacks(b, actor, "second_knell") > 0
+		armed := mechanicStacks(b, actor, "second_knell") > 0
 		if armed {
-			removeStatus(b, actor, "second_knell", 0)
+			removeMechanicStatus(b, actor, "second_knell")
 		}
-		for i, p := range c.Preparations {
-			if p.CardID == "second_knell" && p.Target == actor {
-				c.Preparations = append(c.Preparations[:i], c.Preparations[i+1:]...)
+		for _, p := range c.Preparations {
+			if preparationKind(p) == "second_knell" && activePreparation(b, p) && p.Target == actor {
+				removeCursePreparation(b, p)
 				armed = true
 				break
 			}
 		}
 		if armed {
-			retry, er := e.ownedRoll(b, lib, actor, index, stream, false)
+			retries := content.MechanicInt(rememberedMechanic(b, lib, actor, "second_knell"), "retries")
+			if retries < 1 {
+				retries = 1
+			}
+			var retry state.RolledDie
+			var retryDice []state.RolledDie
+			var retryCursed []bool
+			var er error
+			for n := 0; n < retries; n++ {
+				retry, er = e.ownedRoll(b, lib, actor, index, stream, false)
+				if er != nil {
+					return retry, er
+				}
+				retryDice = append(retryDice, retry)
+				retryCursed = append(retryCursed, containsInt(d.CursedFaces, retry.Face))
+			}
 			if er != nil {
 				return retry, er
 			}
@@ -191,7 +206,7 @@ func (e Engine) ownedRoll(b *state.Battle, lib content.BattleLibrary, actor stri
 					log.Data["second_knell_part"] = true
 				}
 			}
-			data := map[string]any{"kind": "second_knell_trigger", "die": result, "retry_die": retry, "retry_cursed": containsInt(d.CursedFaces, retry.Face), "count_before": countBefore, "count_after": stacks(b, actor, "curse_count"), "roll_context": stream}
+			data := map[string]any{"kind": "second_knell_trigger", "status_card_id": rememberedMechanicID(b, actor, "second_knell"), "source_card_id": rememberedMechanicID(b, actor, "second_knell"), "die": result, "retry_die": retry, "retry_dice": retryDice, "retry_cursed_faces": retryCursed, "retry_cursed": containsInt(d.CursedFaces, retry.Face), "count_before": countBefore, "count_after": stacks(b, actor, "curse_count"), "roll_context": stream}
 			if stream == "combat_dice" && state.SettledPlanningPrivate(*b) {
 				c.PendingKnell = append(c.PendingKnell, state.CurseLog{Actor: actor, Round: b.Segment.Round, Segment: string(b.Segment.Current), Data: data})
 			} else {

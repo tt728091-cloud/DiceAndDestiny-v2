@@ -1,41 +1,57 @@
 {
-  "schema_version": 1,
-  "id": "grave_interest",
-  "name": "Grave Interest",
-  "type": "curse_action",
-  "presentation": {
-    "rules_text": "Apply Grave Interest (maximum 1) to the enemy. At the next Effects, it consumes the first 3 Curse Count to apply Grave Debt: gain 1 less Energy at the next Income, then remove Grave Debt. Remaining Count groups deal damage normally. Grave Interest expires at that Effects even with fewer than 3 Count. One Curse conversion mode per target. Each named Curse card may be played once per player per round.",
-    "art_key": "card_grave_interest",
-    "effect_summary": "Apply Grave Interest: next Effects, spend 3 Count for \u22121 Energy next Income."
-  },
+  "access_type": "curse",
   "cost": {
     "energy": 0
   },
-  "play": {
-    "source_zones": [
-      "hand"
+  "id": "grave_interest",
+  "mechanic": {
+    "kind": "grave_interest",
+    "params": {
+      "groups": 1,
+      "penalty": 1
+    },
+    "windows": [
+      "offensive_planning"
     ],
+    "uses_per_round": 1,
+    "uses_per_battle": 0,
+    "expiration": "next_ongoing",
+    "rounds": 1
+  },
+  "name": "Grave Interest",
+  "operations": [
+    {
+      "id": "grave_interest",
+      "target": "self",
+      "type": "curse_card"
+    }
+  ],
+  "play": {
     "destination": "discard",
     "playable_during": [
       {
-        "segment": "offensive",
         "phase": "main",
+        "segment": "offensive",
         "window_purpose": "planning"
       }
+    ],
+    "source_zones": [
+      "hand"
     ]
   },
-  "targeting": {
-    "selector": "curse_choice",
-    "minimum": 0,
-    "maximum": 1
+  "presentation": {
+    "art_key": "card_grave_interest",
+    "effect_summary": "Apply Grave Interest: next Effects, spend 3 Count for −1 Energy next Income.",
+    "rules_text": "Apply Grave Interest (maximum 1) to the enemy. At the next Effects, it consumes the first 3 Curse Count to apply Grave Debt: gain 1 less Energy at the next Income, then remove Grave Debt. Remaining Count groups deal damage normally. Grave Interest expires at that Effects even with fewer than 3 Count. One Curse conversion mode per target. Each named Curse card may be played once per player per round."
   },
   "reaction_window": {
     "opens": false
   },
-  "operations": [
-    {
-      "type": "curse_card",
-      "target": "self"
-    }
-  ]
+  "schema_version": 1,
+  "targeting": {
+    "maximum": 1,
+    "minimum": 0,
+    "selector": "curse_choice"
+  },
+  "type": "curse_action"
 }

@@ -1,7 +1,7 @@
 extends Control
 
-# Public Curse events use the same card reveal + traveling effect language as
-# status gains. Extra Curse checks have a separate preview; forced offensive
+# Public card/die events retain the played hand pose and send a traveling effect
+# to the target. Extra Curse checks have a separate preview; forced offensive
 # rerolls animate the actual tray while preserving its authoritative data.
 const TIMING := preload("res://presentation/battle/combat_timing.gd")
 const THEME := preload("res://presentation/battle/cinematic_theme.gd")
@@ -9,6 +9,8 @@ var screen: Control
 var feedback: Dictionary
 var _label: Label
 var _card: BattleCard
+var _card_pose: Dictionary = {}
+var _held_hand: Control
 var _roll: Label
 var _ability_label: Label
 var _defense_start := Vector2.ZERO
@@ -34,28 +36,32 @@ var _batch_dice: Array[Rect2] = []
 var _batch_starts: Array[Vector2] = []
 var _batch_rolls: Array[Label] = []
 
-func configure(owner_screen: Control, data: Dictionary) -> void:
+func configure(owner_screen: Control, data: Dictionary, poses: Dictionary = {}) -> void:
 	screen = owner_screen; feedback = data
+	_card_pose = poses.get(str(data.get("card_instance_id", "")), {}).duplicate(true)
 	_defense_origins = screen._curse_defense_origins.duplicate()
 	_battle_id = screen._view.battle_id
 	name = "CurseFeedback"; mouse_filter = Control.MOUSE_FILTER_IGNORE; z_index = 31
 	set_meta("feedback_notice", true)
 	duration = maxf(1.0, TIMING.seconds("curse_feedback_seconds", 2.1))
 	if data.changes.any(func(change): return change.get("kind") == "offensive_reroll"): duration = 2.8
-	if data.card_id == "unquiet_hands": duration = 2.6
-	if data.card_id == "curse_bloom": duration = 2.8
-	if data.changes[0].get("kind") == "second_knell_trigger": duration = 3.6
+	if BattlePresentationCatalog.card_mechanic(str(data.card_id)) == "unquiet_hands": duration = 2.6
+	if BattlePresentationCatalog.card_mechanic(str(data.card_id)) == "curse_bloom": duration = 2.8
+	if data.changes[0].get("kind") == "second_knell_trigger": duration = 3.6 + 0.55 * maxi(0, data.changes[0].get("retry_dice", []).size() - 1)
 	if data.changes[0].get("kind") in ["second_knell_expired", "refusal_expired"]: duration = 1.5
 	if data.changes[0].get("kind") == "refusal_trigger": duration = 2.8
 	if data.changes[0].get("kind") == "refusal_expired": duration = 2.2
 	if data.changes.any(func(change): return change.get("kind") == "offensive_face_set"): duration = 1.15
 	if _face_batch_end() > 1: duration = maxf(duration, 2.8)
 	if _inline_effect(): duration += _launch_end()
-	if not str(data.card_id).is_empty() and data.changes[0].get("kind") != "offensive_face_set" and data.card_id not in ["widen_the_crack", "curse_bloom"]:
+	# A played card can only be shown at its captured hand pose. Missing poses
+	# (hidden enemy hands, replays, delayed status triggers) never spawn a copy
+	# at a fixed screen coordinate.
+	if not str(data.card_id).is_empty() and not _card_pose.is_empty():
 		_card = BattleCard.new()
-		_card.configure("curse-feedback", str(data.card_id), false, false, true)
-		_card.custom_minimum_size = Vector2(145, 195); _card.size = _card.custom_minimum_size
+		_card.configure(str(data.get("card_instance_id", "")), str(data.card_id), true, false, false)
 		_card.mouse_filter = Control.MOUSE_FILTER_IGNORE; add_child(_card)
+		_card.draw.connect(_card.draw_targeting_outline.bind(_card))
 	_label = Label.new(); _label.name = "CurseOutcome"
 	_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_label.custom_minimum_size = Vector2(260, 0); _label.size.x = 260
@@ -135,7 +141,15 @@ func refresh() -> void:
 	var player: bool = str(change.actor_id) == screen.viewer_actor_id
 	# Keep the notice in the open lane beside the recipient's profile/tray.
 	_origin = Vector2(448, 25) if player else Vector2(1240, 25)
-	if is_instance_valid(_card): _card.position = _origin + Vector2(20, 0)
+	if is_instance_valid(_card):
+		if is_instance_valid(screen._hand_dock):
+			_held_hand = screen._hand_dock
+			_held_hand.gain_animation_active = true
+		var pose: Transform2D = _card_pose.transform
+		_card.size = _card_pose.size
+		_card.position = pose.origin
+		_card.rotation = pose.get_rotation()
+		_card.scale = pose.get_scale()
 	_label.position = _origin + Vector2(0, 200 if is_instance_valid(_card) else 125)
 	var heading := str(feedback.get("title", "Curse"))
 	_ability_label.hide()
@@ -163,7 +177,7 @@ func refresh() -> void:
 		_refresh_offensive_reroll(change, inverse)
 		_finish_refresh()
 		return
-	if feedback.card_id == "unquiet_hands":
+	if BattlePresentationCatalog.card_mechanic(str(feedback.card_id)) == "unquiet_hands":
 		_refresh_extra_check(change, inverse)
 		_finish_refresh()
 		return
@@ -192,7 +206,7 @@ func refresh() -> void:
 	if _inline_defense():
 		for panel in screen._defense_result_panels:
 			if str(panel.data.get("source_id", "")) != str(feedback.get("defense_source_id", "")): continue
-			var origin: Control = panel.dice_controls[0] if not panel.dice_controls.is_empty() else panel.effect_origin
+			var origin: Control = panel._prevention_origin(0) if not panel.dice_controls.is_empty() else panel.effect_origin
 			if is_instance_valid(origin): _defense_start = inverse * origin.get_global_rect().get_center()
 	var number := int(change.index) + 1
 	var die_name := "D%d" % number if number > 0 else str(change.die_id)
@@ -202,7 +216,7 @@ func refresh() -> void:
 	if change.get("ordinary_curse", false):
 		if change.rolled: reason = "All five dice are cursed.\nRoll to expand; mark the result."
 		else: reason = "Random clean die → face 1.\nApplied directly · no roll"
-	elif str(feedback.card_id) in ["mark_the_number", "maledictions_refusal"] and not change.rolled: reason += "\nRandomly selected clean die"
+	elif BattlePresentationCatalog.card_mechanic(str(feedback.card_id)) in ["mark_the_number", "maledictions_refusal"] and not change.rolled: reason += "\nRandomly selected clean die"
 	if change.get("released", false) and not rolling: reason += "\nEntombment released"
 	_label.text = "%s\n%s · %s\n%s\n%s" % [heading, screen._actor_display_name(str(change.actor_id)), die_name, outcome, reason]
 	if change.has("count_after") and not rolling:
@@ -222,6 +236,7 @@ func refresh() -> void:
 	# Resolve the actual actor, including visible off-focus enemy trays.
 	if screen.dice_dock(str(change.actor_id)) != null:
 		var dock: Control = screen.dice_dock(str(change.actor_id))
+		screen.reveal_dice_for_effect(dock)
 		if dock.get_child_count() > 0 and dock.get_child(0) is BattleDiceTray:
 			var tray: BattleDiceTray = dock.get_child(0)
 			var index := int(change.index)
@@ -237,9 +252,9 @@ func refresh() -> void:
 	_finish_refresh()
 
 func _finish_refresh() -> void:
-	if _inline_effect():
+	if _inline_effect() or is_instance_valid(_card):
 		_label.hide(); _ability_label.hide()
-	modulate.a = clampf(_elapsed / 0.12, 0, 1) * clampf((duration - _elapsed) / 0.3, 0, 1)
+	modulate.a = (1.0 if is_instance_valid(_card) else clampf(_elapsed / 0.12, 0, 1)) * clampf((duration - _elapsed) / 0.3, 0, 1)
 	if _waiting() or screen._history_review or screen._history_replay or screen._snapshot_panel_open: modulate.a = 0
 	queue_redraw()
 
@@ -265,7 +280,7 @@ func _draw() -> void:
 	if feedback.changes[_step].get("kind") in ["second_knell_trigger", "second_knell_expired"]:
 		_draw_knell(progress, color)
 		return
-	if feedback.card_id == "unquiet_hands":
+	if BattlePresentationCatalog.card_mechanic(str(feedback.card_id)) == "unquiet_hands":
 		_draw_extra_check(progress, color)
 		return
 	if _count_target.size != Vector2.ZERO and progress >= 0.52:
@@ -278,26 +293,40 @@ func _draw() -> void:
 	# Identify the physical die immediately, then land on its numbered face chip.
 	if _die_rect.size != Vector2.ZERO: draw_rect(_die_rect.grow(3), Color(color, 0.6), false, 2, true)
 	if _target.size == Vector2.ZERO or progress < 0.3: return
-	var start := _defense_start if _ability_label.visible else _card.position + _card.size * 0.5 if is_instance_valid(_card) else _roll.position + _roll.size * 0.5
+	var start := _defense_start if _ability_label.visible else _card.get_transform() * (_card.size * 0.5) if is_instance_valid(_card) else _roll.position + _roll.size * 0.5
 	var destination := _target.get_center()
 	var travel := clampf((progress - 0.3) / 0.22, 0, 1)
 	var tip := start.lerp(destination, travel)
 	if progress < 0.65:
-		draw_line(start, tip, Color(color, 0.16), 8, true)
-		draw_line(start, tip, color, 2, true); draw_circle(tip, 5, color)
+		if is_instance_valid(_card):
+			var points := _card_arc(destination, travel)
+			draw_polyline(points, Color(color, 0.16), 8, true)
+			draw_polyline(points, color, 2, true); draw_circle(points[-1], 5, color)
+		else:
+			draw_line(start, tip, Color(color, 0.16), 8, true)
+			draw_line(start, tip, color, 2, true); draw_circle(tip, 5, color)
 	if travel >= 1:
 		var pulse := (sin((progress - 0.52) * 24) + 1) * 0.5
 		draw_rect(_target.grow(3 + pulse * 3), Color(color, 0.7), false, 2, true)
 		draw_circle(destination, 22 + pulse * 8, Color(color, 0.12))
+
+func _card_arc(destination: Vector2, travel: float) -> PackedVector2Array:
+	var start := _card.get_transform() * (_card.size * 0.5)
+	var points := PackedVector2Array()
+	for step in 25:
+		var t := travel * step / 24.0
+		points.append(start.lerp(destination, t) + Vector2(0, -95 * sin(PI * t)))
+	return points
 
 func _release_pending_face() -> void:
 	if is_instance_valid(_pending_tray): _pending_tray.set_curse_face_pending(_pending_index, _pending_face, false)
 	_pending_tray = null
 
 func _exit_tree() -> void:
+	if is_instance_valid(_held_hand): _held_hand.gain_animation_active = false
 	if is_instance_valid(_refusal_expiry_profile):
 		var counts: Dictionary = _refusal_expiry_profile.statuses.counts.duplicate()
-		counts.erase("maledictions_refusal")
+		counts.erase(_feedback_status("maledictions_refusal"))
 		_refusal_expiry_profile.statuses.set_counts(counts)
 	_release_pending_face()
 	_release_forced_roll()
@@ -321,6 +350,7 @@ func _refresh_offensive_reroll(change: Dictionary, inverse: Transform2D) -> void
 	var inspecting: bool = screen._history_review or screen._history_replay or screen._snapshot_panel_open
 	if screen.dice_dock(actor) != null:
 		var dock: Control = screen.dice_dock(actor)
+		screen.reveal_dice_for_effect(dock)
 		if dock.get_child_count() > 0 and dock.get_child(0) is BattleDiceTray:
 			_reroll_tray = dock.get_child(0)
 			_reroll_tray.present_forced_roll(index, int(change.face_before), roll_seconds if inspecting else elapsed, roll_seconds)
@@ -343,6 +373,7 @@ func _sync_attack_marks() -> void:
 		var actor := str(change.actor_id)
 		if screen.dice_dock(actor) == null: continue
 		var dock: Control = screen.dice_dock(actor)
+		screen.reveal_dice_for_effect(dock)
 		if dock.get_child_count() == 0 or not dock.get_child(0) is BattleDiceTray: continue
 		var tray: BattleDiceTray = dock.get_child(0)
 		var index := int(change.index); var face := int(change.face)
@@ -357,6 +388,7 @@ func _refresh_face_set(change: Dictionary, inverse: Transform2D) -> void:
 	_label.text = "%s · D%d\n%d → %d · Face set" % [BattlePresentationCatalog.card(str(feedback.card_id)).name, index + 1, int(change.face_before), int(change.face)]
 	if screen.dice_dock(actor) == null: return
 	var dock: Control = screen.dice_dock(actor)
+	screen.reveal_dice_for_effect(dock)
 	if dock.get_child_count() == 0 or not dock.get_child(0) is BattleDiceTray: return
 	_reroll_tray = dock.get_child(0)
 	var progress := clampf((_elapsed - 0.12) / 0.58, 0.0, 1.0)
@@ -373,7 +405,7 @@ func _sync_counts() -> void:
 		if not change.has("count_after"): continue
 		var actor := str(change.actor_id)
 		if not shown.has(actor): shown[actor] = int(change.get("count_rolled", change.count_before)) if change.get("already_rolled", false) else int(change.count_before)
-		var arrival := 0.75 if feedback.card_id == "unquiet_hands" else 0.8 if change.get("kind") == "offensive_reroll" else 0.52
+		var arrival := 0.75 if BattlePresentationCatalog.card_mechanic(str(feedback.card_id)) == "unquiet_hands" else 0.8 if change.get("kind") == "offensive_reroll" else 0.52
 		if change.get("kind") == "second_knell_trigger":
 			if not _waiting():
 				if _curse_progress() >= 0.3: shown[actor] = int(change.count_before) + 1
@@ -391,8 +423,8 @@ func _sync_counts() -> void:
 		var counts := {}
 		for status in profile._status_entries:
 			if status.get("definition_id") == "curse_count": continue
-			if status.get("definition_id") == "second_knell" and feedback.changes[_step].get("kind") == "second_knell_trigger": continue
-			if status.get("definition_id") == "maledictions_refusal" and feedback.changes[_step].get("kind") == "refusal_trigger" and not _waiting(): continue
+			if status.get("definition_id") == _feedback_status("second_knell") and feedback.changes[_step].get("kind") == "second_knell_trigger": continue
+			if status.get("definition_id") == _feedback_status("maledictions_refusal") and feedback.changes[_step].get("kind") == "refusal_trigger" and not _waiting(): continue
 			counts[str(status.get("definition_id", ""))] = int(status.get("stacks", 0))
 		counts.curse_count = int(shown[actor])
 		profile.statuses.set_counts(counts)
@@ -406,6 +438,7 @@ func _refresh_extra_check(change: Dictionary, inverse: Transform2D) -> void:
 	_die_rect = Rect2(); _target = Rect2()
 	if screen.dice_dock(actor) != null:
 		var dock: Control = screen.dice_dock(actor)
+		screen.reveal_dice_for_effect(dock)
 		if dock.get_child_count() > 0 and dock.get_child(0) is BattleDiceTray:
 			var tray: BattleDiceTray = dock.get_child(0)
 			if index >= 0 and index < tray._buttons.size(): _die_rect = inverse * tray._buttons[index].get_global_rect()
@@ -418,7 +451,7 @@ func _refresh_extra_check(change: Dictionary, inverse: Transform2D) -> void:
 	_roll.text = "%s%s\n%d" % [BattlePresentationCatalog.symbol_for_die_face(str(change.get("definition_id", "standard_d6")), face), " ⌁" if not rolling and change.get("cursed", false) else "", face]
 	_roll.add_theme_color_override("font_color", Color("e2b2ff") if not rolling and change.get("cursed", false) else Color("e5dfc8"))
 	var outcome := "Checking this die for Curse" if progress < 0.2 else "Rolling separate check…" if rolling else "Face %d · %s" % [int(change.face), "Curse hit · +1 Count" if change.get("cursed", false) else "Clean face · no Count"]
-	_label.text = "Unquiet Hands · %s · D%d\n%s\nOffensive result unchanged" % [screen._actor_display_name(actor), index + 1, outcome]
+	_label.text = "%s · %s · D%d\n%s\nOffensive result unchanged" % [_feedback_title("Unquiet Hands"), screen._actor_display_name(actor), index + 1, outcome]
 	if progress >= 0.55 and change.has("count_after"):
 		_label.text += "\nCurse Count %d → %d" % [int(change.count_before), int(change.count_after)]
 		var profile: ActorProfile = screen._actor_profiles.get(actor)
@@ -430,7 +463,7 @@ func _draw_extra_check(progress: float, color: Color) -> void:
 	if _die_rect.size != Vector2.ZERO:
 		draw_rect(_die_rect.grow(3), Color(color, 0.7), false, 2, true)
 		if progress < 0.3 and is_instance_valid(_card):
-			var start := _card.position + _card.size * 0.5
+			var start := _card.get_transform() * (_card.size * 0.5)
 			var tip := start.lerp(_die_rect.get_center(), clampf(progress / 0.2, 0, 1))
 			draw_line(start, tip, Color(color, 0.2), 8, true); draw_line(start, tip, color, 2, true)
 		if progress >= 0.2 and progress < 0.55:
@@ -448,10 +481,10 @@ func _refresh_knell(change: Dictionary, inverse: Transform2D) -> void:
 	var actor := str(change.actor_id)
 	var profile: ActorProfile = screen._actor_profiles.get(actor)
 	_knell_origin = Rect2(); _die_rect = Rect2(); _target = Rect2()
-	_ability_label.show(); _show_status_symbol("second_knell")
+	_ability_label.show(); _show_status_symbol(_feedback_status("second_knell"))
 	_ability_label.modulate.a = 1.0 - clampf((progress - (0.15 if expired else 0.36)) / 0.14, 0, 1)
 	if is_instance_valid(profile):
-		var bounds: Rect2 = inverse * profile.anchor_rect("status", "second_knell")
+		var bounds: Rect2 = inverse * profile.anchor_rect("status", _feedback_status("second_knell"))
 		_ability_label.position = bounds.position
 		_ability_label.size = Vector2(bounds.size.x, 28)
 		_knell_origin = Rect2(_ability_label.position, _ability_label.size)
@@ -460,28 +493,33 @@ func _refresh_knell(change: Dictionary, inverse: Transform2D) -> void:
 	_roll.position = _origin + (Vector2(178, 85) if is_instance_valid(_card) else Vector2(95, 65))
 	_roll.visible = not expired
 	if expired:
-		_label.text = "Second Knell expired\nNo cursed result before Effects ended"
+		_label.text = "%s expired\nUnused effect expired" % _feedback_title("Second Knell")
 		return
 	var die: Dictionary = change.die
-	var retry: Dictionary = change.retry_die
+	var retries: Array = change.get("retry_dice", [change.retry_die])
+	var retry_flags: Array = change.get("retry_cursed_faces", [change.retry_cursed])
+	var retry_progress := clampf((progress - 0.5) / 0.22, 0, 0.99999) * retries.size()
+	var retry_index := mini(int(retry_progress), retries.size() - 1)
+	var retry: Dictionary = retries[retry_index]
 	var index := int(die.index)
 	if screen.dice_dock(actor) != null:
 		var dock: Control = screen.dice_dock(actor)
+		screen.reveal_dice_for_effect(dock)
 		if dock.get_child_count() > 0 and dock.get_child(0) is BattleDiceTray:
 			var tray: BattleDiceTray = dock.get_child(0)
 			if index >= 0 and index < tray._buttons.size(): _die_rect = inverse * tray._buttons[index].get_global_rect()
-	var rolling := progress < 0.2 or (progress >= 0.5 and progress < 0.72)
+	var rolling := progress < 0.2 or (progress >= 0.5 and progress < 0.72 and fmod(retry_progress, 1.0) < 0.65)
 	var face := int(_elapsed * 26) % 6 + 1 if rolling else int(die.face) if progress < 0.5 else int(retry.face)
-	var cursed: bool = not rolling and (progress < 0.5 or change.retry_cursed)
+	var cursed: bool = not rolling and (progress < 0.5 or retry_flags[retry_index])
 	_roll.pivot_offset = _roll.size * 0.5; _roll.rotation = sin(_elapsed * 30) * 0.12 if rolling else 0.0
 	_roll.text = "%s%s\n%d" % [BattlePresentationCatalog.symbol_for_die_face(str(die.die_id), face), " ⌁" if cursed else "", face]
 	_roll.add_theme_color_override("font_color", Color("e2b2ff") if cursed else Color("e5dfc8"))
 	var outcome := "Original roll…"
 	if progress >= 0.2: outcome = "Face %d · Curse hit · +1 Count" % int(die.face)
-	if progress >= 0.36: outcome = "Second Knell consumed\nReroll this same die once"
-	if progress >= 0.5: outcome = "Rolling the same die again…"
+	if progress >= 0.36: outcome = "%s consumed\nReroll this same die %d time(s)" % [_feedback_title("Second Knell"), retries.size()]
+	if progress >= 0.5: outcome = "Reroll %d / %d · %s" % [retry_index + 1, retries.size(), "Rolling…" if rolling else "Face %d" % int(retry.face)]
 	if progress >= 0.72: outcome = "Final face %d · %s\nCurse Count %d → %d" % [int(retry.face), "+1 more Count" if change.retry_cursed else "clean · no extra Count", int(change.count_before), int(change.count_after)]
-	_label.text = "Second Knell · %s · D%d\n%s" % [screen._actor_display_name(actor), index + 1, outcome]
+	_label.text = "%s · %s · D%d\n%s" % [_feedback_title("Second Knell"), screen._actor_display_name(actor), index + 1, outcome]
 	if change.get("roll_context") == "curse_dice": _label.text += "\nSeparate check · offense unchanged"
 	else: _label.text += "\nUse the final result"
 
@@ -489,7 +527,7 @@ func _draw_knell(progress: float, color: Color) -> void:
 	if feedback.changes[_step].kind == "second_knell_expired": return
 	var preview := _roll.position + _roll.size * 0.5
 	if is_instance_valid(_card) and progress < 0.2 and _die_rect.size != Vector2.ZERO:
-		var start := _card.position + _card.size * 0.5
+		var start := _card.get_transform() * (_card.size * 0.5)
 		var tip := start.lerp(_die_rect.get_center(), clampf(progress / 0.15, 0, 1))
 		draw_line(start, tip, color, 2, true)
 	if _die_rect.size != Vector2.ZERO:
@@ -521,10 +559,10 @@ func _refresh_refusal(change: Dictionary, inverse: Transform2D) -> void:
 	if expired:
 		_refresh_refusal_expiry(profile, actor, inverse, progress)
 		return
-	_ability_label.show(); _show_status_symbol("maledictions_refusal")
+	_ability_label.show(); _show_status_symbol(_feedback_status("maledictions_refusal"))
 	_ability_label.modulate.a = 1.0 - clampf((progress - 0.15) / 0.2, 0, 1)
 	if is_instance_valid(profile):
-		var bounds: Rect2 = inverse * profile.anchor_rect("status", "maledictions_refusal")
+		var bounds: Rect2 = inverse * profile.anchor_rect("status", _feedback_status("maledictions_refusal"))
 		_ability_label.position = bounds.position
 		_ability_label.size = Vector2(bounds.size.x, 28)
 		_count_target = inverse * profile.anchor_rect("status", "curse_count")
@@ -540,9 +578,9 @@ func _refresh_refusal(change: Dictionary, inverse: Transform2D) -> void:
 	_target = Rect2(_roll.position, _roll.size)
 	_die_rect = _target
 	_defense_start = _ability_label.position + _ability_label.size * 0.5
-	_label.text = "Malediction’s Refusal consumed\nChecking D%d against Count cleanse…" % (int(die.index) + 1)
+	_label.text = "%s consumed\nChecking D%d against Count cleanse…" % [_feedback_title("Malediction’s Refusal"), int(die.index) + 1]
 	if not rolling:
-		_label.text = "Malediction’s Refusal consumed\nD%d · Face %d\n%s\nCurse Count %d → %d\nOffensive result unchanged" % [int(die.index) + 1, face, "CURSED · CLEANSE BLOCKED" if change.blocked else "CLEAN · CLEANSE SUCCEEDS", int(change.count_before), int(change.count_after)]
+		_label.text = "%s consumed\nD%d · Face %d\n%s\nCurse Count %d → %d\nOffensive result unchanged" % [_feedback_title("Malediction’s Refusal"), int(die.index) + 1, face, "CURSED · CLEANSE BLOCKED" if change.blocked else "CLEAN · CLEANSE SUCCEEDS", int(change.count_before), int(change.count_after)]
 
 
 func _refresh_refusal_expiry(profile: ActorProfile, actor: String, inverse: Transform2D, progress: float) -> void:
@@ -552,14 +590,14 @@ func _refresh_refusal_expiry(profile: ActorProfile, actor: String, inverse: Tran
 	# The authoritative snapshot may already be in Planning. Hold just this
 	# status in its real HUD slot for its local expiration presentation.
 	var counts: Dictionary = profile.statuses.counts.duplicate()
-	counts["maledictions_refusal"] = 1
+	counts[_feedback_status("maledictions_refusal")] = 1
 	profile.statuses.set_counts(counts)
-	var slot: Control = profile.statuses.ensure_slot("maledictions_refusal")
+	var slot: Control = profile.statuses.ensure_slot(_feedback_status("maledictions_refusal"))
 	slot.modulate.a = 1.0 - smoothstep(0.05, 0.55, progress)
 	slot.mouse_filter = Control.MOUSE_FILTER_IGNORE if progress >= 0.55 else Control.MOUSE_FILTER_STOP
 	var bounds: Rect2 = inverse * slot.get_global_rect()
 	_defense_start = bounds.get_center()
-	_label.text = "Malediction’s Refusal expired\nNo cleanse attempted"
+	_label.text = "%s expired\nNo cleanse attempted" % _feedback_title("Malediction’s Refusal")
 	_label.add_theme_stylebox_override("normal", THEME.panel(Color("10191ff2"), Color("b6ad92"), 6))
 	_label.add_theme_color_override("font_color", Color("f3ead4"))
 	_label.custom_minimum_size = Vector2(270, 0); _label.size = Vector2(270, 0)
@@ -575,6 +613,7 @@ func _refresh_refusal_expiry(profile: ActorProfile, actor: String, inverse: Tran
 		# this actor's dice rather than covering anyone's health or statuses.
 		var bottom := hud.end.y
 		var dock: Control = screen.dice_dock(actor)
+		screen.reveal_dice_for_effect(dock)
 		if is_instance_valid(dock) and dock.is_visible_in_tree(): bottom = maxf(bottom, (inverse * dock.get_global_rect()).end.y)
 		caption.position = Vector2(hud.get_center().x - caption.size.x * 0.5, bottom + 16)
 	_label.position = Vector2(clampf(caption.position.x, 16, 1904 - _label.size.x), clampf(caption.position.y, 16, 1064 - _label.size.y))
@@ -643,6 +682,7 @@ func _refresh_face_batch(inverse: Transform2D, heading: String) -> void:
 			if not change.get("marked", false): descriptions.append("D%d · face %d · %s" % [index + 1, face, "already cursed · +1 Count" if change.get("cursed", false) else "clean · no Count"])
 		if screen.dice_dock(actor) == null: continue
 		var dock: Control = screen.dice_dock(actor)
+		screen.reveal_dice_for_effect(dock)
 		if dock.get_child_count() == 0 or not dock.get_child(0) is BattleDiceTray: continue
 		var tray: BattleDiceTray = dock.get_child(0)
 		if index < 0 or index >= tray._buttons.size() or face < 1 or face > 6: continue
@@ -699,10 +739,10 @@ func _refresh_face_batch(inverse: Transform2D, heading: String) -> void:
 	else: detail += "\n%d rolled checks resolved" % rolls
 	if rolls > 0: detail += "\nCurse checks · offense unchanged"
 	if count_start >= 0 and progress >= 0.3: detail += "\nCurse Count %d → %d" % [count_start, count_end]
-	if feedback.card_id == "widen_the_crack" and marks > 0:
+	if BattlePresentationCatalog.card_mechanic(str(feedback.card_id)) == "widen_the_crack" and marks > 0:
 		var change: Dictionary = feedback.changes[_step]
 		detail = "Die %d · face %d cursed\nAdjacent face marked" % [int(change.index) + 1, int(change.face)]
-	if feedback.card_id == "widen_the_crack" and marks == 0:
+	if BattlePresentationCatalog.card_mechanic(str(feedback.card_id)) == "widen_the_crack" and marks == 0:
 		var change: Dictionary = feedback.changes[_step]
 		detail = "Die %d · rolling…" % (int(change.index) + 1) if progress < 0.3 else "Die %d rolled %d · %s" % [int(change.index) + 1, int(change.face), "cursed result" if change.get("cursed", false) else "clean result · no Count"]
 		if progress >= 0.3:
@@ -716,7 +756,7 @@ func _refresh_face_batch(inverse: Transform2D, heading: String) -> void:
 		if is_instance_valid(profile): _count_target = inverse * profile.anchor_rect("status", "curse_count")
 
 func _draw_face_batch(progress: float, color: Color) -> void:
-	var source := _defense_start if _inline_effect() or _ability_label.visible else _card.position + _card.size * 0.5 if is_instance_valid(_card) else _label.position + Vector2(_label.size.x * 0.5, 0)
+	var source := _defense_start if _inline_effect() or _ability_label.visible else _card.get_transform() * (_card.size * 0.5) if is_instance_valid(_card) else _label.position + Vector2(_label.size.x * 0.5, 0)
 	if _inline_effect():
 		# Launch beside the prevention trail, then resolve the existing Curse
 		# check on the receiving die. Never use a detached text pop-up as origin.
@@ -746,8 +786,8 @@ func _draw_face_batch(progress: float, color: Color) -> void:
 		draw_line(source, tip, color, 2, true)
 
 func _uses_tray_curse() -> bool:
-	if _step >= feedback.changes.size() or feedback.card_id == "unquiet_hands": return false
-	return _is_face_application(feedback.changes[_step]) and (_inline_effect() or _face_batch_end() > _step + 1 or feedback.changes[_step].get("rolled", false) or feedback.card_id == "widen_the_crack")
+	if _step >= feedback.changes.size() or BattlePresentationCatalog.card_mechanic(str(feedback.card_id)) == "unquiet_hands": return false
+	return _is_face_application(feedback.changes[_step]) and (_inline_effect() or _face_batch_end() > _step + 1 or feedback.changes[_step].get("rolled", false) or BattlePresentationCatalog.card_mechanic(str(feedback.card_id)) == "widen_the_crack")
 
 
 func _refresh_dividend(change: Dictionary, inverse: Transform2D) -> void:
@@ -758,15 +798,16 @@ func _refresh_dividend(change: Dictionary, inverse: Transform2D) -> void:
 	_label.position = _origin
 	var profile: ActorProfile = screen._actor_profiles.get(str(change.actor_id))
 	if is_instance_valid(profile):
-		_target = inverse * profile.anchor_rect("status", "black_dividend")
-		_ability_label.show(); _show_status_symbol("black_dividend")
+		_target = inverse * profile.anchor_rect("status", _feedback_status("black_dividend"))
+		_ability_label.show(); _show_status_symbol(_feedback_status("black_dividend"))
 		_ability_label.position = _target.position
 		_ability_label.size = Vector2(_target.size.x, 26)
 		_ability_label.modulate.a = 1.0 - progress if expired or change.get("consumed", false) else sin(progress * PI)
 	if expired:
-		_label.text = "Black Dividend expired\nNext Effects complete\n%d / 2 Energy awarded" % int(change.rewards)
+		_label.text = "%s expired\n%d / %d rewards awarded" % [_feedback_title("Black Dividend"), int(change.get("rewards", 0)), int(change.get("limit", 2))]
 		return
 	var dock: Control = screen.dice_dock(str(change.actor_id))
+	screen.reveal_dice_for_effect(dock)
 	if is_instance_valid(dock) and dock.get_child_count() > 0:
 		var tray: BattleDiceTray = dock.get_child(0)
 		var index := int(change.die.index)
@@ -775,7 +816,7 @@ func _refresh_dividend(change: Dictionary, inverse: Transform2D) -> void:
 	if is_instance_valid(recipient):
 		_count_target = inverse * recipient.anchor_rect("energy")
 		recipient.show_resource_gain({"stat": "energy", "before": int(change.energy_before), "after": int(change.energy_after)}, clampf((progress - 0.55) / 0.2, 0, 1))
-	_label.text = "Black Dividend activated\nD%d · cursed face %d\n%s gains 1 Energy\nEnergy %d → %d\n%s" % [int(change.die.index) + 1, int(change.die.face), screen._actor_display_name(str(change.source_actor_id)), int(change.energy_before), int(change.energy_after), "2 / 2 rewards · status consumed" if change.get("consumed", false) else "1 / 2 rewards · waits for next round"]
+	_label.text = "%s activated\nD%d · cursed face %d\n%s gains %d Energy\nEnergy %d → %d\n%d / %d rewards · %s" % [_feedback_title("Black Dividend"), int(change.die.index) + 1, int(change.die.face), screen._actor_display_name(str(change.source_actor_id)), int(change.energy_after) - int(change.energy_before), int(change.energy_before), int(change.energy_after), int(change.rewards), int(change.get("limit", 2)), "status consumed" if change.get("consumed", false) else "waits for next round"]
 
 func _draw_dividend(progress: float) -> void:
 	var color := Color("e2b2ff")
@@ -797,19 +838,19 @@ func _refresh_bloom(change: Dictionary, inverse: Transform2D) -> void:
 	_label.position = _origin
 	var profile: ActorProfile = screen._actor_profiles.get(str(change.actor_id))
 	if is_instance_valid(profile):
-		_target = inverse * profile.anchor_rect("status", "curse_bloom")
-		_ability_label.show(); _show_status_symbol("curse_bloom")
+		_target = inverse * profile.anchor_rect("status", _feedback_status("curse_bloom"))
+		_ability_label.show(); _show_status_symbol(_feedback_status("curse_bloom"))
 		_ability_label.position = _target.position
 		_ability_label.size = Vector2(_target.size.x, 26)
 		_ability_label.modulate.a = 1.0 - _curse_progress()
 	if change.kind == "bloom_expired":
-		_label.text = "Curse Bloom expired\nNext Effects complete\nNo damaging Curse conversion"
+		_label.text = "%s expired\nNo damaging Curse conversion" % _feedback_title("Curse Bloom")
 	elif int(change.damage) == 0:
-		_label.text = "Curse Bloom consumed\nCurse damage removed no health\nNo expansion"
+		_label.text = "%s consumed\nCurse damage removed no health\nNo expansion" % _feedback_title("Curse Bloom")
 	elif int(change.attempts) == 0:
-		_label.text = "Curse Bloom consumed\nCurse removed %d health\nNo cursed dice to expand" % int(change.damage)
+		_label.text = "%s consumed\nCurse removed %d health\nNo cursed dice to expand" % [_feedback_title("Curse Bloom"), int(change.damage)]
 	else:
-		_label.text = "Curse Bloom activated · consumed\nCurse removed %d health\n3 expansion attempts\nNew Count waits until next Effects" % int(change.damage)
+		_label.text = "%s activated · consumed\nCurse removed %d health\n%d expansion attempts\nNew Count waits until next Effects" % [_feedback_title("Curse Bloom"), int(change.damage), int(change.attempts)]
 
 func _show_status_symbol(status_id: String) -> void:
 	# Consumed statuses fade at their own slot using the same symbol as the HUD.
@@ -821,3 +862,12 @@ func _show_status_symbol(status_id: String) -> void:
 		_ability_label.add_child(_status_symbol); _status_symbol.size = Vector2(28, 28)
 	_status_symbol.texture = preload("res://presentation/battle/battle_icons.gd").texture(status_id)
 	_status_symbol.show()
+
+func _feedback_title(fallback: String) -> String:
+	var id := str(feedback.changes[mini(_step, feedback.changes.size() - 1)].get("status_card_id", feedback.get("card_id", "")))
+	return str(BattlePresentationCatalog.card(id).name) if not id.is_empty() else str(feedback.get("title", fallback))
+
+func _feedback_status(fallback: String) -> String:
+	var id := str(feedback.changes[mini(_step, feedback.changes.size() - 1)].get("status_card_id", feedback.get("card_id", "")))
+	var kind := BattlePresentationCatalog.card_mechanic(id)
+	return id + "_card_effect" if kind == fallback and id != kind else fallback

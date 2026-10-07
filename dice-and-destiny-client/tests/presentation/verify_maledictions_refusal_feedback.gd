@@ -125,7 +125,8 @@ func _expiry_lifecycle(applied: Dictionary, width: int, target: String) -> void:
 	_expect(not notice._waiting() and slot.modulate.a > 0 and slot.modulate.a < 1, "real HUD icon fades as expiry notice appears")
 	var bounds: Rect2 = notice.get_global_transform_with_canvas().affine_inverse() * slot.get_global_rect()
 	_expect(notice._defense_start.distance_to(bounds.get_center()) < 1, "green trail originates at exact status icon")
-	_expect(notice._target.get_center().distance_to(bounds.get_center()) < 360, "expiry box stays local to the actor HUD")
+	var near_edge := Vector2(clampf(bounds.get_center().x, notice._target.position.x, notice._target.end.x), clampf(bounds.get_center().y, notice._target.position.y, notice._target.end.y))
+	_expect(near_edge.distance_to(bounds.get_center()) < 240, "expiry caption edge stays close to its status icon")
 	for other in screen._actor_profiles.values():
 		_expect(not notice._label.get_global_rect().intersects(other.get_global_rect()), "expiry caption does not cover any actor HUD")
 	_expect(root.get_visible_rect().encloses(notice._label.get_global_rect()), "local expiry caption fits either screen edge")

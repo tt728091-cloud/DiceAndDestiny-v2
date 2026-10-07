@@ -15,11 +15,12 @@ func _run() -> void:
 				fixture.events = []; fixture.learned_policy = {}; fixture.legal_actions = []; fixture.pending_input = {}
 				fixture.snapshot.actors.erase("goblin-2")
 				for i in range(2, enemies + 1): fixture.snapshot.actors["goblin-" + str(i)] = fixture.snapshot.actors.goblin.duplicate(true)
+				if enemies == 3: fixture.snapshot.actors.goblin.definition_id = "drowned_oracle"
 				fixture.snapshot.unified_defense = OS.get_environment("DICE_AND_DESTINY_UNIFIED_LAYOUT") == "1"
 				fixture.snapshot.segment = "defensive" if fixture.snapshot.unified_defense else "damage_resolution"; fixture.snapshot.stage = "defense_selection" if fixture.snapshot.unified_defense else "damage_reaction"
 				var sources: Array = []; var removals: Array = []
 				for actor in fixture.snapshot.actors:
-					var amounts: Array = [4, 2, 3] if actor == "blade" else [5]
+					var amounts: Array = [5, 2, 3] if actor == "blade" else [5]
 					if large: amounts = [24]
 					for group in amounts.size():
 						var id: String = actor + "-" + str(group)
@@ -32,10 +33,23 @@ func _run() -> void:
 				var screen = SCREEN.instantiate(); screen.initial_result = fixture; screen.gateway = BattleGateway.new(FakeBattleAuthority.new()); screen._auto_pass_disabled = true
 				screen.active_store = ActiveBattleStore.new(WorkspacePaths.persistent_file("damage-stacks.json"))
 				root.add_child(screen); screen.set_process(false)
+				# Let the opening presentation settle before exercising real hover input.
+				await create_timer(0.75).timeout
 				for frame in 12: await process_frame
 				var total := 0
 				_expect(screen._damage_stack_docks.size() == enemies + 1, "one area under every actor")
 				_expect(screen._damage_grids.size() == sources.size(), "separate source stacks")
+				for source in sources:
+					var panel: Control = screen._attack_intents[str(source.id)]
+					if str(source.source_actor_id) == screen.viewer_actor_id:
+						_expect(not panel.intent.visible, "outgoing damage has no duplicate floating badge")
+						_expect(is_instance_valid(panel.target_heading) and panel.target_heading.is_visible_in_tree(), "outgoing attack remains beneath its recipient")
+						_expect(panel.target_heading.text.contains(str(panel.data.attack_name)), "recipient heading retains attack name")
+						_expect(panel.target_heading.tooltip_text == panel._ability_tooltip(), "recipient heading retains full live attack rules")
+						_expect(screen.attack_anchor_rect(str(source.id)) == panel.target_heading.get_global_rect(), "outgoing effect targets follow recipient heading")
+						_expect(panel.attack_origin == panel.target_heading, "attack origins follow visible outgoing heading")
+					else:
+						_expect(panel.intent.visible, "incoming enemy attack badges remain available for defense")
 				for grid in screen._damage_grids:
 					grid.started_ms = Time.get_ticks_msec() - 5000; grid.refresh_playback()
 					total += grid.get_child_count()
@@ -52,12 +66,19 @@ func _run() -> void:
 				for actor in screen._damage_stack_docks:
 					var dock: Control = screen._damage_stack_docks[actor]
 					_expect(root.get_visible_rect().grow(1).encloses(dock.get_global_rect()), "stack area fits viewport")
-					_expect(dock.get_global_rect().position.y >= screen._actor_profiles[actor].get_global_rect().end.y, "stack follows beneath actor HUD")
+					_expect(dock.get_global_rect().end.y < screen._actor_profiles[actor].get_global_rect().position.y if actor == "blade" else dock.get_global_rect().position.y >= screen._actor_profiles[actor].get_global_rect().end.y, "stack stays beside its owner: above player stats, below enemy stats")
 					for other in screen._damage_stack_docks:
 						if other != actor: _expect(not dock.get_global_rect().intersects(screen._damage_stack_docks[other].get_global_rect()), "actor areas do not overlap")
-				if not large:
-					for grid in screen._damage_grids:
-						_expect(grid.visible_card_rect(grid.get_child(-1)).size.y >= grid.STRIDE * screen._root.scale.y - 1, "ordinary multiple attacks show every header")
+
+				# At rest, the first five complete card headers fit on both sides.
+				for actor in screen._damage_stack_docks:
+					var grids: Array = screen._damage_grids.filter(func(g): return g.target_actor == actor)
+					var first: Control = grids[0]
+					for index in 5:
+						var card: Control = first.get_child(index)
+						var visible_row: Rect2 = first.visible_card_rect(card)
+						_expect(visible_row.size.y >= first.STRIDE * screen._root.scale.y - 1, "five full pending card rows visible for %s at %s / %d enemies: row %d, %s" % [actor, viewport, enemies, index, visible_row])
+
 				if large:
 					var dock: ScrollContainer = screen._damage_stack_docks.blade
 					dock.scroll_vertical = 99999
@@ -70,7 +91,8 @@ func _run() -> void:
 					var grid: Control = screen._damage_grids[0]
 					var header: Rect2 = grid.visible_card_rect(grid.get_child(0))
 					var icon_event := InputEventMouseMotion.new(); icon_event.position = grid.get_global_transform_with_canvas() * grid.origin_icon_rect(grid.get_child(0)).get_center(); root.push_input(icon_event, true)
-					await process_frame; grid._update_hover()
+					# The first native window-focus event can replace a synthetic motion.
+					await process_frame; root.push_input(icon_event, true); grid._update_hover()
 					_expect(grid.tooltip_text == "Pulled from discard pile", "source icon hover identifies its recorded pile %s/%d: %s" % [viewport, enemies, grid.tooltip_text])
 					var event := InputEventMouseMotion.new(); event.position = header.get_center(); root.push_input(event, true)
 					await process_frame; grid._update_hover()
@@ -102,6 +124,11 @@ func _run() -> void:
 				screen.active_store.clear(); screen.queue_free(); await process_frame
 	print("DAMAGE CARD LAYOUT: " + ("FAILED" if failed else "PASSED")); quit(1 if failed else 0)
 func _check_preview(screen: Control, grid: Control, card: Control) -> void:
+	# The compact actor lanes intentionally scroll; every reserved card must
+	# still be reachable and previewable, including later source groups.
+	var local_y: float = grid.position.y + grid.get_parent().position.y + card.position.y
+	grid.dock.scroll_vertical = int(local_y)
+	await process_frame; await process_frame
 	var header: Rect2 = grid.visible_card_rect(card)
 	var event := InputEventMouseMotion.new(); event.position = header.get_center(); root.push_input(event, true)
 	await process_frame; grid._update_hover()

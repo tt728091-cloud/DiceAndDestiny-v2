@@ -15,6 +15,7 @@ import (
 // intentionally separate from the legacy mock content structs: accepting both
 // shapes in one decoder would make unknown-field validation ineffective.
 type BattleLibrary struct {
+	CardTrees  map[string]CardTree `json:",omitempty"`
 	Symbols    map[string]SymbolDefinition
 	Dice       map[string]BattleDieDefinition
 	Cards      map[string]BattleCardDefinition
@@ -89,6 +90,10 @@ type CardPlayDefinition struct {
 }
 
 type BattleCardDefinition struct {
+	Mechanic             *CardMechanic            `yaml:"mechanic,omitempty" json:"mechanic,omitempty"`
+	AccessType           string                   `yaml:"access_type,omitempty" json:"access_type,omitempty"`
+	Program              *CardProgram             `yaml:"program,omitempty" json:"program,omitempty"`
+	Economy              *CardEconomy             `yaml:"economy,omitempty" json:"economy,omitempty"`
 	SavedCardDestination string                   `yaml:"saved_card_destination,omitempty" json:"saved_card_destination,omitempty"`
 	SchemaVersion        int                      `yaml:"schema_version" json:"schema_version"`
 	ID                   string                   `yaml:"id" json:"id"`
@@ -127,11 +132,13 @@ type AbilityTier struct {
 }
 
 type AbilityQualification struct {
+	ChooseTier         bool          `yaml:"choose_tier,omitempty" json:"choose_tier,omitempty"`
 	ActivationTiers    []AbilityTier `yaml:"activation_tiers" json:"activation_tiers"`
 	ConditionalBonuses []AbilityTier `yaml:"conditional_bonuses" json:"conditional_bonuses"`
 }
 
 type DefenseSelection struct {
+	OffensiveAbilitiesOnly   bool     `yaml:"offensive_abilities_only,omitempty" json:"offensive_abilities_only,omitempty"`
 	RequiresIncomingProposal bool     `yaml:"requires_incoming_proposal" json:"requires_incoming_proposal"`
 	AllowedProposalTypes     []string `yaml:"allowed_proposal_types" json:"allowed_proposal_types"`
 	TargetCount              int      `yaml:"target_count" json:"target_count"`
@@ -150,6 +157,9 @@ type DefenseResolution struct {
 }
 
 type BattleAbilityDefinition struct {
+	ConfigurationVersion int                   `yaml:"configuration_version,omitempty" json:"configuration_version,omitempty"`
+	OptionalPayment      *AbilityPayment       `yaml:"optional_payment,omitempty" json:"optional_payment,omitempty"`
+	Hooks                []AbilityHook         `yaml:"hooks,omitempty" json:"hooks,omitempty"`
 	SavedCardDestination string                `yaml:"saved_card_destination,omitempty" json:"saved_card_destination,omitempty"`
 	SchemaVersion        int                   `yaml:"schema_version" json:"schema_version"`
 	ID                   string                `yaml:"id" json:"id"`
@@ -208,6 +218,7 @@ type BattleStatusDefinition struct {
 // BattleOperation is a closed, validated data language.  Fields are shared by
 // operation kinds so nested outcomes and ability modifiers remain declarative.
 type BattleOperation struct {
+	Special           *SharedSpecialEffect      `yaml:"special,omitempty" json:"special,omitempty"`
 	ExtraEnergy       int                       `yaml:"extra_energy,omitempty" json:"extra_energy,omitempty"`
 	BonusAmount       int                       `yaml:"bonus_amount,omitempty" json:"bonus_amount,omitempty"`
 	ID                string                    `yaml:"id,omitempty" json:"id,omitempty"`
@@ -374,6 +385,11 @@ func LoadBattleLibrary(root string) (BattleLibrary, error) {
 	if err := loadBattleItems(filepath.Join(root, "combatants"), &lib.Combatants); err != nil {
 		return BattleLibrary{}, err
 	}
+	for id, c := range lib.Cards {
+		if c.Mechanic != nil {
+			lib.Cards[id] = PrepareMechanicCard(c, &lib)
+		}
+	}
 	if err := validateBattleLibrary(lib); err != nil {
 		return BattleLibrary{}, err
 	}
@@ -480,7 +496,7 @@ func validateBattleLibrary(lib BattleLibrary) error {
 		}
 	}
 	for id, card := range lib.Cards {
-		if err := validateSavedCardDestination(card.SavedCardDestination); err != nil {
+		if err := validateSavedCardDestination(card.SavedCardDestination); err != nil && !(card.Mechanic != nil && ProgramContains([]string{"hand", "deck", "removed"}, card.SavedCardDestination)) {
 			return fmt.Errorf("%w: card %q: %v", ErrInvalidContent, id, err)
 		}
 		if card.SchemaVersion != 1 {
@@ -495,8 +511,20 @@ func validateBattleLibrary(lib BattleLibrary) error {
 		if err := reserveContentName(contentNames, "card", id, card.Name); err != nil {
 			return err
 		}
-		if card.Cost.Energy < 0 || len(card.Play.SourceZones) == 0 || card.Play.Destination == "" || len(card.Play.PlayableDuring) == 0 {
+		if card.Cost.Energy < 0 || len(card.Play.SourceZones) == 0 || card.Play.Destination == "" || (card.Program == nil && len(card.Play.PlayableDuring) == 0) {
 			return fmt.Errorf("%w: card %q has invalid cost or play rules", ErrInvalidContent, id)
+		}
+		if card.Mechanic != nil {
+			if err := ValidateCardMechanic(card, lib); err != nil {
+				return fmt.Errorf("card %s: %w", id, err)
+			}
+			continue
+		}
+		if card.Program != nil {
+			if err := ValidateCardProgram(card, lib); err != nil {
+				return fmt.Errorf("card %s: %w", id, err)
+			}
+			continue
 		}
 		for _, timing := range card.Play.PlayableDuring {
 			if !validTiming(timing.Segment, timing.Phase) {
@@ -519,6 +547,9 @@ func validateBattleLibrary(lib BattleLibrary) error {
 		}
 	}
 	for id, ability := range lib.Abilities {
+		if err := validateAbilityConfiguration(ability, lib); err != nil {
+			return fmt.Errorf("ability %s: %w", id, err)
+		}
 		if err := validateSavedCardDestination(ability.SavedCardDestination); err != nil {
 			return fmt.Errorf("%w: ability %q: %v", ErrInvalidContent, id, err)
 		}
@@ -621,9 +652,9 @@ func validateBattleLibrary(lib BattleLibrary) error {
 				}
 			}
 			if policy.CardID != "" {
-				card, ok := lib.Cards[policy.CardID]
-				if !ok || card.Cost.Energy != 1 || len(card.Operations) != 1 || card.Operations[0].Type != "apply_ability_modifier" || card.Operations[0].Duration != "round" {
-					return fmt.Errorf("single ability combatant %q requires a one-energy round attack modifier", id)
+				_, ok := lib.Cards[policy.CardID]
+				if !ok {
+					return fmt.Errorf("single ability combatant %q references an unavailable card", id)
 				}
 			}
 		}
@@ -721,7 +752,7 @@ func validateTier(tier AbilityTier, lib BattleLibrary) error {
 	return validateBattleOperations(tier.Operations, lib)
 }
 func validateBattleOperations(ops []BattleOperation, lib BattleLibrary) error {
-	supported := map[string]bool{"general_card": true, "curse_card": true, "curse_action": true, "provoke": true, "apply_incubation": true, "incubation_or_poison": true, "venom_card": true, "reroll_die": true, "noop": true, "deal_damage": true, "prevent_damage": true, "scale_damage": true, "apply_status": true, "remove_status": true, "remove_status_stack": true, "gain_resource": true, "draw_cards": true, "modify_die": true, "apply_ability_modifier": true, "adjust_max_rolls": true, "cancel_source": true, "roll_dice": true}
+	supported := map[string]bool{"special_effect": true, "general_card": true, "curse_card": true, "curse_action": true, "provoke": true, "apply_incubation": true, "incubation_or_poison": true, "venom_card": true, "reroll_die": true, "noop": true, "deal_damage": true, "prevent_damage": true, "scale_damage": true, "apply_status": true, "remove_status": true, "remove_status_stack": true, "gain_resource": true, "draw_cards": true, "modify_die": true, "apply_ability_modifier": true, "adjust_max_rolls": true, "cancel_source": true, "roll_dice": true}
 	for _, op := range ops {
 		if !supported[op.Type] {
 			return fmt.Errorf("unsupported operation type %q", op.Type)
@@ -750,6 +781,10 @@ func validateBattleOperations(ops []BattleOperation, lib BattleLibrary) error {
 			return fmt.Errorf("offensive ability modifier requires a positive status")
 		}
 		switch op.Type {
+		case "special_effect":
+			if err := validateSpecialEffect(op.Special, lib); err != nil {
+				return err
+			}
 		case "general_card":
 			if err := validateGeneralCardOperation(op); err != nil {
 				return err
@@ -843,6 +878,10 @@ func validateOperationAmount(value any, allowNegative bool) error {
 		return fmt.Errorf("unsupported amount %q", text)
 	}
 	integer, ok := value.(int)
+	if f, isFloat := value.(float64); isFloat && f >= -1000000 && f <= 1000000 && f == float64(int(f)) {
+		integer = int(f)
+		ok = true
+	}
 	if !ok {
 		return fmt.Errorf("amount must be an integer or rolled_face")
 	}

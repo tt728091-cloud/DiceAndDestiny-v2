@@ -9,7 +9,7 @@ import (
 
 // CharacterCatalogs reads definitions without creating/resetting a battle,
 // initializing a policy, drawing cards, or writing any player state.
-func CharacterCatalogs(root string) (map[string]content.BattleLibrary, error) {
+func CharacterCatalogs(root string, authoredRoots ...string) (map[string]content.BattleLibrary, error) {
 	if root == "" {
 		return nil, fmt.Errorf("content_root is required")
 	}
@@ -19,9 +19,15 @@ func CharacterCatalogs(root string) (map[string]content.BattleLibrary, error) {
 		if err != nil {
 			return nil, err
 		}
-		packs := []string{"venom_v1", "curse_v1", "adventurer_v1", "general_v1"}
+		packs := []string{"venom_v1", "curse_v1", "adventurer_v1", "general_v1", "minions_v1"}
 		for _, pack := range packs {
 			lib, err = content.LoadBattleExtension(lib, filepath.Join(root, pack))
+			if err != nil {
+				return nil, err
+			}
+		}
+		if len(authoredRoots) > 0 {
+			lib, err = content.OverlayAuthoredCards(lib, authoredRoots[0])
 			if err != nil {
 				return nil, err
 			}

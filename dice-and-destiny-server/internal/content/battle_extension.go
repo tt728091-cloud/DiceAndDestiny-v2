@@ -36,5 +36,10 @@ func LoadBattleExtension(lib BattleLibrary, root string) (BattleLibrary, error) 
 	if err := loadBattleItems(filepath.Join(root, "combatants"), &lib.Combatants); err != nil {
 		return lib, err
 	}
+	for id, c := range lib.Cards {
+		if c.Mechanic != nil {
+			lib.Cards[id] = PrepareMechanicCard(c, &lib)
+		}
+	}
 	return lib, validateBattleLibrary(lib)
 }

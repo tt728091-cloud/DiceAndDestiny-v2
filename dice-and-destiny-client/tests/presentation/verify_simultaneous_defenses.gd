@@ -56,6 +56,21 @@ func _run() -> void:
 	await create_timer(TIMING.effects_seconds() + 1).timeout
 	_expect(next.damage.text == "5", "second source damage remains independent")
 	_expect(screen._actor_profiles.blade.statuses.text.contains("Catalyst ×2 · pending"), "second flight displays two pending Catalyst")
+	# Incoming Curse may need the player's offensive face maps while a
+	# defensive result is still visible in the same station.
+	var tray: BattleDiceTray = screen._player_dice_dock.get_child(0)
+	var marked := []
+	for i in 5: marked.append({"index": i, "cursed_faces": [1, 2, 3, 4, 5, 6]})
+	tray.display_owned(marked)
+	screen.reveal_dice_for_effect(screen._player_dice_dock)
+	for frame in 8: await process_frame
+	next._update()
+	for cell in next.roll_cells:
+		_expect(not cell.get_global_rect().intersects(screen._player_dice_dock.get_global_rect()), "Curse maps and defense results use separate rows")
+		_expect(Rect2(0, screen.PLAYER_ZONE_TOP, 1920, 1080 - screen.PLAYER_ZONE_TOP).encloses(cell.get_global_rect()), "expanded dice remain inside player region")
+	screen._player_dice_effect_until = Time.get_ticks_msec() - 1
+	screen._process(0)
+	_expect(not screen._player_dice_dock.visible, "temporary player face maps close after the effect")
 	screen.active_store.clear(); screen.queue_free(); await process_frame
 	await _automatic_chain(first_wave, initial, false)
 	await _automatic_chain(first_wave, initial, true)

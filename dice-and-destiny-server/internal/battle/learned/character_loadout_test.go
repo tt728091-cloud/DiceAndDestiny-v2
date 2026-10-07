@@ -35,7 +35,7 @@ func TestOwnedDeckPersistenceAndValidation(t *testing.T) {
 	if err != nil || !reflect.DeepEqual(saved, original) {
 		t.Fatalf("read: %v %v", saved, err)
 	}
-	before, _ := os.ReadFile(filepath.Join(dir, "adventurer.json"))
+	before, _ := os.ReadFile(filepath.Join(dir, "progression", "adventurer.json"))
 	for _, deck := range []any{
 		[]loadout.Entry{}, []loadout.Entry{{CardID: "missing", Count: 1}}, []loadout.Entry{{CardID: "brace", Count: -1}}, []loadout.Entry{{CardID: "brace", Count: 0}}, []loadout.Entry{{CardID: "brace", Count: 21}}, []loadout.Entry{{CardID: "brace", Count: 1}, {CardID: "brace", Count: 2}},
 		[]map[string]any{{"card_id": "brace", "count": 1.5}},
@@ -44,7 +44,7 @@ func TestOwnedDeckPersistenceAndValidation(t *testing.T) {
 		if response := call("save_character_deck", "adventurer", deck); response["ok"] != false {
 			t.Fatalf("accepted invalid deck: %v", response)
 		}
-		after, _ := os.ReadFile(filepath.Join(dir, "adventurer.json"))
+		after, _ := os.ReadFile(filepath.Join(dir, "progression", "adventurer.json"))
 		if string(before) != string(after) {
 			t.Fatal("invalid save overwrote deck")
 		}
@@ -55,22 +55,23 @@ func TestOwnedDeckPersistenceAndValidation(t *testing.T) {
 	response := call("character_catalogs", "", nil)
 	view := response["result"].(map[string]any)
 	adv := view["adventurer"].(map[string]any)
-	if adv["owned_decklist"] == nil || view["venom"].(map[string]any)["owned_decklist"] != nil {
-		t.Fatal("saved decks not isolated")
+	venom, err := loadout.Read(dir, "venom", catalogs["venom"].Cards)
+	if err != nil || adv["owned_decklist"] == nil || reflect.DeepEqual(venom, original) {
+		t.Fatal("character decks not isolated")
 	}
 	template := adv["combatants"].(map[string]any)["adventurer"].(map[string]any)["decklist"].([]any)
 	if len(template) != 7 {
 		t.Fatal("template changed")
 	}
-	if err := os.WriteFile(filepath.Join(dir, "adventurer.json"), []byte("broken"), 0600); err != nil {
+	if err := os.WriteFile(filepath.Join(dir, "progression", "adventurer.json"), []byte("broken"), 0600); err != nil {
 		t.Fatal(err)
 	}
 	response = call("character_catalogs", "", nil)
 	if response["result"].(map[string]any)["adventurer"].(map[string]any)["loadout_error"] == nil {
 		t.Fatal("corrupt save hidden")
 	}
-	if result := call("save_character_deck", "adventurer", original); result["ok"] != true {
-		t.Fatal("cannot repair corrupt save")
+	if result := call("save_character_deck", "adventurer", original); result["ok"] != false {
+		t.Fatal("corrupt shared XP ledger was silently reset")
 	}
 }
 
@@ -81,9 +82,10 @@ func TestOwnedDecksPinToHumanBattleAndReplay(t *testing.T) {
 		t.Fatal(err)
 	}
 	dir := t.TempDir()
+	economy, _ := loadout.LoadEconomy(root, catalogs)
 	for character, catalog := range catalogs {
 		deck := []loadout.Entry{{CardID: "tip_it", Count: 3}, {CardID: "battle_focus", Count: 2}}
-		if _, err := loadout.Write(dir, character, deck, catalog.Cards); err != nil {
+		if _, err := loadout.WriteSharedDeck(dir, character, deck, economy, catalog); err != nil {
 			t.Fatal(err)
 		}
 		s, err := NewSession(SessionConfig{ContentRoot: root, RunStateRoot: t.TempDir(), LoadoutRoot: dir, OpponentDefinition: "drowned_oracle_brine_mask"})
@@ -104,7 +106,7 @@ func TestOwnedDecksPinToHumanBattleAndReplay(t *testing.T) {
 				t.Fatal("custom deck altered opponent")
 			}
 			// Applying another deck cannot rewrite the active battle or its replay.
-			if _, err = loadout.Write(dir, character, []loadout.Entry{{CardID: "tip_it", Count: 1}}, catalog.Cards); err != nil {
+			if _, err = loadout.WriteSharedDeck(dir, character, []loadout.Entry{{CardID: "tip_it", Count: 1}}, economy, catalog); err != nil {
 				t.Fatal(err)
 			}
 			if s.current.Result.Snapshot.Actors[seat].MaxHealth != 5 {
@@ -127,7 +129,7 @@ func TestOwnedDecksPinToHumanBattleAndReplay(t *testing.T) {
 				t.Fatal("replay read changed saved deck")
 			}
 			// Restore before next seat.
-			if _, err = loadout.Write(dir, character, deck, catalog.Cards); err != nil {
+			if _, err = loadout.WriteSharedDeck(dir, character, deck, economy, catalog); err != nil {
 				t.Fatal(err)
 			}
 		}

@@ -60,48 +60,50 @@ type ContentCatalog struct {
 }
 
 type Actor struct {
-	OwnedDice             []state.OwnedDie               `json:"owned_dice,omitempty"`
-	TeamID                string                         `json:"team_id,omitempty"`
-	NeedlefangDamageBonus int                            `json:"needlefang_damage_bonus,omitempty"`
-	DefinitionID          string                         `json:"definition_id,omitempty"`
-	Controller            state.ControllerType           `json:"controller,omitempty"`
-	Character             *CharacterMetadata             `json:"character,omitempty"`
-	EnergyPoints          int                            `json:"energy_points"`
-	MaxEnergyPoints       int                            `json:"max_energy_points,omitempty"`
-	MaxHandSize           int                            `json:"max_hand_size,omitempty"`
-	MaxHealth             int                            `json:"max_health,omitempty"`
-	CurrentHealth         int                            `json:"current_health,omitempty"`
-	HealthCardCount       *int                           `json:"health_card_count,omitempty"`
-	Decklist              []state.DecklistEntry          `json:"decklist,omitempty"`
-	Hand                  []string                       `json:"hand,omitempty"`
-	DeckComposition       map[string]int                 `json:"deck_composition,omitempty"`
-	DiscardComposition    map[string]int                 `json:"discard_composition,omitempty"`
-	RemovedComposition    map[string]int                 `json:"removed_composition,omitempty"`
-	HandCount             int                            `json:"hand_count"`
-	DeckCount             int                            `json:"deck_count"`
-	DiscardCount          int                            `json:"discard_count"`
-	RemovedCount          int                            `json:"removed_count"`
-	DiceLoadout           []state.DiceLoadoutEntry       `json:"dice_loadout,omitempty"`
-	DiceCount             int                            `json:"dice_count,omitempty"`
-	AbilityIDs            []string                       `json:"abilities,omitempty"`
-	AbilityCount          int                            `json:"ability_count,omitempty"`
-	Statuses              []state.StatusState            `json:"statuses,omitempty"`
-	Tokens                []state.TokenState             `json:"tokens,omitempty"`
-	RollPreferences       *state.RollPreferences         `json:"roll_preferences,omitempty"`
-	Dice                  *DiceRollState                 `json:"dice,omitempty"`
-	DefeatState           state.ActorDefeatState         `json:"defeat_state,omitempty"`
-	CardInstances         map[string]state.CardInstance  `json:"card_instances,omitempty"`
-	OffensiveAbilities    []string                       `json:"offensive_abilities,omitempty"`
-	DefensiveAbilities    []string                       `json:"defensive_abilities,omitempty"`
-	RollHistory           []state.RollBatch              `json:"roll_history,omitempty"`
-	QualifiedAbilities    []string                       `json:"qualified_abilities,omitempty"`
-	SelectedAbility       string                         `json:"selected_ability,omitempty"`
-	SelectedTier          string                         `json:"selected_tier,omitempty"`
-	SelectedTargets       []string                       `json:"selected_targets,omitempty"`
-	OffensiveOutcome      map[string]any                 `json:"offensive_outcome,omitempty"`
-	AbilityModifiers      []state.RuntimeAbilityModifier `json:"ability_modifiers,omitempty"`
-	CurrentForm           string                         `json:"current_form,omitempty"`
-	PassiveAbilities      []string                       `json:"passive_abilities,omitempty"`
+	OwnedDice               []state.OwnedDie               `json:"owned_dice,omitempty"`
+	TeamID                  string                         `json:"team_id,omitempty"`
+	CardUses                map[string]int                 `json:"card_uses,omitempty"`
+	ConfiguredAbilityDamage map[string]int                 `json:"configured_ability_damage,omitempty"`
+	NeedlefangDamageBonus   int                            `json:"needlefang_damage_bonus,omitempty"`
+	DefinitionID            string                         `json:"definition_id,omitempty"`
+	Controller              state.ControllerType           `json:"controller,omitempty"`
+	Character               *CharacterMetadata             `json:"character,omitempty"`
+	EnergyPoints            int                            `json:"energy_points"`
+	MaxEnergyPoints         int                            `json:"max_energy_points,omitempty"`
+	MaxHandSize             int                            `json:"max_hand_size,omitempty"`
+	MaxHealth               int                            `json:"max_health,omitempty"`
+	CurrentHealth           int                            `json:"current_health,omitempty"`
+	HealthCardCount         *int                           `json:"health_card_count,omitempty"`
+	Decklist                []state.DecklistEntry          `json:"decklist,omitempty"`
+	Hand                    []string                       `json:"hand,omitempty"`
+	DeckComposition         map[string]int                 `json:"deck_composition,omitempty"`
+	DiscardComposition      map[string]int                 `json:"discard_composition,omitempty"`
+	RemovedComposition      map[string]int                 `json:"removed_composition,omitempty"`
+	HandCount               int                            `json:"hand_count"`
+	DeckCount               int                            `json:"deck_count"`
+	DiscardCount            int                            `json:"discard_count"`
+	RemovedCount            int                            `json:"removed_count"`
+	DiceLoadout             []state.DiceLoadoutEntry       `json:"dice_loadout,omitempty"`
+	DiceCount               int                            `json:"dice_count,omitempty"`
+	AbilityIDs              []string                       `json:"abilities,omitempty"`
+	AbilityCount            int                            `json:"ability_count,omitempty"`
+	Statuses                []state.StatusState            `json:"statuses,omitempty"`
+	Tokens                  []state.TokenState             `json:"tokens,omitempty"`
+	RollPreferences         *state.RollPreferences         `json:"roll_preferences,omitempty"`
+	Dice                    *DiceRollState                 `json:"dice,omitempty"`
+	DefeatState             state.ActorDefeatState         `json:"defeat_state,omitempty"`
+	CardInstances           map[string]state.CardInstance  `json:"card_instances,omitempty"`
+	OffensiveAbilities      []string                       `json:"offensive_abilities,omitempty"`
+	DefensiveAbilities      []string                       `json:"defensive_abilities,omitempty"`
+	RollHistory             []state.RollBatch              `json:"roll_history,omitempty"`
+	QualifiedAbilities      []string                       `json:"qualified_abilities,omitempty"`
+	SelectedAbility         string                         `json:"selected_ability,omitempty"`
+	SelectedTier            string                         `json:"selected_tier,omitempty"`
+	SelectedTargets         []string                       `json:"selected_targets,omitempty"`
+	OffensiveOutcome        map[string]any                 `json:"offensive_outcome,omitempty"`
+	AbilityModifiers        []state.RuntimeAbilityModifier `json:"ability_modifiers,omitempty"`
+	CurrentForm             string                         `json:"current_form,omitempty"`
+	PassiveAbilities        []string                       `json:"passive_abilities,omitempty"`
 }
 
 type CharacterMetadata struct {
@@ -291,6 +293,25 @@ func fromBattleForViewer(battle state.Battle, viewerActorID string, includeConte
 				}
 			}
 			if id == viewerActorID {
+				snapshotActor.CardUses = map[string]int{}
+				for key, value := range runtime.CardUses {
+					snapshotActor.CardUses[key] = value
+				}
+				if battle.Settled.Venom != nil && battle.Settled.Venom.Cards[id+":venom_lens"] != "" {
+					if catalog := settledContentCatalog(battle); catalog != nil {
+						card := catalog.Cards[battle.Settled.Venom.Cards[id+":venom_lens"]]
+						for _, status := range actor.Statuses {
+							if status.DefinitionID == content.MechanicStatusDefinitionID(card) && status.Stacks > 0 {
+								ability := content.MechanicString(card, "ability_id")
+								bonus := content.MechanicInt(card, "damage")
+								snapshotActor.ConfiguredAbilityDamage = map[string]int{ability: bonus}
+								if ability == "needlefang" {
+									snapshotActor.NeedlefangDamageBonus = bonus
+								}
+							}
+						}
+					}
+				}
 				if battle.Settled.Venom != nil && battle.Settled.Venom.Used["battle:lens:"+id] {
 					snapshotActor.NeedlefangDamageBonus = 1
 				}
@@ -369,10 +390,9 @@ func fromBattleForViewer(battle state.Battle, viewerActorID string, includeConte
 		DefensiveProposals: planningProposalsForViewer(battle.DefensiveProposals, viewerActorID),
 		Origin:             originSnapshot(battle.Origin),
 	}
-	// The full cross-character loss ledger is an end-of-battle review only.
-	if state.IsTerminalBattleStatus(battle.Status) {
-		result.Wounds = state.CloneWounds(battle.Wounds)
-	}
+	// Committed losses are public during combat for the wound health-bar hover.
+	// Pending reservations and prevented cards never enter this ledger.
+	result.Wounds = state.CloneWounds(battle.Wounds)
 	if battle.Settled != nil && battle.Settled.PendingBlind != nil {
 		p := battle.Settled.PendingBlind
 		result.BlindCheck = map[string]any{"actor_id": p.ActorID, "status_id": p.StatusID, "die_id": p.DieID, "face": p.Face, "ability_id": battle.Settled.Actors[p.ActorID].SelectedAbilityID}

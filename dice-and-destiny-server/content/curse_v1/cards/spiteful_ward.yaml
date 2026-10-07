@@ -1,41 +1,59 @@
 {
-  "schema_version": 1,
-  "id": "spiteful_ward",
-  "name": "Spiteful Ward",
-  "type": "curse_action",
-  "presentation": {
-    "rules_text": "Against one incoming enemy Offensive ability, prevent 2 damage. If this card actually prevents at least 1 damage, apply 1 ordinary Curse to that attacker after prevention is finalized. Cannot protect against status or card damage. Each named Curse card may be played once per player per round.",
-    "art_key": "card_spiteful_ward",
-    "effect_summary": "Prevent 2 attack damage; Curse if prevention helps."
-  },
+  "access_type": "curse",
   "cost": {
     "energy": 1
   },
-  "play": {
-    "source_zones": [
-      "hand"
+  "id": "spiteful_ward",
+  "mechanic": {
+    "kind": "spiteful_ward",
+    "params": {
+      "curses": 1,
+      "prevent": 2
+    },
+    "windows": [
+      "defense_selection",
+      "damage_reaction",
+      "ongoing_damage"
     ],
+    "uses_per_round": 1,
+    "uses_per_battle": 0,
+    "expiration": "damage_exit",
+    "rounds": 1
+  },
+  "name": "Spiteful Ward",
+  "operations": [
+    {
+      "id": "spiteful_ward",
+      "target": "self",
+      "type": "curse_card"
+    }
+  ],
+  "play": {
     "destination": "discard",
     "playable_during": [
       {
-        "segment": "damage_resolution",
         "phase": "main",
+        "segment": "damage_resolution",
         "window_purpose": "reaction"
       }
+    ],
+    "source_zones": [
+      "hand"
     ]
   },
-  "targeting": {
-    "selector": "curse_choice",
-    "minimum": 0,
-    "maximum": 1
+  "presentation": {
+    "art_key": "card_spiteful_ward",
+    "effect_summary": "Prevent 2 attack damage; Curse if prevention helps.",
+    "rules_text": "Against one incoming enemy Offensive ability, prevent 2 damage. If this card actually prevents at least 1 damage, apply 1 ordinary Curse to that attacker after prevention is finalized. Cannot protect against status or card damage. Each named Curse card may be played once per player per round."
   },
   "reaction_window": {
     "opens": false
   },
-  "operations": [
-    {
-      "type": "curse_card",
-      "target": "self"
-    }
-  ]
+  "schema_version": 1,
+  "targeting": {
+    "maximum": 1,
+    "minimum": 0,
+    "selector": "curse_choice"
+  },
+  "type": "curse_action"
 }

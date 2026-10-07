@@ -11,6 +11,8 @@ type OwnedDie struct {
 	Entombed     bool   `json:"entombed"`
 }
 type CursePreparation struct {
+	Kind            string `json:"kind,omitempty"`
+	StatusID        string `json:"status_id,omitempty"`
 	SourceID        string `json:"source_id,omitempty"`
 	CardID          string `json:"card_id"`
 	Source          string `json:"source"`
@@ -24,6 +26,9 @@ type CursePreparation struct {
 
 // DividendState stores ownership and limits; the matching status enables rewards.
 type DividendState struct {
+	Energy          int
+	Limit           int
+	StatusID        string
 	Source          string
 	StatusInstance  string
 	ExpiresEffects  int
@@ -31,6 +36,8 @@ type DividendState struct {
 	Rewards         int
 }
 type CurseWork struct {
+	Configured      bool     `json:"configured,omitempty"`
+	Limit           int      `json:"limit,omitempty"`
 	DefenseSourceID string   `json:"defense_source_id,omitempty"`
 	Kind            string   `json:"kind"`
 	Source          string   `json:"source"`

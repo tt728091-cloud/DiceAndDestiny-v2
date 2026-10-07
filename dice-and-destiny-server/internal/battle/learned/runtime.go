@@ -1,6 +1,7 @@
 package learned
 
 import (
+	"diceanddestiny/server/internal/content"
 	"encoding/json"
 	"fmt"
 	"sync"
@@ -10,6 +11,13 @@ import (
 )
 
 type runtimeRequest struct {
+	CardTree           json.RawMessage       `json:"card_tree,omitempty"`
+	AdminToken         string                `json:"admin_token,omitempty"`
+	CardID             string                `json:"card_id,omitempty"`
+	Ability            json.RawMessage       `json:"ability,omitempty"`
+	AbilityBoard       content.AbilityBoard  `json:"ability_board,omitempty"`
+	Card               json.RawMessage       `json:"card,omitempty"`
+	CatalogRevision    int                   `json:"catalog_revision,omitempty"`
 	AdminSettings      loadout.AdminSettings `json:"admin_settings,omitempty"`
 	LoadoutMode        string                `json:"loadout_mode,omitempty"`
 	Purchase           loadout.Purchase      `json:"purchase,omitempty"`
@@ -40,13 +48,37 @@ var learnedRuntime struct {
 	config  SessionConfig
 }
 
+// Keep catalog edits and deck transactions ordered, including delete's final
+// dependency check. Battle commands keep their existing session lock.
+var catalogRuntimeMu sync.Mutex
+
 func HandleRuntimeRequest(requestJSON string) string {
 	var request runtimeRequest
 	if err := json.Unmarshal([]byte(requestJSON), &request); err != nil {
 		return runtimeError(fmt.Errorf("decode learned runtime request: %w", err))
 	}
+	switch request.Op {
+	case "card_trees", "validate_card_tree", "publish_card_tree", "open_card_admin", "close_card_admin", "preview_delete_card", "admin_delete_card",
+		"ability_authoring", "validate_ability", "publish_ability", "assign_abilities",
+		"card_authoring", "validate_card", "publish_card", "character_catalogs",
+		"save_character_deck", "progression_catalogs", "progression_purchase", "save_economy_admin":
+		catalogRuntimeMu.Lock()
+		defer catalogRuntimeMu.Unlock()
+	}
+	if request.Op == "card_trees" || request.Op == "validate_card_tree" || request.Op == "publish_card_tree" {
+		return handleCardTrees(request)
+	}
+	if request.Op == "open_card_admin" || request.Op == "close_card_admin" || request.Op == "preview_delete_card" || request.Op == "admin_delete_card" {
+		return handleCardAdmin(request)
+	}
+	if request.Op == "ability_authoring" || request.Op == "validate_ability" || request.Op == "publish_ability" || request.Op == "assign_abilities" {
+		return handleAbilityAuthoring(request)
+	}
+	if request.Op == "card_authoring" || request.Op == "validate_card" || request.Op == "publish_card" {
+		return handleCardAuthoring(request)
+	}
 	if request.Op == "character_catalogs" || request.Op == "save_character_deck" || request.Op == "progression_catalogs" || request.Op == "progression_purchase" || request.Op == "save_economy_admin" {
-		catalogs, err := CharacterCatalogs(request.ContentRoot)
+		catalogs, err := CharacterCatalogs(request.ContentRoot, request.LoadoutRoot)
 		if err != nil {
 			return runtimeError(err)
 		}
@@ -80,6 +112,8 @@ func HandleRuntimeRequest(requestJSON string) string {
 			if err != nil {
 				return runtimeError(err)
 			}
+			// Allocation offsets are authority bookkeeping, never editable client input.
+			admin.BudgetAllocations = nil
 			view := characterCatalogView(catalogs)
 			for id := range catalogs {
 				progress := all[id]
@@ -104,7 +138,7 @@ func HandleRuntimeRequest(requestJSON string) string {
 			if err := access.ValidateDeck(request.Character, request.Decklist); err != nil {
 				return runtimeError(err)
 			}
-			deck, err := loadout.Write(request.LoadoutRoot, request.Character, request.Decklist, catalog.Cards)
+			deck, err := loadout.WriteSharedDeck(request.LoadoutRoot, request.Character, request.Decklist, baseEconomy, catalog)
 			if err != nil {
 				return runtimeError(err)
 			}
@@ -112,12 +146,16 @@ func HandleRuntimeRequest(requestJSON string) string {
 		}
 		view := characterCatalogView(catalogs)
 		for id, catalog := range catalogs {
-			deck, err := loadout.Read(request.LoadoutRoot, id, catalog.Cards)
+			progress, err := loadout.ReadProgress(request.LoadoutRoot, id, baseEconomy, catalog)
+			deck := progress.Deck
 			entry := view[id].(map[string]any)
 			if err != nil {
 				entry["loadout_error"] = err.Error()
 			} else if deck != nil {
 				entry["owned_decklist"] = deck
+			}
+			if progress.AuthoredAbilityRevision > 0 {
+				entry["combatants"].(map[string]any)[id].(map[string]any)["ability_board"] = progress.Abilities
 			}
 			effectiveDeck := deck
 			if effectiveDeck == nil {
@@ -125,6 +163,7 @@ func HandleRuntimeRequest(requestJSON string) string {
 					effectiveDeck = append(effectiveDeck, loadout.Entry{CardID: card.CardID, Count: card.Count})
 				}
 			}
+			entry["economy"] = baseEconomy.Offers(id)
 			entry["access"] = access
 			entry["type_conflicts"] = access.Problems(id, effectiveDeck, catalog.Combatants[id].AbilityBoard)
 			entry["deck_limits"] = map[string]int{"max_cards": loadout.MaxCards, "max_copies": loadout.MaxCopies}

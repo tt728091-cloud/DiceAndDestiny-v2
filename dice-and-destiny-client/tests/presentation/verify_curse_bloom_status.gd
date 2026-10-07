@@ -57,6 +57,9 @@ func _run() -> void:
 		tray.display_owned(owned); await process_frame
 		var notice = NOTICE.new(); notice.configure(screen, feedback[0]); screen.add_child(notice); notice.set_process(false)
 		notice._step = 1; notice._elapsed = notice.duration * 0.6; notice.refresh()
+		# Revealing an enemy tray schedules its Container layout for the next frame.
+		for frame in 2: await process_frame
+		notice.refresh()
 		_expect(notice._face_batch_end() == 4 and notice._batch_rolls.size() == 3 and notice._batch_targets.size() == 3, "all three expansions animate together")
 		notice.queue_free(); await process_frame
 	director.queue_result({"snapshot": screen._view.raw_snapshot, "events": changes})

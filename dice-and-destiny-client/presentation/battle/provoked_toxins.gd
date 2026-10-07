@@ -33,7 +33,7 @@ func configure(rolls: Array, names: Dictionary, outcomes: Array[String], events:
 		_label(cell, str(status.glyph) + " " + str(status.name), 17)
 		var cue := _label(cell, "", 21); cue.custom_minimum_size.y = 30; cue.add_theme_color_override("font_color", Color("d0a6ff"))
 		var die := Button.new(); die.disabled = true; die.custom_minimum_size = Vector2(82, 82); die.size_flags_horizontal = Control.SIZE_SHRINK_CENTER; die.add_theme_font_size_override("font_size", 28); cell.add_child(die)
-		var style := StyleBoxFlat.new(); style.bg_color = Color("242423"); style.border_color = Color("a6987e"); style.set_border_width_all(3); style.set_corner_radius_all(8); die.add_theme_stylebox_override("disabled", style); die.add_theme_color_override("font_disabled_color", Color("eee3c9"))
+		var style := StyleBoxFlat.new(); style.bg_color = preload("res://presentation/battle/cinematic_theme.gd").DARK_SURFACE; style.border_color = Color("a6987e"); style.set_border_width_all(3); style.set_corner_radius_all(8); die.add_theme_stylebox_override("disabled", style); die.add_theme_color_override("font_disabled_color", Color("eee3c9"))
 		die.set_meta("inspection_id", "battle.effect_die.%s.%d" % [actor, int(ordinals.get(actor, 0))]); ordinals[actor] = int(ordinals.get(actor, 0)) + 1
 		var result := _label(cell, "", 17); result.custom_minimum_size.y = 54
 		entries.append({"die": die, "cue": cue, "result": result, "face": int(roll.get("die", {}).get("face", 0)), "die_id": str(roll.get("die", {}).get("die_id", "standard_d6")), "rerolled": bool(roll.get("rerolled", false)), "catalyst": false, "started": Time.get_ticks_msec(), "outcome": outcomes[index]})

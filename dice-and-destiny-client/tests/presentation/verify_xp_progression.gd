@@ -5,12 +5,11 @@ func _run() -> void:
 	var runtime = root.get_node("LearnedBattleRuntime")
 	var screen = SCREEN.new(); root.add_child(screen)
 	for frame in 8: await process_frame
-	var sandbox_deck: Array = screen.character.decklist.duplicate(true)
 	screen._mode_choice.select(1); screen._mode_choice.item_selected.emit(1)
 	for frame in 8: await process_frame
 	_expect(screen.loadout_mode == "progression", "progression mode switches on")
 	_expect(not screen._apply.visible and not screen._reset.visible, "progression cannot apply free sandbox edits")
-	_expect(screen._card_count("brace") == 3 and screen._card_count("brace_plus") == 0, "progression starts with base Brace")
+	_expect(screen._card_count("brace") == 2 and screen._card_count("brace_plus") == 1, "both modes start with the same Brace variants")
 	_expect(screen.character.ability_board.defensive == ["adventurer_guard"], "progression starts with base Guard")
 	var initial_xp := int(screen.catalogs.adventurer.progression.xp)
 	_expect(initial_xp == 100, "configured starter XP displayed")
@@ -24,7 +23,7 @@ func _run() -> void:
 	await _click(_control(screen, "upgrade.brace"))
 	await _capture(screen, "xp-brace-upgrade-preview")
 	await _click(screen._purchase_confirm)
-	_expect(screen._card_count("brace") == 2 and screen._card_count("brace_plus") == 1, "one Brace upgraded")
+	_expect(screen._card_count("brace") == 1 and screen._card_count("brace_plus") == 2, "one Brace upgraded")
 	_expect(screen._health() == 12 and int(screen.catalogs.adventurer.progression.xp) == initial_xp - 10, "card upgrade preserves health and spends configured XP")
 	screen._tabs.current_tab = 0
 	screen.inspect_entry("abilities", "adventurer_guard")
@@ -50,17 +49,25 @@ func _run() -> void:
 		await _capture(screen, "xp-editor-%d" % width)
 	var response: Dictionary = runtime.character_catalogs("progression")
 	_expect(int(response.result.adventurer.progression.xp) == initial_xp - 45, "reloading does not grant more XP")
+	var purchased_deck: Array = screen.character.decklist.duplicate(true)
 	screen._mode_choice.select(0); screen._mode_choice.item_selected.emit(0)
 	for frame in 6: await process_frame
-	_expect(screen.character.decklist == sandbox_deck, "sandbox deck remains unchanged")
+	_expect(screen.character.decklist == purchased_deck, "Sandbox immediately shows purchased deck")
+	screen.inspect_entry("cards", "brace")
+	for frame in 4: await process_frame
+	await _click(_control(screen, "add.brace"))
+	await _click(screen._apply)
+	_expect(screen._card_count("brace") == 2, "free edit saves shared deck")
+	await _capture(screen, "shared-deck-sandbox")
 	screen._mode_choice.select(1); screen._mode_choice.item_selected.emit(1)
 	for frame in 6: await process_frame
-	_expect(screen._card_count("tip_it") == 1 and int(screen.catalogs.adventurer.progression.xp) == initial_xp - 45, "mode switching preserves purchases")
+	_expect(screen._card_count("tip_it") == 1 and screen._card_count("brace") == 2 and int(screen.catalogs.adventurer.progression.xp) == initial_xp - 45, "mode switching preserves purchases")
+	await _capture(screen, "shared-deck-progression")
 	screen.queue_free(); await process_frame
 	var menu = MENU.instantiate(); root.add_child(menu)
 	for frame in 6: await process_frame
 	_expect(menu._loadout_choice.get_selected_metadata() == "progression", "menu retains selected progression mode")
-	_expect("13 health" in menu._character_choice.get_item_text(3), "menu shows progression health")
+	_expect("14 health" in menu._character_choice.get_item_text(3), "menu shows progression health")
 	menu._seat_choice.select(1)
 	await _click(menu._menu_actions[0])
 	for frame in 8: await process_frame
@@ -70,7 +77,7 @@ func _run() -> void:
 	_expect(battle_screen != null, "progression battle starts through menu")
 	if battle_screen != null:
 		_expect(battle_screen.gateway.loadout_mode == "progression", "menu pins progression mode for rematches")
-		_expect(int(battle_screen._view.actor("blade").max_health) == 13, "battle uses purchased card")
+		_expect(int(battle_screen._view.actor("blade").max_health) == 14, "battle uses purchased card")
 		_expect(battle_screen._view.actor("blade").defensive_abilities == ["adventurer_guard_plus"], "battle uses purchased ability upgrade")
 		_expect(int(battle_screen._view.actor("goblin").max_health) == 16, "enemy unchanged")
 		battle_screen.queue_free(); await process_frame

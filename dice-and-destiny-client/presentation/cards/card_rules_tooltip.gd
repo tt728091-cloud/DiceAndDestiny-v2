@@ -6,6 +6,7 @@ const GAP := 12.0
 
 static func create(owner: Control, value: String, card: Control = null) -> Label:
 	var label := preload("res://presentation/battle/wrapped_tooltip.gd").create(owner, value)
+	if label == null: return null
 	label.set_script(load("res://presentation/cards/card_rules_tooltip.gd"))
 	label.anchor = owner
 	label.subject = card if card != null else owner

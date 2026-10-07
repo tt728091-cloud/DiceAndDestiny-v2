@@ -1,41 +1,57 @@
 {
-  "schema_version": 1,
-  "id": "blind_omen",
-  "name": "Blind Omen",
-  "type": "curse_action",
-  "presentation": {
-    "rules_text": "If an enemy has at least 6 Curse Count and a selected Offensive ability, spend 3 of their Count to apply Blind before the normal Blind checkpoint. On a physical roll of 1\u20132, cancel that ability; then remove Blind. Cannot apply if they already have Blind. Each named Curse card may be played once per player per round.",
-    "art_key": "card_blind_omen",
-    "effect_summary": "At 6 enemy Count: spend 3 to apply Blind."
-  },
+  "access_type": "curse",
   "cost": {
     "energy": 1
   },
-  "play": {
-    "source_zones": [
-      "hand"
+  "id": "blind_omen",
+  "mechanic": {
+    "kind": "blind_omen",
+    "params": {
+      "cost_count": 3,
+      "required_count": 6,
+      "stacks": 1,
+      "status_id": "blind"
+    },
+    "windows": [
+      "offensive_reaction"
     ],
+    "uses_per_round": 1,
+    "uses_per_battle": 0
+  },
+  "name": "Blind Omen",
+  "operations": [
+    {
+      "id": "blind_omen",
+      "target": "self",
+      "type": "curse_card"
+    }
+  ],
+  "play": {
     "destination": "discard",
     "playable_during": [
       {
-        "segment": "offensive",
         "phase": "main",
+        "segment": "offensive",
         "window_purpose": "reaction"
       }
+    ],
+    "source_zones": [
+      "hand"
     ]
   },
-  "targeting": {
-    "selector": "curse_choice",
-    "minimum": 0,
-    "maximum": 1
+  "presentation": {
+    "art_key": "card_blind_omen",
+    "effect_summary": "At 6 enemy Count: spend 3 to apply Blind.",
+    "rules_text": "If an enemy has at least 6 Curse Count and a selected Offensive ability, spend 3 of their Count to apply Blind before the normal Blind checkpoint. On a physical roll of 1–2, cancel that ability; then remove Blind. Cannot apply if they already have Blind. Each named Curse card may be played once per player per round."
   },
   "reaction_window": {
     "opens": false
   },
-  "operations": [
-    {
-      "type": "curse_card",
-      "target": "self"
-    }
-  ]
+  "schema_version": 1,
+  "targeting": {
+    "maximum": 1,
+    "minimum": 0,
+    "selector": "curse_choice"
+  },
+  "type": "curse_action"
 }

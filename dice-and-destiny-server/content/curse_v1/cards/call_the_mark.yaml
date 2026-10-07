@@ -1,41 +1,52 @@
 {
-  "schema_version": 1,
-  "id": "call_the_mark",
-  "name": "Call the Mark",
-  "type": "curse_action",
-  "presentation": {
-    "rules_text": "Set one revealed offensive die, yours or an enemy\u2019s, to one of that die\u2019s cursed numbers. Recheck its owner\u2019s ability selection. Setting a face generates no Count and does not release Entombment. Each named Curse card may be played once per player per round.",
-    "art_key": "card_call_the_mark",
-    "effect_summary": "Set a revealed offensive die to its cursed face."
-  },
+  "access_type": "curse",
   "cost": {
     "energy": 1
   },
-  "play": {
-    "source_zones": [
-      "hand"
+  "id": "call_the_mark",
+  "mechanic": {
+    "kind": "call_the_mark",
+    "params": {},
+    "windows": [
+      "offensive_reaction"
     ],
+    "uses_per_round": 1,
+    "uses_per_battle": 0
+  },
+  "name": "Call the Mark",
+  "operations": [
+    {
+      "id": "call_the_mark",
+      "target": "self",
+      "type": "curse_card"
+    }
+  ],
+  "play": {
     "destination": "discard",
     "playable_during": [
       {
-        "segment": "offensive",
         "phase": "main",
+        "segment": "offensive",
         "window_purpose": "reaction"
       }
+    ],
+    "source_zones": [
+      "hand"
     ]
   },
-  "targeting": {
-    "selector": "curse_choice",
-    "minimum": 0,
-    "maximum": 1
+  "presentation": {
+    "art_key": "card_call_the_mark",
+    "effect_summary": "Set a revealed offensive die to its cursed face.",
+    "rules_text": "Set one revealed offensive die, yours or an enemy’s, to one of that die’s cursed numbers. Recheck its owner’s ability selection. Setting a face generates no Count and does not release Entombment. Each named Curse card may be played once per player per round."
   },
   "reaction_window": {
     "opens": false
   },
-  "operations": [
-    {
-      "type": "curse_card",
-      "target": "self"
-    }
-  ]
+  "schema_version": 1,
+  "targeting": {
+    "maximum": 1,
+    "minimum": 0,
+    "selector": "curse_choice"
+  },
+  "type": "curse_action"
 }

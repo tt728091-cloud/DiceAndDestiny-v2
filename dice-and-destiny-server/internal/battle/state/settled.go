@@ -1,6 +1,9 @@
 package state
 
-import "diceanddestiny/server/internal/battle/command"
+import (
+	"diceanddestiny/server/internal/battle/command"
+	"encoding/json"
+)
 
 // SettledRuntime contains only mutable state for the YAML-driven ruleset. The
 // immutable compiled catalog is pinned separately on Battle as JSON so engine
@@ -37,6 +40,9 @@ type SettledPlanningPublicState struct {
 }
 
 type SettledActorRuntime struct {
+	PaidOffensiveEnergy int            `json:",omitempty"`
+	CardExecution       *CardExecution `json:",omitempty"`
+	CardUses            map[string]int `json:",omitempty"`
 	IncomeCards         int
 	IncomeEnergy        int
 	HandLimit           int
@@ -74,12 +80,14 @@ type RollBatch struct {
 }
 
 type RuntimeAbilityModifier struct {
-	ExpiresAfterOffensive bool   `json:"expires_after_offensive,omitempty"`
-	StatusID              string `json:"status_id,omitempty"`
-	ExpiresAfterRound     int    `json:"expires_after_round,omitempty"`
-	SourceCardInstanceID  string `json:"source_card_instance_id"`
-	AbilityID             string `json:"ability_id"`
-	BonusID               string `json:"bonus_id"`
+	ProgramBonus          json.RawMessage `json:"program_bonus,omitempty"`
+	ConsumeOnUse          bool            `json:"consume_on_use,omitempty"`
+	ExpiresAfterOffensive bool            `json:"expires_after_offensive,omitempty"`
+	StatusID              string          `json:"status_id,omitempty"`
+	ExpiresAfterRound     int             `json:"expires_after_round,omitempty"`
+	SourceCardInstanceID  string          `json:"source_card_instance_id"`
+	AbilityID             string          `json:"ability_id"`
+	BonusID               string          `json:"bonus_id"`
 }
 
 type SettledWindow struct {
@@ -276,6 +284,19 @@ func cloneSettledRuntime(value *SettledRuntime) *SettledRuntime {
 }
 
 func cloneSettledActor(value SettledActorRuntime) SettledActorRuntime {
+	if value.CardExecution != nil {
+		c := *value.CardExecution
+		c.Steps = append([]byte(nil), c.Steps...)
+		c.Feedback = append([]ProgramDieFeedback(nil), c.Feedback...)
+		c.Selected = copyStrings(c.Selected)
+		c.Drawn = copyStrings(c.Drawn)
+		value.CardExecution = &c
+	}
+	uses2 := map[string]int{}
+	for k, v := range value.CardUses {
+		uses2[k] = v
+	}
+	value.CardUses = uses2
 	value.SelectedToxins = copyStrings(value.SelectedToxins)
 	value.OffensiveAbilityIDs = copyStrings(value.OffensiveAbilityIDs)
 	value.DefensiveAbilityIDs = copyStrings(value.DefensiveAbilityIDs)
@@ -312,4 +333,22 @@ func copyBoolMap(values map[string]bool) map[string]bool {
 		result[key] = value
 	}
 	return result
+}
+
+// CardExecution persists ordered effect choices between authority commands.
+type CardExecution struct {
+	Feedback []ProgramDieFeedback
+	CardID   string
+	Steps    []byte
+	Selected []string
+	Drawn    []string
+	Paid     bool
+}
+
+type ProgramDieFeedback struct {
+	ActorID    string `json:"actor_id"`
+	Index      int    `json:"index"`
+	FaceBefore int    `json:"face_before"`
+	Face       int    `json:"face"`
+	Rolled     bool   `json:"rolled"`
 }

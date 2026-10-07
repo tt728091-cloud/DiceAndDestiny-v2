@@ -201,7 +201,7 @@ func _style_die(button: Button) -> void:
 	var ink := Color("efe5cc")
 	for state in ["normal", "hover", "pressed", "disabled"]:
 		var style := StyleBoxFlat.new()
-		style.bg_color = Color("242423")
+		style.bg_color = preload("res://presentation/battle/cinematic_theme.gd").DARK_SURFACE
 		style.border_color = Color("ffe0a0") if state in ["hover", "pressed"] else Color("a69c83")
 		style.border_width_left = 2; style.border_width_top = 3; style.border_width_right = 4; style.border_width_bottom = 6
 		style.set_corner_radius_all(7); style.shadow_color = Color("000000b0"); style.shadow_size = 4; style.shadow_offset = Vector2(2, 4)

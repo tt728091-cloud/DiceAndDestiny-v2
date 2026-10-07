@@ -139,18 +139,19 @@ func _protection(size: Vector2i) -> void:
 	fixture.snapshot.settled_damage = {"id": "protection-batch", "sources": fixture.snapshot.damage_sources, "removals": []}
 	var recorder := Recorder.new(); var screen = _screen(fixture, recorder)
 	for frame in 5: await process_frame
-	var buttons: Array = screen._action_footer.get_children().filter(func(child): return child is Button and child.text == "Use Guarded Strike protection")
-	_expect(buttons.size() == 1, "four attacks share one protection button")
-	if buttons.size() == 1:
-		_expect(root.get_visible_rect().encloses(buttons[0].get_global_rect()), "protection button fits viewport")
-		buttons[0].pressed.emit(); await process_frame
-		var dialogs: Array = screen.get_children().filter(func(child): return child is AcceptDialog)
-		_expect(dialogs.size() == 1, "protection opens source chooser")
-		if dialogs.size() == 1:
-			var choices: Array = dialogs[0].find_children("*", "Button", true, false).filter(func(child): return child.text.begins_with("Prevent 2 damage"))
-			_expect(choices.size() == 4 and "Brine Mask 4" in choices[3].text, "each enemy attack identified")
-			if choices.size() == 4: choices[3].pressed.emit(); await process_frame
-			_expect(recorder.commands.size() == 1 and recorder.commands[0].payload.commitment.proposal_ids == ["incoming-4"], "protection submits only selected source")
+	_expect(screen._action_footer.get_children().all(func(child): return not child is Button or "protection" not in child.text), "no floating protection footer")
+	screen._attack_intents["incoming-4"].intent.pressed.emit()
+	for frame in 5: await process_frame
+	var choice: Button = screen._ability_dock.get_node_or_null("ProtectChoice")
+	_expect(choice != null, "selected attack exposes Protect choice")
+	if choice != null:
+		_expect(root.get_visible_rect().encloses(choice.get_global_rect()), "Protect choice fits viewport")
+		# The retired generic entry cannot reopen a target dialog, even with
+		# four eligible sources. It resolves only the already-selected attack.
+		screen._show_venom_choices(fixture.legal_actions.filter(func(action): return action.get("payload", {}).get("commitment", {}).get("choice_id") == "spend_round_prevention"), "Guarded Strike")
+		await process_frame
+		_expect(screen.get_children().all(func(child): return not child is AcceptDialog), "legacy Protect entry cannot create a target modal")
+		_expect(recorder.commands.size() == 1 and recorder.commands[0].payload.commitment.proposal_ids == ["incoming-4"], "protection submits only selected source")
 	# Cardless protection uses the same saved-card feedback without inventing a played card.
 	var feedback := {"events": [{"type": "damage_prevented_or_modified", "sequence": 44, "actor_id": "blade", "data": {"ability_id": "guarded_strike", "status_id": "protect", "source_id": "incoming-4", "damage_before": 4, "damage_after": 2}}]}
 	screen._capture_damage_feedback(feedback, {})

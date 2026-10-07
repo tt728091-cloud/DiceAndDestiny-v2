@@ -46,16 +46,14 @@ func _run() -> void:
 	root.add_child(screen)
 	await _frames()
 	_expect(_ability_count(screen) == 4, "all offensive choices start in the rail")
-	# Actual command path: selection transforms at the rail before moving to target.
+	# Actual command path: selection updates without a detached ability tile.
 	var defense := _fixture("defense_selection")
 	defense.pending_input = {"blade": {"id": "defend", "segment": "defensive", "stage": "defense_selection", "allowed_commands": ["planning_select_ability"]}}
 	defense.legal_actions = [_action("shedskin", "enemy-attack"), _action("shedskin", "enemy-attack", true), _action("barbed_mantle", "enemy-attack"), _action("shedskin", "other-source")]
 	fake.enqueue(defense)
 	screen._send(JSON.stringify({"battle_id": base.snapshot.battle_id, "actor_id": "blade", "type": "planning_select_ability", "payload": {"ability_id": "needlefang", "target_ids": ["goblin"]}}))
-	_expect(screen._ability_dock.get_child(0).modulate.a == 0.0, "new outcome is hidden before its first frame, preventing flashes")
 	await _frames()
-	_expect(not screen._selection_morph.is_empty(), "chosen attack transforms before defense")
-	_expect(_ability_count(screen) == 1, "only chosen attack remains in rail")
+	_expect(screen._flow_transition.ghosts.keys().filter(func(key): return str(key).begins_with("ability:")).is_empty(), "selection never detaches ability tiles")
 	await _capture("selected")
 	await create_timer(TIMING.transition() + 0.5).timeout
 	await _frames()
@@ -180,7 +178,7 @@ func _run() -> void:
 			_expect(screen._center_scroll.get_global_rect().encloses(card.get_global_rect()), "multiple attacks and their cards fit the play area")
 	_expect(shown.size() == 12 and screen._combat_columns.blade.get_child_count() == 2, "all cards and both incoming attacks remain visible")
 	await _capture("multiple-attacks")
-	# Lower abilities use the same morph and slide to the top, with no recipe.
+	# Lower abilities retain their selected outcome without a flying tile.
 	screen._view.apply_result(_fixture("planning")); screen._render(); await _frames()
 	var gland := _fixture("offensive_reaction")
 	gland.snapshot.actors.blade.selected_ability = "venom_gland"
@@ -190,11 +188,11 @@ func _run() -> void:
 	fake.enqueue(gland)
 	screen._send(JSON.stringify({"battle_id": base.snapshot.battle_id, "actor_id": "blade", "type": "planning_select_ability", "payload": {"ability_id": "venom_gland", "target_ids": ["goblin"]}}))
 	await _frames()
-	_expect(screen._selection_morph.ability_id == "venom_gland" and "Catalyst ×2" in screen._selection_morph.text and "Poison ×1" in screen._selection_morph.text, "Venom Gland previews its actual benefits before joint reveal")
+	_expect(screen._selected_attack("blade").ability_id == "venom_gland" and "Catalyst ×2" in screen._selected_attack("blade").text and "Poison ×1" in screen._selected_attack("blade").text, "Venom Gland previews its actual benefits before joint reveal")
 	_expect(_ability_count(screen) == 1 and screen._ability_dock.get_child(0).ability_id == "venom_gland", "lower chosen ability occupies top slot")
 	await create_timer(TIMING.transition() + 0.1).timeout
 	await _capture("venom-gland")
-	while not screen._selection_morph.is_empty() or Time.get_ticks_msec() <= screen._flow_until: await process_frame
+	while Time.get_ticks_msec() <= screen._flow_until: await process_frame
 	# Save restoration has only final actors, so committed events reconstruct
 	# their own pre-loss counts instead of flashing the final health early.
 	var director := BattlePresentationDirector.new()

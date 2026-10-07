@@ -7,6 +7,9 @@ func _run() -> void:
 	screen._tabs.current_tab = 0; screen.inspect_entry("abilities", "adventurer_guard")
 	for frame in 4: await process_frame
 	await _click(_control(screen, "upgrade.adventurer_guard")); await _click(screen._purchase_confirm)
+	# Repricing Brace from 10 to 11 XP moves one XP per equipped copy into the deck.
+	var upgraded_xp := int(screen.catalogs.adventurer.progression.xp)
+	var brace_copies: int = screen._card_count("brace")
 	screen._tabs.current_tab = 1; screen.inspect_entry("cards", "brace")
 	for frame in 4: await process_frame
 	for width in [3456, 1280, 1920, 1024]:
@@ -33,7 +36,7 @@ func _run() -> void:
 			await _set_price(screen._admin_prices.brace, 11 if cycle % 2 == 0 else 10)
 			await _click(screen._admin_save)
 			_expect(not screen._admin_overlay.visible, "save closes admin on cycle %d" % cycle)
-			_expect(int(screen.catalogs.adventurer.progression.xp) == (72 if cycle % 2 == 0 else 75), "repeated saves preserve upgrade investment and revalue cards")
+			_expect(int(screen.catalogs.adventurer.progression.xp) == (upgraded_xp - brace_copies if cycle % 2 == 0 else upgraded_xp), "repeated saves preserve upgrade investment and revalue cards")
 		await _click(screen._admin_button)
 		await _capture(screen, "admin-reopened-%d" % width)
 		await _click(_control(screen, "admin.close"))

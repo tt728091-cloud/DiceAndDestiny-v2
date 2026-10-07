@@ -32,12 +32,6 @@
         },
         "operations": [
           {
-            "type": "apply_status",
-            "target": "self",
-            "status_id": "catalyst",
-            "stack_count": 1
-          },
-          {
             "type": "deal_damage",
             "target": "selected_targets",
             "amount": 4
@@ -50,5 +44,19 @@
         ]
       }
     ]
-  }
+  },
+  "configuration_version": 1,
+  "hooks": [
+    {
+      "timing": "after_provoke",
+      "operations": [
+        {
+          "type": "apply_status",
+          "target": "self",
+          "status_id": "catalyst",
+          "stack_count": 1
+        }
+      ]
+    }
+  ]
 }

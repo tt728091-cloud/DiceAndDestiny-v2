@@ -1,39 +1,54 @@
 {
-  "schema_version": 1,
-  "id": "spined_rebuttal",
-  "name": "Spined Rebuttal",
-  "type": "reaction",
-  "presentation": {
-    "rules_text": "Prevent 1 from an incoming ability and apply 1 Poison to its attacker."
-  },
+  "access_type": "venom",
   "cost": {
     "energy": 1
   },
-  "play": {
-    "source_zones": [
-      "hand"
+  "id": "spined_rebuttal",
+  "mechanic": {
+    "kind": "spined_rebuttal",
+    "params": {
+      "prevent": 1,
+      "stacks": 1,
+      "status_id": "poison"
+    },
+    "windows": [
+      "defense_selection",
+      "defense_reaction"
     ],
+    "uses_per_round": 0,
+    "uses_per_battle": 0
+  },
+  "name": "Spined Rebuttal",
+  "operations": [
+    {
+      "id": "spined_rebuttal",
+      "type": "venom_card"
+    }
+  ],
+  "play": {
     "destination": "discard",
     "playable_during": [
       {
-        "segment": "defensive",
         "phase": "main",
+        "segment": "defensive",
         "window_purpose": "reaction"
       }
+    ],
+    "source_zones": [
+      "hand"
     ]
   },
-  "targeting": {
-    "selector": "venom_choice",
-    "minimum": 0,
-    "maximum": 1
+  "presentation": {
+    "rules_text": "Prevent 1 from an incoming ability and apply 1 Poison to its attacker."
   },
   "reaction_window": {
     "opens": false
   },
-  "operations": [
-    {
-      "type": "venom_card",
-      "id": "spined_rebuttal"
-    }
-  ]
+  "schema_version": 1,
+  "targeting": {
+    "maximum": 1,
+    "minimum": 0,
+    "selector": "venom_choice"
+  },
+  "type": "reaction"
 }

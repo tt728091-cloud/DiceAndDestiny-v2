@@ -6,6 +6,7 @@ var _player_piles := false
 
 var portrait: TextureRect
 var title: Label
+var wound_bar: Control
 var health: ProgressBar
 var stats: Label
 var statuses
@@ -41,13 +42,13 @@ func _ready() -> void:
 	title.size_flags_horizontal = Control.SIZE_EXPAND_FILL; title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER; heading.add_child(title)
 	_add_stat_cell(heading, "energy", "Energy", 20)
 	health = ProgressBar.new(); health.show_percentage = false; health.custom_minimum_size.y = 24; info.add_child(health)
-	var style := StyleBoxFlat.new(); style.bg_color = Color("211923"); style.border_color = Color("100e13"); style.set_border_width_all(3); style.set_corner_radius_all(6)
-	style.shadow_color = Color("09080ccc"); style.shadow_size = 3; style.shadow_offset = Vector2(0, 2)
-	health.add_theme_stylebox_override("background", style)
+	health.add_theme_stylebox_override("background", HUD_THEME.bone_health_frame())
 	var fill := StyleBoxFlat.new(); fill.bg_color = Color("cf424f"); fill.border_color = Color("f48279"); fill.set_border_width_all(2); fill.set_corner_radius_all(4)
-	# Leave the dark outer frame visible even at full health.
-	fill.expand_margin_left = -3; fill.expand_margin_right = -3; fill.expand_margin_top = -3; fill.expand_margin_bottom = -3
+	# Keep the joined-bone frame exposed at full health and during damage playback.
+	fill.expand_margin_left = -5; fill.expand_margin_right = -5; fill.expand_margin_top = -3; fill.expand_margin_bottom = -3
 	health.add_theme_stylebox_override("fill", fill)
+	wound_bar = preload("res://presentation/battle/wound_health_bar.gd").new(); health.add_child(wound_bar)
+	wound_bar.attach(health)
 	_health_text = Label.new(); _health_text.add_theme_font_size_override("font_size", 21); _health_text.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	HUD_THEME.hud_lettering(_health_text, true)
 	_health_text.mouse_filter = Control.MOUSE_FILTER_IGNORE; health.add_child(_health_text); _health_text.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
@@ -86,6 +87,7 @@ func _pile_input(event: InputEvent, zone: String) -> void:
 
 func display(actor_id: String, actor: Dictionary, is_player: bool) -> void:
 	_player_piles = is_player
+	if is_player: add_theme_stylebox_override("panel", HUD_THEME.bone_panel())
 	for zone in ["deck", "discard", "removed"]:
 		_stat_cells[zone].mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND if is_player else Control.CURSOR_ARROW
 	_defense_status_preview.clear()
@@ -96,6 +98,7 @@ func display(actor_id: String, actor: Dictionary, is_player: bool) -> void:
 	title.text = visual.display_name if visual != null else definition.replace("_", " ").capitalize()
 	var current := int(actor.get("current_health", 0)); var maximum := maxi(1, int(actor.get("max_health", current)))
 	health.max_value = maximum; health.value = current
+	wound_bar.display(actor.get("wounds", []), int(actor.get("wound_missing_health", maxi(0, maximum - current))))
 	_health_text.text = "%d/%d" % [current, maximum]
 	_display_values = {
 		"energy": int(actor.get("energy_points", 0)),
@@ -262,9 +265,19 @@ func show_resource_gain(data: Dictionary, progress: float) -> void:
 	var key := str(data.get("stat", ""))
 	var label: Label = _stat_labels.get(key)
 	if label == null or int(_display_values.get(key, -1)) != int(data.get("after", -2)): return
+	if key == "energy":
+		show_energy_fade(int(data.before), int(data.after), progress)
+		return
 	var amount := roundi(lerpf(float(data.before), float(data.after), progress))
 	label.text = str(amount)
 	label.add_theme_color_override("font_color", NORMAL_STAT_COLOR.lerp(INCOME_HIGHLIGHT_COLOR, sin(progress * PI)))
+
+func show_energy_fade(before: int, after: int, progress: float) -> void:
+	var label: Label = _stat_labels.energy
+	var t := clampf(progress, 0.0, 1.0)
+	label.text = str(before if t < 0.5 else after)
+	label.self_modulate.a = absf(2.0 * t - 1.0) if before != after else 1.0
+	label.add_theme_color_override("font_color", NORMAL_STAT_COLOR.lerp(INCOME_HIGHLIGHT_COLOR, sin(t * PI) * 0.45))
 
 func show_status_transition(update: Dictionary, progress: float) -> void:
 	var counts := {}
@@ -286,6 +299,9 @@ func show_status_transition(update: Dictionary, progress: float) -> void:
 
 func status_anchor(status_id: String) -> Vector2:
 	return anchor_rect("status", status_id).get_center()
+
+func _get_tooltip(_at_position: Vector2) -> String:
+	return preload("res://presentation/battle/wrapped_tooltip.gd").content(tooltip_text)
 
 func _make_custom_tooltip(for_text: String) -> Object:
 	return preload("res://presentation/battle/wrapped_tooltip.gd").create(self, for_text)

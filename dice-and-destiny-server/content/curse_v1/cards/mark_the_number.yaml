@@ -1,41 +1,54 @@
 {
-  "schema_version": 1,
-  "id": "mark_the_number",
-  "name": "Mark the Number",
-  "type": "curse_action",
-  "presentation": {
-    "rules_text": "Apply 1 ordinary Curse to an enemy: seed face 1 of a random clean die; otherwise Lesser Expand, or Surge if all dice are fully cursed. Each named Curse card may be played once per player per round.",
-    "art_key": "card_mark_the_number",
-    "effect_summary": "Apply 1 ordinary Curse."
-  },
+  "access_type": "curse",
   "cost": {
     "energy": 0
   },
-  "play": {
-    "source_zones": [
-      "hand"
+  "id": "mark_the_number",
+  "mechanic": {
+    "kind": "mark_the_number",
+    "params": {
+      "curses": 1
+    },
+    "windows": [
+      "offensive_planning"
     ],
+    "uses_per_round": 1,
+    "uses_per_battle": 0
+  },
+  "name": "Mark the Number",
+  "operations": [
+    {
+      "id": "mark_the_number",
+      "target": "self",
+      "type": "curse_card"
+    }
+  ],
+  "play": {
     "destination": "discard",
     "playable_during": [
       {
-        "segment": "offensive",
         "phase": "main",
+        "segment": "offensive",
         "window_purpose": "planning"
       }
+    ],
+    "source_zones": [
+      "hand"
     ]
   },
-  "targeting": {
-    "selector": "curse_choice",
-    "minimum": 0,
-    "maximum": 1
+  "presentation": {
+    "art_key": "card_mark_the_number",
+    "effect_summary": "Apply 1 ordinary Curse.",
+    "rules_text": "Apply 1 ordinary Curse to an enemy: seed face 1 of a random clean die; otherwise Lesser Expand, or Surge if all dice are fully cursed. Each named Curse card may be played once per player per round."
   },
   "reaction_window": {
     "opens": false
   },
-  "operations": [
-    {
-      "type": "curse_card",
-      "target": "self"
-    }
-  ]
+  "schema_version": 1,
+  "targeting": {
+    "maximum": 1,
+    "minimum": 0,
+    "selector": "curse_choice"
+  },
+  "type": "curse_action"
 }

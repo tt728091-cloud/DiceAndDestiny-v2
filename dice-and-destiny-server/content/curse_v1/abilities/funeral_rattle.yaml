@@ -45,13 +45,36 @@
             "type": "deal_damage",
             "target": "selected_targets",
             "amount": 4
-          },
-          {
-            "type": "curse_action",
-            "target": "selected_targets"
           }
         ]
       }
     ]
-  }
+  },
+  "configuration_version": 1,
+  "hooks": [
+    {
+      "timing": "after_damage",
+      "operations": [
+        {
+          "type": "special_effect",
+          "target": "enemy",
+          "special": {
+            "kind": "roll_cursed",
+            "amount": 3
+          }
+        },
+        {
+          "type": "special_effect",
+          "target": "enemy",
+          "special": {
+            "kind": "status_threshold",
+            "status_id": "curse_count",
+            "threshold": 6,
+            "result_status_id": "blind",
+            "stacks": 1
+          }
+        }
+      ]
+    }
+  ]
 }

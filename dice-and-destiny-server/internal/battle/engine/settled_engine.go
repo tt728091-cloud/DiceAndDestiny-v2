@@ -427,6 +427,7 @@ func (e Engine) progressSettledOffensive(battle *state.Battle, library content.B
 				AbilityModifiers: append([]state.RuntimeAbilityModifier(nil), battle.Settled.Actors[actorID].AbilityModifiers...),
 			}
 			runtime := battle.Settled.Actors[actorID]
+			runtime.PaidOffensiveEnergy = 0
 			runtime.RollHistory = nil
 			runtime.FinalDice = nil
 			runtime.KeptIndices = nil
@@ -535,7 +536,9 @@ func (e Engine) planSettledAI(battle *state.Battle, library content.BattleLibrar
 }
 
 func (e Engine) progressSettledDefensive(battle *state.Battle, library content.BattleLibrary) ([]event.Event, error) {
-	e.prepareVenomAttacks(battle, library)
+	if err := e.prepareVenomAttacks(battle, library); err != nil {
+		return nil, err
+	}
 	if battle.Settled.Stage == "" {
 		battle.Settled.DefenseHistory = map[string]state.SettledDefense{}
 		battle.Settled.DefensePlans = map[string]state.SettledDefense{}
@@ -759,7 +762,7 @@ func (e Engine) finalizeDefenses(battle *state.Battle, library content.BattleLib
 		if ability.Resolution.EnergyGainLimit > 0 && result.ResourceDeltas != nil {
 			result.ResourceDeltas[actorID] = min(result.ResourceDeltas[actorID], ability.Resolution.EnergyGainLimit)
 		}
-		before := 0
+		before := settledSourceAmount(*sourceBySettledID(battle, selection.SourceID))
 		if source := batchSourceByID(battle.Settled.PendingDamage, selection.SourceID); source != nil {
 			before = settledSourceAmount(*source)
 		}
@@ -772,7 +775,11 @@ func (e Engine) finalizeDefenses(battle *state.Battle, library content.BattleLib
 				events = append(events, settledEvent(event.TypeDamageModified, battle, actorID, map[string]any{"source_id": source.ID, "ability_id": ability.ID, "damage_before": before, "damage_after": settledSourceAmount(*source), "target_actor_id": source.TargetActorID}))
 			}
 		}
-		if err := e.curseDefenseCompleted(battle, library, selection); err != nil {
+		after := settledSourceAmount(*sourceBySettledID(battle, selection.SourceID))
+		if source := batchSourceByID(battle.Settled.PendingDamage, selection.SourceID); source != nil {
+			after = settledSourceAmount(*source)
+		}
+		if err := e.curseDefenseCompleted(battle, library, selection, before > after); err != nil {
 			return nil, err
 		}
 		selection.Finalized = true
@@ -961,6 +968,12 @@ func (e Engine) finishDamageBatch(battle *state.Battle, library content.BattleLi
 				break
 			}
 		}
+		if !found && containsString(actor.Cards.Removed, removal.CardID) {
+			// An explicit sacrifice/removal already paid this card's health and
+			// recorded its wound. Do not remove or record the same card twice.
+			removal.Accepted = false
+			continue
+		}
 		if !found {
 			return nil, fmt.Errorf("damage card %q is no longer in an active zone for %q", removal.CardID, removal.TargetActorID)
 		}
@@ -1078,12 +1091,17 @@ func (e Engine) advanceSettledSegment(battle *state.Battle) ([]event.Event, erro
 		if battle.Segment.Current == segment.OngoingEffects && battle.Settled.Curse.ConversionRound != battle.Segment.Round {
 			return e.convertCurse(battle, lib)
 		}
+		expireMechanicStatuses(battle)
 		expireCursePreparations(battle)
 	}
+	expireMechanicStatuses(battle)
 	// Attack sources now contain their final bonuses. Clear temporary preparations
 	// on Offensive Exit, whether their ability was selected or not.
 	if battle.Segment.Current == segment.Offensive {
 		expireOffensiveModifiers(battle)
+	}
+	if battle.Segment.Current == segment.DamageResolution {
+		expireProgramRoundBonuses(battle)
 	}
 	// Final action of every Exit: mark zero-health actors defeated and evaluate.
 	for actorID, actor := range battle.Actors {
@@ -1098,6 +1116,8 @@ func (e Engine) advanceSettledSegment(battle *state.Battle) ([]event.Event, erro
 	}
 	if state.IsTerminalBattleStatus(battle.Status) {
 		battle.Settled.CompletedRounds = battle.Segment.Round
+		clearCompletedProgramBonuses(battle)
+		expireMechanicStatuses(battle)
 		for actorID, runtime := range battle.Settled.Actors {
 			runtime.AbilityModifiers = nil
 			battle.Settled.Actors[actorID] = runtime
@@ -1160,33 +1180,41 @@ func (e Engine) handleSettledCommand(battle *state.Battle, cmd command.Command) 
 		return nil, err
 	}
 	var events []event.Event
-	switch window.Stage {
-	case stageCurseChoice:
-		events, err = e.handleCurseChoice(battle, library, cmd)
-	case stageVenomStatus:
-		events, err = e.handleVenomStatus(battle, library, cmd)
-	case stageOffensivePlan:
-		events, err = e.handleOffensivePlanningCommand(battle, library, cmd)
-	case stageOffensiveReact:
-		events, err = e.handleOffensiveReactionCommand(battle, library, cmd)
-	case stageOngoingReact:
-		events, err = e.handleStatusReactionCommand(battle, library, cmd)
-	case stageOngoingRoll:
-		events, err = e.handleStatusRollCommand(battle, library, cmd)
-	case stageOngoingDamage, stageDamageReact:
-		events, err = e.handleDamageReactionCommand(battle, library, cmd)
-	case stageDefenseSelect:
-		events, err = e.handleDefenseSelectionCommand(battle, library, cmd)
-	case stageDefenseRoll:
-		events, err = e.handleDefenseRollCommand(battle, library, cmd)
-	case stageDefenseReact:
-		events, err = e.handleDefenseReactionCommand(battle, library, cmd)
-	case stageBlindReact:
-		events, err = e.handleBlindReactionCommand(battle, library, cmd)
-	case stageHandLimit:
-		events, err = e.handleHandLimitCommand(battle, cmd)
-	default:
-		err = fmt.Errorf("unsupported settled window stage %q", window.Stage)
+	cardID, _ := programPayload(cmd)
+	if battle.Settled.Actors[cmd.ActorID].CardExecution != nil || (cardID != "" && library.Cards[settledCardDefinitionID(battle, cmd.ActorID, cardID)].Program != nil) {
+		events, err = e.handleProgramCommand(battle, library, cmd)
+	} else {
+		switch window.Stage {
+		case stageCurseChoice:
+			events, err = e.handleCurseChoice(battle, library, cmd)
+		case stageVenomStatus:
+			events, err = e.handleVenomStatus(battle, library, cmd)
+		case stageOffensivePlan:
+			events, err = e.handleOffensivePlanningCommand(battle, library, cmd)
+		case stageOffensiveReact:
+			events, err = e.handleOffensiveReactionCommand(battle, library, cmd)
+		case stageOngoingReact:
+			events, err = e.handleStatusReactionCommand(battle, library, cmd)
+		case stageOngoingRoll:
+			events, err = e.handleStatusRollCommand(battle, library, cmd)
+		case stageOngoingDamage, stageDamageReact:
+			events, err = e.handleDamageReactionCommand(battle, library, cmd)
+		case stageDefenseSelect:
+			events, err = e.handleDefenseSelectionCommand(battle, library, cmd)
+		case stageDefenseRoll:
+			events, err = e.handleDefenseRollCommand(battle, library, cmd)
+		case stageDefenseReact:
+			events, err = e.handleDefenseReactionCommand(battle, library, cmd)
+		case stageBlindReact:
+			events, err = e.handleBlindReactionCommand(battle, library, cmd)
+		case stageHandLimit:
+			events, err = e.handleHandLimitCommand(battle, cmd)
+		default:
+			err = fmt.Errorf("unsupported settled window stage %q", window.Stage)
+		}
+	}
+	if battle.Settled.Actors[cmd.ActorID].CardExecution != nil {
+		return events, err
 	}
 	if err == nil && battle.Settled.Venom != nil && battle.Settled.Venom.Active == nil && len(battle.Settled.Venom.Queue) > 0 {
 		next, childErr := e.startVenomWork(battle, library, false)
@@ -1362,6 +1390,9 @@ func (e Engine) handleOffensivePlanningCommand(battle *state.Battle, library con
 			return nil, fmt.Errorf("ability %q is not qualified", payload.AbilityID)
 		}
 		ability := library.Abilities[payload.AbilityID]
+		if ability.Cost.Energy > battle.Actors[actorID].Resources.EnergyPoints+runtime.PaidOffensiveEnergy {
+			return nil, errors.New("insufficient energy for ability")
+		}
 		if ability.Usage.MaximumPerSegment > 0 && runtime.UsedAbilities[payload.AbilityID] >= ability.Usage.MaximumPerSegment {
 			return nil, fmt.Errorf("ability %q has reached its segment usage limit", payload.AbilityID)
 		}
@@ -1372,6 +1403,9 @@ func (e Engine) handleOffensivePlanningCommand(battle *state.Battle, library con
 		}
 		runtime.SelectedAbilityID = payload.AbilityID
 		tier, _ := qualifiedTier(library.Abilities[payload.AbilityID], runtime.FinalDice)
+		if payload.TierID != "" && payload.TierID != tier.ID && !chooseAbilityTier(ability) {
+			return nil, errors.New("ability does not offer a tier choice")
+		}
 		if payload.TierID != "" {
 			found := false
 			for _, candidate := range ability.Qualification.ActivationTiers {
@@ -1419,6 +1453,9 @@ func (e Engine) handleOffensivePlanningCommand(battle *state.Battle, library con
 }
 
 func (e Engine) finalizeOffensivePlanning(battle *state.Battle, library content.BattleLibrary, actorID string) ([]event.Event, error) {
+	if !reserveOffensiveCost(battle, library, actorID) {
+		return nil, errors.New("insufficient energy for selected ability")
+	}
 	runtime := battle.Settled.Actors[actorID]
 	runtime.PlanningCommitted = true
 	battle.Settled.Actors[actorID] = runtime
@@ -1471,14 +1508,14 @@ func (e Engine) handleOffensiveReactionCommand(battle *state.Battle, library con
 		if err := e.playSettledReactionCard(battle, library, cmd.ActorID, payload.Commitment); err != nil {
 			return nil, err
 		}
-		if library.Cards[settledCardDefinitionID(battle, cmd.ActorID, payload.Commitment.CardIDs[0])].ID == "forked_tongue" || len(payload.Commitment.CardIDs) == 1 && isCurseDiceCard(settledCardDefinitionID(battle, cmd.ActorID, payload.Commitment.CardIDs[0])) {
+		if content.MechanicKind(library.Cards[settledCardDefinitionID(battle, cmd.ActorID, payload.Commitment.CardIDs[0])]) == "forked_tongue" || len(payload.Commitment.CardIDs) == 1 && isCurseDiceCard(content.MechanicKind(library.Cards[settledCardDefinitionID(battle, cmd.ActorID, payload.Commitment.CardIDs[0])])) {
 			actorID, _, _ := parseDieChoice(payload.Commitment.ChoiceID)
 			if err := e.revalidateOffensiveSelection(battle, library, actorID); err != nil {
 				return nil, err
 			}
 		}
 		advanceSettledReactionPriority(battle, cmd.ActorID, true)
-		if library.Cards[settledCardDefinitionID(battle, cmd.ActorID, payload.Commitment.CardIDs[0])].ID == "forked_tongue" || len(payload.Commitment.CardIDs) == 1 && isCurseDiceCard(settledCardDefinitionID(battle, cmd.ActorID, payload.Commitment.CardIDs[0])) {
+		if content.MechanicKind(library.Cards[settledCardDefinitionID(battle, cmd.ActorID, payload.Commitment.CardIDs[0])]) == "forked_tongue" || len(payload.Commitment.CardIDs) == 1 && isCurseDiceCard(content.MechanicKind(library.Cards[settledCardDefinitionID(battle, cmd.ActorID, payload.Commitment.CardIDs[0])])) {
 			actorID, _, _ := parseDieChoice(payload.Commitment.ChoiceID)
 			e.reopenOffensiveAfterDiceChange(battle, actorID)
 		}
@@ -1513,6 +1550,13 @@ func (e Engine) revalidateOffensiveSelection(battle *state.Battle, library conte
 	runtime := battle.Settled.Actors[actorID]
 	old := runtime.SelectedAbilityID
 	valid := qualifiedAbilities(library, runtime.OffensiveAbilityIDs, runtime.FinalDice, runtime.AbilityModifiers)
+	affordable := valid[:0]
+	for _, id := range valid {
+		if library.Abilities[id].Cost.Energy <= battle.Actors[actorID].Resources.EnergyPoints+runtime.PaidOffensiveEnergy {
+			affordable = append(affordable, id)
+		}
+	}
+	valid = affordable
 	if containsString(valid, old) {
 	} else if len(valid) == 1 {
 		runtime.SelectedAbilityID = valid[0]
@@ -1529,7 +1573,7 @@ func (e Engine) revalidateOffensiveSelection(battle *state.Battle, library conte
 	if runtime.SelectedAbilityID != "" {
 		tier, _ := qualifiedTier(library.Abilities[runtime.SelectedAbilityID], runtime.FinalDice)
 		// Both tiered characters deliberately permit a lower qualified tier.
-		if runtime.SelectedAbilityID == old && (old == "needlefang" || old == "hexbrand" || old == "adventurer_strike") {
+		if runtime.SelectedAbilityID == old && chooseAbilityTier(library.Abilities[old]) {
 			for _, candidate := range library.Abilities[old].Qualification.ActivationTiers {
 				if candidate.ID == runtime.SelectedTierID && requirementsMet(candidate.Requirements, runtime.FinalDice) {
 					tier = candidate
@@ -1573,6 +1617,13 @@ func (e Engine) finalizeOffensiveSources(battle *state.Battle, library content.B
 		if !ok {
 			continue
 		}
+		if !reserveOffensiveCost(battle, library, actorID) {
+			runtime.SelectedAbilityID = ""
+			battle.Settled.Actors[actorID] = runtime
+			reserveOffensiveCost(battle, library, actorID)
+			continue
+		}
+		runtime = battle.Settled.Actors[actorID]
 		runtime.UsedAbilities[ability.ID]++
 		battle.Settled.Actors[actorID] = runtime
 		ctx := effectContext{SourceActorID: actorID, SourceContentID: ability.ID, SourceContentType: "ability", TargetActorIDs: runtime.SelectedTargetIDs}
@@ -1580,6 +1631,7 @@ func (e Engine) finalizeOffensiveSources(battle *state.Battle, library content.B
 		if err != nil {
 			return nil, err
 		}
+		consumeProgramBonuses(battle, actorID, ability.ID)
 		immediate := result
 		immediate.Damage = nil
 		immediate.StatusApplications = nil
@@ -1636,7 +1688,7 @@ func resolvedOffensiveOperations(battle *state.Battle, library content.BattleLib
 	if !ok {
 		return nil, false
 	}
-	if ability.ID == "needlefang" || ability.ID == "hexbrand" || ability.ID == "adventurer_strike" {
+	if chooseAbilityTier(ability) {
 		for _, candidate := range ability.Qualification.ActivationTiers {
 			if candidate.ID == runtime.SelectedTierID && requirementsMet(candidate.Requirements, runtime.FinalDice) {
 				tier = candidate
@@ -1654,7 +1706,19 @@ func resolvedOffensiveOperations(battle *state.Battle, library content.BattleLib
 		if modifier.StatusID != "" && stacks(battle, actorID, modifier.StatusID) == 0 {
 			continue
 		}
-		if modifier.AbilityID != ability.ID || (modifier.ExpiresAfterRound > 0 && modifier.ExpiresAfterRound != battle.Segment.Round) {
+		if modifier.AbilityID != ability.ID || (modifier.ExpiresAfterRound > 0 && modifier.ExpiresAfterRound < battle.Segment.Round) {
+			continue
+		}
+		if len(modifier.ProgramBonus) > 0 {
+			var step content.CardStep
+			if json.Unmarshal(modifier.ProgramBonus, &step) == nil && (step.Condition == nil || requirementsMet(*step.Condition, runtime.FinalDice)) {
+				if amount := content.ProgramInt(step, "damage"); amount > 0 {
+					ops = append(ops, content.BattleOperation{Type: "deal_damage", Target: "selected_targets", Amount: amount})
+				}
+				if status := content.ProgramString(step, "status_id"); status != "" {
+					ops = append(ops, content.BattleOperation{Type: "apply_status", Target: "selected_targets", StatusID: status, StackCount: content.ProgramInt(step, "stacks")})
+				}
+			}
 			continue
 		}
 		instance, exists := runtime.CardInstances[modifier.SourceCardInstanceID]
@@ -1689,11 +1753,42 @@ func resolvedOffensiveOperations(battle *state.Battle, library content.BattleLib
 			}
 		}
 	}
+
+	for _, kind := range []string{"venom_lens", "deep_puncture"} {
+		if mechanicStacks(battle, actorID, kind) == 0 {
+			continue
+		}
+		def := rememberedMechanic(battle, library, actorID, kind)
+		if def.Mechanic == nil {
+			continue
+		}
+		if kind == "venom_lens" && ability.ID != content.MechanicString(def, "ability_id") {
+			continue
+		}
+		for i := range ops {
+			if ops[i].Type == "deal_damage" {
+				n, _ := operationAmount(ops[i], 0)
+				if kind == "venom_lens" {
+					n += content.MechanicInt(def, "damage")
+				} else {
+					n = max(0, n-content.MechanicInt(def, "damage_cost"))
+				}
+				ops[i].Amount = n
+			}
+			if kind == "deep_puncture" && ops[i].Type == "apply_status" && ops[i].StatusID == content.MechanicString(def, "status_id") {
+				ops[i].StackCount += content.MechanicInt(def, "stacks")
+			}
+		}
+	}
 	if battle.Settled.Curse != nil {
 		for i := range ops {
 			if ops[i].Type == "deal_damage" {
 				n, _ := operationAmount(ops[i], 0)
-				ops[i].Amount = n + battle.Settled.Curse.Bonus[curseBonusKey(battle, actorID)]
+				bonus := battle.Settled.Curse.Bonus[curseBonusKey(battle, actorID)]
+				if rememberedMechanic(battle, library, actorID, "ruin_made_flesh").Mechanic != nil && mechanicStacks(battle, actorID, "ruin_made_flesh") == 0 {
+					bonus = 0
+				}
+				ops[i].Amount = n + bonus
 				break
 			}
 		}
@@ -2045,7 +2140,7 @@ func (e Engine) handleDefenseSelectionCommand(battle *state.Battle, library cont
 		return nil, errors.New("defense target is not a remaining incoming source")
 	}
 	ability := library.Abilities[payload.AbilityID]
-	if ability.ID == "barbed_mantle" && library.Abilities[source.SourceContentID].Type != "offensive" {
+	if abilityOnlyDefense(ability) && library.Abilities[source.SourceContentID].Type != "offensive" {
 		return nil, errors.New("Barbed Mantle requires an incoming offensive ability")
 	}
 	if ability.Usage.MaximumPerSegment > 0 && defenseUses(battle, cmd.ActorID, payload.AbilityID) >= ability.Usage.MaximumPerSegment {
@@ -2055,16 +2150,17 @@ func (e Engine) handleDefenseSelectionCommand(battle *state.Battle, library cont
 		return nil, errors.New("insufficient energy")
 	}
 	if payload.SpendCatalyst {
-		if ability.ID != "shedskin" || stacks(battle, cmd.ActorID, "catalyst") == 0 {
+		if !canPayAbility(battle, cmd.ActorID, ability) {
 			return nil, errors.New("Catalyst payment unavailable")
 		}
-		removeStatus(battle, cmd.ActorID, "catalyst", 1)
-		source.Prevention += 2
+		payment := abilityPayment(ability)
+		removeStatus(battle, cmd.ActorID, payment.StatusID, payment.Stacks)
+		source.Prevention += payment.Prevention
 		if unifiedDefense(battle) {
 			if pending := batchSourceByID(battle.Settled.PendingDamage, source.ID); pending != nil {
 				before := settledSourceAmount(*pending)
-				pending.Prevention += 2
-				setUnifiedSourceAmount(battle, pending, max(0, before-2))
+				pending.Prevention += payment.Prevention
+				setUnifiedSourceAmount(battle, pending, max(0, before-payment.Prevention))
 			}
 			if err := e.reconcileUnifiedDamage(battle, true); err != nil {
 				return nil, err
@@ -2441,10 +2537,10 @@ func (e Engine) playSettledCard(battle *state.Battle, library content.BattleLibr
 	if !ok {
 		return errors.New("card instance does not exist")
 	}
-	if !containsString(battle.Actors[actorID].Cards.Hand, instanceID) {
+	definition := library.Cards[instance.DefinitionID]
+	if !mechanicPlayable(battle, actorID, instanceID, definition) {
 		return errors.New("card is not in hand")
 	}
-	definition := library.Cards[instance.DefinitionID]
 	if definition.Targeting.Selector == "general_choice" {
 		return e.playGeneralCard(battle, library, actorID, instanceID, definition, targetIDs, statusID)
 	}
@@ -2484,6 +2580,10 @@ func (e Engine) playSettledCard(battle *state.Battle, library content.BattleLibr
 	if definition.Targeting.Selector == "selected_die" && len(targetIDs) > 0 {
 		dieActorID = targetIDs[0]
 	}
+	if definition.Mechanic != nil {
+		before := mechanicLiveCards(battle)
+		defer recordMechanicRemovals(battle, actorID, definition, before)
+	}
 	ctx := effectContext{SourceActorID: actorID, SourceContentID: definition.ID, SourceContentType: "card", TargetActorIDs: targetIDs, ProposalIDs: targetIDs, SelectedAbilityID: abilityID, SelectedStatusID: statusID, SelectedDieActorID: dieActorID, SelectedDieIndex: dieIndex}
 	result, err := e.executeEffects(battle, library, ctx, definition.Operations)
 	if err != nil {
@@ -2496,10 +2596,14 @@ func (e Engine) playSettledCard(battle *state.Battle, library content.BattleLibr
 	if len(result.Damage) > 0 {
 		battle.Settled.OffensiveSources = append(battle.Settled.OffensiveSources, result.Damage...)
 	}
-	spendEnergy(battle, actorID, definition.Cost.Energy)
-	actor := battle.Actors[actorID]
-	moveCard(&actor.Cards, instanceID, operation.ZoneHand, operation.CardZone(definition.Play.Destination))
-	battle.Actors[actorID] = actor
+	if definition.Mechanic != nil {
+		payMechanic(battle, actorID, instanceID, definition)
+	} else {
+		spendEnergy(battle, actorID, definition.Cost.Energy)
+		actor := battle.Actors[actorID]
+		moveCard(&actor.Cards, instanceID, operation.ZoneHand, operation.CardZone(definition.Play.Destination))
+		battle.Actors[actorID] = actor
+	}
 	// Effects resolve before the play destination. A saved Brace still pays its
 	// normal discard; publish that live destination for saved-card feedback.
 	if batch := battle.Settled.PendingDamage; batch != nil {

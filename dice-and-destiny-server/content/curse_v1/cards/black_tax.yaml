@@ -1,41 +1,57 @@
 {
-  "schema_version": 1,
-  "id": "black_tax",
-  "name": "Black Tax",
-  "type": "curse_action",
-  "presentation": {
-    "rules_text": "Prepare a conversion mode: at the next Effects, spend the first 3 enemy Count on \u22121 card drawn at their next Income, minimum 0, instead of damage. Convert all remaining groups normally. One conversion mode per target. Each named Curse card may be played once per player per round.",
-    "art_key": "card_black_tax",
-    "effect_summary": "Spend first 3 Count on \u22121 card next Income."
-  },
+  "access_type": "curse",
   "cost": {
     "energy": 1
   },
-  "play": {
-    "source_zones": [
-      "hand"
+  "id": "black_tax",
+  "mechanic": {
+    "kind": "black_tax",
+    "params": {
+      "groups": 1,
+      "penalty": 1
+    },
+    "windows": [
+      "offensive_planning"
     ],
+    "uses_per_round": 1,
+    "uses_per_battle": 0,
+    "expiration": "next_ongoing",
+    "rounds": 1
+  },
+  "name": "Black Tax",
+  "operations": [
+    {
+      "id": "black_tax",
+      "target": "self",
+      "type": "curse_card"
+    }
+  ],
+  "play": {
     "destination": "discard",
     "playable_during": [
       {
-        "segment": "offensive",
         "phase": "main",
+        "segment": "offensive",
         "window_purpose": "planning"
       }
+    ],
+    "source_zones": [
+      "hand"
     ]
   },
-  "targeting": {
-    "selector": "curse_choice",
-    "minimum": 0,
-    "maximum": 1
+  "presentation": {
+    "art_key": "card_black_tax",
+    "effect_summary": "Spend first 3 Count on −1 card next Income.",
+    "rules_text": "Prepare a conversion mode: at the next Effects, spend the first 3 enemy Count on −1 card drawn at their next Income, minimum 0, instead of damage. Convert all remaining groups normally. One conversion mode per target. Each named Curse card may be played once per player per round."
   },
   "reaction_window": {
     "opens": false
   },
-  "operations": [
-    {
-      "type": "curse_card",
-      "target": "self"
-    }
-  ]
+  "schema_version": 1,
+  "targeting": {
+    "maximum": 1,
+    "minimum": 0,
+    "selector": "curse_choice"
+  },
+  "type": "curse_action"
 }

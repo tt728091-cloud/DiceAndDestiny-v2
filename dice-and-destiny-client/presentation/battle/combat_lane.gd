@@ -3,9 +3,10 @@ var body: VBoxContainer
 var _measured_size := Vector2.ZERO
 
 func _ready() -> void:
+	mouse_filter = Control.MOUSE_FILTER_IGNORE
 	size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	size_flags_vertical = Control.SIZE_EXPAND_FILL
-	body = VBoxContainer.new(); body.add_theme_constant_override("separation", 12); add_child(body)
+	body = VBoxContainer.new(); body.mouse_filter = Control.MOUSE_FILTER_IGNORE; body.add_theme_constant_override("separation", 12); add_child(body)
 	resized.connect(_layout_body)
 	_layout_body()
 

@@ -164,6 +164,8 @@ func (e Engine) executeEffect(battle *state.Battle, library content.BattleLibrar
 		return result, err
 	}
 	switch op.Type {
+	case "special_effect":
+		return result, e.executeSharedSpecial(battle, library, ctx, targets, op.Special)
 	case "provoke":
 		return result, nil // ability checks are captured after late cancellation in prepareVenomAttacks
 	case "apply_incubation", "incubation_or_poison":
@@ -186,7 +188,7 @@ func (e Engine) executeEffect(battle *state.Battle, library content.BattleLibrar
 			result.Damage = append(result.Damage, newSettledDamageSource(battle, ctx.SourceActorID, targetID, ctx.SourceContentID, amount))
 		}
 	case "apply_status":
-		if ctx.SourceContentID == "terminal_bite" && op.StatusID == "catalyst" {
+		if ctx.SourceContentID == "terminal_bite" && library.Abilities[ctx.SourceContentID].ConfigurationVersion == 0 && op.StatusID == "catalyst" {
 			return result, nil
 		}
 		for _, targetID := range targets {

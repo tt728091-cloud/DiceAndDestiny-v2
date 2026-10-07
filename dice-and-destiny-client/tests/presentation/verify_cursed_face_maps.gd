@@ -28,6 +28,8 @@ func _run() -> void:
 		var screen = SCREEN.instantiate(); screen.initial_result = f; screen.gateway = BattleGateway.new(FakeBattleAuthority.new())
 		screen.active_store = ActiveBattleStore.new(WorkspacePaths.persistent_file("curse-face-maps.json")); screen._auto_pass_disabled = true
 		root.add_child(screen)
+		screen._enemy_dice_visible["goblin"] = true
+		screen._enemy_dice_dock.expanded = true
 		for frame in 10: await process_frame
 		for dock in [screen._player_dice_dock, screen._enemy_dice_dock]:
 			var tray: BattleDiceTray = dock.get_child(0)
@@ -47,7 +49,7 @@ func _run() -> void:
 		var roll_rect: Rect2 = screen._roll_dock.get_global_rect()
 		var rail_rect: Rect2 = screen._ability_dock.get_parent().get_global_rect()
 		_expect(roll_rect.end.y <= dice_rect.position.y and dice_rect.end.y <= rail_rect.position.y, "maps, roll controls and abilities never overlap")
-		_expect(screen._enemy_dice_dock.get_global_rect().position.y >= screen._actor_profiles[screen._focused_enemy].get_global_rect().end.y, "enemy dice and maps sit below their HUD")
+		_expect(screen._enemy_dice_dock.get_global_rect().end.y <= screen._actor_profiles[screen._focused_enemy].get_global_rect().position.y, "enemy dice and maps unfold above their HUD")
 		_expect(not screen._enemy_dice_dock.get_global_rect().intersects(screen._hand_dock.get_global_rect()), "enemy curse maps stay above the hand")
 		var tray: BattleDiceTray = screen._enemy_dice_dock.get_child(0)
 		_expect(tray._bindings[3].visible and tray._bound_labels[3].text == "BOUND", "loaded Entombment has persistent frame and named badge")

@@ -36,8 +36,12 @@ func Validate(deck []Entry, cards map[string]content.BattleCardDefinition) ([]En
 			return nil, fmt.Errorf("duplicate deck entry %q", entry.CardID)
 		}
 		seen[entry.CardID] = true
-		if entry.Count < 1 || entry.Count > MaxCopies {
-			return nil, fmt.Errorf("card quantities must be 1–%d", MaxCopies)
+		limit := MaxCopies
+		if c := cards[entry.CardID].Economy; c != nil {
+			limit = c.CopyLimit
+		}
+		if entry.Count < 1 || entry.Count > limit {
+			return nil, fmt.Errorf("card quantities must be 1–%d", limit)
 		}
 		total += entry.Count
 	}
@@ -61,7 +65,7 @@ func path(root, character string) (string, error) {
 	return filepath.Join(root, character+".json"), nil
 }
 
-func Read(root, character string, cards map[string]content.BattleCardDefinition) ([]Entry, error) {
+func ReadLegacy(root, character string, cards map[string]content.BattleCardDefinition) ([]Entry, error) {
 	if root == "" {
 		return nil, nil
 	} // Headless simulations retain templates.
@@ -86,6 +90,7 @@ func Read(root, character string, cards map[string]content.BattleCardDefinition)
 	return Validate(saved.Deck, cards)
 }
 
+// Write creates a legacy-format import fixture. Live editors use WriteSharedDeck.
 func Write(root, character string, deck []Entry, cards map[string]content.BattleCardDefinition) ([]Entry, error) {
 	filename, err := path(root, character)
 	if err != nil {
@@ -122,4 +127,33 @@ func Write(root, character string, deck []Entry, cards map[string]content.Battle
 		return nil, err
 	}
 	return deck, nil
+}
+
+// Read exposes the shared deck to older read-only consumers.
+func Read(root, character string, cards map[string]content.BattleCardDefinition) ([]Entry, error) {
+	if root != "" {
+		filename, err := progressPath(root, character)
+		if err != nil {
+			return nil, err
+		}
+		data, err := os.ReadFile(filename)
+		if err == nil {
+			var p Progress
+			if err = json.Unmarshal(data, &p); err != nil {
+				return nil, err
+			}
+			if p.Version != 1 || p.Character != character {
+				return nil, fmt.Errorf("saved deck version or character does not match")
+			}
+			if p.SharedDeck {
+				if len(p.Deck) == 0 {
+					return []Entry{}, nil
+				}
+				return Validate(p.Deck, cards)
+			}
+		} else if !os.IsNotExist(err) {
+			return nil, err
+		}
+	}
+	return ReadLegacy(root, character, cards)
 }

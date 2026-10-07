@@ -1,39 +1,51 @@
 {
-  "schema_version": 1,
-  "id": "agitate",
-  "name": "Agitate",
-  "type": "action",
-  "presentation": {
-    "rules_text": "Choose Poison or Volatile Poison on one enemy. Roll once for every current stack of that chosen status. Resolve its normal damage and clearing results. These checks do not use or count toward the shared Provoke limit."
-  },
+  "access_type": "venom",
   "cost": {
     "energy": 1
   },
-  "play": {
-    "source_zones": [
-      "hand"
+  "id": "agitate",
+  "mechanic": {
+    "kind": "agitate",
+    "params": {
+      "checks": 0
+    },
+    "windows": [
+      "offensive_planning"
     ],
+    "uses_per_round": 0,
+    "uses_per_battle": 0
+  },
+  "name": "Agitate",
+  "operations": [
+    {
+      "id": "agitate",
+      "type": "venom_card"
+    }
+  ],
+  "play": {
     "destination": "discard",
     "playable_during": [
       {
-        "segment": "offensive",
         "phase": "main",
+        "segment": "offensive",
         "window_purpose": "planning"
       }
+    ],
+    "source_zones": [
+      "hand"
     ]
   },
-  "targeting": {
-    "selector": "venom_choice",
-    "minimum": 0,
-    "maximum": 1
+  "presentation": {
+    "rules_text": "Choose Poison or Volatile Poison on one enemy. Roll once for every current stack of that chosen status. Resolve its normal damage and clearing results. These checks do not use or count toward the shared Provoke limit."
   },
   "reaction_window": {
     "opens": false
   },
-  "operations": [
-    {
-      "type": "venom_card",
-      "id": "agitate"
-    }
-  ]
+  "schema_version": 1,
+  "targeting": {
+    "maximum": 1,
+    "minimum": 0,
+    "selector": "venom_choice"
+  },
+  "type": "action"
 }

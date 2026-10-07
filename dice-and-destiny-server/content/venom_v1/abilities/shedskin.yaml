@@ -66,8 +66,10 @@
             ],
             "operations": [
               {
-                "type": "apply_incubation",
-                "target": "enemy"
+                "type": "apply_status",
+                "target": "enemy",
+                "status_id": "incubation",
+                "stack_count": 1
               }
             ]
           }
@@ -78,5 +80,11 @@
       "opens": true,
       "pass_required": true
     }
+  },
+  "configuration_version": 1,
+  "optional_payment": {
+    "status_id": "catalyst",
+    "stacks": 1,
+    "prevention": 2
   }
 }

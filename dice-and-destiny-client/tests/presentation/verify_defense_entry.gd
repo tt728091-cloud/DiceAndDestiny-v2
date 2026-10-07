@@ -49,6 +49,7 @@ func _check(scenario: String) -> void:
 	var screen = SCREEN.instantiate(); screen.initial_result = f; screen.gateway = BattleGateway.new(fake)
 	screen._auto_pass_disabled = true; screen.active_store = ActiveBattleStore.new(WorkspacePaths.persistent_file("defense-entry.json"))
 	root.add_child(screen); screen.set_process(false)
+	await create_timer(0.75).timeout
 	for frame in 8: await process_frame
 	var source := "preview:goblin-2" if scenario == "multiple" else "preview:goblin"
 	_expect(screen._attack_intents.has(source), "revealed preview rendered")
@@ -56,7 +57,7 @@ func _check(scenario: String) -> void:
 	await _click(screen._attack_intents[source].intent)
 	_expect(fake.commands.is_empty() and screen._view.stage == "offensive_reaction", "inspection never passes")
 	_expect(screen._card_legal("tip_it"), "offensive card stays legal while inspecting defense")
-	_expect(screen._ability_actions("shedskin").size() == 2, "normal and Catalyst choices offered before passing")
+	_expect(screen._ability_actions("shedskin").size() == 2, "normal and Catalyst choices offered before passing: " + scenario)
 	if scenario == "card_first":
 		var after := f.duplicate(true); after.snapshot.actors.blade.hand = []; after.pending_input.blade.id = "after-card"
 		fake.enqueue(after)
@@ -81,8 +82,7 @@ func _check(scenario: String) -> void:
 		if scenario == "direct": await _capture("reaction-defense-options")
 		var tile: Control
 		var rail: Control = screen._ability_dock.get_parent()
-		var selected: Control = screen._attack_intents[screen._selected_source].intent
-		_expect(rail.get_global_rect().end.x < selected.get_global_rect().position.x, "offensive reaction offers defenses beside the attack before passing")
+		_expect(rail.position.y < screen.PLAYER_ZONE_TOP and not rail.get_global_rect().intersects(screen._attack_intents[screen._selected_source].intent.get_global_rect()), "offensive reaction offers adjacent defenses without covering attack before passing")
 		for button in screen._ability_dock.find_children("*", "Button", true, false):
 			if button.get_meta("inspection_id", "") == "battle.ability.blade.shedskin": tile = button
 		_expect(tile != null, "defense rail visible")
@@ -105,9 +105,10 @@ func _check(scenario: String) -> void:
 	screen.active_store.clear(); screen.queue_free(); await process_frame
 func _click(button: Control) -> void:
 	var position := button.get_global_rect().get_center()
-	var motion := InputEventMouseMotion.new(); motion.position = position; root.push_input(motion)
+	var motion := InputEventMouseMotion.new(); motion.position = position; root.push_input(motion, true)
+	await process_frame
 	for pressed in [true, false]:
-		var event := InputEventMouseButton.new(); event.position = position; event.button_index = MOUSE_BUTTON_LEFT; event.pressed = pressed; root.push_input(event)
+		var event := InputEventMouseButton.new(); event.position = position; event.button_index = MOUSE_BUTTON_LEFT; event.pressed = pressed; root.push_input(event, true)
 	for frame in 4: await process_frame
 func _capture(name: String) -> void:
 	var directory := OS.get_environment("DICE_AND_DESTINY_INTENT_SCREENSHOTS")

@@ -6,19 +6,26 @@ Open **Character Creation** beside **Start Battle** in battle setup. Choose
 Adventurer, Venom, Curse, or Blade Warden in the left rail. The initial selection
 matches battle setup; closing the viewer preserves the setup selections.
 
-- Health is the sum of decklist quantities, with total and unique card counts.
-- Abilities lists offense and defense separately. Click to inspect full rules,
-  qualification tiers, cost, usage limits, and saved-card destination.
-- Deck lists configured cards, quantities, costs, and summaries. Search the
-  current deck by name or rules. Click a card for its normal card preview and
-  full rules, play timing, and destination.
-- Dice shows configured types, quantities, and each face's number/symbol.
-- Opening hand, starting energy, hand limit, and round income remain visible.
+- The roster shows each character's portrait; the selected character stands in a
+  framed showcase below it.
+- The header shows stat tiles: health (the sum of decklist quantities, with total
+  and unique counts), available XP in Progression, starting energy and income,
+  and opening hand, hand limit and draw. Type chips show the card pools.
+- Abilities shows the board as Offense and Defense columns. Click to inspect full
+  rules, qualification tiers, cost, usage limits, and saved-card destination.
+- Deck rows show card art, an energy pip, the copy count and quick **+**/**−**
+  buttons. Search the current deck by name or rules. Click a card for its battle
+  card preview, copy controls, full rules, play-window chips and destination.
+  An energy curve beside the deck heading counts copies at 0, 1, 2 and 3+ energy.
+- Dice shows each die's faces as tiles, plus how often each symbol appears across
+  every equipped face.
+- The last three tabs carry a launch icon: they open full-screen workshops.
 - Back or Escape returns to setup. Reload definitions rereads the files without
   starting a battle or touching saved player data.
 
-The native `character_catalogs` request is read-only and does not initialize or
-replace a learned session, draw cards, create a battle, or write history/saves.
+The native `character_catalogs` request initializes or migrates owned loadout
+records as needed. It does not replace a learned session, draw cards, create a
+battle, or write battle history.
 Each character gets its own validated catalog with the same base/extension
 composition as battle assembly, avoiding cross-character symbol overrides.
 The screen uses the existing presentation helpers and card renderer, and restores
@@ -32,8 +39,10 @@ unchanged; the viewer endpoint has an explicit client-facing loadout envelope.
   searches and scroll positions, and share the inspector. **Swap sides** exchanges
   their positions without losing filters, scrolling, selection, or draft changes.
   Drag the middle divider to change their widths.
-- The deck pane shows equipped cards and quantities. Select a card and edit **Copies in
-  deck**, or use **Add a copy**. Zero removes it from the draft.
+- The deck pane shows equipped cards and quantities. Use a row's **+**/**−** to add or
+  remove one copy in place (in Progression these open the usual buy/sell review), or
+  select a card and edit **Copies in deck**, **−**, or **+ Add a copy**. Zero removes
+  it from the draft.
 - The library pane searches all cards in the selected character’s validated content
   catalog, including cards absent from its starter deck. The catalog is the same
   base/extension composition used by battle assembly; this is not a global library
@@ -49,8 +58,9 @@ unchanged; the viewer endpoint has an explicit client-facing loadout envelope.
   not XP costs. IDs, integer counts, duplicates, bounds, and catalog availability
   are checked by the Go authority. Invalid saves leave the last saved file intact.
 - Owned decks are versioned JSON under the launcher-isolated runtime directory
-  `user/character_loadouts/<character>.json`. Content YAML remains unchanged.
-  Corrupt/stale decks display an error and can be repaired by applying a valid deck.
+  `user/character_loadouts/progression/<character>.json`, shared by both editing
+  modes. Content YAML remains unchanged. Corrupt records display an error;
+  they are never silently overwritten or granted replacement XP.
 - Battle setup displays the saved health total. New battles and rematches read the
   saved deck for the human seat only, even in a same-character mirror matchup.
   Opening draws, card instances, and maximum health use that deck. Active battles
@@ -62,9 +72,10 @@ The Sandbox mode retains free deck editing. Dice remain inspection-only.
 ## Phase 3: XP purchases and upgrades (implemented)
 
 Choose **Progression · XP** at the top of Character Creation, or **Progression · XP
-purchases** in battle setup. Sandbox and Progression have independent loadouts.
-Progression begins with the character template plus any configured starter
-loadout overrides. It does not import a freely edited Sandbox deck.
+purchases** in battle setup. Both modes use one saved deck per character.
+Sandbox applies free deck edits; Progression buys, sells, and upgrades that same
+deck. Switching modes changes the editing controls, not the equipped cards.
+Both begin with the combatant template (Adventurer: two Brace and one Brace+).
 
 - Each character has an authoritative XP balance. The current development
   allowance is **100 XP**, granted once on initial progression creation. Reopening
@@ -84,9 +95,9 @@ loadout overrides. It does not import a freely edited Sandbox deck.
   purchase price. Starter cards and upgraded cards can both be sold; Brace+
   currently sells for 20 XP. Buying and selling use the same price configuration.
 - Starter cards represent an already invested card budget, in addition to the
-  initial XP allowance. A fresh Adventurer has **100 available XP + 120 XP in
-  starter cards = 220 XP**. The summary displays available XP, current deck value,
-  and their combined card budget. Selling all starter cards makes all 220 XP
+  initial XP allowance. A fresh Adventurer has **100 available XP + 130 XP in
+  starter cards = 230 XP**. The summary displays available XP, current deck value,
+  and their combined card budget. Selling all starter cards makes all 230 XP
   available; this does not grant extra XP or reset an existing balance.
 - An empty Progression deck can be saved while rebuilding. Battle setup disables
   Start Battle and explains that at least one card is required. The authority
@@ -105,8 +116,8 @@ loadout overrides. It does not import a freely edited Sandbox deck.
   Brace+ directly costs **20 XP**.
 - Upgrading an ability replaces its existing offensive/defensive slot. The first
   configured example is **Guard → Guard+ for 25 XP**. Progression Adventurer starts
-  with three base Braces and only base Guard so these upgrades can be tested.
-  Its Sandbox starter remains unchanged. Other characters can buy cards; they
+  with only base Guard so the ability upgrade can be tested. Card decks are
+  shared; the existing mode-specific ability boards remain separate. Other characters can buy cards; they
   show no further upgrade until paths are authored for their abilities/cards.
 - Upgraded abilities also offer **Downgrade → previous tier · +N XP**. This
   reverses a configured ability-upgrade edge, restores the previous ability in
@@ -133,11 +144,19 @@ loadout overrides. It does not import a freely edited Sandbox deck.
   transaction cannot spend or refund twice. XP, deck, ability board, and revision are stored in
   one atomic save. Errors never partially spend or equip an upgrade.
 - Progression saves live under `user/character_loadouts/progression/<character>.json`
-  in the launcher-isolated runtime root. The separate file includes XP, deck,
-  ability board, and revision. Existing Sandbox saves need no migration.
+  in the launcher-isolated runtime root. This is the canonical deck for both
+  modes and includes XP, ability board, and revision. Old separate saves migrate
+  once: the most recently saved deck wins when both exist. The retired unedited
+  Adventurer Progression starter is corrected to two Brace and one Brace+.
+  Customized decks, available XP, and purchased ability investment are preserved.
+  Legacy Sandbox files remain on disk as archives and cannot overwrite later edits.
 - New battles/rematches use the selected mode. Deck and ability-board overrides
   affect only the human participant and are recorded in replays. Existing battles
-  retain their starting loadout. Free Sandbox edits cannot fund Progression.
+  retain their starting loadout. Sandbox edits preserve available XP by adjusting
+  the deck allocation and total budget by the deck-value difference. These freely
+  added cards can subsequently be sold in Progression; Sandbox is a free editor.
+  Admin budget changes record the included free allocation so later reads cannot
+  credit it twice. Selling the entire shared deck blocks battle start in both modes.
 
 ### Admin economy controls
 
@@ -152,7 +171,7 @@ panel discards its edits.
 The invariant is **total budget = available XP + current deck value + upgrade
 investment**. Repricing cards preserves the total budget and changes available
 XP by the opposite amount. For example, setting Adventurer's budget to 260 and
-its three starter Braces to 12 XP yields 126 XP in the deck and 134 XP available.
+its two starter Braces to 12 XP yields 134 XP in the deck and 126 XP available.
 A price reduction releases XP; increasing a budget from 220 to 260 adds 40 XP.
 Ability upgrade spending remains invested. Card upgrade costs are at least the
 increase in card value, or the authored upgrade price if higher, so repricing
@@ -303,7 +322,7 @@ scrolling, inspection from either pane, live quantity updates in both lists,
 swapping without losing context, pointer dragging of the divider, and keeping
 both panes and the inspector inside the viewport at all three tested widths.
 
-Phase 3 native tests cover one-time grants for all characters, sandbox isolation,
+Phase 3 native tests cover one-time grants for all characters, shared-deck migration and mode switching,
 card and ability upgrades, atomic failures, stale prices/revisions, concurrent
 requests, configuration-only price changes, both human seats, complete battles,
 and replayed upgraded ability boards. `verify_xp_progression.gd` tests purchase
@@ -314,8 +333,8 @@ Sales tests cover selling every starter card for all four characters, empty-deck
 persistence, rebuilding and completing battles, configured upgraded-card prices,
 unowned-card rejection, stale quotes/revisions, and concurrent sale requests.
 `verify_xp_sales.gd` validates sale previews/cancellation, pointer sales and
-buybacks, the full 220 XP Adventurer budget, empty-deck menu restrictions,
-Sandbox/other-character isolation, reopening, three viewport sizes, and buying
+buybacks, the full 230 XP Adventurer budget, empty-deck menu restrictions,
+shared empty-deck restrictions and other-character isolation, reopening, three viewport sizes, and buying
 back a card before starting a real battle.
 
 `verify_transaction_preferences.gd` covers independent buy/sell opt-outs,
@@ -400,3 +419,139 @@ Second Guard's single reward resolution, General access and XP buy/sell round
 trips for all four characters, plus card-click/choice/cancel UI at 1280 and 1920
 pixels (`tests/presentation/verify_general_cards.gd`). The pack is separate from
 frozen training content so existing AI content hashes remain compatible.
+
+## Card Creation: configurable General cards
+
+**Card Creation** is a tab in the character creator and opens a full-width
+workspace. It edits or clones all 21 current General cards. Choose a template
+and **Edit template** or **Create a copy**. The latter supplies a new ID and name.
+Edit the Card, Effects & Choices, and Upgrades tabs, then **Validate and preview**
+and **Publish for future battles**. The right side renders a live battle card of the
+draft. Card fields are grouped into Identity (with an artwork picker), Cost &
+economy, Playing the card and Play windows; each effect is a numbered panel with its
+target and values in two-column forms. **Open in character deck** selects the published
+card in the existing deck editor, where Sandbox additions or Progression
+purchases use the usual save, XP, and copy-limit rules. The shared library exposes published cards in both
+Sandbox and Progression. Publishing does not equip a card automatically.
+
+The native authority returns a versioned capability registry. The form uses it
+for effect parameters and validation; generated rules use those same values.
+Ordered effects can be added, removed and reordered. Guided controls also
+cover nested named choices, additional option costs, dice conditions, target
+filters, and upgrade branches. Optional advanced JSON uses the same validator
+and is validated before replacing the form's draft. Live validation refreshes
+the rules preview without disconnecting the controls from the draft. Unpublished
+changes are guarded when closing, switching templates, or creating another copy. Publishing is atomic and rejects stale catalog revisions and
+changes that would invalidate an existing saved deck or exceed its XP budget.
+
+### Compatibility guidance
+
+The effect and target registries drive both authority validation and the form:
+
+- Only compatible effects and play windows are offered together. Nested options
+  participate in that compatibility calculation. Window changes caused by an
+  effect edit are reported visibly.
+- Owned-card movement cannot target enemy private piles or recover removed cards.
+  Defensive rerolls target only the current player's unfinished defensive dice.
+  Enemy offensive dice require the revealed offensive-reaction window.
+- A reroll of your own offensive dice cannot be restricted to before the first
+  roll. A qualified-ability filter likewise requires a roll. Exact self-character
+  targeting cannot ask for more than one character.
+- Sacrifice is locked to chosen, exact, owned-card targeting. Its sequence position
+  cannot be moved below a reward, and a second sacrifice cannot be added to the
+  same sequence. Nested option costs remain supported.
+- Drawn-this-play filters require an earlier draw for yourself, including draws
+  inherited by a nested option. Conditions expose only fields for their selected
+  requirement type; incompatible bounds are rejected.
+- The form shows target count only for exact/up-to selection, rounds only for
+  N-round durations, and on-hit status stacks only when a status is selected.
+  Die bounds, sell prices, and upgrade prices constrain related numeric inputs.
+- Every supported effect has a guided default. Empty effect sequences, missing
+  windows, duplicate names, stale revisions, invalid IDs/references, excessive
+  nesting and invalid saved-deck changes still fail authoritative publication.
+
+### Configurable values
+
+| Area | Supported values |
+| --- | --- |
+| Identity / presentation | ID, name, illustration path; generated summary and rules |
+| Costs / economy | Energy, buy XP, sell XP, copy limit 1–100, branching upgrade IDs and XP |
+| Play | Hand/deck/discard source piles; hand/deck/discard/removed play destination |
+| Timing | Offensive planning/reaction, defense selection/reaction, damage reaction; before/after first roll or unrestricted; per-round/per-battle uses (0 = unlimited) |
+| Targets | Self/enemy/any where eligible; one/exact N/up to N/all; chosen or random |
+| Draw / energy | Amount and recipients; ordinary draws never recycle discard |
+| Prevention | Amount or individually chosen threatened cards; original/discard/hand/deck/removed destination |
+| Movement / sacrifice | Source piles, destination, quantity; exclude recovery cards/definition IDs; cards drawn during this play |
+| Dice | Chosen allowed faces; configurable adjustment amounts and bounds/wrapping; opposite-face sum; copy another die; reroll with replace/higher/lower result; optionally spend one offensive roll attempt |
+| Status | Existing status ID, recipient, stacks; removal quantity and positive/negative/ID filters |
+| Ability preparation | Damage and/or an existing on-hit status; selected abilities; dice qualification conditions; stack cap and stack/replace/refresh policy |
+| Duration | Offensive exit, end of current round's damage, next qualifying use, N rounds including the current round, or battle end |
+| Composition | Ordered effects; named options with extra energy and their own ordered effects; conditions use the existing structured dice requirements |
+
+General templates: Antidote, Battle Focus, Brace, Brace+, Dispel, Disrupt,
+Emergency Ward, Loaded Die, Matchmaker, Nudge, Reclaim, Reinforce, Second Guard,
+Second Wind, Sharpen Blade, Strong Swing, Take Stock, Tip It, Triage, Try Again,
+and Turn the Die. Conversion follows their operation definitions; executing a
+program does not branch on the card's name or ID.
+
+### Rules and deliberate boundaries
+
+- Programs use version 1. An effect sequence has 1–32 steps, choices have 1–16
+  options, and nesting is limited to four levels. Amounts and target counts are
+  bounded. Unknown fields, effects, parameters and incompatible windows are
+  rejected instead of silently ignored. A genuinely new mechanic still needs
+  one engine capability; creating more cards from these capabilities does not.
+- Card-pile selection is restricted to owned live cards; enemy dice must be
+  revealed. Removed cards cannot be recovered. Movement never duplicates cards.
+- Sacrifice is an exact, chosen, unconditional cost at the start of a sequence,
+  with one sacrifice step per sequence. It excludes the played card. Selecting
+  targets does not pay a partial cost; after all targets are selected, removal
+  precedes rewards. Every removed card loses health and appears in wound history.
+  The played card itself may separately have `removed` as its play destination.
+- `original` means the live pile, not a previous reservation's pile. Explicit
+  `removed` destinations permanently remove saved cards: they avoid that attack's
+  removal but still lose health from the authored removal effect. Saved-card
+  feedback follows the live destination; already removed cards never return.
+- Ability bonuses have visible authoritative preparation statuses. Dispelling,
+  consuming or expiring stacks removes the corresponding bonus. Conditions on
+  an ability bonus are checked when the attack resolves. Other step conditions
+  are checked when the step is reached; a failed condition skips that step.
+- Exact targeting requires the full count; if a later effect cannot find that
+  many eligible targets, it has no effect. Up-to targeting can stop early.
+  Multi-die selections count dice, not alternative face choices for one die.
+- Sell prices cannot exceed buy prices. Upgrade XP is at least the increase in
+  deck value, preserving the existing shared XP-budget invariant. Existing Admin
+  price overrides take precedence over a Workshop buy price; Workshop sale
+  prices remain independently authored.
+- In battle, selecting an authored card opens its legal choices in the existing
+  scrolling action rail. The card remains highlighted in hand; no modal selector
+  is added. The authority rebuilds legal choices after each effect and rejects
+  stale input. Pending selections and ordered execution survive save/reload.
+- Definitions live in launcher-isolated
+  `user/character_loadouts/authored_cards.json`, with a revision. Existing battles
+  and replays retain their pinned definitions; future battles/rematches use the
+  published revision. Legacy definitions keep their original execution path
+  until explicitly revised in the Workshop.
+
+### Verification
+
+`card_program_test.go` covers ordered draw/selection, cancellation and stale
+commands, save/reload, sacrifice/health/wounds, multi-target dice, die edits,
+reroll policies, status effects, stack consumption, duration expiry, usage limits,
+and all five prevention destinations from all three live piles in both flows.
+`card_authoring_test.go` covers all General templates, publication/reload,
+revisions, catalog pinning, economy branches and copy limits, rejected saved-deck
+incompatibilities, and complete authored-deck battles against one and two minions.
+
+The compatibility matrix exercises 1,920 owner/count-mode/selection/window
+combinations, all 256 ordered effect pairs, enum choices, numeric boundaries,
+nested dependencies and incompatible configurations.
+
+Godot tests `verify_card_creation_guided.gd`, `verify_card_workshop.gd`, `verify_program_card_battle.gd`, and
+`verify_workshop_progression.gd` cover every template and effect form, disabled conflicts, nested choices and
+conditions, publication and deck handoff, real pointer card selection, renamed-card
+in-hand reroll animation, prices and upgrade branches. The battle test creates
+and equips its card through Card Creation and the character deck editor before
+starting the real native battle.
+Existing General-card, unified-defense and Progression checks remain regression
+coverage. Run every Godot test through the repository's `scripts/godot.sh`.

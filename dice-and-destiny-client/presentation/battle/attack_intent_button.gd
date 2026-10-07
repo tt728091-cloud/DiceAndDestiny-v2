@@ -1,7 +1,9 @@
-extends Button
+extends "res://presentation/battle/tooltip_button.gd"
 ## Shared, wrapped tooltip for both the overhead intent and its fighter target.
 ## Godot positions the popup within the viewport, including right-edge enemies.
 func _make_custom_tooltip(for_text: String) -> Object:
+	for_text = preload("res://presentation/battle/wrapped_tooltip.gd").content(for_text)
+	if for_text.is_empty(): return null
 	var panel := PanelContainer.new()
 	panel.name = "AttackAbilityTooltip"
 	panel.mouse_filter = Control.MOUSE_FILTER_IGNORE

@@ -6,25 +6,29 @@ func _run() -> void:
 	for frame in 8: await process_frame
 	screen.inspect_entry("cards", "brace")
 	for frame in 4: await process_frame
+	# Derive expectations from the starter deck rather than a fixed copy count.
+	var start: int = screen._card_count("brace")
+	var price: int = screen._card_price("brace")
+	var xp0 := int(screen.catalogs.adventurer.progression.xp)
 	_expect(screen._confirm_buy.button_pressed and screen._confirm_sell.button_pressed, "both confirmations default on")
 	await _click(_control(screen, "buy.brace"))
 	await _click(screen._skip_prompt)
 	await _click(screen._purchase_cancel)
-	_expect(screen._confirm_buy.button_pressed and screen._card_count("brace") == 3, "cancel changes neither preference nor deck")
+	_expect(screen._confirm_buy.button_pressed and screen._card_count("brace") == start, "cancel changes neither preference nor deck")
 	await _click(_control(screen, "buy.brace"))
 	_expect(not screen._skip_prompt.button_pressed, "cancelled checkbox is reset")
 	await _click(screen._skip_prompt)
 	await _capture(screen, "buy-do-not-show-again")
 	await _click(screen._purchase_confirm)
 	_expect(not screen._confirm_buy.button_pressed and screen._confirm_sell.button_pressed, "buy preference changes independently")
-	_expect(screen._card_count("brace") == 4 and int(screen.catalogs.adventurer.progression.xp) == 90, "confirmed buy happens once")
+	_expect(screen._card_count("brace") == start + 1 and int(screen.catalogs.adventurer.progression.xp) == xp0 - price, "confirmed buy happens once")
 	await _click(_control(screen, "buy.brace"))
-	_expect(not screen._purchase_overlay.visible and screen._card_count("brace") == 5 and int(screen.catalogs.adventurer.progression.xp) == 80, "subsequent buy immediately executes once")
+	_expect(not screen._purchase_overlay.visible and screen._card_count("brace") == start + 2 and int(screen.catalogs.adventurer.progression.xp) == xp0 - 2 * price, "subsequent buy immediately executes once")
 	await _click(_control(screen, "sell.brace"))
 	_expect(screen._purchase_overlay.visible, "sale still asks independently")
 	await _click(screen._skip_prompt); await _click(screen._purchase_confirm)
 	await _click(_control(screen, "sell.brace"))
-	_expect(not screen._purchase_overlay.visible and screen._card_count("brace") == 3 and int(screen.catalogs.adventurer.progression.xp) == 100, "subsequent sale immediately credits once")
+	_expect(not screen._purchase_overlay.visible and screen._card_count("brace") == start and int(screen.catalogs.adventurer.progression.xp) == xp0, "subsequent sale immediately credits once")
 	# A new screen reads preferences from disk, rather than shared static memory.
 	screen.queue_free(); await process_frame
 	screen = SCREEN.new(); screen.loadout_mode = "progression"; root.add_child(screen)
@@ -52,10 +56,11 @@ func _run() -> void:
 	await _click(screen._purchase_cancel)
 	await _click(screen._confirm_sell)
 	# Direct sales cannot sell a missing copy. Direct buys cannot overspend.
-	for copy in 3: await _click(_control(screen, "sell.brace"))
-	_expect(_control(screen, "sell.brace").disabled and int(screen.catalogs.adventurer.progression.xp) == 130, "selling stops at zero copies")
-	for copy in 13: await _click(_control(screen, "buy.brace"))
-	_expect(_control(screen, "buy.brace").disabled and int(screen.catalogs.adventurer.progression.xp) == 0, "buying stops at zero XP")
-	_expect(screen._card_count("brace") == 13, "direct repeated trades use fresh revisions")
+	for copy in start + 1: await _click(_control(screen, "sell.brace"))
+	var after_sales := xp0 + start * price
+	_expect(_control(screen, "sell.brace").disabled and int(screen.catalogs.adventurer.progression.xp) == after_sales, "selling stops at zero copies")
+	for copy in after_sales / price + 1: await _click(_control(screen, "buy.brace"))
+	_expect(_control(screen, "buy.brace").disabled and int(screen.catalogs.adventurer.progression.xp) == after_sales % price, "buying stops at zero XP")
+	_expect(screen._card_count("brace") == after_sales / price, "direct repeated trades use fresh revisions")
 	screen.queue_free(); await process_frame
 	print("TRANSACTION PREFERENCES: " + ("FAILED" if failed else "PASSED")); quit(1 if failed else 0)

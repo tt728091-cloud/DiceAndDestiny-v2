@@ -57,6 +57,22 @@ func (p *singleAbilityPolicy) Select(t mlsim.Transition) (int, time.Duration, er
 			}
 		}
 	}
+
+	// Finish a started configured card even after its first effect changes the
+	// ability modifiers. Choosing a target never silently cancels a paid play.
+	for i, action := range actions {
+		if action.Type != command.TypePlanningCards {
+			continue
+		}
+		var payload command.PlanningCardsPayload
+		if json.Unmarshal(action.Payload, &payload) != nil || len(payload.CardIDs) != 1 || own.CardInstances[payload.CardIDs[0]].DefinitionID != config.CardID {
+			continue
+		}
+		var choice map[string]any
+		if json.Unmarshal([]byte(payload.StatusID), &choice) == nil && choice["verb"] != "start" && choice["verb"] != "cancel" {
+			return i, 0, nil
+		}
+	}
 	// Complete the initial roll and both available rerolls before spending cards.
 	// An all-target roll stops early: rerolling a kept die would only hurt it.
 	for i, action := range actions {
@@ -108,7 +124,7 @@ func (p *singleAbilityPolicy) Select(t mlsim.Transition) (int, time.Duration, er
 	}
 	// A round modifier records the play even if the card is later removed by
 	// damage. Reopened planning cannot double-play or carry the bonus forward.
-	played := false
+	played := own.CardUses[fmt.Sprintf("%d:%s", t.Result.Snapshot.Round, config.CardID)] > 0
 	for _, modifier := range own.AbilityModifiers {
 		if modifier.ExpiresAfterRound == t.Result.Snapshot.Round {
 			played = true
@@ -123,7 +139,9 @@ func (p *singleAbilityPolicy) Select(t mlsim.Transition) (int, time.Duration, er
 			if err := json.Unmarshal(action.Payload, &payload); err != nil {
 				return 0, 0, err
 			}
-			if payload.AbilityID == attack && len(payload.CardIDs) == 1 && own.CardInstances[payload.CardIDs[0]].DefinitionID == config.CardID {
+			var choice map[string]any
+			_ = json.Unmarshal([]byte(payload.StatusID), &choice)
+			if (payload.AbilityID == attack || choice["verb"] == "start") && len(payload.CardIDs) == 1 && own.CardInstances[payload.CardIDs[0]].DefinitionID == config.CardID {
 				return i, 0, nil
 			}
 		}

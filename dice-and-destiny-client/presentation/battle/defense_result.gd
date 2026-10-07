@@ -22,7 +22,7 @@ var _prevention_progress: Array[float] = []
 func configure(result: Dictionary, start: int, compact: bool = false) -> void:
 	data = result; started_ms = start
 	size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	var style := StyleBoxFlat.new(); style.bg_color = Color("181815ed"); style.border_color = Color("a38b5c"); style.set_border_width_all(1); style.set_corner_radius_all(4)
+	var style := StyleBoxFlat.new(); style.bg_color = preload("res://presentation/battle/cinematic_theme.gd").DARK_SURFACE; style.border_color = Color("a38b5c"); style.set_border_width_all(1); style.set_corner_radius_all(4)
 	style.content_margin_left = 18; style.content_margin_right = 18; style.content_margin_top = 16; style.content_margin_bottom = 16
 	if data.get("stacked", false):
 		style.content_margin_top = 8; style.content_margin_bottom = 8
@@ -102,7 +102,7 @@ func _update() -> void:
 		die.rotation = sin(elapsed * 26 + index) * 0.045 if rolling else 0.0
 		die.tooltip_text = "Rolling…" if rolling else str(data.dice[index].benefit)
 		benefit_labels[index].modulate.a = 0.0 if rolling else 1.0 if data.get("effects_pending", false) else clampf(effects / 0.15, 0, 1)
-	var progress := 0.0 if rolling else clampf((effects - 0.2) / 0.45, 0, 1)
+	var progress := 0.0 if rolling or data.get("damage_pending", false) else clampf((effects - 0.2) / 0.45, 0, 1)
 	damage.text = str(roundi(lerpf(float(data.before), float(data.after), progress)))
 	damage.modulate.a = 1.0 - 0.6 * sin(progress * PI)
 	damage.add_theme_color_override("font_color", Color("ffd19a").lerp(Color("8fe1e6"), progress))
@@ -111,7 +111,7 @@ func _update() -> void:
 	_prevention_progress.clear()
 	var reduced := 0
 	for index in dice_controls.size():
-		var flight := 0.0 if rolling else clampf((effects - 0.2 - index * 0.45 / maxi(1, dice_controls.size())) / (0.45 / maxi(1, dice_controls.size())), 0.0, 1.0)
+		var flight := 0.0 if rolling or data.get("damage_pending", false) else clampf((effects - 0.2 - index * 0.45 / maxi(1, dice_controls.size())) / (0.45 / maxi(1, dice_controls.size())), 0.0, 1.0)
 		_prevention_progress.append(flight)
 		if flight >= 1.0: reduced += int(data.dice[index].get("prevention", 0))
 	if not dice_controls.is_empty(): damage.text = str(int(data.after) if progress >= 1.0 else maxi(int(data.after), int(data.before) - reduced))
@@ -123,14 +123,20 @@ func _update() -> void:
 		damage_settled.emit()
 
 
+func attack_damage_rect() -> Rect2:
+	return damage.get_global_rect()
+
+func _prevention_origin(index: int) -> Control:
+	return dice_controls[index]
+
 func _draw() -> void:
 	if not is_instance_valid(damage): return
 	var inverse := get_global_transform_with_canvas().affine_inverse()
 	for index in _prevention_progress.size():
 		var t := _prevention_progress[index]
 		if t <= 0.0 or t >= 1.0 or int(data.dice[index].get("prevention", 0)) <= 0: continue
-		var start: Vector2 = inverse * dice_controls[index].get_global_rect().get_center()
-		var end: Vector2 = inverse * damage.get_global_rect().get_center()
+		var start: Vector2 = inverse * _prevention_origin(index).get_global_rect().get_center()
+		var end: Vector2 = inverse * attack_damage_rect().get_center()
 		var points := PackedVector2Array()
 		for step in 20:
 			var p := lerpf(maxf(0.0, t - 0.4), t, float(step) / 19.0)

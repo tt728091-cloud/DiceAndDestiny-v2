@@ -4,6 +4,7 @@ const TOOLTIP_BUTTON := preload("res://presentation/battle/tooltip_button.gd")
 const SEGMENTS := [["ongoing_effects", "Effects"], ["income", "Income"], ["offensive", "Offensive"], ["defensive", "Defensive"], ["damage_resolution", "Damage"]]
 const INCOME_DURATION_SETTING := "dice_and_destiny/presentation/income_animation_seconds"
 const CURSE_NOTICE := preload("res://presentation/battle/curse_notice.gd")
+const CARD_ENERGY_NOTICE := preload("res://presentation/battle/card_energy_notice.gd")
 const CARD_GAIN_NOTICE := preload("res://presentation/battle/card_gain_notice.gd")
 const MODEL_TIMEOUT_MS := 2000
 const TRANSCRIPT_PANEL := preload("res://devtools/developer_authority_transcript_panel.gd")
@@ -28,12 +29,18 @@ var learned_human_seat := "seat-a"
 var learned_seed := 0
 
 var _focused_enemy := "goblin"
+var _pending_attack: Dictionary = {}
+var _enemy_dice_visible: Dictionary = {}
+var _player_dice_effect_until := 0
+const PLAYER_ZONE_TOP := 691.2
+const TOP_HUD_BOTTOM := 84.0
 var _enemy_buttons: Dictionary = {}
 var _defense_focus_key := ""
 var _defense_playback_source := ""
 var _view := BattleViewState.new()
 var _director := BattlePresentationDirector.new()
 const CINEMATIC := preload("res://presentation/battle/cinematic_theme.gd")
+var _gain_card_poses: Dictionary = {}
 var _hand_dock: Control
 var _ability_dock: VBoxContainer
 var _roll_dock: VBoxContainer
@@ -98,9 +105,14 @@ var _flow_transition: Control
 var _flow_state := ""
 var _flow_until := 0
 var _timed_buttons: Array[Dictionary] = []
-var _selection_morph: Dictionary = {}
 var _combat_columns: Dictionary = {}
 var _attack_intents: Dictionary = {}
+var _incoming_attack_list: ScrollContainer
+var _incoming_attack_rows: Dictionary = {}
+var _defense_choice_local := false
+var _incoming_scroll_offset := 0
+const DEFENSE_DICE_ORIGIN := Vector2(38, 716)
+const DEFENSE_LIST_TOP := 844.0
 var _damage_card_times: Dictionary = {}
 var _damage_grids: Array = []
 var _damage_stack_docks: Dictionary = {}
@@ -125,13 +137,15 @@ var _auto_pass_button: Button
 var _ability_upgrade_feedback: Dictionary = {}
 var _reaction_card_feedback: Dictionary = {}
 var _center_scroll: ScrollContainer
-var _action_footer: HBoxContainer
+var _action_footer: BoxContainer
 var _content_scroll_key := ""
 var _defense_animation_times: Dictionary = {}
 var _defense_shared_round := ""
 var _defense_shared_start := 0
 var _defense_shared_first_wave := ""
 var _defense_result_panels: Array = []
+var _defense_station_round := ""
+var _defense_station_sources: Dictionary = {}
 var _blind_progress := {}
 var _provoked_panel: VBoxContainer
 var _selected_attack_tiles: Dictionary = {}
@@ -172,6 +186,8 @@ var _held_defense_view: BattleViewState
 var _held_defense_director: BattlePresentationDirector
 var _defense_outcome_until := 0
 var _defense_outcome_start := 0
+var _defense_outcome_sources: Dictionary = {}
+var _defense_damage_feedbacks: Array[Dictionary] = []
 
 func _defense_has_deferred_curse() -> bool:
 	for selection in _view.defense_selections.values():
@@ -180,7 +196,7 @@ func _defense_has_deferred_curse() -> bool:
 	return false
 
 func _defense_before_finalization(result: Dictionary) -> BattleViewState:
-	if _held_defense_view != null or _history_review or _history_replay or _view.stage != "defense_reaction" or not _defense_has_deferred_curse(): return null
+	if _held_defense_view != null or _history_review or _history_replay or _view.stage != "defense_reaction" or (not _unified_defense() and not _defense_has_deferred_curse()): return null
 	var finalized := false
 	var snapshot: Dictionary = result.get("snapshot", {})
 	for selection in _view.defense_selections.values():
@@ -190,6 +206,12 @@ func _defense_before_finalization(result: Dictionary) -> BattleViewState:
 		for event in result.get("events", []):
 			if event.get("type") == "defense_selected" and event.get("data", {}).get("source_id") == source_id: finalized = true
 	if not finalized: return null
+	_defense_outcome_sources.clear()
+	_defense_damage_feedbacks.clear()
+	for event in result.get("events", []):
+		var data: Dictionary = event.get("data", {})
+		if event.get("type") == "damage_prevented_or_modified" and data.has("ability_id"):
+			_defense_outcome_sources[str(data.get("source_id", ""))] = data.duplicate(true)
 	var copy := BattleViewState.new()
 	for property in _view.get_property_list():
 		if int(property.usage) & PROPERTY_USAGE_SCRIPT_VARIABLE:
@@ -202,6 +224,10 @@ func _present_finalized_defense(previous: BattleViewState) -> void:
 	_held_defense_view = _view
 	_held_defense_director = _director
 	_view = previous
+	# Release the authoritative reservations on the held Defense board. Keep
+	# health and next-round piles hidden until its prevention feedback finishes.
+	if not _defense_outcome_sources.is_empty() and _held_defense_view.settled_damage.get("id") == _view.settled_damage.get("id"):
+		_view.settled_damage = _held_defense_view.settled_damage.duplicate(true)
 	# Health, piles and subsequent phase events remain in the saved authority
 	# view. Apply only this defense's public marks to the presentation copy;
 	# a single authority command can also contain later offensive Curse marks.
@@ -226,16 +252,29 @@ func _present_finalized_defense(previous: BattleViewState) -> void:
 		effects_start = maxi(effects_start, int(panel.data.get("roll_started_ms", panel.started_ms)) + ceili(DEFENSE_TIMING.roll_seconds() * 1000.0))
 	_defense_outcome_start = effects_start - ceili(DEFENSE_TIMING.roll_seconds() * 1000.0)
 	_defense_outcome_until = effects_start + ceili((DEFENSE_TIMING.effects_seconds() + DEFENSE_TIMING.hold_seconds()) * 1000.0)
+	if not _defense_damage_feedbacks.is_empty():
+		var feedback_scale := DEFENSE_TIMING.effects_seconds() * 0.45 / 0.8
+		var feedback_duration := DEFENSE_TIMING.effects_seconds() * 0.2 + feedback_scale * 2.5
+		_defense_outcome_until = maxi(_defense_outcome_until, effects_start + ceili(feedback_duration * 1000))
+	for feedback in _defense_damage_feedbacks:
+		feedback.started_ms = effects_start
+		feedback["defense_timing"] = true
+	_reaction_card_feedback["expires_ms"] = _defense_outcome_until
+
 
 func _finish_defense_outcome() -> void:
 	_view = _held_defense_view; _director = _held_defense_director
 	_held_defense_view = null; _held_defense_director = null
+	_defense_outcome_sources.clear(); _defense_damage_feedbacks.clear()
 	_render()
 	call_deferred("_schedule_model_if_needed", {"learned_policy": _view.learned_policy})
 
 var _queued_defense: Dictionary = {}
 
 func _process(_delta: float) -> void:
+	if _player_dice_effect_until > 0 and Time.get_ticks_msec() >= _player_dice_effect_until:
+		_player_dice_effect_until = 0
+		_layout_left_controls()
 	if _held_defense_view != null:
 		if Time.get_ticks_msec() >= _defense_outcome_until and not _card_gain_active() and not _snapshot_panel_open: _finish_defense_outcome()
 		return
@@ -246,7 +285,7 @@ func _process(_delta: float) -> void:
 	for item in _timed_buttons:
 		if is_instance_valid(item.button) and Time.get_ticks_msec() >= int(item.until):
 			item.button.disabled = _submitting or _model_thinking or _history_review or _director.has_beats()
-	if Time.get_ticks_msec() < _flow_until or not _selection_morph.is_empty(): return
+	if Time.get_ticks_msec() < _flow_until: return
 	if not _model_thinking and not _director.has_beats() and bool(_view.learned_policy.get("model_turn", false)):
 		_schedule_model_if_needed({"learned_policy": _view.learned_policy})
 	if _model_thread == null or not _model_thread.is_started():
@@ -280,7 +319,7 @@ func _process(_delta: float) -> void:
 	_apply_model_result(result)
 
 func _auto_pass_if_only_action() -> void:
-	if Time.get_ticks_msec() < _flow_until or not _selection_morph.is_empty(): return
+	if Time.get_ticks_msec() < _flow_until: return
 	if _provoked_toxin_reaction() and is_instance_valid(_provoked_panel) and not _provoked_panel.ready_to_continue(): return
 	var action := _sole_pass_action()
 	if action.is_empty():
@@ -338,7 +377,7 @@ func _sole_pass_action() -> Dictionary:
 	if _view.stage == "defense_selection" and not _unified_defense(): return {}
 	if _selected_card.get("source_targeting", false) or _selected_card.get("die_targeting", false): return {}
 	if _card_gain_active(): return {}
-	if _auto_pass_disabled and not _provoked_toxin_reaction() and not _inline_status_application() and not _pass_hands_off_priority() and _view.stage != "offensive_reaction": return {}
+	if _auto_pass_disabled and not _automatic_defense_completion() and not _provoked_toxin_reaction() and not _inline_status_application() and not _pass_hands_off_priority() and _view.stage != "offensive_reaction": return {}
 	if _reaction_feedback_active(): return {}
 	if _submitting or _model_thinking or _model_error or not _error_message.is_empty(): return {}
 	if _history_review or _history_replay or _snapshot_panel_open or not _history_pending_divergence.is_empty(): return {}
@@ -346,10 +385,11 @@ func _sole_pass_action() -> Dictionary:
 	# Allowed command categories are too broad: a reaction may allow cards even
 	# when none can actually be played. Use the authority's concrete legal list.
 	var candidates := _view.legal_actions
-	# Applying a finished roll returns to the same Defense hub. The separate
-	# Pass button ends all remaining choices, so never auto-click that here.
-	if _unified_defense() and _view.stage == "defense_reaction":
-		candidates = candidates.filter(func(item): return item.get("type") != "pass")
+	# Completing the dice playback returns to the Defense hub, where cards and
+	# other defenses remain available. It never submits the main Pass. Reaction
+	# cards remain usable during review; an active card target pauses completion.
+	if _automatic_defense_completion():
+		candidates = candidates.filter(func(item): return item.get("type") == "planning_pass")
 	if candidates.size() != 1: return {}
 	var action: Dictionary = candidates[0]
 	var command_type := str(action.get("type", ""))
@@ -360,11 +400,14 @@ func _sole_pass_action() -> Dictionary:
 	if input_id.is_empty() or str(action.get("payload", {}).get("pending_input_id", "")) != input_id: return {}
 	return action
 
+func _automatic_defense_completion() -> bool:
+	return _unified_defense() and _view.stage == "defense_reaction"
+
 func _set_auto_pass_disabled(disabled: bool) -> void:
 	_auto_pass_disabled = disabled
 	_defense_reviewed_result = ""
 	# Cancel even an already-highlighted automatic click. Re-enabling starts a
-	# fresh review period; manual acknowledgement is always available.
+	# fresh review period. Finishing a unified defense roll remains automatic.
 	_reset_auto_pass_preview()
 
 func _set_keep_hand_visible(enabled: bool) -> void:
@@ -411,7 +454,7 @@ func _schedule_model_if_needed(result: Dictionary) -> void:
 	if _selected_card.get("die_targeting", false): return
 	if _player_roll_active(): return
 	if _card_gain_active(): return
-	if Time.get_ticks_msec() < _flow_until or not _selection_morph.is_empty() or _director.has_beats(): return
+	if Time.get_ticks_msec() < _flow_until or _director.has_beats(): return
 	if _view.stage == "defense_reaction" and not _defense_result_panels.is_empty():
 		for panel in _defense_result_panels:
 			if Time.get_ticks_msec() - panel.started_ms < (DEFENSE_TIMING.roll_seconds() if _defense_has_deferred_curse() else DEFENSE_TIMING.total_seconds()) * 1000.0: return
@@ -448,6 +491,7 @@ func _apply_model_result(result: Dictionary) -> void:
 		_show_error(str(result.get("error", "The learned policy could not choose an action.")), result)
 		_render()
 		return
+	_capture_gain_card_poses()
 	var defense_before := _defense_before_finalization(result)
 	var previous_actors := _view.actors
 	var previous_damage := _view.settled_damage.duplicate(true)
@@ -457,7 +501,7 @@ func _apply_model_result(result: Dictionary) -> void:
 		_render()
 		return
 	_capture_ability_upgrades(previous_actors)
-	_capture_damage_feedback(result, previous_damage)
+	_capture_damage_feedback(result, previous_damage, defense_before != null)
 	_capture_offensive_reaction_notice(result)
 	_clear_reaction_notice_for_new_round()
 	_error_message = ""
@@ -472,6 +516,8 @@ func _apply_model_result(result: Dictionary) -> void:
 	call_deferred("_schedule_model_if_needed", result)
 
 func _render(force: bool = false) -> void:
+	_sync_program_card_selection()
+	if not _pending_attack.is_empty() and _offensive_target_actions().is_empty(): _pending_attack.clear()
 	_sync_enemy_focus()
 	# Roll commands are authority work, not a separate visual beat. Keep the
 	# selected board for this handoff; both rolls animate in the result panels.
@@ -490,13 +536,14 @@ func _render(force: bool = false) -> void:
 			_provoked_panel.reparent(self); _provoked_panel.hide()
 		else:
 			_provoked_panel.queue_free(); _provoked_panel = null
-	var flow_state := "%s:%d:%s:%s:%s:%s" % [_view.battle_id, _view.round_number, _view.stage, _director.peek().get("type", ""), _selection_morph.get("ability_id", ""), _director.peek().get("event", {}).get("sequence", _view.settled_damage.get("id", "") if _continuous_damage_response() else "")]
+	var flow_state := "%s:%d:%s:%s:%s" % [_view.battle_id, _view.round_number, _view.stage, _director.peek().get("type", ""), _director.peek().get("event", {}).get("sequence", _view.settled_damage.get("id", "") if _continuous_damage_response() else "")]
 	var animate_flow := is_instance_valid(_root) and flow_state != _flow_state and not _history_review and not _history_replay
 	_combat_lane_layouts.clear()
 	if flow_state == _flow_state:
 		for actor_id in _combat_columns:
 			var body: Control = _combat_columns[actor_id]
 			if is_instance_valid(body): _combat_lane_layouts[actor_id] = {"size": body.get_parent().size, "scale": body.scale}
+	_incoming_scroll_offset = _incoming_attack_list.scroll_vertical if is_instance_valid(_incoming_attack_list) and flow_state == _flow_state else 0
 	_flow_state = flow_state
 	if not is_instance_valid(_flow_transition):
 		_flow_transition = preload("res://presentation/battle/combat_transition.gd").new(); add_child(_flow_transition)
@@ -507,6 +554,7 @@ func _render(force: bool = false) -> void:
 	_timed_buttons.clear()
 	_combat_columns.clear()
 	_attack_intents.clear()
+	_incoming_attack_rows.clear(); _incoming_attack_list = null
 	_damage_grids.clear()
 	_damage_stack_docks.clear()
 	_selected_attack_tiles.clear()
@@ -531,27 +579,31 @@ func _render(force: bool = false) -> void:
 	var scenery := SCENERY.new(); scenery.name = "BattleScenery"
 	_root.add_child(scenery); scenery.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	scenery.display(_battlefield_visual(), _view.actors)
-	_player_profile_dock = _profile_dock("PlayerProfile", 330)
+	_battle_frame("PlayerControlsFrame", Rect2(24, 704, 418, 360))
+	_player_profile_dock = _profile_dock("PlayerProfile", 368)
+	_player_profile_dock.position.x = 1514
+	_player_profile_dock.fixed_bottom = 1060
 	_enemy_profile_dock = _profile_dock("EnemyProfile", _enemy_hud_width())
 	_player_dice_dock = Control.new(); _player_dice_dock.name = "PlayerDice"; _root.add_child(_player_dice_dock)
 	_place_cinematic(_player_dice_dock, Rect2(36, 245, BattleDiceTray.HUD_ROW_WIDTH, 60))
 
 	_ability_dock = _cinematic_scroll_box("AbilityRail", Rect2(28, 448, 390, 370))
 	_hand_dock = preload("res://presentation/cards/fanned_hand.gd").new(); _hand_dock.name = "HandDock"
-	_root.add_child(_hand_dock); _place_cinematic(_hand_dock, Rect2(475, 790, 965, 290))
+	_root.add_child(_hand_dock); _place_cinematic(_hand_dock, Rect2(460, 782, 1020, 298))
 	_hand_dock.reveal = hand_reveal
 	_hand_dock.keep_visible = _keep_hand_visible
 	_roll_dock = _cinematic_box("RollControls", Rect2(36, 358, 102, 42))
 	var footer := _cinematic_box("BattleActionFooter", Rect2(146, 358, 54, 42))
-	_action_footer = HBoxContainer.new(); _action_footer.alignment = BoxContainer.ALIGNMENT_CENTER; footer.add_child(_action_footer)
+	_action_footer = VBoxContainer.new() if _view.segment == "defensive" else HBoxContainer.new(); _action_footer.alignment = BoxContainer.ALIGNMENT_CENTER; footer.add_child(_action_footer)
 	_center_scroll = ScrollContainer.new(); _center_scroll.name = "BattleContentScroll"; _root.add_child(_center_scroll)
-	# Results scroll above the fighter HUDs instead of covering their anchors.
+	# Ordinary battle content shares the battlefield; completion is raised separately.
 	_place_cinematic(_center_scroll, Rect2(570, 165, 920, 320))
 	_center_scroll.follow_focus = true
+	_center_scroll.mouse_filter = Control.MOUSE_FILTER_IGNORE
 
-	_center = VBoxContainer.new(); _center.size_flags_horizontal = Control.SIZE_EXPAND_FILL; _center.size_flags_vertical = Control.SIZE_EXPAND_FILL; _center.add_theme_constant_override("separation", 10); _center_scroll.add_child(_center)
+	_center = VBoxContainer.new(); _center.mouse_filter = Control.MOUSE_FILTER_IGNORE; _center.size_flags_horizontal = Control.SIZE_EXPAND_FILL; _center.size_flags_vertical = Control.SIZE_EXPAND_FILL; _center.add_theme_constant_override("separation", 10); _center_scroll.add_child(_center)
 	_build_cinematic_utilities()
-	var header := _cinematic_box("PhaseRail", Rect2(570, 18, 780, 130))
+	var header := _cinematic_box("PhaseRail", Rect2(570, 18, 780, 52))
 	_build_header(header)
 	_sync_entomb_visuals()
 	_build_player_column(null)
@@ -561,9 +613,16 @@ func _render(force: bool = false) -> void:
 	_build_enemy_column(null)
 	_build_other_enemy_profiles()
 	_attach_actor_profiles(scenery)
+	# Model results can rebuild the board after the presenters have processed
+	# for this frame. Resolve their new anchors before capture/fade or drawing.
+	for panel in _attack_intents.values(): panel._update()
 	_build_enemy_selector(scenery)
 	_show_pending_damage_statuses()
 	_build_mark_targeting()
+	_build_incoming_attack_list()
+	# Feedback needs every recipient profile and source-card heading attached.
+	_build_damage_feedback()
+	_build_program_choices()
 	if _director.peek().get("type") == "effects_resolved" and is_instance_valid(_effects_panel):
 		_effects_panel.present_progress()
 	_ability_dock.minimum_size_changed.connect(_layout_left_controls, CONNECT_DEFERRED)
@@ -578,6 +637,10 @@ func _render(force: bool = false) -> void:
 		_build_ability_row("ENEMY ABILITIES", _as_array(_view.actor(_focused_enemy).get("offensive_abilities", [])), _focused_enemy)
 	_build_ability_row("ENEMY DEFENSES", _as_array(_view.actor(_focused_enemy).get("defensive_abilities", [])), _focused_enemy)
 	if _history_tools_enabled(): _build_history_bar(_utility_contents.history)
+	# Godot GUI picking follows tree order, independently of CanvasItem z_index.
+	# Put completion after all fighter controls for both input and drawing.
+	if _center_scroll.has_meta("completion_overlay"):
+		_root.move_child(_center_scroll, -1)
 	for key in _utility_panels: _root.move_child(_utility_panels[key], _root.get_child_count() - 1)
 	var card_updates := {}
 	for update in _director.take_status_updates():
@@ -592,14 +655,22 @@ func _render(force: bool = false) -> void:
 		add_child(notice)
 	for key in card_updates:
 		var changes: Array[Dictionary] = []; changes.assign(card_updates[key])
-		var notice := CARD_GAIN_NOTICE.new(); notice.configure(self, changes); add_child(notice)
+		var notice := CARD_GAIN_NOTICE.new(); notice.configure(self, changes, _gain_card_poses); add_child(notice)
 	for feedback in _director.take_curse_updates():
 		if _history_review or _history_replay: continue
-		var notice := CURSE_NOTICE.new(); notice.configure(self, feedback); add_child(notice)
+		var notice := CURSE_NOTICE.new(); notice.configure(self, feedback, _gain_card_poses); add_child(notice)
+	_gain_card_poses.clear()
+	for change in _director.take_card_energy_updates():
+		if _history_review or _history_replay: continue
+		for old in get_children():
+			if old.get_script() == CARD_ENERGY_NOTICE and old.data.target_actor_id == change.target_actor_id: old.finish()
+		var notice := CARD_ENERGY_NOTICE.new(); notice.configure(self, change); add_child(notice)
 	# Apply surviving notices to newly built profiles before the first frame.
 	for notice in get_children():
 		if notice.get_script() in [preload("res://presentation/battle/status_change_notice.gd"), CARD_GAIN_NOTICE, CURSE_NOTICE]:
 			notice.refresh()
+	for notice in get_children():
+		if notice.get_script() == CARD_ENERGY_NOTICE and not notice.is_queued_for_deletion(): notice.refresh()
 	if not _defense_result_panels.is_empty(): call_deferred("_start_defense_status_flights", _income_animation_generation)
 	for control in [_hand_dock, _player_dice_dock, _enemy_dice_dock, _roll_dock, _action_footer.get_parent()]:
 		if control.get_child_count() > 0: control.set_meta("flow_key", str(control.name))
@@ -615,6 +686,7 @@ func _render(force: bool = false) -> void:
 		for control in _root.find_children("*", "BaseButton", true, false):
 			if not control.get_meta("battle_utility", false): control.disabled = true
 
+	_player_profile_dock._process(0)
 	if not _open_pile.is_empty(): _build_pile_browser()
 
 func _show_pile(zone: String) -> void:
@@ -683,12 +755,11 @@ func _lock_button_until(button: Button, deadline: int) -> void:
 	_timed_buttons.append({"button": button, "until": deadline})
 
 func _central_combat() -> bool:
-	if not _selection_morph.is_empty(): return false
 	return (_view.segment in ["defensive", "damage_resolution"] and not _director.has_beats()) or _director.peek().get("type") in ["combat_damage", "attack_curse"]
 
 func _combat_sides() -> Dictionary:
 	if not _combat_columns.is_empty(): return _combat_columns
-	var lanes := HBoxContainer.new(); lanes.name = "CombatLanes"; lanes.size_flags_vertical = Control.SIZE_EXPAND_FILL; lanes.add_theme_constant_override("separation", 24); _center.add_child(lanes)
+	var lanes := HBoxContainer.new(); lanes.name = "CombatLanes"; lanes.mouse_filter = Control.MOUSE_FILTER_IGNORE; lanes.size_flags_vertical = Control.SIZE_EXPAND_FILL; lanes.add_theme_constant_override("separation", 24); _center.add_child(lanes)
 	for target in ["blade", _focused_enemy]:
 		var lane := preload("res://presentation/battle/combat_lane.gd").new(); lane.name = "Incoming_" + target; lanes.add_child(lane); _combat_columns[target] = lane.body
 		if _combat_lane_layouts.has(target): lane.restore_layout(_combat_lane_layouts[target])
@@ -699,7 +770,8 @@ func _combat_sides() -> Dictionary:
 func _source_flow(panel: Control, source: Dictionary) -> void:
 	panel.attach_to_battlefield(self, source)
 	panel.attack_origin.set_meta("flow_key", "source:" + str(source.get("id", "")))
-	panel.attack_origin.set_meta("flow_origin", "ability:%s:%s" % [source.get("source_actor_id", ""), source.get("source_content_id", "")])
+	if str(source.get("source_actor_id", "")) != viewer_actor_id:
+		panel.attack_origin.set_meta("flow_origin", "ability:%s:%s" % [source.get("source_actor_id", ""), source.get("source_content_id", "")])
 	if not _source_card_actions(str(source.get("id", ""))).is_empty():
 		var target: Button = panel.highlight_card_target("Play %s against %s · %s" % [BattlePresentationCatalog.card(str(_selected_card.definition_id)).name, _actor_display_name(str(source.source_actor_id)), BattlePresentationCatalog.ability(str(source.source_content_id)).name])
 		target.pressed.connect(_play_source_card.bind(str(source.id)))
@@ -717,54 +789,148 @@ func _layout_cinematic_root() -> void:
 
 func _layout_left_controls() -> void:
 	if not is_instance_valid(_player_profile_dock) or not is_instance_valid(_ability_dock): return
-	# Grow the ability list upwards from the bottom edge. Dice and actions
-	# follow its live height rather than a fixed screen coordinate.
+	# Fixed player stations: content can scroll, but never displace the dice,
+	# action buttons, or cross the 64/36 battlefield boundary.
 	var rail := _ability_dock.get_parent() as ScrollContainer
-	var beside_attack := not str(_ability_dock.get_meta("defense_source", "")).is_empty()
-	var rail_height := 0.0 if beside_attack else clampf(_ability_dock.get_combined_minimum_size().y, 48, 620)
-	rail.position.y = 1055 - rail_height; rail.size.y = rail_height
+	_place_cinematic(_roll_dock, Rect2(350, 716, 78, 28))
+	_action_footer.get_parent().position = Vector2(374, 716) if _view.segment == "defensive" else Vector2(350, 748)
+	_action_footer.get_parent().size = Vector2(54, 42) if _view.segment == "defensive" else Vector2(78, 28)
+	_player_dice_dock.position = Vector2(38, DEFENSE_LIST_TOP) if _view.segment == "defensive" else Vector2(38, 716)
 	var dice_height := maxf(60, _player_dice_dock.get_combined_minimum_size().y)
-	var dice_y := rail.position.y - dice_height - 14
-	var actions_y := dice_y - 52
-	_roll_dock.position.y = actions_y; _action_footer.get_parent().position.y = actions_y
 	_player_dice_dock.size.y = dice_height
-	_player_dice_dock.position.y = dice_y
-	if beside_attack: _layout_defense_choices()
+	_player_dice_dock.visible = _view.segment in ["offensive", "income"] or _selected_card.get("die_targeting", false) or not _board_curse_actions().is_empty() or Time.get_ticks_msec() < _player_dice_effect_until
+	var rail_top := minf(970, 724 + (dice_height if _player_dice_dock.visible else 60))
+	if _selected_card_selector() == "one_owned_offensive_ability": rail_top += 48
+	if rail.get_parent() == _root: _place_cinematic(rail, Rect2(32, rail_top, 402, 1055 - rail_top))
+	if _selected_card_selector() == "one_owned_offensive_ability" or _selected_card.get("program_targeting", false):
+		_roll_dock.hide(); _action_footer.get_parent().hide()
+	_layout_incoming_attack_list()
+	if not str(_ability_dock.get_meta("defense_source", "")).is_empty(): _layout_defense_choices()
 	for button in _action_footer.get_children():
 		if button is Button: _compact_action_button(button)
-	# Enemy dice belong to their fighter HUDs. Utility panels keep their own
-	# side rail, independent of the moving dice and status rows.
+	if _view.segment == "defensive":
+		for button in _action_footer.get_children():
+			if button is Button and button.has_node("CompactCaption") and button.get_node("CompactCaption").text == "Pass":
+				_action_footer.move_child(button, 0); break
 	if _utility_panels.has("log"):
 		_place_cinematic(_utility_panels.log, Rect2(1510, 245, 380, 740))
 
-# The existing defense tiles/actions move as a unit; only their position changes.
-# Resolve the source's live intent every frame so moving actors, resizing, and
-# selecting another attack never leave the choices tied to stale coordinates.
 func _layout_defense_choices() -> void:
 	if not is_instance_valid(_ability_dock): return
-	var source_id := str(_ability_dock.get_meta("defense_source", ""))
-	var attack: Control = _attack_intents.get(source_id)
-	if source_id.is_empty() or not is_instance_valid(attack) or not is_instance_valid(attack.intent): return
+	var selected: Control = _attack_intents.get(str(_ability_dock.get_meta("defense_source", "")))
+	if not is_instance_valid(selected) or not is_instance_valid(selected.intent): return
 	var rail := _ability_dock.get_parent() as ScrollContainer
+	rail.visible = _open_utility.is_empty()
+	if not rail.has_theme_stylebox_override("panel"):
+		rail.add_theme_stylebox_override("panel", CINEMATIC.bone_panel(Color.WHITE, 10))
+	if _defense_choice_local and is_instance_valid(_incoming_attack_list):
+		var row: Control = _incoming_attack_rows.get(str(selected.data.source_id))
+		if not is_instance_valid(row): return
+		var inverse := _root.get_global_transform_with_canvas().affine_inverse()
+		var extent := Vector2(422, clampf(_ability_dock.get_combined_minimum_size().y + 20, 56, 339))
+		var row_rect: Rect2 = inverse * row.get_global_rect()
+		_place_cinematic(rail, Rect2(454, clampf(row_rect.position.y, 716, 1055 - extent.y), extent.x, extent.y))
+		# The separate popup must receive pointer input above the fanned hand.
+		if rail.get_index() < _incoming_attack_list.get_index(): _root.move_child(rail, _incoming_attack_list.get_index())
+		rail.z_index = 10
+		return
 	var inverse := _root.get_global_transform_with_canvas().affine_inverse()
-	var target: Rect2 = inverse * attack.intent.get_global_rect()
-	var height := minf(_ability_dock.get_combined_minimum_size().y, 620)
-	var bounds := Rect2(Vector2(maxf(16, target.position.x - 390 - 14), target.position.y), Vector2(390, height))
-	# Keep neighboring attack buttons selectable in crowded encounters. If the
-	# left-hand space contains another intent, place the choices just below it.
-	for other in _attack_intents.values():
-		if not is_instance_valid(other.intent): continue
-		var obstacle: Rect2 = inverse * other.intent.get_global_rect()
-		if bounds.intersects(obstacle.grow(6)):
-			bounds.position.y = obstacle.end.y + 12
-	bounds.position.y = clampf(bounds.position.y, 16, 1064 - height)
-	rail.z_index = 20
-	# Godot GUI hit-testing follows sibling order, independently of z_index.
-	# Keep these controls above the fighter hit targets as well as visually.
-	if rail.get_index() != _root.get_child_count() - 1: _root.move_child(rail, _root.get_child_count() - 1)
-	for utility in _utility_panels.values():
-		if is_instance_valid(utility) and utility.visible: _root.move_child(utility, _root.get_child_count() - 1)
-	_place_cinematic(rail, bounds)
+	var attack: Rect2 = inverse * selected.intent.get_global_rect()
+	var area := Rect2(16, TOP_HUD_BOTTOM, 1888, PLAYER_ZONE_TOP - TOP_HUD_BOTTOM - 16)
+	var extent := Vector2(422, clampf(_ability_dock.get_combined_minimum_size().y + 20, 56, 260))
+	var obstacles: Array[Rect2] = []
+	var last_target_index := rail.get_index()
+	for presenter in _attack_intents.values():
+		if is_instance_valid(presenter.intent) and presenter.intent.visible:
+			obstacles.append((inverse * presenter.intent.get_global_rect()).grow(8))
+			last_target_index = maxi(last_target_index, presenter.intent.get_index())
+		if is_instance_valid(presenter.fighter_target):
+			last_target_index = maxi(last_target_index, presenter.fighter_target.get_index())
+	# GUI sibling order matters independently of drawing: fighter hit areas
+	# must never intercept clicks on an adjacent defensive option.
+	if rail.get_index() < last_target_index: _root.move_child(rail, last_target_index)
+	var candidates: Array[Vector2] = [
+		Vector2(attack.position.x - extent.x - 12, attack.position.y),
+		Vector2(attack.end.x + 12, attack.position.y),
+		Vector2(attack.get_center().x - extent.x / 2, attack.end.y + 12),
+		Vector2(attack.get_center().x - extent.x / 2, attack.position.y - extent.y - 12),
+	]
+	# Crowded lanes or multiple attacks can occupy either side. Try rows
+	# directly below their buttons, retaining the exact selected source.
+	for obstacle in obstacles:
+		candidates.append(Vector2(attack.get_center().x - extent.x / 2, obstacle.end.y + 4))
+	candidates.append(Vector2(attack.get_center().x - extent.x / 2, area.end.y - extent.y))
+	for point in candidates:
+		var placement := Rect2(Vector2(clampf(point.x, area.position.x, area.end.x - extent.x), clampf(point.y, area.position.y, area.end.y - extent.y)), extent)
+		if obstacles.any(func(obstacle: Rect2): return placement.intersects(obstacle)): continue
+		_place_cinematic(rail, placement)
+		return
+
+func _build_incoming_attack_list() -> void:
+	if _view.segment != "defensive" or _view.is_complete(): return
+	var body := _cinematic_scroll_box("IncomingAttacks", Rect2(32, 768, 402, 287))
+	_incoming_attack_list = body.get_parent()
+	_incoming_attack_list.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	body.add_theme_constant_override("separation", 6)
+	var title := Label.new(); title.text = "INCOMING ATTACKS"; title.add_theme_font_size_override("font_size", 15)
+	title.add_theme_color_override("font_color", Color("e7c378")); body.add_child(title)
+	var focus_row: Control
+	var active := str(_view.defense_selections.get(viewer_actor_id, {}).get("source_id", ""))
+	for id in _attack_intents:
+		var presenter: Control = _attack_intents[id]
+		if str(presenter.data.actor_id) != viewer_actor_id: continue
+		var group := VBoxContainer.new(); group.add_theme_constant_override("separation", 4); body.add_child(group)
+		var row := preload("res://presentation/battle/incoming_attack_row.gd").new()
+		group.add_child(row); row.configure(presenter)
+		_incoming_attack_rows[id] = row; presenter.incoming_row = row
+		row.set_meta("source_order", _incoming_attack_rows.size())
+		if id == active and row.defense_rank() < 2: focus_row = row
+	if _incoming_attack_rows.is_empty():
+		var empty := Label.new(); empty.text = "No incoming attacks"; empty.add_theme_font_size_override("font_size", 18); body.add_child(empty)
+	_layout_incoming_attack_list()
+	_sort_incoming_attacks(false)
+	_restore_incoming_scroll.call_deferred(focus_row)
+
+func _restore_incoming_scroll(focus_row: Control) -> void:
+	var list := _incoming_attack_list
+	await get_tree().process_frame
+	if not is_instance_valid(list) or list != _incoming_attack_list: return
+	list.scroll_vertical = _incoming_scroll_offset
+	if is_instance_valid(focus_row): list.ensure_control_visible(focus_row)
+
+func _sort_incoming_attacks(reveal_undefended: bool = true) -> void:
+	if not is_instance_valid(_incoming_attack_list): return
+	var rows := _incoming_attack_rows.values()
+	rows.sort_custom(func(a, b):
+		if a.defense_rank() != b.defense_rank(): return a.defense_rank() < b.defense_rank()
+		return int(a.get_meta("source_order", 0)) < int(b.get_meta("source_order", 0)))
+	for index in rows.size():
+		var group: Control = rows[index].get_parent()
+		group.get_parent().move_child(group, index + 1) # Keep the heading first.
+	if reveal_undefended: _incoming_attack_list.scroll_vertical = 0
+
+func _layout_incoming_attack_list() -> void:
+	if not is_instance_valid(_incoming_attack_list): return
+	# Reserve this band before a defense is selected. Dice never displace rows.
+	var top := DEFENSE_LIST_TOP
+	# Curse can temporarily reveal the offensive face maps below the defense
+	# station. Only that explicit extra tray needs additional vertical space.
+	if _player_dice_dock.visible: top = maxf(top, _player_dice_dock.position.y + _player_dice_dock.size.y + 8)
+	_place_cinematic(_incoming_attack_list, Rect2(32, minf(top, 997), 402, 1055 - minf(top, 997)))
+
+func _battle_frame(id: String, rect: Rect2) -> void:
+	var frame := Panel.new(); frame.name = id
+	frame.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	frame.add_theme_stylebox_override("panel", CINEMATIC.bone_panel())
+	_root.add_child(frame); _place_cinematic(frame, rect)
+
+func reveal_dice_for_effect(dock: Control) -> void:
+	if not is_instance_valid(dock): return
+	if dock.has_method("reveal_for_effect"):
+		dock.reveal_for_effect()
+	elif dock == _player_dice_dock:
+		_player_dice_effect_until = Time.get_ticks_msec() + 180
+		if not dock.visible: _layout_left_controls()
 
 func _place_cinematic(control: Control, rect: Rect2) -> void:
 	control.position = rect.position
@@ -789,21 +955,21 @@ func set_encounter_visual(value: BattleEncounterVisual) -> void:
 func _build_cinematic_utilities() -> void:
 	_utility_panels.clear(); _utility_contents.clear()
 	var utilities := HBoxContainer.new(); utilities.name = "BattleUtilities"; utilities.add_theme_constant_override("separation", 8)
-	_root.add_child(utilities); _place_cinematic(utilities, Rect2(1460, 1000, 435, 54))
-	var entries := [["enemy", "Enemy abilities"], ["log", "Log"], ["inspect", "Inspect"], ["settings", "⚙"]]
+	_root.add_child(utilities); _place_cinematic(utilities, Rect2(1514, 18, 368, 48))
+	var entries := [["enemy", "Enemies"], ["log", "Log"], ["inspect", "Inspect"], ["settings", "⚙"]]
 	if _history_tools_enabled(): entries.append(["history", "History"])
 	for entry in entries:
 		var id := str(entry[0])
 		var button := TOOLTIP_BUTTON.new(); button.text = str(entry[1]); button.custom_minimum_size.y = 48; button.size_flags_horizontal = Control.SIZE_EXPAND_FILL; button.add_theme_font_size_override("font_size", 16); button.toggle_mode = true; button.button_pressed = _open_utility == id
 		for style_name in ["normal", "hover", "pressed", "disabled"]:
-			button.add_theme_stylebox_override(style_name, CINEMATIC.panel(Color("292d25ef") if style_name in ["hover", "pressed"] else Color("11171def"), CINEMATIC.GOLD, 7))
+			button.add_theme_stylebox_override(style_name, CINEMATIC.bone_panel(Color("ffe1a6") if style_name in ["hover", "pressed"] else Color.WHITE, 7))
 		button.pressed.connect(func():
 			_open_utility = "" if _open_utility == id else id
 			for key in _utility_panels: _utility_panels[key].visible = key == _open_utility
 			for sibling in utilities.get_children(): sibling.set_pressed_no_signal(sibling.get_meta("utility") == _open_utility)
 		)
 		button.set_meta("battle_utility", true); button.set_meta("utility", id); utilities.add_child(button); _inspect(button, "battle.utility." + id, "Open Settings" if id == "settings" else "Open " + str(entry[1]))
-		var panel := PanelContainer.new(); panel.name = "Utility_" + id; panel.add_theme_stylebox_override("panel", CINEMATIC.panel(Color("10171df5")))
+		var panel := PanelContainer.new(); panel.name = "Utility_" + id; panel.add_theme_stylebox_override("panel", CINEMATIC.panel(CINEMATIC.DARK_SURFACE))
 		_root.add_child(panel); _place_cinematic(panel, Rect2(520, 195, 880, 565)); panel.visible = _open_utility == id
 		var frame := VBoxContainer.new(); panel.add_child(frame)
 		var heading := HBoxContainer.new(); frame.add_child(heading)
@@ -828,40 +994,23 @@ func _build_cinematic_utilities() -> void:
 	_hand_visibility_toggle.toggled.connect(_set_keep_hand_visible)
 	_utility_contents.settings.add_child(_hand_visibility_toggle)
 	_inspect(_hand_visibility_toggle, "battle.keep_hand_visible", _hand_visibility_toggle.tooltip_text)
-	var hint := Label.new(); hint.text = "Hover cards, abilities, dice, or status counters for their details.\nVenom symbols: ✧ Fang · ⚗ Gland · ◉ Coil\nKept dice glow gold. Hover the hand to raise it, or enable Keep hand visible.\nDefense and damage results keep their existing review timing."; hint.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART; _utility_contents.settings.add_child(hint)
+	var hint := Label.new(); hint.text = "Hover cards, abilities, dice, or status counters for their details.\nClick an enemy name to show or hide its dice.\nVenom symbols: ✧ Fang · ⚗ Gland · ◉ Coil\nKept dice glow gold. Hover the hand to raise it, or enable Keep hand visible.\nDefense and damage results keep their existing review timing."; hint.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART; _utility_contents.settings.add_child(hint)
 	var details := Label.new(); details.text = "Battle %s\nRound %d · %s\n%s\n\nCard and ability descriptions use this battle’s active rules, including upgrades." % [_view.battle_id, _view.round_number, _segment_name(_view.segment), _view.stage.replace("_", " ").capitalize()]; details.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART; _utility_contents.inspect.add_child(details)
 
 func _build_header(parent: VBoxContainer) -> void:
-	var bar := HBoxContainer.new(); bar.alignment = BoxContainer.ALIGNMENT_CENTER; bar.add_theme_constant_override("separation", 20); parent.add_child(bar)
 	var display_segment := _view.segment
 	var display_round := _view.round_number
-	var display_stage := "attacks_selected" if _quiet_offensive_reaction() else _board_stage()
-	if display_stage in ["defense_roll", "defense_reaction"]: display_stage = "defense"
-	if _provoked_toxin_reaction(): display_stage = "provoked_toxins"
 	if _director.has_beats():
 		var beat: Dictionary = _director.peek()
 		var beat_event: Dictionary = _as_dictionary(beat.get("event", {}))
-		display_round = int(beat_event.get("round", display_round))
+		var event_round := int(beat_event.get("round", 0))
+		if event_round > 0: display_round = event_round
 		var event_segment := str(beat.get("presentation_segment", ""))
 		if event_segment.is_empty(): event_segment = str(beat_event.get("segment", beat_event.get("to", "")))
 		if not event_segment.is_empty(): display_segment = event_segment
-		if beat.get("type") in ["combat_damage", "attack_curse"]: display_stage = "damage_resolution"
-		elif beat.get("type") in ["blind_roll", "blind_result"]: display_stage = "blind_check"
-		elif beat.get("type") == "defense_selected": display_stage = "defense_reveal"
-		elif beat.get("type") == "effects_resolved": display_stage = "effects"
-		elif beat.get("type") == "income_summary": display_stage = "income_results"
-		elif beat.get("type") == "card_cleanse": display_stage = "card_played"
-		elif beat.get("type") == "poison_conversion": display_stage = "poison_upgraded"
-		elif beat.get("type") == "segment_entered": display_stage = "presentation"
-	if not _selection_morph.is_empty(): display_segment = "offensive"; display_stage = "attack_selected"
-	if bool(_view.raw_snapshot.get("unified_defense", false)) and display_segment == "damage_resolution": display_segment = "defensive"
-	if bool(_view.raw_snapshot.get("unified_defense", false)) and display_segment == "defensive": display_stage = "defense"
-	for pair in SEGMENTS:
-		if bool(_view.raw_snapshot.get("unified_defense", false)) and pair[0] == "damage_resolution": continue
-		var label := Label.new(); label.text = "●\n%s" % pair[1]; label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER; label.add_theme_font_size_override("font_size", 18)
-		label.add_theme_color_override("font_color", Color("ffe3a0") if display_segment == pair[0] else Color("b4ab9b")); bar.add_child(label)
-	var rule := HSeparator.new(); parent.add_child(rule)
-	var round := Label.new(); round.text = "Round %d · %s" % [display_round, display_stage.replace("_", " ").capitalize()]; round.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER; round.add_theme_color_override("font_color", CINEMATIC.INK); round.add_theme_color_override("font_shadow_color", Color.TRANSPARENT); round.add_theme_font_size_override("font_size", 27); round.add_theme_stylebox_override("normal", CINEMATIC.paper()); round.size_flags_horizontal = Control.SIZE_SHRINK_CENTER; parent.add_child(round); parent.move_child(round, 0)
+	if _unified_defense() and display_segment == "damage_resolution": display_segment = "defensive"
+	var segment_title := str({"offensive": "Offense", "defensive": "Defense"}.get(display_segment, _segment_name(display_segment)))
+	var round := Label.new(); round.name = "RoundBanner"; round.text = "Round %d · %s" % [display_round, segment_title]; round.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER; round.add_theme_color_override("font_color", CINEMATIC.INK); round.add_theme_color_override("font_shadow_color", Color.TRANSPARENT); round.add_theme_font_size_override("font_size", 27); round.add_theme_stylebox_override("normal", CINEMATIC.paper()); round.size_flags_horizontal = Control.SIZE_SHRINK_CENTER; parent.add_child(round)
 	if learned_battle_mode:
 		var policy_badge := preload("res://presentation/battle/tooltip_label.gd").new()
 		var policy_schema := str(_view.learned_policy.get("observation_schema", ""))
@@ -881,6 +1030,8 @@ func _build_header(parent: VBoxContainer) -> void:
 
 func _profile_actor(actor_id: String) -> Dictionary:
 	var actor: Dictionary = _view.actor(actor_id).duplicate(true)
+	actor["wound_missing_health"] = maxi(0, int(actor.get("max_health", 0)) - int(actor.get("current_health", 0)))
+	actor["wounds"] = _as_array(_view.raw_snapshot.get("wounds", [])).filter(func(wound): return wound.get("target_actor_id") == actor_id)
 	var damage_before := _director.pending_damage_actor_before(actor_id)
 	if not damage_before.is_empty():
 		for key in ["current_health", "energy_points", "deck_count", "hand_count", "discard_count", "removed_count", "statuses"]:
@@ -939,23 +1090,22 @@ func _build_player_column(_parent: HBoxContainer) -> void:
 		# planning, so a skipped offense cannot look like a missing character UI.
 		var initial_roll := _view.rolls_used("blade") == 0
 		var command := "planning_roll" if initial_roll else "planning_reroll"
-		var roll := TOOLTIP_BUTTON.new(); roll.custom_minimum_size = Vector2(102, 42)
-		roll.text = "Roll · %d/%d" % [maxi(0, _view.max_rolls("blade") - _view.rolls_used("blade")), _view.max_rolls("blade")]
+		var roll := TOOLTIP_BUTTON.new(); roll.custom_minimum_size = Vector2(78, 28)
+		roll.text = "Roll %d/%d" % [maxi(0, _view.max_rolls("blade") - _view.rolls_used("blade")), _view.max_rolls("blade")]
 		roll.add_theme_font_override("font", CINEMATIC.roll_control_font())
-		roll.add_theme_font_size_override("font_size", 17)
+		roll.add_theme_font_size_override("font_size", 15)
 		CINEMATIC.paper_button(roll)
 		for style_name in ["normal", "hover", "pressed", "disabled"]:
 			var style := roll.get_theme_stylebox(style_name)
 			style.content_margin_left = 5; style.content_margin_right = 5
 			style.content_margin_top = 4; style.content_margin_bottom = 4
 		roll.disabled = not _view.allowed(command) or _submitting or _director.has_beats() or _history_review or _view.rolls_used("blade") >= _view.max_rolls("blade")
-		roll.tooltip_text = _offensive_roll_hint()
 		roll.pressed.connect(func():
 			if initial_roll: _send(BattleCommandBuilder.planning_roll(_view.battle_id, "blade", _pending()))
 			else: _reroll_unkept()
 		)
 		controls.add_child(roll)
-		_inspect(roll, "battle.command.%s" % command, roll.tooltip_text)
+		_inspect(roll, "battle.command.%s" % command, _offensive_roll_hint())
 		if _view.stage == "offensive_reaction" and initial_roll: _show_skipped_offense_hint()
 
 func _show_skipped_offense_hint() -> void:
@@ -993,13 +1143,6 @@ func _build_enemy_column(_parent: HBoxContainer) -> void:
 	_log.text = _view.combat_log.text()
 
 func _build_center() -> void:
-	if not _selection_morph.is_empty():
-		var tile := BattleAbilityTile.new(); _ability_dock.add_child(tile)
-		var id := str(_selection_morph.ability_id)
-		tile.configure(id, false, true, false, _view.actor("blade")); tile.cinematic_compact(); tile.show_selected_attack(str(_selection_morph.get("text", ""))); tile.minimal_rail()
-		tile.set_meta("flow_key", "ability:blade:" + id)
-		_build_hand()
-		return
 	if _quiet_offensive_reaction():
 		_build_offensive(); _build_hand()
 		return
@@ -1038,8 +1181,9 @@ func _build_center() -> void:
 	if _selected_card.get("source_targeting", false): return
 	var pass_row := _action_footer
 	var planning_pass_label := ("Pass All Remaining" if _multiple_enemies() else "Pass Defense") if _view.segment == "defensive" else "Skip Offensive Ability"
-	if _unified_defense(): planning_pass_label = "Apply Defense" if _view.stage == "defense_reaction" else "Pass"
-	_add_action(pass_row, planning_pass_label, "planning_pass", _pass_planning)
+	if _unified_defense(): planning_pass_label = "Pass"
+	if not _automatic_defense_completion():
+		_add_action(pass_row, planning_pass_label, "planning_pass", _pass_planning)
 	var pass_label := "Continue" if _defense_final_review() else "Continue Without Playing a Card" if _view.stage == "status_roll_reaction" else "Pass / Acknowledge"
 	if _unified_defense(): pass_label = "Pass"
 	if (_inline_status_application() or _provoked_toxin_reaction()) and _view.legal_actions.size() == 1 and _view.legal_actions[0].get("type") == "pass": return
@@ -1187,6 +1331,28 @@ func _build_incoming_selection() -> void:
 		panel.source_selected.connect(func(id: String): _select_attack_intent(id))
 		if str(source.get("id", "")) == _selected_source: panel.self_modulate = Color("fff0bd")
 
+# Source-specific presenters retain damage and effect anchors, but each actor
+# has only one dice station. Keep its last roll when finalization clears selection.
+func defense_station_source(actor_id: String) -> String:
+	var round_key := "%s:%d" % [_view.battle_id, _view.round_number]
+	if _defense_station_round != round_key:
+		_defense_station_round = round_key
+		_defense_station_sources.clear()
+	var selected := str(_view.defense_selections.get(actor_id, {}).get("source_id", ""))
+	if not selected.is_empty():
+		_defense_station_sources[actor_id] = selected
+		return selected
+	var retained := str(_defense_station_sources.get(actor_id, ""))
+	var fallback := ""
+	for source_id in _attack_intents:
+		var panel: Control = _attack_intents[source_id]
+		if str(panel.data.actor_id) != actor_id or panel.data.get("selection_only", false): continue
+		if str(source_id) == retained: return retained
+		fallback = str(source_id)
+	# A restored snapshot may contain only history, with no live selection.
+	# Choose one deterministic result, never every historical roll at once.
+	return fallback
+
 func _build_compact_defense_results() -> void:
 	var sides := _combat_sides()
 	var together := _multiple_enemies() and _board_stage() == "defense_reaction"
@@ -1209,6 +1375,13 @@ func _build_compact_defense_results() -> void:
 		data["awaiting_roll"] = _view.stage == "defense_roll" and not _source_handled(str(source.id)) and not _history_review and not _history_replay
 		var queued: bool = _view.raw_snapshot.get("defense_plans", {}).has(str(source.id))
 		data["effects_pending"] = queued or (_held_defense_view == null and _defense_has_deferred_curse())
+		# Unified reservations are released only on finalization. Animate their
+		# authoritative release and the damage amount together in one presenter.
+		var finalized_outcome: Dictionary = _defense_outcome_sources.get(str(source.id), {}) if _held_defense_view != null else {}
+		data["damage_pending"] = _unified_defense() and not _source_handled(str(source.id)) and finalized_outcome.is_empty()
+		if not finalized_outcome.is_empty():
+			data.before = int(finalized_outcome.damage_before)
+			data.after = int(finalized_outcome.damage_after)
 		if queued: data["note"] = "Effects follow the first defense"
 		var key := "%s:%s" % [_defense_review_key(), str(source.get("id", ""))]
 		if not _defense_animation_times.has(key):
@@ -1233,10 +1406,11 @@ func _build_compact_defense_results() -> void:
 		_inspect(panel, "battle.defense_result." + actor_id, "Live defense results; rules are available on the ability name")
 		_defense_result_panels.append(panel)
 
-func _select_attack_intent(id: String) -> void:
+func _select_attack_intent(id: String, from_list: bool = false) -> void:
 	if _submitting or _model_thinking or _history_review or not _queued_defense.is_empty(): return
 	_selected_card.clear()
 	_selected_source = id
+	_defense_choice_local = from_list
 	if id.begins_with("preview:"): _focused_enemy = id.trim_prefix("preview:")
 	for source in _view.damage_sources:
 		if str(source.get("id", "")) == id and str(source.get("source_actor_id", "")) in _enemy_ids():
@@ -1245,7 +1419,7 @@ func _select_attack_intent(id: String) -> void:
 
 func attack_anchor_rect(source_id: String) -> Rect2:
 	var intent: Control = _attack_intents.get(source_id)
-	return intent.damage.get_global_rect() if is_instance_valid(intent) else Rect2()
+	return intent.attack_damage_rect() if is_instance_valid(intent) else Rect2()
 
 func _defense_summary_ready(source_id: String) -> bool:
 	if _history_review or _history_replay: return true
@@ -1278,6 +1452,10 @@ func _compact_defense_data(actor_id: String, counts: Dictionary, shown_source: D
 	if selection.is_empty() and not queued.is_empty(): selection = queued; roll = {}
 	var ability_id := str(selection.get("ability_id", ""))
 	var ability := BattlePresentationCatalog.ability(ability_id)
+	var definition := _view.content_definition("abilities", ability_id)
+	var configured := int(definition.get("configuration_version", 0)) > 0
+	var payment: Dictionary = definition.get("optional_payment", {})
+	var payment_prevention := int(payment.get("prevention", 2)) if selection.get("catalyst_paid", false) else 0
 	var enemy := _focused_enemy if actor_id == "blade" else "blade"
 	var attacker := str(source.get("source_actor_id", enemy))
 	var before := maxi(0, int(source.get("base_amount", 0)) - int(source.get("prevention", 0)) - int(source.get("reaction_prevention", 0)))
@@ -1287,7 +1465,7 @@ func _compact_defense_data(actor_id: String, counts: Dictionary, shown_source: D
 	# Completed gains are already in the authoritative status counts. Queued
 	# rolls are only previews. Neither may inflate another source's live gains.
 	if finalized or not queued.is_empty(): counts = counts.duplicate(true)
-	if finalized and not _unified_defense(): before = maxi(0, int(source.get("base_amount", 0)) - int(source.get("reaction_prevention", 0)) - (2 if selection.get("catalyst_paid", false) else 0)); pending = before
+	if finalized and not _unified_defense(): before = maxi(0, int(source.get("base_amount", 0)) - int(source.get("reaction_prevention", 0)) - payment_prevention); pending = before
 	var prevented := 0
 	var faces: Array = selection.get("rolled_faces", roll.get("rolled_faces", [int(selection.get("rolled_face", roll.get("face", 0)))]))
 	var operations := _as_array(_view.content_definition("abilities", ability_id).get("resolution", {}).get("operations", []))
@@ -1318,18 +1496,25 @@ func _compact_defense_data(actor_id: String, counts: Dictionary, shown_source: D
 					energy_gained += amount
 					benefits.append("+%d Energy" % amount if amount > 0 else "Energy already granted")
 					if amount > 0: gains.append({"target": actor_id, "status_id": "energy", "resource": true, "amount": amount, "after": int(_view.actor(actor_id).get("energy_points", 0)) + energy_gained})
-				"apply_status", "apply_incubation", "incubation_or_poison":
+				"apply_status", "apply_incubation", "incubation_or_poison", "special_effect":
 					var target := actor_id if op.get("target") == "self" else attacker
 					var status_id := str(op.get("status_id", "incubation"))
 					if op.get("type") == "incubation_or_poison" and (int(counts[target].get("poison", 0)) == 0 or int(counts[target].get("incubation", 0)) > 0): status_id = "poison"
 					var amount := maxi(1, int(op.get("stack_count", 1)))
+					if op.get("type") == "special_effect":
+						var special: Dictionary = op.get("special", {})
+						if special.get("kind") != "conditional_status":
+							benefits.append(BattlePresentationCatalog._special_words(special)); continue
+						var matching := int(counts[target].get(str(special.status_id), 0)) >= int(special.threshold) and int(counts[target].get(str(special.result_status_id), 0)) < int(special.limit)
+						status_id = str(special.result_status_id if matching else special.fallback_status_id)
+						amount = int(special.stacks if matching else special.fallback_stacks)
 					var added := _defense_status_gain(gains, counts, target, status_id, amount)
 					benefits.append(("+%d " % added if added > 0 else "At cap · ") + str(BattlePresentationCatalog.status(status_id).name))
 		if int(face) > 0:
 			for gain_index in range(gain_start, gains.size()): gains[gain_index]["die_index"] = dice.size()
 			dice.append({"face": int(face), "benefit": "\n".join(benefits), "prevention": die_prevented})
 	# Curse's Omen reward is once per defense, even when both dice are Omens.
-	if ability_id == "misfortune_repaid" and faces.has(6):
+	if not configured and ability_id == "misfortune_repaid" and faces.has(6):
 		var omen_index := faces.find(6)
 		_defense_status_gain(gains, counts, attacker, "curse_count", 2)
 		if omen_index < dice.size(): dice[omen_index].benefit = "Apply 2 Count\n(once per defense)"
@@ -1342,11 +1527,27 @@ func _compact_defense_data(actor_id: String, counts: Dictionary, shown_source: D
 		before = int(source.get("final_amount", pending)); pending = before
 	# An attack's status applications are independent of its blocked damage.
 	var reveal := _view.offensive_reveal(attacker)
-	var attack_statuses := _attack_source_effect_text(source, _as_array(reveal.get("outcome", {}).get("status_applications", [])))
+	var attack_statuses := _attack_source_effect_text(source, _as_array(source.get("status_applications", reveal.get("outcome", {}).get("status_applications", []))))
 	var note := ""
-	if bool(selection.get("catalyst_paid", false)): note = "Catalyst spent · 2 already prevented"
+	if bool(selection.get("catalyst_paid", false)): note = "%s spent · %d already prevented" % [BattlePresentationCatalog.status(str(payment.get("status_id", "catalyst"))).name, payment_prevention]
 	if int(source.get("reaction_prevention", 0)) > 0: note += (" · " if not note.is_empty() else "") + "%d prevented by cards" % int(source.reaction_prevention)
-	if ability_id == "hexward_rebuttal":
+	if configured:
+		for hook in definition.get("hooks", []):
+			if hook.get("timing") != "after_defense": continue
+			var required_faces: Array = hook.get("faces_any", [])
+			if not required_faces.is_empty() and not faces.any(func(f): return f in required_faces): continue
+			if hook.get("requires_prevention", false) and (prevented <= 0 or before <= 0): continue
+			for op in hook.get("operations", []):
+				var words := ""
+				if op.get("type") == "apply_status":
+					var target := actor_id if op.get("target") == "self" else attacker
+					_defense_status_gain(gains, counts, target, str(op.status_id), int(op.stack_count))
+					words = "Apply %d %s (once per defense)" % [int(op.stack_count), BattlePresentationCatalog.status(str(op.status_id)).name]
+				elif op.get("type") == "special_effect": words = BattlePresentationCatalog._special_words(op.special)
+				elif op.get("type") == "draw_cards": words = "Draw %d cards" % int(op.amount)
+				elif op.get("type") == "gain_resource": words = "Gain %d Energy" % int(op.amount)
+				if not words.is_empty(): note += ("\n" if not note.is_empty() else "") + words
+	elif ability_id == "hexward_rebuttal":
 		note += ("\n" if not note.is_empty() else "") + ("Applied 1 Curse to attacker" if finalized else "Then apply 1 Curse to attacker")
 	elif ability_id == "misfortune_repaid" and prevented > 0 and before > 0:
 		note += ("\n" if not note.is_empty() else "") + ("Die Curse resolved" if finalized else "Then choose an attacker die: seed / Expand / Surge")
@@ -1454,9 +1655,11 @@ func _build_defense_panel(parent: VBoxContainer, actor_id: String, revealed: boo
 	parent.add_child(dice_row)
 	var die := TOOLTIP_BUTTON.new(); die.custom_minimum_size = Vector2(120, 105); die.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 	_style_defense_die(die)
+	var defense_die_id := str(_view.content_definition("abilities", ability_id).get("resolution", {}).get("roll", {}).get("dice_id", "standard_d6"))
+	for op in _view.content_definition("abilities", ability_id).get("resolution", {}).get("operations", []):
+		if op.get("type") == "roll_dice": defense_die_id = str(op.get("dice_id", defense_die_id))
 	if face > 0:
-		var die_data := _as_dictionary(roll.get("die", {})); var die_id := str(die_data.get("die_id", "standard_d6"))
-		if ability_id in ["shedskin", "barbed_mantle"]: die_id = "venom_d6"
+		var die_data := _as_dictionary(roll.get("die", {})); var die_id := str(die_data.get("die_id", defense_die_id))
 		die.text = "%s\n%d" % [BattlePresentationCatalog.symbol_for_die_face(die_id, face), face]
 		die.tooltip_text = "%s defensive die: face %d, %s." % [actor_name.capitalize(), face, BattlePresentationCatalog.symbol_name_for_die_face(die_id, face)]
 		die.disabled = true; die.add_theme_font_size_override("font_size", 26); dice_row.add_child(die); _inspect(die, "battle.defense_die.%s" % actor_id, die.tooltip_text)
@@ -1474,7 +1677,7 @@ func _build_defense_panel(parent: VBoxContainer, actor_id: String, revealed: boo
 	for extra_index in range(1, faces.size()):
 		var extra := TOOLTIP_BUTTON.new()
 		var extra_face := int(faces[extra_index])
-		extra.text = "%s\n%d" % [BattlePresentationCatalog.symbol_for_die_face("venom_d6", extra_face), extra_face]
+		extra.text = "%s\n%d" % [BattlePresentationCatalog.symbol_for_die_face(defense_die_id, extra_face), extra_face]
 		extra.disabled = true
 		_style_defense_die(extra)
 		extra.custom_minimum_size = Vector2(120, 105)
@@ -1483,11 +1686,8 @@ func _build_defense_panel(parent: VBoxContainer, actor_id: String, revealed: boo
 		dice_row.add_child(extra)
 		_inspect(extra, "battle.defense_die.%s.%d" % [actor_id, extra_index], "Second defense die")
 	var preview := _defense_preview(ability_id, base, face)
-	if ability_id == "shedskin":
-		var prevention := 2 if selection.get("catalyst_paid", roll.get("catalyst_paid", false)) else 0
-		for shown_face in faces:
-			if int(shown_face) in [1, 2, 3]: prevention += 1
-		preview = {"rolled": true, "prevented": mini(base, prevention), "pending": maxi(0, base - prevention)}
+	var result_data := _compact_defense_data(actor_id, _status_counts(), source)
+	if not result_data.is_empty(): preview = {"rolled": true, "prevented": result_data.prevented, "pending": result_data.after}
 	var chosen := Label.new(); chosen.text = "%s · %d block" % [ability.name, int(preview.get("prevented", 0))] if bool(preview.get("rolled", false)) else ability.name; chosen.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER; parent.add_child(chosen)
 	var effect := Label.new(); effect.text = str(ability.get("text", "Defense selected")); effect.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER; effect.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART; effect.custom_minimum_size.x = 300; parent.add_child(effect)
 	var pending := int(preview.get("pending", base)); var prevented := int(preview.get("prevented", 0))
@@ -1501,22 +1701,41 @@ func _style_defense_die(die: Button) -> void:
 	die.add_theme_stylebox_override("normal", normal_style); die.add_theme_stylebox_override("hover", hover_style); die.add_theme_stylebox_override("pressed", pressed_style); die.add_theme_stylebox_override("disabled", normal_style.duplicate()); die.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
 
 func _build_damage() -> void:
-	_build_damage_feedback()
 	_build_damage_lanes(_view.settled_damage)
-	var protection: Array = _view.legal_actions.filter(func(action): return action.get("payload", {}).get("commitment", {}).get("choice_id") == "spend_round_prevention")
-	if not protection.is_empty():
-		var button := TOOLTIP_BUTTON.new()
-		button.text = "Use Guarded Strike protection"
-		button.set_meta("compact_caption", "Protect %d" % int(_status_counts().get(viewer_actor_id, {}).get("protect", 0)))
-		button.disabled = _submitting or _director.has_beats() or _history_review
-		button.tooltip_text = BattlePresentationCatalog.status("protect").text
-		button.pressed.connect(func():
-			if protection.size() == 1: _send(JSON.stringify(protection[0]))
-			else: _show_venom_choices(protection, "Guarded Strike · choose one incoming attack")
-		)
-		_action_footer.add_child(button)
-		_lock_button_until(button, _interaction_deadline(true))
-		_inspect(button, "battle.round_protection", button.text)
+	_build_source_protection_choice(_selected_source)
+
+func _source_protection_action(source_id: String) -> Dictionary:
+	if source_id.is_empty(): return {}
+	for action in _view.legal_actions:
+		var commitment: Dictionary = action.get("payload", {}).get("commitment", {})
+		if action.get("actor_id") == viewer_actor_id and commitment.get("choice_id") == "spend_round_prevention" and source_id in commitment.get("proposal_ids", []):
+			return action
+	return {}
+
+func _build_source_protection_choice(source_id: String) -> void:
+	if _source_protection_action(source_id).is_empty(): return
+	# Share the attack's defense popup, including after its rolled defense has
+	# finished. The status is a separate resource, not another defensive roll.
+	_ability_dock.set_meta("defense_source", source_id)
+	var status := BattlePresentationCatalog.status("protect")
+	var button := TOOLTIP_BUTTON.new(); button.name = "ProtectChoice"
+	button.text = "Protect · Prevent %d damage" % int(_status_counts().get(viewer_actor_id, {}).get("protect", 0))
+	button.icon = preload("res://presentation/battle/battle_icons.gd").texture("protect")
+	button.expand_icon = true; button.add_theme_constant_override("icon_max_width", 22)
+	button.custom_minimum_size.y = 38; button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	button.add_theme_font_size_override("font_size", 18)
+	button.tooltip_text = status.text
+	button.disabled = _submitting or _director.has_beats() or _history_review or _model_thinking
+	button.pressed.connect(_spend_source_protection.bind(source_id))
+	_ability_dock.add_child(button)
+	_lock_button_until(button, _interaction_deadline(true))
+	_inspect(button, "battle.protect." + source_id, status.text)
+
+func _spend_source_protection(source_id: String) -> void:
+	if _submitting or _history_review or _model_thinking or _director.has_beats(): return
+	# Re-resolve the current legal command so a stale popup cannot spend twice.
+	var action := _source_protection_action(source_id)
+	if not action.is_empty(): _send(JSON.stringify(action))
 
 func _build_damage_lanes(batch: Dictionary, committed: bool = false, followup_only: bool = false) -> void:
 	var sides := _combat_sides()
@@ -1547,8 +1766,8 @@ func _build_damage_lanes(batch: Dictionary, committed: bool = false, followup_on
 			var dock := preload("res://presentation/battle/damage_stack_dock.gd").new()
 			_root.add_child(dock); dock.configure(self, target); _damage_stack_docks[target] = dock
 		var stack_dock: ScrollContainer = _damage_stack_docks[target]
-		var group := VBoxContainer.new(); group.add_theme_constant_override("separation", 3); stack_dock.body.add_child(group)
-		var heading := TOOLTIP_BUTTON.new(); heading.text = str(amount); heading.icon = preload("res://presentation/battle/battle_icons.gd").texture("attack"); heading.expand_icon = true; heading.add_theme_constant_override("icon_max_width", 20); heading.tooltip_text = data.attack_name + " · " + attack_statuses
+		var group := VBoxContainer.new(); group.set_meta("source_id", str(source.id)); group.add_theme_constant_override("separation", 3); stack_dock.body.add_child(group)
+		var heading := TOOLTIP_BUTTON.new(); heading.text = "%d · %s" % [amount, data.attack_name]; heading.icon = preload("res://presentation/battle/battle_icons.gd").texture("attack"); heading.expand_icon = true; heading.add_theme_constant_override("icon_max_width", 20); heading.tooltip_text = panel.intent.tooltip_text
 		heading.alignment = HORIZONTAL_ALIGNMENT_LEFT; heading.flat = true; heading.add_theme_font_size_override("font_size", 18)
 		for state in ["normal", "hover", "pressed", "focus"]: heading.add_theme_stylebox_override(state, StyleBoxEmpty.new())
 		CINEMATIC.hud_lettering(heading, true); group.add_child(heading)
@@ -1564,6 +1783,9 @@ func _build_damage_lanes(batch: Dictionary, committed: bool = false, followup_on
 				heading.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
 				for state in ["normal", "hover", "pressed", "focus"]:
 					heading.add_theme_stylebox_override(state, CINEMATIC.panel(Color("9a713366"), Color("ffe49c"), 4))
+		if str(source.get("source_actor_id", "")) == viewer_actor_id and target != viewer_actor_id:
+			panel.use_target_heading(heading)
+			_curse_attack_origins[str(source.id)] = heading
 		_inspect(heading, "battle.damage_stack." + str(source.id), heading.tooltip_text)
 		var grid := preload("res://presentation/battle/combat_card_reveal.gd").new(); grid.name = "DamageCards_" + str(source.get("id", "")); group.add_child(grid); grid.set_meta("flow_part", "cards")
 		grid.screen = self; grid.target_actor = target; grid.source_id = str(source.id); grid.dock = stack_dock
@@ -1576,9 +1798,9 @@ func _build_damage_lanes(batch: Dictionary, committed: bool = false, followup_on
 			card.set_meta("removal_origin_zone", str(card_data.get("original_zone", "")))
 			card.tooltip_text += " · From " + str(card_data.get("original_zone", "deck")); _inspect(card, "battle.damage_card." + str(card_data.get("card_id", "")), card.tooltip_text)
 		var card_ids: Array[String] = []
-		for card in grid.get_children(): card_ids.append(str(card.instance_id))
+		for card in grid.card_children(): card_ids.append(str(card.instance_id))
 		grid.set_meta("flow_content", card_ids)
-		if grid.get_child_count() == 0:
+		if grid.card_children().is_empty():
 			grid.hide()
 			var none := Label.new(); none.text = "No cards lost"; CINEMATIC.hud_lettering(none); group.add_child(none)
 		else:
@@ -1837,15 +2059,25 @@ func _build_income() -> void:
 
 func _build_hand(income_drawn_ids: Array = []) -> void:
 	var hand_limit := _view.stage == "discard_to_hand_limit"
+	var ability_targeting := _selected_card_selector() == "one_owned_offensive_ability"
+	var card_targeting: bool = _selected_card.get("program_targeting", false) or ability_targeting or _selected_card.get("source_targeting", false) or _selected_card.get("die_targeting", false)
+	_hand_dock.targeted_id = str(_selected_card.get("instance_id", "")) if card_targeting else ""
 	_hand_dock.held_open = hand_limit or not _selected_card.is_empty() or not income_drawn_ids.is_empty()
 	for entry in _view.hand_cards():
 		var card := BattleCard.new()
 		var legal := _card_legal(str(entry.definition_id)) or hand_limit
-		card.configure(str(entry.instance_id), str(entry.definition_id), legal and not _submitting and not _director.has_beats() and _selection_morph.is_empty())
+		card.configure(str(entry.instance_id), str(entry.definition_id), legal and not _submitting and not _director.has_beats())
 		_hand_dock.add_card(card)
 		_lock_button_until(card, _interaction_deadline(false))
-		card.toggle_mode = hand_limit or _selected_card.get("source_targeting", false) or _selected_card.get("die_targeting", false)
-		card.button_pressed = str(entry.instance_id) in _hand_limit_selection or ((_selected_card.get("source_targeting", false) or _selected_card.get("die_targeting", false)) and _selected_card.get("instance_id") == entry.instance_id)
+		card.toggle_mode = hand_limit or card_targeting
+		card.button_pressed = str(entry.instance_id) in _hand_limit_selection or (card_targeting and _selected_card.get("instance_id") == entry.instance_id)
+		if card_targeting and card.button_pressed:
+			var highlight := Panel.new(); highlight.name = "AbilityTargetCardHighlight"
+			highlight.mouse_filter = Control.MOUSE_FILTER_IGNORE
+			var border := StyleBoxFlat.new(); border.bg_color = Color.TRANSPARENT
+			border.border_color = Color("f4d48b"); border.set_border_width_all(3)
+			highlight.add_theme_stylebox_override("panel", border)
+			card.add_child(highlight); highlight.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 		card.pressed.connect(_on_card_pressed.bind(card))
 		if str(entry.instance_id) in income_drawn_ids:
 			card.prepare_income_draw()
@@ -1855,7 +2087,25 @@ func _build_hand(income_drawn_ids: Array = []) -> void:
 		var need := maxi(0, _view.actor("blade").get("hand_count", 0) - _view.actor("blade").get("max_hand_size", 6))
 		var commit := TOOLTIP_BUTTON.new(); commit.text = "Discard selected cards (%d/%d)" % [_hand_limit_selection.size(), need]; commit.disabled = _hand_limit_selection.size() != need or _submitting or _history_review; commit.pressed.connect(func(): _send(BattleCommandBuilder.commit_interaction(_view.battle_id, "blade", _pending(), _hand_limit_selection))); _center.add_child(commit); _inspect(commit, "battle.hand_limit.commit", "Commit the selected hand-limit discards")
 
+func _ability_card_bonus_caption() -> String:
+	var amount := 0
+	var definition := _view.content_definition("cards", str(_selected_card.get("definition_id", "")))
+	for operation in definition.get("operations", []):
+		for bonus in operation.get("modifier", {}).get("add_conditional_bonus", {}).get("operations", []):
+			if bonus.get("type") == "deal_damage" and (bonus.get("amount") is int or bonus.get("amount") is float): amount += int(bonus.amount)
+	return "+%d damage" % amount if amount > 0 else "Select target"
+
 func _build_card_target_choices() -> void:
+	if _selected_card_selector() == "one_owned_offensive_ability":
+		var prompt := Label.new(); prompt.name = "AbilityCardTargetPrompt"
+		prompt.text = "%s · %s\nChoose an ability below" % [BattlePresentationCatalog.card(str(_selected_card.definition_id)).name, _ability_card_bonus_caption()]
+		prompt.add_theme_font_size_override("font_size", 16); prompt.add_theme_color_override("font_color", Color("a5edce"))
+		prompt.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART; prompt.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		_root.add_child(prompt); _place_cinematic(prompt, Rect2(38, 780, 300, 44))
+		var cancel := TOOLTIP_BUTTON.new(); cancel.name = "CancelAbilityCardTarget"; cancel.text = "Cancel"
+		cancel.add_theme_font_size_override("font_size", 15); cancel.pressed.connect(func(): _selected_card.clear(); _render())
+		_root.add_child(cancel); _place_cinematic(cancel, Rect2(350, 784, 78, 32))
+		return
 	if _selected_card.get("source_targeting", false):
 		var instruction := Label.new(); instruction.text = str(BattlePresentationCatalog.card(str(_selected_card.definition_id)).name) + "\nClick a highlighted incoming attack."; instruction.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART; instruction.add_theme_color_override("font_color", Color("f0cf7c")); _ability_dock.add_child(instruction)
 		var cancel := TOOLTIP_BUTTON.new(); cancel.text = "Cancel targeting"; cancel.pressed.connect(func(): _selected_card.clear(); _render()); _ability_dock.add_child(cancel)
@@ -1885,11 +2135,12 @@ func _build_card_target_choices() -> void:
 func _build_ability_row(caption: String, abilities: Array, actor_id: String) -> void:
 	var dock: VBoxContainer = _ability_dock if actor_id == "blade" else _utility_contents.enemy
 	var label := Label.new(); label.visible = actor_id != "blade"; label.text = caption; label.add_theme_font_size_override("font_size", 14); label.add_theme_color_override("font_color", Color("bbac8e")); dock.add_child(label)
-	var row := VBoxContainer.new(); row.add_theme_constant_override("separation", 7); dock.add_child(row)
+	var row := VBoxContainer.new(); row.add_theme_constant_override("separation", 0); dock.add_child(row)
 	var choosing_defense := _view.segment == "defensive" or (_early_defense_available() and not _selected_source.is_empty())
 	if actor_id == "blade" and choosing_defense and not _selected_source.is_empty():
 		dock.set_meta("defense_source", _selected_source)
 	var actor := _view.actor(actor_id); var qualified: Array = _as_array(actor.get("qualified_abilities", [])); var selected := str(actor.get("selected_ability", ""))
+	if actor_id == viewer_actor_id and not _pending_attack.is_empty(): selected = str(_pending_attack.payload.ability_id)
 	if _view.segment == "defensive" and actor_id == "blade": selected = str(_view.defense_selections.get(actor_id, {}).get("ability_id", ""))
 	for ability_id in abilities:
 		var selected_attack := _selected_attack(actor_id)
@@ -1897,7 +2148,7 @@ func _build_ability_row(caption: String, abilities: Array, actor_id: String) -> 
 		var tile := BattleAbilityTile.new(); row.add_child(tile)
 		if actor_id == "blade": tile.set_meta("flow_key", "ability:%s:%s" % [actor_id, ability_id])
 		var defense_ready := choosing_defense and not _defense_actions(str(ability_id)).is_empty()
-		var can_select := actor_id == "blade" and (_view.allowed("planning_select_ability") or _early_defense_available()) and (defense_ready if choosing_defense else str(ability_id) in qualified) and not _submitting and not _history_review
+		var can_select := actor_id == "blade" and (_view.allowed("planning_select_ability") or _early_defense_available()) and (defense_ready if choosing_defense else str(ability_id) in qualified and _view.legal_actions.any(func(action): return action.get("type") == "planning_select_ability" and action.get("payload", {}).get("ability_id") == ability_id)) and not _submitting and not _history_review
 		if _selected_card_selector() == "one_owned_offensive_ability": can_select = actor_id == "blade" and _view.stage == "planning" and not _history_review and _view.legal_actions.any(func(action): return action.get("payload", {}).get("ability_id") == ability_id and _selected_card.get("instance_id") in action.get("payload", {}).get("card_ids", []))
 		tile.configure(str(ability_id), str(ability_id) in qualified, selected == str(ability_id), can_select, actor)
 		tile.cinematic_compact()
@@ -1929,6 +2180,9 @@ func _build_ability_row(caption: String, abilities: Array, actor_id: String) -> 
 				tile.pressed.connect(_on_ability_pressed.bind(str(ability_id)))
 		if actor_id == "blade":
 			tile.minimal_rail()
+			if _selected_card_selector() == "one_owned_offensive_ability" and can_select:
+				tile.tooltip_text = "Apply %s to %s: %s.\n\n%s" % [BattlePresentationCatalog.card(str(_selected_card.definition_id)).name, BattlePresentationCatalog.ability(str(ability_id)).name, _ability_card_bonus_caption(), tile.tooltip_text]
+				tile.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
 			if choosing_defense:
 				var requirement := tile.find_child("MinimalRequirement", true, false) as Label
 				if requirement != null: requirement.text = "Defend"
@@ -1958,7 +2212,7 @@ func _select_needlefang_tier(tier_id: String) -> void:
 func _select_ability_tier(ability_id: String, tier_id: String) -> void:
 	if _submitting or _history_review or _model_thinking or _director.has_beats() or not _view.allowed("planning_select_ability"): return
 	var action := _ability_tier_action(ability_id, tier_id)
-	if not action.is_empty(): _send(JSON.stringify(action))
+	if not action.is_empty(): _select_ability_action(action)
 
 func _build_sources(caption: String) -> void:
 	var label := Label.new(); label.text = caption; _center.add_child(label)
@@ -2006,14 +2260,16 @@ func _capture_reaction_card_feedback(sent: Dictionary, previous_actors: Dictiona
 	if changes.is_empty(): return
 	var name := str(BattlePresentationCatalog.card(str(card.definition_id)).name)
 	var description := name + " · " + ", ".join(changes.map(func(change): return "%d → %d damage" % [change.before, change.after]))
-	if card.definition_id == "spined_rebuttal":
+	if BattlePresentationCatalog.card_mechanic(str(card.definition_id)) == "spined_rebuttal":
 		for source in _view.damage_sources:
 			if source.get("id") == changes[0].source_id:
-				description = "%s · +%d prevention · 1 Poison queued for %s" % [name, int(changes[0].before) - int(changes[0].after), _actor_display_name(str(source.source_actor_id))]
+				var params: Dictionary = BattlePresentationCatalog.card(str(card.definition_id)).mechanic.get("params", {})
+				description = "%s · +%d prevention · %d %s queued for %s" % [name, int(changes[0].before) - int(changes[0].after), int(params.get("stacks", 1)), BattlePresentationCatalog.status(str(params.get("status_id", "poison"))).name, _actor_display_name(str(source.source_actor_id))]
 	_reaction_card_feedback = {"battle_id": _view.battle_id, "actor_id": actor_id, "source_id": changes[0].source_id, "card_id": card.definition_id, "instance_id": cards[0], "started_ms": Time.get_ticks_msec(), "expires_ms": Time.get_ticks_msec() + 2800, "changes": changes, "text": description}
 
 func _build_reaction_card_feedback() -> void:
 	if not _reaction_feedback_active() or _history_review or _history_replay: return
+	if _damage_feedback.get("battle_id") == _view.battle_id and _damage_feedback.get("started_ms") == _reaction_card_feedback.get("started_ms"): return
 	if not _reaction_card_feedback.get("changes", []).is_empty():
 		var flight := preload("res://presentation/battle/attack_card_flight.gd").new()
 		_root.add_child(flight); flight.configure(self, _reaction_card_feedback)
@@ -2052,7 +2308,7 @@ func _selected_offensive_preview(actor_id: String, ability_id: String) -> Dictio
 	var outcome := {"base_damage": 0, "status_applications": [], "resource_gains": {}, "provoke": 0}
 	for operation in operations:
 		match str(operation.get("type", "")):
-			"deal_damage": outcome.base_damage += int(operation.get("amount", 0)) + (int(actor.get("needlefang_damage_bonus", 0)) if ability_id == "needlefang" else 0)
+			"deal_damage": outcome.base_damage += int(operation.get("amount", 0)) + BattlePresentationCatalog.configured_ability_damage(ability_id, actor)
 			"apply_status": outcome.status_applications.append({"target_actor_id": actor_id if operation.get("target") == "self" else attack_target, "status_id": str(operation.get("status_id", "")), "stacks": int(operation.get("stack_count", 1))})
 			"gain_resource": outcome.resource_gains[str(operation.get("resource", ""))] = int(operation.get("amount", 0))
 			"provoke": outcome.provoke += int(operation.get("amount", 0))
@@ -2295,6 +2551,9 @@ func _upcoming_income_actor_data(actor_id: String) -> Dictionary:
 	return _director.pending_income_actor(actor_id)
 
 func _build_completion() -> void:
+	_center_scroll.set_meta("completion_overlay", true)
+	_center_scroll.z_index = 50 # Above battlefield HUDs; below WoundReview (100).
+	_center_scroll.mouse_filter = Control.MOUSE_FILTER_STOP
 	if not _history_review and not learned_battle_mode: active_store.clear()
 	var spacer := Control.new(); spacer.size_flags_vertical = Control.SIZE_EXPAND_FILL; _center.add_child(spacer)
 	var title := Label.new(); title.text = ("VICTORY" if _view.battle_result == "victory" else _view.battle_result.to_upper()); title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER; title.add_theme_font_size_override("font_size", 52); title.add_theme_color_override("font_color", Color("f5c963")); _center.add_child(title)
@@ -2340,7 +2599,7 @@ func _add_action(parent: Container, text: String, command: String, callback: Cal
 
 func _compact_action_button(button: Button) -> void:
 	if button.has_node("CompactCaption"): return
-	button.custom_minimum_size = Vector2(96 if button.has_meta("compact_caption") else 54, 42)
+	button.custom_minimum_size = Vector2(96 if button.has_meta("compact_caption") else 54, 42) if _view.segment == "defensive" else Vector2(78, 28)
 	# Every footer action needs the same solid parchment backing as Roll/Skip.
 	# Transparent Pass controls disappear against the battlefield scenery.
 	CINEMATIC.paper_button(button)
@@ -2354,16 +2613,16 @@ func _compact_action_button(button: Button) -> void:
 	for key in ["font_color", "font_hover_color", "font_pressed_color", "font_hover_pressed_color", "font_disabled_color", "font_focus_color"]:
 		button.add_theme_color_override(key, Color.TRANSPARENT)
 	var caption := Label.new(); caption.name = "CompactCaption"
-	caption.text = str(button.get_meta("compact_caption", "Skip" if "Skip" in button.text else "Apply" if button.text == "Apply Defense" else "Next" if "Continue" in button.text else "Pass"))
+	caption.text = str(button.get_meta("compact_caption", "Skip" if "Skip" in button.text else "Next" if "Continue" in button.text else "Pass"))
 	caption.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER; caption.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	caption.add_theme_font_size_override("font_size", 17)
+	caption.add_theme_font_size_override("font_size", 17 if _view.segment == "defensive" else 15)
 	caption.add_theme_font_override("font", CINEMATIC.roll_control_font())
 	caption.add_theme_color_override("font_color", CINEMATIC.INK)
 	caption.add_theme_color_override("font_shadow_color", Color.TRANSPARENT)
 	caption.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	button.add_child(caption); caption.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	# Preserve the full action label for inspection and assistive text.
-	button.tooltip_text = button.text
+	# Pass and Skip already explain themselves in the visible caption.
+	button.tooltip_text = "" if caption.text in ["Skip", "Pass"] else button.text
 
 func _pass_planning() -> void:
 	if _submitting or _history_review or not _view.allowed("planning_pass"): return
@@ -2398,12 +2657,14 @@ func _ability_choice_options(ability_id: String, enabled: bool) -> Array[Diction
 	var actions := _ability_actions(ability_id)
 	var options: Array[Dictionary] = []
 	var ready := enabled and not _director.has_beats() and not _model_thinking
-	if ability_id == "shedskin" and (_view.segment == "defensive" or _early_defense_available()):
+	var payment: Dictionary = BattlePresentationCatalog.definition("abilities", ability_id).get("optional_payment", {})
+	if not payment.is_empty() and (_view.segment == "defensive" or _early_defense_available()):
 		for paid in [false, true]:
 			var matching := {}
 			for action in actions:
 				if bool(action.get("payload", {}).get("spend_catalyst", false)) == paid: matching = action; break
-			options.append({"label": "Pay 1 Catalyst\nPrevent +2" if paid else "No Catalyst\nRoll 2 dice", "tooltip": "Spend 1 Catalyst before rolling to prevent 2 additional damage." if paid else "Roll the defense without spending Catalyst.", "action": matching, "enabled": ready and not matching.is_empty()})
+			var caption := "%d %s" % [int(payment.stacks), BattlePresentationCatalog.status(str(payment.status_id)).name]
+			options.append({"label": "Pay %s\nPrevent +%d" % [caption, int(payment.prevention)] if paid else "No payment\nRoll defense", "tooltip": "Spend %s before rolling to prevent %d additional damage." % [caption, int(payment.prevention)] if paid else "Roll without the optional payment.", "action": matching, "enabled": ready and not matching.is_empty()})
 		return options
 	for action in actions:
 		var payload: Dictionary = action.get("payload", {})
@@ -2441,7 +2702,69 @@ func _select_ability_action(action: Dictionary) -> void:
 		_selected_card.clear()
 		_continue_queued_defense()
 		return
+	if _begin_offensive_targeting(action): return
 	_send(JSON.stringify(action))
+
+func _begin_offensive_targeting(action: Dictionary) -> bool:
+	var targets: Array = action.get("payload", {}).get("target_ids", [])
+	if _view.segment != "offensive" or _view.stage != "planning" or targets.size() != 1 or targets[0] not in _enemy_ids(): return false
+	# Keep the chosen tier/options, but never treat inspected enemy focus as consent.
+	_pending_attack = {} if _pending_attack == action else action.duplicate(true)
+	_selected_card.clear()
+	_reset_auto_pass_preview()
+	_render(true)
+	return true
+
+func _offensive_target_actions() -> Dictionary:
+	var result := {}
+	if _pending_attack.is_empty() or _view.segment != "offensive" or _view.stage != "planning" or _history_review: return result
+	var choice: Dictionary = _pending_attack.duplicate(true)
+	choice.payload.erase("target_ids")
+	for action in _view.legal_actions:
+		var targets: Array = action.get("payload", {}).get("target_ids", [])
+		if targets.size() != 1 or targets[0] not in _enemy_ids(): continue
+		if _view.actor(str(targets[0])).get("defeat_state") == "defeated": continue
+		var candidate: Dictionary = action.duplicate(true)
+		candidate.payload.erase("target_ids")
+		if candidate == choice: result[str(targets[0])] = action
+	return result
+
+func _choose_offensive_target(id: String) -> void:
+	if _submitting or _history_review or _model_thinking or _director.has_beats(): return
+	var actions := _offensive_target_actions()
+	if not actions.has(id): return
+	_focused_enemy = id
+	_send(JSON.stringify(actions[id]))
+
+func _cancel_offensive_targeting() -> void:
+	_pending_attack.clear()
+	_render(true)
+
+func _unhandled_key_input(event: InputEvent) -> void:
+	if event.is_action_pressed("ui_cancel") and not _pending_attack.is_empty():
+		_cancel_offensive_targeting()
+		get_viewport().set_input_as_handled()
+
+func _build_offensive_targets() -> void:
+	var actions := _offensive_target_actions()
+	if actions.is_empty(): return
+	for id in actions:
+		var profile: ActorProfile = _actor_profiles.get(id)
+		if profile == null: continue
+		var fighter: Control = profile.get_parent().fighter
+		if not is_instance_valid(fighter): continue
+		var target := preload("res://presentation/battle/offensive_target_button.gd").new()
+		target.name = "OffensiveTarget_" + str(id)
+		target.tooltip_text = "Attack %s with %s" % [_actor_display_name(id), BattlePresentationCatalog.ability(str(_pending_attack.payload.ability_id)).name]
+		target.pressed.connect(_choose_offensive_target.bind(str(id)))
+		fighter.add_child(target); target.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+		target.z_index = 15
+		_enemy_buttons[id].tooltip_text = target.tooltip_text
+		_inspect(target, "battle.offensive_target." + str(id), target.tooltip_text)
+	var cancel := TOOLTIP_BUTTON.new()
+	cancel.text = "Choose an enemy · Cancel"
+	cancel.pressed.connect(_cancel_offensive_targeting)
+	_ability_dock.add_child(cancel)
 
 func _on_ability_pressed(ability_id: String) -> void:
 	if _history_review or _submitting or _model_thinking or _director.has_beats(): return
@@ -2457,9 +2780,19 @@ func _on_ability_pressed(ability_id: String) -> void:
 	# Multi-option abilities are selected exclusively through their inline row.
 
 func _on_card_pressed(card: BattleCard) -> void:
+	if not _pending_attack.is_empty(): _cancel_offensive_targeting()
 	if not _queued_defense.is_empty() and _view.stage == "offensive_reaction": return
 	if _history_review or _submitting or _model_thinking or _director.has_beats(): return
-	if card.definition_id in ["nudge", "try_again", "call_the_mark", "steady_hand", "forked_tongue", "unquiet_hands", "widen_the_crack", "chosen_instrument", "no_safe_keep", "shared_misfortune", "rotten_numeral"] and _view.stage != "discard_to_hand_limit":
+	if _selected_card_selector() == "one_owned_offensive_ability" and _selected_card.get("instance_id") == card.instance_id:
+		_selected_card.clear(); _render(); return
+	if str(BattlePresentationCatalog.card(card.definition_id).targeting.get("selector", "")) == "card_program" and _view.stage != "discard_to_hand_limit":
+		for action in _view.legal_actions:
+			var payload: Dictionary = action.get("payload", {})
+			if card.instance_id in payload.get("card_ids", payload.get("commitment", {}).get("card_ids", [])):
+				var choice = _program_choice(payload)
+				if choice is Dictionary and choice.get("verb") == "start": _send(JSON.stringify(action)); return
+		return
+	if BattlePresentationCatalog.card_mechanic(card.definition_id) in ["nudge", "try_again", "call_the_mark", "steady_hand", "forked_tongue", "unquiet_hands", "widen_the_crack", "chosen_instrument", "no_safe_keep", "shared_misfortune", "rotten_numeral"] and _view.stage != "discard_to_hand_limit":
 		if _selected_card.get("instance_id") == card.instance_id and _selected_card.get("die_targeting", false):
 			_cancel_mark_targeting(); return
 		_selected_card = {"instance_id": card.instance_id, "definition_id": card.definition_id, "die_targeting": true}
@@ -2487,7 +2820,7 @@ func _on_card_pressed(card: BattleCard) -> void:
 				if choices.is_empty(): _selected_card.clear()
 				_render()
 		return
-	if card.definition_id == "spined_rebuttal" and _view.stage == "defense_reaction":
+	if BattlePresentationCatalog.card_mechanic(str(card.definition_id)) == "spined_rebuttal" and _view.stage == "defense_reaction":
 		if _selected_card.get("instance_id") == card.instance_id and _selected_card.get("source_targeting", false):
 			_selected_card.clear()
 		else:
@@ -2621,25 +2954,33 @@ func _reroll_unkept(history_confirmed: bool = false) -> void:
 	_render()
 	if learned_battle_mode: call_deferred("_schedule_model_if_needed", reroll_result)
 
+func _capture_gain_card_poses() -> void:
+	_gain_card_poses.clear()
+	if not is_instance_valid(_hand_dock): return
+	var inverse := _root.get_global_transform_with_canvas().affine_inverse()
+	for card in _hand_dock.cards:
+		_gain_card_poses[card.instance_id] = {"transform": inverse * card.get_global_transform_with_canvas(), "size": card.size}
+
 func _send(command_json: String, history_confirmed: bool = false) -> void:
 	if _held_defense_view != null or _submitting or _history_review or _player_roll_active() or _card_gain_active() or command_json.is_empty(): return
+	_pending_attack.clear()
 	_reset_auto_pass_preview()
 	var sent = JSON.parse_string(command_json)
 	var sent_type := str(sent.get("type", "")) if sent is Dictionary else ""
-	var morph_selection := sent_type == "planning_select_ability" and _view.segment == "offensive"
 	var label := _history_label_for_command(sent)
 	var action := _history_command_action(sent)
 	if _history_replay and not history_confirmed:
 		_try_replay_history_action(action, label, {"kind": "command", "command_json": command_json})
 		return
 	_record_history_point(label, "decision", action)
-	# Submission is synchronous: a throwaway rebuild cannot be drawn and leaves
-	# unlaid-out controls for the selection transition to capture.
+	# Submission is synchronous; rebuild once from the accepted result so
+	# presentation never captures provisional controls.
 	_submitting = true
 	var result: Dictionary = gateway.submit(command_json)
 	_submitting = false
 	if result.get("accepted") != true:
 		_show_error(str(result.get("error", "Battle command rejected.")), result); _render(); return
+	_capture_gain_card_poses()
 	var defense_before := _defense_before_finalization(result)
 	var previous_actors := _view.actors
 	var previous_sources := _view.damage_sources
@@ -2648,7 +2989,7 @@ func _send(command_json: String, history_confirmed: bool = false) -> void:
 		_show_error("Authority result was not a safe battle snapshot.", result); _render(); return
 	_capture_ability_upgrades(previous_actors)
 	_capture_reaction_card_feedback(sent, previous_actors, previous_sources)
-	_capture_damage_feedback(result, previous_damage)
+	_capture_damage_feedback(result, previous_damage, defense_before != null)
 	_clear_reaction_notice_for_new_round()
 	_error_message = ""
 	_selected_card.clear(); _selected_source = ""; _hand_limit_selection.clear()
@@ -2660,18 +3001,8 @@ func _send(command_json: String, history_confirmed: bool = false) -> void:
 	_present_finalized_defense(defense_before)
 	if sent_type in ["planning_roll", "planning_reroll"]:
 		_start_player_roll(range(_view.rolled_dice("blade").size()) if sent_type == "planning_roll" else sent.get("payload", {}).get("reroll_indices", []))
-	if morph_selection and not _history_review and not _history_replay:
-		_selection_morph = _selected_attack("blade")
-		if _selection_morph.is_empty(): _selection_morph = {"ability_id": str(sent.get("payload", {}).get("ability_id", "")), "text": "Selected"}
 	_render()
-	if not _selection_morph.is_empty(): _finish_selection_morph.call_deferred()
-	elif learned_battle_mode: call_deferred("_schedule_model_if_needed", result)
-
-func _finish_selection_morph() -> void:
-	await get_tree().create_timer(COMBAT_TIMING.transition() + 0.35).timeout
-	if not is_inside_tree(): return
-	_selection_morph.clear()
-	_render()
+	if learned_battle_mode: call_deferred("_schedule_model_if_needed", result)
 
 func _advance_beat(history_confirmed: bool = false) -> void:
 	var completed_label := ""
@@ -3148,7 +3479,7 @@ func _save_active() -> void:
 
 func _card_legal(definition: String) -> bool:
 	if not _queued_defense.is_empty() and _view.stage == "offensive_reaction": return false
-	if definition in ["nudge", "try_again", "strong_swing"] or str(BattlePresentationCatalog.card(definition).targeting.get("selector", "")) in ["venom_choice", "curse_choice", "general_choice"] or (_continuous_damage_response() and not _view.legal_actions.is_empty()):
+	if definition in ["nudge", "try_again", "strong_swing"] or str(BattlePresentationCatalog.card(definition).targeting.get("selector", "")) in ["venom_choice", "curse_choice", "general_choice", "card_program"] or (_continuous_damage_response() and not _view.legal_actions.is_empty()):
 		for action in _view.legal_actions:
 			if not _action_in_focus(action): continue
 			var payload: Dictionary = action.get("payload", {})
@@ -3398,6 +3729,11 @@ func inspection_state() -> Dictionary:
 
 func _show_venom_choices(actions: Array, heading: String) -> void:
 	if actions.is_empty() or _submitting or _history_review: return
+	# Protect is always attack-first. Even a legacy chooser entry must use the
+	# currently selected source's fresh legal action, never open a second picker.
+	if actions.all(func(action): return action.get("payload", {}).get("commitment", {}).get("choice_id") == "spend_round_prevention"):
+		_spend_source_protection(_selected_source)
+		return
 	var dialog := AcceptDialog.new()
 	add_child(dialog)
 	dialog.title = heading
@@ -3417,8 +3753,6 @@ func _show_venom_choices(actions: Array, heading: String) -> void:
 	for entry in _view.hand_cards():
 		if str(entry.instance_id) in first_cards:
 			rules = BattlePresentationCatalog.card(str(entry.definition_id)).text
-	if first_payload.get("commitment", {}).get("choice_id") == "spend_round_prevention":
-		rules = BattlePresentationCatalog.status("protect").text
 	if rules.is_empty() and first_payload.has("ability_id"):
 		rules = BattlePresentationCatalog.ability(str(first_payload.ability_id), _view.actor("blade")).text
 	if not rules.is_empty():
@@ -3464,6 +3798,7 @@ func _venom_choice_label(action: Dictionary) -> String:
 		var choice: Variant = JSON.parse_string(key)
 		if choice is Dictionary and choice.has("kind"): return _general_choice_label(choice, action)
 	var text := "Confirm"
+	var mechanic_params: Dictionary = {}
 	var card_ids: Array = payload.get("card_ids", commitment.get("card_ids", []))
 	for card in _view.hand_cards():
 		if str(card.instance_id) in card_ids and str(BattlePresentationCatalog.card(str(card.definition_id)).targeting.get("selector", "")) == "curse_choice":
@@ -3471,11 +3806,14 @@ func _venom_choice_label(action: Dictionary) -> String:
 	if _view.stage == "curse_choice" and card_ids.is_empty(): return _curse_work_label(key)
 
 	for card in _view.hand_cards():
-		if str(card.instance_id) in card_ids and str(card.definition_id) == "agitate":
+		if str(card.instance_id) in card_ids:
+			mechanic_params = BattlePresentationCatalog.card(str(card.definition_id)).get("mechanic", {}).get("params", {})
+		if str(card.instance_id) in card_ids and BattlePresentationCatalog.card_mechanic(str(card.definition_id)) == "agitate":
 			var count := 0
 			for status in _view.actor(_focused_enemy).get("statuses", []):
 				if str(status.get("definition_id", "")) == key: count += int(status.get("stacks", 0))
-			return "Check all %d %s stack%s" % [count, BattlePresentationCatalog.status(key).name, "s" if count != 1 else ""]
+			if int(mechanic_params.get("checks", 0)) > 0: count = mini(count, int(mechanic_params.checks))
+			return "Check %d %s stack%s" % [count, BattlePresentationCatalog.status(key).name, "s" if count != 1 else ""]
 	if not ability.is_empty():
 		text = BattlePresentationCatalog.ability(ability).name
 		var tier := str(payload.get("tier_id", ""))
@@ -3503,11 +3841,10 @@ func _venom_choice_label(action: Dictionary) -> String:
 		var labels: Array[String] = []
 		for status_id in key.split(","): labels.append(BattlePresentationCatalog.status(status_id).name)
 		text = " + ".join(labels)
-		if targets.size() == 1 and str(targets[0]).begins_with("source-"): text = "Prevent 2 + pay 1 Catalyst to remove 1 " + text
-	elif key == "incubation": text = "Prevent 2 + pay 1 Catalyst to remove 1 Incubation"
+		if targets.size() == 1 and str(targets[0]).begins_with("source-"): text = "Prevent %d · pay %d %s to remove %d %s" % [int(mechanic_params.get("prevent", 2)), int(mechanic_params.get("cost_stacks", 1)), BattlePresentationCatalog.status(str(mechanic_params.get("cost_status", "catalyst"))).name, int(mechanic_params.get("cleanse_stacks", 1)), text]
+	elif key == "incubation": text = "Prevent %d · pay %d %s to remove %d Incubation" % [int(mechanic_params.get("prevent", 2)), int(mechanic_params.get("cost_stacks", 1)), BattlePresentationCatalog.status(str(mechanic_params.get("cost_status", "catalyst"))).name, int(mechanic_params.get("cleanse_stacks", 1))]
 	elif key.begins_with("prevent|"): text = "Spend Poison from " + _actor_display_name(key.trim_prefix("prevent|")) + " · prevent damage"
 	elif key == "prevent": text = "Prevent damage"
-	elif key == "spend_round_prevention": text = "Prevent %d damage" % int(_status_counts().get(viewer_actor_id, {}).get("protect", 0))
 	for source in _view.damage_sources + _as_array(_view.settled_damage.get("sources", [])):
 		if str(source.get("id", "")) in targets:
 			text += " · " + _actor_display_name(str(source.get("source_actor_id", ""))) + " · " + BattlePresentationCatalog.ability(str(source.get("source_content_id", ""))).name
@@ -3605,13 +3942,13 @@ func _continuous_damage_response() -> bool:
 func _damage_batch_key() -> String:
 	return _view.battle_id + ":" + str(_view.settled_damage.get("id", "%s:%d" % [_view.stage, _view.round_number]))
 
-func _capture_damage_feedback(result: Dictionary, previous_damage: Dictionary) -> void:
+func _capture_damage_feedback(result: Dictionary, previous_damage: Dictionary, hold_defense: bool = false) -> void:
 	if _history_review or _history_replay: return
 	for emitted in result.get("events", []):
 		if emitted.get("type") != "damage_prevented_or_modified": continue
 		var data: Dictionary = emitted.get("data", {})
 		var card_id := str(data.get("card_definition_id", ""))
-		if card_id.is_empty() and not data.has("ability_id"): continue
+		if card_id.is_empty() and not data.has("ability_id") and not data.has("status_id"): continue
 		var feedback_key := "%s:%s:%s" % [_view.battle_id, emitted.get("sequence", 0), data.get("card_instance_id", "")]
 		if _damage_feedback_seen.has(feedback_key): continue
 		_damage_feedback_seen[feedback_key] = true
@@ -3619,15 +3956,21 @@ func _capture_damage_feedback(result: Dictionary, previous_damage: Dictionary) -
 		var after := int(data.get("damage_after", 0))
 		var actor_id := str(emitted.get("actor_id", ""))
 		var card_name := str(BattlePresentationCatalog.ability(str(data.ability_id)).name) if data.has("ability_id") and card_id.is_empty() else str(BattlePresentationCatalog.card(card_id).name)
-		if data.get("status_id") == "protect": card_name = BattlePresentationCatalog.status("protect").name
+		if data.has("status_id") and card_id.is_empty(): card_name = BattlePresentationCatalog.status(str(data.status_id)).name
 		var text := "%s used %s · damage %d → %d" % [_actor_display_name(actor_id), card_name, before, after]
-		_damage_feedback = {"battle_id": _view.battle_id, "card_id": card_id, "instance_id": str(data.get("card_instance_id", "")), "started_ms": Time.get_ticks_msec(), "text": text, "before": before, "after": after, "actor_id": actor_id, "saved": [], "pending": []}
+		_damage_feedback = {"battle_id": _view.battle_id, "source_id": str(data.get("source_id", "")), "card_id": card_id, "instance_id": str(data.get("card_instance_id", "")), "started_ms": Time.get_ticks_msec(), "text": text, "before": before, "after": after, "actor_id": actor_id, "saved": [], "pending": []}
+		_damage_feedback["hand_pose"] = _gain_card_poses.get(str(data.get("card_instance_id", "")), {}).duplicate(true)
 		var still_pending := {}
 		var released_destinations := {}
 		for removal in _as_array(_view.settled_damage.get("removals", [])):
 			if removal.get("released", false): released_destinations[str(removal.get("card_id", ""))] = str(removal.get("released_destination", "discard"))
 			if removal.get("accepted", false) and not removal.get("released", false): still_pending[str(removal.get("card_id", ""))] = true
+		var source_cards: Array = _damage_cards_by_source(_as_array(previous_damage.get("sources", [])), _as_array(previous_damage.get("removals", []))).get(str(data.get("source_id", "")), [])
+		_damage_feedback["original_count"] = source_cards.size()
+		var held_ids := source_cards.map(func(removal): return str(removal.get("card_id", "")))
 		for removal in _as_array(previous_damage.get("removals", [])):
+			if hold_defense and str(removal.get("card_id", "")) not in held_ids: continue
+			if still_pending.has(str(removal.get("card_id", ""))) and str(removal.get("card_id", "")) not in held_ids: continue
 			if removal.get("accepted", false) and not removal.get("released", false):
 				# Only previously public damage cards are used; never inspect the opponent's hand.
 				var saved: Dictionary = removal.duplicate(true)
@@ -3635,21 +3978,25 @@ func _capture_damage_feedback(result: Dictionary, previous_damage: Dictionary) -
 				var inverse := _root.get_global_transform_with_canvas().affine_inverse()
 				for grid in _damage_grids:
 					if not is_instance_valid(grid): continue
-					for card in grid.get_children():
+					for card in grid.card_children():
 						if card is BattleCard and str(card.instance_id) == str(removal.card_id): saved["origin_rect"] = inverse * grid.feedback_card_rect(card)
 				if still_pending.has(str(removal.get("card_id", ""))): _damage_feedback.pending.append(saved)
 				elif str(removal.get("card_id", "")) != str(data.get("card_instance_id", "")): _damage_feedback.saved.append(saved)
 		if not _damage_feedback.saved.is_empty():
 			text = "%s · %d cards saved" % [card_name, _damage_feedback.saved.size()]
 			_damage_feedback.text = text
-		_reaction_card_feedback = {"battle_id": _view.battle_id, "source_id": str(data.get("source_id", "")), "expires_ms": Time.get_ticks_msec() + 2600, "text": text, "actor_id": actor_id, "card_id": card_id, "instance_id": str(data.get("card_instance_id", "")), "started_ms": Time.get_ticks_msec(), "changes": [{"source_id": str(data.get("source_id", "")), "before": before, "after": after}]}
+		_reaction_card_feedback = {"battle_id": _view.battle_id, "source_id": str(data.get("source_id", "")), "expires_ms": Time.get_ticks_msec() + 2600, "text": text, "actor_id": actor_id, "card_id": card_id, "instance_id": str(data.get("card_instance_id", "")), "started_ms": _damage_feedback.started_ms, "changes": [{"source_id": str(data.get("source_id", "")), "before": before, "after": after}]}
+
+		if hold_defense and data.has("ability_id"): _defense_damage_feedbacks.append(_damage_feedback.duplicate(true))
 
 func _build_damage_feedback() -> void:
 	if _damage_feedback.get("battle_id") != _view.battle_id or not _reaction_feedback_active() or _history_review or _history_replay: return
-	var panel := preload("res://presentation/battle/damage_response_feedback.gd").new()
-	_root.add_child(panel)
-	panel.configure(_damage_feedback, self)
-	_inspect(panel, "battle.damage_response_feedback", str(_damage_feedback.text))
+	var feedbacks: Array = _defense_damage_feedbacks if _held_defense_view != null else [_damage_feedback]
+	for feedback in feedbacks:
+		var panel := preload("res://presentation/battle/damage_response_feedback.gd").new()
+		_root.add_child(panel)
+		panel.configure(feedback, self)
+		_inspect(panel, "battle.damage_response_feedback", str(feedback.text))
 
 func _pass_hands_off_priority() -> bool:
 	return bool(_view.raw_snapshot.get("pass_hands_off_priority", false))
@@ -3706,7 +4053,7 @@ func _sync_enemy_focus() -> void:
 				for id in enemies:
 					if not _incoming_from(str(id), true).is_empty(): _focused_enemy = str(id); break
 		var incoming := _incoming_from(_focused_enemy, true)
-		if not incoming.any(func(source): return source.get("id") == _selected_source): _selected_source = str(incoming[0].id) if not incoming.is_empty() else ""
+		if not incoming.any(func(source): return source.get("id") == _selected_source) and _source_protection_action(_selected_source).is_empty(): _selected_source = ""
 	elif _view.stage in ["defense_roll", "defense_reaction"]:
 		var active := str(_view.defense_selections.get(viewer_actor_id, {}).get("source_id", ""))
 		var key := "%s:%d:%s" % [_view.battle_id, _view.round_number, active]
@@ -3720,6 +4067,9 @@ func _sync_enemy_focus() -> void:
 		if not incoming.is_empty(): _selected_source = str(incoming[0].id)
 
 func _select_enemy(id: String) -> void:
+	if not _pending_attack.is_empty():
+		_choose_offensive_target(id)
+		return
 	if id not in _enemy_ids() or id == _focused_enemy: return
 	_focused_enemy = id
 	_selected_source = ""
@@ -3729,6 +4079,7 @@ func _select_enemy(id: String) -> void:
 func _profile_dock(id: String, width: float) -> VBoxContainer:
 	var dock := preload("res://presentation/battle/fighter_profile_dock.gd").new()
 	dock.name = id; _root.add_child(dock); dock.size = Vector2(width, 0)
+	if id != "PlayerProfile": dock.max_bottom = PLAYER_ZONE_TOP - 12
 	return dock
 
 func _enemy_hud_width() -> float:
@@ -3750,9 +4101,13 @@ func _build_other_enemy_profiles() -> void:
 		_build_enemy_dice(str(id), dock)
 
 func _build_enemy_dice(actor_id: String, profile_dock: VBoxContainer) -> VBoxContainer:
-	var dock := VBoxContainer.new(); dock.name = "EnemyDice" if actor_id == _focused_enemy else "Dice_" + actor_id
+	var dock := preload("res://presentation/battle/enemy_dice_dock.gd").new(); dock.name = "EnemyDice" if actor_id == _focused_enemy else "Dice_" + actor_id
 	dock.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
-	profile_dock.add_child(dock); _enemy_dice_docks[actor_id] = dock
+	_root.add_child(dock); _enemy_dice_docks[actor_id] = dock
+	dock.profile_dock = profile_dock
+	dock.expanded = bool(_enemy_dice_visible.get(actor_id, false))
+	dock.visible = dock.expanded
+	dock.z_index = 14
 	if _director.peek().get("type") == "effects_resolved": return dock
 	var tray := BattleDiceTray.new(); tray.compact_row = true; tray.hud_compact = true
 	tray.dice_columns = 3 if _enemy_ids().size() >= 5 else 5
@@ -3787,7 +4142,6 @@ func actor_anchor_rect(actor_id: String, kind: String, status_id: String = "") -
 
 func _build_enemy_selector(_scenery: Control) -> void:
 	_enemy_buttons.clear()
-	if not _multiple_enemies(): return
 	for id in _enemy_ids():
 		var profile: ActorProfile = _actor_profiles.get(id)
 		if profile == null: continue
@@ -3796,14 +4150,25 @@ func _build_enemy_selector(_scenery: Control) -> void:
 		button.flat = true; button.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
 		var incoming := _incoming_from(str(id))
 		var state := "Defeated" if _profile_actor(str(id)).get("defeat_state") == "defeated" else "Attacking" if not incoming.is_empty() else "Ready" if _view.stage == "planning" else "Miss"
-		button.tooltip_text = "%s · %s\nSelect to target and inspect this enemy." % [profile.title.text, state]
-		button.disabled = _director.has_beats() or _view.segment != "offensive"
+		button.tooltip_text = "%s · %s\nClick name to %s dice. During Offense, also selects this enemy." % [profile.title.text, state, "hide" if _enemy_dice_visible.get(id, false) else "show"]
+		button.disabled = false
 		button.set_meta("battle_utility", true); button.set_meta("actor_id", id)
-		button.pressed.connect(_select_enemy.bind(str(id)))
+		button.pressed.connect(func():
+			if not _pending_attack.is_empty():
+				_choose_offensive_target(str(id))
+				return
+			_enemy_dice_visible[id] = not bool(_enemy_dice_visible.get(id, false))
+			if _view.segment == "offensive" and not _director.has_beats() and id != _focused_enemy:
+				_select_enemy(str(id))
+			else:
+				_enemy_dice_docks[id].expanded = bool(_enemy_dice_visible[id])
+				button.tooltip_text = "%s · Click name to %s dice" % [profile.title.text, "hide" if _enemy_dice_visible[id] else "show"]
+		)
 		profile.title.add_theme_color_override("font_color", Color("ffe4a1") if id == _focused_enemy else Color("e2d8c5"))
 		var selected_style := CINEMATIC.panel(Color.TRANSPARENT, Color("a68b51") if id == _focused_enemy else Color.TRANSPARENT, 6)
 		profile.add_theme_stylebox_override("panel", selected_style)
 		_enemy_buttons[id] = button; _inspect(button, "battle.enemy.select." + str(id), button.tooltip_text)
+	_build_offensive_targets()
 
 func _source_in_focus(source: Dictionary) -> bool:
 	if not _multiple_enemies() or _view.segment != "offensive" or _director.has_beats(): return true
@@ -3831,44 +4196,37 @@ func _display_actor_id(id: String) -> String:
 func _battlefield_visual() -> BattleEncounterVisual:
 	var original: BattleEncounterVisual = encounter_visual if encounter_visual != null else preload("res://content/battle_visuals/library.tres").default_encounter
 	var layout: BattleEncounterVisual = original.duplicate(true)
-	for placement in layout.fighters:
-		if placement.actor_id == "blade":
-			# Reserve the expanded curse-grid height up front; dice changes must
-			# never move the fighter or its attached HUD.
-			placement.ground_position += Vector2(-410 if _enemy_ids().size() == 4 else -340, -230)
-		elif not _multiple_enemies():
-			# Keep the single opponent and its attached HUD/dice beside the
-			# central defense panels throughout every phase.
-			placement.ground_position += Vector2(285, -85)
-	if not _multiple_enemies(): return layout
-	var template: BattleFighterPlacement
-	var kept: Array[BattleFighterPlacement] = []
-	for placement in layout.fighters:
-		if placement.actor_id in _enemy_ids():
-			if template == null: template = placement
-		else: kept.append(placement)
-	if template == null:
-		template = BattleFighterPlacement.new(); template.ground_position = Vector2(1380, 610)
+	var template := BattleFighterPlacement.new()
+	for authored in layout.fighters:
+		if authored.actor_id != "blade":
+			template = authored
+			break
+	var placements: Array[BattleFighterPlacement] = []
 	var enemies := _enemy_ids()
+	var library: BattleVisualLibrary = preload("res://content/battle_visuals/library.tres")
+	# Honor the authored scale of large enemies. In a three-enemy encounter,
+	# give the largest silhouette the center without changing actor identity.
+	if enemies.size() == 3:
+		var largest := 0; var heights: Array[float] = []
+		for id in enemies:
+			var visual := library.fighter(str(_view.actor(str(id)).get("definition_id", "")))
+			heights.append(visual.default_height if visual != null else 320.0)
+			if heights[-1] > heights[largest]: largest = heights.size() - 1
+		if heights[largest] > heights.min() + 60:
+			var middle = enemies[1]; enemies[1] = enemies[largest]; enemies[largest] = middle
+	var spacing := 1824.0 / maxi(1, enemies.size())
 	for i in enemies.size():
 		var placement: BattleFighterPlacement = template.duplicate(true)
 		placement.actor_id = str(enemies[i]); placement.instance_id = "enemy" if i == 0 else "enemy_" + str(i + 1)
-		# Separate actor footprints reserve space for every actor’s own HUD.
-		placement.ground_position = Vector2(1060 + 360 * i, 535) if enemies.size() == 2 else Vector2(1020 + 340 * i, 535)
-		placement.ground_position += template.ground_position - Vector2(1435, 585)
-		# Reserve space below each HUD for its dice without entering the hand.
-		if placement.ground_position.y > 400: placement.ground_position.y -= 50
-		placement.height = 275 if enemies.size() <= 4 else 220
-		if enemies.size() == 4:
-			# The left-shifted player leaves four full-width HUD/dice lanes.
-			placement.ground_position = Vector2(720 + 340 * i, 485) + template.ground_position - Vector2(1435, 585)
-		if enemies.size() >= 5:
-			# A second rank would put its artwork behind the first rank's dice.
-			# Compact the large encounter into one row of independent HUDs.
-			placement.ground_position = Vector2(950 + 215 * i, 330) + template.ground_position - Vector2(1435, 585)
-		placement.draw_order = 12 - i % 3 - (i / 3) * 3
-		kept.append(placement)
-	layout.fighters = kept
+		var visual := library.fighter(str(_view.actor(str(enemies[i])).get("definition_id", "")))
+		var authored_height := visual.default_height if visual != null else 320.0
+		placement.height = clampf(authored_height * 0.75, 220, 300)
+		placement.ground_position = Vector2(48 + spacing * (i + 0.5), 382 if placement.height >= 300 else 342)
+		placement.draw_order = 12 - i
+		placements.append(placement)
+	# A first-person battlefield has no player sprite. The real player HUD
+	# remains the semantic destination for damage, resources, and statuses.
+	layout.fighters = placements
 	return layout
 
 func _display_damage_sources(sources: Array) -> Array:
@@ -3924,28 +4282,32 @@ func _build_source_defense_choices(panel: Control, source_id: String) -> void:
 		_inspect(button, "battle.defense.choose.%s.%s.%s" % [source_id, payload.get("ability_id", ""), str(payload.get("spend_catalyst", false))], ability.text)
 
 func _curse_card_choice_label(id: String, key: String, targets: Array) -> String:
+	var original_id := id
+	var params: Dictionary = BattlePresentationCatalog.card(id).mechanic.get("params", {})
+	id = BattlePresentationCatalog.card_mechanic(id)
 	var target := _actor_display_name(str(targets[0])) if not targets.is_empty() else "enemy"
 	if id in ["shared_misfortune", "rotten_numeral"]: return "Curse face %s · %s" % [key, target]
 	if id in ["widen_the_crack", "unquiet_hands", "chosen_instrument"]: return "Die %d · %s" % [int(key) + 1, target]
 	if id == "spiteful_ward":
 		for source in _view.damage_sources + _as_array(_view.settled_damage.get("sources", [])):
-			if str(source.get("id", "")) in targets: return "Prevent 2 · %s · %s" % [_actor_display_name(str(source.get("source_actor_id", ""))), BattlePresentationCatalog.ability(str(source.get("source_content_id", ""))).name]
-	if id == "curse_eater": return "Spend 3 enemy Count · " + ("draw 2 cards" if key == "draw" else "gain 2 Energy")
-	if id == "ruin_made_flesh": return "Spend %s enemy Count · +%d attack damage" % [key, int(key) / 3 * 2]
+			if str(source.get("id", "")) in targets: return "Prevent %d · %s · %s" % [int(params.get("prevent", 2)),_actor_display_name(str(source.get("source_actor_id", ""))), BattlePresentationCatalog.ability(str(source.get("source_content_id", ""))).name]
+	if id == "curse_eater": return "Spend %d enemy Count · %s" % [int(params.get("cost_count", 3)), "draw %d cards" % int(params.get("draw", 2)) if key == "draw" else "gain %d Energy" % int(params.get("energy", 2))]
+	if id == "ruin_made_flesh": return "Spend %s enemy Count · +%d attack damage" % [key, int(key) / int(params.get("cost_count", 3)) * int(params.get("damage", 2))]
 	if id in ["call_the_mark", "no_safe_keep"]:
 		var parts := key.split(":")
 		return "%s · die %d · %s" % [_actor_display_name(parts[0]), int(parts[1]) + 1, "set to cursed face " + parts[2] if id == "call_the_mark" else "force a reroll"]
-	return "%s · %s" % [BattlePresentationCatalog.card(id).name, target]
+	return "%s · %s" % [BattlePresentationCatalog.card(original_id).name, target]
 
 func _curse_work_label(key: String) -> String:
 	var work: Dictionary = _view.raw_snapshot.get("curse_choice", {})
+	var params: Dictionary = BattlePresentationCatalog.card(str(work.get("card_id", ""))).mechanic.get("params", {})
 	match str(work.get("kind", "")):
 		"grasp": return "Entomb die %d" % (int(key) + 1)
 		"eclipse": return "Curse face %s on every enemy die" % key
 		"adjacent": return "Rolled %d · curse adjacent face %s" % [int(work.get("face", 0)), key]
 		"repaid": return "Apply Curse to die %d" % (int(key) + 1)
-		"tomb": return "Receive 3 Curse Count" if key == "count" else "Roll all five owned dice for Curse"
-		"misfortune": return "Take 2 immediate damage" if key == "damage" else "Receive Cursed Entangle"
+		"tomb": return "Receive %d Curse Count" % int(params.get("count", 3)) if key == "count" else "Roll %d owned dice for Curse" % int(params.get("rolls", 5))
+		"misfortune": return "Take %d immediate damage" % int(params.get("damage", 2)) if key == "damage" else "Receive %d %s" % [int(params.get("stacks", 1)), BattlePresentationCatalog.status(str(params.get("status_id", "cursed_entangle"))).name]
 	return key.capitalize()
 
 func _build_curse_choice() -> void:
@@ -3994,9 +4356,9 @@ func _mark_choice(action: Dictionary) -> String:
 	if not _board_curse_actions().is_empty():
 		var work: Dictionary = _view.raw_snapshot.curse_choice
 		return "%s:%s:0" % [_display_actor_id(str(work.target)), key]
-	if _selected_card.get("definition_id") in ["nudge", "try_again"]:
+	if BattlePresentationCatalog.card_mechanic(str(_selected_card.get("definition_id", ""))) in ["nudge", "try_again"]:
 		return "blade:%d:%d" % [int(payload.get("die_index", 0)), int(payload.get("status_id", 0))]
-	if _selected_card.get("definition_id") in ["unquiet_hands", "widen_the_crack", "chosen_instrument"]:
+	if BattlePresentationCatalog.card_mechanic(str(_selected_card.get("definition_id", ""))) in ["unquiet_hands", "widen_the_crack", "chosen_instrument"]:
 		var targets: Array = payload.get("target_ids", payload.get("commitment", {}).get("target_ids", []))
 		if targets.size() == 1 and key.is_valid_int(): return "%s:%s:0" % [_display_actor_id(str(targets[0])), key]
 	var parts := key.split(":")
@@ -4008,8 +4370,8 @@ func _mark_actions() -> Array:
 	var pending := _board_curse_actions()
 	if not pending.is_empty() and _view.raw_snapshot.curse_choice.kind in ["grasp", "repaid"]: return pending
 	if not _selected_card.get("die_targeting", false) or _history_review or _history_replay or _snapshot_panel_open or _director.has_beats(): return result
-	var extra_check: bool = _selected_card.get("definition_id") in ["unquiet_hands", "widen_the_crack", "chosen_instrument"]
-	if not extra_check and _view.stage != ("planning" if _selected_card.get("definition_id") in ["steady_hand", "nudge", "try_again"] else "offensive_reaction"): return result
+	var extra_check: bool = BattlePresentationCatalog.card_mechanic(str(_selected_card.get("definition_id", ""))) in ["unquiet_hands", "widen_the_crack", "chosen_instrument"]
+	if not extra_check and _view.stage != ("planning" if BattlePresentationCatalog.card_mechanic(str(_selected_card.get("definition_id", ""))) in ["steady_hand", "nudge", "try_again"] else "offensive_reaction"): return result
 	for action in _view.legal_actions:
 		if not _action_in_focus(action): continue
 		var payload: Dictionary = action.get("payload", {})
@@ -4018,12 +4380,16 @@ func _mark_actions() -> Array:
 		if parts.size() != 3 or parts[0] not in ["blade", _focused_enemy] or not parts[1].is_valid_int() or not parts[2].is_valid_int(): continue
 		var dice: Array = _as_array(_view.actor(parts[0]).get("owned_dice", [])) if extra_check else _view.rolled_dice(parts[0])
 		if int(parts[1]) < 0 or int(parts[1]) >= dice.size(): continue
-		if not extra_check and _selected_card.get("definition_id") not in ["no_safe_keep", "try_again"] and (int(parts[2]) < 1 or int(parts[2]) > 6): continue
+		if not extra_check and BattlePresentationCatalog.card_mechanic(str(_selected_card.get("definition_id", ""))) not in ["no_safe_keep", "try_again"] and (int(parts[2]) < 1 or int(parts[2]) > 6): continue
 		result.append(action)
 	return result
 
 func _build_mark_targeting() -> void:
 	var pending := _board_curse_actions()
+	# A legal dice-targeting action unfolds its targets without changing the
+	# user's saved visibility choice. The next ordinary render restores it.
+	if not pending.is_empty() or _selected_card.get("die_targeting", false):
+		for dock in _enemy_dice_docks.values(): dock.targeting = true; dock.show()
 	if not pending.is_empty():
 		var work: Dictionary = _view.raw_snapshot.curse_choice
 		# This choice follows an already committed ability/card and is mandatory.
@@ -4038,7 +4404,7 @@ func _build_mark_targeting() -> void:
 			_root.add_child(selector); selector.configure(self)
 		return
 	if not _selected_card.get("die_targeting", false): return
-	if _selected_card.get("definition_id") in ["shared_misfortune", "rotten_numeral"]:
+	if BattlePresentationCatalog.card_mechanic(str(_selected_card.get("definition_id", ""))) in ["shared_misfortune", "rotten_numeral"]:
 		if _number_face_actions().is_empty(): _selected_card.clear(); return
 		var foldout := preload("res://presentation/battle/number_face_foldout.gd").new()
 		_root.add_child(foldout); foldout.configure(self)
@@ -4094,7 +4460,7 @@ func _number_face_actions() -> Dictionary:
 			if key.is_valid_int() and int(key) >= 1 and int(key) <= 6: choices[int(key)] = action
 		return choices
 	if not _selected_card.get("die_targeting", false) or _history_review or _history_replay or _snapshot_panel_open or _director.has_beats(): return choices
-	if _selected_card.get("definition_id") not in ["shared_misfortune", "rotten_numeral"]: return choices
+	if BattlePresentationCatalog.card_mechanic(str(_selected_card.get("definition_id", ""))) not in ["shared_misfortune", "rotten_numeral"]: return choices
 	for action in _view.legal_actions:
 		if not _action_in_focus(action): continue
 		var payload: Dictionary = action.get("payload", {})
@@ -4171,3 +4537,46 @@ func _general_choice_label(choice: Dictionary, action: Dictionary) -> String:
 				var boost: bool = choice.get("boost", false)
 				return "Prevent %d damage · %d energy" % [int(op.amount) + (int(op.bonus_amount) if boost else 0), int(def.cost.energy) + (int(op.extra_energy) if boost else 0)]
 	return "Confirm"
+
+func _build_program_choices() -> void:
+	if _director.has_beats() or _history_review: return
+	var choices: Array = []
+	var active := false
+	for action in _view.legal_actions:
+		var payload: Dictionary = action.get("payload", {})
+		var choice = _program_choice(payload)
+		if not choice is Dictionary or not choice.has("verb"): continue
+		choices.append({"action": action, "choice": choice})
+		if choice.verb != "start": active = true
+	if choices.is_empty(): return
+	if active:
+		for child in _ability_dock.get_children(): _ability_dock.remove_child(child); child.queue_free()
+		var title := Label.new(); title.text = "Choose targets · " + str(BattlePresentationCatalog.card(str(_selected_card.get("definition_id", ""))).get("name", "Card")); title.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART; _ability_dock.add_child(title)
+	for entry in choices:
+		if not active and entry.choice.verb == "start":
+			var payload: Dictionary = entry.action.payload
+			var cards: Array = payload.get("card_ids", payload.get("commitment", {}).get("card_ids", []))
+			if _view.hand_cards().any(func(card): return str(card.instance_id) in cards): continue
+		var button := TOOLTIP_BUTTON.new(); button.name = "ProgramChoice_" + str(entry.choice.verb); button.set_meta("program_choice", entry.choice); button.text = str(entry.choice.get("label", "Choose")); button.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		button.custom_minimum_size.y = 38
+		button.pressed.connect(func(): _send(JSON.stringify(entry.action)))
+		_ability_dock.add_child(button)
+
+func _sync_program_card_selection() -> void:
+	if _selected_card.get("program_targeting", false): _selected_card.clear()
+	for action in _view.legal_actions:
+		var payload: Dictionary = action.get("payload", {})
+		var choice = _program_choice(payload)
+		if not choice is Dictionary or not choice.has("verb") or choice.verb == "start": continue
+		var ids: Array = payload.get("card_ids", payload.get("commitment", {}).get("card_ids", []))
+		for card in _view.hand_cards():
+			if str(card.instance_id) in ids:
+				_selected_card = {"instance_id": card.instance_id, "definition_id": card.definition_id, "program_targeting": true}
+				return
+
+func _program_choice(payload: Dictionary) -> Dictionary:
+	var raw := str(payload.get("status_id", payload.get("commitment", {}).get("choice_id", "")))
+	if not raw.begins_with("{"): return {}
+	var parsed := JSON.new()
+	if parsed.parse(raw) != OK or not parsed.data is Dictionary: return {}
+	return parsed.data

@@ -1,41 +1,52 @@
 {
-  "schema_version": 1,
-  "id": "no_safe_keep",
-  "name": "No Safe Keep",
-  "type": "curse_action",
-  "presentation": {
-    "rules_text": "Force a kept, cursed enemy offensive die to reroll. Unkeep it and replace its offensive result. Recheck the owner\u2019s ability selection. Uses that result\u2019s one effect retry; cannot target an already-retried result. Grants no extra ordinary roll attempts. Each named Curse card may be played once per player per round.",
-    "art_key": "card_no_safe_keep",
-    "effect_summary": "Force a kept cursed offensive die to reroll."
-  },
+  "access_type": "curse",
   "cost": {
     "energy": 1
   },
-  "play": {
-    "source_zones": [
-      "hand"
+  "id": "no_safe_keep",
+  "mechanic": {
+    "kind": "no_safe_keep",
+    "params": {},
+    "windows": [
+      "offensive_reaction"
     ],
+    "uses_per_round": 1,
+    "uses_per_battle": 0
+  },
+  "name": "No Safe Keep",
+  "operations": [
+    {
+      "id": "no_safe_keep",
+      "target": "self",
+      "type": "curse_card"
+    }
+  ],
+  "play": {
     "destination": "discard",
     "playable_during": [
       {
-        "segment": "offensive",
         "phase": "main",
+        "segment": "offensive",
         "window_purpose": "reaction"
       }
+    ],
+    "source_zones": [
+      "hand"
     ]
   },
-  "targeting": {
-    "selector": "curse_choice",
-    "minimum": 0,
-    "maximum": 1
+  "presentation": {
+    "art_key": "card_no_safe_keep",
+    "effect_summary": "Force a kept cursed offensive die to reroll.",
+    "rules_text": "Force a kept, cursed enemy offensive die to reroll. Unkeep it and replace its offensive result. Recheck the owner’s ability selection. Uses that result’s one effect retry; cannot target an already-retried result. Grants no extra ordinary roll attempts. Each named Curse card may be played once per player per round."
   },
   "reaction_window": {
     "opens": false
   },
-  "operations": [
-    {
-      "type": "curse_card",
-      "target": "self"
-    }
-  ]
+  "schema_version": 1,
+  "targeting": {
+    "maximum": 1,
+    "minimum": 0,
+    "selector": "curse_choice"
+  },
+  "type": "curse_action"
 }

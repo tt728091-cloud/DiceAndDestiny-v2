@@ -13,6 +13,7 @@ const MEANINGFUL := {
 var _queue: Array = []
 var _curse_updates: Array[Dictionary] = []
 var _status_updates: Array[Dictionary] = []
+var _card_energy_updates: Array[Dictionary] = []
 var _shown_attack_cards := {}
 var _last_sequence := 0
 # Received events must not replay while their presentation watermark is pending.
@@ -41,9 +42,14 @@ func queue_result(result: Dictionary, already_presented_sequence: int = 0, previ
 	for emitted in ordered:
 		if emitted.get("type") == "effects_resolved": has_effects_summary = true
 	var automatic_segment := ""
+	# Resource events omit their round. Inherit it from the enclosing ordered
+	# segment event, not a zero default or the final round of the whole batch.
+	var event_round := maxi(1, int(snapshot.get("round", 1)))
 	var fresh_events: Array = []
 	var damage_actors := previous_actors.duplicate(true)
 	for event in ordered:
+		if int(event.get("round", 0)) > 0: event_round = int(event.round)
+		else: event["round"] = event_round
 		if event.get("type") == "segment_entered": automatic_segment = str(event.get("segment", event.get("to", "")))
 		var sequence := int(event.get("sequence", 0))
 		if sequence > 0 and sequence <= maxi(_last_sequence, _last_received_sequence): continue
@@ -110,8 +116,33 @@ func queue_result(result: Dictionary, already_presented_sequence: int = 0, previ
 		_queue.append(beat)
 
 	_queue_card_gains(fresh_events, previous_actors, snapshot.get("actors", {}))
+	_queue_card_energy_changes(fresh_events, previous_actors, snapshot.get("actors", {}))
 	_queue_attack_card_feedback(fresh_events, snapshot)
 	_queue_curse_feedback(fresh_events, snapshot.get("actors", {}), _array(snapshot.get("curse_preparations", [])))
+
+func take_card_energy_updates() -> Array[Dictionary]:
+	var updates := _card_energy_updates
+	_card_energy_updates = []
+	return updates
+
+func _queue_card_energy_changes(events: Array, before: Dictionary, after: Dictionary) -> void:
+	var owners := {}
+	for event in events:
+		if event.get("type") not in ["card_played", "damage_prevented_or_modified"]: continue
+		if str(event.get("data", {}).get("card_definition_id", "")).is_empty(): continue
+		owners[str(event.get("actor_id", ""))] = true
+	for actor_id in owners:
+		if not before.has(actor_id) or not after.has(actor_id): continue
+		var start := int(before[actor_id].get("energy_points", 0))
+		var finish := int(after[actor_id].get("energy_points", 0))
+		var paid := finish
+		# Gain feedback will later animate the reward from its post-cost baseline.
+		# Animate payment first, without competing with that later animation.
+		for update in _status_updates:
+			if update.kind == "resource" and update.data.stat == "energy" and update.data.target_actor_id == actor_id and update.has("card_feedback"):
+				paid = int(update.data.before)
+		if start != paid:
+			_card_energy_updates.append({"target_actor_id": actor_id, "before": start, "after": paid, "expected": finish})
 
 func _queue_attack_card_feedback(events: Array, snapshot: Dictionary) -> void:
 	for event in events:
@@ -122,6 +153,10 @@ func _queue_attack_card_feedback(events: Array, snapshot: Dictionary) -> void:
 				# Brine Surge is part of the joint attack reveal. Show its final
 				# total immediately; provenance lives in the intent's hover text.
 				if bonus.get("card_definition_id") == "brine_surge": continue
+				# Preparation was already presented when the card was played.
+				# Revealing the attack uses its full authoritative total once.
+				var definition := BattlePresentationCatalog.definition("cards", str(bonus.get("card_definition_id", "")))
+				if _array(definition.get("operations")).any(func(operation): return operation.get("type") == "apply_ability_modifier" and operation.get("duration") == "offensive"): continue
 				var key := "%s:%s:%s:%s" % [snapshot.get("battle_id", ""), snapshot.get("round", 0), actor_id, bonus.card_instance_id]
 				if _shown_attack_cards.has(key): continue
 				_shown_attack_cards[key] = true
@@ -190,7 +225,7 @@ func _queue_card_gains(events: Array, before: Dictionary, after: Dictionary) -> 
 			if not card_id.is_empty() and not seen_cards.has(instance):
 				seen_cards[instance] = true
 				played.append(card_id)
-				card_events.append({"definition_id": card_id, "actor_id": str(event.get("actor_id", "")), "sequence": int(event.get("sequence", 0)), "instance_id": instance})
+				card_events.append({"definition_id": card_id, "actor_id": str(event.get("actor_id", "")), "sequence": int(event.get("sequence", 0)), "instance_id": instance, "ability_id": str(event.get("data", {}).get("ability_id", ""))})
 				var owner := str(event.get("actor_id", ""))
 				paid_energy[owner] = int(paid_energy.get(owner, 0)) + int(event.get("energy_cost", BattlePresentationCatalog.card(card_id).cost))
 				played_count[owner] = int(played_count.get(owner, 0)) + 1
@@ -211,7 +246,7 @@ func _queue_card_gains(events: Array, before: Dictionary, after: Dictionary) -> 
 			var start := int(counts.get(id, 0)); var finish := int(status.get("stacks", 0))
 			if finish <= start: continue
 			# Curse check rolls own their Count reveal and trail.
-			if id == "curse_count" and events.any(func(event): return str(event.get("actor_id", "")) == str(actor_id) and event.get("type") == "curse_resolved" and (event.get("data", {}).get("kind") == "second_knell_trigger" or (("unquiet_hands" in played or "widen_the_crack" in played) and event.get("data", {}).get("kind") == "owned_roll" and event.get("data", {}).get("cursed", false)))): continue
+			if id == "curse_count" and events.any(func(event): return str(event.get("actor_id", "")) == str(actor_id) and event.get("type") == "curse_resolved" and (event.get("data", {}).get("kind") == "second_knell_trigger" or (played.any(func(id): return BattlePresentationCatalog.card_mechanic(str(id)) in ["unquiet_hands", "widen_the_crack"]) and event.get("data", {}).get("kind") == "owned_roll" and event.get("data", {}).get("cursed", false)))): continue
 			var already_animated := false
 			for update in _status_updates:
 				if str(update.data.get("target_actor_id", "")) != str(actor_id): continue
@@ -237,8 +272,23 @@ func _queue_card_gains(events: Array, before: Dictionary, after: Dictionary) -> 
 					if event.get("type") == "cards_drawn" and str(event.get("actor_id", "")) == str(actor_id):
 						drawn += maxi(int(event.get("count", 0)), event.get("cards", []).size())
 				gained = maxi(gained, drawn)
-			if gained > 0:
-				_status_updates.append({"kind": "resource", "card_name": card_name, "data": {"target_actor_id": actor_id, "stat": pair[1], "caption": pair[2], "amount": gained, "before": maxi(0, finish - gained), "after": finish}})
+			var draw_events := events.filter(func(event): return event.get("type") == "cards_drawn" and str(event.get("actor_id", "")) == str(actor_id)) if pair[1] == "hand" else []
+			var draw_requested: bool = pair[1] == "hand" and card_events.any(func(card): return card.actor_id == str(actor_id) and BattlePresentationCatalog.card(str(card.definition_id)).operations.any(func(op): return op.get("type") == "draw_cards" and op.get("target", "self") == "self"))
+			if gained > 0 or not draw_events.is_empty() or draw_requested:
+				var data := {"target_actor_id": actor_id, "stat": pair[1], "caption": pair[2], "amount": gained, "before": maxi(0, finish - gained), "after": finish}
+				if pair[1] == "hand":
+					# Only viewer-safe event IDs may become visible card flights.
+					data["drawn_ids"] = []
+					for event in draw_events:
+						for id in _array(event.get("cards", [])):
+							if id not in data.drawn_ids: data.drawn_ids.append(id)
+					# Some authority adapters publish draws only in the resulting
+					# viewer hand. Compare that public hand, never a private deck.
+					for id in _array(final.get("hand", [])):
+						if id not in _array(initial.get("hand", [])) and id not in data.drawn_ids: data.drawn_ids.append(id)
+					data["deck_before"] = int(initial.get("deck_count", 0))
+					data["deck_after"] = int(final.get("deck_count", 0))
+				_status_updates.append({"kind": "resource", "card_name": card_name, "data": data})
 
 	for index in range(first_update, _status_updates.size()): _status_updates[index]["card_feedback"] = feedback
 
@@ -411,13 +461,18 @@ func take_status_updates() -> Array[Dictionary]:
 func _queue_curse_feedback(events: Array, actors: Dictionary, preparations: Array = []) -> void:
 	var changes: Array[Dictionary] = []
 	var cards := {}
+	var instances := {}
 	var rolls := {}
 	var counts := {}
 	for event in events:
-		if event.get("type") == "card_played":
+		if event.get("type") in ["card_played", "card_program_choice"]:
 			var played := str(event.get("data", {}).get("card_definition_id", ""))
-			if not played.is_empty(): cards[played] = str(event.get("actor_id", ""))
-			if played in ["nudge", "try_again"]:
+			if not played.is_empty():
+				cards[played] = str(event.get("actor_id", ""))
+				instances[played] = str(event.get("data", {}).get("card_instance_id", ""))
+			for change in event.get("data", {}).get("program_dice_changes", []) if event.get("data", {}).get("program_dice_changes") is Array else []:
+				changes.append({"kind": "offensive_reroll" if change.get("rolled", false) else "offensive_face_set", "actor_id": str(change.get("actor_id", "")), "index": int(change.get("index", 0)), "face_before": int(change.get("face_before", 0)), "face": int(change.get("face", 0)), "sequence": int(event.get("sequence", 0)), "starter_card": true})
+			if played in ["nudge", "try_again"] and not event.get("data", {}).get("program", false):
 				var die_data: Dictionary = event.get("data", {})
 				changes.append({"kind": "offensive_face_set" if played == "nudge" else "offensive_reroll", "actor_id": str(event.get("actor_id", "")), "index": int(die_data.get("die_index", 0)), "face_before": int(die_data.get("face_before", 0)), "face": int(die_data.get("face", 0)), "sequence": int(event.get("sequence", 0)), "starter_card": true})
 		if event.get("type") != "curse_resolved": continue
@@ -434,11 +489,12 @@ func _queue_curse_feedback(events: Array, actors: Dictionary, preparations: Arra
 		if kind == "bloom_trigger":
 			var bloom: Dictionary = data.duplicate(true)
 			bloom["actor_id"] = actor; bloom["sequence"] = int(event.get("sequence", 0))
-			changes.append(bloom); cards["curse_bloom"] = str(data.get("source_actor_id", ""))
+			changes.append(bloom); cards[str(data.get("source_card_id", "curse_bloom"))] = str(data.get("source_actor_id", ""))
 		if kind == "dividend_trigger":
 			var reward: Dictionary = data.duplicate(true)
 			reward["actor_id"] = actor; reward["sequence"] = int(event.get("sequence", 0))
 			changes.append(reward)
+			if not str(data.get("source_card_id", "")).is_empty(): cards[str(data.source_card_id)] = str(data.get("source_actor_id", ""))
 		if kind == "count": counts[str(data.get("die_id", ""))] = data
 		if data.get("second_knell_part", false) or data.get("refusal_part", false):
 			counts.erase(str(data.get("die", {}).get("owned_id", "")))
@@ -451,7 +507,7 @@ func _queue_curse_feedback(events: Array, actors: Dictionary, preparations: Arra
 				change["count_after"] = int(counts[id].get("count", 0))
 				change["count_before"] = maxi(0, int(change.count_after) - 1)
 			_copy_defense_cause(change, data)
-			if data.get("source_card_id") == "unquiet_hands": cards["unquiet_hands"] = str(data.get("source_actor_id", ""))
+			if BattlePresentationCatalog.card_mechanic(str(data.get("source_card_id", ""))) == "unquiet_hands": cards[str(data.source_card_id)] = str(data.get("source_actor_id", ""))
 			if data.get("offensive_reroll", false):
 				change["kind"] = "offensive_reroll"
 				change["face_before"] = int(data.get("face_before", 0))
@@ -475,7 +531,7 @@ func _queue_curse_feedback(events: Array, actors: Dictionary, preparations: Arra
 	# not find a new face. Existing preparations must not replay on later rolls.
 	for prepared in preparations:
 		var id := str(prepared.get("card_id", ""))
-		if id != "maledictions_refusal" or not cards.has(id): continue
+		if BattlePresentationCatalog.card_mechanic(id) != "maledictions_refusal" or not cards.has(id): continue
 		if str(prepared.get("source", "")) != str(cards[id]): continue
 		changes.append({"kind": "preparation", "actor_id": str(prepared.get("target", "")), "card_id": id})
 	if changes.is_empty(): return
@@ -509,7 +565,7 @@ func _queue_curse_feedback(events: Array, actors: Dictionary, preparations: Arra
 		else:
 			if not attacks.has(attack): attacks[attack] = []
 			attacks[attack].append(change)
-	if not other.is_empty(): _curse_updates.append({"changes": other, "card_id": card_id, "title": title})
+	if not other.is_empty(): _curse_updates.append({"changes": other, "card_id": card_id, "card_instance_id": str(instances.get(card_id, "")), "source_actor_id": str(cards.get(card_id, "")), "title": title})
 	for defense in defenses:
 		_curse_updates.append({"changes": defenses[defense], "card_id": "", "title": title, "defense_inline": true, "defense_source_id": defense})
 	for attack in attacks:
@@ -562,6 +618,7 @@ func _queue_knell_feedback(event: Dictionary) -> void:
 	data["sequence"] = int(event.get("sequence", 0))
 	var refusal: bool = str(data.kind).begins_with("refusal_")
 	var title := "Curse Bloom" if data.kind == "bloom_expired" else "Black Dividend" if data.kind == "dividend_expired" else "Malediction’s Refusal" if refusal else "Second Knell"
+	if not str(data.get("source_card_id", "")).is_empty(): title = BattlePresentationCatalog.card(str(data.source_card_id)).name
 	var key := str(data.kind) + ":" + str(data.sequence)
 	var at := _queue.size()
 	# Keep retries before their Effects result and before later-round income.

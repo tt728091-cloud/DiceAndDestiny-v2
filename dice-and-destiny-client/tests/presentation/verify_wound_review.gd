@@ -14,7 +14,11 @@ func _run() -> void:
 	for step in 2000:
 		if not result.get("accepted", false): _expect(false, "native command: " + str(result.get("error"))); break
 		if result.snapshot.get("status", "") != "active": break
-		_expect(result.snapshot.get("wounds", []).is_empty(), "end-of-battle ledger stays hidden during combat")
+		for actor_id in result.snapshot.actors:
+			var committed := 0
+			for wound in result.snapshot.get("wounds", []):
+				if wound.target_actor_id == actor_id: committed += wound.cards.size()
+			_expect(committed == int(result.snapshot.actors[actor_id].get("removed_count", 0)), "live wounds match committed losses throughout combat")
 		if result.learned_policy.get("model_turn", false): result = gateway.advance_model()
 		else:
 			var actions: Array = result.get("legal_actions", [])
@@ -44,12 +48,38 @@ func _run() -> void:
 	for viewport in [Vector2i(1280, 720), Vector2i(1920, 1080), Vector2i(1024, 768)]:
 		fixture.battle_result = "victory" if viewport.x == 1280 else "defeat" if viewport.x == 1920 else "draw"
 		canvas.size = viewport
-		screen = SCREEN.instantiate(); screen.initial_result = fixture; screen.gateway = BattleGateway.new(FakeBattleAuthority.new())
+		if viewport.x == 1024:
+			for id in ["goblin-3", "goblin-4"]:
+				fixture.snapshot.actors[id] = fixture.snapshot.actors.goblin.duplicate(true)
+				fixture.snapshot.actors[id].removed_count = 0
+				fixture.snapshot.actors[id].current_health = fixture.snapshot.actors[id].max_health
+		screen = SCREEN.instantiate(); screen.initial_result = fixture; screen.learned_battle_mode = true; screen.gateway = BattleGateway.new(FakeBattleAuthority.new())
 		screen.active_store = ActiveBattleStore.new(WorkspacePaths.persistent_file("wounds-ui.json")); canvas.add_child(screen); screen.set_process(false)
 		for frame in 10: await process_frame
 		var button: Button = screen._center.get_node_or_null("ReviewBattle")
 		_expect(button != null, "completion screen exposes Review button")
 		if button == null: screen.queue_free(); await process_frame; continue
+		# Check the right edges too: the second enemy HUD overlaps the result
+		# buttons here, so a center-only click misses the reported regression.
+		for profile in screen._actor_profiles.values():
+			_expect(screen._center_scroll.z_index > profile.get_parent().z_index, "completion draws above every actor HUD")
+		var actions := 0
+		for control in screen._center.get_children():
+			if not control is Button: continue
+			actions += 1
+			var bounds: Rect2 = control.get_global_rect()
+			await _move(Vector2(bounds.end.x-12,bounds.get_center().y))
+			_expect(canvas.gui_get_hovered_control() == control, "right edge of completion action receives pointer: " + control.text)
+			await create_timer(1.2).timeout
+			_expect(not _has_visible_popup(canvas), "completion action does not open an empty hover box: " + control.text)
+			for profile in screen._actor_profiles.values():
+				var overlap: Rect2 = bounds.intersection(profile.get_global_rect())
+				if not overlap.has_area(): continue
+				await _move(overlap.get_center())
+				_expect(canvas.gui_get_hovered_control() == control, "overlapping enemy HUD cannot intercept completion action")
+		_expect(actions == 3, "Review, Rematch and New Battle remain available")
+		if DisplayServer.get_name() != "headless":
+			RenderingServer.force_draw(false); canvas.get_texture().get_image().save_png("res://.godot/layout-review/completion-layer-%d.png" % viewport.x)
 		await _click(button)
 		var review = screen._root.get_node_or_null("WoundReview")
 		_expect(review != null, "pointer opens review")
@@ -106,3 +136,8 @@ func _click(control: Control) -> void:
 		for frame in 4: await process_frame
 func _expect(ok: bool, message: String) -> void:
 	if not ok: failed = true; push_error("WOUND REVIEW: " + message)
+func _has_visible_popup(node: Node) -> bool:
+	if node is Popup and node.visible: return true
+	for child in node.get_children(true):
+		if _has_visible_popup(child): return true
+	return false

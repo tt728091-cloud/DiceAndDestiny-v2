@@ -1,41 +1,56 @@
 {
-  "schema_version": 1,
-  "id": "maledictions_refusal",
-  "name": "Malediction\u2019s Refusal",
-  "type": "curse_action",
-  "presentation": {
-    "rules_text": "Apply 1 ordinary Curse and Malediction\u2019s Refusal status to the enemy. Before the next effect would cleanse this enemy\u2019s Curse Count, roll one random owned enemy die. A final cursed result cancels that cleanse; otherwise it succeeds, including any newly earned Count. Consumed on the attempt; expires at the next Income. Does not affect Count costs, conversion, or face-mark removal. Each named Curse card may be played once per player per round.",
-    "art_key": "card_maledictions_refusal",
-    "effect_summary": "Apply 1 Curse and Refusal status: check the next Count cleanse."
-  },
+  "access_type": "curse",
   "cost": {
     "energy": 1
   },
-  "play": {
-    "source_zones": [
-      "hand"
+  "id": "maledictions_refusal",
+  "mechanic": {
+    "kind": "maledictions_refusal",
+    "params": {
+      "curses": 1
+    },
+    "windows": [
+      "offensive_planning"
     ],
+    "uses_per_round": 1,
+    "uses_per_battle": 0,
+    "expiration": "next_income",
+    "rounds": 1
+  },
+  "name": "Malediction’s Refusal",
+  "operations": [
+    {
+      "id": "maledictions_refusal",
+      "target": "self",
+      "type": "curse_card"
+    }
+  ],
+  "play": {
     "destination": "discard",
     "playable_during": [
       {
-        "segment": "offensive",
         "phase": "main",
+        "segment": "offensive",
         "window_purpose": "planning"
       }
+    ],
+    "source_zones": [
+      "hand"
     ]
   },
-  "targeting": {
-    "selector": "curse_choice",
-    "minimum": 0,
-    "maximum": 1
+  "presentation": {
+    "art_key": "card_maledictions_refusal",
+    "effect_summary": "Apply 1 Curse and Refusal status: check the next Count cleanse.",
+    "rules_text": "Apply 1 ordinary Curse and Malediction’s Refusal status to the enemy. Before the next effect would cleanse this enemy’s Curse Count, roll one random owned enemy die. A final cursed result cancels that cleanse; otherwise it succeeds, including any newly earned Count. Consumed on the attempt; expires at the next Income. Does not affect Count costs, conversion, or face-mark removal. Each named Curse card may be played once per player per round."
   },
   "reaction_window": {
     "opens": false
   },
-  "operations": [
-    {
-      "type": "curse_card",
-      "target": "self"
-    }
-  ]
+  "schema_version": 1,
+  "targeting": {
+    "maximum": 1,
+    "minimum": 0,
+    "selector": "curse_choice"
+  },
+  "type": "curse_action"
 }
