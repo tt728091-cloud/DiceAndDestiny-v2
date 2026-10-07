@@ -68,7 +68,10 @@ type CardEffectSpec struct {
 	Windows    []string                 `json:"windows"`
 }
 
-var CardWindows = []string{"offensive_planning", "offensive_reaction", "defense_selection", "defense_reaction", "damage_reaction"}
+// defense_before_roll is the Defense screen only until the player has rolled a
+// defense this segment; defense_selection stays open before, between and after
+// defense rolls until the player passes.
+var CardWindows = []string{"offensive_planning", "offensive_reaction", "defense_before_roll", "defense_selection", "defense_reaction", "damage_reaction"}
 
 func number(defaultValue, minimum, maximum int) CardParameter {
 	return CardParameter{Type: "integer", Default: defaultValue, Minimum: minimum, Maximum: maximum}
@@ -79,7 +82,7 @@ func choice(defaultValue string, values ...string) CardParameter {
 func CardCapabilities() map[string]CardEffectSpec {
 	all := CardWindows
 	offense := []string{"offensive_planning", "offensive_reaction"}
-	defense := []string{"defense_selection", "defense_reaction", "damage_reaction"}
+	defense := []string{"defense_before_roll", "defense_selection", "defense_reaction", "damage_reaction"}
 	dest := choice("original", "original", "discard", "hand", "deck", "removed")
 	return map[string]CardEffectSpec{
 		"curse":              {"Apply ordinary Curse", "actor", map[string]CardParameter{"amount": number(1, 1, 100)}, all},
@@ -562,6 +565,9 @@ func CardProgramRules(p *CardProgram) string {
 		}
 	}
 	describe(p.Steps, "")
+	if ProgramContains(p.Windows, "defense_before_roll") && !ProgramContains(p.Windows, "defense_selection") {
+		lines = append(lines, "Play only before you roll any defense this round.")
+	}
 	return strings.Join(lines, "\n")
 }
 

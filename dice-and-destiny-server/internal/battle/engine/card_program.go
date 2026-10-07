@@ -64,6 +64,25 @@ func programSetQueue(x *state.CardExecution, s []content.CardStep) {
 	x.Steps, _ = json.Marshal(s)
 	x.Selected = nil
 }
+
+// programWindowOpen also accepts defense_before_roll on the Defense screen
+// until the actor has rolled a defense this segment. Skipped attacks record no
+// ability and do not close it.
+func programWindowOpen(b *state.Battle, actor string, windows []string) bool {
+	w := programWindow(b)
+	if content.ProgramContains(windows, w) {
+		return true
+	}
+	if w != "defense_selection" || !content.ProgramContains(windows, "defense_before_roll") {
+		return false
+	}
+	for _, d := range b.Settled.DefenseHistory {
+		if d.ActorID == actor && d.AbilityID != "" {
+			return false
+		}
+	}
+	return true
+}
 func programWindow(b *state.Battle) string {
 	switch b.Settled.Stage {
 	case stageOffensivePlan:
@@ -97,7 +116,7 @@ func programCards(b *state.Battle, lib content.BattleLibrary, actor string) []st
 		for _, id := range zoneCards(b.Actors[actor].Cards, z) {
 			d := lib.Cards[rt.CardInstances[id].DefinitionID]
 			p := d.Program
-			if p == nil || !content.ProgramContains(d.Play.SourceZones, string(z)) || !content.ProgramContains(p.Windows, programWindow(b)) || b.Actors[actor].Resources.EnergyPoints < d.Cost.Energy {
+			if p == nil || !content.ProgramContains(d.Play.SourceZones, string(z)) || !programWindowOpen(b, actor, p.Windows) || b.Actors[actor].Resources.EnergyPoints < d.Cost.Energy {
 				continue
 			}
 			if p.RollRequirement == "before_first" && rt.RollsUsed != 0 || p.RollRequirement == "after_first" && rt.RollsUsed == 0 {

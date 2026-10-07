@@ -17,6 +17,7 @@ Card Creation opens with a blank program card. **New blank card** starts a fresh
 - Card ID, name, presentation/art, access family, energy cost (0–100).
 - Play source: hand, draw pile or discard; play destination: hand, draw pile, discard or permanently removed. Removed cards cannot be played or resurrected. Removing cards records wounds and loses health.
 - Timing: a nonempty subset of the recipe’s supported windows. Unsupported phase/effect combinations fail validation.
+- Program-card defense windows: **Defense · before any roll** (`defense_before_roll`) is the Defense screen only until that participant rolls their first defense this round; skipping an attack without rolling, or another participant's roll, does not close it. **Defense · any time** (`defense_selection`) stays open before, between and after defense rolls until the participant passes. **Defense · roll review** (`defense_reaction`) is after a defense roll's dice land, before that defense applies. A before-roll-only card's rules text states the restriction. `defense_before_roll_test.go` and `verify_before_roll_window.gd` cover the authority and the editor.
 - Per-round and per-battle play limits (0 means unlimited; active, nonstacking preparations still prevent duplicates).
 - XP buy/sell prices, copy limits and upgrade branches; access restrictions still apply when equipping a deck.
 - Prevention recipes: saved cards may remain in their live original pile, move to discard/hand/deck, or be permanently removed. The played card still pays its own configured destination.

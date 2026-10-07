@@ -8,6 +8,14 @@ var embedded_draft: Dictionary = {}
 const PROGRAM_EDITOR = preload("res://app/screens/character/card_program_editor.gd")
 const STYLE = preload("res://app/screens/character/character_style.gd")
 const PREVIEW_ID := "__card_authoring_preview__"
+const WINDOW_LABELS := {
+	"offensive_planning": ["Offensive planning", "Your offensive turn, before and between your attack rolls."],
+	"offensive_reaction": ["Offensive reaction", "After an attack's dice are revealed."],
+	"defense_before_roll": ["Defense · before any roll", "The Defense screen, only until you roll your first defense this round."],
+	"defense_selection": ["Defense · any time", "The Defense screen before, between and after your defense rolls, until you Pass."],
+	"defense_reaction": ["Defense · roll review", "After a defense roll's dice land, before that defense applies."],
+	"damage_reaction": ["Damage phase (old saves)", "The separate damage phase used only by battles saved before unified defense."],
+}
 var catalog: Dictionary = {}
 var draft: Dictionary = {}
 var revision := 0
@@ -241,7 +249,8 @@ func _card_fields() -> void:
 	_label(timing, "Disabled windows conflict with one of the card's effects.", 13).add_theme_color_override("font_color", STYLE.MUTED)
 	var windows := GridContainer.new(); windows.columns = 2; windows.add_theme_constant_override("h_separation", 18); timing.add_child(windows)
 	for window in _available_windows():
-		var check := _check(windows, str(window).replace("_", " ").capitalize(), window in _timing().windows, func(on):
+		var label: Array = WINDOW_LABELS.get(window, [str(window).replace("_", " ").capitalize(), ""])
+		var check := _check(windows, label[0], window in _timing().windows, func(on):
 			if on and window not in _timing().windows: _timing().windows.append(window)
 			elif not on: _timing().windows.erase(window)
 			_changed(), "window." + str(window))
@@ -293,7 +302,8 @@ func _refresh_window_controls() -> void:
 	var allowed := _available_windows() if draft.has("mechanic") else _compatible_windows(draft.program.steps)
 	for w in _window_checks:
 		_window_checks[w].disabled = w not in allowed
-		_window_checks[w].tooltip_text = "Unavailable because one or more effects cannot run in this window." if w not in allowed else ""
+		var rules: String = WINDOW_LABELS.get(w, ["", ""])[1]
+		_window_checks[w].tooltip_text = (rules + "\n" if not rules.is_empty() else "") + "Unavailable because one or more effects cannot run in this window." if w not in allowed else rules
 func _reconcile_windows() -> void:
 	if draft.has("mechanic"): return
 	if _needs_roll(draft.program.steps) and draft.program.roll_requirement == "before_first":
