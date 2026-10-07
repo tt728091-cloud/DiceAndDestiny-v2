@@ -355,3 +355,78 @@ func TestCardTimingChoicesMapToWindows(t *testing.T) {
 		t.Fatal("offense before/after wrong after the first roll")
 	}
 }
+
+// "Any time" prevention includes each defense roll's review: the legacy
+// Emergency Ward and the specialized Venom/Curse prevention cards.
+func TestAnyTimePreventionDuringRollReview(t *testing.T) {
+	b, _, e := unifiedFixture(t, 4)
+	addCardInstance(&b, "ward-1", "emergency_ward")
+	a := b.Actors["player"]
+	a.Cards.Hand = append(a.Cards.Hand, "ward-1")
+	b.Actors["player"] = a
+	applyFirst(t, e, &b, command.TypePlanningAbility)
+	if b.Settled.Stage == stageDefenseRoll {
+		if _, err := e.ApplyBattleCommand(&b, e.LegalActions(&b, "player")[0]); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if b.Settled.Stage != stageDefenseReact {
+		t.Fatalf("missing roll review: %s", b.Settled.Stage)
+	}
+	before := settledSourceAmount(b.Settled.PendingDamage.Sources[0])
+	played := false
+	for _, action := range e.LegalActions(&b, "player") {
+		var p command.CommitInteractionPayload
+		if json.Unmarshal(action.Payload, &p) == nil && len(p.Commitment.CardIDs) == 1 && p.Commitment.CardIDs[0] == "ward-1" {
+			if _, err := e.ApplyBattleCommand(&b, action); err != nil {
+				t.Fatal(err)
+			}
+			played = true
+			break
+		}
+	}
+	if !played || settledSourceAmount(b.Settled.PendingDamage.Sources[0]) != max(0, before-3) {
+		t.Fatalf("Emergency Ward not playable during the roll review (played=%v)", played)
+	}
+
+	for _, id := range []string{"coagulate", "emergency_molt", "antivenom_draught", "spiteful_ward"} {
+		b, lib := curseFixture(t)
+		c := configuredClone(t, &lib, id)
+		putMechanic(&b, c)
+		applyStatus(&b, lib, "enemy", "poison", 2)
+		applyStatus(&b, lib, "player", "catalyst", 2)
+		b.Segment.Current = segment.Defensive
+		b.Settled.UnifiedDefense = true
+		b.Settled.Stage = stageDefenseReact
+		source := state.SettledDamageSource{ID: "incoming", SourceActorID: "enemy", TargetActorID: "player", SourceContentID: "sword_cut", BaseAmount: 5, FinalAmount: 5}
+		b.Settled.OffensiveSources = []state.SettledDamageSource{source}
+		b.Settled.PendingDamage = &state.SettledDamageBatch{ID: "damage", Sources: []state.SettledDamageSource{source}}
+		var choices int
+		if lib.Cards[c.ID].AccessType == "curse" {
+			choices = len(curseCardChoices(&b, lib, "player", c))
+		} else {
+			choices = len(venomCardChoices(&b, lib, "player", c))
+		}
+		if choices == 0 {
+			t.Fatalf("%s not playable during the roll review", id)
+		}
+	}
+}
+
+// Offense "Any time" includes the reaction window.
+func TestOffenseAnyTimeIncludesReaction(t *testing.T) {
+	b, lib := adventurerFixture(t)
+	adventurerRoll(&b, lib, []int{1, 2, 3, 4, 6})
+	b.Settled.Stage = stageOffensiveReact
+	openSettledWindow(&b, "react", stageOffensiveReact, "reaction", []command.Type{command.TypeCommitInteraction, command.TypePass})
+	hand := len(b.Actors["player"].Cards.Hand)
+	if err := playProgramCard(NewEngine(), &b, lib, "player", "take_stock-0", nil); err != nil {
+		t.Fatal(err)
+	}
+	if len(b.Actors["player"].Cards.Hand) == hand-1 && len(b.Actors["player"].Cards.Deck) > 0 {
+		t.Fatal("Take Stock did not draw during the reaction")
+	}
+	if !programOffers(&b, lib, "nudge-0") {
+		t.Fatal("After die card unavailable during the reaction")
+	}
+}

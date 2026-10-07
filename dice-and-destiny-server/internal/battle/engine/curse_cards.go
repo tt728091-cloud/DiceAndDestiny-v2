@@ -116,7 +116,7 @@ func curseCardChoices(b *state.Battle, lib content.BattleLibrary, actor string, 
 				}
 			}
 		case "spiteful_ward":
-			if stage == stageDamageReact || stage == stageOngoingDamage || (unifiedDefense(b) && stage == stageDefenseSelect) {
+			if stage == stageDamageReact || stage == stageOngoingDamage || (unifiedDefense(b) && (stage == stageDefenseSelect || stage == stageDefenseReact)) {
 				for _, s := range reactionDamageSources(b) {
 					if s.TargetActorID == actor && s.SourceActorID == enemy && lib.Abilities[s.SourceContentID].Type == "offensive" && settledSourceAmount(s) > 0 {
 						add("prevent", s.ID)

@@ -28,7 +28,7 @@ func TestUpgradedBraceRetainsSavedCardsFromEveryZone(t *testing.T) {
 			b.Settled.PendingDamage = batch
 			openSettledWindow(&b, "damage", stageDamageReact, "damage_response", []command.Type{command.TypeCommitInteraction, command.TypePass})
 			e := NewEngine()
-			if err := e.playSettledCard(&b, lib, "player", "brace_plus-0", []string{"hit"}, "", 0, ""); err != nil {
+			if err := playProgramCard(e, &b, lib, "player", "brace_plus-0", func(c programChoice) bool { return c.Source == "hit" }); err != nil {
 				t.Fatal(err)
 			}
 			if b.Actors["player"].CurrentHealth() != 5 || batch.Sources[0].FinalAmount != 1 {
@@ -114,7 +114,7 @@ func TestUpgradedBraceCanSaveItselfWithoutDuplicatingOrRedrawing(t *testing.T) {
 	}
 	b.Settled.PendingDamage = batch
 	openSettledWindow(&b, "damage", stageDamageReact, "damage_response", []command.Type{command.TypeCommitInteraction, command.TypePass})
-	if err := e.playSettledCard(&b, lib, "player", "brace_plus-0", []string{"hit"}, "", 0, ""); err != nil {
+	if err := playProgramCard(e, &b, lib, "player", "brace_plus-0", func(c programChoice) bool { return c.Source == "hit" }); err != nil {
 		t.Fatal(err)
 	}
 	for _, r := range batch.Removals {
@@ -165,7 +165,7 @@ func TestUnifiedUpgradedBraceRetainsPilesAndDoesNotUndoItsPlay(t *testing.T) {
 			b.Settled.PendingDamage = batch
 			openSettledWindow(&b, "defense", stageDefenseSelect, "defense_selection", []command.Type{command.TypeCommitInteraction, command.TypePass})
 			e := NewEngine()
-			if err := e.playSettledCard(&b, lib, "player", "brace_plus-0", []string{"hit"}, "", 0, ""); err != nil {
+			if err := playProgramCard(e, &b, lib, "player", "brace_plus-0", func(c programChoice) bool { return c.Source == "hit" }); err != nil {
 				t.Fatal(err)
 			}
 			for _, r := range batch.Removals {

@@ -23,7 +23,7 @@ func TestTakeStockNeverRedrawsDiscardIncludingItself(t *testing.T) {
 			b.Actors["player"] = a
 			health := a.CurrentHealth()
 			e := NewEngine()
-			if err := e.playSettledCard(&b, lib, "player", "take_stock-0", []string{"player"}, "", 0, ""); err != nil {
+			if err := playProgramCard(e, &b, lib, "player", "take_stock-0", nil); err != nil {
 				t.Fatal(err)
 			}
 			a = b.Actors["player"]

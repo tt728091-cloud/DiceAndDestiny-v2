@@ -166,7 +166,12 @@ func programActions(b *state.Battle, lib content.BattleLibrary, actor string, p 
 	for _, id := range programCards(b, lib, actor) {
 		x := b.Settled.Actors[actor].CardExecution
 		if x == nil {
-			actions = append(actions, programCommand(b, actor, id, p, programChoice{Verb: "start", Label: "Play " + lib.Cards[b.Settled.Actors[actor].CardInstances[id].DefinitionID].Name}))
+			// Legacy defense selection accepts only defenses and Pass; never
+			// enumerate a card start the window would reject.
+			start := programCommand(b, actor, id, p, programChoice{Verb: "start", Label: "Play " + lib.Cards[b.Settled.Actors[actor].CardInstances[id].DefinitionID].Name})
+			if commandAllowed(p.AllowedCommands, start.Type) {
+				actions = append(actions, start)
+			}
 			continue
 		}
 		if !x.Paid {

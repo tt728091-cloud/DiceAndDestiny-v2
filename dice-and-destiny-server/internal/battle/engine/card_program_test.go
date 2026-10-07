@@ -31,16 +31,83 @@ func selfStep(effect string, params map[string]any) content.CardStep {
 }
 func programAction(t *testing.T, b *state.Battle, lib content.BattleLibrary, verb string) command.Command {
 	t.Helper()
+	// The starter deck is program cards too; start the card under test, which
+	// tests add to hand last.
+	hand := b.Actors["player"].Cards.Hand
+	var fallback *command.Command
 	for _, a := range programActions(b, lib, "player", b.Flow.PendingInput["player"]) {
-		_, key := programPayload(a)
+		id, key := programPayload(a)
 		var c programChoice
 		_ = json.Unmarshal([]byte(key), &c)
-		if c.Verb == verb {
+		if c.Verb != verb {
+			continue
+		}
+		if verb != "start" || len(hand) == 0 || id == hand[len(hand)-1] {
 			return a
 		}
+		if fallback == nil {
+			fallback = &a
+		}
+	}
+	if fallback != nil {
+		return *fallback
 	}
 	t.Fatalf("no %s action", verb)
 	return command.Command{}
+}
+
+// playProgramCard plays one program card instance through the program handler,
+// answering each target or option with the first choice pick accepts (nil
+// accepts any) and confirming multi-target selections. A card without an
+// acceptable choice is cancelled and reported as an error, so callers can
+// assert rejections as well as legal plays.
+func playProgramCard(e Engine, b *state.Battle, lib content.BattleLibrary, actor, instance string, pick func(programChoice) bool) error {
+	find := func(match func(string, programChoice) bool) (command.Command, bool) {
+		for _, a := range programActions(b, lib, actor, b.Flow.PendingInput[actor]) {
+			id, key := programPayload(a)
+			var c programChoice
+			if json.Unmarshal([]byte(key), &c) == nil && match(id, c) {
+				return a, true
+			}
+		}
+		return command.Command{}, false
+	}
+	start, ok := find(func(id string, c programChoice) bool { return id == instance && c.Verb == "start" })
+	if !ok {
+		return fmt.Errorf("%s is not playable now", instance)
+	}
+	if _, err := e.handleProgramCommand(b, lib, start); err != nil {
+		return err
+	}
+	for i := 0; i < 32 && b.Settled.Actors[actor].CardExecution != nil; i++ {
+		next, ok := find(func(_ string, c programChoice) bool {
+			return (c.Verb == "target" || c.Verb == "option") && (pick == nil || pick(c))
+		})
+		if !ok {
+			next, ok = find(func(_ string, c programChoice) bool { return c.Verb == "confirm" })
+		}
+		if !ok {
+			if cancel, found := find(func(_ string, c programChoice) bool { return c.Verb == "cancel" }); found {
+				_, _ = e.handleProgramCommand(b, lib, cancel)
+			}
+			return fmt.Errorf("%s has no acceptable choice", instance)
+		}
+		if _, err := e.handleProgramCommand(b, lib, next); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// programOffers reports whether any program action targets one card instance;
+// the starter deck's own program cards may be playable alongside it.
+func programOffers(b *state.Battle, lib content.BattleLibrary, instance string) bool {
+	for _, a := range programActions(b, lib, "player", b.Flow.PendingInput["player"]) {
+		if id, _ := programPayload(a); id == instance {
+			return true
+		}
+	}
+	return false
 }
 func runProgramAction(t *testing.T, b *state.Battle, lib content.BattleLibrary, verb string) {
 	t.Helper()
@@ -270,7 +337,7 @@ func TestProgramNoImplicitRecyclingAndExactCount(t *testing.T) {
 	s.Target.Mode = "exact"
 	s.Target.Count = 100
 	b, lib = programFixture(t, s)
-	if len(programActions(&b, lib, "player", b.Flow.PendingInput["player"])) != 0 {
+	if programOffers(&b, lib, "custom_test") {
 		t.Fatal("unpayable exact selection offered")
 	}
 }
@@ -406,7 +473,7 @@ func TestProgramSacrificeLethalAndUsageLimit(t *testing.T) {
 	lib.Cards[c.ID] = c
 	b.SettledCatalog, _ = json.Marshal(lib)
 	runProgramAction(t, &b, lib, "start")
-	if len(programActions(&b, lib, "player", b.Flow.PendingInput["player"])) != 0 {
+	if programOffers(&b, lib, "custom_test") {
 		t.Fatal("once-per-battle ignored")
 	}
 }

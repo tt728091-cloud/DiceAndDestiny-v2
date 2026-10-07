@@ -300,9 +300,12 @@ func TestGeneralCardsOfferOnlyLegalWindowsAndCosts(t *testing.T) {
 	}
 }
 
+// loadGeneralLibrary loads the pre-program general_choice definitions from
+// testdata. Shipped General cards are program cards now, but pinned battles may
+// still carry these, so their dedicated engine path stays covered here.
 func loadGeneralLibrary(t *testing.T, b *state.Battle, lib content.BattleLibrary) content.BattleLibrary {
 	t.Helper()
-	lib, err := content.LoadBattleExtension(lib, filepath.Join("..", "..", "..", "content", "general_v1"))
+	lib, err := content.LoadBattleExtension(lib, filepath.Join("testdata", "general_v1_legacy"))
 	if err != nil {
 		t.Fatal(err)
 	}

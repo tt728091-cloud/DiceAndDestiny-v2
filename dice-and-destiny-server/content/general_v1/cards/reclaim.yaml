@@ -1,12 +1,41 @@
 {
+  "program": {
+    "version": 1,
+    "windows": [
+      "offensive_planning",
+      "offensive_reaction"
+    ],
+    "roll_requirement": "any",
+    "uses_per_round": 0,
+    "uses_per_battle": 0,
+    "steps": [
+      {
+        "effect": "move_cards",
+        "target": {
+          "owner": "self",
+          "mode": "one",
+          "count": 1,
+          "selection": "choose",
+          "zones": [
+            "discard"
+          ],
+          "exclude_recovery": true
+        },
+        "params": {
+          "destination": "hand"
+        }
+      }
+    ]
+  },
   "schema_version": 1,
   "id": "reclaim",
   "name": "Reclaim",
   "type": "planning",
   "presentation": {
-    "rules_text": "Return one chosen card from your discard pile to your hand. Cannot retrieve a card with a discard-recovery effect, including Reclaim. This does not heal or cancel pending damage reservations.",
-    "effect_summary": "Return a discard card to hand. Cannot retrieve recovery cards.",
-    "illustration_path": "res://assets/battle/cards/battle_focus.png"
+    "illustration_path": "res://assets/battle/cards/battle_focus.png",
+    "effect_summary": "Move one of your cards in discard (excluding recovery cards) to hand.\nPlay: Offense, any time.",
+    "rules_text": "Move one of your cards in discard (excluding recovery cards) to hand.\nPlay: Offense, any time.",
+    "art_key": ""
   },
   "cost": {
     "energy": 2
@@ -16,26 +45,16 @@
       "hand"
     ],
     "destination": "discard",
-    "playable_during": [
-      {
-        "segment": "offensive",
-        "phase": "main",
-        "window_purpose": "planning"
-      }
-    ]
+    "playable_during": []
   },
   "targeting": {
-    "selector": "general_choice",
+    "selector": "card_program",
     "minimum": 1,
     "maximum": 1
   },
   "reaction_window": {
-    "opens": false
+    "opens": false,
+    "pass_required": false
   },
-  "operations": [
-    {
-      "type": "general_card",
-      "modification": "recover_discard"
-    }
-  ]
+  "operations": []
 }

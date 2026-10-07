@@ -27,7 +27,8 @@ func TestConfiguredPreventionDestinations(t *testing.T) {
 					ability := lib.Abilities[id]
 					destination := ability.SavedCardDestination
 					if isCard {
-						destination = card.SavedCardDestination
+						// Program prevention authors its destination on the effect.
+						destination = content.ProgramString(card.Program.Steps[0], "destination")
 					}
 					if destination == "" {
 						t.Fatal("test versions must explicitly author their destination")
@@ -39,7 +40,8 @@ func TestConfiguredPreventionDestinations(t *testing.T) {
 							destination = content.SavedCardsDiscard
 						}
 						if isCard {
-							card.SavedCardDestination = destination
+							card, _ = content.EditableGeneralCard(card)
+							card.Program.Steps[0].Params["destination"] = destination
 							lib.Cards[id] = card
 						} else {
 							ability.SavedCardDestination = destination
@@ -75,7 +77,8 @@ func TestConfiguredPreventionDestinations(t *testing.T) {
 					openSettledWindow(&b, "config", stageDefenseSelect, "defense_selection", []command.Type{command.TypeCommitInteraction, command.TypePlanningPass})
 					e := NewEngine()
 					if isCard {
-						if err := e.playSettledCard(&b, lib, "player", "payment", []string{"hit"}, "", 0, ""); err != nil {
+						b.SettledCatalog, _ = json.Marshal(lib)
+						if _, err := e.handleProgramCommand(&b, lib, programAction(t, &b, lib, "start")); err != nil {
 							t.Fatal(err)
 						}
 						if !containsString(b.Actors["player"].Cards.Discard, "payment") {

@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"path/filepath"
+	"strings"
 	"testing"
 	"time"
 
@@ -65,9 +66,18 @@ func TestVenomFullGamesAgainstPreservedModels(t *testing.T) {
 		})
 	}
 }
+
+// programCancel reports a program card's "cancel" choice, which would let a
+// card-first smoke player start and cancel the same card forever.
+func programCancel(action command.Command) bool {
+	return strings.Contains(string(action.Payload), `\"verb\":\"cancel\"`)
+}
 func venomTestAction(actions []command.Command) command.Command {
 	// Exercise cards and optional choices whenever available, then finish rolls
 	// and select an attack. Keep/reroll candidates cannot trap this test in place.
+	if kept := withoutProgramCancel(actions); len(kept) > 0 {
+		actions = kept
+	}
 	for _, kind := range []command.Type{command.TypePlanningCards, command.TypeCommitInteraction, command.TypePlanningRoll, command.TypePlanningAbility, command.TypeRollDice, command.TypePass, command.TypePlanningPass} {
 		for _, action := range actions {
 			if action.Type == kind {
@@ -76,4 +86,13 @@ func venomTestAction(actions []command.Command) command.Command {
 		}
 	}
 	return actions[0]
+}
+func withoutProgramCancel(actions []command.Command) []command.Command {
+	var kept []command.Command
+	for _, action := range actions {
+		if !programCancel(action) {
+			kept = append(kept, action)
+		}
+	}
+	return kept
 }

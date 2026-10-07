@@ -129,11 +129,15 @@ func TestAuthorityRunsBladeWardenVsVenomGoblinFullBattle(t *testing.T) {
 	result = sendPassFull(t, authority, result)
 	assertFullBattleWait(t, result, "offensive", 2, "planning")
 	assertEffectsDamageDefinitions(t, result, []string{"battle_focus", "loaded_die"})
-	// Antidote is now a planning decision, before the next Effects segment.
+	// Antidote is Defense-only ("Defense, any time"); planning rejects it.
 	antidote := cardInHand(t, result.Snapshot.Actors["blade"], "antidote")
 	p := pendingFull(t, result)
-	result = fullBattleSend(t, authority, envelopeFull(result, command.TypePlanningCards, command.PlanningCardsPayload{PendingInputID: p.ID, Checkpoint: planningCheckpointFull(p), CardIDs: []string{antidote}, StatusID: "poison"}))
-	assertZones(t, result, "blade", 13, 4, 1, 2, 2)
+	raw, _ := json.Marshal(envelopeFull(result, command.TypePlanningCards, command.PlanningCardsPayload{PendingInputID: p.ID, Checkpoint: planningCheckpointFull(p), CardIDs: []string{antidote}, StatusID: "poison"}))
+	var rejected engine.Result
+	if err := json.Unmarshal([]byte(authority.HandleCommandJSON(string(raw))), &rejected); err != nil || rejected.Accepted {
+		t.Fatalf("Antidote accepted during offensive planning: %v", err)
+	}
+	assertZones(t, result, "blade", 13, 5, 0, 2, 3)
 	assertZones(t, result, "goblin", 4, 4, 0, 4, 3)
 	result = sendPlanningRollFull(t, authority, result)
 	result = sendPlanningKeepFull(t, authority, result, []int{0, 1, 2})
@@ -152,6 +156,9 @@ func TestAuthorityRunsBladeWardenVsVenomGoblinFullBattle(t *testing.T) {
 	if defense := result.Snapshot.SettledDefenses["goblin"]; defense.AbilityID != "protect" || defense.SourceID == "" {
 		t.Fatalf("round 2 enemy defense reveal=%#v, want Protect against the player attack", defense)
 	}
+	// The Defense-timed Antidote still cleanses Poison before the next Effects.
+	result = sendCommitFull(t, authority, result, []string{antidote}, nil, nil, "poison")
+	assertFullBattleWait(t, result, "defensive", 2, "defense_reaction")
 	result = sendPassFull(t, authority, result)
 	assertFullBattleWait(t, result, "damage_resolution", 2, "damage_reaction")
 	// Only played Emergency Ward goes to discard; saved cards stay in deck.
@@ -186,7 +193,8 @@ func TestAuthorityRunsBladeWardenVsVenomGoblinFullBattle(t *testing.T) {
 	result = sendRollDiceFull(t, authority, result)
 	result = sendPassFull(t, authority, result)
 	assertFullBattleWait(t, result, "damage_resolution", 3, "damage_reaction")
-	assertDamageDefinitions(t, result, []string{"antidote", "tip_it", "battle_focus", "battle_focus", "loaded_die"})
+	// Antidote reached discard after Tip It (played in round-2 Defense).
+	assertDamageDefinitions(t, result, []string{"tip_it", "antidote", "battle_focus", "battle_focus", "loaded_die"})
 	result = sendPassFull(t, authority, result)
 	assertFullBattleWait(t, result, "offensive", 4, "planning")
 	assertEffectsDamageDefinitions(t, result, []string{"battle_focus", "emergency_ward"})

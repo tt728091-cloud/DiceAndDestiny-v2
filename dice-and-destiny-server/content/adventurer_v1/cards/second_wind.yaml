@@ -1,12 +1,37 @@
 {
+  "program": {
+    "version": 1,
+    "windows": [
+      "offensive_planning",
+      "offensive_reaction"
+    ],
+    "roll_requirement": "any",
+    "uses_per_round": 0,
+    "uses_per_battle": 0,
+    "steps": [
+      {
+        "effect": "energy",
+        "target": {
+          "owner": "self",
+          "mode": "one",
+          "count": 1,
+          "selection": "choose"
+        },
+        "params": {
+          "amount": 2
+        }
+      }
+    ]
+  },
   "schema_version": 1,
   "id": "second_wind",
   "name": "Second Wind",
   "type": "planning",
   "presentation": {
-    "rules_text": "During offensive planning, gain 2 energy.",
-    "effect_summary": "Gain 2 energy.",
-    "illustration_path": "res://assets/battle/cards/battle_focus.png"
+    "illustration_path": "res://assets/battle/cards/battle_focus.png",
+    "effect_summary": "Give 2 energy to one of your characters.\nPlay: Offense, any time.",
+    "rules_text": "Give 2 energy to one of your characters.\nPlay: Offense, any time.",
+    "art_key": ""
   },
   "cost": {
     "energy": 0
@@ -16,28 +41,16 @@
       "hand"
     ],
     "destination": "discard",
-    "playable_during": [
-      {
-        "segment": "offensive",
-        "phase": "main",
-        "window_purpose": "planning"
-      }
-    ]
+    "playable_during": []
   },
   "targeting": {
-    "selector": "self",
+    "selector": "card_program",
     "minimum": 1,
     "maximum": 1
   },
   "reaction_window": {
-    "opens": false
+    "opens": false,
+    "pass_required": false
   },
-  "operations": [
-    {
-      "type": "gain_resource",
-      "target": "self",
-      "amount": 2,
-      "resource": "energy"
-    }
-  ]
+  "operations": []
 }

@@ -112,7 +112,7 @@ func TestAdventurerCardsAndSelectedTier(t *testing.T) {
 				b, lib := adventurerFixture(t)
 				adventurerRoll(&b, lib, []int{before, 4, 4, 5, 6})
 				health := b.Actors["player"].CurrentHealth()
-				err := NewEngine().playSettledCard(&b, lib, "player", "nudge-0", nil, "", 0, fmt.Sprint(after))
+				err := playProgramCard(NewEngine(), &b, lib, "player", "nudge-0", func(c programChoice) bool { return c.Die == 0 && c.Face == after })
 				valid := after >= 1 && after <= 5 && (after == before-1 || after == before+1)
 				if (err == nil) != valid {
 					t.Fatalf("%d -> %d: %v", before, after, err)
@@ -123,7 +123,7 @@ func TestAdventurerCardsAndSelectedTier(t *testing.T) {
 			}
 		}
 		b, lib := adventurerFixture(t)
-		if err := NewEngine().playSettledCard(&b, lib, "player", "nudge-0", nil, "", 0, "2"); err == nil {
+		if err := playProgramCard(NewEngine(), &b, lib, "player", "nudge-0", nil); err == nil {
 			t.Fatal("nudge before first roll")
 		}
 	})
@@ -133,7 +133,7 @@ func TestAdventurerCardsAndSelectedTier(t *testing.T) {
 		script := &ownedSelectionScript{Values: []battlerandom.ScriptedValue{{Stream: "combat_dice", Bound: 6, Value: 5}}}
 		e := NewEngine()
 		e.namedRandom = script
-		if err := e.playSettledCard(&b, lib, "player", "try_again-0", nil, "", 0, ""); err != nil {
+		if err := playProgramCard(e, &b, lib, "player", "try_again-0", func(c programChoice) bool { return c.Die == 0 }); err != nil {
 			t.Fatal(err)
 		}
 		r := b.Settled.Actors["player"]
@@ -149,7 +149,7 @@ func TestAdventurerCardsAndSelectedTier(t *testing.T) {
 		b.Actors["player"] = a
 		e := NewEngine()
 		for _, id := range []string{"take_stock-0", "second_wind-0"} {
-			if err := e.playSettledCard(&b, lib, "player", id, []string{"player"}, "", 0, ""); err != nil {
+			if err := playProgramCard(e, &b, lib, "player", id, nil); err != nil {
 				t.Fatal(err)
 			}
 		}
@@ -161,11 +161,11 @@ func TestAdventurerCardsAndSelectedTier(t *testing.T) {
 	t.Run("strong swing stacks only on qualified chosen attack and expires", func(t *testing.T) {
 		b, lib := adventurerFixture(t)
 		e := NewEngine()
-		if err := e.playSettledCard(&b, lib, "player", "strong_swing-0", nil, "adventurer_guard", 0, ""); err == nil {
+		if err := playProgramCard(e, &b, lib, "player", "strong_swing-0", func(c programChoice) bool { return c.Ability == "adventurer_guard" }); err == nil {
 			t.Fatal("defensive card target")
 		}
 		for _, id := range []string{"strong_swing-0", "strong_swing-1"} {
-			if err := e.playSettledCard(&b, lib, "player", id, nil, "adventurer_strike", 0, ""); err != nil {
+			if err := playProgramCard(e, &b, lib, "player", id, func(c programChoice) bool { return c.Ability == "adventurer_strike" }); err != nil {
 				t.Fatal(err)
 			}
 		}
@@ -179,11 +179,8 @@ func TestAdventurerCardsAndSelectedTier(t *testing.T) {
 		if !ok || summarizeOffensiveOutcome(ops, nil)["base_damage"] != 8 {
 			t.Fatalf("lower tier plus two cards %v", ops)
 		}
-		b.Segment.Round++
-		ops, _ = resolvedOffensiveOperations(&b, lib, "player")
-		if summarizeOffensiveOutcome(ops, nil)["base_damage"] != 4 {
-			t.Fatal("round bonus did not expire")
-		}
+		// Expiry at Offensive Exit is covered by the real phase transition in
+		// TestStrongSwingExpiresAtOffensiveExitUsedOrUnused.
 		adventurerRoll(&b, lib, []int{4, 4, 5, 5, 6})
 		if ops, ok := resolvedOffensiveOperations(&b, lib, "player"); ok || len(ops) > 0 {
 			t.Fatal("bonus turned miss into hit")
@@ -193,7 +190,9 @@ func TestAdventurerCardsAndSelectedTier(t *testing.T) {
 		for _, entry := range []string{"brace", "nudge", "try_again", "strong_swing", "take_stock", "second_wind"} {
 			b, lib := adventurerFixture(t)
 			b.Segment.Current = segment.Income
-			if err := NewEngine().playSettledCard(&b, lib, "player", entry+"-0", nil, "", 0, ""); err == nil {
+			closeSettledWindow(&b)
+			b.Settled.Stage = ""
+			if err := playProgramCard(NewEngine(), &b, lib, "player", entry+"-0", nil); err == nil {
 				t.Fatalf("%s wrong phase accepted", entry)
 			}
 		}
@@ -201,7 +200,7 @@ func TestAdventurerCardsAndSelectedTier(t *testing.T) {
 		a := b.Actors["player"]
 		a.Resources.EnergyPoints = 0
 		b.Actors["player"] = a
-		if err := NewEngine().playSettledCard(&b, lib, "player", "take_stock-0", []string{"player"}, "", 0, ""); err == nil {
+		if err := playProgramCard(NewEngine(), &b, lib, "player", "take_stock-0", nil); err == nil {
 			t.Fatal("unpaid draw")
 		}
 	})
@@ -244,7 +243,7 @@ func TestAdventurerProtectionAndBrace(t *testing.T) {
 	if _, err := e.spendRoundPrevention(&b, lib, "player", choice); err == nil {
 		t.Fatal("spent twice")
 	}
-	if err := e.playSettledCard(&b, lib, "player", "brace-0", []string{"a"}, "", 0, ""); err != nil {
+	if err := playProgramCard(e, &b, lib, "player", "brace-0", func(c programChoice) bool { return c.Source == "a" }); err != nil {
 		t.Fatal(err)
 	}
 	if got := settledSourceAmount(b.Settled.PendingDamage.Sources[0]); got != 4 {

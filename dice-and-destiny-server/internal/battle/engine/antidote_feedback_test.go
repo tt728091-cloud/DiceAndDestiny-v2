@@ -9,7 +9,7 @@ import (
 	"testing"
 )
 
-func TestAntidotePublicOutcomeInPlanningAndDefense(t *testing.T) {
+func TestAntidotePublicOutcomeInDefenseOnly(t *testing.T) {
 	for _, stage := range []string{stageOffensivePlan, stageDefenseReact} {
 		t.Run(stage, func(t *testing.T) {
 			b, lib := venomFixture(t)
@@ -57,15 +57,15 @@ func TestAntidotePublicOutcomeInPlanningAndDefense(t *testing.T) {
 			} else {
 				b.Segment.Current = segment.Offensive
 				openSettledWindow(&b, "planning", stageOffensivePlan, "planning", []command.Type{command.TypePlanningCards, command.TypePlanningRoll})
+				// Antidote is "Defense, any time"; offensive planning rejects it.
 				payload, _ := json.Marshal(command.PlanningCardsPayload{CardIDs: []string{"antidote"}, StatusID: "poison"})
-				events, err := e.handleOffensivePlanningCommand(&b, lib, command.Command{Type: command.TypePlanningCards, ActorID: "enemy", Payload: payload})
-				if err != nil {
-					t.Fatal(err)
+				if _, err := e.handleOffensivePlanningCommand(&b, lib, command.Command{Type: command.TypePlanningCards, ActorID: "enemy", Payload: payload}); err == nil {
+					t.Fatal("Antidote accepted during offensive planning")
 				}
-				data = events[0].Data
-				if snapshot.FromBattleForViewer(b, "player").PassHandsOffPriority {
-					t.Fatal("planning is a real choice, never a response handoff")
+				if stacks(&b, "enemy", "poison") != 3 {
+					t.Fatal("rejected Antidote changed statuses")
 				}
+				return
 			}
 			if data["operation"] != "remove_status" || data["choice_id"] != "poison" || data["stacks_before"] != 3 || data["stacks_after"] != 0 || data["stacks_removed"] != 3 || data["card_definition_id"] != "antidote" {
 				t.Fatalf("missing cleanse outcome: %+v", data)

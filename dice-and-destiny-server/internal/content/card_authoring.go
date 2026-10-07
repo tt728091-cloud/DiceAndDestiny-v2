@@ -205,7 +205,14 @@ func DeleteAuthoredCard(root string, lib BattleLibrary, id string, revision int)
 // Legacy definitions stay untouched until an author publishes a revision.
 func EditableGeneralCard(c BattleCardDefinition) (BattleCardDefinition, error) {
 	if c.Program != nil {
-		return c, nil
+		// Return an independent copy; callers edit the program in place.
+		raw, err := json.Marshal(c)
+		if err != nil {
+			return c, err
+		}
+		var copy BattleCardDefinition
+		err = json.Unmarshal(raw, &copy)
+		return copy, err
 	}
 	p := &CardProgram{Version: 1, RollRequirement: "any"}
 	for _, timing := range c.Play.PlayableDuring {

@@ -39,7 +39,7 @@ func buildCardMechanics() map[string]CardMechanicSpec {
 	// Each list starts with its any-time window; before/after-only variants follow.
 	plan := []string{"offensive_planning", "offensive_before_roll", "offensive_after_roll"}
 	react := []string{"offensive_reaction"}
-	defense := []string{"defense_selection", "defense_before_roll", "defense_after_roll", "damage_reaction", "ongoing_damage"}
+	defense := []string{"defense_selection", "defense_before_roll", "defense_after_roll", "defense_reaction", "damage_reaction", "ongoing_damage"}
 	n := func(v int) CardParameter { return number(v, 1, 100) }
 	z := func(v int) CardParameter { return number(v, 0, 100) }
 	status := func(v string) CardParameter { return CardParameter{Type: "status", Default: v} }

@@ -219,10 +219,6 @@ func _health() -> int:
 	var total := 0
 	for entry in state.get("progression", {}).get("decklist", []): total += int(entry.count)
 	return total
-func _predecessor(id: String) -> Dictionary:
-	for e in draft.get("edges", []):
-		if e.to == id: return _node(str(e.from))
-	return {}
 ## Every card connecting into this one; a converging card has one per route.
 func _predecessors(id: String) -> Array:
 	var out: Array = []
@@ -571,9 +567,10 @@ func _forge_panel() -> void:
 	var forge = FORGE.new(); forge.catalog = catalog; forge.runtime = _runtime(); forge.session = _forge
 	var mode := str(_forge.mode)
 	forge.used_names = _used_names(str(node.card.id) if mode == "edit" else "")
-	var compare: Dictionary = node if mode != "edit" else _predecessor(str(node.id))
-	if compare.is_empty(): compare = {"card": node.card}
-	forge.compare_card = compare.card; forge.compare_name = str(compare.card.name)
+	var compares: Array = [node] if mode != "edit" else _predecessors(str(node.id))
+	if compares.is_empty(): compares = [{"card": node.card}]
+	forge.compare_card = compares[0].card; forge.compare_name = str(compares[0].card.name)
+	forge.compare_cards = compares.map(func(c): return c.card)
 	_details.add_child(forge)
 	var price := int(node.card.economy.buy) + (3 if mode == "upgrade" else -2)
 	forge.start(mode, price, _forge.get("fresh", false)); _forge.fresh = false

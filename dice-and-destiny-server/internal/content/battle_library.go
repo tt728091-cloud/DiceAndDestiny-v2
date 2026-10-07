@@ -388,6 +388,9 @@ func LoadBattleLibrary(root string) (BattleLibrary, error) {
 	for id, c := range lib.Cards {
 		if c.Mechanic != nil {
 			lib.Cards[id] = PrepareMechanicCard(c, &lib)
+		} else if c.Program != nil {
+			// Registers ability-bonus preparation statuses and generated rules.
+			lib.Cards[id] = PrepareProgramCard(c, &lib)
 		}
 	}
 	if err := validateBattleLibrary(lib); err != nil {

@@ -390,39 +390,34 @@ Sandbox editor or buy them in Progression; each starts at the configured default
 price of 10 XP and can be repriced/retyped in Admin settings. Reload definitions
 refreshes the library; new battles pin the updated catalog and owned loadout.
 
-| Card | Energy | Play window | Effect |
+| Card | Energy | Timing | Effect |
 | --- | ---: | --- | --- |
-| Matchmaker | 1 | Offensive planning, after rolling | Set one owned offensive die to another owned die's face. |
-| Turn the Die | 1 | Offensive planning, after rolling | Flip one owned offensive die: 1↔6, 2↔5, 3↔4. |
-| Disrupt | 1 | Offensive reaction | Reroll one revealed enemy offensive die; recheck the selected attack's qualification. |
-| Second Guard | 1 | Defense reaction, before applying the roll | Reroll a chosen nonempty subset of that defense's physical dice. Apply the final defense rewards once. |
-| Reclaim | 2 | Offensive planning | Return one discarded non-recovery card to hand. Does not restore removed cards or heal. |
-| Reinforce | 1, optionally 2 | Defense / legacy damage response | Prevent 2 from one source, or pay 1 extra energy to prevent 4. |
-| Dispel | 1 | Offensive planning / Defense | Remove one enemy positive status stack, unless its definition is `dispel_immune`. |
-| Triage | 1 | Unified Defense | Prevent 1 from one source and save a specific revealed threatened card from that source, including against overage. Other sources can still threaten it. |
+| Matchmaker | 1 | Offense, after | Set one owned offensive die to another owned die's face. |
+| Turn the Die | 1 | Offense, after | Flip one owned offensive die: 1↔6, 2↔5, 3↔4. |
+| Disrupt | 1 | Offense, after (reaction) | Reroll one revealed enemy offensive die; recheck the selected attack's qualification. |
+| Second Guard | 1 | Defense, after (roll review) | Reroll chosen dice of that defense before it applies. Its rewards resolve once. |
+| Reclaim | 2 | Offense, any time | Return one discarded non-recovery card to hand. Does not restore removed cards or heal. |
+| Reinforce | 1, optionally 2 | Defense, any time | Prevent 2 from one source, or pay 1 extra energy to prevent 4. |
+| Dispel | 1 | Offense and Defense, any time | Remove one enemy positive status stack, unless its definition is `dispel_immune`. |
+| Triage | 1 | Defense, any time | Prevent 1 from one source and save a specific revealed threatened card from that source, including against overage. Other sources can still threaten it. |
 
-Reinforce and Triage default to `saved_card_destination: original`, configurable
-like Brace. Playing the prevention card still sends it to its authored play
-destination; saving it never rewinds its play. Triage records the selected
-reservation as protected against that source for this damage batch, persisting
-through reconciliation and save/reload. It does not grant blanket immunity.
-Reclaim cannot recover another card using the `recover_discard` operation, avoiding
-repeatable recovery loops. It respects any existing pending damage reservation.
+These cards, like the Adventurer starter cards (Brace, Brace+, Nudge, Try Again,
+Strong Swing, Take Stock, Second Wind), are program cards: their effects,
+per-effect saved-card destinations and Before / After / Any time timing live in
+`program`, and their rules text and `Play: …` line are generated from it. Reinforce
+and Triage save to `original`. Playing a prevention card still sends it to its
+play destination; saving it never rewinds its play. Triage protects the selected
+reservation against that source for this damage batch, persisting through
+reconciliation and save/reload; it does not grant blanket immunity. Reclaim
+excludes other recovery cards, avoiding repeatable recovery loops, and respects
+existing pending damage reservations.
 
-The shared `general_choice` selector exposes complete legal commands with opaque
-choice IDs; the authority regenerates and validates those choices at play time.
-Effects use the configured `general_card` operation's `modification`, rather than
-card IDs. Reinforce authors `amount`, `extra_energy`, and `bonus_amount`; energy,
-play destinations, rules text, presentation, and saved-card destinations remain
-in the card definitions. New effect kinds require engine support, while variants
-of these effects can be authored as additional definitions.
-
-Validation covers all eight authority command paths, invalid/stale choices,
-source isolation, configurable saved destinations, Triage overage and self-save,
-Second Guard's single reward resolution, General access and XP buy/sell round
-trips for all four characters, plus card-click/choice/cancel UI at 1280 and 1920
-pixels (`tests/presentation/verify_general_cards.gd`). The pack is separate from
-frozen training content so existing AI content hashes remain compatible.
+The previous `general_choice` definitions remain supported by the engine for
+pinned battles and replays; `internal/battle/engine/testdata/general_v1_legacy`
+keeps their regression coverage. `shipped_general_cards_test.go` plays each
+shipped card through the program handler; `verify_general_cards.gd` covers the UI.
+The pack is separate from frozen training content (`battle_v1`), so the enemy AI's
+content inputs are unchanged.
 
 ## Card Creation: configurable General cards
 

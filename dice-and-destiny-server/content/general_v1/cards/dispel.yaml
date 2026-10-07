@@ -1,12 +1,41 @@
 {
+  "program": {
+    "version": 1,
+    "windows": [
+      "offensive_planning",
+      "offensive_reaction",
+      "defense_selection",
+      "defense_reaction",
+      "damage_reaction"
+    ],
+    "roll_requirement": "any",
+    "uses_per_round": 0,
+    "uses_per_battle": 0,
+    "steps": [
+      {
+        "effect": "remove_status",
+        "target": {
+          "owner": "enemy",
+          "mode": "one",
+          "count": 1,
+          "selection": "choose",
+          "polarity": "positive"
+        },
+        "params": {
+          "stacks": 1
+        }
+      }
+    ]
+  },
   "schema_version": 1,
   "id": "dispel",
   "name": "Dispel",
   "type": "action",
   "presentation": {
-    "rules_text": "Remove one removable positive status stack from a chosen enemy. Does not remove negative statuses or statuses marked immune to dispelling.",
-    "effect_summary": "Remove one positive status stack from an enemy.",
-    "illustration_path": "res://assets/battle/cards/antidote.png"
+    "illustration_path": "res://assets/battle/cards/antidote.png",
+    "effect_summary": "Remove 1 stacks from one of enemy statuses with positive polarity.\nPlay: Offense, any time; Defense, any time.",
+    "rules_text": "Remove 1 stacks from one of enemy statuses with positive polarity.\nPlay: Offense, any time; Defense, any time.",
+    "art_key": ""
   },
   "cost": {
     "energy": 1
@@ -16,31 +45,16 @@
       "hand"
     ],
     "destination": "discard",
-    "playable_during": [
-      {
-        "segment": "offensive",
-        "phase": "main",
-        "window_purpose": "planning"
-      },
-      {
-        "segment": "defensive",
-        "phase": "main",
-        "window_purpose": "reaction"
-      }
-    ]
+    "playable_during": []
   },
   "targeting": {
-    "selector": "general_choice",
+    "selector": "card_program",
     "minimum": 1,
     "maximum": 1
   },
   "reaction_window": {
-    "opens": false
+    "opens": false,
+    "pass_required": false
   },
-  "operations": [
-    {
-      "type": "general_card",
-      "modification": "dispel_positive"
-    }
-  ]
+  "operations": []
 }

@@ -1,0 +1,46 @@
+{
+  "schema_version": 1,
+  "id": "dispel",
+  "name": "Dispel",
+  "type": "action",
+  "presentation": {
+    "rules_text": "Remove one removable positive status stack from a chosen enemy. Does not remove negative statuses or statuses marked immune to dispelling.",
+    "effect_summary": "Remove one positive status stack from an enemy.",
+    "illustration_path": "res://assets/battle/cards/antidote.png"
+  },
+  "cost": {
+    "energy": 1
+  },
+  "play": {
+    "source_zones": [
+      "hand"
+    ],
+    "destination": "discard",
+    "playable_during": [
+      {
+        "segment": "offensive",
+        "phase": "main",
+        "window_purpose": "planning"
+      },
+      {
+        "segment": "defensive",
+        "phase": "main",
+        "window_purpose": "reaction"
+      }
+    ]
+  },
+  "targeting": {
+    "selector": "general_choice",
+    "minimum": 1,
+    "maximum": 1
+  },
+  "reaction_window": {
+    "opens": false
+  },
+  "operations": [
+    {
+      "type": "general_card",
+      "modification": "dispel_positive"
+    }
+  ]
+}

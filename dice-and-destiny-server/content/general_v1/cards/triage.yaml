@@ -1,12 +1,38 @@
 {
+  "program": {
+    "version": 1,
+    "windows": [
+      "defense_selection",
+      "defense_reaction",
+      "damage_reaction"
+    ],
+    "roll_requirement": "any",
+    "uses_per_round": 0,
+    "uses_per_battle": 0,
+    "steps": [
+      {
+        "effect": "save_cards",
+        "target": {
+          "owner": "self",
+          "mode": "one",
+          "count": 1,
+          "selection": "choose"
+        },
+        "params": {
+          "destination": "original"
+        }
+      }
+    ]
+  },
   "schema_version": 1,
   "id": "triage",
   "name": "Triage",
   "type": "action",
   "presentation": {
-    "rules_text": "During unified defense, choose one revealed threatened card from one incoming source. Prevent 1 damage and save that exact card from that source, even if it has excess damage. Other sources may still threaten it. Saved cards remain in their current piles; playing Triage sends it to discard even if it saves itself.",
-    "effect_summary": "Save one chosen threatened card from one incoming source.",
-    "illustration_path": "res://assets/battle/cards/emergency_ward.png"
+    "illustration_path": "res://assets/battle/cards/emergency_ward.png",
+    "effect_summary": "Save one of your threatened cards. Saved cards stay in their current piles.\nPlay: Defense, any time.",
+    "rules_text": "Save one of your threatened cards. Saved cards stay in their current piles.\nPlay: Defense, any time.",
+    "art_key": ""
   },
   "cost": {
     "energy": 1
@@ -16,27 +42,16 @@
       "hand"
     ],
     "destination": "discard",
-    "playable_during": [
-      {
-        "segment": "defensive",
-        "phase": "main",
-        "window_purpose": "reaction"
-      }
-    ]
+    "playable_during": []
   },
   "targeting": {
-    "selector": "general_choice",
+    "selector": "card_program",
     "minimum": 1,
     "maximum": 1
   },
   "reaction_window": {
-    "opens": false
+    "opens": false,
+    "pass_required": false
   },
-  "operations": [
-    {
-      "type": "general_card",
-      "modification": "save_threatened_card"
-    }
-  ],
-  "saved_card_destination": "original"
+  "operations": []
 }

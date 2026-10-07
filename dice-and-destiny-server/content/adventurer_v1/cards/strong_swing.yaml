@@ -1,12 +1,41 @@
 {
+  "program": {
+    "version": 1,
+    "windows": [
+      "offensive_before_roll"
+    ],
+    "roll_requirement": "any",
+    "uses_per_round": 0,
+    "uses_per_battle": 0,
+    "steps": [
+      {
+        "effect": "ability_bonus",
+        "target": {
+          "owner": "self",
+          "mode": "one",
+          "count": 1,
+          "selection": "choose"
+        },
+        "params": {
+          "damage": 2,
+          "duration": "offensive",
+          "stack_limit": 100
+        },
+        "condition": {
+          "all": []
+        }
+      }
+    ]
+  },
   "schema_version": 1,
   "id": "strong_swing",
   "name": "Strong Swing",
   "type": "planning",
   "presentation": {
-    "rules_text": "Before your first offensive roll only, choose any ability on your offensive board. Give it +2 damage for this offensive segment if you qualify for and select it. Multiple copies stack. The bonus expires at Offensive Exit even if unused; it cannot turn a miss into a hit.",
-    "effect_summary": "Before rolling: give one offensive ability +2 damage this segment.",
-    "illustration_path": "res://assets/battle/cards/sharpen_blade.png"
+    "illustration_path": "res://assets/battle/cards/sharpen_blade.png",
+    "effect_summary": "Give one of your offensive abilities +2 damage. Expires at the end of the offensive segment, even if unused. Stacks up to 100 times per ability.\nPlay: Offense, before your first roll.",
+    "rules_text": "Give one of your offensive abilities +2 damage. Expires at the end of the offensive segment, even if unused. Stacks up to 100 times per ability.\nPlay: Offense, before your first roll.",
+    "art_key": ""
   },
   "cost": {
     "energy": 1
@@ -16,45 +45,16 @@
       "hand"
     ],
     "destination": "discard",
-    "playable_during": [
-      {
-        "segment": "offensive",
-        "phase": "main",
-        "window_purpose": "planning"
-      }
-    ],
-    "before_first_roll": true
+    "playable_during": []
   },
   "targeting": {
-    "selector": "one_owned_offensive_ability",
+    "selector": "card_program",
     "minimum": 1,
-    "maximum": 1,
-    "requires_qualified": false
+    "maximum": 1
   },
   "reaction_window": {
-    "opens": false
+    "opens": false,
+    "pass_required": false
   },
-  "operations": [
-    {
-      "type": "apply_ability_modifier",
-      "target": "selected_ability",
-      "duration": "offensive",
-      "modifier": {
-        "add_conditional_bonus": {
-          "id": "strong_swing",
-          "requirements": {
-            "all": []
-          },
-          "operations": [
-            {
-              "type": "deal_damage",
-              "target": "selected_targets",
-              "amount": 2
-            }
-          ]
-        }
-      },
-      "status_id": "strong_swing_ready"
-    }
-  ]
+  "operations": []
 }

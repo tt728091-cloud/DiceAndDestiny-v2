@@ -17,6 +17,9 @@ var runtime: Node
 var mode := "upgrade"
 var compare_card: Dictionary = {}
 var compare_name := ""
+## Every card this one is compared with. A converging card in Quick edit has
+## one per incoming route; compare_card stays the first for field highlights.
+var compare_cards: Array = []
 var card: Dictionary = {}
 var used_names: Dictionary = {}
 ## Owned by the workshop so adjustments survive re-rendering: {card, name_touched}.
@@ -37,14 +40,14 @@ func rebuild() -> void:
 	for child in get_children(): remove_child(child); child.queue_free()
 	add_theme_constant_override("separation", 10)
 	STYLE.heading(self, {"upgrade": "Forge an upgrade", "downgrade": "Forge a cheaper variant", "edit": "Quick edit"}[mode])
-	STYLE.label(self, ("Adjusting a copy of %s. Pick one or more changes; everything else stays the same." % compare_name) if mode != "edit" else "Adjust this card in place. Changes compare with %s." % compare_name, 14, STYLE.MUTED)
+	STYLE.label(self, ("Adjusting a copy of %s. Pick one or more changes; everything else stays the same." % compare_name) if mode != "edit" else "Adjust this card in place. Changes compare with %s." % " and ".join(_compares().map(func(c): return str(c.name))), 14, STYLE.MUTED)
 	_preview()
 	var identity := STYLE.section(self)
 	STYLE.heading(identity, "Name & value")
 	_name_field = LineEdit.new(); _name_field.text = str(card.name); _name_field.set_meta("tree_field", "forge.name"); identity.add_child(_name_field)
 	_name_field.text_changed.connect(func(v): session.name_touched = true; card.name = v; _validate(false); _show_error())
-	var delta := int(card.economy.buy) - int(compare_card.get("economy", {}).get("buy", card.economy.buy))
-	_stepper(identity, "XP value", int(card.economy.buy), "%+d from %s" % [delta, compare_name] if not compare_card.is_empty() else "", 1, 100000, func(v): card.economy.buy = v; card.economy.sell = v, "forge.xp", int(compare_card.get("economy", {}).get("buy", -1)))
+	var deltas: Array = _compares().map(func(c): return "%+d from %s" % [int(card.economy.buy) - int(c.get("economy", {}).get("buy", card.economy.buy)), c.name])
+	_stepper(identity, "XP value", int(card.economy.buy), " · ".join(deltas), 1, 100000, func(v): card.economy.buy = v; card.economy.sell = v, "forge.xp", int(compare_card.get("economy", {}).get("buy", -1)))
 	var adjust := STYLE.section(self)
 	STYLE.heading(adjust, "Adjust")
 	_stepper(adjust, "Energy cost", int(card.cost.energy), "", 0, 100, func(v): card.cost.energy = v, "forge.energy", int(compare_card.get("cost", {}).get("energy", -1)))
@@ -90,12 +93,23 @@ func _preview() -> void:
 	STYLE.label(text, str(card.name), 20, STYLE.GOLD_BRIGHT)
 	STYLE.label(text, "%d energy · %d XP" % [int(card.cost.energy), int(card.economy.buy)], 15, STYLE.MUTED)
 	STYLE.label(text, str(card.get("presentation", {}).get("rules_text", "")), 15)
-	var entries := DIFF.changes(compare_card, card, catalog)
+	var compares := _compares()
+	var blocks: Array = []
+	for before in compares:
+		var lines := ""
+		if compares.size() > 1: lines = "[color=#e6c17c]From %s[/color]\n" % str(before.name).replace("[", "[lb]")
+		var entries := DIFF.with_xp(before, card, catalog)
+		lines += DIFF.bbcode(entries)
+		if DIFF.changes(before, card, catalog).is_empty(): lines += ("\n" if not entries.is_empty() else "") + "[color=#9cabb7]No effect changes yet · choose an adjustment below.[/color]"
+		blocks.append(lines)
 	var diff := RichTextLabel.new(); diff.bbcode_enabled = true; diff.fit_content = true; diff.scroll_active = false
 	diff.add_theme_font_size_override("normal_font_size", 15); diff.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	diff.text = DIFF.bbcode(entries) if not entries.is_empty() else "[color=#9cabb7]No changes yet · choose an adjustment below.[/color]"
+	diff.text = "\n\n".join(blocks)
 	diff.set_meta("tree_field", "forge.changes")
 	box.add_child(diff)
+
+func _compares() -> Array:
+	return compare_cards if not compare_cards.is_empty() else [compare_card]
 
 func _compare_timing() -> Dictionary:
 	if compare_card.get("program") is Dictionary: return compare_card.program

@@ -125,5 +125,9 @@ func adventurerTestAction(actions []command.Command, cardsPlayed int) command.Co
 			choices = append(choices, action)
 		}
 	}
+	// A started program card offers only card choices; finish it.
+	if len(choices) == 0 {
+		choices = actions
+	}
 	return venomTestAction(choices)
 }

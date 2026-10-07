@@ -109,7 +109,7 @@ Use `./scripts/godot.sh` for every additional Godot test.
 
 ## Default damage prevention destination
 
-- Cards and defensive abilities configure `saved_card_destination` in their catalog definition: `original` preserves the live pile; `discard` moves newly saved cards to discard. Omission defaults to `original`. Never decide this by card/ability ID or upgrade name. See `docs/game-design/prevention-configuration.md`.
+- Defensive abilities and legacy cards configure `saved_card_destination` in their catalog definition; program cards (all shipped General and Adventurer cards) configure `destination` on each prevention effect. `original` preserves the live pile; `discard` moves newly saved cards to discard. Omission defaults to `original`. Never decide this by card/ability ID or upgrade name. See `docs/game-design/prevention-configuration.md`.
 - The Adventurer test loadout explicitly uses discard for Brace/Guard and original for Brace+/Guard+. Reservations do not move cards, so original-pile prevention must not rewind a draw or play.
 - A played prevention card goes to its normal play destination (usually discard), even if it saves itself. If it remains threatened by an unprotected source, removal still follows it into that destination. Protect retains its explicitly authored saved-to-discard status rule.
 - Never duplicate cards or resurrect permanently removed cards. Repeated reconciliation and save/reload must preserve pile membership and health.

@@ -208,6 +208,20 @@ func TestUnifiedDefenseReturnsToHubAndBraceIsLegalBeforeRoll(t *testing.T) {
 	if _, err := e.handleSettledCommand(&b, brace); err != nil {
 		t.Fatal(err)
 	}
+	// Two viable attacks: Brace asks for its source after the card click.
+	for _, action := range e.LegalActions(&b, "player") {
+		_, key := programPayload(action)
+		var c programChoice
+		if json.Unmarshal([]byte(key), &c) == nil && c.Verb == "target" {
+			if _, err := e.handleSettledCommand(&b, action); err != nil {
+				t.Fatal(err)
+			}
+			break
+		}
+	}
+	if b.Settled.Actors["player"].CardExecution != nil {
+		t.Fatal("Brace did not resolve against a chosen attack")
+	}
 	// Choose a current remaining source after prevention.
 	defense = command.Command{}
 	for _, action := range e.LegalActions(&b, "player") {

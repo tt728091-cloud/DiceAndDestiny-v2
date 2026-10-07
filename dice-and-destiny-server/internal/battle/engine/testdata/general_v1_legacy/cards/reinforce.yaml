@@ -1,0 +1,50 @@
+{
+  "schema_version": 1,
+  "id": "reinforce",
+  "name": "Reinforce",
+  "type": "action",
+  "presentation": {
+    "rules_text": "Prevent 2 damage from one incoming source. You may pay 1 extra energy to prevent 4 instead. Saved cards remain in their current piles. Played cards stay played.",
+    "effect_summary": "Prevent 2 damage. Pay +1 energy to prevent 4 instead.",
+    "illustration_path": "res://assets/battle/cards/emergency_ward.png"
+  },
+  "cost": {
+    "energy": 1
+  },
+  "play": {
+    "source_zones": [
+      "hand"
+    ],
+    "destination": "discard",
+    "playable_during": [
+      {
+        "segment": "defensive",
+        "phase": "main",
+        "window_purpose": "reaction"
+      },
+      {
+        "segment": "damage_resolution",
+        "phase": "main",
+        "window_purpose": "reaction"
+      }
+    ]
+  },
+  "targeting": {
+    "selector": "general_choice",
+    "minimum": 1,
+    "maximum": 1
+  },
+  "reaction_window": {
+    "opens": false
+  },
+  "operations": [
+    {
+      "type": "general_card",
+      "modification": "boost_prevention",
+      "amount": 2,
+      "extra_energy": 1,
+      "bonus_amount": 2
+    }
+  ],
+  "saved_card_destination": "original"
+}

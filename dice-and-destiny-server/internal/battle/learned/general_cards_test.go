@@ -28,7 +28,7 @@ func TestGeneralCardsAvailableToEveryCharacterAndPinToBattle(t *testing.T) {
 			startingXP, startingValue := p.XP, p.DeckValue
 			for _, id := range ids {
 				def, ok := catalog.Cards[id]
-				if !ok || def.Targeting.Selector != "general_choice" || def.Presentation.RulesText == "" {
+				if !ok || def.Program == nil || def.Presentation.RulesText == "" {
 					t.Fatalf("missing usable definition %s", id)
 				}
 				p, err = loadout.Buy(dir, character, economy, catalog, loadout.Purchase{Kind: "buy_card", ID: id, ExpectedCost: 10, Revision: p.Revision})

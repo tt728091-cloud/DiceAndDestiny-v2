@@ -1,12 +1,37 @@
 {
+  "program": {
+    "version": 1,
+    "windows": [
+      "offensive_planning",
+      "offensive_reaction"
+    ],
+    "roll_requirement": "any",
+    "uses_per_round": 0,
+    "uses_per_battle": 0,
+    "steps": [
+      {
+        "effect": "draw",
+        "target": {
+          "owner": "self",
+          "mode": "one",
+          "count": 1,
+          "selection": "choose"
+        },
+        "params": {
+          "amount": 2
+        }
+      }
+    ]
+  },
   "schema_version": 1,
   "id": "take_stock",
   "name": "Take Stock",
   "type": "planning",
   "presentation": {
-    "rules_text": "During offensive planning, draw 2 cards. Playing this card moves it to discard and does not reduce health.",
-    "effect_summary": "Draw 2 cards.",
-    "illustration_path": "res://assets/battle/cards/battle_focus.png"
+    "illustration_path": "res://assets/battle/cards/battle_focus.png",
+    "effect_summary": "Draw 2 cards for one of your characters. Draw only available deck cards; do not recycle discard.\nPlay: Offense, any time.",
+    "rules_text": "Draw 2 cards for one of your characters. Draw only available deck cards; do not recycle discard.\nPlay: Offense, any time.",
+    "art_key": ""
   },
   "cost": {
     "energy": 1
@@ -16,27 +41,16 @@
       "hand"
     ],
     "destination": "discard",
-    "playable_during": [
-      {
-        "segment": "offensive",
-        "phase": "main",
-        "window_purpose": "planning"
-      }
-    ]
+    "playable_during": []
   },
   "targeting": {
-    "selector": "self",
+    "selector": "card_program",
     "minimum": 1,
     "maximum": 1
   },
   "reaction_window": {
-    "opens": false
+    "opens": false,
+    "pass_required": false
   },
-  "operations": [
-    {
-      "type": "draw_cards",
-      "target": "self",
-      "amount": 2
-    }
-  ]
+  "operations": []
 }

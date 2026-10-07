@@ -1,12 +1,35 @@
 {
+  "program": {
+    "version": 1,
+    "windows": [
+      "offensive_after_roll",
+      "offensive_reaction"
+    ],
+    "roll_requirement": "any",
+    "uses_per_round": 0,
+    "uses_per_battle": 0,
+    "steps": [
+      {
+        "effect": "reroll",
+        "target": {
+          "owner": "self",
+          "mode": "one",
+          "count": 1,
+          "selection": "choose"
+        },
+        "params": {}
+      }
+    ]
+  },
   "schema_version": 1,
   "id": "try_again",
   "name": "Try Again",
   "type": "planning",
   "presentation": {
-    "rules_text": "After your first offensive roll, reroll one of your dice without consuming a normal roll attempt.",
-    "effect_summary": "Reroll one of your dice. Does not use a normal roll attempt.",
-    "illustration_path": "res://assets/battle/cards/loaded_die.png"
+    "illustration_path": "res://assets/battle/cards/loaded_die.png",
+    "effect_summary": "Reroll one of your offensive dice. Use the new result. Does not use a normal roll attempt.\nPlay: Offense, after your first roll.",
+    "rules_text": "Reroll one of your offensive dice. Use the new result. Does not use a normal roll attempt.\nPlay: Offense, after your first roll.",
+    "art_key": ""
   },
   "cost": {
     "energy": 1
@@ -16,26 +39,16 @@
       "hand"
     ],
     "destination": "discard",
-    "playable_during": [
-      {
-        "segment": "offensive",
-        "phase": "main",
-        "window_purpose": "planning"
-      }
-    ]
+    "playable_during": []
   },
   "targeting": {
-    "selector": "one_owned_combat_die",
+    "selector": "card_program",
     "minimum": 1,
     "maximum": 1
   },
   "reaction_window": {
-    "opens": false
+    "opens": false,
+    "pass_required": false
   },
-  "operations": [
-    {
-      "type": "reroll_die",
-      "target": "selected_die"
-    }
-  ]
+  "operations": []
 }

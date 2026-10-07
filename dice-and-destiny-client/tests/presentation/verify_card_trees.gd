@@ -95,6 +95,16 @@ func _run() -> void:
 	_expect(from_deeper.contains("Saved cards") and from_deeper.contains("XP value: 13 → 17 (+4 XP)") and not from_deeper.contains("Prevent"), "converging card shows the change from its first route: %s" % from_deeper)
 	_expect(from_original.contains("1 → 2") and from_original.contains("XP value: 14 → 17 (+3 XP)") and not from_original.contains("Saved cards"), "converging card shows the change from its second route: %s" % from_original)
 	_expect(str(ui._canvas.summaries.node_3) == "Joins 2 paths" and str(ui._canvas.tooltips.node_3).contains("+4 XP") and str(ui._canvas.tooltips.node_3).contains("+3 XP"), "medallion and tooltip describe both routes")
+	# Quick edit on the converging card compares against both routes too.
+	await _click(_tree_control(ui, "quick_edit")); await _frames()
+	var forge_changes: String = _tree_control(ui, "forge.changes", "tree_field").get_parsed_text()
+	_expect(forge_changes.contains("From Steady Guard · Deeper guard") and forge_changes.contains("From Steady Guard · Original piles") and forge_changes.contains("(+4 XP)") and forge_changes.contains("(+3 XP)"), "quick edit lists the change from every route: %s" % forge_changes)
+	await _click(_tree_control(ui, "forge.xp.inc")); await _frames()
+	forge_changes = _tree_control(ui, "forge.changes", "tree_field").get_parsed_text()
+	_expect(forge_changes.contains("13 → 18 (+5 XP)") and forge_changes.contains("14 → 18 (+4 XP)"), "quick edit XP change updates every route")
+	await _click(_tree_control(ui, "forge.cancel")); await _frames()
+	_expect(int(ui._node("node_3").card.economy.buy) == 17, "cancelled quick edit leaves the card unchanged")
+	await _canvas_click(ui, "base")
 	node_control = _tree_control(ui, "node_1", "tree_node")
 	var old_x: float = ui._node("node_1").x
 	await _drag(node_control.get_global_rect().get_center(), node_control.get_global_rect().get_center() + Vector2(-30, 0))
