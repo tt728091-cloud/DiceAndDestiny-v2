@@ -22,7 +22,7 @@ func ReadAuthoredAbilities(root string) (AuthoredAbilities, error) {
 	if root == "" {
 		return out, nil
 	}
-	raw, err := os.ReadFile(filepath.Join(root, "authored_abilities.json"))
+	raw, err := os.ReadFile(filepath.Join(AuthoredRoot(root), "authored_abilities.json"))
 	if os.IsNotExist(err) {
 		return out, nil
 	}
@@ -109,14 +109,15 @@ func SaveAuthoredAbility(root string, lib BattleLibrary, a *BattleAbilityDefinit
 		return saved, err
 	}
 	saved.Revision++
-	if err = os.MkdirAll(root, 0755); err != nil {
+	dir := AuthoredRoot(root)
+	if err = os.MkdirAll(dir, 0755); err != nil {
 		return saved, err
 	}
 	raw, err := json.MarshalIndent(saved, "", "  ")
 	if err != nil {
 		return saved, err
 	}
-	f, err := os.CreateTemp(root, ".abilities-*.json")
+	f, err := os.CreateTemp(dir, ".abilities-*.json")
 	if err != nil {
 		return saved, err
 	}
@@ -130,7 +131,7 @@ func SaveAuthoredAbility(root string, lib BattleLibrary, a *BattleAbilityDefinit
 		err = ce
 	}
 	if err == nil {
-		err = os.Rename(f.Name(), filepath.Join(root, "authored_abilities.json"))
+		err = os.Rename(f.Name(), filepath.Join(dir, "authored_abilities.json"))
 	}
 	return saved, err
 }

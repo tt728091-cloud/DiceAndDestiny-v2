@@ -133,3 +133,9 @@ Use `./scripts/godot.sh` for every additional Godot test.
 - Rolled defensive abilities release cards in hand → draw → discard priority, randomly within each live pile. Cards and defensive abilities send released cards to their configured destination; statuses follow their explicitly authored rule above. Never undo a card play or draw when releasing a reservation.
 - The main Pass ends that participant's remaining defenses and card opportunities. Applying a completed defensive roll returns to the same segment; it must not act as the main Pass. Auto-complete when only Pass remains, after the usual review time.
 - Commit remaining damage and queued attack statuses once at the end. Do not open a second damage-response phase or reselect the already revealed cards.
+
+## Authored content storage
+
+- Published cards, card trees, abilities/boards, and admin card prices and pool types live in the tracked `dice-and-destiny-server/content/authored/` directory. The launcher points `DICE_AND_DESTINY_AUTHORED_ROOT` at it for normal runs; commit its changes to share them.
+- Player decks, progression, collections, and admin budgets stay in the uncommitted loadout root.
+- Script tests receive an empty disposable authored root and must never write to the tracked directory.

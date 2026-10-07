@@ -10,6 +10,23 @@ import (
 	"sync"
 )
 
+// AuthoredRootEnv names the launcher-assigned directory for catalog-wide
+// authored content: cards, card trees, abilities, boards, and admin prices and
+// pool types. Normal workspace runs use the tracked content/authored directory
+// so publications can be committed; script tests receive an empty disposable
+// directory. Player decks, progression and budgets always stay in the loadout
+// root.
+const AuthoredRootEnv = "DICE_AND_DESTINY_AUTHORED_ROOT"
+
+// AuthoredRoot resolves the authored-content directory for a loadout root.
+// Without the launcher variable (Go tests, tools) it is the loadout root itself.
+func AuthoredRoot(loadoutRoot string) string {
+	if shared := os.Getenv(AuthoredRootEnv); shared != "" && loadoutRoot != "" {
+		return shared
+	}
+	return loadoutRoot
+}
+
 type AuthoredCards struct {
 	Trees    map[string]CardTree             `json:"trees,omitempty"`
 	Deleted  []string                        `json:"deleted,omitempty"`
@@ -25,7 +42,7 @@ func ReadAuthoredCards(root string) (AuthoredCards, error) {
 	if root == "" {
 		return out, nil
 	}
-	raw, err := os.ReadFile(filepath.Join(root, "authored_cards.json"))
+	raw, err := os.ReadFile(filepath.Join(AuthoredRoot(root), "authored_cards.json"))
 	if os.IsNotExist(err) {
 		return out, nil
 	}
@@ -119,7 +136,7 @@ func SaveAuthoredCard(root string, lib BattleLibrary, card BattleCardDefinition,
 
 func writeAuthoredCards(root string, saved AuthoredCards) error {
 	var err error
-	dir := filepath.Clean(root)
+	dir := filepath.Clean(AuthoredRoot(root))
 	if err = os.MkdirAll(dir, 0755); err != nil {
 		return err
 	}

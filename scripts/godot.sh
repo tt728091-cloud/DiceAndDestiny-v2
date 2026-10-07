@@ -60,16 +60,22 @@ cleanup() {
 }
 trap cleanup EXIT INT TERM
 
+# Published cards, card trees, abilities, and admin prices/types are tracked in
+# the repository so they can be committed. Script tests get an empty disposable
+# directory instead, so they never edit tracked content.
 if [[ "${isolated_run}" == "1" ]]; then
   run_root="$(mktemp -d "${WORKSPACE_RUNTIME_ROOT}/runs/run.XXXXXX")"
   runtime_root="${run_root}/client"
   state_root="${run_root}/server"
+  authored_root="${run_root}/authored"
 else
   runtime_root="${WORKSPACE_STATE_ROOT}/client"
   state_root="${WORKSPACE_STATE_ROOT}/server"
+  authored_root="${SERVER_ROOT}/content/authored"
 fi
 
 mkdir -p \
+  "${authored_root}" \
   "${runtime_root}" \
   "${state_root}/battles" \
   "${state_root}/scenarios" \
@@ -78,6 +84,7 @@ mkdir -p \
 
 export DICE_AND_DESTINY_RUNTIME_ROOT="${runtime_root}"
 export DICE_AND_DESTINY_CONTENT_ROOT="${SERVER_ROOT}/content"
+export DICE_AND_DESTINY_AUTHORED_ROOT="${authored_root}"
 export DICE_AND_DESTINY_RUN_STATE_ROOT="${SERVER_ROOT}/save/run_players"
 export DICE_AND_DESTINY_BATTLE_STATE_ROOT="${state_root}/battles"
 export DICE_AND_DESTINY_SCENARIO_STATE_ROOT="${state_root}/scenarios"

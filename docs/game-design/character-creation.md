@@ -202,9 +202,13 @@ changes and reopening Admin within the character screen.
 `verify_admin_sorting.gd` checks both lists, combined filtering/search,
 draft edits, save/reopen, previews, and three viewport sizes.
 
-These are local administrator tools for this workspace. Overrides persist in
-`user/character_loadouts/economy_admin.json`, separate from authored YAML and
-Sandbox decks. A single atomic settings replacement is the commit point; every
+These are administrator tools. Card prices and card, ability and character
+types are catalog-wide and persist in the tracked
+`dice-and-destiny-server/content/authored/economy_admin.json`, so they can be
+committed with the code. Budgets are reconciled against this player's ledgers
+and stay in `user/character_loadouts/economy_admin.json`; a budget-only edit
+never changes the tracked file. Both are separate from authored YAML and
+Sandbox decks. The admin revision is the sum of both files' revisions; every
 progression read, trade, and battle start reconciles its ledger against that
 settings revision. The response refreshes all characters immediately, and an
 interrupted refresh is safely completed on the next read. Stale admin edits and
@@ -527,8 +531,9 @@ program does not branch on the card's name or ID.
   scrolling action rail. The card remains highlighted in hand; no modal selector
   is added. The authority rebuilds legal choices after each effect and rejects
   stale input. Pending selections and ordered execution survive save/reload.
-- Definitions live in launcher-isolated
-  `user/character_loadouts/authored_cards.json`, with a revision. Existing battles
+- Definitions live in the tracked
+  `dice-and-destiny-server/content/authored/authored_cards.json`, with a
+  revision; commit it to share published cards. Existing battles
   and replays retain their pinned definitions; future battles/rematches use the
   published revision. Legacy definitions keep their original execution path
   until explicitly revised in the Workshop.

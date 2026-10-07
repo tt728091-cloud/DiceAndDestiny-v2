@@ -88,7 +88,7 @@ The guided panes expose identity/cost/targeting, requirements/effects, follow-up
 
 Character boards require 1–20 offensive and 1–20 defensive definitions, no duplicates, matching types and compatible character access/dice. Publishing an edited definition checks reachability for its assigned catalog boards. The creator does not grant extra offensive turns merely because a usage cap is larger; the battle's normal action economy still applies.
 
-The workspace-local `authored_abilities.json` holds definitions, boards and revisions. Writes are atomic and reject stale revisions. Board revisions synchronize assignments into the shared loadout for Sandbox and Progression, while later XP upgrades are not repeatedly overwritten by an old assignment. Card and ability overlays are validated together, so references can cross between authored content. Active saves/replays continue to use their original pinned definitions and version-zero compatibility behavior.
+The tracked `dice-and-destiny-server/content/authored/authored_abilities.json` (created on first publish) holds definitions, boards and revisions. Writes are atomic and reject stale revisions. Board revisions synchronize assignments into the shared loadout for Sandbox and Progression, while later XP upgrades are not repeatedly overwritten by an old assignment. Card and ability overlays are validated together, so references can cross between authored content. Active saves/replays continue to use their original pinned definitions and version-zero compatibility behavior.
 
 ## Verification
 

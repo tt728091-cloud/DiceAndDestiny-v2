@@ -71,7 +71,7 @@ The budget ledger is: available XP + equipped card value + stored card value + a
 
 ## Persistence and validation
 
-Tree metadata and every generated card are stored in one atomic revision of `authored_cards.json`. Collection and equipped cards share the existing per-character progression ledger across modes. Battle catalogs remain pinned, so publishing a tree does not change an active battle's rules or cards.
+Tree metadata and every generated card are stored in one atomic revision of the tracked `dice-and-destiny-server/content/authored/authored_cards.json`; commit it to share published trees. Collection and equipped cards share the existing per-character progression ledger across modes. Battle catalogs remain pinned, so publishing a tree does not change an active battle's rules or cards.
 
 Validation rejects stale publications/trades, unknown fields, invalid card effects, duplicate or colliding IDs, missing referenced cards, cycles, disconnected nodes, invalid XP, and edits that invalidate saved decks, collection contents, or budgets. Graph limits are 100 nodes, 300 connections, and 20 rules per connection. Graph definitions are acyclic; an explicitly reversible connection supports refunds without introducing a definition cycle.
 

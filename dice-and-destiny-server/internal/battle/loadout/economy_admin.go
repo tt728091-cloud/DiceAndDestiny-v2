@@ -3,6 +3,7 @@ package loadout
 import (
 	"encoding/json"
 	"fmt"
+	"maps"
 	"os"
 	"path/filepath"
 
@@ -68,18 +69,12 @@ func reconcileBudget(p *Progress, e Economy) error {
 	return nil
 }
 func effectiveEconomy(root string, e Economy) (Economy, AdminSettings, error) {
-	a := AdminSettings{CardPrices: map[string]int{}, Budgets: map[string]int{}}
 	if root == "" {
-		return e, a, fmt.Errorf("loadout root is required")
+		return e, AdminSettings{CardPrices: map[string]int{}, Budgets: map[string]int{}}, fmt.Errorf("loadout root is required")
 	}
-	data, err := os.ReadFile(filepath.Join(root, "economy_admin.json"))
-	if err != nil && !os.IsNotExist(err) {
+	a, err := readAdminSettings(root)
+	if err != nil {
 		return e, a, err
-	}
-	if err == nil {
-		if err = json.Unmarshal(data, &a); err != nil {
-			return e, a, err
-		}
 	}
 	if a.Revision < 0 {
 		return e, a, fmt.Errorf("invalid admin revision")
@@ -137,8 +132,8 @@ func progressSnapshot(root string, e Economy, catalogs map[string]content.Battle
 	return all, e, a, nil
 }
 
-// Settings are workspace-local admin overrides, not edits to source YAML or a
-// remote authorization system. Prices apply to a card ID across every character.
+// Settings are admin overrides, not edits to source YAML or a remote
+// authorization system. Prices apply to a card ID across every character.
 func SaveAdmin(root string, base Economy, catalogs map[string]content.BattleLibrary, proposed AdminSettings) error {
 	progressMu.Lock()
 	defer progressMu.Unlock()
@@ -187,6 +182,79 @@ func SaveAdmin(root string, base Economy, catalogs map[string]content.BattleLibr
 			return err
 		}
 	}
-	// Validation of every character completes before this single atomic commit.
-	return writeJSON(filepath.Join(root, "economy_admin.json"), proposed)
+	// Validation of every character completes before the commit.
+	return writeAdminSettings(root, current, proposed)
+}
+
+// Prices and pool types are catalog-wide and live with the authored content;
+// budgets are reconciled against this player's ledgers and stay in the loadout
+// root. Without a separate authored root both remain in one file.
+type adminCatalogSettings struct {
+	Revision       int               `json:"revision"`
+	CardPrices     map[string]int    `json:"card_prices"`
+	CardTypes      map[string]string `json:"card_types"`
+	AbilityTypes   map[string]string `json:"ability_types"`
+	CharacterTypes map[string]string `json:"character_types"`
+}
+type adminPlayerSettings struct {
+	Revision          int            `json:"revision"`
+	Budgets           map[string]int `json:"budgets"`
+	BudgetAllocations map[string]int `json:"budget_allocations,omitempty"`
+}
+
+func readAdminFile(filename string, out any) error {
+	data, err := os.ReadFile(filename)
+	if os.IsNotExist(err) {
+		return nil
+	}
+	if err != nil {
+		return err
+	}
+	return json.Unmarshal(data, out)
+}
+
+// The combined revision is the sum of both files' revisions, so a change to
+// either one makes an open Admin draft stale.
+func readAdminSettings(root string) (AdminSettings, error) {
+	a := AdminSettings{CardPrices: map[string]int{}, Budgets: map[string]int{}}
+	if err := readAdminFile(filepath.Join(root, "economy_admin.json"), &a); err != nil {
+		return a, err
+	}
+	shared := content.AuthoredRoot(root)
+	if shared == root {
+		return a, nil
+	}
+	c := adminCatalogSettings{}
+	if err := readAdminFile(filepath.Join(shared, "economy_admin.json"), &c); err != nil {
+		return a, err
+	}
+	if c.Revision < 0 {
+		return a, fmt.Errorf("invalid admin revision")
+	}
+	a.CardPrices, a.CardTypes, a.AbilityTypes, a.CharacterTypes = c.CardPrices, c.CardTypes, c.AbilityTypes, c.CharacterTypes
+	if a.CardPrices == nil {
+		a.CardPrices = map[string]int{}
+	}
+	a.Revision += c.Revision
+	return a, nil
+}
+
+func writeAdminSettings(root string, current, proposed AdminSettings) error {
+	shared := content.AuthoredRoot(root)
+	if shared == root {
+		return writeJSON(filepath.Join(root, "economy_admin.json"), proposed)
+	}
+	c := adminCatalogSettings{}
+	if err := readAdminFile(filepath.Join(shared, "economy_admin.json"), &c); err != nil {
+		return err
+	}
+	// Only rewrite the tracked file when catalog settings actually change, so
+	// budget edits never produce a repository diff.
+	if !maps.Equal(current.CardPrices, proposed.CardPrices) || !maps.Equal(current.CardTypes, proposed.CardTypes) || !maps.Equal(current.AbilityTypes, proposed.AbilityTypes) || !maps.Equal(current.CharacterTypes, proposed.CharacterTypes) {
+		c = adminCatalogSettings{Revision: c.Revision + 1, CardPrices: proposed.CardPrices, CardTypes: proposed.CardTypes, AbilityTypes: proposed.AbilityTypes, CharacterTypes: proposed.CharacterTypes}
+		if err := writeJSON(filepath.Join(shared, "economy_admin.json"), c); err != nil {
+			return err
+		}
+	}
+	return writeJSON(filepath.Join(root, "economy_admin.json"), adminPlayerSettings{Revision: proposed.Revision - c.Revision, Budgets: proposed.Budgets, BudgetAllocations: proposed.BudgetAllocations})
 }
