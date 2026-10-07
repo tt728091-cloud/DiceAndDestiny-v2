@@ -15,11 +15,9 @@
                 "offensive_before_roll",
                 "offensive_planning",
                 "offensive_after_roll",
-                "offensive_reaction",
                 "defense_before_roll",
                 "defense_selection",
                 "defense_after_roll",
-                "defense_reaction",
                 "damage_reaction"
               ],
               "roll_requirement": "any",
@@ -32,7 +30,8 @@
                     "owner": "self",
                     "mode": "one",
                     "count": 1,
-                    "selection": "choose"
+                    "selection": "choose",
+                    "polarity": "negative"
                   },
                   "params": {
                     "stacks": 1
@@ -52,8 +51,8 @@
             "type": "action",
             "presentation": {
               "illustration_path": "res://assets/battle/cards/antidote.png",
-              "effect_summary": "Remove 1 stacks from one of your statuses.\nPlay: Offense, any time; Defense, any time.",
-              "rules_text": "Remove 1 stacks from one of your statuses.\nPlay: Offense, any time; Defense, any time.",
+              "effect_summary": "Remove 1 stacks from one of your statuses with negative polarity.\nPlay: Offense, any time; Defense, any time.",
+              "rules_text": "Remove 1 stacks from one of your statuses with negative polarity.\nPlay: Offense, any time; Defense, any time.",
               "art_key": ""
             },
             "cost": {
@@ -90,11 +89,9 @@
                 "offensive_before_roll",
                 "offensive_planning",
                 "offensive_after_roll",
-                "offensive_reaction",
                 "defense_before_roll",
                 "defense_selection",
                 "defense_after_roll",
-                "defense_reaction",
                 "damage_reaction"
               ],
               "roll_requirement": "any",
@@ -107,7 +104,8 @@
                     "owner": "self",
                     "mode": "one",
                     "count": 1,
-                    "selection": "choose"
+                    "selection": "choose",
+                    "polarity": "negative"
                   },
                   "params": {
                     "stacks": 2
@@ -127,8 +125,8 @@
             "type": "action",
             "presentation": {
               "illustration_path": "res://assets/battle/cards/antidote.png",
-              "effect_summary": "Remove 2 stacks from one of your statuses.\nPlay: Offense, any time; Defense, any time.",
-              "rules_text": "Remove 2 stacks from one of your statuses.\nPlay: Offense, any time; Defense, any time.",
+              "effect_summary": "Remove 2 stacks from one of your statuses with negative polarity.\nPlay: Offense, any time; Defense, any time.",
+              "rules_text": "Remove 2 stacks from one of your statuses with negative polarity.\nPlay: Offense, any time; Defense, any time.",
               "art_key": ""
             },
             "cost": {
@@ -165,11 +163,9 @@
                 "offensive_before_roll",
                 "offensive_planning",
                 "offensive_after_roll",
-                "offensive_reaction",
                 "defense_before_roll",
                 "defense_selection",
                 "defense_after_roll",
-                "defense_reaction",
                 "damage_reaction"
               ],
               "roll_requirement": "any",
@@ -182,7 +178,8 @@
                     "owner": "self",
                     "mode": "up_to",
                     "count": 2,
-                    "selection": "choose"
+                    "selection": "choose",
+                    "polarity": "negative"
                   },
                   "params": {
                     "stacks": 1
@@ -202,8 +199,8 @@
             "type": "action",
             "presentation": {
               "illustration_path": "res://assets/battle/cards/antidote.png",
-              "effect_summary": "Remove 1 stacks from up to 2 of your statuses.\nPlay: Offense, any time; Defense, any time.",
-              "rules_text": "Remove 1 stacks from up to 2 of your statuses.\nPlay: Offense, any time; Defense, any time.",
+              "effect_summary": "Remove 1 stacks from up to 2 of your statuses with negative polarity.\nPlay: Offense, any time; Defense, any time.",
+              "rules_text": "Remove 1 stacks from up to 2 of your statuses with negative polarity.\nPlay: Offense, any time; Defense, any time.",
               "art_key": ""
             },
             "cost": {
@@ -240,11 +237,9 @@
                 "offensive_before_roll",
                 "offensive_planning",
                 "offensive_after_roll",
-                "offensive_reaction",
                 "defense_before_roll",
                 "defense_selection",
                 "defense_after_roll",
-                "defense_reaction",
                 "damage_reaction"
               ],
               "roll_requirement": "any",
@@ -257,7 +252,8 @@
                     "owner": "self",
                     "mode": "up_to",
                     "count": 2,
-                    "selection": "choose"
+                    "selection": "choose",
+                    "polarity": "negative"
                   },
                   "params": {
                     "stacks": 2
@@ -277,8 +273,8 @@
             "type": "action",
             "presentation": {
               "illustration_path": "res://assets/battle/cards/antidote.png",
-              "effect_summary": "Remove 2 stacks from up to 2 of your statuses.\nPlay: Offense, any time; Defense, any time.",
-              "rules_text": "Remove 2 stacks from up to 2 of your statuses.\nPlay: Offense, any time; Defense, any time.",
+              "effect_summary": "Remove 2 stacks from up to 2 of your statuses with negative polarity.\nPlay: Offense, any time; Defense, any time.",
+              "rules_text": "Remove 2 stacks from up to 2 of your statuses with negative polarity.\nPlay: Offense, any time; Defense, any time.",
               "art_key": ""
             },
             "cost": {
@@ -315,11 +311,9 @@
                 "offensive_before_roll",
                 "offensive_planning",
                 "offensive_after_roll",
-                "offensive_reaction",
                 "defense_before_roll",
                 "defense_selection",
                 "defense_after_roll",
-                "defense_reaction",
                 "damage_reaction"
               ],
               "roll_requirement": "any",
@@ -332,7 +326,8 @@
                     "owner": "self",
                     "mode": "one",
                     "count": 1,
-                    "selection": "choose"
+                    "selection": "choose",
+                    "polarity": "negative"
                   },
                   "params": {
                     "stacks": 1
@@ -352,8 +347,8 @@
             "type": "action",
             "presentation": {
               "illustration_path": "res://assets/battle/cards/antidote.png",
-              "effect_summary": "Remove 1 stacks from one of your statuses.\nPlay: Offense, any time; Defense, any time.",
-              "rules_text": "Remove 1 stacks from one of your statuses.\nPlay: Offense, any time; Defense, any time.",
+              "effect_summary": "Remove 1 stacks from one of your statuses with negative polarity.\nPlay: Offense, any time; Defense, any time.",
+              "rules_text": "Remove 1 stacks from one of your statuses with negative polarity.\nPlay: Offense, any time; Defense, any time.",
               "art_key": ""
             },
             "cost": {
@@ -432,7 +427,6 @@
               "version": 1,
               "windows": [
                 "defense_selection",
-                "defense_reaction",
                 "damage_reaction"
               ],
               "roll_requirement": "any",
@@ -502,7 +496,6 @@
               "version": 1,
               "windows": [
                 "defense_selection",
-                "defense_reaction",
                 "damage_reaction"
               ],
               "roll_requirement": "any",
@@ -572,7 +565,6 @@
               "version": 1,
               "windows": [
                 "defense_selection",
-                "defense_reaction",
                 "damage_reaction"
               ],
               "roll_requirement": "any",
@@ -642,7 +634,6 @@
               "version": 1,
               "windows": [
                 "defense_selection",
-                "defense_reaction",
                 "damage_reaction"
               ],
               "roll_requirement": "any",
@@ -712,7 +703,6 @@
               "version": 1,
               "windows": [
                 "defense_selection",
-                "defense_reaction",
                 "damage_reaction"
               ],
               "roll_requirement": "any",
@@ -782,7 +772,6 @@
               "version": 1,
               "windows": [
                 "defense_selection",
-                "defense_reaction",
                 "damage_reaction"
               ],
               "roll_requirement": "any",
@@ -895,7 +884,7 @@
     "brace_custom"
   ],
   "version": 1,
-  "revision": 4,
+  "revision": 6,
   "cards": {
     "salve": {
       "access_type": "general",
@@ -905,11 +894,9 @@
           "offensive_before_roll",
           "offensive_planning",
           "offensive_after_roll",
-          "offensive_reaction",
           "defense_before_roll",
           "defense_selection",
           "defense_after_roll",
-          "defense_reaction",
           "damage_reaction"
         ],
         "roll_requirement": "any",
@@ -922,7 +909,8 @@
               "owner": "self",
               "mode": "one",
               "count": 1,
-              "selection": "choose"
+              "selection": "choose",
+              "polarity": "negative"
             },
             "params": {
               "stacks": 1
@@ -942,8 +930,8 @@
       "type": "action",
       "presentation": {
         "illustration_path": "res://assets/battle/cards/antidote.png",
-        "effect_summary": "Remove 1 stacks from one of your statuses.\nPlay: Offense, any time; Defense, any time.",
-        "rules_text": "Remove 1 stacks from one of your statuses.\nPlay: Offense, any time; Defense, any time.",
+        "effect_summary": "Remove 1 stacks from one of your statuses with negative polarity.\nPlay: Offense, any time; Defense, any time.",
+        "rules_text": "Remove 1 stacks from one of your statuses with negative polarity.\nPlay: Offense, any time; Defense, any time.",
         "art_key": ""
       },
       "cost": {
@@ -975,11 +963,9 @@
           "offensive_before_roll",
           "offensive_planning",
           "offensive_after_roll",
-          "offensive_reaction",
           "defense_before_roll",
           "defense_selection",
           "defense_after_roll",
-          "defense_reaction",
           "damage_reaction"
         ],
         "roll_requirement": "any",
@@ -992,7 +978,8 @@
               "owner": "self",
               "mode": "one",
               "count": 1,
-              "selection": "choose"
+              "selection": "choose",
+              "polarity": "negative"
             },
             "params": {
               "stacks": 2
@@ -1012,8 +999,8 @@
       "type": "action",
       "presentation": {
         "illustration_path": "res://assets/battle/cards/antidote.png",
-        "effect_summary": "Remove 2 stacks from one of your statuses.\nPlay: Offense, any time; Defense, any time.",
-        "rules_text": "Remove 2 stacks from one of your statuses.\nPlay: Offense, any time; Defense, any time.",
+        "effect_summary": "Remove 2 stacks from one of your statuses with negative polarity.\nPlay: Offense, any time; Defense, any time.",
+        "rules_text": "Remove 2 stacks from one of your statuses with negative polarity.\nPlay: Offense, any time; Defense, any time.",
         "art_key": ""
       },
       "cost": {
@@ -1045,11 +1032,9 @@
           "offensive_before_roll",
           "offensive_planning",
           "offensive_after_roll",
-          "offensive_reaction",
           "defense_before_roll",
           "defense_selection",
           "defense_after_roll",
-          "defense_reaction",
           "damage_reaction"
         ],
         "roll_requirement": "any",
@@ -1062,7 +1047,8 @@
               "owner": "self",
               "mode": "up_to",
               "count": 2,
-              "selection": "choose"
+              "selection": "choose",
+              "polarity": "negative"
             },
             "params": {
               "stacks": 1
@@ -1082,8 +1068,8 @@
       "type": "action",
       "presentation": {
         "illustration_path": "res://assets/battle/cards/antidote.png",
-        "effect_summary": "Remove 1 stacks from up to 2 of your statuses.\nPlay: Offense, any time; Defense, any time.",
-        "rules_text": "Remove 1 stacks from up to 2 of your statuses.\nPlay: Offense, any time; Defense, any time.",
+        "effect_summary": "Remove 1 stacks from up to 2 of your statuses with negative polarity.\nPlay: Offense, any time; Defense, any time.",
+        "rules_text": "Remove 1 stacks from up to 2 of your statuses with negative polarity.\nPlay: Offense, any time; Defense, any time.",
         "art_key": ""
       },
       "cost": {
@@ -1115,11 +1101,9 @@
           "offensive_before_roll",
           "offensive_planning",
           "offensive_after_roll",
-          "offensive_reaction",
           "defense_before_roll",
           "defense_selection",
           "defense_after_roll",
-          "defense_reaction",
           "damage_reaction"
         ],
         "roll_requirement": "any",
@@ -1132,7 +1116,8 @@
               "owner": "self",
               "mode": "up_to",
               "count": 2,
-              "selection": "choose"
+              "selection": "choose",
+              "polarity": "negative"
             },
             "params": {
               "stacks": 2
@@ -1152,8 +1137,8 @@
       "type": "action",
       "presentation": {
         "illustration_path": "res://assets/battle/cards/antidote.png",
-        "effect_summary": "Remove 2 stacks from up to 2 of your statuses.\nPlay: Offense, any time; Defense, any time.",
-        "rules_text": "Remove 2 stacks from up to 2 of your statuses.\nPlay: Offense, any time; Defense, any time.",
+        "effect_summary": "Remove 2 stacks from up to 2 of your statuses with negative polarity.\nPlay: Offense, any time; Defense, any time.",
+        "rules_text": "Remove 2 stacks from up to 2 of your statuses with negative polarity.\nPlay: Offense, any time; Defense, any time.",
         "art_key": ""
       },
       "cost": {
@@ -1185,11 +1170,9 @@
           "offensive_before_roll",
           "offensive_planning",
           "offensive_after_roll",
-          "offensive_reaction",
           "defense_before_roll",
           "defense_selection",
           "defense_after_roll",
-          "defense_reaction",
           "damage_reaction"
         ],
         "roll_requirement": "any",
@@ -1202,7 +1185,8 @@
               "owner": "self",
               "mode": "one",
               "count": 1,
-              "selection": "choose"
+              "selection": "choose",
+              "polarity": "negative"
             },
             "params": {
               "stacks": 1
@@ -1222,8 +1206,8 @@
       "type": "action",
       "presentation": {
         "illustration_path": "res://assets/battle/cards/antidote.png",
-        "effect_summary": "Remove 1 stacks from one of your statuses.\nPlay: Offense, any time; Defense, any time.",
-        "rules_text": "Remove 1 stacks from one of your statuses.\nPlay: Offense, any time; Defense, any time.",
+        "effect_summary": "Remove 1 stacks from one of your statuses with negative polarity.\nPlay: Offense, any time; Defense, any time.",
+        "rules_text": "Remove 1 stacks from one of your statuses with negative polarity.\nPlay: Offense, any time; Defense, any time.",
         "art_key": ""
       },
       "cost": {
@@ -1253,7 +1237,6 @@
         "version": 1,
         "windows": [
           "defense_selection",
-          "defense_reaction",
           "damage_reaction"
         ],
         "roll_requirement": "any",
@@ -1318,7 +1301,6 @@
         "version": 1,
         "windows": [
           "defense_selection",
-          "defense_reaction",
           "damage_reaction"
         ],
         "roll_requirement": "any",
@@ -1383,7 +1365,6 @@
         "version": 1,
         "windows": [
           "defense_selection",
-          "defense_reaction",
           "damage_reaction"
         ],
         "roll_requirement": "any",
@@ -1448,7 +1429,6 @@
         "version": 1,
         "windows": [
           "defense_selection",
-          "defense_reaction",
           "damage_reaction"
         ],
         "roll_requirement": "any",
@@ -1513,7 +1493,6 @@
         "version": 1,
         "windows": [
           "defense_selection",
-          "defense_reaction",
           "damage_reaction"
         ],
         "roll_requirement": "any",
@@ -1578,7 +1557,6 @@
         "version": 1,
         "windows": [
           "defense_selection",
-          "defense_reaction",
           "damage_reaction"
         ],
         "roll_requirement": "any",

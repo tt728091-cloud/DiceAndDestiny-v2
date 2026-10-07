@@ -2,8 +2,7 @@
   "program": {
     "version": 1,
     "windows": [
-      "offensive_after_roll",
-      "offensive_reaction"
+      "offensive_after_roll"
     ],
     "roll_requirement": "any",
     "uses_per_round": 0,

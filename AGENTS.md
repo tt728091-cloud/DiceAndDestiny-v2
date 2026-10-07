@@ -133,7 +133,7 @@ Use `./scripts/godot.sh` for every additional Godot test.
 - Rolled defensive abilities release cards in hand → draw → discard priority, randomly within each live pile. Cards and defensive abilities send released cards to their configured destination; statuses follow their explicitly authored rule above. Never undo a card play or draw when releasing a reservation.
 - The main Pass ends that participant's remaining defenses and card opportunities. Applying a completed defensive roll returns to the same segment; it must not act as the main Pass. Auto-complete when only Pass remains, after the usual review time.
 - An attack's queued statuses apply when the defense rolled against it resolves, still inside Defense, so "after" cards can interact with them; undefended attacks' statuses stay pending. Commit remaining damage and remaining queued statuses once at the end. Do not open a second damage-response phase or reselect the already revealed cards.
-- Card timing is authored as Before / After / Any time per segment (see `docs/game-design/card-configuration.md`). The Ongoing Effects segment accepts no card plays.
+- Card timing is authored as Before / After / Any time for each segment's own turn (see `docs/game-design/card-configuration.md`). The offensive reaction and the defense roll review are separate opt-in reaction moments, off by default, because play pauses there whenever a card is playable; never add them to ordinary cards. The Ongoing Effects segment accepts no card plays.
 
 ## Authored content storage
 

@@ -2,8 +2,7 @@
   "program": {
     "version": 1,
     "windows": [
-      "offensive_planning",
-      "offensive_reaction"
+      "offensive_planning"
     ],
     "roll_requirement": "any",
     "uses_per_round": 0,

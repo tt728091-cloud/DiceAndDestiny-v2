@@ -3,9 +3,7 @@
     "version": 1,
     "windows": [
       "offensive_planning",
-      "offensive_reaction",
       "defense_selection",
-      "defense_reaction",
       "damage_reaction"
     ],
     "roll_requirement": "any",

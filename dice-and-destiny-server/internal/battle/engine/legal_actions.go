@@ -268,8 +268,7 @@ func reactionCardActions(battle *state.Battle, library content.BattleLibrary, ac
 		if actor.Resources.EnergyPoints < definition.Cost.Energy || (!cardPlayableDuring(definition, battle, "reaction", actorID) && !(battle.Settled.Stage == stageVenomStatus && definition.Targeting.Selector == "one_negative_status_on_self")) {
 			continue
 		}
-		// Unified defense prevention is "any time": the Defense screen and each roll's review.
-		if !reactionSelectorSupported(battle.Settled.Window.Stage, definition.Targeting.Selector) && !(unifiedDefense(battle) && battle.Settled.Stage == stageDefenseSelect && (definition.Targeting.Selector == "one_incoming_damage_source" || definition.Targeting.Selector == "self" || definition.Targeting.Selector == "one_negative_status_on_self")) && !(unifiedDefense(battle) && battle.Settled.Stage == stageDefenseReact && definition.Targeting.Selector == "one_incoming_damage_source") {
+		if !reactionSelectorSupported(battle.Settled.Window.Stage, definition.Targeting.Selector) && !(unifiedDefense(battle) && battle.Settled.Stage == stageDefenseSelect && (definition.Targeting.Selector == "one_incoming_damage_source" || definition.Targeting.Selector == "self" || definition.Targeting.Selector == "one_negative_status_on_self")) {
 			continue
 		}
 		base := command.CommitInteractionPayload{PendingInputID: pending.ID, Checkpoint: interactionCheckpoint(pending), Commitment: command.InteractionCommitmentData{CardIDs: []string{instanceID}}}
@@ -418,7 +417,7 @@ func cardPlayableDuring(definition content.BattleCardDefinition, battle *state.B
 	}
 	for _, timing := range definition.Play.PlayableDuring {
 		immediateDamage := battle.Settled != nil && battle.Settled.Stage == stageOngoingDamage && battle.Settled.Venom != nil && battle.Settled.Venom.Active != nil && battle.Settled.Venom.Active.Kind == "damage"
-		if ((unifiedDefense(battle) && (battle.Settled.Stage == stageDefenseSelect || battle.Settled.Stage == stageDefenseReact) && timing.Segment == "damage_resolution") || timing.Segment == string(battle.Segment.Current) || (immediateDamage && timing.Segment == "damage_resolution" && definition.Targeting.Selector == "one_incoming_damage_source")) && timing.Phase == "main" && timing.WindowPurpose == purpose {
+		if ((unifiedDefense(battle) && battle.Settled.Stage == stageDefenseSelect && timing.Segment == "damage_resolution") || timing.Segment == string(battle.Segment.Current) || (immediateDamage && timing.Segment == "damage_resolution" && definition.Targeting.Selector == "one_incoming_damage_source")) && timing.Phase == "main" && timing.WindowPurpose == purpose {
 			return true
 		}
 	}

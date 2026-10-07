@@ -12,9 +12,11 @@ const PREVIEW_ID := "__card_authoring_preview__"
 # timing_choices map each choice onto engine windows.
 const TIMING_CHOICES := ["", "before", "after", "any"]
 const TIMING_LABELS := {"": "Not playable", "before": "Before", "after": "After", "any": "Any time"}
+const REACTION_LABELS := {"offense": "Also as a reaction to revealed attack dice", "defense": "Also while a defense roll's result is showing"}
+const REACTION_HELP := {"offense": "Opt-in: the card can also be played after attacks are revealed. Play pauses there whenever it is playable, so only use this for effects that need revealed dice.", "defense": "Opt-in: the card can also be played after a defense roll's dice land, before that defense applies. Play pauses there whenever it is playable."}
 const TIMING_HELP := {
-	"offense": {"": "Cannot be played during Offense.", "before": "Your offensive turn, until your first attack roll.", "after": "After your first attack roll, including the reaction to revealed attack dice.", "any": "Your whole offensive turn, including the reaction to revealed attack dice."},
-	"defense": {"": "Cannot be played during Defense.", "before": "The Defense screen, until your first defense roll.", "after": "From your first defense roll, including its result, until you Pass. Passing without rolling skips it.", "any": "The Defense screen until you Pass, including each defense roll's result."},
+	"offense": {"": "Not playable during your offensive turn.", "before": "Your offensive turn, until your first attack roll.", "after": "Your offensive turn, after your first attack roll.", "any": "Your whole offensive turn, before and after rolling."},
+	"defense": {"": "Not playable on the Defense screen.", "before": "The Defense screen, until your first defense roll.", "after": "The Defense screen after your first defense roll, until you Pass. Passing without rolling skips it.", "any": "The Defense screen until you Pass, before and after your defense rolls."},
 }
 var catalog: Dictionary = {}
 var draft: Dictionary = {}
@@ -254,6 +256,10 @@ func _card_fields() -> void:
 			pick.add_item(TIMING_LABELS[choice]); pick.set_item_metadata(pick.item_count - 1, choice)
 		pick.item_selected.connect(func(i): _set_timing(segment, str(pick.get_item_metadata(i))); _changed())
 		_timing_controls[segment] = pick
+		_label(timing_grid, "")
+		var reaction := _check(timing_grid, REACTION_LABELS[segment], false, func(on): _set_reaction(segment, on); _changed(), "timing." + segment + ".reaction")
+		reaction.tooltip_text = REACTION_HELP[segment]
+		_timing_controls[segment + ".reaction"] = reaction
 
 func _section(title: String) -> VBoxContainer:
 	var box := STYLE.section(_fields, 16)
@@ -298,7 +304,12 @@ func _compatible_windows(steps: Array) -> Array:
 	return result
 func _refresh_window_controls() -> void:
 	if draft.is_empty(): return
-	for segment in _timing_controls:
+	for segment in ["offense", "defense"]:
+		var reaction: CheckBox = _timing_controls.get(segment + ".reaction")
+		if reaction != null:
+			reaction.set_pressed_no_signal(_reaction_window(segment) in _timing().windows)
+			reaction.disabled = _reaction_window(segment) not in _allowed_windows() and not reaction.button_pressed
+	for segment in ["offense", "defense"]:
 		var pick: OptionButton = _timing_controls[segment]
 		var support := _timing_support(segment)
 		var current := _current_timing(segment)
@@ -309,8 +320,15 @@ func _refresh_window_controls() -> void:
 		pick.tooltip_text = TIMING_HELP[segment][current]
 func _allowed_windows() -> Array:
 	return _available_windows() if draft.has("mechanic") else _compatible_windows(draft.program.steps)
+# A segment's turn windows; its opt-in reaction window is managed separately.
 func _segment_windows(segment: String) -> Array:
-	return catalog.window_moments.keys().filter(func(w): return catalog.window_moments[w].any(func(m): return str(m).begins_with(segment + "_")))
+	return catalog.window_moments.keys().filter(func(w): return w != _reaction_window(segment) and catalog.window_moments[w].any(func(m): return str(m).begins_with(segment + "_")))
+func _reaction_window(segment: String) -> String:
+	return str(catalog.get("reaction_windows", {}).get(segment, ""))
+func _set_reaction(segment: String, on: bool) -> void:
+	var window := _reaction_window(segment)
+	if on and window not in _timing().windows and window in _allowed_windows(): _timing().windows.append(window)
+	elif not on: _timing().windows.erase(window)
 func _timing_support(segment: String) -> Dictionary:
 	var allowed := _allowed_windows()
 	var support := {"": true}
@@ -333,7 +351,10 @@ func _timing_summary() -> String:
 	var parts: Array[String] = []
 	for segment in ["offense", "defense"]:
 		var current := _current_timing(segment)
-		if not current.is_empty(): parts.append("%s %s" % [segment.capitalize(), TIMING_LABELS[current].to_lower()])
+		var reacts: bool = _reaction_window(segment) in _timing().windows
+		var words: String = TIMING_LABELS[current].to_lower() if not current.is_empty() else ""
+		if reacts: words += (" + " if not words.is_empty() else "") + ("reaction" if segment == "offense" else "roll review")
+		if not words.is_empty(): parts.append("%s %s" % [segment.capitalize(), words])
 	return " · ".join(parts) if not parts.is_empty() else "never"
 # Legacy roll requirements become the equivalent before/after windows.
 func _normalize_roll_requirement() -> void:
@@ -360,12 +381,18 @@ func _reconcile_windows() -> void:
 			wanted[segment] = "after" if current != "before" and support.after else "before" if current != "after" and support.before else ""
 			changed = true
 	if not changed: return
-	if wanted.values().all(func(c): return c.is_empty()):
+	if wanted.values().all(func(c): return c.is_empty()) and ["offense", "defense"].all(func(seg): return _reaction_window(seg) not in _intersection(_timing().windows, allowed)):
 		for segment in ["offense", "defense"]:
 			var support := _timing_support(segment)
 			wanted[segment] = "any" if support.any else "after" if support.after else "before" if support.before else ""
 			if not wanted[segment].is_empty(): break
 	for segment in wanted: _set_timing(segment, wanted[segment])
+	for segment in ["offense", "defense"]:
+		if _reaction_window(segment) not in allowed: _timing().windows.erase(_reaction_window(segment))
+	# Effects that only work in a reaction moment (enemy dice, defense rerolls).
+	if _timing().windows.is_empty():
+		for segment in ["offense", "defense"]:
+			if _reaction_window(segment) in allowed: _timing().windows.append(_reaction_window(segment)); break
 	_last_notice = "Play timing updated to match the effects."
 func _new_step(effect: String) -> Dictionary:
 	var rules: Dictionary = catalog.target_rules[effect]

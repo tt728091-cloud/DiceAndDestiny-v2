@@ -149,6 +149,10 @@ const EmergencyWardRulesTextContentVersion = "1164005a457c69b61c3b74187671ecf8e8
 // text states their timing. Model inputs and legal offensive actions are unchanged.
 const DefenseTimingContentVersion = "0b903464539b572f0c619f4c5cf0793b01e6082b41a70bec301edc94b9c192b9"
 
+// Reviewed presentation-only update: Antidote's rules text also names its
+// defense roll review timing.
+const AntidoteReviewTextContentVersion = "a0148485851f45d032550289bb516b16cf7c246c795ba32b65900bd6b0f17dfc"
+
 func VerifyContentVersion(contentRoot string) error {
 	paths := []string{}
 	err := filepath.Walk(filepath.Join(contentRoot, "battle_v1"), func(path string, info os.FileInfo, walkErr error) error {
@@ -179,7 +183,7 @@ func VerifyContentVersion(contentRoot string) error {
 		digest.Write(payload)
 	}
 	actual := fmt.Sprintf("%x", digest.Sum(nil))
-	if actual != AcceptedContentVersion && actual != AutomaticEffectsContentVersion && actual != EmergencyWardRulesTextContentVersion && actual != DefenseTimingContentVersion {
+	if actual != AcceptedContentVersion && actual != AutomaticEffectsContentVersion && actual != EmergencyWardRulesTextContentVersion && actual != DefenseTimingContentVersion && actual != AntidoteReviewTextContentVersion {
 		return fmt.Errorf("learned policy content version mismatch: got %s, want %s", actual, AcceptedContentVersion)
 	}
 	return nil

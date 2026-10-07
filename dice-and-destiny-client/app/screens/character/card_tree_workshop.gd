@@ -537,7 +537,7 @@ func _start_card() -> Dictionary:
 			"play": {"source_zones": ["hand"], "destination": "discard"},
 			"targeting": {"selector": "card_program", "minimum": 1, "maximum": 1},
 			"presentation": {"rules_text": "", "illustration_path": ""},
-			"program": {"version": 1, "windows": catalog.effects[effect].windows.duplicate(), "roll_requirement": "any", "uses_per_round": 0, "uses_per_battle": 0, "steps": [step]}}
+			"program": {"version": 1, "windows": _default_windows(effect), "roll_requirement": "any", "uses_per_round": 0, "uses_per_battle": 0, "steps": [step]}}
 	card.id = id; card.name = name
 	card.economy = {"buy": int(_start.xp), "sell": int(_start.xp), "copy_limit": int(card.get("economy", {}).get("copy_limit", 20)), "upgrades": []}
 	if not str(_start.art).is_empty(): card.presentation.illustration_path = _start.art
@@ -1089,3 +1089,14 @@ func _example() -> void:
 	_arrange(); _undo.clear(); _update_undo_buttons()
 	_selected = "base"; _changed(); _render(); _canvas.home()
 	_message.text = "Example draft with a new base card, %s (1 energy · prevent 1). Brace is unchanged. Edit, then publish when ready." % name
+
+# New cards default to Any time on each segment their effect supports. The
+# opt-in reaction moments stay off unless the effect only works there.
+func _default_windows(effect: String) -> Array:
+	var allowed: Array = catalog.effects[effect].windows
+	var result: Array = []
+	for segment in ["offense", "defense"]:
+		for choice in ["any", "after", "before"]:
+			var picked: Array = catalog.get("timing_choices", {}).get(segment, {}).get(choice, []).filter(func(w): return w in allowed)
+			if not picked.is_empty(): result.append_array(picked); break
+	return result if not result.is_empty() else allowed.duplicate()

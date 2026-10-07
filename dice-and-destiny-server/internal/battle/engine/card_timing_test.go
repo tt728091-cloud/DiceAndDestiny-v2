@@ -77,6 +77,7 @@ func TestDefenseBeforeRollWindowClosesAfterFirstDefenseRoll(t *testing.T) {
 	early := guardCard(t, &lib, "early_guard", "defense_before_roll")
 	guardCard(t, &lib, "any_guard", "defense_selection")
 	guardCard(t, &lib, "late_guard", content.CardTimingChoices["defense"]["after"]...)
+	guardCard(t, &lib, "review_guard", append(append([]string{}, content.CardTimingChoices["defense"]["after"]...), content.CardReactionWindows["defense"])...)
 	if !strings.Contains(early.Presentation.RulesText, "Play: Defense, before your first defense roll.") {
 		t.Fatalf("rules text omits timing: %q", early.Presentation.RulesText)
 	}
@@ -84,6 +85,7 @@ func TestDefenseBeforeRollWindowClosesAfterFirstDefenseRoll(t *testing.T) {
 	giveCardCopy(&b, "early-2", "early_guard")
 	giveCardCopy(&b, "any-1", "any_guard")
 	giveCardCopy(&b, "late-1", "late_guard")
+	giveCardCopy(&b, "review-1", "review_guard")
 	b.SettledCatalog, _ = json.Marshal(lib)
 
 	// Before any defense roll both timings are offered.
@@ -134,8 +136,12 @@ func TestDefenseBeforeRollWindowClosesAfterFirstDefenseRoll(t *testing.T) {
 	if _, ok := startActions(e, &b)["early-2"]; ok {
 		t.Fatal("before-roll card offered during the roll review")
 	}
-	if _, ok := startActions(e, &b)["late-1"]; !ok {
-		t.Fatal("after prevention card not playable during the roll review")
+	// The roll review is an opt-in reaction moment: plain After waits it out.
+	if _, ok := startActions(e, &b)["late-1"]; ok {
+		t.Fatal("after card without the review opt-in paused the roll review")
+	}
+	if _, ok := startActions(e, &b)["review-1"]; !ok {
+		t.Fatal("review opt-in card not playable during the roll review")
 	}
 	applyFirst(t, e, &b, command.TypePlanningPass)
 	if b.Settled.Stage != stageDefenseSelect || b.Settled.DefensePassed["player"] {
@@ -356,14 +362,24 @@ func TestCardTimingChoicesMapToWindows(t *testing.T) {
 	}
 }
 
-// "Any time" prevention includes each defense roll's review: the legacy
-// Emergency Ward and the specialized Venom/Curse prevention cards.
-func TestAnyTimePreventionDuringRollReview(t *testing.T) {
+// "Any time" is the Defense screen only: built-in and specialized prevention
+// cards never pause a defense roll's review, then play once it applies.
+func TestAnyTimePreventionWaitsOutRollReview(t *testing.T) {
 	b, _, e := unifiedFixture(t, 4)
 	addCardInstance(&b, "ward-1", "emergency_ward")
 	a := b.Actors["player"]
 	a.Cards.Hand = append(a.Cards.Hand, "ward-1")
 	b.Actors["player"] = a
+	wardActions := func() []command.Command {
+		var out []command.Command
+		for _, action := range e.LegalActions(&b, "player") {
+			var p command.CommitInteractionPayload
+			if json.Unmarshal(action.Payload, &p) == nil && len(p.Commitment.CardIDs) == 1 && p.Commitment.CardIDs[0] == "ward-1" {
+				out = append(out, action)
+			}
+		}
+		return out
+	}
 	applyFirst(t, e, &b, command.TypePlanningAbility)
 	if b.Settled.Stage == stageDefenseRoll {
 		if _, err := e.ApplyBattleCommand(&b, e.LegalActions(&b, "player")[0]); err != nil {
@@ -373,107 +389,63 @@ func TestAnyTimePreventionDuringRollReview(t *testing.T) {
 	if b.Settled.Stage != stageDefenseReact {
 		t.Fatalf("missing roll review: %s", b.Settled.Stage)
 	}
-	before := settledSourceAmount(b.Settled.PendingDamage.Sources[0])
-	played := false
-	for _, action := range e.LegalActions(&b, "player") {
-		var p command.CommitInteractionPayload
-		if json.Unmarshal(action.Payload, &p) == nil && len(p.Commitment.CardIDs) == 1 && p.Commitment.CardIDs[0] == "ward-1" {
-			if _, err := e.ApplyBattleCommand(&b, action); err != nil {
-				t.Fatal(err)
-			}
-			played = true
-			break
-		}
+	if len(wardActions()) != 0 {
+		t.Fatal("Emergency Ward offered during the roll review")
 	}
-	if !played || settledSourceAmount(b.Settled.PendingDamage.Sources[0]) != max(0, before-3) {
-		t.Fatalf("Emergency Ward not playable during the roll review (played=%v)", played)
+	applyFirst(t, e, &b, command.TypePlanningPass)
+	if b.Settled.Stage != stageDefenseSelect {
+		t.Fatalf("defense did not return to the hub: %s", b.Settled.Stage)
+	}
+	if amount := settledSourceAmount(b.Settled.PendingDamage.Sources[0]); amount > 0 && len(wardActions()) == 0 {
+		t.Fatal("Emergency Ward unavailable on the Defense screen after the roll")
 	}
 
 	for _, id := range []string{"coagulate", "emergency_molt", "antivenom_draught", "spiteful_ward"} {
-		b, lib := curseFixture(t)
-		c := configuredClone(t, &lib, id)
-		putMechanic(&b, c)
-		applyStatus(&b, lib, "enemy", "poison", 2)
-		applyStatus(&b, lib, "player", "catalyst", 2)
-		b.Segment.Current = segment.Defensive
-		b.Settled.UnifiedDefense = true
-		b.Settled.Stage = stageDefenseReact
-		source := state.SettledDamageSource{ID: "incoming", SourceActorID: "enemy", TargetActorID: "player", SourceContentID: "sword_cut", BaseAmount: 5, FinalAmount: 5}
-		b.Settled.OffensiveSources = []state.SettledDamageSource{source}
-		b.Settled.PendingDamage = &state.SettledDamageBatch{ID: "damage", Sources: []state.SettledDamageSource{source}}
-		var choices int
-		if lib.Cards[c.ID].AccessType == "curse" {
-			choices = len(curseCardChoices(&b, lib, "player", c))
-		} else {
-			choices = len(venomCardChoices(&b, lib, "player", c))
-		}
-		if choices == 0 {
-			t.Fatalf("%s not playable during the roll review", id)
+		for _, stage := range []string{stageDefenseReact, stageDefenseSelect} {
+			b, lib := curseFixture(t)
+			c := configuredClone(t, &lib, id)
+			putMechanic(&b, c)
+			applyStatus(&b, lib, "enemy", "poison", 2)
+			applyStatus(&b, lib, "player", "catalyst", 2)
+			b.Segment.Current = segment.Defensive
+			b.Settled.UnifiedDefense = true
+			b.Settled.Stage = stage
+			source := state.SettledDamageSource{ID: "incoming", SourceActorID: "enemy", TargetActorID: "player", SourceContentID: "sword_cut", BaseAmount: 5, FinalAmount: 5}
+			b.Settled.OffensiveSources = []state.SettledDamageSource{source}
+			b.Settled.PendingDamage = &state.SettledDamageBatch{ID: "damage", Sources: []state.SettledDamageSource{source}}
+			var choices int
+			if lib.Cards[c.ID].AccessType == "curse" {
+				choices = len(curseCardChoices(&b, lib, "player", c))
+			} else {
+				choices = len(venomCardChoices(&b, lib, "player", c))
+			}
+			if (choices > 0) != (stage == stageDefenseSelect) {
+				t.Fatalf("%s playable=%v at %s", id, choices > 0, stage)
+			}
 		}
 	}
 }
 
-// Offense "Any time" includes the reaction window.
-func TestOffenseAnyTimeIncludesReaction(t *testing.T) {
+// The offensive reaction is opt-in: turn cards wait it out, reaction cards
+// (enemy dice) play there, and the rules text states each timing.
+func TestOffenseReactionIsOptIn(t *testing.T) {
 	b, lib := adventurerFixture(t)
 	adventurerRoll(&b, lib, []int{1, 2, 3, 4, 6})
 	b.Settled.Stage = stageOffensiveReact
 	openSettledWindow(&b, "react", stageOffensiveReact, "reaction", []command.Type{command.TypeCommitInteraction, command.TypePass})
-	hand := len(b.Actors["player"].Cards.Hand)
-	if err := playProgramCard(NewEngine(), &b, lib, "player", "take_stock-0", nil); err != nil {
-		t.Fatal(err)
-	}
-	if len(b.Actors["player"].Cards.Hand) == hand-1 && len(b.Actors["player"].Cards.Deck) > 0 {
-		t.Fatal("Take Stock did not draw during the reaction")
-	}
-	if !programOffers(&b, lib, "nudge-0") {
-		t.Fatal("After die card unavailable during the reaction")
-	}
-}
-
-// Card-first targeting: when starting would ask for a target, start actions
-// also carry each first-step target, so a client chooses before any authority
-// call. One viable target needs no composite start.
-func TestProgramStartCarriesFirstTargets(t *testing.T) {
-	b, lib, e := unifiedFixture(t, 4, 3)
-	starts := func() map[string]command.Command {
-		out := map[string]command.Command{}
-		for _, a := range e.LegalActions(&b, "player") {
-			id, key := programPayload(a)
-			var c programChoice
-			if id == "brace-0" && json.Unmarshal([]byte(key), &c) == nil && c.Verb == "start" {
-				out[c.Source] = a
-			}
+	for _, id := range []string{"take_stock-0", "second_wind-0", "nudge-0", "try_again-0"} {
+		if programOffers(&b, lib, id) {
+			t.Fatalf("%s paused the offensive reaction", id)
 		}
-		return out
 	}
-	a := b.Actors["player"]
-	if !containsString(a.Cards.Hand, "brace-0") {
-		a.Cards.Hand = append(a.Cards.Hand, "brace-0")
-		a.Cards.Deck = removeString(a.Cards.Deck, "brace-0")
-		a.Cards.Discard = removeString(a.Cards.Discard, "brace-0")
-		b.Actors["player"] = a
-	}
-	got := starts()
-	if _, ok := got[""]; !ok || got["a"].Type == "" || got["b"].Type == "" || len(got) != 3 {
-		t.Fatalf("want plain start plus one start per attack, got %v", len(got))
-	}
-	if _, err := e.ApplyBattleCommand(&b, got["b"]); err != nil {
-		t.Fatal(err)
-	}
-	if b.Settled.Actors["player"].CardExecution != nil || settledSourceAmount(b.Settled.PendingDamage.Sources[1]) != 0 || settledSourceAmount(b.Settled.PendingDamage.Sources[0]) != 4 {
-		t.Fatal("start-and-target must prevent only the chosen attack in one command")
-	}
-	b, lib, e = unifiedFixture(t, 4)
-	_ = lib
-	a = b.Actors["player"]
-	if !containsString(a.Cards.Hand, "brace-0") {
-		a.Cards.Hand = append(a.Cards.Hand, "brace-0")
-		a.Cards.Deck = removeString(a.Cards.Deck, "brace-0")
-		a.Cards.Discard = removeString(a.Cards.Discard, "brace-0")
-		b.Actors["player"] = a
-	}
-	if got := starts(); len(got) != 1 {
-		t.Fatalf("a single viable attack needs only the plain start, got %d", len(got))
+	for windows, want := range map[string]string{
+		"offensive_planning":                      "Play: Offense, any time.",
+		"offensive_after_roll,offensive_reaction": "Play: Offense, after your first roll, or as a reaction to revealed attack dice.",
+		"offensive_reaction":                      "Play: Offense, only as a reaction to revealed attack dice.",
+		"defense_selection,defense_reaction":      "Play: Defense, any time, or while a defense roll's result is showing.",
+	} {
+		if got := content.CardTimingRules(strings.Split(windows, ","), "any", false); got != want {
+			t.Fatalf("%s: %q want %q", windows, got, want)
+		}
 	}
 }

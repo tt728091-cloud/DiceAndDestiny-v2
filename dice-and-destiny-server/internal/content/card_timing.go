@@ -2,28 +2,37 @@ package content
 
 import "strings"
 
-// Players see three timing choices per segment: before, after, or any time.
-// Each choice maps to engine windows. A window's moments say which part of a
-// segment it covers; offensive_planning and defense_selection cover both.
+// Players see three timing choices per segment for their own turn: before,
+// after, or any time. Each choice maps to engine windows.
 //   - Offense before: planning until the actor's first offensive roll.
-//   - Offense after: planning after that roll, plus the offensive reaction.
+//   - Offense after: planning after that roll.
 //   - Defense before: the Defense screen until the actor's first defense roll.
-//   - Defense after: that roll's review and the Defense screen afterwards,
-//     until Pass. Passing without rolling never reaches "after".
+//   - Defense after: the Defense screen after that roll, until Pass. Passing
+//     without rolling never reaches "after".
+//
+// The in-between moments are a separate, opt-in reaction setting so ordinary
+// cards never pause play there: the offensive reaction to revealed attack dice,
+// and the defense roll review before a roll applies (CardReactionWindows).
 //
 // damage_reaction is the legacy damage phase. It is never shown to players and
 // rides along with "after" so old saves keep working.
 var CardTimingChoices = map[string]map[string][]string{
 	"offense": {
 		"before": {"offensive_before_roll"},
-		"after":  {"offensive_after_roll", "offensive_reaction"},
-		"any":    {"offensive_planning", "offensive_reaction"},
+		"after":  {"offensive_after_roll"},
+		"any":    {"offensive_planning"},
 	},
 	"defense": {
 		"before": {"defense_before_roll"},
-		"after":  {"defense_after_roll", "defense_reaction", "damage_reaction"},
-		"any":    {"defense_selection", "defense_reaction", "damage_reaction"},
+		"after":  {"defense_after_roll", "damage_reaction"},
+		"any":    {"defense_selection", "damage_reaction"},
 	},
+}
+
+// CardReactionWindows is each segment's opt-in reaction moment.
+var CardReactionWindows = map[string]string{
+	"offense": "offensive_reaction",
+	"defense": "defense_reaction",
 }
 
 // CardWindowMoments lists the segment moments ("offense_before", ...) each
@@ -32,17 +41,17 @@ var CardWindowMoments = map[string][]string{
 	"offensive_before_roll": {"offense_before"},
 	"offensive_planning":    {"offense_before", "offense_after"},
 	"offensive_after_roll":  {"offense_after"},
-	"offensive_reaction":    {"offense_after"},
+	"offensive_reaction":    {"offense_reaction"},
 	"defense_before_roll":   {"defense_before"},
 	"defense_selection":     {"defense_before", "defense_after"},
 	"defense_after_roll":    {"defense_after"},
-	"defense_reaction":      {"defense_after"},
+	"defense_reaction":      {"defense_reaction"},
 	"damage_reaction":       {"defense_after"},
 }
 
-// CardTiming classifies windows as "before", "after", "any" or "" (not
-// playable) for one segment. A legacy roll requirement narrows offensive
-// planning; effects that need a prior roll can never play before it.
+// CardTiming classifies a segment's turn timing as "before", "after", "any" or
+// "" (not playable during the turn). A legacy roll requirement narrows
+// offensive planning; effects that need a prior roll can never play before it.
 func CardTiming(segment string, windows []string, rollRequirement string, needsRoll bool) string {
 	before, after := false, false
 	for _, w := range windows {
@@ -65,16 +74,30 @@ func CardTiming(segment string, windows []string, rollRequirement string, needsR
 	return ""
 }
 
+// CardReaction reports whether the card opts into the segment's reaction moment.
+func CardReaction(segment string, windows []string) bool {
+	return ProgramContains(windows, CardReactionWindows[segment])
+}
+
 // CardTimingRules is the player-facing timing line shown in a card's rules.
 func CardTimingRules(windows []string, rollRequirement string, needsRoll bool) string {
 	words := map[string]map[string]string{
-		"offense": {"before": "Offense, before your first roll", "after": "Offense, after your first roll", "any": "Offense, any time"},
-		"defense": {"before": "Defense, before your first defense roll", "after": "Defense, after your first defense roll", "any": "Defense, any time"},
+		"offense": {"before": "before your first roll", "after": "after your first roll", "any": "any time"},
+		"defense": {"before": "before your first defense roll", "after": "after your first defense roll", "any": "any time"},
 	}
+	reaction := map[string]string{"offense": "as a reaction to revealed attack dice", "defense": "while a defense roll's result is showing"}
+	names := map[string]string{"offense": "Offense", "defense": "Defense"}
 	var parts []string
 	for _, segment := range []string{"offense", "defense"} {
-		if timing := CardTiming(segment, windows, rollRequirement, needsRoll); timing != "" {
-			parts = append(parts, words[segment][timing])
+		turn := CardTiming(segment, windows, rollRequirement, needsRoll)
+		react := CardReaction(segment, windows)
+		switch {
+		case turn != "" && react:
+			parts = append(parts, names[segment]+", "+words[segment][turn]+", or "+reaction[segment])
+		case turn != "":
+			parts = append(parts, names[segment]+", "+words[segment][turn])
+		case react:
+			parts = append(parts, names[segment]+", only "+reaction[segment])
 		}
 	}
 	if len(parts) == 0 {

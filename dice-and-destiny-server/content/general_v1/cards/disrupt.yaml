@@ -26,8 +26,8 @@
   "type": "action",
   "presentation": {
     "illustration_path": "res://assets/battle/cards/tip_it.png",
-    "effect_summary": "Reroll one of enemy offensive dice. Use the new result. Does not use a normal roll attempt.\nPlay: Offense, after your first roll.",
-    "rules_text": "Reroll one of enemy offensive dice. Use the new result. Does not use a normal roll attempt.\nPlay: Offense, after your first roll.",
+    "effect_summary": "Reroll one of enemy offensive dice. Use the new result. Does not use a normal roll attempt.\nPlay: Offense, only as a reaction to revealed attack dice.",
+    "rules_text": "Reroll one of enemy offensive dice. Use the new result. Does not use a normal roll attempt.\nPlay: Offense, only as a reaction to revealed attack dice.",
     "art_key": ""
   },
   "cost": {

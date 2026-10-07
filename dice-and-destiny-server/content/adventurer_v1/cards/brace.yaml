@@ -3,7 +3,6 @@
     "version": 1,
     "windows": [
       "defense_selection",
-      "defense_reaction",
       "damage_reaction"
     ],
     "roll_requirement": "any",

@@ -394,8 +394,8 @@ refreshes the library; new battles pin the updated catalog and owned loadout.
 | --- | ---: | --- | --- |
 | Matchmaker | 1 | Offense, after | Set one owned offensive die to another owned die's face. |
 | Turn the Die | 1 | Offense, after | Flip one owned offensive die: 1↔6, 2↔5, 3↔4. |
-| Disrupt | 1 | Offense, after (reaction) | Reroll one revealed enemy offensive die; recheck the selected attack's qualification. |
-| Second Guard | 1 | Defense, after (roll review) | Reroll chosen dice of that defense before it applies. Its rewards resolve once. |
+| Disrupt | 1 | Offense, reaction only | Reroll one revealed enemy offensive die; recheck the selected attack's qualification. |
+| Second Guard | 1 | Defense, roll review only | Reroll chosen dice of that defense before it applies. Its rewards resolve once. |
 | Reclaim | 2 | Offense, any time | Return one discarded non-recovery card to hand. Does not restore removed cards or heal. |
 | Reinforce | 1, optionally 2 | Defense, any time | Prevent 2 from one source, or pay 1 extra energy to prevent 4. |
 | Dispel | 1 | Offense and Defense, any time | Remove one enemy positive status stack, unless its definition is `dispel_immune`. |

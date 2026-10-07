@@ -157,7 +157,7 @@ func venomCardChoicesForEnemy(b *state.Battle, lib content.BattleLibrary, actor,
 			add("gain", actor)
 		}
 	case "coagulate", "emergency_molt", "antivenom_draught", "spined_rebuttal":
-		isDamage := stage == stageOngoingDamage || stage == stageDamageReact || (unifiedDefense(b) && (stage == stageDefenseSelect || stage == stageDefenseReact))
+		isDamage := stage == stageOngoingDamage || stage == stageDamageReact || (unifiedDefense(b) && stage == stageDefenseSelect)
 		if id == "spined_rebuttal" {
 			isDamage = stage == stageDefenseReact || (unifiedDefense(b) && stage == stageDefenseSelect)
 		}
