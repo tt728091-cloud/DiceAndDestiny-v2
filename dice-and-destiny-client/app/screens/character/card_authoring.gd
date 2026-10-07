@@ -8,13 +8,13 @@ var embedded_draft: Dictionary = {}
 const PROGRAM_EDITOR = preload("res://app/screens/character/card_program_editor.gd")
 const STYLE = preload("res://app/screens/character/character_style.gd")
 const PREVIEW_ID := "__card_authoring_preview__"
-const WINDOW_LABELS := {
-	"offensive_planning": ["Offensive planning", "Your offensive turn, before and between your attack rolls."],
-	"offensive_reaction": ["Offensive reaction", "After an attack's dice are revealed."],
-	"defense_before_roll": ["Defense · before any roll", "The Defense screen, only until you roll your first defense this round."],
-	"defense_selection": ["Defense · any time", "The Defense screen before, between and after your defense rolls, until you Pass."],
-	"defense_reaction": ["Defense · roll review", "After a defense roll's dice land, before that defense applies."],
-	"damage_reaction": ["Damage phase (old saves)", "The separate damage phase used only by battles saved before unified defense."],
+# Authors pick before / after / any time per segment; the server's
+# timing_choices map each choice onto engine windows.
+const TIMING_CHOICES := ["", "before", "after", "any"]
+const TIMING_LABELS := {"": "Not playable", "before": "Before", "after": "After", "any": "Any time"}
+const TIMING_HELP := {
+	"offense": {"": "Cannot be played during Offense.", "before": "Your offensive turn, until your first attack roll.", "after": "After your first attack roll, including the reaction to revealed attack dice.", "any": "Your whole offensive turn, including the reaction to revealed attack dice."},
+	"defense": {"": "Cannot be played during Defense.", "before": "The Defense screen, until your first defense roll.", "after": "From your first defense roll, including its result, until you Pass. Passing without rolling skips it.", "any": "The Defense screen until you Pass, including each defense roll's result."},
 }
 var catalog: Dictionary = {}
 var draft: Dictionary = {}
@@ -38,7 +38,7 @@ var _saved_draft := ""
 var _published_id := ""
 var _validation: Timer
 var _rebuild_pending := false
-var _window_checks: Dictionary = {}
+var _timing_controls: Dictionary = {}
 var _art: TextureRect
 var _title: Label
 var _status: Label
@@ -207,7 +207,7 @@ func _render_fields() -> void:
 	if draft.is_empty(): return
 	if _json.get_parent() != null: _json.get_parent().remove_child(_json)
 	for child in _fields.get_children(): _fields.remove_child(child); child.queue_free()
-	_window_checks.clear()
+	_timing_controls.clear()
 	match _tabs.current_tab:
 		0: _card_fields()
 		1:
@@ -237,7 +237,6 @@ func _card_fields() -> void:
 	var play := _section("Playing the card")
 	grid = STYLE.form(play)
 	_select(grid, "Played card goes to", catalog.destinations, str(draft.play.destination), func(v): draft.play.destination = v; _changed(), "destination")
-	if not draft.has("mechanic"): _select(grid, "Roll requirement", catalog.roll_requirements.filter(func(v): return v != "before_first" or not _needs_roll(draft.program.steps)), str(draft.program.roll_requirement), func(v): draft.program.roll_requirement = v; _changed(), "roll_requirement")
 	for key in ["uses_per_round", "uses_per_battle"]:
 		_number(grid, {"uses_per_round": "Uses per round", "uses_per_battle": "Uses per battle"}[key] + " · 0 = unlimited", int(_timing().get(key, 0)), 0, 100, func(v): _timing()[key] = v; _changed(), key)
 	if draft.has("mechanic") and not str(draft.mechanic.get("expiration", "")).is_empty():
@@ -245,16 +244,16 @@ func _card_fields() -> void:
 		if draft.mechanic.expiration != "battle": _number(grid, "Rounds · 1 = next applicable checkpoint", int(draft.mechanic.get("rounds", 1)), 1, 100, func(v): draft.mechanic.rounds = v; _changed(), "expiration_rounds")
 	var piles := HFlowContainer.new(); piles.add_theme_constant_override("h_separation", 14); play.add_child(piles)
 	_multi(piles, "Can be played from · at least one pile", catalog.source_zones, draft.play.source_zones, func(): _changed(), "play_piles", true)
-	var timing := _section("Play windows")
-	_label(timing, "Disabled windows conflict with one of the card's effects.", 13).add_theme_color_override("font_color", STYLE.MUTED)
-	var windows := GridContainer.new(); windows.columns = 2; windows.add_theme_constant_override("h_separation", 18); timing.add_child(windows)
-	for window in _available_windows():
-		var label: Array = WINDOW_LABELS.get(window, [str(window).replace("_", " ").capitalize(), ""])
-		var check := _check(windows, label[0], window in _timing().windows, func(on):
-			if on and window not in _timing().windows: _timing().windows.append(window)
-			elif not on: _timing().windows.erase(window)
-			_changed(), "window." + str(window))
-		_window_checks[window] = check
+	var timing := _section("When it can be played")
+	_label(timing, "Disabled choices conflict with one of the card's effects.", 13).add_theme_color_override("font_color", STYLE.MUTED)
+	var timing_grid := STYLE.form(timing)
+	for segment in ["offense", "defense"]:
+		_label(timing_grid, segment.capitalize())
+		var pick := OptionButton.new(); timing_grid.add_child(pick); pick.set_meta("editor_key", "timing." + segment); _fill(pick); pick.fit_to_longest_item = false
+		for choice in TIMING_CHOICES:
+			pick.add_item(TIMING_LABELS[choice]); pick.set_item_metadata(pick.item_count - 1, choice)
+		pick.item_selected.connect(func(i): _set_timing(segment, str(pick.get_item_metadata(i))); _changed())
+		_timing_controls[segment] = pick
 
 func _section(title: String) -> VBoxContainer:
 	var box := STYLE.section(_fields, 16)
@@ -299,21 +298,75 @@ func _compatible_windows(steps: Array) -> Array:
 	return result
 func _refresh_window_controls() -> void:
 	if draft.is_empty(): return
-	var allowed := _available_windows() if draft.has("mechanic") else _compatible_windows(draft.program.steps)
-	for w in _window_checks:
-		_window_checks[w].disabled = w not in allowed
-		var rules: String = WINDOW_LABELS.get(w, ["", ""])[1]
-		_window_checks[w].tooltip_text = (rules + "\n" if not rules.is_empty() else "") + "Unavailable because one or more effects cannot run in this window." if w not in allowed else rules
+	for segment in _timing_controls:
+		var pick: OptionButton = _timing_controls[segment]
+		var support := _timing_support(segment)
+		var current := _current_timing(segment)
+		for i in pick.item_count:
+			var choice := str(pick.get_item_metadata(i))
+			pick.set_item_disabled(i, not support[choice])
+			if choice == current: pick.select(i)
+		pick.tooltip_text = TIMING_HELP[segment][current]
+func _allowed_windows() -> Array:
+	return _available_windows() if draft.has("mechanic") else _compatible_windows(draft.program.steps)
+func _segment_windows(segment: String) -> Array:
+	return catalog.window_moments.keys().filter(func(w): return catalog.window_moments[w].any(func(m): return str(m).begins_with(segment + "_")))
+func _timing_support(segment: String) -> Dictionary:
+	var allowed := _allowed_windows()
+	var support := {"": true}
+	for choice in ["before", "after"]:
+		support[choice] = not _intersection(catalog.timing_choices[segment][choice], allowed).is_empty()
+	if segment == "offense" and not draft.has("mechanic") and _needs_roll(draft.program.steps): support.before = false
+	support["any"] = support.before and support.after
+	return support
+# Mirrors content.CardTiming, including legacy roll requirements.
+func _current_timing(segment: String) -> String:
+	var before := false; var after := false
+	var requirement := "any" if draft.has("mechanic") else str(draft.program.get("roll_requirement", "any"))
+	var needs_roll := not draft.has("mechanic") and _needs_roll(draft.program.steps)
+	for w in _timing().windows:
+		for moment in catalog.window_moments.get(w, []):
+			if w == "offensive_planning" and (moment == "offense_before" and (requirement == "after_first" or needs_roll) or moment == "offense_after" and requirement == "before_first"): continue
+			before = before or moment == segment + "_before"; after = after or moment == segment + "_after"
+	return "any" if before and after else "before" if before else "after" if after else ""
+func _timing_summary() -> String:
+	var parts: Array[String] = []
+	for segment in ["offense", "defense"]:
+		var current := _current_timing(segment)
+		if not current.is_empty(): parts.append("%s %s" % [segment.capitalize(), TIMING_LABELS[current].to_lower()])
+	return " · ".join(parts) if not parts.is_empty() else "never"
+# Legacy roll requirements become the equivalent before/after windows.
+func _normalize_roll_requirement() -> void:
+	if draft.has("mechanic") or str(draft.program.get("roll_requirement", "any")) == "any": return
+	var replacement := "offensive_before_roll" if draft.program.roll_requirement == "before_first" else "offensive_after_roll"
+	draft.program.windows = draft.program.windows.map(func(w): return replacement if w == "offensive_planning" else w)
+	draft.program.roll_requirement = "any"
+func _set_timing(segment: String, choice: String) -> void:
+	_normalize_roll_requirement()
+	var owned := _segment_windows(segment)
+	var windows: Array = _timing().windows.filter(func(w): return w not in owned)
+	if not choice.is_empty(): windows.append_array(_intersection(catalog.timing_choices[segment][choice], _allowed_windows()))
+	_timing().windows = windows
 func _reconcile_windows() -> void:
 	if draft.has("mechanic"): return
-	if _needs_roll(draft.program.steps) and draft.program.roll_requirement == "before_first":
-		draft.program.roll_requirement = "after_first"; _last_notice = "Roll requirement changed: these effects need rolled dice."
-	var allowed := _available_windows() if draft.has("mechanic") else _compatible_windows(draft.program.steps)
-	var kept := _intersection(_timing().windows, allowed)
-	if kept != _timing().windows:
-		_last_notice = "Play windows updated to match the effects."
-		_timing().windows = kept if not kept.is_empty() else allowed.duplicate()
-	elif kept.is_empty(): _timing().windows = allowed.duplicate()
+	var allowed := _allowed_windows()
+	var wanted := {}
+	var changed: bool = _intersection(_timing().windows, allowed) != _timing().windows
+	for segment in ["offense", "defense"]:
+		var support := _timing_support(segment)
+		var current := _current_timing(segment)
+		wanted[segment] = current
+		if not support[current]:
+			wanted[segment] = "after" if current != "before" and support.after else "before" if current != "after" and support.before else ""
+			changed = true
+	if not changed: return
+	if wanted.values().all(func(c): return c.is_empty()):
+		for segment in ["offense", "defense"]:
+			var support := _timing_support(segment)
+			wanted[segment] = "any" if support.any else "after" if support.after else "before" if support.before else ""
+			if not wanted[segment].is_empty(): break
+	for segment in wanted: _set_timing(segment, wanted[segment])
+	_last_notice = "Play timing updated to match the effects."
 func _new_step(effect: String) -> Dictionary:
 	var rules: Dictionary = catalog.target_rules[effect]
 	var step := {"effect": effect, "params": {}, "target": {"owner": "self", "mode": "one", "count": 1, "selection": "choose"}}
@@ -407,7 +460,7 @@ func _refresh_card_preview() -> void:
 func _set_valid() -> void:
 	_preview.text = str(draft.presentation.rules_text)
 	_title.text = "%s · %d energy" % [draft.name, int(draft.cost.energy)]
-	_status.text = "Play: %s\nAfter play: %s\nBuy: %d XP · Sell: %d XP · Up to %d copies" % [", ".join(_timing().windows).replace("_", " "), draft.play.destination, int(draft.economy.buy), int(draft.economy.sell), int(draft.economy.copy_limit)]
+	_status.text = "Play: %s\nAfter play: %s\nBuy: %d XP · Sell: %d XP · Up to %d copies" % [_timing_summary(), draft.play.destination, int(draft.economy.buy), int(draft.economy.sell), int(draft.economy.copy_limit)]
 	var path := str(draft.presentation.get("illustration_path", ""))
 	_art.texture = load(path) if not path.is_empty() and ResourceLoader.exists(path) else null; _art.visible = false
 	_error.text = "Definition valid." if _last_notice.is_empty() else "Definition valid. " + _last_notice

@@ -59,6 +59,7 @@ func attach_to_battlefield(owner_screen: Control, attack_source: Dictionary) -> 
 	var applications: Array = screen._as_array(raw_applications)
 	var totals := {}
 	for application in applications:
+		if bool(application.get("applied", false)): continue
 		var target := str(application.get("target_actor_id", data.actor_id))
 		if not source.get("preview", false) and target != str(data.actor_id): continue
 		var id := str(application.get("status_id", ""))

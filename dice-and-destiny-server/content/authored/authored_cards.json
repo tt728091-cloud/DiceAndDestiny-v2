@@ -1,5 +1,424 @@
 {
   "trees": {
+    "salve_paths": {
+      "id": "salve_paths",
+      "name": "Salve paths",
+      "root": "base",
+      "nodes": [
+        {
+          "id": "base",
+          "card": {
+            "access_type": "general",
+            "program": {
+              "version": 1,
+              "windows": [
+                "offensive_before_roll",
+                "offensive_planning",
+                "offensive_after_roll",
+                "offensive_reaction",
+                "defense_before_roll",
+                "defense_selection",
+                "defense_after_roll",
+                "defense_reaction",
+                "damage_reaction"
+              ],
+              "roll_requirement": "any",
+              "uses_per_round": 0,
+              "uses_per_battle": 0,
+              "steps": [
+                {
+                  "effect": "remove_status",
+                  "target": {
+                    "owner": "self",
+                    "mode": "one",
+                    "count": 1,
+                    "selection": "choose"
+                  },
+                  "params": {
+                    "stacks": 1
+                  }
+                }
+              ]
+            },
+            "economy": {
+              "buy": 10,
+              "sell": 10,
+              "copy_limit": 20,
+              "upgrades": []
+            },
+            "schema_version": 1,
+            "id": "salve",
+            "name": "Salve",
+            "type": "action",
+            "presentation": {
+              "illustration_path": "res://assets/battle/cards/antidote.png",
+              "effect_summary": "Remove 1 stacks from one of your statuses.\nPlay: Offense, any time; Defense, any time.",
+              "rules_text": "Remove 1 stacks from one of your statuses.\nPlay: Offense, any time; Defense, any time.",
+              "art_key": ""
+            },
+            "cost": {
+              "energy": 1
+            },
+            "play": {
+              "source_zones": [
+                "hand"
+              ],
+              "destination": "discard",
+              "playable_during": []
+            },
+            "targeting": {
+              "selector": "card_program",
+              "minimum": 1,
+              "maximum": 1
+            },
+            "reaction_window": {
+              "opens": false,
+              "pass_required": false
+            },
+            "operations": []
+          },
+          "x": 0,
+          "y": 0
+        },
+        {
+          "id": "node_1",
+          "card": {
+            "access_type": "general",
+            "program": {
+              "version": 1,
+              "windows": [
+                "offensive_before_roll",
+                "offensive_planning",
+                "offensive_after_roll",
+                "offensive_reaction",
+                "defense_before_roll",
+                "defense_selection",
+                "defense_after_roll",
+                "defense_reaction",
+                "damage_reaction"
+              ],
+              "roll_requirement": "any",
+              "uses_per_round": 0,
+              "uses_per_battle": 0,
+              "steps": [
+                {
+                  "effect": "remove_status",
+                  "target": {
+                    "owner": "self",
+                    "mode": "one",
+                    "count": 1,
+                    "selection": "choose"
+                  },
+                  "params": {
+                    "stacks": 2
+                  }
+                }
+              ]
+            },
+            "economy": {
+              "buy": 13,
+              "sell": 13,
+              "copy_limit": 20,
+              "upgrades": []
+            },
+            "schema_version": 1,
+            "id": "salve_paths_variant_node_1",
+            "name": "Salve · Double dose",
+            "type": "action",
+            "presentation": {
+              "illustration_path": "res://assets/battle/cards/antidote.png",
+              "effect_summary": "Remove 2 stacks from one of your statuses.\nPlay: Offense, any time; Defense, any time.",
+              "rules_text": "Remove 2 stacks from one of your statuses.\nPlay: Offense, any time; Defense, any time.",
+              "art_key": ""
+            },
+            "cost": {
+              "energy": 1
+            },
+            "play": {
+              "source_zones": [
+                "hand"
+              ],
+              "destination": "discard",
+              "playable_during": []
+            },
+            "targeting": {
+              "selector": "card_program",
+              "minimum": 1,
+              "maximum": 1
+            },
+            "reaction_window": {
+              "opens": false,
+              "pass_required": false
+            },
+            "operations": []
+          },
+          "x": -160,
+          "y": -360
+        },
+        {
+          "id": "node_2",
+          "card": {
+            "access_type": "general",
+            "program": {
+              "version": 1,
+              "windows": [
+                "offensive_before_roll",
+                "offensive_planning",
+                "offensive_after_roll",
+                "offensive_reaction",
+                "defense_before_roll",
+                "defense_selection",
+                "defense_after_roll",
+                "defense_reaction",
+                "damage_reaction"
+              ],
+              "roll_requirement": "any",
+              "uses_per_round": 0,
+              "uses_per_battle": 0,
+              "steps": [
+                {
+                  "effect": "remove_status",
+                  "target": {
+                    "owner": "self",
+                    "mode": "up_to",
+                    "count": 2,
+                    "selection": "choose"
+                  },
+                  "params": {
+                    "stacks": 1
+                  }
+                }
+              ]
+            },
+            "economy": {
+              "buy": 14,
+              "sell": 14,
+              "copy_limit": 20,
+              "upgrades": []
+            },
+            "schema_version": 1,
+            "id": "salve_paths_variant_node_2",
+            "name": "Salve · Broad",
+            "type": "action",
+            "presentation": {
+              "illustration_path": "res://assets/battle/cards/antidote.png",
+              "effect_summary": "Remove 1 stacks from up to 2 of your statuses.\nPlay: Offense, any time; Defense, any time.",
+              "rules_text": "Remove 1 stacks from up to 2 of your statuses.\nPlay: Offense, any time; Defense, any time.",
+              "art_key": ""
+            },
+            "cost": {
+              "energy": 1
+            },
+            "play": {
+              "source_zones": [
+                "hand"
+              ],
+              "destination": "discard",
+              "playable_during": []
+            },
+            "targeting": {
+              "selector": "card_program",
+              "minimum": 1,
+              "maximum": 1
+            },
+            "reaction_window": {
+              "opens": false,
+              "pass_required": false
+            },
+            "operations": []
+          },
+          "x": 160,
+          "y": -360
+        },
+        {
+          "id": "node_3",
+          "card": {
+            "access_type": "general",
+            "program": {
+              "version": 1,
+              "windows": [
+                "offensive_before_roll",
+                "offensive_planning",
+                "offensive_after_roll",
+                "offensive_reaction",
+                "defense_before_roll",
+                "defense_selection",
+                "defense_after_roll",
+                "defense_reaction",
+                "damage_reaction"
+              ],
+              "roll_requirement": "any",
+              "uses_per_round": 0,
+              "uses_per_battle": 0,
+              "steps": [
+                {
+                  "effect": "remove_status",
+                  "target": {
+                    "owner": "self",
+                    "mode": "up_to",
+                    "count": 2,
+                    "selection": "choose"
+                  },
+                  "params": {
+                    "stacks": 2
+                  }
+                }
+              ]
+            },
+            "economy": {
+              "buy": 24,
+              "sell": 24,
+              "copy_limit": 20,
+              "upgrades": []
+            },
+            "schema_version": 1,
+            "id": "salve_paths_variant_node_3",
+            "name": "Salve · Complete",
+            "type": "action",
+            "presentation": {
+              "illustration_path": "res://assets/battle/cards/antidote.png",
+              "effect_summary": "Remove 2 stacks from up to 2 of your statuses.\nPlay: Offense, any time; Defense, any time.",
+              "rules_text": "Remove 2 stacks from up to 2 of your statuses.\nPlay: Offense, any time; Defense, any time.",
+              "art_key": ""
+            },
+            "cost": {
+              "energy": 1
+            },
+            "play": {
+              "source_zones": [
+                "hand"
+              ],
+              "destination": "discard",
+              "playable_during": []
+            },
+            "targeting": {
+              "selector": "card_program",
+              "minimum": 1,
+              "maximum": 1
+            },
+            "reaction_window": {
+              "opens": false,
+              "pass_required": false
+            },
+            "operations": []
+          },
+          "x": 20,
+          "y": -720
+        },
+        {
+          "id": "node_4",
+          "card": {
+            "access_type": "general",
+            "program": {
+              "version": 1,
+              "windows": [
+                "offensive_before_roll",
+                "offensive_planning",
+                "offensive_after_roll",
+                "offensive_reaction",
+                "defense_before_roll",
+                "defense_selection",
+                "defense_after_roll",
+                "defense_reaction",
+                "damage_reaction"
+              ],
+              "roll_requirement": "any",
+              "uses_per_round": 0,
+              "uses_per_battle": 0,
+              "steps": [
+                {
+                  "effect": "remove_status",
+                  "target": {
+                    "owner": "self",
+                    "mode": "one",
+                    "count": 1,
+                    "selection": "choose"
+                  },
+                  "params": {
+                    "stacks": 1
+                  }
+                }
+              ]
+            },
+            "economy": {
+              "buy": 8,
+              "sell": 8,
+              "copy_limit": 20,
+              "upgrades": []
+            },
+            "schema_version": 1,
+            "id": "salve_paths_variant_node_4",
+            "name": "Salve · Heavy",
+            "type": "action",
+            "presentation": {
+              "illustration_path": "res://assets/battle/cards/antidote.png",
+              "effect_summary": "Remove 1 stacks from one of your statuses.\nPlay: Offense, any time; Defense, any time.",
+              "rules_text": "Remove 1 stacks from one of your statuses.\nPlay: Offense, any time; Defense, any time.",
+              "art_key": ""
+            },
+            "cost": {
+              "energy": 2
+            },
+            "play": {
+              "source_zones": [
+                "hand"
+              ],
+              "destination": "discard",
+              "playable_during": []
+            },
+            "targeting": {
+              "selector": "card_program",
+              "minimum": 1,
+              "maximum": 1
+            },
+            "reaction_window": {
+              "opens": false,
+              "pass_required": false
+            },
+            "operations": []
+          },
+          "x": 0,
+          "y": 360
+        }
+      ],
+      "edges": [
+        {
+          "id": "edge_1",
+          "from": "base",
+          "to": "node_1",
+          "reversible": true,
+          "requirements": []
+        },
+        {
+          "id": "edge_2",
+          "from": "base",
+          "to": "node_2",
+          "reversible": true,
+          "requirements": []
+        },
+        {
+          "id": "edge_3",
+          "from": "node_2",
+          "to": "node_3",
+          "reversible": true,
+          "requirements": []
+        },
+        {
+          "id": "edge_4",
+          "from": "node_1",
+          "to": "node_3",
+          "reversible": true,
+          "requirements": []
+        },
+        {
+          "id": "edge_5",
+          "from": "base",
+          "to": "node_4",
+          "reversible": true,
+          "requirements": []
+        }
+      ]
+    },
     "steady_guard_paths": {
       "id": "steady_guard_paths",
       "name": "Steady Guard paths",
@@ -13,6 +432,7 @@
               "version": 1,
               "windows": [
                 "defense_selection",
+                "defense_reaction",
                 "damage_reaction"
               ],
               "roll_requirement": "any",
@@ -46,8 +466,8 @@
             "type": "damage_response",
             "presentation": {
               "illustration_path": "res://assets/battle/cards/emergency_ward.png",
-              "effect_summary": "Prevent 1 damage from one of your incoming attacks. Saved cards go to discard.",
-              "rules_text": "Prevent 1 damage from one of your incoming attacks. Saved cards go to discard.",
+              "effect_summary": "Prevent 1 damage from one of your incoming attacks. Saved cards go to discard.\nPlay: Defense, any time.",
+              "rules_text": "Prevent 1 damage from one of your incoming attacks. Saved cards go to discard.\nPlay: Defense, any time.",
               "art_key": ""
             },
             "cost": {
@@ -82,6 +502,7 @@
               "version": 1,
               "windows": [
                 "defense_selection",
+                "defense_reaction",
                 "damage_reaction"
               ],
               "roll_requirement": "any",
@@ -115,8 +536,8 @@
             "type": "damage_response",
             "presentation": {
               "illustration_path": "res://assets/battle/cards/emergency_ward.png",
-              "effect_summary": "Prevent 2 damage from one of your incoming attacks. Saved cards go to discard.",
-              "rules_text": "Prevent 2 damage from one of your incoming attacks. Saved cards go to discard.",
+              "effect_summary": "Prevent 2 damage from one of your incoming attacks. Saved cards go to discard.\nPlay: Defense, any time.",
+              "rules_text": "Prevent 2 damage from one of your incoming attacks. Saved cards go to discard.\nPlay: Defense, any time.",
               "art_key": ""
             },
             "cost": {
@@ -151,6 +572,7 @@
               "version": 1,
               "windows": [
                 "defense_selection",
+                "defense_reaction",
                 "damage_reaction"
               ],
               "roll_requirement": "any",
@@ -184,8 +606,8 @@
             "type": "damage_response",
             "presentation": {
               "illustration_path": "res://assets/battle/cards/emergency_ward.png",
-              "effect_summary": "Prevent 1 damage from one of your incoming attacks. Saved cards stay in their current piles.",
-              "rules_text": "Prevent 1 damage from one of your incoming attacks. Saved cards stay in their current piles.",
+              "effect_summary": "Prevent 1 damage from one of your incoming attacks. Saved cards stay in their current piles.\nPlay: Defense, any time.",
+              "rules_text": "Prevent 1 damage from one of your incoming attacks. Saved cards stay in their current piles.\nPlay: Defense, any time.",
               "art_key": ""
             },
             "cost": {
@@ -220,6 +642,7 @@
               "version": 1,
               "windows": [
                 "defense_selection",
+                "defense_reaction",
                 "damage_reaction"
               ],
               "roll_requirement": "any",
@@ -253,8 +676,8 @@
             "type": "damage_response",
             "presentation": {
               "illustration_path": "res://assets/battle/cards/emergency_ward.png",
-              "effect_summary": "Prevent 2 damage from one of your incoming attacks. Saved cards stay in their current piles.",
-              "rules_text": "Prevent 2 damage from one of your incoming attacks. Saved cards stay in their current piles.",
+              "effect_summary": "Prevent 2 damage from one of your incoming attacks. Saved cards stay in their current piles.\nPlay: Defense, any time.",
+              "rules_text": "Prevent 2 damage from one of your incoming attacks. Saved cards stay in their current piles.\nPlay: Defense, any time.",
               "art_key": ""
             },
             "cost": {
@@ -289,6 +712,7 @@
               "version": 1,
               "windows": [
                 "defense_selection",
+                "defense_reaction",
                 "damage_reaction"
               ],
               "roll_requirement": "any",
@@ -322,8 +746,8 @@
             "type": "damage_response",
             "presentation": {
               "illustration_path": "res://assets/battle/cards/emergency_ward.png",
-              "effect_summary": "Prevent 1 damage from one of your incoming attacks. Saved cards go to discard.",
-              "rules_text": "Prevent 1 damage from one of your incoming attacks. Saved cards go to discard.",
+              "effect_summary": "Prevent 1 damage from one of your incoming attacks. Saved cards go to discard.\nPlay: Defense, any time.",
+              "rules_text": "Prevent 1 damage from one of your incoming attacks. Saved cards go to discard.\nPlay: Defense, any time.",
               "art_key": ""
             },
             "cost": {
@@ -358,6 +782,7 @@
               "version": 1,
               "windows": [
                 "defense_selection",
+                "defense_reaction",
                 "damage_reaction"
               ],
               "roll_requirement": "any",
@@ -391,8 +816,8 @@
             "type": "damage_response",
             "presentation": {
               "illustration_path": "res://assets/battle/cards/emergency_ward.png",
-              "effect_summary": "Prevent 2 damage from one of your incoming attacks. Saved cards go to discard.",
-              "rules_text": "Prevent 2 damage from one of your incoming attacks. Saved cards go to discard.",
+              "effect_summary": "Prevent 2 damage from one of your incoming attacks. Saved cards go to discard.\nPlay: Defense, any time.",
+              "rules_text": "Prevent 2 damage from one of your incoming attacks. Saved cards go to discard.\nPlay: Defense, any time.",
               "art_key": ""
             },
             "cost": {
@@ -470,14 +895,365 @@
     "brace_custom"
   ],
   "version": 1,
-  "revision": 3,
+  "revision": 4,
   "cards": {
+    "salve": {
+      "access_type": "general",
+      "program": {
+        "version": 1,
+        "windows": [
+          "offensive_before_roll",
+          "offensive_planning",
+          "offensive_after_roll",
+          "offensive_reaction",
+          "defense_before_roll",
+          "defense_selection",
+          "defense_after_roll",
+          "defense_reaction",
+          "damage_reaction"
+        ],
+        "roll_requirement": "any",
+        "uses_per_round": 0,
+        "uses_per_battle": 0,
+        "steps": [
+          {
+            "effect": "remove_status",
+            "target": {
+              "owner": "self",
+              "mode": "one",
+              "count": 1,
+              "selection": "choose"
+            },
+            "params": {
+              "stacks": 1
+            }
+          }
+        ]
+      },
+      "economy": {
+        "buy": 10,
+        "sell": 10,
+        "copy_limit": 20,
+        "upgrades": []
+      },
+      "schema_version": 1,
+      "id": "salve",
+      "name": "Salve",
+      "type": "action",
+      "presentation": {
+        "illustration_path": "res://assets/battle/cards/antidote.png",
+        "effect_summary": "Remove 1 stacks from one of your statuses.\nPlay: Offense, any time; Defense, any time.",
+        "rules_text": "Remove 1 stacks from one of your statuses.\nPlay: Offense, any time; Defense, any time.",
+        "art_key": ""
+      },
+      "cost": {
+        "energy": 1
+      },
+      "play": {
+        "source_zones": [
+          "hand"
+        ],
+        "destination": "discard",
+        "playable_during": []
+      },
+      "targeting": {
+        "selector": "card_program",
+        "minimum": 1,
+        "maximum": 1
+      },
+      "reaction_window": {
+        "opens": false,
+        "pass_required": false
+      },
+      "operations": []
+    },
+    "salve_paths_variant_node_1": {
+      "access_type": "general",
+      "program": {
+        "version": 1,
+        "windows": [
+          "offensive_before_roll",
+          "offensive_planning",
+          "offensive_after_roll",
+          "offensive_reaction",
+          "defense_before_roll",
+          "defense_selection",
+          "defense_after_roll",
+          "defense_reaction",
+          "damage_reaction"
+        ],
+        "roll_requirement": "any",
+        "uses_per_round": 0,
+        "uses_per_battle": 0,
+        "steps": [
+          {
+            "effect": "remove_status",
+            "target": {
+              "owner": "self",
+              "mode": "one",
+              "count": 1,
+              "selection": "choose"
+            },
+            "params": {
+              "stacks": 2
+            }
+          }
+        ]
+      },
+      "economy": {
+        "buy": 13,
+        "sell": 13,
+        "copy_limit": 20,
+        "upgrades": []
+      },
+      "schema_version": 1,
+      "id": "salve_paths_variant_node_1",
+      "name": "Salve · Double dose",
+      "type": "action",
+      "presentation": {
+        "illustration_path": "res://assets/battle/cards/antidote.png",
+        "effect_summary": "Remove 2 stacks from one of your statuses.\nPlay: Offense, any time; Defense, any time.",
+        "rules_text": "Remove 2 stacks from one of your statuses.\nPlay: Offense, any time; Defense, any time.",
+        "art_key": ""
+      },
+      "cost": {
+        "energy": 1
+      },
+      "play": {
+        "source_zones": [
+          "hand"
+        ],
+        "destination": "discard",
+        "playable_during": []
+      },
+      "targeting": {
+        "selector": "card_program",
+        "minimum": 1,
+        "maximum": 1
+      },
+      "reaction_window": {
+        "opens": false,
+        "pass_required": false
+      },
+      "operations": []
+    },
+    "salve_paths_variant_node_2": {
+      "access_type": "general",
+      "program": {
+        "version": 1,
+        "windows": [
+          "offensive_before_roll",
+          "offensive_planning",
+          "offensive_after_roll",
+          "offensive_reaction",
+          "defense_before_roll",
+          "defense_selection",
+          "defense_after_roll",
+          "defense_reaction",
+          "damage_reaction"
+        ],
+        "roll_requirement": "any",
+        "uses_per_round": 0,
+        "uses_per_battle": 0,
+        "steps": [
+          {
+            "effect": "remove_status",
+            "target": {
+              "owner": "self",
+              "mode": "up_to",
+              "count": 2,
+              "selection": "choose"
+            },
+            "params": {
+              "stacks": 1
+            }
+          }
+        ]
+      },
+      "economy": {
+        "buy": 14,
+        "sell": 14,
+        "copy_limit": 20,
+        "upgrades": []
+      },
+      "schema_version": 1,
+      "id": "salve_paths_variant_node_2",
+      "name": "Salve · Broad",
+      "type": "action",
+      "presentation": {
+        "illustration_path": "res://assets/battle/cards/antidote.png",
+        "effect_summary": "Remove 1 stacks from up to 2 of your statuses.\nPlay: Offense, any time; Defense, any time.",
+        "rules_text": "Remove 1 stacks from up to 2 of your statuses.\nPlay: Offense, any time; Defense, any time.",
+        "art_key": ""
+      },
+      "cost": {
+        "energy": 1
+      },
+      "play": {
+        "source_zones": [
+          "hand"
+        ],
+        "destination": "discard",
+        "playable_during": []
+      },
+      "targeting": {
+        "selector": "card_program",
+        "minimum": 1,
+        "maximum": 1
+      },
+      "reaction_window": {
+        "opens": false,
+        "pass_required": false
+      },
+      "operations": []
+    },
+    "salve_paths_variant_node_3": {
+      "access_type": "general",
+      "program": {
+        "version": 1,
+        "windows": [
+          "offensive_before_roll",
+          "offensive_planning",
+          "offensive_after_roll",
+          "offensive_reaction",
+          "defense_before_roll",
+          "defense_selection",
+          "defense_after_roll",
+          "defense_reaction",
+          "damage_reaction"
+        ],
+        "roll_requirement": "any",
+        "uses_per_round": 0,
+        "uses_per_battle": 0,
+        "steps": [
+          {
+            "effect": "remove_status",
+            "target": {
+              "owner": "self",
+              "mode": "up_to",
+              "count": 2,
+              "selection": "choose"
+            },
+            "params": {
+              "stacks": 2
+            }
+          }
+        ]
+      },
+      "economy": {
+        "buy": 24,
+        "sell": 24,
+        "copy_limit": 20,
+        "upgrades": []
+      },
+      "schema_version": 1,
+      "id": "salve_paths_variant_node_3",
+      "name": "Salve · Complete",
+      "type": "action",
+      "presentation": {
+        "illustration_path": "res://assets/battle/cards/antidote.png",
+        "effect_summary": "Remove 2 stacks from up to 2 of your statuses.\nPlay: Offense, any time; Defense, any time.",
+        "rules_text": "Remove 2 stacks from up to 2 of your statuses.\nPlay: Offense, any time; Defense, any time.",
+        "art_key": ""
+      },
+      "cost": {
+        "energy": 1
+      },
+      "play": {
+        "source_zones": [
+          "hand"
+        ],
+        "destination": "discard",
+        "playable_during": []
+      },
+      "targeting": {
+        "selector": "card_program",
+        "minimum": 1,
+        "maximum": 1
+      },
+      "reaction_window": {
+        "opens": false,
+        "pass_required": false
+      },
+      "operations": []
+    },
+    "salve_paths_variant_node_4": {
+      "access_type": "general",
+      "program": {
+        "version": 1,
+        "windows": [
+          "offensive_before_roll",
+          "offensive_planning",
+          "offensive_after_roll",
+          "offensive_reaction",
+          "defense_before_roll",
+          "defense_selection",
+          "defense_after_roll",
+          "defense_reaction",
+          "damage_reaction"
+        ],
+        "roll_requirement": "any",
+        "uses_per_round": 0,
+        "uses_per_battle": 0,
+        "steps": [
+          {
+            "effect": "remove_status",
+            "target": {
+              "owner": "self",
+              "mode": "one",
+              "count": 1,
+              "selection": "choose"
+            },
+            "params": {
+              "stacks": 1
+            }
+          }
+        ]
+      },
+      "economy": {
+        "buy": 8,
+        "sell": 8,
+        "copy_limit": 20,
+        "upgrades": []
+      },
+      "schema_version": 1,
+      "id": "salve_paths_variant_node_4",
+      "name": "Salve · Heavy",
+      "type": "action",
+      "presentation": {
+        "illustration_path": "res://assets/battle/cards/antidote.png",
+        "effect_summary": "Remove 1 stacks from one of your statuses.\nPlay: Offense, any time; Defense, any time.",
+        "rules_text": "Remove 1 stacks from one of your statuses.\nPlay: Offense, any time; Defense, any time.",
+        "art_key": ""
+      },
+      "cost": {
+        "energy": 2
+      },
+      "play": {
+        "source_zones": [
+          "hand"
+        ],
+        "destination": "discard",
+        "playable_during": []
+      },
+      "targeting": {
+        "selector": "card_program",
+        "minimum": 1,
+        "maximum": 1
+      },
+      "reaction_window": {
+        "opens": false,
+        "pass_required": false
+      },
+      "operations": []
+    },
     "steady_guard": {
       "access_type": "general",
       "program": {
         "version": 1,
         "windows": [
           "defense_selection",
+          "defense_reaction",
           "damage_reaction"
         ],
         "roll_requirement": "any",
@@ -511,8 +1287,8 @@
       "type": "damage_response",
       "presentation": {
         "illustration_path": "res://assets/battle/cards/emergency_ward.png",
-        "effect_summary": "Prevent 1 damage from one of your incoming attacks. Saved cards go to discard.",
-        "rules_text": "Prevent 1 damage from one of your incoming attacks. Saved cards go to discard.",
+        "effect_summary": "Prevent 1 damage from one of your incoming attacks. Saved cards go to discard.\nPlay: Defense, any time.",
+        "rules_text": "Prevent 1 damage from one of your incoming attacks. Saved cards go to discard.\nPlay: Defense, any time.",
         "art_key": ""
       },
       "cost": {
@@ -542,6 +1318,7 @@
         "version": 1,
         "windows": [
           "defense_selection",
+          "defense_reaction",
           "damage_reaction"
         ],
         "roll_requirement": "any",
@@ -575,8 +1352,8 @@
       "type": "damage_response",
       "presentation": {
         "illustration_path": "res://assets/battle/cards/emergency_ward.png",
-        "effect_summary": "Prevent 2 damage from one of your incoming attacks. Saved cards go to discard.",
-        "rules_text": "Prevent 2 damage from one of your incoming attacks. Saved cards go to discard.",
+        "effect_summary": "Prevent 2 damage from one of your incoming attacks. Saved cards go to discard.\nPlay: Defense, any time.",
+        "rules_text": "Prevent 2 damage from one of your incoming attacks. Saved cards go to discard.\nPlay: Defense, any time.",
         "art_key": ""
       },
       "cost": {
@@ -606,6 +1383,7 @@
         "version": 1,
         "windows": [
           "defense_selection",
+          "defense_reaction",
           "damage_reaction"
         ],
         "roll_requirement": "any",
@@ -639,8 +1417,8 @@
       "type": "damage_response",
       "presentation": {
         "illustration_path": "res://assets/battle/cards/emergency_ward.png",
-        "effect_summary": "Prevent 1 damage from one of your incoming attacks. Saved cards stay in their current piles.",
-        "rules_text": "Prevent 1 damage from one of your incoming attacks. Saved cards stay in their current piles.",
+        "effect_summary": "Prevent 1 damage from one of your incoming attacks. Saved cards stay in their current piles.\nPlay: Defense, any time.",
+        "rules_text": "Prevent 1 damage from one of your incoming attacks. Saved cards stay in their current piles.\nPlay: Defense, any time.",
         "art_key": ""
       },
       "cost": {
@@ -670,6 +1448,7 @@
         "version": 1,
         "windows": [
           "defense_selection",
+          "defense_reaction",
           "damage_reaction"
         ],
         "roll_requirement": "any",
@@ -703,8 +1482,8 @@
       "type": "damage_response",
       "presentation": {
         "illustration_path": "res://assets/battle/cards/emergency_ward.png",
-        "effect_summary": "Prevent 2 damage from one of your incoming attacks. Saved cards stay in their current piles.",
-        "rules_text": "Prevent 2 damage from one of your incoming attacks. Saved cards stay in their current piles.",
+        "effect_summary": "Prevent 2 damage from one of your incoming attacks. Saved cards stay in their current piles.\nPlay: Defense, any time.",
+        "rules_text": "Prevent 2 damage from one of your incoming attacks. Saved cards stay in their current piles.\nPlay: Defense, any time.",
         "art_key": ""
       },
       "cost": {
@@ -734,6 +1513,7 @@
         "version": 1,
         "windows": [
           "defense_selection",
+          "defense_reaction",
           "damage_reaction"
         ],
         "roll_requirement": "any",
@@ -767,8 +1547,8 @@
       "type": "damage_response",
       "presentation": {
         "illustration_path": "res://assets/battle/cards/emergency_ward.png",
-        "effect_summary": "Prevent 1 damage from one of your incoming attacks. Saved cards go to discard.",
-        "rules_text": "Prevent 1 damage from one of your incoming attacks. Saved cards go to discard.",
+        "effect_summary": "Prevent 1 damage from one of your incoming attacks. Saved cards go to discard.\nPlay: Defense, any time.",
+        "rules_text": "Prevent 1 damage from one of your incoming attacks. Saved cards go to discard.\nPlay: Defense, any time.",
         "art_key": ""
       },
       "cost": {
@@ -798,6 +1578,7 @@
         "version": 1,
         "windows": [
           "defense_selection",
+          "defense_reaction",
           "damage_reaction"
         ],
         "roll_requirement": "any",
@@ -831,8 +1612,8 @@
       "type": "damage_response",
       "presentation": {
         "illustration_path": "res://assets/battle/cards/emergency_ward.png",
-        "effect_summary": "Prevent 2 damage from one of your incoming attacks. Saved cards go to discard.",
-        "rules_text": "Prevent 2 damage from one of your incoming attacks. Saved cards go to discard.",
+        "effect_summary": "Prevent 2 damage from one of your incoming attacks. Saved cards go to discard.\nPlay: Defense, any time.",
+        "rules_text": "Prevent 2 damage from one of your incoming attacks. Saved cards go to discard.\nPlay: Defense, any time.",
         "art_key": ""
       },
       "cost": {

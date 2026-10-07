@@ -785,6 +785,9 @@ func (e Engine) finalizeDefenses(battle *state.Battle, library content.BattleLib
 		selection.Finalized = true
 		battle.Settled.DefenseHistory[selection.SourceID] = selection
 		battle.Settled.DefenseSelections[actorID] = selection
+		if unifiedDefense(battle) {
+			applyDefendedAttackStatuses(battle, library, selection.SourceID)
+		}
 		events = append(events, settledEvent(event.TypeDefenseSelected, battle, actorID, map[string]any{"ability_id": selection.AbilityID, "source_id": selection.SourceID, "rolled_face": selection.RolledFace, "rolled_faces": defenseFaces(selection)}))
 	}
 	for _, actorID := range sortedSettledActorIDs(battle) {
@@ -989,7 +992,9 @@ func (e Engine) finishDamageBatch(battle *state.Battle, library content.BattleLi
 		events = append(events, event.NewCardPermanentlyRemoved(removal))
 	}
 	for _, application := range batch.Applications {
-		applyVenomStatus(battle, library, application.SourceActorID, application)
+		if !application.Applied {
+			applyVenomStatus(battle, library, application.SourceActorID, application)
+		}
 	}
 	for actorID, actor := range battle.Actors {
 		if actor.CurrentHealth() == 0 && actor.DefeatState != state.ActorDefeated {

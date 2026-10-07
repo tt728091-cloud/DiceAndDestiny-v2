@@ -36,9 +36,10 @@ func buildCardMechanics() map[string]CardMechanicSpec {
 	add := func(family, id, rules string, windows []string, params map[string]CardParameter) {
 		out[id] = CardMechanicSpec{family, strings.ReplaceAll(id, "_", " "), params, windows, rules}
 	}
-	plan := []string{"offensive_planning"}
+	// Each list starts with its any-time window; before/after-only variants follow.
+	plan := []string{"offensive_planning", "offensive_before_roll", "offensive_after_roll"}
 	react := []string{"offensive_reaction"}
-	defense := []string{"defense_selection", "damage_reaction", "ongoing_damage"}
+	defense := []string{"defense_selection", "defense_before_roll", "defense_after_roll", "damage_reaction", "ongoing_damage"}
 	n := func(v int) CardParameter { return number(v, 1, 100) }
 	z := func(v int) CardParameter { return number(v, 0, 100) }
 	status := func(v string) CardParameter { return CardParameter{Type: "status", Default: v} }
@@ -108,7 +109,7 @@ func buildCardMechanics() map[string]CardMechanicSpec {
 		p["prevent"] = n(amount)
 		w := defense
 		if id == "spined_rebuttal" {
-			w = []string{"defense_selection", "defense_reaction"}
+			w = []string{"defense_selection", "defense_before_roll", "defense_after_roll", "defense_reaction"}
 		}
 		rules := "Prevent {prevent} damage from one incoming source."
 		switch id {
@@ -222,7 +223,7 @@ func EditableCard(c BattleCardDefinition) (BattleCardDefinition, error) {
 	if kind != "roll_table" {
 		c.Operations[0].ID = kind
 	}
-	c.Mechanic = &CardMechanic{Kind: kind, Params: MechanicStep(c).Params, Windows: append([]string(nil), spec.Windows...)}
+	c.Mechanic = &CardMechanic{Kind: kind, Params: MechanicStep(c).Params, Windows: defaultCardWindows(spec.Windows)}
 	if spec.Family == "curse" || kind == "venom_reserve" || kind == "deep_puncture" || kind == "terminal_formula" {
 		c.Mechanic.UsesPerRound = 1
 	}
@@ -374,6 +375,7 @@ func PrepareMechanicCard(c BattleCardDefinition, lib *BattleLibrary) BattleCardD
 	}
 	c.Presentation.RulesText = MechanicRules(c)
 	c.Presentation.EffectSummary = strings.Split(c.Presentation.RulesText, "\n")[0]
+	timing := CardTimingRules(c.Mechanic.Windows, "any", false)
 	if MechanicHasStatus(c.Mechanic.Kind) {
 		id := MechanicStatusDefinitionID(c)
 		polarity := "negative"
@@ -381,6 +383,9 @@ func PrepareMechanicCard(c BattleCardDefinition, lib *BattleLibrary) BattleCardD
 			polarity = "positive"
 		}
 		lib.Statuses[id] = BattleStatusDefinition{SchemaVersion: 1, ID: id, Name: c.Name + " preparation", Presentation: Presentation{RulesText: c.Presentation.RulesText, Glyph: "◆"}, ActivationMode: "automatic", Polarity: polarity, Stacking: StatusStacking{StackLimit: 1, OverflowPolicy: "reject_additional_stacks"}}
+	}
+	if timing != "" {
+		c.Presentation.RulesText += "\n" + timing
 	}
 	return c
 }

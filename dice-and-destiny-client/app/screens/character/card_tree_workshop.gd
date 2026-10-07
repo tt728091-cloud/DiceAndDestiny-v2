@@ -223,6 +223,14 @@ func _predecessor(id: String) -> Dictionary:
 	for e in draft.get("edges", []):
 		if e.to == id: return _node(str(e.from))
 	return {}
+## Every card connecting into this one; a converging card has one per route.
+func _predecessors(id: String) -> Array:
+	var out: Array = []
+	for e in draft.get("edges", []):
+		if e.to == id:
+			var n := _node(str(e.from))
+			if not n.is_empty(): out.append(n)
+	return out
 func _offers() -> Dictionary:
 	return state.get("offers", {}).get(str(draft.get("id", "")), {})
 
@@ -248,8 +256,9 @@ func _render_canvas() -> void:
 	_canvas.selected_edge = _edge
 	_canvas.summaries = {}; _canvas.tooltips = {}; _canvas.edge_tooltips = {}
 	for n in draft.get("nodes", []):
-		var before := _predecessor(str(n.id))
-		if not before.is_empty(): _canvas.summaries[n.id] = DIFF.summary(before.card, n.card, catalog, 1)
+		var before := _predecessors(str(n.id))
+		if before.size() == 1: _canvas.summaries[n.id] = DIFF.summary(before[0].card, n.card, catalog, 1)
+		elif before.size() > 1: _canvas.summaries[n.id] = "Joins %d paths" % before.size()
 		_canvas.tooltips[n.id] = _node_tooltip(n, before)
 	for e in draft.get("edges", []): _canvas.edge_tooltips[e.id] = _edge_tooltip(e)
 	if _admin():
@@ -279,11 +288,11 @@ func _player_states() -> void:
 		else: edges[e.id] = "unowned"
 	_canvas.node_states = nodes; _canvas.edge_states = edges
 
-func _node_tooltip(n: Dictionary, before: Dictionary) -> String:
+func _node_tooltip(n: Dictionary, predecessors: Array) -> String:
 	var card: Dictionary = n.card
 	var text := "%s\n%d energy · %d XP%s\n\n%s" % [card.name, int(card.cost.energy), int(card.economy.buy), " · BASE" if n.id == draft.root else "", str(card.presentation.get("rules_text", ""))]
-	if not before.is_empty():
-		var entries := DIFF.changes(before.card, card, catalog)
+	for before in predecessors:
+		var entries := DIFF.with_xp(before.card, card, catalog)
 		if not entries.is_empty(): text += "\n\nChanges from %s:\n%s" % [before.card.name, DIFF.plain(entries)]
 	if not _admin():
 		text += "\n\nIn deck ×%d · Stored ×%d" % [int(_counts().get(card.id, 0)), int(_collection_counts().get(card.id, 0))]
@@ -315,16 +324,17 @@ func _card_preview(parent: Node, node: Dictionary) -> void:
 	var text := VBoxContainer.new(); text.size_flags_horizontal = Control.SIZE_EXPAND_FILL; text.add_theme_constant_override("separation", 4); top.add_child(text)
 	STYLE.heading(text, "Base card" if node.id == draft.root else "Tree variant")
 	_label(text, str(card.name), 23, STYLE.GOLD_BRIGHT)
-	var before := _predecessor(str(node.id))
-	var delta := "" if before.is_empty() else (" · %+d XP from %s" % [int(card.economy.buy) - int(before.card.economy.buy), before.card.name])
+	var predecessors := _predecessors(str(node.id))
+	var deltas: Array = predecessors.map(func(before): return "%+d XP from %s" % [int(card.economy.buy) - int(before.card.economy.buy), before.card.name])
+	var delta := "" if deltas.is_empty() else " · " + ", ".join(deltas)
 	_label(text, "%d XP per copy · %d energy%s\n%d in deck · %d in collection" % [int(card.economy.buy), int(card.cost.energy), delta, int(_counts().get(card.id, 0)), int(_collection_counts().get(card.id, 0))], 15, STYLE.MUTED)
 	_label(box, str(card.presentation.get("rules_text", "Edit this card to choose its effects.")), 17)
-	if not before.is_empty():
-		var entries := DIFF.changes(before.card, card, catalog)
+	for before in predecessors:
+		var entries := DIFF.with_xp(before.card, card, catalog)
 		if not entries.is_empty():
 			STYLE.heading(box, "Changes from " + str(before.card.name))
 			var diff := RichTextLabel.new(); diff.bbcode_enabled = true; diff.fit_content = true; diff.scroll_active = false; diff.mouse_filter = Control.MOUSE_FILTER_IGNORE
-			diff.add_theme_font_size_override("normal_font_size", 16); diff.text = DIFF.bbcode(entries); box.add_child(diff)
+			diff.add_theme_font_size_override("normal_font_size", 16); diff.text = DIFF.bbcode(entries); diff.set_meta("tree_field", "preview.changes." + str(before.id)); box.add_child(diff)
 	if _issues.has(node.id): _label(box, "⚠ " + str(_issues[node.id]), 15, STYLE.LOSS)
 
 func _admin_node_details(node: Dictionary) -> void:
@@ -1007,7 +1017,7 @@ func _check_tree(announce: bool) -> bool:
 		_canvas.issues = _issues
 		for n in draft.nodes:
 			if _canvas._nodes.has(n.id):
-				_canvas._nodes[n.id].issue = str(_issues.get(n.id, "")); _canvas._nodes[n.id].tooltip_text = _node_tooltip(n, _predecessor(str(n.id))); _canvas._nodes[n.id].queue_redraw()
+				_canvas._nodes[n.id].issue = str(_issues.get(n.id, "")); _canvas._nodes[n.id].tooltip_text = _node_tooltip(n, _predecessors(str(n.id))); _canvas._nodes[n.id].queue_redraw()
 	return ok
 
 func _validate() -> bool:

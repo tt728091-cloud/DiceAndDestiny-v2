@@ -1574,7 +1574,8 @@ func _pending_attack_status_text(applications: Array, target: String) -> String:
 	var totals := {}
 	for value in applications:
 		var application := _as_dictionary(value)
-		if str(application.get("target_actor_id", target)) != target: continue
+		# Unified defense lands an attack's statuses once its defense resolves.
+		if bool(application.get("applied", false)) or str(application.get("target_actor_id", target)) != target: continue
 		var status_id := str(application.get("status_id", ""))
 		if status_id.is_empty(): continue
 		totals[status_id] = int(totals.get(status_id, 0)) + int(application.get("stacks", 1))
@@ -1900,6 +1901,7 @@ func _show_pending_damage_statuses() -> void:
 	# Use the actual pending batch, not the attack's old reveal. Statuses still
 	# apply when damage is fully blocked, and reactions may change this batch.
 	for application in _as_array(batch.get("status_applications", [])):
+		if bool(application.get("applied", false)): continue
 		var target := str(application.get("target_actor_id", ""))
 		var id := str(application.get("status_id", ""))
 		var stacks := int(application.get("stacks", 0))
@@ -1915,7 +1917,7 @@ func _build_pending_statuses() -> void:
 	for application in _as_array(_view.settled_damage.get("status_applications", [])):
 		var status: Dictionary = _as_dictionary(application)
 		var target_id := str(status.get("target_actor_id", "")); var status_id := str(status.get("status_id", ""))
-		if target_id.is_empty() or status_id.is_empty(): continue
+		if target_id.is_empty() or status_id.is_empty() or bool(status.get("applied", false)): continue
 		var key := "%s|%s" % [target_id, status_id]
 		grouped[key] = int(grouped.get(key, 0)) + int(status.get("stacks", 1))
 	if grouped.is_empty():

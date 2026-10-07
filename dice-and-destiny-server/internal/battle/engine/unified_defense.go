@@ -70,6 +70,38 @@ func (e Engine) handleUnifiedCard(b *state.Battle, lib content.BattleLibrary, cm
 	return []event.Event{settledEvent(kind, b, cmd.ActorID, data)}, nil
 }
 
+// applyDefendedAttackStatuses lands an attack's pending statuses once the
+// defense against it resolves, still inside Defense, so later "after" cards
+// see them. Undefended attacks keep theirs until the final commit. The
+// applications stay listed, marked applied, so pending displays drop them.
+func applyDefendedAttackStatuses(b *state.Battle, lib content.BattleLibrary, sourceID string) {
+	batch := b.Settled.PendingDamage
+	source := batchSourceByID(batch, sourceID)
+	if source == nil {
+		return
+	}
+	for i, application := range source.StatusApplications {
+		if application.Applied {
+			continue
+		}
+		for j := range batch.Applications {
+			if !batch.Applications[j].Applied && batch.Applications[j] == application {
+				batch.Applications[j].Applied = true
+				break
+			}
+		}
+		applyVenomStatus(b, lib, application.SourceActorID, application)
+		source.StatusApplications[i].Applied = true
+	}
+	for i := range b.Settled.OffensiveSources {
+		if b.Settled.OffensiveSources[i].ID == sourceID {
+			for j := range b.Settled.OffensiveSources[i].StatusApplications {
+				b.Settled.OffensiveSources[i].StatusApplications[j].Applied = true
+			}
+		}
+	}
+}
+
 func (e Engine) passUnifiedDefense(b *state.Battle, lib content.BattleLibrary, actor string) ([]event.Event, error) {
 	b.Settled.DefensePassed[actor] = true
 	skipRemainingDefenses(b, actor)

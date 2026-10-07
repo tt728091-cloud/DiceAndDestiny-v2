@@ -27,6 +27,15 @@ static func changes(before: Dictionary, after: Dictionary, catalog: Dictionary) 
 		out.append(_entry("Rules changed", null))
 	return out
 
+## The full change list for one connection: effect changes plus the XP step.
+## Kept apart from changes() so suggested names describe effects, not price.
+static func with_xp(before: Dictionary, after: Dictionary, catalog: Dictionary) -> Array:
+	var out := changes(before, after, catalog)
+	if before.is_empty() or after.is_empty(): return out
+	var xp_a := int(before.get("economy", {}).get("buy", 0)); var xp_b := int(after.get("economy", {}).get("buy", 0))
+	if xp_a != xp_b: out.append(_entry("XP value: %d → %d (%+d XP)" % [xp_a, xp_b, xp_b - xp_a], null))
+	return out
+
 static func summary(before: Dictionary, after: Dictionary, catalog: Dictionary, limit: int = 2) -> String:
 	var parts: Array = changes(before, after, catalog).map(func(c): return c.text)
 	if parts.size() > limit: parts = parts.slice(0, limit) + ["+%d more" % (parts.size() - limit)]

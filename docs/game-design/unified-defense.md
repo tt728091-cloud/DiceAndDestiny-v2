@@ -33,8 +33,12 @@ actual saved cards are known. Only the affected attack's list uses temporary
 headers; their text keeps its natural height, and the list reserves its space
 until the saved cards leave. Other attack lists remain live throughout.
 
-After all participants finish, remaining removals and queued attack statuses
-commit once. Normal hand-limit cleanup, defeat checks, and authored follow-up
+Each attack's queued statuses land as soon as the defense rolled against it
+resolves, still inside Defense, so later "after" cards (status removal and so
+on) see them; the snapshot keeps those applications marked `applied` and
+pending displays drop them. Attacks that are never defended keep their statuses
+pending. After all participants finish, remaining removals and the remaining
+queued statuses commit once. Normal hand-limit cleanup, defeat checks, and authored follow-up
 work still run. The engine does not open a second Damage segment.
 
 ## Card ownership and prevention

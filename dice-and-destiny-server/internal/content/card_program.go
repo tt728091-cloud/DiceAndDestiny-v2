@@ -68,10 +68,9 @@ type CardEffectSpec struct {
 	Windows    []string                 `json:"windows"`
 }
 
-// defense_before_roll is the Defense screen only until the player has rolled a
-// defense this segment; defense_selection stays open before, between and after
-// defense rolls until the player passes.
-var CardWindows = []string{"offensive_planning", "offensive_reaction", "defense_before_roll", "defense_selection", "defense_reaction", "damage_reaction"}
+// CardTimingChoices (card_timing.go) maps the player-facing before/after/any
+// choices onto these windows.
+var CardWindows = []string{"offensive_before_roll", "offensive_planning", "offensive_after_roll", "offensive_reaction", "defense_before_roll", "defense_selection", "defense_after_roll", "defense_reaction", "damage_reaction"}
 
 func number(defaultValue, minimum, maximum int) CardParameter {
 	return CardParameter{Type: "integer", Default: defaultValue, Minimum: minimum, Maximum: maximum}
@@ -81,8 +80,9 @@ func choice(defaultValue string, values ...string) CardParameter {
 }
 func CardCapabilities() map[string]CardEffectSpec {
 	all := CardWindows
-	offense := []string{"offensive_planning", "offensive_reaction"}
-	defense := []string{"defense_before_roll", "defense_selection", "defense_reaction", "damage_reaction"}
+	// Die effects need rolled dice, so they never play before the first roll.
+	offense := []string{"offensive_planning", "offensive_after_roll", "offensive_reaction"}
+	defense := []string{"defense_before_roll", "defense_selection", "defense_after_roll", "defense_reaction", "damage_reaction"}
 	dest := choice("original", "original", "discard", "hand", "deck", "removed")
 	return map[string]CardEffectSpec{
 		"curse":              {"Apply ordinary Curse", "actor", map[string]CardParameter{"amount": number(1, 1, 100)}, all},
@@ -103,7 +103,7 @@ func CardCapabilities() map[string]CardEffectSpec {
 		"reroll_defense":     {"Reroll defensive dice", "defensive_die", map[string]CardParameter{"result": choice("replace", "replace", "higher", "lower")}, []string{"defense_reaction"}},
 		"remove_status":      {"Remove statuses", "status", map[string]CardParameter{"stacks": number(0, 0, 100)}, all},
 		"apply_status":       {"Apply status", "actor", map[string]CardParameter{"status_id": {Type: "status", Default: ""}, "stacks": number(1, 1, 100)}, all},
-		"ability_bonus":      {"Add an ability bonus", "ability", map[string]CardParameter{"damage": number(2, 0, 100), "status_id": {Type: "status_optional", Default: ""}, "stacks": number(1, 1, 100), "duration": choice("offensive", "offensive", "round", "next_use", "rounds", "battle"), "rounds": number(1, 1, 100), "stack_limit": number(1, 1, 100), "stacking": choice("stack", "stack", "replace", "refresh")}, []string{"offensive_planning"}},
+		"ability_bonus":      {"Add an ability bonus", "ability", map[string]CardParameter{"damage": number(2, 0, 100), "status_id": {Type: "status_optional", Default: ""}, "stacks": number(1, 1, 100), "duration": choice("offensive", "offensive", "round", "next_use", "rounds", "battle"), "rounds": number(1, 1, 100), "stack_limit": number(1, 1, 100), "stacking": choice("stack", "stack", "replace", "refresh")}, []string{"offensive_before_roll", "offensive_planning", "offensive_after_roll"}},
 		"choice":             {"Choose an option", "none", map[string]CardParameter{}, all},
 	}
 }
@@ -158,7 +158,7 @@ func ValidateCardProgram(card BattleCardDefinition, lib BattleLibrary) error {
 	if !ProgramContains([]string{"any", "before_first", "after_first"}, p.RollRequirement) || p.UsesPerRound < 0 || p.UsesPerBattle < 0 {
 		return fmt.Errorf("invalid roll requirement or usage limits")
 	}
-	if p.RollRequirement == "before_first" && CardNeedsPriorRoll(p.Steps) {
+	if (p.RollRequirement == "before_first" || ProgramContains(p.Windows, "offensive_before_roll")) && CardNeedsPriorRoll(p.Steps) {
 		return fmt.Errorf("these effects require a prior offensive roll; before-first-roll timing is impossible")
 	}
 	for _, w := range p.Windows {
@@ -565,8 +565,8 @@ func CardProgramRules(p *CardProgram) string {
 		}
 	}
 	describe(p.Steps, "")
-	if ProgramContains(p.Windows, "defense_before_roll") && !ProgramContains(p.Windows, "defense_selection") {
-		lines = append(lines, "Play only before you roll any defense this round.")
+	if timing := CardTimingRules(p.Windows, p.RollRequirement, CardNeedsPriorRoll(p.Steps)); timing != "" {
+		lines = append(lines, timing)
 	}
 	return strings.Join(lines, "\n")
 }

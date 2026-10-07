@@ -88,6 +88,13 @@ func _run() -> void:
 	_expect(ui.draft.nodes.size() == 5 and ui.draft.edges.size() == 5, "example offers upgrade, cheaper, and combined paths")
 	_expect(ui.draft.id == "steady_guard_paths" and ui._node("base").card.id == "steady_guard" and ui._node("base").card.name == "Steady Guard", "example uses its own new base card")
 	_expect(not ui.draft.nodes.any(func(n): return n.card.id == "brace"), "example does not edit Brace")
+	# A converging card lists the full change, including XP, from every route into it.
+	await _canvas_click(ui, "node_3")
+	var from_deeper: String = _tree_control(ui, "preview.changes.node_1", "tree_field").text
+	var from_original: String = _tree_control(ui, "preview.changes.node_2", "tree_field").text
+	_expect(from_deeper.contains("Saved cards") and from_deeper.contains("XP value: 13 → 17 (+4 XP)") and not from_deeper.contains("Prevent"), "converging card shows the change from its first route: %s" % from_deeper)
+	_expect(from_original.contains("1 → 2") and from_original.contains("XP value: 14 → 17 (+3 XP)") and not from_original.contains("Saved cards"), "converging card shows the change from its second route: %s" % from_original)
+	_expect(str(ui._canvas.summaries.node_3) == "Joins 2 paths" and str(ui._canvas.tooltips.node_3).contains("+4 XP") and str(ui._canvas.tooltips.node_3).contains("+3 XP"), "medallion and tooltip describe both routes")
 	node_control = _tree_control(ui, "node_1", "tree_node")
 	var old_x: float = ui._node("node_1").x
 	await _drag(node_control.get_global_rect().get_center(), node_control.get_global_rect().get_center() + Vector2(-30, 0))

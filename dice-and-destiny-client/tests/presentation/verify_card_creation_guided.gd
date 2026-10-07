@@ -36,7 +36,7 @@ func _run() -> void:
 	_choose(add, "draw"); await _click_visible(ui, _node(ui, "steps.add")); await _frames()
 	_expect(ui.draft.program.steps.size() == 2, "add ordered effect with pointer")
 	ui._tabs.current_tab = 0; await _frames()
-	_expect(ui._window_checks.offensive_planning.disabled, "offensive timing disabled by prevention")
+	_expect(["before", "after", "any"].all(func(c): return _option_disabled(_node(ui, "timing.offense"), c)), "offensive timing disabled by prevention")
 	_node(ui, "buy").value = 8; await _frames()
 	_expect(int(_node(ui, "sell").max_value) == 8 and int(ui.draft.economy.sell) == 8, "sale bound follows buy price")
 	ui._tabs.current_tab = 2; await _frames()

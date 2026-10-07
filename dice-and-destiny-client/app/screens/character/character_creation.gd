@@ -3,6 +3,7 @@ extends Control
 signal closed
 const UpgradeComparison := preload("res://app/screens/character/upgrade_comparison.gd")
 const STYLE = preload("res://app/screens/character/character_style.gd")
+const CARD_TIMING = preload("res://presentation/cards/card_timing.gd")
 var _comparison: PanelContainer
 const GOLD := STYLE.GOLD
 const MUTED := STYLE.MUTED
@@ -1387,11 +1388,11 @@ func _open_card_workshop() -> void:
 
 func _card_play_windows(definition: Dictionary) -> Array[String]:
 	var timing: Array[String] = []
-	if definition.get("program") is Dictionary:
+	if definition.get("mechanic") is Dictionary:
+		timing.append_array(CARD_TIMING.chips(definition.mechanic.get("windows", [])))
+	elif definition.get("program") is Dictionary:
 		var program: Dictionary = definition.program
-		for window in program.windows: timing.append(str(window).replace("_", " ").capitalize())
-		if program.roll_requirement == "before_first": timing.append("Before your first offensive roll")
-		elif program.roll_requirement == "after_first": timing.append("After your first offensive roll")
+		timing.append_array(CARD_TIMING.chips(program.windows, str(program.get("roll_requirement", "any"))))
 		for key in ["uses_per_round", "uses_per_battle"]:
 			if int(program.get(key, 0)) > 0: timing.append("%d %s" % [int(program[key]), key.replace("_", " ")])
 	else:

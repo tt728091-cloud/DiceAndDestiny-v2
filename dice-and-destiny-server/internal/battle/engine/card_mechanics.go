@@ -19,7 +19,7 @@ func mechanicAvailable(b *state.Battle, actor string, c content.BattleCardDefini
 	if b.Settled.Stage == stageOngoingDamage {
 		w = "ongoing_damage"
 	}
-	if !content.ProgramContains(m.Windows, w) {
+	if !content.ProgramContains(m.Windows, w) && !programWindowOpen(b, actor, m.Windows) {
 		return false
 	}
 	uses := b.Settled.Actors[actor].CardUses

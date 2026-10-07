@@ -129,6 +129,9 @@ type SettledStatusApplication struct {
 	TargetActorID string `json:"target_actor_id"`
 	StatusID      string `json:"status_id"`
 	Stacks        int    `json:"stacks"`
+	// Applied marks a unified-defense status that already landed when the
+	// defense against its attack resolved; the final commit skips it.
+	Applied bool `json:"applied,omitempty"`
 }
 
 type SettledDefense struct {
