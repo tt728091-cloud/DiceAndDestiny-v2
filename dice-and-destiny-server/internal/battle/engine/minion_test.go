@@ -4,6 +4,9 @@ import (
 	"path/filepath"
 	"testing"
 
+	"diceanddestiny/server/internal/battle/command"
+	"diceanddestiny/server/internal/battle/operation"
+	"diceanddestiny/server/internal/battle/segment"
 	"diceanddestiny/server/internal/battle/state"
 	"diceanddestiny/server/internal/content"
 )
@@ -145,5 +148,54 @@ func TestSaltVeilRollPrevention(t *testing.T) {
 				t.Fatalf("face %d incoming %d damage %+v", face, incoming, batch.Sources)
 			}
 		}
+	}
+}
+
+// Salt Veil sends every card it saves to the Brine Mask's discard pile,
+// whichever pile the threatened card came from.
+func TestSaltVeilSavesCardsToDiscard(t *testing.T) {
+	_, lib := venomFixture(t)
+	var err error
+	lib, err = content.LoadBattleExtension(lib, filepath.Join("..", "..", "..", "content", "minions_v1"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if lib.Abilities["salt_veil"].SavedCardDestination != content.SavedCardsDiscard {
+		t.Fatalf("Salt Veil must author its discard destination: %q", lib.Abilities["salt_veil"].SavedCardDestination)
+	}
+	for _, zone := range []operation.CardZone{operation.ZoneDeck, operation.ZoneHand, operation.ZoneDiscard} {
+		t.Run(string(zone), func(t *testing.T) {
+			b, _ := venomFixture(t)
+			b.Settled.UnifiedDefense = true
+			b.Segment.Current = segment.Defensive
+			b.Settled.Stage = stageDefenseSelect
+			enemy := b.Actors["enemy"]
+			enemy.Cards = state.CardZones{}
+			ids := []string{"surge-0", "surge-1", "surge-2"}
+			setZone(&enemy.Cards, zone, ids)
+			b.Actors["enemy"] = enemy
+			health := enemy.CurrentHealth()
+			source := state.SettledDamageSource{ID: "hit", SourceActorID: "player", TargetActorID: "enemy", SourceContentID: "sword_cut", BaseAmount: 3, FinalAmount: 3}
+			b.Settled.OffensiveSources = []state.SettledDamageSource{source}
+			batch := &state.SettledDamageBatch{ID: "salt", Sources: []state.SettledDamageSource{source}}
+			for _, cardID := range ids {
+				batch.Removals = append(batch.Removals, state.ProposedCardRemoval{ID: cardID, CardID: cardID, TargetActorID: "enemy", OriginalZone: zone, Accepted: true, Revealed: true, DamageProposalIDs: []string{"hit"}})
+			}
+			b.Settled.PendingDamage = batch
+			openSettledWindow(&b, "salt", stageDefenseSelect, "defense_selection", []command.Type{command.TypeCommitInteraction, command.TypePlanningPass})
+			// A rolled 5 prevents all three damage.
+			b.Settled.DefenseSelections = map[string]state.SettledDefense{"enemy": {ActorID: "enemy", AbilityID: "salt_veil", SourceID: "hit", RolledFaces: []int{5}}}
+			if _, err := NewEngine().finalizeDefenses(&b, lib); err != nil {
+				t.Fatal(err)
+			}
+			for _, r := range batch.Removals {
+				if !r.Released || r.Accepted || r.ReleasedDestination != operation.ZoneDiscard || !containsString(b.Actors["enemy"].Cards.Discard, r.CardID) {
+					t.Fatalf("saved card not sent to discard: %+v, piles %+v", r, b.Actors["enemy"].Cards)
+				}
+			}
+			if b.Actors["enemy"].CurrentHealth() != health || batch.Sources[0].FinalAmount != 0 {
+				t.Fatal("Salt Veil prevention lost health or left damage")
+			}
+		})
 	}
 }

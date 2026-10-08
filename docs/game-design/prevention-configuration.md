@@ -55,6 +55,15 @@ start: restart the game and start a new battle to test edited content. Existing
 battles keep their saved definitions. Pre-experiment saves also retain the legacy
 flow, where rolled defense reduces damage before cards are revealed.
 
+## Enemy defenses
+
+| Definition | Display name | Destination | Amount |
+| --- | --- | --- | --- |
+| `salt_veil` | Salt Veil (Brine Mask) | `discard` | Roll 1D6; prevent half, rounded up |
+
+Salt Veil lives in `dice-and-destiny-server/content/minions_v1/abilities/`.
+`TestSaltVeilSavesCardsToDiscard` checks saves from all three piles.
+
 Regression tests flip only this configuration on the same IDs and verify both
 destinations, all three piles, real card plays and defensive rolls, persisted
 catalogs, played-card costs, and idempotent reconciliation.
