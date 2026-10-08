@@ -48,7 +48,9 @@ func configure(result: Dictionary, start: int, compact: bool = false) -> void:
 		STONE_DIE.dress(die, str(data.die_id), int(face.face), bool(data.get("enemy_die", false)))
 		dice_controls.append(die)
 		die.tooltip_text = str(face.benefit); die.set_meta("inspection_id", "battle.defense_die.%s%s" % [data.actor_id, "" if index == 0 else ".%d" % index])
-		var die_style := StyleBoxFlat.new(); die_style.bg_color = Color("232321"); die_style.border_color = Color("a6987e"); die_style.set_border_width_all(2); die_style.set_corner_radius_all(10); die.add_theme_stylebox_override("disabled", die_style); die.add_theme_color_override("font_disabled_color", Color("e2f3fb")); cell.add_child(die)
+		# The stone owns the die's styleboxes and text colours. An opaque panel
+		# here would hide the stone, which is drawn behind its button.
+		cell.add_child(die)
 		var benefit := TOOLTIP_LABEL.new(); benefit.text = str(face.benefit); benefit.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER; benefit.add_theme_font_size_override("font_size", 14); benefit.add_theme_color_override("font_color", Color("9de0d6")); cell.add_child(benefit); benefit_labels.append(benefit)
 	for gain in data.gains:
 		var die_index := int(gain.get("die_index", -1))
@@ -96,13 +98,16 @@ func _update() -> void:
 	var roll_elapsed := maxf(0, (Time.get_ticks_msec() - int(data.get("roll_started_ms", started_ms))) / 1000.0)
 	var rolling := roll_elapsed < TIMING.roll_seconds() or bool(data.get("awaiting_roll", false))
 	var effects := 0.0 if data.get("effects_pending", false) else maxf(0.0, elapsed - TIMING.roll_seconds()) / TIMING.effects_seconds()
+	# Tumble on a free-running clock: a roll scheduled after the phase
+	# transition must not sit frozen on one face until its start time.
+	var spin := Time.get_ticks_msec() / 1000.0
 	for index in dice_controls.size():
 		var die := dice_controls[index]
-		var face := 1 + (int(elapsed * 16) + index * 3) % 6 if rolling else int(data.dice[index].face)
+		var face := 1 + (int(spin * 16) + index * 3) % 6 if rolling else int(data.dice[index].face)
 		die.text = "%s\n%d" % [BattlePresentationCatalog.symbol_for_die_face(str(data.die_id), face), face]
 		STONE_DIE.dress(die, str(data.die_id), face, bool(data.get("enemy_die", false)))
 		die.pivot_offset = die.size * 0.5
-		die.rotation = sin(elapsed * 26 + index) * 0.045 if rolling else 0.0
+		die.rotation = sin(spin * 26 + index) * 0.045 if rolling else 0.0
 		die.tooltip_text = "Rolling…" if rolling else str(data.dice[index].benefit)
 		benefit_labels[index].modulate.a = 0.0 if rolling else 1.0 if data.get("effects_pending", false) else clampf(effects / 0.15, 0, 1)
 	var progress := 0.0 if rolling or data.get("damage_pending", false) else clampf((effects - 0.2) / 0.45, 0, 1)
