@@ -39,7 +39,7 @@
   },
   "presentation": {
     "art_key": "card_tombs_choice",
-    "effect_summary": "Enemy chooses: 3 Count or roll all five dice.",
+    "effect_summary": "Enemy chooses: 3 Count or roll all five dice",
     "rules_text": "An enemy with at least one cursed die chooses now: receive 3 Curse Count, or roll all five owned dice for their marks. These extra results cannot be kept or qualify an ability. Each named Curse card may be played once per player per round."
   },
   "reaction_window": {

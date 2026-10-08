@@ -32,6 +32,14 @@ Card Creation opens with a blank program card. **New blank card** starts a fresh
 - Prevention recipes: saved cards may remain in their live original pile, move to discard/hand/deck, or be permanently removed. The played card still pays its own configured destination.
 - Preparations: expiration at Offense exit, damage-resolution exit, Income, ongoing effects or battle end. `rounds` is 1–100; 1 means this round’s exit for exit checkpoints and next round for Income/ongoing checkpoints. Battle-end expiration ignores the round offset.
 
+## Card face, timing ribbon and hover
+
+A card shows three layers of text, each with one job:
+
+- **Face** (`presentation.effect_summary`): a keyword and a number, about two lines: "Prevent 3", "Reroll 1 die", "Change 1 die by ±1". Program cards get theirs from `content.CardProgramFace`. It mentions only non-default parameters. A reroll that uses a roll attempt says "(uses a roll)", and prevention that sends saved cards somewhere other than their pile says "Saved cards → discard". Ranges, wrapping and timing are never on the face. Curse cards author their face text; Venom and legacy cards use `card_effect_summaries.gd`. Use a line break only between two separate effects, never mid-sentence.
+- **Timing ribbon** (`presentation.timing`, `presentation.play_limit`): generated from the program or mechanic windows (`content.CardTimingTags`). A sword marks Offense and a shield marks Defense, followed by Before roll / After roll / Any time / Reaction, plus a play limit such as "1/round". The band is tinted by segment. It replaces the `Play: …` sentence on the face.
+- **Hover** (`BattlePresentationCatalog.card_tooltip`): the name, the full rules (`rules_text`, still including the `Play: …` line and play limits), then a one-line definition of each face keyword (`card_keywords.gd`) and each status the face names.
+
 Published changes affect new battles. Running battles and replays retain their pinned catalog. Authoring never edits an active battle’s rules.
 
 ## Specialized effect parameters and shipped defaults

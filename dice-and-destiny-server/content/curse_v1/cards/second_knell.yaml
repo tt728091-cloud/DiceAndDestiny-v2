@@ -40,7 +40,7 @@
   },
   "presentation": {
     "art_key": "card_second_knell",
-    "effect_summary": "Apply Second Knell: next Curse hit rerolls the same die once. Both hits add Count.",
+    "effect_summary": "Next cursed enemy roll rerolls once; both results add Count",
     "rules_text": "Apply Second Knell (limit 1) to an enemy. After their next physical cursed result, consume this status and reroll that same die once. Both cursed results add Curse Count; use the final result. Resolves before Catalyst and shares its one-retry limit. Expires after the next Effects. Each named Curse card may be played once per player per round."
   },
   "reaction_window": {

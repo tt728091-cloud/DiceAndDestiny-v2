@@ -38,7 +38,7 @@
   },
   "presentation": {
     "art_key": "card_chosen_instrument",
-    "effect_summary": "Prioritize one chosen cursed die for an extra roll.",
+    "effect_summary": "Choose the cursed die for the next extra roll",
     "rules_text": "Choose a cursed enemy die. The next eligible random subset roll selects it with priority after Entombed dice. Wait if no slot is available. Consumed when selected; expires after the next Effects. Each named Curse card may be played once per player per round."
   },
   "reaction_window": {

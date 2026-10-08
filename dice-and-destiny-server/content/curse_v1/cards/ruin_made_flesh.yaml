@@ -42,7 +42,7 @@
   },
   "presentation": {
     "art_key": "card_ruin_made_flesh",
-    "effect_summary": "Spend 3 or 6 Count for +2 or +4 attack damage.",
+    "effect_summary": "Spend 3 or 6 Count for +2 or +4 attack damage",
     "rules_text": "Spend 3 or 6 enemy Curse Count to add 2 or 4 damage to your selected damaging Offensive ability against that enemy. Damage remains defendable. No refund if the ability is canceled. Each named Curse card may be played once per player per round."
   },
   "reaction_window": {

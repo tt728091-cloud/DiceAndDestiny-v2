@@ -41,7 +41,7 @@
   },
   "presentation": {
     "art_key": "card_black_tax",
-    "effect_summary": "Spend first 3 Count on −1 card next Income.",
+    "effect_summary": "Spend first 3 Count on −1 card next Income",
     "rules_text": "Prepare a conversion mode: at the next Effects, spend the first 3 enemy Count on −1 card drawn at their next Income, minimum 0, instead of damage. Convert all remaining groups normally. One conversion mode per target. Each named Curse card may be played once per player per round."
   },
   "reaction_window": {

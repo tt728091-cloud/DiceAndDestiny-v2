@@ -41,7 +41,7 @@
   },
   "presentation": {
     "art_key": "card_blind_omen",
-    "effect_summary": "At 6 enemy Count: spend 3 to apply Blind.",
+    "effect_summary": "At 6 enemy Count: spend 3 to apply Blind",
     "rules_text": "If an enemy has at least 6 Curse Count and a selected Offensive ability, spend 3 of their Count to apply Blind before the normal Blind checkpoint. On a physical roll of 1–2, cancel that ability; then remove Blind. Cannot apply if they already have Blind. Each named Curse card may be played once per player per round."
   },
   "reaction_window": {

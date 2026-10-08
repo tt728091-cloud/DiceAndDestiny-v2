@@ -47,7 +47,7 @@
   },
   "presentation": {
     "art_key": "card_rotten_numeral",
-    "effect_summary": "Curse one number on up to 3 dice.",
+    "effect_summary": "Curse one number on up to 3 dice",
     "rules_text": "Choose a number. Mark it on up to 3 different random enemy dice missing that mark, including partly cursed dice. No replacement effect for missing eligible dice. Each named Curse card may be played once per player per round."
   },
   "reaction_window": {

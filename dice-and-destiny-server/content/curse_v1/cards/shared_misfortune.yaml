@@ -47,7 +47,7 @@
   },
   "presentation": {
     "art_key": "card_shared_misfortune",
-    "effect_summary": "Curse one number on 2 clean dice; expand for shortfalls.",
+    "effect_summary": "Curse one number on 2 clean dice",
     "rules_text": "Choose a number. Mark it on up to 2 different random clean enemy dice. For each missing clean die, make one sequential Lesser Expand attempt instead. Each named Curse card may be played once per player per round."
   },
   "reaction_window": {

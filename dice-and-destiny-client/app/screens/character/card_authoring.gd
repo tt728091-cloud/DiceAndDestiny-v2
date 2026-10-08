@@ -244,8 +244,7 @@ func _card_fields() -> void:
 	if draft.has("mechanic") and not str(draft.mechanic.get("expiration", "")).is_empty():
 		_select(grid, "Unused preparation expires", ["offensive_exit", "damage_exit", "next_income", "next_ongoing", "battle"], str(draft.mechanic.expiration), func(v): draft.mechanic.expiration = v; _changed(true), "expiration")
 		if draft.mechanic.expiration != "battle": _number(grid, "Rounds · 1 = next applicable checkpoint", int(draft.mechanic.get("rounds", 1)), 1, 100, func(v): draft.mechanic.rounds = v; _changed(), "expiration_rounds")
-	var piles := HFlowContainer.new(); piles.add_theme_constant_override("h_separation", 14); play.add_child(piles)
-	_multi(piles, "Can be played from · at least one pile", catalog.source_zones, draft.play.source_zones, func(): _changed(), "play_piles", true)
+	_multi(play, "Can be played from · at least one pile", catalog.source_zones, draft.play.source_zones, func(): _changed(), "play_piles", true)
 	var timing := _section("When it can be played")
 	_label(timing, "Disabled choices conflict with one of the card's effects.", 13).add_theme_color_override("font_color", STYLE.MUTED)
 	var timing_grid := STYLE.form(timing)
@@ -281,9 +280,12 @@ func _art_picker(parent: Node, field: LineEdit) -> void:
 		if path == current: pick.add_theme_stylebox_override("normal", STYLE.box("223442", STYLE.GOLD, 4, 8, 2))
 
 func _multi(parent: Node, title: String, values: Array, selected: Array, changed: Callable, key: String, require_one: bool = false) -> void:
+	# The caption sits above the options: a wrapping label inside the flow row
+	# gets no minimum width and stacks one letter per line.
 	_label(parent, title, 14).add_theme_color_override("font_color", STYLE.MUTED)
+	var options := HFlowContainer.new(); options.add_theme_constant_override("h_separation", 14); parent.add_child(options)
 	for value in values:
-		var check := _check(parent, str(value).replace("_", " ").capitalize(), value in selected, func(on):
+		var check := _check(options,str(value).replace("_", " ").capitalize(), value in selected, func(on):
 			if on and value not in selected: selected.append(value)
 			elif not on:
 				if require_one and selected.size() == 1: _error.text = "Choose at least one pile."; _changed(true); return
@@ -310,7 +312,9 @@ func _refresh_window_controls() -> void:
 			reaction.set_pressed_no_signal(_reaction_window(segment) in _timing().windows)
 			reaction.disabled = _reaction_window(segment) not in _allowed_windows() and not reaction.button_pressed
 	for segment in ["offense", "defense"]:
-		var pick: OptionButton = _timing_controls[segment]
+		# Timing controls exist only on the Card tab; other tabs have none to sync.
+		var pick: OptionButton = _timing_controls.get(segment)
+		if pick == null: continue
 		var support := _timing_support(segment)
 		var current := _current_timing(segment)
 		for i in pick.item_count:

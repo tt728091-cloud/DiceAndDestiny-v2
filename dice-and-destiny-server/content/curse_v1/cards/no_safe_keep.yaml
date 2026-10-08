@@ -36,7 +36,7 @@
   },
   "presentation": {
     "art_key": "card_no_safe_keep",
-    "effect_summary": "Force a kept cursed offensive die to reroll.",
+    "effect_summary": "Force a kept cursed offensive die to reroll",
     "rules_text": "Force a kept, cursed enemy offensive die to reroll. Unkeep it and replace its offensive result. Recheck the owner’s ability selection. Uses that result’s one effect retry; cannot target an already-retried result. Grants no extra ordinary roll attempts. Each named Curse card may be played once per player per round."
   },
   "reaction_window": {

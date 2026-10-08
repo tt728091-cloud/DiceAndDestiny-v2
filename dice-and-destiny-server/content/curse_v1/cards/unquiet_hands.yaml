@@ -38,7 +38,7 @@
   },
   "presentation": {
     "art_key": "card_unquiet_hands",
-    "effect_summary": "Choose an enemy die: Curse check → +1 Count on a cursed face. Offensive result unchanged.",
+    "effect_summary": "Roll a cursed enemy die:\n+1 Count if it lands cursed",
     "rules_text": "Choose a cursed enemy die for a separate roll. A cursed face adds 1 Curse Count; a clean face adds none. No new faces are cursed. Keep its saved offensive result unchanged. Each named Curse card may be played once per player per round."
   },
   "reaction_window": {

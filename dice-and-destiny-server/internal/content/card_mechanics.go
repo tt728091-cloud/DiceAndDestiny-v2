@@ -84,8 +84,8 @@ func buildCardMechanics() map[string]CardMechanicSpec {
 	add("venom", "venom_lens", "Give {ability_id} +{damage} direct damage while this preparation is active. Does not stack.", plan, map[string]CardParameter{"ability_id": {Type: "ability", Default: "needlefang"}, "damage": n(1)})
 	add("venom", "deep_puncture", "For the selected attack with at least {minimum_damage} damage and {status_id}: trade {damage_cost} damage for {stacks} additional status stacks.", react, map[string]CardParameter{"minimum_damage": n(2), "damage_cost": z(1), "stacks": n(1), "status_id": status("poison")})
 	add("venom", "terminal_formula", "For {ability_id}, gain {damage_per_check} damage per captured toxin check this attack.", react, map[string]CardParameter{"ability_id": {Type: "ability", Default: "terminal_bite", Options: []string{"terminal_bite", "fever_spike"}}, "damage_per_check": n(1)})
-	add("venom", "steady_hand", "After rolling, set one of your offensive dice to a face in {faces}.", plan, map[string]CardParameter{"faces": {Type: "integers", Default: []int{1, 4}, Minimum: 1, Maximum: 6}})
-	add("venom", "forked_tongue", "Change a revealed offensive die by one of {deltas}, staying within {minimum}–{maximum}.", react, map[string]CardParameter{"deltas": {Type: "integers", Default: []int{-1, 1}, Minimum: -5, Maximum: 5}, "minimum": number(1, 1, 6), "maximum": number(6, 1, 6)})
+	add("venom", "steady_hand", "After rolling, set one of your offensive dice to {faces}.", plan, map[string]CardParameter{"faces": {Type: "integers", Default: []int{1, 4}, Minimum: 1, Maximum: 6}})
+	add("venom", "forked_tongue", "Change a revealed offensive die by {deltas}, staying within {minimum}–{maximum}.", react, map[string]CardParameter{"deltas": {Type: "integers", Default: []int{-1, 1}, Minimum: -5, Maximum: 5}, "minimum": number(1, 1, 6), "maximum": number(6, 1, 6)})
 	for _, id := range []string{"coagulate", "emergency_molt", "antivenom_draught", "spined_rebuttal"} {
 		amount := 2
 		p := map[string]CardParameter{}
@@ -142,9 +142,9 @@ func buildCardMechanics() map[string]CardMechanicSpec {
 			count = 2
 			clean = true
 		}
-		add("curse", id, "Choose a face from {faces}; mark it on {dice} distinct eligible dice. Clean-only selection falls back to Lesser Curse for missing dice.", plan, map[string]CardParameter{"dice": n(count), "clean_only": {Type: "boolean", Default: clean}, "faces": {Type: "integers", Default: []int{1, 2, 3, 4, 5, 6}, Minimum: 1, Maximum: 6}})
+		add("curse", id, "Choose a face ({faces}); mark it on {dice} distinct eligible dice. Clean-only selection falls back to Lesser Curse for missing dice.", plan, map[string]CardParameter{"dice": n(count), "clean_only": {Type: "boolean", Default: clean}, "faces": {Type: "integers", Default: []int{1, 2, 3, 4, 5, 6}, Minimum: 1, Maximum: 6}})
 	}
-	add("curse", "widen_the_crack", "Roll a partially cursed die, then mark an adjacent uncursed face using {deltas} without wrapping.", plan, map[string]CardParameter{"deltas": {Type: "integers", Default: []int{-1, 1}, Minimum: -5, Maximum: 5}})
+	add("curse", "widen_the_crack", "Roll a partially cursed die, then mark an adjacent uncursed face ({deltas}, no wrapping).", plan, map[string]CardParameter{"deltas": {Type: "integers", Default: []int{-1, 1}, Minimum: -5, Maximum: 5}})
 	add("curse", "unquiet_hands", "Roll a chosen cursed physical die {rolls} times; each result can trigger its curses.", plan, map[string]CardParameter{"rolls": n(1)})
 	add("curse", "tombs_choice", "The enemy chooses: gain {count} Curse Count or roll {rolls} owned dice.", plan, map[string]CardParameter{"count": n(3), "rolls": n(5)})
 	add("curse", "misfortunes_choice", "Spend {cost_count} enemy Curse Count. They choose {damage} damage or {stacks} {status_id}.", plan, map[string]CardParameter{"cost_count": n(3), "damage": n(2), "status_id": status("cursed_entangle"), "stacks": n(1)})
@@ -245,29 +245,56 @@ func MechanicRules(c BattleCardDefinition) string {
 		return RollTableRules(c)
 	}
 	for k, v := range MechanicStep(c).Params {
-		text = strings.ReplaceAll(text, "{"+k+"}", strings.ReplaceAll(fmt.Sprint(v), "_", " "))
+		text = strings.ReplaceAll(text, "{"+k+"}", mechanicParamWords(v))
 	}
 	if MechanicHasStatus(m.Kind) {
 		expiry := map[string]string{"battle": "battle end", "offensive_exit": "the end of Offense", "damage_exit": "the end of damage resolution", "next_income": "Income", "next_ongoing": "ongoing effects"}[m.Expiration]
-		if m.Expiration != "battle" {
-			expiry += fmt.Sprintf(" (in %d round(s))", m.Rounds)
+		if m.Expiration != "battle" && m.Rounds > 1 {
+			expiry += fmt.Sprintf(" in %d rounds", m.Rounds)
 		}
 		text += "\nUnused preparation expires at " + expiry + "."
 	}
 	if strings.Contains(text, "{") {
 		return "Invalid mechanic parameters"
 	}
-	if m.UsesPerRound > 0 {
-		text += fmt.Sprintf("\nUp to %d plays per round.", m.UsesPerRound)
-	}
-	if m.UsesPerBattle > 0 {
-		text += fmt.Sprintf("\nUp to %d plays per battle.", m.UsesPerBattle)
+	if limit := CardPlayLimitRules(m.UsesPerRound, m.UsesPerBattle); limit != "" {
+		text += "\n" + limit
 	}
 	if c.SavedCardDestination != "" {
 		text += "\nSaved cards go to " + c.SavedCardDestination + "."
 	}
 	return text
 }
+
+// mechanicParamWords reads a parameter for rules text: lists as "1 or 4",
+// adjustments as "±1", identifiers without underscores.
+func mechanicParamWords(v any) string {
+	var values []int
+	switch list := v.(type) {
+	case []int:
+		values = list
+	case []any:
+		for _, item := range list {
+			n, ok := item.(int)
+			if f, isFloat := item.(float64); isFloat {
+				n, ok = int(f), f == float64(int(f))
+			}
+			if !ok {
+				return strings.ReplaceAll(fmt.Sprint(v), "_", " ")
+			}
+			values = append(values, n)
+		}
+	default:
+		return strings.ReplaceAll(fmt.Sprint(v), "_", " ")
+	}
+	for _, n := range values {
+		if n < 0 {
+			return deltaWords(values)
+		}
+	}
+	return orList(values)
+}
+
 func ValidateCardMechanic(c BattleCardDefinition, lib BattleLibrary) error {
 	m := c.Mechanic
 	spec, ok := CardMechanics()[m.Kind]
@@ -379,6 +406,8 @@ func PrepareMechanicCard(c BattleCardDefinition, lib *BattleLibrary) BattleCardD
 		c.Presentation.EffectSummary = strings.Split(c.Presentation.RulesText, "\n")[0]
 	}
 	timing := CardTimingRules(c.Mechanic.Windows, "any", false)
+	c.Presentation.Timing = CardTimingTags(c.Mechanic.Windows, "any", false)
+	c.Presentation.PlayLimit = CardPlayLimit(c.Mechanic.UsesPerRound, c.Mechanic.UsesPerBattle)
 	if MechanicHasStatus(c.Mechanic.Kind) {
 		id := MechanicStatusDefinitionID(c)
 		polarity := "negative"

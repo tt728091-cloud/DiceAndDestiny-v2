@@ -359,8 +359,7 @@ func EditableGeneralCard(c BattleCardDefinition) (BattleCardDefinition, error) {
 	c.ReactionWindow = ReactionWindowDefinition{}
 	c.Targeting = TargetingDefinition{Selector: "card_program", Minimum: 1, Maximum: 1}
 	c.SavedCardDestination = ""
-	c.Presentation.RulesText = CardProgramRules(p)
-	c.Presentation.EffectSummary = c.Presentation.RulesText
+	PresentProgramCard(&c, nil)
 	return c, nil
 }
 

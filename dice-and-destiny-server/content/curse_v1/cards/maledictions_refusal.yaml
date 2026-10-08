@@ -40,7 +40,7 @@
   },
   "presentation": {
     "art_key": "card_maledictions_refusal",
-    "effect_summary": "Apply 1 Curse and Refusal status: check the next Count cleanse.",
+    "effect_summary": "Apply 1 Curse\nTheir next Count cleanse may fail",
     "rules_text": "Apply 1 ordinary Curse and Malediction’s Refusal status to the enemy. Before the next effect would cleanse this enemy’s Curse Count, roll one random owned enemy die. A final cursed result cancels that cleanse; otherwise it succeeds, including any newly earned Count. Consumed on the attempt; expires at the next Income. Does not affect Count costs, conversion, or face-mark removal. Each named Curse card may be played once per player per round."
   },
   "reaction_window": {

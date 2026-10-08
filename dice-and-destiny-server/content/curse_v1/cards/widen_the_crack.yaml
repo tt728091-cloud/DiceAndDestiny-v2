@@ -41,7 +41,7 @@
   },
   "presentation": {
     "art_key": "card_widen_the_crack",
-    "effect_summary": "Roll a cursed die, then curse an adjacent face.",
+    "effect_summary": "Roll a cursed die, then curse an adjacent face",
     "rules_text": "Choose a partly cursed enemy die and roll it. Resolve existing marks, then choose an adjacent unmarked number to curse. Numbers do not wrap between 1 and 6. No expansion if neither adjacent face is unmarked. Each named Curse card may be played once per player per round."
   },
   "reaction_window": {

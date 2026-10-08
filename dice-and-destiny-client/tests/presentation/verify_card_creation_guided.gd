@@ -16,6 +16,9 @@ func _run() -> void:
 		ui._validate()
 		_expect(not ui._publish_button.disabled, "template form remains valid: " + str(ui.draft.id) + ": " + ui._error.text)
 	_pick_template(ui, "brace"); ui._load_template()
+	ui._tabs.current_tab = 0; await _frames()
+	var piles_caption: Label = ui.find_children("*", "Label", true, false).filter(func(label): return label.text.begins_with("Can be played from")).front()
+	_expect(piles_caption.get_line_count() == 1 and piles_caption.size.x > 200, "pile caption reads horizontally, not one letter per line")
 	var base: Dictionary = ui.draft.duplicate(true)
 	for effect in ui.catalog.effects:
 		ui.draft = base.duplicate(true); ui.draft.id = "effect_preview_" + effect; ui.draft.name = "Effect Preview " + effect

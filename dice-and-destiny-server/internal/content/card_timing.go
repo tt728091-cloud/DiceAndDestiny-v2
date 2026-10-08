@@ -1,6 +1,9 @@
 package content
 
-import "strings"
+import (
+	"fmt"
+	"strings"
+)
 
 // Players see three timing choices per segment for their own turn: before,
 // after, or any time. Each choice maps to engine windows.
@@ -104,6 +107,59 @@ func CardTimingRules(windows []string, rollRequirement string, needsRoll bool) s
 		return ""
 	}
 	return "Play: " + strings.Join(parts, "; ") + "."
+}
+
+// CardTimingTag is one segment of a card's timing ribbon. When is "before",
+// "after", "any", or "" when the card plays only at the reaction moment.
+type CardTimingTag struct {
+	Segment  string `yaml:"segment" json:"segment"`
+	When     string `yaml:"when,omitempty" json:"when,omitempty"`
+	Reaction bool   `yaml:"reaction,omitempty" json:"reaction,omitempty"`
+}
+
+// CardTimingTags is the structured form of CardTimingRules for card faces.
+func CardTimingTags(windows []string, rollRequirement string, needsRoll bool) []CardTimingTag {
+	var tags []CardTimingTag
+	for _, segment := range []string{"offense", "defense"} {
+		tag := CardTimingTag{Segment: segment, When: CardTiming(segment, windows, rollRequirement, needsRoll), Reaction: CardReaction(segment, windows)}
+		if tag.When != "" || tag.Reaction {
+			tags = append(tags, tag)
+		}
+	}
+	return tags
+}
+
+// CardPlayLimit is the short play-limit badge ("1/round"), or "".
+func CardPlayLimit(perRound, perBattle int) string {
+	var parts []string
+	if perRound > 0 {
+		parts = append(parts, fmt.Sprintf("%d/round", perRound))
+	}
+	if perBattle > 0 {
+		parts = append(parts, fmt.Sprintf("%d/battle", perBattle))
+	}
+	return strings.Join(parts, " · ")
+}
+
+// CardPlayLimitRules is the play limit as a rules sentence, or "".
+func CardPlayLimitRules(perRound, perBattle int) string {
+	times := func(n int) string {
+		switch n {
+		case 1:
+			return "Once"
+		case 2:
+			return "Twice"
+		}
+		return fmt.Sprintf("Up to %d times", n)
+	}
+	var lines []string
+	if perRound > 0 {
+		lines = append(lines, times(perRound)+" per round.")
+	}
+	if perBattle > 0 {
+		lines = append(lines, times(perBattle)+" per battle.")
+	}
+	return strings.Join(lines, "\n")
 }
 
 // defaultCardWindows drops before/after-only windows from a capability list,

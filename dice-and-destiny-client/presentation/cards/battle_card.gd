@@ -9,6 +9,14 @@ var _income_glow: Panel
 var _effect_plaque: PanelContainer
 var _plaque_bottom := 16.0
 var _summary_font_size := 14
+var _ribbon_height := 0.0
+
+const RIBBON_HEIGHT := 20.0
+const SEGMENT_ICONS := {"offense": "attack", "defense": "block"}
+const SEGMENT_NAMES := {"offense": "Offense", "defense": "Defense"}
+const SEGMENT_TINTS := {"offense": Color("9a3b2240"), "defense": Color("2b5f9a40"), "both": Color("5b4a3040")}
+const WHEN_WORDS := {"before": "Before roll", "after": "After roll", "any": "Any time"}
+const WHEN_SHORT := {"before": "Before", "after": "After", "any": "Any"}
 
 ## Draw targeting feedback in card-local coordinates so fan rotation, hover
 ## lift, pivots and draw-animation scaling all follow the visible paper edge.
@@ -23,7 +31,7 @@ func configure(instance: String, definition: String, enabled: bool, pending_remo
 	var data := BattlePresentationCatalog.card(definition)
 	text = "%s  %d✦%s" % [data.name, int(data.cost), "\n× REMOVED" if removed else "\n⚔ PENDING" if pending_removal else ""]
 	clip_text = true
-	tooltip_text = "%s (%s) — %s" % [data.name, instance, data.text]
+	tooltip_text = BattlePresentationCatalog.card_tooltip(definition)
 	custom_minimum_size = Vector2(132, 144) if pending_removal or compact else STANDARD_SIZE
 	var cinematic := preload("res://presentation/battle/cinematic_theme.gd")
 	for style_name in ["normal", "hover", "pressed", "disabled"]:
@@ -47,7 +55,7 @@ func configure(instance: String, definition: String, enabled: bool, pending_remo
 	add_child(title); title.set_anchors_and_offsets_preset(Control.PRESET_TOP_WIDE); title.offset_left = 39; title.offset_right = -7; title.offset_top = 3; title.offset_bottom = 41
 	var cost := Label.new(); cost.name = "EnergyCost"; cost.text = str(int(data.cost)); cost.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER; cost.vertical_alignment = VERTICAL_ALIGNMENT_CENTER; cost.add_theme_font_size_override("font_size", 18); cost.add_theme_stylebox_override("normal", cinematic.panel(Color("204f67"), Color("b6a679"), 2)); cost.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(cost); cost.set_anchors_and_offsets_preset(Control.PRESET_TOP_LEFT); cost.offset_left = 5; cost.offset_right = 33; cost.offset_top = 6; cost.offset_bottom = 34
-	_build_effect_plaque(str(data.effect_summary), pending_removal, compact)
+	_build_effect_plaque(str(data.effect_summary), pending_removal, compact, data.timing, str(data.play_limit))
 	var state := Label.new(); state.name = "RemovalState"; state.text = "× REMOVED" if removed else "× PENDING REMOVAL" if pending_removal else "✦ PLAY" if enabled else "—"; state.add_theme_font_size_override("font_size", 10 if pending_removal else 12); state.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER; state.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	state.visible = pending_removal; state.add_theme_color_override("font_color", Color("ffb9a0")); state.add_theme_stylebox_override("normal", cinematic.panel(Color("291716e8"), Color.TRANSPARENT, 0))
 	add_child(state); state.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_WIDE); state.offset_top = -25; state.offset_bottom = -4
@@ -55,7 +63,7 @@ func configure(instance: String, definition: String, enabled: bool, pending_remo
 	if pending_removal: modulate = Color("df9f88")
 
 
-func _build_effect_plaque(summary: String, pending_removal: bool, compact: bool) -> void:
+func _build_effect_plaque(summary: String, pending_removal: bool, compact: bool, timing: Array = [], play_limit: String = "") -> void:
 	var cinematic := preload("res://presentation/battle/cinematic_theme.gd")
 	_plaque_bottom = 27.0 if pending_removal else 16.0
 	_effect_plaque = PanelContainer.new(); _effect_plaque.name = "EffectPlaque"
@@ -78,7 +86,15 @@ func _build_effect_plaque(summary: String, pending_removal: bool, compact: bool)
 	label.add_theme_font_size_override("font_size", _summary_font_size)
 	label.add_theme_color_override("font_color", cinematic.INK)
 	label.add_theme_color_override("font_shadow_color", Color.TRANSPARENT)
-	label.mouse_filter = Control.MOUSE_FILTER_IGNORE; paper.add_child(label)
+	label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var column := VBoxContainer.new(); column.name = "EffectColumn"; column.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	column.add_theme_constant_override("separation", 3)
+	paper.add_child(column); column.add_child(label)
+	# Small cards keep only the effect; the hover still states the timing.
+	_ribbon_height = 0.0
+	if not compact and not pending_removal and not timing.is_empty():
+		column.add_child(_timing_ribbon(timing, play_limit))
+		_ribbon_height = RIBBON_HEIGHT + 3
 	resized.connect(_layout_effect_plaque)
 	_effect_plaque.minimum_size_changed.connect(_layout_effect_plaque, CONNECT_DEFERRED)
 	call_deferred("_layout_effect_plaque")
@@ -92,7 +108,7 @@ func _layout_effect_plaque() -> void:
 	if size.x >= custom_minimum_size.x and size.y >= custom_minimum_size.y:
 		var font := summary.get_theme_font("font")
 		var point_size := _summary_font_size
-		var available := maxf(1, size.y - _plaque_bottom - 43 - 16)
+		var available := maxf(1, size.y - _plaque_bottom - 43 - 16 - _ribbon_height)
 		while point_size > 8 and _summary_height(summary, font, size.x - 40, point_size) > available:
 			point_size -= 1
 		if summary.get_theme_font_size("font_size") != point_size: summary.add_theme_font_size_override("font_size", point_size)
@@ -103,6 +119,64 @@ func _summary_height(label: Label, font: Font, width: float, point_size: int) ->
 	var measured := font.get_multiline_string_size(label.text, HORIZONTAL_ALIGNMENT_CENTER, width, point_size)
 	var lines := ceili(measured.y / font.get_height(point_size))
 	return measured.y + maxi(0, lines - 1) * label.get_theme_constant("line_spacing")
+
+## The timing ribbon replaces the "Play: …" sentence: a segment icon (sword
+## for Offense, shield for Defense) and when in that turn the card plays.
+func _timing_ribbon(timing: Array, play_limit: String) -> PanelContainer:
+	var cinematic := preload("res://presentation/battle/cinematic_theme.gd")
+	var ribbon := PanelContainer.new(); ribbon.name = "TimingRibbon"; ribbon.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	ribbon.custom_minimum_size.y = RIBBON_HEIGHT
+	# Tinted by segment so Offense and Defense cards read apart at a glance.
+	var segments := timing.map(func(tag): return str(tag.get("segment", "")))
+	var tint: Color = SEGMENT_TINTS.get(segments[0], SEGMENT_TINTS.both) if segments.count(segments[0]) == segments.size() else SEGMENT_TINTS.both
+	var band := StyleBoxFlat.new(); band.bg_color = tint; band.set_corner_radius_all(3)
+	band.content_margin_left = 4; band.content_margin_right = 4; band.content_margin_top = 1; band.content_margin_bottom = 1
+	ribbon.add_theme_stylebox_override("panel", band)
+	var row := HBoxContainer.new(); row.alignment = BoxContainer.ALIGNMENT_CENTER; row.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	row.add_theme_constant_override("separation", 3)
+	ribbon.add_child(row)
+	var groups := timing_groups(timing)
+	for index in groups.size():
+		if index > 0: row.add_child(_ribbon_label("·"))
+		for segment in groups[index].segments:
+			var icon := TextureRect.new(); icon.name = "%sIcon" % SEGMENT_NAMES.get(segment, segment)
+			icon.texture = preload("res://presentation/battle/battle_icons.gd").texture(SEGMENT_ICONS.get(segment, "dice"))
+			icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE; icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+			icon.custom_minimum_size = Vector2(16, 16); icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
+			row.add_child(icon)
+		row.add_child(_ribbon_label(groups[index].label))
+	if not play_limit.is_empty(): row.add_child(_ribbon_label("· " + play_limit))
+	return ribbon
+
+func _ribbon_label(value: String) -> Label:
+	var cinematic := preload("res://presentation/battle/cinematic_theme.gd")
+	var label := Label.new(); label.text = value; label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	label.add_theme_font_override("font", cinematic.roll_control_font())
+	label.add_theme_font_size_override("font_size", 12)
+	label.add_theme_color_override("font_color", cinematic.INK)
+	label.add_theme_color_override("font_shadow_color", Color.TRANSPARENT)
+	return label
+
+## Groups timing tags for the ribbon. Segments with the same timing share one
+## label ("⚔🛡 Any time"); different timings use short labels side by side.
+static func timing_groups(timing: Array) -> Array[Dictionary]:
+	var groups: Array[Dictionary] = []
+	var full := timing.size() == 1 or timing.all(func(tag): return _timing_label(tag, false) == _timing_label(timing[0], false))
+	for tag in timing:
+		var label := _timing_label(tag, not full)
+		if full and not groups.is_empty():
+			groups[0].segments.append(str(tag.get("segment", "")))
+			continue
+		groups.append({"segments": [str(tag.get("segment", ""))], "label": label})
+	return groups
+
+static func _timing_label(tag: Dictionary, short: bool) -> String:
+	var when := str(tag.get("when", ""))
+	var reaction := bool(tag.get("reaction", false))
+	if when.is_empty(): return "Reaction"
+	var words := str((WHEN_SHORT if short else WHEN_WORDS).get(when, when))
+	if reaction: words += " + React" if short else " / Reaction"
+	return words
 
 func prepare_income_draw() -> void:
 	modulate = Color(1, 1, 1, 0)

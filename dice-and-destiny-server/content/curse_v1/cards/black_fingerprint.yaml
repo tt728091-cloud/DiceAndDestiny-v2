@@ -41,7 +41,7 @@
   },
   "presentation": {
     "art_key": "card_black_fingerprint",
-    "effect_summary": "Next attack: mark the health lost as a cursed number.",
+    "effect_summary": "Next attack: curse the number of health it removes",
     "rules_text": "Prepare for your next Offensive ability this round. If it removes 1–6 health from this enemy, mark that number on a random enemy die missing it. If none is eligible, roll one random owned enemy die instead. No effect for 0 or more than 6 damage. Consumed by that ability; expires at round end. Each named Curse card may be played once per player per round."
   },
   "reaction_window": {

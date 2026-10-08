@@ -41,7 +41,7 @@
   },
   "presentation": {
     "art_key": "card_misfortunes_choice",
-    "effect_summary": "Spend 3 Count: enemy chooses 2 damage or Cursed Entangle.",
+    "effect_summary": "Spend 3 Count: enemy takes 2 damage or Cursed Entangle",
     "rules_text": "Spend 3 enemy Curse Count. That enemy chooses: take 2 immediate damage with normal damage-card responses and no defense roll, or receive Cursed Entangle. If already Cursed Entangled, they must take damage. Cursed Entangle rolls all five owned dice for marks before their next offense, discards those results, then reduces ordinary maximum rolls by 1 (minimum 1). It does not add to ordinary Entangle. Each named Curse card may be played once per player per round."
   },
   "reaction_window": {

@@ -40,7 +40,7 @@
   },
   "presentation": {
     "art_key": "card_curse_bloom",
-    "effect_summary": "Apply Curse Bloom: after Curse removes health, expand 3 times.",
+    "effect_summary": "After Curse deals damage, expand it 3 times",
     "rules_text": "Apply Curse Bloom to the enemy. At this enemy’s next Curse conversion, if Curse damage actually removes health, make 3 sequential Lesser Expand attempts afterward. Fully cursed dice Surge instead. With no cursed dice, do nothing. New Count waits for the following Effects. Expires after the next Effects. Each named Curse card may be played once per player per round."
   },
   "reaction_window": {

@@ -60,6 +60,10 @@ type Presentation struct {
 	RulesText        string `yaml:"rules_text" json:"rules_text"`
 	ArtKey           string `yaml:"art_key" json:"art_key"`
 	Glyph            string `yaml:"glyph,omitempty" json:"glyph,omitempty"`
+	// Cards only: when the card can be played and how often, drawn as the
+	// card face's timing ribbon. Generated from the program or mechanic.
+	Timing    []CardTimingTag `yaml:"timing,omitempty" json:"timing,omitempty"`
+	PlayLimit string          `yaml:"play_limit,omitempty" json:"play_limit,omitempty"`
 }
 
 type ReactionWindowDefinition struct {

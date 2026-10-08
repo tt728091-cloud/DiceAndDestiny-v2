@@ -6,6 +6,7 @@ extends RefCounted
 # upgrades are applied to a fresh presentation dictionary, never the catalog.
 const ORDINARY_CURSE_RULES := "Each Curse: choose a random clean die and mark face 1. Once all five dice are cursed, roll an eligible owned die and mark its result. An already cursed result adds Count but no new mark."
 const CARD_SUMMARIES := preload("res://content/card_effect_summaries.gd")
+const CARD_KEYWORDS := preload("res://content/card_keywords.gd")
 static var _catalog: Dictionary = {}
 
 static func configure(catalog: Dictionary) -> void:
@@ -33,12 +34,47 @@ static func card(id: String) -> Dictionary:
 		"illustration_path": str(presentation.get("illustration_path", "")),
 		# Reviewed face text first, then the authority's short summary, then rules.
 		"effect_summary": str(CARD_SUMMARIES.TEXT.get(id, presentation.get("effect_summary", "") if not str(presentation.get("effect_summary", "")).is_empty() else presentation.get("rules_text", "No effect"))),
+		# Structured timing for the face ribbon; battles pinned before it have none.
+		"timing": _array(presentation.get("timing", [])),
+		"play_limit": str(presentation.get("play_limit", "")),
 		"targeting": _dictionary(value.get("targeting", {})),
 		"play": _dictionary(value.get("play", {})),
 		"operations": _array(value.get("operations", [])),
 		"program": _dictionary(value.get("program", {})),
 		"mechanic": _dictionary(value.get("mechanic", {})),
 	}
+
+# Card hover: name, the full rules, then a definition for each keyword and
+# status the face uses, so the face can stay short.
+static func card_tooltip(id: String) -> String:
+	var info := card(id)
+	var lines: Array[String] = [str(info.name)]
+	if not str(info.text).is_empty(): lines.append(str(info.text))
+	var glossary := card_glossary(str(info.effect_summary))
+	if not glossary.is_empty(): lines.append("\n" + "\n".join(glossary))
+	return "\n".join(lines)
+
+static func card_glossary(face: String) -> Array[String]:
+	var entries: Array[String] = []
+	for keyword in CARD_KEYWORDS.TERMS:
+		var pattern := RegEx.create_from_string(str(keyword.pattern))
+		if pattern.search(face) != null: entries.append(str(keyword.text))
+	var statuses = _catalog.get("statuses", {})
+	if statuses is Dictionary:
+		var ids: Array = statuses.keys(); ids.sort()
+		for status_id in ids:
+			var info := status(str(status_id))
+			var rules := str(info.text).get_slice("\n", 0)
+			if rules.is_empty() or str(info.name).is_empty(): continue
+			if RegEx.create_from_string("\\b" + _regex_escape(str(info.name)) + "\\b").search(face) != null:
+				entries.append("%s: %s" % [info.name, rules])
+	return entries
+
+static func _regex_escape(text: String) -> String:
+	var escaped := ""
+	for character in text:
+		escaped += "\\" + character if character in ".^$*+?()[]{}|\\" else character
+	return escaped
 
 static func configured_ability_damage(id: String, actor: Dictionary) -> int:
 	return int(actor.get("configured_ability_damage", {}).get(id, actor.get("needlefang_damage_bonus", 0) if id == "needlefang" else 0))

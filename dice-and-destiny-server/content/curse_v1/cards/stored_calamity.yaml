@@ -38,7 +38,7 @@
   },
   "presentation": {
     "art_key": "card_stored_calamity",
-    "effect_summary": "Skip next conversion; preserve Count.",
+    "effect_summary": "Skip next conversion; preserve Count",
     "rules_text": "Prepare a conversion mode: skip this enemy’s next Curse conversion and retain all Count. Cannot skip consecutive Effects. Does not preserve Three Knocks or extend other preparations. One conversion mode per target. Each named Curse card may be played once per player per round."
   },
   "reaction_window": {

@@ -36,7 +36,7 @@
   },
   "presentation": {
     "art_key": "card_call_the_mark",
-    "effect_summary": "Set a revealed offensive die to its cursed face.",
+    "effect_summary": "Set a revealed die to one of its cursed faces",
     "rules_text": "Set one revealed offensive die, yours or an enemy’s, to one of that die’s cursed numbers. Recheck its owner’s ability selection. Setting a face generates no Count and does not release Entombment. Each named Curse card may be played once per player per round."
   },
   "reaction_window": {

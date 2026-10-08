@@ -391,15 +391,27 @@ func programTargetWords(t CardTarget, noun string, statuses map[string]BattleSta
 		count = fmt.Sprintf("%d", t.Count)
 	case "up_to":
 		count = fmt.Sprintf("up to %d", t.Count)
+		// The editor's maximum count reads as "any number".
+		if t.Count >= 100 {
+			count = "any"
+		}
 	case "all":
 		count = "all eligible"
 	}
 	owner := "your"
 	switch t.Owner {
 	case "enemy":
-		owner = "enemy"
+		owner = "an enemy's"
 	case "any":
 		owner = "any participant's"
+	}
+	if noun == "statuses" {
+		switch t.Polarity {
+		case "negative":
+			noun = "debuffs (negative statuses)"
+		case "positive":
+			noun = "buffs (positive statuses)"
+		}
 	}
 	if t.Selection == "random" {
 		count += " random"
@@ -418,10 +430,7 @@ func programTargetWords(t CardTarget, noun string, statuses map[string]BattleSta
 		text += " (excluding " + strings.Join(t.ExcludeCards, ", ") + ")"
 	}
 	if len(t.Faces) > 0 {
-		text += fmt.Sprintf(" showing %v", t.Faces)
-	}
-	if t.Polarity != "" && t.Polarity != "any" {
-		text += " with " + t.Polarity + " polarity"
+		text += " showing " + orList(t.Faces)
 	}
 	if len(t.StatusIDs) > 0 {
 		names := make([]string, 0, len(t.StatusIDs))
@@ -500,7 +509,7 @@ func CardProgramRulesWithStatuses(p *CardProgram, statuses map[string]BattleStat
 			case "status_threshold":
 				text = fmt.Sprintf("If %s has at least %d %s, apply %d %s.", target("characters"), ProgramInt(s, "threshold"), ProgramString(s, "status_id"), ProgramInt(s, "stacks"), ProgramString(s, "result_status_id"))
 			case "draw":
-				text = fmt.Sprintf("Draw %d cards for %s. Draw only available deck cards; do not recycle discard.", ProgramInt(s, "amount"), target("characters"))
+				text = fmt.Sprintf("Draw %s for %s. If the deck runs short, draw what is left; discard is never reshuffled.", counted(ProgramInt(s, "amount"), "card", "cards"), target("characters"))
 			case "energy":
 				text = fmt.Sprintf("Give %d energy to %s.", ProgramInt(s, "amount"), target("characters"))
 			case "prevent":
@@ -515,13 +524,13 @@ func CardProgramRulesWithStatuses(p *CardProgram, statuses map[string]BattleStat
 			case "sacrifice":
 				text = "First sacrifice " + target("other cards") + ". Permanently remove them and lose one health per card before gaining the effects below."
 			case "set_die":
-				text = fmt.Sprintf("Set %s to a chosen face from %v.", target("offensive dice"), ProgramInts(s, "faces"))
+				text = fmt.Sprintf("Set %s to %s.", target("offensive dice"), orList(ProgramInts(s, "faces")))
 			case "adjust_die":
-				text = fmt.Sprintf("Adjust %s by a chosen amount from %v. Allowed results: %d–%d.", target("offensive dice"), ProgramInts(s, "deltas"), ProgramInt(s, "minimum"), ProgramInt(s, "maximum"))
+				text = fmt.Sprintf("Change %s by %s.", target("offensive dice"), deltaWords(ProgramInts(s, "deltas")))
 				if ProgramBool(s, "wrap") {
-					text += " Wrap at the range ends."
+					text += fmt.Sprintf(" Results wrap around within %d–%d.", ProgramInt(s, "minimum"), ProgramInt(s, "maximum"))
 				} else {
-					text += " No wrapping."
+					text += fmt.Sprintf(" The result must stay within %d–%d.", ProgramInt(s, "minimum"), ProgramInt(s, "maximum"))
 				}
 			case "copy_die":
 				text = "Set " + target("offensive dice") + " to another die's current face on the same character."
@@ -538,8 +547,6 @@ func CardProgramRulesWithStatuses(p *CardProgram, statuses map[string]BattleStat
 					text += " Keep the higher result."
 				case "lower":
 					text += " Keep the lower result."
-				default:
-					text += " Use the new result."
 				}
 				if s.Effect == "reroll" {
 					if ProgramBool(s, "consume_roll") {
@@ -549,22 +556,27 @@ func CardProgramRulesWithStatuses(p *CardProgram, statuses map[string]BattleStat
 					}
 				}
 			case "remove_status":
-				count := fmt.Sprintf("%d stacks", ProgramInt(s, "stacks"))
+				count := counted(ProgramInt(s, "stacks"), "stack", "stacks")
 				if ProgramInt(s, "stacks") == 0 {
 					count = "all stacks"
 				}
 				text = "Remove " + count + " from " + target("statuses") + "."
 			case "apply_status":
-				text = fmt.Sprintf("Apply %d %s to %s.", ProgramInt(s, "stacks"), ProgramString(s, "status_id"), target("characters"))
+				text = fmt.Sprintf("Apply %d %s to %s.", ProgramInt(s, "stacks"), statusName(ProgramString(s, "status_id"), statuses), target("characters"))
 			case "ability_bonus":
 				text = fmt.Sprintf("Give %s +%d damage", target("offensive abilities"), ProgramInt(s, "damage"))
 				if ProgramString(s, "status_id") != "" {
-					text += fmt.Sprintf(" and %d %s on a successful attack", ProgramInt(s, "stacks"), ProgramString(s, "status_id"))
+					text += fmt.Sprintf(" and %d %s on a successful attack", ProgramInt(s, "stacks"), statusName(ProgramString(s, "status_id"), statuses))
 				}
 				text += ". " + ProgramDurationRules(s)
 				switch ProgramString(s, "stacking") {
 				case "stack":
-					text += fmt.Sprintf(" Stacks up to %d times per ability.", ProgramInt(s, "stack_limit"))
+					// The editor's maximum limit means copies stack freely.
+					if ProgramInt(s, "stack_limit") >= 100 {
+						text += " Copies stack on the same ability."
+					} else {
+						text += fmt.Sprintf(" Stacks up to %d times per ability.", ProgramInt(s, "stack_limit"))
+					}
 				case "replace":
 					text += " Replaces the previous bonus on that ability."
 				case "refresh":
@@ -578,12 +590,19 @@ func CardProgramRulesWithStatuses(p *CardProgram, statuses map[string]BattleStat
 			}
 			lines = append(lines, prefix+text)
 			for _, o := range s.Choices {
-				lines = append(lines, prefix+fmt.Sprintf("%s (+%d energy):", o.Name, o.Energy))
+				if o.Energy > 0 {
+					lines = append(lines, prefix+fmt.Sprintf("%s (costs %d more energy):", o.Name, o.Energy))
+				} else {
+					lines = append(lines, prefix+o.Name+":")
+				}
 				describe(o.Steps, prefix+"  ")
 			}
 		}
 	}
 	describe(p.Steps, "")
+	if limit := CardPlayLimitRules(p.UsesPerRound, p.UsesPerBattle); limit != "" {
+		lines = append(lines, limit)
+	}
 	if timing := CardTimingRules(p.Windows, p.RollRequirement, CardNeedsPriorRoll(p.Steps)); timing != "" {
 		lines = append(lines, timing)
 	}
@@ -607,6 +626,17 @@ func ProgramStatusID(card string, step CardStep) string {
 	h := sha256.Sum256(raw)
 	return card + "_preparation_" + hex.EncodeToString(h[:6])
 }
+
+// PresentProgramCard generates a program card's player-facing text: the short
+// face, the timing ribbon and the full rules shown on hover.
+func PresentProgramCard(card *BattleCardDefinition, statuses map[string]BattleStatusDefinition) {
+	p := card.Program
+	card.Presentation.RulesText = CardProgramRulesWithStatuses(p, statuses)
+	card.Presentation.EffectSummary = CardProgramFace(p, statuses)
+	card.Presentation.Timing = CardTimingTags(p.Windows, p.RollRequirement, CardNeedsPriorRoll(p.Steps))
+	card.Presentation.PlayLimit = CardPlayLimit(p.UsesPerRound, p.UsesPerBattle)
+}
+
 func PrepareProgramCard(card BattleCardDefinition, lib *BattleLibrary) BattleCardDefinition {
 	if card.Program == nil {
 		return card
@@ -617,9 +647,7 @@ func PrepareProgramCard(card BattleCardDefinition, lib *BattleLibrary) BattleCar
 	if card.Play.PlayableDuring == nil {
 		card.Play.PlayableDuring = []PlayTiming{}
 	}
-	card.Presentation.RulesText = CardProgramRulesWithStatuses(card.Program, lib.Statuses)
-	// The card face shows the effect; the "Play:" timing line stays in the rules.
-	card.Presentation.EffectSummary = CardProgramRulesWithStatuses(&CardProgram{Steps: card.Program.Steps}, lib.Statuses)
+	PresentProgramCard(&card, lib.Statuses)
 	var walk func([]CardStep)
 	walk = func(steps []CardStep) {
 		for _, s := range steps {

@@ -38,7 +38,7 @@
   },
   "presentation": {
     "art_key": "card_hexward_retort",
-    "effect_summary": "After defense, apply 1 Curse to the attacker.",
+    "effect_summary": "After defense, apply 1 Curse to the attacker",
     "rules_text": "After your defense against an enemy Offensive ability is revealed, apply 1 ordinary Curse to that attacker. Grants no additional prevention. Each named Curse card may be played once per player per round."
   },
   "reaction_window": {
