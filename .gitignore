@@ -32,3 +32,6 @@ dice-and-destiny-server/adapters/gdextension/src/*.os
 
 # Build helper clones godot-cpp here when missing.
 dice-and-destiny-server/third_party/godot-cpp/
+
+# Claude Code worktrees
+.claude/worktrees/
