@@ -10,6 +10,8 @@ func _run() -> void:
 	root.add_child(canvas); canvas.notify_mouse_entered()
 	RenderingServer.frame_pre_draw.connect(_check_frame)
 	RenderingServer.frame_pre_draw.connect(_check_badges)
+	# Headless runs emit no draw signals; process_frame observes the prior frame's drawn layout.
+	process_frame.connect(_check_enemy_dice)
 	for width in [1920,1280,1024]:
 		canvas.size = Vector2i(width, width * 9 / 16)
 		await _scenario(width)
@@ -33,6 +35,10 @@ func _scenario(width: int) -> void:
 	var screen = SCREEN.instantiate(); screen.gateway = gateway; screen.initial_result = result
 	screen.learned_battle_mode = true; screen._auto_pass_disabled = false; screen.active_store = ActiveBattleStore.new(WorkspacePaths.persistent_file("guarded-strike-transition.json"))
 	canvas.add_child(screen); active = screen
+	for frame in 6: await process_frame
+	# Unfolded enemy dice must stay anchored through every threaded model rebuild.
+	for id in screen._enemy_ids(): screen._enemy_dice_visible[id] = true
+	screen._render(true)
 	for frame in 6: await process_frame
 	screen._director.clear(); screen._flow_until = 0
 	for item in screen._timed_buttons: item.until = 0
@@ -97,6 +103,15 @@ func _check_frame() -> void:
 		for key in active._flow_transition.ghosts:
 			if str(key).begins_with("ability:") and is_instance_valid(active._flow_transition.ghosts[key].node):
 				_expect(not active._flow_transition.ghosts[key].node.is_visible_in_tree(), "ability row never flies out of rail")
+func _check_enemy_dice() -> void:
+	if not is_instance_valid(active) or not is_instance_valid(active._root): return
+	var inverse: Transform2D = active._root.get_global_transform_with_canvas().affine_inverse()
+	for id in active._enemy_dice_docks:
+		var dock: Control = active._enemy_dice_docks[id]
+		if not is_instance_valid(dock) or not dock.is_visible_in_tree() or not is_instance_valid(dock.profile_dock): continue
+		var rect: Rect2 = inverse * dock.get_global_rect()
+		var profile: Rect2 = inverse * dock.profile_dock.get_global_rect()
+		_expect(absf(rect.end.y + 8 - profile.position.y) < 2 and absf(rect.get_center().x - profile.get_center().x) < 2, "enemy dice stay above their profile on every frame: %s %s vs %s" % [id, rect, profile])
 func _click(button: Button) -> void:
 	var point := button.get_global_rect().get_center()
 	var motion := InputEventMouseMotion.new(); motion.position = point; canvas.push_input(motion,true); await process_frame

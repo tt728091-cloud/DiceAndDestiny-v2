@@ -615,6 +615,7 @@ func _render(force: bool = false) -> void:
 	_build_enemy_column(null)
 	_build_other_enemy_profiles()
 	_attach_actor_profiles(scenery)
+	for dock in _enemy_dice_docks.values(): dock.place()
 	# Model results can rebuild the board after the presenters have processed
 	# for this frame. Resolve their new anchors before capture/fade or drawing.
 	for panel in _attack_intents.values(): panel._update()
