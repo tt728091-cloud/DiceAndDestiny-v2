@@ -51,7 +51,7 @@ func TestProvokedLethalDamageCancelsOffense(t *testing.T) {
 				}
 				b.Actors["enemy2"] = a
 				p := b.Actors["player"]
-				p.Resources.EnergyPoints = 2
+				p.Resources.EnergyPoints = 10
 				p.Cards.Hand = []string{"agitate-card"}
 				b.Actors["player"] = p
 				applyStatus(&b, lib, "enemy2", "volatile_poison", 1)

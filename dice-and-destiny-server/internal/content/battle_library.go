@@ -258,10 +258,22 @@ type AbilityModifier struct {
 	AddConditionalBonus *AbilityTier `yaml:"add_conditional_bonus,omitempty" json:"add_conditional_bonus,omitempty"`
 }
 
+// DefaultEnergyCap is the game-wide energy maximum used when a combatant does
+// not author its own energy_cap.
+const DefaultEnergyCap = 75
+
 type CombatantResources struct {
 	StartingHandSize int `yaml:"starting_hand_size" json:"starting_hand_size"`
 	StartingEnergy   int `yaml:"starting_energy" json:"starting_energy"`
 	HandLimit        int `yaml:"hand_limit" json:"hand_limit"`
+	EnergyCap        int `yaml:"energy_cap,omitempty" json:"energy_cap,omitempty"`
+}
+
+func (r CombatantResources) EffectiveEnergyCap() int {
+	if r.EnergyCap > 0 {
+		return r.EnergyCap
+	}
+	return DefaultEnergyCap
 }
 
 type CombatantIncome struct {
@@ -610,7 +622,7 @@ func validateBattleLibrary(lib BattleLibrary) error {
 		if err := validateStableNamed("combatant", id, combatant.Name); err != nil {
 			return err
 		}
-		if combatant.Resources.HandLimit < 1 || combatant.Resources.StartingHandSize < 0 || combatant.Resources.StartingEnergy < 0 || len(combatant.Decklist) == 0 {
+		if combatant.Resources.HandLimit < 1 || combatant.Resources.StartingHandSize < 0 || combatant.Resources.StartingEnergy < 0 || combatant.Resources.EnergyCap < 0 || combatant.Resources.StartingEnergy > combatant.Resources.EffectiveEnergyCap() || len(combatant.Decklist) == 0 {
 			return fmt.Errorf("%w: combatant %q has invalid resources or deck", ErrInvalidContent, id)
 		}
 		totalDice := 0

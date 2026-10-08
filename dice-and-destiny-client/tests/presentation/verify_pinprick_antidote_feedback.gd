@@ -12,14 +12,14 @@ func _run() -> void:
 	var reaction := base.duplicate(true)
 	reaction.snapshot.actors.blade.hand.pop_back()
 	reaction.snapshot.actors.blade.hand_count -= 1
-	reaction.snapshot.actors.blade.energy_points -= 1
+	reaction.snapshot.actors.blade.energy_points -= 5
 	reaction.snapshot.actors.blade.discard_count += 1
 	reaction.snapshot.stage = "venom_status_reaction"; reaction.snapshot.presentation_stage = "planning"
 	reaction.snapshot.venom_work = {"Kind": "application", "StatusID": "poison", "Stacks": 1, "SourceActorID": "blade", "TargetActorID": "goblin"}
 	reaction.events = [{"sequence": 100, "type": "card_played", "actor_id": "blade", "segment": "offensive", "data": {"card_definition_id": "pinprick", "card_instance_id": "pinprick"}}]
 	var cleansed := reaction.duplicate(true)
 	cleansed.snapshot.actors.goblin.hand_count -= 1
-	cleansed.snapshot.actors.goblin.energy_points -= 1
+	cleansed.snapshot.actors.goblin.energy_points -= 5
 	cleansed.snapshot.actors.goblin.discard_count += 1
 	cleansed.snapshot.actors.goblin.statuses = []
 	cleansed.events = [{"sequence": 101, "type": "card_played", "actor_id": "goblin", "segment": "offensive", "data": {"card_definition_id": "antidote", "card_instance_id": "antidote", "choice_id": "poison", "operation": "remove_status", "stacks_before": 2, "stacks_after": 0, "stacks_removed": 2}}]

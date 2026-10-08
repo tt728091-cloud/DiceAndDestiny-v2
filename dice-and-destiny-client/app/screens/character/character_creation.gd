@@ -584,22 +584,32 @@ func _populate_card_lists() -> void:
 	library_scroll.set_deferred("scroll_vertical", library_position)
 	deck_scroll.set_deferred("scroll_vertical", deck_position)
 
-## Copies by energy cost (0, 1, 2, 3+), drawn as a small bar chart.
+## Copies by energy cost, drawn as a small bar chart. Buckets follow the
+## energy tiers: free, cheap, standard (5), strong and saved-up (10+).
+const CURVE_LABELS := ["0", "1–4", "5", "6–9", "10+"]
+
+func _curve_bucket(cost: int) -> int:
+	if cost <= 0: return 0
+	if cost < 5: return 1
+	if cost == 5: return 2
+	if cost < 10: return 3
+	return 4
+
 func _refresh_curve() -> void:
 	_clear(_deck_curve)
-	var buckets := [0, 0, 0, 0]
+	var buckets := [0, 0, 0, 0, 0]
 	for entry in character.get("decklist", []):
 		var cost := int(catalogs[character_id].cards.get(entry.card_id, {}).get("cost", {}).get("energy", 0))
-		buckets[mini(cost, 3)] += int(entry.count)
+		buckets[_curve_bucket(cost)] += int(entry.count)
 	var most: int = maxi(1, buckets.max())
 	for i in buckets.size():
 		var column := VBoxContainer.new(); column.add_theme_constant_override("separation", 1); column.alignment = BoxContainer.ALIGNMENT_END
-		column.tooltip_text = "%d %s at %s energy" % [buckets[i], "copy" if buckets[i] == 1 else "copies", "3+" if i == 3 else str(i)]
+		column.tooltip_text = "%d %s at %s energy" % [buckets[i], "copy" if buckets[i] == 1 else "copies", CURVE_LABELS[i]]
 		column.mouse_filter = Control.MOUSE_FILTER_PASS; _deck_curve.add_child(column)
 		var count := _label(column, str(buckets[i]), 12, MUTED); count.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER; count.autowrap_mode = TextServer.AUTOWRAP_OFF
 		var bar := ColorRect.new(); bar.color = STYLE.ENERGY if buckets[i] > 0 else Color("22323f"); bar.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		bar.custom_minimum_size = Vector2(24, maxf(2.0, 18.0 * buckets[i] / most)); column.add_child(bar)
-		var caption := _label(column, "3+" if i == 3 else str(i), 12, STYLE.ENERGY.lightened(0.3)); caption.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER; caption.autowrap_mode = TextServer.AUTOWRAP_OFF
+		var caption := _label(column, CURVE_LABELS[i], 12, STYLE.ENERGY.lightened(0.3)); caption.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER; caption.autowrap_mode = TextServer.AUTOWRAP_OFF
 
 func _matches_card(info: Dictionary, query: String) -> bool:
 	return query.strip_edges().is_empty() or (str(info.name) + " " + str(info.text)).to_lower().contains(query.strip_edges().to_lower())

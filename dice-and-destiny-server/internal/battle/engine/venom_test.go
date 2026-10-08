@@ -182,7 +182,7 @@ func TestCatalystResolvesCollectedRollsAfterCleanse(t *testing.T) {
 				b.Settled.TriggerBatch = &state.SettledTriggerBatch{ID: "antidote-rolls", Rolls: rolls, Reactable: true}
 				actor := b.Actors["enemy"]
 				actor.Controller = state.ControllerHuman
-				actor.Resources.EnergyPoints = 1
+				actor.Resources.EnergyPoints = 5
 				actor.Cards.Hand = []string{"antidote-card"}
 				actor.Cards.Deck = []string{"health-1", "health-2", "health-3"}
 				b.Actors["enemy"] = actor
@@ -245,7 +245,7 @@ func TestAgitateRevealsAllVolatileRollsDealsDamageAndResumesPlanning(t *testing.
 	for _, id := range []string{"player", "enemy"} {
 		a := b.Actors[id]
 		a.Controller = state.ControllerExternal
-		a.Resources.EnergyPoints = 2
+		a.Resources.EnergyPoints = 10
 		a.Cards.Deck = []string{id + "-1", id + "-2", id + "-3", id + "-4", id + "-5", id + "-6"}
 		if id == "player" {
 			a.Cards.Hand = []string{"agitate-card"}
@@ -315,7 +315,7 @@ func TestAgitateCapturesAllOfOnlyChosenToxinOutsideProvokeLimit(t *testing.T) {
 				b, lib := venomFixture(t)
 				b.Settled.Stage = stageOffensivePlan
 				a := b.Actors["player"]
-				a.Resources.EnergyPoints = 1
+				a.Resources.EnergyPoints = 5
 				a.Cards.Hand = []string{"agitate-card"}
 				b.Actors["player"] = a
 				other := "poison"
@@ -425,7 +425,7 @@ func TestVenomCostsAndCloneDoNotLeak(t *testing.T) {
 	applyStatus(&b, lib, "player", "catalyst", 2)
 	applyStatus(&b, lib, "enemy", "poison", 1)
 	a := b.Actors["player"]
-	a.Resources.EnergyPoints = 3
+	a.Resources.EnergyPoints = 15
 	a.Cards.Hand = []string{"distill-card"}
 	b.Actors["player"] = a
 	r := b.Settled.Actors["player"]
@@ -436,7 +436,7 @@ func TestVenomCostsAndCloneDoNotLeak(t *testing.T) {
 	if err := e.playVenomCard(&b, lib, "player", "distill-card", lib.Cards["distill"], []string{"enemy"}, "convert"); err != nil {
 		t.Fatal(err)
 	}
-	if stacks(&b, "player", "catalyst") != 1 || b.Actors["player"].Resources.EnergyPoints != 2 {
+	if stacks(&b, "player", "catalyst") != 1 || b.Actors["player"].Resources.EnergyPoints != 10 {
 		t.Fatal("cost not paid at acceptance")
 	}
 	before, _ := json.Marshal(b)
@@ -460,7 +460,7 @@ func TestEveryVenomCardOffersOnlyExecutableChoices(t *testing.T) {
 		t.Run(entry.CardID, func(t *testing.T) {
 			battle, lib := venomFixture(t)
 			actor := battle.Actors["player"]
-			actor.Resources.EnergyPoints = 10
+			actor.Resources.EnergyPoints = 50
 			actor.Cards.Hand = []string{"card"}
 			actor.Cards.Deck = []string{"draw-1", "draw-2", "draw-3"}
 			battle.Actors["player"] = actor
@@ -650,7 +650,7 @@ func TestSpinedPoisonResponseKeepsPublicDefenseBoard(t *testing.T) {
 	b.Settled.OffensiveSources = []state.SettledDamageSource{{ID: "hit", SourceActorID: "enemy", SourceContentID: "sword_cut", TargetActorID: "player", BaseAmount: 5}}
 	b.Settled.DefenseSelections = map[string]state.SettledDefense{"player": {ActorID: "player", AbilityID: "shedskin", SourceID: "hit", RolledFace: 1, RolledFaces: []int{1, 2}}, "enemy": {ActorID: "enemy", AbilityID: "basic_defense", RolledFace: 3}}
 	a := b.Actors["player"]
-	a.Resources.EnergyPoints = 3
+	a.Resources.EnergyPoints = 15
 	a.Cards.Hand = []string{"spined"}
 	b.Actors["player"] = a
 	e := NewEngine()

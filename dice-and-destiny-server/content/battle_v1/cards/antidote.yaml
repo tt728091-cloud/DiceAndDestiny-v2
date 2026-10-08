@@ -3,7 +3,7 @@ id: antidote
 name: Antidote
 type: status_response
 presentation: {rules_text: "Remove one selected negative status from yourself.\nPlay: Defense, any time, or while a defense roll's result is showing.", art_key: card_antidote}
-cost: {energy: 1}
+cost: {energy: 5}
 play:
   source_zones: [hand]
   destination: discard

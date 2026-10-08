@@ -318,8 +318,8 @@ func _queue_income_event(event: Dictionary, sequence: int) -> void:
 		actor["card_count"] = int(actor.get("card_count", 0)) + maxi(int(event.get("count", 0)), cards.size())
 	else:
 		actor["energy_points"] = int(event.get("energy_points", 0))
-		# Income currently grants one energy. Keeping the delta in the summary lets
-		# the presentation count from the prior value to the authoritative total.
+		# Keeping the Income energy delta in the summary lets the presentation
+		# count from the prior value to the authoritative total.
 		actor["energy_gain"] = int(event.get("data", {}).get("energy_gain", event.get("amount", 1)))
 		if event.get("data", {}).get("status_id") == "grave_debt":
 			actor["grave_debt"] = true

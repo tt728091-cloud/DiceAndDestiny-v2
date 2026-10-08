@@ -4,10 +4,10 @@
   "name": "Misfortune Repaid",
   "type": "defensive",
   "presentation": {
-    "rules_text": "Pay 1 Energy and roll 2 owned dice. Each Skull prevents 1; each Shroud prevents 2; Omen prevents 0. If either result is Omen, apply 2 Curse Count to the attacker once. If at least 1 damage was prevented, choose one attacker die: seed face 1 if clean, Lesser Expand if partly cursed, or Surge if full."
+    "rules_text": "Pay 5 Energy and roll 2 owned dice. Each Skull prevents 1; each Shroud prevents 2; Omen prevents 0. If either result is Omen, apply 2 Curse Count to the attacker once. If at least 1 damage was prevented, choose one attacker die: seed face 1 if clean, Lesser Expand if partly cursed, or Surge if full."
   },
   "cost": {
-    "energy": 1
+    "energy": 5
   },
   "usage": {
     "maximum_per_segment": 1

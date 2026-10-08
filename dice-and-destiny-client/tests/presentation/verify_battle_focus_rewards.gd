@@ -30,12 +30,12 @@ func _run() -> void:
   for child in screen.get_children():
    if child.get_script() == NOTICE and not child.is_queued_for_deletion(): notices.append(child)
   if play < 2:
-   _expect(int(after.energy_points) == int(before.energy_points) + 1, "native snapshot grants one Energy")
+   _expect(int(after.energy_points) == int(before.energy_points) + 5, "native snapshot grants five Energy")
    _expect(after.hand_count == before.hand_count and after.deck_count == before.deck_count - 1 and after.discard_count == before.discard_count + 1, "public pile counts reflect play plus draw")
    _expect(notices.size() == 1, "one reward animation")
    if notices.is_empty(): break
    var notice = notices[0]; notice.set_process(false)
-   _expect(notice._label.text == "+1 Energy · +1 card", "both rewards announced")
+   _expect(notice._label.text == "+5 Energy · +1 card", "both rewards announced")
    _expect(screen._actor_profiles.goblin._stat_labels.energy.text.ends_with(str(int(before.energy_points))), "no first-frame flash of final energy")
    notice._started = true; notice._elapsed = notice.duration * 0.3; notice.refresh()
    screen._render()

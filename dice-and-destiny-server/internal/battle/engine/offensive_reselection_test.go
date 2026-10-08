@@ -19,7 +19,7 @@ func TestOffensiveDiceEditReturnsAffectedPlan(t *testing.T) {
 		for _, id := range []string{"player", "enemy"} {
 			a := b.Actors[id]
 			a.Controller = state.ControllerExternal
-			a.Resources.EnergyPoints = 3
+			a.Resources.EnergyPoints = 15
 			b.Actors[id] = a
 			r := b.Settled.Actors[id]
 			r.PlanningCommitted = true

@@ -117,7 +117,7 @@ func TestAdventurerCardsAndSelectedTier(t *testing.T) {
 				if (err == nil) != valid {
 					t.Fatalf("%d -> %d: %v", before, after, err)
 				}
-				if valid && (b.Settled.Actors["player"].FinalDice[0].Face != after || b.Settled.Actors["player"].RollsUsed != 3 || b.Actors["player"].Resources.EnergyPoints != 9 || b.Actors["player"].CurrentHealth() != health) {
+				if valid && (b.Settled.Actors["player"].FinalDice[0].Face != after || b.Settled.Actors["player"].RollsUsed != 3 || b.Actors["player"].Resources.EnergyPoints != 5 || b.Actors["player"].CurrentHealth() != health) {
 					t.Fatal("nudge changed wrong resources or die")
 				}
 			}
@@ -154,7 +154,7 @@ func TestAdventurerCardsAndSelectedTier(t *testing.T) {
 			}
 		}
 		a = b.Actors["player"]
-		if a.Resources.EnergyPoints != 11 || len(a.Cards.Hand) != 2 || len(a.Cards.Discard) != 2 || a.CurrentHealth() != 4 {
+		if a.Resources.EnergyPoints != 15 || len(a.Cards.Hand) != 2 || len(a.Cards.Discard) != 2 || a.CurrentHealth() != 4 {
 			t.Fatalf("resources %+v", a)
 		}
 	})
@@ -219,7 +219,7 @@ func TestAdventurerProtectionAndBrace(t *testing.T) {
 			t.Fatal(err)
 		}
 	}
-	if stacks(&b, "player", "protect") != 2 || b.Actors["player"].Resources.EnergyPoints != 11 {
+	if stacks(&b, "player", "protect") != 2 || b.Actors["player"].Resources.EnergyPoints != 15 {
 		t.Fatal("ability benefit not granted")
 	}
 	b.Segment.Current = segment.DamageResolution
@@ -287,7 +287,7 @@ func TestAdventurerAllGuardRolls(t *testing.T) {
 					} else if f <= 5 {
 						prevention += 2
 					} else {
-						energy = 1
+						energy = 5
 					}
 				}
 				b.Segment.Current = segment.Defensive

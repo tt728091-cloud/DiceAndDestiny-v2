@@ -108,7 +108,7 @@ func TestVenomCardsSelectEachEnemy(t *testing.T) {
 		e := NewEngine()
 		b.Settled.Stage = stageOffensivePlan
 		a := b.Actors["player"]
-		a.Resources.EnergyPoints = 10
+		a.Resources.EnergyPoints = 50
 		a.Cards.Hand = []string{"card"}
 		b.Actors["player"] = a
 		applyStatus(&b, lib, "player", "catalyst", 1)
@@ -148,7 +148,7 @@ func TestDefensePlansReserveCostsAndPassAllPreservesChosenDefenses(t *testing.T)
 	b.Segment.Current = segment.Defensive
 	b.Settled.OffensiveSources = []state.SettledDamageSource{{ID: "first", SourceActorID: "enemy", SourceContentID: "needlefang", TargetActorID: "player", BaseAmount: 6}, {ID: "second", SourceActorID: "enemy2", SourceContentID: "needlefang", TargetActorID: "player", BaseAmount: 4}}
 	a := b.Actors["player"]
-	a.Resources.EnergyPoints = 1
+	a.Resources.EnergyPoints = 5
 	b.Actors["player"] = a
 	if _, err := e.progressSettledDefensive(&b, lib); err != nil {
 		t.Fatal(err)
@@ -199,7 +199,7 @@ func TestCoagulateChoosesPoisonCostIndependentlyOfIncomingSource(t *testing.T) {
 	e := NewEngine()
 	b.Settled.Stage = stageDamageReact
 	a := b.Actors["player"]
-	a.Resources.EnergyPoints = 1
+	a.Resources.EnergyPoints = 5
 	a.Cards.Hand = []string{"coagulate-card"}
 	b.Actors["player"] = a
 	applyStatus(&b, lib, "enemy2", "poison", 1)

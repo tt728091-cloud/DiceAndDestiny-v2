@@ -439,7 +439,7 @@ func _start_panel() -> void:
 	STYLE.heading(_details, "Start a new tree")
 	_label(_details, "A tree grows from one base card. Upgrades sit above it and cheaper variants below.", 15, STYLE.MUTED)
 	if _start.is_empty():
-		_start = {"name": "", "source": "effect:prevent", "energy": 1, "amount": 1, "xp": 10, "art": ""}
+		_start = {"name": "", "source": "effect:prevent", "energy": 5, "amount": 1, "xp": 10, "art": ""}
 	var create := STYLE.section(_details)
 	STYLE.heading(create, "Create a new base card")
 	var name := _line(create, "Card name, e.g. Steady Guard", "start.name"); name.text = str(_start.name)
@@ -458,7 +458,7 @@ func _start_panel() -> void:
 	var from_effect := str(_start.source).begins_with("effect:")
 	var numbers := HBoxContainer.new(); numbers.add_theme_constant_override("separation", 8); create.add_child(numbers)
 	if from_effect:
-		_spin(numbers, "Energy", int(_start.energy), 0, 10, func(v): _start.energy = v, "start.energy")
+		_spin(numbers, "Energy", int(_start.energy), 0, 75, func(v): _start.energy = v, "start.energy")
 		_spin(numbers, "Amount", int(_start.amount), 1, 20, func(v): _start.amount = v, "start.amount")
 	_spin(numbers, "XP value", int(_start.xp), 1, 1000, func(v): _start.xp = v, "start.xp")
 	var arts := STYLE.card_art()
@@ -1065,10 +1065,10 @@ func _example() -> void:
 	var base: Dictionary
 	if catalog.templates.has("brace"): base = catalog.templates.brace.duplicate(true)
 	else:
-		_start = {"name": name, "source": "effect:prevent", "energy": 1, "amount": 1, "xp": 10, "art": ""}
+		_start = {"name": name, "source": "effect:prevent", "energy": 5, "amount": 1, "xp": 10, "art": ""}
 		base = _start_card()
 	base.id = _unique_card_id(STYLE.slug(name)); base.name = name
-	base.cost.energy = 1; base.economy = {"buy": 10, "sell": 10, "copy_limit": int(base.get("economy", {}).get("copy_limit", 20)), "upgrades": []}
+	base.cost.energy = 5; base.economy = {"buy": 10, "sell": 10, "copy_limit": int(base.get("economy", {}).get("copy_limit", 20)), "upgrades": []}
 	base.program.steps[0].params = {"amount": 1, "destination": "discard"}
 	draft.nodes = [{"id": "base", "card": base, "x": 0.0, "y": 0.0}]
 	var variant := func(id: String, suffix: String, buy: int, energy: int, amount: int, destination: String) -> void:
@@ -1077,10 +1077,10 @@ func _example() -> void:
 		card.economy.buy = buy; card.economy.sell = buy; card.cost.energy = energy
 		card.program.steps[0].params = {"amount": amount, "destination": destination}
 		draft.nodes.append({"id": id, "card": card, "x": 0.0, "y": 0.0})
-	variant.call("node_1", "Deeper guard", 13, 1, 2, "discard")
-	variant.call("node_2", "Original piles", 14, 1, 1, "original")
-	variant.call("node_3", "Complete guard", 17, 1, 2, "original")
-	variant.call("node_4", "Heavy guard", 8, 2, 1, "discard")
+	variant.call("node_1", "Deeper guard", 13, 5, 2, "discard")
+	variant.call("node_2", "Original piles", 14, 5, 1, "original")
+	variant.call("node_3", "Complete guard", 17, 5, 2, "original")
+	variant.call("node_4", "Heavy guard", 8, 10, 1, "discard")
 	for pair in [["base", "node_1"], ["base", "node_2"], ["node_1", "node_3"], ["node_2", "node_3"], ["base", "node_4"]]: _connect(pair[0], pair[1])
 	# Generate readable rules without publishing anything.
 	for n in draft.nodes:
@@ -1088,7 +1088,7 @@ func _example() -> void:
 		if response.get("ok", false): n.card.presentation = response.result.card.presentation
 	_arrange(); _undo.clear(); _update_undo_buttons()
 	_selected = "base"; _changed(); _render(); _canvas.home()
-	_message.text = "Example draft with a new base card, %s (1 energy · prevent 1). Brace is unchanged. Edit, then publish when ready." % name
+	_message.text = "Example draft with a new base card, %s (5 energy · prevent 1). Brace is unchanged. Edit, then publish when ready." % name
 
 # New cards default to Any time on each segment their effect supports. The
 # opt-in reaction moments stay off unless the effect only works there.

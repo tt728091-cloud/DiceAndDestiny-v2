@@ -7,7 +7,7 @@
   "mechanic": {
     "kind": "black_dividend",
     "params": {
-      "energy": 1,
+      "energy": 5,
       "rewards": 2
     },
     "windows": [
@@ -41,8 +41,8 @@
   },
   "presentation": {
     "art_key": "card_black_dividend",
-    "effect_summary": "Gain 1 Energy from an enemy cursed roll each round (max 2)",
-    "rules_text": "Apply Black Dividend to the enemy. Through the end of the next Effects, gain 1 Energy from this enemy’s first physical cursed result each round. Maximum 2 Energy total. Each named Curse card may be played once per player per round."
+    "effect_summary": "Gain 5 Energy from an enemy cursed roll each round (max 10)",
+    "rules_text": "Apply Black Dividend to the enemy. Through the end of the next Effects, gain 5 Energy from this enemy’s first physical cursed result each round. Maximum 10 Energy total. Each named Curse card may be played once per player per round."
   },
   "reaction_window": {
     "opens": false

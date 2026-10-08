@@ -75,7 +75,7 @@ func _scenario(width: int, target_id: String) -> void:
 		notice._elapsed = notice.duration * 0.6; notice.refresh()
 		_expect(notice._cards[0].modulate.a < 0.05, "played card fades away")
 		notice.queue_free()
-	_expect(screen._view.actor("blade").energy_points == energy_before - 1, "confirmed play spends energy once")
+	_expect(screen._view.actor("blade").energy_points == energy_before - 5, "confirmed play spends energy once")
 	_expect(not swing_id in screen._view.actor("blade").hand, "played card leaves hand")
 	await create_timer(2.0).timeout
 	for frame in 6: await process_frame

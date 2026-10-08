@@ -130,7 +130,7 @@ func TestCatalystSetupCardsReplaceToxinEdits(t *testing.T) {
 	for _, tc := range []struct {
 		id         string
 		gain, cost int
-	}{{"bitter_reagent", 1, 1}, {"measured_dose", 2, 2}} {
+	}{{"bitter_reagent", 1, 5}, {"measured_dose", 2, 10}} {
 		t.Run(tc.id, func(t *testing.T) {
 			b, lib := venomFixture(t)
 			if lib.Cards[tc.id].Cost.Energy != tc.cost {
@@ -139,7 +139,7 @@ func TestCatalystSetupCardsReplaceToxinEdits(t *testing.T) {
 			b.Segment.Current = segment.Offensive
 			b.Settled.Stage = stageOffensivePlan
 			a := b.Actors["player"]
-			a.Resources.EnergyPoints = 5
+			a.Resources.EnergyPoints = 25
 			b.Actors["player"] = a
 			choices := venomCardChoices(&b, lib, "player", lib.Cards[tc.id])
 			if len(choices) != 1 {

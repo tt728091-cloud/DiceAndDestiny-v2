@@ -97,9 +97,9 @@ func _defense(id: String, viewport: Vector2i) -> void:
 		if tile is BattleAbilityTile:
 			_check_tile(tile)
 			# Defense tiles show the authored rules_text. Hexward costs 0 Energy,
-			# so only Misfortune Repaid states an Energy cost.
+			# so only Misfortune Repaid states an Energy cost (5).
 			var recipe: String = tile._recipe_label.text.to_lower()
-			_expect("roll" in recipe and "prevent" in recipe and ("1 energy" in recipe if tile.ability_id == "misfortune_repaid" else true), "defenses explain rolls, costs and prevention: %s" % tile._recipe_label.text)
+			_expect("roll" in recipe and "prevent" in recipe and ("5 energy" in recipe if tile.ability_id == "misfortune_repaid" else true), "defenses explain rolls, costs and prevention: %s" % tile._recipe_label.text)
 	await _capture("curse-defense-selection-%s-%d" % [id, viewport.x])
 	f.snapshot.stage = "defense_reaction"; f.pending_input.blade.stage = "defense_reaction"; f.pending_input.blade.allowed_commands = ["pass"]; f.legal_actions = []
 	f.snapshot.defense_selections = {"blade": {"actor_id": "blade", "ability_id": id, "source_id": "incoming", "rolled_face": 1, "rolled_faces": [1] if id == "hexward_rebuttal" else [1, 6]}}

@@ -50,7 +50,7 @@ func rebuild() -> void:
 	_stepper(identity, "XP value", int(card.economy.buy), " · ".join(deltas), 1, 100000, func(v): card.economy.buy = v; card.economy.sell = v, "forge.xp", int(compare_card.get("economy", {}).get("buy", -1)))
 	var adjust := STYLE.section(self)
 	STYLE.heading(adjust, "Adjust")
-	_stepper(adjust, "Energy cost", int(card.cost.energy), "", 0, 100, func(v): card.cost.energy = v, "forge.energy", int(compare_card.get("cost", {}).get("energy", -1)))
+	_stepper(adjust, "Energy cost", int(card.cost.energy), "", 0, 75, func(v): card.cost.energy = v, "forge.energy", int(compare_card.get("cost", {}).get("energy", -1)))
 	if card.get("program") is Dictionary: _program_rows(adjust)
 	elif card.get("mechanic") is Dictionary: _mechanic_rows(adjust)
 	var timing: Dictionary = card.program if card.get("program") is Dictionary else card.get("mechanic", {})

@@ -8,12 +8,13 @@
   },
   "resources": {
     "starting_hand_size": 4,
-    "starting_energy": 2,
-    "hand_limit": 6
+    "starting_energy": 10,
+    "hand_limit": 6,
+    "energy_cap": 75
   },
   "income": {
     "cards": 1,
-    "energy": 1
+    "energy": 5
   },
   "decklist": [
     {

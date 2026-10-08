@@ -117,7 +117,7 @@ func _update_opponent_description() -> void:
 	if _model_choice.get_selected_metadata() == "brine-mask-pair":
 		_message.text = "Two Brine Masks, 16 health each. Choose your attack target and defend separately against each incoming attack. Both keep every 3 and roll Salt Veil to block half their die, rounded up."
 		return
-	_message.text = "Brine Mask: 16 health, one attack, one defense. Keeps every 3 across up to three rolls. Brine Surge adds 1 attack damage for 1 energy." if _model_choice.get_selected_metadata() == "brine-mask" else "Play against the selected trained Blade Warden. Rematch keeps your character and opponent."
+	_message.text = "Brine Mask: 16 health, one attack, one defense. Keeps every 3 across up to three rolls. Brine Surge adds 1 attack damage for 5 energy." if _model_choice.get_selected_metadata() == "brine-mask" else "Play against the selected trained Blade Warden. Rematch keeps your character and opponent."
 
 func _add_selection(caption: String, choices: Array, control_id: String) -> OptionButton:
 	var heading := Label.new()

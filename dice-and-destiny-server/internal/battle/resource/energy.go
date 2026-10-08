@@ -35,6 +35,10 @@ func AddEnergyPoints(battle *state.Battle, actorID string, points int) ([]event.
 	if actor.Resources.EnergyPoints == 0 && actor.EnergyPoints != 0 {
 		actor.Resources.EnergyPoints = actor.EnergyPoints
 	}
+	points = actor.Resources.EnergyGainWithinCap(points)
+	if points == 0 {
+		return nil, nil
+	}
 	actor.Resources.EnergyPoints += points
 	actor.EnergyPoints = actor.Resources.EnergyPoints
 	battle.Actors[actorID] = actor

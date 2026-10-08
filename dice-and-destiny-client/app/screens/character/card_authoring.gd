@@ -232,7 +232,7 @@ func _card_fields() -> void:
 	_art_picker(identity, art_line)
 	var economy := _section("Cost & economy")
 	grid = STYLE.form(economy)
-	_number(grid, "Energy cost", int(draft.cost.energy), 0, 100, func(v): draft.cost.energy = v; _changed(), "energy")
+	_number(grid, "Energy cost", int(draft.cost.energy), 0, 75, func(v): draft.cost.energy = v; _changed(), "energy")
 	_number(grid, "Buy XP", int(draft.economy.buy), 0, 1000000, func(v): draft.economy.buy = v; draft.economy.sell = mini(int(draft.economy.sell), v) if embedded_draft.is_empty() else v; _changed(true), "buy")
 	_number(grid, "Sell XP · cannot exceed buy price", int(draft.economy.sell), 0, int(draft.economy.buy), func(v): draft.economy.sell = v; _changed(), "sell").editable = embedded_draft.is_empty()
 	_number(grid, "Copies per deck", int(draft.economy.copy_limit), 1, 100, func(v): draft.economy.copy_limit = v; _changed(), "copies")

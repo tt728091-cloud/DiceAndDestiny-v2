@@ -27,7 +27,7 @@ func TestTakeStockNeverRedrawsDiscardIncludingItself(t *testing.T) {
 				t.Fatal(err)
 			}
 			a = b.Actors["player"]
-			if len(a.Cards.Hand) != remaining || len(a.Cards.Deck) != 0 || !reflect.DeepEqual(a.Cards.Discard, []string{"second_wind-0", "take_stock-0"}) || !reflect.DeepEqual(a.Cards.Removed, []string{"nudge-0"}) || a.CurrentHealth() != health || a.Resources.EnergyPoints != 9 {
+			if len(a.Cards.Hand) != remaining || len(a.Cards.Deck) != 0 || !reflect.DeepEqual(a.Cards.Discard, []string{"second_wind-0", "take_stock-0"}) || !reflect.DeepEqual(a.Cards.Removed, []string{"nudge-0"}) || a.CurrentHealth() != health || a.Resources.EnergyPoints != 5 {
 				t.Fatalf("Take Stock must draw only available cards, discard itself, and preserve health: %+v", a)
 			}
 			// Exhausted draws survive checkpoint cloning and never request randomness.
@@ -55,7 +55,7 @@ func TestSettledIncomeWithDiscardOnlyPreservesHealthAndAdvances(t *testing.T) {
 		b.Actors[id] = a
 		r := b.Settled.Actors[id]
 		r.IncomeCards = 1
-		r.IncomeEnergy = 1
+		r.IncomeEnergy = 5
 		b.Settled.Actors[id] = r
 	}
 	b.Segment.Current = segment.Income
@@ -70,7 +70,7 @@ func TestSettledIncomeWithDiscardOnlyPreservesHealthAndAdvances(t *testing.T) {
 		t.Fatalf("income stalled at %s", b.Segment.Current)
 	}
 	for id, a := range b.Actors {
-		if len(a.Cards.Deck) != 0 || len(a.Cards.Hand) != 0 || !reflect.DeepEqual(a.Cards.Discard, []string{id + "-spent"}) || a.CurrentHealth() != 1 || a.Resources.EnergyPoints != 1 {
+		if len(a.Cards.Deck) != 0 || len(a.Cards.Hand) != 0 || !reflect.DeepEqual(a.Cards.Discard, []string{id + "-spent"}) || a.CurrentHealth() != 1 || a.Resources.EnergyPoints != 5 {
 			t.Fatalf("%s income: %+v", id, a)
 		}
 		found := false

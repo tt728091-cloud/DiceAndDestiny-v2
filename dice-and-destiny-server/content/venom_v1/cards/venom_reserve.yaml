@@ -7,7 +7,7 @@
   "mechanic": {
     "kind": "venom_reserve",
     "params": {
-      "amount": 1,
+      "amount": 5,
       "cost_stacks": 1,
       "cost_status": "catalyst"
     },
@@ -38,7 +38,7 @@
     ]
   },
   "presentation": {
-    "rules_text": "Pay 1 Catalyst. Gain 1 Energy. Once per round."
+    "rules_text": "Pay 1 Catalyst. Gain 5 Energy. Once per round."
   },
   "reaction_window": {
     "opens": false

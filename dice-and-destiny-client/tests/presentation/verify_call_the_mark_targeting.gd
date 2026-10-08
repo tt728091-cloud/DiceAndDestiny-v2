@@ -128,7 +128,7 @@ func _native_check(gateway) -> void:
 		selector.targets["%s:%s" % [parts[0], parts[1]]].pressed.emit(); await process_frame
 		if not screen._selected_card.is_empty(): screen._commit_mark_face(choice); await process_frame
 		_expect(screen._error_message.is_empty(), "native authority accepts inline choice")
-		_expect(int(screen._view.actor("blade").energy_points) == energy - 1, "card costs exactly one Energy after selection")
+		_expect(int(screen._view.actor("blade").energy_points) == energy - 5, "card costs exactly five Energy after selection")
 		_expect(int(screen._view.rolled_dice(parts[0])[int(parts[1])].face) == int(parts[2]), "native target receives selected face")
 		_expect(_selector(screen) == null, "successful play removes selector")
 		await _check_flip(screen, parts)

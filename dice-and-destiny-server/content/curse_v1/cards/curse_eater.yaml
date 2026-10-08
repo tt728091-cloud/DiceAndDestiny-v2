@@ -9,7 +9,7 @@
     "params": {
       "cost_count": 3,
       "draw": 2,
-      "energy": 2
+      "energy": 10
     },
     "windows": [
       "offensive_planning"
@@ -40,8 +40,8 @@
   },
   "presentation": {
     "art_key": "card_curse_eater",
-    "effect_summary": "Spend 3 enemy Count: draw 2 or gain 2 Energy",
-    "rules_text": "Spend 3 enemy Curse Count. Choose: draw 2 cards or gain 2 Energy. Each named Curse card may be played once per player per round."
+    "effect_summary": "Spend 3 enemy Count: draw 2 or gain 10 Energy",
+    "rules_text": "Spend 3 enemy Curse Count. Choose: draw 2 cards or gain 10 Energy. Each named Curse card may be played once per player per round."
   },
   "reaction_window": {
     "opens": false

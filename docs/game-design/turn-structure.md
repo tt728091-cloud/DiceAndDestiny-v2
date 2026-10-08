@@ -438,7 +438,7 @@ presentation:
   art_key: card_example
 
 cost:
-  energy: 1
+  energy: 5
 
 play:
   source_zones: [hand]
@@ -905,12 +905,13 @@ class: fighter
 
 resources:
   starting_hand_size: 4
-  starting_energy: 2
+  starting_energy: 10
   hand_limit: 6
+  energy_cap: 75
 
 income:
   cards: 1
-  energy: 1
+  energy: 5
 
 decklist:
   - card_id: tip_it
@@ -1701,10 +1702,10 @@ The default Income package is:
 
 ```text
 draw 1 card
-gain 1 energy
+gain 5 energy
 ```
 
-Energy accumulates between rounds and currently has no hard cap.
+Energy accumulates between rounds up to the actor's energy cap, 75 by default.
 
 Entry phase:
 
@@ -1731,8 +1732,9 @@ Exit phase:
 
 Settled defaults:
 
-- Each actor normally draws one card and gains one energy.
-- Energy accumulates and has no default hard cap for now.
+- Each actor normally draws one card and gains five energy. Characters start battles with 10 energy.
+- Energy uses a ×5 scale so one point is a fine (about 20%) step on a standard 5-energy card: cheap cards cost 1–4, standard cards 5, strong cards 6–9 and saved-up cards 10 or more.
+- Energy accumulates up to the energy cap. Combatants author `resources.energy_cap`; omitting it uses the game default of 75. Every gain (Income, cards, abilities and statuses) stops at the cap and the excess is lost. Battles saved before the cap existed remain uncapped.
 - The hand cap is six cards, but it is not enforced during Income. Actors may spend cards during the round to return to the cap naturally. Any actor still above six must discard down to six near the end of Damage Resolution.
 
 ### 3. Offensive
@@ -1936,7 +1938,7 @@ As of this draft, the Go authority already implements:
 Important gaps between code and the target design include:
 
 - Ongoing Effects is currently a placeholder and does not execute status triggers.
-- Income currently defaults to drawing one card for the actor ID `player`; the target default of granting one energy is not implemented in that default flow.
+- Income currently defaults to drawing one card for the actor ID `player`; the target default of granting energy is not implemented in that default flow.
 - Status applications and immediate status-triggered work after damage are not yet executed by the Damage Resolution flow.
 - The six-card hand cap and end-of-Damage-Resolution discard choice are not yet implemented.
 - Content-level declarations for whether a resolution opens its own reaction window are not yet implemented.
@@ -1995,7 +1997,7 @@ The walkthrough begins at Round 3 Ongoing Effects entry.
 | Deck | 4 cards | 5 cards |
 | Discard | 2 cards | 2 cards |
 | Hand | 6 cards | 3 cards |
-| Energy | 2 | 2 |
+| Energy | 10 | 10 |
 | Combat dice | 5 standard D6 | 5 standard D6 |
 | Normal Offensive rolls | 3 | 3 |
 | Statuses | Poison 3, Entangle, Blind | None |
@@ -2004,8 +2006,8 @@ Entangle is a one-use status waiting for Offensive entry. It has no duration: it
 
 The player's initial hand contains these rules-test cards:
 
-- `Loaded Die`: spend one energy and discard the card immediately to change one selected combat die to face 6, Gold Coin.
-- `Tip It`: spend one energy and discard the card immediately during a qualifying reaction window to change one selected revealed face-6 die to face 5, Shield.
+- `Loaded Die`: spend 5 energy and discard the card immediately to change one selected combat die to face 6, Gold Coin.
+- `Tip It`: spend 5 energy and discard the card immediately during a qualifying reaction window to change one selected revealed face-6 die to face 5, Shield.
 
 Each play remains hidden until its relevant shared reveal.
 
@@ -2015,7 +2017,7 @@ Each play remains hidden until its relevant shared reveal.
 |---|---|---|
 | Sword Cut | 3/4/5+ Swords | Deal 5/6/7 damage to one target |
 | Shield Bash | 2+ Swords and 2+ Shields | Deal 4 damage and apply Entangle to one target |
-| Golden Edge | 2+ Swords and 1+ Gold Coin | Deal 5 damage and gain 1 energy |
+| Golden Edge | 2+ Swords and 1+ Gold Coin | Deal 5 damage and gain 5 energy |
 | Perfect Form | Final faces contain 1, 2, 3, 4, and 5 | Deal 8 damage to one target |
 
 ### Player Defensive abilities
@@ -2103,7 +2105,7 @@ State carried into Income:
 | Discard | 2 cards | 2 cards |
 | Hand | 6 cards | 3 cards |
 | Removed | 1 card | 0 cards |
-| Energy | 2 | 2 |
+| Energy | 10 | 10 |
 | Statuses | Poison 1, Entangle, Blind | None |
 
 ### Segment 2: Income
@@ -2114,7 +2116,7 @@ No content modifies the ordinary Income package, so both actors receive the defa
 
 ```text
 draw 1 card
-gain 1 energy
+gain 5 energy
 ```
 
 The reward batch is not reactable in this example. Each actor sees the identity of its own drawn card. The opponent may see public hand and deck counts but not the hidden card identity.
@@ -2133,7 +2135,7 @@ State carried into Offensive:
 | Discard | 2 cards | 2 cards |
 | Hand | 7 cards | 4 cards |
 | Removed | 1 card | 0 cards |
-| Energy | 3 | 3 |
+| Energy | 15 | 15 |
 | Statuses | Poison 1, Entangle, Blind | None |
 
 ### Segment 3: Offensive
@@ -2188,7 +2190,7 @@ The player rerolls dice 3 and 4. Because Entangle reduced the maximum to two tot
 The final pool contains four Swords and one Gold Coin. It qualifies:
 
 - Sword Cut at its four-Sword tier: propose 6 damage.
-- Golden Edge: propose 5 damage and gain 1 energy.
+- Golden Edge: propose 5 damage and gain 5 energy.
 
 The player selects Sword Cut and targets the enemy. Because the ability and required target are valid, selection immediately locks in the player. The Loaded Die card is not played in this example and remains in hand.
 
@@ -2230,7 +2232,7 @@ proposals: deal 3 damage and apply 2 Poison
 
 #### Main phase: Offensive reaction chain
 
-The initial reveal is reactable. In reaction round one, the player secretly plays `Tip It` on the enemy's face-6 Gold Coin die. The accepted play immediately spends one energy and moves `Tip It` from hand to discard, but the enemy does not learn what was played until the round reveals. The enemy AI passes.
+The initial reveal is reactable. In reaction round one, the player secretly plays `Tip It` on the enemy's face-6 Gold Coin die. The accepted play immediately spends 5 energy and moves `Tip It` from hand to discard, but the enemy does not learn what was played until the round reveals. The enemy AI passes.
 
 Reaction round one reveals:
 
@@ -2369,7 +2371,7 @@ State carried into Defensive:
 | Discard | 3 cards | 2 cards |
 | Hand | 6 cards | 4 cards |
 | Removed | 1 card | 0 cards |
-| Energy | 2 | 3 |
+| Energy | 10 | 15 |
 | Statuses | Poison 1 | None |
 | Incoming source | Crushing Advance: 5 | Sword Cut: 6 |
 
@@ -2554,7 +2556,7 @@ State immediately after commit:
 | Hand | 6 | 4 |
 | Removed | 3 | 4 |
 | Remaining health cards | 9 | 6 |
-| Energy | 2 | 3 |
+| Energy | 10 | 15 |
 | Statuses | Poison 1 | None |
 
 Neither actor is pending defeat because both retain cards in discard and hand.
@@ -2586,7 +2588,7 @@ State carried into Round 4:
 | Discard | 3 | 2 |
 | Hand | 6 | 4 |
 | Removed | 3 | 4 |
-| Energy | 2 | 3 |
+| Energy | 10 | 15 |
 | Statuses | Poison 1 | None |
 
 ## Remaining Decisions To Make Together

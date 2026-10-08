@@ -14,7 +14,7 @@ func TestPublicPlanningCardPublishesResourcesWithoutHiddenChoices(t *testing.T) 
 	b, lib := venomFixture(t)
 	a := b.Actors["enemy"]
 	a.Controller = state.ControllerExternal
-	a.Resources.EnergyPoints = 3
+	a.Resources.EnergyPoints = 15
 	a.Cards.Hand = []string{"focus", "hidden-hand"}
 	a.Cards.Deck = []string{"hidden-draw"}
 	a.Cards.Discard = nil
@@ -29,7 +29,7 @@ func TestPublicPlanningCardPublishesResourcesWithoutHiddenChoices(t *testing.T) 
 	r.SelectedAbilityID = "sword_cut"
 	b.Settled.Actors["enemy"] = r
 	b.Settled.PlanningPublic = map[string]state.SettledPlanningPublicState{
-		"enemy": {EnergyPoints: 3, HandCount: 2, DeckCount: 1},
+		"enemy": {EnergyPoints: 15, HandCount: 2, DeckCount: 1},
 	}
 	b.Segment.Current = segment.Offensive
 	openSettledWindow(&b, "planning", stageOffensivePlan, "planning", []command.Type{command.TypePlanningCards, command.TypePlanningRoll})
@@ -43,7 +43,7 @@ func TestPublicPlanningCardPublishesResourcesWithoutHiddenChoices(t *testing.T) 
 	}
 	owner := snapshot.FromBattleForViewer(b, "enemy").Actors["enemy"]
 	other := snapshot.FromBattleForViewer(b, "player").Actors["enemy"]
-	if owner.EnergyPoints != 4 || other.EnergyPoints != 4 || other.HandCount != 2 || other.DeckCount != 0 || other.DiscardCount != 1 {
+	if owner.EnergyPoints != 20 || other.EnergyPoints != 20 || other.HandCount != 2 || other.DeckCount != 0 || other.DiscardCount != 1 {
 		t.Fatalf("Battle Focus public rewards stale: owner=%+v other=%+v", owner, other)
 	}
 	if len(other.Hand) != 0 || len(other.CardInstances) != 0 || other.Dice != nil || other.SelectedAbility != "" {

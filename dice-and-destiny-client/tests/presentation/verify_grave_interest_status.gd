@@ -40,8 +40,8 @@ func _run() -> void:
 			var before := {"health": 11, "energy": 0, "deck_count": 8, "hand_count": 1, "discard_count": 2, "removed_count": 5, "statuses": [{"definition_id": "curse_count", "stacks": count}, {"definition_id": "grave_interest", "stacks": 1}]}
 			var after := before.duplicate(true); after.statuses = []
 			if count % 3 > 0: after.statuses.append({"definition_id": "curse_count", "stacks": count % 3})
-			if count >= 3: after.statuses.append({"definition_id": "grave_debt", "stacks": 1})
-			var summary := {"actors_before": {"goblin": before}, "actors_after": {"goblin": after}, "steps": [{"type": "curse_resolved", "actor_id": "goblin", "data": {"kind": "grave_interest_trigger", "triggered": count >= 3, "count_spent": 3 if count >= 3 else 0}}]}
+			if count >= 3: after.statuses.append({"definition_id": "grave_debt", "stacks": 5})
+			var summary := {"actors_before": {"goblin": before}, "actors_after": {"goblin": after}, "steps": [{"type": "curse_resolved", "actor_id": "goblin", "data": {"kind": "grave_interest_trigger", "triggered": count >= 3, "count_spent": 3 if count >= 3 else 0, "debt": 5 if count >= 3 else 0}}]}
 			if count == 7:
 				after.health -= 1; after.deck_count -= 1; after.removed_count += 1
 				summary.steps.append({"type": "damage_committed", "data": {"sources": [{"id": "loss", "target_actor_id": "goblin", "source_content_id": "curse_count", "final_amount": 1}], "removals": [{"card_id": "lost", "card_definition_id": "brine_surge", "original_zone": "deck", "target_actor_id": "goblin", "accepted": true, "damage_proposal_ids": ["loss"]}]}})
@@ -56,22 +56,22 @@ func _run() -> void:
 			_expect(not gathers.is_empty() and gathers[0].badges.has("goblin:grave_interest"), "status animates from profile into Effects")
 			panel.resume_at(1.5); panel.present_progress()
 			var cue: Label = panel._grave_labels[0].label
-			_expect(("3 Curse Count consumed" in cue.text and "Grave Debt ×1" in cue.text) if count >= 3 else "Expired · no Energy penalty" in cue.text, "trigger or expiry is explicit")
+			_expect(("3 Curse Count consumed" in cue.text and "Grave Debt · −5 Energy next Income" in cue.text) if count >= 3 else "Expired · no Energy penalty" in cue.text, "trigger or expiry is explicit")
 			for frame in 6: await process_frame
 			_expect(root.get_visible_rect().encloses(cue.get_global_rect()), "trigger fits viewport")
 			await _capture("effects-%d-%d" % [count, width])
 			panel.resume_at(panel.duration); panel.present_progress()
 			_expect(not "Grave Interest" in screen._actor_profiles.goblin.statuses.text, "consumed status leaves profile")
-			_expect(("Grave Debt ×1" in screen._actor_profiles.goblin.statuses.text) == (count >= 3), "debt becomes normal status only when triggered")
+			_expect(("Grave Debt ×5" in screen._actor_profiles.goblin.statuses.text) == (count >= 3), "debt becomes normal status only when triggered")
 			screen.active_store.clear(); screen.queue_free(); await process_frame
-	# Public income events carry actual zero gain, so the UI cannot invent +1.
+	# Public income events carry actual zero gain, so the UI cannot invent a gain.
 	var income := base.duplicate(true); income.learned_policy = {}; income.legal_actions = []; income.pending_input = {}
 	income.snapshot.segment = "income"; income.snapshot.round = 4; income.snapshot.actors.goblin.energy_points = 0
-	income.events = [{"sequence": 2000, "type": "segment_entered", "segment": "income", "round": 4}, {"sequence": 2001, "type": "energy_points_gained", "segment": "income", "round": 4, "actor_id": "goblin", "energy_points": 0, "data": {"energy_gain": 0, "status_id": "grave_debt", "energy_prevented": 1}}]
+	income.events = [{"sequence": 2000, "type": "segment_entered", "segment": "income", "round": 4}, {"sequence": 2001, "type": "energy_points_gained", "segment": "income", "round": 4, "actor_id": "goblin", "energy_points": 0, "data": {"energy_gain": 0, "status_id": "grave_debt", "energy_prevented": 5}}]
 	screen = _screen(income, BattleGateway.new(FakeBattleAuthority.new())); await process_frame
 	var profile = screen._actor_profiles.goblin
 	_expect(profile._income_start_values.energy == 0, "income starts at real zero rather than minus one")
-	_expect("Grave Debt −1" in profile._income_markers.energy.text and "+0 Energy · consumed" in profile._income_markers.energy.text, "income explains penalty and consumption")
+	_expect("Grave Debt −5" in profile._income_markers.energy.text and "+0 Energy · consumed" in profile._income_markers.energy.text, "income explains penalty and consumption")
 	await _capture("income")
 	await create_timer(2.5).timeout
 	_expect(not is_instance_valid(profile) or not profile._income_markers.energy.visible, "income feedback cleans up")

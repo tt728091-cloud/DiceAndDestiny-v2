@@ -300,7 +300,7 @@ func TestCursePreparedCardsAndConversionModes(t *testing.T) {
 	for _, tc := range []struct {
 		id                                   string
 		count, damage, remainder, taxE, taxC int
-	}{{"three_knocks", 8, 4, 2, 0, 0}, {"grave_interest", 8, 1, 2, 1, 0}, {"black_tax", 8, 1, 2, 0, 1}, {"stored_calamity", 8, 0, 8, 0, 0}, {"three_knocks", 2, 0, 2, 0, 0}} {
+	}{{"three_knocks", 8, 4, 2, 0, 0}, {"grave_interest", 8, 1, 2, 5, 0}, {"black_tax", 8, 1, 2, 0, 1}, {"stored_calamity", 8, 0, 8, 0, 0}, {"three_knocks", 2, 0, 2, 0, 0}} {
 		t.Run(fmt.Sprintf("%s_%d", tc.id, tc.count), func(t *testing.T) {
 			b, lib := curseFixture(t)
 			cursePlan(&b)
@@ -461,7 +461,7 @@ func TestCurseEaterAndOffensiveReactions(t *testing.T) {
 			if stacks(&b, "enemy", "curse_count") != 0 {
 				t.Fatal("cost missing")
 			}
-			if key == "draw" && len(b.Actors["player"].Cards.Hand) != 2 || key == "energy" && b.Actors["player"].Resources.EnergyPoints != energy+2 {
+			if key == "draw" && len(b.Actors["player"].Cards.Hand) != 2 || key == "energy" && b.Actors["player"].Resources.EnergyPoints != energy+10 {
 				t.Fatal("wrong eater benefit")
 			}
 		})

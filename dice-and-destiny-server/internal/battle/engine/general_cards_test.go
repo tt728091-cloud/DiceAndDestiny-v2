@@ -268,11 +268,12 @@ func TestGeneralSecondGuardRerollsSubsetWithoutDuplicateDefenseRewards(t *testin
 		t.Fatal("reroll changed unselected dice, original clone, or resolved rewards early")
 	}
 	e.namedRandom = nil
-	// Keep this test in the human hub after applying the result.
+	// Keep this test in the human hub after applying the result. The legacy
+	// card cost 1; the shipped Guard Coin grants 5.
 	if _, err := e.finalizeDefenses(&b, lib); err != nil {
 		t.Fatal(err)
 	}
-	if len(activeReservations(b, "a")) != 4 || b.Actors["player"].Resources.EnergyPoints != 10 || !b.Settled.DefenseHistory["a"].Finalized {
+	if len(activeReservations(b, "a")) != 4 || b.Actors["player"].Resources.EnergyPoints != 14 || !b.Settled.DefenseHistory["a"].Finalized {
 		t.Fatal("defense rewards did not apply exactly once to the final roll")
 	}
 	if len(generalCardChoices(&b, lib, "player", lib.Cards["second_guard"])) != 0 {

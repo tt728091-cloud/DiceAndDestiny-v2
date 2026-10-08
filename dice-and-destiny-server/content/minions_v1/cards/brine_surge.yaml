@@ -4,10 +4,10 @@
   "name": "Brine Surge",
   "type": "planning",
   "presentation": {
-    "rules_text": "Spend 1 energy: add 1 damage to your attack this round. Brine Mask automatically plays at most one after rolling a successful attack."
+    "rules_text": "Spend 5 energy: add 1 damage to your attack this round. Brine Mask automatically plays at most one after rolling a successful attack."
   },
   "cost": {
-    "energy": 1
+    "energy": 5
   },
   "play": {
     "source_zones": [

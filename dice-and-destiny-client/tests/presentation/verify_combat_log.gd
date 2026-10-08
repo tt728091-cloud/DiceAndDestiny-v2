@@ -13,7 +13,7 @@ func _run() -> void:
 	var update := initial.duplicate(true)
 	update.snapshot.actors.goblin.hand_count = 6
 	update.snapshot.actors.goblin.deck_count = 14
-	update.snapshot.actors.blade.energy_points = 2
+	update.snapshot.actors.blade.energy_points = 10
 	update.snapshot.actors.blade.statuses = [{"definition_id": "catalyst", "stacks": 2}]
 	update.snapshot.actors.blade.selected_ability = "needlefang"
 	update.events = [
@@ -23,7 +23,7 @@ func _run() -> void:
 		{"sequence": 4, "type": "ability_selected", "actor_id": "goblin", "private_actor_id": "goblin", "data": {"ability_id": "ENEMY_SECRET_ATTACK"}}]
 	view.apply_result(update)
 	var text := view.combat_log.text()
-	for expected in ["drew 1 card", "hand size 6", "Culture Flask", "Catalyst 0 → 2", "Energy 3 → 2", "Needlefang", "rolled 1, 3, 6"]:
+	for expected in ["drew 1 card", "hand size 6", "Culture Flask", "Catalyst 0 → 2", "Energy 15 → 10", "Needlefang", "rolled 1, 3, 6"]:
 		_expect(expected in text, "records visible fact: " + expected)
 	_expect(not "SECRET" in text, "enemy identities never enter the log")
 	var first_response := VIEW.new(); first_response.apply_result(update)

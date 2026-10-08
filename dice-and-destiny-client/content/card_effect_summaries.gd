@@ -11,7 +11,7 @@ const TEXT := {
 	"alchemists_gamble": "1–4: Volatile Poison\n5: Miss · 6: 3 damage",
 	"antidote": "Clear 1 debuff",
 	"antivenom_draught": "Prevent 2\nOptional: 1 Catalyst to cleanse 1 toxin",
-	"battle_focus": "Draw 1 card\nGain 1 Energy",
+	"battle_focus": "Draw 1 card\nGain 5 Energy",
 	"bitter_reagent": "Gain 1 Catalyst",
 	"coagulate": "Spend 1 enemy Poison\nPrevent 3",
 	"culture_flask": "Gain 2 Catalyst",
@@ -36,7 +36,7 @@ const TEXT := {
 	"tip_it": "Change a 6 to a 5",
 	"twin_puncture": "Apply 2 Poison",
 	"venom_lens": "Needlefang: +1 damage to every tier",
-	"venom_reserve": "Spend 1 Catalyst\nGain 1 Energy",
+	"venom_reserve": "Spend 1 Catalyst\nGain 5 Energy",
 	"Mock Focus": "No effect · test card",
 	"Mock Guard": "No effect · test card",
 	"Mock Strike": "No effect · test card"

@@ -7,7 +7,7 @@
     "rules_text": "Roll 1 Venom die against an incoming ability. Fang: prevent 2, apply 1 Poison. Gland: prevent 3, gain 1 Catalyst. Coil: prevent 1; apply Incubation if the attacker has Poison and no Incubation, otherwise apply 1 Poison."
   },
   "cost": {
-    "energy": 1
+    "energy": 5
   },
   "usage": {
     "maximum_per_segment": 1

@@ -16,7 +16,7 @@ func TestAntidotePublicOutcomeInDefenseOnly(t *testing.T) {
 			for _, id := range []string{"player", "enemy"} {
 				a := b.Actors[id]
 				a.Controller = state.ControllerExternal
-				a.Resources.EnergyPoints = 2
+				a.Resources.EnergyPoints = 10
 				b.Actors[id] = a
 			}
 			a := b.Actors["enemy"]

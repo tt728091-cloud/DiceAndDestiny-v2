@@ -89,11 +89,11 @@ func TestAuthorityRunsBladeWardenVsVenomGoblinFullBattle(t *testing.T) {
 
 	result := fullBattleSend(t, authority, map[string]any{"battle_id": "blade-v-goblin", "actor_id": "blade", "type": command.TypeStartBattle, "payload": map[string]any{"player": map[string]string{"instance_id": "blade", "definition_id": "blade_warden"}, "enemies": []map[string]string{{"instance_id": "goblin", "definition_id": "venom_goblin"}}}})
 	assertFullBattleWait(t, result, "offensive", 1, "planning")
-	assertZones(t, result, "blade", 15, 5, 0, 0, 3)
-	assertZones(t, result, "goblin", 9, 3, 0, 0, 2)
+	assertZones(t, result, "blade", 15, 5, 0, 0, 15)
+	assertZones(t, result, "goblin", 9, 3, 0, 0, 10)
 	sharpen := cardInHand(t, result.Snapshot.Actors["blade"], "sharpen_blade")
 	result = sendPlanningCardsFull(t, authority, result, sharpen, "sword_cut")
-	assertZones(t, result, "blade", 15, 4, 1, 0, 2)
+	assertZones(t, result, "blade", 15, 4, 1, 0, 10)
 	result = sendPlanningRollFull(t, authority, result)
 	assertFaces(t, result.Snapshot.Actors["blade"].RollHistory[0].Dice, []int{1, 4, 6, 6, 5})
 	result = sendPlanningKeepFull(t, authority, result, []int{0, 1})
@@ -137,8 +137,8 @@ func TestAuthorityRunsBladeWardenVsVenomGoblinFullBattle(t *testing.T) {
 	if err := json.Unmarshal([]byte(authority.HandleCommandJSON(string(raw))), &rejected); err != nil || rejected.Accepted {
 		t.Fatalf("Antidote accepted during offensive planning: %v", err)
 	}
-	assertZones(t, result, "blade", 13, 5, 0, 2, 3)
-	assertZones(t, result, "goblin", 4, 4, 0, 4, 3)
+	assertZones(t, result, "blade", 13, 5, 0, 2, 15)
+	assertZones(t, result, "goblin", 4, 4, 0, 4, 15)
 	result = sendPlanningRollFull(t, authority, result)
 	result = sendPlanningKeepFull(t, authority, result, []int{0, 1, 2})
 	result = sendPlanningRerollFull(t, authority, result, []int{3, 4})
@@ -162,7 +162,7 @@ func TestAuthorityRunsBladeWardenVsVenomGoblinFullBattle(t *testing.T) {
 	result = sendPassFull(t, authority, result)
 	assertFullBattleWait(t, result, "damage_resolution", 2, "damage_reaction")
 	// Only played Emergency Ward goes to discard; saved cards stay in deck.
-	assertZones(t, result, "goblin", 4, 3, 1, 4, 1)
+	assertZones(t, result, "goblin", 4, 3, 1, 4, 5)
 	for _, removal := range result.Snapshot.SettledDamage.Removals {
 		if removal.Accepted && !removal.Released {
 			t.Fatalf("prevention did not release %#v", removal)
@@ -198,8 +198,8 @@ func TestAuthorityRunsBladeWardenVsVenomGoblinFullBattle(t *testing.T) {
 	result = sendPassFull(t, authority, result)
 	assertFullBattleWait(t, result, "offensive", 4, "planning")
 	assertEffectsDamageDefinitions(t, result, []string{"battle_focus", "emergency_ward"})
-	assertZones(t, result, "blade", 11, 5, 0, 4, 3)
-	assertZones(t, result, "goblin", 0, 1, 0, 11, 3)
+	assertZones(t, result, "blade", 11, 5, 0, 4, 15)
+	assertZones(t, result, "goblin", 0, 1, 0, 11, 15)
 	result = sendPlanningRollFull(t, authority, result)
 	result = sendPlanningKeepFull(t, authority, result, []int{0, 1})
 	result = sendPlanningRerollFull(t, authority, result, []int{2, 3, 4})
@@ -221,8 +221,8 @@ func TestAuthorityRunsBladeWardenVsVenomGoblinFullBattle(t *testing.T) {
 	if result.Status != engine.ProgressBattleComplete || result.BattleResult != state.BattleVictory {
 		t.Fatalf("final result=%#v", result)
 	}
-	assertZones(t, result, "blade", 11, 5, 0, 4, 3)
-	assertZones(t, result, "goblin", 0, 0, 0, 12, 3)
+	assertZones(t, result, "blade", 11, 5, 0, 4, 15)
+	assertZones(t, result, "goblin", 0, 0, 0, 12, 15)
 	if result.Snapshot.CompletedRounds != 4 {
 		t.Fatalf("completed rounds=%d", result.Snapshot.CompletedRounds)
 	}

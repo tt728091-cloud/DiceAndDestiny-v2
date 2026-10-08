@@ -17,7 +17,7 @@ func TestDamageRemovesMarkedReactionCardFromItsCurrentZone(t *testing.T) {
 	b.Settled.Stage = stageDamageReact
 	actor := b.Actors["player"]
 	actor.Cards = state.CardZones{Hand: []string{"molt", "shock", "reserve", "incubate"}}
-	actor.Resources.EnergyPoints = 2
+	actor.Resources.EnergyPoints = 10
 	b.Actors["player"] = actor
 	runtime := b.Settled.Actors["player"]
 	runtime.HandLimit = 5

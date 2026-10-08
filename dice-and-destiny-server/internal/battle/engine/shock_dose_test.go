@@ -19,7 +19,7 @@ func TestShockDoseResolvesDuringPlanning(t *testing.T) {
 			for _, id := range []string{"player", "enemy"} {
 				a := b.Actors[id]
 				a.Controller = state.ControllerExternal
-				a.Resources.EnergyPoints = 4
+				a.Resources.EnergyPoints = 20
 				a.Cards.Deck = []string{id + "1", id + "2", id + "3", id + "4", id + "5", id + "6"}
 				if mode == "lethal" && id == "enemy" {
 					a.Cards.Deck = a.Cards.Deck[:3]
@@ -60,7 +60,7 @@ func TestShockDoseResolvesDuringPlanning(t *testing.T) {
 			if b.Settled.Stage != stageOngoingDamage || len(b.Settled.OffensiveSources) != 0 || len(b.Settled.PendingDamage.Removals) != 3 {
 				t.Fatal("Shock Dose must reveal immediate damage, not queue an offensive attack")
 			}
-			if stacks(&b, "enemy", "volatile_poison") != 1 || b.Actors["player"].Resources.EnergyPoints != 2 {
+			if stacks(&b, "enemy", "volatile_poison") != 1 || b.Actors["player"].Resources.EnergyPoints != 10 {
 				t.Fatal("costs must be paid once")
 			}
 			b = b.Clone() // Pending child damage and planning continuation survive saves.

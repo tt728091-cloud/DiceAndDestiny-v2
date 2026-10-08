@@ -153,6 +153,13 @@ const DefenseTimingContentVersion = "0b903464539b572f0c619f4c5cf0793b01e6082b41a
 // defense roll review timing.
 const AntidoteReviewTextContentVersion = "a0148485851f45d032550289bb516b16cf7c246c795ba32b65900bd6b0f17dfc"
 
+// Reviewed economy update: energy costs, energy gains, starting energy and
+// Income energy are scaled ×5 and combatants cap energy at 75. Card IDs and
+// action encoding are unchanged and affordability stays in the legal-action
+// mask, but the energy observation (energy / max energy) now reads about two
+// thirds of its trained value. Retrain to restore the exact input scale.
+const EnergyScaleContentVersion = "8b13038334c7c524e98a6c8898c6f16798210afe7ac5bbadb71ec2f2a17fe19d"
+
 func VerifyContentVersion(contentRoot string) error {
 	paths := []string{}
 	err := filepath.Walk(filepath.Join(contentRoot, "battle_v1"), func(path string, info os.FileInfo, walkErr error) error {
@@ -183,7 +190,7 @@ func VerifyContentVersion(contentRoot string) error {
 		digest.Write(payload)
 	}
 	actual := fmt.Sprintf("%x", digest.Sum(nil))
-	if actual != AcceptedContentVersion && actual != AutomaticEffectsContentVersion && actual != EmergencyWardRulesTextContentVersion && actual != DefenseTimingContentVersion && actual != AntidoteReviewTextContentVersion {
+	if actual != AcceptedContentVersion && actual != AutomaticEffectsContentVersion && actual != EmergencyWardRulesTextContentVersion && actual != DefenseTimingContentVersion && actual != AntidoteReviewTextContentVersion && actual != EnergyScaleContentVersion {
 		return fmt.Errorf("learned policy content version mismatch: got %s, want %s", actual, AcceptedContentVersion)
 	}
 	return nil

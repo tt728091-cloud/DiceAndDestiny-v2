@@ -16,14 +16,14 @@ func TestAntidoteResponseToPinprickPublishesCauseBeforeApplication(t *testing.T)
 	b.Segment.Current = segment.Offensive
 	a := b.Actors["enemy"]
 	a.Controller = state.ControllerExternal
-	a.Resources.EnergyPoints = 4
+	a.Resources.EnergyPoints = 20
 	a.Cards.Hand = []string{"antidote", "hidden"}
 	a.Cards.Discard = nil
 	b.Actors["enemy"] = a
 	r := b.Settled.Actors["enemy"]
 	r.CardInstances = map[string]state.CardInstance{"antidote": {InstanceID: "antidote", DefinitionID: "antidote"}, "hidden": {InstanceID: "hidden", DefinitionID: "tip_it"}}
 	b.Settled.Actors["enemy"] = r
-	b.Settled.PlanningPublic = map[string]state.SettledPlanningPublicState{"enemy": {EnergyPoints: 4, HandCount: 2}}
+	b.Settled.PlanningPublic = map[string]state.SettledPlanningPublicState{"enemy": {EnergyPoints: 20, HandCount: 2}}
 	applyStatus(&b, lib, "enemy", "poison", 2)
 	openSettledWindow(&b, "planning", stageOffensivePlan, "planning", []command.Type{command.TypePlanningCards, command.TypePlanningRoll})
 	venomRuntime(&b).Queue = append(venomRuntime(&b).Queue, state.VenomWork{Kind: "application", SourceActorID: "player", SourceContentID: "pinprick", TargetActorID: "enemy", StatusID: "poison", Stacks: 1})
@@ -60,7 +60,7 @@ func TestAntidoteResponseToPinprickPublishesCauseBeforeApplication(t *testing.T)
 		t.Fatal("missing separate Pinprick application outcome")
 	}
 	view := snapshot.FromBattleForViewer(b, "player").Actors["enemy"]
-	if view.EnergyPoints != 3 || view.HandCount != 1 || view.DiscardCount != 1 {
+	if view.EnergyPoints != 15 || view.HandCount != 1 || view.DiscardCount != 1 {
 		t.Fatalf("reaction public costs went stale after returning to planning: %+v", view)
 	}
 	if len(view.Hand) != 0 || len(view.CardInstances) != 0 {

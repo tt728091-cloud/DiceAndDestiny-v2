@@ -129,6 +129,15 @@ type ResourceState struct {
 	EnergyPoints         int
 }
 
+// EnergyGainWithinCap returns the part of a gain that fits under the energy
+// cap. A zero cap is uncapped, which preserves battles saved before the cap.
+func (r ResourceState) EnergyGainWithinCap(points int) int {
+	if points <= 0 || r.MaxEnergyPoints <= 0 {
+		return points
+	}
+	return max(0, min(points, r.MaxEnergyPoints-r.EnergyPoints))
+}
+
 type HealthMetadata struct {
 	Model     string
 	MaxHealth int

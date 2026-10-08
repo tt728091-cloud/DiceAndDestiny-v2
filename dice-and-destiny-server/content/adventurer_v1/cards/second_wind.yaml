@@ -17,7 +17,7 @@
           "selection": "choose"
         },
         "params": {
-          "amount": 2
+          "amount": 10
         }
       }
     ]
@@ -28,8 +28,8 @@
   "type": "planning",
   "presentation": {
     "illustration_path": "res://assets/battle/cards/battle_focus.png",
-    "effect_summary": "Give 2 energy to one of your characters.\nPlay: Offense, any time.",
-    "rules_text": "Give 2 energy to one of your characters.\nPlay: Offense, any time.",
+    "effect_summary": "Give 10 energy to one of your characters.\nPlay: Offense, any time.",
+    "rules_text": "Give 10 energy to one of your characters.\nPlay: Offense, any time.",
     "art_key": ""
   },
   "cost": {

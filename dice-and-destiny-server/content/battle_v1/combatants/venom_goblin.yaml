@@ -3,8 +3,8 @@ id: venom_goblin
 name: Venom Goblin
 class: goblin
 controller_defaults: {type: ai}
-resources: {starting_hand_size: 2, starting_energy: 1, hand_limit: 6}
-income: {cards: 1, energy: 1}
+resources: {starting_hand_size: 2, starting_energy: 5, hand_limit: 6, energy_cap: 75}
+income: {cards: 1, energy: 5}
 decklist:
   - {card_id: tip_it, count: 2}
   - {card_id: loaded_die, count: 2}

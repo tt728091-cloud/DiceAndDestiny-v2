@@ -55,7 +55,7 @@ func TestShippedGeneralDieCards(t *testing.T) {
 				t.Fatal(err)
 			}
 			r := b.Settled.Actors["player"]
-			if r.FinalDice[0].Face != tc.want || r.FinalDice[4].Face != 6 || r.RollsUsed != 3 || b.Actors["player"].Resources.EnergyPoints != 9 {
+			if r.FinalDice[0].Face != tc.want || r.FinalDice[4].Face != 6 || r.RollsUsed != 3 || b.Actors["player"].Resources.EnergyPoints != 5 {
 				t.Fatalf("die %d, rolls %d, energy %d", r.FinalDice[0].Face, r.RollsUsed, b.Actors["player"].Resources.EnergyPoints)
 			}
 		})
@@ -77,7 +77,7 @@ func TestShippedReclaimExcludesRecoveryAndPreservesHealth(t *testing.T) {
 		t.Fatal(err)
 	}
 	a = b.Actors["player"]
-	if !containsString(a.Cards.Hand, "nudge-0") || !containsString(a.Cards.Discard, "reclaim-2") || !containsString(a.Cards.Discard, "reclaim") || a.CurrentHealth() != health || a.Resources.EnergyPoints != 8 {
+	if !containsString(a.Cards.Hand, "nudge-0") || !containsString(a.Cards.Discard, "reclaim-2") || !containsString(a.Cards.Discard, "reclaim") || a.CurrentHealth() != health || a.Resources.EnergyPoints != 0 {
 		t.Fatalf("Reclaim result %+v", a.Cards)
 	}
 }
@@ -100,7 +100,7 @@ func TestShippedDispelRemovesOnePositiveStack(t *testing.T) {
 func TestShippedReinforceExtraEnergyChoice(t *testing.T) {
 	for _, tc := range []struct {
 		option, energy, want int
-	}{{0, 1, 3}, {1, 2, 1}} {
+	}{{0, 5, 3}, {1, 10, 1}} {
 		b, lib, e := unifiedFixture(t, 5)
 		lib = loadShippedGeneral(t, &b, lib)
 		giveGeneralCard(&b, "reinforce")
@@ -116,12 +116,12 @@ func TestShippedReinforceExtraEnergyChoice(t *testing.T) {
 			t.Fatalf("option %d left %d damage, energy %d", tc.option, got, b.Actors["player"].Resources.EnergyPoints)
 		}
 	}
-	// One energy pays only the card; the boosted option is not offered.
+	// Five energy pays only the card; the boosted option is not offered.
 	b, lib, e := unifiedFixture(t, 5)
 	lib = loadShippedGeneral(t, &b, lib)
 	giveGeneralCard(&b, "reinforce")
 	a := b.Actors["player"]
-	a.Resources.EnergyPoints = 1
+	a.Resources.EnergyPoints = 5
 	b.Actors["player"] = a
 	if _, err := e.handleProgramCommand(&b, lib, programAction(t, &b, lib, "start")); err != nil {
 		t.Fatal(err)

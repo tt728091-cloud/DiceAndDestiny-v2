@@ -35,7 +35,7 @@ func TestGraveInterestStatusLifecycle(t *testing.T) {
 			if count >= 3 {
 				debt = 1
 			}
-			if stacks(&b, "enemy", "grave_interest") != 0 || stacks(&b, "enemy", "grave_debt") != debt || stacks(&b, "enemy", "curse_count") != count%3 {
+			if stacks(&b, "enemy", "grave_interest") != 0 || stacks(&b, "enemy", "grave_debt") != debt*5 || stacks(&b, "enemy", "curse_count") != count%3 {
 				t.Fatal("wrong status conversion or expiration")
 			}
 			damage := max(0, count/3-1)
@@ -78,10 +78,10 @@ func TestGraveInterestStatusLifecycle(t *testing.T) {
 }
 
 func TestGraveDebtIncome(t *testing.T) {
-	for _, income := range []int{0, 1, 2} {
+	for _, income := range []int{0, 3, 5, 10} {
 		t.Run(fmt.Sprint(income), func(t *testing.T) {
 			b, lib := curseFixture(t)
-			applyStatus(&b, lib, "enemy", "grave_debt", 1)
+			applyStatus(&b, lib, "enemy", "grave_debt", 5)
 			b = b.Clone()
 			actor := b.Actors["enemy"]
 			actor.Resources.EnergyPoints = 0
@@ -96,7 +96,7 @@ func TestGraveDebtIncome(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			gain := max(0, income-1)
+			gain := max(0, income-5)
 			if b.Actors["enemy"].Resources.EnergyPoints != gain || stacks(&b, "enemy", "grave_debt") != 0 {
 				t.Fatal("debt must reduce one income, floor at zero, and expire")
 			}
@@ -104,7 +104,7 @@ func TestGraveDebtIncome(t *testing.T) {
 			for _, ev := range events {
 				if ev.ActorID == "enemy" && ev.Data["status_id"] == "grave_debt" {
 					found = true
-					if ev.Data["energy_gain"] != gain || ev.Data["energy_prevented"] != min(1, income) {
+					if ev.Data["energy_gain"] != gain || ev.Data["energy_prevented"] != min(5, income) {
 						t.Fatalf("wrong income feedback: %+v", ev)
 					}
 				}

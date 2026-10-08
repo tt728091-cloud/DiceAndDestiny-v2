@@ -92,7 +92,7 @@ func _guard(size: Vector2i) -> void:
 		var panel = screen._defense_result_panels[0]
 		_expect(panel.data.dice.size() == 3 and panel.dice_controls.size() == 3, "three shared animated defense dice")
 		_expect(panel.data.prevented == (3 if faces[0] == 1 else 0), "prevention preview matches symbols")
-		_expect(panel.data.gains.size() == 1 and panel.data.gains[0].amount == 1 and panel.data.gains[0].get("resource", false), "Coin energy shown once even for triple six")
+		_expect(panel.data.gains.size() == 1 and panel.data.gains[0].amount == 5 and panel.data.gains[0].get("resource", false), "Coin energy shown once even for triple six")
 		var gain = panel.data.gains[0]
 		var flight = preload("res://presentation/battle/defense_status_flight.gd").new(); screen._root.add_child(flight)
 		flight.configure(panel.gain_origins[0], screen._actor_profiles.blade, gain, Time.get_ticks_msec())

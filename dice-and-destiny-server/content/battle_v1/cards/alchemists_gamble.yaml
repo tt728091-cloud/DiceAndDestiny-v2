@@ -3,7 +3,7 @@ id: alchemists_gamble
 name: Alchemist's Gamble
 type: planning
 presentation: {rules_text: "Target an enemy and roll 1D6. On 1-4 apply Volatile Poison; on 5 do nothing; on 6 deal 3 damage.", art_key: card_alchemists_gamble}
-cost: {energy: 1}
+cost: {energy: 5}
 play: {source_zones: [hand], destination: discard, playable_during: [{segment: offensive, phase: main, window_purpose: planning}]}
 targeting: {selector: one_enemy, minimum: 1, maximum: 1}
 reaction_window: {opens: false}

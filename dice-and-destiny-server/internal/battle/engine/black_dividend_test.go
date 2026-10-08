@@ -33,18 +33,18 @@ func TestBlackDividendStatusRewards(t *testing.T) {
 	}
 	roll(1)
 	roll(1)
-	if b.Actors["player"].Resources.EnergyPoints != start+1 || stacks(&b, "enemy", "black_dividend") != 1 {
+	if b.Actors["player"].Resources.EnergyPoints != start+5 || stacks(&b, "enemy", "black_dividend") != 1 {
 		t.Fatal("first reward must persist; at most once per round")
 	}
 	b = b.Clone()
 	b.Segment.Round++
 	b.Segment.Current = segment.OngoingEffects
 	roll(1)
-	if b.Actors["player"].Resources.EnergyPoints != start+2 || stacks(&b, "enemy", "black_dividend") != 0 {
+	if b.Actors["player"].Resources.EnergyPoints != start+10 || stacks(&b, "enemy", "black_dividend") != 0 {
 		t.Fatal("second reward must consume status")
 	}
 	roll(1)
-	if b.Actors["player"].Resources.EnergyPoints != start+2 {
+	if b.Actors["player"].Resources.EnergyPoints != start+10 {
 		t.Fatal("exceeded max rewards")
 	}
 	rewards := 0

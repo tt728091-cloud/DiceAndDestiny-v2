@@ -1,7 +1,7 @@
 {
   "access_type": "venom",
   "cost": {
-    "energy": 2
+    "energy": 10
   },
   "id": "shock_dose",
   "mechanic": {

@@ -36,7 +36,7 @@
     "art_key": ""
   },
   "cost": {
-    "energy": 1
+    "energy": 5
   },
   "play": {
     "source_zones": [

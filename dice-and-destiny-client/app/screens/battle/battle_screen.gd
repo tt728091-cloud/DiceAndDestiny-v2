@@ -1020,7 +1020,7 @@ func _build_header(parent: VBoxContainer) -> void:
 		policy_badge.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 		policy_badge.text = "BRINE MASK · Keeps every 3" if _is_single_ability_opponent() else "LEARNED BATTLE · %s · HUMAN %s" % [policy_label, learned_human_seat.to_upper()]
 		policy_badge.add_theme_color_override("font_color", Color("9de0ff"))
-		policy_badge.tooltip_text = "Three rolls · 2 damage per 3 · Salt Veil rolls 1D6: half, rounded up · Brine Surge costs 1 energy for +1 damage" if _is_single_ability_opponent() else "Frozen policy %s · no training or fallback" % str(_view.learned_policy.get("model_id", "unknown"))
+		policy_badge.tooltip_text = "Three rolls · 2 damage per 3 · Salt Veil rolls 1D6: half, rounded up · Brine Surge costs 5 energy for +1 damage" if _is_single_ability_opponent() else "Frozen policy %s · no training or fallback" % str(_view.learned_policy.get("model_id", "unknown"))
 		_utility_contents.inspect.add_child(policy_badge)
 		_inspect(policy_badge, "battle.learned_policy.badge", policy_badge.tooltip_text)
 	if _snapshot_tools_enabled():
@@ -2060,7 +2060,7 @@ func _roll_effect_die(index: int) -> void:
 	_send(BattleCommandBuilder.roll_dice(_view.battle_id, "blade", _pending(), [index]))
 
 func _build_income() -> void:
-	var label := Label.new(); label.text = "▣  DRAW  →  NEW CARD  →  HAND        ✦ +1 ENERGY"; label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER; label.add_theme_font_size_override("font_size", 28); _center.add_child(label)
+	var label := Label.new(); label.text = "▣  DRAW  →  NEW CARD  →  HAND        ✦ +5 ENERGY"; label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER; label.add_theme_font_size_override("font_size", 28); _center.add_child(label)
 
 func _build_hand(income_drawn_ids: Array = []) -> void:
 	var hand_limit := _view.stage == "discard_to_hand_limit"

@@ -9,11 +9,12 @@
   "resources": {
     "starting_hand_size": 1,
     "starting_energy": 0,
-    "hand_limit": 3
+    "hand_limit": 3,
+    "energy_cap": 75
   },
   "income": {
     "cards": 1,
-    "energy": 1
+    "energy": 5
   },
   "decklist": [
     {

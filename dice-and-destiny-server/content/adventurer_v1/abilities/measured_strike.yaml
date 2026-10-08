@@ -4,7 +4,7 @@
   "name": "Measured Strike",
   "type": "offensive",
   "presentation": {
-    "rules_text": "2 Swords + 2 Coins: deal 4 damage and gain 1 energy. Faces 1-3 are Swords; 6 is Coin. The fifth die may be anything. Misses without the required symbols."
+    "rules_text": "2 Swords + 2 Coins: deal 4 damage and gain 5 energy. Faces 1-3 are Swords; 6 is Coin. The fifth die may be anything. Misses without the required symbols."
   },
   "cost": {
     "energy": 0
@@ -44,7 +44,7 @@
           {
             "type": "gain_resource",
             "target": "self",
-            "amount": 1,
+            "amount": 5,
             "resource": "energy"
           }
         ]

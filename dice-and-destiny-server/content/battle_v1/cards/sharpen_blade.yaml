@@ -3,7 +3,7 @@ id: sharpen_blade
 name: Sharpen Blade
 type: ability_upgrade
 presentation: {rules_text: Add a matching-pair Bleed bonus for this battle. Three-of-a-kind also contains a matching pair., art_key: card_sharpen_blade}
-cost: {energy: 1}
+cost: {energy: 5}
 play: {source_zones: [hand], destination: discard, playable_during: [{segment: offensive, phase: main, window_purpose: planning}]}
 targeting: {selector: one_owned_offensive_ability, minimum: 1, maximum: 1}
 reaction_window: {opens: false}

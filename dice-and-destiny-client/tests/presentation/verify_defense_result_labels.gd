@@ -23,7 +23,7 @@ func _run() -> void:
 		screen.active_store = ActiveBattleStore.new(WorkspacePaths.persistent_file("defense-labels.json"))
 		canvas.add_child(screen); screen.set_process(false)
 		for frame in 8: await process_frame
-		var panel := _check_station(screen, "attack-1", ["Prevent 1", "Prevent 1", "+1 Energy"])
+		var panel := _check_station(screen, "attack-1", ["Prevent 1", "Prevent 1", "+5 Energy"])
 		if panel != null:
 			for i in panel.benefit_labels.size()-1:
 				_expect(not panel.benefit_labels[i].get_global_rect().intersects(panel.benefit_labels[i+1].get_global_rect()), "neighboring labels have separate bounds")
@@ -31,20 +31,20 @@ func _run() -> void:
 			RenderingServer.force_draw(false); canvas.get_texture().get_image().save_png("res://.godot/layout-review/defense-labels-%d.png" % viewport.x)
 		# Defend in reverse source order, then clear the selection as finalization does.
 		screen._view.defense_selections = {"blade": fixture.snapshot.defense_history["attack-0"].duplicate(true)}
-		_check_station(screen, "attack-0", ["Prevent 1", "+1 Energy", "Prevent 1"])
+		_check_station(screen, "attack-0", ["Prevent 1", "+5 Energy", "Prevent 1"])
 		screen._view.defense_selections.clear()
 		screen._render()
 		for frame in 8: await process_frame
-		_check_station(screen, "attack-0", ["Prevent 1", "+1 Energy", "Prevent 1"])
+		_check_station(screen, "attack-0", ["Prevent 1", "+5 Energy", "Prevent 1"])
 		# A new round must not keep the previous round's remembered source.
 		screen._view.round_number += 1
-		_check_station(screen, "attack-1", ["Prevent 1", "Prevent 1", "+1 Energy"])
+		_check_station(screen, "attack-1", ["Prevent 1", "Prevent 1", "+5 Energy"])
 		# The second six is capped: its longer explanation must not widen its
 		# fixed dice cell into the next die's prevention label.
 		screen._view.raw_snapshot.defense_history["attack-1"].rolled_faces = [6,6,3]
 		screen._render()
 		for frame in 8: await process_frame
-		panel = _check_station(screen, "attack-1", ["+1 Energy", "Energy already granted", "Prevent 1"])
+		panel = _check_station(screen, "attack-1", ["+5 Energy", "Energy already granted", "Prevent 1"])
 		if panel != null:
 			for i in panel.benefit_labels.size()-1:
 				_expect(not panel.benefit_labels[i].get_global_rect().intersects(panel.benefit_labels[i+1].get_global_rect()), "capped energy explanation stays in its own dice cell")

@@ -16,7 +16,7 @@ matches battle setup; closing the viewer preserves the setup selections.
 - Deck rows show card art, an energy pip, the copy count and quick **+**/**−**
   buttons. Search the current deck by name or rules. Click a card for its battle
   card preview, copy controls, full rules, play-window chips and destination.
-  An energy curve beside the deck heading counts copies at 0, 1, 2 and 3+ energy.
+  An energy curve beside the deck heading counts copies at 0, 1–4, 5, 6–9 and 10+ energy.
 - Dice shows each die's faces as tiles, plus how often each symbol appears across
   every equipped face.
 - The last three tabs carry a launch icon: they open full-screen workshops.

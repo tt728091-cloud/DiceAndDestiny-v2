@@ -17,7 +17,7 @@ func TestMinionAttackTiersAndRoundBonus(t *testing.T) {
 	}
 	actor := b.Actors["enemy"]
 	actor.Controller = state.ControllerExternal
-	actor.Resources.EnergyPoints = 1
+	actor.Resources.EnergyPoints = 5
 	actor.Cards.Hand = []string{"surge"}
 	actor.Cards.Discard = nil
 	b.Actors["enemy"] = actor

@@ -185,7 +185,7 @@ func _native() -> void:
 		await _click(point)
 		var after: Dictionary = screen._view.actor("blade")
 		_expect(screen._error_message.is_empty() and card_id not in after.hand, "real Brace click accepted without selecting incoming source")
-		_expect(int(after.energy_points) == int(before.energy_points) - 1, "real play spends exactly one energy")
+		_expect(int(after.energy_points) == int(before.energy_points) - 5, "real play spends exactly five energy")
 		_expect(int(after.current_health) == int(before.current_health), "prevention preserves health")
 		_expect(not screen._damage_feedback.is_empty(), "real play starts saved-card feedback")
 		if not screen._damage_feedback.is_empty(): _expect(screen._damage_feedback.saved.size() == 3, "Brace saves three revealed damage cards")

@@ -3,7 +3,7 @@ id: loaded_die
 name: Loaded Die
 type: planning
 presentation: {rules_text: Change one owned combat die to face 6., art_key: card_loaded_die}
-cost: {energy: 1}
+cost: {energy: 5}
 play: {source_zones: [hand], destination: discard, playable_during: [{segment: offensive, phase: main, window_purpose: planning}]}
 targeting: {selector: one_owned_combat_die, minimum: 1, maximum: 1}
 reaction_window: {opens: false}

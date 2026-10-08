@@ -228,7 +228,7 @@ func present_progress() -> void:
 		if elapsed >= 0.8:
 			if item.trigger.get("triggered", false):
 				cue.text += "\n3 Curse Count consumed"
-				cue.text += "\n−1 Energy next Income instead of damage" if item.trigger.get("legacy", false) else "\n⌁ Grave Debt ×1 · −1 Energy next Income"
+				cue.text += "\n−1 Energy next Income instead of damage" if item.trigger.get("legacy", false) else "\n⌁ Grave Debt · −%d Energy next Income" % int(item.trigger.get("debt", 1))
 				if item.trigger.has("count_after"): cue.text += "\n%d → %d Count · %d damage" % [int(item.trigger.count_before), int(item.trigger.count_after), int(item.trigger.get("damage", 0))]
 			else: cue.text += "\nFewer than 3 Curse Count\nExpired · no Energy penalty"
 		cue.modulate = Color.WHITE.lerp(Color("d9a6ff"), sin(clampf((elapsed - 0.8) / 1.2, 0, 1) * PI))

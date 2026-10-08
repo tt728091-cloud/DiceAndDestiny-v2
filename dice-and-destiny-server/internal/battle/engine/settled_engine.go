@@ -376,7 +376,7 @@ func (e Engine) progressSettledIncome(battle *state.Battle, _ content.BattleLibr
 		debt := stacks(battle, actorID, "grave_debt")
 		removeStatus(battle, actorID, "grave_debt", 0)
 		actor := battle.Actors[actorID]
-		gain := max(0, runtime.IncomeEnergy-curseRuntime(battle).TaxEnergy[actorID]-debt)
+		gain := actor.Resources.EnergyGainWithinCap(max(0, runtime.IncomeEnergy-curseRuntime(battle).TaxEnergy[actorID]-debt))
 		actor.Resources.EnergyPoints += gain
 		delete(curseRuntime(battle).TaxCards, actorID)
 		delete(curseRuntime(battle).TaxEnergy, actorID)
@@ -2979,7 +2979,7 @@ func spendEnergy(battle *state.Battle, actorID string, amount int) {
 }
 func gainEnergy(battle *state.Battle, actorID string, amount int) {
 	actor := battle.Actors[actorID]
-	actor.Resources.EnergyPoints += amount
+	actor.Resources.EnergyPoints += actor.Resources.EnergyGainWithinCap(amount)
 	actor.EnergyPoints = actor.Resources.EnergyPoints
 	battle.Actors[actorID] = actor
 }
