@@ -1,4 +1,5 @@
 extends VBoxContainer
+const STONE_DIE := preload("res://presentation/dice/stone_die.gd")
 
 # Presentation only: every landed face comes from the authority snapshot.
 const ROLL_SECONDS := 1.0
@@ -87,7 +88,7 @@ func _process(_delta: float) -> void:
 		var rolling := elapsed >= cue_time and elapsed < cue_time + ROLL_SECONDS
 		var face := int(entry.get("previous_face", entry.face)) if elapsed < cue_time else 1 + int(elapsed * 19) % 6 if rolling else int(entry.face)
 		entry.die.text = "%s\n%d" % [BattlePresentationCatalog.symbol_for_die_face(entry.die_id, face), face]
-		StoneDie.dress(entry.die, entry.die_id, face, bool(entry.get("enemy", false)))
+		STONE_DIE.dress(entry.die, entry.die_id, face, bool(entry.get("enemy", false)))
 		entry.die.pivot_offset = entry.die.size * 0.5
 		entry.die.rotation = sin(elapsed * 30) * 0.07 if rolling else 0.0
 		entry.die.modulate = Color("d0a6ff") if entry.catalyst and elapsed < cue_time + ROLL_SECONDS else Color.WHITE

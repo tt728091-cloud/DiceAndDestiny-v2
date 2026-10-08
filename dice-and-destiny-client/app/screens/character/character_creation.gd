@@ -1,4 +1,5 @@
 extends Control
+const STONE_DIE := preload("res://presentation/dice/stone_die.gd")
 
 signal closed
 const UpgradeComparison := preload("res://app/screens/character/upgrade_comparison.gd")
@@ -534,7 +535,7 @@ func _face_tile(parent: Node, die_id: String, face: int, size: int) -> PanelCont
 	# Full-size faces show the carved battle die; small chips stay plain numbers.
 	if size >= 40:
 		tile.add_theme_stylebox_override("panel", StyleBoxEmpty.new())
-		StoneDie.dress(text, die_id, face)
+		STONE_DIE.dress(text, die_id, face)
 	return tile
 
 func _populate_entries() -> void:

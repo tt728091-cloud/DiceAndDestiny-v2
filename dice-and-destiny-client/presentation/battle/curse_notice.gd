@@ -1,4 +1,5 @@
 extends Control
+const STONE_DIE := preload("res://presentation/dice/stone_die.gd")
 
 # Public card/die events retain the played hand pose and send a traveling effect
 # to the target. Extra Curse checks have a separate preview; forced offensive
@@ -879,4 +880,4 @@ func _feedback_status(fallback: String) -> String:
 ## Roll previews use the same carved stone as the owner's tray dice.
 func _stone(preview: Label, die_id: String, face: int, change: Dictionary, cursed: bool) -> void:
 	var owner := str(change.get("actor_id", ""))
-	StoneDie.dress(preview, die_id, face, not owner.is_empty() and owner != screen.viewer_actor_id, "⌁" if cursed else "")
+	STONE_DIE.dress(preview, die_id, face, not owner.is_empty() and owner != screen.viewer_actor_id, "⌁" if cursed else "")

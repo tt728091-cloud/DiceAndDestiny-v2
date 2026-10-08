@@ -1,4 +1,5 @@
 extends SceneTree
+const STONE_DIE := preload("res://presentation/dice/stone_die.gd")
 const SCREEN := preload("res://app/screens/battle/battle_screen.tscn")
 const GATEWAY := preload("res://local_client/learned_battle/learned_battle_gateway.gd")
 var failed := false
@@ -23,7 +24,7 @@ func _run() -> void:
 					_expect(tray._buttons[0].modulate == Color.WHITE, "main die retains normal colors")
 					_expect(tray._numbers[0].visible and tray._numbers[0].text == str(face), "number survives double-symbol layout")
 					_expect(tray._normal_symbols[0].visible, "original positive symbol stays visible")
-					_expect(not StoneDie.glyph(BattlePresentationCatalog.symbol_id_for_die_face(die_id, face)).is_empty(), "shipped symbols have a carved stone glyph")
+					_expect(not STONE_DIE.glyph(BattlePresentationCatalog.symbol_id_for_die_face(die_id, face)).is_empty(), "shipped symbols have a carved stone glyph")
 					var glyph := BattlePresentationCatalog.symbol_for_die_face(die_id, face)
 					_expect(tray._buttons[0].text.begins_with(glyph) and tray._buttons[0].text.ends_with("\n%d" % face), "accessible die text preserves normal symbol and number")
 					_expect(tray._buttons[0].button_pressed, "kept state survives mark refresh")

@@ -1,4 +1,5 @@
 extends PanelContainer
+const STONE_DIE := preload("res://presentation/dice/stone_die.gd")
 signal source_selected(source_id: String)
 signal damage_settled
 const TOOLTIP_BUTTON := preload("res://presentation/battle/tooltip_button.gd")
@@ -44,7 +45,7 @@ func configure(result: Dictionary, start: int, compact: bool = false) -> void:
 		var cell := VBoxContainer.new(); dice.add_child(cell)
 		var die := TOOLTIP_BUTTON.new(); die.disabled = true; die.custom_minimum_size = Vector2(54, 54) if compact else Vector2(72, 72); die.add_theme_font_size_override("font_size", 24)
 		die.text = "%s\n%d" % [BattlePresentationCatalog.symbol_for_die_face(str(data.die_id), int(face.face)), int(face.face)]
-		StoneDie.dress(die, str(data.die_id), int(face.face), bool(data.get("enemy_die", false)))
+		STONE_DIE.dress(die, str(data.die_id), int(face.face), bool(data.get("enemy_die", false)))
 		dice_controls.append(die)
 		die.tooltip_text = str(face.benefit); die.set_meta("inspection_id", "battle.defense_die.%s%s" % [data.actor_id, "" if index == 0 else ".%d" % index])
 		var die_style := StyleBoxFlat.new(); die_style.bg_color = Color("232321"); die_style.border_color = Color("a6987e"); die_style.set_border_width_all(2); die_style.set_corner_radius_all(10); die.add_theme_stylebox_override("disabled", die_style); die.add_theme_color_override("font_disabled_color", Color("e2f3fb")); cell.add_child(die)
@@ -99,7 +100,7 @@ func _update() -> void:
 		var die := dice_controls[index]
 		var face := 1 + (int(elapsed * 16) + index * 3) % 6 if rolling else int(data.dice[index].face)
 		die.text = "%s\n%d" % [BattlePresentationCatalog.symbol_for_die_face(str(data.die_id), face), face]
-		StoneDie.dress(die, str(data.die_id), face, bool(data.get("enemy_die", false)))
+		STONE_DIE.dress(die, str(data.die_id), face, bool(data.get("enemy_die", false)))
 		die.pivot_offset = die.size * 0.5
 		die.rotation = sin(elapsed * 26 + index) * 0.045 if rolling else 0.0
 		die.tooltip_text = "Rolling…" if rolling else str(data.dice[index].benefit)

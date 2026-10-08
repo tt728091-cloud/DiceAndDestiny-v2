@@ -1,4 +1,5 @@
 extends Control
+const STONE_DIE := preload("res://presentation/dice/stone_die.gd")
 const TOOLTIP_BUTTON := preload("res://presentation/battle/tooltip_button.gd")
 
 const SEGMENTS := [["ongoing_effects", "Effects"], ["income", "Income"], ["offensive", "Offensive"], ["defensive", "Defensive"], ["damage_resolution", "Damage"]]
@@ -1679,14 +1680,14 @@ func _build_defense_panel(parent: VBoxContainer, actor_id: String, revealed: boo
 	if face > 0:
 		var die_data := _as_dictionary(roll.get("die", {})); var die_id := str(die_data.get("die_id", defense_die_id))
 		die.text = "%s\n%d" % [BattlePresentationCatalog.symbol_for_die_face(die_id, face), face]
-		StoneDie.dress(die, die_id, face, actor_id != viewer_actor_id)
+		STONE_DIE.dress(die, die_id, face, actor_id != viewer_actor_id)
 		die.tooltip_text = "%s defensive die: face %d, %s." % [actor_name.capitalize(), face, BattlePresentationCatalog.symbol_name_for_die_face(die_id, face)]
 		die.disabled = true; die.add_theme_font_size_override("font_size", 26); dice_row.add_child(die); _inspect(die, "battle.defense_die.%s" % actor_id, die.tooltip_text)
 	elif revealed:
 		var no_die := Label.new(); no_die.custom_minimum_size = Vector2(120, 105); no_die.text = "NO DIE ROLL"; no_die.vertical_alignment = VERTICAL_ALIGNMENT_CENTER; no_die.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER; no_die.add_theme_font_size_override("font_size", 18); no_die.add_theme_color_override("font_color", Color("b8bfca")); dice_row.add_child(no_die)
 	else:
 		die.tooltip_text = "Click this blank player defense die to roll it."
-		StoneDie.dress(die, defense_die_id, 0)
+		STONE_DIE.dress(die, defense_die_id, 0)
 		die.disabled = _submitting or _director.has_beats() or _history_review
 		die.pressed.connect(func(): _send(BattleCommandBuilder.roll_dice(_view.battle_id, "blade", _pending())))
 		dice_row.add_child(die); _inspect(die, "battle.defense_die.blade.pending", die.tooltip_text)
@@ -1700,7 +1701,7 @@ func _build_defense_panel(parent: VBoxContainer, actor_id: String, revealed: boo
 		extra.text = "%s\n%d" % [BattlePresentationCatalog.symbol_for_die_face(defense_die_id, extra_face), extra_face]
 		extra.disabled = true
 		_style_defense_die(extra)
-		StoneDie.dress(extra, defense_die_id, extra_face, actor_id != viewer_actor_id)
+		STONE_DIE.dress(extra, defense_die_id, extra_face, actor_id != viewer_actor_id)
 		extra.custom_minimum_size = Vector2(120, 105)
 		extra.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 		extra.add_theme_font_size_override("font_size", 26)
@@ -2095,11 +2096,11 @@ func _build_effects_panel(parent: VBoxContainer, actor_id: String, revealed: boo
 		var die := TOOLTIP_BUTTON.new(); die.custom_minimum_size = Vector2(96, 96); die.size_flags_horizontal = Control.SIZE_SHRINK_CENTER; _style_defense_die(die)
 		if face > 0:
 			die.text = "%s\n%d" % [BattlePresentationCatalog.symbol_for_die_face(die_id, face), face]; die.disabled = true; die.add_theme_font_size_override("font_size", 24)
-			StoneDie.dress(die, die_id, face, actor_id != viewer_actor_id)
+			STONE_DIE.dress(die, die_id, face, actor_id != viewer_actor_id)
 			die.tooltip_text = "%s %s die: face %d, %s." % [actor_name.capitalize(), BattlePresentationCatalog.status(status_id).name, face, BattlePresentationCatalog.symbol_name_for_die_face(die_id, face)]
 			dice_row.add_child(die); _inspect(die, "battle.effect_die.%s.%d" % [actor_id, index], die.tooltip_text)
 		elif secretly_rolled:
-			die.text = "✓\nHIDDEN"; die.disabled = true; die.add_theme_font_size_override("font_size", 16); StoneDie.dress(die, die_id, 0, actor_id != viewer_actor_id); die.tooltip_text = "This effect die was rolled in secret. Its face will appear during the reveal."
+			die.text = "✓\nHIDDEN"; die.disabled = true; die.add_theme_font_size_override("font_size", 16); STONE_DIE.dress(die, die_id, 0, actor_id != viewer_actor_id); die.tooltip_text = "This effect die was rolled in secret. Its face will appear during the reveal."
 			dice_row.add_child(die); _inspect(die, "battle.effect_die.blade.hidden.%d" % index, die.tooltip_text)
 		else:
 			die.tooltip_text = "Click this blank player effect die to roll it in secret."

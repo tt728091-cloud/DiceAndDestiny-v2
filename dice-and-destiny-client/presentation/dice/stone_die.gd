@@ -1,10 +1,13 @@
-class_name StoneDie
 extends Control
 
 ## Carved-stone die, seen slightly from the front so the lower side shows.
 ## Symbols are engraved into the top face and the number is cut into its
 ## upper-right corner. Player dice are pale stone; enemy and faction dice are
 ## tinted so ownership reads at a glance. Drawn procedurally: no imported art.
+
+# No class_name: a new global class only works after the editor rescans a
+# checkout, so callers preload this script by path instead.
+const SCRIPT_PATH := "res://presentation/dice/stone_die.gd"
 
 enum Mode { FULL, BODY, GLYPH }
 
@@ -72,10 +75,10 @@ static func layout(die_size: Vector2) -> Dictionary:
 ## Gives any die Button or Label the carved-stone look. Callers keep setting
 ## the control's text for tooltips and inspection; the stone hides it unless
 ## the face is blank (rolling hidden, "—", "HIDDEN").
-static func dress(control: Control, die: String, shown_face: int, enemy_owned := false, shown_mark := "") -> StoneDie:
-	var stone: StoneDie = control.get_node_or_null("StoneDie")
+static func dress(control: Control, die: String, shown_face: int, enemy_owned := false, shown_mark := "") -> Control:
+	var stone = control.get_node_or_null("StoneDie")
 	if stone == null:
-		stone = StoneDie.new(); stone.name = "StoneDie"
+		stone = load(SCRIPT_PATH).new(); stone.name = "StoneDie"
 		control.add_child(stone); control.move_child(stone, 0)
 		var empty := StyleBoxEmpty.new()
 		var states := ["normal", "hover", "pressed", "hover_pressed", "disabled", "focus"] if control is BaseButton else ["normal"]

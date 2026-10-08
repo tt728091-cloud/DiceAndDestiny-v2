@@ -1,4 +1,5 @@
 extends VBoxContainer
+const STONE_DIE := preload("res://presentation/dice/stone_die.gd")
 
 var started_ms: int
 var dice: Array[Button] = []
@@ -28,5 +29,5 @@ func _process(_delta: float) -> void:
 	for index in dice.size():
 		var face := 1 + (int(elapsed * 18) + index * 3) % 6
 		dice[index].text = "%s\n%d" % [BattlePresentationCatalog.symbol_for_die_face(die_ids[index], face), face] if not paused else "—"
-		StoneDie.dress(dice[index], die_ids[index], face if not paused else 0)
+		STONE_DIE.dress(dice[index], die_ids[index], face if not paused else 0)
 		dice[index].rotation = sin(elapsed * 28 + index) * 0.06 if not paused else 0.0

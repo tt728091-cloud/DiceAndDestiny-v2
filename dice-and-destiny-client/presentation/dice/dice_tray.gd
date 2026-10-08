@@ -1,5 +1,6 @@
 class_name BattleDiceTray
 extends VBoxContainer
+const STONE_DIE := preload("res://presentation/dice/stone_die.gd")
 
 signal selection_changed(indices: Array)
 var selected: Array = []
@@ -13,9 +14,9 @@ const HUD_DIE_SIZE := Vector2(56, 60)
 const HUD_ROW_WIDTH := 304.0
 var _buttons: Array[Button] = []
 var _caption: Label
-var _stones: Array[StoneDie] = []
+var _stones: Array[STONE_DIE] = []
 var _numbers: Array[Label] = []
-var _normal_symbols: Array[StoneDie] = []
+var _normal_symbols: Array[STONE_DIE] = []
 var _curse_symbols: Array[Label] = []
 var _mark_labels: Array[Label] = []
 var _mark_panels: Array[PanelContainer] = []
@@ -48,15 +49,15 @@ func _ready() -> void:
 		bound.hide(); slot.add_child(bound); _bound_labels.append(bound)
 		_build_mark_map(slot, index)
 		# Carved-stone body beneath the engraved symbol, Curse mark and corner number.
-		var regions := StoneDie.layout(button.custom_minimum_size)
-		var stone := StoneDie.new(); stone.mode = StoneDie.Mode.BODY; button.add_child(stone); _stones.append(stone)
-		var symbol := StoneDie.new(); symbol.name = "NormalSymbol"; symbol.mode = StoneDie.Mode.GLYPH; symbol.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		var regions := STONE_DIE.layout(button.custom_minimum_size)
+		var stone := STONE_DIE.new(); stone.mode = STONE_DIE.Mode.BODY; button.add_child(stone); _stones.append(stone)
+		var symbol := STONE_DIE.new(); symbol.name = "NormalSymbol"; symbol.mode = STONE_DIE.Mode.GLYPH; symbol.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		button.add_child(symbol); _normal_symbols.append(symbol)
 		var curse := Label.new(); curse.name = "CurseSymbol"; curse.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		curse.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER; curse.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 		var mark: Rect2 = regions.mark
 		curse.position = mark.position; curse.size = mark.size
-		_engrave(curse, int(regions.font_size * 1.3)); curse.add_theme_color_override("font_color", StoneDie.CURSE_INK)
+		_engrave(curse, int(regions.font_size * 1.3)); curse.add_theme_color_override("font_color", STONE_DIE.CURSE_INK)
 		curse.add_theme_color_override("font_shadow_color", Color.TRANSPARENT)
 		# Centre the letter on the badge even when the font's line is taller.
 		curse.position.y = mark.get_center().y - curse.size.y * 0.5
@@ -76,7 +77,7 @@ func _ready() -> void:
 
 # Numbers and marks are cut into the stone: dark ink over a lit lower edge.
 func _engrave(label: Label, font_size: int) -> void:
-	label.add_theme_font_override("font", StoneDie.font())
+	label.add_theme_font_override("font", STONE_DIE.font())
 	label.add_theme_font_size_override("font_size", font_size)
 	label.add_theme_constant_override("shadow_offset_x", 1); label.add_theme_constant_override("shadow_offset_y", 1)
 	label.add_theme_constant_override("outline_size", 0)
@@ -191,10 +192,10 @@ func _show_face(index: int, face: int) -> void:
 	_normal_symbols[index].configure(die_id, face, enemy_dice)
 	_curse_symbols[index].visible = cursed
 	_curse_symbols[index].text = curse_glyph
-	var regions := StoneDie.layout(button.custom_minimum_size)
+	var regions := STONE_DIE.layout(button.custom_minimum_size)
 	var glyph: Rect2 = regions.glyph_marked if cursed else regions.glyph
 	_normal_symbols[index].position = glyph.position; _normal_symbols[index].size = glyph.size
-	var ink := StoneDie.ink(die_id, enemy_dice); var light := StoneDie.highlight(die_id, enemy_dice)
+	var ink := STONE_DIE.ink(die_id, enemy_dice); var light := STONE_DIE.highlight(die_id, enemy_dice)
 	_numbers[index].add_theme_color_override("font_color", ink)
 	_numbers[index].add_theme_color_override("font_shadow_color", Color(light, 0.85))
 	# Separate face controls preserve both symbols and their own colors. Native

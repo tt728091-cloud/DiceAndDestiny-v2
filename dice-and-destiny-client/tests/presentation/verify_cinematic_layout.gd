@@ -1,4 +1,5 @@
 extends SceneTree
+const STONE_DIE := preload("res://presentation/dice/stone_die.gd")
 
 const SCREEN := preload("res://app/screens/battle/battle_screen.tscn")
 const GATEWAY := preload("res://local_client/learned_battle/learned_battle_gateway.gd")
@@ -49,7 +50,7 @@ func _run() -> void:
 		for die in screen._player_dice_dock.find_children("*", "Button", true, false):
 			for state in ["normal", "hover", "pressed", "disabled"]:
 				_expect(die.get_theme_stylebox(state) is StyleBoxEmpty, "carved stone, not a button frame, draws the die in every interaction state")
-			var stones: Array = die.get_children().filter(func(child): return child is StoneDie and child.mode == StoneDie.Mode.BODY)
+			var stones: Array = die.get_children().filter(func(child): return child is STONE_DIE and child.mode == STONE_DIE.Mode.BODY)
 			_expect(stones.size() == 1 and not stones[0].enemy, "each player die has one pale-stone body")
 		var hand_fan: Control = screen._hand_dock
 		_expect(hand_fan.cards.size() == 5, "all hand cards retained")
