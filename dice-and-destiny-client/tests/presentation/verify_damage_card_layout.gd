@@ -31,13 +31,22 @@ func _run() -> void:
 				fixture.snapshot.settled_damage = {"id": "stacks", "sources": sources, "removals": removals}
 				if fixture.snapshot.unified_defense: fixture.snapshot.damage_sources = sources.duplicate(true)
 				var screen = SCREEN.instantiate(); screen.initial_result = fixture; screen.gateway = BattleGateway.new(FakeBattleAuthority.new()); screen._auto_pass_disabled = true
+				# Lists start folded; this layout check covers every unfolded list.
+				for actor in fixture.snapshot.actors: screen._damage_cards_open["actor:" + actor] = true
+				# One enemy shows one attack's cards at a time.
+				for source in sources:
+					if source.target_actor_id == "blade" and source.id.ends_with("-0"): screen._damage_cards_open["source:" + source.id] = true
 				screen.active_store = ActiveBattleStore.new(WorkspacePaths.persistent_file("damage-stacks.json"))
 				root.add_child(screen); screen.set_process(false)
 				# Let the opening presentation settle before exercising real hover input.
 				await create_timer(0.75).timeout
 				for frame in 12: await process_frame
 				var total := 0
-				_expect(screen._damage_stack_docks.size() == enemies + 1, "one area under every actor")
+				var incoming := sources.filter(func(source): return source.target_actor_id == "blade")
+				for source in incoming:
+					var row: Control = screen._damage_stack_docks["attack:" + source.id]
+					_expect(row.visible == source.id.ends_with("-0"), "while one attack shows its cards, the enemy's other attacks keep only their badges")
+				_expect(screen._damage_stack_docks.size() == enemies + incoming.size(), "one area under every enemy plus one beneath each attack badge")
 				_expect(screen._damage_grids.size() == sources.size(), "separate source stacks")
 				for source in sources:
 					var panel: Control = screen._attack_intents[str(source.id)]
@@ -63,24 +72,31 @@ func _run() -> void:
 						_expect(icon.position.x >= 0 and icon.end.x < card.position.x and is_equal_approx(icon.get_center().y, card.position.y + grid.STRIDE / 2), "source symbol fits immediately left of each card header")
 						_expect(card.position.x + card.size.x <= grid.dock.column_width + 1, "source gutter preserves the card column width")
 				_expect(total == removals.size() - 1, "all accepted cards retained")
-				for actor in screen._damage_stack_docks:
-					var dock: Control = screen._damage_stack_docks[actor]
+				for key in screen._damage_stack_docks:
+					var dock: Control = screen._damage_stack_docks[key]
+					if not dock.visible: continue
 					_expect(root.get_visible_rect().grow(1).encloses(dock.get_global_rect()), "stack area fits viewport")
-					_expect(dock.get_global_rect().end.y < screen._actor_profiles[actor].get_global_rect().position.y if actor == "blade" else dock.get_global_rect().position.y >= screen._actor_profiles[actor].get_global_rect().end.y, "stack stays beside its owner: above player stats, below enemy stats")
+					if str(key).begins_with("attack:"):
+						var badge: Rect2 = dock.attack.intent.get_global_rect()
+						_expect(absf(dock.get_global_rect().position.y - badge.end.y - 4 * screen._root.scale.y) < 2, "attack list hangs beneath its badge")
+						_expect(dock.get_global_rect().end.y <= screen._actor_profiles[dock.attack.attacker_id].get_global_rect().position.y + 1, "attack list stops above the attacker's name")
+					else: _expect(dock.get_global_rect().position.y >= screen._actor_profiles[key].get_global_rect().end.y, "outgoing stack stays below enemy stats")
 					for other in screen._damage_stack_docks:
-						if other != actor: _expect(not dock.get_global_rect().intersects(screen._damage_stack_docks[other].get_global_rect()), "actor areas do not overlap")
+						if other != key and screen._damage_stack_docks[other].visible: _expect(not dock.get_global_rect().intersects(screen._damage_stack_docks[other].get_global_rect()), "actor areas do not overlap")
 
 				# At rest, the first five complete card headers fit on both sides.
-				for actor in screen._damage_stack_docks:
-					var grids: Array = screen._damage_grids.filter(func(g): return g.target_actor == actor)
+				for key in screen._damage_stack_docks:
+					var dock: Control = screen._damage_stack_docks[key]
+					if not dock.visible: continue
+					var grids: Array = screen._damage_grids.filter(func(g): return g.dock == dock)
 					var first: Control = grids[0]
 					for index in 5:
 						var card: Control = first.get_child(index)
 						var visible_row: Rect2 = first.visible_card_rect(card)
-						_expect(visible_row.size.y >= first.STRIDE * screen._root.scale.y - 1, "five full pending card rows visible for %s at %s / %d enemies: row %d, %s" % [actor, viewport, enemies, index, visible_row])
+						_expect(visible_row.size.y >= first.STRIDE * screen._root.scale.y - 1, "five full pending card rows visible for %s at %s / %d enemies: row %d, %s" % [key, viewport, enemies, index, visible_row])
 
 				if large:
-					var dock: ScrollContainer = screen._damage_stack_docks.blade
+					var dock: ScrollContainer = screen._damage_stack_docks["attack:blade-0"]
 					dock.scroll_vertical = 99999
 					await process_frame
 					var grid: Control = screen._damage_grids[0]
@@ -101,6 +117,8 @@ func _run() -> void:
 					await _capture("damage-stacks-hover-%dx%d-%d" % [viewport.x, viewport.y, enemies])
 					# Every row, both sides and the rightmost enemy, retains a clear list.
 					for other_grid in screen._damage_grids:
+						# Hidden: another attack from that enemy shows its cards.
+						if not other_grid.is_visible_in_tree(): continue
 						for card in other_grid.get_children():
 							await _check_preview(screen, other_grid, card)
 					if enemies == 4: await _capture("damage-stacks-hover-edge-%dx%d" % [viewport.x, viewport.y])
@@ -110,6 +128,9 @@ func _run() -> void:
 					for item in screen._damage_grids:
 						item.removal_started_ms = Time.get_ticks_msec() - int(TIMING.removal() * 500)
 						item.refresh_playback(); item.set_process(false)
+						if not item.is_visible_in_tree():
+							_expect(item._tear == null, "a hidden list skips the card tear")
+							continue
 						_expect(item._tear != null and item.get_child(0).modulate.a == 0, "committed stack tears rather than fading intact")
 						var profile: Control = screen._actor_profiles[item.target_actor]
 						var inverse: Transform2D = screen._root.get_global_transform_with_canvas().affine_inverse()

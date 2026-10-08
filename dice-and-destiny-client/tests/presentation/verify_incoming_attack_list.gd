@@ -90,7 +90,7 @@ func _run() -> void:
 				_expect(row.state_label.text == "Defending…" and row.amount.text == "7", "active roll has its own state and unreduced amount")
 				_expect(row.disabled, "in-progress defense cannot be chosen again")
 				_expect(screen._incoming_attack_rows["incoming-0"].state_label.text == "Undefended", "defending one source leaves another undefended")
-				_expect(panel.attack_damage_rect() == row.damage_rect(), "prevention endpoint is local list, never overhead enemy")
+				_expect(panel.attack_damage_rect() == panel.intent.get_global_rect(), "prevention endpoint is the enemy's attack badge")
 				_expect(screen._incoming_attack_list.get_global_rect() == reserved, "dice use the pre-reserved band without shifting list")
 				for i in panel.roll_cells.size():
 					var die: Button = panel.dice_controls[i]
@@ -123,9 +123,12 @@ func _run() -> void:
 				screen._render(); await _settle()
 				fake.commands.clear(); fake.enqueue(fixture)
 				screen._incoming_attack_list.ensure_control_visible(screen._incoming_attack_rows[target]); await _settle()
+				# The list is for defense selection; prevention cards target the badge.
 				await _click(screen._incoming_attack_rows[target])
-				_expect(fake.commands.size() == 1, "card-first list click sends one command")
-				if fake.commands.size() == 1: _expect(JSON.parse_string(fake.commands[0]).payload.target_ids == [target], "card-first list preserves exact source target")
+				_expect(fake.commands.is_empty(), "card-first click on the list row sends nothing")
+				await _click(screen._attack_intents[target].intent)
+				_expect(fake.commands.size() == 1, "card-first badge click sends one command")
+				if fake.commands.size() == 1: _expect(JSON.parse_string(fake.commands[0]).payload.target_ids == [target], "card-first badge preserves exact source target")
 				screen.active_store.clear(); screen.queue_free(); await process_frame
 	for ability_id in ["adventurer_guard", "adventurer_guard_plus"]:
 		for auto_pass_disabled in [false, true]:
@@ -149,6 +152,8 @@ func _live_defense(ability_id: String, auto_pass_disabled: bool) -> void:
 	if target.is_empty(): return
 	var screen = SCREEN.instantiate(); screen.initial_result = result; screen.gateway = gateway
 	screen.learned_battle_mode = true; screen._auto_pass_disabled = auto_pass_disabled
+	# Lists start folded; unfold this attack's so its saved-card flights play.
+	screen._damage_cards_open["source:" + target] = true
 	screen.active_store = ActiveBattleStore.new(WorkspacePaths.persistent_file("incoming-live.json"))
 	canvas.add_child(screen)
 	await _settle()
@@ -174,7 +179,7 @@ func _live_defense(ability_id: String, auto_pass_disabled: bool) -> void:
 			var panel: Control = screen._attack_intents.get(target)
 			if panel != null:
 				_expect(int(panel.data.prevented) > 0, "live defense actually prevents damage")
-				_expect(panel.attack_damage_rect() == screen._incoming_attack_rows[target].damage_rect(), "live reduction targets local row")
+				_expect(panel.attack_damage_rect() == panel.intent.get_global_rect(), "live reduction targets the enemy's attack badge")
 			await _settle()
 			await _capture("native-rolled")
 			_expect_no_apply(screen)
@@ -213,7 +218,7 @@ func _live_defense(ability_id: String, auto_pass_disabled: bool) -> void:
 			var saved: Array = screen._damage_feedback.get("saved", [])
 			_expect(not saved.is_empty(), "saved-card animation still receives released cards")
 			for card in saved:
-				_expect(card.get("origin_rect", Rect2()).position.x > 1450, "saved cards animate from right-side pending list")
+				_expect(card.get("origin_rect", Rect2()).position.y < screen.PLAYER_ZONE_TOP, "saved cards animate from the list beneath the attack badge")
 				_expect(card.get("released_destination") == (card.get("original_zone") if ability_id.ends_with("_plus") else "discard"), "Guard animation honors authoritative saved destination")
 			deadline = Time.get_ticks_msec() + 12000
 			while Time.get_ticks_msec() < deadline and (screen._model_thinking or screen._view.learned_policy.get("model_turn", false)): await process_frame
@@ -240,7 +245,7 @@ func _verify_saved_animation(screen, source_id: String) -> void:
 			if not captured:
 				await _capture("native-synchronized-saves"); captured = true
 		for entry in feedback._pending:
-			_expect(entry.card.size.y == 24 and entry.card.scale.is_equal_approx(Vector2.ONE), "held headers keep their natural height and text scale")
+			_expect(is_equal_approx(entry.card.size.y, 24) and entry.card.scale.is_equal_approx(Vector2.ONE), "held headers keep their natural height and text scale")
 		for entry in feedback._saved:
 			_expect(is_equal_approx(entry.card.scale.x, entry.card.scale.y), "saved headers scale uniformly while flying")
 		for grid in feedback._hidden_grids:

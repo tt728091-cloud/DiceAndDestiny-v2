@@ -281,13 +281,33 @@ windows retain their existing automatic progression.
 
 ### Damage stacks and removal playback
 
-Damage cards are partitioned by exact source ID and placed in independent stacks
-inside an actor-bound area below that actor's HUD (and enemy dice). A compact
+Damage cards are partitioned by exact source ID. Cards an enemy attack threatens
+hang beneath that attack's badge on the battlefield (`damage_stack_dock.gd` in
+attack mode). There is no separate player stack in the lower right. The player's
+outgoing attacks share an area below each enemy's HUD (and dice). A compact
 header shows the source's damage; each 24-pixel card header retains its cost and
 name. Moving over a header shows a full, non-intercepting card above the stack;
 moving away restores it. Large batches scroll within the actor's area rather
 than shrinking type. The ordinary 5/2/3 damage example keeps three separate
 stacks; five full headers fit before scrolling to later sources.
+
+Every attack heading, and its row in the lower-left Incoming Attacks list, ends
+with `removal_tally.gd`: the cumulative cards it is removing from hand, draw
+pile, and discard pile (hover names each pile). Every card list starts folded.
+Clicking an enemy attack badge, its "N cards" row, or its chevron toggles that
+attack's list. Clicking the player's damage heading under an enemy, or its
+chevron, toggles that enemy's list. Toggles happen in place, survive board
+rebuilds, and keep the reveal/removal clocks running. A folded row is only as
+wide as its text, so the fighter stays clickable. When everything is folded, an
+enemy's later attacks stack below the earlier badges and their rows. Each enemy
+shows one attack's cards at a time: opening one folds its siblings. While a list
+is open, that enemy's badges line up side by side, growing away from a tall head,
+so the list gets the whole column. Lists scroll rather than covering the
+attacker's dice or name. Status damage such as Poison has no attacker badge; its
+list stays above the player HUD. Defense choices avoid open lists. Prevention
+cards target attack badges only, and effect trails end at the badge. While a list is folded, prevention animates only the damage
+reduction, with no saved-card flights, pile pulses, or held rows. A committed
+removal skips that list's tear; counters and health still settle normally.
 
 `combat_card_reveal.gd` keeps the original BattleCard children and public removal
 identities for prevention feedback. Saved/released cards are excluded from

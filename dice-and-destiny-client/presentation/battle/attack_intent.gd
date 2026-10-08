@@ -41,7 +41,10 @@ func attach_to_battlefield(owner_screen: Control, attack_source: Dictionary) -> 
 	intent.tooltip_text = _ability_tooltip()
 	intent.set_meta("inspection_id", "battle.source." + str(data.source_id))
 	intent.pressed.connect(func():
-		if not screen._selected_card.get("source_targeting", false): source_selected.emit(str(data.source_id))
+		# Clicking an attack also unfolds the cards it threatens beneath it.
+		if not screen._selected_card.get("source_targeting", false):
+			screen._toggle_damage_cards("source:" + str(data.source_id))
+			source_selected.emit(str(data.source_id))
 	)
 	for state in ["normal", "hover", "pressed", "disabled", "focus"]:
 		var style := INK.bone_panel(Color("ffe1a6") if state in ["hover", "pressed", "focus"] or screen._selected_source == str(data.source_id) else Color.WHITE, 8)
@@ -89,7 +92,9 @@ func attach_to_battlefield(owner_screen: Control, attack_source: Dictionary) -> 
 		fighter_target.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
 		fighter_target.set_meta("inspection_id", "battle.attacker." + attacker_id)
 		fighter_target.pressed.connect(func():
-			if not intent.disabled: intent.pressed.emit()
+			if intent.disabled: return
+			if screen._selected_card.get("source_targeting", false): intent.pressed.emit()
+			else: source_selected.emit(str(data.source_id))
 		)
 		screen._root.move_child(intent, -1)
 		for state in ["normal", "hover", "pressed", "focus"]: fighter_target.add_theme_stylebox_override(state, StyleBoxEmpty.new())
@@ -138,6 +143,8 @@ func _refresh_target_heading() -> void:
 	target_heading.tooltip_text = _ability_tooltip()
 
 func attack_damage_rect() -> Rect2:
+	# The badge is the attack's single on-board focus whenever it is shown.
+	if is_instance_valid(intent) and intent.is_visible_in_tree(): return intent.get_global_rect()
 	if is_instance_valid(incoming_row): return incoming_row.damage_rect()
 	return target_heading.get_global_rect() if is_instance_valid(target_heading) else super.attack_damage_rect()
 
@@ -193,11 +200,26 @@ func _update() -> void:
 	var rect: Rect2 = inverse * fighter.get_global_rect()
 	var minimum := intent_row.get_combined_minimum_size() + Vector2(24, 16)
 	intent.size = Vector2(maxf(70, minimum.x), maxf(44, minimum.y))
-	intent.position = Vector2(clampf(rect.get_center().x - intent.size.x * 0.5, 16, 1904 - intent.size.x), maxf(screen.TOP_HUD_BOTTOM, rect.position.y - intent.size.y - 12) + actor_slot * 58)
+	# Later attacks from the same enemy start below earlier badges and their
+	# folded rows. While one of them shows its cards, the badges line up side
+	# by side so that list has the enemy's whole column.
+	var side_by_side: bool = attacker_id != screen.viewer_actor_id and not screen.open_attack_for(attacker_id).is_empty()
+	var stacked := 0.0
+	var beside := 0.0
+	for other in screen._attack_intents.values():
+		if other != self and other.attacker_id == attacker_id and other.actor_slot < actor_slot:
+			stacked += 58 + screen.attack_cards_height(str(other.data.source_id))
+			beside += other.intent.size.x + 8
+	if side_by_side: stacked = 0.0
+	intent.position = Vector2(clampf(rect.get_center().x - intent.size.x * 0.5, 16, 1904 - intent.size.x), maxf(screen.TOP_HUD_BOTTOM, rect.position.y - intent.size.y - 12) + stacked)
 	# Tall silhouettes use the space beside their head, keeping the compact
 	# top bar and the enemy artwork clear. Each source retains its own row.
-	if attacker_id != screen.viewer_actor_id and intent.position.y + intent.size.y > rect.position.y:
+	var beside_head: bool = attacker_id != screen.viewer_actor_id and intent.position.y + intent.size.y > rect.position.y
+	if beside_head:
 		intent.position.x = maxf(16, rect.position.x - intent.size.x - 8)
+	if side_by_side:
+		# Beside a tall head the row grows away from the fighter.
+		intent.position.x = clampf(intent.position.x + (-beside if beside_head else beside), 16, 1904 - intent.size.x)
 	intent_row.position = Vector2(12, 8); intent_row.size = intent.size - Vector2(24, 16)
 	if str(data.source_id) == screen._selected_source: screen._layout_defense_choices()
 	if is_instance_valid(fighter_target):

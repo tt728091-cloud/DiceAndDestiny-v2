@@ -56,6 +56,8 @@ func _scenario(scenario: String, unified: bool = false, definition: String = "br
 			removal.released = true; removal.released_destination = "discard"
 	var fake := FakeBattleAuthority.new(); fake.enqueue(after)
 	var screen = SCREEN.instantiate(); screen.initial_result = fixture; screen.gateway = BattleGateway.new(fake); screen._auto_pass_disabled = true
+	# Lists start folded; unfold the defended attack's so its saved-card flights play.
+	screen._damage_cards_open["source:" + defended_source] = true
 	screen.active_store = ActiveBattleStore.new(WorkspacePaths.persistent_file("brace-targeting.json")); canvas.add_child(screen); screen.set_process(false)
 	await _ready_hand(screen)
 	# An earlier clicked source must never override the card-first choice.
@@ -78,8 +80,8 @@ func _scenario(scenario: String, unified: bool = false, definition: String = "br
 		_expect(screen._sole_pass_action().is_empty(), "target choice blocks automatic pass")
 		for id in ["incoming-0", "incoming-1"]:
 			_expect(screen._attack_intents[id].intent.get_meta("inspection_id") == "battle.card_target." + id, "all incoming sources highlighted, including same-enemy attacks")
-			_expect("Save with Brace" in _heading(screen, id).text, "damage stack identifies save action")
-		_expect(screen._attack_intents.outgoing.intent.disabled and _heading(screen, "outgoing").disabled, "outgoing damage cannot be chosen")
+			_expect(not ("Save with" in _heading(screen, id).text), "the card list under a badge is not a second card target")
+		_expect(screen._attack_intents.outgoing.intent.disabled, "outgoing damage cannot be chosen")
 		await _capture("brace-targets-%s-%d" % [scenario, canvas.size.x])
 		# Click the selected card a second time to cancel without an authority call.
 		await _ready_hand(screen); await _click_card(screen)
@@ -88,12 +90,20 @@ func _scenario(scenario: String, unified: bool = false, definition: String = "br
 		await _ready_hand(screen); await _click_card(screen)
 		for frame in 8: await process_frame
 		var legal: Array = screen._view.legal_actions; screen._view.legal_actions = []
-		await _click(_heading(screen, "incoming-1").get_global_rect().get_center())
+		await _click(screen._attack_intents["incoming-1"].intent.get_global_rect().get_center())
 		_expect(fake.commands.is_empty(), "stale target cannot submit")
 		screen._view.legal_actions = legal
-		var target: Control = _heading(screen, "incoming-1") if scenario == "same_enemy" else screen._attack_intents["incoming-1"].intent
-		await _click(target.get_global_rect().get_center())
-		_expect(fake.commands.size() == 1, "clicking highlighted stack or attack submits exactly once")
+		# Only the enemy's attack badge plays the card; its list and the
+		# lower-left Incoming Attacks row never do.
+		# The heading only folds/unfolds the list; click twice to leave it open.
+		for twice in 2:
+			await _click(_heading(screen, "incoming-1").get_global_rect().get_center())
+			for frame in 3: await process_frame
+		if is_instance_valid(screen._incoming_attack_rows.get("incoming-1")):
+			await _click(screen._incoming_attack_rows["incoming-1"].get_global_rect().get_center())
+		_expect(fake.commands.is_empty() and not screen._selected_card.is_empty(), "card list and incoming row are not card targets")
+		await _click(screen._attack_intents["incoming-1"].intent.get_global_rect().get_center())
+		_expect(fake.commands.size() == 1, "clicking the highlighted attack badge submits exactly once")
 		if fake.commands.size() == 1: _expect(fake.commands[0] == JSON.stringify(fixture.legal_actions[-1]), "chosen source is preserved")
 	_expect(screen._error_message.is_empty(), "no source-first instruction or command error")
 	if not fake.commands.is_empty(): await _verify_feedback(screen, clicked_pose, scenario + "-" + definition)
@@ -140,7 +150,7 @@ func _verify_feedback(screen, original_pose: Transform2D, caption: String) -> vo
 			_expect(screen._hand_dock.prevention_animation_active, "hand stays open during prevention")
 			var presenter: Control = screen._attack_intents[panel._source_id]
 			_expect(int(presenter.damage.text) < panel._before and int(presenter.damage.text) > panel._after, "damage decreases during saved-card flights")
-			_expect(panel._saved.any(func(entry): return entry.progress > 0 and entry.progress < 1), "saved cards move during damage reduction")
+			_expect(panel._saved.any(func(entry): return entry.progress > 0 and entry.progress < 1), "saved cards move during damage reduction: " + caption + " " + str(canvas.size.x))
 			await _capture("brace-feedback-" + caption + "-" + str(canvas.size.x))
 	_expect(not screen._hand_dock.prevention_animation_active and panel._played.modulate.a == 0, "finished feedback releases hand and removes played card")
 func _click(point: Vector2) -> void:
@@ -169,6 +179,9 @@ func _native() -> void:
 			result = gateway.submit(JSON.stringify(choices[0]))
 		else: result = gateway.advance_model()
 	var screen = SCREEN.instantiate(); screen.initial_result = result; screen.gateway = gateway; screen._auto_pass_disabled = true
+	# Lists start folded; unfold the incoming attack's so its saved-card flights play.
+	for source in result.snapshot.get("settled_damage", {}).get("sources", []):
+		if source.get("target_actor_id") == "blade": screen._damage_cards_open["source:" + str(source.id)] = true
 	screen.active_store = ActiveBattleStore.new(WorkspacePaths.persistent_file("brace-native.json")); canvas.add_child(screen); screen.set_process(false)
 	await _ready_hand(screen)
 	var card_index := -1

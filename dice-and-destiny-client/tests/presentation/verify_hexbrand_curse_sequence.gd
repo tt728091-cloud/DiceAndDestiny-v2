@@ -23,6 +23,7 @@ func _check(base: Dictionary, viewport: Vector2i) -> void:
 	for i in 3: batch.removals.append({"card_id": "lost-" + str(i), "card_definition_id": "brine_surge", "accepted": true, "target_actor_id": "goblin", "original_zone": "deck", "damage_proposal_ids": [source.id]})
 	f.snapshot.damage_sources = [source]; f.snapshot.settled_damage = batch
 	var screen = SCREEN.instantiate(); screen.initial_result = f; screen.gateway = BattleGateway.new(FakeBattleAuthority.new()); screen._auto_pass_disabled = true
+	screen._damage_cards_open["actor:goblin"] = true # Lists start folded; watch the tear.
 	screen.active_store = ActiveBattleStore.new(WorkspacePaths.persistent_file("hexbrand-sequence.json")); root.add_child(screen)
 	for frame in 8: await process_frame
 	var cue: Label = screen._curse_attack_origins[source.id]

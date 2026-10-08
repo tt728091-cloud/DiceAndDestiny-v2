@@ -11,6 +11,8 @@ const SHAPES := {
 	"deck": '<path d="M7 4H23V26H7Z M4 8V29H21"/><path d="M12 10H18M12 15H18"/>',
 	"hand": '<path d="M8 18V11Q8 8 11 10V17 5Q13 2 15 5V15 4Q17 1 19 4V16 7Q22 4 23 7V19L26 15Q30 14 28 19L23 28H12L4 19Q3 15 6 16Z"/>',
 	"discard": '<path d="M9 9V28H23V9M6 8H26M12 4H20M13 13V24M19 13V24"/>',
+	"chevron_open": '<path d="M7 11L16 22 25 11Z"/>',
+	"chevron_closed": '<path d="M11 7L22 16 11 25Z"/>',
 	"removed": '<circle cx="16" cy="16" r="12"/><path d="M11 11L21 21M21 11L11 21"/>',
 	"poison": '<path d="M12 3H20M14 3V12L6 25Q5 29 10 29H23Q27 29 25 25L18 12V3M9 22H23"/><circle cx="14" cy="19" r="1"/>',
 	"volatile_poison": '<path d="M12 3H20M14 3V12L6 26Q5 29 10 29H23Q27 29 25 25L18 12V3"/><path d="M18 14L12 21H18L14 27"/>',

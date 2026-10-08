@@ -60,9 +60,10 @@ func configure(data: Dictionary, screen: Control) -> void:
 	# The incoming row already explains an ability's reduction. Do not float
 	# a duplicate caption or launch saved-card trails from an invisible card.
 	if _ability_feedback or _hand_play: _caption.hide()
+	# Folded lists show only the damage reduction, never card flights.
 	for removal in data.get("saved", []):
 		var target := str(removal.get("target_actor_id", ""))
-		if not screen._actor_profiles.has(target): continue
+		if not screen._actor_profiles.has(target) or not screen.source_cards_shown(_source_id): continue
 		var zone := str(removal.get("released_destination", "discard"))
 		var key := target + ":" + zone
 		if not _piles.has(key):
@@ -78,7 +79,7 @@ func configure(data: Dictionary, screen: Control) -> void:
 		badge.text = "✓ SAVED"; badge.hide(); badge.add_theme_color_override("font_color", GREEN)
 		_saved.append({"card": card, "origin": origin, "pile": key, "progress": 0.0, "native_size": card.size})
 	for removal in data.get("pending", []):
-		if not removal.has("origin_rect"): continue
+		if not removal.has("origin_rect") or not screen.source_cards_shown(_source_id): continue
 		var card := BattleCard.new(); add_child(card)
 		card.configure(str(removal.card_id), str(removal.card_definition_id), false, true)
 		card.size = CARD_SIZE; card.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -148,7 +149,7 @@ func present_progress(elapsed: float) -> void:
 	var held_ids := _pending.map(func(entry): return entry.card.instance_id)
 	for entry in _pending: entry.card.hide()
 	for grid in _screen._damage_grids:
-		if not is_instance_valid(grid) or grid.source_id != _source_id: continue
+		if not is_instance_valid(grid) or grid.source_id != _source_id or not _screen.damage_cards_shown(grid.fold_key): continue
 		var cards: Array[BattleCard] = grid.card_children()
 		var group: Control = grid.get_parent()
 		if not _held_groups.any(func(entry): return entry.group == group):

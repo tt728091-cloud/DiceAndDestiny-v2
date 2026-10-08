@@ -4,6 +4,7 @@ const TOOLTIP_BUTTON := preload("res://presentation/battle/tooltip_button.gd")
 const SEGMENTS := [["ongoing_effects", "Effects"], ["income", "Income"], ["offensive", "Offensive"], ["defensive", "Defensive"], ["damage_resolution", "Damage"]]
 const INCOME_DURATION_SETTING := "dice_and_destiny/presentation/income_animation_seconds"
 const CURSE_NOTICE := preload("res://presentation/battle/curse_notice.gd")
+const REMOVAL_TALLY := preload("res://presentation/battle/removal_tally.gd")
 const CARD_ENERGY_NOTICE := preload("res://presentation/battle/card_energy_notice.gd")
 const CARD_GAIN_NOTICE := preload("res://presentation/battle/card_gain_notice.gd")
 const MODEL_TIMEOUT_MS := 2000
@@ -31,6 +32,9 @@ var learned_seed := 0
 var _focused_enemy := "goblin"
 var _pending_attack: Dictionary = {}
 var _enemy_dice_visible: Dictionary = {}
+# Threatened-card lists start folded; see damage_cards_shown().
+var _damage_cards_open: Dictionary = {}
+var _damage_zone_counts: Dictionary = {}
 var _player_dice_effect_until := 0
 const PLAYER_ZONE_TOP := 691.2
 const TOP_HUD_BOTTOM := 84.0
@@ -556,7 +560,7 @@ func _render(force: bool = false) -> void:
 	_attack_intents.clear()
 	_incoming_attack_rows.clear(); _incoming_attack_list = null
 	_damage_grids.clear()
-	_damage_stack_docks.clear()
+	_damage_stack_docks.clear(); _damage_zone_counts.clear()
 	_selected_attack_tiles.clear()
 	_curse_attack_origins.clear()
 	_actor_profiles.clear(); _enemy_dice_docks.clear()
@@ -847,17 +851,26 @@ func _layout_defense_choices() -> void:
 		if is_instance_valid(presenter.intent) and presenter.intent.visible:
 			obstacles.append((inverse * presenter.intent.get_global_rect()).grow(8))
 			last_target_index = maxi(last_target_index, presenter.intent.get_index())
+		# The cards hanging beneath each badge are part of that attack.
+		var cards: Control = _damage_stack_docks.get("attack:" + str(presenter.data.source_id))
+		if is_instance_valid(cards) and cards.visible:
+			obstacles.append((inverse * cards.get_global_rect()).grow(8))
+			last_target_index = maxi(last_target_index, cards.get_index())
 		if is_instance_valid(presenter.fighter_target):
 			last_target_index = maxi(last_target_index, presenter.fighter_target.get_index())
 	# GUI sibling order matters independently of drawing: fighter hit areas
 	# must never intercept clicks on an adjacent defensive option.
 	if rail.get_index() < last_target_index: _root.move_child(rail, last_target_index)
+	rail.z_index = 11 # Above the attack card lists beneath the badges.
 	var candidates: Array[Vector2] = [
 		Vector2(attack.position.x - extent.x - 12, attack.position.y),
 		Vector2(attack.end.x + 12, attack.position.y),
 		Vector2(attack.get_center().x - extent.x / 2, attack.end.y + 12),
 		Vector2(attack.get_center().x - extent.x / 2, attack.position.y - extent.y - 12),
 	]
+	# An open card list can fill the badge's side; prefer the space beside it.
+	for obstacle in obstacles:
+		candidates.append(Vector2(obstacle.end.x + 4, attack.position.y))
 	# Crowded lanes or multiple attacks can occupy either side. Try rows
 	# directly below their buttons, retaining the exact selected source.
 	for obstacle in obstacles:
@@ -1770,33 +1783,38 @@ func _build_damage_lanes(batch: Dictionary, committed: bool = false, followup_on
 		_curse_attack_origins[str(source.get("id", ""))] = panel.attack_origin
 		if _multiple_enemies() and not committed and target == viewer_actor_id and str(source.get("id", "")) == _selected_source: panel.self_modulate = Color("fff0bd")
 
-		if not _damage_stack_docks.has(target):
+		# Cards an enemy attack threatens hang beneath that attack's badge; the
+		# player's outgoing attacks share one area under each enemy's HUD.
+		# Status damage (Poison, Bleed) has no attacker badge and stays by the HUD.
+		var incoming := target == viewer_actor_id and is_instance_valid(panel.intent) and str(source.get("source_actor_id", "")) in _enemy_ids()
+		var dock_key := "attack:" + str(source.id) if incoming else target
+		var fold_key := "source:" + str(source.id) if incoming else "actor:" + target
+		if not _damage_stack_docks.has(dock_key):
 			var dock := preload("res://presentation/battle/damage_stack_dock.gd").new()
-			_root.add_child(dock); dock.configure(self, target); _damage_stack_docks[target] = dock
-		var stack_dock: ScrollContainer = _damage_stack_docks[target]
+			_root.add_child(dock); dock.configure(self, target, panel if incoming else null); _damage_stack_docks[dock_key] = dock
+			dock.fold_key = fold_key
+		var stack_dock: ScrollContainer = _damage_stack_docks[dock_key]
 		var group := VBoxContainer.new(); group.set_meta("source_id", str(source.id)); group.add_theme_constant_override("separation", 3); stack_dock.body.add_child(group)
 		var heading := TOOLTIP_BUTTON.new(); heading.text = "%d · %s" % [amount, data.attack_name]; heading.icon = preload("res://presentation/battle/battle_icons.gd").texture("attack"); heading.expand_icon = true; heading.add_theme_constant_override("icon_max_width", 20); heading.tooltip_text = panel.intent.tooltip_text
 		heading.alignment = HORIZONTAL_ALIGNMENT_LEFT; heading.flat = true; heading.add_theme_font_size_override("font_size", 18)
 		for state in ["normal", "hover", "pressed", "focus"]: heading.add_theme_stylebox_override(state, StyleBoxEmpty.new())
-		CINEMATIC.hud_lettering(heading, true); group.add_child(heading)
-		heading.pressed.connect(func():
-			if is_instance_valid(panel.intent) and not panel.intent.disabled: panel.intent.pressed.emit()
-		)
-		if _selected_card.get("source_targeting", false):
-			heading.disabled = _source_card_actions(str(source.id)).is_empty()
-			if not heading.disabled:
-				heading.flat = false
-				heading.text += " · Save with " + str(BattlePresentationCatalog.card(str(_selected_card.definition_id)).name)
-				heading.tooltip_text = panel.intent.tooltip_text
-				heading.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
-				for state in ["normal", "hover", "pressed", "focus"]:
-					heading.add_theme_stylebox_override(state, CINEMATIC.panel(Color("9a713366"), Color("ffe49c"), 4))
+		CINEMATIC.hud_lettering(heading, true)
+		var heading_row := HBoxContainer.new(); heading_row.name = "StackHeading"; heading_row.add_theme_constant_override("separation", 4); group.add_child(heading_row)
+		heading_row.add_child(heading)
+		# The badge above already shows the attack; its list heading counts cards.
+		if incoming:
+			heading.icon = null; heading.add_theme_font_size_override("font_size", 16)
+		else:
+			heading.size_flags_horizontal = Control.SIZE_EXPAND_FILL; heading.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		heading.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+		heading.pressed.connect(_toggle_damage_cards.bind(fold_key))
+		heading.set_meta("battle_utility", true)
 		if str(source.get("source_actor_id", "")) == viewer_actor_id and target != viewer_actor_id:
 			panel.use_target_heading(heading)
 			_curse_attack_origins[str(source.id)] = heading
 		_inspect(heading, "battle.damage_stack." + str(source.id), heading.tooltip_text)
 		var grid := preload("res://presentation/battle/combat_card_reveal.gd").new(); grid.name = "DamageCards_" + str(source.get("id", "")); group.add_child(grid); grid.set_meta("flow_part", "cards")
-		grid.screen = self; grid.target_actor = target; grid.source_id = str(source.id); grid.dock = stack_dock
+		grid.screen = self; grid.target_actor = target; grid.source_id = str(source.id); grid.dock = stack_dock; grid.fold_key = fold_key
 		grid.started_ms = int(_damage_card_times[batch_key]) if not _history_review else Time.get_ticks_msec() - 10000; _damage_grids.append(grid)
 		for card_data in cards_by_source.get(str(source.get("id", "")), []):
 			if card_data.get("target_actor_id") != target or not card_data.get("accepted", false) or card_data.get("released", false) or claimed.has(str(card_data.get("card_id", ""))): continue
@@ -1808,11 +1826,24 @@ func _build_damage_lanes(batch: Dictionary, committed: bool = false, followup_on
 		var card_ids: Array[String] = []
 		for card in grid.card_children(): card_ids.append(str(card.instance_id))
 		grid.set_meta("flow_content", card_ids)
+		if incoming: heading.text = "No cards lost" if card_ids.is_empty() else "%d card%s" % [card_ids.size(), "" if card_ids.size() == 1 else "s"]
 		if grid.card_children().is_empty():
 			grid.hide()
-			var none := Label.new(); none.text = "No cards lost"; CINEMATIC.hud_lettering(none); group.add_child(none)
+			if not incoming:
+				var none := Label.new(); none.text = "No cards lost"; CINEMATIC.hud_lettering(none); group.add_child(none)
+				none.set_meta("removal_detail", true); none.set_meta("fold_key", fold_key)
 		else:
 			grid._layout_cards()
+			grid.set_meta("removal_detail", true); grid.set_meta("fold_key", fold_key)
+		var tally := REMOVAL_TALLY.new(); tally.configure(REMOVAL_TALLY.zone_counts(grid.card_children())); heading_row.add_child(tally)
+		_damage_zone_counts[str(source.id)] = tally.counts
+		var fold := TOOLTIP_BUTTON.new(); fold.name = "FoldCards_" + str(source.id); fold.flat = true; fold.expand_icon = true
+		fold.custom_minimum_size = Vector2(26, 26); fold.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+		for state in ["normal", "hover", "pressed", "focus"]: fold.add_theme_stylebox_override(state, StyleBoxEmpty.new())
+		fold.set_meta("cards_toggle", true); fold.set_meta("battle_utility", true); fold.set_meta("fold_key", fold_key)
+		fold.pressed.connect(_toggle_damage_cards.bind(fold_key)); heading_row.add_child(fold)
+		fold.visible = not grid.card_children().is_empty()
+		_inspect(fold, "battle.damage_stack.fold." + str(source.id), "Show or hide the cards this attack removes")
 		var ability_id := str(source.get("source_content_id", ""))
 		var attacker := str(source.get("source_actor_id", ""))
 		var actor: Dictionary = batch.get("actors_before", {}).get(attacker, _view.actor(attacker))
@@ -1832,6 +1863,7 @@ func _build_damage_lanes(batch: Dictionary, committed: bool = false, followup_on
 			cue.add_theme_color_override("font_color", Color("e8c5ff")); CINEMATIC.hud_lettering(cue, true)
 			cue.tooltip_text = attack_statuses; group.add_child(cue)
 			_curse_attack_origins[str(source.id)] = cue
+	for dock in _damage_stack_docks.values(): dock.show_cards()
 	if committed and not followup_only and not _history_review and not _history_replay:
 		if not _damage_commit_started.has(batch_key):
 			_damage_commit_started[batch_key] = maxi(Time.get_ticks_msec(), int(_damage_card_times[batch_key]) + ceili(COMBAT_TIMING.review_seconds() * 1000.0))
@@ -1842,6 +1874,47 @@ func _build_damage_lanes(batch: Dictionary, committed: bool = false, followup_on
 	# rather than showing reviewed cards as transparent for one frame.
 	for grid in _damage_grids: grid.refresh_playback()
 	if committed and _director.peek().get("curse_followups", []).any(func(item): return _damage_followups_ready.get(str(item.feedback_key), false)): _show_damage_counts(1.0)
+
+## Every card list starts folded; keys are "source:<id>" beneath an enemy's
+## attack badge and "actor:<id>" for the player's attacks under an enemy.
+func damage_cards_shown(fold_key: String) -> bool:
+	return bool(_damage_cards_open.get(fold_key, false))
+
+## Whether this source's threatened cards are on screen to animate.
+func source_cards_shown(source_id: String) -> bool:
+	for grid in _damage_grids:
+		if not is_instance_valid(grid) or grid.source_id != source_id: continue
+		# A sibling attack's open list hides this one; nothing is on screen to fly.
+		var presenter: Control = _attack_intents.get(source_id)
+		if grid.fold_key.begins_with("source:") and is_instance_valid(presenter) and open_attack_for(presenter.attacker_id) != source_id: return false
+		return damage_cards_shown(grid.fold_key)
+	return true
+
+func _toggle_damage_cards(fold_key: String) -> void:
+	# Local presentation only: fold in place so reveal/removal clocks continue.
+	_damage_cards_open[fold_key] = not damage_cards_shown(fold_key)
+	# One enemy shows one attack's cards at a time; its column has little room.
+	var opened: Control = _attack_intents.get(fold_key.trim_prefix("source:")) if fold_key.begins_with("source:") and _damage_cards_open[fold_key] else null
+	if is_instance_valid(opened):
+		for id in _attack_intents:
+			if id != opened.data.source_id and _attack_intents[id].attacker_id == opened.attacker_id: _damage_cards_open.erase("source:" + str(id))
+	for dock in _damage_stack_docks.values():
+		if is_instance_valid(dock): dock.show_cards()
+
+## The attack whose cards are open beneath this enemy's badges, if any.
+func open_attack_for(attacker_id: String) -> String:
+	var best := ""
+	var best_slot := 1 << 30
+	for id in _attack_intents:
+		var presenter: Control = _attack_intents[id]
+		if presenter.attacker_id != attacker_id or not damage_cards_shown("source:" + str(id)) or not _damage_stack_docks.has("attack:" + str(id)): continue
+		if presenter.actor_slot < best_slot: best = str(id); best_slot = presenter.actor_slot
+	return best
+
+## Vertical room an attack's list takes beneath its badge.
+func attack_cards_height(source_id: String) -> float:
+	var dock: Control = _damage_stack_docks.get("attack:" + source_id)
+	return dock.reserved_height() if is_instance_valid(dock) else 0.0
 
 func _finish_damage_sequence(batch_key: String, generation: int) -> void:
 	var last_tick := Time.get_ticks_msec()
@@ -2120,7 +2193,7 @@ func _build_card_target_choices() -> void:
 		_root.add_child(cancel); _place_cinematic(cancel, Rect2(350, 784, 78, 32))
 		return
 	if _selected_card.get("source_targeting", false):
-		var instruction := Label.new(); instruction.text = str(BattlePresentationCatalog.card(str(_selected_card.definition_id)).name) + "\nClick a highlighted incoming attack."; instruction.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART; instruction.add_theme_color_override("font_color", Color("f0cf7c")); _ability_dock.add_child(instruction)
+		var instruction := Label.new(); instruction.text = str(BattlePresentationCatalog.card(str(_selected_card.definition_id)).name) + "\nClick a highlighted enemy attack."; instruction.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART; instruction.add_theme_color_override("font_color", Color("f0cf7c")); _ability_dock.add_child(instruction)
 		var cancel := TOOLTIP_BUTTON.new(); cancel.text = "Cancel targeting"; cancel.pressed.connect(func(): _selected_card.clear(); _render()); _ability_dock.add_child(cancel)
 		_inspect(cancel, "battle.card_target.cancel", "Cancel without playing the card or spending energy")
 		return

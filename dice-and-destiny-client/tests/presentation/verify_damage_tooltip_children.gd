@@ -18,6 +18,7 @@ func _run() -> void:
 	fixture.snapshot.settled_damage = {"id": "tooltip-batch", "sources": [source], "removals": removals}
 	var screen = SCREEN.instantiate(); screen.initial_result = fixture
 	screen.gateway = BattleGateway.new(FakeBattleAuthority.new()); screen._auto_pass_disabled = true
+	screen._damage_cards_open["source:incoming"] = true # Lists start folded.
 	screen.active_store = ActiveBattleStore.new(WorkspacePaths.persistent_file("tooltip-children.json"))
 	root.add_child(screen); screen.set_process(false)
 	await create_timer(0.8).timeout

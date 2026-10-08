@@ -33,7 +33,9 @@ func _run() -> void:
 				var panel = screen._attack_intents[id]
 				_expect(panel.get_parent() == screen._root and panel.get_theme_stylebox("panel") is StyleBoxEmpty, "no central attack box")
 				_expect(root.get_visible_rect().encloses(panel.intent.get_global_rect()), "intent fits viewport")
-				_expect(screen.attack_anchor_rect(id) == (panel.incoming_row.damage_rect() if is_instance_valid(panel.incoming_row) else panel.damage.get_global_rect()), "source ID resolves exact live damage number")
+				# The badge is each attack's single on-board focus while it is shown.
+				var expected: Rect2 = panel.intent.get_global_rect() if panel.intent.is_visible_in_tree() else panel.incoming_row.damage_rect() if is_instance_valid(panel.incoming_row) else panel.damage.get_global_rect()
+				_expect(screen.attack_anchor_rect(id) == expected, "source ID resolves its badge or live damage number")
 				if id != "outgoing":
 					_expect(panel.intent_row.get_children().any(func(child): return "Apply 2 Poison" in child.tooltip_text), "effect icon explains application on hover")
 			# Switching attackers moves the same choices without covering other intents.

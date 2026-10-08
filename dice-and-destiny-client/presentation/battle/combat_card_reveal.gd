@@ -11,6 +11,7 @@ var removal_started_ms := 0
 var screen: Control
 var target_actor := ""
 var source_id := ""
+var fold_key := ""
 var dock: ScrollContainer
 var hovered_id := ""
 var _hover_card: BattleCard
@@ -125,7 +126,8 @@ func _exit_tree() -> void:
 func refresh_playback() -> void:
 	var elapsed := maxf(0.0, (Time.get_ticks_msec() - started_ms) / 1000.0)
 	var tearing := removal_started_ms > 0 and Time.get_ticks_msec() >= removal_started_ms
-	if tearing and is_instance_valid(screen) and not is_instance_valid(_tear):
+	# A folded list has no card headers to tear; its counters still settle.
+	if tearing and is_instance_valid(screen) and not is_instance_valid(_tear) and is_visible_in_tree():
 		_clear_hover()
 		_tear = preload("res://presentation/battle/damage_stack_tear.gd").new()
 		screen._root.add_child(_tear); _tear.configure(self, screen, target_actor)
@@ -136,6 +138,7 @@ func refresh_playback() -> void:
 		var progress := clampf((elapsed - delay) / maxf(0.01, TIMING.reveal()), 0.0, 1.0)
 		card.modulate.a = 0.0 if tearing else progress
 	queue_redraw()
+	if is_instance_valid(_tear): _tear.visible = is_visible_in_tree()
 	if is_instance_valid(_tear): _tear.present_progress(clampf((Time.get_ticks_msec() - removal_started_ms) / (maxf(0.01, TIMING.removal()) * 1000.0), 0, 1))
 
 func origin_icon_rect(card: Control) -> Rect2:

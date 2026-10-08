@@ -23,6 +23,9 @@ func configure(value: Control) -> void:
 	icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED; icon.mouse_filter = Control.MOUSE_FILTER_IGNORE; header.add_child(icon)
 	amount = _label(header, "", 22)
 	var damage_caption := _label(header, "damage", 16); damage_caption.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	var tally := preload("res://presentation/battle/removal_tally.gd").new()
+	tally.configure(presenter.screen._damage_zone_counts.get(str(presenter.data.source_id), {}), 15)
+	tally.mouse_filter = Control.MOUSE_FILTER_IGNORE; header.add_child(tally)
 	state_label = _label(header, "", 16); state_label.add_theme_color_override("font_color", Color("ffe1a6"))
 	var title := _label(body, BattlePresentationCatalog.ability(str(presenter.source.get("source_content_id", ""))).name, 19)
 	title.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
@@ -31,15 +34,14 @@ func configure(value: Control) -> void:
 	if not effects.is_empty():
 		var detail := _label(body, effects, 15); detail.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	for style_name in ["normal", "hover", "pressed", "disabled", "focus"]:
-		var selected: bool = presenter.screen._selected_source == str(presenter.data.source_id) or not presenter.screen._source_card_actions(str(presenter.data.source_id)).is_empty()
+		var selected: bool = presenter.screen._selected_source == str(presenter.data.source_id)
 		add_theme_stylebox_override(style_name, INK.panel(INK.DARK_SURFACE, Color("e7c378") if selected or style_name in ["hover", "focus"] else Color("726951"), 4))
 	resized.connect(_layout_body); body.minimum_size_changed.connect(_layout_body)
 	pressed.connect(func():
 		var screen: Control = presenter.screen
 		var id := str(presenter.data.source_id)
-		if screen._selected_card.get("source_targeting", false):
-			if not screen._source_card_actions(id).is_empty(): screen._play_source_card(id)
-		else: screen._select_attack_intent(id, true)
+		# Prevention cards target the attack badges on the battlefield only.
+		if not screen._selected_card.get("source_targeting", false): screen._select_attack_intent(id, true)
 	)
 	_layout_body(); refresh()
 
@@ -72,10 +74,10 @@ func refresh() -> void:
 	if _last_rank >= 0 and rank != _last_rank: screen._sort_incoming_attacks.call_deferred(rank == 2)
 	_last_rank = rank
 	# Legal source actions, not remaining damage alone, govern this entry point.
-	# This also keeps card-first targeting available in the lower-left list.
-	disabled = presenter.intent.disabled
-	if not screen._selected_card.get("source_targeting", false):
-		disabled = disabled or (screen._source_protection_action(id).is_empty() and not screen._view.legal_actions.any(func(action): return action.get("actor_id") == screen.viewer_actor_id and action.get("type") == "planning_select_ability" and id in action.get("payload", {}).get("target_ids", [])))
+	# Card-first targeting happens on the attack badges, never in this list.
+	disabled = presenter.intent.disabled or screen._selected_card.get("source_targeting", false)
+	if not disabled:
+		disabled = (screen._source_protection_action(id).is_empty() and not screen._view.legal_actions.any(func(action): return action.get("actor_id") == screen.viewer_actor_id and action.get("type") == "planning_select_ability" and id in action.get("payload", {}).get("target_ids", [])))
 
 func defense_rank() -> int:
 	if state_label.text in ["", "Passed"]: return 2

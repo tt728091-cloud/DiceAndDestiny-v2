@@ -86,6 +86,8 @@ func _finalized_prevention(base: Dictionary, width: int, human: bool) -> void:
 		removals.append({"card_id": card_id, "card_definition_id": "brine_surge", "target_actor_id": "goblin", "original_zone": "deck", "accepted": true, "released": false, "damage_proposal_ids": [source.id]})
 	fixture.snapshot.settled_damage = {"id": "held-prevention", "sources": [source.duplicate(true)], "removals": removals, "committed": false}
 	var screen = SCREEN.instantiate(); screen.initial_result = fixture; screen.gateway = BattleGateway.new(FakeBattleAuthority.new()); screen._auto_pass_disabled = true
+	# The enemy's list starts folded; unfold it so its saved-card flights play.
+	screen._damage_cards_open["actor:goblin"] = true
 	screen.active_store = ActiveBattleStore.new(WorkspacePaths.persistent_file("finalized-prevention.json"))
 	canvas.add_child(screen); screen.set_process(false); await _settle()
 	var panel = screen._attack_intents[source.id]; panel.set_process(false)

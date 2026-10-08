@@ -123,7 +123,7 @@ Use `./scripts/godot.sh` for every additional Godot test.
 ## Damage-prevention card targeting
 
 - Start with the card click. If exactly one incoming source has remaining damage and a current legal card action, play against it immediately; do not require the player to preselect an attack.
-- With multiple viable sources, select the card and highlight each eligible attack and its damage-list control. Let the player choose the source next or cancel without spending. Count sources, not enemies; one enemy can have multiple attacks.
+- With multiple viable sources, select the card and highlight each eligible enemy attack badge on the battlefield. The badge is the only card target; its threatened-card list hangs beneath it, and the lower-left Incoming Attacks list is for defense selection only. Let the player choose the source next or cancel without spending. Count sources, not enemies; one enemy can have multiple attacks.
 - Never target outgoing or fully prevented damage, reuse an earlier source selection, or submit stale target commands. Preserve the full ability tooltip and existing prevention/saved-card animations.
 
 ## Unified defense experiment
