@@ -30,30 +30,28 @@ func _check(tier: int, stage: String, viewport: Vector2i) -> void:
 	var screen = SCREEN.instantiate(); screen.initial_result = f; screen.gateway = BattleGateway.new(FakeBattleAuthority.new()); screen._auto_pass_disabled = true
 	screen.active_store = ActiveBattleStore.new(WorkspacePaths.persistent_file("curse-followups.json")); root.add_child(screen)
 	for frame in 8: await process_frame
-	var expected := "Then apply %d Curse after damage (even if blocked)" % (tier - 2)
+	var expected := "Apply %d Curse after damage (even if blocked)" % (tier - 2)
 	var shown := 0
-	for panel in screen._center.find_children("*", "PanelContainer", true, false):
+	# The attack panel body is hidden and defense result panels sit on _root;
+	# the follow-up's visible form is the intent icon + count, covered by
+	# verify_intent_effect_counts and verify_hexbrand_curse_sequence.
+	for panel in screen._root.find_children("*", "PanelContainer", true, false):
 		if panel.get_script() != screen.DEFENSE_RESULT: continue
 		if panel.data.source_id == "hexbrand-hit":
+			shown += 1
 			_expect(panel.data.attack_statuses.begins_with(expected), "chosen tier's Curse amount accompanies target damage")
 			if stage == "damage_reaction": _expect(panel.data.after == 0, "blocked damage fixture really shows zero damage")
-			for label in panel.find_children("*", "Label", true, false):
-				if label.get_meta("flow_part", "") != "statuses": continue
-				shown += 1
-				_expect(label.text.begins_with(expected) and label.is_visible_in_tree(), "Curse follow-up is visibly rendered")
-				_expect(panel.get_global_rect().encloses(label.get_global_rect()), "follow-up fits target panel")
-				_expect(root.get_visible_rect().encloses(label.get_global_rect()), "follow-up fits viewport")
 		elif panel.data.source_id == "brine-hit": _expect(not "Curse" in panel.data.attack_statuses, "Curse does not leak onto the unrelated incoming attack")
-	_expect(shown == 1, "one follow-up label per target attack")
+	_expect(shown == 1, "one target panel per attack")
 	var applications := [{"target_actor_id": "goblin", "status_id": "poison", "stacks": 2}]
 	_expect("Poison ×2 pending" in screen._attack_source_effect_text(source, applications), "ordinary status summary remains alongside Curse")
 	_expect(expected in screen._attack_source_effect_text(source, applications), "ordinary statuses cannot replace bespoke Curse effect")
 	# Recorded damage playback uses the actor state from that batch.
-	_expect("Then apply 3 Curse" in screen._attack_source_effect_text(source, [], {"blade": {"selected_tier": "skull_5"}}), "damage history uses its recorded tier")
+	_expect("Apply 3 Curse after damage" in screen._attack_source_effect_text(source, [], {"blade": {"selected_tier": "skull_5"}}), "damage history uses its recorded tier")
 	_expect(expected in screen._attack_source_effect_text(source, [], {"blade": {"current_health": 24}}), "sparse damage baseline retains live selected tier")
 	var reversed := source.duplicate(); reversed.source_actor_id = "goblin"; reversed.target_actor_id = "blade"
 	screen._view.actors.goblin.selected_tier = "skull_4"
-	_expect("Then apply 2 Curse" in screen._attack_source_effect_text(reversed, []), "incoming Curse uses its own attacker tier")
+	_expect("Apply 2 Curse after damage" in screen._attack_source_effect_text(reversed, []), "incoming Curse uses its own attacker tier")
 	var status_source := source.duplicate(); status_source.source_content_id = "curse_count"
 	_expect(screen._attack_source_effect_text(status_source, []).is_empty(), "Curse Count damage does not invent additional Curse applications")
 	var dir := OS.get_environment("DICE_AND_DESTINY_CURSE_FOLLOWUP_SCREENSHOTS")

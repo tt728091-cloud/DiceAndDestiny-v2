@@ -618,7 +618,8 @@ func PrepareProgramCard(card BattleCardDefinition, lib *BattleLibrary) BattleCar
 		card.Play.PlayableDuring = []PlayTiming{}
 	}
 	card.Presentation.RulesText = CardProgramRulesWithStatuses(card.Program, lib.Statuses)
-	card.Presentation.EffectSummary = card.Presentation.RulesText
+	// The card face shows the effect; the "Play:" timing line stays in the rules.
+	card.Presentation.EffectSummary = CardProgramRulesWithStatuses(&CardProgram{Steps: card.Program.Steps}, lib.Statuses)
 	var walk func([]CardStep)
 	walk = func(steps []CardStep) {
 		for _, s := range steps {

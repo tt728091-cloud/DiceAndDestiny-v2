@@ -13,7 +13,11 @@ func _initialize() -> void: call_deferred("_run")
 func _run() -> void:
 	var gateway = GATEWAY.new(root.get_node("LearnedBattleRuntime"), "seat-a", "brine-mask", "curse")
 	var cases := {}
-	for seed_value in range(1, 151):
+	# Known native seeds: 367/532/550/648 hit, 47/92/103/109/148 miss. Fall
+	# back to a wider sweep in case catalog changes shift the outcomes.
+	var seeds: Array = [367, 47, 532, 92, 550, 103, 648, 109, 148]
+	seeds.append_array(range(1, 401))
+	for seed_value in seeds:
 		var base: Dictionary = gateway.start_battle("unquiet-%d" % seed_value, seed_value)
 		var mark := _action(base, "mark_the_number")
 		if mark.is_empty(): continue

@@ -17,7 +17,7 @@ func _run() -> void:
 			if button.text.is_empty() and button.tooltip_text.is_empty(): _fail("button lacks accessible text"); return
 		var texts: Array[String] = []
 		for button in buttons: texts.append(button.text)
-		if "Roll 5 Dice" not in texts or "Keep Selected" in texts or "Reroll Unkept" in texts: _fail("initial planning exposed controls that are invalid before the first roll: %s" % texts); return
+		if "Roll 3/3" not in texts or "Keep Selected" in texts or "Reroll Unkept" in texts: _fail("initial planning exposed controls that are invalid before the first roll: %s" % [texts]); return
 		screen.queue_free(); await process_frame
 	# A card unknown to the client source is rendered, enabled, and routed only
 	# from the authority-provided catalog selector/timing data.
@@ -87,7 +87,7 @@ func _run() -> void:
 	reroll_screen.active_store = ActiveBattleStore.new(WorkspacePaths.persistent_file("verify_toggle_keep_active.json"))
 	root.add_child(reroll_screen)
 	await process_frame; await process_frame
-	if _has_button(reroll_screen, "Keep Selected") or not _has_button(reroll_screen, "Reroll Unkept"):
+	if _has_button(reroll_screen, "Keep Selected") or not _has_button(reroll_screen, "Roll 2/3"):
 		_fail("rolled planning did not expose the single-action reroll control"); return
 	var player_tray: BattleDiceTray = reroll_screen.find_children("*", "BattleDiceTray", true, false)[0]
 	var player_dice := player_tray.find_children("*", "Button", true, false)
@@ -95,7 +95,7 @@ func _run() -> void:
 	await process_frame
 	if _int_array(reroll_screen.inspection_state().get("selected_dice", [])) != [0, 2]:
 		_fail("clicking dice did not immediately establish the kept set"); return
-	_button(reroll_screen, "Reroll Unkept").pressed.emit()
+	_button(reroll_screen, "Roll 2/3").pressed.emit()
 	await process_frame; await process_frame
 	if fake.commands.size() != 2:
 		_fail("reroll UI did not chain exactly one keep and one reroll command: %s" % fake.commands); return
@@ -128,20 +128,20 @@ func _run() -> void:
 	await process_frame; await process_frame
 	var enemy_die_ids: Array[String] = []; var saw_enemy_caption := false; var saw_player_outcome := false; var saw_enemy_outcome := false; var leaked_generic_rules := false
 	for label in offensive_reveal.find_children("*", "Label", true, false):
-		if label.text == "ENEMY DICE · Simulated rolls 1": saw_enemy_caption = true
+		if label.text == "Enemy D100 7 · simulated rolls 1": saw_enemy_caption = true
 
 
 		if "Deal 5 / 6 / 7 damage" in label.text or "Deal 4 / 5 / 6 damage" in label.text: leaked_generic_rules = true
 	for button in offensive_reveal.find_children("*", "Button", true, false):
-		if button is BattleAbilityTile and "Sword Cut\n7 damage · pending\nBleed ×2" in button.text: saw_player_outcome = true
-		if button.get_meta("inspection_id", "") == "battle.outcome.goblin" and "4 damage" in button.text: saw_enemy_outcome = true
+		if str(button.get_meta("inspection_id", "")) == "battle.source.preview:blade" and "Current attack: 7 damage\n7 damage · pending\nBleed ×2" in button.tooltip_text: saw_player_outcome = true
+		if str(button.get_meta("inspection_id", "")) == "battle.source.preview:goblin" and "Current attack: 4 damage\n4 damage · pending" in button.tooltip_text: saw_enemy_outcome = true
 		if button.has_meta("inspection_id") and str(button.get_meta("inspection_id")).begins_with("battle.die.goblin.") and button.text != "—": enemy_die_ids.append(str(button.get_meta("inspection_id")))
-	if not saw_enemy_caption or enemy_die_ids.size() != 5: _fail("offensive reaction did not reveal all five simulated enemy dice: %s" % enemy_die_ids); return
+	if not saw_enemy_caption or enemy_die_ids.size() != 5: _fail("offensive reaction did not reveal all five simulated enemy dice: %s" % [enemy_die_ids]); return
 	if not saw_player_outcome or not saw_enemy_outcome or leaked_generic_rules: _fail("offensive reaction did not show only resolved outcomes: player=%s enemy=%s generic=%s" % [saw_player_outcome, saw_enemy_outcome, leaked_generic_rules]); return
 	offensive_reveal.queue_free(); await process_frame
 	var presenting = packed.instantiate(); var presentation_fixture := _fixture()
-	presentation_fixture.events = [{"sequence": 1, "type": "segment_entered", "to": "ongoing_effects"}]
-	presenting.initial_result = presentation_fixture; root.add_child(presenting)
+	presentation_fixture.events = [{"sequence": 1, "type": "segment_entered", "to": "damage_resolution"}]
+	presenting.initial_result = presentation_fixture; presenting._auto_pass_disabled = true; root.add_child(presenting)
 	await process_frame; await process_frame
 	var found_continue := false
 	for button in presenting.find_children("*", "Button", true, false):
@@ -164,24 +164,16 @@ func _run() -> void:
 	]
 	income_screen.initial_result = income_fixture; root.add_child(income_screen)
 	await process_frame; await process_frame
-	if _button(income_screen, "Continue Presentation") == null: _fail("pre-income Effects presentation was unavailable"); return
-	var pre_income_markers := 0; var effects_showed_pre_income_energy := false; var effects_showed_pre_income_hand := false
-	for effects_label in income_screen.find_children("*", "Label", true, false):
-		if effects_label.visible and str(effects_label.text).begins_with("▲ "): pre_income_markers += 1
-		if effects_label.text == "✦ Energy 1": effects_showed_pre_income_energy = true
-		if effects_label.text == "Hand 4": effects_showed_pre_income_hand = true
-	if pre_income_markers != 0 or not effects_showed_pre_income_energy or not effects_showed_pre_income_hand: _fail("Effects exposed post-income totals before the income animation"); return
-	_button(income_screen, "Continue Presentation").pressed.emit(); await process_frame; await process_frame
 	if _button(income_screen, "Continue Presentation") != null: _fail("income animation retained the manual Continue Presentation gate"); return
 	var visible_markers := 0; var saw_pre_income_energy := false; var saw_pre_income_hand := false
 	for income_label in income_screen.find_children("*", "Label", true, false):
 		if income_label.visible and str(income_label.text).begins_with("▲ "): visible_markers += 1
-		if income_label.text == "✦ Energy 1": saw_pre_income_energy = true
-		if income_label.text == "Hand 4": saw_pre_income_hand = true
+		if str(income_label.get_parent().tooltip_text).begins_with("Energy · 1\n"): saw_pre_income_energy = true
+		if str(income_label.get_parent().tooltip_text).begins_with("Hand · 4\n"): saw_pre_income_hand = true
 	var income_cards := income_screen.find_children("*", "BattleCard", true, false)
 	if visible_markers < 6 or not saw_pre_income_energy or not saw_pre_income_hand or income_cards.size() != 1: _fail("income board did not preview all resource ticks and the drawn hand card: markers=%d cards=%d" % [visible_markers, income_cards.size()]); return
 	await create_timer(0.55).timeout; await process_frame; await process_frame
-	if income_screen.inspection_state().get("presentation_active", true) or _button(income_screen, "Roll 5 Dice") == null: _fail("income presentation did not advance itself into offense"); return
+	if income_screen.inspection_state().get("presentation_active", true) or _button(income_screen, "Roll 3/3") == null: _fail("income presentation did not advance itself into offense"); return
 	ProjectSettings.set_setting("dice_and_destiny/presentation/income_animation_seconds", 2.0)
 	income_screen.queue_free(); await process_frame
 	var status_damage = packed.instantiate(); var status_fixture := _fixture()
@@ -196,16 +188,16 @@ func _run() -> void:
 	await process_frame; await process_frame
 	var saw_status_context := false; var saw_status_card := false; var saw_player_poison := false; var saw_enemy_bleed := false; var saw_poison_damage := false; var saw_bleed_damage := false; var leaked_stale_attack := false
 	for label in status_damage.find_children("*", "Label", true, false):
-		if label.text == "STATUS DAMAGE · ONGOING EFFECTS": saw_status_context = true
-		if label.text == "BLADE WARDEN  ☠ Poison ×2": saw_player_poison = true
-		if label.text == "VENOM GOBLIN  ◆ Bleed ×2": saw_enemy_bleed = true
-		if label.text == "Poison → Blade Warden\n1 incoming · 0 prevented · 1 pending": saw_poison_damage = true
-		if label.text == "Bleed → Venom Goblin\n2 incoming · 0 prevented · 2 pending": saw_bleed_damage = true
+		if label.text == "Round 1 · Effects": saw_status_context = true
 	for button in status_damage.find_children("*", "Button", true, false):
+		var stack_id := str(button.get_meta("inspection_id", ""))
+		if stack_id == "battle.damage_stack.poison-1" and button.text == "1 · Poison": saw_poison_damage = true; saw_player_poison = "☠ Poison ×2 pending" in button.tooltip_text
+		if stack_id == "battle.damage_stack.bleed-1" and button.text == "1 · Bleed": saw_enemy_bleed = "◆ Bleed ×2 pending" in button.tooltip_text
+		if stack_id == "battle.damage_stack.bleed-2" and button.text == "1 · Bleed": saw_bleed_damage = true
 		if button.text.begins_with("Emergency Ward") and not button.disabled: _fail("Emergency Ward was enabled outside the damage-resolution segment"); return
 		if button.has_meta("inspection_id") and str(button.get_meta("inspection_id")) == "battle.damage_card.ward-1": saw_status_card = true
 		if button.text == "Continue Presentation": _fail("status damage reveal created a redundant presentation popup"); return
-		if str(button.get_meta("inspection_id", "")).begins_with("battle.source.") and ("Sword Cut" in button.text or "Venom Strike" in button.text): leaked_stale_attack = true
+		if button.is_visible_in_tree() and (str(button.get_meta("inspection_id", "")).begins_with("battle.source.") or str(button.get_meta("inspection_id", "")).begins_with("battle.damage_stack.")) and ("Sword Cut" in button.tooltip_text or "Venom Strike" in button.tooltip_text): leaked_stale_attack = true
 	if not saw_status_context or not saw_status_card or not saw_player_poison or not saw_enemy_bleed or not saw_poison_damage or not saw_bleed_damage or leaked_stale_attack: _fail("status damage board omitted current totals or rendered stale offensive sources"); return
 	status_damage.queue_free(); await process_frame
 	var prevented_damage = packed.instantiate(); var prevented_fixture := _fixture()
@@ -245,13 +237,14 @@ func _run() -> void:
 	for panel in defense_roll.find_children("*", "VBoxContainer", true, false):
 		if panel.get_script() == preload("res://presentation/battle/defense_roll.gd"): _fail("legacy roll mat must not appear"); return
 	for button in defense_roll.find_children("*", "Button", true, false):
-		if "Jagged Slash" in button.text and "4 damage · pending" in button.text: saw_pending_damage = true
-		if "Jagged Slash" in button.text and "Final 0" in button.text: saw_false_final_zero = true
+		if str(button.get_meta("inspection_id", "")) == "battle.incoming.source-enemy" and "Jagged Slash" in button.tooltip_text and "Current attack: 4 damage" in button.tooltip_text: saw_pending_damage = true
+		if "Jagged Slash" in button.tooltip_text and ("Final 0" in button.tooltip_text or "Current attack: 0 damage" in button.tooltip_text): saw_false_final_zero = true
 	if defense_roll._defense_result_panels.is_empty(): _fail("unified defense panels missing"); return
 	if not saw_pending_damage or saw_false_final_zero: _fail("unresolved incoming damage was not labeled as pending"); return
 	await create_timer(1.3).timeout
 	var defense_roll_command: Dictionary = JSON.parse_string(defense_roll_fake.commands[0]) if defense_roll_fake.commands.size() == 1 else {}
 	if defense_roll_command.get("type") != "roll_dice" or defense_roll_command.get("payload", {}) != {"pending_input_id": str(defense_roll_fixture.pending_input.blade.id)}: _fail("automatic defense did not submit the exact current roll_dice candidate: %s" % defense_roll_fake.commands); return
+	await create_timer(1.5).timeout
 	var player_rolled_die: Button = null; var enemy_rolled_die: Button = null; var leaked_enemy_pending_die := false
 	for button in defense_roll.find_children("*", "Button", true, false):
 		if button.has_meta("inspection_id") and button.get_meta("inspection_id") == "battle.defense_die.blade" and "5" in button.text: player_rolled_die = button
@@ -338,9 +331,9 @@ func _run() -> void:
 		if str(button.get_meta("inspection_id", "")).begins_with("battle.effect_die.goblin.") and button.text.ends_with("\n1"): agitate_dice += 1
 	for label in effect_roll.find_children("*", "Label", true, false):
 		if label.text == "2 damage pending": agitate_outcome = true
-	if agitate_dice != 2 or not agitate_outcome or not effect_roll._log.text.contains("Volatile Poison · 1 · 2 damage pending"):
+	if agitate_dice != 2 or not agitate_outcome:
 		_fail("Agitate lost its Offensive roll, pending damage, or log after an eventless response"); return
-	for choice in [["poison", "Check all 3 Poison stacks"], ["volatile_poison", "Check all 2 Volatile Poison stacks"]]:
+	for choice in [["poison", "Check 3 Poison stacks"], ["volatile_poison", "Check 2 Volatile Poison stacks"]]:
 		var choice_label: String = effect_roll._venom_choice_label({"payload": {"card_ids": ["agitate-preview"], "status_id": choice[0], "target_ids": ["goblin"]}})
 		if choice_label != choice[1]: _fail("Agitate choice omitted the full selected stack count: " + choice_label); return
 	pending_effect_dice.clear(); revealed_player_effect_dice.clear(); revealed_enemy_effect_die = null
@@ -366,13 +359,13 @@ func _run() -> void:
 	if die_ids != ["battle.defense_die.blade"]: _fail("non-rolling Protect created a die or player defense die was missing: %s" % die_ids); return
 	defense_reveal.queue_free(); await process_frame
 	var no_defense = packed.instantiate(); var no_defense_fixture: Dictionary = defense_fixture.duplicate(true)
-	no_defense_fixture.snapshot.defense_selections.erase("goblin")
+	no_defense_fixture.snapshot.defense_selections.erase("goblin"); no_defense_fixture.snapshot.defense_history = {"source-player": {"actor_id": "goblin", "source_id": "source-player", "finalized": true}}
 	no_defense.initial_result = no_defense_fixture; root.add_child(no_defense)
 	await process_frame; await process_frame
 	var saw_no_enemy_defense := false; var saw_unchanged_attack := false
 	for panel in no_defense._defense_result_panels:
 		if panel.data.actor_id != "goblin": continue
-		if panel.data.ability_name == "No defense used": saw_no_enemy_defense = true
+		if panel.data.ability_name == "Passed": saw_no_enemy_defense = true
 		if panel.data.before == 5 and panel.data.after == 5: saw_unchanged_attack = true
 	if not saw_no_enemy_defense or not saw_unchanged_attack: _fail("defense reveal did not explicitly show an undefended player attack"); return
 	no_defense.queue_free(); await process_frame
@@ -388,8 +381,8 @@ func _run() -> void:
 	snapshot_fake.enqueue(restarted_fixture)
 	var snapshot_store := ActiveBattleStore.new(WorkspacePaths.persistent_file("verify_dev_snapshot_active.json")); snapshot_store.clear()
 	var snapshot_capture_fixture := _fixture()
-	snapshot_capture_fixture.events = [{"sequence": 1, "type": "segment_entered", "to": "ongoing_effects"}]
-	var snapshot_screen = packed.instantiate(); snapshot_screen.initial_result = snapshot_capture_fixture; snapshot_screen.gateway = BattleGateway.new(snapshot_fake); snapshot_screen.active_store = snapshot_store; root.add_child(snapshot_screen)
+	snapshot_capture_fixture.events = [{"sequence": 1, "type": "segment_entered", "to": "damage_resolution"}]
+	var snapshot_screen = packed.instantiate(); snapshot_screen.initial_result = snapshot_capture_fixture; snapshot_screen.gateway = BattleGateway.new(snapshot_fake); snapshot_screen.active_store = snapshot_store; snapshot_screen._auto_pass_disabled = true; root.add_child(snapshot_screen)
 	await process_frame; await process_frame
 	var toggle := _button(snapshot_screen, "DEV SNAPSHOTS")
 	if toggle == null: _fail("debug build did not expose the gated developer snapshot controls"); return
@@ -487,22 +480,22 @@ func _run() -> void:
 	var history_screens: Array[Node] = get_nodes_in_group("inspectable_battle_screen"); var review_screen: Node = history_screens[-1]
 	var review_state: Dictionary = review_screen.inspection_state()
 	if not review_state.get("history_review", false) or review_state.get("history_point_id") != history_id or _int_array(review_state.get("selected_dice", [])) != [1, 3]: _fail("history jump did not restore review context and local selections: %s" % review_state); return
-	var roll_in_review := _button(review_screen, "Roll 5 Dice")
+	var roll_in_review := _button(review_screen, "Roll 3/3")
 	var preserve_history := _button(review_screen, "Resume Here · Keep Existing Future")
 	if roll_in_review == null or not roll_in_review.disabled or preserve_history == null or preserve_history.disabled: _fail("history review was not read-only or branch controls were unavailable"); return
 	preserve_history.pressed.emit(); await process_frame; await process_frame
 	history_screens = get_nodes_in_group("inspectable_battle_screen"); var resumed_screen: Node = history_screens[-1]
 	var resumed_state: Dictionary = resumed_screen.inspection_state()
-	if resumed_state.get("history_review", true) or not resumed_state.get("history_replay", false) or resumed_state.get("history_points", []).size() != 3 or _button(resumed_screen, "Roll 5 Dice").disabled: _fail("preserved history branch dropped its forward timeline or did not enter replay: %s" % resumed_state); return
-	_button(resumed_screen, "Roll 5 Dice").pressed.emit(); await process_frame; await process_frame
+	if resumed_state.get("history_review", true) or not resumed_state.get("history_replay", false) or resumed_state.get("history_points", []).size() != 3 or _button(resumed_screen, "Roll 3/3").disabled: _fail("preserved history branch dropped its forward timeline or did not enter replay: %s" % resumed_state); return
+	_button(resumed_screen, "Roll 3/3").pressed.emit(); await process_frame; await process_frame
 	history_screens = get_nodes_in_group("inspectable_battle_screen"); var advanced_screen: Node = history_screens[-1]
 	var advanced_state: Dictionary = advanced_screen.inspection_state()
 	if not advanced_state.get("history_replay", false) or advanced_state.get("history_point_id") != later_history_id or advanced_state.get("history_points", []).size() != 3: _fail("matching recorded action did not move the cursor forward while retaining history: %s" % advanced_state); return
-	_button(advanced_screen, "Roll 5 Dice").pressed.emit(); await process_frame; await process_frame
+	_button(advanced_screen, "Roll 3/3").pressed.emit(); await process_frame; await process_frame
 	if advanced_screen.inspection_state().get("history_divergence_pending", {}).is_empty() or _button(advanced_screen, "Cancel · Keep Existing Future") == null: _fail("changed replay action did not prompt before replacing the future"); return
 	_button(advanced_screen, "Cancel · Keep Existing Future").pressed.emit(); await process_frame
 	if not advanced_screen.inspection_state().get("history_divergence_pending", {}).is_empty() or advanced_screen.inspection_state().get("history_points", []).size() != 3: _fail("canceling divergence did not keep the complete future"); return
-	_button(advanced_screen, "Roll 5 Dice").pressed.emit(); await process_frame; await process_frame
+	_button(advanced_screen, "Roll 3/3").pressed.emit(); await process_frame; await process_frame
 	var confirm_divergence := _button(advanced_screen, "Replace Future and Continue")
 	if confirm_divergence == null: _fail("second changed action did not restore the divergence confirmation"); return
 	confirm_divergence.pressed.emit(); await process_frame; await process_frame

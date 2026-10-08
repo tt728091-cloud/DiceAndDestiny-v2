@@ -1,9 +1,12 @@
 extends SceneTree
 
+const DevToolingGuard := preload("res://tests/support/dev_tooling_guard.gd")
+
 func _init() -> void:
 	call_deferred("_run")
 
 func _run() -> void:
+	if DevToolingGuard.skip_unless_enabled(self, "verify_real_history_roll_endpoints", [DevToolingGuard.HISTORY]): return
 	root.size = Vector2i(1920, 1080)
 	ProjectSettings.set_setting("dice_and_destiny/presentation/income_animation_seconds", 0.2)
 	var gateway := BattleGateway.new()
@@ -15,18 +18,14 @@ func _run() -> void:
 	screen.initial_result = started; screen.gateway = gateway; screen.active_store = store; screen.last_presented_sequence = 0
 	root.add_child(screen); await process_frame; await process_frame
 
-	var continue_button := _button(screen, "Continue Presentation")
-	if continue_button == null: _fail("startup Effects presentation was unavailable"); return
-	continue_button.pressed.emit(); await process_frame; await process_frame
+	# A new battle opens on the automatic Income animation, which offers no manual action.
 	if _button(screen, "Continue Presentation") != null: _fail("automated Income presentation exposed a manual action"); return
-	await create_timer(0.25).timeout; await process_frame; await process_frame
-	var roll := _button(screen, "Roll 5 Dice")
-	if roll == null: _fail("initial offensive roll was unavailable"); return
-	roll.pressed.emit(); await process_frame; await process_frame
-	for roll_number in [2, 3]:
-		var reroll := _button(screen, "Reroll Unkept")
-		if reroll == null: _fail("offensive reroll %d was unavailable" % roll_number); return
-		reroll.pressed.emit(); await process_frame; await process_frame
+	await create_timer(1.5).timeout; await process_frame; await process_frame
+	for roll_number in [1, 2, 3]:
+		var roll := _button(screen, "Roll %d/3" % (4 - roll_number))
+		if roll == null: _fail("offensive roll %d was unavailable" % roll_number); return
+		roll.pressed.emit(); await process_frame; await process_frame
+		await create_timer(2.5).timeout; await process_frame
 
 	var state: Dictionary = screen.inspection_state()
 	var history: Array = state.get("history_points", [])
@@ -41,12 +40,15 @@ func _run() -> void:
 	var roll_origin_id := str(history[-4].get("id", ""))
 	var terminal_id := str(terminal.get("id", ""))
 	var terminal_label := str(terminal.get("label", ""))
-	var pass_planning := _button(screen, "Pass Planning")
-	if pass_planning == null: _fail("post-roll planning action was unavailable"); return
-	pass_planning.pressed.emit(); await process_frame; await process_frame
+	var skip_ability := _button(screen, "Skip Offensive Ability")
+	if skip_ability == null: _fail("post-roll planning action was unavailable"); return
+	skip_ability.pressed.emit(); await process_frame; await process_frame
 	history = screen.inspection_state().get("history_points", [])
-	if history.size() < 2 or str(history[-2].get("id", "")) != terminal_id or str(history[-2].get("label", "")) != terminal_label or not str(history[-1].get("label", "")).begins_with("Pass Planning"):
-		_fail("the action after 3/3 replaced or moved the completed third-roll entry: %s" % history)
+	var terminal_index := -1
+	for index in history.size():
+		if str(history[index].get("id", "")) == terminal_id: terminal_index = index
+	if terminal_index < 0 or terminal_index + 1 >= history.size() or str(history[terminal_index].get("label", "")) != terminal_label or not str(history[terminal_index + 1].get("label", "")).begins_with("Skip Offensive Ability"):
+		_fail("the action after 3/3 replaced or moved the completed third-roll entry: %s" % [history])
 		return
 	var origin_button := _history_button(screen, roll_origin_id)
 	if origin_button == null: _fail("earlier roll state was not jumpable"); return

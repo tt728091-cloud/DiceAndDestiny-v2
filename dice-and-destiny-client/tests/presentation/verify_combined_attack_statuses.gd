@@ -26,8 +26,14 @@ func _run() -> void:
 		screen._view.segment = "damage_resolution" if phase == "damage_reaction" else "defensive"
 		screen._render(); await process_frame
 		var found := false
-		for label in screen._center.find_children("*", "Label", true, false):
-			if label.get_meta("flow_part", "") != "statuses": continue
+		# Defense lists each incoming source in the lower-left station; Damage keeps its target panel.
+		var labels: Array = screen._center.find_children("*", "Label", true, false).filter(func(l): return l.get_meta("flow_part", "") == "statuses")
+		if phase != "damage_reaction":
+			var row: Node = screen._incoming_attack_list.find_child("IncomingAttack_sword-cut", true, false)
+			labels = [] if row == null else row.find_children("*", "Label", true, false).filter(func(l): return "pending" in l.text and l.is_visible_in_tree())
+			var intent = screen._attack_intents.get("sword-cut")
+			_expect(intent != null and _count(intent, "bleed") == "×2" and _count(intent, "poison") == "×3", phase + ": intent symbols sum per status for this recipient only")
+		for label in labels:
 			found = true
 			_expect(label.text.count("Bleed ×2 pending") == 1, phase + ": one combined Bleed ×2 line")
 			_expect(label.text.count("Poison ×3 pending") == 1, phase + ": different statuses stay separate")
@@ -39,3 +45,9 @@ func _run() -> void:
 
 func _expect(condition: bool, message: String) -> void:
 	if not condition: failed = true; push_error("COMBINED ATTACK STATUSES: " + message)
+
+func _count(panel: Control, effect: String) -> String:
+	var children: Array = panel.intent_row.get_children()
+	for i in range(children.size() - 1):
+		if children[i].get_meta("intent_effect", "") == effect and children[i + 1] is Label: return children[i + 1].text
+	return ""

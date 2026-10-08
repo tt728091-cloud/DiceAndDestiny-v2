@@ -48,7 +48,8 @@ func _run() -> void:
 		var dice_rect: Rect2 = screen._player_dice_dock.get_global_rect()
 		var roll_rect: Rect2 = screen._roll_dock.get_global_rect()
 		var rail_rect: Rect2 = screen._ability_dock.get_parent().get_global_rect()
-		_expect(roll_rect.end.y <= dice_rect.position.y and dice_rect.end.y <= rail_rect.position.y, "maps, roll controls and abilities never overlap")
+		# battle-hud-anchors.md: Roll/Skip stack to the right of the player dice at the same top.
+		_expect(roll_rect.position.x >= dice_rect.end.x and not roll_rect.intersects(dice_rect) and roll_rect.end.y <= rail_rect.position.y and dice_rect.end.y <= rail_rect.position.y, "maps, roll controls and abilities never overlap: dice %s roll %s rail %s" % [dice_rect, roll_rect, rail_rect])
 		_expect(screen._enemy_dice_dock.get_global_rect().end.y <= screen._actor_profiles[screen._focused_enemy].get_global_rect().position.y, "enemy dice and maps unfold above their HUD")
 		_expect(not screen._enemy_dice_dock.get_global_rect().intersects(screen._hand_dock.get_global_rect()), "enemy curse maps stay above the hand")
 		var tray: BattleDiceTray = screen._enemy_dice_dock.get_child(0)

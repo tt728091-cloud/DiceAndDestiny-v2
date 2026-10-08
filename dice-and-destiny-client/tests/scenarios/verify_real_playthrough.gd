@@ -13,7 +13,7 @@ func _init() -> void:
 
 func _run() -> void:
 	battle_id = "playthrough-%d-%d" % [Time.get_unix_time_from_system(), Time.get_ticks_usec()]
-	result = gateway.start_battle(battle_id, "blade")
+	result = gateway.start_battle(battle_id, "blade", true)
 	if not _ok("start"): return
 	for step in 800:
 		var snapshot: Dictionary = result.get("snapshot", {})
@@ -84,36 +84,39 @@ func _verify_real_ui(stage: String) -> bool:
 	screen.active_store = ActiveBattleStore.new(WorkspacePaths.persistent_file("playthrough_ui_active.json"))
 	screen.last_presented_sequence = 999999
 	root.add_child(screen)
+	screen.set_process(false)
 	await process_frame
 	await process_frame
 	var pending: Dictionary = result.get("pending_input", {}).get("blade", {})
 	var allowed: Array = pending.get("allowed_commands", [])
+	var view := BattleViewState.new()
+	if not view.apply_result(result): screen.free(); _fail("real UI result could not populate control lifecycle view"); return false
 	var required := {
-		"planning_roll": "Roll 5 Dice",
-		"planning_reroll": "Reroll Unkept",
-		"pass": "Pass / Acknowledge",
+		"planning_roll": "Roll %d/%d" % [view.max_rolls("blade"), view.max_rolls("blade")],
+		"planning_reroll": "Roll %d/%d" % [maxi(0, view.max_rolls("blade") - view.rolls_used("blade")), view.max_rolls("blade")],
+		"pass": "Pass" if screen._unified_defense() else "Pass / Acknowledge",
 	}
 	if _has_button(screen, "Keep Selected", false):
 		var summary := _button_summary(screen); screen.free(); _fail("real UI still exposes the removed Keep Selected action; buttons=%s" % summary); return false
-	var view := BattleViewState.new()
-	if not view.apply_result(result): screen.free(); _fail("real UI result could not populate control lifecycle view"); return false
 	if "planning_pass" in allowed:
-		var pass_label := "Pass Defense" if stage == "defense_selection" else "Pass Planning"
+		var pass_label := "Pass" if screen._unified_defense() else "Pass Defense" if stage == "defense_selection" else "Skip Offensive Ability"
 		if not _has_button(screen, pass_label, true):
 			var summary := _button_summary(screen); screen.free(); _fail("real UI stage %s lacks enabled planning_pass control; buttons=%s" % [stage, summary]); return false
 	for command_type in required:
+		if command_type == "planning_reroll" and view.rolls_used("blade") == 0: continue
 		var should_show: bool = command_type in allowed
 		if command_type == "planning_roll": should_show = should_show and view.rolls_used("blade") == 0
+		elif command_type == "pass": should_show = should_show and not screen._quiet_offensive_reaction()
 		elif command_type == "planning_reroll": should_show = should_show and view.rolls_used("blade") > 0 and view.rolls_used("blade") < view.max_rolls("blade")
 		if should_show and not _has_button(screen, required[command_type], true):
 			var summary := _button_summary(screen); screen.free(); _fail("real UI stage %s lacks enabled %s control; buttons=%s" % [stage, command_type, summary]); return false
-		if not should_show and _has_button(screen, required[command_type], true):
+		if not should_show and _has_button(screen, required[command_type], true) and not (command_type == "pass" and screen._unified_defense() and "planning_pass" in allowed):
 			var summary := _button_summary(screen); screen.free(); _fail("real UI stage %s exposes invalid %s control; buttons=%s" % [stage, command_type, summary]); return false
 	var pending_defense_die := _button_with_inspection_id(screen, "battle.defense_die.blade.pending")
 	var enemy_pending_defense_die := _button_with_inspection_id(screen, "battle.defense_die.goblin.pending")
 	var pending_effect_dice := _buttons_with_inspection_prefix(screen, "battle.effect_die.blade.pending.")
 	var enemy_effect_dice := _buttons_with_inspection_prefix(screen, "battle.effect_die.goblin")
-	if "roll_dice" in allowed and stage == "defense_roll" and (pending_defense_die == null or pending_defense_die.disabled or not pending_defense_die.text.is_empty()):
+	if "roll_dice" in allowed and stage == "defense_roll" and (pending_defense_die != null or screen._defense_roll_action().is_empty()):
 		var summary := _button_summary(screen); screen.free(); _fail("real UI stage %s lacks an enabled blank defense die; buttons=%s" % [stage, summary]); return false
 	if "roll_dice" in allowed and stage == "status_roll" and (pending_effect_dice.is_empty() or pending_effect_dice[0].disabled or not pending_effect_dice[0].text.is_empty()):
 		var summary := _button_summary(screen); screen.free(); _fail("real UI stage %s lacks enabled blank effect dice; buttons=%s" % [stage, summary]); return false
@@ -128,10 +131,12 @@ func _verify_real_ui(stage: String) -> bool:
 	if "planning_select_ability" in allowed:
 		var should_have_ability: bool = stage == "defense_selection" or not result.get("snapshot", {}).get("actors", {}).get("blade", {}).get("qualified_abilities", []).is_empty()
 		if stage == "defense_selection":
-			var source_button: Button = _button_containing(screen, "→ blade")
-			if source_button == null:
+			var source_id := _incoming(result.get("snapshot", {}), "blade")
+			var intent = screen._attack_intents.get(source_id)
+			if intent == null:
 				screen.free(); _fail("defense UI lacks incoming source selector"); return false
-			source_button.pressed.emit()
+			intent.source_selected.emit(source_id)
+			await process_frame
 		if should_have_ability and not _has_enabled_ability(screen):
 			screen.free(); _fail("real UI stage %s lacks an enabled ability" % stage); return false
 	if stage == "discard_to_hand_limit" and _button_containing(screen, "Discard ") == null:
@@ -149,7 +154,13 @@ func _verify_real_ui(stage: String) -> bool:
 
 func _has_button(node: Node, exact_text: String, enabled: bool) -> bool:
 	for child in _all_buttons(node):
-		if child.text == exact_text and (not enabled or not child.disabled): return true
+		if child.text == exact_text and (not enabled or not child.disabled or _review_locked(node, child)): return true
+	return false
+
+func _review_locked(screen: Node, button: Button) -> bool:
+	if not ("_timed_buttons" in screen): return false
+	for item in screen._timed_buttons:
+		if item.button == button: return true
 	return false
 
 func _button_containing(node: Node, text_part: String) -> Button:

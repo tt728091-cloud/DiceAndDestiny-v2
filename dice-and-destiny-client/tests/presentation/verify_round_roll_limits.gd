@@ -31,10 +31,10 @@ func _run() -> void:
 			screen._render()
 			await process_frame
 			_expect(screen._view.max_rolls("blade") == limit, "round %d: correct maximum before and after rolling" % (round_index + 1))
-			var caption := "%d / %d" % [limit - used, limit]
+			var caption := "Roll %d/%d" % [limit - used, limit]
 			var found := false
-			for label in screen._roll_dock.find_children("*", "Label", true, false):
-				if label.text == caption: found = true
+			for button in screen._roll_dock.find_children("*", "Button", true, false):
+				if button.text == caption: found = true
 			_expect(found, "roll button displays " + caption)
 	# Reopening a reduced-roll battle must not depend on receiving past events.
 	var reopened := BattleViewState.new()

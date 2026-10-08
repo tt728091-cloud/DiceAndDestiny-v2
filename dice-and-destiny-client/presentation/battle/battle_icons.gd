@@ -30,16 +30,26 @@ const SHAPES := {
 	"chosen_instrument": '<path d="M7 3H25V29H7ZM11 8H21M11 14H21M11 20H21"/><circle cx="16" cy="25" r="1"/>',
 	"curse_bloom": '<path d="M16 29V18M16 24L7 20M16 26L25 21M16 17C-2 20 1 8 11 11C4-3 28-3 21 11C34 8 31 22 16 17Z"/>',
 	"injury": '<path d="M5 9L9 5 27 23 23 27ZM5 23L9 27 27 9 23 5Z"/>',
-	"advanced_poison": '<path d="M12 3H20M14 3V12L6 26Q5 29 10 29H23Q27 29 25 25L18 12V3M10 22H23M16 14V25M12 19H20"/>'
+	"advanced_poison": '<path d="M12 3H20M14 3V12L6 26Q5 29 10 29H23Q27 29 25 25L18 12V3M10 22H23M16 14V25M12 19H20"/>',
+	# Card preparation statuses (one distinct symbol each).
+	"black_fingerprint_card_effect": '<path d="M16 4C8 4 5 10 5 16M16 8C11 8 9 12 9 17V24M16 12C14 12 13 14 13 17V28M16 4C24 4 27 10 27 16V22M16 8C21 8 23 12 23 17V27M16 12C18 12 19 14 19 17V29"/>',
+	"black_tax_card_effect": '<circle cx="16" cy="16" r="13"/><path d="M10 16H22M16 6V10M16 22V26"/>',
+	"chosen_instrument_card_effect": '<path d="M7 3H25V29H7ZM11 8H21M11 14H21M11 20H21"/><circle cx="16" cy="25" r="1"/>',
+	"deep_puncture_card_effect": '<path d="M4 28L22 10M18 6L26 14M22 2L30 10M8 20L12 24"/>',
+	"ruin_made_flesh_card_effect": '<path d="M16 28C2 18 2 6 10 5C13 5 15 7 16 9C17 7 19 5 22 5C30 6 30 18 16 28ZM12 14L16 18 20 13"/>',
+	"spiteful_ward_card_effect": '<path d="M16 4L26 8V16Q25 24 16 28Q7 24 6 16V8ZM2 10L6 12M30 10L26 12M16 0V4M3 22L7 20M29 22L25 20"/>',
+	"stored_calamity_card_effect": '<path d="M9 6H23V9L26 13V27H6V13L9 9ZM9 9H23M17 14L12 21H17L14 26"/>',
+	"terminal_formula_card_effect": '<path d="M12 3H20M14 3V11L7 25Q6 29 11 29H21Q26 29 25 25L18 11V3M12 18L20 26M20 18L12 26"/>',
+	"venom_lens_card_effect": '<circle cx="13" cy="13" r="9"/><path d="M20 20L29 29M13 8Q10 12 13 16Q16 12 13 8Z"/>'
 }
 static var cache: Dictionary = {}
 static func texture(id: String) -> Texture2D:
 	if cache.has(id): return cache[id]
 	var color := "fff0cc"
 	if id in ["poison", "volatile_poison", "catalyst", "incubation", "advanced_poison"]: color = "b9ef75"
-	elif id in ["protect", "strong_swing_ready"]: color = "a5edce"
+	elif id in ["protect", "strong_swing_ready", "venom_lens_card_effect", "deep_puncture_card_effect", "terminal_formula_card_effect", "ruin_made_flesh_card_effect"]: color = "a5edce"
 	elif id in ["bleed", "injury"]: color = "ff858a"
-	elif id in ["curse_count", "second_knell", "three_knocks_status", "curse_bloom", "maledictions_refusal", "cursed_entangle"]: color = "d98aff"
+	elif id in ["curse_count", "second_knell", "three_knocks_status", "curse_bloom", "maledictions_refusal", "cursed_entangle", "black_fingerprint_card_effect", "black_tax_card_effect", "chosen_instrument_card_effect", "spiteful_ward_card_effect", "stored_calamity_card_effect"]: color = "d98aff"
 	elif id in ["energy", "grave_interest", "black_dividend", "grave_debt"]: color = "ffdb78"
 	var shape: String = SHAPES.get(id, '<path d="M16 2L30 16 16 30 2 16Z"/><circle cx="16" cy="16" r="5"/>')
 	# Opaque outer ink follows the symbol itself, never a rectangular backplate.

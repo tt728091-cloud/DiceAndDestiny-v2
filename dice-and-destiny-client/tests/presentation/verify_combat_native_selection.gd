@@ -32,6 +32,10 @@ func _run() -> void:
 		var original_rect := Rect2()
 		for tile in screen._ability_dock.find_children("*", "Control", true, false):
 			if tile.get_meta("flow_key", "") == selected_key: original_rect = tile.get_global_rect()
+		# The first-person layout has no selection morph; the learned model's
+		# planning turn and the hand-off to offensive reaction are sampled instead.
+		screen.learned_battle_mode = true
+		screen._director.configure_learned_battle(true)
 		screen._send(JSON.stringify(chosen))
 		_expect(not screen._flow_transition.ghosts.has(selected_key), "selected tile is never detached for a flying animation")
 		_expect(screen._error_message.is_empty(), "authority accepts attack")
@@ -39,7 +43,11 @@ func _run() -> void:
 		var sampled := 0
 		var captured := false
 		var sampling_started := Time.get_ticks_msec()
-		while Time.get_ticks_msec() < screen._flow_until:
+		var handoff_deadline := sampling_started + 30000
+		while Time.get_ticks_msec() < handoff_deadline:
+			if screen._model_error or not screen._error_message.is_empty(): break
+			var still_planning: bool = screen._view.stage == "planning" or screen._model_thinking
+			if not still_planning and Time.get_ticks_msec() >= screen._flow_until and sampled > 0: break
 			_check_steady(screen); sampled += 1
 			if not captured and Time.get_ticks_msec() - sampling_started > 220:
 				captured = true
@@ -48,7 +56,11 @@ func _run() -> void:
 					await RenderingServer.frame_post_draw
 					root.get_texture().get_image().save_png(screenshot)
 			await process_frame
-		_expect(sampled > 10, "selection and its follow-up handoff sampled frame by frame")
+		_expect(sampled > 10, "selection and its follow-up handoff sampled frame by frame (%d frames)" % sampled)
+		# Offensive reaction is an opt-in card moment (abf470e): authority pauses
+		# there only when a reaction card is playable, otherwise Defense follows.
+		_expect(screen._view.stage in ["offensive_reaction", "defense_selection"], "attack selection hands off out of planning to offensive reaction or defense (stage=%s)" % screen._view.stage)
+		print("NATIVE COMBAT SELECTION: sampled %d handoff frames into %s" % [sampled, screen._view.stage])
 		screen.learned_battle_mode = true
 		screen._director.configure_learned_battle(true)
 		screen._auto_pass_disabled = false

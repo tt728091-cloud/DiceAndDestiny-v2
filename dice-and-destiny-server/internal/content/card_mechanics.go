@@ -374,7 +374,10 @@ func PrepareMechanicCard(c BattleCardDefinition, lib *BattleLibrary) BattleCardD
 		return c
 	}
 	c.Presentation.RulesText = MechanicRules(c)
-	c.Presentation.EffectSummary = strings.Split(c.Presentation.RulesText, "\n")[0]
+	// Keep an authored short face summary; generated text is the fallback.
+	if c.Presentation.EffectSummary == "" {
+		c.Presentation.EffectSummary = strings.Split(c.Presentation.RulesText, "\n")[0]
+	}
 	timing := CardTimingRules(c.Mechanic.Windows, "any", false)
 	if MechanicHasStatus(c.Mechanic.Kind) {
 		id := MechanicStatusDefinitionID(c)

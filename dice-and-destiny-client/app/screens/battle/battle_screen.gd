@@ -597,7 +597,9 @@ func _render(force: bool = false) -> void:
 	_action_footer = VBoxContainer.new() if _view.segment == "defensive" else HBoxContainer.new(); _action_footer.alignment = BoxContainer.ALIGNMENT_CENTER; footer.add_child(_action_footer)
 	_center_scroll = ScrollContainer.new(); _center_scroll.name = "BattleContentScroll"; _root.add_child(_center_scroll)
 	# Ordinary battle content shares the battlefield; completion is raised separately.
-	_place_cinematic(_center_scroll, Rect2(570, 165, 920, 320))
+	# Effects results (every card loss and excess marker) need the full board
+	# height; other results stay above the fighter HUDs.
+	_place_cinematic(_center_scroll, Rect2(570, 165, 920, 825) if _director.peek().get("type") == "effects_resolved" else Rect2(570, 165, 920, 320))
 	_center_scroll.follow_focus = true
 	_center_scroll.mouse_filter = Control.MOUSE_FILTER_IGNORE
 
@@ -1535,7 +1537,8 @@ func _compact_defense_data(actor_id: String, counts: Dictionary, shown_source: D
 		for hook in definition.get("hooks", []):
 			if hook.get("timing") != "after_defense": continue
 			var required_faces: Array = hook.get("faces_any", [])
-			if not required_faces.is_empty() and not faces.any(func(f): return f in required_faces): continue
+			# Catalog faces arrive as floats; compare whole numbers.
+			if not required_faces.is_empty() and not faces.any(func(f): return required_faces.any(func(r): return int(r) == int(f))): continue
 			if hook.get("requires_prevention", false) and (prevented <= 0 or before <= 0): continue
 			for op in hook.get("operations", []):
 				var words := ""
@@ -3154,12 +3157,19 @@ func _build_history_bar(parent: VBoxContainer) -> void:
 	var horizontal_bar := scroll.get_h_scroll_bar()
 	_history_scroll_adjusting = true
 	horizontal_bar.value_changed.connect(func(value): _history_scroll_changed(scroll, int(value)))
+	# The bar lives in the History panel; position it whenever it is shown.
+	scroll.visibility_changed.connect(func(): _position_history_scroll.call_deferred(scroll))
+	scroll.resized.connect(func(): _position_history_scroll.call_deferred(scroll))
 	_position_history_scroll.call_deferred(scroll)
 	if not _history_message.is_empty():
 		var message := Label.new(); message.text = _history_message; message.add_theme_color_override("font_color", Color("ff8a78") if "error" in _history_message.to_lower() else Color("9fd69f")); content.add_child(message)
 
 func _position_history_scroll(scroll: ScrollContainer) -> void:
-	if not is_instance_valid(scroll): return
+	# A closed History panel has no width; positioning it would overwrite the
+	# saved scroll. Opening the panel positions it again.
+	if not is_instance_valid(scroll) or not scroll.is_visible_in_tree() or scroll.size.x <= 0:
+		_history_scroll_adjusting = false
+		return
 	var horizontal_bar := scroll.get_h_scroll_bar()
 	var latest := maxi(0, int(horizontal_bar.max_value - horizontal_bar.page))
 	_history_scroll_adjusting = true

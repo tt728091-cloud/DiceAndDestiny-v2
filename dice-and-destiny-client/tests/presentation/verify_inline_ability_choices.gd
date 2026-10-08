@@ -64,9 +64,12 @@ func _check(ability: String, viewport_size: Vector2i) -> void:
 		if selected == 0: await _capture("%s-%d" % [ability, viewport_size.x])
 		var next := fixture.duplicate(true); next.legal_actions = []
 		fake.enqueue(next)
-		var click := InputEventMouseButton.new(); click.position = target.get_global_rect().get_center(); click.button_index = MOUSE_BUTTON_LEFT; click.pressed = true
-		root.push_input(click, true); var release := click.duplicate(); release.pressed = false; root.push_input(release, true)
-		await process_frame
+		await _click(target.get_global_rect().get_center())
+		if not defense:
+			_expect(fake.commands.size() == selected, "offensive choice prepares locally until a target is clicked")
+			var portrait: Button = screen.find_child("OffensiveTarget_goblin", true, false)
+			_expect(portrait != null, "goblin target cue shown")
+			if portrait != null: await _click(portrait.get_global_rect().get_center())
 		_expect(fake.commands.size() == selected + 1, "one command per real inline click")
 		if fake.commands.size() > selected: _expect(fake.commands[selected] == JSON.stringify(fixture.legal_actions[selected]), "exact tier, toxin, source and cost preserved")
 		_expect(screen.find_children("*", "AcceptDialog", false, false).is_empty(), "no ability choice popup")
@@ -91,3 +94,10 @@ func _capture(name: String) -> void:
 
 func _expect(condition: bool, message: String) -> void:
 	if not condition: failed = true; push_error("INLINE ABILITY CHOICES: " + message)
+
+func _click(point: Vector2) -> void:
+	var motion := InputEventMouseMotion.new(); motion.position = point; root.push_input(motion, true)
+	await process_frame
+	var click := InputEventMouseButton.new(); click.position = point; click.button_index = MOUSE_BUTTON_LEFT; click.pressed = true
+	root.push_input(click, true); var release := click.duplicate(); release.pressed = false; root.push_input(release, true)
+	await process_frame

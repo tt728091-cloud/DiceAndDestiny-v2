@@ -12,9 +12,9 @@ func _run() -> void:
 	_expect(fixture.get("accepted") == true, "native catalog loads")
 	var view := BattleViewState.new(); view.apply_result(fixture)
 	var cards: Dictionary = BattlePresentationCatalog._catalog.get("cards", {})
-	for id in cards: _expect(SUMMARIES.TEXT.has(id), "reviewed summary exists for " + id)
+	for id in cards: _expect(not str(BattlePresentationCatalog.card(id).effect_summary).strip_edges().is_empty(), "face summary exists for " + id)
 	var board := Control.new(); board.theme = preload("res://presentation/battle/cinematic_theme.gd").create(); root.add_child(board)
-	var ids := SUMMARIES.TEXT.keys(); ids.sort()
+	var ids := cards.keys(); ids.sort()
 	for mode in ["hand", "disabled", "pending"]:
 		for page in range(ceili(ids.size() / 18.0)):
 			var displayed: Array[BattleCard] = []

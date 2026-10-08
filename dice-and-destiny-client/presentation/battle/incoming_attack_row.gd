@@ -85,6 +85,9 @@ func damage_rect() -> Rect2:
 	# A source can scroll out of view. Keep its effect endpoint inside the list,
 	# never redirect a prevention flight back up to the enemy's overhead badge.
 	var rect := amount.get_global_rect()
-	var viewport: Rect2 = presenter.screen._incoming_attack_list.get_global_rect()
+	# A trail can outlive the Defense list it started from; then nothing clamps.
+	var list = presenter.screen._incoming_attack_list
+	if not is_instance_valid(list): return rect
+	var viewport: Rect2 = list.get_global_rect()
 	rect.position.y = clampf(rect.position.y, viewport.position.y, maxf(viewport.position.y, viewport.end.y - rect.size.y))
 	return rect

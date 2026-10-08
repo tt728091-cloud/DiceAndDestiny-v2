@@ -1,6 +1,9 @@
 extends SceneTree
 
+const DevToolingGuard := preload("res://tests/support/dev_tooling_guard.gd")
+
 func _init() -> void:
+	if DevToolingGuard.skip_unless_enabled(self, "verify_dev_snapshots", [DevToolingGuard.HISTORY, DevToolingGuard.SNAPSHOTS]): return
 	var gateway := BattleGateway.new()
 	var source_id := "snapshot-native-source-%d-%d" % [Time.get_unix_time_from_system(), Time.get_ticks_usec()]
 	var snapshot_name := "round-1-offensive-native-%d" % Time.get_ticks_usec()

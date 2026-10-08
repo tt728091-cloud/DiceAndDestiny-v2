@@ -46,7 +46,8 @@ func _check(size: Vector2i, segment: String, stage: String) -> void:
 	if button != null:
 		var position := button.get_global_rect()
 		_expect(root.get_visible_rect().encloses(position), "%s footer inside %s viewport" % [stage, size])
-		_expect(position.end.y > root.get_visible_rect().end.y - 90, "action stays at bottom")
+		var station: Rect2 = screen._root.get_global_transform_with_canvas() * Rect2(24, screen.PLAYER_ZONE_TOP, 418, 1080 - screen.PLAYER_ZONE_TOP)
+		_expect(station.encloses(position), "%s action stays in the lower-left player station at %s" % [stage, size])
 		var scroll: ScrollContainer = screen._center_scroll
 		_expect(scroll.get_v_scroll_bar().max_value > scroll.get_v_scroll_bar().page, "overflow content scrolls")
 		var path := OS.get_environment("DICE_AND_DESTINY_FOOTER_SCREENSHOTS")

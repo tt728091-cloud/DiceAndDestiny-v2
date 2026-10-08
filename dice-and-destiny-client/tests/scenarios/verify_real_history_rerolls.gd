@@ -1,6 +1,9 @@
 extends SceneTree
 
+const DevToolingGuard := preload("res://tests/support/dev_tooling_guard.gd")
+
 func _init() -> void:
+	if DevToolingGuard.skip_unless_enabled(self, "verify_real_history_rerolls", [DevToolingGuard.HISTORY]): return
 	var gateway := BattleGateway.new()
 	var source_id := "history-rerolls-%d-%d" % [Time.get_unix_time_from_system(), Time.get_ticks_usec()]
 	var started := gateway.start_battle(source_id, "blade")

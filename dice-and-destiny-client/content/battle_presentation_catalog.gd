@@ -31,7 +31,8 @@ static func card(id: String) -> Dictionary:
 		"text": str(presentation.get("rules_text", "")),
 		"art": "res://assets/battle/cards/%s.png" % id,
 		"illustration_path": str(presentation.get("illustration_path", "")),
-		"effect_summary": str(presentation.get("effect_summary", CARD_SUMMARIES.TEXT.get(id, presentation.get("rules_text", "No effect")))),
+		# Reviewed face text first, then the authority's short summary, then rules.
+		"effect_summary": str(CARD_SUMMARIES.TEXT.get(id, presentation.get("effect_summary", "") if not str(presentation.get("effect_summary", "")).is_empty() else presentation.get("rules_text", "No effect"))),
 		"targeting": _dictionary(value.get("targeting", {})),
 		"play": _dictionary(value.get("play", {})),
 		"operations": _array(value.get("operations", [])),
@@ -164,6 +165,10 @@ static func offensive_tier_summaries(id: String, actor: Dictionary = {}) -> Arra
 					var name := str(status(status_id).glyph) if status_id == "poison" else str(status(status_id).name)
 					benefits.append("%s %d%s%s" % ["Gain" if operation.get("target") == "self" else "Apply", int(operation.get("stack_count", 0)), "" if status_id == "poison" else " ", name])
 				_: needs_rules = true
+		# Configured abilities put their follow-up (e.g. Curse) in tier hooks.
+		if int(value.get("configuration_version", 0)) > 0:
+			var hooked := ability_followup(id, str(tier.get("id", "")))
+			if not hooked.is_empty(): benefits.append("Then " + hooked.left(1).to_lower() + hooked.substr(1))
 		if needs_rules or benefits.is_empty():
 			benefits = [str(_dictionary(value.get("presentation", {})).get("effect_summary", ability(id, actor).text))]
 		for modifier in _array(_dictionary(value.get("qualification", {})).get("conditional_bonuses", [])):
@@ -203,9 +208,10 @@ static func ability_followup_intents(id: String, tier_id: String = "") -> Array[
 			for op in hook.operations:
 				if op.type == "special_effect":
 					var effect: Dictionary = op.special
-					var icon := "curse_count"; var count := str(effect.get("amount", 1))
+					# JSON numbers arrive as floats; counts are whole numbers.
+					var icon := "curse_count"; var count := str(int(effect.get("amount", 1)))
 					if effect.kind == "roll_cursed": icon = "dice"; count = "≤" + count
-					elif effect.kind == "status_threshold": icon = str(effect.result_status_id); count = str(effect.stacks) + "?"
+					elif effect.kind == "status_threshold": icon = str(effect.result_status_id); count = str(int(effect.stacks)) + "?"
 					elif effect.kind == "curse_face_choice": count = "1/die"
 					result.append({"icon": icon, "count": count, "hint": _special_words(effect)})
 					if effect.kind == "entomb_choice": result.append({"icon": "entomb", "count": "1", "hint": _special_words(effect)})

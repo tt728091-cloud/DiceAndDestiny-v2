@@ -189,12 +189,24 @@ func _live_defense(ability_id: String, auto_pass_disabled: bool) -> void:
 			screen._selected_card.clear()
 			_expect(screen._sole_pass_action().get("type") == "planning_pass", "roll completion stays automatic regardless of auto-pass preference")
 			deadline = Time.get_ticks_msec() + 12000
-			while Time.get_ticks_msec() < deadline and screen._view.stage != "defense_selection":
+			while Time.get_ticks_msec() < deadline and screen._held_defense_view == null and screen._view.stage != "defense_selection":
 				_expect_no_apply(screen)
 				if screen._view.stage == "defense_reaction" and screen._attack_intents.has(target):
 					var preview: Control = screen._attack_intents[target]
 					_expect(preview.damage.text == str(preview.data.before), "damage waits for authoritative saved-card feedback")
 				await process_frame
+			_expect(screen._held_defense_view != null, "finalized defense holds the board for its shared feedback clock")
+			await process_frame
+			var held_saved: Array = screen._damage_feedback.get("saved", [])
+			_expect(not held_saved.is_empty(), "saved-card animation receives released cards while the finalized defense is held")
+			var held_found := false
+			for control in screen._root.get_children():
+				if not control.has_method("prevention_origin"): continue
+				held_found = true
+				_expect(screen.attack_anchor_rect(target).has_point(control.get_global_transform_with_canvas() * control.prevention_origin()), "saved-card trails start at the local incoming amount")
+			_expect(held_found, "native saved-card feedback visible while the defense is held")
+			await _verify_saved_animation(screen, target)
+			while Time.get_ticks_msec() < deadline and screen._view.stage != "defense_selection": await process_frame
 			_expect(screen._view.stage == "defense_selection", "roll automatically returns to same defense hub")
 			_expect(is_instance_valid(screen._auto_pass_button) and screen._auto_pass_button.is_visible_in_tree(), "main Pass remains reachable in defense hub")
 			_expect(screen._incoming_attack_rows.has(target) and screen._incoming_attack_rows[target].state_label.text == "", "completed native defense clears Undefended")
@@ -203,17 +215,6 @@ func _live_defense(ability_id: String, auto_pass_disabled: bool) -> void:
 			for card in saved:
 				_expect(card.get("origin_rect", Rect2()).position.x > 1450, "saved cards animate from right-side pending list")
 				_expect(card.get("released_destination") == (card.get("original_zone") if ability_id.ends_with("_plus") else "discard"), "Guard animation honors authoritative saved destination")
-			await _settle()
-			var feedback_found := false
-			for control in screen._root.get_children():
-				if not control.has_method("prevention_origin"): continue
-				feedback_found = true
-				var anchor: Rect2 = screen.attack_anchor_rect(target)
-				var origin: Vector2 = control.get_global_transform_with_canvas() * control.prevention_origin()
-				_expect(anchor.has_point(origin), "saved-card green trails start at the local incoming amount")
-			_expect(feedback_found, "native saved-card feedback remains visible")
-			await _capture("native-saved")
-			await _verify_saved_animation(screen, target)
 			deadline = Time.get_ticks_msec() + 12000
 			while Time.get_ticks_msec() < deadline and (screen._model_thinking or screen._view.learned_policy.get("model_turn", false)): await process_frame
 			_expect(screen._view.stage == "defense_selection", "completion does not act as main Pass")

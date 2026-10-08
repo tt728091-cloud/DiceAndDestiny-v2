@@ -1,11 +1,13 @@
 extends SceneTree
 
+const DevToolingGuard := preload("res://tests/support/dev_tooling_guard.gd")
+
 func _init() -> void:
 	call_deferred("_run")
 
 func _run() -> void:
-	OS.set_environment("DICE_AND_DESTINY_ENABLE_SNAPSHOTS", "1")
-	OS.set_environment("DICE_AND_DESTINY_ENABLE_HISTORY", "1")
+	# The native snapshot/history authorities read these flags at process start.
+	if DevToolingGuard.skip_unless_enabled(self, "verify_snapshot_during_presentation", [DevToolingGuard.HISTORY, DevToolingGuard.SNAPSHOTS]): return
 	root.size = Vector2i(1280, 720)
 	var gateway := BattleGateway.new()
 	var store := ActiveBattleStore.new(WorkspacePaths.persistent_file("verify_snapshot_during_presentation_active.json"))
@@ -26,6 +28,8 @@ func _run() -> void:
 	if not before.get("presentation_active", false):
 		_fail("new battle did not begin on a capturable presentation beat: %s" % before); return
 	var presentation_type := str(before.get("presentation_type", ""))
+	# The presentation cursor the screen has actually reached; the snapshot must persist it.
+	var captured_sequence: int = screen._director.last_sequence()
 
 	var toggle := _button(screen, "DEV SNAPSHOTS")
 	if toggle == null: _fail("developer snapshot controls were unavailable"); return
@@ -49,8 +53,8 @@ func _run() -> void:
 	if after.get("loaded_snapshot_name") != snapshot_name or not after.get("presentation_active", false) or str(after.get("presentation_type", "")) != presentation_type:
 		_fail("loaded snapshot did not resume the exact visible presentation: before=%s after=%s" % [before, after]); return
 	var active := store.load_active()
-	if active.get("battle_id") == battle_id or active.get("snapshot_name") != snapshot_name or int(active.get("last_sequence", -1)) != 0:
-		_fail("loaded presentation cursor was not persisted as the active battle: %s" % active); return
+	if active.get("battle_id") == battle_id or active.get("snapshot_name") != snapshot_name or int(active.get("last_sequence", -1)) != captured_sequence:
+		_fail("loaded presentation cursor was not persisted as the active battle (expected last_sequence %d): %s" % [captured_sequence, active]); return
 
 	store.clear()
 	restored.queue_free(); await process_frame

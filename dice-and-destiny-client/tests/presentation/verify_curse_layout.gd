@@ -68,13 +68,20 @@ func _planning(count: int, viewport: Vector2i) -> void:
 		var click := InputEventMouseButton.new(); click.position = target.get_global_rect().get_center(); click.button_index = MOUSE_BUTTON_LEFT; click.pressed = true
 		root.push_input(click, true)
 		var release := click.duplicate(); release.pressed = false; root.push_input(release, true)
+		await process_frame
+		_expect(fake.commands.is_empty() and not screen._pending_attack.is_empty(), "tier click waits for explicit enemy selection")
+		var enemy := screen.find_child("OffensiveTarget_goblin", true, false) as Button
+		_expect(enemy != null, "enemy target is highlighted")
+		if enemy != null:
+			click.position = enemy.get_global_rect().get_center(); release.position = click.position
+			root.push_input(click, true); root.push_input(release, true)
 		await _frames()
-		_expect(fake.commands.size() == 1 and JSON.parse_string(fake.commands[0]).payload.tier_id == "skull_3", "real tier click submits exactly the chosen action")
+		_expect(fake.commands.size() == 1 and JSON.parse_string(fake.commands[0]).payload.tier_id == "skull_3" and JSON.parse_string(fake.commands[0]).payload.target_ids == ["goblin"], "real tier and enemy clicks submit exactly the chosen action")
 		while Time.get_ticks_msec() <= screen._flow_until: await process_frame
 		f.snapshot.actors.blade.selected_ability = "hexbrand"; f.snapshot.actors.blade.selected_tier = "skull_%d" % count
 		f.legal_actions = []; screen._view.apply_result(f); screen._render(); await _frames()
 		var selected: Dictionary = screen._selected_attack("blade")
-		_expect("Then apply %d Curse" % (count - 2) in selected.text, "selected attack preserves chosen Curse tier")
+		_expect("Apply %d Curse" % (count - 2) in selected.text, "selected attack preserves chosen Curse tier")
 		for tile in screen._ability_dock.find_children("*", "Button", true, false):
 			if tile is BattleAbilityTile: _check_tile(tile)
 		if count == 3: await _capture("curse-selected-%d" % viewport.x)
@@ -89,7 +96,10 @@ func _defense(id: String, viewport: Vector2i) -> void:
 	for tile in screen._ability_dock.find_children("*", "Button", true, false):
 		if tile is BattleAbilityTile:
 			_check_tile(tile)
-			_expect("Prevent" in tile._recipe_label.text and "Energy" in tile._recipe_label.text, "defenses explain rolls, costs and prevention")
+			# Defense tiles show the authored rules_text. Hexward costs 0 Energy,
+			# so only Misfortune Repaid states an Energy cost.
+			var recipe: String = tile._recipe_label.text.to_lower()
+			_expect("roll" in recipe and "prevent" in recipe and ("1 energy" in recipe if tile.ability_id == "misfortune_repaid" else true), "defenses explain rolls, costs and prevention: %s" % tile._recipe_label.text)
 	await _capture("curse-defense-selection-%s-%d" % [id, viewport.x])
 	f.snapshot.stage = "defense_reaction"; f.pending_input.blade.stage = "defense_reaction"; f.pending_input.blade.allowed_commands = ["pass"]; f.legal_actions = []
 	f.snapshot.defense_selections = {"blade": {"actor_id": "blade", "ability_id": id, "source_id": "incoming", "rolled_face": 1, "rolled_faces": [1] if id == "hexward_rebuttal" else [1, 6]}}
@@ -97,7 +107,7 @@ func _defense(id: String, viewport: Vector2i) -> void:
 	var counts := {"blade": {}, "goblin": {}}
 	var result: Dictionary = screen._compact_defense_data("blade", counts, f.snapshot.damage_sources[0])
 	_expect(result.prevented == (2 if id == "hexward_rebuttal" else 1), "visible prevention matches Curse symbols")
-	_expect("Curse" in result.note if id == "hexward_rebuttal" else "Expand" in result.note, "follow-up outcome visible during defense")
+	_expect("Curse" in result.note if id == "hexward_rebuttal" else "expand" in result.note.to_lower(), "follow-up outcome visible during defense: %s" % result.note)
 	if id == "misfortune_repaid":
 		_expect(result.gains.size() == 1 and result.gains[0].amount == 2 and result.gains[0].status_id == "curse_count", "Omen displays its Count reward")
 		f.snapshot.defense_selections.blade.rolled_faces = [6, 6]

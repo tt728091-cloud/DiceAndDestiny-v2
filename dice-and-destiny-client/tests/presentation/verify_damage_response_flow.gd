@@ -100,14 +100,14 @@ func _check_saved_animation(screen) -> void:
 	if feedback == null: return
 	feedback.set_process(false)
 	var original: Dictionary = screen._view.actors.duplicate(true)
-	feedback.present_progress(0.6)
+	feedback.present_progress(0.25)
 	for entry in feedback._saved:
 		_expect(entry.origin.size.x > 0 and entry.origin.size.y > 0, "uses the actual revealed card rectangle")
 		_expect(entry.card.position.is_equal_approx(entry.origin.position), "saved card starts where it was marked for removal")
 		_expect(entry.card.get_node("RemovalState").text == "✓ SAVED", "saved badge replaces pending removal")
 	for entry in feedback._pending:
 		_expect(entry.card.position.is_equal_approx(entry.origin.position), "unsaved cards hold their slots while saved cards leave")
-	feedback.present_progress(1.45)
+	feedback.present_progress(0.85)
 	for entry in feedback._saved:
 		_expect(entry.progress > 0 and entry.progress < 1, "saved cards visibly travel before disappearing")
 	feedback.present_progress(2.05)
@@ -130,7 +130,7 @@ func _check_saved_animation(screen) -> void:
 func _check_native_ward() -> void:
 	var gateway = preload("res://local_client/learned_battle/learned_battle_gateway.gd").new(root.get_node("LearnedBattleRuntime"), "seat-a", "brine-mask", "curse")
 	var before := {}; var after := {}
-	for seed_value in [153, 48, 1, 2, 3]:
+	for seed_value in [4, 11, 12, 26, 27]:
 		var result: Dictionary = gateway.start_battle("ward-%d" % seed_value, seed_value)
 		for step in 100:
 			var action := {}

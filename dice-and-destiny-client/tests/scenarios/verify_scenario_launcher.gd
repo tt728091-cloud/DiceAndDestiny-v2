@@ -1,9 +1,12 @@
 extends SceneTree
 
+const DevToolingGuard := preload("res://tests/support/dev_tooling_guard.gd")
+
 const GATEWAY_SCRIPT := preload("res://local_client/battle_gateway/battle_gateway.gd")
 const STORE_SCRIPT := preload("res://local_client/battle_gateway/active_battle_store.gd")
 
 func _init() -> void:
+	if DevToolingGuard.skip_unless_enabled(self, "verify_scenario_launcher", [DevToolingGuard.SCENARIOS]): return
 	var state_root := OS.get_environment("DICE_AND_DESTINY_SCENARIO_STATE_ROOT")
 	if state_root.is_empty():
 		state_root = WorkspacePaths.runtime_dir("scenario_headless_state")

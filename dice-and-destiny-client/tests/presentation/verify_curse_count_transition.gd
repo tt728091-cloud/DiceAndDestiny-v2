@@ -31,15 +31,17 @@ func _run() -> void:
 		_expect(notices.size() == 1, "legacy rolls form one post-damage sequence")
 		if notices.is_empty(): screen.queue_free(); continue
 		var notice = notices[0]; notice.set_process(false)
-		_expect(screen._director._queue.map(func(beat): return beat.type) == ["combat_damage", "attack_curse", "effects_resolved"], "recorded order is damage, curse roll, then Effects")
+		# Post-damage Curse is folded into the Damage beat as an inline follow-up.
+		_expect(screen._director._queue.map(func(beat): return beat.type) == ["combat_damage", "effects_resolved"], "recorded order is damage (with its curse roll), then Effects")
+		_expect(screen._director._queue[0].get("curse_followups", []).size() == 1, "damage beat carries the post-damage curse roll")
 		_expect(notice.feedback.changes.size() == 3, "legacy rolled marks do not duplicate their physical roll")
 		_expect("×3" in screen._actor_profiles.goblin.statuses.text, "Count stays three during damage")
 		screen._show_damage_counts(1.0)
 		_expect(screen._actor_profiles.goblin.health.value == 6, "three attack damage lowers nine health to six")
-		screen._director.advance(); screen._render(true)
-		await create_timer(0.85).timeout
-		for frame in 5: await process_frame
-		_expect(screen._director.peek().event.round == 3, "post-damage curse remains in the originating round")
+		# The inline follow-up starts once the Damage tear/counter updates finish.
+		var deadline := Time.get_ticks_msec() + 7000
+		while notice._waiting() and Time.get_ticks_msec() < deadline: await process_frame
+		_expect(screen._director.peek().get("type") == "combat_damage" and screen._director.peek().event.round == 3 and not notice._waiting(), "post-damage curse remains in the originating round's Damage beat")
 		notice._step = 2; notice._elapsed = notice.duration * 0.2; notice.refresh()
 		_expect("×3" in screen._actor_profiles.goblin.statuses.text, "Count stays three while D5 rolls")
 		notice._elapsed = notice.duration * 0.6; notice.refresh()
@@ -51,15 +53,20 @@ func _run() -> void:
 		notice.queue_free(); screen._director.advance(); screen._render(true)
 		await create_timer(0.85).timeout
 		for frame in 5: await process_frame
-		var panel = screen._effects_panel; panel.set_process(false); panel.resume_at(1.5); panel.present_progress()
-		_expect(panel._grave_labels.size() == 1 and panel.entries.is_empty(), "legacy conversion has a trigger cue without inventing damage")
-		var cue: Label = panel._grave_labels[0].label
-		_expect("instead of damage" in cue.text and "4 → 1 Count · 0 damage" in cue.text, "Grave Interest explicitly accounts for all Count")
-		_expect(not "Grave Debt" in cue.text, "legacy battle does not invent a status absent from its rules")
-		_expect(root.get_visible_rect().encloses(cue.get_global_rect()), "trigger fits viewport")
-		await _capture("conversion-%d" % width)
-		panel.resume_at(panel.duration); panel.present_progress()
-		_expect(screen._actor_profiles.goblin.health.value == 6 and "×1" in screen._actor_profiles.goblin.statuses.text, "Effects retains six health and one Count")
+		var panel = screen._effects_panel
+		_expect(is_instance_valid(panel), "Effects panel follows the Damage beat")
+		if is_instance_valid(panel):
+			panel.set_process(false); panel.resume_at(1.5); panel.present_progress()
+			_expect(panel._grave_labels.size() == 1 and panel.entries.is_empty(), "legacy conversion has a trigger cue without inventing damage")
+			if panel._grave_labels.size() == 1:
+				var cue: Label = panel._grave_labels[0].label
+				_expect("instead of damage" in cue.text and "4 → 1 Count · 0 damage" in cue.text, "Grave Interest explicitly accounts for all Count")
+				_expect(not "Grave Debt" in cue.text, "legacy battle does not invent a status absent from its rules")
+				_expect(root.get_visible_rect().encloses(cue.get_global_rect()), "trigger fits viewport")
+			await _capture("conversion-%d" % width)
+			if is_instance_valid(panel):
+				panel.resume_at(panel.duration); panel.present_progress()
+				_expect(screen._actor_profiles.goblin.health.value == 6 and "×1" in screen._actor_profiles.goblin.statuses.text, "Effects retains six health and one Count")
 		var log := preload("res://local_client/view_state/combat_log.gd").new()
 		log.receive({"snapshot": result.snapshot, "events": [{"type": "curse_resolved", "sequence": 999, "actor_id": "goblin", "data": events[-1].data.steps[-1].data}]})
 		_expect("Grave Interest spends 3 Count" in log.text(), "combat log names the reason damage was replaced")

@@ -73,7 +73,8 @@ func _run() -> void:
 	root.add_child(screen)
 	for frame in 5: await process_frame
 	var live: Control = screen._root.get_node("BattleScenery")
-	_expect(live.has_node("Fighter_player") and live.has_node("Fighter_enemy"), "live battle renders both independent fighters")
+	# First-person battlefield (docs/game-design/battle-hud-anchors.md): no player sprite.
+	_expect(not live.has_node("Fighter_player") and live.has_node("Fighter_enemy"), "live battle renders only enemy fighters")
 	await _capture("layered-live-battle")
 	screen.set_encounter_visual(layout)
 	screen._render()
@@ -85,7 +86,7 @@ func _run() -> void:
 	_expect(screen._root.scale.x == screen._root.scale.y, "letterboxing scales habitat and fighters together")
 	var live_enemy: TextureRect = live.get_node("Fighter_enemy")
 	var enemy_visual := LIBRARY.fighter(str(screen._view.actor("goblin").definition_id))
-	_expect((live_enemy.position + live_enemy.size * enemy_visual.ground_anchor).is_equal_approx(layout.fighters[1].ground_position), "resizing preserves the configured ground position")
+	_expect((live_enemy.position + live_enemy.size * enemy_visual.ground_anchor).is_equal_approx(screen._battlefield_visual().fighters[0].ground_position), "resizing preserves the configured ground position")
 	var profile := ActorProfile.new(); root.add_child(profile)
 	profile.display("new-enemy", {"definition_id": "spore_cantor"}, false)
 	_expect(profile.title.text == "Spore Cantor" and profile.portrait.texture == LIBRARY.fighter("spore_cantor").portrait, "HUD uses the same visual profile registry")

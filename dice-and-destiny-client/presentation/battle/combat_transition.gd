@@ -81,6 +81,12 @@ func present(board: Control) -> void:
 			_continue_panel(key, ghosts[key].node, node, duration)
 			continued[key] = true
 			continue
+		# Attack badges (Buttons) persist across stages; keep them steady.
+		if key.begins_with("source:") and ghosts.has(key) and node is Button:
+			node.modulate.a = 1.0
+			ghosts[key].node.hide()
+			continued[key] = true
+			continue
 		node.modulate.a = 0.0
 		destinations.append({"node": node})
 		var tween := create_tween(); motions.append(tween)

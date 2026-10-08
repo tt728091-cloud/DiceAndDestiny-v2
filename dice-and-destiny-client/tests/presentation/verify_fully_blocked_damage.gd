@@ -50,7 +50,17 @@ func _run() -> void:
 	screen._apply_model_result(update)
 	await process_frame
 	_expect(screen._director.peek().get("type") == "combat_damage", "live model response holds the Damage presentation")
-	_expect(screen._enemy_buttons.values().all(func(button): return button.disabled), "battlefield nameplates cannot retarget during queued damage")
+	# Nameplates stay enabled (they toggle enemy dice), but pressing them while
+	# presentation beats are queued must not retarget or disturb the Damage beat.
+	var focused_before: String = screen._focused_enemy
+	var beat_before: Dictionary = screen._director.peek()
+	for enemy_id in screen._enemy_buttons.keys():
+		var nameplate: Button = screen._enemy_buttons[enemy_id]
+		if not is_instance_valid(nameplate): continue
+		nameplate.pressed.emit()
+		await process_frame
+		_expect(screen._focused_enemy == focused_before, "battlefield nameplate %s cannot retarget during queued damage" % enemy_id)
+		_expect(screen._director.peek().get("type") == "combat_damage" and is_same(screen._director.peek(), beat_before), "battlefield nameplate %s leaves the queued Damage beat unchanged" % enemy_id)
 	_expect(_has_label(screen, "No cards lost"), "blocked damage visibly reports no cards lost")
 	screen._show_damage_counts(1.0)
 	_expect(screen._actor_profiles.blade.health.value == 8, "combat playback leaves player health unchanged")

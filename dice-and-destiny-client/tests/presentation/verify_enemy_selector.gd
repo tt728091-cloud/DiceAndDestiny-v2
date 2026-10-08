@@ -24,9 +24,9 @@ func _run() -> void:
 	_expect(multi._player_dice_dock.get_rect() == player_rect, "player dice retain original coordinates")
 	_expect(multi._hand_dock.get_rect() == hand_rect and multi._ability_dock.get_parent().get_rect() == ability_rect and multi._center.get_rect() == center_rect, "hand, ability rail, and central battle retain original layout")
 	_expect(multi._enemy_profile_dock.size.x <= enemy_rect.size.x and multi._enemy_dice_docks.size() == 2, "enemy HUDs compact and each has its own dice")
-	_expect(multi._enemy_dice_dock.get_global_rect().position.y >= multi._actor_profiles[multi._focused_enemy].get_global_rect().end.y, "enemy dice sit below their own profile")
+	_expect(not multi._enemy_dice_dock.visible, "enemy dice start collapsed")
 	_expect(multi._enemy_dice_dock.get_child(0)._buttons[0].size == BattleDiceTray.HUD_DIE_SIZE, "enemy dice match the compact player dice size")
-	_expect(multi._enemy_profile_dock.get_child_count() == 2, "no selector above enemy profile")
+	_expect(multi._enemy_profile_dock.get_child_count() == 1, "no selector above enemy profile")
 	var scenery: Control = multi._root.get_node("BattleScenery")
 	var right: TextureRect = scenery.get_node("Fighter_enemy")
 	var left: TextureRect = scenery.get_node("Fighter_enemy_2")
@@ -87,7 +87,6 @@ func _defense() -> void:
 	var screen = _screen(fixture)
 	await process_frame; await process_frame
 	_expect(screen._attack_intents.values().filter(func(panel): return panel.data.actor_id == "blade").size() == 2, "both incoming attacks stay visible during selection")
-	_expect(screen._enemy_buttons.values().all(func(button): return button.disabled), "no enemy switching controls during defense")
 	var fake: FakeBattleAuthority = screen.gateway._authority
 	fake.enqueue(fixture)
 	await _click(screen._attack_intents["source-2"].intent)
@@ -105,7 +104,7 @@ func _defense() -> void:
 	fixture.snapshot.damage_sources[1].prevention = 1
 	fixture.legal_actions = [fixture.legal_actions[0]]
 	screen._view.apply_result(fixture); screen._render(); await process_frame
-	_expect(screen._focused_enemy == "goblin" and screen._selected_source == "source-1", "next defense selects remaining attacker")
+	_expect(screen._focused_enemy == "goblin" and screen._selected_source.is_empty(), "next defense focuses remaining attacker without preselecting it")
 	_expect(screen._attack_intents.values().filter(func(panel): return panel.data.actor_id == "blade").size() == 2, "completed defense remains visible beside remaining choice")
 	var data: Dictionary = screen._compact_defense_data("blade", screen._status_counts(), fixture.snapshot.damage_sources[1])
 	_expect(data.gains.is_empty() and data.read_only, "historical defense does not replay status gains")
@@ -138,7 +137,6 @@ func _effects() -> void:
 	if is_instance_valid(screen._effects_panel):
 		screen._effects_panel.resume_at(3.2); screen._effects_panel.present_progress()
 		_expect(screen._effects_panel.visible_actor_ids == ["blade", "goblin", "goblin-2"], "all actor effects share one timeline")
-		_expect(screen._enemy_buttons.values().all(func(button): return button.disabled), "no switching required for effects")
 		for entry in screen._effects_panel.entries:
 			_expect(entry.has("die") and entry.die.is_visible_in_tree(), "every effect has a visible die")
 		screen._effects_panel.set_paused(true)
@@ -185,7 +183,7 @@ func _damage() -> void:
 	await create_timer(1.6).timeout
 	_expect(screen._combat_columns["goblin-2"].get_child_count() == 1 and screen._damage_grids[2].get_child_count() == 2, "outgoing attack and enemy removals stay visible on the right")
 	for grid in screen._damage_grids:
-		for card in grid.get_children(): _expect(screen._center_scroll.get_global_rect().encloses(card.get_global_rect()), "all removal cards fit above the hand")
+		_expect(root.get_visible_rect().encloses(grid.dock.get_global_rect()) and not grid.dock.get_global_rect().intersects(screen._hand_dock.get_global_rect()), "removal stacks stay on screen and clear of the hand")
 	await _capture("brine-stacked-damage.png")
 	# Prevent only the second hit; authority releases two removals from the batch.
 	sources[1].final_amount = 3
@@ -211,7 +209,7 @@ func _defense_plan_review() -> void:
 	fixture.legal_actions = [{"battle_id": fixture.snapshot.battle_id, "actor_id": "blade", "type": "planning_pass", "payload": {"pending_input_id": "choose-all"}}]
 	var screen = _screen(fixture); screen._auto_pass_disabled = false
 	await process_frame; await process_frame
-	_expect(screen._focused_enemy == "goblin-2" and screen._selected_source == "second", "queued first defense selects remaining decision")
+	_expect(screen._focused_enemy == "goblin-2" and screen._selected_source.is_empty(), "queued first defense focuses remaining decision without preselecting it")
 	_expect(screen._sole_pass_action().is_empty(), "sole pass is never automatically chosen during defense selection")
 	_expect("Queued" in screen._attack_intents["first"].data.note and "Needs defense" in screen._attack_intents["second"].data.note, "both decision states are visible")
 	var fake: FakeBattleAuthority = screen.gateway._authority

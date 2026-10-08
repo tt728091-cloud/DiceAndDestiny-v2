@@ -29,7 +29,7 @@ func _run() -> void:
 			for tile in tiles:
 				var title: Label = tile.find_child("MinimalTitle", true, false)
 				_expect(is_equal_approx(title.global_position.x, first_title.global_position.x), "ability names share a left edge")
-				_expect(tile.size.y == 48 and tile._minimal, "no expanded effect prose")
+				_expect(tile.size.y == 36 and tile._minimal, "no expanded effect prose")
 				_expect(screen._ability_dock.get_parent().get_global_rect().encloses(tile.get_global_rect()), "rows stay inside rail")
 				if tile.ability_id == "hexbrand":
 					var tiers: Array = tile.find_children("*", "Button", true, false).filter(func(button): return button.has_meta("tier_id"))
@@ -46,9 +46,10 @@ func _run() -> void:
 					_expect(is_equal_approx(row.get_node("MinimalRequirement").get_global_rect().end.x, tier_right), "requirements and tier controls share a right edge")
 					_expect(tile.get_node_or_null("AbilityChoices") == null and not tile.disabled, "one enabled button for single-outcome ability")
 					if tile.ability_id == action.payload.ability_id: click = tile
-			_expect(screen._roll_dock.get_global_rect().end.y < screen._player_dice_dock.get_global_rect().position.y and screen._player_dice_dock.get_global_rect().end.y < screen._ability_dock.get_global_rect().position.y, "Roll/Skip above dice above abilities")
-			_expect(is_equal_approx(screen._player_dice_dock.position.x, screen._roll_dock.position.x), "dice and Roll share the left edge")
-			_expect(screen._roll_dock.get_global_rect().end.x <= screen._action_footer.get_global_rect().position.x, "Roll leaves room for Skip")
+			var dice_rect: Rect2 = screen._player_dice_dock.get_global_rect(); var roll_rect: Rect2 = screen._roll_dock.get_global_rect(); var skip_rect: Rect2 = screen._action_footer.get_global_rect()
+			_expect(is_equal_approx(dice_rect.position.y, roll_rect.position.y) and dice_rect.end.x <= roll_rect.position.x, "Roll sits beside the dice on the station's top row")
+			_expect(is_equal_approx(roll_rect.position.x, skip_rect.position.x) and roll_rect.end.y <= skip_rect.position.y, "Skip sits directly below Roll")
+			_expect(maxf(dice_rect.end.y, skip_rect.end.y) <= screen._ability_dock.get_global_rect().position.y, "dice and Roll/Skip stay above abilities")
 			if not OS.get_environment("DICE_AND_DESTINY_MINIMAL_SCREENSHOTS").is_empty() and action == base.legal_actions[0] and DisplayServer.get_name() != "headless":
 				RenderingServer.force_draw(false); root.get_texture().get_image().save_png(OS.get_environment("DICE_AND_DESTINY_MINIMAL_SCREENSHOTS").path_join("enabled-%d.png" % viewport.x))
 			if click != null:

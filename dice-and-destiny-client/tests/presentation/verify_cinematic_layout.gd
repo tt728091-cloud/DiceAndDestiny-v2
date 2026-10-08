@@ -40,11 +40,12 @@ func _run() -> void:
 		var roll_rect: Rect2 = screen._roll_dock.get_global_rect()
 		_expect(is_equal_approx(screen._ability_dock.get_parent().position.y + screen._ability_dock.get_parent().size.y, 1055), "abilities anchored to lower left")
 		var ability_rect: Rect2 = screen._ability_dock.get_parent().get_global_rect()
-		_expect(roll_rect.end.y <= dice_rect.position.y and dice_rect.end.y <= ability_rect.position.y, "left dice, roll controls and abilities never overlap: %s / %s / %s" % [dice_rect, roll_rect, ability_rect])
+		var skip_rect: Rect2 = screen._action_footer.get_global_rect()
+		_expect(dice_rect.end.x <= roll_rect.position.x and dice_rect.end.x <= skip_rect.position.x and maxf(dice_rect.end.y, skip_rect.end.y) <= ability_rect.position.y, "left dice, roll controls and abilities never overlap: %s / %s / %s / %s" % [dice_rect, roll_rect, skip_rect, ability_rect])
 		_expect(not screen._roll_dock.get_global_rect().intersects(screen._action_footer.get_global_rect()), "roll and skip remain separate click targets")
 		var roll_button := _control(screen, "battle.command.planning_reroll")
 		var skip_button := _control(screen, "battle.command.planning_pass")
-		_expect(roll_button != null and skip_button != null and is_equal_approx(roll_button.get_global_rect().position.y, skip_button.get_global_rect().position.y) and is_equal_approx(roll_button.size.y, skip_button.size.y), "Roll and Skip have identical top and height")
+		_expect(roll_button != null and skip_button != null and is_equal_approx(roll_button.get_global_rect().position.x, skip_button.get_global_rect().position.x) and roll_button.get_global_rect().size.is_equal_approx(skip_button.get_global_rect().size) and skip_button.get_global_rect().position.y >= roll_button.get_global_rect().end.y, "Skip sits directly below Roll with identical width and height")
 		for die in screen._player_dice_dock.find_children("*", "Button", true, false):
 			for state in ["normal", "hover", "pressed", "disabled"]:
 				_expect(die.get_theme_stylebox(state).bg_color == Color("282728"), "dice retain uniform charcoal faces in every interaction state")
@@ -82,7 +83,10 @@ func _run() -> void:
 		for tile in screen._ability_dock.find_children("*", "BattleAbilityTile", true, false):
 			_expect(screen._ability_dock.get_parent().get_global_rect().encloses(tile.get_global_rect()), "all four ability tiles fit without scrolling")
 		for tile in screen._ability_dock.find_children("*", "BattleAbilityTile", true, false):
-			_expect(tile._minimal and tile.size.y == 36, "minimal 36px ability row")
+			var requirement := tile.find_child("MinimalRequirement", true, false) as Control
+			var wrapped: bool = requirement != null and requirement.get_parent() == tile
+			var expected_height: float = 60.0 if wrapped else 36.0
+			_expect(tile._minimal and is_equal_approx(tile.size.y, expected_height), "minimal ability row is %spx (requirement wrapped: %s, actual %s)" % [expected_height, wrapped, tile.size.y])
 			for label in tile.find_children("*", "Label", true, false):
 				if label.name in ["AbilityOutcome", "TierOutcome"]: _expect(not label.is_visible_in_tree(), "rules moved out of live rail")
 			_expect(tile.tooltip_text.contains(BattlePresentationCatalog.ability(tile.ability_id).text), "full rules retained in popup")
@@ -115,7 +119,7 @@ func _run() -> void:
 		profile.statuses.text = "Poison ×3\nVolatile Poison ×3\nCatalyst ×3\nBleed ×3\nIncubation ×1\nEntangle ×1\nAdditional status\nAdditional status"
 		await process_frame; await process_frame; await process_frame
 		_expect(not screen._player_profile_dock.get_global_rect().intersects(screen._hand_dock.get_global_rect()), "expanded status HUD retains breathing room above hand")
-		_expect(is_equal_approx(screen._player_dice_dock.position.y - screen._roll_dock.position.y, 52), "status growth moves the controls together")
+		_expect(screen._roll_dock.get_global_rect().is_equal_approx(roll_rect) and is_equal_approx(screen._player_dice_dock.position.y, screen._roll_dock.position.y), "status growth leaves the roll controls fixed beside the dice")
 		_expect(screen._player_dice_dock.get_global_rect().position.is_equal_approx(dice_rect.position), "status growth leaves player dice anchored to the ability rail")
 		_expect(screen._utility_panels.log.position.y == 245, "log stays in the utility rail when status HUDs grow")
 		profile.statuses.text = original_statuses

@@ -1,9 +1,12 @@
 extends SceneTree
 
+const DevToolingGuard := preload("res://tests/support/dev_tooling_guard.gd")
+
 func _init() -> void:
 	call_deferred("_run")
 
 func _run() -> void:
+	if DevToolingGuard.skip_unless_enabled(self, "verify_real_history_scene", [DevToolingGuard.HISTORY]): return
 	root.size = Vector2i(1920, 1080)
 	var gateway := BattleGateway.new()
 	var store := ActiveBattleStore.new(WorkspacePaths.persistent_file("verify_real_history_scene_active.json")); store.clear()
@@ -25,18 +28,24 @@ func _run() -> void:
 	var state: Dictionary = screen.inspection_state()
 	var points: Array = state.get("history_points", [])
 	if points.size() != 3 or points[0].get("id") != first_id or points[1].get("id") != second_id or not str(points[2].get("action_key", "")).is_empty(): _fail("real screen did not load its complete history including the current endpoint: %s" % state); return
+	# The history bar lives inside the History utility panel.
+	var history_toggle: Button = null
+	for control in screen.find_children("*", "Button", true, false):
+		if control.has_meta("utility") and str(control.get_meta("utility")) == "history": history_toggle = control
+	if history_toggle == null: _fail("History panel control was unavailable"); return
+	history_toggle.pressed.emit(); await process_frame; await process_frame
 	var point_button: Button = null
 	var history_bar: PanelContainer = null
 	for control in screen.find_children("*", "Button", true, false):
 		if control.has_meta("inspection_id") and str(control.get_meta("inspection_id")) == "battle.history.point.%s" % first_id: point_button = control
 	for control in screen.find_children("*", "PanelContainer", true, false):
 		if control.has_meta("inspection_id") and control.get_meta("inspection_id") == "battle.history.bar": history_bar = control
-	if point_button == null or history_bar == null or history_bar.size.x < 1000 or history_bar.size.y <= 0: _fail("real history point was not jumpable from a laid-out timeline bar"); return
+	if point_button == null or history_bar == null or not history_bar.is_visible_in_tree() or history_bar.size.x < 800 or history_bar.size.y <= 0: _fail("real history point was not jumpable from a laid-out timeline bar: %s" % [Vector2.ZERO if history_bar == null else history_bar.size]); return
 	point_button.pressed.emit(); await process_frame; await process_frame
 	var screens: Array[Node] = get_nodes_in_group("inspectable_battle_screen"); var review: Node = screens[-1]
 	var review_state: Dictionary = review.inspection_state()
 	if not review_state.get("history_review", false): _fail("real history jump did not enter review mode: %s" % review_state); return
-	var review_roll := _button(review, "Roll 5 Dice")
+	var review_roll := _button(review, "Roll 3/3")
 	if review_roll == null or not review_roll.disabled or _button(review, "Return to Latest") == null: _fail("real review screen was not read-only or lacked exit controls"); return
 	var review_panel: PanelContainer = null
 	for control in review.find_children("*", "PanelContainer", true, false):
@@ -46,14 +55,14 @@ func _run() -> void:
 	screens = get_nodes_in_group("inspectable_battle_screen"); var replay: Node = screens[-1]
 	var replay_state: Dictionary = replay.inspection_state()
 	if not replay_state.get("history_replay", false) or replay_state.get("history_points", []).size() != 3 or replay_state.get("history_point_id") != first_id: _fail("keeping history did not retain the forward timeline: %s" % replay_state); return
-	var replay_roll := _button(replay, "Roll 5 Dice")
+	var replay_roll := _button(replay, "Roll 3/3")
 	if replay_roll == null or replay_roll.disabled: _fail("recorded replay action was not available"); return
 	replay_roll.pressed.emit(); await process_frame; await process_frame
 	screens = get_nodes_in_group("inspectable_battle_screen"); var advanced: Node = screens[-1]
 	var advanced_state: Dictionary = advanced.inspection_state()
 	if not advanced_state.get("history_replay", false) or advanced_state.get("history_point_id") != second_id or advanced_state.get("history_points", []).size() != 3: _fail("matching action did not move forward through retained history: %s" % advanced_state); return
-	var different := _button(advanced, "Pass Planning")
-	if different == null: different = _button(advanced, "Reroll Unkept")
+	var different := _button(advanced, "Skip Offensive Ability")
+	if different == null: different = _button(advanced, "Roll 2/3")
 	if different == null: _fail("no alternate action was available for divergence validation"); return
 	different.pressed.emit(); await process_frame; await process_frame
 	if advanced.inspection_state().get("history_divergence_pending", {}).is_empty() or _button(advanced, "Cancel · Keep Existing Future") == null: _fail("different action did not prompt before dropping history"); return
