@@ -1186,7 +1186,11 @@ func (e Engine) handleSettledCommand(battle *state.Battle, cmd command.Command) 
 	}
 	var events []event.Event
 	cardID, _ := programPayload(cmd)
-	if battle.Settled.Actors[cmd.ActorID].CardExecution != nil || (cardID != "" && library.Cards[settledCardDefinitionID(battle, cmd.ActorID, cardID)].Program != nil) {
+	// A one-card hand-limit discard has the same shape as a card play; no card
+	// is played while discarding down, so it always belongs to the discard.
+	if window.Stage == stageHandLimit {
+		events, err = e.handleHandLimitCommand(battle, cmd)
+	} else if battle.Settled.Actors[cmd.ActorID].CardExecution != nil || (cardID != "" && library.Cards[settledCardDefinitionID(battle, cmd.ActorID, cardID)].Program != nil) {
 		events, err = e.handleProgramCommand(battle, library, cmd)
 	} else {
 		switch window.Stage {
@@ -1212,8 +1216,6 @@ func (e Engine) handleSettledCommand(battle *state.Battle, cmd command.Command) 
 			events, err = e.handleDefenseReactionCommand(battle, library, cmd)
 		case stageBlindReact:
 			events, err = e.handleBlindReactionCommand(battle, library, cmd)
-		case stageHandLimit:
-			events, err = e.handleHandLimitCommand(battle, cmd)
 		default:
 			err = fmt.Errorf("unsupported settled window stage %q", window.Stage)
 		}
