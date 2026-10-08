@@ -531,6 +531,10 @@ func _face_tile(parent: Node, die_id: String, face: int, size: int) -> PanelCont
 	text.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER; text.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	text.add_theme_font_size_override("font_size", int(size * 0.5) if size < 40 else int(size * 0.3)); text.add_theme_color_override("font_color", Color("211e19"))
 	text.mouse_filter = Control.MOUSE_FILTER_IGNORE; tile.add_child(text)
+	# Full-size faces show the carved battle die; small chips stay plain numbers.
+	if size >= 40:
+		tile.add_theme_stylebox_override("panel", StyleBoxEmpty.new())
+		StoneDie.dress(text, die_id, face)
 	return tile
 
 func _populate_entries() -> void:

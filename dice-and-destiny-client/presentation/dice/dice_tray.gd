@@ -6,14 +6,16 @@ var selected: Array = []
 var compact_row := false
 # Render at native small dimensions; curse numbers stay independently sized.
 var hud_compact := false
+## Enemy-owned standard dice use slate rather than the player's pale stone.
+var enemy_dice := false
 var dice_columns := 5
 const HUD_DIE_SIZE := Vector2(56, 60)
 const HUD_ROW_WIDTH := 304.0
 var _buttons: Array[Button] = []
 var _caption: Label
-var _faces: Array[TextureRect] = []
+var _stones: Array[StoneDie] = []
 var _numbers: Array[Label] = []
-var _normal_symbols: Array[Label] = []
+var _normal_symbols: Array[StoneDie] = []
 var _curse_symbols: Array[Label] = []
 var _mark_labels: Array[Label] = []
 var _mark_panels: Array[PanelContainer] = []
@@ -45,20 +47,24 @@ func _ready() -> void:
 		bound.add_theme_stylebox_override("normal", badge)
 		bound.hide(); slot.add_child(bound); _bound_labels.append(bound)
 		_build_mark_map(slot, index)
-		var icon := TextureRect.new(); icon.mouse_filter = Control.MOUSE_FILTER_IGNORE; icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE; icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-		button.add_child(icon); icon.position = Vector2(19, 7); icon.size = Vector2(32, 32); _faces.append(icon)
-		var symbol := Label.new(); symbol.name = "NormalSymbol"; symbol.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		symbol.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER; symbol.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-		symbol.add_theme_font_size_override("font_size", 20 if hud_compact else 23); symbol.add_theme_color_override("font_color", Color("efe5cc")); symbol.add_theme_color_override("font_shadow_color", Color.TRANSPARENT)
+		# Carved-stone body beneath the engraved symbol, Curse mark and corner number.
+		var regions := StoneDie.layout(button.custom_minimum_size)
+		var stone := StoneDie.new(); stone.mode = StoneDie.Mode.BODY; button.add_child(stone); _stones.append(stone)
+		var symbol := StoneDie.new(); symbol.name = "NormalSymbol"; symbol.mode = StoneDie.Mode.GLYPH; symbol.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		button.add_child(symbol); _normal_symbols.append(symbol)
 		var curse := Label.new(); curse.name = "CurseSymbol"; curse.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		curse.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER; curse.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-		curse.position = Vector2(31, 3) if hud_compact else Vector2(39, 9); curse.size = Vector2(21, 26) if hud_compact else Vector2(24, 28)
-		curse.add_theme_font_size_override("font_size", 20 if hud_compact else 23); curse.add_theme_color_override("font_color", Color("e2b2ff")); curse.add_theme_color_override("font_shadow_color", Color.TRANSPARENT)
+		var mark: Rect2 = regions.mark
+		curse.position = mark.position; curse.size = mark.size
+		_engrave(curse, int(regions.font_size * 1.3)); curse.add_theme_color_override("font_color", StoneDie.CURSE_INK)
+		curse.add_theme_color_override("font_shadow_color", Color.TRANSPARENT)
+		# Centre the letter on the badge even when the font's line is taller.
+		curse.position.y = mark.get_center().y - curse.size.y * 0.5
 		button.add_child(curse); _curse_symbols.append(curse)
-		var number := Label.new(); number.mouse_filter = Control.MOUSE_FILTER_IGNORE; number.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER; number.add_theme_color_override("font_color", Color("efe5cc")); number.add_theme_color_override("font_shadow_color", Color.TRANSPARENT)
-		number.add_theme_font_size_override("font_size", 20 if hud_compact else 23)
-		button.add_child(number); number.position = Vector2(0, 31) if hud_compact else Vector2(0, 42); number.size = Vector2(56, 24) if hud_compact else Vector2(70, 25); _numbers.append(number)
+		var number := Label.new(); number.mouse_filter = Control.MOUSE_FILTER_IGNORE; number.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER; number.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+		_engrave(number, int(regions.font_size))
+		var corner: Rect2 = regions.number
+		button.add_child(number); number.position = corner.position; number.size = corner.size; _numbers.append(number)
 		var binding := preload("res://presentation/dice/entomb_binding.gd").new()
 		binding.name = "EntombBinding"; button.add_child(binding); binding.hide(); _bindings.append(binding)
 
@@ -67,6 +73,13 @@ func _ready() -> void:
 	_mark_legend.add_theme_font_size_override("font_size", 13)
 	_mark_legend.add_theme_color_override("font_color", Color("e2c6fa"))
 	_mark_legend.hide(); add_child(_mark_legend)
+
+# Numbers and marks are cut into the stone: dark ink over a lit lower edge.
+func _engrave(label: Label, font_size: int) -> void:
+	label.add_theme_font_override("font", StoneDie.font())
+	label.add_theme_font_size_override("font_size", font_size)
+	label.add_theme_constant_override("shadow_offset_x", 1); label.add_theme_constant_override("shadow_offset_y", 1)
+	label.add_theme_constant_override("outline_size", 0)
 
 func _build_mark_map(slot: VBoxContainer, index: int) -> void:
 	var panel := PanelContainer.new(); panel.name = "CurseMap%d" % (index + 1)
@@ -162,34 +175,32 @@ func _face_is_cursed(index: int, face: int) -> bool:
 
 func _show_face(index: int, face: int) -> void:
 	var button := _buttons[index]
-	var die_id := str(_dice[index].get("die_id", "standard_d6")) if index < _dice.size() else "standard_d6"
+	# Unrolled dice still show their owned die's stone before the first roll.
+	var owned_id := str(_owned[index].get("definition_id", "standard_d6")) if index < _owned.size() else "standard_d6"
+	var die_id := str(_dice[index].get("die_id", owned_id)) if index < _dice.size() else owned_id
 	var symbol := BattlePresentationCatalog.symbol_for_die_face(die_id, face)
 	var cursed := _face_is_cursed(index, face)
 	var curse_glyph := str(BattlePresentationCatalog.status("curse_count").glyph)
 	button.text = "%s%s\n%d" % [symbol, " " + curse_glyph if cursed else "", face] if face > 0 else "—"
 	button.tooltip_text = "Die %d: face %d, %s%s" % [index + 1, face, BattlePresentationCatalog.symbol_name_for_die_face(die_id, face), " (kept)" if index in selected else ""] if face > 0 else "Ready die %d" % (index + 1)
 	if cursed: button.tooltip_text += "\nCurse symbol · physical rolls of this face add 1 Curse Count."
-	var illustrated := face > 0 and die_id == "venom_d6"
-	_faces[index].visible = illustrated
+	_stones[index].configure(die_id, face, enemy_dice, curse_glyph if cursed else "")
 	_numbers[index].visible = face > 0
 	_numbers[index].text = str(face)
-	_normal_symbols[index].visible = face > 0 and not illustrated
-	_normal_symbols[index].text = symbol
+	_normal_symbols[index].visible = face > 0
+	_normal_symbols[index].configure(die_id, face, enemy_dice)
 	_curse_symbols[index].visible = cursed
 	_curse_symbols[index].text = curse_glyph
-	var symbol_position := Vector2(6, 7) if cursed else Vector2(19, 7)
-	var symbol_size := Vector2(28, 32) if cursed else Vector2(32, 32)
-	if hud_compact:
-		symbol_position = Vector2(4, 3) if cursed else Vector2(15, 3)
-		symbol_size = Vector2(26, 27)
-	_normal_symbols[index].position = symbol_position; _normal_symbols[index].size = symbol_size
-	_faces[index].position = symbol_position; _faces[index].size = symbol_size
-	if illustrated:
-		_faces[index].texture = load("res://assets/battle/wasteland/%s.svg" % ("fang" if face <= 3 else "gland" if face <= 5 else "coil"))
+	var regions := StoneDie.layout(button.custom_minimum_size)
+	var glyph: Rect2 = regions.glyph_marked if cursed else regions.glyph
+	_normal_symbols[index].position = glyph.position; _normal_symbols[index].size = glyph.size
+	var ink := StoneDie.ink(die_id, enemy_dice); var light := StoneDie.highlight(die_id, enemy_dice)
+	_numbers[index].add_theme_color_override("font_color", ink)
+	_numbers[index].add_theme_color_override("font_shadow_color", Color(light, 0.85))
 	# Separate face controls preserve both symbols and their own colors. Native
 	# text retains the same information for accessibility and inspection.
 	for key in ["font_color", "font_hover_color", "font_pressed_color", "font_hover_pressed_color", "font_disabled_color", "font_focus_color"]:
-		button.add_theme_color_override(key, Color.TRANSPARENT if face > 0 else Color("efe5cc"))
+		button.add_theme_color_override(key, Color.TRANSPARENT if face > 0 else ink)
 
 func _toggle(pressed: bool, index: int) -> void:
 	if pressed and index not in selected: selected.append(index)
@@ -197,22 +208,10 @@ func _toggle(pressed: bool, index: int) -> void:
 	selected.sort()
 	selection_changed.emit(selected.duplicate())
 
+# The stone body draws the die; the button keeps only its text and input.
 func _style_die(button: Button) -> void:
-	var ink := Color("efe5cc")
-	for state in ["normal", "hover", "pressed", "disabled"]:
-		var style := StyleBoxFlat.new()
-		style.bg_color = preload("res://presentation/battle/cinematic_theme.gd").DARK_SURFACE
-		style.border_color = Color("ffe0a0") if state in ["hover", "pressed"] else Color("a69c83")
-		style.border_width_left = 2; style.border_width_top = 3; style.border_width_right = 4; style.border_width_bottom = 6
-		style.set_corner_radius_all(7); style.shadow_color = Color("000000b0"); style.shadow_size = 4; style.shadow_offset = Vector2(2, 4)
-		style.content_margin_left = 4; style.content_margin_right = 4; style.content_margin_top = 2; style.content_margin_bottom = 4
-		if hud_compact:
-			style.set_border_width_all(2); style.border_width_bottom = 3; style.set_corner_radius_all(4)
-			style.shadow_size = 2; style.shadow_offset = Vector2(1, 2)
-			style.content_margin_top = 1; style.content_margin_bottom = 1
-		if state == "pressed": style.shadow_color = Color("e8c78070"); style.shadow_size = 7
-		button.add_theme_stylebox_override(state, style)
-	for color_key in ["font_color", "font_hover_color", "font_pressed_color", "font_hover_pressed_color", "font_disabled_color", "font_focus_color"]: button.add_theme_color_override(color_key, ink)
+	var empty := StyleBoxEmpty.new()
+	for state in ["normal", "hover", "pressed", "hover_pressed", "disabled", "focus"]: button.add_theme_stylebox_override(state, empty)
 	button.add_theme_color_override("font_shadow_color", Color.TRANSPARENT)
 
 # Mark data persists even when the offensive result is hidden or a die is rolling.

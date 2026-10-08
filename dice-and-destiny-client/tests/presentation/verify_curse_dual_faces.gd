@@ -22,12 +22,13 @@ func _run() -> void:
 					_expect(tray._curse_symbols[0].visible == cursed, "negative symbol matches current face, not just the die")
 					_expect(tray._buttons[0].modulate == Color.WHITE, "main die retains normal colors")
 					_expect(tray._numbers[0].visible and tray._numbers[0].text == str(face), "number survives double-symbol layout")
-					_expect(tray._faces[0].visible if die_id == "venom_d6" else tray._normal_symbols[0].visible, "original positive symbol stays visible")
+					_expect(tray._normal_symbols[0].visible, "original positive symbol stays visible")
+					_expect(not StoneDie.glyph(BattlePresentationCatalog.symbol_id_for_die_face(die_id, face)).is_empty(), "shipped symbols have a carved stone glyph")
 					var glyph := BattlePresentationCatalog.symbol_for_die_face(die_id, face)
 					_expect(tray._buttons[0].text.begins_with(glyph) and tray._buttons[0].text.ends_with("\n%d" % face), "accessible die text preserves normal symbol and number")
 					_expect(tray._buttons[0].button_pressed, "kept state survives mark refresh")
 					if cursed:
-						var normal: Control = tray._faces[0] if die_id == "venom_d6" else tray._normal_symbols[0]
+						var normal: Control = tray._normal_symbols[0]
 						_expect(not normal.get_rect().intersects(tray._curse_symbols[0].get_rect()), "positive and negative symbols do not overlap")
 						_expect("Curse symbol" in tray._buttons[0].tooltip_text, "tooltip explains the negative symbol")
 					# A different animated face must not retain a stale Curse symbol.

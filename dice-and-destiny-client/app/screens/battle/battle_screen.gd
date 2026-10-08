@@ -1555,7 +1555,7 @@ func _compact_defense_data(actor_id: String, counts: Dictionary, shown_source: D
 	elif ability_id == "misfortune_repaid" and prevented > 0 and before > 0:
 		note += ("\n" if not note.is_empty() else "") + ("Die Curse resolved" if finalized else "Then choose an attacker die: seed / Expand / Surge")
 	if finalized or not queued.is_empty(): gains.clear()
-	return {"source_id": str(source.get("id", "")), "read_only": finalized or _history_review or _submitting, "actor_id": actor_id, "actor_name": _actor_display_name(actor_id), "stacked": _multiple_enemies(), "attack_name": (_actor_display_name(attacker) + " · " if _multiple_enemies() and actor_id == viewer_actor_id else "") + BattlePresentationCatalog.ability(str(source.get("source_content_id", ""))).name, "before": before, "after": pending, "prevented": prevented, "ability_name": ability.name if not ability_id.is_empty() else ("Queued — " + BattlePresentationCatalog.ability(str(_view.raw_snapshot.get("defense_plans", {}).get(str(source.get("id", "")), {}).get("ability_id", ""))).name if _view.raw_snapshot.get("defense_plans", {}).has(str(source.get("id", ""))) else "Passed" if _source_handled(str(source.get("id", ""))) else "Needs defense"), "rules": ability.text, "dice": dice, "die_id": die_id, "gains": gains, "attack_statuses": attack_statuses, "note": note}
+	return {"source_id": str(source.get("id", "")), "read_only": finalized or _history_review or _submitting, "actor_id": actor_id, "actor_name": _actor_display_name(actor_id), "stacked": _multiple_enemies(), "attack_name": (_actor_display_name(attacker) + " · " if _multiple_enemies() and actor_id == viewer_actor_id else "") + BattlePresentationCatalog.ability(str(source.get("source_content_id", ""))).name, "before": before, "after": pending, "prevented": prevented, "ability_name": ability.name if not ability_id.is_empty() else ("Queued — " + BattlePresentationCatalog.ability(str(_view.raw_snapshot.get("defense_plans", {}).get(str(source.get("id", "")), {}).get("ability_id", ""))).name if _view.raw_snapshot.get("defense_plans", {}).has(str(source.get("id", ""))) else "Passed" if _source_handled(str(source.get("id", ""))) else "Needs defense"), "rules": ability.text, "dice": dice, "die_id": die_id, "enemy_die": actor_id != viewer_actor_id, "gains": gains, "attack_statuses": attack_statuses, "note": note}
 
 # Bespoke after-damage effects are not status_applications. Show them on the
 # same target panel as ordinary attack statuses, independently of prevention.
@@ -1665,12 +1665,14 @@ func _build_defense_panel(parent: VBoxContainer, actor_id: String, revealed: boo
 	if face > 0:
 		var die_data := _as_dictionary(roll.get("die", {})); var die_id := str(die_data.get("die_id", defense_die_id))
 		die.text = "%s\n%d" % [BattlePresentationCatalog.symbol_for_die_face(die_id, face), face]
+		StoneDie.dress(die, die_id, face, actor_id != viewer_actor_id)
 		die.tooltip_text = "%s defensive die: face %d, %s." % [actor_name.capitalize(), face, BattlePresentationCatalog.symbol_name_for_die_face(die_id, face)]
 		die.disabled = true; die.add_theme_font_size_override("font_size", 26); dice_row.add_child(die); _inspect(die, "battle.defense_die.%s" % actor_id, die.tooltip_text)
 	elif revealed:
 		var no_die := Label.new(); no_die.custom_minimum_size = Vector2(120, 105); no_die.text = "NO DIE ROLL"; no_die.vertical_alignment = VERTICAL_ALIGNMENT_CENTER; no_die.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER; no_die.add_theme_font_size_override("font_size", 18); no_die.add_theme_color_override("font_color", Color("b8bfca")); dice_row.add_child(no_die)
 	else:
 		die.tooltip_text = "Click this blank player defense die to roll it."
+		StoneDie.dress(die, defense_die_id, 0)
 		die.disabled = _submitting or _director.has_beats() or _history_review
 		die.pressed.connect(func(): _send(BattleCommandBuilder.roll_dice(_view.battle_id, "blade", _pending())))
 		dice_row.add_child(die); _inspect(die, "battle.defense_die.blade.pending", die.tooltip_text)
@@ -1684,6 +1686,7 @@ func _build_defense_panel(parent: VBoxContainer, actor_id: String, revealed: boo
 		extra.text = "%s\n%d" % [BattlePresentationCatalog.symbol_for_die_face(defense_die_id, extra_face), extra_face]
 		extra.disabled = true
 		_style_defense_die(extra)
+		StoneDie.dress(extra, defense_die_id, extra_face, actor_id != viewer_actor_id)
 		extra.custom_minimum_size = Vector2(120, 105)
 		extra.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 		extra.add_theme_font_size_override("font_size", 26)
@@ -1948,6 +1951,7 @@ func _build_provoked_toxins() -> void:
 	for roll in _view.effect_rolls: outcomes.append(_effect_roll_outcome(roll))
 	if not is_instance_valid(_provoked_panel):
 		_provoked_panel = preload("res://presentation/battle/provoked_toxins.gd").new()
+		_provoked_panel.viewer_actor_id = viewer_actor_id
 		_center.add_child(_provoked_panel)
 		_provoked_panel.configure(_view.effect_rolls, _actor_names(), outcomes, _view.events)
 		_provoked_panel.set_meta("batch_id", batch_id)
@@ -2017,10 +2021,11 @@ func _build_effects_panel(parent: VBoxContainer, actor_id: String, revealed: boo
 		var die := TOOLTIP_BUTTON.new(); die.custom_minimum_size = Vector2(96, 96); die.size_flags_horizontal = Control.SIZE_SHRINK_CENTER; _style_defense_die(die)
 		if face > 0:
 			die.text = "%s\n%d" % [BattlePresentationCatalog.symbol_for_die_face(die_id, face), face]; die.disabled = true; die.add_theme_font_size_override("font_size", 24)
+			StoneDie.dress(die, die_id, face, actor_id != viewer_actor_id)
 			die.tooltip_text = "%s %s die: face %d, %s." % [actor_name.capitalize(), BattlePresentationCatalog.status(status_id).name, face, BattlePresentationCatalog.symbol_name_for_die_face(die_id, face)]
 			dice_row.add_child(die); _inspect(die, "battle.effect_die.%s.%d" % [actor_id, index], die.tooltip_text)
 		elif secretly_rolled:
-			die.text = "✓\nHIDDEN"; die.disabled = true; die.add_theme_font_size_override("font_size", 16); die.tooltip_text = "This effect die was rolled in secret. Its face will appear during the reveal."
+			die.text = "✓\nHIDDEN"; die.disabled = true; die.add_theme_font_size_override("font_size", 16); StoneDie.dress(die, die_id, 0, actor_id != viewer_actor_id); die.tooltip_text = "This effect die was rolled in secret. Its face will appear during the reveal."
 			dice_row.add_child(die); _inspect(die, "battle.effect_die.blade.hidden.%d" % index, die.tooltip_text)
 		else:
 			die.tooltip_text = "Click this blank player effect die to roll it in secret."
@@ -4136,7 +4141,7 @@ func _build_enemy_dice(actor_id: String, profile_dock: VBoxContainer) -> VBoxCon
 	dock.visible = dock.expanded
 	dock.z_index = 14
 	if _director.peek().get("type") == "effects_resolved": return dock
-	var tray := BattleDiceTray.new(); tray.compact_row = true; tray.hud_compact = true
+	var tray := BattleDiceTray.new(); tray.compact_row = true; tray.hud_compact = true; tray.enemy_dice = true
 	tray.dice_columns = 3 if _enemy_ids().size() >= 5 else 5
 	dock.add_child(tray)
 	tray.display(_view.rolled_dice(actor_id), [], false, "", "battle.die." + actor_id)

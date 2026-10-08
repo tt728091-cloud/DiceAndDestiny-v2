@@ -231,7 +231,9 @@ func refresh() -> void:
 		_label.position = _origin
 		_roll.position = _origin + Vector2(270 if player else -85, 35)
 	var face := (int(_elapsed * 22) % 6 + 1) if rolling else int(change.face)
-	_roll.text = "%s%s\n%d" % [BattlePresentationCatalog.symbol_for_die_face(str(change.get("definition_id", "standard_d6")), face), " ⌁" if not rolling and (change.get("cursed", false) or (change.marked and _curse_progress() >= 0.52)) else "", face]
+	var marked: bool = not rolling and (change.get("cursed", false) or (change.marked and _curse_progress() >= 0.52))
+	_roll.text = "%s%s\n%d" % [BattlePresentationCatalog.symbol_for_die_face(str(change.get("definition_id", "standard_d6")), face), " ⌁" if marked else "", face]
+	_stone(_roll, str(change.get("definition_id", "standard_d6")), face, change, marked)
 	_target = Rect2(); _die_rect = Rect2()
 	# Resolve the actual actor, including visible off-focus enemy trays.
 	if screen.dice_dock(str(change.actor_id)) != null:
@@ -449,7 +451,7 @@ func _refresh_extra_check(change: Dictionary, inverse: Transform2D) -> void:
 	_roll.rotation = sin(_elapsed * 32) * 0.12 if rolling else 0.0
 	var face := int(_elapsed * 24) % 6 + 1 if rolling else int(change.face)
 	_roll.text = "%s%s\n%d" % [BattlePresentationCatalog.symbol_for_die_face(str(change.get("definition_id", "standard_d6")), face), " ⌁" if not rolling and change.get("cursed", false) else "", face]
-	_roll.add_theme_color_override("font_color", Color("e2b2ff") if not rolling and change.get("cursed", false) else Color("e5dfc8"))
+	_stone(_roll, str(change.get("definition_id", "standard_d6")), face, change, not rolling and change.get("cursed", false))
 	var outcome := "Checking this die for Curse" if progress < 0.2 else "Rolling separate check…" if rolling else "Face %d · %s" % [int(change.face), "Curse hit · +1 Count" if change.get("cursed", false) else "Clean face · no Count"]
 	_label.text = "%s · %s · D%d\n%s\nOffensive result unchanged" % [_feedback_title("Unquiet Hands"), screen._actor_display_name(actor), index + 1, outcome]
 	if progress >= 0.55 and change.has("count_after"):
@@ -513,7 +515,7 @@ func _refresh_knell(change: Dictionary, inverse: Transform2D) -> void:
 	var cursed: bool = not rolling and (progress < 0.5 or retry_flags[retry_index])
 	_roll.pivot_offset = _roll.size * 0.5; _roll.rotation = sin(_elapsed * 30) * 0.12 if rolling else 0.0
 	_roll.text = "%s%s\n%d" % [BattlePresentationCatalog.symbol_for_die_face(str(die.die_id), face), " ⌁" if cursed else "", face]
-	_roll.add_theme_color_override("font_color", Color("e2b2ff") if cursed else Color("e5dfc8"))
+	_stone(_roll, str(die.die_id), face, change, cursed)
 	var outcome := "Original roll…"
 	if progress >= 0.2: outcome = "Face %d · Curse hit · +1 Count" % int(die.face)
 	if progress >= 0.36: outcome = "%s consumed\nReroll this same die %d time(s)" % [_feedback_title("Second Knell"), retries.size()]
@@ -573,6 +575,7 @@ func _refresh_refusal(change: Dictionary, inverse: Transform2D) -> void:
 	var rolling: bool = progress < 0.45 and not change.get("already_rolled", false)
 	var face := int(_elapsed * 26) % 6 + 1 if rolling else int(die.face)
 	_roll.text = "%s%s\n%d" % [BattlePresentationCatalog.symbol_for_die_face(str(die.die_id), face), " ⌁" if not rolling and change.blocked else "", face]
+	_stone(_roll, str(die.die_id), face, change, not rolling and change.blocked)
 	_roll.pivot_offset = _roll.size * 0.5
 	_roll.rotation = sin(_elapsed * 30) * 0.12 if rolling else 0.0
 	_target = Rect2(_roll.position, _roll.size)
@@ -722,6 +725,7 @@ func _refresh_face_batch(inverse: Transform2D, heading: String) -> void:
 			preview.rotation = sin(_elapsed * 28 + i) * 0.10 if rolling else 0.0
 			var shown := (int(_elapsed * 22) + i * 2) % 6 + 1 if rolling else face
 			preview.text = "%s%s\n%d" % [BattlePresentationCatalog.symbol_for_die_face(str(change.get("definition_id", "standard_d6")), shown), " ⌁" if not rolling and change.get("cursed", false) else "", shown]
+			_stone(preview, str(change.get("definition_id", "standard_d6")), shown, change, not rolling and change.get("cursed", false))
 			preview.visible = not _inline_effect() or _elapsed >= _launch_end()
 			line_start.x = preview.position.x + preview.size.x * 0.5
 		var chip: Control = tray._mark_faces[index][face - 1]
@@ -871,3 +875,8 @@ func _feedback_status(fallback: String) -> String:
 	var id := str(feedback.changes[mini(_step, feedback.changes.size() - 1)].get("status_card_id", feedback.get("card_id", "")))
 	var kind := BattlePresentationCatalog.card_mechanic(id)
 	return id + "_card_effect" if kind == fallback and id != kind else fallback
+
+## Roll previews use the same carved stone as the owner's tray dice.
+func _stone(preview: Label, die_id: String, face: int, change: Dictionary, cursed: bool) -> void:
+	var owner := str(change.get("actor_id", ""))
+	StoneDie.dress(preview, die_id, face, not owner.is_empty() and owner != screen.viewer_actor_id, "⌁" if cursed else "")

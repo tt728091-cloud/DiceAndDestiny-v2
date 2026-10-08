@@ -48,7 +48,9 @@ func _run() -> void:
 		_expect(roll_button != null and skip_button != null and is_equal_approx(roll_button.get_global_rect().position.x, skip_button.get_global_rect().position.x) and roll_button.get_global_rect().size.is_equal_approx(skip_button.get_global_rect().size) and skip_button.get_global_rect().position.y >= roll_button.get_global_rect().end.y, "Skip sits directly below Roll with identical width and height")
 		for die in screen._player_dice_dock.find_children("*", "Button", true, false):
 			for state in ["normal", "hover", "pressed", "disabled"]:
-				_expect(die.get_theme_stylebox(state).bg_color == Color("282728"), "dice retain uniform charcoal faces in every interaction state")
+				_expect(die.get_theme_stylebox(state) is StyleBoxEmpty, "carved stone, not a button frame, draws the die in every interaction state")
+			var stones: Array = die.get_children().filter(func(child): return child is StoneDie and child.mode == StoneDie.Mode.BODY)
+			_expect(stones.size() == 1 and not stones[0].enemy, "each player die has one pale-stone body")
 		var hand_fan: Control = screen._hand_dock
 		_expect(hand_fan.cards.size() == 5, "all hand cards retained")
 		_expect(screen._ability_dock.find_children("*", "BattleAbilityTile", true, false).size() == 4, "four compact ability tiles retained")

@@ -6,6 +6,8 @@ const CATALYST_CUE_SECONDS := 0.8
 const RESULT_HOLD_SECONDS := 1.4
 var entries: Array[Dictionary] = []
 var paused := false
+## Dice owned by anyone else are carved from the enemy slate.
+var viewer_actor_id := ""
 var _paused_at := 0
 
 func configure(rolls: Array, names: Dictionary, outcomes: Array[String], events: Array = []) -> void:
@@ -36,7 +38,7 @@ func configure(rolls: Array, names: Dictionary, outcomes: Array[String], events:
 		var style := StyleBoxFlat.new(); style.bg_color = preload("res://presentation/battle/cinematic_theme.gd").DARK_SURFACE; style.border_color = Color("a6987e"); style.set_border_width_all(3); style.set_corner_radius_all(8); die.add_theme_stylebox_override("disabled", style); die.add_theme_color_override("font_disabled_color", Color("eee3c9"))
 		die.set_meta("inspection_id", "battle.effect_die.%s.%d" % [actor, int(ordinals.get(actor, 0))]); ordinals[actor] = int(ordinals.get(actor, 0)) + 1
 		var result := _label(cell, "", 17); result.custom_minimum_size.y = 54
-		entries.append({"die": die, "cue": cue, "result": result, "face": int(roll.get("die", {}).get("face", 0)), "die_id": str(roll.get("die", {}).get("die_id", "standard_d6")), "rerolled": bool(roll.get("rerolled", false)), "catalyst": false, "started": Time.get_ticks_msec(), "outcome": outcomes[index]})
+		entries.append({"die": die, "cue": cue, "result": result, "face": int(roll.get("die", {}).get("face", 0)), "die_id": str(roll.get("die", {}).get("die_id", "standard_d6")), "enemy": not viewer_actor_id.is_empty() and actor != viewer_actor_id, "rerolled": bool(roll.get("rerolled", false)), "catalyst": false, "started": Time.get_ticks_msec(), "outcome": outcomes[index]})
 	# A reopened snapshot can include the Catalyst event that produced its face.
 	# Reconstruct only the known prior face; never invent historical outcomes.
 	for event in events:
@@ -85,6 +87,7 @@ func _process(_delta: float) -> void:
 		var rolling := elapsed >= cue_time and elapsed < cue_time + ROLL_SECONDS
 		var face := int(entry.get("previous_face", entry.face)) if elapsed < cue_time else 1 + int(elapsed * 19) % 6 if rolling else int(entry.face)
 		entry.die.text = "%s\n%d" % [BattlePresentationCatalog.symbol_for_die_face(entry.die_id, face), face]
+		StoneDie.dress(entry.die, entry.die_id, face, bool(entry.get("enemy", false)))
 		entry.die.pivot_offset = entry.die.size * 0.5
 		entry.die.rotation = sin(elapsed * 30) * 0.07 if rolling else 0.0
 		entry.die.modulate = Color("d0a6ff") if entry.catalyst and elapsed < cue_time + ROLL_SECONDS else Color.WHITE

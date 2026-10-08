@@ -334,6 +334,12 @@ static func symbol_for_die_face(die_id: String, face: int) -> String:
 			return str(symbol.get("glyph", "•"))
 	return "•"
 
+static func symbol_id_for_die_face(die_id: String, face: int) -> String:
+	var die := definition("dice", die_id)
+	for entry in _array(die.get("faces", [])):
+		if entry is Dictionary and int(entry.get("number", 0)) == face: return str(entry.get("symbol", ""))
+	return ""
+
 static func symbol_name_for_die_face(die_id: String, face: int) -> String:
 	var die := definition("dice", die_id)
 	for entry in _array(die.get("faces", [])):
