@@ -38,6 +38,9 @@ var _damage_cards_open: Dictionary = {}
 var _damage_zone_counts: Dictionary = {}
 var _player_dice_effect_until := 0
 const PLAYER_ZONE_TOP := 691.2
+## Space a folded attack's chevron takes beside its badge while a sibling
+## attack shows its cards.
+const FOLD_CHEVRON_ROOM := 30.0
 const TOP_HUD_BOTTOM := 84.0
 var _enemy_buttons: Dictionary = {}
 var _defense_focus_key := ""
@@ -1807,8 +1810,8 @@ func _build_damage_lanes(batch: Dictionary, committed: bool = false, followup_on
 			heading.icon = null; heading.add_theme_font_size_override("font_size", 16)
 		else:
 			heading.size_flags_horizontal = Control.SIZE_EXPAND_FILL; heading.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-		heading.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
-		heading.pressed.connect(_toggle_damage_cards.bind(fold_key))
+		# The chevron beside it is the list's only fold control.
+		heading.mouse_default_cursor_shape = Control.CURSOR_ARROW
 		heading.set_meta("battle_utility", true)
 		if str(source.get("source_actor_id", "")) == viewer_actor_id and target != viewer_actor_id:
 			panel.use_target_heading(heading)

@@ -110,6 +110,7 @@ func _position_hover(wanted: Control) -> void:
 	# Lift the preview above those rows instead of obscuring another list.
 	for _pass in screen._damage_grids.size():
 		for grid in screen._damage_grids:
+			if not grid.is_visible_in_tree(): continue # Folded lists occupy nothing.
 			var occupied: Rect2 = grid.get_global_rect()
 			if is_instance_valid(grid.dock): occupied = occupied.intersection(grid.dock.get_global_rect())
 			occupied = inverse * occupied

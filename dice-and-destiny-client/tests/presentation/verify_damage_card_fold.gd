@@ -59,6 +59,9 @@ func _grid(screen: Control, source_id: String) -> Control:
 func _heading(screen: Control, source_id: String) -> Button:
 	return _grid(screen, source_id).get_parent().get_node("StackHeading").get_child(0)
 
+func _chevron(screen: Control, source_id: String) -> Button:
+	return _grid(screen, source_id).get_parent().get_node("StackHeading").find_child("FoldCards_*", false, false)
+
 func _expected(grid: Control) -> Dictionary:
 	var expected := {}
 	for card in grid.card_children(): expected[card.get_meta("removal_origin_zone")] = int(expected.get(card.get_meta("removal_origin_zone"), 0)) + 1
@@ -91,16 +94,26 @@ func _check(screen: Control, unified: bool) -> void:
 		var row: Control = screen._incoming_attack_rows.get("in-a")
 		_expect(row != null and row.find_child("RemovalTally", true, false).counts == screen._damage_zone_counts["in-a"], "incoming attack row shows pile totals")
 
-	# Pointer: clicking the enemy's attack badge unfolds that attack's cards.
+	# Pointer: the badge and its card-count row never fold; only the chevron does.
 	await _click(screen._attack_intents["in-a"].intent)
 	for frame in 3: await process_frame
-	_expect(_grid(screen, "in-a").is_visible_in_tree(), "%s: clicking the attack shows its cards" % label)
+	_expect(not _grid(screen, "in-a").is_visible_in_tree(), "%s: clicking the attack badge leaves its cards folded" % label)
+	if unified: _expect(screen._selected_source == "in-a", "unified: clicking the attack badge selects it for defense")
+	await _click(_heading(screen, "in-a"))
+	for frame in 3: await process_frame
+	_expect(not _grid(screen, "in-a").is_visible_in_tree(), "%s: clicking the card count leaves its cards folded" % label)
+	await _click(_chevron(screen, "in-a"))
+	for frame in 3: await process_frame
+	_expect(_grid(screen, "in-a").is_visible_in_tree(), "%s: the chevron shows the attack's cards" % label)
 	_expect(not _grid(screen, "in-b").is_visible_in_tree() and not _grid(screen, "in-c").is_visible_in_tree(), "%s: other attacks stay folded" % label)
 	var list_rect: Rect2 = inverse * screen._damage_stack_docks["attack:in-a"].get_global_rect()
 	var first: Rect2 = inverse * screen._attack_intents["in-a"].intent.get_global_rect()
 	var second: Rect2 = inverse * screen._attack_intents["in-b"].intent.get_global_rect()
 	_expect(is_equal_approx(second.position.y, first.position.y) and not second.intersects(first) and not second.intersects(list_rect), "%s: while a list is open, the enemy's other badge sits beside it: %s vs %s" % [label, second, first])
-	_expect(not screen._damage_stack_docks["attack:in-b"].visible, "%s: the other attack keeps only its badge" % label)
+	# The other attack keeps only its chevron, beside its badge, clear of the list.
+	var sibling_chevron: Rect2 = inverse * _chevron(screen, "in-b").get_global_rect()
+	_expect(_chevron(screen, "in-b").is_visible_in_tree() and not _heading(screen, "in-b").is_visible_in_tree(), "%s: the other attack keeps only its badge and chevron" % label)
+	_expect(not sibling_chevron.intersects(list_rect) and not sibling_chevron.intersects(first) and not sibling_chevron.intersects(second) and sibling_chevron.position.x >= second.end.x and absf(sibling_chevron.get_center().y - second.get_center().y) < 2, "%s: its chevron sits beside its badge: %s vs %s" % [label, sibling_chevron, second])
 	var profile: Rect2 = inverse * screen._actor_profiles.goblin.get_global_rect()
 	_expect(list_rect.end.y <= profile.position.y, "%s: open list never covers the attacker's name" % label)
 	_expect(_grid(screen, "in-a").visible_card_rect(_grid(screen, "in-a").card_children()[4]).size.y >= _grid(screen, "in-a").STRIDE * screen._root.scale.y - 1, "%s: open list shows five full rows" % label)
@@ -110,26 +123,36 @@ func _check(screen: Control, unified: bool) -> void:
 	await _capture("damage-fold-attack-open-%s.png" % label)
 	screen._render(true); for frame in 3: await process_frame
 	_expect(_grid(screen, "in-a").is_visible_in_tree(), "%s: unfolded state survives a board rebuild" % label)
-	# Opening the enemy's other attack folds the first: one list per enemy.
-	await _click(screen._attack_intents["in-b"].intent)
+	await _click(screen._attack_intents["in-a"].intent)
+	for frame in 3: await process_frame
+	_expect(_grid(screen, "in-a").is_visible_in_tree(), "%s: clicking the attack badge leaves an open list open" % label)
+	# Opening the enemy's other attack by its beside chevron folds the first:
+	# one list per enemy, and the first attack's chevron moves beside its badge.
+	await _click(_chevron(screen, "in-b"))
 	for frame in 3: await process_frame
 	_expect(_grid(screen, "in-b").is_visible_in_tree() and not _grid(screen, "in-a").is_visible_in_tree(), "%s: opening a sibling attack folds the first" % label)
-	await _click(_heading(screen, "in-b"))
+	var b_list: Rect2 = inverse * screen._damage_stack_docks["attack:in-b"].get_global_rect()
+	var a_chevron: Rect2 = inverse * _chevron(screen, "in-a").get_global_rect()
+	_expect(_chevron(screen, "in-a").is_visible_in_tree() and not a_chevron.intersects(b_list) and not a_chevron.intersects(inverse * screen._attack_intents["in-b"].intent.get_global_rect()), "%s: the first attack's chevron stays reachable beside its badge" % label)
+	_expect(_heading(screen, "in-b").is_visible_in_tree() and _grid(screen, "in-b").get_parent().get_node("StackHeading").get_node("RemovalTally").is_visible_in_tree(), "%s: the opened attack shows its full heading again" % label)
+	await _click(_chevron(screen, "in-b"))
 	for frame in 3: await process_frame
-	_expect(not _grid(screen, "in-b").is_visible_in_tree(), "%s: clicking the card count folds it again" % label)
+	_expect(not _grid(screen, "in-b").is_visible_in_tree(), "%s: the chevron folds it again" % label)
 	var restacked: Rect2 = inverse * screen._attack_intents["in-b"].intent.get_global_rect()
 	_expect(restacked.position.y > (inverse * screen._attack_intents["in-a"].intent.get_global_rect()).end.y, "%s: all folded, the enemy's badges stack again" % label)
 	_expect((inverse * screen._damage_stack_docks["attack:in-b"].get_global_rect()).end.y <= profile.position.y + 1, "%s: stacked rows stay above the name" % label)
-	var fold: Button = _grid(screen, "in-c").get_parent().get_node("StackHeading").find_child("FoldCards_*", false, false)
+	var fold: Button = _chevron(screen, "in-c")
 	await _click(fold)
 	_expect(_grid(screen, "in-c").is_visible_in_tree() and fold.get_meta("cards_shown") == true, "%s: chevron unfolds the list" % label)
 	await _click(fold)
 
-	# Pointer: an enemy's outgoing-damage heading folds that enemy's list.
+	# Pointer: an enemy's outgoing-damage chevron folds that enemy's list; its heading does not.
 	await _click(_heading(screen, "out-1"))
-	_expect(_grid(screen, "out-1").is_visible_in_tree() and not _grid(screen, "out-2").is_visible_in_tree(), "%s: enemy heading unfolds only that enemy" % label)
-	await _click(_heading(screen, "out-1"))
-	_expect(not _grid(screen, "out-1").is_visible_in_tree(), "%s: enemy heading refolds" % label)
+	_expect(not _grid(screen, "out-1").is_visible_in_tree(), "%s: enemy heading leaves its list folded" % label)
+	await _click(_chevron(screen, "out-1"))
+	_expect(_grid(screen, "out-1").is_visible_in_tree() and not _grid(screen, "out-2").is_visible_in_tree(), "%s: enemy chevron unfolds only that enemy" % label)
+	await _click(_chevron(screen, "out-1"))
+	_expect(not _grid(screen, "out-1").is_visible_in_tree(), "%s: enemy chevron refolds" % label)
 
 	# Prevention on folded lists animates only the reduction: no card flights.
 	for id in ["in-a", "out-1"]:

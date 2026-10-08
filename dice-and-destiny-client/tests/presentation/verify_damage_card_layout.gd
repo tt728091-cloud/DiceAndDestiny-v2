@@ -45,7 +45,11 @@ func _run() -> void:
 				var incoming := sources.filter(func(source): return source.target_actor_id == "blade")
 				for source in incoming:
 					var row: Control = screen._damage_stack_docks["attack:" + source.id]
-					_expect(row.visible == source.id.ends_with("-0"), "while one attack shows its cards, the enemy's other attacks keep only their badges")
+					var open: bool = source.id.ends_with("-0")
+					var chevron: Control = row.body.find_child("FoldCards_*", true, false)
+					var heading: Control = row.body.find_child("StackHeading", true, false).get_child(0)
+					_expect(row.visible and chevron.is_visible_in_tree() and heading.is_visible_in_tree() == open, "while one attack shows its cards, the enemy's other attacks keep only their badges and chevrons")
+					if not open: _expect(not chevron.get_global_rect().intersects(screen._damage_stack_docks["attack:blade-0"].get_global_rect()) and not chevron.get_global_rect().intersects(screen._attack_intents[source.id].intent.get_global_rect()), "a folded attack's chevron sits clear of the open list and its badge")
 				_expect(screen._damage_stack_docks.size() == enemies + incoming.size(), "one area under every enemy plus one beneath each attack badge")
 				_expect(screen._damage_grids.size() == sources.size(), "separate source stacks")
 				for source in sources:
@@ -76,18 +80,25 @@ func _run() -> void:
 					var dock: Control = screen._damage_stack_docks[key]
 					if not dock.visible: continue
 					_expect(root.get_visible_rect().grow(1).encloses(dock.get_global_rect()), "stack area fits viewport")
+					if dock.is_compact():
+						# Only a chevron beside its badge: clear of every badge and other area.
+						for presenter in screen._attack_intents.values():
+							if presenter.intent.visible: _expect(not dock.get_global_rect().intersects(presenter.intent.get_global_rect()), "chevron %s clears badge %s" % [key, presenter.data.source_id])
+						for other in screen._damage_stack_docks:
+							if other != key and screen._damage_stack_docks[other].visible: _expect(not dock.get_global_rect().intersects(screen._damage_stack_docks[other].get_global_rect()), "chevron %s %s clears %s %s" % [key, dock.get_global_rect(), other, screen._damage_stack_docks[other].get_global_rect()])
+						continue
 					if str(key).begins_with("attack:"):
 						var badge: Rect2 = dock.attack.intent.get_global_rect()
 						_expect(absf(dock.get_global_rect().position.y - badge.end.y - 4 * screen._root.scale.y) < 2, "attack list hangs beneath its badge")
 						_expect(dock.get_global_rect().end.y <= screen._actor_profiles[dock.attack.attacker_id].get_global_rect().position.y + 1, "attack list stops above the attacker's name")
 					else: _expect(dock.get_global_rect().position.y >= screen._actor_profiles[key].get_global_rect().end.y, "outgoing stack stays below enemy stats")
 					for other in screen._damage_stack_docks:
-						if other != key and screen._damage_stack_docks[other].visible: _expect(not dock.get_global_rect().intersects(screen._damage_stack_docks[other].get_global_rect()), "actor areas do not overlap")
+						if other != key and screen._damage_stack_docks[other].visible: _expect(not dock.get_global_rect().intersects(screen._damage_stack_docks[other].get_global_rect()), "actor areas do not overlap: %s %s vs %s %s" % [key, dock.get_global_rect(), other, screen._damage_stack_docks[other].get_global_rect()])
 
 				# At rest, the first five complete card headers fit on both sides.
 				for key in screen._damage_stack_docks:
 					var dock: Control = screen._damage_stack_docks[key]
-					if not dock.visible: continue
+					if not dock.visible or dock.is_compact(): continue
 					var grids: Array = screen._damage_grids.filter(func(g): return g.dock == dock)
 					var first: Control = grids[0]
 					for index in 5:
@@ -163,8 +174,9 @@ func _check_preview(screen: Control, grid: Control, card: Control) -> void:
 	else:
 		_expect(preview.end.x < list_rect.position.x, "right-edge list uses a clear left-side preview")
 	for other in screen._damage_grids:
+		if not other.is_visible_in_tree(): continue # Folded lists occupy nothing.
 		var occupied: Rect2 = other.get_global_rect().intersection(other.dock.get_global_rect())
-		_expect(not preview.intersects(occupied), "preview never covers this or another damage list")
+		_expect(not preview.intersects(occupied), "preview never covers this or another damage list: %s over %s %s (hovering %s)" % [preview, other.source_id, occupied, grid.source_id])
 
 func _capture(name: String) -> void:
 	var directory := OS.get_environment("DICE_AND_DESTINY_DAMAGE_LAYOUT_SCREENSHOTS")

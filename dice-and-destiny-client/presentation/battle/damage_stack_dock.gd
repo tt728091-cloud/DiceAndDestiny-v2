@@ -9,6 +9,7 @@ var column_width := 314.0
 var attack: Control
 var fold_key := ""
 var _focused_source := ""
+var _compact := false
 func configure(owner_screen: Control, actor: String, attack_presenter: Control = null) -> void:
 	screen = owner_screen; actor_id = actor; attack = attack_presenter
 	name = "DamageStacks_" + actor if attack == null else "AttackCards_" + str(attack.data.source_id)
@@ -28,7 +29,7 @@ func show_cards() -> void:
 	for node in body.find_children("*", "Control", true, false):
 		if not node.has_meta("fold_key"): continue
 		var shown: bool = screen.damage_cards_shown(str(node.get_meta("fold_key")))
-		if node.has_meta("removal_detail"): node.visible = shown
+		if node.has_meta("removal_detail"): node.visible = shown and not _compact
 		elif node.has_meta("cards_toggle"):
 			node.icon = ICONS.texture("chevron_open" if shown else "chevron_closed")
 			node.tooltip_text = "Hide the cards being removed" if shown else "Show the cards being removed"
@@ -65,12 +66,18 @@ func _follow_attack() -> void:
 	# The list belongs to the badge: it moves and hides with it, and stops
 	# above the attacker's own dice/name so neither is ever covered.
 	var badge: Control = attack.intent if is_instance_valid(attack) else null
-	# While another attack from this enemy shows its cards, keep only the badge.
+	# While another attack from this enemy shows its cards, a folded attack
+	# keeps only its chevron, beside its badge, so it can still be unfolded.
 	var open_attack: String = screen.open_attack_for(str(attack.attacker_id)) if is_instance_valid(attack) else ""
-	visible = is_instance_valid(badge) and badge.visible and (open_attack.is_empty() or open_attack == str(attack.data.source_id))
+	_set_compact(not open_attack.is_empty() and open_attack != str(attack.data.source_id))
+	visible = is_instance_valid(badge) and badge.visible and (not _compact or _compact_chevron().visible)
 	if not visible: return
 	var inverse: Transform2D = screen._root.get_global_transform_with_canvas().affine_inverse()
 	var rect: Rect2 = inverse * badge.get_global_rect()
+	if _compact:
+		size = body.get_combined_minimum_size()
+		position = Vector2(rect.end.x + 4, rect.get_center().y - size.y * 0.5).round()
+		return
 	var top := rect.end.y + 4
 	var bottom := 682.0
 	var profile: Control = screen._actor_profiles.get(str(attack.attacker_id))
@@ -88,6 +95,35 @@ func _follow_attack() -> void:
 	size = Vector2(width, minf(body.get_combined_minimum_size().y, maxf(28, bottom - top)))
 	# Whole pixels keep the headers crisp and their flight rects exact.
 	position = Vector2(clampf(rect.position.x, 16, 1904 - size.x), top).round()
+
+## Whether this row shows only its chevron beside the badge.
+func is_compact() -> bool:
+	return _compact
+
+func _compact_chevron() -> Control:
+	for node in body.find_children("FoldCards_*", "Control", true, false): return node
+	return body
+
+## Folded rows beside a sibling's open list show only their chevron; the
+## heading, pile totals, and status cue return when the row stands alone.
+func _set_compact(compact: bool) -> void:
+	if compact == _compact: return
+	_compact = compact
+	var chevron := _compact_chevron()
+	for group in body.get_children():
+		for node in group.get_children():
+			if node.name == "StackHeading":
+				for part in node.get_children():
+					if part != chevron: _hide_for_compact(part)
+			else: _hide_for_compact(node)
+	show_cards()
+
+func _hide_for_compact(node: Control) -> void:
+	if node.has_meta("removal_detail"): return # show_cards() owns the card list.
+	if _compact:
+		node.set_meta("compact_shown", node.visible); node.visible = false
+	elif node.has_meta("compact_shown"):
+		node.visible = node.get_meta("compact_shown"); node.remove_meta("compact_shown")
 
 ## Space this badge's list occupies, so a second attack from the same enemy
 ## starts below its cards rather than beneath them.

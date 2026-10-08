@@ -41,10 +41,8 @@ func attach_to_battlefield(owner_screen: Control, attack_source: Dictionary) -> 
 	intent.tooltip_text = _ability_tooltip()
 	intent.set_meta("inspection_id", "battle.source." + str(data.source_id))
 	intent.pressed.connect(func():
-		# Clicking an attack also unfolds the cards it threatens beneath it.
-		if not screen._selected_card.get("source_targeting", false):
-			screen._toggle_damage_cards("source:" + str(data.source_id))
-			source_selected.emit(str(data.source_id))
+		# Only the list's chevron folds its cards; the badge selects a defense.
+		if not screen._selected_card.get("source_targeting", false): source_selected.emit(str(data.source_id))
 	)
 	for state in ["normal", "hover", "pressed", "disabled", "focus"]:
 		var style := INK.bone_panel(Color("ffe1a6") if state in ["hover", "pressed", "focus"] or screen._selected_source == str(data.source_id) else Color.WHITE, 8)
@@ -202,14 +200,28 @@ func _update() -> void:
 	intent.size = Vector2(maxf(70, minimum.x), maxf(44, minimum.y))
 	# Later attacks from the same enemy start below earlier badges and their
 	# folded rows. While one of them shows its cards, the badges line up side
-	# by side so that list has the enemy's whole column.
-	var side_by_side: bool = attacker_id != screen.viewer_actor_id and not screen.open_attack_for(attacker_id).is_empty()
+	# by side so that list has the enemy's whole column; each folded badge
+	# keeps its chevron beside it.
+	var open_attack: String = screen.open_attack_for(attacker_id) if attacker_id != screen.viewer_actor_id else ""
+	var side_by_side := not open_attack.is_empty()
 	var stacked := 0.0
-	var beside := 0.0
+	var beside := 0.0 # Growing right: everything before this badge.
+	var beside_left := 0.0 # Growing left: this badge and those between it and the first.
+	var row_left := 0.0 # Growing left: every badge after the first.
+	var first_slot := actor_slot
+	var first_width := intent.size.x
 	for other in screen._attack_intents.values():
-		if other != self and other.attacker_id == attacker_id and other.actor_slot < actor_slot:
+		if other.attacker_id == attacker_id and other.actor_slot < first_slot:
+			first_slot = other.actor_slot; first_width = other.intent.size.x
+	for other in screen._attack_intents.values():
+		if other.attacker_id != attacker_id: continue
+		var footprint: float = other.intent.size.x + 8 + (screen.FOLD_CHEVRON_ROOM if str(other.data.source_id) != open_attack else 0.0)
+		if other.actor_slot > first_slot: row_left += footprint
+		if other.actor_slot > actor_slot: continue
+		if other.actor_slot > first_slot: beside_left += footprint
+		if other != self and other.actor_slot < actor_slot:
 			stacked += 58 + screen.attack_cards_height(str(other.data.source_id))
-			beside += other.intent.size.x + 8
+			beside += footprint
 	if side_by_side: stacked = 0.0
 	intent.position = Vector2(clampf(rect.get_center().x - intent.size.x * 0.5, 16, 1904 - intent.size.x), maxf(screen.TOP_HUD_BOTTOM, rect.position.y - intent.size.y - 12) + stacked)
 	# Tall silhouettes use the space beside their head, keeping the compact
@@ -218,8 +230,13 @@ func _update() -> void:
 	if beside_head:
 		intent.position.x = maxf(16, rect.position.x - intent.size.x - 8)
 	if side_by_side:
-		# Beside a tall head the row grows away from the fighter.
-		intent.position.x = clampf(intent.position.x + (-beside if beside_head else beside), 16, 1904 - intent.size.x)
+		# The row lines up from the first badge. Beside a tall head it grows
+		# away from the fighter, unless the screen edge is too close; then it
+		# grows inward rather than piling up.
+		var first_x: float = maxf(16, rect.position.x - first_width - 8) if beside_head else clampf(rect.get_center().x - first_width * 0.5, 16, 1904 - first_width)
+		if beside_head and first_x - row_left >= 16: intent.position.x = first_x - beside_left
+		else: intent.position.x = first_x + beside
+		intent.position.x = clampf(intent.position.x, 16, 1904 - intent.size.x)
 	intent_row.position = Vector2(12, 8); intent_row.size = intent.size - Vector2(24, 16)
 	if str(data.source_id) == screen._selected_source: screen._layout_defense_choices()
 	if is_instance_valid(fighter_target):
