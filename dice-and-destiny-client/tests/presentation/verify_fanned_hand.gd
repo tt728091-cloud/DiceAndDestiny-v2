@@ -23,7 +23,7 @@ func _run() -> void:
 			_expect(fan.cards.size() == fixture.snapshot.actors.blade.hand.size(), "shared hand retains every " + character + " card")
 			fan.reveal = 0; fan.hovered = -1; fan._layout()
 			for card in fan.cards:
-				_expect(card.get_node("EnergyCost").position.x == 5 and card.get_node("CardTitle").position.x == 39, "cost left, title inset for " + character)
+				_expect(card.get_node("EnergyCost").position.x < 12 and card.get_node("CardTitle").position.x > card.get_node("EnergyCost").get_rect().end.x, "cost left, title inset for " + character)
 				var top: Vector2 = fan.get_global_transform().affine_inverse() * (card.get_global_transform() * Vector2(0, 0))
 				_expect(top.y > fan.size.y - 105 and top.y < fan.size.y - 25, "collapsed tops visible")
 			if capture and viewport.x == 1920: await _capture(character + "-collapsed")

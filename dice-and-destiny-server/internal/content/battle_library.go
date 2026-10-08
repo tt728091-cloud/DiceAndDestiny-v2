@@ -64,6 +64,11 @@ type Presentation struct {
 	// card face's timing ribbon. Generated from the program or mechanic.
 	Timing    []CardTimingTag `yaml:"timing,omitempty" json:"timing,omitempty"`
 	PlayLimit string          `yaml:"play_limit,omitempty" json:"play_limit,omitempty"`
+	// Cards only: the card face's frame and outer border colours. Each is a
+	// name from CardFrameColors / CardBorderColors or a "#rrggbb" hex value;
+	// empty uses the default (colorless frame, black border).
+	FrameColor  string `yaml:"frame_color,omitempty" json:"frame_color,omitempty"`
+	BorderColor string `yaml:"border_color,omitempty" json:"border_color,omitempty"`
 }
 
 type ReactionWindowDefinition struct {
@@ -526,6 +531,9 @@ func validateBattleLibrary(lib BattleLibrary) error {
 		}
 		if strings.TrimSpace(card.Presentation.RulesText) == "" {
 			return fmt.Errorf("%w: card %q presentation rules_text is required", ErrInvalidContent, id)
+		}
+		if err := ValidateCardColors(card.Presentation); err != nil {
+			return fmt.Errorf("%w: card %q: %v", ErrInvalidContent, id, err)
 		}
 		if err := reserveContentName(contentNames, "card", id, card.Name); err != nil {
 			return err

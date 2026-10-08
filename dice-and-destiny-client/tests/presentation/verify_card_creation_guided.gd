@@ -91,6 +91,16 @@ func _run() -> void:
 	_expect(_node(ui, "steps.0.status_ids.remove.bleed").text == "Remove filter: Bleed", "chosen filter shows its name")
 	ui._validate(); await _frames()
 	_expect(not ui._publish_button.disabled and str(ui.draft.presentation.rules_text).contains("matching Bleed"), "named status filter validates: %s · %s" % [ui._error.text, ui.draft.presentation.rules_text])
+	# Face colours are guided choices that survive validation into the preview.
+	ui._tabs.current_tab = 0; await _frames()
+	for setting in [["presentation.frame_color", "red"], ["presentation.border_color", "white"]]:
+		var color_pick: OptionButton = _node(ui, setting[0])
+		var index: int = range(color_pick.item_count).filter(func(i): return str(color_pick.get_item_metadata(i)) == setting[1]).front()
+		color_pick.select(index); color_pick.item_selected.emit(index)
+	ui._validate(); await _frames()
+	_expect(ui.draft.presentation.get("frame_color") == "red" and ui.draft.presentation.get("border_color") == "white", "chosen face colours survive validation: %s" % [ui.draft.presentation])
+	var preview := ui._card_frame.get_child(0) as BattleCard
+	_expect(preview != null and preview._frame_color.is_equal_approx(preload("res://presentation/cards/card_colors.gd").FRAMES.red), "preview card uses the chosen frame colour")
 	ui._tabs.current_tab = 0; ui._scroll.scroll_vertical = 0; await _frames()
 	if DisplayServer.get_name() != "headless":
 		await RenderingServer.frame_post_draw; DirAccess.make_dir_recursive_absolute("res://.godot/layout-review")

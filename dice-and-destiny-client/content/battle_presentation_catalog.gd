@@ -37,6 +37,9 @@ static func card(id: String) -> Dictionary:
 		# Structured timing for the face ribbon; battles pinned before it have none.
 		"timing": _array(presentation.get("timing", [])),
 		"play_limit": str(presentation.get("play_limit", "")),
+		# Card face colours: a palette name or "#rrggbb"; empty uses the default.
+		"frame_color": str(presentation.get("frame_color", "")),
+		"border_color": str(presentation.get("border_color", "")),
 		"targeting": _dictionary(value.get("targeting", {})),
 		"play": _dictionary(value.get("play", {})),
 		"operations": _array(value.get("operations", [])),

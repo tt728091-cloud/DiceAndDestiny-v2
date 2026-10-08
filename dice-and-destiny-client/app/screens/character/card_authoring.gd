@@ -7,6 +7,7 @@ signal draft_accepted(card: Dictionary)
 var embedded_draft: Dictionary = {}
 const PROGRAM_EDITOR = preload("res://app/screens/character/card_program_editor.gd")
 const STYLE = preload("res://app/screens/character/character_style.gd")
+const CARD_COLORS = preload("res://presentation/cards/card_colors.gd")
 const PREVIEW_ID := "__card_authoring_preview__"
 # Authors pick before / after / any time per segment; the server's
 # timing_choices map each choice onto engine windows.
@@ -230,6 +231,9 @@ func _card_fields() -> void:
 	_select(grid, "Card family", catalog.get("access_types", {"general": "General"}).keys(), str(draft.get("access_type", "general")), func(v): draft.access_type = v; _changed(), "access_type")
 	var art_line := _line(grid, "Illustration path · optional res:// image", str(draft.presentation.get("illustration_path", "")), func(v): draft.presentation.illustration_path = v; _changed(), "art")
 	_art_picker(identity, art_line)
+	grid = STYLE.form(identity)
+	_color_select(grid, "Frame colour · the card's colour identity", "frame_color", CARD_COLORS.FRAMES.keys(), CARD_COLORS.DEFAULT_FRAME)
+	_color_select(grid, "Border colour · the outer edge", "border_color", CARD_COLORS.BORDERS.keys(), CARD_COLORS.DEFAULT_BORDER)
 	var economy := _section("Cost & economy")
 	grid = STYLE.form(economy)
 	_number(grid, "Energy cost", int(draft.cost.energy), 0, 75, func(v): draft.cost.energy = v; _changed(), "energy")
@@ -259,6 +263,19 @@ func _card_fields() -> void:
 		var reaction := _check(timing_grid, REACTION_LABELS[segment], false, func(on): _set_reaction(segment, on); _changed(), "timing." + segment + ".reaction")
 		reaction.tooltip_text = REACTION_HELP[segment]
 		_timing_controls[segment + ".reaction"] = reaction
+
+## A palette-name dropdown for a card face colour. Empty uses the default; a
+## "#rrggbb" value set in the advanced definition stays selectable.
+func _color_select(grid: Node, title: String, key: String, names: Array, default_name: String) -> void:
+	var current := str(draft.presentation.get(key, ""))
+	var values: Array = [""] + names
+	if not current.is_empty() and current not in values: values.append(current)
+	var field := _select(grid, title, values, current, func(v):
+		if v.is_empty(): draft.presentation.erase(key)
+		else: draft.presentation[key] = v
+		_changed(true), "presentation." + key)
+	field.set_item_text(0, "Default (%s)" % default_name.capitalize())
+	if current.is_empty(): field.select(0)
 
 func _section(title: String) -> VBoxContainer:
 	var box := STYLE.section(_fields, 16)
