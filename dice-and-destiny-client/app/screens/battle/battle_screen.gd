@@ -2206,11 +2206,8 @@ func _build_card_target_choices() -> void:
 		cancel.add_theme_font_size_override("font_size", 15); cancel.pressed.connect(func(): _selected_card.clear(); _render())
 		_root.add_child(cancel); _place_cinematic(cancel, Rect2(350, 784, 78, 32))
 		return
-	if _selected_card.get("source_targeting", false):
-		var instruction := Label.new(); instruction.text = str(BattlePresentationCatalog.card(str(_selected_card.definition_id)).name) + "\nClick a highlighted enemy attack."; instruction.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART; instruction.add_theme_color_override("font_color", Color("f0cf7c")); _ability_dock.add_child(instruction)
-		var cancel := TOOLTIP_BUTTON.new(); cancel.text = "Cancel targeting"; cancel.pressed.connect(func(): _selected_card.clear(); _render()); _ability_dock.add_child(cancel)
-		_inspect(cancel, "battle.card_target.cancel", "Cancel without playing the card or spending energy")
-		return
+	# Source targeting is shown by the highlighted card and attack badges; clicking the card again cancels.
+	if _selected_card.get("source_targeting", false): return
 	if _selected_card_selector() != "one_negative_status_on_self": return
 	var card_definition := _view.content_definition("cards", str(_selected_card.get("definition_id", "")))
 	var card_name := str(card_definition.get("name", "Selected card"))

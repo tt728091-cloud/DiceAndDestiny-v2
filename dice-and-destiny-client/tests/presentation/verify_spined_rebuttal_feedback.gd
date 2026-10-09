@@ -65,9 +65,10 @@ func _check(scenario: String) -> void:
 		_expect(str(screen._defense_result_panels[index].intent.get_meta("inspection_id", "")).begins_with("battle.card_target."), "every legal incoming attack is highlighted")
 	if scenario.begins_with("multiple"):
 		_expect(screen._venom_choice_label(fixture.legal_actions[0]) != screen._venom_choice_label(fixture.legal_actions[1]), "fallback labels distinguish identical abilities by attacker")
-	# Cancel leaves the hand and authority untouched, and targeting can restart.
-	for button in screen.find_children("*", "Button", true, false):
-		if button.get_meta("inspection_id", "") == "battle.card_target.cancel": button.pressed.emit(); break
+	_expect(not screen.find_children("*", "Label", true, false).any(func(label): return "highlighted enemy attack" in label.text), "source targeting adds no dock instruction text")
+	# Clicking the selected card again cancels, leaves authority untouched, and targeting can restart.
+	for node in screen.find_children("*", "Button", true, false):
+		if node is BattleCard and node.definition_id == "spined_rebuttal": node.pressed.emit(); break
 	await process_frame
 	_expect(screen._selected_card.is_empty() and fake.commands.is_empty(), "cancel spends nothing")
 	for node in screen.find_children("*", "Button", true, false):
