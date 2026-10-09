@@ -2,6 +2,7 @@ extends Control
 
 # Played cards retain their hand pose; feedback survives board rebuilds. Multiple
 # effects of a card share its reveal and trails, never a stack of floating text.
+# Successive plays never hold player input.
 const TIMING := preload("res://presentation/battle/combat_timing.gd")
 var screen: Control
 var updates: Array[Dictionary] = []
@@ -21,7 +22,14 @@ var _held_hand: Control
 func _exit_tree() -> void:
 	for card in _hidden_hand_cards:
 		if is_instance_valid(card): card.modulate.a = 1.0
-	if is_instance_valid(_held_hand): _held_hand.gain_animation_active = false
+	if is_instance_valid(_held_hand) and not hand_held_elsewhere(screen, _held_hand, self): _held_hand.gain_animation_active = false
+
+# Concurrent card feedback may still be flying into the same hand.
+static func hand_held_elsewhere(owner_screen: Node, hand: Control, leaving: Node) -> bool:
+	if not is_instance_valid(owner_screen): return false
+	for sibling in owner_screen.get_children():
+		if sibling != leaving and sibling.get_meta("feedback_notice", false) and not sibling.is_queued_for_deletion() and sibling.get("_held_hand") == hand: return true
+	return false
 
 func configure(owner_screen: Control, changes: Array[Dictionary], poses: Dictionary = {}) -> void:
 	screen = owner_screen; updates = changes
@@ -65,10 +73,12 @@ func configure(owner_screen: Control, changes: Array[Dictionary], poses: Diction
 	modulate.a = 0.0
 
 func _waiting() -> bool:
-	# Serialize quick successive plays instead of piling them over the HUD.
-	for sibling in screen.get_children():
-		if sibling == self: break
-		if sibling.get_meta("feedback_notice", false) and not sibling.is_queued_for_deletion(): return true
+	# Cards shown from their own hand pose overlap freely. Pose-less cards (an
+	# opponent's burst) share one spot, so they still play one at a time.
+	if _poses.is_empty():
+		for sibling in screen.get_children():
+			if sibling == self: break
+			if sibling.get_script() == get_script() and not sibling.is_queued_for_deletion() and sibling._poses.is_empty(): return true
 	for update in updates:
 		if update.kind == "attack_bonus" and not is_instance_valid(screen.ability_intent(str(update.data.target_actor_id), str(update.data.ability_id))) and not is_instance_valid(screen._selected_attack_tiles.get(str(update.data.target_actor_id))): return true
 	return screen._director.has_pending_status_animation()

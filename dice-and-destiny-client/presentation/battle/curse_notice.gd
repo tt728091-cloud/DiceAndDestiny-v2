@@ -107,9 +107,10 @@ func _waiting() -> bool:
 		return Time.get_ticks_msec() < screen._defense_outcome_start + ceili(preload("res://presentation/battle/defense_timing.gd").roll_seconds() * 1000.0)
 	if feedback.has("beat_key"):
 		return screen._director.peek().get("feedback_key", "") != feedback.beat_key
+	# Dice effects share trays, so they play in order; card gains run alongside.
 	for sibling in screen.get_children():
 		if sibling == self: break
-		if sibling.get_meta("feedback_notice", false) and not sibling.is_queued_for_deletion(): return true
+		if sibling.get_script() == get_script() and not sibling.is_queued_for_deletion(): return true
 	return screen._director.has_beats()
 
 func _process(delta: float) -> void:
@@ -326,7 +327,7 @@ func _release_pending_face() -> void:
 	_pending_tray = null
 
 func _exit_tree() -> void:
-	if is_instance_valid(_held_hand): _held_hand.gain_animation_active = false
+	if is_instance_valid(_held_hand) and not preload("res://presentation/battle/card_gain_notice.gd").hand_held_elsewhere(screen, _held_hand, self): _held_hand.gain_animation_active = false
 	if is_instance_valid(_refusal_expiry_profile):
 		var counts: Dictionary = _refusal_expiry_profile.statuses.counts.duplicate()
 		counts.erase(_feedback_status("maledictions_refusal"))

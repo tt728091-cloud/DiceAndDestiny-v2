@@ -92,6 +92,26 @@ func configure(instance: String, definition: String, enabled: bool, pending_remo
 	if pending_removal: modulate = Color("df9f88")
 	call_deferred("_fit_title")
 
+## Hand cards reserved by an incoming attack name their attacker beneath the
+## title, high enough to stay readable while the hand is lowered.
+func show_threat(source_name: String, detail: String) -> void:
+	var ribbon := get_node_or_null("ThreatRibbon") as Button
+	if ribbon == null:
+		ribbon = Button.new(); ribbon.name = "ThreatRibbon"; ribbon.mouse_filter = Control.MOUSE_FILTER_IGNORE; ribbon.focus_mode = Control.FOCUS_NONE
+		ribbon.icon = preload("res://presentation/battle/battle_icons.gd").texture("removed"); ribbon.expand_icon = true
+		ribbon.add_theme_constant_override("icon_max_width", 15); ribbon.add_theme_constant_override("h_separation", 4)
+		ribbon.add_theme_font_override("font", title_font()); ribbon.add_theme_font_size_override("font_size", 13)
+		ribbon.clip_text = true; ribbon.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+		for state in ["normal", "hover", "pressed", "disabled", "focus"]:
+			ribbon.add_theme_stylebox_override(state, preload("res://presentation/battle/cinematic_theme.gd").panel(Color("7a1712eb"), Color("e0806a"), 0))
+		for state in ["font_color", "font_hover_color", "font_pressed_color", "font_disabled_color", "font_focus_color"]: ribbon.add_theme_color_override(state, Color("ffe1d6"))
+		for state in ["icon_normal_color", "icon_hover_color", "icon_pressed_color", "icon_disabled_color", "icon_focus_color"]: ribbon.add_theme_color_override(state, Color("ffb9a0"))
+		add_child(ribbon); ribbon.set_anchors_and_offsets_preset(Control.PRESET_TOP_WIDE)
+		var inset := _border_width(false) + _band_width(false)
+		ribbon.offset_left = inset; ribbon.offset_right = -inset; ribbon.offset_top = 37; ribbon.offset_bottom = 57
+	ribbon.text = source_name
+	tooltip_text = BattlePresentationCatalog.card_tooltip(definition_id) + "\n\nPending removal · " + detail
+
 static func title_font() -> SystemFont:
 	var font := SystemFont.new()
 	font.font_names = PackedStringArray(["Copperplate", "Cinzel", "Trajan Pro", "Georgia", "serif"])

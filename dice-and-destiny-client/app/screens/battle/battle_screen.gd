@@ -125,6 +125,8 @@ var _damage_card_times: Dictionary = {}
 var _damage_grids: Array = []
 var _damage_stack_docks: Dictionary = {}
 var _damage_commit_started := {}
+# Hand card ID → the live attack that reserves it, for the hand's threat ribbon.
+var _hand_threats: Dictionary = {}
 const DEFENSE_TIMING := preload("res://presentation/battle/defense_timing.gd")
 const DAMAGE_AUTO_PASS_CLICK_MS := 250
 var _auto_pass_disabled := false
@@ -564,7 +566,7 @@ func _render(force: bool = false) -> void:
 	_attack_intents.clear()
 	_incoming_attack_rows.clear(); _incoming_attack_list = null
 	_damage_grids.clear()
-	_damage_stack_docks.clear(); _damage_zone_counts.clear()
+	_damage_stack_docks.clear(); _damage_zone_counts.clear(); _hand_threats.clear()
 	_selected_attack_tiles.clear()
 	_curse_attack_origins.clear()
 	_actor_profiles.clear(); _enemy_dice_docks.clear()
@@ -694,8 +696,9 @@ func _render(force: bool = false) -> void:
 		_flow_transition.prepare(_root)
 		_present_flow.call_deferred(_income_animation_generation)
 	if _player_roll_active():
+		# Dice-dependent choices wait for the roll to land; hand cards stay playable.
 		for control in _root.find_children("*", "BaseButton", true, false):
-			if not control.get_meta("battle_utility", false): control.disabled = true
+			if not control.get_meta("battle_utility", false) and not (control is BattleCard and _hand_dock.is_ancestor_of(control)): control.disabled = true
 
 	_player_profile_dock._process(0)
 	if not _open_pile.is_empty(): _build_pile_browser()
@@ -1826,6 +1829,11 @@ func _build_damage_lanes(batch: Dictionary, committed: bool = false, followup_on
 			var card := BattleCard.new(); grid.add_child(card); card.configure(str(card_data.get("card_id", "")), str(card_data.get("card_definition_id", "unknown")), false, true)
 			card.modulate.a = 0.0
 			card.set_meta("removal_origin_zone", str(card_data.get("original_zone", "")))
+			if not committed and target == viewer_actor_id and str(card_data.get("original_zone", "")) == "hand":
+				var attacker := str(source.get("source_actor_id", ""))
+				var attacker_name: String = _actor_display_name(attacker) if attacker in _enemy_ids() else str(data.attack_name)
+				var ability_name := str(BattlePresentationCatalog.ability(str(source.get("source_content_id", ""))).name)
+				_hand_threats[str(card_data.get("card_id", ""))] = {"name": attacker_name, "detail": "%s · %d damage" % [attacker_name if ability_name.is_empty() or ability_name == attacker_name else "%s's %s" % [attacker_name, ability_name], amount]}
 			card.tooltip_text += " · From " + str(card_data.get("original_zone", "deck")); _inspect(card, "battle.damage_card." + str(card_data.get("card_id", "")), card.tooltip_text)
 		var card_ids: Array[String] = []
 		for card in grid.card_children(): card_ids.append(str(card.instance_id))
@@ -2167,6 +2175,8 @@ func _build_hand(income_drawn_ids: Array = []) -> void:
 			highlight.add_theme_stylebox_override("panel", border)
 			card.add_child(highlight); highlight.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 		card.pressed.connect(_on_card_pressed.bind(card))
+		if _hand_threats.has(str(entry.instance_id)):
+			card.show_threat(str(_hand_threats[str(entry.instance_id)].name), str(_hand_threats[str(entry.instance_id)].detail))
 		if str(entry.instance_id) in income_drawn_ids:
 			card.prepare_income_draw()
 			_income_drawn_cards.append(card)
@@ -3017,8 +3027,22 @@ func _start_player_roll(indices: Array) -> void:
 func _player_roll_active() -> bool:
 	return not _player_roll_feedback.is_empty() and not _history_review and not _history_replay and _player_roll_feedback.battle_id == _view.battle_id and int(_player_roll_feedback.round) == _view.round_number and Time.get_ticks_msec() < int(_player_roll_feedback.started_ms) + int(_player_roll_feedback.duration_ms)
 
+# The viewer's own roll, or a forced reroll of the viewer's dice, still tumbling.
+func _offensive_roll_animating() -> bool:
+	if _player_roll_active(): return true
+	for child in get_children():
+		if child.get_script() != CURSE_NOTICE or child.is_queued_for_deletion(): continue
+		for change in child.feedback.get("changes", []):
+			if change.get("kind") == "offensive_reroll" and str(change.get("actor_id", "")) == viewer_actor_id: return true
+	return false
+
+func _command_plays_card(command) -> bool:
+	if not command is Dictionary: return false
+	var payload: Dictionary = _as_dictionary(command.get("payload", {}))
+	return not _as_array(payload.get("card_ids", _as_dictionary(payload.get("commitment", {})).get("card_ids", []))).is_empty()
+
 func _reroll_unkept(history_confirmed: bool = false) -> void:
-	if _submitting or _history_review or _player_roll_active(): return
+	if _submitting or _history_review or _offensive_roll_animating(): return
 	var indices: Array = []
 	for index in _view.rolled_dice("blade").size():
 		if index not in _selected_indices: indices.append(index)
@@ -3062,11 +3086,15 @@ func _capture_gain_card_poses() -> void:
 		_gain_card_poses[card.instance_id] = {"transform": inverse * card.get_global_transform_with_canvas(), "size": card.size}
 
 func _send(command_json: String, history_confirmed: bool = false) -> void:
-	if _held_defense_view != null or _submitting or _history_review or _player_roll_active() or _card_gain_active() or command_json.is_empty(): return
-	_pending_attack.clear()
-	_reset_auto_pass_preview()
+	if _held_defense_view != null or _submitting or _history_review or command_json.is_empty(): return
 	var sent = JSON.parse_string(command_json)
 	var sent_type := str(sent.get("type", "")) if sent is Dictionary else ""
+	# Card feedback plays alongside later commands. Only an offensive roll holds
+	# the next roll; card plays stay available while the dice tumble.
+	if sent_type in ["planning_roll", "planning_reroll"] and _offensive_roll_animating(): return
+	if _player_roll_active() and not _command_plays_card(sent): return
+	_pending_attack.clear()
+	_reset_auto_pass_preview()
 	var label := _history_label_for_command(sent)
 	var action := _history_command_action(sent)
 	if _history_replay and not history_confirmed:
@@ -4543,7 +4571,7 @@ func _select_mark_die(actor: String, index: int) -> void:
 		_selected_card["mark_die"] = "%s:%d" % [actor, index]; _render()
 
 func _commit_mark_face(action: Dictionary) -> void:
-	if action not in _mark_actions() or _submitting or _model_thinking or _card_gain_active(): return
+	if action not in _mark_actions() or _submitting or _model_thinking: return
 	_selected_card.clear(); _send(JSON.stringify(action))
 
 func _cancel_mark_targeting() -> void:
@@ -4591,7 +4619,7 @@ func _number_face_actions() -> Dictionary:
 	return choices
 
 func _commit_number_face(face: int) -> void:
-	if _submitting or _model_thinking or _card_gain_active(): return
+	if _submitting or _model_thinking: return
 	var actions := _number_face_actions()
 	if not actions.has(face): return
 	var action: Dictionary = actions[face]
