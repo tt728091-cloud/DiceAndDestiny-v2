@@ -25,6 +25,7 @@ var editable := false
 var link_target := false
 var hovered := false
 var _name_lines := 1
+var _name := TextParagraph.new()
 
 func setup(id: String, root: bool) -> void:
 	node_id = id; is_root = root; radius = BASE_RADIUS if root else RADIUS
@@ -35,9 +36,14 @@ func setup(id: String, root: bool) -> void:
 	set_meta("tree_node", id)
 
 func refresh() -> void:
-	var font := get_theme_default_font()
-	var width := WIDTH - 36
-	_name_lines = 1 if font.get_string_size(title, HORIZONTAL_ALIGNMENT_CENTER, -1, 24).x <= width else 2
+	# Wrap the name once, at the exact width it is drawn, so the plate grows to fit it.
+	_name.clear()
+	_name.width = _plate_rect().size.x - 12
+	_name.alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_name.max_lines_visible = 2
+	_name.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+	_name.add_string(title, get_theme_default_font(), 24)
+	_name_lines = clampi(_name.get_line_count(), 1, 2)
 	size = Vector2(WIDTH, TOP + radius * 2 + 22 + _plate_height())
 	queue_redraw()
 
@@ -141,10 +147,10 @@ func _draw() -> void:
 	var border := STYLE.GOLD if selected else Color(ring, 0.7)
 	draw_style_box(STYLE.box(Color(0.03, 0.05, 0.08, 0.88), border, 0, 8, 2 if selected else 1), plate)
 	var name_color := STYLE.IVORY if lit or state == "available" else STYLE.MUTED
-	var y := plate.position.y + 8 + font.get_ascent(24)
-	draw_multiline_string_outline(font, Vector2(plate.position.x + 6, y), title, HORIZONTAL_ALIGNMENT_CENTER, plate.size.x - 12, 24, 2, 4, Color(0, 0, 0, 0.8))
-	draw_multiline_string(font, Vector2(plate.position.x + 6, y), title, HORIZONTAL_ALIGNMENT_CENTER, plate.size.x - 12, 24, 2, name_color)
-	y += font.get_height(24) * (_name_lines - 1) + 24.0
+	var name_at := Vector2(plate.position.x + 6, plate.position.y + 8)
+	_name.draw_outline(get_canvas_item(), name_at, 4, Color(0, 0, 0, 0.8))
+	_name.draw(get_canvas_item(), name_at, name_color)
+	var y := name_at.y + font.get_ascent(24) + font.get_height(24) * (_name_lines - 1) + 24.0
 	var xp_line := ("BASE · %d XP" % xp) if is_root else ("%d XP" % xp)
 	draw_string(font, Vector2(plate.position.x + 6, y), xp_line, HORIZONTAL_ALIGNMENT_CENTER, plate.size.x - 12, 18, STYLE.GOLD if lit else STYLE.DIM)
 	if not subtitle.is_empty():

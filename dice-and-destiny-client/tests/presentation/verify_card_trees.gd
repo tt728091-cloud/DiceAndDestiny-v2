@@ -95,6 +95,15 @@ func _run() -> void:
 	_expect(from_deeper.contains("Saved cards") and from_deeper.contains("XP value: 13 → 17 (+4 XP)") and not from_deeper.contains("Prevent"), "converging card shows the change from its first route: %s" % from_deeper)
 	_expect(from_original.contains("1 → 2") and from_original.contains("XP value: 14 → 17 (+3 XP)") and not from_original.contains("Saved cards"), "converging card shows the change from its second route: %s" % from_original)
 	_expect(str(ui._canvas.summaries.node_3) == "Joins 2 paths" and str(ui._canvas.tooltips.node_3).contains("+4 XP") and str(ui._canvas.tooltips.node_3).contains("+3 XP"), "medallion and tooltip describe both routes")
+	# Name plates reserve a line for every wrapped name line, so XP never overlaps the name.
+	var probe = ui._canvas._nodes.node_3
+	var probe_title: String = probe.title
+	probe.title = "Guard"; probe.refresh()
+	var one_line: float = probe.size.y
+	for name in ["Strong Swing · Finisher", "Strong Swing · Decisive", "Steady Guard · Deeper guard and original piles"]:
+		probe.title = name; probe.refresh()
+		_expect(probe._name.get_line_count() >= 2 and probe._name_lines == 2 and probe.size.y > one_line, "long name wraps inside its plate: " + name)
+	probe.title = probe_title; probe.refresh()
 	# Quick edit on the converging card compares against both routes too.
 	await _click(_tree_control(ui, "quick_edit")); await _frames()
 	var forge_changes: String = _tree_control(ui, "forge.changes", "tree_field").get_parsed_text()
