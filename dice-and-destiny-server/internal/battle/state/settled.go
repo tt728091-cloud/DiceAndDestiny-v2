@@ -345,7 +345,9 @@ type CardExecution struct {
 	Steps    []byte
 	Selected []string
 	Drawn    []string
-	Paid     bool
+	// Removed lists cards this play sacrificed, so a later step cannot revive them.
+	Removed []string `json:",omitempty"`
+	Paid    bool
 }
 
 type ProgramDieFeedback struct {

@@ -405,6 +405,10 @@ func programCandidates(b *state.Battle, lib content.BattleLibrary, actor, card s
 					if s.Target.DrawnThisPlay && (x == nil || !containsString(x.Drawn, id)) {
 						continue
 					}
+					// Cards this play removed are its cost; it cannot revive them.
+					if operation.CardZone(z) == operation.ZoneRemoved && x != nil && containsString(x.Removed, id) {
+						continue
+					}
 					if s.Target.ExcludeRecovery && programRecovery(def) {
 						continue
 					}
@@ -725,9 +729,19 @@ func (e Engine) applyProgramStep(b *state.Battle, lib content.BattleLibrary, act
 			}
 			a := b.Actors[t.Actor]
 			zone := programCardZone(b, t.Actor, t.Card)
-			if zone != "" && zone != operation.ZoneRemoved {
+			switch {
+			case zone == operation.ZoneRemoved && content.ProgramContains(s.Target.Zones, string(operation.ZoneRemoved)) && dest != string(operation.ZoneRemoved):
+				// An authored revive trade returns the card and heals it from
+				// the wound that removed it; the card's own cost removes others.
 				moveCard(&a.Cards, t.Card, zone, operation.CardZone(dest))
 				b.Actors[t.Actor] = a
+				b.HealWoundCard(t.Actor, t.Card)
+			case zone != "" && zone != operation.ZoneRemoved:
+				moveCard(&a.Cards, t.Card, zone, operation.CardZone(dest))
+				b.Actors[t.Actor] = a
+				if dest == string(operation.ZoneRemoved) {
+					x.Removed = append(x.Removed, t.Card)
+				}
 			}
 		case "prevent":
 			result.Preventions = []effectPrevention{{ProposalID: t.Source, Amount: content.ProgramInt(s, "amount")}}

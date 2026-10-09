@@ -69,6 +69,15 @@ func faceStep(s CardStep, statuses map[string]BattleStatusDefinition) string {
 	case "save_cards":
 		return "Save " + faceTarget(t, "threatened card", "threatened cards") + faceDestination(s)
 	case "move_cards":
+		if ProgramContains(t.Zones, "removed") {
+			revived := t
+			revived.Zones = nil
+			text := "Revive " + faceTarget(revived, "removed card", "removed cards")
+			if d := ProgramString(s, "destination"); d != "hand" {
+				text += " to " + d
+			}
+			return text
+		}
 		cards := faceTarget(t, "card", "cards")
 		if len(t.Zones) > 0 {
 			cards += " from " + strings.Join(t.Zones, "/")

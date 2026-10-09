@@ -104,7 +104,7 @@ static func _filters(ui: Control, box: VBoxContainer, step: Dictionary, filters:
 	var target: Dictionary = step.target
 	if "zones" in filters:
 		if not target.has("zones"): target.zones = ["hand"]
-		ui._multi(box, "Select cards from", ui.catalog.source_zones, target.zones, func(): ui._changed(), key + ".zones", true)
+		ui._multi(box, "Select cards from", ui.catalog.get("target_zones", ui.catalog.source_zones), target.zones, func(): ui._changed(), key + ".zones", true)
 		ui._check(box, "Exclude cards that recover other cards", bool(target.get("exclude_recovery", false)), func(v): target.exclude_recovery = v; ui._changed(), key + ".exclude_recovery")
 		var drawn = ui._check(box, "Only cards drawn earlier in this play", bool(target.get("drawn_this_play", false)), func(v): target.drawn_this_play = v; ui._changed(), key + ".drawn_this_play")
 		drawn.disabled = not ui._draw_before(ui.draft.program.steps, key) and not bool(target.get("drawn_this_play", false))

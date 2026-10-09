@@ -15,7 +15,7 @@ Card Creation opens with a blank program card. **New blank card** starts a fresh
 ## Shared configuration
 
 - Card ID, name, presentation/art, access family, energy cost (0–100).
-- Play source: hand, draw pile or discard; play destination: hand, draw pile, discard or permanently removed. Removed cards cannot be played or resurrected. Removing cards records wounds and loses health.
+- Play source: hand, draw pile or discard; play destination: hand, draw pile, discard or permanently removed. Removed cards cannot be played. Removing cards records wounds and loses health. The only way back is a **revive trade**: a `move_cards` step that selects only from `removed` (a fixed count, never "all") to a live pile. Validation requires the card to remove at least as many cards as it revives — its own `removed` play destination plus sacrifices — so health never rises. Each revived card leaves the wound that removed it; a wound with no cards left is healed and disappears, while the trade records its own new wound. Cards removed by the same play cannot be revived by it, and recovery cards are excluded as usual. A card whose play destination is `removed` states this in its rules and shows "Removes itself (−1 health)" on its face.
 - Timing: a nonempty subset of the recipe’s supported windows. Unsupported phase/effect combinations fail validation.
 - Timing is authored as **Before**, **After** or **Any time** (or not playable) for your own Offense and Defense turn; `content.CardTimingChoices` maps each choice onto engine windows, narrowed to the windows the card's effects support:
 

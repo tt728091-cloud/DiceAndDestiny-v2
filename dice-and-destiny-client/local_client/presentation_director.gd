@@ -286,8 +286,22 @@ func _queue_card_gains(events: Array, before: Dictionary, after: Dictionary) -> 
 							if id not in data.drawn_ids: data.drawn_ids.append(id)
 					# Some authority adapters publish draws only in the resulting
 					# viewer hand. Compare that public hand, never a private deck.
+					var undrawn: Array = []
 					for id in _array(final.get("hand", [])):
-						if id not in _array(initial.get("hand", [])) and id not in data.drawn_ids: data.drawn_ids.append(id)
+						if id not in _array(initial.get("hand", [])) and id not in data.drawn_ids: data.drawn_ids.append(id); undrawn.append(id)
+					# A recovered or revived card leaves discard or the removed pile,
+					# not the deck; its flight starts where that public composition shrank.
+					data["drawn_from"] = {}
+					var recovered := {}
+					for id in undrawn:
+						var definition := str(final.get("card_instances", {}).get(id, {}).get("definition_id", ""))
+						if definition.is_empty(): continue
+						for pile: String in ["removed", "discard"]:
+							var key: String = pile + ":" + definition
+							var left: int = int(initial.get(pile + "_composition", {}).get(definition, 0)) - int(final.get(pile + "_composition", {}).get(definition, 0))
+							if left <= int(recovered.get(key, 0)): continue
+							recovered[key] = int(recovered.get(key, 0)) + 1; data.drawn_from[id] = pile
+							break
 					data["deck_before"] = int(initial.get("deck_count", 0))
 					data["deck_after"] = int(final.get("deck_count", 0))
 				_status_updates.append({"kind": "resource", "card_name": card_name, "data": data})

@@ -16,6 +16,7 @@ var duration := 2.4
 var _destinations: Array[Vector2] = []
 var _poses: Dictionary = {}
 var _draw_cards: Dictionary = {}
+var _draw_sources: Dictionary = {}
 var _hidden_hand_cards: Array[BattleCard] = []
 var _held_hand: Control
 
@@ -69,7 +70,7 @@ func configure(owner_screen: Control, changes: Array[Dictionary], poses: Diction
 				var card := BattleCard.new(); add_child(card)
 				card.configure(str(id), str(entry.definition_id), false, false, true)
 				card.mouse_filter = Control.MOUSE_FILTER_IGNORE; card.size = BattleCard.STANDARD_SIZE; card.hide()
-				_draw_cards[id] = card
+				_draw_cards[id] = card; _draw_sources[id] = str(update.data.get("drawn_from", {}).get(id, "deck"))
 	modulate.a = 0.0
 
 func _waiting() -> bool:
@@ -210,10 +211,10 @@ func _refresh_draws() -> void:
 	var inverse := get_global_transform_with_canvas().affine_inverse()
 	var profile: ActorProfile = screen._actor_profiles.get(screen.viewer_actor_id)
 	if not is_instance_valid(profile): return
-	var origin := inverse * profile.anchor_rect("deck").get_center()
 	var index := 0
 	for id in _draw_cards:
 		var flight: BattleCard = _draw_cards[id]
+		var origin := inverse * profile.anchor_rect(str(_draw_sources.get(id, "deck"))).get_center()
 		flight.hide()
 		for card in hand.cards:
 			if card.instance_id != id: continue

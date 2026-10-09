@@ -20,8 +20,8 @@ do not expose future wounds. Unknown historical losses remain dark.
   damage source in one batch is one wound. Repeated hits, multiple enemies,
   and later rounds remain separate. Zero-loss hits do not create wounds.
 - Wound damage is the number of recorded cards, not raw attack damage. Released
-  cards and overkill beyond available health never count. Non-damage removals,
-  such as playing a card with a remove destination, do not create wounds.
+  cards and overkill beyond available health never count. Other non-damage
+  removals create wounds only when a program card removes cards as its cost (below).
 - Unified Defense preserves exact source reservations. Effects and legacy pooled
   batches allocate their actual removed cards in source order, capped by each
   source's final damage. This assigns the previously unassigned pooled cards
@@ -38,12 +38,19 @@ do not expose future wounds. Unknown historical losses remain dark.
   their rules and can record subsequent damage, but earlier losses are not
   retroactively invented.
 
-This phase does not change character decks between battles and does not implement
-healing, bandages, permanent wounds, or recovery rolls. Those systems can later
-reference individual wound and card-instance IDs without pooling distinct hits.
+Program cards that remove cards as a cost (sacrifices, or a `removed` play
+destination) record their own wound, sourced to the card. A **revive trade**
+(`card-configuration.md`) returns a removed card and removes it from the wound
+that recorded it, so that wound shrinks; a wound with no cards left is healed and
+disappears. This is the only healing so far. Between-battle deck changes,
+bandages, permanent wounds and recovery rolls are not implemented; they can
+reference the same wound and card-instance IDs without pooling distinct hits.
 
 ## Validation
 
+- `internal/battle/engine/revive_test.go`: revive trades, partial and full wound
+  healing, two-card trades with a sacrifice, recovery-card exclusion, and the
+  trade validation rule.
 - `internal/battle/engine/wounds_test.go`: prevention, separate hits/rounds,
   ongoing effects, overkill, played-card zones, failed commits, deep clone,
   JSON persistence, snapshot visibility, duplicate recording.

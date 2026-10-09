@@ -7,6 +7,7 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"slices"
 	"strings"
 )
 
@@ -186,6 +187,9 @@ func ValidateCardProgram(card BattleCardDefinition, lib BattleLibrary) error {
 	if err := validateProgramSteps(p.Steps, p.Windows, lib, 0, false); err != nil {
 		return err
 	}
+	if revive, cost := ProgramReviveCount(p.Steps), ProgramRemovalCost(card); revive > cost {
+		return fmt.Errorf("reviving %d removed cards is a trade: remove at least %d cards as its cost (this card's removed play destination plus sacrifices), found %d", revive, revive, cost)
+	}
 	if c := card.Economy; c != nil {
 		if c.Buy < 0 || c.Buy > 1000000 || c.Sell < 0 || c.Sell > c.Buy || c.CopyLimit < 1 || c.CopyLimit > 100 {
 			return fmt.Errorf("invalid card economy (sale price must not exceed buy price)")
@@ -328,8 +332,15 @@ func validateProgramSteps(steps []CardStep, windows []string, lib BattleLibrary,
 				return fmt.Errorf("card targets require source piles")
 			}
 			for _, z := range t.Zones {
+				if z == "removed" {
+					// Reviving is an authored trade (see ProgramReviveCount).
+					if s.Effect != "move_cards" || ProgramString(s, "destination") == "removed" || len(t.Zones) != 1 || t.Mode == "all" {
+						return fmt.Errorf("removed cards can only be revived on their own, by a fixed number of cards, to a live pile")
+					}
+					continue
+				}
 				if !ProgramContains([]string{"hand", "discard", "deck"}, z) {
-					return fmt.Errorf("removed cards cannot be recovered")
+					return fmt.Errorf("unsupported card pile %q", z)
 				}
 			}
 		}
@@ -518,6 +529,11 @@ func CardProgramRulesWithStatuses(p *CardProgram, statuses map[string]BattleStat
 				text = "Save " + target("threatened cards") + ". " + programDestinationWords(s)
 			case "move_cards":
 				text = "Move " + target("cards") + " to " + ProgramString(s, "destination") + "."
+				if ProgramContains(s.Target.Zones, "removed") {
+					revived := s.Target
+					revived.Zones = nil
+					text = "Revive " + programTargetWords(revived, "permanently removed cards", statuses) + " to " + ProgramString(s, "destination") + ". Each revived card heals 1 health of the wound that removed it."
+				}
 				if ProgramString(s, "destination") == "removed" {
 					text += " Each permanently removed card costs one health."
 				}
@@ -612,6 +628,44 @@ func CardProgramRulesWithStatuses(p *CardProgram, statuses map[string]BattleStat
 // ProgramPreparationStatus is the visible status an ability bonus applies: an
 // authored status when the effect names one (with its own rules and expiry
 // text), otherwise a generated per-card preparation status.
+// ProgramReviveCount is the most removed cards one play can return: each
+// revive step's fixed count, taking the largest option of a choice.
+func ProgramReviveCount(steps []CardStep) int {
+	total := 0
+	for _, s := range steps {
+		if s.Effect == "move_cards" && ProgramContains(s.Target.Zones, "removed") {
+			if s.Target.Mode == "exact" || s.Target.Mode == "up_to" {
+				total += s.Target.Count
+			} else {
+				total++
+			}
+		}
+		best := 0
+		for _, o := range s.Choices {
+			best = max(best, ProgramReviveCount(o.Steps))
+		}
+		total += best
+	}
+	return total
+}
+
+// ProgramRemovalCost counts the cards a play permanently removes as its cost:
+// the card itself when its play destination is removed, plus sacrifices.
+func ProgramRemovalCost(card BattleCardDefinition) int {
+	cost := 0
+	if card.Play.Destination == "removed" {
+		cost++
+	}
+	if card.Program != nil {
+		for _, s := range card.Program.Steps {
+			if s.Effect == "sacrifice" {
+				cost += s.Target.Count
+			}
+		}
+	}
+	return cost
+}
+
 func ProgramPreparationStatus(card string, step CardStep) string {
 	if id := ProgramString(step, "preparation_status"); id != "" {
 		return id
@@ -633,6 +687,22 @@ func PresentProgramCard(card *BattleCardDefinition, statuses map[string]BattleSt
 	p := card.Program
 	card.Presentation.RulesText = CardProgramRulesWithStatuses(p, statuses)
 	card.Presentation.EffectSummary = CardProgramFace(p, statuses)
+	if card.Play.Destination == "removed" {
+		// Removing itself is part of the card's cost, so the rules state it
+		// before the timing line and the face shows it.
+		self := "When played, this card is permanently removed instead of discarded (−1 health)."
+		lines := strings.Split(card.Presentation.RulesText, "\n")
+		limits := strings.Split(CardPlayLimitRules(p.UsesPerRound, p.UsesPerBattle), "\n")
+		at := len(lines)
+		for i, line := range lines {
+			if strings.HasPrefix(line, "Play:") || slices.Contains(limits, line) && line != "" {
+				at = i
+				break
+			}
+		}
+		card.Presentation.RulesText = strings.Join(slices.Insert(lines, at, self), "\n")
+		card.Presentation.EffectSummary += "\nRemoves itself (−1 health)"
+	}
 	card.Presentation.Timing = CardTimingTags(p.Windows, p.RollRequirement, CardNeedsPriorRoll(p.Steps))
 	card.Presentation.PlayLimit = CardPlayLimit(p.UsesPerRound, p.UsesPerBattle)
 	card.Presentation.Target = CardStatusTarget(p.Steps)

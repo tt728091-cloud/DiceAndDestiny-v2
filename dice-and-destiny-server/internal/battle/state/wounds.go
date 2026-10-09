@@ -95,3 +95,26 @@ func (battle *Battle) RecordDamageWounds(batchID string, sources []SettledDamage
 		battle.Wounds = append(battle.Wounds, wound)
 	}
 }
+
+// HealWoundCard records that a removed card returned to play. The card leaves
+// the wound that removed it, so that wound shrinks by one health; a wound with
+// no remaining cards is fully healed and disappears. Removals recorded before
+// wound tracking have no entry, so nothing changes for them.
+func (battle *Battle) HealWoundCard(actorID, cardID string) {
+	for i := range battle.Wounds {
+		w := &battle.Wounds[i]
+		if w.TargetActorID != actorID {
+			continue
+		}
+		for j, c := range w.Cards {
+			if c.CardID != cardID {
+				continue
+			}
+			w.Cards = slices.Delete(slices.Clone(w.Cards), j, j+1)
+			if len(w.Cards) == 0 {
+				battle.Wounds = slices.Delete(slices.Clone(battle.Wounds), i, i+1)
+			}
+			return
+		}
+	}
+}

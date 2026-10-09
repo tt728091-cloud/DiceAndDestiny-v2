@@ -110,9 +110,9 @@ Use `./scripts/godot.sh` for every additional Godot test.
 ## Default damage prevention destination
 
 - Defensive abilities and legacy cards configure `saved_card_destination` in their catalog definition; program cards (all shipped General and Adventurer cards) configure `destination` on each prevention effect. `original` preserves the live pile; `discard` moves newly saved cards to discard. Omission defaults to `original`. Never decide this by card/ability ID or upgrade name. See `docs/game-design/prevention-configuration.md`.
-- The Adventurer test loadout explicitly uses discard for Brace/Guard and original for Brace+/Guard+. Reservations do not move cards, so original-pile prevention must not rewind a draw or play.
+- In the Steady Guard tree, Steady Guard and Brace explicitly use discard; Bulwark uses original. Guard uses discard and Guard+ uses original. Reservations do not move cards, so original-pile prevention must not rewind a draw or play.
 - A played prevention card goes to its normal play destination (usually discard), even if it saves itself. If it remains threatened by an unprotected source, removal still follows it into that destination. Protect retains its explicitly authored saved-to-discard status rule.
-- Never duplicate cards or resurrect permanently removed cards. Repeated reconciliation and save/reload must preserve pile membership and health.
+- Never duplicate cards or resurrect permanently removed cards, except through an explicitly authored revive trade: a `move_cards` step from `removed` whose card removes at least as many cards (its own removed play destination plus sacrifices) as it revives. Each revived card heals out of the wound that removed it. Repeated reconciliation and save/reload must preserve pile membership and health.
 - Publish the saved card's live destination for animations, including the played card's final destination after its effects resolve. Saved-card flights and pile counts must agree with authority. Any different destination requires an explicit effect.
 
 ## Default damage-card selection order

@@ -75,7 +75,7 @@ Choose **Progression · XP** at the top of Character Creation, or **Progression 
 purchases** in battle setup. Both modes use one saved deck per character.
 Sandbox applies free deck edits; Progression buys, sells, and upgrades that same
 deck. Switching modes changes the editing controls, not the equipped cards.
-Both begin with the combatant template (Adventurer: two Brace and one Brace+).
+Both begin with the combatant template (Adventurer: three Steady Guard).
 
 - Each character has an authoritative XP balance. The current development
   allowance is **100 XP**, granted once on initial progression creation. Reopening
@@ -92,12 +92,12 @@ Both begin with the combatant template (Adventurer: two Brace and one Brace+).
 - The default card price is **10 XP**; per-character overrides are supported.
   Buying a copy immediately equips it and increases maximum health by one.
 - **Sell a copy** removes one equipped card and refunds its current configured
-  purchase price. Starter cards and upgraded cards can both be sold; Brace+
-  currently sells for 20 XP. Buying and selling use the same price configuration.
+  purchase price. Starter cards and upgraded cards can both be sold. Buying and
+  selling use the same price configuration.
 - Starter cards represent an already invested card budget, in addition to the
-  initial XP allowance. A fresh Adventurer has **100 available XP + 130 XP in
-  starter cards = 230 XP**. The summary displays available XP, current deck value,
-  and their combined card budget. Selling all starter cards makes all 230 XP
+  initial XP allowance. A fresh Adventurer has **100 available XP + 120 XP in
+  starter cards = 220 XP**. The summary displays available XP, current deck value,
+  and their combined card budget. Selling all starter cards makes all 220 XP
   available; this does not grant extra XP or reset an existing balance.
 - An empty Progression deck can be saved while rebuilding. Battle setup disables
   Start Battle and explains that at least one card is required. The authority
@@ -112,8 +112,8 @@ Both begin with the combatant template (Adventurer: two Brace and one Brace+).
   also compare both tiers. Clicking opens the existing transaction review and
   dismisses the hover; changing entries clears it. Hovering never changes a save.
 - Upgrading a card replaces exactly one owned copy and preserves health.
-  The Adventurer example is **Brace → Brace+ for 10 XP**. Buying an additional
-  Brace+ directly costs **20 XP**.
+  Shipped cards progress through card trees (see `card-trees.md`); the economy's
+  per-character `card_upgrades` remain supported, but no shipped card uses them.
 - Upgrading an ability replaces its existing offensive/defensive slot. The first
   configured example is **Guard → Guard+ for 25 XP**. Progression Adventurer starts
   with only base Guard so the ability upgrade can be tested. Card decks are
@@ -146,9 +146,7 @@ Both begin with the combatant template (Adventurer: two Brace and one Brace+).
 - Progression saves live under `user/character_loadouts/progression/<character>.json`
   in the launcher-isolated runtime root. This is the canonical deck for both
   modes and includes XP, ability board, and revision. Old separate saves migrate
-  once: the most recently saved deck wins when both exist. The retired unedited
-  Adventurer Progression starter is corrected to two Brace and one Brace+.
-  Customized decks, available XP, and purchased ability investment are preserved.
+  once: the most recently saved deck wins when both exist. Customized decks, available XP, and purchased ability investment are preserved.
   Legacy Sandbox files remain on disk as archives and cannot overwrite later edits.
 - New battles/rematches use the selected mode. Deck and ability-board overrides
   affect only the human participant and are recorded in replays. Existing battles
@@ -171,7 +169,7 @@ panel discards its edits.
 The invariant is **total budget = available XP + current deck value + upgrade
 investment**. Repricing cards preserves the total budget and changes available
 XP by the opposite amount. For example, setting Adventurer's budget to 260 and
-its two starter Braces to 12 XP yields 134 XP in the deck and 126 XP available.
+its three starter Steady Guards to 12 XP yields 126 XP in the deck and 134 XP available.
 A price reduction releases XP; increasing a budget from 220 to 260 adds 40 XP.
 Ability upgrade spending remains invested. Card upgrade costs are at least the
 increase in card value, or the authored upgrade price if higher, so repricing
@@ -272,9 +270,6 @@ starting_xp: 100
 default_card_price: 10
 characters:
   adventurer:
-    card_prices: {brace_plus: 20}
-    card_upgrades:
-      brace: {to: brace_plus, xp: 10}
     ability_upgrades:
       adventurer_guard: {to: adventurer_guard_plus, xp: 25}
 ```
@@ -357,7 +352,7 @@ The admin dialog uses a viewport-bounded scroll container so content height
 changes cannot push the dialog off-screen behind its dimmer. Each opening
 detaches the previous dialog before rebuilding controls from current settings.
 `verify_admin_reopening.gd` checks 24 consecutive save/reopen cycles across four
-window sizes (including 3456×2048), with Guard+ equipped and Brace prices
+window sizes (including 3456×2048), with Guard+ equipped and Steady Guard prices
 alternating between 10 and 11 XP. It also checks layout after validation content
 grows and clears, closing/canceling, and keyboard dismissal.
 
@@ -401,7 +396,7 @@ refreshes the library; new battles pin the updated catalog and owned loadout.
 | Dispel | 1 | Offense and Defense, any time | Remove one enemy positive status stack, unless its definition is `dispel_immune`. |
 | Triage | 1 | Defense, any time | Prevent 1 from one source and save a specific revealed threatened card from that source, including against overage. Other sources can still threaten it. |
 
-These cards, like the Adventurer starter cards (Brace, Brace+, Nudge, Try Again,
+These cards, like the Adventurer starter cards (Steady Guard, Nudge, Try Again,
 Strong Swing, Take Stock, Second Wind), are program cards: their effects,
 per-effect saved-card destinations and Before / After / Any time timing live in
 `program`, and their rules text and `Play: …` line are generated from it. Reinforce
@@ -487,9 +482,9 @@ The effect and target registries drive both authority validation and the form:
 | Duration | Offensive exit, end of current round's damage, next qualifying use, N rounds including the current round, or battle end |
 | Composition | Ordered effects; named options with extra energy and their own ordered effects; conditions use the existing structured dice requirements |
 
-General templates: Antidote, Battle Focus, Brace, Brace+, Dispel, Disrupt,
-Emergency Ward, Loaded Die, Matchmaker, Nudge, Reclaim, Reinforce, Second Guard,
-Second Wind, Sharpen Blade, Strong Swing, Take Stock, Tip It, Triage, Try Again,
+General templates: Antidote, Battle Focus, Dispel, Disrupt, Emergency Ward,
+Loaded Die, Matchmaker, Nudge, Reclaim, Reinforce, Second Guard, Second Wind,
+Sharpen Blade, Steady Guard, Strong Swing, Take Stock, Tip It, Triage, Try Again,
 and Turn the Die. Conversion follows their operation definitions; executing a
 program does not branch on the card's name or ID.
 
@@ -501,7 +496,7 @@ program does not branch on the card's name or ID.
   rejected instead of silently ignored. A genuinely new mechanic still needs
   one engine capability; creating more cards from these capabilities does not.
 - Card-pile selection is restricted to owned live cards; enemy dice must be
-  revealed. Removed cards cannot be recovered. Movement never duplicates cards.
+  revealed. Removed cards return only through a revive trade (see `card-configuration.md`). Movement never duplicates cards.
 - Sacrifice is an exact, chosen, unconditional cost at the start of a sequence,
   with one sacrifice step per sequence. It excludes the played card. Selecting
   targets does not pay a partial cost; after all targets are selected, removal
