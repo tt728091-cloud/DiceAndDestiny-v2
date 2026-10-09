@@ -68,6 +68,9 @@ func configure(instance: String, definition: String, enabled: bool, pending_remo
 	add_child(_frame); _frame.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	_frame.draw.connect(_draw_frame)
 	var title := Label.new(); title.name = "CardTitle"; title.text = str(data.name); title.vertical_alignment = VERTICAL_ALIGNMENT_CENTER; title.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	# Clipping keeps the label at the card's width, so a long name can never
+	# spill past the frame while _fit_title shrinks or wraps it.
+	title.clip_text = true
 	title.add_theme_font_override("font", title_font()); title.add_theme_font_size_override("font_size", 12 if small else 15)
 	_ivory_text(title, IVORY if enabled else Color("bdb6a8"), 5)
 	add_child(title); title.set_anchors_and_offsets_preset(Control.PRESET_TOP_WIDE); title.offset_left = 33 if small else 44; title.offset_right = -(8 if small else 12); title.offset_top = 6 if small else 11; title.offset_bottom = 30 if small else 37
@@ -129,7 +132,9 @@ func _fit_title() -> void:
 	if title == null or title.autowrap_mode == TextServer.AUTOWRAP_OFF and title.text_overrun_behavior != TextServer.OVERRUN_NO_TRIMMING: return
 	var font := title.get_theme_font("font")
 	var largest := 12 if custom_minimum_size.x < STANDARD_SIZE.x else 15
-	var width := title.size.x
+	# Measure the space the card gives the title, not the label's own size:
+	# an unwrapped label can grow to its text and would always "fit".
+	var width := size.x * (title.anchor_right - title.anchor_left) + title.offset_right - title.offset_left
 	if width <= 1: return
 	var point_size := largest
 	while point_size > largest - 3 and font.get_string_size(title.text, HORIZONTAL_ALIGNMENT_LEFT, -1, point_size).x > width: point_size -= 1
