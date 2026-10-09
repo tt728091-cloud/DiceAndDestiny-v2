@@ -36,6 +36,24 @@ static func with_xp(before: Dictionary, after: Dictionary, catalog: Dictionary) 
 	if xp_a != xp_b: out.append(_entry("XP value: %d → %d (%+d XP)" % [xp_a, xp_b, xp_b - xp_a], null))
 	return out
 
+## The tree's XP value for one node. Trees own XP (`xp` on the node); older
+## stores without it fall back to the card's own price. Shared cards have no
+## price of their own, so their node value is the only source.
+static func node_xp(node: Dictionary) -> int:
+	var xp := int(node.get("xp", 0))
+	if xp > 0: return xp
+	var economy = node.get("card", {}).get("economy", {})
+	return int(economy.get("buy", 0)) if economy is Dictionary else 0
+
+## A copy of the node's card priced at the tree's XP, so diffs, the forge and
+## the full editor read and edit one XP value for shared and exclusive cards.
+static func valued_card(node: Dictionary) -> Dictionary:
+	var card: Dictionary = node.get("card", {}).duplicate(true)
+	if not card.get("economy") is Dictionary: card.economy = {"copy_limit": 20}
+	card.economy.buy = node_xp(node); card.economy.sell = card.economy.buy
+	if not card.economy.get("upgrades") is Array: card.economy.upgrades = []
+	return card
+
 static func summary(before: Dictionary, after: Dictionary, catalog: Dictionary, limit: int = 2) -> String:
 	var parts: Array = changes(before, after, catalog).map(func(c): return c.text)
 	if parts.size() > limit: parts = parts.slice(0, limit) + ["+%d more" % (parts.size() - limit)]

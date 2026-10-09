@@ -12,9 +12,9 @@ func _run() -> void:
 	if not screen.has_node("CardTreeWorkspace"): quit(1); return
 	var ui = screen.get_node("CardTreeWorkspace")
 	_tree_line(ui, "tree.id", "template_tree"); _tree_line(ui, "tree.name", "Template Tree")
-	_choose(ui._base_pick, "brace"); await _click(_tree_control(ui, "base")); await _frames()
+	_choose(ui._base_pick, "steady_guard"); await _click(_tree_control(ui, "base")); await _frames()
 	var base: Dictionary = ui._node("base").duplicate(true)
-	var source: Dictionary = ui.catalog.templates.brace_plus.duplicate(true)
+	var source: Dictionary = ui.catalog.templates.reinforce.duplicate(true)
 	await _click(_tree_control(ui, "add_up")); await _frames()
 	await _click(_tree_control(ui, "forge.commit")); await _frames()
 	var node_id: String = ui._selected
@@ -22,14 +22,14 @@ func _run() -> void:
 	var edges: Array = ui.draft.edges.duplicate(true)
 	_expect(_tree_control(ui, "node.apply_template").disabled, "applying requires an explicit template selection")
 	# Switching across different programs must replace all settings, not merge stale fields.
-	for template_id in ["strong_swing", "brace_plus"]:
+	for template_id in ["strong_swing", "reinforce"]:
 		_choose(_tree_control(ui, "node.template", "tree_field"), template_id)
 		await _click(_tree_control(ui, "node.apply_template")); await _frames()
 		var expected: Dictionary = ui.catalog.templates[template_id].duplicate(true)
 		expected.id = original.card.id; expected.name = ui._node(node_id).card.name; expected.economy.buy = maxi(1, int(expected.economy.buy)); expected.economy.sell = expected.economy.buy; expected.economy.upgrades = []
 		_expect(JSON.stringify(ui._node(node_id).card) == JSON.stringify(expected), "complete independent settings copied from " + template_id)
 		_expect(ui._node(node_id).x == original.x and ui._node(node_id).y == original.y and ui.draft.edges == edges, "identity, position and graph preserved")
-	_expect(ui._node("base") == base and ui.catalog.templates.brace_plus == source, "base and source definitions unchanged")
+	_expect(ui._node("base") == base and ui.catalog.templates.reinforce == source, "base and source definitions unchanged")
 	_expect(ui._dirty and ui._publish.disabled, "template changes require validation and publication")
 	for width in [1280, 1920]:
 		root.size = Vector2i(width, int(width * 9.0 / 16.0)); await _frames()
@@ -45,8 +45,8 @@ func _run() -> void:
 	await _click(ui._publish); await _frames()
 	_expect(ui._message.text.begins_with("Published"), "template tree publishes: " + ui._message.text)
 	await _click(_tree_control(ui, "refresh")); await _frames()
-	_expect(ui._node(node_id).card.name == source.name + " · Template Tree" and ui._node(node_id).card.program == source.program, "published variant survives reload")
-	_expect(ui.catalog.templates.brace_plus == source, "published source stays unchanged")
+	_expect(ui._node(node_id).card.name == source.name + " II" and ui._node(node_id).card.program == source.program, "published variant survives reload")
+	_expect(ui.catalog.templates.reinforce == source, "published source stays unchanged")
 	await _click(_tree_control(ui, "back")); await _frames()
 	screen._tabs.current_tab = 5; await _frames(); ui = screen.get_node("CardTreeWorkspace")
 	_expect(not ui._admin(), "player view remains non-admin")

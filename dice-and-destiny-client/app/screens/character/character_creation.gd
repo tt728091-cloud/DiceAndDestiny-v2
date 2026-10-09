@@ -95,6 +95,8 @@ var _deck_curve: HBoxContainer
 var _portrait_name: Label
 var _portrait_note: Label
 var _roster_icons: Dictionary = {}
+## Card tree names by ID, for labelling shared cards' per-tree copies.
+var _tree_names: Dictionary = {}
 const TAB_HINTS := [
 	"Your equipped ability board. Select an ability for its tiers and upgrades.",
 	"",
@@ -347,6 +349,9 @@ func reload_catalogs() -> void:
 		_error.text = "Could not load characters: " + str(response.get("error", "Unknown error")); _error.show(); return
 	_error.hide(); catalogs = response.get("result", {})
 	_catalog_mode = loadout_mode
+	var trees: Dictionary = runtime.card_trees("card_trees", {}, 0, "adventurer") if runtime.has_method("card_trees") else {}
+	_tree_names = {}
+	for tree_id in trees.get("result", {}).get("trees", {}): _tree_names[tree_id] = str(trees.result.trees[tree_id].get("name", tree_id))
 	_drafts.clear(); _saved.clear()
 	for id in catalogs:
 		_saved[id] = catalogs[id].get("owned_decklist", catalogs[id].combatants[id].decklist).duplicate(true)
@@ -394,7 +399,7 @@ func _refresh_summary() -> void:
 	if loadout_mode == "progression":
 		var xp := int(catalogs[character_id].progression.xp)
 		var deck_value := 0
-		for entry in character.decklist: deck_value += int(entry.count) * _card_price(str(entry.card_id))
+		for entry in character.decklist: deck_value += int(entry.count) * _copy_value(_entry_key(entry))
 		var collection_value := int(catalogs[character_id].progression.get("collection_value", 0))
 		var budget_text := "%d XP available + %d XP in deck" % [xp, deck_value]
 		if collection_value > 0: budget_text += " + %d XP in collection" % collection_value
@@ -421,6 +426,7 @@ func _swap_card_sides() -> void:
 	_card_split.split_offset = -_card_split.split_offset
 
 func _entry(kind: String, id: String, title: String, subtitle: String, badge: String = "", target: VBoxContainer = null, source: String = "") -> void:
+	var card_id := _card_of(id) if kind == "cards" else id
 	var b := _button(_list if target == null else target, title, func(): inspect_entry(kind, id), "entry." + (source + "." if not source.is_empty() else "") + kind + "." + id)
 	for state in ["font_color", "font_hover_color", "font_pressed_color", "font_focus_color", "font_hover_pressed_color"]: b.add_theme_color_override(state, Color.TRANSPARENT)
 	b.custom_minimum_size.y = 78; b.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -431,9 +437,9 @@ func _entry(kind: String, id: String, title: String, subtitle: String, badge: St
 	m.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	for side in ["left", "right", "top", "bottom"]: m.add_theme_constant_override("margin_" + side, 8)
 	var row := HBoxContainer.new(); row.add_theme_constant_override("separation", 10); m.add_child(row); row.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	var definition: Dictionary = catalogs[character_id].get(kind, {}).get(id, {})
+	var definition: Dictionary = catalogs[character_id].get(kind, {}).get(card_id, {})
 	match kind:
-		"cards": STYLE.thumbnail(row, STYLE.card_texture(id), Vector2(44, 60), GOLD if _card_count(id) > 0 else STYLE.BRONZE)
+		"cards": STYLE.thumbnail(row, STYLE.card_texture(card_id), Vector2(44, 60), GOLD if _card_count(id) > 0 else STYLE.BRONZE)
 		"abilities":
 			var mark := STYLE.chip(row, badge, STYLE.OFFENSE if badge == "ATK" else STYLE.DEFENSE, 13)
 			mark.custom_minimum_size = Vector2(46, 46); mark.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER; mark.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
@@ -449,8 +455,8 @@ func _entry(kind: String, id: String, title: String, subtitle: String, badge: St
 		for face in definition.get("faces", []): _face_tile(faces, id, int(face.number), 40)
 		b.custom_minimum_size.y = 96
 	else:
-		var sub := _label(v, (_type_caption(kind, id) + " · " if kind in ["cards", "abilities"] else "") + subtitle, 13, MUTED); sub.max_lines_visible = 1; sub.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS; sub.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		if not _type_allowed(kind, id): sub.add_theme_color_override("font_color", STYLE.LOSS)
+		var sub := _label(v, (_type_caption(kind, card_id) + " · " if kind in ["cards", "abilities"] else "") + subtitle, 13, MUTED); sub.max_lines_visible = 1; sub.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS; sub.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		if not _type_allowed(kind, card_id): sub.add_theme_color_override("font_color", STYLE.LOSS)
 	if loadout_mode == "progression" and kind in ["cards", "abilities"]:
 		var value := _label(v, _entry_xp_text(kind, id), 13, GOLD); value.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		b.custom_minimum_size.y = 92
@@ -500,26 +506,30 @@ func _quick_controls(row: HBoxContainer, id: String, source: String) -> void:
 	var remove := _button(box, "−", func(): _quick_change(id, -1), "quick_remove.%s.%s" % [source, id])
 	for button in [add, remove]:
 		button.custom_minimum_size = Vector2(38, 32); button.add_theme_font_size_override("font_size", 18); button.focus_mode = Control.FOCUS_NONE
-	add.disabled = not _can_add(id); remove.disabled = _card_count(id) < 1
-	add.tooltip_text = ("Buy a copy · %d XP" % _card_price(id)) if progression else "Add a copy"
-	remove.tooltip_text = ("Sell a copy · +%d XP" % int(_economy_map("card_sale_prices").get(id, _card_price(id)))) if progression else "Remove a copy"
-	if progression and _economy_map("card_tree_membership").get(id, {}).get("is_variant", false): add.tooltip_text = "Obtain this variant through its card tree."
+	add.disabled = not _can_add(id); remove.disabled = _card_count(id) < 1 or _copy_key(id).is_empty()
+	add.tooltip_text = ("Buy a copy · %d XP" % _card_price(id)) if progression else "Add a copy" + (" via " + _tree_name(_tree_of(_copy_key(id, true))) if _is_shared(id) else "")
+	remove.tooltip_text = ("Sell a copy · +%d XP" % _sale_value(_copy_key(id))) if progression else "Remove a copy"
+	if _is_shared(id) and _copy_key(id).is_empty() and _card_count(id) > 0: remove.tooltip_text = "Copies come from several trees · use that tree's line in the deck"
+	if progression and _membership(id).get("is_variant", false): add.tooltip_text = "Obtain this variant through its card tree."
 
+## Copy limits cover every copy of a card, whichever tree it came through.
 func _copy_limit(id: String) -> int:
-	return int(_economy_map("card_copy_limits").get(id, catalogs[character_id].deck_limits.max_copies))
+	return int(_economy_map("card_copy_limits").get(_card_of(id), catalogs[character_id].deck_limits.max_copies))
 
 func _can_add(id: String) -> bool:
-	if not _type_allowed("cards", id) or _card_count(id) >= _copy_limit(id): return false
+	if not _type_allowed("cards", _card_of(id)) or _card_count(_card_of(id)) >= _copy_limit(id): return false
 	if loadout_mode != "progression": return true
-	if _economy_map("card_tree_membership").get(id, {}).get("is_variant", false): return false
+	if _membership(id).get("is_variant", false): return false
 	return int(catalogs[character_id].progression.xp) >= _card_price(id) and _health() < int(catalogs[character_id].deck_limits.max_cards)
 
 func _quick_change(id: String, delta: int) -> void:
 	if loadout_mode == "progression":
 		if delta > 0: _review_purchase("buy_card", id, _card_price(id))
-		else: _review_purchase("sell_card", id, int(_economy_map("card_sale_prices").get(id, _card_price(id))))
+		elif not _copy_key(id).is_empty(): _review_purchase("sell_card", _copy_key(id), _sale_value(_copy_key(id)))
 		return
-	_set_card_count(id, _card_count(id) + delta)
+	var key := _copy_key(id, delta > 0)
+	if key.is_empty(): return
+	_set_card_count(key, _card_count(key) + delta)
 	if selected_id == id and selected_kind == "cards": inspect_entry("cards", id)
 
 func _face_tile(parent: Node, die_id: String, face: int, size: int) -> PanelContainer:
@@ -578,12 +588,17 @@ func _populate_card_lists() -> void:
 		if not _matches_card(info, _library_search.text): continue
 		_entry("cards", str(id), info.name, "%d energy · %s" % [info.cost, info.effect_summary], "×%d" % _card_count(str(id)), _library_list, "library")
 	# Sort a display copy so browsing never changes the configured deck order.
+	# Copies of a shared card from different trees stay on separate lines.
 	var deck: Array = character.get("decklist", []).duplicate()
-	deck.sort_custom(func(a, b): return str(catalogs[character_id].cards[a.card_id].name).naturalnocasecmp_to(str(catalogs[character_id].cards[b.card_id].name)) < 0)
+	deck.sort_custom(func(a, b):
+		var order := str(catalogs[character_id].cards[a.card_id].name).naturalnocasecmp_to(str(catalogs[character_id].cards[b.card_id].name))
+		return order < 0 if order != 0 else _tree_name(str(a.get("tree", ""))) < _tree_name(str(b.get("tree", ""))))
 	for entry in deck:
 		var info := BattlePresentationCatalog.card(str(entry.card_id))
-		if not _matches_card(info, _deck_search.text): continue
-		_entry("cards", str(entry.card_id), info.name, "%d energy · %s" % [info.cost, info.effect_summary], "×%d" % int(entry.count), _deck_list, "deck")
+		var query := _deck_search.text.strip_edges().to_lower()
+		var tree_match := not query.is_empty() and not str(entry.get("tree", "")).is_empty() and _tree_name(str(entry.tree)).to_lower().contains(query)
+		if not _matches_card(info, _deck_search.text) and not tree_match: continue
+		_entry("cards", _entry_key(entry), _display_name(_entry_key(entry)), "%d energy · %s" % [info.cost, info.effect_summary], "×%d" % int(entry.count), _deck_list, "deck")
 	if _library_buttons.is_empty(): _label(_library_list, "No library cards match your search.", 16, MUTED)
 	if _deck_buttons.is_empty(): _label(_deck_list, "Your deck is empty. Add cards from the library." if character.decklist.is_empty() else "No deck cards match your search.", 16, MUTED)
 	library_scroll.set_deferred("scroll_vertical", library_position)
@@ -626,24 +641,29 @@ func inspect_entry(kind: String, id: String) -> void:
 		b.add_theme_stylebox_override("normal", _row_style(b.get_meta("entry_id") == id))
 	_clear(_details)
 	_quantity = null
-	var definition: Dictionary = catalogs[character_id][kind][id]
+	# Card rows may name one tree's copies of a shared card ("tree/card").
+	var card_id := _card_of(id) if kind == "cards" else id
+	var definition: Dictionary = catalogs[character_id][kind][card_id]
 	var head := HBoxContainer.new(); head.add_theme_constant_override("separation", 12); _details.add_child(head)
 	var titles := VBoxContainer.new(); titles.size_flags_horizontal = Control.SIZE_EXPAND_FILL; titles.add_theme_constant_override("separation", 6); head.add_child(titles)
-	_label(titles, str(definition.name), 24, STYLE.GOLD_BRIGHT)
+	_label(titles, _display_name(id) if kind == "cards" else str(definition.name), 24, STYLE.GOLD_BRIGHT)
 	var tags := HFlowContainer.new(); tags.add_theme_constant_override("h_separation", 6); tags.add_theme_constant_override("v_separation", 6); titles.add_child(tags)
+	if kind == "cards" and _is_shared(id): STYLE.chip(tags, "Shared card", STYLE.DEFENSE)
 	if kind in ["cards", "abilities"]:
-		STYLE.chip(tags, "Type: " + _type_caption(kind, id), GOLD if _type_allowed(kind, id) else STYLE.LOSS)
+		STYLE.chip(tags, "Type: " + _type_caption(kind, card_id), GOLD if _type_allowed(kind, card_id) else STYLE.LOSS)
 		if kind == "abilities": STYLE.chip(tags, str(definition.type).capitalize(), STYLE.OFFENSE if str(definition.type) == "offensive" else STYLE.DEFENSE)
 		else: STYLE.chip(tags, str(definition.get("type", "card")).replace("_", " ").capitalize(), MUTED)
 		STYLE.pip(head, int(definition.get("cost", {}).get("energy", 0)), 40)
 	else:
 		STYLE.chip(tags, "%d faces" % int(definition.get("side_count", definition.get("faces", []).size())), MUTED)
 	if loadout_mode == "progression" and kind in ["cards", "abilities"]: _label(_details, _entry_xp_text(kind, id), 15, GOLD)
-	if kind in ["cards", "abilities"] and not _type_allowed(kind, id):
+	if kind in ["cards", "abilities"] and not _type_allowed(kind, card_id):
 		var warning := _label(_details, "Unavailable for this character type. " + ("Sell/remove this card or change its type in Admin settings before battle." if kind == "cards" else "Choose an eligible downgrade or change the ability/character type in Admin settings before battle."), 15, Color("ffd2c8"))
 		warning.add_theme_stylebox_override("normal", STYLE.box(Color(STYLE.LOSS, 0.12), Color(STYLE.LOSS, 0.55), 12, 8))
-	if kind == "cards": _append_card_visual(_details, id)
-	if kind == "cards":
+	if kind == "cards": _append_card_visual(_details, card_id)
+	if kind == "cards" and _is_shared(id) and _tree_of(id).is_empty():
+		_shared_copies(id)
+	elif kind == "cards":
 		if loadout_mode == "progression":
 			_progression_actions(kind, id)
 		else:
@@ -652,17 +672,18 @@ func inspect_entry(kind: String, id: String) -> void:
 			var quantity_row := HBoxContainer.new(); quantity_row.add_theme_constant_override("separation", 8); copies.add_child(quantity_row)
 			var minus := _button(quantity_row, "−", func(): _set_card_count(id, _card_count(id) - 1), "remove." + id)
 			minus.custom_minimum_size.x = 44; minus.disabled = _card_count(id) < 1
-			_quantity = SpinBox.new(); _quantity.min_value = 0; _quantity.max_value = _copy_limit(id) if _type_allowed("cards", id) else _card_count(id)
+			if not _tree_of(id).is_empty(): _label(copies, "Copies obtained through %s · worth %d XP each in that tree." % [_tree_name(_tree_of(id)), _copy_value(id)], 14, MUTED)
+			_quantity = SpinBox.new(); _quantity.min_value = 0; _quantity.max_value = _copy_limit(id) if _type_allowed("cards", card_id) else _card_count(id)
 			_quantity.step = 1; _quantity.value = _card_count(id); _quantity.custom_minimum_size = Vector2(110, 42); quantity_row.add_child(_quantity)
 			_quantity.alignment = HORIZONTAL_ALIGNMENT_CENTER
 			_quantity.value_changed.connect(func(value): _set_card_count(id, int(value)); minus.disabled = int(value) < 1)
 			_add_copy = STYLE.accent(_button(quantity_row, "+ Add a copy", func(): _set_card_count(id, _card_count(id) + 1); minus.disabled = _card_count(id) < 1, "add." + id))
 			_add_copy.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-			_add_copy.disabled = not _type_allowed("cards", id) or _card_count(id) >= _copy_limit(id)
+			_add_copy.disabled = not _type_allowed("cards", card_id) or _card_count(card_id) >= _copy_limit(id)
 			_label(copies, "Set to 0 to remove · up to %d copies" % _copy_limit(id), 13, MUTED)
 	elif kind == "abilities" and loadout_mode == "progression":
 		_progression_actions(kind, id)
-	_append_item_rules(_details, kind, id)
+	_append_item_rules(_details, kind, card_id)
 
 # Shared read-only rendering keeps Admin and the character inspector identical.
 func _append_item_preview(parent: VBoxContainer, kind: String, id: String) -> void:
@@ -735,14 +756,20 @@ func _guard_unsaved(action: Callable) -> void:
 
 func _deck_counts(deck: Array) -> Dictionary:
 	var counts := {}
-	for entry in deck: counts[str(entry.card_id)] = int(entry.count)
+	for entry in deck: counts[_entry_key(entry)] = int(counts.get(_entry_key(entry), 0)) + int(entry.count)
 	return counts
 
 func _dirty(id: String) -> bool:
 	return _deck_counts(_drafts[id]) != _deck_counts(_saved[id])
 
+## Equipped copies. A "tree/card" key counts that tree's copies; a plain card
+## ID counts every copy of the card, from any tree.
 func _card_count(id: String) -> int:
-	return int(_deck_counts(_drafts[character_id]).get(id, 0))
+	if id.contains("/"): return int(_deck_counts(_drafts[character_id]).get(id, 0))
+	var total := 0
+	for entry in _drafts[character_id]:
+		if str(entry.card_id) == id: total += int(entry.count)
+	return total
 
 func _health() -> int:
 	var total := 0
@@ -777,16 +804,24 @@ func _refresh_actions() -> void:
 	for id in _roster_buttons: _roster_buttons[id].text = str(catalogs[id].combatants[id].name) + (" *" if _dirty(id) else "")
 
 func _set_card_count(id: String, count: int) -> void:
-	count = clampi(count, 0, int(_economy_map("card_copy_limits").get(id, catalogs[character_id].deck_limits.max_copies)))
-	if count > _card_count(id) and not _type_allowed("cards", id): return
+	# Free edits keep each shared copy's tree: a plain shared ID resolves to one tree's line.
+	if _is_shared(id) and _tree_of(id).is_empty():
+		id = _copy_key(id, count > _card_count(id))
+		if id.is_empty(): return
+	var others := _card_count(_card_of(id)) - _card_count(id)
+	count = clampi(count, 0, maxi(0, _copy_limit(id) - others))
+	if count > _card_count(id) and not _type_allowed("cards", _card_of(id)): return
 	var found := false
 	var deck: Array = _drafts[character_id]
 	for index in range(deck.size() - 1, -1, -1):
-		if str(deck[index].card_id) != id: continue
+		if _entry_key(deck[index]) != id: continue
 		found = true
 		if count == 0: deck.remove_at(index)
 		else: deck[index].count = count
-	if not found and count > 0: deck.append({"card_id": id, "count": count})
+	if not found and count > 0:
+		var line := {"card_id": _card_of(id), "count": count}
+		if not _tree_of(id).is_empty(): line.tree = _tree_of(id)
+		deck.append(line)
 	character.decklist = deck
 	# The inspector controls belong to the inspected card; quick row buttons may
 	# change a different card.
@@ -827,7 +862,61 @@ func _economy_map(key: String) -> Dictionary:
 	return value if value is Dictionary else {}
 
 func _card_price(id: String) -> int:
-	return int(_economy_map("card_prices").get(id, catalogs[character_id].economy.default_card_price))
+	return int(_economy_map("card_prices").get(_card_of(id), catalogs[character_id].economy.default_card_price))
+
+# Shared cards ------------------------------------------------------------------
+## Deck and collection rows are keyed by card ID, except copies of shared cards:
+## each remembers the tree it came through and is keyed "tree/card".
+static func _entry_key(entry: Dictionary) -> String:
+	var tree := str(entry.get("tree", ""))
+	return str(entry.card_id) if tree.is_empty() else "%s/%s" % [tree, entry.card_id]
+static func _card_of(key: String) -> String: return key.get_slice("/", 1) if key.contains("/") else key
+static func _tree_of(key: String) -> String: return key.get_slice("/", 0) if key.contains("/") else ""
+func _membership(id: String) -> Dictionary:
+	return _economy_map("card_tree_membership").get(_card_of(id), {})
+func _is_shared(id: String) -> bool: return bool(_membership(id).get("shared", false))
+func _tree_name(tree_id: String) -> String: return str(_tree_names.get(tree_id, tree_id))
+func _display_name(key: String) -> String:
+	var name := str(catalogs[character_id].cards.get(_card_of(key), {}).get("name", _card_of(key)))
+	return name if _tree_of(key).is_empty() else "%s · via %s" % [name, _tree_name(_tree_of(key))]
+## Each tree lending a shared card, with that tree's XP: [{tree_id, node_id, xp}].
+func _shared_trees(id: String) -> Array:
+	return _membership(id).get("trees", [])
+## XP one copy is worth: its tree's value for shared copies, else the card price.
+func _copy_value(key: String) -> int:
+	for tree in _shared_trees(key):
+		if str(tree.tree_id) == _tree_of(key): return int(tree.xp)
+	return _card_price(key)
+func _sale_value(key: String) -> int:
+	if not _tree_of(key).is_empty(): return _copy_value(key)
+	return int(_economy_map("card_sale_prices").get(_card_of(key), _card_price(key)))
+## The one row a plain shared-card action means: the only tree whose copies are
+## equipped, or (when adding) the first tree that lends it. Empty when ambiguous.
+func _copy_key(id: String, adding: bool = false) -> String:
+	if not _is_shared(id) or not _tree_of(id).is_empty(): return id
+	var held: Array = []
+	for entry in _drafts[character_id]:
+		if str(entry.card_id) == id and not str(entry.get("tree", "")).is_empty() and _entry_key(entry) not in held: held.append(_entry_key(entry))
+	held.sort()
+	if held.size() == 1 or (adding and not held.is_empty()): return held[0]
+	if adding and not _shared_trees(id).is_empty(): return "%s/%s" % [_shared_trees(id)[0].tree_id, id]
+	return ""
+## Stored copies for a row key (see _card_count for plain IDs).
+func _stored_count(key: String) -> int:
+	var total := 0
+	for entry in catalogs[character_id].get("progression", {}).get("collection", []):
+		if _entry_key(entry) == key or (not key.contains("/") and str(entry.card_id) == key): total += int(entry.count)
+	return total
+## A shared card's inspector lists each tree's copies; every action names one tree.
+func _shared_copies(id: String) -> void:
+	var box := STYLE.section(_details)
+	STYLE.heading(box, "Copies by tree")
+	_label(box, "A shared card keeps the tree it came through. Each tree's copies have that tree's XP value and move only along its paths. Battles count them together.", 14, MUTED)
+	for tree in _shared_trees(id):
+		var key := "%s/%s" % [tree.tree_id, id]
+		var line := _button(box, "%s · %d XP · %d in deck · %d stored" % [_tree_name(str(tree.tree_id)), int(tree.xp), _card_count(key), _stored_count(key)], func(): inspect_entry("cards", key), "copies." + key)
+		line.alignment = HORIZONTAL_ALIGNMENT_LEFT
+	if _shared_trees(id).is_empty(): _label(box, "No published tree lends this card.", 14, MUTED)
 
 func _progression_actions(kind: String, id: String) -> void:
 	var progress: Dictionary = catalogs[character_id].progression
@@ -836,26 +925,31 @@ func _progression_actions(kind: String, id: String) -> void:
 		var copies := STYLE.section(_details)
 		STYLE.heading(copies, "Copies")
 		_label(copies, "%d %s equipped" % [_card_count(id), "copy" if _card_count(id) == 1 else "copies"], 16, MUTED)
+		var card_id := _card_of(id)
 		var price := _card_price(id)
 		var trade := HBoxContainer.new(); trade.add_theme_constant_override("separation", 8); copies.add_child(trade)
 		var buy := STYLE.accent(_button(trade, "Buy a copy · %d XP" % price, func(): _review_purchase("buy_card", id, price), "buy." + id))
-		buy.disabled = not _type_allowed("cards", id) or int(progress.xp) < price or _card_count(id) >= _copy_limit(id) or _health() >= int(catalogs[character_id].deck_limits.max_cards)
-		var sale_price := int(_economy_map("card_sale_prices").get(id, price))
+		buy.disabled = not _type_allowed("cards", card_id) or int(progress.xp) < price or _card_count(card_id) >= _copy_limit(id) or _health() >= int(catalogs[character_id].deck_limits.max_cards)
+		# A shared copy sells for the XP of the tree it came through.
+		var sale_price := _sale_value(id)
 		var sell := STYLE.accent(_button(trade, "Sell a copy · +%d XP" % sale_price, func(): _review_purchase("sell_card", id, sale_price), "sell." + id), STYLE.AMBER)
 		sell.disabled = _card_count(id) < 1
 		for b in [buy, sell]: b.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		if int(progress.xp) < price: _label(copies, "Need %d more XP to buy a copy." % (price - int(progress.xp)), 14, MUTED)
-		var tree_membership: Dictionary = _economy_map("card_tree_membership").get(id, {})
+		if int(progress.xp) < price and not _is_shared(id): _label(copies, "Need %d more XP to buy a copy." % (price - int(progress.xp)), 14, MUTED)
+		var tree_membership := _membership(id)
 		if not tree_membership.is_empty():
 			var tree := STYLE.section(_details)
 			STYLE.heading(tree, "Card tree")
 			_button(tree, "Open Card Trees", _open_card_trees, "tree." + id)
-			if tree_membership.get("is_variant", false):
+			if _is_shared(id):
+				buy.disabled = true
+				var others: Array = _shared_trees(id).filter(func(t): return str(t.tree_id) != _tree_of(id)).map(func(t): return "%s (%d XP)" % [_tree_name(str(t.tree_id)), int(t.xp)])
+				_label(tree, "Shared card · these copies came through %s and are worth %d XP each there. Obtain more through a card tree." % [_tree_name(_tree_of(id)), _copy_value(id)], 14, MUTED)
+				if not others.is_empty(): _label(tree, "Also in: " + ", ".join(others) + ". Copies from different trees stay separate.", 14, MUTED)
+			elif tree_membership.get("is_variant", false):
 				buy.disabled = true
 				_label(tree, "Obtain this variant through its connected card tree.", 14, MUTED)
-		var stored := 0
-		for entry in progress.get("collection", []):
-			if entry.card_id == id: stored = int(entry.count)
+		var stored := _stored_count(id)
 		var collection := STYLE.section(_details)
 		STYLE.heading(collection, "Collection")
 		_label(collection, "%d in collection · not counted as health" % stored, 14, MUTED)
@@ -902,21 +996,25 @@ func _upgrade_section() -> VBoxContainer:
 	return box
 
 func _move_collection_card(kind: String, id: String) -> void:
-	_pending_purchase = {"character": character_id, "kind": kind, "id": id, "cost": 0, "revision": int(catalogs[character_id].progression.revision), "target_id": id}
+	_pending_purchase = {"character": character_id, "kind": kind, "id": _card_of(id), "tree": _tree_of(id), "cost": 0, "revision": int(catalogs[character_id].progression.revision), "target_id": id}
 	_confirm_purchase()
 
 func _review_purchase(kind: String, id: String, cost: int, downgrade_target: String = "") -> void:
 	_comparison.dismiss()
 	var progress: Dictionary = catalogs[character_id].progression
-	_pending_purchase = {"character": character_id, "kind": kind, "id": id, "cost": cost, "revision": int(progress.revision)}
-	_clear(_purchase_details)
 	var collection := "abilities" if kind in ["upgrade_ability", "downgrade_ability"] else "cards"
+	# Card rows may name one tree's copies of a shared card; the request names that tree.
+	var key := id
+	if collection == "cards": id = _card_of(key)
+	_pending_purchase = {"character": character_id, "kind": kind, "id": id, "tree": _tree_of(key) if collection == "cards" else "", "cost": cost, "revision": int(progress.revision)}
+	_clear(_purchase_details)
 	var current: Dictionary = catalogs[character_id][collection][id]
 	var upgrade := kind in ["upgrade_card", "upgrade_ability", "downgrade_ability"]
 	var downgrade := kind == "downgrade_ability"
 	var selling := kind in ["sell_card", "sell_collection_card"]
 	var target_id := downgrade_target if kind == "upgrade_card" and not downgrade_target.is_empty() else str(_economy_map("ability_upgrades" if collection == "abilities" else "card_upgrades")[id].to) if upgrade and not downgrade else id
 	if downgrade: target_id = downgrade_target
+	if collection == "cards" and not upgrade: target_id = key
 	_pending_purchase.target_id = target_id
 	_skip_prompt.set_pressed_no_signal(false)
 	_skip_prompt.visible = not upgrade and kind != "sell_collection_card"
@@ -930,16 +1028,16 @@ func _review_purchase(kind: String, id: String, cost: int, downgrade_target: Str
 		if not _confirmation_enabled(kind):
 			_confirm_purchase()
 			return
-	var target: Dictionary = catalogs[character_id][collection][target_id]
+	var target: Dictionary = catalogs[character_id][collection][_card_of(target_id) if collection == "cards" else target_id]
 	var card_delta := -1 if kind == "sell_card" else 1 if kind == "buy_card" else 0
-	_label(_purchase_details, "%s → %s" % [current.name, target.name] if upgrade else ("Sell one %s" if selling else "Add one %s") % target.name, 24, GOLD)
+	_label(_purchase_details, "%s → %s" % [current.name, target.name] if upgrade else ("Sell one %s" if selling else "Add one %s") % (_display_name(key) if collection == "cards" else str(target.name)), 24, GOLD)
 	var delta := _label(_purchase_details, "XP: %d → %d    ·    Health: %d → %d" % [int(progress.xp), int(progress.xp) + (cost if selling or downgrade else -cost), _health(), _health() + card_delta], 22)
 	delta.add_theme_stylebox_override("normal", STYLE.box("0c1620", Color(GOLD, 0.4), 14, 8))
 	if kind == "upgrade_card": _label(_purchase_details, "Replaces one owned copy. Other copies remain unchanged.", 16, MUTED)
 	elif kind == "upgrade_ability": _label(_purchase_details, "Replaces the equipped ability in its slot.", 16, MUTED)
 	elif downgrade: _label(_purchase_details, "Returns the previous ability tier to the same slot and refunds %d XP. You can buy this upgrade again." % cost, 16, MUTED)
 	elif kind == "sell_collection_card": _label(_purchase_details, "Sells one stored copy. Your equipped deck and health are unchanged.", 16, MUTED)
-	else: _label(_purchase_details, "Equipped copies: %d → %d" % [_card_count(id), _card_count(id) + card_delta], 16, MUTED)
+	else: _label(_purchase_details, "Equipped copies: %d → %d" % [_card_count(key), _card_count(key) + card_delta], 16, MUTED)
 	if selling:
 		_label(_purchase_details, "Returns the current purchase price to your XP balance. You can buy this card again from the library.", 18, MUTED)
 		if _health() == 1 and kind == "sell_card": _label(_purchase_details, "This empties your deck. Buy at least one card before starting a battle.", 18, GOLD)
@@ -960,7 +1058,7 @@ func _confirm_purchase() -> void:
 	var p := _pending_purchase
 	if loadout_mode != "progression" or character_id != str(p.character):
 		_purchase_overlay.hide(); return
-	var response: Dictionary = get_node("/root/LearnedBattleRuntime").purchase_progression(str(p.character), str(p.kind), str(p.id), int(p.revision), int(p.cost), str(p.target_id) if p.kind in ["downgrade_ability", "upgrade_card"] else "")
+	var response: Dictionary = get_node("/root/LearnedBattleRuntime").purchase_progression(str(p.character), str(p.kind), str(p.id), int(p.revision), int(p.cost), str(p.target_id) if p.kind in ["downgrade_ability", "upgrade_card"] else "", str(p.get("tree", "")))
 	_purchase_overlay.hide()
 	if not response.get("ok", false):
 		_error.text = "Transaction not completed: " + str(response.get("error", "Unknown error")) + ". Reload definitions to refresh."; _error.show(); return
@@ -1106,6 +1204,12 @@ func _admin_base_price(id: String) -> int:
 	var prices = catalog.economy.get("card_prices")
 	return int(prices.get(id, catalog.economy.default_card_price)) if prices is Dictionary else int(catalog.economy.default_card_price)
 
+## A shared copy's value in the tree it came through (prices never apply).
+func _tree_value(catalog: Dictionary, entry: Dictionary) -> int:
+	for tree in catalog.economy.get("card_tree_membership", {}).get(str(entry.card_id), {}).get("trees", []):
+		if str(tree.tree_id) == str(entry.tree): return int(tree.xp)
+	return 0
+
 func _admin_spin(parent: Node, amount: int, minimum: int) -> SpinBox:
 	var spin := SpinBox.new(); spin.min_value = minimum; spin.max_value = 1000000; spin.step = 1; spin.value = amount
 	spin.custom_minimum_size.x = 120; spin.suffix = "XP"; spin.alignment = HORIZONTAL_ALIGNMENT_RIGHT; parent.add_child(spin); return spin
@@ -1118,11 +1222,11 @@ func _refresh_admin_preview() -> void:
 		var prices = catalog.economy.get("card_prices")
 		for entry in progress.decklist:
 			var base := int(prices.get(entry.card_id, catalog.economy.default_card_price)) if prices is Dictionary else int(catalog.economy.default_card_price)
-			value += int(entry.count) * int(_admin_draft.card_prices.get(entry.card_id, base))
+			value += int(entry.count) * (_tree_value(catalog, entry) if not str(entry.get("tree", "")).is_empty() else int(_admin_draft.card_prices.get(entry.card_id, base)))
 		var collection_value := 0
 		for entry in progress.get("collection", []):
 			var base := int(prices.get(entry.card_id, catalog.economy.default_card_price)) if prices is Dictionary else int(catalog.economy.default_card_price)
-			collection_value += int(entry.count) * int(_admin_draft.card_prices.get(entry.card_id, base))
+			collection_value += int(entry.count) * (_tree_value(catalog, entry) if not str(entry.get("tree", "")).is_empty() else int(_admin_draft.card_prices.get(entry.card_id, base)))
 		var spent := int(progress.get("upgrade_spent", 0)); var budget := int(_admin_draft.budgets[id]); var available := budget - value - collection_value - spent
 		var conflicts := 0
 		for entry in progress.decklist:
@@ -1177,7 +1281,12 @@ func _comparison_rules(kind: String, id: String) -> String:
 
 func _entry_xp_text(kind: String, id: String) -> String:
 	if kind == "cards":
-		var unit := _card_price(id); var count := _card_count(id)
+		if _is_shared(id) and _tree_of(id).is_empty():
+			var total := 0
+			for entry in _drafts[character_id]:
+				if str(entry.card_id) == id: total += int(entry.count) * _copy_value(_entry_key(entry))
+			return "Shared card · XP set per tree · %d XP total" % total
+		var unit := _copy_value(id); var count := _card_count(id)
 		return "%d XP × %d = %d XP total" % [unit, count, unit * count]
 	var value := _ability_xp_value(id)
 	return "%d XP total · %s" % [value, "included starter ability" if value == 0 else "configured upgrade investment"]
@@ -1278,7 +1387,7 @@ func _populate_admin_items(list: VBoxContainer, kind: String) -> void:
 			var spin := _admin_spin(row, value, 1); _admin_prices[id] = spin
 			if _economy_map("card_tree_membership").has(id):
 				spin.value = _card_price(id); spin.editable = false
-				spin.tooltip_text = "Edit XP in Card Trees"
+				spin.tooltip_text = "Shared card · each tree sets its own XP in Card Trees" if _is_shared(id) else "Edit XP in Card Trees"
 			spin.value_changed.connect(func(amount): _admin_draft.card_prices[id] = int(amount); _refresh_admin_preview())
 		_admin_type_choice(row, kind, str(id))
 		_connect_admin_item_hover(group, kind, str(id))
@@ -1389,7 +1498,8 @@ func _refresh_admin_item_context() -> void:
 	if not is_instance_valid(_admin_item_context) or _admin_item_id.is_empty(): return
 	var pool := _type_name(_draft_type(_admin_item_kind, _admin_item_id))
 	var context := "Type: " + pool
-	if _admin_item_kind == "cards": context += " · %d XP" % int(_admin_draft.card_prices.get(_admin_item_id, _admin_base_price(_admin_item_id)))
+	if _admin_item_kind == "cards" and _is_shared(_admin_item_id): context += " · shared card · XP per tree: " + ", ".join(_shared_trees(_admin_item_id).map(func(t): return "%s %d" % [_tree_name(str(t.tree_id)), int(t.xp)]))
+	elif _admin_item_kind == "cards": context += " · %d XP" % int(_admin_draft.card_prices.get(_admin_item_id, _admin_base_price(_admin_item_id)))
 	context += "\n" + str(character.name) + (" · Available" if _draft_type_allowed(character_id, _admin_item_kind, _admin_item_id) else " · Requires matching type")
 	_admin_item_context.text = context
 

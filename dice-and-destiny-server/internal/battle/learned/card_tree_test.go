@@ -119,11 +119,11 @@ func TestCardTreeGatesAndGraphValidation(t *testing.T) {
 	}
 	e, _ := loadout.LoadEconomy(root, libs)
 	deck := []loadout.Entry{{CardID: "steady_guard", Count: 2}, {CardID: "second_wind", Count: 1}, {CardID: "strong_swing", Count: 1}}
-	if _, _, err := loadout.TreeTransition(deck, "steady_guard", "test_tree_variant_guard", e, libs["adventurer"], "adventurer"); err != nil {
+	if _, _, err := loadout.TreeTransition(deck, "steady_guard", "test_tree_variant_guard", "", e, libs["adventurer"], "adventurer"); err != nil {
 		t.Fatal("deck gates must not block upgrades", err)
 	}
 	deck = deck[:2]
-	changed, cost, err := loadout.TreeTransition(deck, "steady_guard", "test_tree_variant_guard", e, libs["adventurer"], "adventurer")
+	changed, cost, err := loadout.TreeTransition(deck, "steady_guard", "test_tree_variant_guard", "", e, libs["adventurer"], "adventurer")
 	if err != nil || cost != 3 {
 		t.Fatal(err)
 	}

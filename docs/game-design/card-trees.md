@@ -21,11 +21,11 @@ Navigation: drag the background (or a card, in the player view) to pan; scroll o
 
 ### Growing it
 
-Select a card and choose **Upgrade ↑** (U) or **Cheaper ↓** (D). The forge copies the card and offers only valid one-step adjustments to its own fields: energy, each effect's values (for example *Prevent damage 1 → 2*), saved-card destinations, targets, choice energy, uses per round, play destination, and one-click compatible additions such as *+ Draw 1 card*. Each change is validated immediately; the panel previews the rules text and the change list, suggests a name (for example *Steady Guard · Swift*) and suggests +3 XP (upgrade) or −2 XP (cheaper, minimum 1 XP). **Create upgrade** adds the card one row above or below and connects it. **Open full card editor…** covers every other setting and returns to the forge. **Quick edit** uses the same controls on an existing card. The editor does not infer balance from price.
+Select a card and choose **Upgrade ↑** (U) or **Cheaper ↓** (D). The forge copies the card and offers only valid one-step adjustments to its own fields: energy, each effect's values (for example *Prevent damage 1 → 2*), saved-card destinations, targets, choice energy, uses per round, play destination, and one-click compatible additions such as *+ Draw 1 card*. Each change is validated immediately; the panel previews the rules text and the change list, suggests a short, unique name (for example *Swift Ward*: an adjective for the change plus a noun for the effect, never repeating the base name; see `card_name_suggester.gd`) and suggests +3 XP (upgrade) or −2 XP (cheaper, minimum 1 XP). **Create upgrade** adds the card one row above or below and connects it. **Open full card editor…** covers every other setting and returns to the forge. **Quick edit** uses the same controls on an existing card. The editor does not infer balance from price.
 
 A card is a complete definition, not a patch. Editing one card never changes its descendants. Tree card buy/sell values are equal and at least 1 XP; their prices are managed here rather than in the separate economy price overrides.
 
-**To reuse an existing card such as Brace+:** select the card, choose one under **Use existing card as template**, then **Apply card template**. This replaces the card's settings (name, effects, artwork, energy, XP) while preserving its generated ID, position and connections. A unique name is generated from the source card and tree name. The source card remains unchanged.
+**To reuse an existing card such as Emergency Ward:** select the card, choose one under **Use existing card as template**, then **Apply card template**. This replaces the card's settings (name, effects, artwork, energy, XP) while preserving its generated ID, position and connections. The source card's name is kept, with a numeral (II, III, …) only if it is already taken. The source card remains unchanged.
 
 ### Connections and layout
 
@@ -37,7 +37,7 @@ Drag cards to arrange them (positions snap to a 20-unit grid). **Auto-arrange** 
 
 ### Steady Guard example
 
-**Steady Guard example** creates an unpublished draft with its own new base card, so it never edits Brace:
+**Steady Guard example** creates an unpublished draft with its own new base card, so it never edits an existing card:
 
 | Card | Energy | Prevention | Saved cards | Total XP |
 | --- | ---: | ---: | --- | ---: |
@@ -48,6 +48,21 @@ Drag cards to arrange them (positions snap to a 20-unit grid). **Auto-arrange** 
 | Heavy guard | 2 | 1 | Discard | 8 |
 
 Complete guard connects from both upper branches. Nothing changes until an admin publishes it.
+
+## Shared cards
+
+Most tree cards belong to exactly one tree. A **shared card** is deliberately lent to several trees instead: one card definition, used by as many trees as you choose.
+
+- **One definition.** The card's name, energy, effects, targets, timing and rules exist once in the catalog. Editing it from any tree that uses it (the full card editor opens from any of them) updates every tree. The editor warns how many trees the change affects.
+- **Trees own the XP.** Every tree card's XP value is stored on the tree's node (`xp`), not on the card. A shared card has no price of its own, so the same card can cost a different amount in each tree. Exclusive tree cards keep their card price equal to the node's XP for compatibility.
+- **Bases are never shared.** A tree's base belongs to that tree only, and a card used as one tree's base cannot appear in any other tree. A shared card appears at most once per tree.
+- **IDs.** A shared card has its own card ID (never the `<tree>_variant_<node>` pattern). Tree nodes mark it with `"shared": true`. Removing it from one tree keeps it for the others; removing it from the last tree deletes it, because it would have no XP anywhere (owned copies block that publish).
+- **Sharing.** In the workshop, **Add an existing card ↗** lends a shared card (or a catalog card in no tree) to this tree, and **Share this card** turns an exclusive variant into a shared card with a new card ID. A card that players own outside any tree, or a variant players own, cannot be shared: those copies would have no tree to belong to, so the publish is refused with an explanation.
+- **No bridge between trees.** Every owned copy of a shared card remembers the tree it came through (`tree` on deck and collection entries). That copy is worth its tree's XP, moves only along that tree's connections, and sells for that tree's value. A copy obtained through one tree can never step down into another tree's cards. Trades name their tree (`tree` on `tree_card` purchases); sales, equips and unequips name it when you hold copies from more than one tree.
+- **Battles see cards, not trees.** Copies of the same card from different trees merge into one card count when a battle starts.
+- **Deck rules.** Connection requirements count every copy of a card. A shared card's path rules are checked only in the trees its equipped copies came through.
+
+The runtime's card-tree response adds `tree` to each trade offer and keys a shared card's equip state as `<tree>/<card>`. The progression catalog's `card_tree_membership` lists every tree (with its XP) under `trees` for shared cards.
 
 ## Deck restrictions, not upgrade restrictions
 
@@ -75,4 +90,4 @@ Tree metadata and every generated card are stored in one atomic revision of the 
 
 Validation rejects stale publications/trades, unknown fields, invalid card effects, duplicate or colliding IDs, missing referenced cards, cycles, disconnected nodes, invalid XP, and edits that invalidate saved decks, collection contents, or budgets. Graph limits are 100 nodes, 300 connections, and 20 rules per connection. Graph definitions are acyclic; an explicitly reversible connection supports refunds without introducing a definition cycle.
 
-Regression coverage lives in `internal/battle/learned/card_tree_test.go` and `tests/presentation/verify_card_trees.gd`. It includes restricted upgrades, equip-time rejection, prerequisites, deck-wide exclusions, alternative paths, XP conservation, stored-card sales, stale revisions, admin publication, complete battles with tree variants, pinned definitions, and pointer-driven authoring/equipping.
+Regression coverage lives in `internal/battle/learned/card_tree_test.go`, `internal/battle/learned/shared_card_test.go`, `tests/presentation/verify_card_trees.gd` and `tests/presentation/verify_shared_cards.gd`. It includes restricted upgrades, equip-time rejection, prerequisites, deck-wide exclusions, alternative paths, XP conservation, stored-card sales, stale revisions, admin publication, complete battles with tree variants, pinned definitions, and pointer-driven authoring/equipping.

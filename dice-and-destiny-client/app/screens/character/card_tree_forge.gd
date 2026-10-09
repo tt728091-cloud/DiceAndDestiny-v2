@@ -8,6 +8,7 @@ signal full_editor_requested(card: Dictionary)
 
 const STYLE = preload("res://app/screens/character/character_style.gd")
 const DIFF = preload("res://app/screens/character/card_tree_diff.gd")
+const NAMES = preload("res://app/screens/character/card_name_suggester.gd")
 ## Extra effects offered as one-click additions when their timing fits.
 const QUICK_EFFECTS := ["draw", "energy", "prevent", "remove_status", "curse"]
 
@@ -22,6 +23,8 @@ var compare_name := ""
 var compare_cards: Array = []
 var card: Dictionary = {}
 var used_names: Dictionary = {}
+## Shown above the commit button, e.g. which trees a shared card edit updates.
+var notice := ""
 ## Owned by the workshop so adjustments survive re-rendering: {card, name_touched}.
 var session: Dictionary = {}
 var _error := ""
@@ -71,6 +74,9 @@ func rebuild() -> void:
 		if not any: STYLE.label(additions, "No quick additions fit this card's play timing. Use the full editor for other effects.", 14, STYLE.MUTED)
 	var full := _button(self, "Open full card editor…", func(): full_editor_requested.emit(card.duplicate(true)), "forge.full")
 	full.tooltip_text = "Edit every setting, including targets, conditions and choices. Returns here afterwards."
+	if not notice.is_empty():
+		var warning := STYLE.label(self, notice, 15, STYLE.AMBER); warning.set_meta("tree_field", "forge.shared_notice")
+		warning.add_theme_stylebox_override("normal", STYLE.box(Color(STYLE.AMBER, 0.12), Color(STYLE.AMBER, 0.55), 10, 8))
 	_error_label = STYLE.label(self, "", 15, STYLE.LOSS)
 	var row := HBoxContainer.new(); row.add_theme_constant_override("separation", 8); add_child(row)
 	var commit := STYLE.accent(_button(row, {"upgrade": "Create upgrade ↑", "downgrade": "Create cheaper variant ↓", "edit": "Apply changes"}[mode], func(): committed.emit(card.duplicate(true)), "forge.commit"))
@@ -239,26 +245,4 @@ func _validate(refresh_rules: bool = true) -> void:
 	elif _error.is_empty(): _error = str(response.get("error", "This combination is not valid."))
 
 func _suggest_name() -> String:
-	var root := str(compare_name).split(" · ")[0]
-	var entries := DIFF.changes(compare_card, card, catalog)
-	var word := "Variant" if entries.is_empty() else _adjective(entries[0])
-	var candidate := "%s · %s" % [root, word]
-	var n := 2
-	while used_names.has(candidate.to_lower()):
-		candidate = "%s · %s %d" % [root, word, n]; n += 1
-	return candidate
-
-func _adjective(change: Dictionary) -> String:
-	var text := str(change.text); var gain: bool = change.tone == "gain"; var loss: bool = change.tone == "loss"
-	if text.begins_with("Energy"): return "Swift" if gain else "Heavy"
-	if text.begins_with("Saved cards"): return "Steadfast"
-	if text.begins_with("+ Draw"): return "Insightful"
-	if text.begins_with("+ Gain"): return "Energizing"
-	if text.begins_with("+ Prevent"): return "Warded"
-	if text.begins_with("+ "): return "Empowered"
-	if text.begins_with("− "): return "Stripped"
-	if text.begins_with("After play") and text.ends_with("removed"): return "Fleeting"
-	if text.begins_with("Uses per"): return "Tireless" if gain else "Limited"
-	if text.begins_with("Prevent"): return "Fortified" if gain else "Brittle"
-	if text.begins_with("Draw"): return "Keen" if gain else "Dull"
-	return "Greater" if gain else "Lesser" if loss else "Altered"
+	return NAMES.suggest(card, DIFF.changes(compare_card, card, catalog), used_names)

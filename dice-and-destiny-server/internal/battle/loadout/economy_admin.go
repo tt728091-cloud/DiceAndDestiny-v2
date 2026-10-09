@@ -25,7 +25,7 @@ type AdminSettings struct {
 func deckValue(deck []Entry, character string, e Economy) int {
 	value := 0
 	for _, entry := range deck {
-		value += entry.Count * e.Price(character, entry.CardID)
+		value += entry.Count * e.Value(character, entry)
 	}
 	return value
 }

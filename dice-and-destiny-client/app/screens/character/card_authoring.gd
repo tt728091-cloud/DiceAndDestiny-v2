@@ -5,6 +5,9 @@ signal closed
 signal deck_requested(card_id: String)
 signal draft_accepted(card: Dictionary)
 var embedded_draft: Dictionary = {}
+## Shown above the actions when editing a tree card, e.g. which trees a shared
+## card's change updates.
+var embedded_notice := ""
 const PROGRAM_EDITOR = preload("res://app/screens/character/card_program_editor.gd")
 const STYLE = preload("res://app/screens/character/character_style.gd")
 const CARD_COLORS = preload("res://presentation/cards/card_colors.gd")
@@ -96,6 +99,9 @@ func _ready() -> void:
 	STYLE.label(_pending_bar, "Discard unpublished changes?", 16, STYLE.GOLD).size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_button(_pending_bar, "Keep editing", func(): _pending_bar.hide(), "keep_editing")
 	STYLE.accent(_button(_pending_bar, "Discard changes", func(): _pending_bar.hide(); _pending_action.call(), "discard_changes"), STYLE.LOSS)
+	if not embedded_notice.is_empty():
+		var notice := STYLE.label(_body, embedded_notice, 15, STYLE.AMBER); notice.set_meta("editor_key", "embedded_notice")
+		notice.add_theme_stylebox_override("normal", STYLE.box(Color(STYLE.AMBER, 0.12), Color(STYLE.AMBER, 0.55), 10, 8))
 	var actions := HBoxContainer.new(); actions.add_theme_constant_override("separation", 8); _body.add_child(actions)
 	_button(actions, "Validate and preview", _validate, "validate")
 	_publish_button = STYLE.accent(_button(actions, "Use card settings" if not embedded_draft.is_empty() else "Publish for future battles", _publish, "publish"))
@@ -110,7 +116,7 @@ func _ready() -> void:
 
 func _request(op: String) -> Dictionary:
 	return get_node("/root/LearnedBattleRuntime").card_authoring(op, draft, revision)
-func _reload_catalog(select_id: String = "brace") -> bool:
+func _reload_catalog(select_id: String = "steady_guard") -> bool:
 	var response := _request("card_authoring")
 	if not response.get("ok", false): _error.text = str(response.get("error", "Card creation unavailable")); _publish_button.disabled = true; return false
 	catalog = response.result; revision = int(catalog.revision)

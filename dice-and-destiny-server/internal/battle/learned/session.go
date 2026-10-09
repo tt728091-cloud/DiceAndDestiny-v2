@@ -223,7 +223,7 @@ func (s *Session) ResetCharacterLoadout(battleID string, seed uint64, humanSeat 
 			if len(progress.Deck) == 0 {
 				return nil, fmt.Errorf("progression deck is empty; buy at least one card before starting a battle")
 			}
-			decks = map[string][]loadout.Entry{humanSeat: progress.Deck}
+			decks = map[string][]loadout.Entry{humanSeat: loadout.BattleDeck(progress.Deck)}
 			abilityBoards = map[string]content.AbilityBoard{humanSeat: progress.Abilities}
 		} else {
 			progress, err := loadout.ReadProgress(s.config.LoadoutRoot, character, economy, catalogs[character])
@@ -238,7 +238,7 @@ func (s *Session) ResetCharacterLoadout(battleID string, seed uint64, humanSeat 
 				return nil, fmt.Errorf("deck is empty; add at least one card before starting a battle")
 			}
 			if deck != nil {
-				decks = map[string][]loadout.Entry{humanSeat: deck}
+				decks = map[string][]loadout.Entry{humanSeat: loadout.BattleDeck(deck)}
 			}
 		}
 		deck := decks[humanSeat]

@@ -41,12 +41,18 @@ func handleCardTrees(r runtimeRequest) string {
 		for id, tree := range saved.Trees {
 			choices := map[string]any{}
 			for _, n := range tree.Nodes {
-				_, why := loadout.MoveCollectionCard(p, n.Card.ID, true, economy, catalogs[r.Character], r.Character)
+				// A shared card's copies belong to a tree, so its equip state is
+				// keyed "tree/card"; other cards keep their plain card ID key.
+				key, copyTree := n.Card.ID, ""
+				if n.Shared {
+					key, copyTree = id+"/"+n.Card.ID, id
+				}
+				_, why := loadout.MoveCollectionCard(p, n.Card.ID, copyTree, true, economy, catalogs[r.Character], r.Character)
 				reason := ""
 				if why != nil {
 					reason = why.Error()
 				}
-				equipment[n.Card.ID] = map[string]any{"available": why == nil, "reason": reason}
+				equipment[key] = map[string]any{"available": why == nil, "reason": reason}
 			}
 			for _, edge := range tree.Edges {
 				a, _ := tree.Node(edge.From)
@@ -58,7 +64,7 @@ func handleCardTrees(r runtimeRequest) string {
 						}
 						a, b = b, a
 					}
-					_, cost, why := loadout.UpgradeTreeCard(p, a.Card.ID, b.Card.ID, economy, catalogs[r.Character], r.Character)
+					_, cost, why := loadout.UpgradeTreeCard(p, a.Card.ID, b.Card.ID, id, economy, catalogs[r.Character], r.Character)
 					if why == nil && cost > p.XP {
 						why = fmt.Errorf("not enough XP")
 					}
@@ -70,7 +76,7 @@ func handleCardTrees(r runtimeRequest) string {
 					if reverse == 1 {
 						key += ":back"
 					}
-					choices[key] = map[string]any{"from": a.ID, "to": b.ID, "from_card": a.Card.ID, "to_card": b.Card.ID, "cost": cost, "available": why == nil, "reason": reason}
+					choices[key] = map[string]any{"tree": id, "from": a.ID, "to": b.ID, "from_card": a.Card.ID, "to_card": b.Card.ID, "cost": cost, "available": why == nil, "reason": reason}
 				}
 			}
 			offers[id] = choices

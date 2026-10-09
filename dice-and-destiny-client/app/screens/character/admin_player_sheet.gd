@@ -102,6 +102,7 @@ func _reload() -> void:
 	_populate()
 var _icons: Dictionary = {}
 func _icon(id: String) -> Texture2D:
+	id = _card_of(id)
 	if not _icons.has(id):
 		var path := str(_cards[id].get("presentation", {}).get("illustration_path", ""))
 		var tex := STYLE.texture(path)
@@ -113,12 +114,24 @@ func _icon(id: String) -> Texture2D:
 func _allowed(id: String) -> bool:
 	var required := _card_type(id)
 	return required == "general" or required == str(catalogs[character_id].access.character_types.get(character_id, "general"))
+## Owned copies keyed by card ID, or "tree/card" for a shared card's copies,
+## which belong to the tree they came through.
 func _counts(key: String) -> Dictionary:
 	var result := {}
-	for entry in catalogs[character_id].progression.get(key, []): result[entry.card_id] = int(entry.count)
+	for entry in catalogs[character_id].progression.get(key, []):
+		var row := _row_key(str(entry.card_id), str(entry.get("tree", "")))
+		result[row] = int(result.get(row, 0)) + int(entry.count)
 	return result
+static func _row_key(card_id: String, tree: String) -> String: return card_id if tree.is_empty() else "%s/%s" % [tree, card_id]
+static func _card_of(key: String) -> String: return key.get_slice("/", 1) if key.contains("/") else key
+static func _tree_of(key: String) -> String: return key.get_slice("/", 0) if key.contains("/") else ""
 func _membership(id: String) -> Dictionary:
-	return catalogs[character_id].economy.get("card_tree_membership", {}).get(id, {})
+	return catalogs[character_id].economy.get("card_tree_membership", {}).get(_card_of(id), {})
+## One table row per card, or per tree for a shared card: [{key, tree, xp}].
+func _row_specs(id: String) -> Array:
+	var membership := _membership(id)
+	if not membership.get("shared", false): return [{"key": id, "tree": str(membership.get("tree_id", "")), "xp": _price(id)}]
+	return membership.get("trees", []).map(func(t): return {"key": _row_key(id, str(t.tree_id)), "tree": str(t.tree_id), "xp": int(t.xp)})
 func _card_type(id: String) -> String:
 	return str(catalogs[character_id].access.card_types.get(id, "general"))
 func _type_name(id: String) -> String:
@@ -127,8 +140,12 @@ func _price(id: String) -> int:
 	var economy: Dictionary = catalogs[character_id].economy
 	return int(economy.get("card_prices", {}).get(id, economy.default_card_price))
 func _tree_name(id: String) -> String:
-	var membership := _membership(id)
-	return str(_trees.get(membership.get("tree_id", ""), {}).get("name", membership.get("tree_id", "")))
+	var tree := _tree_of(id) if not _tree_of(id).is_empty() else str(_membership(id).get("tree_id", ""))
+	return str(_trees.get(tree, {}).get("name", tree))
+func _row_xp(key: String) -> int:
+	for spec in _row_specs(_card_of(key)):
+		if spec.key == key: return int(spec.xp)
+	return _price(_card_of(key))
 func _populate() -> void:
 	if catalogs.is_empty(): return
 	var deck := _counts("decklist"); var stored := _counts("collection")
@@ -147,22 +164,26 @@ func _populate() -> void:
 	var query := _search.text.strip_edges().to_lower()
 	for id in ids:
 		var card: Dictionary = _cards[id]; var membership := _membership(id); var variant: bool = membership.get("is_variant", false)
-		if not query.is_empty() and not (str(card.name) + " " + str(id) + " " + str(card.presentation.get("rules_text", "")) + " " + _tree_name(id)).to_lower().contains(query): continue
+		var shared: bool = membership.get("shared", false)
 		if _type.selected > 0 and _card_type(id) != str(_type.get_selected_metadata()): continue
 		if _scope.selected == 1 and variant or _scope.selected == 2 and not variant: continue
-		if _scope.selected == 3 and int(deck.get(id, 0)) + int(stored.get(id, 0)) == 0: continue
-		var item := _table.create_item(base); item.set_metadata(0, id); _rows[id] = item
-		var source := ("%s · variant" if variant else "%s · base") % _tree_name(id) if not membership.is_empty() else "—"
-		var values := [card.name, _type_name(_card_type(id)), source, str(int(card.cost.energy)), str(_price(id)), str(deck.get(id, 0)), str(stored.get(id, 0))]
-		for column in values.size():
-			item.set_text(column, str(values[column])); item.set_text_alignment(column, HORIZONTAL_ALIGNMENT_CENTER if column >= 3 else HORIZONTAL_ALIGNMENT_LEFT); item.set_tooltip_text(column, "%s\n%s\n%s" % [card.name, id, _tree_name(id)])
-		item.set_icon(0, _icon(id)); item.set_icon_max_width(0, 22)
-		item.set_custom_color(1, STYLE.type_color(_card_type(id)))
-		item.set_custom_color(2, STYLE.AMBER if variant else STYLE.GAIN if not membership.is_empty() else STYLE.DIM)
-		item.set_custom_color(3, STYLE.ENERGY.lightened(0.2)); item.set_custom_color(4, STYLE.GOLD)
-		for column in [5, 6]: item.set_custom_color(column, STYLE.IVORY if int(values[column]) > 0 else STYLE.DIM)
-		if not _allowed(id): item.set_custom_color(0, STYLE.MUTED)
-		if id == _selected: item.select(0)
+		# A shared card lists each tree's copies on its own row, at that tree's XP.
+		for spec in _row_specs(id):
+			var key := str(spec.key)
+			if not query.is_empty() and not (str(card.name) + " " + str(id) + " " + str(card.presentation.get("rules_text", "")) + " " + _tree_name(key)).to_lower().contains(query): continue
+			if _scope.selected == 3 and int(deck.get(key, 0)) + int(stored.get(key, 0)) == 0: continue
+			var item := _table.create_item(base); item.set_metadata(0, key); _rows[key] = item
+			var source := ("%s · shared" if shared else "%s · variant" if variant else "%s · base") % _tree_name(key) if not membership.is_empty() else "—"
+			var values := [str(card.name) + (" · via " + _tree_name(key) if shared else ""), _type_name(_card_type(id)), source, str(int(card.cost.energy)), str(int(spec.xp)), str(deck.get(key, 0)), str(stored.get(key, 0))]
+			for column in values.size():
+				item.set_text(column, str(values[column])); item.set_text_alignment(column, HORIZONTAL_ALIGNMENT_CENTER if column >= 3 else HORIZONTAL_ALIGNMENT_LEFT); item.set_tooltip_text(column, "%s\n%s\n%s" % [card.name, id, _tree_name(key)])
+			item.set_icon(0, _icon(id)); item.set_icon_max_width(0, 22)
+			item.set_custom_color(1, STYLE.type_color(_card_type(id)))
+			item.set_custom_color(2, STYLE.DEFENSE if shared else STYLE.AMBER if variant else STYLE.GAIN if not membership.is_empty() else STYLE.DIM)
+			item.set_custom_color(3, STYLE.ENERGY.lightened(0.2)); item.set_custom_color(4, STYLE.GOLD)
+			for column in [5, 6]: item.set_custom_color(column, STYLE.IVORY if int(values[column]) > 0 else STYLE.DIM)
+			if not _allowed(id): item.set_custom_color(0, STYLE.MUTED)
+			if key == _selected: item.select(0)
 	_count.text = "%d shown / %d published" % [_rows.size(), _cards.size()]
 	_count.tooltip_text = "Grey card names are outside this character's type."; _count.mouse_filter = Control.MOUSE_FILTER_PASS
 	if not _rows.has(_selected): _selected = str(_rows.keys()[0]) if not _rows.is_empty() else ""
@@ -173,30 +194,40 @@ func _inspect() -> void:
 	if _selected.is_empty():
 		STYLE.heading(_details, "Card details")
 		_label(_details, "No cards match these filters.", 16, STYLE.MUTED); return
-	var card: Dictionary = _cards[_selected]; var membership := _membership(_selected)
+	var card_id := _card_of(_selected)
+	var card: Dictionary = _cards[card_id]; var membership := _membership(_selected)
 	var top := HBoxContainer.new(); top.add_theme_constant_override("separation", 14); _details.add_child(top)
 	var path := str(card.presentation.get("illustration_path", ""))
 	var tex := STYLE.texture(path)
 	if tex == null:
 		var cinematic := preload("res://presentation/battle/cinematic_theme.gd")
-		tex = cinematic.art(cinematic.card_art_index(_selected))
-	STYLE.thumbnail(top, tex, Vector2(120, 168), STYLE.GOLD if _allowed(_selected) else STYLE.BRONZE)
+		tex = cinematic.art(cinematic.card_art_index(card_id))
+	STYLE.thumbnail(top, tex, Vector2(120, 168), STYLE.GOLD if _allowed(card_id) else STYLE.BRONZE)
 	var head := VBoxContainer.new(); head.size_flags_horizontal = Control.SIZE_EXPAND_FILL; head.add_theme_constant_override("separation", 6); top.add_child(head)
 	_label(head, str(card.name), 24, STYLE.GOLD_BRIGHT)
-	_label(head, "Card ID: " + _selected, 13, STYLE.DIM)
+	_label(head, "Card ID: " + card_id, 13, STYLE.DIM)
 	var chips := HFlowContainer.new(); chips.add_theme_constant_override("h_separation", 6); chips.add_theme_constant_override("v_separation", 6); head.add_child(chips)
-	STYLE.chip(chips, _type_name(_card_type(_selected)), STYLE.type_color(_card_type(_selected)))
+	STYLE.chip(chips, _type_name(_card_type(card_id)), STYLE.type_color(_card_type(card_id)))
 	STYLE.chip(chips, "%d energy" % int(card.cost.energy), STYLE.ENERGY)
-	STYLE.chip(chips, "%d XP" % _price(_selected), STYLE.GOLD)
+	var shared: bool = membership.get("shared", false)
+	if shared: STYLE.chip(chips, "Shared card", STYLE.DEFENSE)
+	STYLE.chip(chips, ("%d XP in " % _row_xp(_selected) + _tree_name(_selected)) if shared else "%d XP" % _price(card_id), STYLE.GOLD)
 	var rules := STYLE.section(_details, 12)
 	STYLE.heading(rules, "Rules")
 	_label(rules, str(card.presentation.get("rules_text", "No rules text configured.")), 16)
 	var owned := STYLE.section(_details, 12)
 	STYLE.heading(owned, "This character")
-	_label(owned, "In deck: %d · In collection: %d" % [int(_counts("decklist").get(_selected, 0)), int(_counts("collection").get(_selected, 0))], 16)
-	var access := _label(owned, "Character type allows this card." if _allowed(_selected) else "Outside this character's type. Shown here because this is the complete admin catalog.", 14, STYLE.GAIN if _allowed(_selected) else Color("ffd2c8"))
-	if not _allowed(_selected): access.add_theme_stylebox_override("normal", STYLE.box(Color(STYLE.LOSS, 0.12), Color(STYLE.LOSS, 0.5), 10, 8))
-	if not membership.is_empty():
+	_label(owned, "In deck: %d · In collection: %d" % [int(_counts("decklist").get(_selected, 0)), int(_counts("collection").get(_selected, 0))] + (" (copies via %s)" % _tree_name(_selected) if shared else ""), 16)
+	var access := _label(owned, "Character type allows this card." if _allowed(card_id) else "Outside this character's type. Shown here because this is the complete admin catalog.", 14, STYLE.GAIN if _allowed(card_id) else Color("ffd2c8"))
+	if not _allowed(card_id): access.add_theme_stylebox_override("normal", STYLE.box(Color(STYLE.LOSS, 0.12), Color(STYLE.LOSS, 0.5), 10, 8))
+	if shared:
+		var trees := STYLE.section(_details, 12)
+		STYLE.heading(trees, "Shared card · copies by tree")
+		_label(trees, "One definition lent to several trees. Each tree sets its own XP; copies keep the tree they came through and are acquired only through it.", 14, STYLE.MUTED)
+		var deck := _counts("decklist"); var stored := _counts("collection")
+		for spec in _row_specs(card_id):
+			_label(trees, "%s · %d XP · deck %d · stored %d" % [_tree_name(str(spec.key)), int(spec.xp), int(deck.get(spec.key, 0)), int(stored.get(spec.key, 0))], 15).set_meta("sheet_tree", str(spec.tree))
+	elif not membership.is_empty():
 		var tree := STYLE.section(_details, 12)
 		STYLE.heading(tree, "Card tree")
 		_label(tree, "Tree: " + _tree_name(_selected), 16)

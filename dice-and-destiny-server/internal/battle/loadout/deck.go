@@ -17,6 +17,26 @@ const MaxCopies = 20
 type Entry struct {
 	CardID string `json:"card_id" yaml:"card_id"`
 	Count  int    `json:"count" yaml:"count"`
+	// Tree records which card tree a shared card's copies came through: they
+	// keep that tree's XP value and move only along its paths. Exclusive tree
+	// cards and ordinary cards leave it empty.
+	Tree string `json:"tree,omitempty" yaml:"tree,omitempty"`
+}
+
+// BattleDeck merges copies of the same card from different trees; battles
+// only see cards, not where they were acquired.
+func BattleDeck(deck []Entry) []Entry {
+	var out []Entry
+	index := map[string]int{}
+	for _, e := range deck {
+		if i, ok := index[e.CardID]; ok {
+			out[i].Count += e.Count
+			continue
+		}
+		index[e.CardID] = len(out)
+		out = append(out, Entry{CardID: e.CardID, Count: e.Count})
+	}
+	return out
 }
 
 type Saved struct {
@@ -28,19 +48,22 @@ type Saved struct {
 func Validate(deck []Entry, cards map[string]content.BattleCardDefinition) ([]Entry, error) {
 	total := 0
 	seen := map[string]bool{}
+	copies := map[string]int{}
 	for _, entry := range deck {
 		if _, ok := cards[entry.CardID]; !ok {
 			return nil, fmt.Errorf("card %q is unavailable for this character", entry.CardID)
 		}
-		if seen[entry.CardID] {
+		key := entry.CardID + "|" + entry.Tree
+		if seen[key] {
 			return nil, fmt.Errorf("duplicate deck entry %q", entry.CardID)
 		}
-		seen[entry.CardID] = true
+		seen[key] = true
 		limit := MaxCopies
 		if c := cards[entry.CardID].Economy; c != nil {
 			limit = c.CopyLimit
 		}
-		if entry.Count < 1 || entry.Count > limit {
+		copies[entry.CardID] += entry.Count
+		if entry.Count < 1 || copies[entry.CardID] > limit {
 			return nil, fmt.Errorf("card quantities must be 1–%d", limit)
 		}
 		total += entry.Count
@@ -49,7 +72,12 @@ func Validate(deck []Entry, cards map[string]content.BattleCardDefinition) ([]En
 		return nil, fmt.Errorf("deck must contain 1–%d cards", MaxCards)
 	}
 	result := append([]Entry(nil), deck...)
-	sort.Slice(result, func(i, j int) bool { return result[i].CardID < result[j].CardID })
+	sort.Slice(result, func(i, j int) bool {
+		if result[i].CardID != result[j].CardID {
+			return result[i].CardID < result[j].CardID
+		}
+		return result[i].Tree < result[j].Tree
+	})
 	return result, nil
 }
 

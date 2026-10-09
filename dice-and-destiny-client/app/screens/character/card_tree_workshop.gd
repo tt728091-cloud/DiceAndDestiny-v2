@@ -5,6 +5,7 @@ const CARD_EDITOR = preload("res://app/screens/character/card_authoring.gd")
 const STYLE = preload("res://app/screens/character/character_style.gd")
 const DIFF = preload("res://app/screens/character/card_tree_diff.gd")
 const FORGE = preload("res://app/screens/character/card_tree_forge.gd")
+const NAMES = preload("res://app/screens/character/card_name_suggester.gd")
 const COMPARISON = preload("res://app/screens/character/upgrade_comparison.gd")
 const ROW := 360.0
 const GAP := 330.0
@@ -46,6 +47,8 @@ var _pending_trade: Dictionary = {}
 var _menu: PopupMenu
 var _menu_actions: Array = []
 var _comparison: PanelContainer
+## Active "Add an existing card" session: {from, card, xp}.
+var _adding: Dictionary = {}
 
 func _ready() -> void:
 	set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT); mouse_filter = Control.MOUSE_FILTER_STOP
@@ -88,8 +91,8 @@ func _ready() -> void:
 	_canvas = CANVAS.new(); _canvas.custom_minimum_size = Vector2(420, 260); _canvas.size_flags_horizontal = Control.SIZE_EXPAND_FILL; _canvas.size_flags_stretch_ratio = 2.2; _canvas.editable = _admin(); split.add_child(_canvas)
 	_canvas.node_selected.connect(func(id):
 		if _forge.get("node", "") != id: _forge = {}
-		_selected = id; _edge = ""; _render())
-	_canvas.edge_selected.connect(func(id): _forge = {}; _edge = id; _selected = ""; _render())
+		_adding = {}; _selected = id; _edge = ""; _render())
+	_canvas.edge_selected.connect(func(id): _forge = {}; _adding = {}; _edge = id; _selected = ""; _render())
 	_canvas.node_drag_started.connect(func(_id): _snapshot())
 	_canvas.node_moved.connect(func(_node_id, _at): _changed())
 	_canvas.connect_requested.connect(_connect_cards)
@@ -161,7 +164,7 @@ func _reload() -> bool:
 	return true
 
 func _reset_session() -> void:
-	_undo.clear(); _redo.clear(); _forge = {}; _issues = {}; _pending_trade = {}; _trade_bar.hide(); _update_undo_buttons()
+	_undo.clear(); _redo.clear(); _forge = {}; _adding = {}; _issues = {}; _pending_trade = {}; _trade_bar.hide(); _update_undo_buttons()
 	_canvas.connect_from = ""
 
 func _new_tree() -> void:
@@ -190,7 +193,7 @@ func _set_base() -> void:
 
 func _start_with(card: Dictionary) -> void:
 	_snapshot()
-	draft.nodes = [{"id": "base", "card": card, "x": 0.0, "y": 0.0}]
+	draft.nodes = [{"id": "base", "card": card, "x": 0.0, "y": 0.0, "xp": maxi(1, int(card.economy.buy))}]
 	draft.root = "base"
 	if str(draft.get("name", "")).strip_edges().is_empty():
 		draft.name = str(card.name) + " paths"; _name.text = draft.name
@@ -207,14 +210,36 @@ func _edge_by_id(id: String) -> Dictionary:
 	for e in draft.get("edges", []):
 		if e.id == id: return e
 	return {}
+## Owned copies by card ID. Shared cards' copies belong to the tree they came
+## through, so they are keyed "tree/card" and never count in another tree.
 func _collection_counts() -> Dictionary:
-	var counts := {}
-	for entry in state.get("progression", {}).get("collection", []): counts[entry.card_id] = int(entry.count)
-	return counts
+	return _entry_counts(state.get("progression", {}).get("collection", []))
 func _counts() -> Dictionary:
+	return _entry_counts(state.get("progression", {}).get("decklist", []))
+func _entry_counts(entries: Array) -> Dictionary:
 	var counts := {}
-	for entry in state.get("progression", {}).get("decklist", []): counts[entry.card_id] = int(entry.count)
+	for entry in entries:
+		var key := str(entry.card_id) if str(entry.get("tree", "")).is_empty() else "%s/%s" % [entry.tree, entry.card_id]
+		counts[key] = int(counts.get(key, 0)) + int(entry.count)
 	return counts
+## The count key for a node's copies in this tree (see _entry_counts).
+func _key(n: Dictionary) -> String:
+	return "%s/%s" % [str(draft.get("id", "")), str(n.card.id)] if _is_shared(n) else str(n.card.id)
+func _is_shared(n: Dictionary) -> bool: return bool(n.get("shared", false))
+## The tree's XP value for a node; exclusive cards mirror it in their price.
+func _value(n: Dictionary) -> int: return DIFF.node_xp(n)
+## The node's card priced at the tree's XP, for diffs, the forge and the editor.
+func _valued(n: Dictionary) -> Dictionary: return DIFF.valued_card(n)
+## Store a card edited at a tree price. The node keeps the XP; exclusive cards
+## mirror it in buy/sell, shared cards keep no price of their own.
+func _store(n: Dictionary, card: Dictionary) -> void:
+	var economy: Dictionary = card.get("economy", {}) if card.get("economy") is Dictionary else {}
+	n.xp = int(economy.get("buy", _value(n)))
+	var limit := int(economy.get("copy_limit", 20))
+	if _is_shared(n): card.economy = {"buy": 0, "sell": 0, "copy_limit": limit if limit > 0 else 20, "upgrades": []}
+	else:
+		card.economy = economy; card.economy.buy = n.xp; card.economy.sell = n.xp; card.economy.upgrades = []
+	n.card = card
 func _health() -> int:
 	var total := 0
 	for entry in state.get("progression", {}).get("decklist", []): total += int(entry.count)
@@ -236,6 +261,7 @@ func _render() -> void:
 	_render_canvas()
 	if _admin() and draft.get("nodes", []).is_empty(): _start_panel(); return
 	if not _edge.is_empty(): _edge_details(); return
+	if not _adding.is_empty() and _admin(): _add_existing_panel(); return
 	var node := _node(_selected)
 	if node.is_empty(): _label(_details, "Select a card to view it, or a connection to view its deck rules.", 16, STYLE.MUTED); return
 	if not _forge.is_empty() and _admin(): _forge_panel(); return
@@ -268,10 +294,10 @@ func _player_states() -> void:
 	var owned := {}
 	var nodes := {}; var edges := {}
 	for n in draft.get("nodes", []):
-		if int(counts.get(n.card.id, 0)) + int(stored.get(n.card.id, 0)) > 0: owned[n.id] = true
+		if int(counts.get(_key(n), 0)) + int(stored.get(_key(n), 0)) > 0: owned[n.id] = true
 		nodes[n.id] = "owned" if owned.has(n.id) else "unowned"
 	var root := _node(str(draft.get("root", "")))
-	if not root.is_empty() and not owned.has(root.id) and int(state.progression.xp) >= int(root.card.economy.buy): nodes[root.id] = "available"
+	if not root.is_empty() and not owned.has(root.id) and int(state.progression.xp) >= _value(root): nodes[root.id] = "available"
 	var offers := _offers()
 	for key in offers:
 		var o: Dictionary = offers[key]
@@ -286,19 +312,20 @@ func _player_states() -> void:
 
 func _node_tooltip(n: Dictionary, predecessors: Array) -> String:
 	var card: Dictionary = n.card
-	var text := "%s\n%d energy · %d XP%s\n\n%s" % [card.name, int(card.cost.energy), int(card.economy.buy), " · BASE" if n.id == draft.root else "", str(card.presentation.get("rules_text", ""))]
+	var text := "%s\n%d energy · %d XP%s\n\n%s" % [card.name, int(card.cost.energy), _value(n), " · BASE" if n.id == draft.root else "", str(card.presentation.get("rules_text", ""))]
+	if _is_shared(n): text += "\n\n" + _shared_note(n)
 	for before in predecessors:
-		var entries := DIFF.with_xp(before.card, card, catalog)
+		var entries := DIFF.with_xp(_valued(before), _valued(n), catalog)
 		if not entries.is_empty(): text += "\n\nChanges from %s:\n%s" % [before.card.name, DIFF.plain(entries)]
 	if not _admin():
-		text += "\n\nIn deck ×%d · Stored ×%d" % [int(_counts().get(card.id, 0)), int(_collection_counts().get(card.id, 0))]
+		text += "\n\nIn deck ×%d · Stored ×%d" % [int(_counts().get(_key(n), 0)), int(_collection_counts().get(_key(n), 0))]
 	if _issues.has(n.id): text += "\n\n⚠ " + str(_issues[n.id])
 	return text
 
 func _edge_tooltip(e: Dictionary) -> String:
 	var a := _node(str(e.from)); var b := _node(str(e.to))
 	if a.is_empty() or b.is_empty(): return ""
-	var cost := int(b.card.economy.buy) - int(a.card.economy.buy)
+	var cost := _value(b) - _value(a)
 	var text := "%s → %s\n%s" % [a.card.name, b.card.name, ("Costs %d XP" % cost) if cost > 0 else ("Refunds %d XP" % -cost) if cost < 0 else "No XP change"]
 	text += "\n" + ("Can return to %s for the same difference." % a.card.name if e.reversible else "One-way connection.")
 	var cards := _all_cards()
@@ -318,15 +345,16 @@ func _card_preview(parent: Node, node: Dictionary) -> void:
 	var art := TextureRect.new(); art.texture = STYLE.texture(str(card.presentation.get("illustration_path", "")))
 	art.custom_minimum_size = Vector2(118, 166); art.expand_mode = TextureRect.EXPAND_IGNORE_SIZE; art.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED; frame.add_child(art)
 	var text := VBoxContainer.new(); text.size_flags_horizontal = Control.SIZE_EXPAND_FILL; text.add_theme_constant_override("separation", 4); top.add_child(text)
-	STYLE.heading(text, "Base card" if node.id == draft.root else "Tree variant")
+	STYLE.heading(text, "Base card" if node.id == draft.root else "Shared card" if _is_shared(node) else "Tree variant")
 	_label(text, str(card.name), 23, STYLE.GOLD_BRIGHT)
 	var predecessors := _predecessors(str(node.id))
-	var deltas: Array = predecessors.map(func(before): return "%+d XP from %s" % [int(card.economy.buy) - int(before.card.economy.buy), before.card.name])
+	var deltas: Array = predecessors.map(func(before): return "%+d XP from %s" % [_value(node) - _value(before), before.card.name])
 	var delta := "" if deltas.is_empty() else " · " + ", ".join(deltas)
-	_label(text, "%d XP per copy · %d energy%s\n%d in deck · %d in collection" % [int(card.economy.buy), int(card.cost.energy), delta, int(_counts().get(card.id, 0)), int(_collection_counts().get(card.id, 0))], 15, STYLE.MUTED)
+	_label(text, "%d XP per copy%s · %d energy%s\n%d in deck · %d in collection" % [_value(node), " in this tree" if _is_shared(node) else "", int(card.cost.energy), delta, int(_counts().get(_key(node), 0)), int(_collection_counts().get(_key(node), 0))], 15, STYLE.MUTED)
+	if _is_shared(node): _label(text, _shared_note(node), 15, STYLE.DEFENSE.lightened(0.3)).set_meta("tree_field", "preview.shared")
 	_label(box, str(card.presentation.get("rules_text", "Edit this card to choose its effects.")), 17)
 	for before in predecessors:
-		var entries := DIFF.with_xp(before.card, card, catalog)
+		var entries := DIFF.with_xp(_valued(before), _valued(node), catalog)
 		if not entries.is_empty():
 			STYLE.heading(box, "Changes from " + str(before.card.name))
 			var diff := RichTextLabel.new(); diff.bbcode_enabled = true; diff.fit_content = true; diff.scroll_active = false; diff.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -342,10 +370,15 @@ func _admin_node_details(node: Dictionary) -> void:
 	up.tooltip_text = "Copy this card one step up and adjust what improves (U)."
 	var down := STYLE.accent(_button(grow, "Cheaper ↓", func(): _open_forge("downgrade"), "add_down"), STYLE.AMBER); down.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	down.tooltip_text = "Copy this card one step down with a tradeoff and a lower XP value (D)."
+	_xp_stepper(build, node)
+	var existing := _button(build, "Add an existing card ↗", func(): _open_add_existing(str(node.id)), "add_existing")
+	existing.tooltip_text = "Lend an existing shared card, or a card in no tree, to this tree. It keeps one definition everywhere; this tree sets its XP."
 	var edit := HBoxContainer.new(); edit.add_theme_constant_override("separation", 8); build.add_child(edit)
 	_button(edit, "Quick edit", func(): _open_forge("edit"), "quick_edit").size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_button(edit, "Full card editor", func(): _edit_card(node), "edit_card").size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	if node.id == draft.root and catalog.templates.has(card.id) and not state.get("trees", {}).has(str(draft.get("id", ""))):
+	if _is_shared(node):
+		_notice(build, _shared_edit_notice(node)).set_meta("tree_field", "node.shared_notice")
+	elif node.id == draft.root and catalog.templates.has(card.id) and not state.get("trees", {}).has(str(draft.get("id", ""))):
 		_label(build, "This base is the existing catalog card “%s”. Editing it changes that card everywhere once published." % catalog.templates[card.id].name, 14, STYLE.AMBER)
 	elif node.id == draft.root:
 		_label(build, "Editing the base updates this card for future battles. Variants keep their own settings.", 14, STYLE.MUTED)
@@ -364,6 +397,12 @@ func _admin_node_details(node: Dictionary) -> void:
 	apply_template.disabled = true
 	template.item_selected.connect(func(_index): apply_template.disabled = template.selected < 0)
 	_label(reuse, "Copies the card's effects, artwork, energy and XP. A unique name is assigned; this card keeps its ID and connections.", 14, STYLE.MUTED)
+	if node.id != draft.root and not _is_shared(node):
+		var share := STYLE.section(_details)
+		STYLE.heading(share, "Share this card")
+		_label(share, "Turn this variant into a shared card that other trees can also use. It needs its own card ID; the old variant ID is removed when you publish, so the server refuses while players own copies of it.", 14, STYLE.MUTED)
+		var share_id := _line(share, "new_card_id", "share.id"); share_id.text = _unique_card_id(STYLE.slug(str(card.name)))
+		_button(share, "Share this card", func(): _share_node(str(node.id), share_id.text), "share_card")
 	var links := STYLE.section(_details)
 	STYLE.heading(links, "Connections")
 	for e in draft.edges:
@@ -387,19 +426,40 @@ func _admin_node_details(node: Dictionary) -> void:
 		var remove := STYLE.accent(_button(_details, "Remove this card & its connections", func(): _remove_node(str(node.id)), "remove_node"), STYLE.LOSS)
 		remove.tooltip_text = "Delete (⌫). Undo restores it."
 
+## "XP value" edits the node's tree XP in place; exclusive cards mirror it in
+## their price, shared cards keep none of their own.
+func _xp_stepper(parent: Node, node: Dictionary) -> void:
+	var row := HBoxContainer.new(); row.add_theme_constant_override("separation", 6); parent.add_child(row)
+	var caption := _label(row, "XP value" + (" in this tree" if _is_shared(node) else ""), 15); caption.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	var value := _value(node)
+	for step in [-1, 1]:
+		var b := _button(row, "−" if step < 0 else "+", func():
+			_snapshot()
+			var card: Dictionary = _valued(node); card.economy.buy = maxi(1, value + step)
+			_store(node, card); _changed(); _render(), "node.xp." + ("dec" if step < 0 else "inc"))
+		b.custom_minimum_size = Vector2(40, 36); b.disabled = step < 0 and value <= 1
+		if step < 0:
+			var shown := _label(row, str(value), 18, STYLE.GOLD_BRIGHT); shown.set_meta("tree_field", "node.xp.value")
+			shown.custom_minimum_size.x = 44; shown.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+
 func _player_node_details(node: Dictionary) -> void:
 	var card: Dictionary = node.card
 	var copies := STYLE.section(_details)
 	STYLE.heading(copies, "Your copies")
 	_label(copies, "Upgrades go to your collection, outside the deck. They spend or refund the XP difference. Deck rules apply only when equipping. Collected cards keep their XP value but give no health.", 14, STYLE.MUTED)
-	var equipment: Dictionary = state.get("equipment", {}).get(card.id, {})
-	var equip := _button(copies, "Add collected copy to deck · no extra XP", func(): _collection_trade("equip_collection_card", card.id, 0), "equip." + str(card.id))
+	# A shared card's copies are this tree's copies only: they move, equip and
+	# sell at this tree's XP, and requests name the tree.
+	var tree := str(draft.id) if _is_shared(node) else ""
+	var owned_key := _key(node); var value := _value(node)
+	if _is_shared(node): _label(copies, "Shared card · copies from this tree are separate from copies obtained through other trees.", 14, STYLE.DEFENSE.lightened(0.3))
+	var equipment: Dictionary = state.get("equipment", {}).get(owned_key, {})
+	var equip := _button(copies, "Add collected copy to deck · no extra XP", func(): _collection_trade("equip_collection_card", card.id, 0, tree), "equip." + str(card.id))
 	equip.disabled = not equipment.get("available", false)
 	if equip.disabled: _label(copies, str(equipment.get("reason", "No collected copy")), 14, STYLE.MUTED)
-	var unequip := _button(copies, "Move deck copy to collection", func(): _collection_trade("unequip_collection_card", card.id, 0), "unequip." + str(card.id)); unequip.disabled = int(_counts().get(card.id, 0)) < 1
-	var sell := _button(copies, "Sell collected copy · refund %d XP" % int(card.economy.buy), func(): _collection_trade("sell_collection_card", card.id, int(card.economy.buy)), "sell_collection." + str(card.id)); sell.disabled = int(_collection_counts().get(card.id, 0)) < 1
+	var unequip := _button(copies, "Move deck copy to collection", func(): _collection_trade("unequip_collection_card", card.id, 0, tree), "unequip." + str(card.id)); unequip.disabled = int(_counts().get(owned_key, 0)) < 1
+	var sell := _button(copies, "Sell collected copy · refund %d XP" % value, func(): _collection_trade("sell_collection_card", card.id, value, tree), "sell_collection." + str(card.id)); sell.disabled = int(_collection_counts().get(owned_key, 0)) < 1
 	if node.id == draft.root:
-		var buy := _button(copies, "Buy base for collection · %d XP" % int(card.economy.buy), func(): _collection_trade("buy_collection_card", card.id, int(card.economy.buy)), "buy_collection." + str(card.id)); buy.disabled = int(state.progression.xp) < int(card.economy.buy)
+		var buy := _button(copies, "Buy base for collection · %d XP" % value, func(): _collection_trade("buy_collection_card", card.id, value), "buy_collection." + str(card.id)); buy.disabled = int(state.progression.xp) < value
 	var offers := _offers()
 	var incoming: Array = []; var outgoing: Array = []
 	for key in offers:
@@ -424,7 +484,7 @@ func _offer_row(parent: Node, key: String, offer: Dictionary, incoming: bool) ->
 	_label(text, ("From " + str(source.card.name)) if incoming else str(target.card.name), 16)
 	var summary := DIFF.summary(source.card, target.card, catalog, 2)
 	if not summary.is_empty(): _label(text, summary, 14, STYLE.GAIN.lerp(STYLE.IVORY, 0.3))
-	var cost: int = int(target.card.economy.buy) - int(source.card.economy.buy)
+	var cost: int = _value(target) - _value(source)
 	var verb := "Upgrade" if cost > 0 else "Downgrade" if cost < 0 else "Switch"
 	var price := ("%d XP" % cost) if cost > 0 else ("refund %d XP" % -cost) if cost < 0 else "free"
 	var button := _button(text, "%s · %s" % [verb, price], func(): _request_trade(offer), "trade." + key)
@@ -558,7 +618,8 @@ func _open_forge(mode: String) -> void:
 	if str(draft.get("id", "")).strip_edges().is_empty():
 		if str(draft.get("name", "")).strip_edges().is_empty(): draft.name = str(_node(str(draft.root)).card.name) + " paths"; _name.text = draft.name
 		var id := _unique_tree_id(STYLE.slug(str(draft.name))); _id.text = id; _rename_tree(id)
-	_forge = {"mode": mode, "node": str(node.id), "card": node.card.duplicate(true), "name_touched": mode == "edit", "fresh": true}
+	_adding = {}
+	_forge = {"mode": mode, "node": str(node.id), "card": _valued(node), "name_touched": mode == "edit", "fresh": true}
 	_render()
 
 func _forge_panel() -> void:
@@ -568,11 +629,12 @@ func _forge_panel() -> void:
 	var mode := str(_forge.mode)
 	forge.used_names = _used_names(str(node.card.id) if mode == "edit" else "")
 	var compares: Array = [node] if mode != "edit" else _predecessors(str(node.id))
-	if compares.is_empty(): compares = [{"card": node.card}]
-	forge.compare_card = compares[0].card; forge.compare_name = str(compares[0].card.name)
-	forge.compare_cards = compares.map(func(c): return c.card)
+	if compares.is_empty(): compares = [node]
+	forge.compare_card = _valued(compares[0]); forge.compare_name = str(compares[0].card.name)
+	forge.compare_cards = compares.map(func(c): return _valued(c))
+	if mode == "edit" and _is_shared(node): forge.notice = _shared_edit_notice(node)
 	_details.add_child(forge)
-	var price := int(node.card.economy.buy) + (3 if mode == "upgrade" else -2)
+	var price := _value(node) + (3 if mode == "upgrade" else -2)
 	forge.start(mode, price, _forge.get("fresh", false)); _forge.fresh = false
 	forge.committed.connect(_commit_forge)
 	forge.cancelled.connect(func(): _forge = {}; _render(); _message.text = "No changes made.")
@@ -586,14 +648,18 @@ func _commit_forge(card: Dictionary) -> void:
 	_snapshot()
 	card.economy.upgrades = []; card.economy.sell = card.economy.buy
 	if _forge.mode == "edit":
-		card.id = node.card.id; node.card = card
-		_forge = {}; _changed(); _render(); _message.text = "Updated %s." % card.name; return
+		card.id = node.card.id; _store(node, card)
+		_forge = {}; _changed(); _render()
+		_message.text = ("Updated shared card %s. Publishing updates it in every tree that uses it." if _is_shared(node) else "Updated %s.") % card.name; return
 	var i := 1
 	while draft.nodes.any(func(n): return n.id == "node_" + str(i)): i += 1
 	var id := "node_" + str(i)
 	card.id = str(draft.id) + "_variant_" + id
-	var at := _place_new(node, int(card.economy.buy) >= int(node.card.economy.buy))
-	draft.nodes.append({"id": id, "card": card, "x": at.x, "y": at.y})
+	var at := _place_new(node, int(card.economy.buy) >= _value(node))
+	# New variants are exclusive to this tree, even when forged from a shared card.
+	var created := {"id": id, "card": card, "x": at.x, "y": at.y}
+	_store(created, card)
+	draft.nodes.append(created)
 	_connect(str(node.id), id)
 	_forge = {}; _selected = id; _changed(); _render(); _canvas.home()
 	_message.text = "Created %s. Keep building from it, or right-click any card for more." % card.name
@@ -660,9 +726,10 @@ func _remove_node(id: String) -> void:
 	if id == str(draft.root) or _node(id).is_empty(): return
 	_snapshot()
 	var name := str(_node(id).card.name)
+	var shared := _is_shared(_node(id))
 	draft.nodes = draft.nodes.filter(func(n): return n.id != id); draft.edges = draft.edges.filter(func(e): return e.from != id and e.to != id)
 	_selected = str(draft.root); _forge = {}; _changed(); _render()
-	_message.text = "Removed %s. Undo (⌘Z) restores it." % name
+	_message.text = "Removed %s. Undo (⌘Z) restores it." % name + (" The shared card stays in the other trees that use it." if shared else "")
 
 func _remove_edge(id: String) -> void:
 	var edge := _edge_by_id(id)
@@ -676,7 +743,8 @@ func _rename_tree(id: String) -> void:
 	# Variant IDs follow tree_id_variant_node_id; keep rules pointing at the same cards.
 	var renamed := {}
 	for n in draft.get("nodes", []):
-		if n.id == draft.root: continue
+		# Shared cards keep their own IDs in every tree.
+		if n.id == draft.root or _is_shared(n): continue
 		var next := id + "_variant_" + str(n.id)
 		renamed[n.card.id] = next; n.card.id = next
 	for e in draft.get("edges", []):
@@ -696,28 +764,22 @@ func _apply_card_template(node_id: String, template_id: String) -> void:
 	# a copied card's legacy upgrade links. The source definition stays independent.
 	card.economy.buy = maxi(1, int(card.economy.buy))
 	card.economy.sell = card.economy.buy; card.economy.upgrades = []
-	node.card = card
+	_store(node, card)
 	_changed(); _render()
 	_message.text = "Applied %s to this card. Review it, then validate and publish the tree. Tree cards use equal buy/sell XP (minimum 1 XP)." % str(card.name)
 
 func _template_name(source_name: String, card_id: String) -> String:
-	var used := _used_names(card_id)
-	var candidate := source_name
-	var suffix := str(draft.name).strip_edges()
-	if suffix.is_empty(): suffix = "Tree variant"
-	var index := 1
-	while used.has(candidate.strip_edges().to_lower()):
-		candidate = "%s · %s%s" % [source_name, suffix, "" if index == 1 else " %d" % index]
-		index += 1
-	return candidate
+	return NAMES.numbered(source_name.strip_edges(), _used_names(card_id))
 
+## The full editor shows the card at this tree's XP ("Buy XP"); accepting stores
+## that value on the node. Shared cards warn which trees the change updates.
 func _edit_card(node: Dictionary) -> void:
-	_edit_card_dict(node.card, func(card):
+	_edit_card_dict(_valued(node), func(card):
 		if card.id != node.card.id: _message.text = "A tree card keeps its ID. Reopen its editor and keep the original ID."; return
-		_snapshot(); node.card = card; _changed(); _render())
+		_snapshot(); _store(node, card); _changed(); _render(), _shared_edit_notice(node) if _is_shared(node) else "")
 
-func _edit_card_dict(source: Dictionary, accepted: Callable) -> void:
-	var editor = CARD_EDITOR.new(); editor.embedded_draft = source.duplicate(true); add_child(editor)
+func _edit_card_dict(source: Dictionary, accepted: Callable, notice: String = "") -> void:
+	var editor = CARD_EDITOR.new(); editor.embedded_draft = source.duplicate(true); editor.embedded_notice = notice; add_child(editor)
 	editor.draft_accepted.connect(func(card):
 		card.economy.upgrades = []; card.economy.sell = card.economy.buy
 		accepted.call(card))
@@ -727,12 +789,15 @@ func _all_cards() -> Dictionary:
 	for n in draft.get("nodes", []): cards[n.card.id] = n.card.name
 	return cards
 
-## Lowercase names already taken by other cards (catalog plus this draft).
+## Lowercase names already taken (catalog plus this draft). Card, ability and
+## status names share one namespace, so all three are reserved.
 func _used_names(except_card: String) -> Dictionary:
-	var used := {}
-	var cards := _all_cards()
-	for id in cards:
-		if str(id) != except_card: used[str(cards[id]).strip_edges().to_lower()] = true
+	var used := NAMES.taken(_all_cards(), except_card)
+	for kind in ["abilities", "statuses"]:
+		var entries: Dictionary = catalog.get(kind, {})
+		for id in entries:
+			if entries[id] is Dictionary: used[str(entries[id].get("name", "")).strip_edges().to_lower()] = true
+	used.erase("")
 	return used
 
 func _tree_owned_card(card_id: String) -> bool:
@@ -765,7 +830,7 @@ func _arrange() -> void:
 	if not _admin() or draft.get("nodes", []).is_empty(): return
 	_snapshot()
 	var buy := {}
-	for n in draft.nodes: buy[n.id] = int(n.card.economy.buy)
+	for n in draft.nodes: buy[n.id] = _value(n)
 	var indegree := {}
 	for n in draft.nodes: indegree[n.id] = 0
 	for e in draft.edges: indegree[e.to] = int(indegree.get(e.to, 0)) + 1
@@ -854,6 +919,7 @@ func _unhandled_key_input(event: InputEvent) -> void:
 			if not _canvas.connect_from.is_empty(): _canvas.connect_from = ""; _canvas.queue_redraw(); _canvas._overlay.queue_redraw()
 			elif _trade_bar.visible: _trade_bar.hide()
 			elif not _forge.is_empty(): _forge = {}; _render()
+			elif not _adding.is_empty(): _adding = {}; _render()
 			elif _confirm.visible: _confirm.hide(); _sync_picker()
 			else: _guard(func(): closed.emit(); queue_free())
 		KEY_F: _canvas.home()
@@ -888,6 +954,7 @@ func _context_menu(kind: String, id: String, at: Vector2) -> void:
 				add.call("Cheaper variant ↓", func(): _open_forge("downgrade"), false)
 				add.call("Quick edit", func(): _open_forge("edit"), false)
 				add.call("Full card editor…", func(): _edit_card(_node(id)), false)
+				add.call("Add an existing card from here…", func(): _open_add_existing(id), false)
 				_menu.add_separator(); _menu_actions.append(func(): pass)
 				add.call("Connect from here…", func(): _canvas.connect_from = id; _canvas._overlay.queue_redraw(), false)
 				add.call("Center on card", func(): _canvas.focus_node(id), false)
@@ -913,6 +980,7 @@ func _context_menu(kind: String, id: String, at: Vector2) -> void:
 		_:
 			add.call("Center view", func(): _canvas.home(), false)
 			if _admin():
+				add.call("Add an existing card…", func(): _open_add_existing(_selected), draft.get("nodes", []).is_empty())
 				add.call("Auto-arrange", _arrange, draft.get("nodes", []).is_empty())
 				add.call("Undo", _undo_step, _undo.is_empty())
 				add.call("Redo", _redo_step, _redo.is_empty())
@@ -929,7 +997,7 @@ func _edge_details() -> void:
 	var box := STYLE.section(_details)
 	STYLE.heading(box, "Connection")
 	_label(box, "%s → %s" % [a.card.name, b.card.name], 22, STYLE.GOLD_BRIGHT)
-	var cost := int(b.card.economy.buy) - int(a.card.economy.buy)
+	var cost := _value(b) - _value(a)
 	_label(box, ("Upgrading costs %d XP" % cost) if cost > 0 else ("Downgrading refunds %d XP" % -cost) if cost < 0 else "No XP difference", 16, STYLE.GOLD if cost > 0 else STYLE.AMBER)
 	var entries := DIFF.changes(a.card, b.card, catalog)
 	if not entries.is_empty():
@@ -985,12 +1053,35 @@ func _local_issues() -> Dictionary:
 	for n in nodes: mine[n.card.id] = true
 	for id in cards:
 		if not mine.has(id): used[str(cards[id]).strip_edges().to_lower()] = true
+	# Names are unique per card ID: a shared card keeps its one name in every
+	# tree, so only other cards' names (and repeats inside this tree) collide.
+	var placements := _other_placements()
+	var seen := {}
 	for n in nodes:
 		var key := str(n.card.name).strip_edges().to_lower()
+		var card_id := str(n.card.id)
+		var elsewhere: Array = placements.get(card_id, [])
 		if not reached.has(n.id): out[n.id] = "Not connected to the base card."
-		elif int(n.card.economy.buy) < 1: out[n.id] = "XP value must be at least 1."
+		elif _value(n) < 1: out[n.id] = "XP value must be at least 1."
+		elif seen.has(card_id): out[n.id] = "%s already appears in this tree. A card can appear once per tree." % n.card.name
+		elif _is_shared(n) and n.id == draft.root: out[n.id] = "A tree's base cannot be a shared card."
+		elif _is_shared(n) and card_id.contains("_variant_"): out[n.id] = "A shared card needs its own card ID, not a tree variant ID."
+		elif elsewhere.any(func(p): return not p.shared): out[n.id] = "%s belongs to %s as its own card. Share it there first." % [n.card.name, elsewhere.filter(func(p): return not p.shared)[0].name]
+		elif not elsewhere.is_empty() and not _is_shared(n): out[n.id] = "%s is a shared card used by %s. Add it as a shared card." % [n.card.name, ", ".join(elsewhere.map(func(p): return p.name))]
 		elif names.has(key) or used.has(key): out[n.id] = "Another card is already named %s." % n.card.name
-		names[key] = true
+		names[key] = true; seen[card_id] = true
+	return out
+
+## Where each card appears in the other published trees: card ID → [{tree, name, shared, base}].
+func _other_placements() -> Dictionary:
+	var out := {}
+	for id in state.get("trees", {}):
+		if id == draft.get("id", ""): continue
+		var tree: Dictionary = state.trees[id]
+		for n in tree.nodes:
+			var card_id := str(n.card.id)
+			if not out.has(card_id): out[card_id] = []
+			out[card_id].append({"tree": str(id), "name": str(tree.name), "shared": bool(n.get("shared", false)) and n.id != tree.root, "base": n.id == tree.root})
 	return out
 
 func _check_tree(announce: bool) -> bool:
@@ -1001,7 +1092,7 @@ func _check_tree(announce: bool) -> bool:
 		return false
 	var response: Dictionary = _runtime().card_trees("validate_card_tree", draft, _revision, character_id, admin_token)
 	var ok: bool = response.get("ok", false)
-	var error := str(response.get("error", ""))
+	var error := _explain(str(response.get("error", "")))
 	_issues = _local_issues()
 	if not ok:
 		for n in draft.nodes:
@@ -1023,13 +1114,186 @@ func _validate() -> bool:
 
 func _save() -> void:
 	if not _validate(): return
+	var updates := _shared_updates()
 	var response: Dictionary = _runtime().card_trees("publish_card_tree", draft, _revision, character_id, admin_token)
-	if not response.get("ok", false): _message.text = str(response.get("error")); return
+	if not response.get("ok", false):
+		var error := _explain(str(response.get("error")))
+		_message.text = error; _validity.text = "⚠ " + error; _validity.add_theme_color_override("font_color", STYLE.LOSS); return
 	var id := str(draft.id); _dirty = false; _reload()
 	for i in _tree_pick.item_count:
 		if _tree_pick.get_item_metadata(i) == id: _tree_pick.select(i)
 	_load_tree(); _message.text = "Published tree and all card variants. Open Card Trees outside Admin to use it."
+	if not updates.is_empty(): _message.text += " Shared card updates: " + "; ".join(updates) + "."
 	_validity.text = "✓ Published"; _validity.add_theme_color_override("font_color", STYLE.GAIN)
+
+# Shared cards ----------------------------------------------------------------
+## Names of the other published trees that lend this node's card.
+func _shared_tree_names(card_id: String) -> Array:
+	return _other_placements().get(card_id, []).filter(func(p): return p.shared).map(func(p): return p.name)
+
+func _shared_note(n: Dictionary) -> String:
+	var others := _shared_tree_names(str(n.card.id))
+	return "Shared card · also used by: " + ", ".join(others) if not others.is_empty() else "Shared card · not used by other trees yet"
+
+func _shared_edit_notice(n: Dictionary) -> String:
+	var trees: Array = [str(draft.get("name", "")).strip_edges() if not str(draft.get("name", "")).strip_edges().is_empty() else "this tree"]
+	trees.append_array(_shared_tree_names(str(n.card.id)))
+	return "Shared card · this change updates %d tree%s: %s. XP stays separate in each tree." % [trees.size(), "" if trees.size() == 1 else "s", ", ".join(trees)]
+
+func _notice(parent: Node, text: String) -> Label:
+	var label := _label(parent, text, 15, STYLE.AMBER)
+	label.add_theme_stylebox_override("normal", STYLE.box(Color(STYLE.AMBER, 0.12), Color(STYLE.AMBER, 0.55), 10, 8))
+	return label
+
+## "Name → Tree A, Tree B" for each shared card whose definition this publish changes.
+func _shared_updates() -> Array:
+	var out: Array = []
+	var published: Dictionary = state.get("trees", {}).get(str(draft.get("id", "")), {})
+	for n in draft.get("nodes", []):
+		if not _is_shared(n): continue
+		var others := _shared_tree_names(str(n.card.id))
+		if others.is_empty(): continue
+		var before: Dictionary = {}
+		for old in published.get("nodes", []):
+			if old.card.id == n.card.id: before = old.card
+		if before.is_empty():
+			for p in _other_placements().get(str(n.card.id), []):
+				for old in state.trees[p.tree].nodes:
+					if old.card.id == n.card.id: before = old.card
+		if JSON.stringify(_definition(before)) != JSON.stringify(_definition(n.card)): out.append("%s → %s" % [n.card.name, ", ".join(others)])
+	return out
+
+## A card's rules without its price or generated text, for change detection.
+func _definition(card: Dictionary) -> Dictionary:
+	var copy := card.duplicate(true); copy.erase("economy")
+	if copy.get("presentation") is Dictionary: copy.presentation.erase("rules_text")
+	return copy
+
+## Sharing a variant retires its old card ID, which owned copies block; say so.
+func _explain(error: String) -> String:
+	var conversions := _shared_conversions()
+	if error.is_empty() or conversions.is_empty(): return error
+	return "Could not share %s: %s. Sharing removes the old card ID %s, so players who own copies must trade or sell them first." % [", ".join(conversions.map(func(c): return c.name)), error, ", ".join(conversions.map(func(c): return c.old_id))]
+
+## Variants this draft turns into shared cards: [{name, old_id}].
+func _shared_conversions() -> Array:
+	var out: Array = []
+	var published: Dictionary = state.get("trees", {}).get(str(draft.get("id", "")), {})
+	for old in published.get("nodes", []):
+		if old.get("shared", false) or old.id == published.root: continue
+		var now := _node(str(old.id))
+		if _is_shared(now): out.append({"name": str(now.card.name), "old_id": str(old.card.id)})
+	return out
+
+## Cards that may join this tree as shared nodes: shared cards from other trees
+## and configurable catalog cards in no tree. Never a tree's base, another
+## tree's exclusive card, or a card already in this tree.
+func _shareable_cards() -> Dictionary:
+	var out := {}
+	var placements := _other_placements()
+	for card_id in placements:
+		var refs: Array = placements[card_id]
+		if refs.all(func(p): return p.shared):
+			out[card_id] = catalog.get("templates", {}).get(card_id, _placed_card(card_id, refs[0].tree))
+	for id in catalog.get("templates", {}):
+		if placements.has(id) or str(id).contains("_variant_"): continue
+		var card: Dictionary = catalog.templates[id]
+		if card.get("program") is Dictionary or card.get("mechanic") is Dictionary: out[id] = card
+	for n in draft.get("nodes", []): out.erase(str(n.card.id))
+	# This tree's own published cards (e.g. a removed variant) are not shareable here.
+	for old in state.get("trees", {}).get(str(draft.get("id", "")), {}).get("nodes", []):
+		if not old.get("shared", false): out.erase(str(old.card.id))
+	return out
+
+func _placed_card(card_id: String, tree_id: String) -> Dictionary:
+	for n in state.trees[tree_id].nodes:
+		if n.card.id == card_id: return n.card
+	return {}
+
+func _open_add_existing(from: String) -> void:
+	if not _admin() or draft.get("nodes", []).is_empty(): return
+	if _node(from).is_empty(): from = str(draft.root)
+	_forge = {}; _edge = ""; _selected = from
+	_adding = {"from": from, "card": "", "xp": _value(_node(from)) + 10}
+	_render()
+	_message.text = "Choose an existing card to lend to this tree, then set its XP here."
+
+func _add_existing_panel() -> void:
+	var box := STYLE.section(_details)
+	STYLE.heading(box, "Add an existing card")
+	_label(box, "A shared card keeps one definition in every tree that uses it; each tree sets its own XP. Bases and cards that belong to another tree cannot be added.", 14, STYLE.MUTED)
+	var cards := _shareable_cards()
+	var ids: Array = cards.keys()
+	ids.sort_custom(func(a, b): return str(cards[a].name).naturalnocasecmp_to(str(cards[b].name)) < 0 if cards[a].name != cards[b].name else str(a) < str(b))
+	var options := {}
+	for id in ids:
+		var users := _shared_tree_names(str(id))
+		options[id] = "%s · %s" % [cards[id].name, ("shared by " + ", ".join(users)) if not users.is_empty() else "in no tree yet"]
+	_label(box, "Card", 13, STYLE.MUTED)
+	var pick := _pick(box, options, "share.card")
+	pick.select(-1); pick.text = "Choose a card…" if not ids.is_empty() else "No shareable cards"
+	for i in pick.item_count:
+		if pick.get_item_metadata(i) == _adding.card: pick.select(i)
+	pick.item_selected.connect(func(i): _adding.card = str(pick.get_item_metadata(i)); _render())
+	var chosen: Dictionary = cards.get(_adding.card, {})
+	if not chosen.is_empty():
+		_label(box, "%d energy · %s" % [int(chosen.get("cost", {}).get("energy", 0)), str(chosen.get("presentation", {}).get("rules_text", ""))], 15)
+		if _shared_tree_names(str(_adding.card)).is_empty():
+			_notice(box, "This card becomes a shared card: its own price is replaced by each tree's XP.")
+	var from_options := {}
+	for n in draft.nodes: from_options[n.id] = n.card.name
+	_label(box, "Connect from", 13, STYLE.MUTED)
+	var from := _pick(box, from_options, "share.from")
+	for i in from.item_count:
+		if from.get_item_metadata(i) == _adding.from: from.select(i)
+	from.item_selected.connect(func(i): _adding.from = str(from.get_item_metadata(i)); _adding.xp = _value(_node(_adding.from)) + 10; _render())
+	_spin(box, "XP value in this tree", int(_adding.xp), 1, 100000, func(v): _adding.xp = v, "share.xp")
+	var row := HBoxContainer.new(); row.add_theme_constant_override("separation", 8); box.add_child(row)
+	var add := STYLE.accent(_button(row, "Add shared card", func(): _add_existing(str(_adding.card), str(_adding.from), int(_adding.xp)), "share.add"))
+	add.size_flags_horizontal = Control.SIZE_EXPAND_FILL; add.disabled = chosen.is_empty()
+	_button(row, "Cancel", func(): _adding = {}; _render(), "share.cancel")
+
+func _add_existing(card_id: String, from: String, xp: int) -> void:
+	if not _admin(): return
+	var cards := _shareable_cards()
+	var parent := _node(from)
+	if not cards.has(card_id):
+		var refs: Array = _other_placements().get(card_id, [])
+		_message.text = ("%s is %s; it cannot be shared." % [card_id, "a tree's base" if refs.any(func(p): return p.base) else "another tree's own card"]) if not refs.is_empty() else "That card cannot be added to this tree."
+		return
+	if parent.is_empty(): _message.text = "Choose a card to connect from."; return
+	_snapshot()
+	var card: Dictionary = cards[card_id].duplicate(true)
+	var limit := int(card.get("economy", {}).get("copy_limit", 20)) if card.get("economy") is Dictionary else 20
+	card.economy = {"buy": 0, "sell": 0, "copy_limit": limit if limit > 0 else 20, "upgrades": []}
+	var i := 1
+	while draft.nodes.any(func(n): return n.id == "node_" + str(i)): i += 1
+	var id := "node_" + str(i)
+	var at := _place_new(parent, xp >= _value(parent))
+	draft.nodes.append({"id": id, "card": card, "x": at.x, "y": at.y, "xp": maxi(1, xp), "shared": true})
+	_connect(from, id)
+	_adding = {}; _selected = id; _changed(); _render(); _canvas.home()
+	_message.text = "Added shared card %s at %d XP. It keeps one definition in every tree that uses it." % [card.name, maxi(1, xp)]
+
+## Turn an exclusive variant into a shared card with its own new card ID.
+func _share_node(node_id: String, new_id: String) -> void:
+	var node := _node(node_id)
+	if not _admin() or node.is_empty() or node.id == draft.root or _is_shared(node): return
+	new_id = new_id.strip_edges()
+	if new_id.is_empty() or STYLE.slug(new_id) != new_id or new_id.contains("_variant_"):
+		_message.text = "Enter a lowercase card ID such as %s (letters, numbers and underscores; not a tree variant ID)." % STYLE.slug(str(node.card.name)); return
+	if _all_cards().has(new_id) or catalog.get("templates", {}).has(new_id):
+		_message.text = "Card ID %s is already used. Choose another ID." % new_id; return
+	_snapshot()
+	var old_id := str(node.card.id)
+	var card: Dictionary = _valued(node)
+	card.id = new_id
+	node.shared = true; _store(node, card)
+	for e in draft.edges:
+		for rule in e.requirements:
+			if rule.card_id == old_id: rule.card_id = new_id
+	_changed(); _render()
+	_message.text = "%s is now a shared card (%s). Publishing removes the old variant ID %s; the server refuses while players own copies of it." % [node.card.name, new_id, old_id]
 
 # Player transactions ---------------------------------------------------------
 func _request_trade(offer: Dictionary) -> void:
@@ -1037,50 +1301,54 @@ func _request_trade(offer: Dictionary) -> void:
 	var source := _node(str(offer.from)); var target := _node(str(offer.to))
 	var cost := int(offer.cost)
 	var text := ("Upgrade %s → %s for %d XP?" % [source.card.name, target.card.name, cost]) if cost > 0 else ("Downgrade %s → %s and refund %d XP?" % [source.card.name, target.card.name, -cost]) if cost < 0 else "Switch %s → %s?" % [source.card.name, target.card.name]
-	if int(_collection_counts().get(offer.from_card, 0)) > 0: text += "  Uses a stored copy; your deck is unchanged."
+	if int(_collection_counts().get(_key(source), 0)) > 0: text += "  Uses a stored copy; your deck is unchanged."
 	else: text += "  Takes one copy out of your deck (health %d → %d). The new card goes to your collection." % [_health(), _health() - 1]
 	_pending_trade = offer; _trade_text.text = text; _trade_bar.show()
 
 func _trade(offer: Dictionary) -> void:
 	if offer.is_empty(): return
-	var response: Dictionary = _runtime().purchase_progression(character_id, "tree_card", str(offer.from_card), int(state.progression.revision), int(offer.cost), str(offer.to_card))
+	# Every trade names its tree: shared cards need it, exclusive cards ignore it.
+	var response: Dictionary = _runtime().purchase_progression(character_id, "tree_card", str(offer.from_card), int(state.progression.revision), int(offer.cost), str(offer.to_card), str(offer.get("tree", draft.get("id", ""))))
 	_pending_trade = {}
 	if not response.get("ok", false): _message.text = str(response.get("error")); return
 	var id := str(draft.id); var target := str(offer.to); _reload(); draft = state.trees[id].duplicate(true); _sync_picker(); _selected = target; _edge = ""; _render()
 	_canvas.play_transition(str(offer.from), target)
 	_message.text = "Variant obtained and saved in your collection. Add it to the deck when its requirements are met."
 
-func _collection_trade(kind: String, id: String, cost: int) -> void:
-	var response: Dictionary = _runtime().purchase_progression(character_id, kind, id, int(state.progression.revision), cost)
+func _collection_trade(kind: String, id: String, cost: int, tree: String = "") -> void:
+	var response: Dictionary = _runtime().purchase_progression(character_id, kind, id, int(state.progression.revision), cost, "", tree)
 	if not response.get("ok", false): _message.text = str(response.get("error")); return
 	var tree_id := str(draft.id); _reload(); draft = state.trees[tree_id].duplicate(true); _sync_picker(); _render(); _message.text = "Collection and deck saved. Only equipped cards count as health."
 
 # Example ---------------------------------------------------------------------
-## An unpublished example with its own new base card, so it never edits Brace.
+## An unpublished example with its own new base card (copied from the shipped
+## Steady Guard template), so it never edits Steady Guard or any other card.
 func _example() -> void:
 	_new_tree()
 	var name := _unique_name("Steady Guard")
 	draft.name = name + " paths"; _name.text = draft.name
 	var tree_id := _unique_tree_id(STYLE.slug(draft.name)); _id.text = tree_id; draft.id = tree_id; _id_touched = true
 	var base: Dictionary
-	if catalog.templates.has("brace"): base = catalog.templates.brace.duplicate(true)
+	if catalog.templates.has("steady_guard"): base = catalog.templates.steady_guard.duplicate(true)
 	else:
 		_start = {"name": name, "source": "effect:prevent", "energy": 5, "amount": 1, "xp": 10, "art": ""}
 		base = _start_card()
 	base.id = _unique_card_id(STYLE.slug(name)); base.name = name
 	base.cost.energy = 5; base.economy = {"buy": 10, "sell": 10, "copy_limit": int(base.get("economy", {}).get("copy_limit", 20)), "upgrades": []}
 	base.program.steps[0].params = {"amount": 1, "destination": "discard"}
-	draft.nodes = [{"id": "base", "card": base, "x": 0.0, "y": 0.0}]
-	var variant := func(id: String, suffix: String, buy: int, energy: int, amount: int, destination: String) -> void:
+	draft.nodes = [{"id": "base", "card": base, "x": 0.0, "y": 0.0, "xp": 10}]
+	var variant := func(id: String, buy: int, energy: int, amount: int, destination: String) -> void:
 		var card: Dictionary = base.duplicate(true)
-		card.id = tree_id + "_variant_" + id; card.name = name + " · " + suffix
+		card.id = tree_id + "_variant_" + id
 		card.economy.buy = buy; card.economy.sell = buy; card.cost.energy = energy
 		card.program.steps[0].params = {"amount": amount, "destination": destination}
-		draft.nodes.append({"id": id, "card": card, "x": 0.0, "y": 0.0})
-	variant.call("node_1", "Deeper guard", 13, 5, 2, "discard")
-	variant.call("node_2", "Original piles", 14, 5, 1, "original")
-	variant.call("node_3", "Complete guard", 17, 5, 2, "original")
-	variant.call("node_4", "Heavy guard", 8, 10, 1, "discard")
+		# Same generated names as the forge: what changed from the base plus what it does.
+		card.name = NAMES.suggest(card, DIFF.changes(base, card, catalog), _used_names(""))
+		draft.nodes.append({"id": id, "card": card, "x": 0.0, "y": 0.0, "xp": buy})
+	variant.call("node_1", 13, 5, 2, "discard")
+	variant.call("node_2", 14, 5, 1, "original")
+	variant.call("node_3", 17, 5, 2, "original")
+	variant.call("node_4", 8, 10, 1, "discard")
 	for pair in [["base", "node_1"], ["base", "node_2"], ["node_1", "node_3"], ["node_2", "node_3"], ["base", "node_4"]]: _connect(pair[0], pair[1])
 	# Generate readable rules without publishing anything.
 	for n in draft.nodes:
@@ -1088,7 +1356,7 @@ func _example() -> void:
 		if response.get("ok", false): n.card.presentation = response.result.card.presentation
 	_arrange(); _undo.clear(); _update_undo_buttons()
 	_selected = "base"; _changed(); _render(); _canvas.home()
-	_message.text = "Example draft with a new base card, %s (5 energy · prevent 1). Brace is unchanged. Edit, then publish when ready." % name
+	_message.text = "Example draft with a new base card, %s (5 energy · prevent 1). Steady Guard is unchanged. Edit, then publish when ready." % name
 
 # New cards default to Any time on each segment their effect supports. The
 # opt-in reaction moments stay off unless the effect only works there.

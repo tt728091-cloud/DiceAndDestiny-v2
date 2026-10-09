@@ -17,6 +17,8 @@ var xp := 0
 var energy := 0
 var deck_count := 0
 var stored_count := 0
+## A shared card lent to several trees; drawn with a chain-link badge.
+var shared := false
 ## authored (editor), owned, available, locked, unowned.
 var state := "authored"
 var selected := false
@@ -135,6 +137,7 @@ func _draw() -> void:
 	if stored_count > 0:
 		draw_circle(badge, 13, Color("4b5b6b")); draw_arc(badge, 13, 0, TAU, 24, Color("c9d6e0"), 1.5, true)
 		_centered(font, "%d" % stored_count, badge, 14, Color.WHITE)
+	if shared: _draw_link(c + Vector2(0.72, 0.72) * (radius + 6))
 	if not issue.is_empty():
 		var warn := c + Vector2(-0.72, -0.72) * (radius + 6)
 		draw_circle(warn, 13, STYLE.LOSS); _centered(font, "!", warn, 18, Color("2a0d0a"))
@@ -185,6 +188,19 @@ func _draw_art(c: Vector2, lit: bool) -> void:
 		var d := Vector2(cos(a), sin(a))
 		points.append(c + d * radius); uvs.append(middle + d * span * 0.5); colors.append(tint)
 	draw_polygon(points, colors, uvs, art)
+
+## Chain-link mark for shared cards: two interlocked rings on a dark disc.
+func _draw_link(at: Vector2) -> void:
+	draw_circle(at, 16, Color("0d1720")); draw_circle(at, 14, Color("1d3a4a"))
+	draw_arc(at, 16, 0, TAU, 28, Color("8fd3ff"), 1.5, true)
+	var tilt := Vector2(1, -1).normalized()
+	for side in [-1.0, 1.0]:
+		var centre: Vector2 = at + tilt * 3.6 * side
+		var points := PackedVector2Array()
+		for i in 21:
+			var a := TAU * i / 20.0
+			points.append(centre + tilt * cos(a) * 6.0 + Vector2(-tilt.y, tilt.x) * sin(a) * 3.4)
+		draw_polyline(points, Color("d9f1ff"), 2.2, true)
 
 func _draw_lock(c: Vector2) -> void:
 	var body := Rect2(c + Vector2(-13, -4), Vector2(26, 20))

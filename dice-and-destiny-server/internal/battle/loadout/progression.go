@@ -55,6 +55,8 @@ type Progress struct {
 	Abilities               content.AbilityBoard `json:"ability_board"`
 }
 type Purchase struct {
+	// Tree names the card tree for shared-card trades and their copies.
+	Tree         string `json:"tree,omitempty"`
 	TargetID     string `json:"target_id,omitempty"`
 	Kind         string `json:"kind"`
 	ID           string `json:"id"`
@@ -200,10 +202,26 @@ func (e Economy) Offers(character string) map[string]any {
 			prices[id] = e.Price(character, id)
 		}
 	}
+	// Exclusive cards keep a single entry. A shared card lists every tree that
+	// lends it with that tree's XP; its first placement fills the plain fields.
 	membership := map[string]any{}
-	for tid, tree := range e.Trees {
-		for _, node := range tree.Nodes {
-			membership[node.Card.ID] = map[string]any{"tree_id": tid, "node_id": node.ID, "is_variant": node.ID != tree.Root}
+	for id := range e.Trees {
+		for _, node := range e.Trees[id].Nodes {
+			refs := content.TreeCardPlacements(e.Trees, node.Card.ID)
+			if _, done := membership[node.Card.ID]; done || len(refs) == 0 {
+				continue
+			}
+			first := e.Trees[refs[0].Tree]
+			entry := map[string]any{"tree_id": refs[0].Tree, "node_id": refs[0].Node, "is_variant": refs[0].Node != first.Root, "shared": refs[0].Shared}
+			if refs[0].Shared {
+				var trees []map[string]any
+				for _, ref := range refs {
+					n, _ := e.Trees[ref.Tree].Node(ref.Node)
+					trees = append(trees, map[string]any{"tree_id": ref.Tree, "node_id": ref.Node, "xp": n.Value()})
+				}
+				entry["trees"] = trees
+			}
+			membership[node.Card.ID] = entry
 		}
 	}
 	sales := map[string]int{}
@@ -327,10 +345,14 @@ func validateProgress(p Progress, lib content.BattleLibrary) error {
 	}
 	seen := map[string]bool{}
 	for _, entry := range p.Collection {
-		if _, ok := lib.Cards[entry.CardID]; !ok || entry.Count < 1 || entry.Count > 1000000 || seen[entry.CardID] {
+		key := entry.CardID + "|" + entry.Tree
+		if _, ok := lib.Cards[entry.CardID]; !ok || entry.Count < 1 || entry.Count > 1000000 || seen[key] {
 			return fmt.Errorf("invalid collection card %s", entry.CardID)
 		}
-		seen[entry.CardID] = true
+		seen[key] = true
+	}
+	if err := validateTreeTags(p.Collection, lib.CardTrees); err != nil {
+		return err
 	}
 	return ValidateAbilities(p.Abilities, lib)
 }
@@ -410,25 +432,29 @@ func Buy(root, character string, e Economy, lib content.BattleLibrary, request P
 		if request.Kind == "sell_collection_card" {
 			source = p.Collection
 		}
-		if _, ok := lib.Cards[request.ID]; !ok || deckCount(source, request.ID) < 1 {
+		tree, err := copyTree(source, request.ID, request.Tree, lib.CardTrees)
+		if err != nil {
+			return p, err
+		}
+		if _, ok := lib.Cards[request.ID]; !ok || deckCountIn(source, request.ID, tree) < 1 {
 			return p, fmt.Errorf("no owned copy to sell")
 		}
-		cost = e.Price(character, request.ID)
-		if c, ok := e.Authored[request.ID]; ok {
+		cost = e.Value(character, Entry{CardID: request.ID, Tree: tree})
+		if c, ok := e.Authored[request.ID]; ok && tree == "" {
 			cost = c.Sell
 		}
 		if request.Kind == "sell_collection_card" {
-			p.Collection = changeCount(p.Collection, request.ID, -1)
+			p.Collection = changeCountIn(p.Collection, request.ID, tree, -1)
 		} else {
-			p.Deck = changeCount(p.Deck, request.ID, -1)
+			p.Deck = changeCountIn(p.Deck, request.ID, tree, -1)
 		}
 	case "equip_collection_card", "unequip_collection_card":
-		p, err = MoveCollectionCard(p, request.ID, request.Kind == "equip_collection_card", e, lib, character)
+		p, err = MoveCollectionCard(p, request.ID, request.Tree, request.Kind == "equip_collection_card", e, lib, character)
 		if err != nil {
 			return p, err
 		}
 	case "tree_card":
-		p, cost, err = UpgradeTreeCard(p, request.ID, request.TargetID, e, lib, character)
+		p, cost, err = UpgradeTreeCard(p, request.ID, request.TargetID, request.Tree, e, lib, character)
 		if err != nil {
 			return p, err
 		}
@@ -535,17 +561,24 @@ func Buy(root, character string, e Economy, lib content.BattleLibrary, request P
 	}
 	return p, nil
 }
-func deckCount(deck []Entry, id string) int {
+func deckCount(deck []Entry, id string) int { return deckCountIn(deck, id, "") }
+func changeCount(deck []Entry, id string, delta int) []Entry {
+	return changeCountIn(deck, id, "", delta)
+}
+
+// deckCountIn and changeCountIn address one card's copies from one tree; the
+// empty tree is an exclusive or ordinary card.
+func deckCountIn(deck []Entry, id, tree string) int {
 	for _, entry := range deck {
-		if entry.CardID == id {
+		if entry.CardID == id && entry.Tree == tree {
 			return entry.Count
 		}
 	}
 	return 0
 }
-func changeCount(deck []Entry, id string, delta int) []Entry {
+func changeCountIn(deck []Entry, id, tree string, delta int) []Entry {
 	for i := range deck {
-		if deck[i].CardID == id {
+		if deck[i].CardID == id && deck[i].Tree == tree {
 			deck[i].Count += delta
 			if deck[i].Count == 0 {
 				return append(deck[:i], deck[i+1:]...)
@@ -553,7 +586,39 @@ func changeCount(deck []Entry, id string, delta int) []Entry {
 			return deck
 		}
 	}
-	return append(deck, Entry{CardID: id, Count: delta})
+	return append(deck, Entry{CardID: id, Count: delta, Tree: tree})
+}
+
+// copyTree picks which tree's copies of a card a request means. Shared cards
+// need one; when the request omits it, the only tree the player holds wins.
+func copyTree(source []Entry, id, tree string, trees map[string]content.CardTree) (string, error) {
+	if !content.IsSharedCard(trees, id) {
+		return "", nil
+	}
+	if tree != "" {
+		return tree, nil
+	}
+	held := ""
+	for _, e := range source {
+		if e.CardID == id && e.Count > 0 {
+			if held != "" && held != e.Tree {
+				return "", fmt.Errorf("choose which tree's copy of this shared card to use")
+			}
+			held = e.Tree
+		}
+	}
+	return held, nil
+}
+
+// Value is the XP one copy of an entry is worth: its tree's XP for a shared
+// card, otherwise the card's price.
+func (e Economy) Value(character string, entry Entry) int {
+	if entry.Tree != "" {
+		if n, ok := e.Trees[entry.Tree].CardNode(entry.CardID); ok && n.Shared {
+			return n.Value()
+		}
+	}
+	return e.Price(character, entry.CardID)
 }
 
 // ValidateCatalogUpdate checks saved decks and XP without mutating them. A

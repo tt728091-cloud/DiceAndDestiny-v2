@@ -11,6 +11,7 @@ signal context_requested(kind: String, id: String, at: Vector2)
 const NODE = preload("res://app/screens/character/card_tree_node.gd")
 const CHIP = preload("res://app/screens/character/card_tree_edge_chip.gd")
 const STYLE = preload("res://app/screens/character/character_style.gd")
+const DIFF = preload("res://app/screens/character/card_tree_diff.gd")
 const GRID := 20.0
 const TILE := 1400.0
 const MIN_ZOOM := 0.25
@@ -141,7 +142,7 @@ func show_tree(value: Dictionary, owned: Dictionary, focus: String = "") -> void
 		var chip := CHIP.new(); chip.setup(str(edge.id)); _world.add_child(chip)
 		_chips[str(edge.id)] = chip
 		var a := _node(str(edge.from)); var b := _node(str(edge.to))
-		if not a.is_empty() and not b.is_empty(): chip.cost = int(b.card.economy.buy) - int(a.card.economy.buy)
+		if not a.is_empty() and not b.is_empty(): chip.cost = DIFF.node_xp(b) - DIFF.node_xp(a)
 		chip.selected = edge.id == selected_edge
 		chip.dim = edge_states.get(edge.id, "") in ["unowned", "locked"]
 		for rule in edge.get("requirements", []):
@@ -161,12 +162,18 @@ func _apply_node(node, n: Dictionary) -> void:
 	node.title = str(n.card.name)
 	node.art = STYLE.texture(str(n.card.get("presentation", {}).get("illustration_path", "")))
 	node.subtitle = str(summaries.get(id, ""))
-	node.xp = int(n.card.economy.buy); node.energy = int(n.card.get("cost", {}).get("energy", 0))
-	node.deck_count = int(counts.get(n.card.id, 0)); node.stored_count = int(collection_counts.get(n.card.id, 0))
+	node.xp = DIFF.node_xp(n); node.energy = int(n.card.get("cost", {}).get("energy", 0))
+	node.shared = bool(n.get("shared", false))
+	node.deck_count = int(counts.get(count_key(n), 0)); node.stored_count = int(collection_counts.get(count_key(n), 0))
 	node.state = str(node_states.get(id, "authored")); node.selected = id == selected
 	node.issue = str(issues.get(id, "")); node.editable = editable
 	node.tooltip_text = str(tooltips.get(id, n.card.get("presentation", {}).get("rules_text", "")))
 	node.refresh(); node.place(Vector2(n.x, n.y))
+
+## Owned counts are keyed by card ID, except shared cards: their copies belong
+## to a tree, so this tree's copies are keyed "tree/card".
+func count_key(n: Dictionary) -> String:
+	return "%s/%s" % [str(tree.get("id", "")), str(n.card.id)] if n.get("shared", false) else str(n.card.id)
 
 func _refresh_chips() -> void:
 	for edge in tree.get("edges", []):
