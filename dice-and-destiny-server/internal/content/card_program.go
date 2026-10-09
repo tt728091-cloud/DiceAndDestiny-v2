@@ -718,6 +718,20 @@ func PrepareProgramCard(card BattleCardDefinition, lib *BattleLibrary) BattleCar
 	if card.Play.PlayableDuring == nil {
 		card.Play.PlayableDuring = []PlayTiming{}
 	}
+	// Steps without parameters (e.g. a sacrifice cost) store {} rather than
+	// null, so every reader can treat params as a dictionary.
+	var normalize func([]CardStep)
+	normalize = func(steps []CardStep) {
+		for i := range steps {
+			if steps[i].Params == nil {
+				steps[i].Params = map[string]any{}
+			}
+			for j := range steps[i].Choices {
+				normalize(steps[i].Choices[j].Steps)
+			}
+		}
+	}
+	normalize(card.Program.Steps)
 	PresentProgramCard(&card, lib.Statuses)
 	var walk func([]CardStep)
 	walk = func(steps []CardStep) {

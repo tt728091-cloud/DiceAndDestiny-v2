@@ -70,8 +70,13 @@ static func bbcode(entries: Array) -> String:
 static func plain(entries: Array) -> String:
 	return "\n".join(entries.map(func(c): return "• " + str(c.text)))
 
+## A step's parameters; steps without any (a sacrifice cost) may store null.
+static func step_params(step: Dictionary) -> Dictionary:
+	var params = step.get("params")
+	return params if params is Dictionary else {}
+
 static func step_phrase(step: Dictionary, catalog: Dictionary) -> String:
-	var p: Dictionary = step.get("params", {})
+	var p := step_params(step)
 	var spec: Dictionary = catalog.get("effects", {}).get(str(step.get("effect", "")), {})
 	var amount := int(p.get("amount", spec.get("parameters", {}).get("amount", {}).get("default", 1)))
 	match str(step.get("effect", "")):
@@ -101,7 +106,7 @@ static func _step(out: Array, a: Dictionary, b: Dictionary, catalog: Dictionary,
 	var keys: Array = spec.get("parameters", {}).keys(); keys.sort()
 	for key in keys:
 		var default = spec.parameters[key].get("default")
-		var va = a.get("params", {}).get(key, default); var vb = b.get("params", {}).get(key, default)
+		var va = step_params(a).get(key, default); var vb = step_params(b).get(key, default)
 		if JSON.stringify(va) == JSON.stringify(vb): continue
 		if key == "destination" and str(b.effect) in ["prevent", "save_cards"]:
 			out.append(_entry(prefix + "Saved cards: %s → %s" % [_word(str(va)), _word(str(vb))], null))

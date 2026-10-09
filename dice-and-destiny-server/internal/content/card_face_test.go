@@ -1,6 +1,7 @@
 package content
 
 import (
+	"encoding/json"
 	"reflect"
 	"strings"
 	"testing"
@@ -137,5 +138,23 @@ func TestFaceWordHelpers(t *testing.T) {
 	reroll := CardStep{Effect: "reroll", Target: CardTarget{Owner: "self", Mode: "up_to", Count: 2}, Params: map[string]any{"result": "higher", "consume_roll": true}}
 	if got := faceStep(reroll, nil); got != "Reroll up to 2 dice, keep the higher (uses a roll)" {
 		t.Errorf("non-default reroll face = %q", got)
+	}
+}
+
+// Steps without parameters (a sacrifice cost) are stored with {} params, not
+// null, so clients can always read params as a dictionary.
+func TestPreparedProgramStepsNeverHaveNullParams(t *testing.T) {
+	lib := shippedCards(t, "adventurer_v1", "general_v1")
+	c, err := EditableGeneralCard(lib.Cards["take_stock"])
+	if err != nil {
+		t.Fatal(err)
+	}
+	sacrifice := CardStep{Effect: "sacrifice", Target: CardTarget{Owner: "self", Mode: "exact", Count: 1, Selection: "choose", Zones: []string{"hand"}}}
+	choice := CardStep{Effect: "choice", Target: CardTarget{Owner: "self", Mode: "one", Count: 1, Selection: "choose"}, Choices: []CardOption{{Name: "Pay", Steps: []CardStep{{Effect: "sacrifice", Target: sacrifice.Target}}}}}
+	c.Program.Steps = []CardStep{sacrifice, choice}
+	c = PrepareProgramCard(c, &lib)
+	raw, _ := json.Marshal(c.Program)
+	if strings.Contains(string(raw), `"params":null`) {
+		t.Fatalf("null params stored: %s", raw)
 	}
 }

@@ -28,7 +28,7 @@
                       "hand"
                     ]
                   },
-                  "params": null
+                  "params": {}
                 },
                 {
                   "effect": "choice",
@@ -124,7 +124,8 @@
             "operations": []
           },
           "x": 0,
-          "y": 0
+          "y": 0,
+          "xp": 10
         },
         {
           "id": "node_1",
@@ -149,7 +150,7 @@
                       "hand"
                     ]
                   },
-                  "params": null
+                  "params": {}
                 },
                 {
                   "effect": "choice",
@@ -245,7 +246,8 @@
             "operations": []
           },
           "x": -480,
-          "y": -360
+          "y": -360,
+          "xp": 14
         },
         {
           "id": "node_2",
@@ -272,7 +274,7 @@
                       "hand"
                     ]
                   },
-                  "params": null
+                  "params": {}
                 },
                 {
                   "effect": "choice",
@@ -372,7 +374,8 @@
             "operations": []
           },
           "x": -160,
-          "y": -360
+          "y": -360,
+          "xp": 13
         },
         {
           "id": "node_3",
@@ -399,7 +402,7 @@
                       "hand"
                     ]
                   },
-                  "params": null
+                  "params": {}
                 },
                 {
                   "effect": "choice",
@@ -499,7 +502,8 @@
             "operations": []
           },
           "x": -320,
-          "y": -720
+          "y": -720,
+          "xp": 18
         },
         {
           "id": "node_4",
@@ -524,7 +528,7 @@
                       "discard"
                     ]
                   },
-                  "params": null
+                  "params": {}
                 },
                 {
                   "effect": "choice",
@@ -620,7 +624,8 @@
             "operations": []
           },
           "x": 160,
-          "y": -360
+          "y": -360,
+          "xp": 15
         },
         {
           "id": "node_5",
@@ -728,7 +733,8 @@
             "operations": []
           },
           "x": 480,
-          "y": -360
+          "y": -360,
+          "xp": 14
         },
         {
           "id": "node_6",
@@ -753,7 +759,7 @@
                       "hand"
                     ]
                   },
-                  "params": null
+                  "params": {}
                 },
                 {
                   "effect": "choice",
@@ -849,7 +855,8 @@
             "operations": []
           },
           "x": -640,
-          "y": -720
+          "y": -720,
+          "xp": 18
         },
         {
           "id": "node_7",
@@ -874,7 +881,7 @@
                       "hand"
                     ]
                   },
-                  "params": null
+                  "params": {}
                 },
                 {
                   "effect": "choice",
@@ -970,7 +977,8 @@
             "operations": []
           },
           "x": 0,
-          "y": 360
+          "y": 360,
+          "xp": 8
         }
       ],
       "edges": [
@@ -3997,7 +4005,8 @@
             "operations": []
           },
           "x": 0,
-          "y": 0
+          "y": 0,
+          "xp": 10
         },
         {
           "id": "node_1",
@@ -4073,7 +4082,8 @@
             "operations": []
           },
           "x": -320,
-          "y": -360
+          "y": -360,
+          "xp": 14
         },
         {
           "id": "node_2",
@@ -4155,7 +4165,8 @@
             "operations": []
           },
           "x": 0,
-          "y": -360
+          "y": -360,
+          "xp": 14
         },
         {
           "id": "node_3",
@@ -4231,7 +4242,8 @@
             "operations": []
           },
           "x": 0,
-          "y": 360
+          "y": 360,
+          "xp": 8
         },
         {
           "id": "node_4",
@@ -4307,7 +4319,8 @@
             "operations": []
           },
           "x": -160,
-          "y": -720
+          "y": -720,
+          "xp": 20
         },
         {
           "id": "node_5",
@@ -4332,7 +4345,7 @@
                       "hand"
                     ]
                   },
-                  "params": null
+                  "params": {}
                 },
                 {
                   "effect": "move_cards",
@@ -4396,7 +4409,8 @@
             "operations": []
           },
           "x": -160,
-          "y": -1080
+          "y": -1080,
+          "xp": 26
         }
       ],
       "edges": [
@@ -8901,7 +8915,7 @@
     "triage"
   ],
   "version": 1,
-  "revision": 45,
+  "revision": 47,
   "cards": {
     "blood_price": {
       "program": {
@@ -8924,7 +8938,7 @@
                 "hand"
               ]
             },
-            "params": null
+            "params": {}
           },
           {
             "effect": "choice",
@@ -9040,7 +9054,7 @@
                 "hand"
               ]
             },
-            "params": null
+            "params": {}
           },
           {
             "effect": "choice",
@@ -9158,7 +9172,7 @@
                 "hand"
               ]
             },
-            "params": null
+            "params": {}
           },
           {
             "effect": "choice",
@@ -9280,7 +9294,7 @@
                 "hand"
               ]
             },
-            "params": null
+            "params": {}
           },
           {
             "effect": "choice",
@@ -9400,7 +9414,7 @@
                 "discard"
               ]
             },
-            "params": null
+            "params": {}
           },
           {
             "effect": "choice",
@@ -9619,7 +9633,7 @@
                 "hand"
               ]
             },
-            "params": null
+            "params": {}
           },
           {
             "effect": "choice",
@@ -9735,7 +9749,7 @@
                 "hand"
               ]
             },
-            "params": null
+            "params": {}
           },
           {
             "effect": "choice",
@@ -12471,7 +12485,7 @@
                 "hand"
               ]
             },
-            "params": null
+            "params": {}
           },
           {
             "effect": "move_cards",
