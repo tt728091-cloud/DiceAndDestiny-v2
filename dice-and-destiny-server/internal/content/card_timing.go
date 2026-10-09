@@ -141,6 +141,33 @@ func CardPlayLimit(perRound, perBattle int) string {
 	return strings.Join(parts, " · ")
 }
 
+// CardStatusTarget is the ribbon's target badge for cards that remove
+// statuses, whose faces ("Remove 1 debuff stack") don't say from whom:
+// "Self", "Enemy", "Anyone", or several joined by "/". "" when no step,
+// including inside options, removes statuses.
+func CardStatusTarget(steps []CardStep) string {
+	seen := map[string]bool{}
+	var walk func([]CardStep)
+	walk = func(steps []CardStep) {
+		for _, s := range steps {
+			if s.Effect == "remove_status" {
+				seen[s.Target.Owner] = true
+			}
+			for _, o := range s.Choices {
+				walk(o.Steps)
+			}
+		}
+	}
+	walk(steps)
+	var words []string
+	for _, owner := range []struct{ id, word string }{{"self", "Self"}, {"enemy", "Enemy"}, {"any", "Anyone"}} {
+		if seen[owner.id] {
+			words = append(words, owner.word)
+		}
+	}
+	return strings.Join(words, "/")
+}
+
 // CardPlayLimitRules is the play limit as a rules sentence, or "".
 func CardPlayLimitRules(perRound, perBattle int) string {
 	times := func(n int) string {

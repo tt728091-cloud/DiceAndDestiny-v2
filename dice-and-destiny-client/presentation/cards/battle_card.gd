@@ -83,7 +83,7 @@ func configure(instance: String, definition: String, enabled: bool, pending_remo
 	# Other views restyle the title and cost into header strips; follow them.
 	cost.item_rect_changed.connect(_frame.queue_redraw)
 	title.item_rect_changed.connect(_fit_title)
-	_build_effect_plaque(str(data.effect_summary), pending_removal, compact, data.timing, str(data.play_limit))
+	_build_effect_plaque(str(data.effect_summary), pending_removal, compact, data.timing, str(data.play_limit), str(data.target))
 	var state := Label.new(); state.name = "RemovalState"; state.text = "× REMOVED" if removed else "× PENDING REMOVAL" if pending_removal else "✦ PLAY" if enabled else "—"; state.add_theme_font_size_override("font_size", 10 if pending_removal else 12); state.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER; state.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	state.visible = pending_removal; state.add_theme_color_override("font_color", Color("ffb9a0")); state.add_theme_stylebox_override("normal", cinematic.panel(Color("291716e8"), Color.TRANSPARENT, 0))
 	add_child(state); state.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_WIDE); state.offset_top = -25; state.offset_bottom = -4
@@ -138,7 +138,7 @@ func _fit_title() -> void:
 	if not fits: point_size = largest - 4
 	if title.get_theme_font_size("font_size") != point_size: title.add_theme_font_size_override("font_size", point_size)
 
-func _build_effect_plaque(summary: String, pending_removal: bool, compact: bool, timing: Array = [], play_limit: String = "") -> void:
+func _build_effect_plaque(summary: String, pending_removal: bool, compact: bool, timing: Array = [], play_limit: String = "", target: String = "") -> void:
 	var cinematic := preload("res://presentation/battle/cinematic_theme.gd")
 	_plaque_bottom = 27.0 if pending_removal else 9.0 if compact else 14.0
 	_effect_plaque = PanelContainer.new(); _effect_plaque.name = "EffectPlaque"
@@ -160,8 +160,8 @@ func _build_effect_plaque(summary: String, pending_removal: bool, compact: bool,
 	_effect_plaque.add_child(column); column.add_child(label)
 	# Small cards keep only the effect; the hover still states the timing.
 	_ribbon_height = 0.0
-	if not compact and not pending_removal and not timing.is_empty():
-		column.add_child(_timing_ribbon(timing, play_limit))
+	if not compact and not pending_removal and not (timing.is_empty() and target.is_empty()):
+		column.add_child(_timing_ribbon(timing, play_limit, target))
 		_ribbon_height = RIBBON_HEIGHT + 3
 	resized.connect(_layout_effect_plaque)
 	_effect_plaque.minimum_size_changed.connect(_layout_effect_plaque, CONNECT_DEFERRED)
@@ -170,7 +170,10 @@ func _build_effect_plaque(summary: String, pending_removal: bool, compact: bool,
 
 func _layout_effect_plaque() -> void:
 	if not is_instance_valid(_effect_plaque): return
-	_effect_plaque.size.x = maxf(60.0, size.x - 2.0 * _plaque_inset())
+	# Fit the ribbon first: the plaque cannot shrink below its contents.
+	var width := maxf(60.0, size.x - 2.0 * _plaque_inset())
+	_fit_target_badge(width)
+	_effect_plaque.size.x = width
 	var summary := _effect_plaque.find_child("EffectSummary", true, false) as Label
 	# Measure at the final card width, not a provisional Container width. A
 	# long compact summary may shrink; normal hand cards retain their font.
@@ -184,6 +187,26 @@ func _layout_effect_plaque() -> void:
 	_effect_plaque.size.y = _effect_plaque.get_combined_minimum_size().y
 	_effect_plaque.position = Vector2(_plaque_inset(), size.y - _plaque_bottom - _effect_plaque.size.y)
 
+## The ribbon narrows its side margins before the target badge crowds the
+## card edge; if the line still overflows, the target takes a second line.
+func _fit_target_badge(width: float) -> void:
+	var badge := _effect_plaque.find_child("TargetBadge", true, false) as Label
+	if badge == null: return
+	var ribbon := _effect_plaque.find_child("TimingRibbon", true, false) as MarginContainer
+	var lines := ribbon.find_child("RibbonLines", true, false) as VBoxContainer
+	var row := lines.get_child(0) as HBoxContainer
+	var target := str(badge.get_meta("target"))
+	if badge.get_parent() != row: badge.reparent(row)
+	badge.text = ("· " if row.get_child_count() > 1 else "") + target
+	ribbon.custom_minimum_size.y = RIBBON_HEIGHT
+	if row.get_combined_minimum_size().x > width and row.get_child_count() > 1:
+		badge.reparent(lines); badge.text = target; badge.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		ribbon.custom_minimum_size.y = RIBBON_HEIGHT + badge.get_combined_minimum_size().y
+	var spare := width - lines.get_combined_minimum_size().x
+	var margin := 16 if spare >= 32 else maxi(0, floori(spare / 2.0))
+	ribbon.add_theme_constant_override("margin_left", margin); ribbon.add_theme_constant_override("margin_right", margin)
+	_ribbon_height = ribbon.custom_minimum_size.y + 3
+
 func _plaque_inset() -> float:
 	return 13.0 if custom_minimum_size.x < STANDARD_SIZE.x else 18.0
 
@@ -194,8 +217,9 @@ func _summary_height(label: Label, font: Font, width: float, point_size: int) ->
 
 ## The timing line replaces the "Play: …" sentence: a thin rule in the frame
 ## colour, then a segment icon (sword for Offense, shield for Defense) and
-## when in that turn the card plays.
-func _timing_ribbon(timing: Array, play_limit: String) -> MarginContainer:
+## when in that turn the card plays, then any play limit and, for status
+## removal, whose statuses it affects ("Self").
+func _timing_ribbon(timing: Array, play_limit: String, target: String = "") -> MarginContainer:
 	var ribbon := MarginContainer.new(); ribbon.name = "TimingRibbon"; ribbon.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	ribbon.custom_minimum_size.y = RIBBON_HEIGHT
 	ribbon.add_theme_constant_override("margin_left", 16); ribbon.add_theme_constant_override("margin_right", 16)
@@ -218,6 +242,13 @@ func _timing_ribbon(timing: Array, play_limit: String) -> MarginContainer:
 			row.add_child(icon)
 		row.add_child(_ribbon_label(groups[index].label))
 	if not play_limit.is_empty(): row.add_child(_ribbon_label("· " + play_limit))
+	if not target.is_empty():
+		var badge := _ribbon_label(("· " if not groups.is_empty() or not play_limit.is_empty() else "") + target); badge.name = "TargetBadge"
+		row.add_child(badge)
+		badge.set_meta("target", target)
+		var lines := VBoxContainer.new(); lines.name = "RibbonLines"; lines.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		lines.add_theme_constant_override("separation", 0)
+		rule.remove_child(row); rule.add_child(lines); lines.add_child(row)
 	return ribbon
 
 func _ribbon_label(value: String) -> Label:

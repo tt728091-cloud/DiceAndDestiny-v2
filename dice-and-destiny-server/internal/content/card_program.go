@@ -635,6 +635,7 @@ func PresentProgramCard(card *BattleCardDefinition, statuses map[string]BattleSt
 	card.Presentation.EffectSummary = CardProgramFace(p, statuses)
 	card.Presentation.Timing = CardTimingTags(p.Windows, p.RollRequirement, CardNeedsPriorRoll(p.Steps))
 	card.Presentation.PlayLimit = CardPlayLimit(p.UsesPerRound, p.UsesPerBattle)
+	card.Presentation.Target = CardStatusTarget(p.Steps)
 }
 
 func PrepareProgramCard(card BattleCardDefinition, lib *BattleLibrary) BattleCardDefinition {

@@ -64,6 +64,9 @@ type Presentation struct {
 	// card face's timing ribbon. Generated from the program or mechanic.
 	Timing    []CardTimingTag `yaml:"timing,omitempty" json:"timing,omitempty"`
 	PlayLimit string          `yaml:"play_limit,omitempty" json:"play_limit,omitempty"`
+	// Cards only: whose statuses the card removes ("Self", "Enemy",
+	// "Anyone"), shown after the timing. Generated from the program.
+	Target string `yaml:"target,omitempty" json:"target,omitempty"`
 	// Cards only: the card face's frame and outer border colours. Each is a
 	// name from CardFrameColors / CardBorderColors or a "#rrggbb" hex value;
 	// empty uses the default (colorless frame, black border).

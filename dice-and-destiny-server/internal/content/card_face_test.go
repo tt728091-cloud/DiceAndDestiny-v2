@@ -89,6 +89,29 @@ func TestCardTimingTagsMatchRules(t *testing.T) {
 	}
 }
 
+func TestStatusRemovalCardsNameTheirTarget(t *testing.T) {
+	lib := shippedCards(t, "general_v1")
+	if got := lib.Cards["dispel"].Presentation.Target; got != "Enemy" {
+		t.Errorf("dispel target = %q, want Enemy", got)
+	}
+	if got := lib.Cards["disrupt"].Presentation.Target; got != "" {
+		t.Errorf("disrupt removes no statuses but shows target %q", got)
+	}
+	remove := func(owner string) CardStep {
+		return CardStep{Effect: "remove_status", Target: CardTarget{Owner: owner, Mode: "one", Selection: "choose", Polarity: "negative"}}
+	}
+	salve := BattleCardDefinition{Program: &CardProgram{Windows: []string{"defense_selection"}, Steps: []CardStep{remove("self")}}}
+	PresentProgramCard(&salve, nil)
+	if salve.Presentation.Target != "Self" {
+		t.Errorf("self status removal target = %q, want Self", salve.Presentation.Target)
+	}
+	// Options count too, and mixed owners list each one.
+	mixed := []CardStep{{Effect: "choice", Choices: []CardOption{{Name: "a", Steps: []CardStep{remove("any")}}, {Name: "b", Steps: []CardStep{remove("self")}}}}}
+	if got := CardStatusTarget(mixed); got != "Self/Anyone" {
+		t.Errorf("mixed target = %q, want Self/Anyone", got)
+	}
+}
+
 func TestFaceWordHelpers(t *testing.T) {
 	if got := deltaWords([]int{-1, 1}); got != "±1" {
 		t.Errorf("deltaWords(-1,1) = %q", got)
