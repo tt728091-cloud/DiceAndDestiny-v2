@@ -527,8 +527,9 @@ Prevention cards retain that captured hand pose through target confirmation and
 board rebuilds, then fade in place. Their trails to the incoming damage amount
 and saved-card list share the same clock; the hand stays open until feedback
 ends. Animation headers keep their full dimensions even at a scroll boundary,
-so clipped rows cannot squash their text during a flight. Brace/Brace+ pointer
-and animation checks live in `verify_brace_targeting.gd` for both defense flows.
+so clipped rows cannot squash their text during a flight. Steady Guard and
+Reinforce pointer and animation checks live in
+`verify_steady_guard_targeting.gd` for both defense flows.
 
 
 The offensive station puts its five unchanged 56×60 dice at (38,716), with

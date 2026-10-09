@@ -5,8 +5,8 @@ extends SceneTree
 ## Writes concept_<style>.png per style and concepts_compare.png.
 
 const CONCEPT := preload("res://devtools/card_concepts/concept_card.gd")
-const SHEET := [["brace", true], ["take_stock", true], ["nudge", true], ["try_again", true], ["strong_swing", true], ["accelerant", true], ["black_tax", true], ["second_wind", false]]
-const COMPARE := ["brace", "nudge"]
+const SHEET := [["steady_guard", true], ["take_stock", true], ["nudge", true], ["try_again", true], ["strong_swing", true], ["accelerant", true], ["black_tax", true], ["second_wind", false]]
+const COMPARE := ["steady_guard", "nudge"]
 
 var _directory := ""
 

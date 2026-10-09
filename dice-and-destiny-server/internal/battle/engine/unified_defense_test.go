@@ -178,12 +178,12 @@ func TestUnifiedPassFinishesWithoutSelectingDefense(t *testing.T) {
 	_ = events
 	_ = lib
 }
-func TestUnifiedDefenseReturnsToHubAndBraceIsLegalBeforeRoll(t *testing.T) {
+func TestUnifiedDefenseReturnsToHubAndSteadyGuardIsLegalBeforeRoll(t *testing.T) {
 	b, lib, e := unifiedFixture(t, 4, 3)
-	// Put one Brace in hand without changing total health.
+	// Put one Steady Guard in hand without changing total health.
 	a := b.Actors["player"]
 	for id, card := range b.Settled.Actors["player"].CardInstances {
-		if card.DefinitionID == "brace" {
+		if card.DefinitionID == "steady_guard" {
 			for _, z := range []operation.CardZone{operation.ZoneDeck, operation.ZoneDiscard} {
 				moveCard(&a.Cards, id, z, operation.ZoneHand)
 			}
@@ -191,24 +191,24 @@ func TestUnifiedDefenseReturnsToHubAndBraceIsLegalBeforeRoll(t *testing.T) {
 		}
 	}
 	b.Actors["player"] = a
-	var defense, brace command.Command
+	var defense, guard command.Command
 	for _, action := range e.LegalActions(&b, "player") {
 		if action.Type == command.TypePlanningAbility {
 			defense = action
 		}
 		var p command.CommitInteractionPayload
 		_ = json.Unmarshal(action.Payload, &p)
-		if len(p.Commitment.CardIDs) > 0 && settledCardDefinitionID(&b, "player", p.Commitment.CardIDs[0]) == "brace" {
-			brace = action
+		if len(p.Commitment.CardIDs) > 0 && settledCardDefinitionID(&b, "player", p.Commitment.CardIDs[0]) == "steady_guard" {
+			guard = action
 		}
 	}
-	if brace.Type == "" || defense.Type == "" {
+	if guard.Type == "" || defense.Type == "" {
 		t.Fatal("cards and defenses must be legal together")
 	}
-	if _, err := e.handleSettledCommand(&b, brace); err != nil {
+	if _, err := e.handleSettledCommand(&b, guard); err != nil {
 		t.Fatal(err)
 	}
-	// Two viable attacks: Brace asks for its source after the card click.
+	// Two viable attacks: Steady Guard asks for its source after the card click.
 	for _, action := range e.LegalActions(&b, "player") {
 		_, key := programPayload(action)
 		var c programChoice
@@ -220,7 +220,7 @@ func TestUnifiedDefenseReturnsToHubAndBraceIsLegalBeforeRoll(t *testing.T) {
 		}
 	}
 	if b.Settled.Actors["player"].CardExecution != nil {
-		t.Fatal("Brace did not resolve against a chosen attack")
+		t.Fatal("Steady Guard did not resolve against a chosen attack")
 	}
 	// Choose a current remaining source after prevention.
 	defense = command.Command{}
@@ -390,7 +390,7 @@ func TestUnifiedPreventionUsesCurrentDamageInPlayOrder(t *testing.T) {
 	b, lib, e := unifiedFixture(t, 7)
 	card := effectResult{Preventions: []effectPrevention{{ProposalID: "a", Amount: 3}}}
 	half := effectResult{Scales: []effectScale{{ProposalID: "a", Numerator: 1, Denominator: 2}}}
-	if err := e.applyEffectMutations(&b, lib, "brace", card); err != nil {
+	if err := e.applyEffectMutations(&b, lib, "steady_guard", card); err != nil {
 		t.Fatal(err)
 	}
 	if err := e.applyEffectMutations(&b, lib, "", half); err != nil {
@@ -415,7 +415,7 @@ func TestUnifiedPreventionUsesCurrentDamageInPlayOrder(t *testing.T) {
 	if err := e.applyEffectMutations(&b, lib, "", half); err != nil {
 		t.Fatal(err)
 	}
-	if err := e.applyEffectMutations(&b, lib, "brace", card); err != nil {
+	if err := e.applyEffectMutations(&b, lib, "steady_guard", card); err != nil {
 		t.Fatal(err)
 	}
 	if settledSourceAmount(b.Settled.PendingDamage.Sources[0]) != 0 {

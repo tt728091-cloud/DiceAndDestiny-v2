@@ -8,9 +8,6 @@ characters:
     starting_abilities:
       offensive: [adventurer_strike, guarded_strike, measured_strike, adventurer_small_straight, adventurer_large_straight, decisive_blow]
       defensive: [adventurer_guard]
-    card_prices: {brace_plus: 20}
-    card_upgrades:
-      brace: {to: brace_plus, xp: 10}
     ability_upgrades:
       adventurer_guard: {to: adventurer_guard_plus, xp: 25}
 

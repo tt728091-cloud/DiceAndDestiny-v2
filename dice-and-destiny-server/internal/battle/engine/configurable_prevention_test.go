@@ -14,7 +14,7 @@ import (
 // Run real card plays and finalized defensive rolls, then flip only the pinned
 // configuration. No identity-specific handler may determine the destination.
 func TestConfiguredPreventionDestinations(t *testing.T) {
-	for _, id := range []string{"brace", "brace_plus", "adventurer_guard", "adventurer_guard_plus"} {
+	for _, id := range []string{"guard_brace", "guard_bulwark", "adventurer_guard", "adventurer_guard_plus"} {
 		for _, flip := range []bool{false, true} {
 			for _, zone := range []operation.CardZone{operation.ZoneDeck, operation.ZoneHand, operation.ZoneDiscard} {
 				name := id + "/" + string(zone)

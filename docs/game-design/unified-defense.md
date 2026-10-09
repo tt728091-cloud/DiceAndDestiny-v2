@@ -55,10 +55,10 @@ work still run. The engine does not open a second Damage segment.
 - Reductions apply in play order. Preventing three from seven and then halving
   leaves two; halving seven (rounded down) before preventing three leaves zero.
 - Cards and defensive abilities use the shared `saved_card_destination` setting:
-  `original` (default) or `discard`. Brace/Guard explicitly use discard and
-  Brace+/Guard+ use original. A played Brace still goes to discard, even if it saves
-  itself; protecting another source does not clear Brace's own outstanding
-  reservation. Protect retains its explicit
+  `original` (default) or `discard`. Steady Guard/Guard explicitly use discard
+  and Bulwark/Guard+ use original. A played prevention card still
+  goes to discard, even if it saves itself; protecting another source does not
+  clear that card's own outstanding reservation. Protect retains its explicit
   saved-to-discard status rule. Discard counts as health and never reshuffles.
 - Repainting, reopening a save, or reconciling unchanged damage never rerolls
   existing reservations. Saved proposals remain released.
@@ -83,7 +83,7 @@ cd dice-and-destiny-server && go test ./...
 cd ..
 ./scripts/godot.sh --headless --script res://scripts/verify_battle_authority.gd
 ./scripts/godot.sh --headless --script res://tests/presentation/verify_unified_defense.gd
-./scripts/godot.sh --headless --script res://tests/presentation/verify_brace_targeting.gd
+./scripts/godot.sh --headless --script res://tests/presentation/verify_steady_guard_targeting.gd
 DICE_AND_DESTINY_UNIFIED_LAYOUT=1 ./scripts/godot.sh --headless --script res://tests/presentation/verify_damage_card_layout.gd
 ```
 

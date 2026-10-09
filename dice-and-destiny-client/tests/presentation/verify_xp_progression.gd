@@ -9,30 +9,23 @@ func _run() -> void:
 	for frame in 8: await process_frame
 	_expect(screen.loadout_mode == "progression", "progression mode switches on")
 	_expect(not screen._apply.visible and not screen._reset.visible, "progression cannot apply free sandbox edits")
-	_expect(screen._card_count("brace") == 2 and screen._card_count("brace_plus") == 1, "both modes start with the same Brace variants")
+	_expect(screen._card_count("steady_guard") == 3, "both modes start with the same Steady Guard copies")
 	_expect(screen.character.ability_board.defensive == ["adventurer_guard"], "progression starts with base Guard")
 	var initial_xp := int(screen.catalogs.adventurer.progression.xp)
 	_expect(initial_xp == 100, "configured starter XP displayed")
-	screen.inspect_entry("cards", "brace")
-	for frame in 4: await process_frame
-	await _click(_control(screen, "upgrade.brace"))
-	_expect(screen._purchase_overlay.visible and "BEFORE" in _text(screen._purchase_details) and "AFTER" in _text(screen._purchase_details), "upgrade preview shows before and after")
-	_expect(str(screen.catalogs.adventurer.cards.brace_plus.presentation.rules_text) in _text(screen._purchase_details), "upgrade explains saved-card destination")
-	await _click(screen._purchase_cancel)
-	_expect(int(screen.catalogs.adventurer.progression.xp) == initial_xp, "cancel spends nothing")
-	await _click(_control(screen, "upgrade.brace"))
-	await _capture(screen, "xp-brace-upgrade-preview")
-	await _click(screen._purchase_confirm)
-	_expect(screen._card_count("brace") == 1 and screen._card_count("brace_plus") == 2, "one Brace upgraded")
-	_expect(screen._health() == 12 and int(screen.catalogs.adventurer.progression.xp) == initial_xp - 10, "card upgrade preserves health and spends configured XP")
 	screen._tabs.current_tab = 0
 	screen.inspect_entry("abilities", "adventurer_guard")
 	for frame in 4: await process_frame
 	await _click(_control(screen, "upgrade.adventurer_guard"))
+	_expect(screen._purchase_overlay.visible and "BEFORE" in _text(screen._purchase_details) and "AFTER" in _text(screen._purchase_details), "upgrade preview shows before and after")
+	_expect(str(screen.catalogs.adventurer.abilities.adventurer_guard_plus.presentation.rules_text) in _text(screen._purchase_details), "upgrade explains saved-card destination")
+	await _click(screen._purchase_cancel)
+	_expect(int(screen.catalogs.adventurer.progression.xp) == initial_xp and screen.character.ability_board.defensive == ["adventurer_guard"], "cancel spends nothing")
+	await _click(_control(screen, "upgrade.adventurer_guard"))
 	await _capture(screen, "xp-guard-upgrade-preview")
 	await _click(screen._purchase_confirm)
 	_expect(screen.character.ability_board.defensive == ["adventurer_guard_plus"], "Guard is replaced in its ability slot")
-	_expect(int(screen.catalogs.adventurer.progression.xp) == initial_xp - 35, "ability purchase charges XP")
+	_expect(screen._health() == 12 and int(screen.catalogs.adventurer.progression.xp) == initial_xp - 25, "ability upgrade preserves health and spends configured XP")
 	screen._tabs.current_tab = 1
 	screen._library_search.text = "Tip It"; screen._library_search.text_changed.emit("Tip It")
 	for frame in 4: await process_frame
@@ -41,27 +34,27 @@ func _run() -> void:
 	_expect("Health: 12 → 13" in _text(screen._purchase_details), "card purchase previews health increase")
 	await _click(screen._purchase_confirm)
 	_expect(screen._card_count("tip_it") == 1 and screen._health() == 13, "new card bought and equipped")
-	_expect(int(screen.catalogs.adventurer.progression.xp) == initial_xp - 45, "card purchase charged once")
+	_expect(int(screen.catalogs.adventurer.progression.xp) == initial_xp - 35, "card purchase charged once")
 	for width in [1024,1280,1920]:
 		root.size = Vector2i(width, 768 if width == 1024 else width * 9 / 16)
 		for frame in 6: await process_frame
 		_expect(screen._details.get_global_rect().end.x <= root.get_visible_rect().size.x - 20, "XP inspector fits viewport")
 		await _capture(screen, "xp-editor-%d" % width)
 	var response: Dictionary = runtime.character_catalogs("progression")
-	_expect(int(response.result.adventurer.progression.xp) == initial_xp - 45, "reloading does not grant more XP")
+	_expect(int(response.result.adventurer.progression.xp) == initial_xp - 35, "reloading does not grant more XP")
 	var purchased_deck: Array = screen.character.decklist.duplicate(true)
 	screen._mode_choice.select(0); screen._mode_choice.item_selected.emit(0)
 	for frame in 6: await process_frame
 	_expect(screen.character.decklist == purchased_deck, "Sandbox immediately shows purchased deck")
-	screen.inspect_entry("cards", "brace")
+	screen.inspect_entry("cards", "steady_guard")
 	for frame in 4: await process_frame
-	await _click(_control(screen, "add.brace"))
+	await _click(_control(screen, "add.steady_guard"))
 	await _click(screen._apply)
-	_expect(screen._card_count("brace") == 2, "free edit saves shared deck")
+	_expect(screen._card_count("steady_guard") == 4, "free edit saves shared deck")
 	await _capture(screen, "shared-deck-sandbox")
 	screen._mode_choice.select(1); screen._mode_choice.item_selected.emit(1)
 	for frame in 6: await process_frame
-	_expect(screen._card_count("tip_it") == 1 and screen._card_count("brace") == 2 and int(screen.catalogs.adventurer.progression.xp) == initial_xp - 45, "mode switching preserves purchases")
+	_expect(screen._card_count("tip_it") == 1 and screen._card_count("steady_guard") == 4 and int(screen.catalogs.adventurer.progression.xp) == initial_xp - 35, "mode switching preserves purchases")
 	await _capture(screen, "shared-deck-progression")
 	screen.queue_free(); await process_frame
 	var menu = MENU.instantiate(); root.add_child(menu)
@@ -85,7 +78,7 @@ func _run() -> void:
 	screen = SCREEN.new(); screen.loadout_mode = "progression"; root.add_child(screen)
 	for frame in 8: await process_frame
 	screen.inspect_entry("cards", "tip_it")
-	for attempt in 5:
+	for attempt in 6:
 		for frame in 3: await process_frame
 		await _click(_control(screen, "buy.tip_it")); await _click(screen._purchase_confirm)
 	_expect(int(screen.catalogs.adventurer.progression.xp) == 5 and _control(screen, "buy.tip_it").disabled, "insufficient XP disables purchase")

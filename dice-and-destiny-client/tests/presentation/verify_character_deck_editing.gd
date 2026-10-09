@@ -9,7 +9,7 @@ func _run() -> void:
 	var templates := JSON.stringify(screen.catalogs)
 	_expect(screen._tabs.current_tab == 1, "editor opens with deck and library together")
 	_expect(screen._library_pane.get_global_rect().end.x < screen._deck_pane.get_global_rect().position.x, "library starts left of deck")
-	_expect(screen._deck_buttons.size() == 7, "starter deck is visible beside library")
+	_expect(screen._deck_buttons.size() == 6, "starter deck is visible beside library")
 	# Independent scrolling, filters, and swapping must not change the draft.
 	var library_scroll: ScrollContainer = screen._library_list.get_parent()
 	var deck_scroll: ScrollContainer = screen._deck_list.get_parent()
@@ -37,24 +37,24 @@ func _run() -> void:
 	await _capture(screen, "split-deck-and-library")
 	await _click(screen._swap)
 	library_scroll.scroll_vertical = 0
-	screen._deck_search.text = "Brace"; screen._deck_search.text_changed.emit("Brace")
+	screen._deck_search.text = "offensive dice"; screen._deck_search.text_changed.emit("offensive dice")
 	for frame in 4: await process_frame
-	_expect(screen._deck_buttons.size() == 2, "deck filter finds both Brace versions")
+	_expect(screen._deck_buttons.size() == 2, "deck filter searches rules text and finds Nudge and Try Again")
 	screen._tabs.current_tab = 1
 	for frame in 4: await process_frame
 	_expect(screen._library_buttons.size() == screen._eligible_card_ids().size(), "library includes all cards allowed for the character type")
 	screen._library_search.text = "Tip It"; screen._library_search.text_changed.emit("Tip It")
 	for frame in 4: await process_frame
 	_expect(screen._library_buttons.size() == 1, "library search finds a card not in the starter deck")
-	_expect(screen._deck_buttons.size() == 2 and screen._deck_search.text == "Brace", "library filter preserves deck filter")
+	_expect(screen._deck_buttons.size() == 2 and screen._deck_search.text == "offensive dice", "library filter preserves deck filter")
 	await _click(screen._deck_buttons[0])
-	_expect(screen.selected_id == "brace", "deck rows open shared inspector")
+	_expect(screen.selected_id == "nudge", "deck rows open shared inspector")
 	await _click(screen._library_buttons[0])
 	_expect(screen.selected_id == "tip_it" and screen._card_count("tip_it") == 0, "new card inspection")
 	await _click(_control(screen, "add.tip_it"))
 	_expect(screen._card_count("tip_it") == 1 and screen._health() == 13, "Add updates deck and health")
 	_expect("13  HEALTH" in _text(screen._summary), "health summary updates immediately")
-	_expect(screen._deck_search.text == "Brace", "editing preserves deck filter")
+	_expect(screen._deck_search.text == "offensive dice", "editing preserves deck filter")
 	screen._deck_search.text = "Tip It"; screen._deck_search.text_changed.emit("Tip It")
 	for frame in 4: await process_frame
 	_expect(screen._deck_buttons.size() == 1 and "×1" in _text(screen._deck_buttons[0]), "added card immediately appears in deck")
@@ -78,14 +78,14 @@ func _run() -> void:
 	await _click(screen._apply)
 	_expect(not screen._dirty("adventurer") and screen._apply.disabled, "Apply saves and clears dirty state")
 	var response: Dictionary = runtime.character_catalogs()
-	_expect(response.result.adventurer.get("owned_decklist", []).size() == 8, "native persisted newly added card")
+	_expect(response.result.adventurer.get("owned_decklist", []).size() == 7, "native persisted newly added card")
 	await _click(_control(screen, "add.tip_it"))
 	await _click(screen._revert)
 	_expect(screen._card_count("tip_it") == 3, "Revert restores saved deck")
 	await _click(screen._reset)
 	_expect(screen._health() == 12 and screen._dirty("adventurer"), "Reset changes only draft")
 	response = runtime.character_catalogs()
-	_expect(response.result.adventurer.get("owned_decklist", []).size() == 8, "Reset does not silently save")
+	_expect(response.result.adventurer.get("owned_decklist", []).size() == 7, "Reset does not silently save")
 	await _click(screen._revert)
 	for width in [1024, 1280, 1920]:
 		root.size = Vector2i(width, 768 if width == 1024 else width * 9 / 16)

@@ -2611,8 +2611,8 @@ func (e Engine) playSettledCard(battle *state.Battle, library content.BattleLibr
 		moveCard(&actor.Cards, instanceID, operation.ZoneHand, operation.CardZone(definition.Play.Destination))
 		battle.Actors[actorID] = actor
 	}
-	// Effects resolve before the play destination. A saved Brace still pays its
-	// normal discard; publish that live destination for saved-card feedback.
+	// Effects resolve before the play destination. A prevention card that saves
+	// itself still pays its normal discard; publish that live destination for saved-card feedback.
 	if batch := battle.Settled.PendingDamage; batch != nil {
 		for i := range batch.Removals {
 			r := &batch.Removals[i]

@@ -24,7 +24,7 @@ func TestSharedDeckEditsTradesAndBudgets(t *testing.T) {
 	// Both positive and negative free allocations compose with admin budgets.
 	for _, copies := range []int{20, 1, 4} {
 		old := p
-		deck := []loadout.Entry{{CardID: "brace_plus", Count: copies}}
+		deck := []loadout.Entry{{CardID: "steady_guard", Count: copies}}
 		if _, err = loadout.WriteSharedDeck(dir, "adventurer", deck, e, lib); err != nil {
 			t.Fatal(err)
 		}
@@ -32,14 +32,14 @@ func TestSharedDeckEditsTradesAndBudgets(t *testing.T) {
 		if err != nil || p.XP != old.XP || !reflect.DeepEqual(p.Deck, deck) {
 			t.Fatalf("free edit: %+v %v", p, err)
 		}
-		if _, err = loadout.Buy(dir, "adventurer", e, lib, loadout.Purchase{Kind: "buy_card", ID: "brace", Revision: old.Revision, ExpectedCost: 10}); err == nil {
+		if _, err = loadout.Buy(dir, "adventurer", e, lib, loadout.Purchase{Kind: "buy_card", ID: "steady_guard", Revision: old.Revision, ExpectedCost: 10}); err == nil {
 			t.Fatal("pre-edit quote accepted")
 		}
 		_, _, admin, err := loadout.ProgressSnapshot(dir, e, catalogs)
 		if err != nil {
 			t.Fatal(err)
 		}
-		admin.Budgets = map[string]int{"adventurer": copies*20 + 50}
+		admin.Budgets = map[string]int{"adventurer": copies*10 + 50}
 		if err = loadout.SaveAdmin(dir, e, catalogs, admin); err != nil {
 			t.Fatal(err)
 		}
@@ -47,8 +47,8 @@ func TestSharedDeckEditsTradesAndBudgets(t *testing.T) {
 		if err != nil || p.XP != 50 {
 			t.Fatalf("admin total applied twice: %+v %v", p, err)
 		}
-		p, err = loadout.Buy(dir, "adventurer", e, lib, loadout.Purchase{Kind: "sell_card", ID: "brace_plus", Revision: p.Revision, ExpectedCost: 20})
-		if err != nil || p.XP != 70 {
+		p, err = loadout.Buy(dir, "adventurer", e, lib, loadout.Purchase{Kind: "sell_card", ID: "steady_guard", Revision: p.Revision, ExpectedCost: 10})
+		if err != nil || p.XP != 60 {
 			t.Fatalf("sale: %+v %v", p, err)
 		}
 		again, err := loadout.ReadProgress(dir, "adventurer", e, lib)
@@ -88,7 +88,7 @@ func TestSharedDeckMigration(t *testing.T) {
 	catalogs, _ := CharacterCatalogs(contentRoot)
 	e, _ := loadout.LoadEconomy(contentRoot, catalogs)
 	lib := catalogs["adventurer"]
-	for _, scenario := range []string{"old-starter", "custom-progression", "newer-sandbox", "newer-progression"} {
+	for _, scenario := range []string{"custom-progression", "newer-sandbox", "newer-progression"} {
 		t.Run(scenario, func(t *testing.T) {
 			dir := t.TempDir()
 			p, err := loadout.ReadProgress(dir, "adventurer", e, lib)
@@ -96,7 +96,7 @@ func TestSharedDeckMigration(t *testing.T) {
 				t.Fatal(err)
 			}
 			p.SharedDeck = false
-			p.Deck = []loadout.Entry{{CardID: "brace", Count: 3}, {CardID: "nudge", Count: 2}, {CardID: "try_again", Count: 2}, {CardID: "strong_swing", Count: 2}, {CardID: "take_stock", Count: 2}, {CardID: "second_wind", Count: 1}}
+			p.Deck = []loadout.Entry{{CardID: "steady_guard", Count: 3}, {CardID: "nudge", Count: 2}, {CardID: "try_again", Count: 2}, {CardID: "strong_swing", Count: 2}, {CardID: "take_stock", Count: 2}, {CardID: "second_wind", Count: 1}}
 			p.DeckValue = 120
 			budget := 220
 			p.Budget = &budget
@@ -115,7 +115,7 @@ func TestSharedDeckMigration(t *testing.T) {
 				t.Fatal(err)
 			}
 			if scenario == "newer-sandbox" || scenario == "newer-progression" {
-				if _, err = loadout.Write(dir, "adventurer", []loadout.Entry{{CardID: "brace_plus", Count: 2}}, lib.Cards); err != nil {
+				if _, err = loadout.Write(dir, "adventurer", []loadout.Entry{{CardID: "emergency_ward", Count: 2}}, lib.Cards); err != nil {
 					t.Fatal(err)
 				}
 				a, b := time.Unix(100, 0), time.Unix(200, 0)
@@ -130,12 +130,8 @@ func TestSharedDeckMigration(t *testing.T) {
 				t.Fatalf("migration: %+v %v", migrated, err)
 			}
 			switch scenario {
-			case "old-starter":
-				if countProgress(migrated.Deck, "brace") != 2 || countProgress(migrated.Deck, "brace_plus") != 1 || *migrated.Budget != 230 {
-					t.Fatal("starter downgrade not repaired")
-				}
 			case "newer-sandbox":
-				if len(migrated.Deck) != 1 || countProgress(migrated.Deck, "brace_plus") != 2 {
+				if len(migrated.Deck) != 1 || countProgress(migrated.Deck, "emergency_ward") != 2 {
 					t.Fatal("newer sandbox lost")
 				}
 			default:
@@ -144,7 +140,7 @@ func TestSharedDeckMigration(t *testing.T) {
 				}
 			}
 			// Old files are archival after migration, never a second source of truth.
-			loadout.Write(dir, "adventurer", []loadout.Entry{{CardID: "brace", Count: 1}}, lib.Cards)
+			loadout.Write(dir, "adventurer", []loadout.Entry{{CardID: "steady_guard", Count: 1}}, lib.Cards)
 			again, err := loadout.ReadProgress(dir, "adventurer", e, lib)
 			if err != nil || !reflect.DeepEqual(again, migrated) {
 				t.Fatalf("migration repeated: %+v %v", again, err)

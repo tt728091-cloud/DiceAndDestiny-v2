@@ -53,7 +53,7 @@ func _targeting(size: Vector2i) -> void:
 	for die in [3, 4]: fixture.legal_actions.append(_program_start("reroll-test", {"kind": "offensive_die", "actor": "blade", "die": die, "label": "Adventurer · die %d" % (die + 1)}))
 	var recorder := Recorder.new(); var screen = _screen(fixture, recorder)
 	for frame in 5: await process_frame
-	for id in ["brace", "nudge", "try_again", "strong_swing", "take_stock", "second_wind"]:
+	for id in ["steady_guard", "nudge", "try_again", "strong_swing", "take_stock", "second_wind"]:
 		var card := BattleCard.new(); screen._root.add_child(card); card.configure(id, id, true)
 		_expect(not BattlePresentationCatalog.card(id).text.is_empty() and not card._effect_plaque.find_child("EffectSummary", true, false).text.is_empty(), id + " has shared card rules and effect text")
 		card.queue_free()

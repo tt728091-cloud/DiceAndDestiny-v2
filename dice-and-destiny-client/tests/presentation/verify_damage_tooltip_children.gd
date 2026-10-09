@@ -58,7 +58,7 @@ func _run() -> void:
 	root.push_input(motion, true); await process_frame; grid._update_hover()
 	_expect(grid.hovered_id == cards[0].instance_id and is_instance_valid(grid._hover_card), "full card preview still opens")
 	var feedback := FEEDBACK.new(); screen._root.add_child(feedback)
-	feedback.configure({"source_id": "incoming", "started_ms": Time.get_ticks_msec(), "instance_id": "played", "card_id": "brace", "actor_id": "blade", "before": 4, "after": 3, "saved": [], "pending": pending}, screen)
+	feedback.configure({"source_id": "incoming", "started_ms": Time.get_ticks_msec(), "instance_id": "played", "card_id": "steady_guard", "actor_id": "blade", "before": 4, "after": 3, "saved": [], "pending": pending}, screen)
 	feedback.set_process(false)
 	feedback.present_progress(1.0)
 	_expect(grid in feedback._hidden_grids and grid.modulate.a == 0, "pending-card feedback matches cards despite popup child")

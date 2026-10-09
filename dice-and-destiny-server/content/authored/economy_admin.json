@@ -1,8 +1,6 @@
 {
   "revision": 0,
-  "card_prices": {
-    "brace": 10
-  },
+  "card_prices": {},
   "card_types": {},
   "ability_types": {},
   "character_types": {}

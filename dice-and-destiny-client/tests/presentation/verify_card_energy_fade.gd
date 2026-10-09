@@ -10,7 +10,7 @@ func _run() -> void:
 	var base: Dictionary = gateway.start_battle("energy-fade", 43)
 	for width in [1280, 1920]:
 		root.size = Vector2i(width, width * 9 / 16)
-		for scenario in [["take_stock", "offensive", 3, 2, 1], ["nudge", "offensive", 2, 0, 2], ["brace", "defensive", 3, 2, 1], ["second_wind", "offensive", 3, 5, 0], ["battle_focus", "offensive", 3, 4, 1], ["brace", "defensive", 0, 0, 0]]:
+		for scenario in [["take_stock", "offensive", 3, 2, 1], ["nudge", "offensive", 2, 0, 2], ["steady_guard", "defensive", 3, 2, 1], ["second_wind", "offensive", 3, 5, 0], ["battle_focus", "offensive", 3, 4, 1], ["steady_guard", "defensive", 0, 0, 0]]:
 			await _scenario(base, scenario)
 	print("CARD ENERGY FADE: " + ("FAILED" if failed else "PASSED")); quit(1 if failed else 0)
 func _scenario(base: Dictionary, values: Array) -> void:

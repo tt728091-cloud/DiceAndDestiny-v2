@@ -367,15 +367,15 @@ func TestProgramPreventionDestinations(t *testing.T) {
 				t.Run(fmt.Sprintf("%v/%s/%s", unified, dest, zone), func(t *testing.T) {
 					b, lib := adventurerFixture(t)
 					b.Settled.UnifiedDefense = unified
-					card, _ := content.EditableGeneralCard(lib.Cards["brace"])
-					card.ID = "configured_brace"
-					card.Name = "Configured Brace"
+					card, _ := content.EditableGeneralCard(lib.Cards["steady_guard"])
+					card.ID = "configured_guard"
+					card.Name = "Configured Guard"
 					card.Program.Steps[0].Params["amount"] = 3
 					card.Program.Steps[0].Params["destination"] = dest
 					lib.Cards[card.ID] = card
 					giveGeneralCard(&b, card.ID)
 					b.SettledCatalog, _ = json.Marshal(lib)
-					id := "configured_brace-test"
+					id := "configured_guard-test"
 					for key, inst := range b.Settled.Actors["player"].CardInstances {
 						if inst.DefinitionID == card.ID {
 							id = key
@@ -586,7 +586,7 @@ func TestProgramSacrificeReservedCardCommitsOnce(t *testing.T) {
 	s.Target.Mode = "exact"
 	s.Target.Count = 1
 	s.Target.Zones = []string{"hand"}
-	c, _ := content.EditableGeneralCard(lib.Cards["brace"])
+	c, _ := content.EditableGeneralCard(lib.Cards["steady_guard"])
 	c.ID = "sacrificial_ward"
 	c.Program.Steps = []content.CardStep{s, selfStep("energy", map[string]any{"amount": 4})}
 	c = content.PrepareProgramCard(c, &lib)

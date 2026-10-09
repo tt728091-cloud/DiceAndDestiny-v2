@@ -11,7 +11,7 @@ import (
 func templateDeck(lib content.BattleLibrary, character string) []Entry {
 	var deck []Entry
 	for _, entry := range lib.Combatants[character].Decklist {
-		deck = append(deck, Entry{entry.CardID, entry.Count})
+		deck = append(deck, Entry{CardID: entry.CardID, Count: entry.Count})
 	}
 	return deck
 }
@@ -58,12 +58,6 @@ func migrateSharedDeck(root string, p *Progress, e Economy, lib content.BattleLi
 		// Retain the most recently saved deck when both old modes were customized.
 		if a.ModTime().After(b.ModTime()) && !sameDeck(deck, p.Deck) {
 			replaceDeck(p, deck, e)
-		}
-	} else if p.Character == "adventurer" {
-		// The retired progression starter downgraded the template's Brace+.
-		old := []Entry{{"brace", 3}, {"nudge", 2}, {"try_again", 2}, {"strong_swing", 2}, {"take_stock", 2}, {"second_wind", 1}}
-		if sameDeck(p.Deck, old) {
-			replaceDeck(p, templateDeck(lib, p.Character), e)
 		}
 	}
 	p.SharedDeck = true

@@ -51,7 +51,7 @@ func TestCharacterCatalogMatchesBattleConfiguration(t *testing.T) {
 	}
 	adventurer := result["result"].(map[string]any)["adventurer"].(map[string]any)["combatants"].(map[string]any)["adventurer"].(map[string]any)
 	entry := adventurer["decklist"].([]any)[0].(map[string]any)
-	if entry["card_id"] != "brace" || entry["count"] != float64(2) {
+	if entry["card_id"] != "steady_guard" || entry["count"] != float64(3) {
 		t.Fatalf("incorrect client loadout schema: %v", entry)
 	}
 	learnedRuntime.Lock()

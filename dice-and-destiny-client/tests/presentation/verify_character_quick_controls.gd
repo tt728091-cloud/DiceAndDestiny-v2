@@ -23,12 +23,12 @@ func _run() -> void:
 	var screen = SCREEN.new(); root.add_child(screen)
 	for frame in 8: await process_frame
 	# Sandbox: quick buttons change one copy without moving the inspector.
-	screen.inspect_entry("cards", "brace")
+	screen.inspect_entry("cards", "steady_guard")
 	for frame in 4: await process_frame
-	var brace: int = screen._card_count("brace"); var nudge: int = screen._card_count("nudge"); var health: int = screen._health()
+	var guard: int = screen._card_count("steady_guard"); var nudge: int = screen._card_count("nudge"); var health: int = screen._health()
 	await _visible_click("quick_add.deck.nudge", screen)
 	_expect(screen._card_count("nudge") == nudge + 1 and screen._health() == health + 1, "deck row + adds one copy")
-	_expect(screen.selected_id == "brace" and int(screen._quantity.value) == brace, "inspector keeps the inspected card's count")
+	_expect(screen.selected_id == "steady_guard" and int(screen._quantity.value) == guard, "inspector keeps the inspected card's count")
 	await _visible_click("quick_remove.library.nudge", screen)
 	_expect(screen._card_count("nudge") == nudge and not screen._dirty("adventurer"), "library row − removes it again")
 	_expect(_control(screen, "quick_remove.library.tip_it").disabled, "− is disabled at zero copies")
@@ -48,14 +48,14 @@ func _run() -> void:
 	# Progression: + and − go through the usual buy and sell review.
 	screen = SCREEN.new(); screen.loadout_mode = "progression"; root.add_child(screen)
 	for frame in 8: await process_frame
-	var xp := int(screen.catalogs.adventurer.progression.xp); var copies: int = screen._card_count("brace"); var price: int = screen._card_price("brace")
-	await _visible_click("quick_add.deck.brace", screen)
+	var xp := int(screen.catalogs.adventurer.progression.xp); var copies: int = screen._card_count("steady_guard"); var price: int = screen._card_price("steady_guard")
+	await _visible_click("quick_add.deck.steady_guard", screen)
 	_expect(screen._purchase_overlay.visible, "+ opens the buy review")
 	await _click(screen._purchase_confirm)
-	_expect(screen._card_count("brace") == copies + 1 and int(screen.catalogs.adventurer.progression.xp) == xp - price, "+ buys exactly one copy")
-	await _visible_click("quick_remove.deck.brace", screen)
+	_expect(screen._card_count("steady_guard") == copies + 1 and int(screen.catalogs.adventurer.progression.xp) == xp - price, "+ buys exactly one copy")
+	await _visible_click("quick_remove.deck.steady_guard", screen)
 	_expect(screen._purchase_overlay.visible, "− opens the sale review")
 	await _click(screen._purchase_confirm)
-	_expect(screen._card_count("brace") == copies and int(screen.catalogs.adventurer.progression.xp) == xp, "− sells exactly one copy")
+	_expect(screen._card_count("steady_guard") == copies and int(screen.catalogs.adventurer.progression.xp) == xp, "− sells exactly one copy")
 	screen.queue_free(); await process_frame
 	print("CHARACTER QUICK CONTROLS: " + ("FAILED" if failed else "PASSED")); quit(1 if failed else 0)

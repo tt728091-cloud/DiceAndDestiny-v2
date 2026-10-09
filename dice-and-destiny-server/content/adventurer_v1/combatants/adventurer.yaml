@@ -18,12 +18,8 @@
   },
   "decklist": [
     {
-      "card_id": "brace",
-      "count": 2
-    },
-    {
-      "card_id": "brace_plus",
-      "count": 1
+      "card_id": "steady_guard",
+      "count": 3
     },
     {
       "card_id": "nudge",

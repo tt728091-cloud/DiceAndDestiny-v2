@@ -27,7 +27,7 @@ func TestOwnedDeckPersistenceAndValidation(t *testing.T) {
 		}
 		return response
 	}
-	original := []loadout.Entry{{CardID: "brace", Count: 2}, {CardID: "tip_it", Count: 3}}
+	original := []loadout.Entry{{CardID: "steady_guard", Count: 2}, {CardID: "tip_it", Count: 3}}
 	if result := call("save_character_deck", "adventurer", original); result["ok"] != true {
 		t.Fatal(result)
 	}
@@ -37,9 +37,9 @@ func TestOwnedDeckPersistenceAndValidation(t *testing.T) {
 	}
 	before, _ := os.ReadFile(filepath.Join(dir, "progression", "adventurer.json"))
 	for _, deck := range []any{
-		[]loadout.Entry{}, []loadout.Entry{{CardID: "missing", Count: 1}}, []loadout.Entry{{CardID: "brace", Count: -1}}, []loadout.Entry{{CardID: "brace", Count: 0}}, []loadout.Entry{{CardID: "brace", Count: 21}}, []loadout.Entry{{CardID: "brace", Count: 1}, {CardID: "brace", Count: 2}},
-		[]map[string]any{{"card_id": "brace", "count": 1.5}},
-		[]loadout.Entry{{CardID: "brace", Count: 20}, {CardID: "brace_plus", Count: 20}, {CardID: "nudge", Count: 20}, {CardID: "try_again", Count: 20}, {CardID: "strong_swing", Count: 20}, {CardID: "take_stock", Count: 1}},
+		[]loadout.Entry{}, []loadout.Entry{{CardID: "missing", Count: 1}}, []loadout.Entry{{CardID: "steady_guard", Count: -1}}, []loadout.Entry{{CardID: "steady_guard", Count: 0}}, []loadout.Entry{{CardID: "steady_guard", Count: 21}}, []loadout.Entry{{CardID: "steady_guard", Count: 1}, {CardID: "steady_guard", Count: 2}},
+		[]map[string]any{{"card_id": "steady_guard", "count": 1.5}},
+		[]loadout.Entry{{CardID: "steady_guard", Count: 20}, {CardID: "emergency_ward", Count: 20}, {CardID: "nudge", Count: 20}, {CardID: "try_again", Count: 20}, {CardID: "strong_swing", Count: 20}, {CardID: "take_stock", Count: 1}},
 	} {
 		if response := call("save_character_deck", "adventurer", deck); response["ok"] != false {
 			t.Fatalf("accepted invalid deck: %v", response)
@@ -60,7 +60,7 @@ func TestOwnedDeckPersistenceAndValidation(t *testing.T) {
 		t.Fatal("character decks not isolated")
 	}
 	template := adv["combatants"].(map[string]any)["adventurer"].(map[string]any)["decklist"].([]any)
-	if len(template) != 7 {
+	if len(template) != 6 {
 		t.Fatal("template changed")
 	}
 	if err := os.WriteFile(filepath.Join(dir, "progression", "adventurer.json"), []byte("broken"), 0600); err != nil {

@@ -30,7 +30,7 @@ func _run() -> void:
 		for count in [1, 6, 10]:
 			var fan = FAN.new(); stage.add_child(fan); fan.position = Vector2(475, 790); fan.size = Vector2(965, 290)
 			for i in count:
-				var card := BattleCard.new(); card.configure("hand-" + str(i), ["brace", "strong_swing", "nudge", "try_again", "take_stock", "brace_plus"][i % 6], true); fan.add_card(card)
+				var card := BattleCard.new(); card.configure("hand-" + str(i), ["steady_guard", "strong_swing", "nudge", "try_again", "take_stock", "emergency_ward"][i % 6], true); fan.add_card(card)
 				card.pressed.connect(func(): clicked = i)
 			for frame in 6: await process_frame
 			await _move(fan.get_global_transform_with_canvas() * Vector2(480, 15))

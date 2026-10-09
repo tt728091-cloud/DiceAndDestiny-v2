@@ -31,10 +31,10 @@ func _choices(id: String) -> Array:
 		"turn_the_die": return [{"kind": "offensive_die", "actor": "blade", "die": 0, "face": 6, "label": "Adventurer · die 1 → 6"}, {"kind": "offensive_die", "actor": "blade", "die": 1, "face": 5, "label": "Adventurer · die 2 → 5"}]
 		"disrupt": return [{"kind": "offensive_die", "actor": "goblin", "die": 0, "label": "Brine Mask · die 1 (6)"}, {"kind": "offensive_die", "actor": "goblin", "die": 1, "label": "Brine Mask · die 2 (6)"}]
 		"second_guard": return [{"kind": "defensive_die", "actor": "blade", "die": 0, "label": "Adventurer · die 1 (2)"}, {"kind": "defensive_die", "actor": "blade", "die": 1, "label": "Adventurer · die 2 (3)"}]
-		"reclaim": return [{"kind": "card", "actor": "blade", "card": "nudge-x", "label": "Nudge"}, {"kind": "card", "actor": "blade", "card": "brace-x", "label": "Brace"}]
+		"reclaim": return [{"kind": "card", "actor": "blade", "card": "nudge-x", "label": "Nudge"}, {"kind": "card", "actor": "blade", "card": "steady_guard-x", "label": "Steady Guard"}]
 		"reinforce": return [{"kind": "option", "option": 0, "label": "Prevent 2 damage · 1 energy"}, {"kind": "option", "option": 1, "label": "Prevent 4 damage · 2 energy"}]
 		"dispel": return [{"kind": "status", "actor": "goblin", "status": "protect", "label": "Brine Mask · Protect (2)"}, {"kind": "status", "actor": "goblin", "status": "catalyst", "label": "Brine Mask · Catalyst (1)"}]
-		"triage": return [{"kind": "threatened_card", "actor": "blade", "card": "nudge-x", "source": "incoming", "label": "Save Nudge from Brine Mask · Brine Lash"}, {"kind": "threatened_card", "actor": "blade", "card": "brace-x", "source": "incoming", "label": "Save Brace from Brine Mask · Brine Lash"}]
+		"triage": return [{"kind": "threatened_card", "actor": "blade", "card": "nudge-x", "source": "incoming", "label": "Save Nudge from Brine Mask · Brine Lash"}, {"kind": "threatened_card", "actor": "blade", "card": "steady_guard-x", "source": "incoming", "label": "Save Steady Guard from Brine Mask · Brine Lash"}]
 	return []
 
 func _scenario(id: String, multiple: bool = false) -> void:

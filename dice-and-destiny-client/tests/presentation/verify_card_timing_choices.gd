@@ -17,7 +17,7 @@ func _run() -> void:
 	_expect(["before", "after", "any"].all(func(c): return _option_disabled(defense, c)), "offensive die effects have no Defense timing")
 	var offense_reaction: CheckBox = _node(ui, "timing.offense.reaction")
 	_expect(not offense_reaction.button_pressed and not offense_reaction.disabled and offense_reaction.tooltip_text.contains("pauses"), "reaction moment is an explained opt-in, off by default")
-	_pick_template(ui, "brace"); ui._load_template(); ui._clone_template()
+	_pick_template(ui, "steady_guard"); ui._load_template(); ui._clone_template()
 	_line_edit(ui, "id", "early_guard"); _line_edit(ui, "name", "Early Guard")
 	ui._tabs.current_tab = 0; await _frames()
 	offense = _node(ui, "timing.offense"); defense = _node(ui, "timing.defense")

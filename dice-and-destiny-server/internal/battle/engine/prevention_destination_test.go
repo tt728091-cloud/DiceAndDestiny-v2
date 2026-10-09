@@ -11,12 +11,12 @@ import (
 	"diceanddestiny/server/internal/battle/state"
 )
 
-func TestUpgradedBraceRetainsSavedCardsFromEveryZone(t *testing.T) {
+func TestBulwarkRetainsSavedCardsFromEveryZone(t *testing.T) {
 	for _, zone := range []operation.CardZone{operation.ZoneDeck, operation.ZoneHand, operation.ZoneDiscard} {
 		t.Run(string(zone), func(t *testing.T) {
 			b, lib := adventurerFixture(t)
 			a := b.Actors["player"]
-			a.Cards = state.CardZones{Hand: []string{"brace_plus-0"}, Removed: []string{"old-loss"}}
+			a.Cards = state.CardZones{Hand: []string{"guard_bulwark-0"}, Removed: []string{"old-loss"}}
 			setZone(&a.Cards, zone, append(zoneCards(a.Cards, zone), "nudge-0", "nudge-1", "strong_swing-0", "strong_swing-1"))
 			b.Actors["player"] = a
 			b.Segment.Current = segment.DamageResolution
@@ -28,7 +28,7 @@ func TestUpgradedBraceRetainsSavedCardsFromEveryZone(t *testing.T) {
 			b.Settled.PendingDamage = batch
 			openSettledWindow(&b, "damage", stageDamageReact, "damage_response", []command.Type{command.TypeCommitInteraction, command.TypePass})
 			e := NewEngine()
-			if err := playProgramCard(e, &b, lib, "player", "brace_plus-0", func(c programChoice) bool { return c.Source == "hit" }); err != nil {
+			if err := playProgramCard(e, &b, lib, "player", "guard_bulwark-0", func(c programChoice) bool { return c.Source == "hit" }); err != nil {
 				t.Fatal(err)
 			}
 			if b.Actors["player"].CurrentHealth() != 5 || batch.Sources[0].FinalAmount != 1 {
@@ -58,9 +58,9 @@ func TestUpgradedBraceRetainsSavedCardsFromEveryZone(t *testing.T) {
 			a = b.Actors["player"]
 			savedPileCount := 3
 			if zone == operation.ZoneDiscard {
-				savedPileCount++ // Includes the played Brace.
+				savedPileCount++ // Includes the played Bulwark.
 			}
-			if a.CurrentHealth() != 4 || !containsString(a.Cards.Discard, "brace_plus-0") || len(zoneCards(a.Cards, zone)) != savedPileCount || !reflect.DeepEqual(a.Cards.Removed, []string{"old-loss", "nudge-0"}) {
+			if a.CurrentHealth() != 4 || !containsString(a.Cards.Discard, "guard_bulwark-0") || len(zoneCards(a.Cards, zone)) != savedPileCount || !reflect.DeepEqual(a.Cards.Removed, []string{"old-loss", "nudge-0"}) {
 				t.Fatalf("commit must remove only unsaved damage: %+v", a.Cards)
 			}
 		})
@@ -100,10 +100,10 @@ func TestProtectDiscardsOnlyActualSavedCardsAfterOverage(t *testing.T) {
 	}
 }
 
-func TestUpgradedBraceCanSaveItselfWithoutDuplicatingOrRedrawing(t *testing.T) {
+func TestBulwarkCanSaveItselfWithoutDuplicatingOrRedrawing(t *testing.T) {
 	b, lib := adventurerFixture(t)
 	a := b.Actors["player"]
-	a.Cards = state.CardZones{Hand: []string{"brace_plus-0", "nudge-0"}}
+	a.Cards = state.CardZones{Hand: []string{"guard_bulwark-0", "nudge-0"}}
 	b.Actors["player"] = a
 	b.Segment.Current = segment.DamageResolution
 	b.Settled.Stage = stageDamageReact
@@ -114,12 +114,12 @@ func TestUpgradedBraceCanSaveItselfWithoutDuplicatingOrRedrawing(t *testing.T) {
 	}
 	b.Settled.PendingDamage = batch
 	openSettledWindow(&b, "damage", stageDamageReact, "damage_response", []command.Type{command.TypeCommitInteraction, command.TypePass})
-	if err := playProgramCard(e, &b, lib, "player", "brace_plus-0", func(c programChoice) bool { return c.Source == "hit" }); err != nil {
+	if err := playProgramCard(e, &b, lib, "player", "guard_bulwark-0", func(c programChoice) bool { return c.Source == "hit" }); err != nil {
 		t.Fatal(err)
 	}
 	for _, r := range batch.Removals {
 		want := operation.ZoneHand
-		if r.CardID == "brace_plus-0" {
+		if r.CardID == "guard_bulwark-0" {
 			want = operation.ZoneDiscard
 		}
 		if !r.Released || r.ReleasedDestination != want {
@@ -130,15 +130,15 @@ func TestUpgradedBraceCanSaveItselfWithoutDuplicatingOrRedrawing(t *testing.T) {
 		t.Fatal(err)
 	}
 	a = b.Actors["player"]
-	if a.CurrentHealth() != 2 || !reflect.DeepEqual(a.Cards.Discard, []string{"brace_plus-0"}) || !reflect.DeepEqual(a.Cards.Hand, []string{"nudge-0"}) || len(a.Cards.Removed) != 0 {
-		t.Fatalf("played Brace must be discarded and saved Nudge must remain in hand: %+v", a.Cards)
+	if a.CurrentHealth() != 2 || !reflect.DeepEqual(a.Cards.Discard, []string{"guard_bulwark-0"}) || !reflect.DeepEqual(a.Cards.Hand, []string{"nudge-0"}) || len(a.Cards.Removed) != 0 {
+		t.Fatalf("played Bulwark must be discarded and saved Nudge must remain in hand: %+v", a.Cards)
 	}
 	if drawn, err := e.drawSettledCard(&b, "player", "card_draw"); err != nil || drawn != "" {
 		t.Fatalf("saved cards were redrawn: %q, %v", drawn, err)
 	}
 }
 
-func TestUnifiedUpgradedBraceRetainsPilesAndDoesNotUndoItsPlay(t *testing.T) {
+func TestUnifiedBulwarkRetainsPilesAndDoesNotUndoItsPlay(t *testing.T) {
 	for _, separateSource := range []bool{false, true} {
 		t.Run(map[bool]string{false: "saves_itself", true: "protects_other_source"}[separateSource], func(t *testing.T) {
 			b, lib := adventurerFixture(t)
@@ -146,13 +146,13 @@ func TestUnifiedUpgradedBraceRetainsPilesAndDoesNotUndoItsPlay(t *testing.T) {
 			b.Segment.Current = segment.Defensive
 			b.Settled.Stage = stageDefenseSelect
 			a := b.Actors["player"]
-			a.Cards = state.CardZones{Hand: []string{"brace_plus-0", "nudge-0"}, Deck: []string{"nudge-1"}, Discard: []string{"strong_swing-0"}}
+			a.Cards = state.CardZones{Hand: []string{"guard_bulwark-0", "nudge-0"}, Deck: []string{"nudge-1"}, Discard: []string{"strong_swing-0"}}
 			b.Actors["player"] = a
 			batch := &state.SettledDamageBatch{ID: "mixed", Sources: []state.SettledDamageSource{{ID: "hit", SourceActorID: "enemy", TargetActorID: "player", BaseAmount: 4}}}
 			for _, zone := range []operation.CardZone{operation.ZoneDiscard, operation.ZoneDeck, operation.ZoneHand} {
 				for _, id := range zoneCards(a.Cards, zone) {
 					source := "hit"
-					if separateSource && id == "brace_plus-0" {
+					if separateSource && id == "guard_bulwark-0" {
 						source = "other"
 					}
 					batch.Removals = append(batch.Removals, state.ProposedCardRemoval{ID: id, CardID: id, TargetActorID: "player", OriginalZone: zone, Accepted: true, Revealed: true, DamageProposalIDs: []string{source}})
@@ -165,20 +165,20 @@ func TestUnifiedUpgradedBraceRetainsPilesAndDoesNotUndoItsPlay(t *testing.T) {
 			b.Settled.PendingDamage = batch
 			openSettledWindow(&b, "defense", stageDefenseSelect, "defense_selection", []command.Type{command.TypeCommitInteraction, command.TypePass})
 			e := NewEngine()
-			if err := playProgramCard(e, &b, lib, "player", "brace_plus-0", func(c programChoice) bool { return c.Source == "hit" }); err != nil {
+			if err := playProgramCard(e, &b, lib, "player", "guard_bulwark-0", func(c programChoice) bool { return c.Source == "hit" }); err != nil {
 				t.Fatal(err)
 			}
 			for _, r := range batch.Removals {
 				if r.Released && r.ReleasedDestination != currentRemovalZone(&b, r) {
 					t.Fatalf("incorrect saved-card destination: %+v", r)
 				}
-				if separateSource && r.CardID == "brace_plus-0" && (!r.Accepted || r.Released) {
-					t.Fatal("protecting one source also protected Brace from another source")
+				if separateSource && r.CardID == "guard_bulwark-0" && (!r.Accepted || r.Released) {
+					t.Fatal("protecting one source also protected Bulwark from another source")
 				}
 			}
-			expected := state.CardZones{Hand: []string{"nudge-0"}, Deck: []string{"nudge-1"}, Discard: []string{"strong_swing-0", "brace_plus-0"}}
+			expected := state.CardZones{Hand: []string{"nudge-0"}, Deck: []string{"nudge-1"}, Discard: []string{"strong_swing-0", "guard_bulwark-0"}}
 			if !reflect.DeepEqual(b.Actors["player"].Cards, expected) {
-				t.Fatalf("prevention moved cards or undid Brace play: %+v", b.Actors["player"].Cards)
+				t.Fatalf("prevention moved cards or undid Bulwark play: %+v", b.Actors["player"].Cards)
 			}
 			if err := e.reconcileUnifiedDamage(&b, true); err != nil {
 				t.Fatal(err)
@@ -189,7 +189,7 @@ func TestUnifiedUpgradedBraceRetainsPilesAndDoesNotUndoItsPlay(t *testing.T) {
 			a = b.Actors["player"]
 			lost := "strong_swing-0"
 			if separateSource {
-				lost = "brace_plus-0"
+				lost = "guard_bulwark-0"
 			}
 			if a.CurrentHealth() != 3 || !reflect.DeepEqual(a.Cards.Removed, []string{lost}) || !reflect.DeepEqual(a.Cards.Hand, []string{"nudge-0"}) || !reflect.DeepEqual(a.Cards.Deck, []string{"nudge-1"}) {
 				t.Fatalf("only unprotected source cards may be removed: %+v", a.Cards)

@@ -12,23 +12,43 @@ func _run() -> void:
 		for protect in [false, true]: await _scenario(protect)
 	print("ADVENTURER DAMAGE PROGRESSION: " + ("FAILED" if failed else "PASSED"))
 	quit(1 if failed else 0)
-func _program_equivalent(actions: Array, recorded: Dictionary) -> Array:
-	var commitment: Dictionary = recorded.get("payload", {}).get("commitment", {})
+# The recording played a since-retired prevent-3 card. Steady Guard prevents
+# 1, so replay it as three Steady Guard plays against the same attack; that
+# spends the starting energy and reproduces the reported threatened state.
+const RECORDED_PREVENTION := 3
+const STEADY_GUARD_PREVENTION := 1
+func _replay_with_steady_guards(gateway, result: Dictionary, recorded: Dictionary) -> Dictionary:
+	var sources: Array = recorded.get("payload", {}).get("commitment", {}).get("proposal_ids", [])
+	if sources.size() != 1: return {"accepted": false, "error": "recorded card play has one source"}
+	var source = _semantic(str(sources[0]))
+	for play in RECORDED_PREVENTION / STEADY_GUARD_PREVENTION:
+		# Leave the final enemy response to the recorded learned-policy step.
+		while play > 0 and result.get("accepted", false) and result.get("learned_policy", {}).get("model_turn", false): result = gateway.advance_model()
+		if not result.get("accepted", false): return result
+		var plays: Array = result.get("legal_actions", []).filter(func(action): return _steady_guard_play(result, action, source))
+		if plays.is_empty(): return {"accepted": false, "error": "Steady Guard %d is playable against the recorded attack" % (play + 1)}
+		var released := _released(result, source)
+		result = gateway.submit(JSON.stringify(plays[0]))
+		if not result.get("accepted", false): return result
+		_expect(_released(result, source) == released + STEADY_GUARD_PREVENTION, "Steady Guard saves exactly one threatened card to discard")
+	return result
+func _steady_guard_play(result: Dictionary, action: Dictionary, source) -> bool:
+	var commitment: Dictionary = action.get("payload", {}).get("commitment", {})
 	var cards: Array = commitment.get("card_ids", [])
-	var sources: Array = commitment.get("proposal_ids", [])
-	if cards.size() != 1 or sources.size() != 1: return []
-	var plain: Array = []
-	for action in actions:
-		var payload: Dictionary = action.get("payload", {})
-		if payload.get("commitment", {}).get("card_ids", []) != cards: continue
-		var raw := str(payload.get("commitment", {}).get("choice_id", ""))
-		var choice = JSON.parse_string(raw) if raw.begins_with("{") else null
-		if not choice is Dictionary or choice.get("verb") != "start": continue
-		if _semantic(str(choice.get("source", ""))) == _semantic(str(sources[0])): return [action]
-		if str(choice.get("then", "")).is_empty(): plain.append(action)
-	return plain
+	if action.get("type") != "commit_interaction" or cards.size() != 1: return false
+	if result.snapshot.actors.blade.card_instances.get(cards[0], {}).get("definition_id") != "steady_guard": return false
+	var raw := str(commitment.get("choice_id", ""))
+	var choice = JSON.parse_string(raw) if raw.begins_with("{") else null
+	if not choice is Dictionary or choice.get("verb") != "start": return false
+	return str(choice.get("source", "")).is_empty() or _semantic(str(choice.source)) == source
+func _released(result: Dictionary, source) -> int:
+	var count := 0
+	for removal in result.get("snapshot", {}).get("settled_damage", {}).get("removals", []):
+		if removal.get("released", false) and removal.get("released_destination") == "discard" and _semantic(removal.get("damage_proposal_ids", [])) == [source]: count += 1
+	return count
 func _scenario(protect: bool) -> void:
-	# Replay the reported battle: Guarded Strike, Guard, Brace, then enemy pass.
+	# Replay the reported battle: Guarded Strike, Guard, prevent 3 (now three
+	# Steady Guards), then enemy pass.
 	# The old full-battle tests submitted commands directly and missed GUI occlusion.
 	var fixture: Dictionary = JSON.parse_string(FileAccess.get_file_as_string("res://tests/fixtures/adventurer_damage_progression.json"))
 	var gateway = GATEWAY.new(root.get_node("LearnedBattleRuntime"), "seat-a", "brine-mask", "adventurer")
@@ -38,11 +58,11 @@ func _scenario(protect: bool) -> void:
 		if step.controller == "human":
 			var recorded: Dictionary = JSON.parse_string(JSON.stringify(step.command).replace('"seat-a"', '"blade"').replace('"seat-b"', '"goblin"'))
 			var choices: Array = result.legal_actions.filter(func(action): return _semantic(action) == _semantic(recorded))
-			# Brace is now a program card: replay its recorded play as the
-			# program start for the same card and attack.
-			if choices.is_empty(): choices = _program_equivalent(result.legal_actions, recorded)
-			if choices.size() != 1: _expect(false, "replay has one current legal match for " + str(recorded)); return
-			result = gateway.submit(JSON.stringify(choices[0]))
+			if choices.is_empty() and not recorded.get("payload", {}).get("commitment", {}).get("card_ids", []).is_empty():
+				result = _replay_with_steady_guards(gateway, result, recorded)
+			else:
+				if choices.size() != 1: _expect(false, "replay has one current legal match for " + str(recorded)); return
+				result = gateway.submit(JSON.stringify(choices[0]))
 		else:
 			# Any-time starter cards can now answer the offensive reaction, a
 			# decision the recording predates; decline it and let the model act.

@@ -5,7 +5,7 @@ extends SceneTree
 ## Optional: DICE_AND_DESTINY_CARD_PREVIEW_ZOOM=2, _ORIGIN=x,y and _COLORS (below).
 ## Rows: playable hand cards, disabled cards, pending-removal/compact cards.
 
-const IDS := ["brace", "take_stock", "nudge", "try_again", "strong_swing", "second_wind"]
+const IDS := ["steady_guard", "take_stock", "nudge", "try_again", "strong_swing", "second_wind"]
 
 func _initialize() -> void: call_deferred("_run")
 
@@ -20,7 +20,7 @@ func _run() -> void:
 	BattleViewState.new().apply_result(gateway.new(root.get_node("LearnedBattleRuntime"), "seat-a", "brine-mask", "adventurer").start_battle("card-face-preview", 43))
 	venom_cards.merge(BattlePresentationCatalog._catalog.get("cards", {}), true)
 	BattlePresentationCatalog._catalog["cards"] = venom_cards
-	# Try face colours: DICE_AND_DESTINY_CARD_PREVIEW_COLORS="brace=blue,nudge=red/white"
+	# Try face colours: DICE_AND_DESTINY_CARD_PREVIEW_COLORS="steady_guard=blue,nudge=red/white"
 	# (frame, then optional border; names or #rrggbb).
 	for entry in OS.get_environment("DICE_AND_DESTINY_CARD_PREVIEW_COLORS").split(",", false):
 		var parts := entry.split("=")
@@ -42,7 +42,7 @@ func _run() -> void:
 	var extras := ["black_tax", "accelerant", "agitate"]
 	for index in extras.size():
 		_card(board, extras[index], Vector2(30 + index * 210, 590), true, false, false, 0)
-	_card(board, "brace", Vector2(660, 600), false, true, false, 0)
+	_card(board, "steady_guard", Vector2(660, 600), false, true, false, 0)
 	_card(board, "nudge", Vector2(810, 600), false, false, true, 0)
 	_card(board, "try_again", Vector2(960, 600), false, true, false, 0, true)
 	for frame in 8: await process_frame

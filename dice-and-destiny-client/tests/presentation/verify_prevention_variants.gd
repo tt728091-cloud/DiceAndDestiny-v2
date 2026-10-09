@@ -2,11 +2,19 @@ extends SceneTree
 const GATEWAY := preload("res://local_client/learned_battle/learned_battle_gateway.gd")
 var failed := false
 func _initialize() -> void: call_deferred("_run")
+# Configured saved-card destination for each prevention definition under test.
+const DESTINATIONS := {"steady_guard": "discard", "adventurer_guard": "discard", "adventurer_guard_plus": "original", "emergency_ward": "original"}
 func _run() -> void:
-	for definition in ["brace", "brace_plus", "adventurer_guard", "adventurer_guard_plus"]:
+	var runtime = root.get_node("LearnedBattleRuntime")
+	for definition in DESTINATIONS:
+		if definition == "emergency_ward":
+			# The starter deck has no original-pile prevention card; add shipped Emergency Ward copies.
+			var deck: Array = runtime.character_catalogs("sandbox").result.adventurer.combatants.adventurer.decklist.duplicate(true)
+			deck.append({"card_id": "emergency_ward", "count": 3})
+			_expect(runtime.save_character_deck("adventurer", deck).get("ok", false), "Emergency Ward added to the shared Adventurer deck")
 		var tested := false
 		for seed in range(1, 41):
-			var gateway = GATEWAY.new(root.get_node("LearnedBattleRuntime"), "seat-a", "brine-mask", "adventurer")
+			var gateway = GATEWAY.new(runtime, "seat-a", "brine-mask", "adventurer")
 			gateway.unified_defense = true
 			var result: Dictionary = gateway.start_battle("prevention-%s-%d" % [definition, seed], seed)
 			for step in 80:
@@ -29,7 +37,7 @@ func _run() -> void:
 			for removal in result.snapshot.get("settled_damage", {}).get("removals", []):
 				if removal.get("target_actor_id") != "blade" or not removal.get("released", false): continue
 				saved += 1
-				var expected: String = "discard" if not definition.ends_with("_plus") else str(removal.original_zone)
+				var expected: String = "discard" if DESTINATIONS[definition] == "discard" else str(removal.original_zone)
 				if removal.get("card_id") in action.get("payload", {}).get("commitment", {}).get("card_ids", []): expected = "discard"
 				_expect(removal.get("released_destination") == expected, definition + " publishes configured saved-card destination")
 			if saved == 0: continue # Three Coins can prevent zero damage.

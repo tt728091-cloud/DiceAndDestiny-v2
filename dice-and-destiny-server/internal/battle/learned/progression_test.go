@@ -13,7 +13,7 @@ import (
 )
 
 func TestProgressionPurchasesPersistenceAndSharedDeck(t *testing.T) {
-	root := filepath.Join(testServerRoot(t), "content")
+	root := legacyUpgradeContent(t)
 	catalogs, err := CharacterCatalogs(root)
 	if err != nil {
 		t.Fatal(err)
@@ -31,7 +31,7 @@ func TestProgressionPurchasesPersistenceAndSharedDeck(t *testing.T) {
 		if p.XP != economy.StartingXP || p.Revision != 1 {
 			t.Fatal("missing starter allowance")
 		}
-		if id == "adventurer" && (!reflect.DeepEqual(p.Abilities.Defensive, []string{"adventurer_guard"}) || countProgress(p.Deck, "brace") != 2 || countProgress(p.Deck, "brace_plus") != 1) {
+		if id == "adventurer" && (!reflect.DeepEqual(p.Abilities.Defensive, []string{"adventurer_guard"}) || countProgress(p.Deck, "steady_guard") != 3) {
 			t.Fatalf("wrong progression starter: %+v", p)
 		}
 		p, err = loadout.Buy(dir, id, economy, lib, loadout.Purchase{Kind: "buy_card", ID: "tip_it", Revision: p.Revision, ExpectedCost: economy.Price(id, "tip_it")})
@@ -55,11 +55,11 @@ func TestProgressionPurchasesPersistenceAndSharedDeck(t *testing.T) {
 	lib := catalogs["adventurer"]
 	p, _ := loadout.ReadProgress(dir, "adventurer", economy, lib)
 	beforeHealth := totalProgress(p.Deck)
-	p, err = loadout.Buy(dir, "adventurer", economy, lib, loadout.Purchase{Kind: "upgrade_card", ID: "brace", Revision: p.Revision, ExpectedCost: 10})
+	p, err = loadout.Buy(dir, "adventurer", economy, lib, loadout.Purchase{Kind: "upgrade_card", ID: "steady_guard", Revision: p.Revision, ExpectedCost: 10})
 	if err != nil {
 		t.Fatal(err)
 	}
-	if countProgress(p.Deck, "brace") != 1 || countProgress(p.Deck, "brace_plus") != 2 || totalProgress(p.Deck) != beforeHealth {
+	if countProgress(p.Deck, "steady_guard") != 2 || countProgress(p.Deck, "emergency_ward") != 1 || totalProgress(p.Deck) != beforeHealth {
 		t.Fatal("upgrade did not replace exactly one card")
 	}
 	p, err = loadout.Buy(dir, "adventurer", economy, lib, loadout.Purchase{Kind: "upgrade_ability", ID: "adventurer_guard", Revision: p.Revision, ExpectedCost: 25})
@@ -115,9 +115,11 @@ func TestProgressionPurchasesPersistenceAndSharedDeck(t *testing.T) {
 }
 
 func TestProgressionBattlePinsUpgradedAbilitiesAndReplay(t *testing.T) {
+	// Battles use the shipped content (policies pin its version); only the
+	// economy needs the legacy card upgrade.
 	root := filepath.Join(testServerRoot(t), "content")
 	catalogs, _ := CharacterCatalogs(root)
-	economy, err := loadout.LoadEconomy(root, catalogs)
+	economy, err := loadout.LoadEconomy(legacyUpgradeContent(t), catalogs)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -131,7 +133,7 @@ func TestProgressionBattlePinsUpgradedAbilitiesAndReplay(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	p, err = loadout.Buy(dir, "adventurer", economy, lib, loadout.Purchase{Kind: "upgrade_card", ID: "brace", Revision: p.Revision, ExpectedCost: 10})
+	p, err = loadout.Buy(dir, "adventurer", economy, lib, loadout.Purchase{Kind: "upgrade_card", ID: "steady_guard", Revision: p.Revision, ExpectedCost: 10})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -181,7 +183,7 @@ func TestProgressionRuntimeAndConfig(t *testing.T) {
 	configRoot := t.TempDir()
 	os.MkdirAll(filepath.Join(configRoot, "progression_v1"), 0700)
 	filename := filepath.Join(configRoot, "progression_v1", "economy.yaml")
-	os.WriteFile(filename, []byte("schema_version: 1\nstarting_xp: 77\ndefault_card_price: 4\ncharacters:\n  adventurer:\n    card_upgrades:\n      brace: {to: brace_plus, xp: 2}\n"), 0600)
+	os.WriteFile(filename, []byte("schema_version: 1\nstarting_xp: 77\ndefault_card_price: 4\ncharacters:\n  adventurer:\n    card_upgrades:\n      steady_guard: {to: emergency_ward, xp: 2}\n"), 0600)
 	e, err := loadout.LoadEconomy(configRoot, catalogs)
 	if err != nil {
 		t.Fatal(err)
@@ -191,7 +193,7 @@ func TestProgressionRuntimeAndConfig(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	p, err = loadout.Buy(fresh, "adventurer", e, catalogs["adventurer"], loadout.Purchase{Kind: "upgrade_card", ID: "brace", Revision: p.Revision, ExpectedCost: 2})
+	p, err = loadout.Buy(fresh, "adventurer", e, catalogs["adventurer"], loadout.Purchase{Kind: "upgrade_card", ID: "steady_guard", Revision: p.Revision, ExpectedCost: 2})
 	if err != nil || p.XP != 75 {
 		t.Fatalf("configured price ignored: %+v %v", p, err)
 	}
@@ -251,8 +253,8 @@ func TestProgressionSellEntireStarterDeckAndRebuild(t *testing.T) {
 			if len(p.Deck) != 0 || p.XP != budget {
 				t.Fatalf("liquidation mismatch: %+v budget %d", p, budget)
 			}
-			if character == "adventurer" && budget != 230 {
-				t.Fatal("Adventurer's 130 XP starter plus 100 XP allowance must equal 230")
+			if character == "adventurer" && budget != 220 {
+				t.Fatal("Adventurer's 120 XP starter plus 100 XP allowance must equal 220")
 			}
 			reopened, err := loadout.ReadProgress(dir, character, economy, lib)
 			if err != nil || !reflect.DeepEqual(p, reopened) {
@@ -300,18 +302,18 @@ func TestProgressionSellEntireStarterDeckAndRebuild(t *testing.T) {
 }
 
 func TestProgressionSalePriceOverridesAndStaleRequests(t *testing.T) {
-	root := filepath.Join(testServerRoot(t), "content")
+	root := legacyUpgradeContent(t)
 	catalogs, _ := CharacterCatalogs(root)
 	economy, _ := loadout.LoadEconomy(root, catalogs)
 	dir := t.TempDir()
 	lib := catalogs["adventurer"]
 	p, _ := loadout.ReadProgress(dir, "adventurer", economy, lib)
-	p, err := loadout.Buy(dir, "adventurer", economy, lib, loadout.Purchase{Kind: "upgrade_card", ID: "brace", Revision: p.Revision, ExpectedCost: 10})
+	p, err := loadout.Buy(dir, "adventurer", economy, lib, loadout.Purchase{Kind: "upgrade_card", ID: "steady_guard", Revision: p.Revision, ExpectedCost: 10})
 	if err != nil {
 		t.Fatal(err)
 	}
 	revision := p.Revision
-	sale := loadout.Purchase{Kind: "sell_card", ID: "brace_plus", Revision: revision, ExpectedCost: 20}
+	sale := loadout.Purchase{Kind: "sell_card", ID: "emergency_ward", Revision: revision, ExpectedCost: 20}
 	bad := sale
 	bad.ExpectedCost = 10
 	if _, err = loadout.Buy(dir, "adventurer", economy, lib, bad); err == nil {
@@ -321,17 +323,17 @@ func TestProgressionSalePriceOverridesAndStaleRequests(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if p.XP != 110 || countProgress(p.Deck, "brace_plus") != 1 {
+	if p.XP != 110 || countProgress(p.Deck, "emergency_ward") != 0 {
 		t.Fatal("upgraded card did not sell at its configured purchase price")
 	}
 	if _, err = loadout.Buy(dir, "adventurer", economy, lib, sale); err == nil {
 		t.Fatal("duplicate sale credited twice")
 	}
-	p, err = loadout.Buy(dir, "adventurer", economy, lib, loadout.Purchase{Kind: "buy_card", ID: "brace_plus", Revision: p.Revision, ExpectedCost: 20})
+	p, err = loadout.Buy(dir, "adventurer", economy, lib, loadout.Purchase{Kind: "buy_card", ID: "emergency_ward", Revision: p.Revision, ExpectedCost: 20})
 	if err != nil {
 		t.Fatal(err)
 	}
-	if p.XP != 90 || countProgress(p.Deck, "brace_plus") != 2 {
+	if p.XP != 90 || countProgress(p.Deck, "emergency_ward") != 1 {
 		t.Fatal("sale and rebuy must cancel out")
 	}
 	// Concurrent sales of one owned copy can only credit once.
@@ -342,7 +344,7 @@ func TestProgressionSalePriceOverridesAndStaleRequests(t *testing.T) {
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
-			_, err := loadout.Buy(dir, "adventurer", economy, lib, loadout.Purchase{Kind: "sell_card", ID: "brace_plus", Revision: p.Revision, ExpectedCost: 20})
+			_, err := loadout.Buy(dir, "adventurer", economy, lib, loadout.Purchase{Kind: "sell_card", ID: "emergency_ward", Revision: p.Revision, ExpectedCost: 20})
 			if err == nil {
 				mu.Lock()
 				success++

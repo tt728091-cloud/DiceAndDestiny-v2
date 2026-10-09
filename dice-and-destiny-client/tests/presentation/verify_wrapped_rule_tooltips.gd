@@ -49,7 +49,7 @@ func _run() -> void:
 				for frame in 3: await process_frame
 				await _hover(straight, straight.get_global_rect().position + Vector2(40, 20), "straight-%d-%s-%s" % [viewport.x, right, boosted])
 				straight.queue_free(); await process_frame
-			var card := BattleCard.new(); stage.add_child(card); card.configure("test-card", "brace", true)
+			var card := BattleCard.new(); stage.add_child(card); card.configure("test-card", "steady_guard", true)
 			card.position = Vector2(viewport.x - 205 if right else 12, viewport.y - 270)
 			await process_frame
 			await _hover(card, card.get_global_rect().get_center(), "card-%d-%s" % [viewport.x, right])

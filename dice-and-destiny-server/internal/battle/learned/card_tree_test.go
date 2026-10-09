@@ -17,14 +17,14 @@ func treeFixture(t *testing.T) (string, map[string]content.BattleLibrary, conten
 	if err != nil {
 		t.Fatal(err)
 	}
-	base, err := content.EditableGeneralCard(libs["adventurer"].Cards["brace"])
+	base, err := content.EditableGeneralCard(libs["adventurer"].Cards["steady_guard"])
 	if err != nil {
 		t.Fatal(err)
 	}
 	base.Economy = &content.CardEconomy{Buy: 10, Sell: 10, CopyLimit: 20}
 	base.Cost.Energy = 1
 	base.Program.Steps[0].Params = map[string]any{"amount": 1, "destination": "discard"}
-	tree := content.CardTree{ID: "test_tree", Name: "Brace progression", Root: "base", Nodes: []content.CardTreeNode{{ID: "base", Card: base}}}
+	tree := content.CardTree{ID: "test_tree", Name: "Steady Guard progression", Root: "base", Nodes: []content.CardTreeNode{{ID: "base", Card: base}}}
 	for _, v := range []struct {
 		id                     string
 		xp, energy, prevention int
@@ -74,18 +74,18 @@ func TestCardTreeTransactionsAndPersistence(t *testing.T) {
 			t.Fatal(err)
 		}
 	}
-	trade("brace", "test_tree_variant_guard", 3)
+	trade("steady_guard", "test_tree_variant_guard", 3)
 	trade("test_tree_variant_guard", "test_tree_variant_both", 4)
 	if p.XP != startXP-7 || p.DeckValue+p.CollectionValue != startValue+7 {
 		t.Fatal("upgrade math", p)
 	}
 	trade("test_tree_variant_both", "test_tree_variant_original", -3)
-	trade("test_tree_variant_original", "brace", -4)
-	trade("brace", "test_tree_variant_heavy", -2)
+	trade("test_tree_variant_original", "steady_guard", -4)
+	trade("steady_guard", "test_tree_variant_heavy", -2)
 	if p.XP != startXP+2 || p.DeckValue+p.CollectionValue != startValue-2 {
 		t.Fatal("downgrade refund", p)
 	}
-	trade("test_tree_variant_heavy", "brace", 2)
+	trade("test_tree_variant_heavy", "steady_guard", 2)
 	if p.XP != startXP || p.DeckValue+p.CollectionValue != startValue {
 		t.Fatal("cycle minted XP", p)
 	}
@@ -93,7 +93,7 @@ func TestCardTreeTransactionsAndPersistence(t *testing.T) {
 	if err != nil || reloaded.XP != startXP {
 		t.Fatal(err)
 	}
-	for _, req := range []loadout.Purchase{{Kind: "buy_card", ID: "test_tree_variant_both", ExpectedCost: 17, Revision: p.Revision}, {Kind: "tree_card", ID: "brace", TargetID: "test_tree_variant_both", ExpectedCost: 7, Revision: p.Revision}, {Kind: "tree_card", ID: "brace", TargetID: "test_tree_variant_guard", ExpectedCost: 0, Revision: p.Revision}, {Kind: "tree_card", ID: "brace", TargetID: "test_tree_variant_guard", ExpectedCost: 3, Revision: p.Revision - 1}} {
+	for _, req := range []loadout.Purchase{{Kind: "buy_card", ID: "test_tree_variant_both", ExpectedCost: 17, Revision: p.Revision}, {Kind: "tree_card", ID: "steady_guard", TargetID: "test_tree_variant_both", ExpectedCost: 7, Revision: p.Revision}, {Kind: "tree_card", ID: "steady_guard", TargetID: "test_tree_variant_guard", ExpectedCost: 0, Revision: p.Revision}, {Kind: "tree_card", ID: "steady_guard", TargetID: "test_tree_variant_guard", ExpectedCost: 3, Revision: p.Revision - 1}} {
 		if _, err := loadout.Buy(dir, "adventurer", e, libs["adventurer"], req); err == nil {
 			t.Fatal("invalid transaction accepted", req)
 		}
@@ -108,7 +108,7 @@ func TestCardTreeTransactionsAndPersistence(t *testing.T) {
 func TestCardTreeGatesAndGraphValidation(t *testing.T) {
 	root, libs, tree := treeFixture(t)
 	zero := 0
-	tree.Edges[0].Requirements = []content.CardTreeRequirement{{CardID: "strong_swing", Maximum: &zero}, {CardID: "brace_plus", Minimum: 1}}
+	tree.Edges[0].Requirements = []content.CardTreeRequirement{{CardID: "strong_swing", Maximum: &zero}, {CardID: "second_wind", Minimum: 1}}
 	dir := t.TempDir()
 	if _, err := content.SaveCardTree(dir, libs["adventurer"], tree, 0); err != nil {
 		t.Fatal(err)
@@ -118,12 +118,12 @@ func TestCardTreeGatesAndGraphValidation(t *testing.T) {
 		t.Fatal(err)
 	}
 	e, _ := loadout.LoadEconomy(root, libs)
-	deck := []loadout.Entry{{CardID: "brace", Count: 2}, {CardID: "brace_plus", Count: 1}, {CardID: "strong_swing", Count: 1}}
-	if _, _, err := loadout.TreeTransition(deck, "brace", "test_tree_variant_guard", e, libs["adventurer"], "adventurer"); err != nil {
+	deck := []loadout.Entry{{CardID: "steady_guard", Count: 2}, {CardID: "second_wind", Count: 1}, {CardID: "strong_swing", Count: 1}}
+	if _, _, err := loadout.TreeTransition(deck, "steady_guard", "test_tree_variant_guard", e, libs["adventurer"], "adventurer"); err != nil {
 		t.Fatal("deck gates must not block upgrades", err)
 	}
 	deck = deck[:2]
-	changed, cost, err := loadout.TreeTransition(deck, "brace", "test_tree_variant_guard", e, libs["adventurer"], "adventurer")
+	changed, cost, err := loadout.TreeTransition(deck, "steady_guard", "test_tree_variant_guard", e, libs["adventurer"], "adventurer")
 	if err != nil || cost != 3 {
 		t.Fatal(err)
 	}
@@ -144,7 +144,7 @@ func TestCardTreeGatesAndGraphValidation(t *testing.T) {
 		func(x *content.CardTree) { x.Edges = x.Edges[:3] },
 		func(x *content.CardTree) { x.Edges[0].Requirements[0].CardID = "missing" },
 		func(x *content.CardTree) { x.Nodes[1].Card.Economy.Buy = 0 },
-		func(x *content.CardTree) { x.Nodes[1].Card.ID = "brace_plus" },
+		func(x *content.CardTree) { x.Nodes[1].Card.ID = "second_wind" },
 	} {
 		raw, _ := json.Marshal(tree)
 		var invalid content.CardTree
@@ -185,7 +185,7 @@ func TestCardTreeAdminAtomicPublication(t *testing.T) {
 	libs, _ := CharacterCatalogs(root, dir)
 	e, _ := loadout.LoadEconomy(root, libs)
 	p, _ := loadout.ReadProgress(dir, "adventurer", e, libs["adventurer"])
-	_, err := loadout.Buy(dir, "adventurer", e, libs["adventurer"], loadout.Purchase{Kind: "tree_card", ID: "brace", TargetID: "test_tree_variant_guard", ExpectedCost: 3, Revision: p.Revision})
+	_, err := loadout.Buy(dir, "adventurer", e, libs["adventurer"], loadout.Purchase{Kind: "tree_card", ID: "steady_guard", TargetID: "test_tree_variant_guard", ExpectedCost: 3, Revision: p.Revision})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -301,7 +301,7 @@ func TestCardTreeRestrictionsApplyOnlyToEquippedDeck(t *testing.T) {
 	root, libs, tree := treeFixture(t)
 	dir := t.TempDir()
 	zero := 0
-	tree.Edges[0].Requirements = []content.CardTreeRequirement{{CardID: "strong_swing", Maximum: &zero}, {CardID: "brace_plus", Minimum: 1}}
+	tree.Edges[0].Requirements = []content.CardTreeRequirement{{CardID: "strong_swing", Maximum: &zero}, {CardID: "second_wind", Minimum: 1}}
 	if _, err := content.SaveCardTree(dir, libs["adventurer"], tree, 0); err != nil {
 		t.Fatal(err)
 	}
@@ -326,7 +326,7 @@ func TestCardTreeRestrictionsApplyOnlyToEquippedDeck(t *testing.T) {
 		return err
 	}
 	// Strong Swing is equipped, yet the upgrade succeeds and goes to collection.
-	if err := trade("tree_card", "brace", "test_tree_variant_guard", 3); err != nil {
+	if err := trade("tree_card", "steady_guard", "test_tree_variant_guard", 3); err != nil {
 		t.Fatal(err)
 	}
 	if p.CollectionValue != 13 || p.XP != initialXP-3 || p.DeckValue != initialValue-10 || p.UpgradeSpent != 0 {
@@ -353,7 +353,7 @@ func TestCardTreeRestrictionsApplyOnlyToEquippedDeck(t *testing.T) {
 	if p.XP != initialXP-3 || p.CollectionValue != 20 {
 		t.Fatal("equip charged extra XP", p)
 	}
-	if err := trade("unequip_collection_card", "brace_plus", "", 0); err == nil {
+	if err := trade("unequip_collection_card", "second_wind", "", 0); err == nil {
 		t.Fatal("removed equipped prerequisite")
 	}
 	if err := trade("equip_collection_card", "strong_swing", "", 0); err == nil {
@@ -362,7 +362,7 @@ func TestCardTreeRestrictionsApplyOnlyToEquippedDeck(t *testing.T) {
 	if err := trade("unequip_collection_card", "test_tree_variant_guard", "", 0); err != nil {
 		t.Fatal(err)
 	}
-	if err := trade("unequip_collection_card", "brace_plus", "", 0); err != nil {
+	if err := trade("unequip_collection_card", "second_wind", "", 0); err != nil {
 		t.Fatal(err)
 	}
 	if err := trade("equip_collection_card", "test_tree_variant_guard", "", 0); err == nil {
@@ -380,15 +380,15 @@ func TestCardTreeAuthorsNewBaseCard(t *testing.T) {
 	root, libs, tree := treeFixture(t)
 	dir := t.TempDir()
 	rename := func(x *content.CardTree, id, name string) {
-		x.ID, x.Name = "steady_tree", "Steady Guard paths"
+		x.ID, x.Name = "steady_tree", "Watchful Guard paths"
 		x.Nodes[0].Card.ID, x.Nodes[0].Card.Name = id, name
 		for i := 1; i < len(x.Nodes); i++ {
 			x.Nodes[i].Card.ID = "steady_tree_variant_" + x.Nodes[i].ID
 			x.Nodes[i].Card.Name = name + " · " + x.Nodes[i].ID
 		}
 	}
-	rename(&tree, "steady_guard", "Steady Guard")
-	for _, invalid := range []struct{ id, name string }{{"Steady Guard", "Steady Guard"}, {"steady_tree_variant_base", "Steady Guard"}, {"steady_guard", "Brace"}} {
+	rename(&tree, "watchful_guard", "Watchful Guard")
+	for _, invalid := range []struct{ id, name string }{{"Watchful Guard", "Watchful Guard"}, {"steady_tree_variant_base", "Watchful Guard"}, {"watchful_guard", "Steady Guard"}} {
 		raw, _ := json.Marshal(tree)
 		var candidate content.CardTree
 		json.Unmarshal(raw, &candidate)
@@ -404,12 +404,12 @@ func TestCardTreeAuthorsNewBaseCard(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	base, ok := libs["adventurer"].Cards["steady_guard"]
-	if !ok || base.Name != "Steady Guard" || libs["adventurer"].Cards["brace"].Name != "Brace" {
-		t.Fatal("new base card missing or existing Brace changed")
+	base, ok := libs["adventurer"].Cards["watchful_guard"]
+	if !ok || base.Name != "Watchful Guard" || libs["adventurer"].Cards["steady_guard"].Name != "Steady Guard" {
+		t.Fatal("new base card missing or existing Steady Guard changed")
 	}
-	if steps := libs["adventurer"].Cards["brace"].Program; steps != nil && content.ProgramInt(steps.Steps[0], "amount") == 1 {
-		t.Fatal("existing Brace adopted the new base settings")
+	if libs["adventurer"].Cards["steady_guard"].Cost.Energy == base.Cost.Energy {
+		t.Fatal("existing Steady Guard adopted the new base settings")
 	}
 	e, err := loadout.LoadEconomy(root, libs)
 	if err != nil {
@@ -419,10 +419,10 @@ func TestCardTreeAuthorsNewBaseCard(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if p, err = loadout.Buy(dir, "adventurer", e, libs["adventurer"], loadout.Purchase{Kind: "buy_collection_card", ID: "steady_guard", ExpectedCost: 10, Revision: p.Revision}); err != nil {
+	if p, err = loadout.Buy(dir, "adventurer", e, libs["adventurer"], loadout.Purchase{Kind: "buy_collection_card", ID: "watchful_guard", ExpectedCost: 10, Revision: p.Revision}); err != nil {
 		t.Fatal(err)
 	}
-	if _, err = loadout.Buy(dir, "adventurer", e, libs["adventurer"], loadout.Purchase{Kind: "tree_card", ID: "steady_guard", TargetID: "steady_tree_variant_guard", ExpectedCost: 3, Revision: p.Revision}); err != nil {
+	if _, err = loadout.Buy(dir, "adventurer", e, libs["adventurer"], loadout.Purchase{Kind: "tree_card", ID: "watchful_guard", TargetID: "steady_tree_variant_guard", ExpectedCost: 3, Revision: p.Revision}); err != nil {
 		t.Fatal(err)
 	}
 	// A published tree keeps the base it authored.

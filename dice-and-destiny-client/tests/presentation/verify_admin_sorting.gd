@@ -75,21 +75,21 @@ func _run() -> void:
 	_expect(JSON.stringify(screen._admin_draft) == original, "browsing never changes admin draft")
 	# Editing a draft type immediately repositions/refilters the same controls.
 	screen._admin_tabs.current_tab = 0
-	await _filter(screen, "general"); await _search(screen, "Brace")
-	await _set_price(screen._admin_prices.brace, 12)
-	var retained: SpinBox = screen._admin_prices.brace
-	var type_choice: OptionButton = screen._admin_types.cards.brace
+	await _filter(screen, "general"); await _search(screen, "Steady Guard")
+	await _set_price(screen._admin_prices.steady_guard, 12)
+	var retained: SpinBox = screen._admin_prices.steady_guard
+	var type_choice: OptionButton = screen._admin_types.cards.steady_guard
 	for index in type_choice.item_count:
 		if str(type_choice.get_item_metadata(index)) == "venom": await _select(type_choice, index); break
-	_expect(not "brace" in _visible_ids(screen), "retagged card leaves the General filter")
+	_expect(not "steady_guard" in _visible_ids(screen), "retagged card leaves the General filter")
 	await _filter(screen, "venom")
-	_expect("brace" in _visible_ids(screen), "retagged card enters the Venom filter")
+	_expect("steady_guard" in _visible_ids(screen), "retagged card enters the Venom filter")
 	await _select(screen._admin_sort, 0)
-	_expect(screen._admin_prices.brace == retained and int(retained.value) == 12, "sorting retains edits and control identity")
+	_expect(screen._admin_prices.steady_guard == retained and int(retained.value) == 12, "sorting retains edits and control identity")
 	await _click(screen._admin_save)
 	await _click(screen._admin_button)
 	_expect(screen._admin_sort.selected == 0 and screen._admin_filter_type == "venom", "browse choices survive reopening")
-	_expect(int(screen._admin_prices.brace.value) == 12 and screen._draft_type("cards", "brace") == "venom", "edits save correctly after sorting")
+	_expect(int(screen._admin_prices.steady_guard.value) == 12 and screen._draft_type("cards", "steady_guard") == "venom", "edits save correctly after sorting")
 	await _click(_control(screen, "admin.close"))
 	screen.queue_free(); await process_frame
 	print("ADMIN SORTING: " + ("FAILED" if failed else "PASSED")); quit(1 if failed else 0)

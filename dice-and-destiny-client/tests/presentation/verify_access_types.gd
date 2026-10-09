@@ -20,7 +20,7 @@ func _run() -> void:
 	_expect("pinprick" not in screen._eligible_card_ids() and "black_fingerprint" not in screen._eligible_card_ids(), "Adventurer excludes themed pools")
 	for id in screen.ROSTER:
 		screen.select_character(id)
-		_expect("brace" in screen._eligible_card_ids(), "General is available to " + id)
+		_expect("steady_guard" in screen._eligible_card_ids(), "General is available to " + id)
 	screen.select_character("venom")
 	_expect("pinprick" in screen._eligible_card_ids() and "black_fingerprint" not in screen._eligible_card_ids(), "Venom has matching pool")
 	for frame in 4: await process_frame

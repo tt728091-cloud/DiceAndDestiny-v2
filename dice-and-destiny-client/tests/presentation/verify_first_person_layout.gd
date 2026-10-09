@@ -76,7 +76,7 @@ func _run() -> void:
 				var id := "incoming-" + str(i)
 				sources.append({"id": id, "source_actor_id": attacker, "target_actor_id": "blade", "source_content_id": "brine_lash", "base_amount": 4, "final_amount": 4, "status_applications": [{"target_actor_id": "blade", "status_id": "poison", "stacks": 2}]})
 				fixture.legal_actions.append({"type": "planning_select_ability", "actor_id": "blade", "payload": {"pending_input_id": "layout", "ability_id": "guard", "target_ids": [id]}})
-				for j in 4: removals.append({"card_id": id + "-" + str(j), "card_definition_id": ["brace", "nudge", "try_again", "take_stock"][j], "target_actor_id": "blade", "original_zone": "deck", "accepted": true, "damage_proposal_ids": [id]})
+				for j in 4: removals.append({"card_id": id + "-" + str(j), "card_definition_id": ["steady_guard", "nudge", "try_again", "take_stock"][j], "target_actor_id": "blade", "original_zone": "deck", "accepted": true, "damage_proposal_ids": [id]})
 			fixture.snapshot.damage_sources = sources
 			fixture.snapshot.settled_damage = {"id": "layout-cards", "sources": sources, "removals": removals}
 			screen._selected_source = ""; screen._view.apply_result(fixture); screen._render(); await _settle()

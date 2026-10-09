@@ -15,13 +15,13 @@ func _run() -> void:
 		"salve": _card("Salve", "Remove 1 debuff stack", both_any, "", "Self"),
 		"dispel": _card("Dispel", "Remove 1 enemy buff stack", both_any, "", "Enemy"),
 		"crowded": _card("Crowded", "Remove 1 status stack", split, "", "Self/Anyone"),
-		"brace": _card("Brace", "Prevent 3", [{"segment": "defense", "when": "any"}], "", ""),
+		"steady_guard": _card("Steady Guard", "Prevent 1", [{"segment": "defense", "when": "any"}], "", ""),
 		"legacy": _card("Legacy", "Remove 1 debuff stack", [], "", "Self"),
 	}})
 	var board := Control.new(); board.theme = preload("res://presentation/battle/cinematic_theme.gd").create(); root.add_child(board)
 	var shown := {}
 	var index := 0
-	for id in ["salve", "dispel", "crowded", "brace", "legacy"]:
+	for id in ["salve", "dispel", "crowded", "steady_guard", "legacy"]:
 		var card := BattleCard.new(); board.add_child(card); card.configure(id, id, true)
 		card.size = card.custom_minimum_size; card.position = Vector2(15 + index * 175, 20)
 		shown[id] = card; index += 1

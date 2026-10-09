@@ -6,7 +6,7 @@ extends SceneTree
 ## framed_compare.png.
 
 const FRAMED := preload("res://devtools/card_concepts/framed_card.gd")
-const CARDS := ["brace", "take_stock", "nudge", "try_again", "strong_swing", "accelerant", "black_tax", "second_wind"]
+const CARDS := ["steady_guard", "take_stock", "nudge", "try_again", "strong_swing", "accelerant", "black_tax", "second_wind"]
 const COLORS := ["white", "blue", "black", "red", "green", "artifact", "gold", "colorless"]
 ## The foil concept shows off a coloured border; the rest use black.
 const STYLE_BORDERS := {"foil": "gold"}
@@ -83,7 +83,7 @@ func _borders() -> void:
 		var style := "modern" if row == 0 else "keyline"
 		for column in combos.size():
 			var at := Vector2(30 + column * (FRAMED.SIZE.x * zoom + 26), 44 + row * (FRAMED.SIZE.y * zoom + 44))
-			_card(board, ["nudge", "brace", "try_again", "strong_swing", "take_stock"][column], style, combos[column][1], combos[column][0], at, zoom)
+			_card(board, ["nudge", "steady_guard", "try_again", "strong_swing", "take_stock"][column], style, combos[column][1], combos[column][0], at, zoom)
 			_title(board, "%s border · %s frame" % combos[column], at + Vector2(0, FRAMED.SIZE.y * zoom + 3), 14)
 	await _save(board.get_parent(), "framed_borders")
 
@@ -96,8 +96,8 @@ func _compare(styles: Array) -> void:
 		var x := (60 if few else 22) + column * (FRAMED.SIZE.x * zoom + (90 if few else 32))
 		_title(board, FRAMED.FRAME_NAMES[style].split(" + ")[0] + " · " + FRAMED.FRAME_NAMES[style].split(" + ")[-1] if " + " in FRAMED.FRAME_NAMES[style] else FRAMED.FRAME_NAMES[style], Vector2(x, 10), 18 if few else 16)
 		var border: String = STYLE_BORDERS.get(style, "black")
-		_card(board, "strong_swing" if few else "brace", style, "red" if few else "blue", border, Vector2(x, 46), zoom, 0.0 if few else -1.5)
-		if few: _card(board, "brace", style, "blue", border, Vector2(x, 46 + FRAMED.SIZE.y * zoom + 30), zoom)
+		_card(board, "strong_swing" if few else "steady_guard", style, "red" if few else "blue", border, Vector2(x, 46), zoom, 0.0 if few else -1.5)
+		if few: _card(board, "steady_guard", style, "blue", border, Vector2(x, 46 + FRAMED.SIZE.y * zoom + 30), zoom)
 		else: _card(board, "nudge", style, "red", border, Vector2(x, 52 + FRAMED.SIZE.y * zoom + 40), zoom, 1.5)
 	await _save(board.get_parent(), "framed_compare" if not few else "iron_compare")
 
@@ -105,7 +105,7 @@ func _closeup(style: String) -> void:
 	var board := _board()
 	_title(board, FRAMED.FRAME_NAMES[style] + "   ·   close-up", Vector2(24, 6))
 	var zoom := 2.0
-	var picks := [["strong_swing", "red"], ["brace", "blue"], ["nudge", "black"]]
+	var picks := [["strong_swing", "red"], ["steady_guard", "blue"], ["nudge", "black"]]
 	for index in picks.size():
 		_card(board, picks[index][0], style, picks[index][1], "black", Vector2(40 + index * (FRAMED.SIZE.x * zoom + 46), 50), zoom)
 	await _save(board.get_parent(), style + "_closeup")
@@ -114,7 +114,7 @@ func _closeup(style: String) -> void:
 func _hand(style: String) -> void:
 	var board := _board()
 	_title(board, FRAMED.FRAME_NAMES[style] + "   ·   hand at game scale", Vector2(24, 6))
-	var picks := [["second_wind", "colorless"], ["strong_swing", "red"], ["try_again", "red"], ["nudge", "red"], ["brace", "blue"], ["take_stock", "green"]]
+	var picks := [["second_wind", "colorless"], ["strong_swing", "red"], ["try_again", "red"], ["nudge", "red"], ["steady_guard", "blue"], ["take_stock", "green"]]
 	var zoom := 1.15
 	for index in picks.size():
 		var offset := index - (picks.size() - 1) * 0.5

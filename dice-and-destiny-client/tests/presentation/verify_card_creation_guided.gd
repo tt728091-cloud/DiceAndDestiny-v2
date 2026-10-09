@@ -15,7 +15,7 @@ func _run() -> void:
 			await process_frame
 		ui._validate()
 		_expect(not ui._publish_button.disabled, "template form remains valid: " + str(ui.draft.id) + ": " + ui._error.text)
-	_pick_template(ui, "brace"); ui._load_template()
+	_pick_template(ui, "steady_guard"); ui._load_template()
 	ui._tabs.current_tab = 0; await _frames()
 	var piles_caption: Label = ui.find_children("*", "Label", true, false).filter(func(label): return label.text.begins_with("Can be played from")).front()
 	_expect(piles_caption.get_line_count() == 1 and piles_caption.size.x > 200, "pile caption reads horizontally, not one letter per line")
@@ -25,7 +25,7 @@ func _run() -> void:
 		ui.draft.program.steps = [ui._new_step(effect)]; ui.draft.program.windows = ui._compatible_windows(ui.draft.program.steps)
 		ui._tabs.current_tab = 1; ui._render_fields(); ui._validate(); await process_frame
 		_expect(not ui._publish_button.disabled, "all advertised effects have valid guided defaults: " + effect + ": " + ui._error.text)
-	_pick_template(ui, "brace"); ui._load_template(); ui._clone_template()
+	_pick_template(ui, "steady_guard"); ui._load_template(); ui._clone_template()
 	_line_edit(ui, "id", "guided_guard"); _line_edit(ui, "name", "Guided Guard")
 	_node(ui, "energy").value = 2
 	ui._tabs.current_tab = 1; await _frames()

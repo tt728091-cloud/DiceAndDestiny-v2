@@ -24,9 +24,10 @@ func _run() -> void:
 		for width in [1280,1920]:
 			canvas.size = Vector2i(width,width*9/16)
 			await _inspect_hub(result, mode)
-		# Play Brace directly from the combined hub, then defend another source.
+		# Play Steady Guard directly from the combined hub, then defend another source.
 		var choices: Array = result.get("legal_actions", []).filter(func(a): return not a.get("payload", {}).get("commitment", {}).get("card_ids", []).is_empty())
 		if not choices.is_empty():
+			_expect(result.snapshot.actors.blade.card_instances[choices[0].payload.commitment.card_ids[0]].definition_id == "steady_guard", "starter hub card is Steady Guard")
 			result = gateway.submit(JSON.stringify(choices[0]))
 			_expect(result.get("accepted", false) and result.snapshot.stage == "defense_selection", "card can be played before defensive roll without leaving hub")
 		var defense: Array = result.get("legal_actions", []).filter(func(a): return a.type == "planning_select_ability")

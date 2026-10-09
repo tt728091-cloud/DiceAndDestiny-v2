@@ -17,7 +17,7 @@ both as dropdowns, and content YAML can set them on any card.
 Preview the faces with
 `DICE_AND_DESTINY_CARD_PREVIEW=/tmp/cards.png ./scripts/godot.sh --script res://devtools/card_face_preview.gd`
 (add `DICE_AND_DESTINY_CARD_PREVIEW_ZOOM=2` to inspect detail, and
-`DICE_AND_DESTINY_CARD_PREVIEW_COLORS="brace=blue,nudge=red/white"` to try
+`DICE_AND_DESTINY_CARD_PREVIEW_COLORS="steady_guard=blue,nudge=red/white"` to try
 colours). Verify colours with `tests/presentation/verify_card_colors.gd`.
 
 Card rule hovers use `card_rules_tooltip.gd` with the shared wrapped text presenter.

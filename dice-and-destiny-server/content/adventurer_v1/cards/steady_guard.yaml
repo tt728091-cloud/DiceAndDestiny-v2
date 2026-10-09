@@ -18,20 +18,20 @@
           "selection": "choose"
         },
         "params": {
-          "amount": 3,
+          "amount": 1,
           "destination": "discard"
         }
       }
     ]
   },
   "schema_version": 1,
-  "id": "brace",
-  "name": "Brace",
+  "id": "steady_guard",
+  "name": "Steady Guard",
   "type": "damage_response",
   "presentation": {
     "illustration_path": "res://assets/battle/cards/emergency_ward.png",
-    "effect_summary": "Prevent 3 damage from one of your incoming attacks. Saved cards go to discard.\nPlay: Defense, any time.",
-    "rules_text": "Prevent 3 damage from one of your incoming attacks. Saved cards go to discard.\nPlay: Defense, any time.",
+    "effect_summary": "Prevent 1 damage from one of your incoming attacks. Saved cards go to discard.\nPlay: Defense, any time.",
+    "rules_text": "Prevent 1 damage from one of your incoming attacks. Saved cards go to discard.\nPlay: Defense, any time.",
     "art_key": ""
   },
   "cost": {

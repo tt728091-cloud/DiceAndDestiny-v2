@@ -18,7 +18,7 @@ func TestTakeStockNeverRedrawsDiscardIncludingItself(t *testing.T) {
 			a := b.Actors["player"]
 			a.Cards = state.CardZones{Hand: []string{"take_stock-0"}, Discard: []string{"second_wind-0"}, Removed: []string{"nudge-0"}}
 			for i := 0; i < remaining; i++ {
-				a.Cards.Deck = append(a.Cards.Deck, fmt.Sprintf("brace-%d", i))
+				a.Cards.Deck = append(a.Cards.Deck, fmt.Sprintf("steady_guard-%d", i))
 			}
 			b.Actors["player"] = a
 			health := a.CurrentHealth()

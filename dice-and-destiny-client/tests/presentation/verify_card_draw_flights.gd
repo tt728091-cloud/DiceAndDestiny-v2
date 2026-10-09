@@ -42,7 +42,7 @@ func _scenario(base: Dictionary, count: int) -> void:
 	before.snapshot.segment = "offensive"; before.snapshot.stage = "planning"
 	var actor: Dictionary = before.snapshot.actors.blade
 	actor.hand = ["left", "played", "right"]; actor.hand_count = 3; actor.deck_count = count; actor.discard_count = 4
-	actor.card_instances = {"left":{"definition_id":"brace"}, "played":{"definition_id":"take_stock"}, "right":{"definition_id":"nudge"}}
+	actor.card_instances = {"left":{"definition_id":"steady_guard"}, "played":{"definition_id":"take_stock"}, "right":{"definition_id":"nudge"}}
 	# Take Stock is a program card with no choices: one plain start plays it.
 	var action := {"type":"planning_commit_cards", "actor_id":"blade", "battle_id":before.snapshot.battle_id, "payload":{"card_ids":["played"], "pending_input_id":"draw-input", "status_id": JSON.stringify({"verb": "start", "label": "Play Take Stock", "die": 0})}}
 	before.legal_actions = [action]; before.pending_input = {"blade":{"id":"draw-input", "input_type":"planning", "allowed_commands":["planning_commit_cards"]}}
@@ -54,7 +54,7 @@ func _scenario(base: Dictionary, count: int) -> void:
 	for i in count:
 		var id := "drawn-" + str(i); ids.append(id)
 		after.snapshot.actors.blade.hand.append(id)
-		after.snapshot.actors.blade.card_instances[id] = {"definition_id":"brace" if i == 0 else "take_stock"}
+		after.snapshot.actors.blade.card_instances[id] = {"definition_id":"steady_guard" if i == 0 else "take_stock"}
 	after.events = [{"sequence":100,"type":"card_played","actor_id":"blade","energy_cost":1,"data":{"card_definition_id":"take_stock","card_instance_id":"played"}}, {"sequence":101,"type":"cards_drawn","actor_id":"blade","cards":ids,"count":count,"deck_empty":true}]
 	var fake := FakeBattleAuthority.new(); fake.enqueue(after)
 	var screen = SCREEN.instantiate(); screen.initial_result = before; screen.gateway = BattleGateway.new(fake); screen._auto_pass_disabled = true

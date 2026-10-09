@@ -12,7 +12,8 @@ func _run() -> void:
 	for width in [1024,1280,1920]:
 		root.size = Vector2i(width, 768 if width == 1024 else width * 9 / 16)
 		for frame in 6: await process_frame
-		for pair in [["cards", "brace"], ["abilities", "adventurer_guard"]]:
+		# No shipped card has a legacy card upgrade; the Guard ability upgrade exercises the shared comparison.
+		for pair in [["abilities", "adventurer_guard"]]:
 			screen._tabs.current_tab = 1 if pair[0] == "cards" else 0
 			screen.inspect_entry(pair[0], pair[1])
 			for frame in 5: await process_frame
@@ -20,8 +21,8 @@ func _run() -> void:
 			await _hover(button)
 			var comparison = screen._comparison
 			_expect(comparison.visible, "pointer hover opens " + pair[0] + " comparison")
-			# Brace+ (program) says saved cards "stay"; Guard+ says they "return".
-			var kept_word := "stay" if "stay" in comparison.after_text else "return"
+			# Guard+ says saved cards "return" to their piles.
+			var kept_word := "return"
 			_expect("Saved cards go to discard" in comparison.before_text and kept_word in comparison.after_text, "both full rules are shown")
 			_expect(not comparison.changed_after.is_empty() and kept_word in comparison.changed_after, "changed words highlighted")
 			_expect("energy" not in comparison.changed_after, "unchanged wording stays neutral")
@@ -38,10 +39,9 @@ func _run() -> void:
 			_expect(comparison.visible, "keyboard focus opens comparison")
 			button.release_focus(); comparison.dismiss()
 	# Hover remains informative when the upgrade is unaffordable.
-	screen._tabs.current_tab = 1; screen.inspect_entry("cards", "brace")
+	screen._tabs.current_tab = 0; screen.inspect_entry("abilities", "adventurer_guard")
 	for frame in 5: await process_frame
-	var disabled_button := _control(screen, "upgrade.brace"); disabled_button.disabled = true
-	var plus_before: int = screen._card_count("brace_plus")
+	var disabled_button := _control(screen, "upgrade.adventurer_guard"); disabled_button.disabled = true
 	var xp_before := int(screen.catalogs.adventurer.progression.xp)
 	await _hover(disabled_button)
 	_expect(screen._comparison.visible, "disabled upgrade still reveals comparison")
@@ -49,20 +49,16 @@ func _run() -> void:
 	await _click(disabled_button)
 	_expect(screen._purchase_overlay.visible and not screen._comparison.visible, "click opens existing review without hover overlap")
 	await _click(screen._purchase_confirm)
-	_expect(screen._card_count("brace_plus") == plus_before + 1 and int(screen.catalogs.adventurer.progression.xp) == xp_before - 10, "card upgrade still purchases once")
-	screen._tabs.current_tab = 0; screen.inspect_entry("abilities", "adventurer_guard")
-	for frame in 5: await process_frame
-	await _click(_control(screen, "upgrade.adventurer_guard")); await _click(screen._purchase_confirm)
-	_expect(screen.character.ability_board.defensive == ["adventurer_guard_plus"], "ability upgrade still works")
+	_expect(screen.character.ability_board.defensive == ["adventurer_guard_plus"] and int(screen.catalogs.adventurer.progression.xp) == xp_before - 25, "ability upgrade still purchases once")
 	var downgrade := _control(screen, "downgrade.adventurer_guard_plus.adventurer_guard")
 	await _hover(downgrade)
 	_expect(screen._comparison.visible and "Downgrade" in screen._comparison._title.text, "downgrade also compares tiers")
 	screen.inspect_entry("cards", "nudge")
 	_expect(not screen._comparison.visible, "changing inspected entry clears stale comparison")
 	# Long authored rules remain readable using the independent scroll columns.
-	screen.inspect_entry("cards", "brace")
+	screen._tabs.current_tab = 0; screen.inspect_entry("abilities", "adventurer_guard_plus")
 	for frame in 5: await process_frame
-	var button := _control(screen, "upgrade.brace")
+	var button := _control(screen, "downgrade.adventurer_guard_plus.adventurer_guard")
 	screen._comparison.present(button, "Current", "Upgrade", "Old rule. ".repeat(300), "New rule. ".repeat(300), 10)
 	for frame in 6: await process_frame
 	_expect(screen._comparison._after_rules.get_v_scroll_bar().max_value > screen._comparison._after_rules.size.y, "long rules scroll inside bounded comparison")

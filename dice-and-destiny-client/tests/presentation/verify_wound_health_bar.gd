@@ -21,7 +21,7 @@ func _run() -> void:
 				actor.current_health = actor.max_health - 6; actor.removed_count = 6
 				for index in 2:
 					fixture.snapshot.wounds.append({"id": "%s-wound-%d" % [actor_id,index], "target_actor_id": actor_id, "round": index + 1, "segment": "defensive", "source_content_id": "brine_lash" if actor_id == "blade" else "adventurer_strike", "cards": [
-						{"card_id": "%s-%d-a" % [actor_id,index], "card_definition_id": "brace" if actor_id == "blade" else "brine_surge", "original_zone": "hand"},
+						{"card_id": "%s-%d-a" % [actor_id,index], "card_definition_id": "steady_guard" if actor_id == "blade" else "brine_surge", "original_zone": "hand"},
 						{"card_id": "%s-%d-b" % [actor_id,index], "card_definition_id": "nudge" if actor_id == "blade" else "brine_surge", "original_zone": "deck"},
 						{"card_id": "%s-%d-c" % [actor_id,index], "card_definition_id": "take_stock" if actor_id == "blade" else "brine_surge", "original_zone": "discard"}]})
 			var screen = SCREEN.instantiate(); screen.initial_result = fixture; screen.gateway = BattleGateway.new(FakeBattleAuthority.new()); screen._auto_pass_disabled = true
@@ -38,7 +38,7 @@ func _run() -> void:
 					_expect(absf(segment.size.x - (profile.health.size.x - 10) * 3 / profile.health.max_value) < 0.1, "each wound occupies exactly three health units")
 					await _hover(segment)
 					_expect(canvas.gui_get_hovered_control() == segment, "pointer reaches " + actor_id + " wound")
-					_expect("3 damage" in segment.tooltip_text and "Round" in segment.tooltip_text and ("Brace" if actor_id == "blade" else "Brine Surge") in segment.tooltip_text, "hover describes wound and exact lost cards")
+					_expect("3 damage" in segment.tooltip_text and "Round" in segment.tooltip_text and ("Steady Guard" if actor_id == "blade" else "Brine Surge") in segment.tooltip_text, "hover describes wound and exact lost cards")
 					var tooltip: Control = segment._make_custom_tooltip(segment.tooltip_text); screen._root.add_child(tooltip)
 					await _settle(); _expect(tooltip.size.x <= 440 and tooltip.size.y < viewport.y, "tooltip wraps within viewport"); tooltip.queue_free()
 				# The final snapshot can arrive before damage playback. No future

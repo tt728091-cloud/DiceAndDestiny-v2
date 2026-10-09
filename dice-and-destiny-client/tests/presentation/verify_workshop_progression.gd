@@ -3,9 +3,9 @@ func _run() -> void:
 	root.size = Vector2i(1280, 720)
 	var runtime = root.get_node("LearnedBattleRuntime")
 	var data: Dictionary = runtime.card_authoring().result
-	var card: Dictionary = data.templates.brace.duplicate(true)
+	var card: Dictionary = data.templates.steady_guard.duplicate(true)
 	card.id = "branching_ward"; card.name = "Branching Ward"
-	card.economy = {"buy": 20, "sell": 7, "copy_limit": 1, "upgrades": [{"to": "brace_plus", "xp": 5}, {"to": "emergency_ward", "xp": 8}]}
+	card.economy = {"buy": 20, "sell": 7, "copy_limit": 1, "upgrades": [{"to": "reinforce", "xp": 5}, {"to": "emergency_ward", "xp": 8}]}
 	_expect(runtime.card_authoring("publish_card", card, int(data.revision)).get("ok", false), "publish configurable economy")
 	var screen = SCREEN.new(); screen.loadout_mode = "progression"; root.add_child(screen)
 	for frame in 8: await process_frame
@@ -18,7 +18,7 @@ func _run() -> void:
 	await _click(_control(screen, "sell." + card.id)); await _click(screen._purchase_confirm)
 	_expect(screen._card_count(card.id) == 0 and int(screen.catalogs.adventurer.progression.xp) == 87, "authored sale price credited")
 	await _click(_control(screen, "buy." + card.id)); await _click(screen._purchase_confirm)
-	var first = _control(screen, "upgrade." + card.id + ".brace_plus")
+	var first = _control(screen, "upgrade." + card.id + ".reinforce")
 	var second = _control(screen, "upgrade." + card.id + ".emergency_ward")
 	_expect(first != null and second != null, "both authored upgrade branches available")
 	await _click(second)

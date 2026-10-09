@@ -99,7 +99,7 @@ func _create_and_equip(_runtime: Node) -> Dictionary:
 	_expect(characters.selected_id == card.id, "new card selected in deck editor")
 	for id in characters._deck_counts(characters._drafts.adventurer).keys(): characters._set_card_count(id, 0)
 	characters.inspect_entry("cards", card.id); characters._quantity.value = 6
-	characters.inspect_entry("cards", "brace"); characters._quantity.value = 6
+	characters.inspect_entry("cards", "steady_guard"); characters._quantity.value = 6
 	await _root_click(characters._apply)
 	_expect(not characters._dirty("adventurer") and characters._card_count(card.id) == 6, "save authored battle deck through character editor")
 	characters.queue_free(); await process_frame

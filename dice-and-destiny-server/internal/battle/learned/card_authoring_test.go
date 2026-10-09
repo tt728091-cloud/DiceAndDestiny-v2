@@ -17,7 +17,7 @@ func TestEveryGeneralCardHasEditableProgram(t *testing.T) {
 		t.Fatal(err)
 	}
 	lib := catalogs["adventurer"]
-	ids := []string{"antidote", "battle_focus", "emergency_ward", "loaded_die", "sharpen_blade", "tip_it", "brace", "brace_plus", "nudge", "try_again", "strong_swing", "take_stock", "second_wind", "matchmaker", "turn_the_die", "disrupt", "second_guard", "reclaim", "reinforce", "triage", "dispel"}
+	ids := []string{"antidote", "battle_focus", "emergency_ward", "loaded_die", "sharpen_blade", "tip_it", "steady_guard", "nudge", "try_again", "strong_swing", "take_stock", "second_wind", "matchmaker", "turn_the_die", "disrupt", "second_guard", "reclaim", "reinforce", "triage", "dispel"}
 	for _, id := range ids {
 		t.Run(id, func(t *testing.T) {
 			c, err := content.EditableGeneralCard(lib.Cards[id])
@@ -40,12 +40,12 @@ func TestAuthoringPublishReloadAndRevision(t *testing.T) {
 		t.Fatal(err)
 	}
 	lib := catalogs["adventurer"]
-	c, err := content.EditableGeneralCard(lib.Cards["brace"])
+	c, err := content.EditableGeneralCard(lib.Cards["steady_guard"])
 	if err != nil {
 		t.Fatal(err)
 	}
-	c.ID = "custom_brace"
-	c.Name = "Custom Brace"
+	c.ID = "custom_guard"
+	c.Name = "Custom Guard"
 	c.Cost.Energy = 2
 	c.Program.Steps[0].Params["amount"] = 5
 	c.Economy = &content.CardEconomy{Buy: 25, Sell: 12, CopyLimit: 3}
@@ -100,7 +100,7 @@ func TestAuthoredDeckFullBattlesAndPinnedRevision(t *testing.T) {
 	lib := catalogs["adventurer"]
 	rev := 0
 	deck := []loadout.Entry{}
-	for _, id := range []string{"brace", "brace_plus", "nudge", "try_again", "strong_swing", "take_stock", "second_wind", "matchmaker", "turn_the_die", "battle_focus", "loaded_die", "emergency_ward"} {
+	for _, id := range []string{"steady_guard", "nudge", "try_again", "strong_swing", "take_stock", "second_wind", "matchmaker", "turn_the_die", "battle_focus", "loaded_die", "emergency_ward"} {
 		c, err := content.EditableGeneralCard(lib.Cards[id])
 		if err != nil {
 			t.Fatal(err)
@@ -134,11 +134,11 @@ func TestAuthoredDeckFullBattlesAndPinnedRevision(t *testing.T) {
 			t.Fatal(err)
 		}
 		pinned, _ := json.Marshal(s.current.Result.Snapshot.ContentCatalog)
-		if !strings.Contains(string(pinned), "authored_brace") {
+		if !strings.Contains(string(pinned), "authored_steady_guard") {
 			t.Fatal("new battle did not pin authored definitions")
 		}
 		if count == 1 {
-			c := catalogs["adventurer"].Cards["authored_brace"]
+			c := catalogs["adventurer"].Cards["authored_steady_guard"]
 			c.Cost.Energy = 9
 			if _, err = content.SaveAuthoredCard(dir, lib, c, rev); err != nil {
 				t.Fatal(err)
@@ -206,10 +206,10 @@ func TestAuthoredEconomyBranchesSaleAndLimit(t *testing.T) {
 		t.Fatal(err)
 	}
 	lib := catalogs["adventurer"]
-	c, _ := content.EditableGeneralCard(lib.Cards["brace"])
+	c, _ := content.EditableGeneralCard(lib.Cards["steady_guard"])
 	c.ID = "branching_ward"
 	c.Name = "Branching Ward"
-	c.Economy = &content.CardEconomy{Buy: 20, Sell: 7, CopyLimit: 1, Upgrades: []content.CardUpgrade{{To: "brace_plus", XP: 5}, {To: "emergency_ward", XP: 8}}}
+	c.Economy = &content.CardEconomy{Buy: 20, Sell: 7, CopyLimit: 1, Upgrades: []content.CardUpgrade{{To: "emergency_ward", XP: 5}, {To: "battle_focus", XP: 8}}}
 	if _, err = content.SaveAuthoredCard(dir, lib, c, 0); err != nil {
 		t.Fatal(err)
 	}
@@ -253,7 +253,7 @@ func TestAuthoredEconomyBranchesSaleAndLimit(t *testing.T) {
 	if err = trade("upgrade_card", "", 5); err == nil {
 		t.Fatal("ambiguous upgrade accepted")
 	}
-	if err = trade("upgrade_card", "brace_plus", 5); err != nil {
+	if err = trade("upgrade_card", "emergency_ward", 5); err != nil {
 		t.Fatal(err)
 	}
 }
@@ -272,7 +272,7 @@ func TestWorkshopRejectsPublicationThatBreaksSavedDeck(t *testing.T) {
 	if _, err = loadout.ReadProgress(dir, "adventurer", economy, catalogs["adventurer"]); err != nil {
 		t.Fatal(err)
 	}
-	c, _ := content.EditableGeneralCard(catalogs["adventurer"].Cards["brace"])
+	c, _ := content.EditableGeneralCard(catalogs["adventurer"].Cards["steady_guard"])
 	for _, eco := range []content.CardEconomy{{Buy: 9999, Sell: 1, CopyLimit: 20}, {Buy: 10, Sell: 10, CopyLimit: 1}} {
 		c.Economy = &eco
 		raw, _ := json.Marshal(map[string]any{"op": "publish_card", "content_root": root, "loadout_root": dir, "catalog_revision": 0, "card": c})
@@ -294,7 +294,7 @@ func TestGuidedCardCapabilityMatrix(t *testing.T) {
 		t.Fatal(err)
 	}
 	lib := catalogs["adventurer"]
-	base, _ := content.EditableGeneralCard(lib.Cards["brace"])
+	base, _ := content.EditableGeneralCard(lib.Cards["steady_guard"])
 	base.Program.RollRequirement = "any"
 	valid, invalid := 0, 0
 	makeStep := func(effect string) content.CardStep {
@@ -478,7 +478,7 @@ func TestCardCreationNestedAndDrawDependencies(t *testing.T) {
 	if content.ValidateCardProgram(c, lib) == nil {
 		t.Fatal("nested target allowed without its parent draw")
 	}
-	guard, _ := content.EditableGeneralCard(lib.Cards["brace"])
+	guard, _ := content.EditableGeneralCard(lib.Cards["steady_guard"])
 	c.Program.Steps = []content.CardStep{{Effect: "choice", Choices: []content.CardOption{{Name: "Guard", Steps: guard.Program.Steps}}}}
 	if content.ValidateCardProgram(c, lib) == nil {
 		t.Fatal("nested defense effect accepted in offensive timing")

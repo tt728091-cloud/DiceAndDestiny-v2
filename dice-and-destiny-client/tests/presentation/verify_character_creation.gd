@@ -45,7 +45,7 @@ func _run() -> void:
 			screen.inspect_entry("abilities", str(screen.character.ability_board.offensive[0]))
 			await _capture(screen, "%s-abilities-%d" % [id,width])
 			if id == "adventurer":
-				screen._tabs.current_tab = 1; screen.inspect_entry("cards", "brace_plus")
+				screen._tabs.current_tab = 1; screen.inspect_entry("cards", "steady_guard")
 				await _capture(screen, "adventurer-deck-%d" % width)
 		screen.queue_free(); await process_frame
 	_expect(runtime._initialized == before_initialized, "viewer never initializes a battle or policy")

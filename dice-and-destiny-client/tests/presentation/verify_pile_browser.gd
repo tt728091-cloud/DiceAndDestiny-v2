@@ -17,7 +17,7 @@ func _run() -> void:
 				fixture.snapshot.segment = "offensive" if stage == "planning" else "damage_resolution"; fixture.snapshot.stage = stage
 				for i in range(2, enemies + 1): fixture.snapshot.actors["goblin-" + str(i)] = fixture.snapshot.actors.goblin.duplicate(true)
 				var owner: Dictionary = fixture.snapshot.actors.blade
-				owner.deck_composition = {"brace": 2, "strong_swing": 1}; owner.deck_count = 3
+				owner.deck_composition = {"steady_guard": 2, "strong_swing": 1}; owner.deck_count = 3
 				owner.discard_composition = {"nudge": 2}; owner.discard_count = 2
 				owner.removed_composition = {"try_again": 1}; owner.removed_count = 1
 				var screen = SCREEN.instantiate(); screen.initial_result = fixture; screen._auto_pass_disabled = true
@@ -53,7 +53,7 @@ func _run() -> void:
 						await _click(browser.close_button.get_global_rect().get_center())
 						_expect(screen._open_pile.is_empty() and not is_instance_valid(screen._pile_browser), "Close returns to battle")
 				# Large piles scroll, tabs switch categories, Escape and outside clicks dismiss.
-				screen._view.actors.blade.discard_composition = {"brace": 30}; screen._view.actors.blade.discard_count = 30
+				screen._view.actors.blade.discard_composition = {"steady_guard": 30}; screen._view.actors.blade.discard_count = 30
 				await _click(screen._actor_profiles.blade._stat_cells.deck.get_global_rect().get_center())
 				var browser = screen._pile_browser
 				await _click(browser.tabs.discard.get_global_rect().get_center())

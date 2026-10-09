@@ -28,7 +28,7 @@ func TestAccessTypesAndAdminOverrides(t *testing.T) {
 		if problems := e.Access.Problems(character, p.Deck, p.Abilities); len(problems) != 0 {
 			t.Fatalf("starter %s: %v", character, problems)
 		}
-		if !e.Access.Allows(character, "cards", "brace") {
+		if !e.Access.Allows(character, "cards", "steady_guard") {
 			t.Fatal("General missing")
 		}
 		if e.Access.Allows(character, "cards", "pinprick") != (character == "venom") {
@@ -132,18 +132,19 @@ func TestTypeRestrictedUpgradeTargetsAndAbilityBattleConflict(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	e, err := loadout.LoadEconomy(contentRoot, catalogs)
+	// The rejected card upgrade must exist, so it comes from a legacy economy.
+	e, err := loadout.LoadEconomy(legacyUpgradeContent(t), catalogs)
 	if err != nil {
 		t.Fatal(err)
 	}
 	root := t.TempDir()
 	lib := catalogs["adventurer"]
-	settings := loadout.AdminSettings{CardTypes: map[string]string{"brace_plus": "venom"}, AbilityTypes: map[string]string{}}
+	settings := loadout.AdminSettings{CardTypes: map[string]string{"emergency_ward": "venom"}, AbilityTypes: map[string]string{}}
 	if err = loadout.SaveAdmin(root, e, catalogs, settings); err != nil {
 		t.Fatal(err)
 	}
 	p, _ := loadout.ReadProgress(root, "adventurer", e, lib)
-	if _, err = loadout.Buy(root, "adventurer", e, lib, loadout.Purchase{Kind: "upgrade_card", ID: "brace", ExpectedCost: 10, Revision: p.Revision}); err == nil {
+	if _, err = loadout.Buy(root, "adventurer", e, lib, loadout.Purchase{Kind: "upgrade_card", ID: "steady_guard", ExpectedCost: 10, Revision: p.Revision}); err == nil {
 		t.Fatal("cross-type card upgrade accepted")
 	}
 	p, err = loadout.Buy(root, "adventurer", e, lib, loadout.Purchase{Kind: "upgrade_ability", ID: "adventurer_guard", ExpectedCost: 25, Revision: p.Revision})
@@ -172,7 +173,7 @@ func TestTypeRestrictedUpgradeTargetsAndAbilityBattleConflict(t *testing.T) {
 	}
 	_, _, settings, _ = loadout.ProgressSnapshot(root, e, catalogs)
 	settings.AbilityTypes["adventurer_guard"] = "general"
-	settings.CardTypes["brace_plus"] = "general" // Shared starter now contains Brace+.
+	settings.CardTypes["emergency_ward"] = "general"
 	if err = loadout.SaveAdmin(root, e, catalogs, settings); err != nil {
 		t.Fatal(err)
 	}

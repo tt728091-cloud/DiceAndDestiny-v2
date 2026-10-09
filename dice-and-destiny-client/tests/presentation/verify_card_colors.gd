@@ -14,7 +14,7 @@ func _run() -> void:
 	_expect(fixture.get("accepted") == true, "native catalog loads")
 	BattleViewState.new().apply_result(fixture)
 	var cards: Dictionary = BattlePresentationCatalog._catalog.get("cards", {})
-	_expect(cards.has("brace"), "Brace is in the catalog")
+	_expect(cards.has("steady_guard"), "Steady Guard is in the catalog")
 	var board := Control.new(); root.add_child(board)
 	var cases := [
 		[{}, COLORS.FRAMES.colorless, COLORS.BORDERS.black],
@@ -23,12 +23,12 @@ func _run() -> void:
 		[{"frame_color": "purple", "border_color": "#12"}, COLORS.FRAMES.colorless, COLORS.BORDERS.black],
 	]
 	for entry in cases:
-		var presentation: Dictionary = cards.brace.get("presentation", {})
+		var presentation: Dictionary = cards.steady_guard.get("presentation", {})
 		presentation.erase("frame_color"); presentation.erase("border_color")
 		presentation.merge(entry[0], true)
-		cards.brace.presentation = presentation
+		cards.steady_guard.presentation = presentation
 		var card := BattleCard.new(); board.add_child(card)
-		card.configure("brace-1", "brace", true)
+		card.configure("steady_guard-1", "steady_guard", true)
 		card.size = card.custom_minimum_size
 		_expect(card._frame_color.is_equal_approx(entry[1]), "frame colour for %s" % [entry[0]])
 		_expect(card._border_color.is_equal_approx(entry[2]), "border colour for %s" % [entry[0]])

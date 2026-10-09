@@ -14,7 +14,7 @@ import (
 // guardCard authors a prevent-1 program card with the given play windows.
 func guardCard(t *testing.T, lib *content.BattleLibrary, id string, windows ...string) content.BattleCardDefinition {
 	t.Helper()
-	c, err := content.EditableGeneralCard(lib.Cards["brace"])
+	c, err := content.EditableGeneralCard(lib.Cards["steady_guard"])
 	if err != nil {
 		t.Fatal(err)
 	}

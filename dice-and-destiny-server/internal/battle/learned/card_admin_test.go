@@ -18,7 +18,7 @@ func TestAdminCardDeletionLifecycle(t *testing.T) {
 		t.Fatal(err)
 	}
 	lib := catalogs["adventurer"]
-	c, _ := content.EditableGeneralCard(lib.Cards["brace"])
+	c, _ := content.EditableGeneralCard(lib.Cards["steady_guard"])
 	c.ID, c.Name = "delete_test", "Delete Test"
 	c.Economy = &content.CardEconomy{Buy: 10, Sell: 10, CopyLimit: 20}
 	if _, err = content.SaveAuthoredCard(dir, lib, c, 0); err != nil {
@@ -44,13 +44,13 @@ func TestAdminCardDeletionLifecycle(t *testing.T) {
 	if request("admin_delete_card", token, c.ID, 0)["ok"] == true {
 		t.Fatal("stale deletion accepted")
 	}
-	blocked := request("preview_delete_card", token, "brace", 1)["result"].(map[string]any)
+	blocked := request("preview_delete_card", token, "steady_guard", 1)["result"].(map[string]any)
 	if blocked["can_delete"] != false || !strings.Contains(blocked["reason"].(string), "starter deck") {
 		t.Fatalf("starter reference not explained: %v", blocked)
 	}
 	catalogs, _ = CharacterCatalogs(root, dir)
 	economy, _ := loadout.LoadEconomy(root, catalogs)
-	deck := []loadout.Entry{{CardID: c.ID, Count: 2}, {CardID: "brace", Count: 2}}
+	deck := []loadout.Entry{{CardID: c.ID, Count: 2}, {CardID: "steady_guard", Count: 2}}
 	if _, err = loadout.WriteSharedDeck(dir, "adventurer", deck, economy, catalogs["adventurer"]); err != nil {
 		t.Fatal(err)
 	}
@@ -69,7 +69,7 @@ func TestAdminCardDeletionLifecycle(t *testing.T) {
 	if request("admin_delete_card", token, c.ID, 1)["ok"] == true {
 		t.Fatal("direct delete bypassed deck guard")
 	}
-	if _, err = loadout.WriteSharedDeck(dir, "adventurer", []loadout.Entry{{CardID: "brace", Count: 2}}, economy, catalogs["adventurer"]); err != nil {
+	if _, err = loadout.WriteSharedDeck(dir, "adventurer", []loadout.Entry{{CardID: "steady_guard", Count: 2}}, economy, catalogs["adventurer"]); err != nil {
 		t.Fatal(err)
 	}
 	parent := c
@@ -155,7 +155,7 @@ func TestAdminCardDeletionLifecycle(t *testing.T) {
 		t.Fatal("stale admin overrides broke next save: ", err)
 	}
 	request("close_card_admin", token, "", 0)
-	if request("preview_delete_card", token, "brace", 4)["ok"] == true {
+	if request("preview_delete_card", token, "steady_guard", 4)["ok"] == true {
 		t.Fatal("closed admin session accepted")
 	}
 }

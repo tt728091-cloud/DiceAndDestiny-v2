@@ -22,11 +22,11 @@ func TestAuthoredRootSeparatesSharedContentFromPlayerState(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	c, err := content.EditableGeneralCard(catalogs["adventurer"].Cards["brace"])
+	c, err := content.EditableGeneralCard(catalogs["adventurer"].Cards["steady_guard"])
 	if err != nil {
 		t.Fatal(err)
 	}
-	c.ID, c.Name = "shared_brace", "Shared Brace"
+	c.ID, c.Name = "shared_guard", "Shared Guard"
 	if _, err = content.SaveAuthoredCard(loadoutRoot, catalogs["adventurer"], c, 0); err != nil {
 		t.Fatal(err)
 	}
@@ -39,7 +39,7 @@ func TestAuthoredRootSeparatesSharedContentFromPlayerState(t *testing.T) {
 	if catalogs, err = CharacterCatalogs(contentRoot, loadoutRoot); err != nil {
 		t.Fatal(err)
 	}
-	if _, ok := catalogs["venom"].Cards["shared_brace"]; !ok {
+	if _, ok := catalogs["venom"].Cards["shared_guard"]; !ok {
 		t.Fatal("shared card missing from catalog")
 	}
 

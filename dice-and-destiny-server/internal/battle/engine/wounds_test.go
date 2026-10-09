@@ -18,17 +18,17 @@ func TestCommittedWoundsExcludeDefenseAndCardPrevention(t *testing.T) {
 	b.Segment.Current = segment.Defensive
 	b.Settled.Stage = stageDefenseSelect
 	a := b.Actors["player"]
-	a.Cards = state.CardZones{Hand: []string{"brace_plus-0"}, Discard: []string{"nudge-0", "nudge-1", "strong_swing-0", "strong_swing-1", "take_stock-0", "take_stock-1", "second_wind-0"}}
+	a.Cards = state.CardZones{Hand: []string{"guard_bulwark-0"}, Discard: []string{"nudge-0", "nudge-1", "strong_swing-0", "strong_swing-1", "take_stock-0", "take_stock-1", "second_wind-0"}}
 	b.Actors["player"] = a
 	e := NewEngine()
-	// Seven incoming, two already blocked by defense, then three by Brace+.
+	// Seven incoming, two already blocked by defense, then three by Bulwark.
 	batch, err := e.buildDamageBatch(&b, []state.SettledDamageSource{{ID: "hit", SourceActorID: "enemy", SourceContentID: "brine_surge", TargetActorID: "player", BaseAmount: 7, Prevention: 2}})
 	if err != nil {
 		t.Fatal(err)
 	}
 	b.Settled.PendingDamage = batch
 	openSettledWindow(&b, "damage", stageDefenseSelect, "damage_response", []command.Type{command.TypeCommitInteraction, command.TypePass})
-	if err := playProgramCard(e, &b, lib, "player", "brace_plus-0", func(c programChoice) bool { return c.Source == "hit" }); err != nil {
+	if err := playProgramCard(e, &b, lib, "player", "guard_bulwark-0", func(c programChoice) bool { return c.Source == "hit" }); err != nil {
 		t.Fatal(err)
 	}
 	if len(b.Wounds) != 0 {
@@ -45,7 +45,7 @@ func TestCommittedWoundsExcludeDefenseAndCardPrevention(t *testing.T) {
 		t.Fatalf("lost source identity: %+v", w)
 	}
 	for _, c := range w.Cards {
-		if !containsString(b.Actors["player"].Cards.Removed, c.CardID) || c.CardID == "brace_plus-0" || c.CardDefinitionID == "" {
+		if !containsString(b.Actors["player"].Cards.Removed, c.CardID) || c.CardID == "guard_bulwark-0" || c.CardDefinitionID == "" {
 			t.Fatalf("incorrect lost card: %+v", c)
 		}
 	}
@@ -92,7 +92,7 @@ func TestWoundsSeparateSourcesRoundsAndOverkill(t *testing.T) {
 			b.Settled.UnifiedDefense = true
 			b.Segment.Current = segmentID
 			a := b.Actors["player"]
-			a.Cards = state.CardZones{Discard: []string{"nudge-0", "nudge-1"}, Deck: []string{"strong_swing-0", "strong_swing-1", "take_stock-0", "take_stock-1"}, Hand: []string{"brace_plus-0"}}
+			a.Cards = state.CardZones{Discard: []string{"nudge-0", "nudge-1"}, Deck: []string{"strong_swing-0", "strong_swing-1", "take_stock-0", "take_stock-1"}, Hand: []string{"guard_bulwark-0"}}
 			b.Actors["player"] = a
 			e := NewEngine()
 			first, err := e.buildDamageBatch(&b, []state.SettledDamageSource{

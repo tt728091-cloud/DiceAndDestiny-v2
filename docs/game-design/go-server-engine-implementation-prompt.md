@@ -138,7 +138,7 @@ At minimum, the implementation must support the following as reusable rules:
   explicit reusable rule says otherwise.
 - Reveals still show what was played even though the card is already discarded.
 - Damage-prevention cards release saved cards in their current pile, preserving
-  health and never undoing a draw or play. A played Brace still goes to discard,
+  health and never undoing a draw or play. A played prevention card still goes to discard,
   even if it saves itself. Different destinations require an explicit effect;
   Protect retains its authored saved-to-discard status rule.
 

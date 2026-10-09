@@ -36,7 +36,7 @@ func TestAbilityDowngradeRefundPersistenceAndBattle(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if p.XP != 25 || p.UpgradeSpent != 0 || *p.Budget != 155 || totalProgress(p.Deck) != 12 || !reflect.DeepEqual(p.Abilities.Defensive, []string{"adventurer_guard"}) {
+	if p.XP != 25 || p.UpgradeSpent != 0 || *p.Budget != 145 || totalProgress(p.Deck) != 12 || !reflect.DeepEqual(p.Abilities.Defensive, []string{"adventurer_guard"}) {
 		t.Fatalf("invalid refund: %+v", p)
 	}
 	if !reflect.DeepEqual(s.current.Result.Snapshot.Actors["seat-a"].DefensiveAbilities, []string{"adventurer_guard_plus"}) {

@@ -24,8 +24,7 @@ func shippedCards(t *testing.T, packs ...string) BattleLibrary {
 func TestProgramCardFacesAreShort(t *testing.T) {
 	lib := shippedCards(t, "adventurer_v1", "general_v1")
 	want := map[string]string{
-		"brace":        "Prevent 3\nSaved cards → discard",
-		"brace_plus":   "Prevent 3",
+		"steady_guard": "Prevent 1\nSaved cards → discard",
 		"nudge":        "Change 1 die by ±1",
 		"second_wind":  "Gain 10 Energy",
 		"strong_swing": "+2 damage to 1 ability this Offense",
@@ -46,6 +45,16 @@ func TestProgramCardFacesAreShort(t *testing.T) {
 		if strings.Contains(c.Presentation.EffectSummary, "Play:") || !strings.Contains(c.Presentation.RulesText, "Play:") {
 			t.Errorf("%s: timing belongs in the rules, not the face", id)
 		}
+	}
+	// The default original-pile destination stays off the face (the Steady Guard tree's Bulwark).
+	bulwark, err := EditableGeneralCard(lib.Cards["steady_guard"])
+	if err != nil {
+		t.Fatal(err)
+	}
+	bulwark.Program.Steps[0].Params = map[string]any{"amount": 3, "destination": SavedCardsOriginal}
+	PresentProgramCard(&bulwark, nil)
+	if bulwark.Presentation.EffectSummary != "Prevent 3" {
+		t.Errorf("original-pile prevention face = %q, want %q", bulwark.Presentation.EffectSummary, "Prevent 3")
 	}
 }
 
@@ -72,7 +81,7 @@ func TestCardTimingTagsMatchRules(t *testing.T) {
 	cases := map[string][]CardTimingTag{
 		"strong_swing":  {{Segment: "offense", When: "before"}},
 		"try_again":     {{Segment: "offense", When: "after"}},
-		"brace":         {{Segment: "defense", When: "any"}},
+		"steady_guard":  {{Segment: "defense", When: "any"}},
 		"dispel":        {{Segment: "offense", When: "any"}, {Segment: "defense", When: "any"}},
 		"disrupt":       {{Segment: "offense", Reaction: true}},
 		"second_guard":  {{Segment: "defense", Reaction: true}},

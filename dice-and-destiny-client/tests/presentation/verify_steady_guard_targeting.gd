@@ -6,24 +6,27 @@ var failed := false
 var canvas: SubViewport
 var base: Dictionary
 var clicked_pose := Transform2D.IDENTITY
+# Steady Guard saves one of three revealed cards; Reinforce (a shipped program
+# card) saves two, so multi-card saved flights stay covered too.
+const PREVENTED := {"steady_guard": 1, "reinforce": 2}
 func _initialize() -> void: call_deferred("_run")
 func _run() -> void:
 	canvas = SubViewport.new(); canvas.gui_embed_subwindows = true; canvas.render_target_update_mode = SubViewport.UPDATE_ALWAYS; root.add_child(canvas); canvas.notify_mouse_entered()
 	var gateway = GATEWAY.new(root.get_node("LearnedBattleRuntime"), "seat-a", "brine-mask-pair", "adventurer")
-	base = gateway.start_battle("brace-targeting", 43)
+	base = gateway.start_battle("steady-guard-targeting", 43)
 	for width in [1280, 1920]:
 		canvas.size = Vector2i(width, width * 9 / 16)
 		for unified in [false, true]:
-			for definition in ["brace", "brace_plus"]:
+			for definition in ["steady_guard", "reinforce"]:
 				for scenario in ["single", "same_enemy", "multiple_enemies", "one_viable", "none"]: await _scenario(scenario, unified, definition)
 	await _native()
-	print("BRACE TARGETING: " + ("FAILED" if failed else "PASSED")); quit(1 if failed else 0)
-func _scenario(scenario: String, unified: bool = false, definition: String = "brace") -> void:
+	print("STEADY GUARD TARGETING: " + ("FAILED" if failed else "PASSED")); quit(1 if failed else 0)
+func _scenario(scenario: String, unified: bool = false, definition: String = "steady_guard") -> void:
 	var fixture := base.duplicate(true); fixture.events = []; fixture.learned_policy = {}
 	fixture.snapshot.unified_defense = unified
 	fixture.snapshot.segment = "defensive" if unified else "damage_resolution"; fixture.snapshot.stage = "defense_selection" if unified else "damage_reaction"
-	fixture.snapshot.actors.blade.hand = ["brace-card", "other-1", "other-2"]; fixture.snapshot.actors.blade.hand_count = 3
-	fixture.snapshot.actors.blade.card_instances = {"brace-card": {"instance_id": "brace-card", "definition_id": definition}, "other-1": {"instance_id": "other-1", "definition_id": "nudge"}, "other-2": {"instance_id": "other-2", "definition_id": "try_again"}}
+	fixture.snapshot.actors.blade.hand = ["guard-card", "other-1", "other-2"]; fixture.snapshot.actors.blade.hand_count = 3
+	fixture.snapshot.actors.blade.card_instances = {"guard-card": {"instance_id": "guard-card", "definition_id": definition}, "other-1": {"instance_id": "other-1", "definition_id": "nudge"}, "other-2": {"instance_id": "other-2", "definition_id": "try_again"}}
 	fixture.snapshot.actors.blade.energy_points = 3
 	fixture.pending_input = {"blade": {"id": "damage-input", "segment": fixture.snapshot.segment, "stage": fixture.snapshot.stage, "allowed_commands": ["commit_interaction", "pass"]}}
 	fixture.legal_actions = []; fixture.snapshot.damage_sources = []
@@ -47,18 +50,18 @@ func _scenario(scenario: String, unified: bool = false, definition: String = "br
 	after.snapshot.actors.blade.energy_points = 2
 	after.snapshot.actors.blade.discard_count += 1
 	var defended_source := "incoming-0" if scenario == "single" else "incoming-1"
-	var remaining := 0 if scenario == "single" else 1
-	after.events = [{"type": "damage_prevented_or_modified", "sequence": 10000, "actor_id": "blade", "data": {"source_id": defended_source, "card_definition_id": definition, "card_instance_id": "brace-card", "damage_before": 3, "damage_after": remaining}}]
+	var remaining: int = 3 - int(PREVENTED[definition])
+	after.events = [{"type": "damage_prevented_or_modified", "sequence": 10000, "actor_id": "blade", "data": {"source_id": defended_source, "card_definition_id": definition, "card_instance_id": "guard-card", "damage_before": 3, "damage_after": remaining}}]
 	for source in after.snapshot.settled_damage.sources:
 		if source.id == defended_source: source.final_amount = remaining
 	for removal in after.snapshot.settled_damage.removals:
-		if defended_source in removal.damage_proposal_ids and (remaining == 0 or removal.card_id != defended_source + "0"):
+		if defended_source in removal.damage_proposal_ids and int(str(removal.card_id).trim_prefix(defended_source)) >= remaining:
 			removal.released = true; removal.released_destination = "discard"
 	var fake := FakeBattleAuthority.new(); fake.enqueue(after)
 	var screen = SCREEN.instantiate(); screen.initial_result = fixture; screen.gateway = BattleGateway.new(fake); screen._auto_pass_disabled = true
 	# Lists start folded; unfold the defended attack's so its saved-card flights play.
 	screen._damage_cards_open["source:" + defended_source] = true
-	screen.active_store = ActiveBattleStore.new(WorkspacePaths.persistent_file("brace-targeting.json")); canvas.add_child(screen); screen.set_process(false)
+	screen.active_store = ActiveBattleStore.new(WorkspacePaths.persistent_file("steady-guard-targeting.json")); canvas.add_child(screen); screen.set_process(false)
 	await _ready_hand(screen)
 	# An earlier clicked source must never override the card-first choice.
 	screen._selected_source = "outgoing"
@@ -68,7 +71,7 @@ func _scenario(scenario: String, unified: bool = false, definition: String = "br
 		_expect(fake.commands.size() == 1, "one viable source plays immediately: " + scenario)
 		if fake.commands.size() == 1: _expect(fake.commands[0] == JSON.stringify(fixture.legal_actions[-1]), "auto-target sends exact current legal command")
 	elif scenario == "none":
-		_expect(fake.commands.is_empty() and screen._selected_card.is_empty(), "fully prevented attacks cannot waste Brace")
+		_expect(fake.commands.is_empty() and screen._selected_card.is_empty(), "fully prevented attacks cannot waste Steady Guard")
 	else:
 		_expect(fake.commands.is_empty() and screen._selected_card.get("source_targeting", false), "card first waits for source without spending")
 		var motion := InputEventMouseMotion.new(); motion.position = Vector2(10, 10); canvas.push_input(motion, true)
@@ -82,7 +85,7 @@ func _scenario(scenario: String, unified: bool = false, definition: String = "br
 			_expect(screen._attack_intents[id].intent.get_meta("inspection_id") == "battle.card_target." + id, "all incoming sources highlighted, including same-enemy attacks")
 			_expect(not ("Save with" in _heading(screen, id).text), "the card list under a badge is not a second card target")
 		_expect(screen._attack_intents.outgoing.intent.disabled, "outgoing damage cannot be chosen")
-		await _capture("brace-targets-%s-%d" % [scenario, canvas.size.x])
+		await _capture("guard-targets-%s-%s-%d" % [definition, scenario, canvas.size.x])
 		# Click the selected card a second time to cancel without an authority call.
 		await _ready_hand(screen); await _click_card(screen)
 		_expect(screen._selected_card.is_empty() and fake.commands.is_empty(), "second click cancels without spending")
@@ -109,8 +112,8 @@ func _scenario(scenario: String, unified: bool = false, definition: String = "br
 	if not fake.commands.is_empty(): await _verify_feedback(screen, clicked_pose, scenario + "-" + definition)
 	screen.queue_free(); await process_frame
 func _start_action(fixture: Dictionary, extra: Dictionary) -> Dictionary:
-	var choice := {"verb": "start", "label": "Play Brace", "die": 0}; choice.merge(extra)
-	return {"battle_id": fixture.snapshot.battle_id, "actor_id": "blade", "type": "commit_interaction", "payload": {"pending_input_id": "damage-input", "commitment": {"card_ids": ["brace-card"], "choice_id": JSON.stringify(choice)}}}
+	var choice := {"verb": "start", "label": "Play Steady Guard", "die": 0}; choice.merge(extra)
+	return {"battle_id": fixture.snapshot.battle_id, "actor_id": "blade", "type": "commit_interaction", "payload": {"pending_input_id": "damage-input", "commitment": {"card_ids": ["guard-card"], "choice_id": JSON.stringify(choice)}}}
 func _ready_hand(screen) -> void:
 	for frame in 12: await process_frame
 	screen._flow_until = 0
@@ -149,9 +152,9 @@ func _verify_feedback(screen, original_pose: Transform2D, caption: String) -> vo
 			_expect(panel._played.modulate.a > 0 and panel._played.modulate.a < 1, "played card fades while damage and saves animate")
 			_expect(screen._hand_dock.prevention_animation_active, "hand stays open during prevention")
 			var presenter: Control = screen._attack_intents[panel._source_id]
-			_expect(int(presenter.damage.text) < panel._before and int(presenter.damage.text) > panel._after, "damage decreases during saved-card flights")
+			_expect((int(presenter.damage.text) < panel._before and int(presenter.damage.text) > panel._after) if panel._before - panel._after > 1 else (int(presenter.damage.text) <= panel._before and int(presenter.damage.text) >= panel._after), "damage decreases during saved-card flights")
 			_expect(panel._saved.any(func(entry): return entry.progress > 0 and entry.progress < 1), "saved cards move during damage reduction: " + caption + " " + str(canvas.size.x))
-			await _capture("brace-feedback-" + caption + "-" + str(canvas.size.x))
+			await _capture("guard-feedback-" + caption + "-" + str(canvas.size.x))
 	_expect(not screen._hand_dock.prevention_animation_active and panel._played.modulate.a == 0, "finished feedback releases hand and removes played card")
 func _click(point: Vector2) -> void:
 	var motion := InputEventMouseMotion.new(); motion.position = point; canvas.push_input(motion, true); await process_frame
@@ -162,7 +165,7 @@ func _heading(screen, id: String) -> Button:
 		if button.get_meta("inspection_id", "") == "battle.damage_stack." + id: return button
 	return null
 func _capture(filename: String) -> void:
-	var directory := OS.get_environment("DICE_AND_DESTINY_BRACE_SCREENSHOTS")
+	var directory := OS.get_environment("DICE_AND_DESTINY_GUARD_SCREENSHOTS")
 	if directory.is_empty() or DisplayServer.get_name() == "headless": return
 	await process_frame # Flush queued CanvasItem trails before capturing.
 	RenderingServer.force_draw(); canvas.get_texture().get_image().save_png(directory.path_join(filename + ".png"))
@@ -182,12 +185,12 @@ func _native() -> void:
 	# Lists start folded; unfold the incoming attack's so its saved-card flights play.
 	for source in result.snapshot.get("settled_damage", {}).get("sources", []):
 		if source.get("target_actor_id") == "blade": screen._damage_cards_open["source:" + str(source.id)] = true
-	screen.active_store = ActiveBattleStore.new(WorkspacePaths.persistent_file("brace-native.json")); canvas.add_child(screen); screen.set_process(false)
+	screen.active_store = ActiveBattleStore.new(WorkspacePaths.persistent_file("steady-guard-native.json")); canvas.add_child(screen); screen.set_process(false)
 	await _ready_hand(screen)
 	var card_index := -1
 	for i in screen._hand_dock.cards.size():
-		if screen._hand_dock.cards[i].definition_id in ["brace", "brace_plus"]: card_index = i; break
-	_expect(card_index >= 0, "native trace reaches playable Brace")
+		if screen._hand_dock.cards[i].definition_id == "steady_guard": card_index = i; break
+	_expect(card_index >= 0, "native trace reaches playable Steady Guard")
 	if card_index >= 0:
 		var before: Dictionary = screen._view.actor("blade").duplicate(true)
 		var card_id: String = screen._hand_dock.cards[card_index].instance_id
@@ -197,16 +200,16 @@ func _native() -> void:
 		var original_pose: Transform2D = screen._root.get_global_transform_with_canvas().affine_inverse() * hand.cards[card_index].get_global_transform_with_canvas()
 		await _click(point)
 		var after: Dictionary = screen._view.actor("blade")
-		_expect(screen._error_message.is_empty() and card_id not in after.hand, "real Brace click accepted without selecting incoming source")
+		_expect(screen._error_message.is_empty() and card_id not in after.hand, "real Steady Guard click accepted without selecting incoming source")
 		_expect(int(after.energy_points) == int(before.energy_points) - 5, "real play spends exactly five energy")
 		_expect(int(after.current_health) == int(before.current_health), "prevention preserves health")
 		_expect(not screen._damage_feedback.is_empty(), "real play starts saved-card feedback")
-		if not screen._damage_feedback.is_empty(): _expect(screen._damage_feedback.saved.size() == 3, "Brace saves three revealed damage cards")
-		_expect(int(after.discard_count) > int(before.discard_count), "played Brace reaches discard")
+		if not screen._damage_feedback.is_empty(): _expect(screen._damage_feedback.saved.size() == 1, "Steady Guard saves one revealed damage card")
+		_expect(int(after.discard_count) > int(before.discard_count), "played Steady Guard reaches discard")
 		await _verify_feedback(screen, original_pose, "native")
 	screen.queue_free(); await process_frame
 func _expect(ok: bool, message: String) -> void:
-	if not ok: failed = true; push_error("BRACE TARGETING: " + message)
+	if not ok: failed = true; push_error("STEADY GUARD TARGETING: " + message)
 
 func _semantic(value):
 	if value is Dictionary:

@@ -23,7 +23,7 @@ func _run() -> void:
 func _source(sources: Array, removals: Array, id: String, attacker: String, target: String, ability: String, amount: int) -> void:
 	sources.append({"id": id, "target_actor_id": target, "source_actor_id": attacker, "source_content_id": ability, "base_amount": amount, "final_amount": amount})
 	for index in amount:
-		removals.append({"card_id": id + "-" + str(index), "card_definition_id": "brace", "target_actor_id": target, "original_zone": ZONES[index], "accepted": true, "released": false, "damage_proposal_ids": [id]})
+		removals.append({"card_id": id + "-" + str(index), "card_definition_id": "steady_guard", "target_actor_id": target, "original_zone": ZONES[index], "accepted": true, "released": false, "damage_proposal_ids": [id]})
 
 func _fixture(base: Dictionary, unified: bool) -> Dictionary:
 	var fixture := base.duplicate(true)
@@ -159,7 +159,7 @@ func _check(screen: Control, unified: bool) -> void:
 		var grid: Control = _grid(screen, id)
 		var card: BattleCard = grid.card_children()[0]
 		var removal := {"card_id": card.instance_id, "card_definition_id": card.definition_id, "target_actor_id": grid.target_actor, "released_destination": "discard", "origin_rect": Rect2(40, 600, 300, 24)}
-		var data := {"source_id": id, "card_id": "brace", "instance_id": "played", "started_ms": Time.get_ticks_msec(), "before": 6, "after": 3, "actor_id": "blade", "saved": [removal], "pending": [removal]}
+		var data := {"source_id": id, "card_id": "emergency_ward", "instance_id": "played", "started_ms": Time.get_ticks_msec(), "before": 6, "after": 3, "actor_id": "blade", "saved": [removal], "pending": [removal]}
 		var folded = FEEDBACK.new(); screen._root.add_child(folded); folded.configure(data, screen)
 		_expect(folded._saved.is_empty() and folded._piles.is_empty() and folded._pending.is_empty(), "%s: folded %s list has no saved-card flight" % [label, id])
 		folded.present_progress(1.0)

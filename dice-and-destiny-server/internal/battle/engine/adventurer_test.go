@@ -19,6 +19,7 @@ func adventurerFixture(t *testing.T) (state.Battle, content.BattleLibrary) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	addSteadyGuardUpgrades(t, &lib)
 	b := settledStatusBattle(t, lib, "", 0)
 	a := b.Actors["player"]
 	a.DefinitionID = "adventurer"
@@ -35,11 +36,33 @@ func adventurerFixture(t *testing.T) (state.Battle, content.BattleLibrary) {
 			a.Cards.Hand = append(a.Cards.Hand, id)
 		}
 	}
+	// Upgrade copies are known instances but start outside every zone, so the
+	// starter deck's health is unchanged until a test places them.
+	for _, id := range []string{"guard_brace-0", "guard_brace-1", "guard_bulwark-0"} {
+		r.CardInstances[id] = state.CardInstance{InstanceID: id, DefinitionID: id[:len(id)-2]}
+	}
 	b.Actors["player"] = a
 	b.Settled.Actors["player"] = r
 	b.Settled.Stage = stageOffensivePlan
 	openSettledWindowForActors(&b, "test", stageOffensivePlan, "planning", []command.Type{command.TypePlanningCards}, []string{"player"}, true)
 	return b, lib
+}
+
+// addSteadyGuardUpgrades registers the Steady Guard tree's Prevent 3 cards.
+// The tree is authored content, which engine tests do not load: guard_brace
+// mirrors the tree's Brace (saved cards to discard) and guard_bulwark
+// mirrors its Bulwark (saved cards stay in their original piles).
+func addSteadyGuardUpgrades(t *testing.T, lib *content.BattleLibrary) {
+	t.Helper()
+	for id, destination := range map[string]string{"guard_brace": content.SavedCardsDiscard, "guard_bulwark": content.SavedCardsOriginal} {
+		c, err := content.EditableGeneralCard(lib.Cards["steady_guard"])
+		if err != nil {
+			t.Fatal(err)
+		}
+		c.ID, c.Name = id, "Steady Guard "+id[len("guard_"):]
+		c.Program.Steps[0].Params = map[string]any{"amount": 3, "destination": destination}
+		lib.Cards[id] = content.PrepareProgramCard(c, lib)
+	}
 }
 func adventurerRoll(b *state.Battle, lib content.BattleLibrary, faces []int) {
 	r := b.Settled.Actors["player"]
@@ -145,7 +168,7 @@ func TestAdventurerCardsAndSelectedTier(t *testing.T) {
 		b, lib := adventurerFixture(t)
 		a := b.Actors["player"]
 		a.Cards.Hand = []string{"take_stock-0", "second_wind-0"}
-		a.Cards.Deck = []string{"brace-0", "brace-1"}
+		a.Cards.Deck = []string{"steady_guard-0", "steady_guard-1"}
 		b.Actors["player"] = a
 		e := NewEngine()
 		for _, id := range []string{"take_stock-0", "second_wind-0"} {
@@ -187,7 +210,7 @@ func TestAdventurerCardsAndSelectedTier(t *testing.T) {
 		}
 	})
 	t.Run("cost and timing rejection", func(t *testing.T) {
-		for _, entry := range []string{"brace", "nudge", "try_again", "strong_swing", "take_stock", "second_wind"} {
+		for _, entry := range []string{"steady_guard", "nudge", "try_again", "strong_swing", "take_stock", "second_wind"} {
 			b, lib := adventurerFixture(t)
 			b.Segment.Current = segment.Income
 			closeSettledWindow(&b)
@@ -206,7 +229,7 @@ func TestAdventurerCardsAndSelectedTier(t *testing.T) {
 	})
 }
 
-func TestAdventurerProtectionAndBrace(t *testing.T) {
+func TestAdventurerProtectionAndSteadyGuard(t *testing.T) {
 	b, lib := adventurerFixture(t)
 	e := NewEngine()
 	for _, id := range []string{"guarded_strike", "measured_strike"} {
@@ -243,11 +266,11 @@ func TestAdventurerProtectionAndBrace(t *testing.T) {
 	if _, err := e.spendRoundPrevention(&b, lib, "player", choice); err == nil {
 		t.Fatal("spent twice")
 	}
-	if err := playProgramCard(e, &b, lib, "player", "brace-0", func(c programChoice) bool { return c.Source == "a" }); err != nil {
+	if err := playProgramCard(e, &b, lib, "player", "steady_guard-0", func(c programChoice) bool { return c.Source == "a" }); err != nil {
 		t.Fatal(err)
 	}
-	if got := settledSourceAmount(b.Settled.PendingDamage.Sources[0]); got != 4 {
-		t.Fatalf("brace result %d", got)
+	if got := settledSourceAmount(b.Settled.PendingDamage.Sources[0]); got != 6 {
+		t.Fatalf("Steady Guard result %d", got)
 	}
 	if stacks(&b, "player", "protect") != 0 {
 		t.Fatal("spent status remains on actor")
