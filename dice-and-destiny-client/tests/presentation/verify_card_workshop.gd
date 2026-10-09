@@ -11,11 +11,11 @@ func _run() -> void:
 	_check(response.result.templates.size() >= 21, "General templates missing")
 	var screen = load("res://app/screens/character/card_authoring.gd").new(); root.add_child(screen)
 	await process_frame; await process_frame
-	# The workshop opens on a blank card; load Brace explicitly as the template.
+	# The workshop opens on a blank card; load Steady Guard explicitly as the template.
 	for i in screen._template.item_count:
-		if screen._template.get_item_metadata(i) == "brace": screen._template.select(i)
+		if screen._template.get_item_metadata(i) == "steady_guard": screen._template.select(i)
 	screen._load_template()
-	_check(screen.draft.get("id", "") == "brace", "Workshop did not load Brace")
+	_check(screen.draft.get("id", "") == "steady_guard", "Workshop did not load Steady Guard")
 	screen.draft.id = "workshop_test_guard"; screen.draft.name = "Workshop Test Guard"
 	screen.draft.cost.energy = 2; screen.draft.program.steps[0].params.amount = 5
 	screen._validate(); _check(screen._error.text == "Definition valid.", screen._error.text)
