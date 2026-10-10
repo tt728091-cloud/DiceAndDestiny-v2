@@ -217,9 +217,11 @@ func campaign_loadout(save_id: String) -> Dictionary:
 	return _request({"op": "campaign_loadout", "campaign_save": save_id, "loadout_root": WorkspacePaths.runtime_dir("user/character_loadouts"), "content_root": ProjectSettings.globalize_path("res://../dice-and-destiny-server/content")})
 
 ## One Prepare transaction on one campaign save (never the editors' saves).
-func campaign_purchase(save_id: String, kind: String, id: String, revision: int, cost: int, target_id: String = "", tree: String = "") -> Dictionary:
+## `count` trades that many copies along a tree connection at once; `cost` is
+## the total for all of them.
+func campaign_purchase(save_id: String, kind: String, id: String, revision: int, cost: int, target_id: String = "", tree: String = "", count: int = 1) -> Dictionary:
 	if _native_authority == null: return {"ok": false, "error": _initialization_error}
-	return _request({"op": "campaign_purchase", "campaign_save": save_id, "purchase": {"kind": kind, "id": id, "revision": revision, "expected_cost": cost, "target_id": target_id, "tree": tree}, "loadout_root": WorkspacePaths.runtime_dir("user/character_loadouts"), "content_root": ProjectSettings.globalize_path("res://../dice-and-destiny-server/content")})
+	return _request({"op": "campaign_purchase", "campaign_save": save_id, "purchase": {"kind": kind, "id": id, "revision": revision, "expected_cost": cost, "target_id": target_id, "tree": tree, "count": count}, "loadout_root": WorkspacePaths.runtime_dir("user/character_loadouts"), "content_root": ProjectSettings.globalize_path("res://../dice-and-destiny-server/content")})
 
 func save_character_deck(character: String, decklist: Array) -> Dictionary:
 	if _native_authority == null: return {"ok": false, "error": _initialization_error}

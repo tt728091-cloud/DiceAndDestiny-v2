@@ -42,7 +42,22 @@ func _run() -> void:
 	var target := str(up.request.target_id)
 	_expect(prepare.focus_node == str(up.to_node) and _prepare_control(prepare, "prepare.trade.steady_guard." + target) != null, "a tree card previews with its upgrade")
 	await _capture(prepare, "prepare-preview")
+	_expect(int(up.max_count) == 3 and "each" in _prepare_control(prepare, "prepare.trade.steady_guard." + target).text, "three copies can upgrade together")
+	# With several copies, Upgrade asks how many: Cancel and Esc spend nothing.
 	await _tap(_prepare_control(prepare, "prepare.trade.steady_guard." + target))
+	_expect(prepare._batch != null and _prepare_control(prepare, "prepare.batch.count.3").text == "All 3" and _prepare_control(prepare, "prepare.batch.count.3").button_pressed, "Upgrade asks how many, defaulting to all three")
+	_expect("Upgrade 3 copies · %d XP" % (3 * int(up.cost)) == _prepare_control(prepare, "prepare.batch.confirm").text, "the prompt totals the XP for the batch")
+	await _capture(prepare, "prepare-count-prompt")
+	await _click(_prepare_control(prepare, "prepare.batch.cancel"))
+	_expect(prepare._batch == null and prepare._xp.text == "100" and prepare._deck_count("steady_guard") == 3, "cancelling the prompt spends nothing")
+	await _tap(_prepare_control(prepare, "prepare.trade.steady_guard." + target))
+	var escape := InputEventAction.new(); escape.action = "ui_cancel"; escape.pressed = true; root.push_input(escape)
+	for frame in 2: await process_frame
+	_expect(prepare._batch == null and is_instance_valid(prepare) and prepare.visible, "Esc closes the prompt, not Prepare")
+	await _tap(_prepare_control(prepare, "prepare.trade.steady_guard." + target))
+	await _click(_prepare_control(prepare, "prepare.batch.count.1"))
+	_expect(_prepare_control(prepare, "prepare.batch.confirm").text == "Upgrade 1 copy · %d XP" % int(up.cost), "choosing one updates the total")
+	await _click(_prepare_control(prepare, "prepare.batch.confirm"))
 	for frame in 4: await process_frame
 	_expect(prepare._health.text == "12" and prepare._xp.text == str(100 - int(up.cost)), "an upgrade keeps health and spends the XP difference")
 	_expect(prepare.selection.id == target and prepare._deck_count("steady_guard") == 2 and prepare._deck_count(target) == 1, "the upgraded copy stays in the deck and is selected")
@@ -52,6 +67,9 @@ func _run() -> void:
 	# Trade a Steady Guard copy down for a refund.
 	await _tap(_prepare_control(prepare, "prepare.card.steady_guard"))
 	await _tap(_prepare_control(prepare, "prepare.trade.steady_guard." + str(down.request.target_id)))
+	_expect(prepare._batch != null and _prepare_control(prepare, "prepare.batch.count.2").text == "All 2", "trading down also asks how many")
+	await _click(_prepare_control(prepare, "prepare.batch.count.1"))
+	await _click(_prepare_control(prepare, "prepare.batch.confirm"))
 	for frame in 4: await process_frame
 	var xp := 100 - int(up.cost) - int(down.cost)
 	_expect(prepare._xp.text == str(xp) and prepare._health.text == "12", "trading down refunds XP and keeps health")
@@ -77,6 +95,17 @@ func _run() -> void:
 	await _tap(_prepare_control(prepare, "prepare.equip.nudge"))
 	for frame in 4: await process_frame
 	_expect(prepare._health.text == "12" and _prepare_control(prepare, "prepare.stored.nudge") == null, "a stored copy can go back into the deck")
+
+	# Upgrade both Try Again copies in one go.
+	await _tap(_prepare_control(prepare, "prepare.card.try_again"))
+	var again: Dictionary = prepare._trades_from("try_again", "").filter(func(t): return int(t.cost) > 0 and t.available)[0]
+	var again_target := str(again.request.target_id)
+	await _tap(_prepare_control(prepare, "prepare.trade.try_again." + again_target))
+	await _click(_prepare_control(prepare, "prepare.batch.confirm"))
+	for frame in 4: await process_frame
+	xp -= 2 * int(again.cost)
+	_expect(prepare._deck_count("try_again") == 0 and prepare._deck_count(again_target) == 2 and prepare._xp.text == str(xp) and prepare._health.text == "12", "both copies upgrade in one trade")
+	_expect(prepare._message.text.contains("×2"), "the batch is confirmed in words")
 
 	# Abilities: upgrade Guard, then sell the tier back.
 	await _tap(_prepare_control(prepare, "prepare.ability.adventurer_guard"))

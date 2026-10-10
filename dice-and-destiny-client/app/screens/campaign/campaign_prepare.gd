@@ -37,6 +37,10 @@ var _center_body: ScrollContainer
 var _center_content: VBoxContainer
 var _details: VBoxContainer
 var _add_button: Button
+## The "how many copies?" prompt for a tree trade, and its choice.
+var _batch: Control
+var _batch_offer: Dictionary = {}
+var _batch_count := 1
 
 func _ready() -> void:
 	name = "CampaignPrepare"
@@ -201,7 +205,7 @@ func _render_card() -> void:
 		_center_hint.text = "This card is not part of any card tree, so the campaign cannot use it. Sell it for XP, or store it."
 	else:
 		_center_title.text = str(tree.name)
-		_center_hint.text = "Click a glowing card to preview it. Upgrade or trade down one copy at a time; it stays in your deck." if not stored else "Stored cards are not in your deck. Add one back to your deck to upgrade it."
+		_center_hint.text = "Click a glowing card to preview it. Upgrade or trade down as many copies as you like; they stay in your deck." if not stored else "Stored cards are not in your deck. Add one back to your deck to upgrade it."
 		_show_tree(tree, id)
 	var focus := _tree_node_card(tree, focus_node)
 	if not focus.is_empty() and str(focus.card.id) != id: _render_preview(id, tree, focus)
@@ -259,6 +263,7 @@ func _trade_row(parent: Node, from: String, trade: Dictionary) -> void:
 	STYLE.label(row, "→ " + _card_name(target), 17, STYLE.GOLD_BRIGHT)
 	if not change.is_empty(): STYLE.label(row, change, 13, STYLE.MUTED)
 	var label := ("Upgrade · %d XP" % int(trade.cost)) if int(trade.cost) > 0 else ("Trade down · +%d XP" % -int(trade.cost)) if int(trade.cost) < 0 else "Switch · free"
+	if int(trade.get("max_count", 1)) > 1 and int(trade.cost) != 0: label += " each"
 	_offer_button(row, trade, label, "prepare.trade.%s.%s" % [from, target], STYLE.GOLD if int(trade.cost) >= 0 else STYLE.AMBER)
 
 func _offer_button(parent: Node, offer: Dictionary, text: String, control_id: String, color: Color = STYLE.GOLD) -> Button:
@@ -366,17 +371,23 @@ func _select(value: Dictionary) -> void:
 
 func _trade(offer: Dictionary) -> void:
 	if not offer.get("available", false): return
+	# With more than one copy that could go, ask how many first.
+	if str(offer.request.kind) == "tree_card_deck" and int(offer.get("max_count", 1)) > 1:
+		_ask_count(offer); return
+	_submit(offer, 1)
+
+func _submit(offer: Dictionary, count: int) -> void:
 	var request: Dictionary = offer.request
-	var response: Dictionary = _runtime().campaign_purchase(save_id, str(request.kind), str(request.id), int(data.revision), int(offer.cost), str(request.target_id), str(request.tree))
+	var response: Dictionary = _runtime().campaign_purchase(save_id, str(request.kind), str(request.id), int(data.revision), int(offer.cost) * count, str(request.target_id), str(request.tree), count)
 	if response.get("ok") != true:
 		_error("Not completed: %s" % str(response.get("error", "unknown error")))
 		reload(); return
-	var change := int(offer.get("xp_change", 0))
+	var change := int(offer.get("xp_change", 0)) * count
 	var spent := ("−%d XP" % -change) if change < 0 else ("+%d XP" % change) if change > 0 else "no XP"
 	var kind := str(request.kind)
 	var text := ""
 	match kind:
-		"tree_card_deck": text = "%s → %s · %s" % [_card_name(str(request.id)), _card_name(str(request.target_id)), spent]
+		"tree_card_deck": text = "%s → %s%s · %s" % [_card_name(str(request.id)), _card_name(str(request.target_id)), " ×%d" % count if count > 1 else "", spent]
 		"buy_card": text = "Bought %s · %s" % [_card_name(str(request.id)), spent]
 		"sell_card", "sell_collection_card": text = "Sold %s · %s" % [_card_name(str(request.id)), spent]
 		"unequip_collection_card": text = "Stored %s" % _card_name(str(request.id))
@@ -391,6 +402,61 @@ func _trade(offer: Dictionary) -> void:
 	reload()
 	_message.text = text; _message.add_theme_color_override("font_color", STYLE.GAIN)
 
+## How many copies to trade along one connection: 1 up to the largest batch the
+## authority accepts now (copies held, XP, copy limits, deck rules).
+func _ask_count(offer: Dictionary) -> void:
+	_close_count()
+	_batch_offer = offer
+	var most := int(offer.max_count)
+	_batch_count = most
+	var from := str(offer.request.id); var target := str(offer.request.target_id)
+	var held := int(_entry("deck", from, str(selection.get("tree", ""))).get("count", most))
+	var upgrade := int(offer.cost) >= 0
+	_batch = Control.new(); _batch.name = "CountPrompt"; _batch.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT); _batch.mouse_filter = Control.MOUSE_FILTER_STOP
+	add_child(_batch)
+	var dim := ColorRect.new(); dim.color = Color(0, 0, 0, 0.7); dim.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT); _batch.add_child(dim)
+	var center := CenterContainer.new(); center.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT); _batch.add_child(center)
+	var panel := PanelContainer.new(); panel.custom_minimum_size.x = 480; panel.add_theme_stylebox_override("panel", STYLE.box(STYLE.PANEL, STYLE.GOLD, 22, 12, 2)); center.add_child(panel)
+	var box := VBoxContainer.new(); box.add_theme_constant_override("separation", 12); panel.add_child(box)
+	STYLE.heading(box, "Upgrade copies" if upgrade else "Trade copies down")
+	STYLE.label(box, "%s → %s" % [_card_name(from), _card_name(target)], 22, STYLE.GOLD_BRIGHT)
+	var note := "You have %d %s in your deck. How many do you want to %s?" % [held, _card_name(from), "upgrade" if upgrade else "trade down"]
+	if most < held: note += " Up to %d can go now." % most
+	STYLE.label(box, note, 15, STYLE.MUTED)
+	var counts := HFlowContainer.new(); counts.name = "Counts"; counts.add_theme_constant_override("h_separation", 8); counts.add_theme_constant_override("v_separation", 8); box.add_child(counts)
+	for n in range(1, most + 1):
+		var choice := _button(counts, ("All %d" % n) if n == held and n > 1 else str(n), func(): _batch_count = n; _refresh_count(), "prepare.batch.count.%d" % n)
+		choice.toggle_mode = true; choice.autowrap_mode = TextServer.AUTOWRAP_OFF; choice.custom_minimum_size = Vector2(64, 44)
+		choice.add_theme_stylebox_override("pressed", STYLE.box("223442", STYLE.GOLD, 10, 8, 2))
+		choice.set_meta("batch_count", n)
+	var total := STYLE.label(box, "", 16, STYLE.IVORY); total.name = "Total"
+	var actions := HBoxContainer.new(); actions.add_theme_constant_override("separation", 10); box.add_child(actions)
+	var cancel := _button(actions, "Cancel", _close_count, "prepare.batch.cancel"); cancel.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	var confirm := STYLE.accent(_button(actions, "", _confirm_count, "prepare.batch.confirm"), STYLE.GOLD if upgrade else STYLE.AMBER)
+	confirm.name = "Confirm"; confirm.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	for button in [cancel, confirm]: button.custom_minimum_size.y = 48; button.autowrap_mode = TextServer.AUTOWRAP_OFF
+	_refresh_count()
+	confirm.grab_focus()
+
+func _refresh_count() -> void:
+	if _batch == null: return
+	var per := int(_batch_offer.cost)
+	var upgrade := per >= 0
+	for choice in _batch.find_child("Counts", true, false).get_children(): choice.set_pressed_no_signal(int(choice.get_meta("batch_count")) == _batch_count)
+	var copies := "%d %s" % [_batch_count, "copy" if _batch_count == 1 else "copies"]
+	var xp := int(data.xp) - per * _batch_count
+	(_batch.find_child("Total", true, false) as Label).text = "%s · %s · %d XP left" % [copies, ("−%d XP" % (per * _batch_count)) if upgrade else ("+%d XP" % (-per * _batch_count)), xp]
+	(_batch.find_child("Confirm", true, false) as Button).text = ("Upgrade %s · %d XP" % [copies, per * _batch_count]) if upgrade else ("Trade down %s · +%d XP" % [copies, -per * _batch_count])
+
+func _confirm_count() -> void:
+	var offer := _batch_offer; var count := _batch_count
+	_close_count()
+	_submit(offer, count)
+
+func _close_count() -> void:
+	if _batch != null: _batch.queue_free()
+	_batch = null
+
 func _ability_upgrade_target(id: String) -> String:
 	for ability in data.abilities:
 		if ability.id == id and ability.has("upgrade"): return str(ability.upgrade.to)
@@ -401,7 +467,10 @@ func _close() -> void:
 	queue_free()
 
 func _unhandled_input(event: InputEvent) -> void:
-	if event.is_action_pressed("ui_cancel"): get_viewport().set_input_as_handled(); _close()
+	if not event.is_action_pressed("ui_cancel"): return
+	get_viewport().set_input_as_handled()
+	if _batch != null: _close_count()
+	else: _close()
 
 # Helpers ---------------------------------------------------------------------
 func _trades_from(card_id: String, copy_tree: String) -> Array:

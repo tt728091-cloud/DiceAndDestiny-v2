@@ -30,14 +30,14 @@ The client never names a reward amount. The battle session knows it is a campaig
 - **Left:** your deck (art, copies, energy, and how many upgrades are open), any stored cards, and your abilities. **+ Add a new card** is at the bottom.
 - **Center:** select a deck card and its card tree appears. The card is highlighted, cards you hold glow gold, and cards you can reach from it pulse. Click another card you hold to switch to it; click any other card to preview it and see how it differs.
 - **Right:** the selected card and what you can do with it:
-  - **Upgrade one copy** (pay the XP difference) or **Trade one copy down** (get the difference back). The copy moves along a tree connection and stays in your deck, so health never changes.
+  - **Upgrade** (pay the XP difference) or **Trade down** (get the difference back). Copies move along a tree connection and stay in your deck, so health never changes. With more than one copy that could go, a prompt asks how many: 1 up to "All N", defaulting to all, with the total XP shown. Cancel and Esc spend nothing.
   - **Buy another copy** (tree bases only), **Sell a copy** for its full XP, or **Store a copy** (−1 health, keeps its XP). Stored copies can be added back or sold.
 - **Add a new card** lists every card-tree base with its card face and price. Buying one adds it to your deck.
 - **Abilities** show the equipped tier's rules and the next or previous tier, with **Upgrade** or **Downgrade** (refund). Starter and Adventurer can upgrade Guard to Guard+ for 25 XP.
 
 Unaffordable or illegal options stay visible but disabled, with the authority's reason ("Not enough XP.", copy limits, deck requirements).
 
-The authority prepares this view with the `campaign_loadout` op. It dry-runs every offer through `loadout.PreviewPurchase`, the same rules `loadout.Buy` applies, so the screen never offers a trade the authority would refuse. Tree trades use the `tree_card_deck` purchase kind (`loadout.UpgradeDeckTreeCard`), which keeps the copy equipped. The older `tree_card` kind used by the Card Trees workshop moves the result into the collection.
+The authority prepares this view with the `campaign_loadout` op. It dry-runs every offer through `loadout.PreviewPurchase`, the same rules `loadout.Buy` applies, so the screen never offers a trade the authority would refuse. Tree trades use the `tree_card_deck` purchase kind (`loadout.UpgradeDeckTreeCard`), which keeps the copy equipped. Its `count` trades several copies in one all-or-nothing purchase, with `expected_cost` the batch total; other kinds refuse a count. Each trade offer carries `max_count`: the largest batch the authority would accept now, given copies held, XP, copy limits and deck rules. The older `tree_card` kind used by the Card Trees workshop moves the result into the collection.
 
 ## Card-tree cards only
 
@@ -105,6 +105,7 @@ Runtime ops:
   - admin budget overrides do not reach saves;
   - deletion removes only that save, and save IDs cannot escape the folder;
   - older progress converts into a save once.
+  - batched tree trades: the full batch works, batches beyond the copies held or the XP available are refused without changes, and `max_count` matches the limit.
 - `tests/presentation/verify_campaign.gd` drives the loop with the pointer:
   - menu → Campaign → New campaign (Starter, default name) → a second campaign from the Adventurer sheet;
   - Progression-mode purchases do not reach the campaign;
@@ -113,7 +114,8 @@ Runtime ops:
 - `tests/presentation/verify_campaign_prepare.gd` drives Prepare with the pointer:
   - select a card and see its tree;
   - preview a tree card;
-  - upgrade and trade down in place;
+  - the count prompt (defaults to all, Cancel, Esc, choose one);
+  - upgrade and trade down in place, and upgrade both Try Again copies in one go;
   - buy a base, sell, store and re-add;
   - upgrade and sell back Guard;
   - fit at 1024, 1280 and 1920 widths.

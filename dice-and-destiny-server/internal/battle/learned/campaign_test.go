@@ -475,3 +475,80 @@ func copyDir(t *testing.T, from, to string) {
 		t.Fatal(err)
 	}
 }
+
+// Several copies trade along one connection at once, all or none; Prepare
+// reports the largest batch the authority would accept.
+func TestCampaignBatchTreeTrades(t *testing.T) {
+	contentRoot := filepath.Join(testServerRoot(t), "content")
+	root := campaignLoadoutRoot(t)
+	save := startCampaign(t, contentRoot, root, campaignCharacter, "Batch")
+	upgradeOf := func(card string) map[string]any {
+		view, err := campaignLoadout(contentRoot, root, save.ID)
+		if err != nil {
+			t.Fatal(err)
+		}
+		for _, o := range view["trades"].([]map[string]any) {
+			if r := o["request"].(map[string]any); r["id"] == card && o["cost"].(int) > 0 && o["available"].(bool) {
+				return o
+			}
+		}
+		t.Fatalf("no upgrade for %s", card)
+		return nil
+	}
+	trade := func(o map[string]any, count, revision int) (loadout.CampaignSave, error) {
+		r := o["request"].(map[string]any)
+		return campaignPurchase(contentRoot, root, save.ID, loadout.Purchase{Kind: "tree_card_deck", ID: r["id"].(string), TargetID: r["target_id"].(string), Tree: r["tree"].(string), Count: count, Revision: revision, ExpectedCost: o["cost"].(int) * count})
+	}
+	up := upgradeOf("steady_guard")
+	if up["max_count"].(int) != 3 {
+		t.Fatalf("all three Steady Guards should be upgradable together: %v", up["max_count"])
+	}
+	target := up["request"].(map[string]any)["target_id"].(string)
+	if _, err := trade(up, 4, save.Sheet.Revision); err == nil {
+		t.Fatal("traded more copies than the deck holds")
+	}
+	if _, err := campaignPurchase(contentRoot, root, save.ID, loadout.Purchase{Kind: "sell_card", ID: "steady_guard", Count: 2, Revision: save.Sheet.Revision, ExpectedCost: 20}); err == nil {
+		t.Fatal("a count was accepted outside tree trades")
+	}
+	after, err := trade(up, 3, save.Sheet.Revision)
+	if err != nil {
+		t.Fatal(err)
+	}
+	count := func(deck []loadout.Entry, id string) int {
+		for _, e := range deck {
+			if e.CardID == id {
+				return e.Count
+			}
+		}
+		return 0
+	}
+	cost := up["cost"].(int)
+	if count(after.Sheet.Deck, "steady_guard") != 0 || count(after.Sheet.Deck, target) != 3 || after.Sheet.XP != save.Sheet.XP-3*cost || deckHealth(after.Sheet.Deck) != deckHealth(save.Sheet.Deck) {
+		t.Fatalf("batch upgrade wrong: %+v", after.Sheet)
+	}
+	// With too little XP for the whole batch, the offer caps the count and a
+	// larger batch is refused without changing anything.
+	revision := after.Sheet.Revision
+	for _, id := range []string{"dispel", "salve", "reclaim", "disrupt", "blood_price", "nudge"} {
+		bought, err := campaignPurchase(contentRoot, root, save.ID, loadout.Purchase{Kind: "buy_card", ID: id, Revision: revision, ExpectedCost: 10})
+		if err != nil {
+			t.Fatal(err)
+		}
+		revision = bought.Sheet.Revision
+	}
+	if _, err = campaignPurchase(contentRoot, root, save.ID, loadout.Purchase{Kind: "upgrade_ability", ID: "adventurer_guard", Revision: revision, ExpectedCost: 25}); err != nil {
+		t.Fatal(err)
+	}
+	poor := readSave(t, contentRoot, root, save.ID)
+	nudge := upgradeOf("nudge")
+	limit := min(3, poor.Sheet.XP/nudge["cost"].(int))
+	if nudge["max_count"].(int) != limit || limit >= 3 || limit < 1 {
+		t.Fatalf("max_count %v should be capped by %d XP to %d", nudge["max_count"], poor.Sheet.XP, limit)
+	}
+	if _, err = trade(nudge, limit+1, poor.Sheet.Revision); err == nil {
+		t.Fatal("an unaffordable batch went through")
+	}
+	if again := readSave(t, contentRoot, root, save.ID); !reflect.DeepEqual(again.Sheet, poor.Sheet) {
+		t.Fatal("a refused batch changed the save")
+	}
+}

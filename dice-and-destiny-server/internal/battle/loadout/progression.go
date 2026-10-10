@@ -70,7 +70,13 @@ type Purchase struct {
 	// TreeCardsOnly refuses adding non-tree cards (campaign editing). Selling
 	// and storing any card stays allowed.
 	TreeCardsOnly bool `json:"tree_cards_only,omitempty"`
+	// Count trades several equipped copies along one tree connection at once,
+	// all or none (tree_card_deck only); the cost is the total for all of them.
+	Count int `json:"count,omitempty"`
 }
+
+// maxBatch bounds a batched tree trade; a deck holds at most MaxCopies of a card.
+const maxBatch = MaxCopies
 
 var progressMu sync.Mutex
 
@@ -471,6 +477,9 @@ func applyPurchase(p Progress, character string, e Economy, lib content.BattleLi
 			return p, 0, fmt.Errorf("the campaign uses only card-tree cards; %s can be sold but not added", added)
 		}
 	}
+	if request.Count < 0 || request.Count > maxBatch || request.Count > 1 && request.Kind != "tree_card_deck" {
+		return p, 0, fmt.Errorf("only tree trades take a copy count (1–%d)", maxBatch)
+	}
 	switch request.Kind {
 	case "buy_card", "buy_collection_card":
 		if _, _, variant := content.TreeCardOwner(lib.CardTrees, request.ID); variant {
@@ -520,9 +529,12 @@ func applyPurchase(p Progress, character string, e Economy, lib content.BattleLi
 			return p, 0, err
 		}
 	case "tree_card_deck":
-		p, cost, err = UpgradeDeckTreeCard(p, request.ID, request.TargetID, request.Tree, e, lib, character)
-		if err != nil {
-			return p, 0, err
+		for i := 0; i < max(1, request.Count); i++ {
+			var step int
+			if p, step, err = UpgradeDeckTreeCard(p, request.ID, request.TargetID, request.Tree, e, lib, character); err != nil {
+				return p, 0, err
+			}
+			cost += step
 		}
 
 	case "upgrade_card":

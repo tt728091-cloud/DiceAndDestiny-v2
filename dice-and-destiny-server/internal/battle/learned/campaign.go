@@ -288,6 +288,15 @@ func campaignLoadout(contentRoot, loadoutRoot, saveID string) (map[string]any, e
 					seen[key] = true
 					o := offer(loadout.Purchase{Kind: "tree_card_deck", ID: entry.CardID, TargetID: target.Card.ID, Tree: ref.Tree})
 					o["tree_id"], o["from_node"], o["to_node"], o["edge"] = ref.Tree, ref.Node, target.ID, edge.ID
+					// The most copies one batched trade can move now: held copies,
+					// XP, copy limits and deck rules all apply to the batch.
+					o["max_count"] = 0
+					for n := entry.Count; n >= 1; n-- {
+						if _, why := loadout.PreviewPurchase(p, character, e, lib, loadout.Purchase{Kind: "tree_card_deck", ID: entry.CardID, TargetID: target.Card.ID, Tree: ref.Tree, Count: n, TreeCardsOnly: true}); why == nil {
+							o["max_count"] = n
+							break
+						}
+					}
 					trades = append(trades, o)
 				}
 			}
@@ -342,7 +351,7 @@ func campaignLoadout(contentRoot, loadoutRoot, saveID string) (map[string]any, e
 	return map[string]any{
 		"save_id": save.ID, "save_name": save.Name,
 		// Card and ability definitions for presentation; no other save is read.
-		"catalog": characterCatalogView(map[string]content.BattleLibrary{character: lib})[character],
+		"catalog":   characterCatalogView(map[string]content.BattleLibrary{character: lib})[character],
 		"character": character, "name": lib.Combatants[character].Name, "revision": p.Revision, "xp": p.XP, "health": health,
 		"deck": deck, "collection": stored, "trades": trades, "bases": bases, "abilities": abilities,
 		"trees": lib.CardTrees, "tree_order": treeIDs,
