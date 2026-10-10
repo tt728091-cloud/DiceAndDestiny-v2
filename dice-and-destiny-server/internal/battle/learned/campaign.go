@@ -2,6 +2,7 @@ package learned
 
 import (
 	"fmt"
+	"sort"
 	"strings"
 
 	"diceanddestiny/server/internal/battle/loadout"
@@ -183,4 +184,125 @@ func cardNames(lib content.BattleLibrary, ids []string) []string {
 		names = append(names, lib.Cards[id].Name)
 	}
 	return names
+}
+
+// campaignLoadout is the focused between-battles view of one campaign
+// character: its deck, stored cards and abilities, with every trade open to
+// them. Each offer is dry-run through the purchase rules, so the client shows
+// exactly what the authority would accept, and why not otherwise.
+func campaignLoadout(contentRoot, loadoutRoot, character string) (map[string]any, error) {
+	c, err := loadCampaignContext(contentRoot, loadoutRoot)
+	if err != nil {
+		return nil, err
+	}
+	if !c.campaign.Allows(character) {
+		return nil, fmt.Errorf("%s cannot enter the campaign", character)
+	}
+	lib := c.catalogs[character]
+	e, err := loadout.EffectiveEconomy(loadoutRoot, c.economy)
+	if err != nil {
+		return nil, err
+	}
+	p, err := loadout.ReadProgress(loadoutRoot, character, c.economy, lib)
+	if err != nil {
+		return nil, err
+	}
+	offer := func(request loadout.Purchase) map[string]any {
+		request.TreeCardsOnly = true
+		cost, why := loadout.PreviewPurchase(p, character, e, lib, request)
+		change := -cost
+		if request.Kind == "sell_card" || request.Kind == "sell_collection_card" || request.Kind == "downgrade_ability" {
+			change = cost
+		}
+		o := map[string]any{"request": map[string]any{"kind": request.Kind, "id": request.ID, "target_id": request.TargetID, "tree": request.Tree}, "cost": cost, "xp_change": change, "available": why == nil}
+		if why != nil {
+			o["reason"] = why.Error()
+		}
+		return o
+	}
+	treeIDs := make([]string, 0, len(lib.CardTrees))
+	for id := range lib.CardTrees {
+		treeIDs = append(treeIDs, id)
+	}
+	sort.Strings(treeIDs)
+	// Upgrades and trade-downs of an equipped copy keep it in the deck.
+	trades := []map[string]any{}
+	seen := map[string]bool{}
+	for _, entry := range p.Deck {
+		for _, ref := range content.TreeCardPlacements(lib.CardTrees, entry.CardID) {
+			if ref.Shared && ref.Tree != entry.Tree {
+				continue
+			}
+			t := lib.CardTrees[ref.Tree]
+			for _, edge := range t.Edges {
+				for _, ends := range [][2]string{{edge.From, edge.To}, {edge.To, edge.From}} {
+					if ends[0] != ref.Node || ends[0] == edge.To && !edge.Reversible {
+						continue
+					}
+					target, _ := t.Node(ends[1])
+					key := ref.Tree + "|" + entry.CardID + "|" + target.Card.ID
+					if seen[key] {
+						continue
+					}
+					seen[key] = true
+					o := offer(loadout.Purchase{Kind: "tree_card_deck", ID: entry.CardID, TargetID: target.Card.ID, Tree: ref.Tree})
+					o["tree_id"], o["from_node"], o["to_node"], o["edge"] = ref.Tree, ref.Node, target.ID, edge.ID
+					trades = append(trades, o)
+				}
+			}
+		}
+	}
+	// New cards enter the deck as tree bases.
+	bases := []map[string]any{}
+	for _, id := range treeIDs {
+		t := lib.CardTrees[id]
+		root, _ := t.Node(t.Root)
+		o := offer(loadout.Purchase{Kind: "buy_card", ID: root.Card.ID})
+		o["tree_id"], o["tree_name"] = id, t.Name
+		bases = append(bases, o)
+	}
+	deck := []map[string]any{}
+	for _, entry := range p.Deck {
+		deck = append(deck, map[string]any{"card_id": entry.CardID, "tree": entry.Tree, "count": entry.Count, "tree_card": loadout.IsTreeCard(lib.CardTrees, entry.CardID),
+			"sell":  offer(loadout.Purchase{Kind: "sell_card", ID: entry.CardID, Tree: entry.Tree}),
+			"store": offer(loadout.Purchase{Kind: "unequip_collection_card", ID: entry.CardID, Tree: entry.Tree})})
+	}
+	stored := []map[string]any{}
+	for _, entry := range p.Collection {
+		stored = append(stored, map[string]any{"card_id": entry.CardID, "tree": entry.Tree, "count": entry.Count, "tree_card": loadout.IsTreeCard(lib.CardTrees, entry.CardID),
+			"sell":  offer(loadout.Purchase{Kind: "sell_collection_card", ID: entry.CardID, Tree: entry.Tree}),
+			"equip": offer(loadout.Purchase{Kind: "equip_collection_card", ID: entry.CardID, Tree: entry.Tree})})
+	}
+	paths := e.Characters[character].AbilityUpgrades
+	abilities := []map[string]any{}
+	for _, slot := range []struct {
+		kind string
+		ids  []string
+	}{{"offensive", p.Abilities.Offensive}, {"defensive", p.Abilities.Defensive}} {
+		for _, id := range slot.ids {
+			a := map[string]any{"id": id, "type": slot.kind}
+			if u, ok := paths[id]; ok {
+				a["upgrade"] = offer(loadout.Purchase{Kind: "upgrade_ability", ID: id})
+				a["upgrade"].(map[string]any)["to"] = u.To
+			}
+			for from, u := range paths {
+				if u.To == id {
+					a["downgrade"] = offer(loadout.Purchase{Kind: "downgrade_ability", ID: id, TargetID: from})
+					a["downgrade"].(map[string]any)["to"] = from
+				}
+			}
+			abilities = append(abilities, a)
+		}
+	}
+	health := 0
+	for _, entry := range p.Deck {
+		health += entry.Count
+	}
+	return map[string]any{
+		"character": character, "name": lib.Combatants[character].Name, "revision": p.Revision, "xp": p.XP, "health": health,
+		"deck": deck, "collection": stored, "trades": trades, "bases": bases, "abilities": abilities,
+		"trees": lib.CardTrees, "tree_order": treeIDs,
+		"tree_conflicts": cardNames(lib, loadout.NonTreeCards(p.Deck, lib.CardTrees)),
+		"max_cards":      loadout.MaxCards,
+	}, nil
 }

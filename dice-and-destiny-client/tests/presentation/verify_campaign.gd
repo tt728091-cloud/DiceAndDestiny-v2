@@ -1,6 +1,6 @@
 extends "res://tests/presentation/verify_character_deck_editing.gd"
 ## The campaign loop through pointer input: menu → campaign → battle → reward →
-## spend XP in the deck editors → the next encounter fights with the new deck.
+## spend XP in Prepare → the next encounter fights with the new deck.
 
 const CAMPAIGN_SCRIPT := "res://app/screens/campaign/campaign_screen.gd"
 const BATTLE_SCRIPT := "res://app/screens/battle/battle_screen.gd"
@@ -40,19 +40,17 @@ func _run() -> void:
 	_expect(campaign._fight.disabled and "Tip It" in campaign._message.text, "an equipped legacy card blocks the campaign and is named")
 	await _click(campaign._deck)
 	for frame in 8: await process_frame
-	var cleanup = _find("res://app/screens/character/character_creation.gd")
-	_expect(cleanup != null and cleanup.campaign_mode, "the campaign opens its editors in campaign mode")
+	var cleanup: Control = _find("res://app/screens/campaign/campaign_prepare.gd")
+	_expect(cleanup != null and not campaign.visible, "Prepare opens from the campaign")
 	if cleanup == null: _finish(); return
-	_expect("tip_it" not in cleanup._eligible_card_ids() and "take_stock" in cleanup._eligible_card_ids(), "the campaign library offers only card-tree cards")
-	_expect(cleanup._has_type_conflicts() and "only card-tree cards" in cleanup._save_status.text, "the equipped legacy card is flagged")
-	cleanup.inspect_entry("cards", "tip_it")
+	_expect("Tip It" in cleanup.data.tree_conflicts and "only card-tree cards" in _text(cleanup._list), "the equipped legacy card is flagged")
+	_expect(not cleanup.data.bases.any(func(b): return b.request.id == "tip_it"), "Prepare offers only card-tree bases")
+	await _tap(_prepare_control(cleanup, "prepare.card.tip_it"))
+	_expect("not part of any card tree" in cleanup._center_hint.text and _prepare_control(cleanup, "prepare.buy.tip_it") == null, "the legacy card explains why it is blocked and cannot be bought")
+	await _tap(_prepare_control(cleanup, "prepare.sell.tip_it"))
 	for frame in 4: await process_frame
-	_expect("The campaign uses only card-tree cards" in _text(cleanup._details), "the legacy card explains why it is blocked")
-	_expect(_control(cleanup, "buy.tip_it").disabled and not _control(cleanup, "sell.tip_it").disabled, "a legacy card can be sold but not bought")
-	await _click(_control(cleanup, "sell.tip_it"))
-	await _click(cleanup._purchase_confirm)
-	_expect(cleanup._card_count("tip_it") == 0 and not cleanup._has_type_conflicts(), "selling the legacy card clears the conflict")
-	await _click(_control(cleanup, "back"))
+	_expect(cleanup._deck_count("tip_it") == 0 and cleanup.data.tree_conflicts.is_empty(), "selling the legacy card clears the conflict")
+	await _tap(_prepare_control(cleanup, "prepare.back"))
 	for frame in 6: await process_frame
 	_expect(not campaign._fight.disabled and "100 XP to spend" in campaign._summary.text, "the sale refunds its XP and unblocks the campaign")
 	await _capture(campaign, "campaign-start")
@@ -101,24 +99,20 @@ func _run() -> void:
 	_expect("ENCOUNTER 1  ·  CLEARED" in _text(campaign._path), "the first encounter shows cleared")
 	await _capture(campaign, "campaign-after-victory")
 
-	# Spend the reward in the progression editors, locked to XP spending.
+	# Spend the reward in Prepare: buy a new base card.
 	await _click(campaign._deck)
 	for frame in 8: await process_frame
-	var editor = _find("res://app/screens/character/character_creation.gd")
-	_expect(editor != null and not campaign.visible, "Deck & Card Trees opens the editors")
-	if editor != null: _expect(editor.character_id == "starter", "the editors open on the campaign character")
-	if editor == null: _finish(); return
-	_expect(editor.loadout_mode == "progression" and editor._mode_choice.disabled, "the campaign opens the editors locked to Progression")
-	_expect(_control(editor, "back").text == "Back to campaign", "the editors return to the campaign")
-	var health: int = editor._health()
-	var price := int(editor.catalogs.starter.economy.card_prices.get("take_stock", 10))
-	editor.inspect_entry("cards", "take_stock")
+	var prepare: Control = _find("res://app/screens/campaign/campaign_prepare.gd")
+	_expect(prepare != null and not campaign.visible and prepare.character_id == "starter", "Prepare opens on the campaign character")
+	if prepare == null: _finish(); return
+	var health := int(prepare.data.health)
+	var price := int(prepare._base_offer("take_stock").cost)
+	await _tap(prepare._add_button)
+	await _tap(_prepare_control(prepare, "prepare.buy.take_stock"))
 	for frame in 4: await process_frame
-	await _click(_control(editor, "buy.take_stock"))
-	await _click(editor._purchase_confirm)
-	_expect(editor._health() == health + 1 and int(editor.catalogs.starter.progression.xp) == xp - price, "earned XP buys a card")
+	_expect(int(prepare.data.health) == health + 1 and int(prepare.data.xp) == xp - price, "earned XP buys a card")
 	xp -= price
-	await _click(_control(editor, "back"))
+	await _tap(_prepare_control(prepare, "prepare.back"))
 	for frame in 6: await process_frame
 	_expect(campaign.visible and "%d health · %d XP to spend" % [health + 1, xp] in campaign._summary.text, "campaign reflects the new deck and XP")
 
@@ -146,6 +140,22 @@ func _seed_card_trees() -> void:
 	if target.is_empty() or target.simplify_path() == source.simplify_path(): return
 	for name in ["authored_cards.json", "economy_admin.json"]:
 		_expect(DirAccess.copy_absolute(source.path_join(name), target.path_join(name)) == OK, "copied %s into the disposable authored root" % name)
+
+## Scroll a control into view, as a player would, then click it.
+func _tap(button: Button) -> void:
+	_expect(button != null, "control present")
+	if button == null: return
+	var scroll := button.get_parent()
+	while scroll != null and not scroll is ScrollContainer: scroll = scroll.get_parent()
+	if scroll != null:
+		scroll.ensure_control_visible(button)
+		for frame in 2: await process_frame
+	await _click(button)
+
+func _prepare_control(screen: Node, key: String) -> Button:
+	for button in screen.find_children("*", "Button", true, false):
+		if button.get_meta("prepare_control", "") == key and not button.is_queued_for_deletion(): return button
+	return null
 
 func _finish() -> void:
 	print("CAMPAIGN: " + ("FAILED" if failed else "PASSED")); quit(1 if failed else 0)

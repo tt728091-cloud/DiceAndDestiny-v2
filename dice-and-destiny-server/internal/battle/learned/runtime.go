@@ -62,9 +62,16 @@ func HandleRuntimeRequest(requestJSON string) string {
 	case "card_trees", "validate_card_tree", "publish_card_tree", "open_card_admin", "close_card_admin", "preview_delete_card", "admin_delete_card",
 		"ability_authoring", "validate_ability", "publish_ability", "assign_abilities",
 		"card_authoring", "validate_card", "publish_card", "character_catalogs",
-		"save_character_deck", "progression_catalogs", "progression_purchase", "save_economy_admin", "campaign_status":
+		"save_character_deck", "progression_catalogs", "progression_purchase", "save_economy_admin", "campaign_status", "campaign_loadout":
 		catalogRuntimeMu.Lock()
 		defer catalogRuntimeMu.Unlock()
+	}
+	if request.Op == "campaign_loadout" {
+		view, err := campaignLoadout(request.ContentRoot, request.LoadoutRoot, request.Character)
+		if err != nil {
+			return runtimeError(err)
+		}
+		return runtimeSuccess(view)
 	}
 	if request.Op == "campaign_status" {
 		status, err := campaignStatus(request.ContentRoot, request.LoadoutRoot)

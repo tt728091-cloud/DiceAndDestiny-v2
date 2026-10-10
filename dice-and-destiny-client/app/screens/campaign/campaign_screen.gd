@@ -1,14 +1,14 @@
 extends Control
 ## Between campaign battles: shows the encounter path, the XP the last battle
-## earned and the character's XP to spend. Deck & Card Trees opens the
-## progression editors; Fight starts the next encounter. The authority owns the
+## earned and the character's XP to spend. Prepare opens the focused deck and
+## ability screen; Fight starts the next encounter. The authority owns the
 ## encounter order and every reward.
 
 const STYLE := preload("res://app/screens/character/character_style.gd")
 const BATTLE_SCREEN := preload("res://app/screens/battle/battle_screen.tscn")
 const LEARNED_GATEWAY := preload("res://local_client/learned_battle/learned_battle_gateway.gd")
 const LEARNED_RUNTIME := preload("res://local_client/learned_battle/learned_battle_runtime.gd")
-const CHARACTER_CREATION := preload("res://app/screens/character/character_creation.gd")
+const CAMPAIGN_PREPARE := preload("res://app/screens/campaign/campaign_prepare.gd")
 
 ## Empty picks the first campaign character.
 var character_id := ""
@@ -52,8 +52,8 @@ func _build() -> void:
 	_path = HBoxContainer.new(); _path.name = "EncounterPath"; _path.add_theme_constant_override("separation", 10); _path.alignment = BoxContainer.ALIGNMENT_CENTER
 	_path.size_flags_vertical = Control.SIZE_EXPAND_FILL; _body.add_child(_path)
 	var actions := HBoxContainer.new(); actions.add_theme_constant_override("separation", 14); _body.add_child(actions)
-	_deck = _button(actions, "Deck & Card Trees", _open_deck, "campaign.deck")
-	_deck.tooltip_text = "Spend XP: buy base cards, climb card trees, and equip or store cards. Every equipped card is a point of health."
+	_deck = _button(actions, "Prepare · Deck & Abilities", _open_deck, "campaign.deck")
+	_deck.tooltip_text = "Spend XP: upgrade your cards through their card trees, buy new base cards, sell cards back, and upgrade abilities. Every card in your deck is a point of health."
 	_fight = _button(actions, "Fight", _start_next, "campaign.fight")
 	for button in [_deck, _fight]: button.custom_minimum_size.y = 64; button.size_flags_horizontal = Control.SIZE_EXPAND_FILL; button.add_theme_font_size_override("font_size", 20)
 	_fight.add_theme_stylebox_override("normal", STYLE.box("2b3a26", STYLE.GOLD, 10, 8, 2))
@@ -82,9 +82,9 @@ func refresh() -> void:
 	_fight.text = "Fight · %s" % str(next.get("name", ""))
 	_fight.tooltip_text = "%s Victory earns %d XP." % [str(next.get("description", "")), int(next.get("xp", 0))]
 	var blocked := ""
-	if int(character.get("health", 0)) == 0: blocked = "Your deck is empty. Open Deck & Card Trees and equip at least one card."
-	elif not character.get("type_conflicts", []).is_empty(): blocked = "Your deck has a type conflict. Open Deck & Card Trees to resolve it."
-	elif not character.get("tree_conflicts", []).is_empty(): blocked = "The campaign uses only card-tree cards. In Deck & Card Trees, sell or store: %s." % ", ".join(PackedStringArray(character.tree_conflicts))
+	if int(character.get("health", 0)) == 0: blocked = "Your deck is empty. Open Prepare and buy at least one card."
+	elif not character.get("type_conflicts", []).is_empty(): blocked = "Your deck has a type conflict. Open Prepare to sell or store the card."
+	elif not character.get("tree_conflicts", []).is_empty(): blocked = "The campaign uses only card-tree cards. In Prepare, sell or store: %s." % ", ".join(PackedStringArray(character.tree_conflicts))
 	_fight.disabled = not blocked.is_empty()
 	_message.text = blocked if not blocked.is_empty() else "Win to earn XP. A defeat earns nothing, and the encounter waits for you to try again. Change your deck as often as you like between battles."
 	_message.add_theme_color_override("font_color", STYLE.LOSS if not blocked.is_empty() else STYLE.MUTED)
@@ -159,11 +159,8 @@ func _start_next() -> void:
 	queue_free()
 
 func _open_deck() -> void:
-	var screen = CHARACTER_CREATION.new()
-	screen.initial_character = character_id
-	screen.loadout_mode = "progression"
-	screen.back_label = "Back to campaign"
-	screen.campaign_mode = true
+	var screen = CAMPAIGN_PREPARE.new()
+	screen.character_id = character_id
 	screen.closed.connect(func(): show(); last_battle = {}; refresh(); _fight.grab_focus())
 	get_tree().root.add_child(screen)
 	hide()

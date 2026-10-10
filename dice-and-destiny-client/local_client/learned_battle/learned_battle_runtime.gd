@@ -199,6 +199,12 @@ func campaign_status() -> Dictionary:
 	if _native_authority == null: return {"ok": false, "error": _initialization_error}
 	return _request({"op": "campaign_status", "loadout_root": WorkspacePaths.runtime_dir("user/character_loadouts"), "content_root": ProjectSettings.globalize_path("res://../dice-and-destiny-server/content")})
 
+## Read-only: one campaign character's deck, stored cards and abilities with
+## every trade open to them, each pre-checked by the authority.
+func campaign_loadout(character: String) -> Dictionary:
+	if _native_authority == null: return {"ok": false, "error": _initialization_error}
+	return _request({"op": "campaign_loadout", "character": character, "loadout_root": WorkspacePaths.runtime_dir("user/character_loadouts"), "content_root": ProjectSettings.globalize_path("res://../dice-and-destiny-server/content")})
+
 func save_character_deck(character: String, decklist: Array) -> Dictionary:
 	if _native_authority == null: return {"ok": false, "error": _initialization_error}
 	var entries: Array = []

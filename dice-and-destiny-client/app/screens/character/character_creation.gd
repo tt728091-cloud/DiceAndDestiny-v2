@@ -11,11 +11,6 @@ const MUTED := STYLE.MUTED
 const ROSTER := ["adventurer", "venom", "curse", "blade_warden", "starter"]
 var initial_character := "adventurer"
 var loadout_mode := "sandbox"
-var back_label := "Back to battle setup"
-## Opened from the campaign: locked to Progression (Sandbox's free deck edits
-## would bypass XP), and only card-tree cards can be added. Any owned card can
-## still be sold or stored.
-var campaign_mode := false
 var _catalog_mode := "sandbox"
 var _mode_choice: OptionButton
 var _mode_note: Label
@@ -172,11 +167,8 @@ func _build() -> void:
 	_mode_choice.tooltip_text = "Sandbox edits decks freely. Progression buys and sells with XP."
 	_mode_choice.select(1 if loadout_mode == "progression" else 0); mode_box.add_child(_mode_choice)
 	_mode_choice.item_selected.connect(_change_mode)
-	if campaign_mode:
-		_mode_choice.disabled = true
-		_mode_choice.tooltip_text = "The campaign spends earned XP only."
 	_button(header, "Reload definitions", func(): _guard_unsaved(reload_catalogs), "reload").size_flags_vertical = Control.SIZE_SHRINK_END
-	_button(header, back_label, _close, "back").size_flags_vertical = Control.SIZE_SHRINK_END
+	_button(header, "Back to battle setup", _close, "back").size_flags_vertical = Control.SIZE_SHRINK_END
 	_error = _label(body, "", 16, Color("ffd2c8")); _error.hide()
 	_error.add_theme_stylebox_override("normal", STYLE.box(Color(STYLE.LOSS, 0.12), Color(STYLE.LOSS, 0.6), 14, 8))
 	var columns := HBoxContainer.new(); columns.add_theme_constant_override("separation", 16)
@@ -665,10 +657,7 @@ func inspect_entry(kind: String, id: String) -> void:
 	else:
 		STYLE.chip(tags, "%d faces" % int(definition.get("side_count", definition.get("faces", []).size())), MUTED)
 	if loadout_mode == "progression" and kind in ["cards", "abilities"]: _label(_details, _entry_xp_text(kind, id), 15, GOLD)
-	if kind == "cards" and _campaign_blocked(card_id):
-		var blocked := _label(_details, "The campaign uses only card-tree cards. Sell this card or move it to your collection before a campaign battle.", 15, Color("ffd2c8"))
-		blocked.add_theme_stylebox_override("normal", STYLE.box(Color(STYLE.LOSS, 0.12), Color(STYLE.LOSS, 0.55), 12, 8))
-	elif kind in ["cards", "abilities"] and not _type_allowed(kind, card_id):
+	if kind in ["cards", "abilities"] and not _type_allowed(kind, card_id):
 		var warning := _label(_details, "Unavailable for this character type. " + ("Sell/remove this card or change its type in Admin settings before battle." if kind == "cards" else "Choose an eligible downgrade or change the ability/character type in Admin settings before battle."), 15, Color("ffd2c8"))
 		warning.add_theme_stylebox_override("normal", STYLE.box(Color(STYLE.LOSS, 0.12), Color(STYLE.LOSS, 0.55), 12, 8))
 	if kind == "cards": _append_card_visual(_details, card_id)
@@ -798,7 +787,6 @@ func _refresh_actions() -> void:
 		_save_status.add_theme_color_override("font_color", GOLD)
 		if _health() == 0: _save_status.text = "Deck empty · buy at least one card before starting a battle."; _save_status.add_theme_color_override("font_color", STYLE.LOSS)
 		if _has_type_conflicts(): _save_status.text = "Type conflict · sell/remove incompatible cards or update Admin types before battle."; _save_status.add_theme_color_override("font_color", STYLE.LOSS)
-		if campaign_mode and _has_type_conflicts(): _save_status.text = "Campaign · only card-tree cards can be used. Sell or store the flagged cards before your next battle."
 		return
 	var dirty := _dirty(character_id)
 	var valid := not _has_type_conflicts() and _health() >= 1 and _health() <= int(catalogs[character_id].deck_limits.max_cards)
@@ -967,7 +955,7 @@ func _progression_actions(kind: String, id: String) -> void:
 		_label(collection, "%d in collection · not counted as health" % stored, 14, MUTED)
 		var store := _button(collection, "Move deck copy to collection", func(): _move_collection_card("unequip_collection_card", id), "store." + id); store.disabled = _card_count(id) < 1
 		if stored > 0:
-			_button(collection, "Add collected copy to deck · no extra XP", func(): _move_collection_card("equip_collection_card", id), "equip." + id).disabled = not _type_allowed("cards", card_id)
+			_button(collection, "Add collected copy to deck · no extra XP", func(): _move_collection_card("equip_collection_card", id), "equip." + id)
 			_button(collection, "Sell collected copy · +%d XP" % sale_price, func(): _review_purchase("sell_collection_card", id, sale_price), "sell_collection." + id)
 		for branch in _economy_map("card_upgrade_branches").get(id, []):
 			if upgrades_box == null: upgrades_box = _upgrade_section()
@@ -1070,7 +1058,7 @@ func _confirm_purchase() -> void:
 	var p := _pending_purchase
 	if loadout_mode != "progression" or character_id != str(p.character):
 		_purchase_overlay.hide(); return
-	var response: Dictionary = get_node("/root/LearnedBattleRuntime").purchase_progression(str(p.character), str(p.kind), str(p.id), int(p.revision), int(p.cost), str(p.target_id) if p.kind in ["downgrade_ability", "upgrade_card"] else "", str(p.get("tree", "")), campaign_mode)
+	var response: Dictionary = get_node("/root/LearnedBattleRuntime").purchase_progression(str(p.character), str(p.kind), str(p.id), int(p.revision), int(p.cost), str(p.target_id) if p.kind in ["downgrade_ability", "upgrade_card"] else "", str(p.get("tree", "")))
 	_purchase_overlay.hide()
 	if not response.get("ok", false):
 		_error.text = "Transaction not completed: " + str(response.get("error", "Unknown error")) + ". Reload definitions to refresh."; _error.show(); return
@@ -1329,21 +1317,14 @@ func _type_name(id: String) -> String:
 	return str(catalogs[character_id].access.types.get(id, id))
 
 func _type_caption(kind: String, id: String) -> String:
-	if kind == "cards" and _campaign_blocked(id): return _type_name(str(catalogs[character_id].access[_type_key(kind)].get(id, "general"))) + " · not a card-tree card"
 	return _type_name(str(catalogs[character_id].access[_type_key(kind)].get(id, "general"))) + (" · incompatible" if not _type_allowed(kind, id) else "")
 
 func _type_allowed(kind: String, id: String) -> bool:
-	if kind == "cards" and _campaign_blocked(id): return false
 	var required := str(catalogs[character_id].access[_type_key(kind)].get(id, "general"))
 	return required == "general" or required == _character_type()
 
-## The campaign uses only card-tree cards (bases, variants and shared cards).
-func _campaign_blocked(card_id: String) -> bool:
-	return campaign_mode and not _economy_map("card_tree_membership").has(_card_of(card_id))
-
 func _eligible_card_ids() -> Array:
-	# Stored cards the campaign cannot use stay listed so they can be sold.
-	return catalogs[character_id].cards.keys().filter(func(id): return _type_allowed("cards", str(id)) or (_campaign_blocked(str(id)) and _stored_count(str(id)) > 0))
+	return catalogs[character_id].cards.keys().filter(func(id): return _type_allowed("cards", str(id)))
 
 func _has_type_conflicts() -> bool:
 	for entry in character.decklist:

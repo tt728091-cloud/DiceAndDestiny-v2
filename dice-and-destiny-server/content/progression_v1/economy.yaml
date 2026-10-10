@@ -15,6 +15,8 @@ characters:
     starting_abilities:
       offensive: [adventurer_strike, guarded_strike, measured_strike, adventurer_small_straight, adventurer_large_straight, decisive_blow]
       defensive: [adventurer_guard]
+    ability_upgrades:
+      adventurer_guard: {to: adventurer_guard_plus, xp: 25}
 
 # Pool assignments; omitted items are General. Admin overrides persist separately.
 access:

@@ -416,6 +416,50 @@ func Buy(root, character string, e Economy, lib content.BattleLibrary, request P
 	if request.Revision != p.Revision {
 		return p, fmt.Errorf("loadout changed; refresh before trading")
 	}
+	next, cost, err := applyPurchase(cloneProgress(p), character, e, lib, request)
+	if err != nil {
+		return p, err
+	}
+	if cost != request.ExpectedCost {
+		return p, fmt.Errorf("price changed; refresh before trading")
+	}
+	if next, err = settlePurchase(next, character, e, lib, request.Kind, cost); err != nil {
+		return p, err
+	}
+	filename, _ := progressPath(root, character)
+	if err = writeProgress(filename, next); err != nil {
+		return p, err
+	}
+	return next, nil
+}
+
+// PreviewPurchase dry-runs a transaction against a loaded ledger and an
+// effective economy without saving: the XP it would cost (negative refunds)
+// and why it would be refused.
+func PreviewPurchase(p Progress, character string, e Economy, lib content.BattleLibrary, request Purchase) (int, error) {
+	next, cost, err := applyPurchase(cloneProgress(p), character, e, lib, request)
+	if err != nil {
+		return cost, err
+	}
+	_, err = settlePurchase(next, character, e, lib, request.Kind, cost)
+	return cost, err
+}
+
+// EffectiveEconomy applies the saved admin prices, budgets and types.
+func EffectiveEconomy(root string, e Economy) (Economy, error) {
+	e, _, err := effectiveEconomy(root, e)
+	return e, err
+}
+
+func cloneProgress(p Progress) Progress {
+	p.Deck = append([]Entry{}, p.Deck...)
+	p.Collection = append([]Entry(nil), p.Collection...)
+	p.Abilities = content.AbilityBoard{Offensive: append([]string(nil), p.Abilities.Offensive...), Defensive: append([]string(nil), p.Abilities.Defensive...)}
+	return p
+}
+
+func applyPurchase(p Progress, character string, e Economy, lib content.BattleLibrary, request Purchase) (Progress, int, error) {
+	var err error
 	cost := 0
 	cfg := e.Characters[character]
 	if request.TreeCardsOnly {
@@ -424,19 +468,19 @@ func Buy(root, character string, e Economy, lib content.BattleLibrary, request P
 			added = request.TargetID
 		}
 		if (request.Kind == "buy_card" || request.Kind == "buy_collection_card" || request.Kind == "equip_collection_card" || request.Kind == "upgrade_card") && !IsTreeCard(lib.CardTrees, added) {
-			return p, fmt.Errorf("the campaign uses only card-tree cards; %s can be sold but not added", added)
+			return p, 0, fmt.Errorf("the campaign uses only card-tree cards; %s can be sold but not added", added)
 		}
 	}
 	switch request.Kind {
 	case "buy_card", "buy_collection_card":
 		if _, _, variant := content.TreeCardOwner(lib.CardTrees, request.ID); variant {
-			return p, fmt.Errorf("acquire this variant through Card Trees")
+			return p, 0, fmt.Errorf("acquire this variant through Card Trees")
 		}
 		if err := e.Access.Check(character, "cards", request.ID); err != nil {
-			return p, err
+			return p, 0, err
 		}
 		if _, ok := lib.Cards[request.ID]; !ok {
-			return p, fmt.Errorf("card unavailable")
+			return p, 0, fmt.Errorf("card unavailable")
 		}
 		cost = e.Price(character, request.ID)
 		if request.Kind == "buy_collection_card" {
@@ -451,10 +495,10 @@ func Buy(root, character string, e Economy, lib content.BattleLibrary, request P
 		}
 		tree, err := copyTree(source, request.ID, request.Tree, lib.CardTrees)
 		if err != nil {
-			return p, err
+			return p, 0, err
 		}
 		if _, ok := lib.Cards[request.ID]; !ok || deckCountIn(source, request.ID, tree) < 1 {
-			return p, fmt.Errorf("no owned copy to sell")
+			return p, 0, fmt.Errorf("no owned copy to sell")
 		}
 		cost = e.Value(character, Entry{CardID: request.ID, Tree: tree})
 		if c, ok := e.Authored[request.ID]; ok && tree == "" {
@@ -468,12 +512,17 @@ func Buy(root, character string, e Economy, lib content.BattleLibrary, request P
 	case "equip_collection_card", "unequip_collection_card":
 		p, err = MoveCollectionCard(p, request.ID, request.Tree, request.Kind == "equip_collection_card", e, lib, character)
 		if err != nil {
-			return p, err
+			return p, 0, err
 		}
 	case "tree_card":
 		p, cost, err = UpgradeTreeCard(p, request.ID, request.TargetID, request.Tree, e, lib, character)
 		if err != nil {
-			return p, err
+			return p, 0, err
+		}
+	case "tree_card_deck":
+		p, cost, err = UpgradeDeckTreeCard(p, request.ID, request.TargetID, request.Tree, e, lib, character)
+		if err != nil {
+			return p, 0, err
 		}
 
 	case "upgrade_card":
@@ -488,13 +537,13 @@ func Buy(root, character string, e Economy, lib content.BattleLibrary, request P
 			}
 		}
 		if !ok || deckCount(p.Deck, request.ID) < 1 {
-			return p, fmt.Errorf("no owned copy or upgrade path")
+			return p, 0, fmt.Errorf("no owned copy or upgrade path")
 		}
 		if _, _, variant := content.TreeCardOwner(lib.CardTrees, upgrade.To); variant {
-			return p, fmt.Errorf("acquire this variant through Card Trees")
+			return p, 0, fmt.Errorf("acquire this variant through Card Trees")
 		}
 		if err := e.Access.Check(character, "cards", upgrade.To); err != nil {
-			return p, err
+			return p, 0, err
 		}
 		cost = upgrade.XP
 		p.Deck = changeCount(p.Deck, request.ID, -1)
@@ -502,20 +551,20 @@ func Buy(root, character string, e Economy, lib content.BattleLibrary, request P
 	case "downgrade_ability":
 		upgrade, ok := cfg.AbilityUpgrades[request.TargetID]
 		if !ok || upgrade.To != request.ID {
-			return p, fmt.Errorf("no matching ability downgrade path")
+			return p, 0, fmt.Errorf("no matching ability downgrade path")
 		}
 		if err := e.Access.Check(character, "abilities", request.TargetID); err != nil {
-			return p, err
+			return p, 0, err
 		}
 		cost = upgrade.XP
 		if p.UpgradeSpent < cost {
-			return p, fmt.Errorf("not enough invested upgrade XP to refund this tier")
+			return p, 0, fmt.Errorf("not enough invested upgrade XP to refund this tier")
 		}
 		replaced := false
 		for _, ids := range [][]string{p.Abilities.Offensive, p.Abilities.Defensive} {
 			for i, id := range ids {
 				if id == request.TargetID {
-					return p, fmt.Errorf("previous ability tier already equipped")
+					return p, 0, fmt.Errorf("previous ability tier already equipped")
 				}
 				if id == request.ID {
 					ids[i] = request.TargetID
@@ -524,22 +573,22 @@ func Buy(root, character string, e Economy, lib content.BattleLibrary, request P
 			}
 		}
 		if !replaced {
-			return p, fmt.Errorf("ability is not equipped")
+			return p, 0, fmt.Errorf("ability is not equipped")
 		}
 	case "upgrade_ability":
 		upgrade, ok := cfg.AbilityUpgrades[request.ID]
 		if !ok {
-			return p, fmt.Errorf("no ability upgrade path")
+			return p, 0, fmt.Errorf("no ability upgrade path")
 		}
 		if err := e.Access.Check(character, "abilities", upgrade.To); err != nil {
-			return p, err
+			return p, 0, err
 		}
 		cost = upgrade.XP
 		replaced := false
 		for _, ids := range [][]string{p.Abilities.Offensive, p.Abilities.Defensive} {
 			for i, id := range ids {
 				if id == upgrade.To {
-					return p, fmt.Errorf("upgraded ability already equipped")
+					return p, 0, fmt.Errorf("upgraded ability already equipped")
 				}
 				if id == request.ID {
 					ids[i] = upgrade.To
@@ -548,15 +597,17 @@ func Buy(root, character string, e Economy, lib content.BattleLibrary, request P
 			}
 		}
 		if !replaced {
-			return p, fmt.Errorf("ability is not equipped")
+			return p, 0, fmt.Errorf("ability is not equipped")
 		}
 	default:
-		return p, fmt.Errorf("unknown transaction kind")
+		return p, 0, fmt.Errorf("unknown transaction kind")
 	}
-	if cost != request.ExpectedCost {
-		return p, fmt.Errorf("price changed; refresh before trading")
-	}
-	refund := request.Kind == "sell_card" || request.Kind == "sell_collection_card" || request.Kind == "downgrade_ability"
+	return p, cost, nil
+}
+
+// settlePurchase charges or refunds the transaction and checks the result.
+func settlePurchase(p Progress, character string, e Economy, lib content.BattleLibrary, kind string, cost int) (Progress, error) {
+	refund := kind == "sell_card" || kind == "sell_collection_card" || kind == "downgrade_ability"
 	if !refund && p.XP < cost {
 		return p, fmt.Errorf("not enough XP")
 	}
@@ -569,11 +620,7 @@ func Buy(root, character string, e Economy, lib content.BattleLibrary, request P
 	p.CollectionValue = deckValue(p.Collection, character, e)
 	p.UpgradeSpent = *p.Budget - p.XP - p.DeckValue - p.CollectionValue
 	p.Revision++
-	if err = validateProgress(p, lib); err != nil {
-		return p, err
-	}
-	filename, _ := progressPath(root, character)
-	if err = writeProgress(filename, p); err != nil {
+	if err := validateProgress(p, lib); err != nil {
 		return p, err
 	}
 	return p, nil

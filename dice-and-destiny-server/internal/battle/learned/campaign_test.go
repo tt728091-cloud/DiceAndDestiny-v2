@@ -280,3 +280,97 @@ func TestCampaignXPSurvivesAdminBudgetOverride(t *testing.T) {
 		t.Fatalf("reward lost to the admin override: %v before %+v after %+v", err, p, after)
 	}
 }
+
+// Prepare's offers are dry runs of the real purchases: each one marked
+// available must succeed and each one refused must fail, on a copy of the save.
+// A tree trade keeps the copy in the deck, so health never changes.
+func TestCampaignLoadoutOffersMatchPurchases(t *testing.T) {
+	contentRoot := filepath.Join(testServerRoot(t), "content")
+	root := campaignLoadoutRoot(t)
+	c, err := loadCampaignContext(contentRoot, root)
+	if err != nil {
+		t.Fatal(err)
+	}
+	lib := c.catalogs[campaignCharacter]
+	// Spend most XP so some offers are refused for cost.
+	p := readCampaignProgress(t, contentRoot, root)
+	for _, id := range []string{"dispel", "salve", "reclaim", "disrupt", "blood_price", "take_stock", "nudge", "try_again"} {
+		if p, err = loadout.Buy(root, campaignCharacter, c.economy, lib, loadout.Purchase{Kind: "buy_card", ID: id, Revision: p.Revision, ExpectedCost: c.economy.Price(campaignCharacter, id)}); err != nil {
+			t.Fatal(err)
+		}
+	}
+	view, err := campaignLoadout(contentRoot, root, campaignCharacter)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var offers []map[string]any
+	for _, key := range []string{"trades", "bases"} {
+		offers = append(offers, view[key].([]map[string]any)...)
+	}
+	for _, entry := range view["deck"].([]map[string]any) {
+		offers = append(offers, entry["sell"].(map[string]any), entry["store"].(map[string]any))
+	}
+	for _, a := range view["abilities"].([]map[string]any) {
+		if u, ok := a["upgrade"].(map[string]any); ok {
+			offers = append(offers, u)
+		}
+	}
+	available, refused := 0, 0
+	for _, o := range offers {
+		r := o["request"].(map[string]any)
+		copyRoot := t.TempDir()
+		copyDir(t, root, copyRoot)
+		before, _ := loadout.ReadProgress(copyRoot, campaignCharacter, c.economy, lib)
+		after, err := loadout.Buy(copyRoot, campaignCharacter, c.economy, lib, loadout.Purchase{Kind: r["kind"].(string), ID: r["id"].(string), TargetID: r["target_id"].(string), Tree: r["tree"].(string), Revision: before.Revision, ExpectedCost: o["cost"].(int), TreeCardsOnly: true})
+		if (err == nil) != o["available"].(bool) {
+			t.Fatalf("offer %v said available=%v but the purchase returned %v", r, o["available"], err)
+		}
+		if err != nil {
+			refused++
+			continue
+		}
+		available++
+		if after.XP != before.XP+o["xp_change"].(int) {
+			t.Fatalf("offer %v changed XP by %d, not %d", r, after.XP-before.XP, o["xp_change"])
+		}
+		if r["kind"] == "tree_card_deck" && totalProgress(after.Deck) != totalProgress(before.Deck) {
+			t.Fatalf("tree trade %v changed health", r)
+		}
+	}
+	if available == 0 || refused == 0 {
+		t.Fatalf("expected both kinds of offer: %d available, %d refused", available, refused)
+	}
+	downs := 0
+	for _, o := range view["trades"].([]map[string]any) {
+		if o["cost"].(int) < 0 {
+			downs++
+		}
+	}
+	if downs == 0 {
+		t.Fatal("no trade-down offers")
+	}
+	if _, err = campaignLoadout(contentRoot, root, "venom"); err == nil {
+		t.Fatal("Prepare opened for a non-campaign character")
+	}
+}
+
+func copyDir(t *testing.T, from, to string) {
+	t.Helper()
+	err := filepath.WalkDir(from, func(path string, d os.DirEntry, err error) error {
+		if err != nil {
+			return err
+		}
+		rel, _ := filepath.Rel(from, path)
+		if d.IsDir() {
+			return os.MkdirAll(filepath.Join(to, rel), 0o700)
+		}
+		raw, err := os.ReadFile(path)
+		if err != nil {
+			return err
+		}
+		return os.WriteFile(filepath.Join(to, rel), raw, 0o600)
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+}
