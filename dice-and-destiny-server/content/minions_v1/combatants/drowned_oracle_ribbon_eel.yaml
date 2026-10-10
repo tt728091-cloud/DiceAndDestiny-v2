@@ -1,0 +1,51 @@
+{
+  "schema_version": 1,
+  "id": "drowned_oracle_ribbon_eel",
+  "name": "Ribbon Eel",
+  "class": "minion",
+  "controller_defaults": {
+    "type": "external"
+  },
+  "resources": {
+    "starting_hand_size": 1,
+    "starting_energy": 0,
+    "hand_limit": 3,
+    "energy_cap": 75
+  },
+  "income": {
+    "cards": 1,
+    "energy": 0
+  },
+  "decklist": [
+    {
+      "card_id": "shed_ribbon",
+      "count": 15
+    }
+  ],
+  "dice_loadout": [
+    {
+      "dice_id": "eel_d6",
+      "count": 5
+    }
+  ],
+  "ability_board": {
+    "offensive": [
+      "coiling_snare"
+    ],
+    "defensive": [
+      "slip_the_current"
+    ]
+  },
+  "roll_preferences": {
+    "status_effects": "automatic",
+    "offensive": "automatic",
+    "ability_effects": "automatic"
+  },
+  "single_ability_policy": {
+    "target_faces": [
+      2,
+      4,
+      6
+    ]
+  }
+}

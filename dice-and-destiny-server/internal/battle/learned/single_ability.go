@@ -83,13 +83,13 @@ func (p *singleAbilityPolicy) Select(t mlsim.Transition) (int, time.Duration, er
 	if own.Dice != nil && own.Dice.RollsUsed < own.Dice.MaxRolls {
 		reroll := []int{}
 		for _, die := range own.Dice.Dice {
-			if die.Face != config.TargetFace || bound[die.Index] {
+			if !config.Keeps(die.Face) || bound[die.Index] {
 				reroll = append(reroll, die.Index)
 			}
 		}
 		keep := []int{}
 		for _, die := range own.Dice.Dice {
-			if die.Face == config.TargetFace && !bound[die.Index] {
+			if config.Keeps(die.Face) && !bound[die.Index] {
 				keep = append(keep, die.Index)
 			}
 		}

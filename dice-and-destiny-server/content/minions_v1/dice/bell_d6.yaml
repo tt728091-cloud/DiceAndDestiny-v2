@@ -1,0 +1,33 @@
+{
+  "schema_version": 1,
+  "id": "bell_d6",
+  "name": "Bell Die",
+  "die_type": "combat",
+  "side_count": 6,
+  "faces": [
+    {
+      "number": 1,
+      "symbol": "murk"
+    },
+    {
+      "number": 2,
+      "symbol": "murk"
+    },
+    {
+      "number": 3,
+      "symbol": "murk"
+    },
+    {
+      "number": 4,
+      "symbol": "murk"
+    },
+    {
+      "number": 5,
+      "symbol": "toll"
+    },
+    {
+      "number": 6,
+      "symbol": "toll"
+    }
+  ]
+}

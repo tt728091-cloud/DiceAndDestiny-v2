@@ -20,6 +20,20 @@ const MODEL_PRIOR_GLOBAL_CP38 := "prior-global-cp38"
 const MODEL_PRIOR_GLOBAL_CP480 := "prior-global-cp480"
 const MODEL_BRINE_MASK := "brine-mask"
 const MODEL_BRINE_PAIR := "brine-mask-pair"
+const MODEL_BELL_DIVER := "bell-diver"
+const MODEL_RIBBON_EEL := "ribbon-eel"
+## Scripted single-ability minions: content definition plus the summary shown in
+## the setup menu and the battle badge. The server reads behavior from content.
+const MINIONS := {
+	MODEL_BRINE_MASK: {"definition": "drowned_oracle_brine_mask", "keeps": "Keeps every 3", "badge": "BRINE MASK · Keeps every 3",
+		"rules": "Three rolls · 2 damage per 3 · Salt Veil rolls 1D6: half, rounded up · Brine Surge costs 5 energy for +1 damage"},
+	MODEL_BRINE_PAIR: {"definition": "drowned_oracle_brine_mask", "keeps": "Keeps every 3", "badge": "BRINE MASK · Keeps every 3",
+		"rules": "Three rolls · 2 damage per 3 · Salt Veil rolls 1D6: half, rounded up · Brine Surge costs 5 energy for +1 damage"},
+	MODEL_BELL_DIVER: {"definition": "drowned_oracle_bell_diver", "keeps": "Keeps every 5 and 6", "badge": "BELL DIVER · Keeps every 5 and 6",
+		"rules": "Three rolls · 3/4/5 Tolls deal 4/5/8; fewer is a miss · Brass Helm rolls 1D6: 1–3 prevent 2, 4–6 prevent 3 · 18 blank health cards"},
+	MODEL_RIBBON_EEL: {"definition": "drowned_oracle_ribbon_eel", "keeps": "Keeps every even die", "badge": "RIBBON EEL · Keeps every even die",
+		"rules": "Three rolls · 3/4/5 Snares deal 3/5/7; fewer is a miss · Slip the Current rolls 1D6: 1–3 prevent 1, 4–5 prevent 2, 6 prevents 4 · 15 blank health cards"},
+}
 const INFERENCE_TIMEOUT_MS := 2000
 
 var selected_loadout_mode := "sandbox"
@@ -38,7 +52,7 @@ func _ready() -> void:
 		_initialization_error = "NativeBattleAuthority GDExtension class is unavailable."
 
 func select_model(model_key: String) -> Dictionary:
-	if model_key not in [MODEL_ACCEPTED_V1, MODEL_DECISION_V2, MODEL_OPTIMIZED_V3, MODEL_GLOBAL_CHAMPION, MODEL_PRIOR_GLOBAL_CP38, MODEL_PRIOR_GLOBAL_CP480, MODEL_BRINE_MASK, MODEL_BRINE_PAIR]:
+	if model_key not in [MODEL_ACCEPTED_V1, MODEL_DECISION_V2, MODEL_OPTIMIZED_V3, MODEL_GLOBAL_CHAMPION, MODEL_PRIOR_GLOBAL_CP38, MODEL_PRIOR_GLOBAL_CP480] and not MINIONS.has(model_key):
 		return {"ok": false, "error": "Unknown learned model selection: %s" % model_key}
 	_selected_model_key = model_key
 	_initialized = _initialized_model_key == model_key
@@ -47,6 +61,12 @@ func select_model(model_key: String) -> Dictionary:
 
 func selected_model_key() -> String:
 	return _selected_model_key
+
+## The menu/badge summary for a scripted minion's content definition.
+static func minion_summary(definition_id: String) -> Dictionary:
+	for minion in MINIONS.values():
+		if minion.definition == definition_id: return minion
+	return {}
 
 func ensure_initialized() -> Dictionary:
 	if _initialized:
@@ -57,9 +77,9 @@ func ensure_initialized() -> Dictionary:
 		"op": "initialize",
 		"loadout_root": WorkspacePaths.runtime_dir("user/character_loadouts"),
 		"replace_session": not _initialized_model_key.is_empty() and _initialized_model_key != _selected_model_key,
-		"model_path": "" if _selected_model_key in [MODEL_BRINE_MASK, MODEL_BRINE_PAIR] else ProjectSettings.globalize_path(_selected_model_path()),
+		"model_path": "" if MINIONS.has(_selected_model_key) else ProjectSettings.globalize_path(_selected_model_path()),
 		"opponent_count": 2 if _selected_model_key == MODEL_BRINE_PAIR else 1,
-		"opponent_definition": "drowned_oracle_brine_mask" if _selected_model_key in [MODEL_BRINE_MASK, MODEL_BRINE_PAIR] else "",
+		"opponent_definition": str(MINIONS.get(_selected_model_key, {}).get("definition", "")),
 		"model_sha256": _selected_model_sha256(),
 		"content_root": ProjectSettings.globalize_path("res://../dice-and-destiny-server/content"),
 		"run_state_root": ProjectSettings.globalize_path("res://../dice-and-destiny-server/save/run_players"),

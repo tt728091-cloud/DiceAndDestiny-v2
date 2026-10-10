@@ -14,7 +14,17 @@ import (
 )
 
 func TestSingleAbilityKeepsEveryTargetFace(t *testing.T) {
-	p, err := loadSingleAbilityPolicy(filepath.Join(testServerRoot(t), "content"), "drowned_oracle_brine_mask")
+	for id, kept := range map[string][]int{
+		"drowned_oracle_brine_mask": {3},
+		"drowned_oracle_bell_diver": {5, 6},
+		"drowned_oracle_ribbon_eel": {2, 4, 6},
+	} {
+		t.Run(id, func(t *testing.T) { checkKeepsEveryTargetFace(t, id, kept) })
+	}
+}
+
+func checkKeepsEveryTargetFace(t *testing.T, id string, kept []int) {
+	p, err := loadSingleAbilityPolicy(filepath.Join(testServerRoot(t), "content"), id)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -27,7 +37,7 @@ func TestSingleAbilityKeepsEveryTargetFace(t *testing.T) {
 			face := n%6 + 1
 			n /= 6
 			dice[i] = state.RolledDie{Index: i, Face: face}
-			if face != 3 {
+			if !slices.Contains(kept, face) {
 				reroll = append(reroll, i)
 			}
 		}

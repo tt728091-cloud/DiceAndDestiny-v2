@@ -53,7 +53,8 @@ func _run() -> void:
 	var learned_menu = BOOTSTRAP.instantiate()
 	root.add_child(learned_menu)
 	await process_frame
-	learned_menu._model_choice.select(5) # preserved v1
+	for i in learned_menu._model_choice.item_count: # preserved v1
+		if learned_menu._model_choice.get_item_metadata(i) == "accepted-v1": learned_menu._model_choice.select(i)
 	var learned_button := _find_button_containing(learned_menu, "Start Battle")
 	_expect(learned_button != null and learned_button.visible and not learned_button.disabled, "learned Seat A mode is not graphically actionable")
 	if learned_button != null:
