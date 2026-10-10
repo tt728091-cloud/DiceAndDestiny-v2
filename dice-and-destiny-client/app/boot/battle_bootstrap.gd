@@ -2,6 +2,7 @@ extends Control
 
 const BATTLE_SCREEN := preload("res://app/screens/battle/battle_screen.tscn")
 const LEARNED_GATEWAY := preload("res://local_client/learned_battle/learned_battle_gateway.gd")
+const LEARNED_RUNTIME := preload("res://local_client/learned_battle/learned_battle_runtime.gd")
 const VIEWER := "blade"
 const MODE_PANEL_MAXIMUM_SIZE := Vector2(760, 620)
 const MODE_PANEL_VIEWPORT_INSET := Vector2(32, 32)
@@ -74,6 +75,7 @@ func _build_mode_menu() -> void:
 		["Venom · Poison, Incubation, and Catalyst", "venom"],
 		["Curse · cursed dice, Entombment, and misfortune", "curse"],
 		["Adventurer · swords, shields, and coins", "adventurer"],
+		["Starter · base General cards only", "starter"],
 	], "battle.setup.character")
 	_loadout_choice = _add_selection("LOADOUT", [["Sandbox · free deck editing", "sandbox"], ["Progression · XP purchases", "progression"]], "battle.setup.loadout")
 	var selected_mode: String = get_node("/root/LearnedBattleRuntime").selected_loadout_mode
@@ -84,6 +86,8 @@ func _build_mode_menu() -> void:
 	_refresh_character_loadouts()
 	_model_choice = _add_selection("OPPONENT", [
 		["Brine Mask · minion · keeps every 3", "brine-mask"],
+		["Bell Diver · minion · keeps every 5 and 6", "bell-diver"],
+		["Ribbon Eel · minion · keeps every even die", "ribbon-eel"],
 		["Blade Warden · Global Champion CP193", "global-champion"],
 		["Prior Champion CP38 · winner-health", "prior-global-cp38"],
 		["Prior Champion CP480 · 2.4M steps", "prior-global-cp480"],
@@ -121,7 +125,11 @@ func _update_opponent_description() -> void:
 	if _model_choice.get_selected_metadata() == "brine-mask-pair":
 		_message.text = "Two Brine Masks, 16 health each. Choose your attack target and defend separately against each incoming attack. Both keep every 3 and roll Salt Veil to block half their die, rounded up."
 		return
-	_message.text = "Brine Mask: 16 health, one attack, one defense. Keeps every 3 across up to three rolls. Brine Surge adds 1 attack damage for 5 energy." if _model_choice.get_selected_metadata() == "brine-mask" else "Play against the selected trained Blade Warden. Rematch keeps your character and opponent."
+	match _model_choice.get_selected_metadata():
+		"brine-mask": _message.text = "Brine Mask: 16 health, one attack, one defense. Keeps every 3 across up to three rolls. Brine Surge adds 1 attack damage for 5 energy."
+		"bell-diver": _message.text = "Bell Diver: 18 health, one attack, one defense. Keeps every 5 and 6 across up to three rolls; 3, 4 or 5 Tolls deal 4, 5 or 8 damage, fewer misses. Brass Helm blocks 2–3. Its cards are blank."
+		"ribbon-eel": _message.text = "Ribbon Eel: 15 health, one attack, one defense. Keeps every even die across up to three rolls; 3, 4 or 5 Snares deal 3, 5 or 7 damage, fewer misses. Slip the Current blocks 1, 2 or 4. Its cards are blank."
+		_: _message.text = "Play against the selected trained Blade Warden. Rematch keeps your character and opponent."
 
 func _add_selection(caption: String, choices: Array, control_id: String) -> OptionButton:
 	var heading := Label.new()
@@ -187,7 +195,7 @@ func _start_classic() -> void:
 
 func _start_learned(human_seat: String, model_key: String) -> void:
 	_set_buttons_disabled(true)
-	_message.text = "Preparing Brine Masks…" if model_key in ["brine-mask", "brine-mask-pair"] else "Loading the selected frozen learned policy…"
+	_message.text = "Preparing the minion encounter…" if LEARNED_RUNTIME.MINIONS.has(model_key) else "Loading the selected frozen learned policy…"
 	await get_tree().process_frame
 	var runtime := get_node_or_null("/root/LearnedBattleRuntime")
 	if runtime == null:

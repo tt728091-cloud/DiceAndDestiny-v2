@@ -20,6 +20,20 @@ const MODEL_PRIOR_GLOBAL_CP38 := "prior-global-cp38"
 const MODEL_PRIOR_GLOBAL_CP480 := "prior-global-cp480"
 const MODEL_BRINE_MASK := "brine-mask"
 const MODEL_BRINE_PAIR := "brine-mask-pair"
+const MODEL_BELL_DIVER := "bell-diver"
+const MODEL_RIBBON_EEL := "ribbon-eel"
+## Scripted single-ability minions: content definition plus the summary shown in
+## the setup menu and the battle badge. The server reads behavior from content.
+const MINIONS := {
+	MODEL_BRINE_MASK: {"definition": "drowned_oracle_brine_mask", "keeps": "Keeps every 3", "badge": "BRINE MASK · Keeps every 3",
+		"rules": "Three rolls · 2 damage per 3 · Salt Veil rolls 1D6: half, rounded up · Brine Surge costs 5 energy for +1 damage"},
+	MODEL_BRINE_PAIR: {"definition": "drowned_oracle_brine_mask", "keeps": "Keeps every 3", "badge": "BRINE MASK · Keeps every 3",
+		"rules": "Three rolls · 2 damage per 3 · Salt Veil rolls 1D6: half, rounded up · Brine Surge costs 5 energy for +1 damage"},
+	MODEL_BELL_DIVER: {"definition": "drowned_oracle_bell_diver", "keeps": "Keeps every 5 and 6", "badge": "BELL DIVER · Keeps every 5 and 6",
+		"rules": "Three rolls · 3/4/5 Tolls deal 4/5/8; fewer is a miss · Brass Helm rolls 1D6: 1–3 prevent 2, 4–6 prevent 3 · 18 blank health cards"},
+	MODEL_RIBBON_EEL: {"definition": "drowned_oracle_ribbon_eel", "keeps": "Keeps every even die", "badge": "RIBBON EEL · Keeps every even die",
+		"rules": "Three rolls · 3/4/5 Snares deal 3/5/7; fewer is a miss · Slip the Current rolls 1D6: 1–3 prevent 1, 4–5 prevent 2, 6 prevents 4 · 15 blank health cards"},
+}
 ## Campaign encounters name any scripted minion: "minion:<definition>:<count>".
 const MODEL_MINION_PREFIX := "minion:"
 const INFERENCE_TIMEOUT_MS := 2000
@@ -42,7 +56,7 @@ func _ready() -> void:
 func select_model(model_key: String) -> Dictionary:
 	if model_key.begins_with(MODEL_MINION_PREFIX) and _minion_opponent(model_key).is_empty():
 		return {"ok": false, "error": "Invalid minion opponent selection: %s" % model_key}
-	if not model_key.begins_with(MODEL_MINION_PREFIX) and model_key not in [MODEL_ACCEPTED_V1, MODEL_DECISION_V2, MODEL_OPTIMIZED_V3, MODEL_GLOBAL_CHAMPION, MODEL_PRIOR_GLOBAL_CP38, MODEL_PRIOR_GLOBAL_CP480, MODEL_BRINE_MASK, MODEL_BRINE_PAIR]:
+	if not model_key.begins_with(MODEL_MINION_PREFIX) and model_key not in [MODEL_ACCEPTED_V1, MODEL_DECISION_V2, MODEL_OPTIMIZED_V3, MODEL_GLOBAL_CHAMPION, MODEL_PRIOR_GLOBAL_CP38, MODEL_PRIOR_GLOBAL_CP480] and not MINIONS.has(model_key):
 		return {"ok": false, "error": "Unknown learned model selection: %s" % model_key}
 	_selected_model_key = model_key
 	_initialized = _initialized_model_key == model_key
@@ -52,13 +66,19 @@ func select_model(model_key: String) -> Dictionary:
 func selected_model_key() -> String:
 	return _selected_model_key
 
+## The menu/badge summary for a scripted minion's content definition.
+static func minion_summary(definition_id: String) -> Dictionary:
+	for minion in MINIONS.values():
+		if minion.definition == definition_id: return minion
+	return {}
+
 ## The model key for a campaign encounter's scripted minion opponent.
 static func encounter_model_key(encounter: Dictionary) -> String:
 	return "%s%s:%d" % [MODEL_MINION_PREFIX, str(encounter.get("opponent", "")), maxi(1, int(encounter.get("opponent_count", 1)))]
 
 func _minion_opponent(model_key: String) -> Dictionary:
-	if model_key in [MODEL_BRINE_MASK, MODEL_BRINE_PAIR]:
-		return {"definition": "drowned_oracle_brine_mask", "count": 2 if model_key == MODEL_BRINE_PAIR else 1}
+	if MINIONS.has(model_key):
+		return {"definition": MINIONS[model_key].definition, "count": 2 if model_key == MODEL_BRINE_PAIR else 1}
 	if not model_key.begins_with(MODEL_MINION_PREFIX): return {}
 	var parts := model_key.trim_prefix(MODEL_MINION_PREFIX).split(":")
 	if parts.size() != 2 or parts[0].is_empty() or not parts[1].is_valid_int() or int(parts[1]) not in [1, 2]: return {}

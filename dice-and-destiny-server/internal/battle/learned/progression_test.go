@@ -175,7 +175,7 @@ func TestProgressionRuntimeAndConfig(t *testing.T) {
 	if err := json.Unmarshal([]byte(HandleRuntimeRequest(string(request))), &reply); err != nil || reply["ok"] != true {
 		t.Fatalf("runtime: %v %v", reply, err)
 	}
-	if len(reply["result"].(map[string]any)) != 4 {
+	if len(reply["result"].(map[string]any)) != 5 {
 		t.Fatal("missing progression characters")
 	}
 	// Price and upgrade adjustments are consumed directly from configuration.

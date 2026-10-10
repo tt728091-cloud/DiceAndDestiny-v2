@@ -1,4 +1,4 @@
-[gd_resource type="Resource" script_class="BattleVisualLibrary" load_steps=42 format=3]
+[gd_resource type="Resource" script_class="BattleVisualLibrary" load_steps=45 format=3]
 
 [ext_resource type="Script" path="res://content/battle_visuals/visual_library.gd" id="1"]
 [ext_resource type="Script" path="res://content/battle_visuals/fighter_visual_profile.gd" id="2"]
@@ -41,11 +41,14 @@
 [ext_resource type="Resource" path="res://content/battle_visuals/habitats/flooded_aqueduct.tres" id="h_flooded_aqueduct"]
 
 [ext_resource type="Resource" path="res://content/battle_visuals/minions/drowned_oracle/brine_mask.tres" id="f_brine_mask"]
+[ext_resource type="Resource" path="res://content/battle_visuals/minions/drowned_oracle/bell_diver.tres" id="f_bell_diver"]
+[ext_resource type="Resource" path="res://content/battle_visuals/minions/drowned_oracle/ribbon_eel.tres" id="f_ribbon_eel"]
 
 [ext_resource type="Resource" path="res://content/battle_visuals/fighters/adventurer.tres" id="f_adventurer"]
+[ext_resource type="Resource" path="res://content/battle_visuals/fighters/starter.tres" id="f_starter"]
 
 [resource]
 script = ExtResource("1")
-fighters = Array[ExtResource("2")]([ExtResource("f_adventurer"), ExtResource("f_curse"), ExtResource("f_brine_mask"), ExtResource("f_venom"), ExtResource("f_blade_warden"), ExtResource("f_venom_goblin"), ExtResource("f_mire_crown"), ExtResource("f_rime_burrower"), ExtResource("f_dune_sieve"), ExtResource("f_spore_cantor"), ExtResource("f_reef_breaker"), ExtResource("f_ember_gullet"), ExtResource("f_root_widow"), ExtResource("f_prism_devourer"), ExtResource("f_silk_regent"), ExtResource("f_sluice_horror"), ExtResource("f_bellback_pilgrim"), ExtResource("f_ashwing_matriarch"), ExtResource("f_reliquary_crab"), ExtResource("f_thorn_seamstress"), ExtResource("f_cinder_colossus"), ExtResource("f_wax_revenant"), ExtResource("f_flint_tusk"), ExtResource("f_drowned_oracle"), ExtResource("f_carrion_harp"), ExtResource("f_glass_centipede")])
+fighters = Array[ExtResource("2")]([ExtResource("f_adventurer"), ExtResource("f_starter"), ExtResource("f_curse"), ExtResource("f_brine_mask"), ExtResource("f_bell_diver"), ExtResource("f_ribbon_eel"), ExtResource("f_venom"), ExtResource("f_blade_warden"), ExtResource("f_venom_goblin"), ExtResource("f_mire_crown"), ExtResource("f_rime_burrower"), ExtResource("f_dune_sieve"), ExtResource("f_spore_cantor"), ExtResource("f_reef_breaker"), ExtResource("f_ember_gullet"), ExtResource("f_root_widow"), ExtResource("f_prism_devourer"), ExtResource("f_silk_regent"), ExtResource("f_sluice_horror"), ExtResource("f_bellback_pilgrim"), ExtResource("f_ashwing_matriarch"), ExtResource("f_reliquary_crab"), ExtResource("f_thorn_seamstress"), ExtResource("f_cinder_colossus"), ExtResource("f_wax_revenant"), ExtResource("f_flint_tusk"), ExtResource("f_drowned_oracle"), ExtResource("f_carrion_harp"), ExtResource("f_glass_centipede")])
 habitats = Array[ExtResource("3")]([ExtResource("h_wasteland"), ExtResource("h_peat_bog"), ExtResource("h_fractured_glacier"), ExtResource("h_salt_dunes"), ExtResource("h_mushroom_cavern"), ExtResource("h_storm_shore"), ExtResource("h_ash_caldera"), ExtResource("h_dead_orchard"), ExtResource("h_crystal_cavern"), ExtResource("h_shrouded_ravine"), ExtResource("h_flooded_aqueduct")])
 default_encounter = ExtResource("duel")

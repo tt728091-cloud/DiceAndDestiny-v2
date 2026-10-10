@@ -10,7 +10,7 @@ func _run() -> void:
 		root.size = Vector2i(width, width * 9 / 16 if width != 1024 else 768)
 		var screen = SCREEN.new(); root.add_child(screen)
 		for frame in 8: await process_frame
-		_expect(screen.catalogs.size() == 4, "native catalog has all four characters")
+		_expect(screen.catalogs.size() == 5, "native catalog has all five characters")
 		for id in screen.ROSTER:
 			await _click(screen._roster_buttons[id])
 			_expect(screen.character_id == id, "pointer character selection")

@@ -18,7 +18,13 @@ func TestEntireCardCatalogEditableAndPublishable(t *testing.T) {
 	}
 	lib := catalogs["adventurer"]
 	revision := 0
+	blank := map[string]bool{}
 	for id, original := range lib.Cards {
+		// Blank minion health cards have no effects; the editor never publishes those.
+		if content.IsBlankCard(original) {
+			blank[id] = true
+			continue
+		}
 		c, err := content.EditableCard(original)
 		if err != nil {
 			t.Fatalf("%s is not editable: %v", id, err)
@@ -36,6 +42,9 @@ func TestEntireCardCatalogEditableAndPublishable(t *testing.T) {
 		t.Fatal(err)
 	}
 	for id := range lib.Cards {
+		if blank[id] {
+			continue
+		}
 		c, ok := loaded["adventurer"].Cards["catalog_copy_"+id]
 		if !ok || c.Cost.Energy != 2 || c.Program == nil && c.Mechanic == nil {
 			t.Fatalf("%s did not round-trip", id)

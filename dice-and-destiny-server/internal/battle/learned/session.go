@@ -193,7 +193,7 @@ func (s *Session) resetLoadout(battleID string, seed uint64, humanSeat string, r
 	if character == "" {
 		character = "blade_warden"
 	}
-	if character != "blade_warden" && character != "venom" && character != "curse" && character != "adventurer" {
+	if character != "blade_warden" && character != "venom" && character != "curse" && character != "adventurer" && character != "starter" {
 		return nil, fmt.Errorf("unknown playable character %q", character)
 	}
 	s.mu.Lock()

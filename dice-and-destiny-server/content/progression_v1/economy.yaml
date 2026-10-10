@@ -10,11 +10,16 @@ characters:
       defensive: [adventurer_guard]
     ability_upgrades:
       adventurer_guard: {to: adventurer_guard_plus, xp: 25}
+  starter:
+    # The Adventurer's mix and board, built only from General tree bases.
+    starting_abilities:
+      offensive: [adventurer_strike, guarded_strike, measured_strike, adventurer_small_straight, adventurer_large_straight, decisive_blow]
+      defensive: [adventurer_guard]
 
 # Pool assignments; omitted items are General. Admin overrides persist separately.
 access:
   types: {general: General, venom: Venom, curse: Curse, blade_warden: Blade Warden}
-  character_types: {adventurer: general, venom: venom, curse: curse, blade_warden: blade_warden}
+  character_types: {adventurer: general, venom: venom, curse: curse, blade_warden: blade_warden, starter: general}
   card_types:
     alchemists_gamble: venom
     accelerant: venom

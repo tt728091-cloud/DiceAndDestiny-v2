@@ -1039,13 +1039,13 @@ func _build_header(parent: VBoxContainer) -> void:
 		var policy_schema := str(_view.learned_policy.get("observation_schema", ""))
 		var policy_label := "NEW V2" if policy_schema == "dice-and-destiny-observation-v2" else "OLD V1"
 		policy_badge.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-		policy_badge.text = "BRINE MASK · Keeps every 3" if _is_single_ability_opponent() else "LEARNED BATTLE · %s · HUMAN %s" % [policy_label, learned_human_seat.to_upper()]
+		policy_badge.text = str(_minion_summary().get("badge", "")) if _is_single_ability_opponent() else "LEARNED BATTLE · %s · HUMAN %s" % [policy_label, learned_human_seat.to_upper()]
 		policy_badge.add_theme_color_override("font_color", Color("9de0ff"))
-		policy_badge.tooltip_text = "Three rolls · 2 damage per 3 · Salt Veil rolls 1D6: half, rounded up · Brine Surge costs 5 energy for +1 damage" if _is_single_ability_opponent() else "Frozen policy %s · no training or fallback" % str(_view.learned_policy.get("model_id", "unknown"))
+		policy_badge.tooltip_text = str(_minion_summary().get("rules", "")) if _is_single_ability_opponent() else "Frozen policy %s · no training or fallback" % str(_view.learned_policy.get("model_id", "unknown"))
 		if not _view.campaign.is_empty():
 			var encounter: Dictionary = _view.campaign.get("encounter", {})
 			policy_badge.text = "CAMPAIGN %d/%d · %s" % [int(_view.campaign.get("index", 0)) + 1, int(_view.campaign.get("total", 1)), str(encounter.get("name", "")).to_upper()]
-			policy_badge.tooltip_text = "%s Victory earns %d XP." % [str(encounter.get("description", "")), int(encounter.get("xp", 0))]
+			policy_badge.tooltip_text = "%s Victory earns %d XP. %s" % [str(encounter.get("description", "")), int(encounter.get("xp", 0)), policy_badge.tooltip_text]
 		_utility_contents.inspect.add_child(policy_badge)
 		_inspect(policy_badge, "battle.learned_policy.badge", policy_badge.tooltip_text)
 	if _snapshot_tools_enabled():
@@ -1157,7 +1157,7 @@ func _build_enemy_column(_parent: HBoxContainer) -> void:
 	if learned_battle_mode or _multiple_enemies():
 		profile.title.text = _actor_display_name(_focused_enemy).trim_prefix("Learned ")
 	if learned_battle_mode:
-		profile.title.tooltip_text = "Keeps every 3 · one attack · one defense" if _is_single_ability_opponent() else "Learned Policy"
+		profile.title.tooltip_text = "%s · one attack · one defense" % str(_minion_summary().get("keeps", "")) if _is_single_ability_opponent() else "Learned Policy"
 	var income := _income_actor_data(_focused_enemy)
 	if not income.is_empty(): profile.prepare_income(income)
 	else:
@@ -3728,6 +3728,9 @@ func _segment_name(id: String) -> String:
 
 func _is_single_ability_opponent() -> bool:
 	return _view.learned_policy.get("controller_kind", "") == "single_ability"
+
+func _minion_summary() -> Dictionary:
+	return preload("res://local_client/learned_battle/learned_battle_runtime.gd").minion_summary(str(_view.learned_policy.get("model_id", "")))
 
 func _actor_display_name(actor_id: String) -> String:
 	actor_id = _display_actor_id(actor_id)
