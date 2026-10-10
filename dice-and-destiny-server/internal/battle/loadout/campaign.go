@@ -25,8 +25,10 @@ type Encounter struct {
 // Campaign is the authored encounter sequence. It loops: after the last
 // encounter the next run starts again from the first.
 type Campaign struct {
-	Version    int         `yaml:"schema_version" json:"-"`
-	Characters []string    `yaml:"characters" json:"characters"`
+	Version    int      `yaml:"schema_version" json:"-"`
+	Characters []string `yaml:"characters" json:"characters"`
+	// BonusXP is what a new campaign save starts with, on top of the starting sheet.
+	BonusXP    int         `yaml:"bonus_xp" json:"bonus_xp"`
 	Encounters []Encounter `yaml:"encounters" json:"encounters"`
 }
 
@@ -65,8 +67,8 @@ func LoadCampaign(root string, catalogs map[string]content.BattleLibrary, access
 	if err = decoder.Decode(&c); err != nil {
 		return c, err
 	}
-	if c.Version != 1 || len(c.Characters) == 0 || len(c.Encounters) == 0 || len(c.Encounters) > 20 {
-		return c, fmt.Errorf("campaign needs schema_version 1, characters and 1–20 encounters")
+	if c.Version != 1 || len(c.Characters) == 0 || len(c.Encounters) == 0 || len(c.Encounters) > 20 || c.BonusXP < 0 || c.BonusXP > 1000000 {
+		return c, fmt.Errorf("campaign needs schema_version 1, characters, bonus_xp 0–1000000 and 1–20 encounters")
 	}
 	for _, id := range c.Characters {
 		if _, ok := catalogs[id]; !ok {
@@ -116,10 +118,10 @@ func (c Campaign) NextEncounter(p Progress) Encounter {
 	return c.Encounters[next]
 }
 
-// RecordCampaignBattle commits a finished campaign battle: a victory earns the
-// encounter's XP and advances to the next encounter; anything else leaves the
-// character facing the same encounter.
-func RecordCampaignBattle(root, character string, e Economy, lib content.BattleLibrary, c Campaign, encounterID, battleID, result string) (CampaignOutcome, error) {
+// RecordCampaignBattle commits a finished battle to its campaign save: a
+// victory earns the encounter's XP and advances to the next encounter; anything
+// else leaves the save facing the same encounter.
+func RecordCampaignBattle(root, saveID string, e Economy, catalogs map[string]content.BattleLibrary, c Campaign, encounterID, battleID, result string) (CampaignOutcome, error) {
 	progressMu.Lock()
 	defer progressMu.Unlock()
 	outcome := CampaignOutcome{BattleID: battleID, EncounterID: encounterID, Result: result}
@@ -127,10 +129,11 @@ func RecordCampaignBattle(root, character string, e Economy, lib content.BattleL
 	if err != nil {
 		return outcome, err
 	}
-	p, err := readProgress(root, character, e, lib)
+	save, err := readCampaignSave(root, saveID, e, catalogs)
 	if err != nil {
 		return outcome, err
 	}
+	p := &save.Sheet
 	if p.Campaign == nil {
 		p.Campaign = &CampaignProgress{}
 	}
@@ -138,7 +141,7 @@ func RecordCampaignBattle(root, character string, e Economy, lib content.BattleL
 	if battleID == "" || slices.Contains(state.Battles, battleID) {
 		return outcome, fmt.Errorf("campaign battle %q was already recorded", battleID)
 	}
-	encounter := c.NextEncounter(p)
+	encounter := c.NextEncounter(*p)
 	if encounter.ID != encounterID {
 		return outcome, fmt.Errorf("campaign moved on from %q; this battle earns nothing", encounterID)
 	}
@@ -164,11 +167,10 @@ func RecordCampaignBattle(root, character string, e Economy, lib content.BattleL
 		state.Battles = state.Battles[len(state.Battles)-recordedBattleLimit:]
 	}
 	p.Revision++
-	if err = validateProgress(p, lib); err != nil {
+	if err = validateProgress(*p, catalogs[save.Character]); err != nil {
 		return outcome, err
 	}
-	filename, _ := progressPath(root, character)
-	if err = writeProgress(filename, p); err != nil {
+	if err = writeCampaignSave(root, save); err != nil {
 		return outcome, err
 	}
 	outcome.XP = p.XP

@@ -7,16 +7,10 @@ const BATTLE_SCRIPT := "res://app/screens/battle/battle_screen.gd"
 const BATTLE_SCREEN := preload("res://app/screens/battle/battle_screen.tscn")
 
 func _run() -> void:
+	root.gui_embed_subwindows = true
 	root.size = Vector2i(1280, 720)
 	_seed_card_trees()
 	var runtime = root.get_node("LearnedBattleRuntime")
-	# A legacy card equipped outside the campaign (Progression mode) blocks it.
-	var catalogs: Dictionary = runtime.character_catalogs("progression").result
-	var tip_price := int(catalogs.starter.economy.card_prices.get("tip_it", catalogs.starter.economy.default_card_price))
-	var bought: Dictionary = runtime.purchase_progression("starter", "buy_card", "tip_it", int(catalogs.starter.progression.revision), tip_price)
-	_expect(bought.get("ok") == true, "Progression mode can still equip a legacy card")
-	var refused: Dictionary = runtime.purchase_progression("starter", "buy_card", "tip_it", int(bought.result.revision), tip_price, "", "", true)
-	_expect(refused.get("ok") != true and "card-tree" in str(refused.get("error", "")), "campaign editing refuses buying a legacy card")
 	var menu = MENU.instantiate(); root.add_child(menu)
 	for frame in 6: await process_frame
 	var campaign_button: Button = menu._menu_actions[2]
@@ -26,33 +20,52 @@ func _run() -> void:
 	var campaign: Control = _find(CAMPAIGN_SCRIPT)
 	_expect(campaign != null, "Campaign opens from the menu")
 	if campaign == null: _finish(); return
-	_expect(campaign._path.find_children("Encounter*", "PanelContainer", false, false).size() == 3, "three encounters are on the path")
-	_expect("%d XP to spend" % (100 - tip_price) in campaign._summary.text, "campaign shows the starting XP less the legacy purchase")
-	_expect("ENCOUNTER 1  ·  NEXT" in _text(campaign._path) and "Brine Mask" in _text(campaign._path), "first encounter is next and names its opponent")
-	_expect(campaign._fight.text == "Fight · Tide Pool" and not campaign._banner.visible, "Fight offers the first encounter")
-	_expect(campaign.character_id == "starter" and campaign._summary.text.begins_with("Starter"), "the campaign defaults to the Starter")
-	_expect(campaign._character_choice.visible and campaign._character_choice.item_count == 2, "the Adventurer can be chosen too")
-	campaign._character_choice.select(1); campaign._character_choice.item_selected.emit(1)
-	for frame in 3: await process_frame
-	_expect(campaign.character_id == "adventurer" and campaign._summary.text.begins_with("Adventurer"), "choosing the Adventurer shows its own progress")
-	campaign._character_choice.select(0); campaign._character_choice.item_selected.emit(0)
-	for frame in 3: await process_frame
-	_expect(campaign._fight.disabled and "Tip It" in campaign._message.text, "an equipped legacy card blocks the campaign and is named")
-	await _click(campaign._deck)
-	for frame in 8: await process_frame
-	var cleanup: Control = _find("res://app/screens/campaign/campaign_prepare.gd")
-	_expect(cleanup != null and not campaign.visible, "Prepare opens from the campaign")
-	if cleanup == null: _finish(); return
-	_expect("Tip It" in cleanup.data.tree_conflicts and "only card-tree cards" in _text(cleanup._list), "the equipped legacy card is flagged")
-	_expect(not cleanup.data.bases.any(func(b): return b.request.id == "tip_it"), "Prepare offers only card-tree bases")
-	await _tap(_prepare_control(cleanup, "prepare.card.tip_it"))
-	_expect("not part of any card tree" in cleanup._center_hint.text and _prepare_control(cleanup, "prepare.buy.tip_it") == null, "the legacy card explains why it is blocked and cannot be bought")
-	await _tap(_prepare_control(cleanup, "prepare.sell.tip_it"))
+
+	# No campaigns yet: start one from the Starter sheet with the default name.
+	_expect(campaign._saves_view.visible and not campaign._play_view.visible and "No campaigns yet" in _text(campaign._save_list), "Campaign opens on the empty save list")
+	_expect(campaign._new_sheet == "starter" and campaign._new_name.text == "Starter campaign" and "100 bonus XP" in campaign._new_note.text, "a new campaign defaults to the Starter sheet")
+	await _capture(campaign, "campaign-saves-empty")
+	await _click(_campaign_control(campaign, "campaign.begin"))
 	for frame in 4: await process_frame
-	_expect(cleanup._deck_count("tip_it") == 0 and cleanup.data.tree_conflicts.is_empty(), "selling the legacy card clears the conflict")
-	await _tap(_prepare_control(cleanup, "prepare.back"))
-	for frame in 6: await process_frame
-	_expect(not campaign._fight.disabled and "100 XP to spend" in campaign._summary.text, "the sale refunds its XP and unblocks the campaign")
+	_expect(campaign._play_view.visible and campaign._title.text == "Starter campaign" and not campaign.save_id.is_empty(), "Begin opens the new campaign")
+	var first_save: String = campaign.save_id
+	_expect(campaign._path.find_children("Encounter*", "PanelContainer", false, false).size() == 3, "three encounters are on the path")
+	_expect("Starter · 12 health · 100 XP to spend" in campaign._summary.text, "the campaign starts from the Starter sheet with 100 bonus XP")
+	_expect("ENCOUNTER 1  ·  NEXT" in _text(campaign._path) and "Brine Mask" in _text(campaign._path), "first encounter is next and names its opponent")
+	_expect(campaign._fight.text == "Fight · Tide Pool" and not campaign._banner.visible and not campaign._fight.disabled, "Fight offers the first encounter")
+
+	# A second campaign from the Adventurer sheet is its own save.
+	await _click(campaign._all_saves)
+	await _click(_campaign_control(campaign, "campaign.sheet.adventurer"))
+	_expect(campaign._new_name.text == "Adventurer campaign", "the default name follows the chosen sheet")
+	campaign._new_name.text = "Second run"; campaign._new_name.text_changed.emit("Second run")
+	await _click(_campaign_control(campaign, "campaign.begin"))
+	for frame in 4: await process_frame
+	_expect(campaign._title.text == "Second run" and campaign._summary.text.begins_with("Adventurer") and campaign.save_id != first_save, "a second campaign starts from the Adventurer sheet")
+	var second_save: String = campaign.save_id
+	await _click(campaign._all_saves)
+	_expect(campaign._save_list.get_child_count() == 2 and "Starter campaign" in _text(campaign._save_list) and "Second run" in _text(campaign._save_list), "both campaigns are listed")
+	await _capture(campaign, "campaign-saves")
+
+	# The editors' Progression mode never touches a campaign save.
+	var catalogs: Dictionary = runtime.character_catalogs("progression").result
+	var bought: Dictionary = runtime.purchase_progression("starter", "buy_card", "tip_it", int(catalogs.starter.progression.revision), int(catalogs.starter.economy.card_prices.get("tip_it", catalogs.starter.economy.default_card_price)))
+	_expect(bought.get("ok") == true, "Progression mode buys into its own save")
+	await _click(_campaign_control(campaign, "campaign.continue." + first_save))
+	_expect(campaign._title.text == "Starter campaign" and "12 health · 100 XP to spend" in campaign._summary.text and not campaign._fight.disabled, "the campaign save ignores the editors' purchases")
+
+	# Delete the second campaign after confirming.
+	await _click(campaign._all_saves)
+	await _click(_campaign_control(campaign, "campaign.delete." + second_save))
+	_expect(campaign._confirm_delete.visible and "Second run" in campaign._confirm_delete.dialog_text, "deleting asks first")
+	campaign._confirm_delete.get_cancel_button().pressed.emit()
+	for frame in 2: await process_frame
+	_expect(campaign._save_list.get_child_count() == 2, "cancelling keeps the campaign")
+	await _click(_campaign_control(campaign, "campaign.delete." + second_save))
+	campaign._confirm_delete.get_ok_button().pressed.emit()
+	for frame in 4: await process_frame
+	_expect(campaign._save_list.get_child_count() == 1 and "Second run" not in _text(campaign._save_list), "confirming deletes only that campaign")
+	await _click(_campaign_control(campaign, "campaign.continue." + first_save))
 	await _capture(campaign, "campaign-start")
 
 	# Fight until a victory; a defeat on the way must earn nothing and repeat.
@@ -127,7 +140,8 @@ func _run() -> void:
 		_expect(str(next_battle._view.actor("goblin").get("definition_id", "")) == "drowned_oracle_bell_diver", "the second encounter fights the Bell Diver")
 		next_battle.queue_free(); await process_frame
 	var status: Dictionary = runtime.campaign_status()
-	_expect(int(status.result.characters.starter.xp) == xp and int(status.result.characters.starter.campaign.victories) == 1, "authority ledger agrees")
+	var saved: Dictionary = status.result.saves.filter(func(s): return s.id == first_save)[0]
+	_expect(int(saved.xp) == xp and int(saved.campaign.victories) == 1, "the campaign save agrees")
 	if not saw_defeat: print("campaign: no defeat occurred; the loss path was not exercised this run")
 	_finish()
 
@@ -151,6 +165,11 @@ func _tap(button: Button) -> void:
 		scroll.ensure_control_visible(button)
 		for frame in 2: await process_frame
 	await _click(button)
+
+func _campaign_control(screen: Node, key: String) -> Button:
+	for button in screen.find_children("*", "Button", true, false):
+		if button.get_meta("campaign_control", "") == key and not button.is_queued_for_deletion(): return button
+	return null
 
 func _prepare_control(screen: Node, key: String) -> Button:
 	for button in screen.find_children("*", "Button", true, false):

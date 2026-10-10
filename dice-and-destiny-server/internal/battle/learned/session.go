@@ -183,7 +183,7 @@ func (s *Session) ResetCharacterLoadout(battleID string, seed uint64, humanSeat 
 	return s.resetLoadout(battleID, seed, humanSeat, rematch, character, unified, mode, nil)
 }
 func (s *Session) resetLoadout(battleID string, seed uint64, humanSeat string, rematch bool, character string, unified bool, mode string, campaign *campaignBattle) (map[string]any, error) {
-	if mode != "" && mode != "sandbox" && mode != "progression" {
+	if mode != "" && mode != "sandbox" && mode != "progression" && !(mode == "campaign" && campaign != nil) {
 		return nil, fmt.Errorf("invalid loadout mode")
 	}
 	if mode == "progression" && s.config.LoadoutRoot == "" {
@@ -219,7 +219,11 @@ func (s *Session) resetLoadout(battleID string, seed uint64, humanSeat string, r
 		if err != nil {
 			return nil, err
 		}
-		if mode == "progression" {
+		if mode == "campaign" {
+			// A campaign battle fights with the campaign save's own sheet.
+			decks = map[string][]loadout.Entry{humanSeat: loadout.BattleDeck(campaign.deck)}
+			abilityBoards = map[string]content.AbilityBoard{humanSeat: campaign.board}
+		} else if mode == "progression" {
 			progress, err := loadout.ReadProgress(s.config.LoadoutRoot, character, economy, catalogs[character])
 			if err != nil {
 				return nil, err

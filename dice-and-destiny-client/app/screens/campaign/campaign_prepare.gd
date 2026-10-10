@@ -1,6 +1,6 @@
 extends Control
-## The campaign's deck screen, focused on one character: its deck, stored cards
-## and abilities, nothing else. Select a deck card to see its card tree and trade
+## The campaign's deck screen, focused on one campaign save (the player's own
+## character sheet): its deck, stored cards and abilities, nothing else. Select a deck card to see its card tree and trade
 ## a copy up or down, buy another or sell one; "Add a new card" buys card-tree
 ## bases. Every offer arrives pre-checked by the authority (campaign_loadout)
 ## and every trade goes through it. Character Creation stays the admin editor.
@@ -11,7 +11,8 @@ const STYLE := preload("res://app/screens/character/character_style.gd")
 const CANVAS := preload("res://app/screens/character/card_tree_canvas.gd")
 const DIFF := preload("res://app/screens/character/card_tree_diff.gd")
 
-var character_id := "starter"
+var save_id := ""
+var character_id := ""
 ## The authority's campaign_loadout view.
 var data: Dictionary = {}
 ## The character's catalog (card and ability definitions).
@@ -98,17 +99,17 @@ func _panel(parent: Node, width: int = 0) -> VBoxContainer:
 func reload() -> bool:
 	var runtime := _runtime()
 	if runtime == null: _error("The battle runtime is unavailable."); return false
-	var catalogs: Dictionary = runtime.character_catalogs("progression")
-	if catalogs.get("ok") != true: _error(str(catalogs.get("error", "The character catalog could not be loaded."))); return false
-	catalog = catalogs.result.get(character_id, {})
-	BattlePresentationCatalog.configure(catalog)
-	if authoring.is_empty():
-		var response: Dictionary = runtime.card_authoring()
-		if response.get("ok") == true: authoring = response.result
-	var response: Dictionary = runtime.campaign_loadout(character_id)
+	var response: Dictionary = runtime.campaign_loadout(save_id)
 	if response.get("ok") != true: _error(str(response.get("error", "The campaign deck could not be loaded."))); return false
 	data = response.result
-	_title.text = "Prepare · %s" % str(data.name)
+	character_id = str(data.character)
+	# Definitions only; the deck and abilities come from the campaign save.
+	catalog = data.catalog
+	BattlePresentationCatalog.configure(catalog)
+	if authoring.is_empty():
+		var authored: Dictionary = runtime.card_authoring()
+		if authored.get("ok") == true: authoring = authored.result
+	_title.text = "Prepare · %s" % str(data.save_name)
 	_health.text = str(int(data.health))
 	_xp.text = str(int(data.xp))
 	if not _selection_valid(): selection = _default_selection()
@@ -366,7 +367,7 @@ func _select(value: Dictionary) -> void:
 func _trade(offer: Dictionary) -> void:
 	if not offer.get("available", false): return
 	var request: Dictionary = offer.request
-	var response: Dictionary = _runtime().purchase_progression(character_id, str(request.kind), str(request.id), int(data.revision), int(offer.cost), str(request.target_id), str(request.tree), true)
+	var response: Dictionary = _runtime().campaign_purchase(save_id, str(request.kind), str(request.id), int(data.revision), int(offer.cost), str(request.target_id), str(request.tree))
 	if response.get("ok") != true:
 		_error("Not completed: %s" % str(response.get("error", "unknown error")))
 		reload(); return

@@ -6,8 +6,11 @@ schema_version: 1
 #
 # Only General-type characters may enter, so campaign decks draw on the General
 # card trees, never the Venom or Curse pools.
-# The first character is the campaign's default.
+# Starting character sheets a new campaign can copy. Each campaign save is the
+# player's own copy; the original sheet never changes. The first is the default.
 characters: [starter, adventurer]
+# A new campaign starts with its sheet's deck and abilities plus this much XP.
+bonus_xp: 100
 encounters:
   # Ordered by difficulty; see docs/game-design/enemies/bell-diver-and-ribbon-eel.md.
   - id: tide_pool

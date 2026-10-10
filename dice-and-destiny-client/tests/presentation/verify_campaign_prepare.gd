@@ -6,10 +6,14 @@ extends "res://tests/presentation/verify_campaign.gd"
 const PREPARE_SCRIPT := "res://app/screens/campaign/campaign_prepare.gd"
 
 func _run() -> void:
+	root.gui_embed_subwindows = true
 	root.size = Vector2i(1280, 720)
 	_seed_card_trees()
 	var runtime = root.get_node("LearnedBattleRuntime")
-	var campaign = preload("res://app/screens/campaign/campaign_screen.gd").new(); root.add_child(campaign)
+	var started: Dictionary = runtime.campaign_new("starter", "Prepare test")
+	_expect(started.get("ok") == true, "a campaign save starts")
+	var campaign = preload("res://app/screens/campaign/campaign_screen.gd").new()
+	campaign.save_id = str(started.result.id); root.add_child(campaign)
 	for frame in 6: await process_frame
 	_expect(campaign._deck.text == "Prepare · Deck & Abilities", "the campaign offers Prepare")
 	await _click(campaign._deck)
@@ -17,7 +21,7 @@ func _run() -> void:
 	var prepare: Control = _find(PREPARE_SCRIPT)
 	_expect(prepare != null and not campaign.visible, "Prepare opens from the campaign")
 	if prepare == null: _finish(); return
-	_expect(prepare.character_id == "starter" and prepare._title.text == "Prepare · Starter", "Prepare is about the campaign character")
+	_expect(prepare.save_id == campaign.save_id and prepare.character_id == "starter" and prepare._title.text == "Prepare · Prepare test", "Prepare is about the campaign save")
 	_expect(prepare._health.text == "12" and prepare._xp.text == "100", "Prepare shows health and XP")
 	_expect(_prepare_control(prepare, "prepare.card.steady_guard") != null and _prepare_control(prepare, "prepare.ability.adventurer_guard") != null, "the deck and abilities are listed")
 	_expect(_prepare_control(prepare, "prepare.card.tip_it") == null, "only the character's own cards are listed")
@@ -101,7 +105,9 @@ func _run() -> void:
 	for frame in 6: await process_frame
 	_expect(campaign.visible and "%d XP to spend" % xp in campaign._summary.text and "12 health" in campaign._summary.text, "the campaign reflects Prepare's trades")
 	var status: Dictionary = runtime.campaign_status()
-	_expect(int(status.result.characters.starter.xp) == xp, "the authority ledger agrees")
+	_expect(int(status.result.saves[0].xp) == xp, "the campaign save agrees")
+	var editors: Dictionary = runtime.character_catalogs("progression")
+	_expect(int(editors.result.starter.progression.xp) == 100 and int(editors.result.starter.owned_decklist.reduce(func(total, e): return total + int(e.count), 0)) == 12, "Prepare never touched the editors' Progression save")
 	_finish()
 
 func _finish() -> void:

@@ -2,21 +2,30 @@
 
 The campaign is the battle → XP → deck change → next battle loop. Open it from the main menu with **Campaign**.
 
+## Campaign saves
+
+Every campaign is a named **save slot**: the player's own character sheet, copied from a starting character sheet when the campaign begins. You can keep as many campaigns as you like, for the same or different characters.
+
+- **New campaign:** choose a starting sheet (Starter or Adventurer), name it (the default is "Starter campaign", "Starter campaign 2", …) and **Begin campaign**. The save starts with the sheet's deck and ability board plus `bonus_xp` (100) to spend.
+- **Continue** opens a save's encounter path. **Delete** removes it after a confirmation. Other campaigns and the original sheet are never affected.
+- **The original sheet is never changed.** The character template, Character Creation's Progression and Sandbox saves, and admin budget overrides never touch a campaign save, and campaign play never touches them.
+- **Card and ability definitions are not copied.** A save stores card and ability IDs, so catalog edits (repricing, rules changes) reach campaigns already in progress. A repriced card keeps the save's total XP and moves the difference into XP to spend. Locking definitions per campaign belongs to future content versioning (see `TODO.md`).
+
 ## Flow
 
-1. The **Campaign** screen opens on the Starter; a picker switches to the Adventurer. Each character keeps its own XP, deck and place in the campaign. The screen shows the character's health (equipped cards), XP to spend, run number and victories. It also shows the encounter path, with each encounter marked Cleared, Next or Ahead.
-2. **Fight · <encounter>** starts the next encounter. It uses the character's Progression deck and ability board, Seat A, and the unified defense rule.
-3. When the battle ends, the authority records the result in the character's progression ledger:
+1. **Campaign** opens the list of campaign saves and the New campaign panel. Continuing a save shows its health (equipped cards), XP to spend, run number and victories, and the encounter path, with each encounter marked Cleared, Next or Ahead. **All campaigns** returns to the list.
+2. **Fight · <encounter>** starts the next encounter. It uses the save's deck and ability board, Seat A, and the unified defense rule.
+3. When the battle ends, the authority records the result in the campaign save:
    - **Victory:** adds the encounter's XP and advances to the next encounter. After the last encounter, the run counter increases and the next run starts again at the first encounter. XP and cards carry over.
    - **Defeat or draw:** earns nothing; the same encounter is offered again.
 4. The result screen shows the reward. **Continue · Spend XP & Next Battle** returns to the Campaign screen.
 5. **Prepare · Deck & Abilities** opens the campaign's own deck screen (see below). Character Creation stays the admin editor for card trees, cards and abilities outside the campaign.
 
-The client never names a reward amount. The battle session knows it is a campaign battle and which encounter it is. When the battle becomes terminal, it calls `loadout.RecordCampaignBattle`, which commits the XP and the campaign position in one atomic ledger write. Each battle ID is recorded once. A battle whose encounter is no longer the character's next encounter earns nothing.
+The client never names a reward amount. The battle session knows it is a campaign battle and which encounter it is. When the battle becomes terminal, it calls `loadout.RecordCampaignBattle`, which commits the XP and the campaign position in one atomic write to the save. Each battle ID is recorded once. A battle whose encounter is no longer the save's next encounter earns nothing.
 
 ## Prepare screen
 
-`app/screens/campaign/campaign_prepare.gd` shows one campaign character and nothing else:
+`app/screens/campaign/campaign_prepare.gd` shows one campaign save and nothing else:
 
 - **Left:** your deck (art, copies, energy, and how many upgrades are open), any stored cards, and your abilities. **+ Add a new card** is at the bottom.
 - **Center:** select a deck card and its card tree appears. The card is highlighted, cards you hold glow gold, and cards you can reach from it pulse. Click another card you hold to switch to it; click any other card to preview it and see how it differs.
@@ -36,7 +45,8 @@ Campaign decks may use only **card-tree cards**: tree bases, variants and shared
 
 - Prepare only offers card-tree bases and tree trades. A non-tree card in the deck is flagged, and selecting it offers only Sell and Store.
 - Prepare's purchases send `tree_cards_only`, and the authority refuses buying, equipping or upgrading into a non-tree card.
-- The campaign shares its deck with Progression mode, which can still equip legacy cards. When it does, the authority refuses to start a campaign battle and names the cards (`tree_conflicts` in the campaign status). The Campaign screen disables **Fight** and says what to sell or store.
+- `campaign_purchase` always applies `tree_cards_only`, so no client can add a non-tree card to a campaign save.
+- A save that still holds a non-tree card (for example one converted from older progress) cannot start a battle. The authority names the cards (`tree_conflicts` in the campaign status), and the Campaign screen disables **Fight** and says what to sell or store.
 
 Both campaign characters' starting decks are already all card-tree cards.
 
@@ -46,13 +56,14 @@ Both campaign characters' starting decks are already all card-tree cards.
 
 | Field | Meaning |
 | --- | --- |
-| `characters` | Characters that may enter. Each must have the General type, so campaign decks only use General cards and trees. The first is the default. |
+| `characters` | Starting sheets a new campaign can copy. Each must have the General type, so campaign decks only use General cards and trees. The first is the default. |
+| `bonus_xp` | XP a new campaign save starts with, on top of the sheet's deck and abilities (100). |
 | `encounters[].id` / `name` / `description` | Stable ID and the text shown on the path. |
 | `encounters[].opponent` | A scripted minion combatant (one with `single_ability_policy`), such as `drowned_oracle_brine_mask`. |
 | `encounters[].opponent_count` | 1 or 2 copies of that minion. |
 | `encounters[].xp` | XP a victory awards (base-10 scale; a base card costs 10). |
 
-The characters are Starter (the default) and Adventurer. The encounters are ordered by difficulty (see [Bell Diver and Ribbon Eel](enemies/bell-diver-and-ribbon-eel.md)):
+The starting sheets are Starter (the default) and Adventurer. The encounters are ordered by difficulty (see [Bell Diver and Ribbon Eel](enemies/bell-diver-and-ribbon-eel.md)):
 
 | Encounter | Opponent | Victory XP |
 | --- | --- | ---: |
@@ -62,14 +73,22 @@ The characters are Starter (the default) and Adventurer. The encounters are orde
 
 The runtime pins one opponent per session, so the client re-initializes it with each encounter's minion (model key `minion:<definition>:<count>`). Another playable character also needs adding to the playable-character lists in `learned.CharacterCatalogs` and `Session.resetLoadout`.
 
-## Ledger
+## Storage
 
-The campaign uses the per-character progression ledger shared with Progression mode (`<loadout root>/progression/<character>.json`):
+Campaign saves live in `<loadout root>/campaigns/<save id>.json` (`loadout.CampaignSave`). Each holds its name, character, creation time and `sheet`: deck, stored cards, ability board, XP and budget, `earned_xp`, and `campaign` (next encounter, victories, defeats, runs completed, and recent recorded battle IDs). Save IDs are `<character>-<UTC timestamp>` and are checked against a strict pattern, so a request cannot reach outside the folder.
 
-- `campaign`: next encounter, victories, defeats, runs completed, and recent recorded battle IDs.
-- `earned_xp`: total battle rewards. An admin budget override is a total fixed at the time it is saved. Rewards earned later are added to it, just like free deck edits.
+Runtime ops:
 
-The `starting_xp` allowance in `economy.yaml` is still the new-character XP.
+| Op | Does |
+| --- | --- |
+| `campaign_status` | Lists encounters, starting sheets and saves |
+| `campaign_new` | Starts a save from a sheet |
+| `campaign_delete` | Deletes a save |
+| `campaign_loadout` | Returns Prepare's view of a save |
+| `campaign_purchase` | Applies one Prepare trade |
+| `reset` | With `encounter` and `campaign_save`, starts a save's battle |
+
+**Converting older progress:** before campaigns had their own saves, campaign progress lived in the character's progression save (`progression/<character>.json`). The first `campaign_status` converts any such progress into a campaign save named "<Character> campaign" (with `migrated_from`), copying its deck, stored cards, abilities, XP and position, then clears the `campaign` field from the progression save.
 
 ## Tests
 
@@ -81,7 +100,16 @@ The `starting_xp` allowance in `economy.yaml` is still the new-character XP.
   - spending XP between battles changing the next battle's deck;
   - rewards surviving admin budget overrides.
 - `internal/battle/learned/campaign_test.go` also checks that every Prepare offer matches the real purchase: available offers succeed with the shown XP change, and refused offers fail. It also checks that tree trades keep health.
-- `tests/presentation/verify_campaign.gd` drives the loop with the pointer: menu → Campaign (Starter, with the Adventurer picker) → battle → reward screen → Continue → Prepare purchase → the next encounter uses the new deck.
+- `internal/battle/learned/campaign_test.go` also checks:
+  - saves are independent copies: trading in one changes no other save, the progression save or the template;
+  - admin budget overrides do not reach saves;
+  - deletion removes only that save, and save IDs cannot escape the folder;
+  - older progress converts into a save once.
+- `tests/presentation/verify_campaign.gd` drives the loop with the pointer:
+  - menu → Campaign → New campaign (Starter, default name) → a second campaign from the Adventurer sheet;
+  - Progression-mode purchases do not reach the campaign;
+  - delete with confirm and cancel;
+  - Continue → battle → reward screen → Continue → Prepare purchase → the next encounter uses the new deck.
 - `tests/presentation/verify_campaign_prepare.gd` drives Prepare with the pointer:
   - select a card and see its tree;
   - preview a tree card;

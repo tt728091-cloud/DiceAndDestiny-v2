@@ -140,15 +140,16 @@ func _selected_model_sha256() -> String:
 		_:
 			return ""
 
-## A non-empty `encounter` starts that campaign encounter with the progression
-## deck; the authority then awards its XP when the battle ends in victory.
-func start_battle(battle_id: String, human_seat: String, seed: int, rematch: bool = false, character: String = "blade_warden", unified_defense: bool = false, loadout_mode: String = "sandbox", encounter: String = "") -> Dictionary:
+## A non-empty `encounter` starts that encounter of the `campaign_save`, with
+## the save's own deck and abilities; the authority records the result there.
+func start_battle(battle_id: String, human_seat: String, seed: int, rematch: bool = false, character: String = "blade_warden", unified_defense: bool = false, loadout_mode: String = "sandbox", encounter: String = "", campaign_save: String = "") -> Dictionary:
 	var initialized := ensure_initialized()
 	if initialized.get("ok") != true:
 		return {"accepted": false, "error": initialized.get("error", _initialization_error)}
 	return _request({
 		"op": "reset",
 		"encounter": encounter,
+		"campaign_save": campaign_save,
 		"loadout_mode": loadout_mode,
 		"battle_id": battle_id,
 		"human_seat": human_seat,
@@ -193,17 +194,32 @@ func character_catalogs(mode: String = "sandbox") -> Dictionary:
 	if _native_authority == null: return {"ok": false, "error": _initialization_error}
 	return _request({"op": "progression_catalogs" if mode == "progression" else "character_catalogs", "loadout_root": WorkspacePaths.runtime_dir("user/character_loadouts"), "content_root": ProjectSettings.globalize_path("res://../dice-and-destiny-server/content")})
 
-## Read-only: the campaign's encounters and each campaign character's XP,
-## health and next encounter.
+## The campaign menu: encounters, starting sheets, and every campaign save with
+## its XP, health and next encounter. Converts pre-save campaign progress once.
 func campaign_status() -> Dictionary:
 	if _native_authority == null: return {"ok": false, "error": _initialization_error}
 	return _request({"op": "campaign_status", "loadout_root": WorkspacePaths.runtime_dir("user/character_loadouts"), "content_root": ProjectSettings.globalize_path("res://../dice-and-destiny-server/content")})
 
-## Read-only: one campaign character's deck, stored cards and abilities with
-## every trade open to them, each pre-checked by the authority.
-func campaign_loadout(character: String) -> Dictionary:
+## Starts a campaign: a new named save copying the starting sheet `character`.
+func campaign_new(character: String, campaign_name: String) -> Dictionary:
 	if _native_authority == null: return {"ok": false, "error": _initialization_error}
-	return _request({"op": "campaign_loadout", "character": character, "loadout_root": WorkspacePaths.runtime_dir("user/character_loadouts"), "content_root": ProjectSettings.globalize_path("res://../dice-and-destiny-server/content")})
+	return _request({"op": "campaign_new", "character": character, "name": campaign_name, "loadout_root": WorkspacePaths.runtime_dir("user/character_loadouts"), "content_root": ProjectSettings.globalize_path("res://../dice-and-destiny-server/content")})
+
+## Permanently deletes one campaign save.
+func campaign_delete(save_id: String) -> Dictionary:
+	if _native_authority == null: return {"ok": false, "error": _initialization_error}
+	return _request({"op": "campaign_delete", "campaign_save": save_id, "loadout_root": WorkspacePaths.runtime_dir("user/character_loadouts"), "content_root": ProjectSettings.globalize_path("res://../dice-and-destiny-server/content")})
+
+## Read-only: one campaign save's deck, stored cards and abilities with every
+## trade open to them, each pre-checked by the authority.
+func campaign_loadout(save_id: String) -> Dictionary:
+	if _native_authority == null: return {"ok": false, "error": _initialization_error}
+	return _request({"op": "campaign_loadout", "campaign_save": save_id, "loadout_root": WorkspacePaths.runtime_dir("user/character_loadouts"), "content_root": ProjectSettings.globalize_path("res://../dice-and-destiny-server/content")})
+
+## One Prepare transaction on one campaign save (never the editors' saves).
+func campaign_purchase(save_id: String, kind: String, id: String, revision: int, cost: int, target_id: String = "", tree: String = "") -> Dictionary:
+	if _native_authority == null: return {"ok": false, "error": _initialization_error}
+	return _request({"op": "campaign_purchase", "campaign_save": save_id, "purchase": {"kind": kind, "id": id, "revision": revision, "expected_cost": cost, "target_id": target_id, "tree": tree}, "loadout_root": WorkspacePaths.runtime_dir("user/character_loadouts"), "content_root": ProjectSettings.globalize_path("res://../dice-and-destiny-server/content")})
 
 func save_character_deck(character: String, decklist: Array) -> Dictionary:
 	if _native_authority == null: return {"ok": false, "error": _initialization_error}

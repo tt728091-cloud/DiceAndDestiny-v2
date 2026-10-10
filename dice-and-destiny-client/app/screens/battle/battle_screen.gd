@@ -2709,7 +2709,7 @@ func _return_to_campaign() -> void:
 	if _submitting or _model_thinking: return
 	var screen = preload("res://app/screens/campaign/campaign_screen.gd").new()
 	screen.last_battle = _view.campaign.duplicate(true)
-	screen.character_id = str(_view.campaign.get("character", ""))
+	screen.save_id = str(_view.campaign.get("save_id", ""))
 	get_tree().root.add_child(screen)
 	queue_free()
 

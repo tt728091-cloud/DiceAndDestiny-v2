@@ -10,9 +10,13 @@ import (
 )
 
 // campaignBattle marks the session's battle as a campaign encounter. The
-// authority records its result in the progression ledger exactly once, when
-// the battle ends; the client never names the reward.
+// authority records its result in the campaign save exactly once, when the
+// battle ends; the client never names the reward.
 type campaignBattle struct {
+	saveID    string
+	saveName  string
+	deck      []loadout.Entry
+	board     content.AbilityBoard
 	character string
 	encounter loadout.Encounter
 	index     int
@@ -24,7 +28,7 @@ type campaignBattle struct {
 }
 
 func (b *campaignBattle) view() map[string]any {
-	view := map[string]any{"character": b.character, "encounter": b.encounter, "index": b.index, "total": b.total}
+	view := map[string]any{"save_id": b.saveID, "save_name": b.saveName, "character": b.character, "encounter": b.encounter, "index": b.index, "total": b.total}
 	if b.outcome != nil {
 		view["outcome"] = b.outcome
 	}
@@ -57,10 +61,10 @@ func loadCampaignContext(contentRoot, loadoutRoot string) (campaignContext, erro
 	return c, err
 }
 
-// ResetCampaignEncounter starts the character's next campaign encounter with
-// its progression deck. The session must already be initialized with that
+// ResetCampaignEncounter starts a campaign save's next encounter with that
+// save's deck and abilities. The session must already be initialized with the
 // encounter's opponent.
-func (s *Session) ResetCampaignEncounter(battleID string, seed uint64, character, encounterID string) (map[string]any, error) {
+func (s *Session) ResetCampaignEncounter(battleID string, seed uint64, saveID, encounterID string) (map[string]any, error) {
 	if s.config.LoadoutRoot == "" {
 		return nil, fmt.Errorf("the campaign requires loadout storage")
 	}
@@ -69,23 +73,27 @@ func (s *Session) ResetCampaignEncounter(battleID string, seed uint64, character
 		return nil, err
 	}
 	campaign := c.campaign
-	if !campaign.Allows(character) {
-		return nil, fmt.Errorf("%s cannot enter the campaign", character)
+	save, err := loadout.ReadCampaignSave(s.config.LoadoutRoot, saveID, c.economy, c.catalogs)
+	if err != nil {
+		return nil, err
+	}
+	if !campaign.Allows(save.Character) {
+		return nil, fmt.Errorf("%s can no longer play the campaign", save.Character)
 	}
 	encounter, ok := campaign.Encounter(encounterID)
 	if !ok {
 		return nil, fmt.Errorf("unknown campaign encounter %q", encounterID)
 	}
-	progress, err := loadout.ReadProgress(s.config.LoadoutRoot, character, c.economy, c.catalogs[character])
-	if err != nil {
-		return nil, err
-	}
-	next := campaign.NextEncounter(progress)
+	next := campaign.NextEncounter(save.Sheet)
 	if next.ID != encounterID {
 		return nil, fmt.Errorf("the next campaign encounter is %s", next.Name)
 	}
-	if blocked := loadout.NonTreeCards(progress.Deck, c.catalogs[character].CardTrees); len(blocked) > 0 {
-		return nil, fmt.Errorf("the campaign uses only card-tree cards; sell or store %s first", strings.Join(cardNames(c.catalogs[character], blocked), ", "))
+	lib := c.catalogs[save.Character]
+	if blocked := loadout.NonTreeCards(save.Sheet.Deck, lib.CardTrees); len(blocked) > 0 {
+		return nil, fmt.Errorf("the campaign uses only card-tree cards; sell or store %s first", strings.Join(cardNames(lib, blocked), ", "))
+	}
+	if len(save.Sheet.Deck) == 0 {
+		return nil, fmt.Errorf("the campaign deck is empty; buy at least one card before fighting")
 	}
 	if encounter.Opponent != s.config.OpponentDefinition || encounter.OpponentCount != max(1, s.config.OpponentCount) {
 		return nil, fmt.Errorf("initialize the battle runtime with encounter %q's opponent first", encounterID)
@@ -96,8 +104,8 @@ func (s *Session) ResetCampaignEncounter(battleID string, seed uint64, character
 			index = i
 		}
 	}
-	battle := &campaignBattle{character: character, encounter: encounter, index: index, total: len(campaign.Encounters)}
-	return s.resetLoadout(battleID, seed, "seat-a", false, character, true, "progression", battle)
+	battle := &campaignBattle{saveID: save.ID, saveName: save.Name, deck: save.Sheet.Deck, board: save.Sheet.Abilities, character: save.Character, encounter: encounter, index: index, total: len(campaign.Encounters)}
+	return s.resetLoadout(battleID, seed, "seat-a", false, save.Character, true, "campaign", battle)
 }
 
 // recordCampaignBattle runs under s.mu once the battle is terminal or truncated.
@@ -110,61 +118,70 @@ func (s *Session) recordCampaignBattle() {
 	c, err := loadCampaignContext(s.config.ContentRoot, s.config.LoadoutRoot)
 	var outcome loadout.CampaignOutcome
 	if err == nil {
-		outcome, err = loadout.RecordCampaignBattle(s.config.LoadoutRoot, b.character, c.economy, c.catalogs[b.character], c.campaign, b.encounter.ID, b.battleID, s.telemetry.Result)
+		outcome, err = loadout.RecordCampaignBattle(s.config.LoadoutRoot, b.saveID, c.economy, c.catalogs, c.campaign, b.encounter.ID, b.battleID, s.telemetry.Result)
 	}
 	if err != nil {
 		b.err = err.Error()
 		s.telemetry.Errors = append(s.telemetry.Errors, b.err)
-		s.recordDiagnostic("campaign_error", map[string]any{"error": b.err, "encounter_id": b.encounter.ID})
+		s.recordDiagnostic("campaign_error", map[string]any{"error": b.err, "encounter_id": b.encounter.ID, "campaign_save": b.saveID})
 		return
 	}
 	b.outcome = &outcome
-	s.recordDiagnostic("campaign_recorded", outcome)
+	s.recordDiagnostic("campaign_recorded", map[string]any{"campaign_save": b.saveID, "outcome": outcome})
 }
 
-// campaignStatus is the between-battles view: the encounter sequence and each
-// campaign character's XP, health and place in it.
+// campaignStatus is the campaign menu: the encounters, the starting character
+// sheets a new campaign can copy, and every campaign save with its XP, health
+// and place in the campaign.
 func campaignStatus(contentRoot, loadoutRoot string) (map[string]any, error) {
 	c, err := loadCampaignContext(contentRoot, loadoutRoot)
 	if err != nil {
 		return nil, err
 	}
 	campaign := c.campaign
-	characters := map[string]any{}
-	for _, id := range campaign.Characters {
-		p, err := loadout.ReadProgress(loadoutRoot, id, c.economy, c.catalogs[id])
-		if err != nil {
-			return nil, err
-		}
-		state := loadout.CampaignProgress{}
-		if p.Campaign != nil {
-			state = *p.Campaign
-			state.Battles = nil
-		}
-		state.Next = 0
-		next := campaign.NextEncounter(p)
+	if err = loadout.MigrateCampaignProgress(loadoutRoot, campaign, c.economy, c.catalogs); err != nil {
+		return nil, err
+	}
+	saves, problems, err := loadout.ListCampaignSaves(loadoutRoot, c.economy, c.catalogs)
+	if err != nil {
+		return nil, err
+	}
+	encounterIndex := func(id string) int {
 		for i, e := range campaign.Encounters {
-			if e.ID == next.ID {
-				state.Next = i
+			if e.ID == id {
+				return i
 			}
 		}
+		return 0
+	}
+	views := []map[string]any{}
+	for _, save := range saves {
+		lib := c.catalogs[save.Character]
+		state := loadout.CampaignProgress{}
+		if save.Sheet.Campaign != nil {
+			state = *save.Sheet.Campaign
+			state.Battles = nil
+		}
+		next := campaign.NextEncounter(save.Sheet)
+		state.Next = encounterIndex(next.ID)
+		views = append(views, map[string]any{
+			"id": save.ID, "name": save.Name, "character": save.Character, "character_name": lib.Combatants[save.Character].Name,
+			"created_at": save.CreatedAt, "playable": campaign.Allows(save.Character),
+			"xp": save.Sheet.XP, "earned_xp": save.Sheet.EarnedXP, "health": deckHealth(save.Sheet.Deck),
+			"campaign": state, "next_encounter": next,
+			"type_conflicts": c.access.Problems(save.Character, save.Sheet.Deck, save.Sheet.Abilities),
+			// Equipped cards outside every card tree; the campaign refuses them.
+			"tree_conflicts": cardNames(lib, loadout.NonTreeCards(save.Sheet.Deck, lib.CardTrees)),
+		})
+	}
+	sheets := []map[string]any{}
+	for _, id := range campaign.Characters {
+		combatant := c.catalogs[id].Combatants[id]
 		health := 0
-		for _, entry := range p.Deck {
+		for _, entry := range combatant.Decklist {
 			health += entry.Count
 		}
-		characters[id] = map[string]any{
-			"name":           c.catalogs[id].Combatants[id].Name,
-			"xp":             p.XP,
-			"earned_xp":      p.EarnedXP,
-			"health":         health,
-			"deck_value":     p.DeckValue,
-			"stored_cards":   len(p.Collection),
-			"campaign":       state,
-			"next_encounter": next,
-			"type_conflicts": c.access.Problems(id, p.Deck, p.Abilities),
-			// Equipped cards outside every card tree; the campaign refuses them.
-			"tree_conflicts": cardNames(c.catalogs[id], loadout.NonTreeCards(p.Deck, c.catalogs[id].CardTrees)),
-		}
+		sheets = append(sheets, map[string]any{"id": id, "name": combatant.Name, "health": health})
 	}
 	encounters := []map[string]any{}
 	for _, e := range campaign.Encounters {
@@ -175,7 +192,33 @@ func campaignStatus(contentRoot, loadoutRoot string) (map[string]any, error) {
 		}
 		encounters = append(encounters, map[string]any{"id": e.ID, "name": e.Name, "description": e.Description, "opponent": e.Opponent, "opponent_name": opponent, "opponent_count": e.OpponentCount, "xp": e.XP})
 	}
-	return map[string]any{"encounters": encounters, "characters": characters, "character_order": campaign.Characters}, nil
+	return map[string]any{"encounters": encounters, "sheets": sheets, "saves": views, "problems": problems, "bonus_xp": campaign.BonusXP}, nil
+}
+
+// newCampaign starts a named campaign save from a starting character sheet.
+func newCampaign(contentRoot, loadoutRoot, character, name string) (loadout.CampaignSave, error) {
+	c, err := loadCampaignContext(contentRoot, loadoutRoot)
+	if err != nil {
+		return loadout.CampaignSave{}, err
+	}
+	return loadout.NewCampaignSave(loadoutRoot, character, name, c.campaign, c.economy, c.catalogs)
+}
+
+// campaignPurchase applies one Prepare transaction to one campaign save.
+func campaignPurchase(contentRoot, loadoutRoot, saveID string, request loadout.Purchase) (loadout.CampaignSave, error) {
+	c, err := loadCampaignContext(contentRoot, loadoutRoot)
+	if err != nil {
+		return loadout.CampaignSave{}, err
+	}
+	return loadout.BuyCampaign(loadoutRoot, saveID, c.economy, c.catalogs, request)
+}
+
+func deckHealth(deck []loadout.Entry) int {
+	health := 0
+	for _, entry := range deck {
+		health += entry.Count
+	}
+	return health
 }
 
 func cardNames(lib content.BattleLibrary, ids []string) []string {
@@ -190,20 +233,18 @@ func cardNames(lib content.BattleLibrary, ids []string) []string {
 // character: its deck, stored cards and abilities, with every trade open to
 // them. Each offer is dry-run through the purchase rules, so the client shows
 // exactly what the authority would accept, and why not otherwise.
-func campaignLoadout(contentRoot, loadoutRoot, character string) (map[string]any, error) {
+func campaignLoadout(contentRoot, loadoutRoot, saveID string) (map[string]any, error) {
 	c, err := loadCampaignContext(contentRoot, loadoutRoot)
 	if err != nil {
 		return nil, err
 	}
-	if !c.campaign.Allows(character) {
-		return nil, fmt.Errorf("%s cannot enter the campaign", character)
-	}
-	lib := c.catalogs[character]
-	e, err := loadout.EffectiveEconomy(loadoutRoot, c.economy)
+	save, err := loadout.ReadCampaignSave(loadoutRoot, saveID, c.economy, c.catalogs)
 	if err != nil {
 		return nil, err
 	}
-	p, err := loadout.ReadProgress(loadoutRoot, character, c.economy, lib)
+	character, p := save.Character, save.Sheet
+	lib := c.catalogs[character]
+	e, err := loadout.EffectiveEconomy(loadoutRoot, c.economy)
 	if err != nil {
 		return nil, err
 	}
@@ -299,6 +340,9 @@ func campaignLoadout(contentRoot, loadoutRoot, character string) (map[string]any
 		health += entry.Count
 	}
 	return map[string]any{
+		"save_id": save.ID, "save_name": save.Name,
+		// Card and ability definitions for presentation; no other save is read.
+		"catalog": characterCatalogView(map[string]content.BattleLibrary{character: lib})[character],
 		"character": character, "name": lib.Combatants[character].Name, "revision": p.Revision, "xp": p.XP, "health": health,
 		"deck": deck, "collection": stored, "trades": trades, "bases": bases, "abilities": abilities,
 		"trees": lib.CardTrees, "tree_order": treeIDs,

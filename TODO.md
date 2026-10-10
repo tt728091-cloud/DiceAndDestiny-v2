@@ -34,3 +34,14 @@ Acceptance criteria:
 - A battle ID is sufficient to locate and export the bundle.
 - Normal gameplay does not require the inspector to be enabled.
 - Diagnostics can be disabled or retention-limited for release builds.
+
+## Content versioning for campaign saves
+
+- [ ] Version the game content and tie campaign saves to it.
+
+Campaign saves store card and ability IDs, not definitions, so admin edits to cards, trees and abilities reach campaigns already in progress. That is intended while cards are being tuned (decided 2026-10-10). Before release, review:
+
+- stamping each campaign save with the content version it started on;
+- shipping compatibility upgrades for each new version (renamed, repriced or removed cards and abilities, changed tree paths);
+- refusing, or explicitly migrating, saves that a breaking change would invalidate.
+

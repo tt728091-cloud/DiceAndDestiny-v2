@@ -41,6 +41,8 @@ type runtimeRequest struct {
 	Rematch            bool                  `json:"rematch,omitempty"`
 	CommandJSON        string                `json:"command_json,omitempty"`
 	Encounter          string                `json:"encounter,omitempty"`
+	CampaignSave       string                `json:"campaign_save,omitempty"`
+	Name               string                `json:"name,omitempty"`
 }
 
 var learnedRuntime struct {
@@ -62,12 +64,32 @@ func HandleRuntimeRequest(requestJSON string) string {
 	case "card_trees", "validate_card_tree", "publish_card_tree", "open_card_admin", "close_card_admin", "preview_delete_card", "admin_delete_card",
 		"ability_authoring", "validate_ability", "publish_ability", "assign_abilities",
 		"card_authoring", "validate_card", "publish_card", "character_catalogs",
-		"save_character_deck", "progression_catalogs", "progression_purchase", "save_economy_admin", "campaign_status", "campaign_loadout":
+		"save_character_deck", "progression_catalogs", "progression_purchase", "save_economy_admin", "campaign_status", "campaign_loadout", "campaign_new", "campaign_delete", "campaign_purchase":
 		catalogRuntimeMu.Lock()
 		defer catalogRuntimeMu.Unlock()
 	}
+	if request.Op == "campaign_new" {
+		save, err := newCampaign(request.ContentRoot, request.LoadoutRoot, request.Character, request.Name)
+		if err != nil {
+			return runtimeError(err)
+		}
+		return runtimeSuccess(map[string]any{"id": save.ID, "name": save.Name, "character": save.Character})
+	}
+	if request.Op == "campaign_delete" {
+		if err := loadout.DeleteCampaignSave(request.LoadoutRoot, request.CampaignSave); err != nil {
+			return runtimeError(err)
+		}
+		return runtimeSuccess(map[string]any{"deleted": request.CampaignSave})
+	}
+	if request.Op == "campaign_purchase" {
+		save, err := campaignPurchase(request.ContentRoot, request.LoadoutRoot, request.CampaignSave, request.Purchase)
+		if err != nil {
+			return runtimeError(err)
+		}
+		return runtimeSuccess(map[string]any{"id": save.ID, "revision": save.Sheet.Revision, "xp": save.Sheet.XP})
+	}
 	if request.Op == "campaign_loadout" {
-		view, err := campaignLoadout(request.ContentRoot, request.LoadoutRoot, request.Character)
+		view, err := campaignLoadout(request.ContentRoot, request.LoadoutRoot, request.CampaignSave)
 		if err != nil {
 			return runtimeError(err)
 		}
@@ -227,7 +249,7 @@ func HandleRuntimeRequest(requestJSON string) string {
 	switch request.Op {
 	case "reset":
 		if request.Encounter != "" {
-			value, err = learnedRuntime.session.ResetCampaignEncounter(request.BattleID, request.Seed, request.Character, request.Encounter)
+			value, err = learnedRuntime.session.ResetCampaignEncounter(request.BattleID, request.Seed, request.CampaignSave, request.Encounter)
 			break
 		}
 		value, err = learnedRuntime.session.ResetCharacterLoadout(request.BattleID, request.Seed, request.HumanSeat, request.Rematch, request.Character, request.UnifiedDefense, request.LoadoutMode)
