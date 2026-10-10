@@ -20,6 +20,8 @@ const MODEL_PRIOR_GLOBAL_CP38 := "prior-global-cp38"
 const MODEL_PRIOR_GLOBAL_CP480 := "prior-global-cp480"
 const MODEL_BRINE_MASK := "brine-mask"
 const MODEL_BRINE_PAIR := "brine-mask-pair"
+## Campaign encounters name any scripted minion: "minion:<definition>:<count>".
+const MODEL_MINION_PREFIX := "minion:"
 const INFERENCE_TIMEOUT_MS := 2000
 
 var selected_loadout_mode := "sandbox"
@@ -38,7 +40,9 @@ func _ready() -> void:
 		_initialization_error = "NativeBattleAuthority GDExtension class is unavailable."
 
 func select_model(model_key: String) -> Dictionary:
-	if model_key not in [MODEL_ACCEPTED_V1, MODEL_DECISION_V2, MODEL_OPTIMIZED_V3, MODEL_GLOBAL_CHAMPION, MODEL_PRIOR_GLOBAL_CP38, MODEL_PRIOR_GLOBAL_CP480, MODEL_BRINE_MASK, MODEL_BRINE_PAIR]:
+	if model_key.begins_with(MODEL_MINION_PREFIX) and _minion_opponent(model_key).is_empty():
+		return {"ok": false, "error": "Invalid minion opponent selection: %s" % model_key}
+	if not model_key.begins_with(MODEL_MINION_PREFIX) and model_key not in [MODEL_ACCEPTED_V1, MODEL_DECISION_V2, MODEL_OPTIMIZED_V3, MODEL_GLOBAL_CHAMPION, MODEL_PRIOR_GLOBAL_CP38, MODEL_PRIOR_GLOBAL_CP480, MODEL_BRINE_MASK, MODEL_BRINE_PAIR]:
 		return {"ok": false, "error": "Unknown learned model selection: %s" % model_key}
 	_selected_model_key = model_key
 	_initialized = _initialized_model_key == model_key
@@ -48,18 +52,31 @@ func select_model(model_key: String) -> Dictionary:
 func selected_model_key() -> String:
 	return _selected_model_key
 
+## The model key for a campaign encounter's scripted minion opponent.
+static func encounter_model_key(encounter: Dictionary) -> String:
+	return "%s%s:%d" % [MODEL_MINION_PREFIX, str(encounter.get("opponent", "")), maxi(1, int(encounter.get("opponent_count", 1)))]
+
+func _minion_opponent(model_key: String) -> Dictionary:
+	if model_key in [MODEL_BRINE_MASK, MODEL_BRINE_PAIR]:
+		return {"definition": "drowned_oracle_brine_mask", "count": 2 if model_key == MODEL_BRINE_PAIR else 1}
+	if not model_key.begins_with(MODEL_MINION_PREFIX): return {}
+	var parts := model_key.trim_prefix(MODEL_MINION_PREFIX).split(":")
+	if parts.size() != 2 or parts[0].is_empty() or not parts[1].is_valid_int() or int(parts[1]) not in [1, 2]: return {}
+	return {"definition": parts[0], "count": int(parts[1])}
+
 func ensure_initialized() -> Dictionary:
 	if _initialized:
 		return {"ok": true}
 	if _native_authority == null:
 		return {"ok": false, "error": _initialization_error}
+	var minion := _minion_opponent(_selected_model_key)
 	var result := _request({
 		"op": "initialize",
 		"loadout_root": WorkspacePaths.runtime_dir("user/character_loadouts"),
 		"replace_session": not _initialized_model_key.is_empty() and _initialized_model_key != _selected_model_key,
-		"model_path": "" if _selected_model_key in [MODEL_BRINE_MASK, MODEL_BRINE_PAIR] else ProjectSettings.globalize_path(_selected_model_path()),
-		"opponent_count": 2 if _selected_model_key == MODEL_BRINE_PAIR else 1,
-		"opponent_definition": "drowned_oracle_brine_mask" if _selected_model_key in [MODEL_BRINE_MASK, MODEL_BRINE_PAIR] else "",
+		"model_path": "" if not minion.is_empty() else ProjectSettings.globalize_path(_selected_model_path()),
+		"opponent_count": int(minion.get("count", 1)),
+		"opponent_definition": str(minion.get("definition", "")),
 		"model_sha256": _selected_model_sha256(),
 		"content_root": ProjectSettings.globalize_path("res://../dice-and-destiny-server/content"),
 		"run_state_root": ProjectSettings.globalize_path("res://../dice-and-destiny-server/save/run_players"),
@@ -103,12 +120,15 @@ func _selected_model_sha256() -> String:
 		_:
 			return ""
 
-func start_battle(battle_id: String, human_seat: String, seed: int, rematch: bool = false, character: String = "blade_warden", unified_defense: bool = false, loadout_mode: String = "sandbox") -> Dictionary:
+## A non-empty `encounter` starts that campaign encounter with the progression
+## deck; the authority then awards its XP when the battle ends in victory.
+func start_battle(battle_id: String, human_seat: String, seed: int, rematch: bool = false, character: String = "blade_warden", unified_defense: bool = false, loadout_mode: String = "sandbox", encounter: String = "") -> Dictionary:
 	var initialized := ensure_initialized()
 	if initialized.get("ok") != true:
 		return {"accepted": false, "error": initialized.get("error", _initialization_error)}
 	return _request({
 		"op": "reset",
+		"encounter": encounter,
 		"loadout_mode": loadout_mode,
 		"battle_id": battle_id,
 		"human_seat": human_seat,
@@ -152,6 +172,12 @@ func _exit_tree() -> void:
 func character_catalogs(mode: String = "sandbox") -> Dictionary:
 	if _native_authority == null: return {"ok": false, "error": _initialization_error}
 	return _request({"op": "progression_catalogs" if mode == "progression" else "character_catalogs", "loadout_root": WorkspacePaths.runtime_dir("user/character_loadouts"), "content_root": ProjectSettings.globalize_path("res://../dice-and-destiny-server/content")})
+
+## Read-only: the campaign's encounters and each campaign character's XP,
+## health and next encounter.
+func campaign_status() -> Dictionary:
+	if _native_authority == null: return {"ok": false, "error": _initialization_error}
+	return _request({"op": "campaign_status", "loadout_root": WorkspacePaths.runtime_dir("user/character_loadouts"), "content_root": ProjectSettings.globalize_path("res://../dice-and-destiny-server/content")})
 
 func save_character_deck(character: String, decklist: Array) -> Dictionary:
 	if _native_authority == null: return {"ok": false, "error": _initialization_error}

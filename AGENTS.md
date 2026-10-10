@@ -135,6 +135,11 @@ Use `./scripts/godot.sh` for every additional Godot test.
 - An attack's queued statuses apply when the defense rolled against it resolves, still inside Defense, so "after" cards can interact with them; undefended attacks' statuses stay pending. Commit remaining damage and remaining queued statuses once at the end. Do not open a second damage-response phase or reselect the already revealed cards.
 - Card timing is authored as Before / After / Any time for each segment's own turn (see `docs/game-design/card-configuration.md`). The offensive reaction and the defense roll review are separate opt-in reaction moments, off by default, because play pauses there whenever a card is playable; never add them to ordinary cards. The Ongoing Effects segment accepts no card plays.
 
+## Campaign progression
+
+- The menu's **Campaign** runs the battle → XP → deck change → next battle loop. Encounters, XP rewards, and eligible (General-type) characters live in `dice-and-destiny-server/content/progression_v1/campaign.yaml`. See `docs/game-design/campaign.md`.
+- Only the authority awards XP: the session records a campaign battle's result once, when it ends (victory only), in the progression ledger. Never compute or grant rewards from the client. The campaign opens the deck editors locked to Progression.
+
 ## Authored content storage
 
 - Published cards, card trees, abilities/boards, and admin card prices and pool types live in the tracked `dice-and-destiny-server/content/authored/` directory. The launcher points `DICE_AND_DESTINY_AUTHORED_ROOT` at it for normal runs; commit its changes to share them.

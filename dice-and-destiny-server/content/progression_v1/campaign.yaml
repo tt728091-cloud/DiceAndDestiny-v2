@@ -1,0 +1,30 @@
+schema_version: 1
+# The progression campaign: fight the encounters in order, earn XP for each
+# victory, then spend it on cards and card trees before the next battle. After
+# the last encounter the run starts over from the first, keeping all XP and
+# cards. A defeat or draw earns nothing; the same encounter is offered again.
+#
+# Only General-type characters may enter, so campaign decks draw on the General
+# card trees, never the Venom or Curse pools.
+characters: [adventurer]
+encounters:
+  # Every encounter uses Brine Mask until the new minions land; swap each
+  # `opponent` for its minions_v1 combatant ID then.
+  - id: tide_pool
+    name: Tide Pool
+    description: A lone Brine Mask stirs in the shallows.
+    opponent: drowned_oracle_brine_mask
+    opponent_count: 1
+    xp: 20
+  - id: sunken_steps
+    name: Sunken Steps
+    description: A Brine Mask guards the way down.
+    opponent: drowned_oracle_brine_mask
+    opponent_count: 1
+    xp: 25
+  - id: drowned_shrine
+    name: Drowned Shrine
+    description: The shrine's keeper rises from the brine.
+    opponent: drowned_oracle_brine_mask
+    opponent_count: 1
+    xp: 30

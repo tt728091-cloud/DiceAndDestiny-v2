@@ -50,7 +50,7 @@ func legacyAbilitySpend(id string, paths map[string]Upgrade, seen map[string]boo
 func reconcileBudget(p *Progress, e Economy) error {
 	budget := *p.Budget
 	if override, ok := e.Budgets[p.Character]; ok {
-		budget = override + p.FreeDeckBudget - e.BudgetAllocations[p.Character]
+		budget = override + p.FreeDeckBudget + p.EarnedXP - e.BudgetAllocations[p.Character]
 	}
 	value := deckValue(p.Deck, p.Character, e)
 	collectionValue := deckValue(p.Collection, p.Character, e)
@@ -166,10 +166,11 @@ func SaveAdmin(root string, base Economy, catalogs map[string]content.BattleLibr
 	if err := base.Access.withOverrides(proposed).validate(catalogs); err != nil {
 		return err
 	}
-	// Record the free allocation included in each explicit total-budget override.
+	// Record the free allocation and earned XP included in each explicit
+	// total-budget override; only later changes adjust it.
 	proposed.BudgetAllocations = map[string]int{}
 	for id := range proposed.Budgets {
-		proposed.BudgetAllocations[id] = all[id].FreeDeckBudget
+		proposed.BudgetAllocations[id] = all[id].FreeDeckBudget + all[id].EarnedXP
 	}
 	proposed.Revision++
 	next := base

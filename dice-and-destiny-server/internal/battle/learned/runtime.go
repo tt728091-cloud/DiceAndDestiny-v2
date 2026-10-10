@@ -40,6 +40,7 @@ type runtimeRequest struct {
 	Character          string                `json:"character,omitempty"`
 	Rematch            bool                  `json:"rematch,omitempty"`
 	CommandJSON        string                `json:"command_json,omitempty"`
+	Encounter          string                `json:"encounter,omitempty"`
 }
 
 var learnedRuntime struct {
@@ -61,9 +62,16 @@ func HandleRuntimeRequest(requestJSON string) string {
 	case "card_trees", "validate_card_tree", "publish_card_tree", "open_card_admin", "close_card_admin", "preview_delete_card", "admin_delete_card",
 		"ability_authoring", "validate_ability", "publish_ability", "assign_abilities",
 		"card_authoring", "validate_card", "publish_card", "character_catalogs",
-		"save_character_deck", "progression_catalogs", "progression_purchase", "save_economy_admin":
+		"save_character_deck", "progression_catalogs", "progression_purchase", "save_economy_admin", "campaign_status":
 		catalogRuntimeMu.Lock()
 		defer catalogRuntimeMu.Unlock()
+	}
+	if request.Op == "campaign_status" {
+		status, err := campaignStatus(request.ContentRoot, request.LoadoutRoot)
+		if err != nil {
+			return runtimeError(err)
+		}
+		return runtimeSuccess(status)
 	}
 	if request.Op == "card_trees" || request.Op == "validate_card_tree" || request.Op == "publish_card_tree" {
 		return handleCardTrees(request)
@@ -211,6 +219,10 @@ func HandleRuntimeRequest(requestJSON string) string {
 	var err error
 	switch request.Op {
 	case "reset":
+		if request.Encounter != "" {
+			value, err = learnedRuntime.session.ResetCampaignEncounter(request.BattleID, request.Seed, request.Character, request.Encounter)
+			break
+		}
 		value, err = learnedRuntime.session.ResetCharacterLoadout(request.BattleID, request.Seed, request.HumanSeat, request.Rematch, request.Character, request.UnifiedDefense, request.LoadoutMode)
 	case "submit_human":
 		value, err = learnedRuntime.session.SubmitHuman(request.CommandJSON)

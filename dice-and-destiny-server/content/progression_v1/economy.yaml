@@ -1,5 +1,5 @@
 schema_version: 1
-# One-time development allowance, until victory rewards are implemented.
+# A new character's XP; campaign victories add more (see campaign.yaml).
 starting_xp: 100
 default_card_price: 10
 characters:

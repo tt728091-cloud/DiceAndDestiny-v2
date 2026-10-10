@@ -97,10 +97,14 @@ func _build_mode_menu() -> void:
 	var start: Button = _buttons.get_child(_buttons.get_child_count() - 1)
 	_add_mode_button("Character Creation", _open_character_creation, "battle.setup.characters")
 	var creation: Button = _buttons.get_child(_buttons.get_child_count() - 1)
+	_add_mode_button("Campaign", _open_campaign, "battle.setup.campaign")
+	var campaign: Button = _buttons.get_child(_buttons.get_child_count() - 1)
+	campaign.tooltip_text = "Fight three encounters in a row, earn XP for each victory, and spend it on cards and card trees between battles."
 	var actions := HBoxContainer.new(); actions.add_theme_constant_override("separation", 12); content.add_child(actions)
-	for action in [start, creation]:
+	for action in [start, creation, campaign]:
 		action.reparent(actions); action.custom_minimum_size.y = 54; action.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		_menu_actions.append(action)
+	actions.move_child(campaign, 0)
 	_message = Label.new()
 	_model_choice.item_selected.connect(func(_index: int): _update_opponent_description())
 	_update_opponent_description()
@@ -247,6 +251,10 @@ func _open_character_creation() -> void:
 	screen.closed.connect(func(): show(); _loadout_choice.select(1 if get_node("/root/LearnedBattleRuntime").selected_loadout_mode == "progression" else 0); _refresh_character_loadouts(); _character_choice.grab_focus())
 	get_tree().root.add_child(screen)
 	hide()
+
+func _open_campaign() -> void:
+	get_tree().root.add_child(preload("res://app/screens/campaign/campaign_screen.gd").new())
+	queue_free()
 
 func _refresh_character_loadouts() -> void:
 	var response: Dictionary = get_node("/root/LearnedBattleRuntime").character_catalogs(str(_loadout_choice.get_selected_metadata()))

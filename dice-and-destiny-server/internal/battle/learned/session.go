@@ -95,6 +95,7 @@ type Session struct {
 	telemetry        BattleTelemetry
 	lifetime         LifetimeTelemetry
 	decisionSequence int
+	campaign         *campaignBattle
 }
 
 func NewSession(config SessionConfig) (*Session, error) {
@@ -179,6 +180,9 @@ func (s *Session) ResetCharacter(battleID string, seed uint64, humanSeat string,
 	return s.ResetCharacterLoadout(battleID, seed, humanSeat, rematch, character, len(unified) > 0 && unified[0], "sandbox")
 }
 func (s *Session) ResetCharacterLoadout(battleID string, seed uint64, humanSeat string, rematch bool, character string, unified bool, mode string) (map[string]any, error) {
+	return s.resetLoadout(battleID, seed, humanSeat, rematch, character, unified, mode, nil)
+}
+func (s *Session) resetLoadout(battleID string, seed uint64, humanSeat string, rematch bool, character string, unified bool, mode string, campaign *campaignBattle) (map[string]any, error) {
 	if mode != "" && mode != "sandbox" && mode != "progression" {
 		return nil, fmt.Errorf("invalid loadout mode")
 	}
@@ -286,6 +290,10 @@ func (s *Session) ResetCharacterLoadout(battleID string, seed uint64, humanSeat 
 	}
 	s.current = transition
 	s.decisionSequence = 0
+	s.campaign = campaign
+	if campaign != nil {
+		campaign.battleID = transition.Metrics.BattleID
+	}
 	s.lifetime.BattlesStarted++
 	if rematch {
 		s.lifetime.Rematches++
@@ -462,6 +470,7 @@ func (s *Session) updateTerminalTelemetry() {
 	s.telemetry.Result = humanResult(metrics.Winner, metrics.Status, s.humanSeat)
 	s.telemetry.CompletedAtUTC = time.Now().UTC().Format(time.RFC3339Nano)
 	s.recordDiagnostic("battle_completed", s.telemetry)
+	s.recordCampaignBattle()
 }
 
 func (s *Session) present(result engine.Result) map[string]any {
@@ -479,6 +488,9 @@ func (s *Session) present(result engine.Result) map[string]any {
 	}
 	if s.current.Terminal {
 		view["battle_result"] = humanResult(s.current.Winner, s.current.Metrics.Status, s.humanSeat)
+	}
+	if s.campaign != nil {
+		view["campaign"] = s.campaign.view()
 	}
 	view["learned_policy"] = map[string]any{
 		"enabled":                  true,

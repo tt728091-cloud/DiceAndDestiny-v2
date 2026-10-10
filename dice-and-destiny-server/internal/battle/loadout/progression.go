@@ -53,6 +53,11 @@ type Progress struct {
 	XP                      int                  `json:"xp"`
 	Deck                    []Entry              `json:"decklist"`
 	Abilities               content.AbilityBoard `json:"ability_board"`
+
+	// EarnedXP totals battle rewards; like free deck edits, it survives an
+	// admin budget override set before it was earned.
+	EarnedXP int               `json:"earned_xp,omitempty"`
+	Campaign *CampaignProgress `json:"campaign,omitempty"`
 }
 type Purchase struct {
 	// Tree names the card tree for shared-card trades and their copies.

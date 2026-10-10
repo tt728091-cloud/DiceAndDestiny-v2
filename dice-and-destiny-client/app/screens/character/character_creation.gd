@@ -11,6 +11,10 @@ const MUTED := STYLE.MUTED
 const ROSTER := ["adventurer", "venom", "curse", "blade_warden"]
 var initial_character := "adventurer"
 var loadout_mode := "sandbox"
+var back_label := "Back to battle setup"
+## The campaign spends earned XP only, so it opens these editors locked to
+## Progression; Sandbox's free deck edits would bypass XP.
+var lock_progression := false
 var _catalog_mode := "sandbox"
 var _mode_choice: OptionButton
 var _mode_note: Label
@@ -167,8 +171,11 @@ func _build() -> void:
 	_mode_choice.tooltip_text = "Sandbox edits decks freely. Progression buys and sells with XP."
 	_mode_choice.select(1 if loadout_mode == "progression" else 0); mode_box.add_child(_mode_choice)
 	_mode_choice.item_selected.connect(_change_mode)
+	if lock_progression:
+		_mode_choice.disabled = true
+		_mode_choice.tooltip_text = "The campaign spends earned XP only."
 	_button(header, "Reload definitions", func(): _guard_unsaved(reload_catalogs), "reload").size_flags_vertical = Control.SIZE_SHRINK_END
-	_button(header, "Back to battle setup", _close, "back").size_flags_vertical = Control.SIZE_SHRINK_END
+	_button(header, back_label, _close, "back").size_flags_vertical = Control.SIZE_SHRINK_END
 	_error = _label(body, "", 16, Color("ffd2c8")); _error.hide()
 	_error.add_theme_stylebox_override("normal", STYLE.box(Color(STYLE.LOSS, 0.12), Color(STYLE.LOSS, 0.6), 14, 8))
 	var columns := HBoxContainer.new(); columns.add_theme_constant_override("separation", 16)
@@ -781,7 +788,7 @@ func _refresh_actions() -> void:
 	_admin_button.visible = progression
 	_confirmation_options.visible = progression
 	_apply.visible = not progression; _revert.visible = not progression; _reset.visible = not progression
-	_mode_note.text = "Buying and selling save immediately for your next battle. Cards sell for their current purchase price. Battle rewards and discovery come next." if progression else "Sandbox: freely edit the same deck used in Progression. Apply changes to save; available XP stays unchanged."
+	_mode_note.text = "Buying and selling save immediately for your next battle. Cards sell for their current purchase price. Win campaign battles to earn more XP." if progression else "Sandbox: freely edit the same deck used in Progression. Apply changes to save; available XP stays unchanged."
 	if progression:
 		_save_status.text = "%d XP available · buy and sell cards at equal prices" % int(catalogs[character_id].progression.xp)
 		_save_status.add_theme_color_override("font_color", GOLD)
