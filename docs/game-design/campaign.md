@@ -27,7 +27,7 @@ The client never names a reward amount. The battle session knows it is a campaig
 
 `app/screens/campaign/campaign_prepare.gd` shows one campaign save and nothing else:
 
-- **Left:** your deck (art, copies, energy, and how many upgrades are open), any stored cards, and your abilities. **+ Add a new card** is at the bottom.
+- **Left:** your deck, any stored cards, and your abilities. Each card row shows its art, copies, energy and how many upgrades are open, and on the right the XP per card × copies over the total (e.g. "10 XP × 3" / "30 XP"). The deck heading shows card count and total deck XP. **+ Add a new card** is at the bottom.
 - **Center:** select a deck card and its card tree appears. The card is highlighted, cards you hold glow gold, and cards you can reach from it pulse. Click another card you hold to switch to it; click any other card to preview it and see how it differs.
 - **Right:** the selected card and what you can do with it:
   - **Upgrade** (pay the XP difference) or **Trade down** (get the difference back). Copies move along a tree connection and stay in your deck, so health never changes. With more than one copy that could go, a prompt asks how many: 1 up to "All N", defaulting to all, with the total XP shown. Cancel and Esc spend nothing.

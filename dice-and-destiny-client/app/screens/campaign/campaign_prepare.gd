@@ -72,7 +72,7 @@ func _build() -> void:
 	_message = STYLE.label(body, "", 15, STYLE.MUTED)
 	var columns := HBoxContainer.new(); columns.add_theme_constant_override("separation", 14); columns.size_flags_vertical = Control.SIZE_EXPAND_FILL; body.add_child(columns)
 	# Left: the character's deck, stored cards and abilities.
-	var left := _panel(columns, 290)
+	var left := _panel(columns, 320)
 	var list_scroll := ScrollContainer.new(); list_scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL; list_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED; left.add_child(list_scroll)
 	_list = VBoxContainer.new(); _list.name = "DeckList"; _list.size_flags_horizontal = Control.SIZE_EXPAND_FILL; _list.add_theme_constant_override("separation", 6); list_scroll.add_child(_list)
 	_add_button = STYLE.accent(_button(left, "+  Add a new card", func(): _select({"kind": "add"}), "prepare.add"))
@@ -151,7 +151,8 @@ func _render() -> void:
 func _render_list() -> void:
 	for child in _list.get_children(): _list.remove_child(child); child.queue_free()
 	var conflicts: Array = data.get("tree_conflicts", [])
-	STYLE.heading(_list, "Your deck · %d cards" % int(data.health))
+	var deck_xp: int = data.deck.reduce(func(total, e): return total + int(e.count) * int(e.sell.cost), 0)
+	STYLE.heading(_list, "Your deck · %d cards · %d XP" % [int(data.health), deck_xp])
 	if not conflicts.is_empty():
 		STYLE.label(_list, "The campaign uses only card-tree cards. Sell or store: %s." % ", ".join(PackedStringArray(conflicts)), 13, STYLE.LOSS)
 	for entry in _sorted(data.deck):
@@ -185,6 +186,23 @@ func _list_row(entry: Dictionary, kind: String) -> void:
 	if not entry.get("tree_card", true): row.add_theme_color_override("font_color", STYLE.LOSS)
 	row.button_pressed = selection.get("kind") == kind and selection.get("id") == id and str(selection.get("tree", "")) == tree
 	row.pressed.connect(func(): _select({"kind": kind, "id": id, "tree": tree}))
+	_row_xp(row, int(entry.sell.cost), int(entry.count))
+
+## The XP a row's copies are worth, on the row's right: "10 XP × 3" over "30 XP".
+func _row_xp(row: Button, each: int, count: int) -> void:
+	for state in ["normal", "hover", "pressed", "hover_pressed", "disabled", "focus"]:
+		var style := row.get_theme_stylebox(state).duplicate() as StyleBox
+		style.content_margin_right = 84
+		row.add_theme_stylebox_override(state, style)
+	var column := VBoxContainer.new(); column.name = "XP"; column.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	column.alignment = BoxContainer.ALIGNMENT_CENTER; column.add_theme_constant_override("separation", 0)
+	column.anchor_left = 1.0; column.anchor_right = 1.0; column.anchor_top = 0.0; column.anchor_bottom = 1.0
+	column.offset_left = -84; column.offset_right = -10
+	row.add_child(column)
+	var each_label := STYLE.label(column, "%d XP × %d" % [each, count], 12, STYLE.MUTED)
+	var total := STYLE.label(column, "%d XP" % (each * count), 16, STYLE.GOLD)
+	for label in [each_label, total]:
+		label.autowrap_mode = TextServer.AUTOWRAP_OFF; label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 
 func _row_button(parent: Node, text: String, icon: Texture2D, control_id: String) -> Button:
 	var row := _button(parent, text, func(): pass, control_id)
@@ -224,10 +242,10 @@ func _render_owned(id: String, entry: Dictionary, stored: bool) -> void:
 	var ups := trades.filter(func(t): return int(t.cost) >= 0)
 	var downs := trades.filter(func(t): return int(t.cost) < 0)
 	if not ups.is_empty():
-		var box := STYLE.section(_details); STYLE.heading(box, "Upgrade one copy")
+		var box := STYLE.section(_details); STYLE.heading(box, "Upgrade")
 		for trade in ups: _trade_row(box, id, trade)
 	if not downs.is_empty():
-		var box := STYLE.section(_details); STYLE.heading(box, "Trade one copy down")
+		var box := STYLE.section(_details); STYLE.heading(box, "Trade down")
 		for trade in downs: _trade_row(box, id, trade)
 	if ups.is_empty() and downs.is_empty() and entry.get("tree_card", true):
 		STYLE.label(_details, "No connections lead on from this card.", 14, STYLE.MUTED)

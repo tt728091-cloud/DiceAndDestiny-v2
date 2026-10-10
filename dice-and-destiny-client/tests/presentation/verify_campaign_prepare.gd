@@ -25,6 +25,9 @@ func _run() -> void:
 	_expect(prepare._health.text == "12" and prepare._xp.text == "100", "Prepare shows health and XP")
 	_expect(_prepare_control(prepare, "prepare.card.steady_guard") != null and _prepare_control(prepare, "prepare.ability.adventurer_guard") != null, "the deck and abilities are listed")
 	_expect(_prepare_control(prepare, "prepare.card.tip_it") == null, "only the character's own cards are listed")
+	var guard_row := _prepare_control(prepare, "prepare.card.steady_guard")
+	_expect("10 XP × 3" in _text(guard_row) and "30 XP" in _text(guard_row), "each deck row shows XP per card × copies and the total")
+	_expect("Your deck · 12 cards · 120 XP".to_upper() in _text(prepare._list), "the deck heading totals the deck's XP")
 
 	# Select Steady Guard: its tree appears with upgrades and a trade-down.
 	await _tap(_prepare_control(prepare, "prepare.card.steady_guard"))
