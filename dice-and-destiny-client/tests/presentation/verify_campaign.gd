@@ -22,6 +22,13 @@ func _run() -> void:
 	_expect("100 XP to spend" in campaign._summary.text, "campaign shows the starting XP")
 	_expect("ENCOUNTER 1  ·  NEXT" in _text(campaign._path) and "Brine Mask" in _text(campaign._path), "first encounter is next and names its opponent")
 	_expect(campaign._fight.text == "Fight · Tide Pool" and not campaign._banner.visible, "Fight offers the first encounter")
+	_expect(campaign.character_id == "starter" and campaign._summary.text.begins_with("Starter"), "the campaign defaults to the Starter")
+	_expect(campaign._character_choice.visible and campaign._character_choice.item_count == 2, "the Adventurer can be chosen too")
+	campaign._character_choice.select(1); campaign._character_choice.item_selected.emit(1)
+	for frame in 3: await process_frame
+	_expect(campaign.character_id == "adventurer" and campaign._summary.text.begins_with("Adventurer"), "choosing the Adventurer shows its own progress")
+	campaign._character_choice.select(0); campaign._character_choice.item_selected.emit(0)
+	for frame in 3: await process_frame
 	await _capture(campaign, "campaign-start")
 
 	# Fight until a victory; a defeat on the way must earn nothing and repeat.
@@ -63,7 +70,7 @@ func _run() -> void:
 	if not won: _finish(); return
 	xp += 20
 	_expect(campaign._banner.visible and "+20 XP" in campaign._banner.text, "campaign banner reports the reward")
-	_expect("%d XP to spend" % xp in campaign._summary.text and campaign._fight.text == "Fight · Sunken Steps", "victory advances to the second encounter")
+	_expect("%d XP to spend" % xp in campaign._summary.text and campaign._fight.text == "Fight · Sunken Belfry", "victory advances to the second encounter")
 	_expect("ENCOUNTER 1  ·  CLEARED" in _text(campaign._path), "the first encounter shows cleared")
 	await _capture(campaign, "campaign-after-victory")
 
@@ -72,16 +79,17 @@ func _run() -> void:
 	for frame in 8: await process_frame
 	var editor = _find("res://app/screens/character/character_creation.gd")
 	_expect(editor != null and not campaign.visible, "Deck & Card Trees opens the editors")
+	if editor != null: _expect(editor.character_id == "starter", "the editors open on the campaign character")
 	if editor == null: _finish(); return
 	_expect(editor.loadout_mode == "progression" and editor._mode_choice.disabled, "the campaign opens the editors locked to Progression")
 	_expect(_control(editor, "back").text == "Back to campaign", "the editors return to the campaign")
 	var health: int = editor._health()
-	var price := int(editor.catalogs.adventurer.economy.card_prices.get("take_stock", 10))
+	var price := int(editor.catalogs.starter.economy.card_prices.get("take_stock", 10))
 	editor.inspect_entry("cards", "take_stock")
 	for frame in 4: await process_frame
 	await _click(_control(editor, "buy.take_stock"))
 	await _click(editor._purchase_confirm)
-	_expect(editor._health() == health + 1 and int(editor.catalogs.adventurer.progression.xp) == xp - price, "earned XP buys a card")
+	_expect(editor._health() == health + 1 and int(editor.catalogs.starter.progression.xp) == xp - price, "earned XP buys a card")
 	xp -= price
 	await _click(_control(editor, "back"))
 	for frame in 6: await process_frame
@@ -91,13 +99,14 @@ func _run() -> void:
 	await _click(campaign._fight)
 	for frame in 8: await process_frame
 	var next_battle: Control = _find(BATTLE_SCRIPT)
-	_expect(next_battle != null and next_battle._view.campaign.encounter.id == "sunken_steps", "the second encounter starts")
+	_expect(next_battle != null and next_battle._view.campaign.encounter.id == "sunken_belfry", "the second encounter starts")
 	if next_battle != null:
 		_expect(int(next_battle._view.actor("blade").max_health) == health + 1, "the next battle uses the purchased card")
-		_expect("CAMPAIGN 2/3 · SUNKEN STEPS" in _text(next_battle), "the battle names the campaign encounter")
+		_expect("CAMPAIGN 2/3 · SUNKEN BELFRY" in _text(next_battle), "the battle names the campaign encounter")
+		_expect(str(next_battle._view.actor("goblin").get("definition_id", "")) == "drowned_oracle_bell_diver", "the second encounter fights the Bell Diver")
 		next_battle.queue_free(); await process_frame
 	var status: Dictionary = runtime.campaign_status()
-	_expect(int(status.result.characters.adventurer.xp) == xp and int(status.result.characters.adventurer.campaign.victories) == 1, "authority ledger agrees")
+	_expect(int(status.result.characters.starter.xp) == xp and int(status.result.characters.starter.campaign.victories) == 1, "authority ledger agrees")
 	if not saw_defeat: print("campaign: no defeat occurred; the loss path was not exercised this run")
 	_finish()
 

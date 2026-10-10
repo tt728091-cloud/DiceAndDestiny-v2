@@ -4,7 +4,7 @@ The campaign is the battle → XP → deck change → next battle loop. Open it 
 
 ## Flow
 
-1. The **Campaign** screen shows the character's health (equipped cards), XP to spend, run number and victories. It also shows the encounter path, with each encounter marked Cleared, Next or Ahead.
+1. The **Campaign** screen opens on the Starter; a picker switches to the Adventurer. Each character keeps its own XP, deck and place in the campaign. The screen shows the character's health (equipped cards), XP to spend, run number and victories. It also shows the encounter path, with each encounter marked Cleared, Next or Ahead.
 2. **Fight · <encounter>** starts the next encounter. It uses the character's Progression deck and ability board, Seat A, and the unified defense rule.
 3. When the battle ends, the authority records the result in the character's progression ledger:
    - **Victory:** adds the encounter's XP and advances to the next encounter. After the last encounter, the run counter increases and the next run starts again at the first encounter. XP and cards carry over.
@@ -31,10 +31,15 @@ The client never names a reward amount. The battle session knows it is a campaig
 | `encounters[].opponent_count` | 1 or 2 copies of that minion. |
 | `encounters[].xp` | XP a victory awards (base-10 scale; a base card costs 10). |
 
-All three encounters currently use Brine Mask: Tide Pool (20 XP), Sunken Steps (25 XP) and Drowned Shrine (30 XP). To use new enemies, change each `opponent`. A new playable character (for example, Starter) also needs:
+The characters are Starter (the default) and Adventurer. The encounters are ordered by difficulty (see [Bell Diver and Ribbon Eel](enemies/bell-diver-and-ribbon-eel.md)):
 
-- an entry in `characters`;
-- the playable-character lists in `learned.CharacterCatalogs` and `Session.resetLoadout`.
+| Encounter | Opponent | Victory XP |
+| --- | --- | ---: |
+| Tide Pool | Brine Mask | 20 |
+| Sunken Belfry | Bell Diver | 25 |
+| Kelp Narrows | Ribbon Eel | 30 |
+
+The runtime pins one opponent per session, so the client re-initializes it with each encounter's minion (model key `minion:<definition>:<count>`). Another playable character also needs adding to the playable-character lists in `learned.CharacterCatalogs` and `Session.resetLoadout`.
 
 ## Ledger
 
@@ -54,4 +59,4 @@ The `starting_xp` allowance in `economy.yaml` is still the new-character XP.
   - duplicate recording being refused;
   - spending XP between battles changing the next battle's deck;
   - rewards surviving admin budget overrides.
-- `tests/presentation/verify_campaign.gd` drives the loop with the pointer: menu → Campaign → battle → reward screen → Continue → Deck & Card Trees purchase → the next encounter uses the new deck.
+- `tests/presentation/verify_campaign.gd` drives the loop with the pointer: menu → Campaign (Starter, with the Adventurer picker) → battle → reward screen → Continue → Deck & Card Trees purchase → the next encounter uses the new deck.

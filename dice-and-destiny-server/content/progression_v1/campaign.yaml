@@ -6,25 +6,25 @@ schema_version: 1
 #
 # Only General-type characters may enter, so campaign decks draw on the General
 # card trees, never the Venom or Curse pools.
-characters: [adventurer]
+# The first character is the campaign's default.
+characters: [starter, adventurer]
 encounters:
-  # Every encounter uses Brine Mask until the new minions land; swap each
-  # `opponent` for its minions_v1 combatant ID then.
+  # Ordered by difficulty; see docs/game-design/enemies/bell-diver-and-ribbon-eel.md.
   - id: tide_pool
     name: Tide Pool
     description: A lone Brine Mask stirs in the shallows.
     opponent: drowned_oracle_brine_mask
     opponent_count: 1
     xp: 20
-  - id: sunken_steps
-    name: Sunken Steps
-    description: A Brine Mask guards the way down.
-    opponent: drowned_oracle_brine_mask
+  - id: sunken_belfry
+    name: Sunken Belfry
+    description: A Bell Diver tolls in the drowned tower, slow and hard to crack.
+    opponent: drowned_oracle_bell_diver
     opponent_count: 1
     xp: 25
-  - id: drowned_shrine
-    name: Drowned Shrine
-    description: The shrine's keeper rises from the brine.
-    opponent: drowned_oracle_brine_mask
+  - id: kelp_narrows
+    name: Kelp Narrows
+    description: A Ribbon Eel snares whatever swims past; it almost never misses.
+    opponent: drowned_oracle_ribbon_eel
     opponent_count: 1
     xp: 30

@@ -34,13 +34,15 @@ func playCampaignBattle(t *testing.T, s *Session) map[string]any {
 	return view
 }
 
+const campaignCharacter = "starter"
+
 func readCampaignProgress(t *testing.T, contentRoot, loadoutRoot string) loadout.Progress {
 	t.Helper()
 	c, err := loadCampaignContext(contentRoot, loadoutRoot)
 	if err != nil {
 		t.Fatal(err)
 	}
-	p, err := loadout.ReadProgress(loadoutRoot, "adventurer", c.economy, c.catalogs["adventurer"])
+	p, err := loadout.ReadProgress(loadoutRoot, campaignCharacter, c.economy, c.catalogs[campaignCharacter])
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -50,33 +52,53 @@ func readCampaignProgress(t *testing.T, contentRoot, loadoutRoot string) loadout
 func TestCampaignAwardsVictoryXPAndAdvancesEncounters(t *testing.T) {
 	contentRoot := filepath.Join(testServerRoot(t), "content")
 	loadoutRoot := t.TempDir()
-	s, err := NewSession(SessionConfig{ContentRoot: contentRoot, LoadoutRoot: loadoutRoot, RunStateRoot: t.TempDir(), OpponentDefinition: "drowned_oracle_brine_mask"})
-	if err != nil {
-		t.Fatal(err)
-	}
 	c, err := loadCampaignContext(contentRoot, loadoutRoot)
 	if err != nil {
 		t.Fatal(err)
 	}
 	encounters := c.campaign.Encounters
-	if len(encounters) != 3 {
-		t.Fatalf("expected three encounters, got %d", len(encounters))
+	if len(encounters) != 3 || c.campaign.Characters[0] != campaignCharacter || !c.campaign.Allows("adventurer") {
+		t.Fatalf("expected three encounters for Starter and Adventurer: %+v", c.campaign)
 	}
-	if _, err = s.ResetCampaignEncounter("wrong", 1, "adventurer", encounters[1].ID); err == nil || !strings.Contains(err.Error(), encounters[0].Name) {
+	// The runtime pins one opponent per session, as the client does per encounter.
+	sessions := map[string]*Session{}
+	session := func(e loadout.Encounter) *Session {
+		if sessions[e.Opponent] == nil {
+			s, err := NewSession(SessionConfig{ContentRoot: contentRoot, LoadoutRoot: loadoutRoot, RunStateRoot: t.TempDir(), OpponentDefinition: e.Opponent, OpponentCount: e.OpponentCount})
+			if err != nil {
+				t.Fatal(err)
+			}
+			sessions[e.Opponent] = s
+		}
+		return sessions[e.Opponent]
+	}
+	first := session(encounters[0])
+	if _, err = session(encounters[1]).ResetCampaignEncounter("wrong", 1, campaignCharacter, encounters[1].ID); err == nil || !strings.Contains(err.Error(), encounters[0].Name) {
 		t.Fatalf("a later encounter started out of order: %v", err)
 	}
-	if _, err = s.ResetCampaignEncounter("venom", 1, "venom", encounters[0].ID); err == nil {
+	if encounters[1].Opponent != encounters[0].Opponent {
+		if _, err = session(encounters[1]).ResetCampaignEncounter("mismatch", 1, campaignCharacter, encounters[0].ID); err == nil {
+			t.Fatal("an encounter started against the wrong opponent")
+		}
+	}
+	if _, err = first.ResetCampaignEncounter("venom", 1, "venom", encounters[0].ID); err == nil {
 		t.Fatal("a Venom character entered the General campaign")
 	}
+	opponents := map[string]bool{}
 
 	victories, defeats := 0, 0
 	for seed := uint64(1); seed <= 200 && (victories < len(encounters) || defeats == 0); seed++ {
 		before := readCampaignProgress(t, contentRoot, loadoutRoot)
 		next := c.campaign.NextEncounter(before)
-		view, err := s.ResetCampaignEncounter(fmt.Sprintf("campaign-%d", seed), seed, "adventurer", next.ID)
+		s := session(next)
+		view, err := s.ResetCampaignEncounter(fmt.Sprintf("campaign-%d", seed), seed, campaignCharacter, next.ID)
 		if err != nil {
 			t.Fatal(err)
 		}
+		if got := s.current.Result.Snapshot.Actors[s.modelSeat].DefinitionID; got != next.Opponent {
+			t.Fatalf("encounter %s fought %s", next.ID, got)
+		}
+		opponents[next.Opponent] = true
 		health := 0
 		for _, entry := range before.Deck {
 			health += entry.Count
@@ -120,8 +142,8 @@ func TestCampaignAwardsVictoryXPAndAdvancesEncounters(t *testing.T) {
 		}
 		// Spend the first reward between battles: the next battle fights with it.
 		if outcome.Result == "victory" && victories == 1 {
-			price := c.economy.Price("adventurer", "take_stock")
-			if _, err = loadout.Buy(loadoutRoot, "adventurer", c.economy, c.catalogs["adventurer"], loadout.Purchase{Kind: "buy_card", ID: "take_stock", Revision: after.Revision, ExpectedCost: price}); err != nil {
+			price := c.economy.Price(campaignCharacter, "take_stock")
+			if _, err = loadout.Buy(loadoutRoot, campaignCharacter, c.economy, c.catalogs[campaignCharacter], loadout.Purchase{Kind: "buy_card", ID: "take_stock", Revision: after.Revision, ExpectedCost: price}); err != nil {
 				t.Fatal(err)
 			}
 			if bought := readCampaignProgress(t, contentRoot, loadoutRoot); bought.XP != after.XP-price {
@@ -133,20 +155,21 @@ func TestCampaignAwardsVictoryXPAndAdvancesEncounters(t *testing.T) {
 		s.mu.Lock()
 		s.recordCampaignBattle()
 		s.mu.Unlock()
-		if _, err = loadout.RecordCampaignBattle(loadoutRoot, "adventurer", c.economy, c.catalogs["adventurer"], c.campaign, next.ID, outcome.BattleID, "victory"); err == nil {
+		if _, err = loadout.RecordCampaignBattle(loadoutRoot, campaignCharacter, c.economy, c.catalogs[campaignCharacter], c.campaign, next.ID, outcome.BattleID, "victory"); err == nil {
 			t.Fatal("a battle was rewarded twice")
 		}
 		if again := readCampaignProgress(t, contentRoot, loadoutRoot); again.XP != after.XP || again.Revision != after.Revision {
 			t.Fatal("re-recording changed the ledger")
 		}
 	}
-	if victories < len(encounters) || defeats == 0 {
-		t.Fatalf("missing coverage: %d victories, %d defeats", victories, defeats)
+	if victories < len(encounters) || defeats == 0 || len(opponents) != 3 {
+		t.Fatalf("missing coverage: %d victories, %d defeats, opponents %v", victories, defeats, opponents)
 	}
+	s := first
 
 	// An ordinary progression battle afterwards earns nothing.
 	before := readCampaignProgress(t, contentRoot, loadoutRoot)
-	if _, err = s.ResetCharacterLoadout("plain", 7, "seat-a", false, "adventurer", true, "progression"); err != nil {
+	if _, err = s.ResetCharacterLoadout("plain", 7, "seat-a", false, campaignCharacter, true, "progression"); err != nil {
 		t.Fatal(err)
 	}
 	if view := playCampaignBattle(t, s); view["campaign"] != nil || s.campaign != nil {
@@ -160,9 +183,13 @@ func TestCampaignAwardsVictoryXPAndAdvancesEncounters(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	adventurer := object(status["characters"])["adventurer"].(map[string]any)
-	if adventurer["xp"] != before.XP || adventurer["campaign"].(loadout.CampaignProgress).Victories != victories {
-		t.Fatalf("campaign status disagrees with the ledger: %+v", adventurer)
+	starter := object(status["characters"])[campaignCharacter].(map[string]any)
+	if starter["xp"] != before.XP || starter["campaign"].(loadout.CampaignProgress).Victories != victories {
+		t.Fatalf("campaign status disagrees with the ledger: %+v", starter)
+	}
+	// Each character keeps its own place: the Adventurer has not started.
+	if adventurer := object(status["characters"])["adventurer"].(map[string]any); adventurer["campaign"].(loadout.CampaignProgress).Victories != 0 {
+		t.Fatalf("the Adventurer shared the Starter's campaign: %+v", adventurer)
 	}
 }
 

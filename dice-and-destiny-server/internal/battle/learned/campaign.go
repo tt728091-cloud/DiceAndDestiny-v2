@@ -74,9 +74,6 @@ func (s *Session) ResetCampaignEncounter(battleID string, seed uint64, character
 	if !ok {
 		return nil, fmt.Errorf("unknown campaign encounter %q", encounterID)
 	}
-	if encounter.Opponent != s.config.OpponentDefinition || encounter.OpponentCount != max(1, s.config.OpponentCount) {
-		return nil, fmt.Errorf("initialize the battle runtime with encounter %q's opponent first", encounterID)
-	}
 	progress, err := loadout.ReadProgress(s.config.LoadoutRoot, character, c.economy, c.catalogs[character])
 	if err != nil {
 		return nil, err
@@ -84,6 +81,9 @@ func (s *Session) ResetCampaignEncounter(battleID string, seed uint64, character
 	next := campaign.NextEncounter(progress)
 	if next.ID != encounterID {
 		return nil, fmt.Errorf("the next campaign encounter is %s", next.Name)
+	}
+	if encounter.Opponent != s.config.OpponentDefinition || encounter.OpponentCount != max(1, s.config.OpponentCount) {
+		return nil, fmt.Errorf("initialize the battle runtime with encounter %q's opponent first", encounterID)
 	}
 	index := 0
 	for i, e := range campaign.Encounters {
