@@ -8,7 +8,15 @@ const BATTLE_SCREEN := preload("res://app/screens/battle/battle_screen.tscn")
 
 func _run() -> void:
 	root.size = Vector2i(1280, 720)
+	_seed_card_trees()
 	var runtime = root.get_node("LearnedBattleRuntime")
+	# A legacy card equipped outside the campaign (Progression mode) blocks it.
+	var catalogs: Dictionary = runtime.character_catalogs("progression").result
+	var tip_price := int(catalogs.starter.economy.card_prices.get("tip_it", catalogs.starter.economy.default_card_price))
+	var bought: Dictionary = runtime.purchase_progression("starter", "buy_card", "tip_it", int(catalogs.starter.progression.revision), tip_price)
+	_expect(bought.get("ok") == true, "Progression mode can still equip a legacy card")
+	var refused: Dictionary = runtime.purchase_progression("starter", "buy_card", "tip_it", int(bought.result.revision), tip_price, "", "", true)
+	_expect(refused.get("ok") != true and "card-tree" in str(refused.get("error", "")), "campaign editing refuses buying a legacy card")
 	var menu = MENU.instantiate(); root.add_child(menu)
 	for frame in 6: await process_frame
 	var campaign_button: Button = menu._menu_actions[2]
@@ -19,7 +27,7 @@ func _run() -> void:
 	_expect(campaign != null, "Campaign opens from the menu")
 	if campaign == null: _finish(); return
 	_expect(campaign._path.find_children("Encounter*", "PanelContainer", false, false).size() == 3, "three encounters are on the path")
-	_expect("100 XP to spend" in campaign._summary.text, "campaign shows the starting XP")
+	_expect("%d XP to spend" % (100 - tip_price) in campaign._summary.text, "campaign shows the starting XP less the legacy purchase")
 	_expect("ENCOUNTER 1  ·  NEXT" in _text(campaign._path) and "Brine Mask" in _text(campaign._path), "first encounter is next and names its opponent")
 	_expect(campaign._fight.text == "Fight · Tide Pool" and not campaign._banner.visible, "Fight offers the first encounter")
 	_expect(campaign.character_id == "starter" and campaign._summary.text.begins_with("Starter"), "the campaign defaults to the Starter")
@@ -29,13 +37,31 @@ func _run() -> void:
 	_expect(campaign.character_id == "adventurer" and campaign._summary.text.begins_with("Adventurer"), "choosing the Adventurer shows its own progress")
 	campaign._character_choice.select(0); campaign._character_choice.item_selected.emit(0)
 	for frame in 3: await process_frame
+	_expect(campaign._fight.disabled and "Tip It" in campaign._message.text, "an equipped legacy card blocks the campaign and is named")
+	await _click(campaign._deck)
+	for frame in 8: await process_frame
+	var cleanup = _find("res://app/screens/character/character_creation.gd")
+	_expect(cleanup != null and cleanup.campaign_mode, "the campaign opens its editors in campaign mode")
+	if cleanup == null: _finish(); return
+	_expect("tip_it" not in cleanup._eligible_card_ids() and "take_stock" in cleanup._eligible_card_ids(), "the campaign library offers only card-tree cards")
+	_expect(cleanup._has_type_conflicts() and "only card-tree cards" in cleanup._save_status.text, "the equipped legacy card is flagged")
+	cleanup.inspect_entry("cards", "tip_it")
+	for frame in 4: await process_frame
+	_expect("The campaign uses only card-tree cards" in _text(cleanup._details), "the legacy card explains why it is blocked")
+	_expect(_control(cleanup, "buy.tip_it").disabled and not _control(cleanup, "sell.tip_it").disabled, "a legacy card can be sold but not bought")
+	await _click(_control(cleanup, "sell.tip_it"))
+	await _click(cleanup._purchase_confirm)
+	_expect(cleanup._card_count("tip_it") == 0 and not cleanup._has_type_conflicts(), "selling the legacy card clears the conflict")
+	await _click(_control(cleanup, "back"))
+	for frame in 6: await process_frame
+	_expect(not campaign._fight.disabled and "100 XP to spend" in campaign._summary.text, "the sale refunds its XP and unblocks the campaign")
 	await _capture(campaign, "campaign-start")
 
 	# Fight until a victory; a defeat on the way must earn nothing and repeat.
 	var xp := 100
 	var saw_defeat := false
 	var won := false
-	for attempt in 12:
+	for attempt in 30:
 		await _click(campaign._fight)
 		for frame in 8: await process_frame
 		var battle: Control = _find(BATTLE_SCRIPT)
@@ -53,6 +79,7 @@ func _run() -> void:
 		_expect(reward != null, "the result screen shows the campaign reward")
 		_expect(_find_button(battle, "Rematch · Same Seats") == null and _find_button(battle, "Continue · Spend XP & Next Battle") != null, "a campaign result continues the campaign instead of a rematch")
 		won = result.battle_result == "victory"
+		print("campaign attempt %d: %s" % [attempt + 1, result.battle_result])
 		if won:
 			_expect(reward != null and "+20 XP · 120 XP to spend" in reward.text, "victory awards the encounter's XP")
 		else:
@@ -66,7 +93,7 @@ func _run() -> void:
 		if campaign == null: _finish(); return
 		if won: break
 		_expect(campaign._fight.text == "Fight · Tide Pool" and "%d XP to spend" % xp in campaign._summary.text, "after a loss the same encounter waits")
-	_expect(won, "a campaign victory within twelve battles")
+	_expect(won, "a campaign victory within thirty battles")
 	if not won: _finish(); return
 	xp += 20
 	_expect(campaign._banner.visible and "+20 XP" in campaign._banner.text, "campaign banner reports the reward")
@@ -109,6 +136,16 @@ func _run() -> void:
 	_expect(int(status.result.characters.starter.xp) == xp and int(status.result.characters.starter.campaign.victories) == 1, "authority ledger agrees")
 	if not saw_defeat: print("campaign: no defeat occurred; the loss path was not exercised this run")
 	_finish()
+
+## Script tests get an empty authored root; campaign decks need the published
+## card trees, so copy them in (read-only use of the tracked files).
+func _seed_card_trees() -> void:
+	var target := OS.get_environment("DICE_AND_DESTINY_AUTHORED_ROOT")
+	var source := OS.get_environment("DICE_AND_DESTINY_CONTENT_ROOT").path_join("authored")
+	_expect(not target.is_empty() and target.simplify_path() != source.simplify_path(), "the test has a disposable authored root")
+	if target.is_empty() or target.simplify_path() == source.simplify_path(): return
+	for name in ["authored_cards.json", "economy_admin.json"]:
+		_expect(DirAccess.copy_absolute(source.path_join(name), target.path_join(name)) == OK, "copied %s into the disposable authored root" % name)
 
 func _finish() -> void:
 	print("CAMPAIGN: " + ("FAILED" if failed else "PASSED")); quit(1 if failed else 0)

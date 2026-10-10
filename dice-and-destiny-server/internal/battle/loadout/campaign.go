@@ -175,3 +175,20 @@ func RecordCampaignBattle(root, character string, e Economy, lib content.BattleL
 	outcome.NextEncounter = state.Next
 	return outcome, nil
 }
+
+// IsTreeCard reports whether a card belongs to any published card tree, as a
+// base, variant or shared card. Campaign decks use only these cards.
+func IsTreeCard(trees map[string]content.CardTree, id string) bool {
+	return len(content.TreeCardPlacements(trees, id)) > 0
+}
+
+// NonTreeCards lists a deck's cards the campaign cannot use, once each.
+func NonTreeCards(deck []Entry, trees map[string]content.CardTree) []string {
+	var ids []string
+	for _, entry := range deck {
+		if entry.Count > 0 && !IsTreeCard(trees, entry.CardID) && !slices.Contains(ids, entry.CardID) {
+			ids = append(ids, entry.CardID)
+		}
+	}
+	return ids
+}

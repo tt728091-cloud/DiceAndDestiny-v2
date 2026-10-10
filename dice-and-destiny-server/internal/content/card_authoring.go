@@ -214,7 +214,8 @@ func EditableGeneralCard(c BattleCardDefinition) (BattleCardDefinition, error) {
 		err = json.Unmarshal(raw, &copy)
 		return copy, err
 	}
-	p := &CardProgram{Version: 1, RollRequirement: "any"}
+	// A blank card has no steps; store [] rather than null for every reader.
+	p := &CardProgram{Version: 1, RollRequirement: "any", Steps: []CardStep{}}
 	for _, timing := range c.Play.PlayableDuring {
 		w := ""
 		switch timing.Segment {

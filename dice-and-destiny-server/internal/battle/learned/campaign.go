@@ -2,6 +2,7 @@ package learned
 
 import (
 	"fmt"
+	"strings"
 
 	"diceanddestiny/server/internal/battle/loadout"
 	"diceanddestiny/server/internal/content"
@@ -82,6 +83,9 @@ func (s *Session) ResetCampaignEncounter(battleID string, seed uint64, character
 	if next.ID != encounterID {
 		return nil, fmt.Errorf("the next campaign encounter is %s", next.Name)
 	}
+	if blocked := loadout.NonTreeCards(progress.Deck, c.catalogs[character].CardTrees); len(blocked) > 0 {
+		return nil, fmt.Errorf("the campaign uses only card-tree cards; sell or store %s first", strings.Join(cardNames(c.catalogs[character], blocked), ", "))
+	}
 	if encounter.Opponent != s.config.OpponentDefinition || encounter.OpponentCount != max(1, s.config.OpponentCount) {
 		return nil, fmt.Errorf("initialize the battle runtime with encounter %q's opponent first", encounterID)
 	}
@@ -157,6 +161,8 @@ func campaignStatus(contentRoot, loadoutRoot string) (map[string]any, error) {
 			"campaign":       state,
 			"next_encounter": next,
 			"type_conflicts": c.access.Problems(id, p.Deck, p.Abilities),
+			// Equipped cards outside every card tree; the campaign refuses them.
+			"tree_conflicts": cardNames(c.catalogs[id], loadout.NonTreeCards(p.Deck, c.catalogs[id].CardTrees)),
 		}
 	}
 	encounters := []map[string]any{}
@@ -169,4 +175,12 @@ func campaignStatus(contentRoot, loadoutRoot string) (map[string]any, error) {
 		encounters = append(encounters, map[string]any{"id": e.ID, "name": e.Name, "description": e.Description, "opponent": e.Opponent, "opponent_name": opponent, "opponent_count": e.OpponentCount, "xp": e.XP})
 	}
 	return map[string]any{"encounters": encounters, "characters": characters, "character_order": campaign.Characters}, nil
+}
+
+func cardNames(lib content.BattleLibrary, ids []string) []string {
+	names := []string{}
+	for _, id := range ids {
+		names = append(names, lib.Cards[id].Name)
+	}
+	return names
 }

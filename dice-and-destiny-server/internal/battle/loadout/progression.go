@@ -67,6 +67,9 @@ type Purchase struct {
 	ID           string `json:"id"`
 	Revision     int    `json:"revision"`
 	ExpectedCost int    `json:"expected_cost"`
+	// TreeCardsOnly refuses adding non-tree cards (campaign editing). Selling
+	// and storing any card stays allowed.
+	TreeCardsOnly bool `json:"tree_cards_only,omitempty"`
 }
 
 var progressMu sync.Mutex
@@ -415,6 +418,15 @@ func Buy(root, character string, e Economy, lib content.BattleLibrary, request P
 	}
 	cost := 0
 	cfg := e.Characters[character]
+	if request.TreeCardsOnly {
+		added := request.ID
+		if request.Kind == "upgrade_card" {
+			added = request.TargetID
+		}
+		if (request.Kind == "buy_card" || request.Kind == "buy_collection_card" || request.Kind == "equip_collection_card" || request.Kind == "upgrade_card") && !IsTreeCard(lib.CardTrees, added) {
+			return p, fmt.Errorf("the campaign uses only card-tree cards; %s can be sold but not added", added)
+		}
+	}
 	switch request.Kind {
 	case "buy_card", "buy_collection_card":
 		if _, _, variant := content.TreeCardOwner(lib.CardTrees, request.ID); variant {

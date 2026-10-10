@@ -139,6 +139,7 @@ Use `./scripts/godot.sh` for every additional Godot test.
 
 - The menu's **Campaign** runs the battle → XP → deck change → next battle loop. Encounters, XP rewards, and eligible (General-type) characters live in `dice-and-destiny-server/content/progression_v1/campaign.yaml`. See `docs/game-design/campaign.md`.
 - Only the authority awards XP: the session records a campaign battle's result once, when it ends (victory only), in the progression ledger. Never compute or grant rewards from the client. The campaign opens the deck editors locked to Progression.
+- Campaign decks use only card-tree cards (bases, variants, shared cards). Legacy and standalone cards may be sold or stored but never added or fought with; the authority refuses a campaign battle whose deck holds one.
 
 ## Authored content storage
 

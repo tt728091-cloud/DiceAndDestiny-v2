@@ -84,6 +84,7 @@ func refresh() -> void:
 	var blocked := ""
 	if int(character.get("health", 0)) == 0: blocked = "Your deck is empty. Open Deck & Card Trees and equip at least one card."
 	elif not character.get("type_conflicts", []).is_empty(): blocked = "Your deck has a type conflict. Open Deck & Card Trees to resolve it."
+	elif not character.get("tree_conflicts", []).is_empty(): blocked = "The campaign uses only card-tree cards. In Deck & Card Trees, sell or store: %s." % ", ".join(PackedStringArray(character.tree_conflicts))
 	_fight.disabled = not blocked.is_empty()
 	_message.text = blocked if not blocked.is_empty() else "Win to earn XP. A defeat earns nothing, and the encounter waits for you to try again. Change your deck as often as you like between battles."
 	_message.add_theme_color_override("font_color", STYLE.LOSS if not blocked.is_empty() else STYLE.MUTED)
@@ -162,7 +163,7 @@ func _open_deck() -> void:
 	screen.initial_character = character_id
 	screen.loadout_mode = "progression"
 	screen.back_label = "Back to campaign"
-	screen.lock_progression = true
+	screen.campaign_mode = true
 	screen.closed.connect(func(): show(); last_battle = {}; refresh(); _fight.grab_focus())
 	get_tree().root.add_child(screen)
 	hide()

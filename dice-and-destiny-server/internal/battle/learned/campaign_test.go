@@ -3,6 +3,7 @@ package learned
 import (
 	"encoding/json"
 	"fmt"
+	"os"
 	"path/filepath"
 	"strings"
 	"testing"
@@ -36,6 +37,23 @@ func playCampaignBattle(t *testing.T, s *Session) map[string]any {
 
 const campaignCharacter = "starter"
 
+// campaignLoadoutRoot copies the published card trees into a disposable root:
+// campaign decks may use only card-tree cards.
+func campaignLoadoutRoot(t *testing.T) string {
+	t.Helper()
+	root := t.TempDir()
+	for _, name := range []string{"authored_cards.json", "economy_admin.json"} {
+		raw, err := os.ReadFile(filepath.Join(testServerRoot(t), "content", "authored", name))
+		if err != nil {
+			t.Fatal(err)
+		}
+		if err = os.WriteFile(filepath.Join(root, name), raw, 0o600); err != nil {
+			t.Fatal(err)
+		}
+	}
+	return root
+}
+
 func readCampaignProgress(t *testing.T, contentRoot, loadoutRoot string) loadout.Progress {
 	t.Helper()
 	c, err := loadCampaignContext(contentRoot, loadoutRoot)
@@ -51,7 +69,7 @@ func readCampaignProgress(t *testing.T, contentRoot, loadoutRoot string) loadout
 
 func TestCampaignAwardsVictoryXPAndAdvancesEncounters(t *testing.T) {
 	contentRoot := filepath.Join(testServerRoot(t), "content")
-	loadoutRoot := t.TempDir()
+	loadoutRoot := campaignLoadoutRoot(t)
 	c, err := loadCampaignContext(contentRoot, loadoutRoot)
 	if err != nil {
 		t.Fatal(err)
@@ -85,6 +103,39 @@ func TestCampaignAwardsVictoryXPAndAdvancesEncounters(t *testing.T) {
 		t.Fatal("a Venom character entered the General campaign")
 	}
 	opponents := map[string]bool{}
+
+	// Campaign decks use only card-tree cards. A legacy card is refused by the
+	// campaign editors, blocks a campaign battle when equipped elsewhere, and
+	// can still be sold.
+	lib := c.catalogs[campaignCharacter]
+	if !loadout.IsTreeCard(lib.CardTrees, "take_stock") || loadout.IsTreeCard(lib.CardTrees, "tip_it") {
+		t.Fatal("expected Take Stock in a tree and Tip It outside every tree")
+	}
+	p := readCampaignProgress(t, contentRoot, loadoutRoot)
+	if bad := loadout.NonTreeCards(p.Deck, lib.CardTrees); len(bad) > 0 {
+		t.Fatalf("the Starter's deck has non-tree cards: %v", bad)
+	}
+	tip := loadout.Purchase{Kind: "buy_card", ID: "tip_it", Revision: p.Revision, ExpectedCost: c.economy.Price(campaignCharacter, "tip_it"), TreeCardsOnly: true}
+	if _, err = loadout.Buy(loadoutRoot, campaignCharacter, c.economy, lib, tip); err == nil || !strings.Contains(err.Error(), "card-tree") {
+		t.Fatalf("the campaign editors bought a legacy card: %v", err)
+	}
+	tip.TreeCardsOnly = false
+	if p, err = loadout.Buy(loadoutRoot, campaignCharacter, c.economy, lib, tip); err != nil {
+		t.Fatal(err)
+	}
+	if _, err = first.ResetCampaignEncounter("legacy", 1, campaignCharacter, encounters[0].ID); err == nil || !strings.Contains(err.Error(), "Tip It") {
+		t.Fatalf("a campaign battle started with a legacy card: %v", err)
+	}
+	status, err := campaignStatus(contentRoot, loadoutRoot)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if conflicts := object(status["characters"])[campaignCharacter].(map[string]any)["tree_conflicts"].([]string); len(conflicts) != 1 || conflicts[0] != "Tip It" {
+		t.Fatalf("campaign status did not flag the legacy card: %v", conflicts)
+	}
+	if _, err = loadout.Buy(loadoutRoot, campaignCharacter, c.economy, lib, loadout.Purchase{Kind: "sell_card", ID: "tip_it", Revision: p.Revision, ExpectedCost: tip.ExpectedCost, TreeCardsOnly: true}); err != nil {
+		t.Fatalf("the campaign could not sell a legacy card: %v", err)
+	}
 
 	victories, defeats := 0, 0
 	for seed := uint64(1); seed <= 200 && (victories < len(encounters) || defeats == 0); seed++ {
@@ -179,7 +230,7 @@ func TestCampaignAwardsVictoryXPAndAdvancesEncounters(t *testing.T) {
 		t.Fatal("a non-campaign battle changed XP")
 	}
 
-	status, err := campaignStatus(contentRoot, loadoutRoot)
+	status, err = campaignStatus(contentRoot, loadoutRoot)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -197,7 +248,7 @@ func TestCampaignAwardsVictoryXPAndAdvancesEncounters(t *testing.T) {
 // only fixes the total at the time it was saved.
 func TestCampaignXPSurvivesAdminBudgetOverride(t *testing.T) {
 	contentRoot := filepath.Join(testServerRoot(t), "content")
-	loadoutRoot := t.TempDir()
+	loadoutRoot := campaignLoadoutRoot(t)
 	c, err := loadCampaignContext(contentRoot, loadoutRoot)
 	if err != nil {
 		t.Fatal(err)

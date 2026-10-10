@@ -574,7 +574,8 @@ func _default_art(source: String, arts: Array) -> String:
 	var effect := source.trim_prefix("effect:")
 	for id in catalog.get("templates", {}):
 		var c: Dictionary = catalog.templates[id]
-		if c.get("program") is Dictionary and not c.program.get("steps", []).is_empty() and c.program.steps[0].effect == effect:
+		var steps = c.program.get("steps") if c.get("program") is Dictionary else null
+		if steps is Array and not steps.is_empty() and steps[0].effect == effect:
 			var path := str(c.presentation.get("illustration_path", ""))
 			if not path.is_empty(): return path
 	return arts[0] if not arts.is_empty() else ""

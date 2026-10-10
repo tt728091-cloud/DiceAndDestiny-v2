@@ -211,9 +211,10 @@ func save_character_deck(character: String, decklist: Array) -> Dictionary:
 
 ## `tree` names the card tree for tree trades and for copies of shared cards;
 ## exclusive and ordinary cards ignore it.
-func purchase_progression(character: String, kind: String, id: String, revision: int, cost: int, target_id: String = "", tree: String = "") -> Dictionary:
+## `tree_cards_only` (campaign editing) refuses adding cards outside every card tree.
+func purchase_progression(character: String, kind: String, id: String, revision: int, cost: int, target_id: String = "", tree: String = "", tree_cards_only: bool = false) -> Dictionary:
 	if _native_authority == null: return {"ok": false, "error": _initialization_error}
-	return _request({"op": "progression_purchase", "content_root": ProjectSettings.globalize_path("res://../dice-and-destiny-server/content"), "loadout_root": WorkspacePaths.runtime_dir("user/character_loadouts"), "character": character, "purchase": {"kind": kind, "id": id, "revision": revision, "expected_cost": cost, "target_id": target_id, "tree": tree}})
+	return _request({"op": "progression_purchase", "content_root": ProjectSettings.globalize_path("res://../dice-and-destiny-server/content"), "loadout_root": WorkspacePaths.runtime_dir("user/character_loadouts"), "character": character, "purchase": {"kind": kind, "id": id, "revision": revision, "expected_cost": cost, "target_id": target_id, "tree": tree, "tree_cards_only": tree_cards_only}})
 
 func save_economy_admin(settings: Dictionary) -> Dictionary:
 	return _request({"op": "save_economy_admin", "admin_settings": settings, "loadout_root": WorkspacePaths.runtime_dir("user/character_loadouts"), "content_root": ProjectSettings.globalize_path("res://../dice-and-destiny-server/content")})

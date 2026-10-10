@@ -19,6 +19,16 @@ The campaign is the battle → XP → deck change → next battle loop. Open it 
 
 The client never names a reward amount. The battle session knows it is a campaign battle and which encounter it is. When the battle becomes terminal, it calls `loadout.RecordCampaignBattle`, which commits the XP and the campaign position in one atomic ledger write. Each battle ID is recorded once. A battle whose encounter is no longer the character's next encounter earns nothing.
 
+## Card-tree cards only
+
+Campaign decks may use only **card-tree cards**: tree bases, variants and shared cards in any published tree. Standalone and legacy cards (for example Blade Warden's Tip It) cannot be used, but any owned card can still be sold or stored for its XP.
+
+- In the campaign's editors, the library lists only card-tree cards, plus any stored non-tree copies so they can be sold. A non-tree card in the deck is flagged with "The campaign uses only card-tree cards"; its Buy and "Add collected copy to deck" buttons are disabled, and Sell and "Move to collection" stay available.
+- Purchases from the campaign's editors send `tree_cards_only`, and the authority refuses buying, equipping or upgrading into a non-tree card.
+- The campaign shares its deck with Progression mode, which can still equip legacy cards. When it does, the authority refuses to start a campaign battle and names the cards (`tree_conflicts` in the campaign status). The Campaign screen disables **Fight** and says what to sell or store.
+
+Both campaign characters' starting decks are already all card-tree cards.
+
 ## Configuration
 
 `dice-and-destiny-server/content/progression_v1/campaign.yaml`:
