@@ -69,7 +69,7 @@ func (assembler *FileParticipantAssembler) AssembleParticipants(
 		// Minion definitions are an opt-in pack. Keep the frozen learned
 		// opponents' vocabulary byte-for-byte unchanged in existing matchups.
 		for _, requested := range participants {
-			if requested.DefinitionID == "curse" || requested.DefinitionID == "adventurer" {
+			if requested.DefinitionID == "curse" || requested.DefinitionID == "adventurer" || requested.DefinitionID == "starter" {
 				continue
 			}
 			if _, ok := library.Combatants[requested.DefinitionID]; ok {
@@ -100,7 +100,7 @@ func (assembler *FileParticipantAssembler) AssembleParticipants(
 			break
 		}
 		for _, requested := range participants {
-			if requested.DefinitionID != "adventurer" && !assembler.IncludeCharacterPools {
+			if requested.DefinitionID != "adventurer" && requested.DefinitionID != "starter" && !assembler.IncludeCharacterPools {
 				continue
 			}
 			library = content.BattleLibrary{Symbols: maps.Clone(library.Symbols), Dice: maps.Clone(library.Dice), Cards: maps.Clone(library.Cards), Abilities: maps.Clone(library.Abilities), Statuses: maps.Clone(library.Statuses), Combatants: maps.Clone(library.Combatants)}
