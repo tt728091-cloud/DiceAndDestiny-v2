@@ -85,7 +85,7 @@ func _reload() -> void:
 	_summary.hide()
 	catalogs = response.result
 	_cards.clear(); _character.clear()
-	for id in ["adventurer", "venom", "curse", "blade_warden"]:
+	for id in ["adventurer", "venom", "curse", "blade_warden", "starter"]:
 		if not catalogs.has(id): continue
 		_character.add_item(str(catalogs[id].combatants[id].name)); _character.set_item_metadata(_character.item_count - 1, id)
 		if id == character_id: _character.select(_character.item_count - 1)

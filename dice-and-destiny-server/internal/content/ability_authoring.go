@@ -88,7 +88,7 @@ func SaveAuthoredAbility(root string, lib BattleLibrary, a *BattleAbilityDefinit
 	}
 	if board != nil {
 		switch character {
-		case "adventurer", "venom", "curse", "blade_warden":
+		case "adventurer", "venom", "curse", "blade_warden", "starter":
 		default:
 			return saved, fmt.Errorf("unknown playable character")
 		}
