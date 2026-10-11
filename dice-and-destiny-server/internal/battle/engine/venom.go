@@ -114,6 +114,9 @@ func (e Engine) nextVenomWork(b *state.Battle, lib content.BattleLibrary) ([]eve
 		b.Settled.TriggerBatch = resume.Trigger
 		b.Settled.PendingDamage = resume.Damage
 		pruneDefeatedWindowActors(b)
+		if events, handled, err := e.reconcileHandLimitWindow(b); handled {
+			return events, err
+		}
 		if resume.Advance {
 			return e.advanceSettledSegment(b)
 		}

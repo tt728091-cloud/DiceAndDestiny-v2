@@ -1,0 +1,50 @@
+{
+  "schema_version": 1,
+  "id": "drowned_oracle_bell_diver",
+  "name": "Bell Diver",
+  "class": "minion",
+  "controller_defaults": {
+    "type": "external"
+  },
+  "resources": {
+    "starting_hand_size": 1,
+    "starting_energy": 0,
+    "hand_limit": 3,
+    "energy_cap": 75
+  },
+  "income": {
+    "cards": 1,
+    "energy": 0
+  },
+  "decklist": [
+    {
+      "card_id": "ballast_stone",
+      "count": 18
+    }
+  ],
+  "dice_loadout": [
+    {
+      "dice_id": "bell_d6",
+      "count": 5
+    }
+  ],
+  "ability_board": {
+    "offensive": [
+      "sunken_toll"
+    ],
+    "defensive": [
+      "brass_helm"
+    ]
+  },
+  "roll_preferences": {
+    "status_effects": "automatic",
+    "offensive": "automatic",
+    "ability_effects": "automatic"
+  },
+  "single_ability_policy": {
+    "target_faces": [
+      5,
+      6
+    ]
+  }
+}

@@ -174,3 +174,25 @@ func UpgradeTreeCard(p Progress, from, to, tree string, e Economy, lib content.B
 	}
 	return p, cost, nil
 }
+
+// UpgradeDeckTreeCard moves one equipped copy along a tree connection and keeps
+// the result equipped, so health is unchanged. Upgrades cost the XP between the
+// two cards; trading down refunds it (a negative cost).
+func UpgradeDeckTreeCard(p Progress, from, to, tree string, e Economy, lib content.BattleLibrary, character string) (Progress, int, error) {
+	trade, err := resolveTreeTrade(lib, from, to, tree)
+	if err != nil {
+		return p, 0, err
+	}
+	var cost int
+	p.Deck, cost, err = TreeTransition(append([]Entry(nil), p.Deck...), from, to, trade.tree.ID, e, lib, character)
+	if err != nil {
+		return p, 0, err
+	}
+	if _, err = Validate(p.Deck, lib.Cards); err != nil {
+		return p, 0, err
+	}
+	if err = ValidateTreeDeck(p.Deck, lib.CardTrees); err != nil {
+		return p, 0, err
+	}
+	return p, cost, nil
+}

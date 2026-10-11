@@ -14,7 +14,7 @@ func CharacterCatalogs(root string, authoredRoots ...string) (map[string]content
 		return nil, fmt.Errorf("content_root is required")
 	}
 	result := map[string]content.BattleLibrary{}
-	for _, id := range []string{"adventurer", "venom", "curse", "blade_warden"} {
+	for _, id := range []string{"adventurer", "venom", "curse", "blade_warden", "starter"} {
 		lib, err := content.LoadBattleLibrary(filepath.Join(root, "battle_v1"))
 		if err != nil {
 			return nil, err

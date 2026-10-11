@@ -8,7 +8,7 @@ const CARD_TIMING = preload("res://presentation/cards/card_timing.gd")
 var _comparison: PanelContainer
 const GOLD := STYLE.GOLD
 const MUTED := STYLE.MUTED
-const ROSTER := ["adventurer", "venom", "curse", "blade_warden"]
+const ROSTER := ["adventurer", "venom", "curse", "blade_warden", "starter"]
 var initial_character := "adventurer"
 var loadout_mode := "sandbox"
 var _catalog_mode := "sandbox"
@@ -273,7 +273,7 @@ func _build() -> void:
 	_comparison = UpgradeComparison.new(); add_child(_comparison)
 
 func _roster_icon(id: String) -> Texture2D:
-	var tex := STYLE.texture("res://assets/battle/fighters/%s.png" % ("blade_warden" if id == "adventurer" else id))
+	var tex := STYLE.texture("res://assets/battle/fighters/%s.png" % ("blade_warden" if id in ["adventurer", "starter"] else id))
 	if tex == null: return null
 	var image := tex.get_image()
 	if image == null: return null
@@ -370,7 +370,7 @@ func select_character(id: String) -> void:
 	for key in _roster_buttons:
 		_roster_buttons[key].set_pressed_no_signal(key == id)
 		_roster_buttons[key].text = catalogs[key].combatants[key].name
-	_portrait.texture = load("res://assets/battle/fighters/%s.png" % ("blade_warden" if id == "adventurer" else id))
+	_portrait.texture = load("res://assets/battle/fighters/%s.png" % ("blade_warden" if id in ["adventurer", "starter"] else id))
 	_portrait_name.text = str(catalogs[id].combatants[id].name)
 	_refresh_summary()
 	_error.visible = catalogs[id].has("loadout_error")
@@ -781,7 +781,7 @@ func _refresh_actions() -> void:
 	_admin_button.visible = progression
 	_confirmation_options.visible = progression
 	_apply.visible = not progression; _revert.visible = not progression; _reset.visible = not progression
-	_mode_note.text = "Buying and selling save immediately for your next battle. Cards sell for their current purchase price. Battle rewards and discovery come next." if progression else "Sandbox: freely edit the same deck used in Progression. Apply changes to save; available XP stays unchanged."
+	_mode_note.text = "Buying and selling save immediately for your next battle. Cards sell for their current purchase price. Win campaign battles to earn more XP." if progression else "Sandbox: freely edit the same deck used in Progression. Apply changes to save; available XP stays unchanged."
 	if progression:
 		_save_status.text = "%d XP available · buy and sell cards at equal prices" % int(catalogs[character_id].progression.xp)
 		_save_status.add_theme_color_override("font_color", GOLD)

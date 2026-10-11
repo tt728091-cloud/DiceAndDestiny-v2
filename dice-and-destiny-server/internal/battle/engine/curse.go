@@ -123,6 +123,9 @@ func (e Engine) nextCurseWork(b *state.Battle, lib content.BattleLibrary) ([]eve
 	b.Flow = r.Flow
 	b.Settled.TriggerBatch = r.Trigger
 	b.Settled.PendingDamage = r.Damage
+	if events, handled, err := e.reconcileHandLimitWindow(b); handled {
+		return events, err
+	}
 	if r.Advance {
 		return e.advanceSettledSegment(b)
 	}

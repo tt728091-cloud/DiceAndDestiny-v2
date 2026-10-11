@@ -1,0 +1,81 @@
+{
+  "schema_version": 1,
+  "id": "coiling_snare",
+  "name": "Coiling Snare",
+  "type": "offensive",
+  "presentation": {
+    "rules_text": "Keep every even die (Snare: 2, 4, 6) and reroll the odd dice up to twice. 3 Snares deal 3 damage, 4 deal 5, and 5 deal 7. Fewer than 3 Snares is a miss."
+  },
+  "cost": {
+    "energy": 0
+  },
+  "usage": {
+    "maximum_per_segment": 1
+  },
+  "targeting": {
+    "selector": "one_enemy",
+    "minimum": 1,
+    "maximum": 1
+  },
+  "qualification": {
+    "activation_tiers": [
+      {
+        "id": "snare_5",
+        "requirements": {
+          "all": [
+            {
+              "type": "symbol_count",
+              "symbol_id": "snare",
+              "minimum": 5
+            }
+          ]
+        },
+        "operations": [
+          {
+            "type": "deal_damage",
+            "target": "selected_targets",
+            "amount": 7
+          }
+        ]
+      },
+      {
+        "id": "snare_4",
+        "requirements": {
+          "all": [
+            {
+              "type": "symbol_count",
+              "symbol_id": "snare",
+              "minimum": 4
+            }
+          ]
+        },
+        "operations": [
+          {
+            "type": "deal_damage",
+            "target": "selected_targets",
+            "amount": 5
+          }
+        ]
+      },
+      {
+        "id": "snare_3",
+        "requirements": {
+          "all": [
+            {
+              "type": "symbol_count",
+              "symbol_id": "snare",
+              "minimum": 3
+            }
+          ]
+        },
+        "operations": [
+          {
+            "type": "deal_damage",
+            "target": "selected_targets",
+            "amount": 3
+          }
+        ]
+      }
+    ]
+  }
+}

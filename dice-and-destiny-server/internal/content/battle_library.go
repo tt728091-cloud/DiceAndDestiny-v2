@@ -5,6 +5,7 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
+	"slices"
 	"sort"
 	"strings"
 
@@ -348,9 +349,30 @@ type CombatantAI struct {
 
 // SingleAbilityPolicy is an external authority-command controller. It never
 // invents dice or chooses between attacks; the ability board supplies both moves.
+// It keeps every die showing TargetFace or any of TargetFaces.
 type SingleAbilityPolicy struct {
-	TargetFace int    `yaml:"target_face" json:"target_face"`
-	CardID     string `yaml:"card_id,omitempty" json:"card_id,omitempty"`
+	TargetFace  int    `yaml:"target_face,omitempty" json:"target_face,omitempty"`
+	TargetFaces []int  `yaml:"target_faces,omitempty" json:"target_faces,omitempty"`
+	CardID      string `yaml:"card_id,omitempty" json:"card_id,omitempty"`
+}
+
+// Keeps reports whether the policy saves a die showing face.
+func (p SingleAbilityPolicy) Keeps(face int) bool {
+	return face == p.TargetFace || slices.Contains(p.TargetFaces, face)
+}
+
+// KeptFaces lists every configured target face.
+func (p SingleAbilityPolicy) KeptFaces() []int {
+	if p.TargetFace == 0 {
+		return p.TargetFaces
+	}
+	return append([]int{p.TargetFace}, p.TargetFaces...)
+}
+
+// IsBlankCard reports a card with no timing and no effect. It cannot be played
+// and only counts as health, like a scripted minion's deck.
+func IsBlankCard(card BattleCardDefinition) bool {
+	return card.Program == nil && card.Mechanic == nil && len(card.Play.PlayableDuring) == 0 && len(card.Operations) == 0
 }
 
 type CombatantDefinition struct {
@@ -541,7 +563,7 @@ func validateBattleLibrary(lib BattleLibrary) error {
 		if err := reserveContentName(contentNames, "card", id, card.Name); err != nil {
 			return err
 		}
-		if card.Cost.Energy < 0 || len(card.Play.SourceZones) == 0 || card.Play.Destination == "" || (card.Program == nil && len(card.Play.PlayableDuring) == 0) {
+		if card.Cost.Energy < 0 || len(card.Play.SourceZones) == 0 || card.Play.Destination == "" || (card.Program == nil && len(card.Play.PlayableDuring) == 0 && !IsBlankCard(card)) {
 			return fmt.Errorf("%w: card %q has invalid cost or play rules", ErrInvalidContent, id)
 		}
 		if card.Mechanic != nil {
@@ -676,9 +698,14 @@ func validateBattleLibrary(lib BattleLibrary) error {
 			if combatant.ControllerDefaults.Type != "external" || len(combatant.AbilityBoard.Offensive) != 1 || len(combatant.AbilityBoard.Defensive) != 1 {
 				return fmt.Errorf("single ability combatant %q requires external control and exactly one attack and defense", id)
 			}
+			if len(policy.KeptFaces()) == 0 {
+				return fmt.Errorf("single ability combatant %q needs a target face", id)
+			}
 			for _, entry := range combatant.DiceLoadout {
-				if policy.TargetFace < 1 || policy.TargetFace > lib.Dice[entry.DiceID].SideCount {
-					return fmt.Errorf("invalid target face for %q", id)
+				for _, face := range policy.KeptFaces() {
+					if face < 1 || face > lib.Dice[entry.DiceID].SideCount {
+						return fmt.Errorf("invalid target face for %q", id)
+					}
 				}
 			}
 			if policy.CardID != "" {

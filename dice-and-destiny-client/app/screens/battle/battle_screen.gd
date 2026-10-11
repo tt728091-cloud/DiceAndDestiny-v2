@@ -1039,9 +1039,13 @@ func _build_header(parent: VBoxContainer) -> void:
 		var policy_schema := str(_view.learned_policy.get("observation_schema", ""))
 		var policy_label := "NEW V2" if policy_schema == "dice-and-destiny-observation-v2" else "OLD V1"
 		policy_badge.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-		policy_badge.text = "BRINE MASK · Keeps every 3" if _is_single_ability_opponent() else "LEARNED BATTLE · %s · HUMAN %s" % [policy_label, learned_human_seat.to_upper()]
+		policy_badge.text = str(_minion_summary().get("badge", "")) if _is_single_ability_opponent() else "LEARNED BATTLE · %s · HUMAN %s" % [policy_label, learned_human_seat.to_upper()]
 		policy_badge.add_theme_color_override("font_color", Color("9de0ff"))
-		policy_badge.tooltip_text = "Three rolls · 2 damage per 3 · Salt Veil rolls 1D6: half, rounded up · Brine Surge costs 5 energy for +1 damage" if _is_single_ability_opponent() else "Frozen policy %s · no training or fallback" % str(_view.learned_policy.get("model_id", "unknown"))
+		policy_badge.tooltip_text = str(_minion_summary().get("rules", "")) if _is_single_ability_opponent() else "Frozen policy %s · no training or fallback" % str(_view.learned_policy.get("model_id", "unknown"))
+		if not _view.campaign.is_empty():
+			var encounter: Dictionary = _view.campaign.get("encounter", {})
+			policy_badge.text = "CAMPAIGN %d/%d · %s" % [int(_view.campaign.get("index", 0)) + 1, int(_view.campaign.get("total", 1)), str(encounter.get("name", "")).to_upper()]
+			policy_badge.tooltip_text = "%s Victory earns %d XP. %s" % [str(encounter.get("description", "")), int(encounter.get("xp", 0)), policy_badge.tooltip_text]
 		_utility_contents.inspect.add_child(policy_badge)
 		_inspect(policy_badge, "battle.learned_policy.badge", policy_badge.tooltip_text)
 	if _snapshot_tools_enabled():
@@ -1153,7 +1157,7 @@ func _build_enemy_column(_parent: HBoxContainer) -> void:
 	if learned_battle_mode or _multiple_enemies():
 		profile.title.text = _actor_display_name(_focused_enemy).trim_prefix("Learned ")
 	if learned_battle_mode:
-		profile.title.tooltip_text = "Keeps every 3 · one attack · one defense" if _is_single_ability_opponent() else "Learned Policy"
+		profile.title.tooltip_text = "%s · one attack · one defense" % str(_minion_summary().get("keeps", "")) if _is_single_ability_opponent() else "Learned Policy"
 	var income := _income_actor_data(_focused_enemy)
 	if not income.is_empty(): profile.prepare_income(income)
 	else:
@@ -2666,10 +2670,48 @@ func _build_completion() -> void:
 	final.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER; _center.add_child(final)
 	var review := TOOLTIP_BUTTON.new(); review.name = "ReviewBattle"; review.text = "Review · Wounds"; review.pressed.connect(_open_wound_review); _center.add_child(review)
 	_inspect(review, "battle.complete.review", "Review each wound and the cards lost after prevention")
+	if not _view.campaign.is_empty():
+		_build_campaign_completion()
+		var campaign_spacer := Control.new(); campaign_spacer.size_flags_vertical = Control.SIZE_EXPAND_FILL; _center.add_child(campaign_spacer)
+		return
 	var again := TOOLTIP_BUTTON.new(); again.text = "Rematch · Same Seats" if learned_battle_mode else "Play Again"; again.disabled = _history_review; again.pressed.connect(_play_again); _center.add_child(again); _inspect(again, "battle.complete.play_again", "Reset this learned matchup without reloading the model" if learned_battle_mode else "Start a new real-random battle")
 	if learned_battle_mode:
 		var new_battle := TOOLTIP_BUTTON.new(); new_battle.text = "New Battle · Change Seat or Mode"; new_battle.pressed.connect(_return_to_mode_menu); _center.add_child(new_battle); _inspect(new_battle, "battle.complete.new_battle", "Return to the graphical battle-mode menu")
 	var spacer2 := Control.new(); spacer2.size_flags_vertical = Control.SIZE_EXPAND_FILL; _center.add_child(spacer2)
+
+## A campaign battle's reward comes from the authority's recorded outcome;
+## the client never computes it.
+func _build_campaign_completion() -> void:
+	var outcome: Dictionary = _view.campaign.get("outcome", {})
+	var encounter: Dictionary = _view.campaign.get("encounter", {})
+	var reward := Label.new(); reward.name = "CampaignReward"
+	reward.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	reward.add_theme_font_size_override("font_size", 24)
+	# Parchment keeps the reward legible over the enemy nameplate.
+	reward.add_theme_stylebox_override("normal", CINEMATIC.paper()); reward.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	reward.add_theme_color_override("font_shadow_color", Color.TRANSPARENT)
+	if outcome.is_empty():
+		reward.text = "The campaign result was not recorded: %s" % str(_view.campaign.get("error", "unknown error"))
+		reward.add_theme_color_override("font_color", Color("8a2f24"))
+	elif int(outcome.get("xp_awarded", 0)) > 0:
+		reward.text = "+%d XP · %d XP to spend" % [int(outcome.xp_awarded), int(outcome.get("xp", 0))]
+		if outcome.get("run_completed", false): reward.text += "\nCampaign cleared! The next run starts again from the first encounter."
+		reward.add_theme_color_override("font_color", Color("2f6b3a"))
+	else:
+		reward.text = "No XP earned. %s waits for another attempt." % str(encounter.get("name", "The encounter"))
+		reward.add_theme_color_override("font_color", Color("8a2f24"))
+	_center.add_child(reward)
+	var proceed := TOOLTIP_BUTTON.new(); proceed.name = "ContinueCampaign"; proceed.text = "Continue · Spend XP & Next Battle"
+	proceed.pressed.connect(_return_to_campaign); _center.add_child(proceed)
+	_inspect(proceed, "battle.complete.campaign", "Return to the campaign to change your deck and fight the next encounter")
+
+func _return_to_campaign() -> void:
+	if _submitting or _model_thinking: return
+	var screen = preload("res://app/screens/campaign/campaign_screen.gd").new()
+	screen.last_battle = _view.campaign.duplicate(true)
+	screen.save_id = str(_view.campaign.get("save_id", ""))
+	get_tree().root.add_child(screen)
+	queue_free()
 
 func _open_wound_review() -> void:
 	if _root.has_node("WoundReview"): return
@@ -3686,6 +3728,9 @@ func _segment_name(id: String) -> String:
 
 func _is_single_ability_opponent() -> bool:
 	return _view.learned_policy.get("controller_kind", "") == "single_ability"
+
+func _minion_summary() -> Dictionary:
+	return preload("res://local_client/learned_battle/learned_battle_runtime.gd").minion_summary(str(_view.learned_policy.get("model_id", "")))
 
 func _actor_display_name(actor_id: String) -> String:
 	actor_id = _display_actor_id(actor_id)

@@ -12,9 +12,10 @@ func _run() -> void:
 	root.add_child(menu)
 	await process_frame
 	_expect(menu._character_choice.item_count == 4, "four playable characters")
-	_expect(menu._model_choice.item_count == 8, "six preserved models and minion encounters")
+	_expect(menu._model_choice.item_count == 10, "six preserved models and minion encounters")
 	menu._character_choice.select(2)
-	menu._model_choice.select(1)
+	for i in menu._model_choice.item_count:
+		if menu._model_choice.get_item_metadata(i) == "global-champion": menu._model_choice.select(i)
 	_expect(str(menu._character_choice.get_selected_metadata()) == "curse", "Curse selection")
 	await _capture("curse-menu")
 	menu._start_selected()

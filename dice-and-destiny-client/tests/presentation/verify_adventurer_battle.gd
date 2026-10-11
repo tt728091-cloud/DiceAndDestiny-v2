@@ -16,7 +16,9 @@ func _run() -> void:
 	await process_frame
 	_expect(menu._character_choice.get_selected_metadata() == "adventurer", "Adventurer is the starter default")
 	_expect(menu._model_choice.get_selected_metadata() == "brine-mask", "minion is selectable in opponent dropdown")
-	menu._model_choice.select(1); menu._update_opponent_description()
+	for i in menu._model_choice.item_count:
+		if menu._model_choice.get_item_metadata(i) == "global-champion": menu._model_choice.select(i)
+	menu._update_opponent_description()
 	_expect("trained Blade Warden" in menu._message.text, "description follows opponent selection")
 	menu._model_choice.select(0); menu._update_opponent_description()
 	menu._start_selected()

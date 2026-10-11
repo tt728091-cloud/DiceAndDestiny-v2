@@ -12,6 +12,24 @@
       "name": "Salt",
       "presentation_key": "symbol_salt",
       "glyph": "\u00b7"
+    },
+    {
+      "id": "toll",
+      "name": "Toll",
+      "presentation_key": "symbol_toll",
+      "glyph": "\u03a9"
+    },
+    {
+      "id": "snare",
+      "name": "Snare",
+      "presentation_key": "symbol_snare",
+      "glyph": "\u221e"
+    },
+    {
+      "id": "murk",
+      "name": "Murk",
+      "presentation_key": "symbol_murk",
+      "glyph": "\u2218"
     }
   ]
 }

@@ -86,7 +86,7 @@ func path(root, character string) (string, error) {
 		return "", fmt.Errorf("loadout root is required")
 	}
 	switch character {
-	case "adventurer", "venom", "curse", "blade_warden":
+	case "adventurer", "venom", "curse", "blade_warden", "starter":
 	default:
 		return "", fmt.Errorf("unknown playable character %q", character)
 	}

@@ -17,8 +17,8 @@ func TestCharacterCatalogMatchesBattleConfiguration(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(catalogs) != 4 {
-		t.Fatal("expected four playable characters")
+	if len(catalogs) != 5 {
+		t.Fatal("expected five playable characters")
 	}
 	assembler := battle.NewFileParticipantAssembler(root, t.TempDir())
 	for id, catalog := range catalogs {

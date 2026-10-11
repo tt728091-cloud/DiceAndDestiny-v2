@@ -1,0 +1,81 @@
+{
+  "schema_version": 1,
+  "id": "sunken_toll",
+  "name": "Sunken Toll",
+  "type": "offensive",
+  "presentation": {
+    "rules_text": "Keep every 5 and 6 (Toll) and reroll the other dice up to twice. 3 Tolls deal 4 damage, 4 Tolls deal 5, and all 5 Tolls deal 8. Fewer than 3 Tolls is a miss."
+  },
+  "cost": {
+    "energy": 0
+  },
+  "usage": {
+    "maximum_per_segment": 1
+  },
+  "targeting": {
+    "selector": "one_enemy",
+    "minimum": 1,
+    "maximum": 1
+  },
+  "qualification": {
+    "activation_tiers": [
+      {
+        "id": "toll_5",
+        "requirements": {
+          "all": [
+            {
+              "type": "symbol_count",
+              "symbol_id": "toll",
+              "minimum": 5
+            }
+          ]
+        },
+        "operations": [
+          {
+            "type": "deal_damage",
+            "target": "selected_targets",
+            "amount": 8
+          }
+        ]
+      },
+      {
+        "id": "toll_4",
+        "requirements": {
+          "all": [
+            {
+              "type": "symbol_count",
+              "symbol_id": "toll",
+              "minimum": 4
+            }
+          ]
+        },
+        "operations": [
+          {
+            "type": "deal_damage",
+            "target": "selected_targets",
+            "amount": 5
+          }
+        ]
+      },
+      {
+        "id": "toll_3",
+        "requirements": {
+          "all": [
+            {
+              "type": "symbol_count",
+              "symbol_id": "toll",
+              "minimum": 3
+            }
+          ]
+        },
+        "operations": [
+          {
+            "type": "deal_damage",
+            "target": "selected_targets",
+            "amount": 4
+          }
+        ]
+      }
+    ]
+  }
+}

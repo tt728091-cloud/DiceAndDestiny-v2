@@ -1,0 +1,28 @@
+{
+  "schema_version": 1,
+  "id": "ballast_stone",
+  "name": "Ballast Stone",
+  "type": "blank",
+  "presentation": {
+    "rules_text": "Blank. This card has no effect and cannot be played; it only counts as Bell Diver's health."
+  },
+  "cost": {
+    "energy": 0
+  },
+  "play": {
+    "source_zones": [
+      "hand"
+    ],
+    "destination": "discard",
+    "playable_during": []
+  },
+  "targeting": {
+    "selector": "self",
+    "minimum": 0,
+    "maximum": 1
+  },
+  "reaction_window": {
+    "opens": false
+  },
+  "operations": []
+}

@@ -24,6 +24,8 @@ var offensive_reveals: Dictionary = {}
 var raw_snapshot: Dictionary = {}
 var content_catalog: Dictionary = {}
 var learned_policy: Dictionary = {}
+## Campaign battles only: the encounter, and its recorded outcome once the battle ends.
+var campaign: Dictionary = {}
 var max_rolls_by_actor := {"blade": 3, "goblin": 3}
 
 func apply_result(result: Dictionary) -> bool:
@@ -48,6 +50,7 @@ func apply_result(result: Dictionary) -> bool:
 	raw_snapshot = snapshot.duplicate(true)
 	content_catalog = snapshot.get("content_catalog", {}).duplicate(true)
 	learned_policy = result.get("learned_policy", {}).duplicate(true)
+	campaign = result.get("campaign", {}).duplicate(true)
 	BattlePresentationCatalog.configure(content_catalog)
 	battle_id = str(snapshot.get("battle_id", ""))
 	status = str(snapshot.get("status", ""))

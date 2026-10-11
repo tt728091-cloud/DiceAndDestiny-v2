@@ -18,8 +18,10 @@ const PALETTES := {
 	"curse": [Color("ad9cc0"), Color("7a678f"), Color("5a4a6b"), Color("2a2133"), Color("170f1f"), Color("e4d8f0")],
 	"venom": [Color("b7c296"), Color("7f8c5f"), Color("5d6943"), Color("2c3320"), Color("11160a"), Color("e8efd2")],
 	"brine": [Color("a9c4c3"), Color("6c8e8f"), Color("4d6c6d"), Color("223535"), Color("0b1819"), Color("dcecec")],
+	"bell": [Color("c9b98f"), Color("958459"), Color("6f6240"), Color("332c1b"), Color("17130a"), Color("efe4c4")],
+	"eel": [Color("9fb3a6"), Color("677d70"), Color("4a5d52"), Color("1f2a24"), Color("0a120e"), Color("d8e6dc")],
 }
-const DIE_PALETTES := {"curse_d6": "curse", "venom_d6": "venom", "brine_d6": "brine"}
+const DIE_PALETTES := {"curse_d6": "curse", "venom_d6": "venom", "brine_d6": "brine", "bell_d6": "bell", "eel_d6": "eel"}
 const KEPT_GLOW := Color("ffd77a")
 const CURSE_BADGE := Color("4b1a78")
 const CURSE_INK := Color("f0d9ff")
@@ -290,6 +292,21 @@ static func _build_glyph(symbol_id: String) -> Dictionary:
 				"solid": [["poly", PackedVector2Array([Vector2(50, 5), Vector2(88, 27), Vector2(88, 73), Vector2(50, 95), Vector2(12, 73), Vector2(12, 27)])]],
 				"inner": [["line", PackedVector2Array([Vector2(50, 50), Vector2(50, 10)]), 4.0], ["line", PackedVector2Array([Vector2(50, 50), Vector2(84, 70)]), 4.0], ["line", PackedVector2Array([Vector2(50, 50), Vector2(16, 70)]), 4.0]],
 			}
+		"toll":
+			return {
+				"solid": [["poly", _path("M50 6 C33 6 25 19 25 37 L25 60 C25 68 17 72 12 80 L88 80 C83 72 75 68 75 60 L75 37 C75 19 67 6 50 6 Z")], ["circle", Vector2(50, 88), 8.0]],
+				"inner": [["line", PackedVector2Array([Vector2(31, 58), Vector2(69, 58)]), 5.0], ["line", PackedVector2Array([Vector2(40, 22), Vector2(40, 46)]), 4.0]],
+			}
+		"snare":
+			# A figure-eight loop: the eel's knotted ribbons.
+			var loop := PackedVector2Array()
+			for step in 49:
+				var t := TAU * step / 48.0
+				var d := 1.0 + sin(t) * sin(t)
+				loop.append(Vector2(50.0 + 42.0 * cos(t) / d, 50.0 + 42.0 * sin(t) * cos(t) / d))
+			return {"solid": [["line", loop, 11.0]]}
+		"murk":
+			return {"solid": [["ring", Vector2(50, 50), 30.0, 6.0], ["circle", Vector2(50, 50), 7.0]]}
 	return {}
 
 ## Absolute M/L/H/V/C/Q/Z path data sampled into one point list.

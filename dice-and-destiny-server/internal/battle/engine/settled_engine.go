@@ -2281,6 +2281,34 @@ func (e Engine) handleHandLimitCommand(battle *state.Battle, cmd command.Command
 	return e.advanceSettledSegment(battle)
 }
 
+// reconcileHandLimitWindow re-checks a hand-limit window restored after
+// suspended Venom or Curse work. That work can remove hand cards, so keep only
+// actors still over their limit, or continue once nobody needs to discard.
+func (e Engine) reconcileHandLimitWindow(battle *state.Battle) ([]event.Event, bool, error) {
+	window := battle.Settled.Window
+	if battle.Settled.Stage != stageHandLimit || window == nil {
+		return nil, false, nil
+	}
+	var overLimit []string
+	for _, actorID := range window.RequiredActorIDs {
+		if len(battle.Actors[actorID].Cards.Hand) > battle.Settled.Actors[actorID].HandLimit {
+			overLimit = append(overLimit, actorID)
+		}
+	}
+	if len(overLimit) == len(window.RequiredActorIDs) {
+		return nil, false, nil
+	}
+	if len(overLimit) > 0 {
+		openSettledWindowForActors(battle, "hand-limit", stageHandLimit, "choose_card", []command.Type{command.TypeCommitInteraction}, overLimit, false)
+		return nil, true, nil
+	}
+	closeSettledWindow(battle)
+	battle.Settled.PendingDamage = nil
+	battle.Settled.Stage = "complete"
+	events, err := e.advanceSettledSegment(battle)
+	return events, true, err
+}
+
 func validateSettledPending(cmd command.Command, pending state.PendingInput) error {
 	var id string
 	var planning *command.PlanningCheckpoint

@@ -1,0 +1,33 @@
+{
+  "schema_version": 1,
+  "id": "eel_d6",
+  "name": "Eel Die",
+  "die_type": "combat",
+  "side_count": 6,
+  "faces": [
+    {
+      "number": 1,
+      "symbol": "murk"
+    },
+    {
+      "number": 2,
+      "symbol": "snare"
+    },
+    {
+      "number": 3,
+      "symbol": "murk"
+    },
+    {
+      "number": 4,
+      "symbol": "snare"
+    },
+    {
+      "number": 5,
+      "symbol": "murk"
+    },
+    {
+      "number": 6,
+      "symbol": "snare"
+    }
+  ]
+}
