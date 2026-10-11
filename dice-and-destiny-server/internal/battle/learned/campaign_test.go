@@ -174,7 +174,8 @@ func TestCampaignAwardsVictoryXPAndAdvancesEncounters(t *testing.T) {
 
 	opponents := map[string]bool{}
 	victories, defeats := 0, 0
-	for seed := uint64(1); seed <= 200 && (victories < len(encounters) || defeats == 0); seed++ {
+	sawWoundedStart, sawMend := false, false
+	for seed := uint64(1); seed <= 200 && (victories < len(encounters)-1 || defeats == 0 || len(opponents) < len(encounters) || !sawWoundedStart); seed++ {
 		before := readSave(t, contentRoot, loadoutRoot, save.ID).Sheet
 		next := c.campaign.NextEncounter(before)
 		s := session(next)
@@ -186,13 +187,25 @@ func TestCampaignAwardsVictoryXPAndAdvancesEncounters(t *testing.T) {
 			t.Fatalf("encounter %s fought %s", next.ID, got)
 		}
 		opponents[next.Opponent] = true
-		if got := s.current.Result.Snapshot.Actors[s.humanSeat].MaxHealth; got != deckHealth(before.Deck) {
-			t.Fatalf("campaign battle used a %d-card deck, not the save's %d cards", got, deckHealth(before.Deck))
+		// Wounds carry over: they start in the removed pile and still count
+		// toward max health.
+		start, _ := s.environment.Observe(s.humanSeat)
+		actor := start.Snapshot.Actors[s.humanSeat]
+		if actor.MaxHealth != deckHealth(before.Deck)+deckHealth(before.Wounds) || actor.CurrentHealth != deckHealth(before.Deck) || actor.RemovedCount != deckHealth(before.Wounds) {
+			t.Fatalf("battle started at %d/%d with %d removed, not the save's %d healthy and %d wounded", actor.CurrentHealth, actor.MaxHealth, actor.RemovedCount, deckHealth(before.Deck), deckHealth(before.Wounds))
+		}
+		if len(before.Wounds) > 0 {
+			sawWoundedStart = true
 		}
 		if object(view["campaign"])["outcome"] != nil || object(view["campaign"])["save_id"] != save.ID {
 			t.Fatal("a new battle carried an outcome or the wrong save")
 		}
 		view = playCampaignBattle(t, s)
+		end, _ := s.environment.Observe(s.humanSeat)
+		removedAtEnd := 0
+		for _, n := range end.Snapshot.Actors[s.humanSeat].RemovedComposition {
+			removedAtEnd += n
+		}
 		after := readSave(t, contentRoot, loadoutRoot, save.ID).Sheet
 		outcome := s.campaign.outcome
 		if outcome == nil || object(view["campaign"])["outcome"] == nil {
@@ -211,12 +224,29 @@ func TestCampaignAwardsVictoryXPAndAdvancesEncounters(t *testing.T) {
 			if outcome.RunCompleted != (wantNext == 0) || (wantNext == 0 && after.Campaign.RunsCompleted != campaignState(before).RunsCompleted+1) {
 				t.Fatalf("run completion wrong: %+v %+v", outcome, after.Campaign)
 			}
+			// The removed pile becomes the save's wounds; clearing the
+			// campaign mends them all. Owned copies are never lost.
+			owned := deckHealth(before.Deck) + deckHealth(before.Wounds)
+			if deckHealth(after.Deck)+deckHealth(after.Wounds) != owned {
+				t.Fatalf("victory changed the owned copies: %d → %d", owned, deckHealth(after.Deck)+deckHealth(after.Wounds))
+			}
+			if outcome.RunCompleted {
+				sawMend = true
+				if len(after.Wounds) != 0 || outcome.WoundsMended != removedAtEnd || outcome.Health != owned {
+					t.Fatalf("clearing the campaign did not mend: %+v %+v", outcome, after.Wounds)
+				}
+			} else if deckHealth(after.Wounds) != removedAtEnd || outcome.Wounds != removedAtEnd || outcome.Health != owned-removedAtEnd {
+				t.Fatalf("victory recorded %d wounds, but %d cards ended removed: %+v", deckHealth(after.Wounds), removedAtEnd, outcome)
+			}
 		default:
 			if outcome.Result == "defeat" {
 				defeats++
 			}
 			if after.XP != before.XP || outcome.XPAwarded != 0 || c.campaign.NextEncounter(after).ID != next.ID {
 				t.Fatalf("%s changed XP or the encounter: before %+v after %+v", outcome.Result, before, after)
+			}
+			if !reflect.DeepEqual(after.Wounds, before.Wounds) || !reflect.DeepEqual(after.Deck, before.Deck) {
+				t.Fatalf("a %s changed the wounds: before %v after %v", outcome.Result, before.Wounds, after.Wounds)
 			}
 		}
 		// Spend the first reward between battles: the next battle fights with it.
@@ -234,15 +264,38 @@ func TestCampaignAwardsVictoryXPAndAdvancesEncounters(t *testing.T) {
 		s.mu.Lock()
 		s.recordCampaignBattle()
 		s.mu.Unlock()
-		if _, err = loadout.RecordCampaignBattle(loadoutRoot, save.ID, c.economy, c.catalogs, c.campaign, next.ID, outcome.BattleID, "victory"); err == nil {
+		if _, err = loadout.RecordCampaignBattle(loadoutRoot, save.ID, c.economy, c.catalogs, c.campaign, next.ID, outcome.BattleID, "victory", nil); err == nil {
 			t.Fatal("a battle was rewarded twice")
 		}
 		if again := readSave(t, contentRoot, loadoutRoot, save.ID).Sheet; again.XP != after.XP || again.Revision != after.Revision {
 			t.Fatal("re-recording changed the save")
 		}
 	}
-	if victories < len(encounters) || defeats == 0 || len(opponents) != 3 {
-		t.Fatalf("missing coverage: %d victories, %d defeats, opponents %v", victories, defeats, opponents)
+	if victories < len(encounters)-1 || defeats == 0 || len(opponents) != 3 || !sawWoundedStart {
+		t.Fatalf("missing coverage: %d victories, %d defeats, opponents %v, wounded start %v", victories, defeats, opponents, sawWoundedStart)
+	}
+	// Clearing the last encounter mends every wound, including new ones. (The
+	// scripted player rarely beats the last encounter wounded, so record it.)
+	if !sawMend {
+		before := readSave(t, contentRoot, loadoutRoot, save.ID).Sheet
+		last := c.campaign.NextEncounter(before)
+		if last.ID != encounters[len(encounters)-1].ID || len(before.Wounds) == 0 {
+			t.Fatalf("expected to face the last encounter wounded: %s %v", last.ID, before.Wounds)
+		}
+		removed := map[string]int{}
+		for _, e := range before.Wounds {
+			removed[e.CardID] += e.Count
+		}
+		removed[before.Deck[0].CardID]++
+		outcome, err := loadout.RecordCampaignBattle(loadoutRoot, save.ID, c.economy, c.catalogs, c.campaign, last.ID, "final-victory", "victory", removed)
+		if err != nil {
+			t.Fatal(err)
+		}
+		after := readSave(t, contentRoot, loadoutRoot, save.ID).Sheet
+		owned := deckHealth(before.Deck) + deckHealth(before.Wounds)
+		if !outcome.RunCompleted || outcome.WoundsMended != deckHealth(before.Wounds)+1 || len(after.Wounds) != 0 || deckHealth(after.Deck) != owned || after.XP != before.XP+last.XP {
+			t.Fatalf("clearing the campaign did not mend every wound: %+v %+v", outcome, after)
+		}
 	}
 
 	// An ordinary progression battle afterwards earns nothing for the save.

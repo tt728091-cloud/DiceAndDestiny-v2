@@ -17,17 +17,29 @@ Every campaign is a named **save slot**: the player's own character sheet, copie
 2. **Fight · <encounter>** starts the next encounter. It uses the save's deck and ability board, Seat A, and the unified defense rule.
 3. When the battle ends, the authority records the result in the campaign save:
    - **Victory:** adds the encounter's XP and advances to the next encounter. After the last encounter, the run counter increases and the next run starts again at the first encounter. XP and cards carry over.
-   - **Defeat or draw:** earns nothing; the same encounter is offered again.
+   - **Wounds carry over (victory):** every card in your removed pile at the end of the battle becomes a wound (see below).
+   - **Defeat or draw:** earns nothing; the same encounter is offered again, and your wounds stay as they were before that battle.
 4. The result screen shows the reward. **Continue · Spend XP & Next Battle** returns to the Campaign screen.
 5. **Prepare · Deck & Abilities** opens the campaign's own deck screen (see below). Character Creation stays the admin editor for card trees, cards and abilities outside the campaign.
 
 The client never names a reward amount. The battle session knows it is a campaign battle and which encounter it is. When the battle becomes terminal, it calls `loadout.RecordCampaignBattle`, which commits the XP and the campaign position in one atomic write to the save. Each battle ID is recorded once. A battle whose encounter is no longer the save's next encounter earns nothing.
 
+## Wounds
+
+Cards removed in a battle are **wounds**, and they carry over between campaign battles:
+
+- **After a victory,** the save's wounds become exactly the copies in your removed pile at the end. That includes earlier wounds, minus any healed during the battle. The save moves those copies from `deck` to `wounds` (copies already wounded are chosen first, keeping shared cards' tree tags).
+- **The next battle starts wounded.** Wounded copies start in the removed pile and still count toward max health, so 12 cards with 5 wounds start at 7/12, with 5 in the removed pile. The opening draw never reaches them, and an in-battle heal can restore them. This uses `battle.WithCarriedWounds` and the `seat_wounds` field of the reset request and replay record.
+- **Out of play until mended.** Wounded copies are owned and keep their XP value, but you can't play, trade or sell them. Selling one and buying a fresh copy would be free healing. Prepare lists them under **Wounded**, with their XP. Buying new cards still adds health.
+- **Clearing the campaign's last encounter mends every wound.** Out-of-battle healing (bandages, rests, relics) is planned and not built yet.
+- **A defeat or draw records no wounds,** so a lost battle never leaves the deck at 0 health.
+- **Where it shows:** the result screen, the Campaign screen and the save list show health as "7/12 health · 5 wounded".
+
 ## Prepare screen
 
 `app/screens/campaign/campaign_prepare.gd` shows one campaign save and nothing else:
 
-- **Left:** your deck, any stored cards, and your abilities. Each card row shows its art, copies, energy and how many upgrades are open, and on the right the XP per card × copies over the total (e.g. "10 XP × 3" / "30 XP"). The deck heading shows card count and total deck XP. **+ Add a new card** is at the bottom.
+- **Left:** your deck, any wounded and stored cards, and your abilities. Each card row shows its art, copies, energy and how many upgrades are open, and on the right the XP per card × copies over the total (e.g. "10 XP × 3" / "30 XP"). The deck heading shows card count and total deck XP. **+ Add a new card** is at the bottom.
 - **Center:** select a deck card and its card tree appears. The card is highlighted, cards you hold glow gold, and cards you can reach from it pulse. Click another card you hold to switch to it; click any other card to preview it and see how it differs.
 - **Right:** the selected card and what you can do with it:
   - **Upgrade** (pay the XP difference) or **Trade down** (get the difference back). Copies move along a tree connection and stay in your deck, so health never changes. With more than one copy that could go, a prompt asks how many: 1 up to "All N", defaulting to all, with the total XP shown. Cancel and Esc spend nothing.
@@ -75,7 +87,7 @@ The runtime pins one opponent per session, so the client re-initializes it with 
 
 ## Storage
 
-Campaign saves live in `<loadout root>/campaigns/<save id>.json` (`loadout.CampaignSave`). Each holds its name, character, creation time and `sheet`: deck, stored cards, ability board, XP and budget, `earned_xp`, and `campaign` (next encounter, victories, defeats, runs completed, and recent recorded battle IDs). Save IDs are `<character>-<UTC timestamp>` and are checked against a strict pattern, so a request cannot reach outside the folder.
+Campaign saves live in `<loadout root>/campaigns/<save id>.json` (`loadout.CampaignSave`). Each holds its name, character, creation time and `sheet`: deck, stored cards, `wounds` (with `wound_value` in the XP ledger), ability board, XP and budget, `earned_xp`, and `campaign` (next encounter, victories, defeats, runs completed, and recent recorded battle IDs). Save IDs are `<character>-<UTC timestamp>` and are checked against a strict pattern, so a request cannot reach outside the folder.
 
 Runtime ops:
 

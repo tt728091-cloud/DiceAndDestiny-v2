@@ -141,7 +141,7 @@ func _render_saves() -> void:
 		_label(text, str(save.name), 22, STYLE.GOLD_BRIGHT)
 		var progress: Dictionary = save.get("campaign", {})
 		var next: Dictionary = save.get("next_encounter", {})
-		_label(text, "%s · %d health · %d XP to spend" % [save.character_name, int(save.health), int(save.xp)], 16)
+		_label(text, "%s · %s · %d XP to spend" % [save.character_name, _health_text(save), int(save.xp)], 16)
 		_label(text, "Run %d · %d victories · next: %s (%d of %d)" % [int(progress.get("runs_completed", 0)) + 1, int(progress.get("victories", 0)), next.get("name", ""), int(progress.get("next_encounter", 0)) + 1, encounters.size()], 14, STYLE.MUTED)
 		var id := str(save.id)
 		var play := STYLE.accent(_button(row, "Continue", func(): _open_save(id), "campaign.continue." + id))
@@ -231,7 +231,7 @@ func _render_play() -> void:
 	var progress: Dictionary = save.get("campaign", {})
 	_title.text = str(save.name)
 	_subtitle.text = "DICE & DESTINY  /  CAMPAIGN  /  %s" % str(save.character_name).to_upper()
-	_summary.text = "%s · %d health · %d XP to spend · Run %d · %d victories" % [save.character_name, int(save.health), int(save.xp), int(progress.get("runs_completed", 0)) + 1, int(progress.get("victories", 0))]
+	_summary.text = "%s · %s · %d XP to spend · Run %d · %d victories" % [save.character_name, _health_text(save), int(save.xp), int(progress.get("runs_completed", 0)) + 1, int(progress.get("victories", 0))]
 	_render_banner()
 	_render_path(int(progress.get("next_encounter", 0)))
 	var next: Dictionary = save.get("next_encounter", {})
@@ -239,6 +239,7 @@ func _render_play() -> void:
 	_fight.tooltip_text = "%s Victory earns %d XP." % [str(next.get("description", "")), int(next.get("xp", 0))]
 	var blocked := ""
 	if not save.get("playable", true): blocked = "%s is no longer a campaign character." % save.character_name
+	elif int(save.get("health", 0)) == 0 and int(save.get("wounds", 0)) > 0: blocked = "Every card in your deck is wounded. Open Prepare and buy a new card."
 	elif int(save.get("health", 0)) == 0: blocked = "Your deck is empty. Open Prepare and buy at least one card."
 	elif not save.get("type_conflicts", []).is_empty(): blocked = "Your deck has a type conflict. Open Prepare to sell or store the card."
 	elif not save.get("tree_conflicts", []).is_empty(): blocked = "The campaign uses only card-tree cards. In Prepare, sell or store: %s." % ", ".join(PackedStringArray(save.tree_conflicts))
@@ -257,7 +258,8 @@ func _render_banner() -> void:
 		color = STYLE.LOSS
 	elif int(outcome.get("xp_awarded", 0)) > 0:
 		_banner.text = "Victory at %s · +%d XP" % [encounter.get("name", ""), int(outcome.xp_awarded)]
-		if outcome.get("run_completed", false): _banner.text += " · Campaign cleared! A new run begins."
+		if outcome.get("run_completed", false): _banner.text += " · Campaign cleared! Every wound is mended and a new run begins."
+		elif int(outcome.get("wounds", 0)) > 0: _banner.text += " · %d wounded %s carry over" % [int(outcome.wounds), "card" if int(outcome.wounds) == 1 else "cards"]
 	else:
 		_banner.text = "%s at %s · no XP earned" % [str(outcome.get("result", "defeat")).capitalize(), encounter.get("name", "")]
 		color = STYLE.LOSS
@@ -325,6 +327,12 @@ func _open_deck() -> void:
 func _back_to_menu() -> void:
 	get_tree().change_scene_to_file("res://app/boot/battle_bootstrap.tscn")
 	queue_free()
+
+## "7/12 health · 5 wounded" when wounds carry over, else "12 health".
+func _health_text(save: Dictionary) -> String:
+	var wounds := int(save.get("wounds", 0))
+	if wounds == 0: return "%d health" % int(save.get("health", 0))
+	return "%d/%d health · %d wounded" % [int(save.health), int(save.get("max_health", 0)), wounds]
 
 func _show_error(text: String) -> void:
 	_message.text = text

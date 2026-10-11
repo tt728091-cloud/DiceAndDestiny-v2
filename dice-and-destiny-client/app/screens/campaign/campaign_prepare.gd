@@ -114,7 +114,8 @@ func reload() -> bool:
 		var authored: Dictionary = runtime.card_authoring()
 		if authored.get("ok") == true: authoring = authored.result
 	_title.text = "Prepare · %s" % str(data.save_name)
-	_health.text = str(int(data.health))
+	var wounds := int(data.get("max_health", data.health)) - int(data.health)
+	_health.text = str(int(data.health)) if wounds == 0 else "%d/%d" % [int(data.health), int(data.max_health)]
 	_xp.text = str(int(data.xp))
 	if not _selection_valid(): selection = _default_selection()
 	_render()
@@ -157,6 +158,9 @@ func _render_list() -> void:
 		STYLE.label(_list, "The campaign uses only card-tree cards. Sell or store: %s." % ", ".join(PackedStringArray(conflicts)), 13, STYLE.LOSS)
 	for entry in _sorted(data.deck):
 		_list_row(entry, "card")
+	if not data.get("wounds", []).is_empty():
+		STYLE.heading(_list, "Wounded · out of play until the campaign is cleared")
+		for entry in _sorted(data.wounds): _wounded_row(entry)
 	if not data.collection.is_empty():
 		STYLE.heading(_list, "Stored · not in your deck")
 		for entry in _sorted(data.collection): _list_row(entry, "stored")
@@ -187,6 +191,16 @@ func _list_row(entry: Dictionary, kind: String) -> void:
 	row.button_pressed = selection.get("kind") == kind and selection.get("id") == id and str(selection.get("tree", "")) == tree
 	row.pressed.connect(func(): _select({"kind": kind, "id": id, "tree": tree}))
 	_row_xp(row, int(entry.sell.cost), int(entry.count))
+
+## A wounded copy: shown for its XP, but it can't be played, traded or sold
+## until clearing the campaign mends it.
+func _wounded_row(entry: Dictionary) -> void:
+	var id := str(entry.card_id)
+	var row := _row_button(_list, "%s\n×%d  ·  wounded" % [_card_name(id), int(entry.count)], STYLE.icon(STYLE.card_texture(id), 34, 46), "prepare.wounded." + id)
+	row.disabled = true; row.toggle_mode = false
+	row.tooltip_text = "Removed in an earlier battle. Wounds carry over between battles and start each battle in your removed pile. Clearing the campaign's last encounter mends them."
+	row.add_theme_color_override("font_disabled_color", STYLE.LOSS.lightened(0.2))
+	_row_xp(row, int(entry.value), int(entry.count))
 
 ## The XP a row's copies are worth, on the row's right: "10 XP × 3" over "30 XP".
 func _row_xp(row: Button, each: int, count: int) -> void:

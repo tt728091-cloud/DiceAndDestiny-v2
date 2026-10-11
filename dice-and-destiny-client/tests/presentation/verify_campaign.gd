@@ -93,6 +93,9 @@ func _run() -> void:
 		print("campaign attempt %d: %s" % [attempt + 1, result.battle_result])
 		if won:
 			_expect(reward != null and "+20 XP · 120 XP to spend" in reward.text, "victory awards the encounter's XP")
+			var wounded := int(result.campaign.outcome.get("wounds", 0))
+			_expect(wounded == int(battle._view.actor("blade").get("max_health", 0)) - int(battle._view.actor("blade").get("current_health", 0)), "every card removed in the battle becomes a wound")
+			if wounded > 0: _expect(reward != null and "%d wounded" % wounded in reward.text, "the result names the wounds that carry over")
 		else:
 			saw_defeat = saw_defeat or result.battle_result == "defeat"
 			_expect(reward != null and "No XP earned" in reward.text, "a loss earns nothing")
@@ -119,6 +122,8 @@ func _run() -> void:
 	_expect(prepare != null and not campaign.visible and prepare.character_id == "starter", "Prepare opens on the campaign character")
 	if prepare == null: _finish(); return
 	var health := int(prepare.data.health)
+	var max_health := int(prepare.data.max_health)
+	_expect(max_health - health == campaign._save().get("wounds", 0) and prepare._health.text == (str(health) if max_health == health else "%d/%d" % [health, max_health]), "Prepare shows health over max health with the wounds")
 	var price := int(prepare._base_offer("take_stock").cost)
 	await _tap(prepare._add_button)
 	await _tap(_prepare_control(prepare, "prepare.buy.take_stock"))
@@ -127,7 +132,8 @@ func _run() -> void:
 	xp -= price
 	await _tap(_prepare_control(prepare, "prepare.back"))
 	for frame in 6: await process_frame
-	_expect(campaign.visible and "%d health · %d XP to spend" % [health + 1, xp] in campaign._summary.text, "campaign reflects the new deck and XP")
+	var health_text := "%d health" % (health + 1) if max_health == health else "%d/%d health · %d wounded" % [health + 1, max_health + 1, max_health - health]
+	_expect(campaign.visible and "%s · %d XP to spend" % [health_text, xp] in campaign._summary.text, "campaign reflects the new deck, wounds and XP")
 
 	# The next encounter fights with the changed deck.
 	await _click(campaign._fight)
@@ -135,7 +141,7 @@ func _run() -> void:
 	var next_battle: Control = _find(BATTLE_SCRIPT)
 	_expect(next_battle != null and next_battle._view.campaign.encounter.id == "sunken_belfry", "the second encounter starts")
 	if next_battle != null:
-		_expect(int(next_battle._view.actor("blade").max_health) == health + 1, "the next battle uses the purchased card")
+		_expect(int(next_battle._view.actor("blade").max_health) == max_health + 1 and int(next_battle._view.actor("blade").current_health) == health + 1, "the next battle starts with the purchased card and the carried wounds")
 		_expect("CAMPAIGN 2/3 · SUNKEN BELFRY" in _text(next_battle), "the battle names the campaign encounter")
 		_expect(str(next_battle._view.actor("goblin").get("definition_id", "")) == "drowned_oracle_bell_diver", "the second encounter fights the Bell Diver")
 		next_battle.queue_free(); await process_frame

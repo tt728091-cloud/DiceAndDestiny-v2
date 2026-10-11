@@ -204,7 +204,7 @@ func (s *Session) resetLoadout(battleID string, seed uint64, humanSeat string, r
 	if s.config.OpponentCount > 1 && s.config.OpponentDefinition == "" {
 		return nil, fmt.Errorf("multiple opponents require a scripted minion")
 	}
-	var decks map[string][]loadout.Entry
+	var decks, wounds map[string][]loadout.Entry
 	var abilityBoards map[string]content.AbilityBoard
 	if s.config.LoadoutRoot != "" {
 		catalogs, err := CharacterCatalogs(s.config.ContentRoot, s.config.LoadoutRoot)
@@ -220,8 +220,12 @@ func (s *Session) resetLoadout(battleID string, seed uint64, humanSeat string, r
 			return nil, err
 		}
 		if mode == "campaign" {
-			// A campaign battle fights with the campaign save's own sheet.
-			decks = map[string][]loadout.Entry{humanSeat: loadout.BattleDeck(campaign.deck)}
+			// A campaign battle fights with the campaign save's own sheet; its
+			// wounds start in the removed pile.
+			decks = map[string][]loadout.Entry{humanSeat: loadout.BattleDeck(append(append([]loadout.Entry(nil), campaign.deck...), campaign.wounds...))}
+			if len(campaign.wounds) > 0 {
+				wounds = map[string][]loadout.Entry{humanSeat: loadout.BattleDeck(campaign.wounds)}
+			}
 			abilityBoards = map[string]content.AbilityBoard{humanSeat: campaign.board}
 		} else if mode == "progression" {
 			progress, err := loadout.ReadProgress(s.config.LoadoutRoot, character, economy, catalogs[character])
@@ -282,6 +286,7 @@ func (s *Session) resetLoadout(battleID string, seed uint64, humanSeat string, r
 	}
 	transition, err := s.environment.Reset(mlsim.ResetRequest{
 		SeatDecklists:     decks,
+		SeatWounds:        wounds,
 		SeatAbilityBoards: abilityBoards,
 		UnifiedDefense:    unified,
 		Seed:              seed,

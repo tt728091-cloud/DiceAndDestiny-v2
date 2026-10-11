@@ -59,12 +59,14 @@ type Config struct {
 type ResetRequest struct {
 	SeatAbilityBoards map[string]content.AbilityBoard `json:"seat_ability_boards,omitempty"`
 	SeatDecklists     map[string][]loadout.Entry      `json:"seat_decklists,omitempty"`
-	UnifiedDefense    bool                            `json:"unified_defense,omitempty"`
-	SeatTeams         map[string]string               `json:"seat_teams,omitempty"`
-	Seed              uint64                          `json:"seed"`
-	BattleID          string                          `json:"battle_id,omitempty"`
-	SeatModels        map[string]string               `json:"seat_models,omitempty"`
-	SeatDefinitions   map[string]string               `json:"seat_definitions,omitempty"`
+	// SeatWounds are decklist copies that start in the removed pile.
+	SeatWounds      map[string][]loadout.Entry `json:"seat_wounds,omitempty"`
+	UnifiedDefense  bool                       `json:"unified_defense,omitempty"`
+	SeatTeams       map[string]string          `json:"seat_teams,omitempty"`
+	Seed            uint64                     `json:"seed"`
+	BattleID        string                     `json:"battle_id,omitempty"`
+	SeatModels      map[string]string          `json:"seat_models,omitempty"`
+	SeatDefinitions map[string]string          `json:"seat_definitions,omitempty"`
 }
 
 type ActionRecord struct {
@@ -76,6 +78,7 @@ type ActionRecord struct {
 type ReplayRecord struct {
 	SeatAbilityBoards map[string]content.AbilityBoard `json:"seat_ability_boards,omitempty"`
 	SeatDecklists     map[string][]loadout.Entry      `json:"seat_decklists,omitempty"`
+	SeatWounds        map[string][]loadout.Entry      `json:"seat_wounds,omitempty"`
 	UnifiedDefense    bool                            `json:"unified_defense,omitempty"`
 	SeatTeams         map[string]string               `json:"seat_teams,omitempty"`
 	EnvironmentSchema string                          `json:"environment_schema"`
@@ -239,7 +242,7 @@ func (e *Environment) Reset(request ResetRequest) (Transition, error) {
 	e.authority = battle.NewAuthority(
 		simulationEngine,
 		repo,
-		battle.WithAbilityLoadouts(battle.WithDeckLoadouts(e.loadoutAssembler(request), request.SeatDecklists), request.SeatAbilityBoards),
+		battle.WithAbilityLoadouts(battle.WithCarriedWounds(battle.WithDeckLoadouts(e.loadoutAssembler(request), request.SeatDecklists), request.SeatWounds), request.SeatAbilityBoards),
 	)
 	humanSeat, modelSeat := transcriptSeats(request.SeatModels)
 	e.authority.ConfigureTranscriptBattle(battle.TranscriptBattleContext{
@@ -256,6 +259,7 @@ func (e *Environment) Reset(request ResetRequest) (Transition, error) {
 	e.replay = ReplayRecord{
 		SeatAbilityBoards: cloneAbilityBoards(request.SeatAbilityBoards),
 		SeatDecklists:     cloneDecklists(request.SeatDecklists),
+		SeatWounds:        cloneDecklists(request.SeatWounds),
 		UnifiedDefense:    request.UnifiedDefense,
 		EnvironmentSchema: environmentSchema,
 		ObservationSchema: observationSchema,
@@ -527,6 +531,7 @@ func (e *Environment) Metrics() EpisodeMetrics {
 func (e *Environment) Replay(record ReplayRecord) (Transition, error) {
 	transition, err := e.Reset(ResetRequest{
 		SeatDecklists:     cloneDecklists(record.SeatDecklists),
+		SeatWounds:        cloneDecklists(record.SeatWounds),
 		SeatAbilityBoards: cloneAbilityBoards(record.SeatAbilityBoards),
 		Seed:              record.Seed, BattleID: record.BattleID, UnifiedDefense: record.UnifiedDefense,
 		SeatModels: record.SeatModels, SeatDefinitions: record.SeatDefinitions, SeatTeams: record.SeatTeams,

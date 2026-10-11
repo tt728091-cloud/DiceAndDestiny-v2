@@ -32,7 +32,8 @@ func deckValue(deck []Entry, character string, e Economy) int {
 func initializeBudget(p *Progress, e Economy) {
 	p.DeckValue = deckValue(p.Deck, p.Character, e)
 	p.CollectionValue = deckValue(p.Collection, p.Character, e)
-	budget := p.XP + p.DeckValue + p.CollectionValue + p.UpgradeSpent
+	p.WoundValue = deckValue(p.Wounds, p.Character, e)
+	budget := p.XP + p.DeckValue + p.CollectionValue + p.WoundValue + p.UpgradeSpent
 	p.Budget = &budget
 }
 func legacyAbilitySpend(id string, paths map[string]Upgrade, seen map[string]bool) int {
@@ -54,16 +55,18 @@ func reconcileBudget(p *Progress, e Economy) error {
 	}
 	value := deckValue(p.Deck, p.Character, e)
 	collectionValue := deckValue(p.Collection, p.Character, e)
-	available := budget - value - collectionValue - p.UpgradeSpent
+	woundValue := deckValue(p.Wounds, p.Character, e)
+	available := budget - value - collectionValue - woundValue - p.UpgradeSpent
 	if available < 0 {
-		return fmt.Errorf("%s needs a budget of at least %d XP (proposed %d XP); raise its budget or sell cards first", p.Character, value+collectionValue+p.UpgradeSpent, budget)
+		return fmt.Errorf("%s needs a budget of at least %d XP (proposed %d XP); raise its budget or sell cards first", p.Character, value+collectionValue+woundValue+p.UpgradeSpent, budget)
 	}
-	if budget != *p.Budget || value != p.DeckValue || collectionValue != p.CollectionValue || e.AdminRevision != p.AdminRevision {
+	if budget != *p.Budget || value != p.DeckValue || collectionValue != p.CollectionValue || woundValue != p.WoundValue || e.AdminRevision != p.AdminRevision {
 		p.Revision++
 	}
 	p.Budget = &budget
 	p.DeckValue = value
 	p.CollectionValue = collectionValue
+	p.WoundValue = woundValue
 	p.XP = available
 	p.AdminRevision = e.AdminRevision
 	return nil

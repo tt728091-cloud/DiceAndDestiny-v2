@@ -2695,7 +2695,8 @@ func _build_campaign_completion() -> void:
 		reward.add_theme_color_override("font_color", Color("8a2f24"))
 	elif int(outcome.get("xp_awarded", 0)) > 0:
 		reward.text = "+%d XP · %d XP to spend" % [int(outcome.xp_awarded), int(outcome.get("xp", 0))]
-		if outcome.get("run_completed", false): reward.text += "\nCampaign cleared! The next run starts again from the first encounter."
+		if outcome.get("run_completed", false): reward.text += "\nCampaign cleared! Every wound is mended; the next run starts again from the first encounter."
+		elif int(outcome.get("wounds", 0)) > 0: reward.text += "\n%d wounded %s carry over · %d/%d health" % [int(outcome.wounds), "card" if int(outcome.wounds) == 1 else "cards", int(outcome.get("health", 0)), int(outcome.get("health", 0)) + int(outcome.wounds)]
 		reward.add_theme_color_override("font_color", Color("2f6b3a"))
 	else:
 		reward.text = "No XP earned. %s waits for another attempt." % str(encounter.get("name", "The encounter"))

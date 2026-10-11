@@ -58,6 +58,11 @@ type Progress struct {
 	// admin budget override set before it was earned.
 	EarnedXP int               `json:"earned_xp,omitempty"`
 	Campaign *CampaignProgress `json:"campaign,omitempty"`
+	// Wounds are owned copies removed in earlier campaign battles. They stay
+	// out of the deck (no health, no trades, no sales) but keep their XP
+	// value, and start the next battle in the removed pile.
+	Wounds     []Entry `json:"wounds,omitempty"`
+	WoundValue int     `json:"wound_value,omitempty"`
 }
 type Purchase struct {
 	// Tree names the card tree for shared-card trades and their copies.
@@ -368,6 +373,17 @@ func validateProgress(p Progress, lib content.BattleLibrary) error {
 	if err := validateTreeTags(p.Collection, lib.CardTrees); err != nil {
 		return err
 	}
+	seen = map[string]bool{}
+	for _, entry := range p.Wounds {
+		key := entry.CardID + "|" + entry.Tree
+		if _, ok := lib.Cards[entry.CardID]; !ok || entry.Count < 1 || entry.Count > MaxCards || seen[key] {
+			return fmt.Errorf("invalid wounded card %s", entry.CardID)
+		}
+		seen[key] = true
+	}
+	if err := validateTreeTags(p.Wounds, lib.CardTrees); err != nil {
+		return err
+	}
 	return ValidateAbilities(p.Abilities, lib)
 }
 func writeProgress(filename string, p Progress) error { return writeJSON(filename, p) }
@@ -630,7 +646,8 @@ func settlePurchase(p Progress, character string, e Economy, lib content.BattleL
 	}
 	p.DeckValue = deckValue(p.Deck, character, e)
 	p.CollectionValue = deckValue(p.Collection, character, e)
-	p.UpgradeSpent = *p.Budget - p.XP - p.DeckValue - p.CollectionValue
+	p.WoundValue = deckValue(p.Wounds, character, e)
+	p.UpgradeSpent = *p.Budget - p.XP - p.DeckValue - p.CollectionValue - p.WoundValue
 	p.Revision++
 	if err := validateProgress(p, lib); err != nil {
 		return p, err

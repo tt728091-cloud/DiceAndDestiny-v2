@@ -5,6 +5,7 @@ import (
 	"sort"
 	"strings"
 
+	"diceanddestiny/server/internal/battle/engine"
 	"diceanddestiny/server/internal/battle/loadout"
 	"diceanddestiny/server/internal/content"
 )
@@ -16,6 +17,7 @@ type campaignBattle struct {
 	saveID    string
 	saveName  string
 	deck      []loadout.Entry
+	wounds    []loadout.Entry
 	board     content.AbilityBoard
 	character string
 	encounter loadout.Encounter
@@ -93,6 +95,9 @@ func (s *Session) ResetCampaignEncounter(battleID string, seed uint64, saveID, e
 		return nil, fmt.Errorf("the campaign uses only card-tree cards; sell or store %s first", strings.Join(cardNames(lib, blocked), ", "))
 	}
 	if len(save.Sheet.Deck) == 0 {
+		if len(save.Sheet.Wounds) > 0 {
+			return nil, fmt.Errorf("every card in the campaign deck is wounded; buy a new card before fighting")
+		}
 		return nil, fmt.Errorf("the campaign deck is empty; buy at least one card before fighting")
 	}
 	if encounter.Opponent != s.config.OpponentDefinition || encounter.OpponentCount != max(1, s.config.OpponentCount) {
@@ -104,7 +109,7 @@ func (s *Session) ResetCampaignEncounter(battleID string, seed uint64, saveID, e
 			index = i
 		}
 	}
-	battle := &campaignBattle{saveID: save.ID, saveName: save.Name, deck: save.Sheet.Deck, board: save.Sheet.Abilities, character: save.Character, encounter: encounter, index: index, total: len(campaign.Encounters)}
+	battle := &campaignBattle{saveID: save.ID, saveName: save.Name, deck: save.Sheet.Deck, wounds: save.Sheet.Wounds, board: save.Sheet.Abilities, character: save.Character, encounter: encounter, index: index, total: len(campaign.Encounters)}
 	return s.resetLoadout(battleID, seed, "seat-a", false, save.Character, true, "campaign", battle)
 }
 
@@ -117,8 +122,14 @@ func (s *Session) recordCampaignBattle() {
 	b.recorded = true
 	c, err := loadCampaignContext(s.config.ContentRoot, s.config.LoadoutRoot)
 	var outcome loadout.CampaignOutcome
+	var final engine.Result
 	if err == nil {
-		outcome, err = loadout.RecordCampaignBattle(s.config.LoadoutRoot, b.saveID, c.economy, c.catalogs, c.campaign, b.encounter.ID, b.battleID, s.telemetry.Result)
+		// The removed pile carries over as wounds; read it from the human's view.
+		final, err = s.environment.Observe(s.humanSeat)
+	}
+	if err == nil {
+		removed := final.Snapshot.Actors[s.humanSeat].RemovedComposition
+		outcome, err = loadout.RecordCampaignBattle(s.config.LoadoutRoot, b.saveID, c.economy, c.catalogs, c.campaign, b.encounter.ID, b.battleID, s.telemetry.Result, removed)
 	}
 	if err != nil {
 		b.err = err.Error()
@@ -168,6 +179,7 @@ func campaignStatus(contentRoot, loadoutRoot string) (map[string]any, error) {
 			"id": save.ID, "name": save.Name, "character": save.Character, "character_name": lib.Combatants[save.Character].Name,
 			"created_at": save.CreatedAt, "playable": campaign.Allows(save.Character),
 			"xp": save.Sheet.XP, "earned_xp": save.Sheet.EarnedXP, "health": deckHealth(save.Sheet.Deck),
+			"wounds": deckHealth(save.Sheet.Wounds), "max_health": deckHealth(save.Sheet.Deck) + deckHealth(save.Sheet.Wounds),
 			"campaign": state, "next_encounter": next,
 			"type_conflicts": c.access.Problems(save.Character, save.Sheet.Deck, save.Sheet.Abilities),
 			// Equipped cards outside every card tree; the campaign refuses them.
@@ -323,6 +335,10 @@ func campaignLoadout(contentRoot, loadoutRoot, saveID string) (map[string]any, e
 			"sell":  offer(loadout.Purchase{Kind: "sell_collection_card", ID: entry.CardID, Tree: entry.Tree}),
 			"equip": offer(loadout.Purchase{Kind: "equip_collection_card", ID: entry.CardID, Tree: entry.Tree})})
 	}
+	wounded := []map[string]any{}
+	for _, entry := range p.Wounds {
+		wounded = append(wounded, map[string]any{"card_id": entry.CardID, "tree": entry.Tree, "count": entry.Count, "value": e.Value(character, entry)})
+	}
 	paths := e.Characters[character].AbilityUpgrades
 	abilities := []map[string]any{}
 	for _, slot := range []struct {
@@ -354,6 +370,8 @@ func campaignLoadout(contentRoot, loadoutRoot, saveID string) (map[string]any, e
 		"catalog":   characterCatalogView(map[string]content.BattleLibrary{character: lib})[character],
 		"character": character, "name": lib.Combatants[character].Name, "revision": p.Revision, "xp": p.XP, "health": health,
 		"deck": deck, "collection": stored, "trades": trades, "bases": bases, "abilities": abilities,
+		// Wounded copies: owned and worth their XP, but out of play until mended.
+		"wounds": wounded, "max_health": health + deckHealth(p.Wounds),
 		"trees": lib.CardTrees, "tree_order": treeIDs,
 		"tree_conflicts": cardNames(lib, loadout.NonTreeCards(p.Deck, lib.CardTrees)),
 		"max_cards":      loadout.MaxCards,

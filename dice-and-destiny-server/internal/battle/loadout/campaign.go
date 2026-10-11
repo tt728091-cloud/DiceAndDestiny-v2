@@ -6,6 +6,7 @@ import (
 	"os"
 	"path/filepath"
 	"slices"
+	"sort"
 
 	"diceanddestiny/server/internal/content"
 	"gopkg.in/yaml.v3"
@@ -52,6 +53,11 @@ type CampaignOutcome struct {
 	XP            int    `json:"xp"`
 	NextEncounter int    `json:"next_encounter"`
 	RunCompleted  bool   `json:"run_completed"`
+	// Health and Wounds after the battle; WoundsMended counts copies mended
+	// by clearing the campaign.
+	Health       int `json:"health"`
+	Wounds       int `json:"wounds"`
+	WoundsMended int `json:"wounds_mended,omitempty"`
 }
 
 const recordedBattleLimit = 20
@@ -121,7 +127,12 @@ func (c Campaign) NextEncounter(p Progress) Encounter {
 // RecordCampaignBattle commits a finished battle to its campaign save: a
 // victory earns the encounter's XP and advances to the next encounter; anything
 // else leaves the save facing the same encounter.
-func RecordCampaignBattle(root, saveID string, e Economy, catalogs map[string]content.BattleLibrary, c Campaign, encounterID, battleID, result string) (CampaignOutcome, error) {
+//
+// removed is the human's removed pile at the end, by card definition. After a
+// victory those copies become (or stay) the save's wounds, so they start the
+// next battle removed; clearing the last encounter mends every wound. A defeat
+// or draw keeps the wounds from before the battle.
+func RecordCampaignBattle(root, saveID string, e Economy, catalogs map[string]content.BattleLibrary, c Campaign, encounterID, battleID, result string, removed map[string]int) (CampaignOutcome, error) {
 	progressMu.Lock()
 	defer progressMu.Unlock()
 	outcome := CampaignOutcome{BattleID: battleID, EncounterID: encounterID, Result: result}
@@ -154,11 +165,17 @@ func RecordCampaignBattle(root, saveID string, e Economy, catalogs map[string]co
 		p.Budget = &budget
 		state.Victories++
 		state.Next++
+		p.Deck, p.Wounds = woundCopies(append(append([]Entry(nil), p.Deck...), p.Wounds...), p.Wounds, removed)
 		if state.Next == len(c.Encounters) {
 			state.Next = 0
 			state.RunsCompleted++
 			outcome.RunCompleted = true
+			// Clearing the campaign mends every wound.
+			outcome.WoundsMended = entryCount(p.Wounds)
+			p.Deck, p.Wounds = mergeEntries(p.Deck, p.Wounds), nil
 		}
+		p.DeckValue = deckValue(p.Deck, save.Character, e)
+		p.WoundValue = deckValue(p.Wounds, save.Character, e)
 	} else if result == "defeat" {
 		state.Defeats++
 	}
@@ -175,7 +192,66 @@ func RecordCampaignBattle(root, saveID string, e Economy, catalogs map[string]co
 	}
 	outcome.XP = p.XP
 	outcome.NextEncounter = state.Next
+	outcome.Health = entryCount(p.Deck)
+	outcome.Wounds = entryCount(p.Wounds)
 	return outcome, nil
+}
+
+func entryCount(entries []Entry) int {
+	n := 0
+	for _, e := range entries {
+		n += e.Count
+	}
+	return n
+}
+
+// mergeEntries adds b's copies into a, keeping each card's tree tag.
+func mergeEntries(a, b []Entry) []Entry {
+	out := append([]Entry{}, a...)
+	for _, e := range b {
+		out = changeCountIn(out, e.CardID, e.Tree, e.Count)
+	}
+	return out
+}
+
+// woundCopies splits every owned copy (all) into the deck and the wounds, so
+// that the wounds hold exactly the removed copies by definition. Copies that
+// were already wounded are chosen first, keeping shared cards' tree tags.
+func woundCopies(all, previous []Entry, removed map[string]int) (deck, wounds []Entry) {
+	deck = mergeEntries(nil, all)
+	wounds = []Entry{}
+	ids := make([]string, 0, len(removed))
+	for id := range removed {
+		ids = append(ids, id)
+	}
+	sort.Strings(ids)
+	for _, id := range ids {
+		need := removed[id]
+		var sources []Entry
+		for _, e := range previous {
+			if e.CardID == id {
+				sources = append(sources, e)
+			}
+		}
+		for _, e := range deck {
+			if e.CardID == id {
+				sources = append(sources, e)
+			}
+		}
+		for _, src := range sources {
+			take := min(need, deckCountIn(deck, id, src.Tree))
+			if take <= 0 {
+				continue
+			}
+			deck = changeCountIn(deck, id, src.Tree, -take)
+			wounds = changeCountIn(wounds, id, src.Tree, take)
+			need -= take
+		}
+	}
+	if len(wounds) == 0 {
+		wounds = nil
+	}
+	return deck, wounds
 }
 
 // IsTreeCard reports whether a card belongs to any published card tree, as a
