@@ -232,14 +232,16 @@ func (s *State) ResolveBattle(r Rules, end BattleEnd) (Rewards, *BattleReport, e
 			s.log("Defeated by %s: %d defeat wounds, driven back to %s.", pb.Name, report.DefeatWounds, pb.Origin)
 		}
 	default:
-		// A draw: the piles come back as they are; nobody wins; the turn ends.
-		s.Hand, s.Draw, s.Spent = append([]string{}, end.Hand...), append([]string{}, end.Draw...), append([]string{}, end.Spent...)
-		s.Wounds = append([]string{}, end.Removed...)
-		s.Energy = min(end.Energy, pb.EnergyIn)
+		// A draw (both sides fell in the same round) records nothing, as in
+		// the linear campaign: the pre-battle piles, wounds and energy come
+		// back, nobody wins, the enemy stays, and the turn ends.
+		s.Hand, s.Draw, s.Spent = append([]string{}, pb.HandBefore...), append([]string{}, pb.DrawBefore...), append([]string{}, pb.SpentBefore...)
+		s.Wounds = append([]string{}, pb.WoundsBefore...)
+		s.Energy = pb.EnergyIn
 		if pb.Warlord {
 			s.Player = pb.Origin
 		}
-		s.log("The battle with %s ended in a draw.", pb.Name)
+		s.log("The battle with %s ended in a draw: both sides fall back.", pb.Name)
 	}
 	report.EnergyKept = s.Energy
 	report.HandAfter = append([]string{}, s.Hand...)
@@ -247,6 +249,13 @@ func (s *State) ResolveBattle(r Rules, end BattleEnd) (Rewards, *BattleReport, e
 	s.LastBattle = report
 	if s.Result != "" {
 		s.refreshSight(r)
+		return rewards, report, nil
+	}
+	if end.Result == "draw" && pb.Kind == "deadline" {
+		// The deadline fight is forced: after a draw the Warlord attacks again.
+		s.Phase = PhaseTurn
+		s.log("The Warlord attacks again.")
+		s.startBattle(r, battleStart{kind: "deadline", warlord: true, origin: s.Player, position: s.Player})
 		return rewards, report, nil
 	}
 	// A fight ends the turn.

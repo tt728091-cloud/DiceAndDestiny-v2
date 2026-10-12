@@ -118,6 +118,7 @@ def main():
     parser.add_argument("--base")
     parser.add_argument("--token")
     parser.add_argument("--out")
+    parser.add_argument("--text", help="for activate: the text to type into a registered text field")
     parser.add_argument("--segment")
     parser.add_argument("--stage")
     parser.add_argument("--control-id")
@@ -152,7 +153,7 @@ def main():
     elif args.command == "activate":
         if not args.value:
             parser.error("activate requires a semantic control ID")
-        result = request(base, token, "POST", f"/controls/{args.value}/activate", {})
+        result = request(base, token, "POST", f"/controls/{args.value}/activate", {"text": args.text} if args.text is not None else {})
     elif args.command == "wait":
         condition = {"timeout_ms": args.timeout_ms}
         for key in ("segment", "stage", "control_id"):

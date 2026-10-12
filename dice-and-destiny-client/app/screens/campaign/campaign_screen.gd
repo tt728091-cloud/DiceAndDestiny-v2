@@ -97,6 +97,7 @@ func _build_saves(body: Node) -> void:
 	_new_seed = LineEdit.new(); _new_seed.name = "CampaignSeed"; _new_seed.max_length = 19; _new_seed.placeholder_text = "Random"; _new_seed.custom_minimum_size.y = 36
 	_new_seed.tooltip_text = "The same seed builds the same region and draws the same cards. Leave it empty for a random region."
 	new_panel.add_child(_new_seed)
+	_register("campaign.seed", _new_seed, "The new expedition's seed (empty for a random region)")
 	_new_note = STYLE.label(new_panel, "", 14, STYLE.GOLD)
 	_begin = STYLE.accent(_button(new_panel, "Begin campaign", _begin_campaign, "campaign.begin"))
 	_begin.custom_minimum_size.y = 52

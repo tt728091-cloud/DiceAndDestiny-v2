@@ -109,7 +109,7 @@ func _handle_request(peer: StreamPeerTCP, request: Dictionary) -> void:
 		_:
 			if str(request.method) == "POST" and path.begins_with("/controls/") and path.ends_with("/activate"):
 				var control_id := path.trim_prefix("/controls/").trim_suffix("/activate")
-				var result := _activate(control_id)
+				var result := _activate(control_id, _json_body(request.body))
 				_send(peer, 200 if result.ok else 409, result)
 			else: _send(peer, 404, {"error": "route not found", "method": request.method, "path": path})
 
@@ -142,6 +142,7 @@ func _control_list() -> Array:
 		if not control is Control: continue
 		var entry := {"id": control_id, "type": control.get_class(), "visible": control.is_visible_in_tree(), "enabled": _control_enabled(control), "focused": control.has_focus(), "bounds": {"x": control.global_position.x, "y": control.global_position.y, "width": control.size.x, "height": control.size.y}, "tooltip": control.tooltip_text, "description": str(control.get_meta("inspection_description", ""))}
 		if control is Button: entry["text"] = control.text; entry["pressed"] = control.button_pressed
+		if control is LineEdit: entry["text"] = control.text
 		result.append(entry)
 	for control_id in stale: _controls.erase(control_id)
 	result.sort_custom(func(a, b): return str(a.id) < str(b.id))
@@ -152,12 +153,20 @@ func _control_enabled(control: Control) -> bool:
 	if control is BaseButton: return not control.disabled
 	return control.mouse_filter != Control.MOUSE_FILTER_IGNORE
 
-func _activate(control_id: String) -> Dictionary:
+func _activate(control_id: String, body: Dictionary = {}) -> Dictionary:
 	if not _controls.has(control_id): return {"ok": false, "error": "control not found", "control_id": control_id}
 	var control = (_controls[control_id] as WeakRef).get_ref()
 	if not is_instance_valid(control):
 		_controls.erase(control_id)
 		return {"ok": false, "error": "control is stale", "control_id": control_id}
+	if control is LineEdit:
+		# Typing: {"text": "..."} replaces the field's text as a player would.
+		if not body.has("text"): return {"ok": false, "error": "a text field needs {\"text\": ...}", "control_id": control_id}
+		if not _control_enabled(control) or not control.editable: return {"ok": false, "error": "control is hidden or disabled", "control_id": control_id}
+		control.text = str(body.text)
+		control.text_changed.emit(control.text)
+		control.text_submitted.emit(control.text)
+		return {"ok": true, "control_id": control_id, "text": control.text}
 	if not control is Button: return {"ok": false, "error": "control is not activatable", "control_id": control_id}
 	if not _control_enabled(control): return {"ok": false, "error": "control is hidden or disabled", "control_id": control_id}
 	if control.toggle_mode:
@@ -167,7 +176,17 @@ func _activate(control_id: String) -> Dictionary:
 	return {"ok": true, "control_id": control_id}
 
 func _screenshot_response(peer: StreamPeerTCP) -> void:
-	await RenderingServer.frame_post_draw
+	# An occluded or napping window is not drawn by the main loop: force a
+	# frame so the capture is current, and never hang the request.
+	await get_tree().process_frame
+	if DisplayServer.window_can_draw():
+		var drawn := false
+		RenderingServer.frame_post_draw.connect(func(): drawn = true, CONNECT_ONE_SHOT)
+		var started := Time.get_ticks_msec()
+		while not drawn and Time.get_ticks_msec() - started < 2000:
+			await get_tree().create_timer(0.05).timeout
+	else:
+		RenderingServer.force_draw(false)
 	var texture := get_viewport().get_texture()
 	if texture == null: _send(peer, 503, {"error": "viewport texture unavailable"}); return
 	var image := texture.get_image()

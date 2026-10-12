@@ -10,6 +10,9 @@ extends "res://tests/presentation/verify_campaign.gd"
 const EXPEDITION_SCRIPT := "res://app/screens/map/expedition_screen.gd"
 const PREPARE_SCRIPT := "res://app/screens/campaign/campaign_prepare.gd"
 const VIEW_STATE := preload("res://local_client/view_state/battle_view_state.gd")
+## A seed whose Warlord stands on the east slot in round 1 and loses to the
+## proxy when caught there (found with EXPEDITION_SEED_PROBE=1-60).
+const VICTORY_SEED := 8
 
 var runtime
 var map: Control
@@ -23,8 +26,15 @@ func _run() -> void:
 	seed_used = _probe_seed()
 	_expect(seed_used > 0, "a seed whose east tile holds an event site was found")
 	if seed_used == 0: _finish_map(); return
+	if not OS.get_environment("EXPEDITION_SEED_PROBE").is_empty():
+		# Offline helper: report how a straight Warlord hunt ends per seed.
+		var parts := OS.get_environment("EXPEDITION_SEED_PROBE").split("-")
+		for seed in range(int(parts[0]), int(parts[-1]) + 1):
+			print("expedition seed probe: seed %d → %s" % [seed, await _victory_pass(seed)])
+		_finish_map(); return
 	await _full_flow(seed_used)
 	await _layout_pass(Vector2i(1920, 1080), seed_used)
+	await _victory_flow(VICTORY_SEED)
 	_finish_map()
 
 func _finish_map() -> void:
@@ -303,7 +313,11 @@ func _fight() -> String:
 	_expect(not outcome.is_empty() and str(outcome.get("result", "")) == str(result.get("battle_result", "")), "the authority recorded the expedition battle")
 	await _capture(battle, "expedition-battle-result-%s" % str(result.get("battle_result", "")))
 	var proceed := _find_button(battle, "Continue · Back to the map")
-	_expect(proceed != null and battle._center_scroll.get_global_rect().encloses(proceed.get_global_rect()), "Continue is inside the result panel without scrolling")
+	_expect(proceed != null, "the result panel offers Continue · Back to the map (result %s, reward %s)" % [str(result.get("battle_result", "")), reward.text if reward != null else "none"])
+	if proceed == null:
+		battle.queue_free(); await process_frame
+		return ""
+	_expect(battle._center_scroll.get_global_rect().encloses(proceed.get_global_rect()), "Continue is inside the result panel without scrolling")
 	await _click(proceed)
 	for frame in 8: await process_frame
 	map = _find(EXPEDITION_SCRIPT)
@@ -498,6 +512,71 @@ func _full_flow(seed: int) -> void:
 	campaign = _find(CAMPAIGN_SCRIPT)
 	_expect(campaign != null and ("Expedition · won" in _text(campaign._save_list) or "Expedition · run over" in _text(campaign._save_list)), "the campaign list shows the ended expedition")
 	if campaign != null: campaign.queue_free(); await process_frame
+
+## The region victory by pointer: a fresh expedition, explore east, catch the
+## Warlord on the road and beat him; the victory end screen follows.
+func _victory_flow(seed: int) -> void:
+	root.size = Vector2i(1280, 720)
+	for frame in 3: await process_frame
+	var result := await _victory_pass(seed)
+	_expect(result == "victory", "seed %d: the Warlord caught on the road is beaten by pointer (%s)" % [seed, result])
+	if result != "victory": return
+	await _settle_overlays()
+	var state := _state()
+	_expect(state.phase == "victory" and str(state.result) == "victory" and state.wounds.size() == 0 and int(state.xp) > 100, "the region is won: wounds mended, XP earned (%s, xp %s)" % [state.phase, state.xp])
+	_expect(_control(map, "expedition.end.campaigns") != null and "region is won" in _text(map._overlay), "the victory end screen is shown")
+	await _capture(map, "expedition-end-victory-1280")
+	await _press("expedition.end.campaigns")
+	for frame in 6: await process_frame
+	var campaign: Control = _find(CAMPAIGN_SCRIPT)
+	_expect(campaign != null and "Expedition · won" in _text(campaign._save_list), "the campaign list shows the won expedition")
+	if campaign != null: campaign.queue_free(); await process_frame
+
+## Starts an expedition for a seed, explores east and hunts the Warlord by
+## pointer when he stands there; returns the fight's result ("" if none).
+func _victory_pass(seed: int) -> String:
+	var created: Dictionary = runtime.campaign_new("starter", "Victory %d" % seed, "expedition", "", seed)
+	if created.get("ok") != true: return "no campaign"
+	var screen = load(EXPEDITION_SCRIPT).new(); screen.save_id = str(created.result.id); root.add_child(screen)
+	for frame in 6: await process_frame
+	map = screen
+	var result := ""
+	if await _move_to(1, 0):
+		await _select(2, 0); await _press("expedition.card.0"); await _press("expedition.energy.plus")
+		if await _press("expedition.explore"):
+			for attempt in 6:
+				await _settle_overlays()
+				if _state().pending_battle != null:
+					result = await _fight(); break
+				if map.view.phase != "turn": break
+				var warlord := Vector2i(999, 999)
+				for hex in map.view.hexes:
+					if hex.get("warlord", false): warlord = Vector2i(int(hex.q), int(hex.r))
+				if warlord == Vector2i(999, 999): result = "warlord not in sight"; break
+				var player := Vector2i(int(map.view.player.q), int(map.view.player.r))
+				var adjacent := player in _neighbors(warlord.x, warlord.y)
+				if not adjacent:
+					var walked := false
+					for n in _neighbors(warlord.x, warlord.y):
+						if not _path(n).is_empty() and await _walk(n): walked = true; break
+					if _state().pending_battle != null: result = await _fight(); break
+					if not walked:
+						if bool(map.view.turn.can_end_turn): await _press("expedition.end_turn")
+						else: await _press("expedition.card.0"); await _press("expedition.discard"); await _press("expedition.end_turn")
+					continue
+				await _select(warlord.x, warlord.y)
+				if _control(map, "expedition.challenge") == null:
+					if bool(map.view.turn.can_end_turn): await _press("expedition.end_turn")
+					else: await _press("expedition.card.0"); await _press("expedition.discard"); await _press("expedition.end_turn")
+					continue
+				await _press("expedition.challenge")
+				_expect(_state().pending_battle != null and _state().pending_battle.get("warlord", false), "challenging the Warlord starts his fight")
+				await _capture(map, "expedition-warlord-challenge-1280")
+				result = await _fight(); break
+	if result != "victory":
+		if is_instance_valid(screen): screen.queue_free(); await process_frame
+		map = _find(EXPEDITION_SCRIPT)
+	return result
 
 ## A second expedition at 1920×1080 for layout screenshots.
 func _layout_pass(size: Vector2i, seed: int) -> void:

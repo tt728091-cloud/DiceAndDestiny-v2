@@ -1103,7 +1103,16 @@ func _build_player_column(_parent: HBoxContainer) -> void:
 	if history.size() != _selection_roll_number:
 		_selected_indices.clear()
 		if not history.is_empty():
-			for index in history[-1].get("kept_indices", []): _selected_indices.append(int(index))
+			var kept_history: Array = history[-1].get("kept_indices", [])
+			var collapsed := false
+			for index in kept_history:
+				if int(index) >= rolled.size(): collapsed = true
+			if collapsed:
+				# An Ambush keep collapsed the tray onto the chosen dice: they
+				# now sit at 0..n-1 and all of them count as kept.
+				for index in rolled.size(): _selected_indices.append(index)
+			else:
+				for index in kept_history: _selected_indices.append(int(index))
 		_selected_indices.sort()
 		_selection_roll_number = history.size()
 	for owned in actor.get("owned_dice", []):
@@ -2740,12 +2749,13 @@ func _build_expedition_completion() -> void:
 	var report: Dictionary = outcome.get("report", {}) if outcome.get("report") != null else {}
 	var reward := Label.new(); reward.name = "CampaignReward"
 	reward.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	reward.add_theme_font_size_override("font_size", 19)
+	reward.add_theme_font_size_override("font_size", 18)
 	reward.add_theme_stylebox_override("normal", CINEMATIC.paper()); reward.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 	reward.add_theme_color_override("font_shadow_color", Color.TRANSPARENT)
-	# At most three short lines so the Continue button stays inside the result
-	# panel without scrolling.
+	# At most three short lines, and a taller result panel, so the Continue
+	# button stays inside the panel without scrolling.
 	reward.custom_minimum_size.x = 880; reward.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	_place_cinematic(_center_scroll, Rect2(570, 165, 920, 400))
 	if outcome.is_empty():
 		reward.text = "The expedition result was not recorded: %s" % str(_view.campaign.get("error", "unknown error"))
 		reward.add_theme_color_override("font_color", Color("8a2f24"))
@@ -2758,11 +2768,11 @@ func _build_expedition_completion() -> void:
 				if report.get("run_over", false): lines.append("Defeat · the Warlord has won: the run is over")
 				elif int(report.get("defeat_wounds", 0)) > 0: lines.append("Defeat · %d defeat wounds on top of your pre-battle wounds; driven back, the round ends with a rest" % int(report.defeat_wounds))
 				else: lines.append("Defeat · driven back; the round ends with a rest")
-			_: lines.append("A draw · no reward")
+			_: lines.append("A draw · nothing is recorded: your pre-battle cards, wounds and energy come back" + (" · the Warlord attacks again" if str(_view.campaign.get("expedition", {}).get("kind", "")) == "deadline" else ""))
 		lines.append("Back to the map: hand %d · draw %d · Spent %d · wounds %d · energy %d of %d kept" % [report.get("hand_after", []).size(), int(report.get("draw_after", 0)), int(report.get("spent_after", 0)), int(report.get("wounds", 0)), int(report.get("energy_kept", 0)), int(report.get("energy_in", 0))])
 		var extras: Array = []
-		if int(report.get("early_xp", 0)) > 0: extras.append("Early strike: +%d XP and %d extra relic choice(s) pending" % [int(report.early_xp), int(report.get("relic_choices", 0))])
-		if report.get("region_won", false): extras.append("The region is won; every wound is mended (%d)" % int(report.get("wounds_mended", 0)))
+		if int(report.get("early_xp", 0)) > 0: extras.append("Early strike: +%d XP, %d relic choice pending" % [int(report.early_xp), int(report.get("relic_choices", 0))])
+		if report.get("region_won", false): extras.append("Region won: %d wounds mended" % int(report.get("wounds_mended", 0)))
 		if not extras.is_empty(): lines.append(" · ".join(extras))
 		reward.text = "\n".join(lines)
 		reward.add_theme_color_override("font_color", Color("2f6b3a") if str(outcome.get("result", "")) == "victory" else Color("8a2f24"))

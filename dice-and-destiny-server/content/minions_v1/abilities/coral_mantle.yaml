@@ -4,7 +4,7 @@
   "name": "Coral Mantle",
   "type": "defensive",
   "presentation": {
-    "rules_text": "Roll 1D6. 1\u20132 prevent 2 damage; 3\u20134 prevent 3 damage; 5\u20136 prevent 4 damage. Saved cards go to the discard pile."
+    "rules_text": "Roll 1D6. 1\u20132 prevent 1 damage; 3\u20134 prevent 2 damage; 5\u20136 prevent 3 damage. Saved cards go to the discard pile."
   },
   "cost": {
     "energy": 0
@@ -45,7 +45,7 @@
               {
                 "type": "prevent_damage",
                 "target": "selected_proposal",
-                "amount": 2
+                "amount": 1
               }
             ]
           },
@@ -58,7 +58,7 @@
               {
                 "type": "prevent_damage",
                 "target": "selected_proposal",
-                "amount": 3
+                "amount": 2
               }
             ]
           },
@@ -71,7 +71,7 @@
               {
                 "type": "prevent_damage",
                 "target": "selected_proposal",
-                "amount": 4
+                "amount": 3
               }
             ]
           }

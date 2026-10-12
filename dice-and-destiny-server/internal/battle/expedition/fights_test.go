@@ -2,6 +2,7 @@ package expedition
 
 import (
 	"encoding/json"
+	"reflect"
 	"strings"
 	"testing"
 )
@@ -288,15 +289,26 @@ func TestBattleBridgeVictoryDefeatAndEnergyCap(t *testing.T) {
 	if s4.LiveCards() != 1 || report.DefeatWounds != 1 {
 		t.Fatalf("the last card survives: live %d wounds %d", s4.LiveCards(), report.DefeatWounds)
 	}
-	// A draw returns the piles and ends the turn without rewards.
+	// A draw records nothing: the pre-battle piles, wounds and energy come
+	// back (even when the battle wiped out every card), the enemy stays, the
+	// turn ends.
 	s5 := newState(t, r, 6)
 	placeAll(s5, r)
 	s5.teleport(r, from)
+	woundCard(t, s5, "second_wind")
 	act(t, s5, r, Action{Kind: "challenge", Group: g.ID})
-	rewards, _, err = s5.ResolveBattle(r, BattleEnd{BattleID: s5.PendingBattle.ID, Result: "draw", Hand: s5.Hand, Draw: s5.Draw, Spent: s5.Spent, Energy: 10})
+	before := reloaded(t, s5)
+	all := append(append(append([]string{}, s5.Hand...), s5.Draw...), s5.Spent...)
+	rewards, report, err = s5.ResolveBattle(r, BattleEnd{BattleID: s5.PendingBattle.ID, Result: "draw", Removed: append(all, s5.Wounds...), Energy: 40})
 	must(t, err)
-	if rewards.XP != 0 || s5.Gold != 0 || s5.group(g.ID).Defeated {
+	if rewards.XP != 0 || s5.Gold != 0 || s5.group(g.ID).Defeated || report.Result != "draw" {
 		t.Fatal("a draw earns nothing")
+	}
+	if !reflect.DeepEqual(sortedStrings(s5.Wounds), sortedStrings(before.Wounds)) || s5.LiveCards() != before.LiveCards() || s5.Energy != before.PendingBattle.EnergyIn {
+		t.Fatalf("a draw restores the pre-battle piles: wounds %v vs %v, live %d vs %d, energy %d", s5.Wounds, before.Wounds, s5.LiveCards(), before.LiveCards(), s5.Energy)
+	}
+	if s5.PendingBattle != nil || s5.Turn.Number != before.Turn.Number+1 && s5.Phase != PhaseCamp {
+		t.Fatalf("a draw ends the turn: phase %s turn %d", s5.Phase, s5.Turn.Number)
 	}
 }
 
@@ -440,5 +452,38 @@ func TestWarlordMarchesGoalConquerorChallengeAndDeadline(t *testing.T) {
 	raw, _ := json.Marshal(s3.View(r, 1))
 	if !strings.Contains(string(raw), `"result":"victory"`) {
 		t.Fatal("the view reports the region as won")
+	}
+}
+
+// A draw in the forced deadline fight restores the pre-battle piles and the
+// Warlord attacks again at once; the run neither ends nor is won.
+func TestDeadlineDrawRepeatsTheFight(t *testing.T) {
+	r := testRules(t)
+	s := newState(t, r, 6)
+	for s.PendingBattle == nil {
+		act(t, s, r, Action{Kind: "make_camp"})
+		act(t, s, r, Action{Kind: "break_camp"})
+	}
+	first := s.PendingBattle
+	if first.Kind != "deadline" || !first.Warlord {
+		t.Fatalf("the deadline fight: %+v", first)
+	}
+	before := reloaded(t, s)
+	all := append(append(append([]string{}, s.Hand...), s.Draw...), s.Spent...)
+	_, report, err := s.ResolveBattle(r, BattleEnd{BattleID: first.ID, Result: "draw", Removed: all, Energy: 30})
+	must(t, err)
+	if report.Result != "draw" || report.RunOver || report.RegionWon || s.Result != "" {
+		t.Fatalf("a drawn deadline fight neither wins nor ends the run: %+v", report)
+	}
+	if s.PendingBattle == nil || s.PendingBattle.Kind != "deadline" || s.PendingBattle.ID == first.ID || s.Phase != PhaseBattle {
+		t.Fatalf("the Warlord attacks again: %+v", s.PendingBattle)
+	}
+	if s.LiveCards() != before.LiveCards() || len(s.Wounds) != len(before.Wounds) || s.PendingBattle.EnergyIn != before.PendingBattle.EnergyIn {
+		t.Fatalf("the second fight starts from the pre-battle piles: live %d/%d wounds %d/%d energy %d/%d", s.LiveCards(), before.LiveCards(), len(s.Wounds), len(before.Wounds), s.PendingBattle.EnergyIn, before.PendingBattle.EnergyIn)
+	}
+	_, report, err = s.ResolveBattle(r, BattleEnd{BattleID: s.PendingBattle.ID, Result: "victory", Hand: s.Hand, Draw: s.Draw, Spent: s.Spent, Energy: 5})
+	must(t, err)
+	if !report.RegionWon || s.Result != "victory" {
+		t.Fatalf("winning the repeated fight wins the region: %+v", report)
 	}
 }

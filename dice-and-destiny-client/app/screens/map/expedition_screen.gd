@@ -550,6 +550,7 @@ func _render_battle_result(body: VBoxContainer) -> void:
 		lines.append("Energy: brought %d, ended %d, kept %d" % [int(report.get("energy_in", 0)), int(report.get("energy_end", 0)), int(report.get("energy_kept", 0))])
 		lines.append("Cards back on the map: hand %d, draw %d, Spent %d · wounds %d" % [_list(report, "hand_after").size(), int(report.get("draw_after", 0)), int(report.get("spent_after", 0)), int(report.get("wounds", 0))])
 		if int(report.get("defeat_wounds", 0)) > 0: lines.append("Defeat: %d defeat wounds on top of your pre-battle wounds; driven back; the round ends with a rest." % int(report.defeat_wounds))
+		if str(outcome.get("result", "")) == "draw": lines.append("A draw: nothing is recorded; your pre-battle cards, wounds and energy are back.%s" % (" The Warlord attacks again." if str(report.get("kind", "")) == "deadline" else ""))
 		if not str(report.get("site_freed", "")).is_empty(): lines.append("%s is freed." % report.site_freed)
 		if report.get("lieutenant", false) and outcome.get("result", "") == "victory": lines.append("A Lieutenant is slain: the Warlord loses a Lieutenant's Favor.")
 		if report.get("region_won", false): lines.append("The region is won! %d relic choice(s) pending; wounds mended: %d." % [int(report.get("relic_choices", 0)), int(report.get("wounds_mended", 0))])
@@ -616,6 +617,7 @@ func inspection_state() -> Dictionary:
 		"selected_hex": [selected_hex.x, selected_hex.y] if selected_hex != Vector2i(999, 999) else null, "selected_cards": selected_cards, "energy_payment": energy_payment,
 		"placed_tiles": _list(view, "slots").filter(func(s): return s.get("placed", false)).size(), "seen_hexes": _list(view, "hexes").filter(func(h): return h.get("seen", false)).size(),
 		"message": _message.text,
+		"hexes": _list(view, "hexes"), "slots": _list(view, "slots"),
 	}
 
 func _button(parent: Node, text: String, callback: Callable, control_id: String) -> Button:
