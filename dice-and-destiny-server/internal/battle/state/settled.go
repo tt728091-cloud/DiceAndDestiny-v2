@@ -54,6 +54,9 @@ type SettledActorRuntime struct {
 	KeptIndices         []int
 	RollsUsed           int
 	MaxRolls            int
+	// AmbushChoose is how many dice the actor must keep from a first roll
+	// that rolled bonus dice (an Ambush); zero when no choice is pending.
+	AmbushChoose        int `json:",omitempty"`
 	QualifiedAbilityIDs []string
 	SelectedAbilityID   string
 	SelectedTierID      string

@@ -458,6 +458,21 @@ func (s *Session) AdvanceModel() (map[string]any, error) {
 	return s.present(result), nil
 }
 
+// ObserveHuman re-reads the current battle from the human's side without
+// acting: the same viewer-safe presentation a command result carries.
+func (s *Session) ObserveHuman() (map[string]any, error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if s.humanSeat == "" {
+		return nil, fmt.Errorf("no battle has started")
+	}
+	view, err := s.environment.Observe(s.humanSeat)
+	if err != nil {
+		return nil, err
+	}
+	return s.present(view), nil
+}
+
 func (s *Session) Telemetry() (BattleTelemetry, LifetimeTelemetry) {
 	s.mu.Lock()
 	defer s.mu.Unlock()

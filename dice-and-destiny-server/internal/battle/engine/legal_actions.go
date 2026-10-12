@@ -45,8 +45,18 @@ func settledLegalActions(battle *state.Battle, library content.BattleLibrary, ac
 	case stageCurseChoice:
 		return curseCardActions(battle, library, actorID, pending)
 	case stageOffensivePlan:
-		actions = append(actions, planningCardActions(battle, library, actorID, pending)...)
 		runtime := battle.Settled.Actors[actorID]
+		if runtime.AmbushChoose > 0 {
+			// After a bonus first roll the only move is choosing which
+			// loadout-sized set of dice to keep.
+			for _, indices := range indexSubsets(allDieIndices(len(runtime.FinalDice)), false) {
+				if len(indices) == runtime.AmbushChoose {
+					actions = append(actions, legalCommand(battle.ID, actorID, command.TypePlanningKeep, command.PlanningKeepPayload{PendingInputID: pending.ID, Checkpoint: planningCheckpoint(pending), KeptIndices: indices}))
+				}
+			}
+			return actions
+		}
+		actions = append(actions, planningCardActions(battle, library, actorID, pending)...)
 		if containsCommand(window.AllowedCommands, command.TypePlanningRoll) && runtime.RollsUsed == 0 {
 			actions = append(actions, legalCommand(battle.ID, actorID, command.TypePlanningRoll, command.PlanningRollPayload{PendingInputID: pending.ID, Checkpoint: planningCheckpoint(pending)}))
 		}

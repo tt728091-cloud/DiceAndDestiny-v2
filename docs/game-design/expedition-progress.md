@@ -13,7 +13,7 @@ Evidence folder (ignored): `dice-and-destiny-client/.godot/runtime/expedition-ev
 | M1 Configuration and content loading | done | see git log (`M1: …`) |
 | M2 Map rules on the authority | done | see git log (`M2+M3: …`) |
 | M3 Battle bridge | done | see git log (`M2+M3: …`) |
-| M4 Ambush, Fortified, Lieutenant buffs, Conqueror | not started | — |
+| M4 Ambush, Fortified, Lieutenant buffs, Conqueror | done | see git log (`M4: …`) |
 | M5 Client map screen | not started | — |
 | M6 Content complete and full-region play | not started | — |
 | M7 Docs and wrap-up | not started | — |
@@ -68,6 +68,26 @@ Tests (all run and passed): `internal/battle/expedition/{rules_test.go,fights_te
 Files: `internal/battle/deck_loadout_assembler.go` (`PresetPiles`, `WithPresetPiles`: deals the deck loadout's instances into hand/draw/discard/removed, sets energy (clamped), hand limit, `StartingHandSize = 0`, start statuses); `internal/battle/mlsim/environment.go` (`ResetRequest.SeatPresets`, `ReplayRecord.SeatPresets`, replay support, `InspectBattle`); `internal/battle/learned/{session.go,campaign.go,runtime.go}` (`expeditionBattle` context, `ResetExpeditionBattle` using the pending battle's id and seed, `recordExpeditionBattle` reading the terminal battle's piles/energy through `InspectBattle`, the `reset` op's `expedition: true`, `campaign` view with an `expedition` block and the outcome).
 
 Tests (run and passed): `internal/battle/learned/expedition_battle_test.go` — `TestExpeditionBattleBridgeBothWays` plays real battles through the session until both a victory and a defeat occurred (seeds 1..): exact hand/draw/Spent/wound hand-off (hand = map hand + exactly the one Income card at the first decision, so no opening draw; Income draws from the map draw pile), `StartingHandSize 0`, hand limit 6, energy = map energy + Income, the Ambush status when earned, damage taking discard first (wound ledger zones), piles returned exactly (with the post-fight rest when the draw pile ran out), the energy carry-out cap, XP/gold from the authority only, defeat wounds +2 / push back / forced rest, no double recording. `TestMapCardsAreNeverLegalInBattle` — Trailblaze in the battle hand is never in the legal actions, counts as health (max 13).
+
+## M4 — Ambush, Fortified, Lieutenant buffs, Conqueror (2026-10-12)
+
+Engine (`internal/battle/engine/settled_engine.go`, `legal_actions.go`, `state/settled.go`, `snapshot/snapshot.go`):
+- Statuses are read by their `modifiers` fields, never by ID (`statusModifierTotal`, `removeStatusesWith`).
+- **Ambush**: the first planning roll adds one bonus die per stack (`rollBonusDice`, temporary dice of the loadout's die), the status is used up, and `SettledActorRuntime.AmbushChoose` (= the loadout size) opens the choice: the only legal command is `planning_keep` with exactly that many indices (56 keeps for 8 dice); any other command is refused with "choose exactly 5 dice to keep first". The keep collapses the tray onto owned dice 0..4, keeping faces, uses no roll, records the choice in the roll history, and normal keep/reroll resumes (max 3 rolls). Unused Ambush expires at Offensive exit (`expireFirstRollBonuses`). The snapshot's dice state exposes `choose_count`.
+- **Fortified / Conqueror**: `rollSelectedDefense` adds `defense_dice_bonus` × stacks dice; every face feeds its outcome.
+- **Lieutenant's Favor**: `resolvedOffensiveOperations` appends `attack_damage_bonus` × stacks damage to any damaging attack (a miss stays a miss).
+- Tests: `engine/expedition_statuses_test.go` — `TestAmbushRollsBonusDiceThenKeepsFive` (8 dice, only 56 five-keeps legal, keep 4 / reroll / bad index refused without state change, reload mid-choice continues identically, collapse to the chosen faces, roll budget), `TestAmbushIsNotReusedAndExpiresUnused` (no Ambush → 5 dice; round 2 → 5 dice; unused expires through `advanceSettledSegment`), `TestFortifiedAndConquerorAddDefensiveDice` (1/2/3 dice, 2 stacks → 3), `TestLieutenantsFavorAddsDamagePerStack` (0/1/2 stacks, miss stays miss).
+
+Client:
+- `presentation/battle/battle_icons.gd`: icons for ambush, fortified, conqueror, lieutenants_favor, lieutenant, shaken.
+- `presentation/dice/dice_tray.gd`: `_add_die`/`_size_die`; `display()` grows the tray for an Ambush's eight dice and lays them out as two compact rows of four so the ability rail keeps its place; back to five normal dice after the choice.
+- `app/screens/battle/battle_screen.gd`: the "Keep 5/8" control (enabled only with exactly five dice selected; tooltip explains the choice), `_keep_chosen`, history label; `battle_view_state.gd` `choose_count()`.
+- Runtime: `observe` op (viewer-safe current view without acting) + `observe()` in the runtime and gateway; `campaign_new(mode, region, seed)`, `expedition_status/act/deck_change` wrappers; the gateway's `expedition` flag.
+- Test: `tests/presentation/verify_expedition_statuses.gd` (pointer, 1280×720 and 1920×1080): drives a new expedition to an ambushed challenge through the map ops, starts the real battle, checks the Ambush icon with count 3 and the full rules (incl. expiry) on hover with the pointer, clicks Roll → 8 dice shown and selectable, Keep 5/8 disabled until five dice are clicked, keep → the five chosen faces, no roll used, Ambush gone from the bar, reroll back to five dice (Roll 2/3), relaunching the pending battle restores Ambush ×3 on the same battle id (persistence), and skipping the offense unrolled expires it by round 2. Headless and graphical runs PASSED; screenshots inspected: `.godot/runtime/expedition-evidence/m4-screens/expedition-ambush-{status,eight-dice,kept}-{1280x720,1920x1080}.png` — Ambush icon with "3" under the Starter's health bar; eight compact dice in two rows with "Keep 5/8"/"Skip" and all six ability rows visible at both sizes; five kept dice with "Roll 2/3" and Strike's 3-Sword tier lit.
+- Regression (headless): campaign, campaign prepare, battle authority, unified defense, steady guard targeting, curse bloom status, actor HUD tooltips, automatic pass — all PASSED (`m4-godot-regression.log`, `m4-godot.log`).
+- Pre-existing failure, not caused by this work: `tests/phase3/verify_offensive_roll_controls.gd` fails identically on the pristine client files (it looks for the old "Roll 5 Dice" label and drives a learned model); recorded, not fixed.
+
+Fortified, Conqueror and Lieutenant's Favor by pointer: the status bar and hover use the same shared status strip and catalog rules as Ambush (verified by pointer above); their acquisition, target, persistence and per-stack effect are proven by the engine and bridge tests and will be exercised again in the live play-through (M6) against the keep's Fortified garrison and the Warlord.
 
 ## Decisions made during implementation
 

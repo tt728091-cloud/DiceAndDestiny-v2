@@ -1104,6 +1104,9 @@ func (e Engine) advanceSettledSegment(battle *state.Battle) ([]event.Event, erro
 	// on Offensive Exit, whether their ability was selected or not.
 	if battle.Segment.Current == segment.Offensive {
 		expireOffensiveModifiers(battle)
+		if library, err := settledLibrary(battle); err == nil {
+			expireFirstRollBonuses(battle, library)
+		}
 	}
 	if battle.Segment.Current == segment.DamageResolution {
 		expireProgramRoundBonuses(battle)
@@ -1299,6 +1302,9 @@ func (e Engine) handleStatusRollCommand(battle *state.Battle, library content.Ba
 func (e Engine) handleOffensivePlanningCommand(battle *state.Battle, library content.BattleLibrary, cmd command.Command) ([]event.Event, error) {
 	actorID := cmd.ActorID
 	runtime := battle.Settled.Actors[actorID]
+	if runtime.AmbushChoose > 0 && cmd.Type != command.TypePlanningKeep {
+		return nil, fmt.Errorf("choose exactly %d dice to keep first", runtime.AmbushChoose)
+	}
 	switch cmd.Type {
 	case command.TypePlanningCards:
 		var payload command.PlanningCardsPayload
@@ -1334,9 +1340,24 @@ func (e Engine) handleOffensivePlanningCommand(battle *state.Battle, library con
 		}
 		runtime = battle.Settled.Actors[actorID]
 		runtime.RollsUsed = 1
+		// An Ambush rolls bonus dice on the first roll; the actor then chooses
+		// a loadout-sized set to keep, and the status is used up.
+		if bonus := statusModifierTotal(battle, library, actorID, func(m *content.StatusModifiers) int { return m.FirstRollBonusDice }); bonus > 0 {
+			extra, err := e.rollBonusDice(battle, library, actorID, len(dice), bonus)
+			if err != nil {
+				return nil, err
+			}
+			runtime.AmbushChoose = len(dice)
+			dice = append(dice, extra...)
+			removeStatusesWith(battle, library, actorID, func(m *content.StatusModifiers) int { return m.FirstRollBonusDice })
+		}
 		runtime.FinalDice = dice
 		runtime.RollHistory = append(runtime.RollHistory, state.RollBatch{Number: 1, RolledIndices: allDieIndices(len(dice)), Dice: cloneDice(dice)})
-		runtime.QualifiedAbilityIDs = qualifiedAbilities(library, runtime.OffensiveAbilityIDs, dice, runtime.AbilityModifiers)
+		if runtime.AmbushChoose > 0 {
+			runtime.QualifiedAbilityIDs = nil
+		} else {
+			runtime.QualifiedAbilityIDs = qualifiedAbilities(library, runtime.OffensiveAbilityIDs, dice, runtime.AbilityModifiers)
+		}
 		battle.Settled.Actors[actorID] = runtime
 		rotateSettledPending(battle, actorID)
 		return []event.Event{diceEvent(battle, actorID, runtime, allDieIndices(len(dice)))}, nil
@@ -1350,6 +1371,35 @@ func (e Engine) handleOffensivePlanningCommand(battle *state.Battle, library con
 		}
 		if err := validateIndices(runtime.FinalDice, payload.KeptIndices); err != nil {
 			return nil, err
+		}
+		if runtime.AmbushChoose > 0 {
+			// Collapse the bonus roll onto the loadout dice: the chosen dice
+			// take owned-die positions 0..n-1 and keep their faces.
+			if len(payload.KeptIndices) != runtime.AmbushChoose {
+				return nil, fmt.Errorf("choose exactly %d dice to keep", runtime.AmbushChoose)
+			}
+			chosen := append([]int(nil), payload.KeptIndices...)
+			sort.Ints(chosen)
+			owned := curseRuntime(battle).Dice[actorID]
+			kept := make([]state.RolledDie, 0, len(chosen))
+			for i, index := range chosen {
+				die := runtime.FinalDice[index]
+				die.Index = i
+				if i < len(owned) {
+					die.OwnedID, die.DieID = owned[i].ID, owned[i].DefinitionID
+				}
+				kept = append(kept, die)
+			}
+			runtime.FinalDice = kept
+			runtime.KeptIndices = nil
+			runtime.AmbushChoose = 0
+			if n := len(runtime.RollHistory); n > 0 {
+				runtime.RollHistory[n-1].KeptIndices = chosen
+			}
+			runtime.QualifiedAbilityIDs = qualifiedAbilities(library, runtime.OffensiveAbilityIDs, kept, runtime.AbilityModifiers)
+			battle.Settled.Actors[actorID] = runtime
+			rotateSettledPending(battle, actorID)
+			return []event.Event{diceEvent(battle, actorID, runtime, nil)}, nil
 		}
 		for _, i := range payload.KeptIndices {
 			if containsInt(entombedIndices(battle, actorID), i) {
@@ -1739,6 +1789,16 @@ func resolvedOffensiveOperations(battle *state.Battle, library content.BattleLib
 		for _, op := range card.Operations {
 			if op.Modifier != nil && op.Modifier.AddConditionalBonus != nil && requirementsMet(op.Modifier.AddConditionalBonus.Requirements, runtime.FinalDice) {
 				ops = append(ops, op.Modifier.AddConditionalBonus.Operations...)
+			}
+		}
+	}
+	// Statuses that add damage per stack (the Warlord's Lieutenant's Favor)
+	// strengthen every damaging attack; a miss stays a miss.
+	if bonus := statusModifierTotal(battle, library, actorID, func(m *content.StatusModifiers) int { return m.AttackDamageBonus }); bonus > 0 {
+		for _, op := range ops {
+			if op.Type == "deal_damage" {
+				ops = append(ops, content.BattleOperation{Type: "deal_damage", Target: "selected_targets", Amount: bonus})
+				break
 			}
 		}
 	}
@@ -2238,7 +2298,9 @@ func (e Engine) rollSelectedDefense(battle *state.Battle, library content.Battle
 		return nil, nil
 	}
 	var dice []state.RolledDie
-	for i := 0; i < max(1, roll.DiceCount); i++ {
+	// Fortified, Conqueror and similar statuses add defensive dice per stack.
+	count := max(1, roll.DiceCount) + statusModifierTotal(battle, library, selection.ActorID, func(m *content.StatusModifiers) int { return m.DefenseDiceBonus })
+	for i := 0; i < count; i++ {
 		index, err := e.selectOwned(battle, selection.ActorID, selection.SourceID, allOwned(battle, selection.ActorID))
 		if err != nil {
 			return nil, err
@@ -2564,6 +2626,60 @@ func (e Engine) rollCombatDice(battle *state.Battle, library content.BattleLibra
 		dice[index] = rolled
 	}
 	return dice, nil
+}
+
+// rollBonusDice rolls count temporary dice of the actor's first loadout die
+// at tray positions from.. (an Ambush's bonus dice). They are not owned dice:
+// nothing can address them before the actor chooses which dice to keep.
+func (e Engine) rollBonusDice(battle *state.Battle, library content.BattleLibrary, actorID string, from, count int) ([]state.RolledDie, error) {
+	loadout := battle.Actors[actorID].DiceLoadout
+	if len(loadout) == 0 {
+		return nil, errors.New("no combat dice to roll")
+	}
+	def, ok := library.Dice[loadout[0].DiceID]
+	if !ok || def.SideCount < 1 {
+		return nil, fmt.Errorf("unknown combat die %q", loadout[0].DiceID)
+	}
+	var out []state.RolledDie
+	for i := 0; i < count; i++ {
+		n, err := e.namedIntn(battle, "combat_dice", def.SideCount)
+		if err != nil {
+			return nil, err
+		}
+		face := def.Faces[n]
+		out = append(out, state.RolledDie{Index: from + i, DieID: loadout[0].DiceID, Face: face.Number, Value: face.Number, Symbols: []string{face.Symbol}})
+	}
+	return out, nil
+}
+
+// statusModifierTotal sums one per-stack status modifier over an actor's
+// statuses. Modifiers are read by field, never by status ID.
+func statusModifierTotal(battle *state.Battle, library content.BattleLibrary, actorID string, pick func(*content.StatusModifiers) int) int {
+	total := 0
+	for _, status := range battle.Actors[actorID].Statuses {
+		if def, ok := library.Statuses[status.DefinitionID]; ok && def.Modifiers != nil {
+			total += status.Stacks * pick(def.Modifiers)
+		}
+	}
+	return total
+}
+
+// removeStatusesWith removes every status of the actor that grants the picked
+// modifier (all stacks).
+func removeStatusesWith(battle *state.Battle, library content.BattleLibrary, actorID string, pick func(*content.StatusModifiers) int) {
+	for _, status := range append([]state.StatusState(nil), battle.Actors[actorID].Statuses...) {
+		if def, ok := library.Statuses[status.DefinitionID]; ok && def.Modifiers != nil && pick(def.Modifiers) > 0 {
+			removeStatus(battle, actorID, status.DefinitionID, 0)
+		}
+	}
+}
+
+// expireFirstRollBonuses removes unused first-roll bonus statuses (an Ambush
+// nobody rolled with) at the end of the Offensive segment.
+func expireFirstRollBonuses(battle *state.Battle, library content.BattleLibrary) {
+	for _, actorID := range sortedSettledActorIDs(battle) {
+		removeStatusesWith(battle, library, actorID, func(m *content.StatusModifiers) int { return m.FirstRollBonusDice })
+	}
 }
 
 func (e Engine) playSettledCard(battle *state.Battle, library content.BattleLibrary, actorID, instanceID string, targetIDs []string, abilityID string, dieIndex int, statusID string) error {

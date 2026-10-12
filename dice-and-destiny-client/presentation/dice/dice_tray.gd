@@ -31,49 +31,72 @@ var _interactive := false
 var _rolling_indices: Array = []
 var _roll_started_ms := 0
 var _roll_duration_ms := 0
+var _row: GridContainer
 
 func _ready() -> void:
 	_caption = Label.new(); _caption.add_theme_font_size_override("font_size", 14); _caption.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART; _caption.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER; add_child(_caption)
-	var row := GridContainer.new(); row.columns = dice_columns; row.add_theme_constant_override("h_separation", 6); row.add_theme_constant_override("v_separation", 6); add_child(row)
-	for index in 5:
-		var button := Button.new(); button.custom_minimum_size = HUD_DIE_SIZE if hud_compact else Vector2(70, 76); button.add_theme_font_size_override("font_size", 18 if hud_compact else 23); button.toggle_mode = true; button.text = "—"; button.tooltip_text = "Ready die %d" % (index + 1)
-		_style_die(button)
-		button.toggled.connect(_toggle.bind(index))
-		var slot := VBoxContainer.new(); row.add_child(slot); slot.add_child(button); _buttons.append(button)
-		var bound := Label.new(); bound.name = "Entombed%d" % (index + 1); bound.text = "BOUND" if hud_compact else "ENTOMBED"
-		bound.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-		bound.add_theme_font_size_override("font_size", 9 if hud_compact else 12); bound.add_theme_color_override("font_color", Color("251b14"))
-		bound.add_theme_color_override("font_shadow_color", Color.TRANSPARENT)
-		var badge := StyleBoxFlat.new(); badge.bg_color = Color("edc27d"); badge.border_color = Color("edc27d"); badge.set_border_width_all(1); badge.set_corner_radius_all(3)
-		bound.add_theme_stylebox_override("normal", badge)
-		bound.hide(); slot.add_child(bound); _bound_labels.append(bound)
-		_build_mark_map(slot, index)
-		# Carved-stone body beneath the engraved symbol, Curse mark and corner number.
-		var regions := STONE_DIE.layout(button.custom_minimum_size)
-		var stone := STONE_DIE.new(); stone.mode = STONE_DIE.Mode.BODY; button.add_child(stone); _stones.append(stone)
-		var symbol := STONE_DIE.new(); symbol.name = "NormalSymbol"; symbol.mode = STONE_DIE.Mode.GLYPH; symbol.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		button.add_child(symbol); _normal_symbols.append(symbol)
-		var curse := Label.new(); curse.name = "CurseSymbol"; curse.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		curse.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER; curse.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-		var mark: Rect2 = regions.mark
-		curse.position = mark.position; curse.size = mark.size
-		_engrave(curse, int(regions.font_size * 1.3)); curse.add_theme_color_override("font_color", STONE_DIE.CURSE_INK)
-		curse.add_theme_color_override("font_shadow_color", Color.TRANSPARENT)
-		# Centre the letter on the badge even when the font's line is taller.
-		curse.position.y = mark.get_center().y - curse.size.y * 0.5
-		button.add_child(curse); _curse_symbols.append(curse)
-		var number := Label.new(); number.mouse_filter = Control.MOUSE_FILTER_IGNORE; number.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER; number.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-		_engrave(number, int(regions.font_size))
-		var corner: Rect2 = regions.number
-		button.add_child(number); number.position = corner.position; number.size = corner.size; _numbers.append(number)
-		var binding := preload("res://presentation/dice/entomb_binding.gd").new()
-		binding.name = "EntombBinding"; button.add_child(binding); binding.hide(); _bindings.append(binding)
+	_row = GridContainer.new(); _row.columns = dice_columns; _row.add_theme_constant_override("h_separation", 6); _row.add_theme_constant_override("v_separation", 6); add_child(_row)
+	for index in 5: _add_die(index)
 
 	_mark_legend = Label.new(); _mark_legend.text = "CURSED FACES · highlighted numbers"
 	_mark_legend.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_mark_legend.add_theme_font_size_override("font_size", 13)
 	_mark_legend.add_theme_color_override("font_color", Color("e2c6fa"))
 	_mark_legend.hide(); add_child(_mark_legend)
+
+# One die slot: the button, its stone, symbols, number, curse map and binding.
+# Five exist from the start; an Ambush's bonus dice add slots when displayed.
+func _add_die(index: int) -> void:
+	var row := _row
+	var button := Button.new(); button.toggle_mode = true; button.text = "—"; button.tooltip_text = "Ready die %d" % (index + 1)
+	_style_die(button)
+	button.toggled.connect(_toggle.bind(index))
+	var slot := VBoxContainer.new(); row.add_child(slot); slot.add_child(button); _buttons.append(button)
+	var bound := Label.new(); bound.name = "Entombed%d" % (index + 1); bound.text = "BOUND" if hud_compact else "ENTOMBED"
+	bound.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	bound.add_theme_font_size_override("font_size", 9 if hud_compact else 12); bound.add_theme_color_override("font_color", Color("251b14"))
+	bound.add_theme_color_override("font_shadow_color", Color.TRANSPARENT)
+	var badge := StyleBoxFlat.new(); badge.bg_color = Color("edc27d"); badge.border_color = Color("edc27d"); badge.set_border_width_all(1); badge.set_corner_radius_all(3)
+	bound.add_theme_stylebox_override("normal", badge)
+	bound.hide(); slot.add_child(bound); _bound_labels.append(bound)
+	_build_mark_map(slot, index)
+	# Carved-stone body beneath the engraved symbol, Curse mark and corner number.
+	var stone := STONE_DIE.new(); stone.mode = STONE_DIE.Mode.BODY; button.add_child(stone); _stones.append(stone)
+	var symbol := STONE_DIE.new(); symbol.name = "NormalSymbol"; symbol.mode = STONE_DIE.Mode.GLYPH; symbol.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	button.add_child(symbol); _normal_symbols.append(symbol)
+	var curse := Label.new(); curse.name = "CurseSymbol"; curse.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	curse.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER; curse.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	curse.add_theme_color_override("font_color", STONE_DIE.CURSE_INK)
+	curse.add_theme_color_override("font_shadow_color", Color.TRANSPARENT)
+	button.add_child(curse); _curse_symbols.append(curse)
+	var number := Label.new(); number.mouse_filter = Control.MOUSE_FILTER_IGNORE; number.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER; number.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	button.add_child(number); _numbers.append(number)
+	_size_die(index, _die_size(false))
+	var binding := preload("res://presentation/dice/entomb_binding.gd").new()
+	binding.name = "EntombBinding"; button.add_child(binding); binding.hide(); _bindings.append(binding)
+
+## The die size for the usual five dice, or the compact size that fits an
+## Ambush's eight dice in two rows without displacing the ability rail.
+func _die_size(compact: bool) -> Vector2:
+	if compact: return Vector2(44, 48) if hud_compact else Vector2(56, 60)
+	return HUD_DIE_SIZE if hud_compact else Vector2(70, 76)
+
+## Applies a die size to one slot: the button, its engraved number and mark.
+func _size_die(index: int, die_size: Vector2) -> void:
+	var button := _buttons[index]
+	button.custom_minimum_size = die_size
+	button.add_theme_font_size_override("font_size", int(roundf(die_size.y * 0.3)))
+	var regions := STONE_DIE.layout(die_size)
+	var curse := _curse_symbols[index]
+	var mark: Rect2 = regions.mark
+	curse.position = mark.position; curse.size = mark.size
+	_engrave(curse, int(regions.font_size * 1.3))
+	# Centre the letter on the badge even when the font's line is taller.
+	curse.position.y = mark.get_center().y - curse.size.y * 0.5
+	var number := _numbers[index]
+	_engrave(number, int(regions.font_size))
+	var corner: Rect2 = regions.number
+	number.position = corner.position; number.size = corner.size
 
 # Numbers and marks are cut into the stone: dark ink over a lit lower edge.
 func _engrave(label: Label, font_size: int) -> void:
@@ -108,6 +131,14 @@ func _build_mark_map(slot: VBoxContainer, index: int) -> void:
 	panel.hide()
 
 func display(dice: Array, kept: Array = [], interactive: bool = false, caption: String = "Dice", inspection_prefix: String = "") -> void:
+	# An Ambush's first roll shows more dice than the five-die loadout: they
+	# sit in two compact rows so the controls beneath keep their place.
+	while _buttons.size() < dice.size(): _add_die(_buttons.size())
+	var compact := dice.size() > 5
+	if _row != null: _row.columns = 4 if compact else dice_columns
+	var wanted := _die_size(compact)
+	for index in _buttons.size():
+		if _buttons[index].custom_minimum_size != wanted: _size_die(index, wanted)
 	_dice = dice.duplicate(true)
 	_interactive = interactive
 	_rolling_indices.clear()

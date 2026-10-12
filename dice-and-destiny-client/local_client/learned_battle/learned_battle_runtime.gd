@@ -142,7 +142,7 @@ func _selected_model_sha256() -> String:
 
 ## A non-empty `encounter` starts that encounter of the `campaign_save`, with
 ## the save's own deck and abilities; the authority records the result there.
-func start_battle(battle_id: String, human_seat: String, seed: int, rematch: bool = false, character: String = "blade_warden", unified_defense: bool = false, loadout_mode: String = "sandbox", encounter: String = "", campaign_save: String = "") -> Dictionary:
+func start_battle(battle_id: String, human_seat: String, seed: int, rematch: bool = false, character: String = "blade_warden", unified_defense: bool = false, loadout_mode: String = "sandbox", encounter: String = "", campaign_save: String = "", expedition: bool = false) -> Dictionary:
 	var initialized := ensure_initialized()
 	if initialized.get("ok") != true:
 		return {"accepted": false, "error": initialized.get("error", _initialization_error)}
@@ -150,6 +150,7 @@ func start_battle(battle_id: String, human_seat: String, seed: int, rematch: boo
 		"op": "reset",
 		"encounter": encounter,
 		"campaign_save": campaign_save,
+		"expedition": expedition,
 		"loadout_mode": loadout_mode,
 		"battle_id": battle_id,
 		"human_seat": human_seat,
@@ -173,6 +174,12 @@ func telemetry() -> Dictionary:
 	if not _initialized:
 		return {"ok": false, "error": "The learned battle runtime is not initialized."}
 	return _request({"op": "telemetry"})
+
+## Read-only: the current battle as the human sees it, without acting.
+func observe() -> Dictionary:
+	if not _initialized:
+		return {"accepted": false, "error": "The learned battle runtime is not initialized."}
+	return _request({"op": "observe"})
 
 func initialization_error() -> String:
 	return _initialization_error
@@ -201,9 +208,31 @@ func campaign_status() -> Dictionary:
 	return _request({"op": "campaign_status", "loadout_root": WorkspacePaths.runtime_dir("user/character_loadouts"), "content_root": ProjectSettings.globalize_path("res://../dice-and-destiny-server/content")})
 
 ## Starts a campaign: a new named save copying the starting sheet `character`.
-func campaign_new(character: String, campaign_name: String) -> Dictionary:
+## `mode` "expedition" builds a map region (seed 0 lets the authority pick one);
+## "" keeps the original linear encounter list.
+func campaign_new(character: String, campaign_name: String, mode: String = "", region: String = "", seed: int = 0) -> Dictionary:
 	if _native_authority == null: return {"ok": false, "error": _initialization_error}
-	return _request({"op": "campaign_new", "character": character, "name": campaign_name, "loadout_root": WorkspacePaths.runtime_dir("user/character_loadouts"), "content_root": ProjectSettings.globalize_path("res://../dice-and-destiny-server/content")})
+	return _request({"op": "campaign_new", "character": character, "name": campaign_name, "mode": mode, "region": region, "seed": seed, "loadout_root": WorkspacePaths.runtime_dir("user/character_loadouts"), "content_root": ProjectSettings.globalize_path("res://../dice-and-destiny-server/content")})
+
+## Read-only: an expedition save's viewer-safe map view, with the card and
+## status definitions it shows and the pending battle, if any.
+func expedition_status(save_id: String) -> Dictionary:
+	if _native_authority == null: return {"ok": false, "error": _initialization_error}
+	return _request({"op": "expedition_status", "campaign_save": save_id, "loadout_root": WorkspacePaths.runtime_dir("user/character_loadouts"), "content_root": ProjectSettings.globalize_path("res://../dice-and-destiny-server/content")})
+
+## One map action on an expedition save. `action` is the authority's action
+## dictionary (kind, target, slot, cards, energy, card, service, item, gold,
+## count, choice, group, site); `revision` is the sheet revision the view was
+## built on (0 skips the check).
+func expedition_act(save_id: String, action: Dictionary, revision: int = 0) -> Dictionary:
+	if _native_authority == null: return {"ok": false, "error": _initialization_error}
+	return _request({"op": "expedition_act", "campaign_save": save_id, "action": action, "revision": revision, "loadout_root": WorkspacePaths.runtime_dir("user/character_loadouts"), "content_root": ProjectSettings.globalize_path("res://../dice-and-destiny-server/content")})
+
+## One Prepare transaction on an expedition save, at a site or camp; the
+## authority charges the site's Influence first.
+func expedition_deck_change(save_id: String, kind: String, id: String, revision: int, cost: int, target_id: String = "", tree: String = "", count: int = 1) -> Dictionary:
+	if _native_authority == null: return {"ok": false, "error": _initialization_error}
+	return _request({"op": "expedition_deck_change", "campaign_save": save_id, "purchase": {"kind": kind, "id": id, "revision": revision, "expected_cost": cost, "target_id": target_id, "tree": tree, "count": count}, "loadout_root": WorkspacePaths.runtime_dir("user/character_loadouts"), "content_root": ProjectSettings.globalize_path("res://../dice-and-destiny-server/content")})
 
 ## Permanently deletes one campaign save.
 func campaign_delete(save_id: String) -> Dictionary:

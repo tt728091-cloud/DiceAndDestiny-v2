@@ -209,6 +209,9 @@ type DiceRollState struct {
 	Combinations   []string             `json:"combinations,omitempty"`
 	SymbolCounts   map[string]int       `json:"symbol_counts,omitempty"`
 	Complete       bool                 `json:"complete,omitempty"`
+	// ChooseCount is how many dice the actor must choose to keep after a
+	// bonus first roll (an Ambush); zero otherwise.
+	ChooseCount int `json:"choose_count,omitempty"`
 }
 
 // FromBattle copies authoritative battle state into the public snapshot shape.
@@ -331,6 +334,7 @@ func fromBattleForViewer(battle state.Battle, viewerActorID string, includeConte
 						RollsRemaining: max(runtime.MaxRolls-runtime.RollsUsed, 0),
 						SymbolCounts:   rolledSymbolCounts(runtime.FinalDice),
 						Complete:       runtime.PlanningCommitted || runtime.RollsUsed >= runtime.MaxRolls,
+						ChooseCount:    runtime.AmbushChoose,
 					}
 				}
 				snapshotActor.CardInstances = make(map[string]state.CardInstance, len(runtime.CardInstances))

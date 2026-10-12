@@ -11,6 +11,9 @@ var loadout_mode := "sandbox"
 ## Set for campaign battles; the encounter's opponent is the model key.
 var encounter_id := ""
 var campaign_save := ""
+## Set to start the campaign save's pending expedition battle from the map's
+## piles; the authority supplies the battle id and seed.
+var expedition := false
 var _configuration_error := ""
 
 func _init(runtime: Node, selected_human_seat: String = "seat-a", selected_model_key: String = "accepted-v1", selected_character: String = "blade_warden") -> void:
@@ -26,7 +29,7 @@ func start_battle(battle_id: String, selected_seed: int, rematch: bool = false) 
 	if not _configuration_error.is_empty():
 		return {"accepted": false, "error": _configuration_error}
 	seed = selected_seed
-	return _runtime.start_battle(battle_id, human_seat, seed, rematch, character, unified_defense, loadout_mode, encounter_id, campaign_save)
+	return _runtime.start_battle(battle_id, human_seat, seed, rematch, character, unified_defense, loadout_mode, encounter_id, campaign_save, expedition)
 
 func submit(command_json: String) -> Dictionary:
 	return _runtime.submit_human(command_json)
@@ -36,3 +39,6 @@ func advance_model() -> Dictionary:
 
 func telemetry() -> Dictionary:
 	return _runtime.telemetry()
+
+func observe() -> Dictionary:
+	return _runtime.observe()

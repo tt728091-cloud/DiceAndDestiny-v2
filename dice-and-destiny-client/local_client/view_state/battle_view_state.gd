@@ -203,6 +203,10 @@ func _actor_offensive_dice(actor_state: Dictionary) -> Array:
 func _array(value) -> Array:
 	return value if value is Array else []
 
+# An Ambush's first roll asks the actor to choose this many dice to keep.
+func choose_count(actor_id: String) -> int:
+	return int(_offensive_dice_state(actor(actor_id)).get("choose_count", 0))
+
 func rolls_used(actor_id: String) -> int:
 	var current := _offensive_dice_state(actor(actor_id))
 	if current.has("rolls_used"): return int(current.rolls_used)

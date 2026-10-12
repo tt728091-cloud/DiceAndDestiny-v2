@@ -1112,7 +1112,27 @@ func _build_player_column(_parent: HBoxContainer) -> void:
 		dice.animate_roll(_player_roll_feedback.indices, int(_player_roll_feedback.started_ms), int(_player_roll_feedback.duration_ms))
 	dice.selection_changed.connect(func(indices): _selected_indices = indices)
 	var controls := HBoxContainer.new(); controls.alignment = BoxContainer.ALIGNMENT_CENTER; _roll_dock.add_child(controls)
-	if _view.segment == "offensive":
+	var choose := _view.choose_count("blade")
+	if _view.segment == "offensive" and choose > 0 and _view.stage == "planning":
+		# An Ambush rolled bonus dice: choose exactly `choose` dice to keep;
+		# the rest are set aside and no roll is used.
+		var keep := TOOLTIP_BUTTON.new(); keep.custom_minimum_size = Vector2(78, 28)
+		keep.text = "Keep %d/%d" % [choose, rolled.size()]
+		keep.add_theme_font_override("font", CINEMATIC.roll_control_font())
+		keep.add_theme_font_size_override("font_size", 15)
+		CINEMATIC.paper_button(keep)
+		for style_name in ["normal", "hover", "pressed", "disabled"]:
+			var style := keep.get_theme_stylebox(style_name)
+			style.content_margin_left = 5; style.content_margin_right = 5
+			style.content_margin_top = 4; style.content_margin_bottom = 4
+		var refresh_keep := func(): keep.disabled = _selected_indices.size() != choose or _submitting or _director.has_beats() or _history_review or not _view.allowed("planning_keep")
+		refresh_keep.call()
+		dice.selection_changed.connect(func(_indices): refresh_keep.call())
+		keep.pressed.connect(_keep_chosen.bind(choose))
+		controls.add_child(keep)
+		keep.tooltip_text = "Ambush: your first roll used %d dice. Click exactly %d to keep; the others are set aside. No roll is used." % [rolled.size(), choose]
+		_inspect(keep, "battle.command.planning_keep", keep.tooltip_text)
+	elif _view.segment == "offensive":
 		# Keep the shared roll control visible even when the authority has closed
 		# planning, so a skipped offense cannot look like a missing character UI.
 		var initial_roll := _view.rolls_used("blade") == 0
@@ -3081,6 +3101,18 @@ func _command_plays_card(command) -> bool:
 	var payload: Dictionary = _as_dictionary(command.get("payload", {}))
 	return not _as_array(payload.get("card_ids", _as_dictionary(payload.get("commitment", {})).get("card_ids", []))).is_empty()
 
+# The Ambush choice: keep exactly `choose` of the rolled dice.
+func _keep_chosen(choose: int) -> void:
+	if _submitting or _history_review or _offensive_roll_animating(): return
+	if _selected_indices.size() != choose:
+		_show_error("Choose exactly %d dice to keep." % choose); return
+	_send(BattleCommandBuilder.planning_keep(_view.battle_id, "blade", _pending(), _selected_indices))
+	if _view.choose_count("blade") == 0:
+		# The tray collapsed to the kept dice; the old indices no longer apply.
+		_selected_indices.clear()
+		_selection_roll_number = -1
+		_render()
+
 func _reroll_unkept(history_confirmed: bool = false) -> void:
 	if _submitting or _history_review or _offensive_roll_animating(): return
 	var indices: Array = []
@@ -3526,6 +3558,7 @@ func _history_label_for_command(command_value) -> String:
 	var payload: Dictionary = _as_dictionary(command.get("payload", {}))
 	match kind:
 		"planning_roll": return "Roll 5 Dice"
+		"planning_keep": return "Keep %d Dice" % _as_array(payload.get("kept_indices", [])).size()
 		"planning_reroll": return "Reroll Unkept Dice"
 		"planning_select_ability": return "Choose %s" % str(BattlePresentationCatalog.ability(str(payload.get("ability_id", ""))).get("name", "Ability"))
 		"planning_commit_cards", "commit_interaction":

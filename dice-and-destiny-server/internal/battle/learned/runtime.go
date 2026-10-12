@@ -299,6 +299,8 @@ func HandleRuntimeRequest(requestJSON string) string {
 		value, err = learnedRuntime.session.SubmitHuman(request.CommandJSON)
 	case "advance_model":
 		value, err = learnedRuntime.session.AdvanceModel()
+	case "observe":
+		value, err = learnedRuntime.session.ObserveHuman()
 	case "telemetry":
 		battle, lifetime := learnedRuntime.session.Telemetry()
 		value = map[string]any{"battle": battle, "lifetime": lifetime}
