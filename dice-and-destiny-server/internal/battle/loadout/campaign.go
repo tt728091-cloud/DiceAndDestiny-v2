@@ -144,6 +144,9 @@ func RecordCampaignBattle(root, saveID string, e Economy, catalogs map[string]co
 	if err != nil {
 		return outcome, err
 	}
+	if save.IsExpedition() {
+		return outcome, fmt.Errorf("campaign save %q is an expedition; its battles are recorded by the map", saveID)
+	}
 	p := &save.Sheet
 	if p.Campaign == nil {
 		p.Campaign = &CampaignProgress{}

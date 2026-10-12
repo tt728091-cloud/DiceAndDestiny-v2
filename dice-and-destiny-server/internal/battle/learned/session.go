@@ -96,6 +96,7 @@ type Session struct {
 	lifetime         LifetimeTelemetry
 	decisionSequence int
 	campaign         *campaignBattle
+	expedition       *expeditionBattle
 }
 
 func NewSession(config SessionConfig) (*Session, error) {
@@ -180,10 +181,10 @@ func (s *Session) ResetCharacter(battleID string, seed uint64, humanSeat string,
 	return s.ResetCharacterLoadout(battleID, seed, humanSeat, rematch, character, len(unified) > 0 && unified[0], "sandbox")
 }
 func (s *Session) ResetCharacterLoadout(battleID string, seed uint64, humanSeat string, rematch bool, character string, unified bool, mode string) (map[string]any, error) {
-	return s.resetLoadout(battleID, seed, humanSeat, rematch, character, unified, mode, nil)
+	return s.resetLoadout(battleID, seed, humanSeat, rematch, character, unified, mode, nil, nil)
 }
-func (s *Session) resetLoadout(battleID string, seed uint64, humanSeat string, rematch bool, character string, unified bool, mode string, campaign *campaignBattle) (map[string]any, error) {
-	if mode != "" && mode != "sandbox" && mode != "progression" && !(mode == "campaign" && campaign != nil) {
+func (s *Session) resetLoadout(battleID string, seed uint64, humanSeat string, rematch bool, character string, unified bool, mode string, campaign *campaignBattle, expedition *expeditionBattle) (map[string]any, error) {
+	if mode != "" && mode != "sandbox" && mode != "progression" && !(mode == "campaign" && campaign != nil) && !(mode == "expedition" && expedition != nil) {
 		return nil, fmt.Errorf("invalid loadout mode")
 	}
 	if mode == "progression" && s.config.LoadoutRoot == "" {
@@ -227,6 +228,12 @@ func (s *Session) resetLoadout(battleID string, seed uint64, humanSeat string, r
 				wounds = map[string][]loadout.Entry{humanSeat: loadout.BattleDeck(campaign.wounds)}
 			}
 			abilityBoards = map[string]content.AbilityBoard{humanSeat: campaign.board}
+		} else if mode == "expedition" {
+			// An expedition battle starts from the map's piles exactly as they
+			// are: every owned copy is in the deck loadout, and the preset
+			// piles deal them into hand, draw, Spent (discard) and wounds.
+			decks = map[string][]loadout.Entry{humanSeat: loadout.BattleDeck(append(append([]loadout.Entry(nil), expedition.deck...), expedition.wounds...))}
+			abilityBoards = map[string]content.AbilityBoard{humanSeat: expedition.board}
 		} else if mode == "progression" {
 			progress, err := loadout.ReadProgress(s.config.LoadoutRoot, character, economy, catalogs[character])
 			if err != nil {
@@ -284,9 +291,15 @@ func (s *Session) resetLoadout(battleID string, seed uint64, humanSeat string, r
 		models["seat-c"] = s.policy.Metadata().ModelID
 		teams = map[string]string{s.humanSeat: "heroes", s.modelSeat: "minions", "seat-c": "minions"}
 	}
+	var presets map[string]battle.PresetPiles
+	if expedition != nil {
+		presets = expedition.presets(s.humanSeat, s.modelSeat, s.config.OpponentCount)
+		battleID, seed = expedition.setup.BattleID, expedition.setup.Seed
+	}
 	transition, err := s.environment.Reset(mlsim.ResetRequest{
 		SeatDecklists:     decks,
 		SeatWounds:        wounds,
+		SeatPresets:       presets,
 		SeatAbilityBoards: abilityBoards,
 		UnifiedDefense:    unified,
 		Seed:              seed,
@@ -300,8 +313,12 @@ func (s *Session) resetLoadout(battleID string, seed uint64, humanSeat string, r
 	s.current = transition
 	s.decisionSequence = 0
 	s.campaign = campaign
+	s.expedition = expedition
 	if campaign != nil {
 		campaign.battleID = transition.Metrics.BattleID
+	}
+	if expedition != nil {
+		expedition.battleID = transition.Metrics.BattleID
 	}
 	s.lifetime.BattlesStarted++
 	if rematch {
@@ -480,6 +497,7 @@ func (s *Session) updateTerminalTelemetry() {
 	s.telemetry.CompletedAtUTC = time.Now().UTC().Format(time.RFC3339Nano)
 	s.recordDiagnostic("battle_completed", s.telemetry)
 	s.recordCampaignBattle()
+	s.recordExpeditionBattle()
 }
 
 func (s *Session) present(result engine.Result) map[string]any {
@@ -500,6 +518,9 @@ func (s *Session) present(result engine.Result) map[string]any {
 	}
 	if s.campaign != nil {
 		view["campaign"] = s.campaign.view()
+	}
+	if s.expedition != nil {
+		view["campaign"] = s.expedition.view()
 	}
 	view["learned_policy"] = map[string]any{
 		"enabled":                  true,

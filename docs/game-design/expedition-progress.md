@@ -11,8 +11,8 @@ Evidence folder (ignored): `dice-and-destiny-client/.godot/runtime/expedition-ev
 | --- | --- | --- |
 | M0 Baseline | done | (no code change) |
 | M1 Configuration and content loading | done | see git log (`M1: …`) |
-| M2 Map rules on the authority | not started | — |
-| M3 Battle bridge | not started | — |
+| M2 Map rules on the authority | done | see git log (`M2+M3: …`) |
+| M3 Battle bridge | done | see git log (`M2+M3: …`) |
 | M4 Ambush, Fortified, Lieutenant buffs, Conqueror | not started | — |
 | M5 Client map screen | not started | — |
 | M6 Content complete and full-region play | not started | — |
@@ -49,6 +49,26 @@ Tests (all run and passed):
 - `go test ./internal/battle/learned/ ./internal/battle/loadout/... ./internal/battle/engine/ ./internal/battle/` → ok.
 - Godot: `verify_campaign.gd` PASSED, `verify_campaign_prepare.gd` PASSED, `verify_battle_authority.gd` passed (log `.godot/runtime/expedition-evidence/m1-godot.log`).
 
+## M2 — Map rules on the authority (2026-10-12)
+
+Files (package `internal/battle/expedition`):
+- `state.go` — the serializable `State` (seed + RNG position, round/Day–Night/phase, placed tiles, hidden countryside stack and core deal, seen hexes, player hex, hand/draw/Spent/wounds, energy, gold, inventory, map statuses, groups, sites, the Warlord's route, turn state, camp, pending event, pending battle, last battle/rest/event reports, log).
+- `rng.go` — splitmix64 over (seed, position): shuffles, d6, ranges.
+- `generate.go` — `Rules` (config + pack + card/status definitions), `New` (start tile, seeded countryside stack, core tiles dealt to core slots, the Warlord's BFS route off slot centres, opening hand), sight/seen refresh, hand size with status deltas.
+- `actions.go` — `Act` for `move`, `explore`, `play_map_card`, `use_site`, `event_choice`, `challenge`, `enter_site`, `discard`, `end_turn`, `make_camp`, `camp_service`, `break_camp`; payment (cards 1 Move, energy 5 Move) into a per-turn Move pool; provoke detection; terrain by Day/Night; the 1-card rule; rest steps; the Warlord's march and goal capture; patrol guard; night hunters per turn; Influence per site; mending; shops; healer; trainer; deck-change cost/payment and pile sync.
+- `battle.go` — Ambush evaluation (player-started, unseen by turn-start distance or cover, habit × Day/Night), `startBattle` (pending battle with Fortified/Conqueror/Lieutenant statuses and pre-battle piles), `ResolveBattle` (bridge back: piles, energy cap, rewards, defeat rule, Warlord victory/defeat), `Setup`.
+- `view.go` — the viewer-safe `View` with legal moves/explores/challenges/enters, site services and costs, fog (in sight / remembered / unknown), the Warlord as known, pending event/camp/battle.
+- `internal/battle/loadout/expedition_save.go` and `campaign_save.go` — `CampaignSave.Mode` and `Expedition`; `NewExpeditionSave`, `ExpeditionAct` (revision check, XP credit, deck/wound sync, atomic write), `ExpeditionDeckChange` (purchase rules + Influence + in-place pile update), `ExpeditionBattleSetup`, `RecordExpeditionBattle` (once per battle id). `BuyCampaign` and `RecordCampaignBattle` refuse expedition saves.
+- `internal/battle/learned/{runtime.go,campaign.go}` — ops `campaign_new` (`mode: expedition`, `region`, `seed`), `expedition_status`, `expedition_act` (`action`, `revision`), `expedition_deck_change`; `campaign_status` lists `mode` and an expedition summary.
+
+Tests (all run and passed): `internal/battle/expedition/{rules_test.go,fights_test.go}` — determinism and start state, viewer safety (JSON scan), explore stack/countryside-before-core, movement costs/payments/impassable/night forest, map cards and energy rules, the 1-card rule and end-turn draw, rest steps and make camp, save/reload equivalence after every action, sites/Influence/mending/shops/trainer/deck-change costs, pile sync on deck changes, seeded mending rolls and the inn bonus, the three events (requirements, roll, wound/fight/status/item/mend outcomes), patrols/night hunters/guards, config-driven behaviour (rounds, hand size, energy per Move, terrain, explore cost, defeat wounds), provoked fights, Ambush × habit × Day/Night × seen/unseen/cover, garrisons/Siege Hooks/ruins guardians by night, the battle bridge in the state (victory, defeat +2 never the last card, draw, energy cap), ruins loot, Lieutenants, the Warlord's march/goal/Conqueror/road challenge/early reward/deadline/run over. `internal/battle/learned/expedition_test.go` — the runtime ops, revision checks, persistence, deck change at a village through the op, linear saves untouched, seed determinism through the runtime.
+
+## M3 — Battle bridge (2026-10-12)
+
+Files: `internal/battle/deck_loadout_assembler.go` (`PresetPiles`, `WithPresetPiles`: deals the deck loadout's instances into hand/draw/discard/removed, sets energy (clamped), hand limit, `StartingHandSize = 0`, start statuses); `internal/battle/mlsim/environment.go` (`ResetRequest.SeatPresets`, `ReplayRecord.SeatPresets`, replay support, `InspectBattle`); `internal/battle/learned/{session.go,campaign.go,runtime.go}` (`expeditionBattle` context, `ResetExpeditionBattle` using the pending battle's id and seed, `recordExpeditionBattle` reading the terminal battle's piles/energy through `InspectBattle`, the `reset` op's `expedition: true`, `campaign` view with an `expedition` block and the outcome).
+
+Tests (run and passed): `internal/battle/learned/expedition_battle_test.go` — `TestExpeditionBattleBridgeBothWays` plays real battles through the session until both a victory and a defeat occurred (seeds 1..): exact hand/draw/Spent/wound hand-off (hand = map hand + exactly the one Income card at the first decision, so no opening draw; Income draws from the map draw pile), `StartingHandSize 0`, hand limit 6, energy = map energy + Income, the Ambush status when earned, damage taking discard first (wound ledger zones), piles returned exactly (with the post-fight rest when the draw pile ran out), the energy carry-out cap, XP/gold from the authority only, defeat wounds +2 / push back / forced rest, no double recording. `TestMapCardsAreNeverLegalInBattle` — Trailblaze in the battle hand is never in the legal actions, counts as health (max 13).
+
 ## Decisions made during implementation
 
 1. **Tile stack and the Warlord's goal.** The region's slots are typed (countryside or core). Countryside tiles form a seeded stack drawn in order into any empty countryside slot the player explores. Core tiles are dealt (seeded shuffle) to the core slots when the region is built, and a core slot can be explored only once the countryside stack is empty ("countryside tiles first, then core tiles"). Reason: the Warlord's route must be "laid out at region build" ~5 hexes from his goal, which is a site on a core tile; dealing the core tiles at build is the only way the goal hex exists before it is explored. The player never learns a core slot's tile before exploring it (viewer-safe status omits it).
@@ -62,6 +82,10 @@ Tests (all run and passed):
 9. **Map cards are blank battle cards with a `map_effect`.** A card with `map_effect` and no program/mechanic is a blank card (never legal in battle, still health, removable by damage); "both" cards keep their program. No new engine gate is needed beyond the existing blank-card behaviour, which the tests assert explicitly.
 10. **The Warlord never provokes.** He marches on an agenda; the player challenges him from an adjacent hex. Provoke detection applies to minion groups only, so a hex that touches a minion group and the Warlord never pulls two enemies into one fight. Minion groups are validated statically (decision 2). If his route crosses a hex holding a minion group he shares it; if it is the player's hex he waits one step short.
 11. **Entering a site is the action and costs no Move.** `enter_site` from an adjacent hex moves the player onto the keep/tower/ruins/grotto/occupied-village hex and starts the garrison or guardian fight; a defeat pushes the player back to the hex they came from. Event sites trigger when the player moves onto them (Slay-the-Spire "?" rooms) and must be resolved before any other action; each is one-shot.
+13. **The Warlord's route avoids slot centres.** His BFS route (laid out at build) stays on the region's tiles and off every slot centre except his goal, so he never stands where an open group stands; he waits a step short of the player or of a group on his road. Patrols never step onto his hex.
+14. **A rest after a fight.** A fight ends the turn; if the end-of-turn draw empties the draw pile, the usual rest follows immediately (reshuffle, energy reset, camp). The battle result panel therefore may show a camp.
+15. **Mended cards return to the draw pile** at a seeded random position, so mending is useful before the next rest; bought cards go on top of the draw pile.
+16. **Ambush keeps the five-dice loadout**: the engine collapses the first roll back to `LoadoutDiceCount` (5); `ambush.max_kept` must equal it.
 12. **Deck changes keep copies in place.** An upgrade/trade-down replaces the copy in hand first, then draw pile, then Spent; a sold or stored copy leaves Spent first, then draw, then hand; a bought card goes on top of the draw pile (it adds health and time to this round, as the design says). Wounded copies never move.
 
 ## Placeholders created

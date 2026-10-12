@@ -60,13 +60,16 @@ type ResetRequest struct {
 	SeatAbilityBoards map[string]content.AbilityBoard `json:"seat_ability_boards,omitempty"`
 	SeatDecklists     map[string][]loadout.Entry      `json:"seat_decklists,omitempty"`
 	// SeatWounds are decklist copies that start in the removed pile.
-	SeatWounds      map[string][]loadout.Entry `json:"seat_wounds,omitempty"`
-	UnifiedDefense  bool                       `json:"unified_defense,omitempty"`
-	SeatTeams       map[string]string          `json:"seat_teams,omitempty"`
-	Seed            uint64                     `json:"seed"`
-	BattleID        string                     `json:"battle_id,omitempty"`
-	SeatModels      map[string]string          `json:"seat_models,omitempty"`
-	SeatDefinitions map[string]string          `json:"seat_definitions,omitempty"`
+	SeatWounds map[string][]loadout.Entry `json:"seat_wounds,omitempty"`
+	// SeatPresets start seats from preset piles, energy and statuses (the
+	// Expedition bridge).
+	SeatPresets     map[string]battle.PresetPiles `json:"seat_presets,omitempty"`
+	UnifiedDefense  bool                          `json:"unified_defense,omitempty"`
+	SeatTeams       map[string]string             `json:"seat_teams,omitempty"`
+	Seed            uint64                        `json:"seed"`
+	BattleID        string                        `json:"battle_id,omitempty"`
+	SeatModels      map[string]string             `json:"seat_models,omitempty"`
+	SeatDefinitions map[string]string             `json:"seat_definitions,omitempty"`
 }
 
 type ActionRecord struct {
@@ -79,6 +82,7 @@ type ReplayRecord struct {
 	SeatAbilityBoards map[string]content.AbilityBoard `json:"seat_ability_boards,omitempty"`
 	SeatDecklists     map[string][]loadout.Entry      `json:"seat_decklists,omitempty"`
 	SeatWounds        map[string][]loadout.Entry      `json:"seat_wounds,omitempty"`
+	SeatPresets       map[string]battle.PresetPiles   `json:"seat_presets,omitempty"`
 	UnifiedDefense    bool                            `json:"unified_defense,omitempty"`
 	SeatTeams         map[string]string               `json:"seat_teams,omitempty"`
 	EnvironmentSchema string                          `json:"environment_schema"`
@@ -242,7 +246,7 @@ func (e *Environment) Reset(request ResetRequest) (Transition, error) {
 	e.authority = battle.NewAuthority(
 		simulationEngine,
 		repo,
-		battle.WithAbilityLoadouts(battle.WithCarriedWounds(battle.WithDeckLoadouts(e.loadoutAssembler(request), request.SeatDecklists), request.SeatWounds), request.SeatAbilityBoards),
+		battle.WithPresetPiles(battle.WithAbilityLoadouts(battle.WithCarriedWounds(battle.WithDeckLoadouts(e.loadoutAssembler(request), request.SeatDecklists), request.SeatWounds), request.SeatAbilityBoards), request.SeatPresets),
 	)
 	humanSeat, modelSeat := transcriptSeats(request.SeatModels)
 	e.authority.ConfigureTranscriptBattle(battle.TranscriptBattleContext{
@@ -260,6 +264,7 @@ func (e *Environment) Reset(request ResetRequest) (Transition, error) {
 		SeatAbilityBoards: cloneAbilityBoards(request.SeatAbilityBoards),
 		SeatDecklists:     cloneDecklists(request.SeatDecklists),
 		SeatWounds:        cloneDecklists(request.SeatWounds),
+		SeatPresets:       clonePresets(request.SeatPresets),
 		UnifiedDefense:    request.UnifiedDefense,
 		EnvironmentSchema: environmentSchema,
 		ObservationSchema: observationSchema,
@@ -532,6 +537,7 @@ func (e *Environment) Replay(record ReplayRecord) (Transition, error) {
 	transition, err := e.Reset(ResetRequest{
 		SeatDecklists:     cloneDecklists(record.SeatDecklists),
 		SeatWounds:        cloneDecklists(record.SeatWounds),
+		SeatPresets:       clonePresets(record.SeatPresets),
 		SeatAbilityBoards: cloneAbilityBoards(record.SeatAbilityBoards),
 		Seed:              record.Seed, BattleID: record.BattleID, UnifiedDefense: record.UnifiedDefense,
 		SeatModels: record.SeatModels, SeatDefinitions: record.SeatDefinitions, SeatTeams: record.SeatTeams,
@@ -763,4 +769,24 @@ func (e *Environment) loadoutAssembler(request ResetRequest) battle.ParticipantA
 	assembler.IncludeCharacterPools = true
 	assembler.AuthoredCardsRoot = e.config.AuthoredCardsRoot
 	return assembler
+}
+
+func clonePresets(presets map[string]battle.PresetPiles) map[string]battle.PresetPiles {
+	if presets == nil {
+		return nil
+	}
+	raw, _ := json.Marshal(presets)
+	var out map[string]battle.PresetPiles
+	_ = json.Unmarshal(raw, &out)
+	return out
+}
+
+// InspectBattle returns a clone of the current battle's full authoritative
+// state (every pile, energy, statuses, the wound ledger). It is for the
+// authority's own bookkeeping after a battle ends, never for a viewer.
+func (e *Environment) InspectBattle() (state.Battle, error) {
+	if e.authority == nil || e.replay.BattleID == "" {
+		return state.Battle{}, errors.New("environment has not been reset")
+	}
+	return e.authority.InspectBattleState(e.replay.BattleID)
 }

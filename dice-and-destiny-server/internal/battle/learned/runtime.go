@@ -7,6 +7,7 @@ import (
 	"sync"
 	"time"
 
+	"diceanddestiny/server/internal/battle/expedition"
 	"diceanddestiny/server/internal/battle/loadout"
 )
 
@@ -43,6 +44,14 @@ type runtimeRequest struct {
 	Encounter          string                `json:"encounter,omitempty"`
 	CampaignSave       string                `json:"campaign_save,omitempty"`
 	Name               string                `json:"name,omitempty"`
+	// Expedition campaigns: the mode of a new campaign, its region and seed,
+	// a map action with the sheet revision it was built on, and the flag that
+	// starts a save's pending expedition battle.
+	Mode       string            `json:"mode,omitempty"`
+	Region     string            `json:"region,omitempty"`
+	Action     expedition.Action `json:"action,omitempty"`
+	Revision   int               `json:"revision,omitempty"`
+	Expedition bool              `json:"expedition,omitempty"`
 }
 
 var learnedRuntime struct {
@@ -64,16 +73,45 @@ func HandleRuntimeRequest(requestJSON string) string {
 	case "card_trees", "validate_card_tree", "publish_card_tree", "open_card_admin", "close_card_admin", "preview_delete_card", "admin_delete_card",
 		"ability_authoring", "validate_ability", "publish_ability", "assign_abilities",
 		"card_authoring", "validate_card", "publish_card", "character_catalogs",
-		"save_character_deck", "progression_catalogs", "progression_purchase", "save_economy_admin", "campaign_status", "campaign_loadout", "campaign_new", "campaign_delete", "campaign_purchase":
+		"save_character_deck", "progression_catalogs", "progression_purchase", "save_economy_admin", "campaign_status", "campaign_loadout", "campaign_new", "campaign_delete", "campaign_purchase",
+		"expedition_status", "expedition_act", "expedition_deck_change":
 		catalogRuntimeMu.Lock()
 		defer catalogRuntimeMu.Unlock()
 	}
 	if request.Op == "campaign_new" {
+		if request.Mode == loadout.ModeExpedition {
+			save, err := newExpeditionCampaign(request.ContentRoot, request.LoadoutRoot, request.Character, request.Name, request.Region, request.Seed)
+			if err != nil {
+				return runtimeError(err)
+			}
+			return runtimeSuccess(map[string]any{"id": save.ID, "name": save.Name, "character": save.Character, "mode": save.Mode})
+		}
 		save, err := newCampaign(request.ContentRoot, request.LoadoutRoot, request.Character, request.Name)
 		if err != nil {
 			return runtimeError(err)
 		}
 		return runtimeSuccess(map[string]any{"id": save.ID, "name": save.Name, "character": save.Character})
+	}
+	if request.Op == "expedition_status" {
+		view, err := expeditionStatus(request.ContentRoot, request.LoadoutRoot, request.CampaignSave)
+		if err != nil {
+			return runtimeError(err)
+		}
+		return runtimeSuccess(view)
+	}
+	if request.Op == "expedition_act" {
+		view, err := expeditionAct(request.ContentRoot, request.LoadoutRoot, request.CampaignSave, request.Action, request.Revision)
+		if err != nil {
+			return runtimeError(err)
+		}
+		return runtimeSuccess(view)
+	}
+	if request.Op == "expedition_deck_change" {
+		view, err := expeditionDeckChange(request.ContentRoot, request.LoadoutRoot, request.CampaignSave, request.Purchase)
+		if err != nil {
+			return runtimeError(err)
+		}
+		return runtimeSuccess(view)
 	}
 	if request.Op == "campaign_delete" {
 		if err := loadout.DeleteCampaignSave(request.LoadoutRoot, request.CampaignSave); err != nil {
@@ -248,6 +286,10 @@ func HandleRuntimeRequest(requestJSON string) string {
 	var err error
 	switch request.Op {
 	case "reset":
+		if request.Expedition {
+			value, err = learnedRuntime.session.ResetExpeditionBattle(request.CampaignSave)
+			break
+		}
 		if request.Encounter != "" {
 			value, err = learnedRuntime.session.ResetCampaignEncounter(request.BattleID, request.Seed, request.CampaignSave, request.Encounter)
 			break

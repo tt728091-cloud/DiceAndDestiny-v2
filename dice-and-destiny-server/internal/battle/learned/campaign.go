@@ -5,7 +5,9 @@ import (
 	"sort"
 	"strings"
 
+	"diceanddestiny/server/internal/battle"
 	"diceanddestiny/server/internal/battle/engine"
+	"diceanddestiny/server/internal/battle/expedition"
 	"diceanddestiny/server/internal/battle/loadout"
 	"diceanddestiny/server/internal/content"
 )
@@ -110,7 +112,7 @@ func (s *Session) ResetCampaignEncounter(battleID string, seed uint64, saveID, e
 		}
 	}
 	battle := &campaignBattle{saveID: save.ID, saveName: save.Name, deck: save.Sheet.Deck, wounds: save.Sheet.Wounds, board: save.Sheet.Abilities, character: save.Character, encounter: encounter, index: index, total: len(campaign.Encounters)}
-	return s.resetLoadout(battleID, seed, "seat-a", false, save.Character, true, "campaign", battle)
+	return s.resetLoadout(battleID, seed, "seat-a", false, save.Character, true, "campaign", battle, nil)
 }
 
 // recordCampaignBattle runs under s.mu once the battle is terminal or truncated.
@@ -175,7 +177,17 @@ func campaignStatus(contentRoot, loadoutRoot string) (map[string]any, error) {
 		}
 		next := campaign.NextEncounter(save.Sheet)
 		state.Next = encounterIndex(next.ID)
+		mode := save.Mode
+		if mode == "" {
+			mode = "linear"
+		}
+		var exp map[string]any
+		if save.IsExpedition() {
+			x := save.Expedition
+			exp = map[string]any{"region": x.Region, "round": x.Round, "night": x.Night, "phase": x.Phase, "result": x.Result, "pending_battle": x.PendingBattle != nil, "gold": x.Gold}
+		}
 		views = append(views, map[string]any{
+			"mode": mode, "expedition": exp,
 			"id": save.ID, "name": save.Name, "character": save.Character, "character_name": lib.Combatants[save.Character].Name,
 			"created_at": save.CreatedAt, "playable": campaign.Allows(save.Character),
 			"xp": save.Sheet.XP, "earned_xp": save.Sheet.EarnedXP, "health": deckHealth(save.Sheet.Deck),
@@ -376,4 +388,248 @@ func campaignLoadout(contentRoot, loadoutRoot, saveID string) (map[string]any, e
 		"tree_conflicts": cardNames(lib, loadout.NonTreeCards(p.Deck, lib.CardTrees)),
 		"max_cards":      loadout.MaxCards,
 	}, nil
+}
+
+// --- expedition ops -----------------------------------------------------------
+
+type expeditionContext struct {
+	campaignContext
+	rules map[string]expedition.Rules
+}
+
+func loadExpeditionContext(contentRoot, loadoutRoot string) (expeditionContext, error) {
+	c, err := loadCampaignContext(contentRoot, loadoutRoot)
+	if err != nil {
+		return expeditionContext{}, err
+	}
+	x := expeditionContext{campaignContext: c, rules: map[string]expedition.Rules{}}
+	for _, id := range c.campaign.Characters {
+		if x.rules[id], err = loadout.ExpeditionRules(contentRoot, c.catalogs[id]); err != nil {
+			return x, err
+		}
+	}
+	return x, nil
+}
+
+func newExpeditionCampaign(contentRoot, loadoutRoot, character, name, region string, seed uint64) (loadout.CampaignSave, error) {
+	x, err := loadExpeditionContext(contentRoot, loadoutRoot)
+	if err != nil {
+		return loadout.CampaignSave{}, err
+	}
+	rules, ok := x.rules[character]
+	if !ok {
+		return loadout.CampaignSave{}, fmt.Errorf("%s cannot start an expedition", character)
+	}
+	return loadout.NewExpeditionSave(loadoutRoot, character, name, region, seed, x.campaign, x.economy, x.catalogs, rules)
+}
+
+// expeditionView is the viewer-safe status of an expedition save.
+func expeditionView(x expeditionContext, save loadout.CampaignSave) map[string]any {
+	lib := x.catalogs[save.Character]
+	view := save.Expedition.View(x.rules[save.Character], save.Sheet.Revision)
+	cards := map[string]any{}
+	for _, id := range append(append(append([]string{}, save.Expedition.Hand...), save.Expedition.Draw...), append(save.Expedition.Spent, save.Expedition.Wounds...)...) {
+		if _, done := cards[id]; !done {
+			cards[id] = lib.Cards[id]
+		}
+	}
+	statuses := map[string]any{}
+	for id, def := range lib.Statuses {
+		statuses[id] = def
+	}
+	var pending map[string]any
+	if pb := save.Expedition.PendingBattle; pb != nil {
+		pending = map[string]any{"id": pb.ID, "opponent": pb.Opponent, "opponent_count": pb.Count, "name": pb.Name, "kind": pb.Kind, "ambush": pb.Ambush, "warlord": pb.Warlord}
+	}
+	return map[string]any{
+		"save_id": save.ID, "save_name": save.Name, "character": save.Character, "character_name": lib.Combatants[save.Character].Name,
+		"revision": save.Sheet.Revision, "xp": save.Sheet.XP, "earned_xp": save.Sheet.EarnedXP,
+		"health": deckHealth(save.Sheet.Deck), "max_health": deckHealth(save.Sheet.Deck) + deckHealth(save.Sheet.Wounds),
+		"view": view, "pending_battle": pending,
+		// Card and status definitions for presentation (faces, hover rules).
+		"catalog": map[string]any{"cards": cards, "statuses": statuses},
+	}
+}
+
+func expeditionStatus(contentRoot, loadoutRoot, saveID string) (map[string]any, error) {
+	x, err := loadExpeditionContext(contentRoot, loadoutRoot)
+	if err != nil {
+		return nil, err
+	}
+	save, err := loadout.ReadExpeditionSave(loadoutRoot, saveID, x.economy, x.catalogs)
+	if err != nil {
+		return nil, err
+	}
+	return expeditionView(x, save), nil
+}
+
+func expeditionAct(contentRoot, loadoutRoot, saveID string, action expedition.Action, revision int) (map[string]any, error) {
+	x, err := loadExpeditionContext(contentRoot, loadoutRoot)
+	if err != nil {
+		return nil, err
+	}
+	save, err := loadout.ReadExpeditionSave(loadoutRoot, saveID, x.economy, x.catalogs)
+	if err != nil {
+		return nil, err
+	}
+	save, rewards, err := loadout.ExpeditionAct(loadoutRoot, saveID, x.economy, x.catalogs, x.rules[save.Character], action, revision)
+	if err != nil {
+		return nil, err
+	}
+	view := expeditionView(x, save)
+	view["rewards"] = rewards
+	return view, nil
+}
+
+func expeditionDeckChange(contentRoot, loadoutRoot, saveID string, request loadout.Purchase) (map[string]any, error) {
+	x, err := loadExpeditionContext(contentRoot, loadoutRoot)
+	if err != nil {
+		return nil, err
+	}
+	save, err := loadout.ReadExpeditionSave(loadoutRoot, saveID, x.economy, x.catalogs)
+	if err != nil {
+		return nil, err
+	}
+	save, err = loadout.ExpeditionDeckChange(loadoutRoot, saveID, x.economy, x.catalogs, x.rules[save.Character], request)
+	if err != nil {
+		return nil, err
+	}
+	return map[string]any{"id": save.ID, "revision": save.Sheet.Revision, "xp": save.Sheet.XP, "view": save.Expedition.View(x.rules[save.Character], save.Sheet.Revision)}, nil
+}
+
+// --- expedition battles ---------------------------------------------------------
+
+// expeditionBattle marks the session's battle as an expedition fight: it
+// started from the map's piles and the map records its result once.
+type expeditionBattle struct {
+	saveID    string
+	saveName  string
+	character string
+	deck      []loadout.Entry
+	wounds    []loadout.Entry
+	board     content.AbilityBoard
+	setup     expedition.BattleSetup
+	pending   expedition.PendingBattle
+	region    string
+	round     int
+	night     bool
+	battleID  string
+	recorded  bool
+	outcome   *loadout.ExpeditionOutcome
+	err       string
+}
+
+func (b *expeditionBattle) view() map[string]any {
+	view := map[string]any{"save_id": b.saveID, "save_name": b.saveName, "character": b.character, "expedition": map[string]any{
+		"kind": b.pending.Kind, "name": b.pending.Name, "opponent": b.pending.Opponent, "count": b.pending.Count, "ambush": b.pending.Ambush, "warlord": b.pending.Warlord,
+		"region": b.region, "round": b.round, "night": b.night, "energy_in": b.pending.EnergyIn,
+	}}
+	if b.outcome != nil {
+		view["outcome"] = b.outcome
+	}
+	if b.err != "" {
+		view["error"] = b.err
+	}
+	return view
+}
+
+// presets builds the bridge: the human seat starts from the map piles, every
+// enemy seat gets the pending battle's statuses.
+func (b *expeditionBattle) presets(humanSeat, modelSeat string, opponentCount int) map[string]battle.PresetPiles {
+	var playerStatuses, enemyStatuses []content.StartingStatus
+	for _, st := range b.setup.PlayerStatuses {
+		playerStatuses = append(playerStatuses, content.StartingStatus{DefinitionID: st.ID, Stacks: st.Stacks})
+	}
+	for _, st := range b.setup.EnemyStatuses {
+		enemyStatuses = append(enemyStatuses, content.StartingStatus{DefinitionID: st.ID, Stacks: st.Stacks})
+	}
+	presets := map[string]battle.PresetPiles{humanSeat: {Piles: true, Hand: b.setup.Hand, Deck: b.setup.Draw, Discard: b.setup.Spent, Removed: b.setup.Wounds, Energy: b.setup.Energy, HandLimit: b.setup.HandLimit, Statuses: playerStatuses}}
+	if len(enemyStatuses) > 0 {
+		presets[modelSeat] = battle.PresetPiles{Statuses: enemyStatuses}
+		if opponentCount == 2 {
+			presets["seat-c"] = battle.PresetPiles{Statuses: enemyStatuses}
+		}
+	}
+	return presets
+}
+
+// ResetExpeditionBattle starts the save's pending expedition battle from the
+// map's piles. The session must already be initialized with the pending
+// battle's opponent; the battle id and seed come from the pending battle so a
+// relaunch restarts the identical battle.
+func (s *Session) ResetExpeditionBattle(saveID string) (map[string]any, error) {
+	if s.config.LoadoutRoot == "" {
+		return nil, fmt.Errorf("the expedition requires loadout storage")
+	}
+	x, err := loadExpeditionContext(s.config.ContentRoot, s.config.LoadoutRoot)
+	if err != nil {
+		return nil, err
+	}
+	save, err := loadout.ReadExpeditionSave(s.config.LoadoutRoot, saveID, x.economy, x.catalogs)
+	if err != nil {
+		return nil, err
+	}
+	if !x.campaign.Allows(save.Character) {
+		return nil, fmt.Errorf("%s can no longer play the campaign", save.Character)
+	}
+	rules := x.rules[save.Character]
+	_, setup, err := loadout.ExpeditionBattleSetup(s.config.LoadoutRoot, saveID, x.economy, x.catalogs, rules)
+	if err != nil {
+		return nil, err
+	}
+	if setup.Opponent != s.config.OpponentDefinition || setup.Count != max(1, s.config.OpponentCount) {
+		return nil, fmt.Errorf("initialize the battle runtime with %s ×%d first", setup.Opponent, setup.Count)
+	}
+	if len(setup.Hand)+len(setup.Draw)+len(setup.Spent) == 0 {
+		return nil, fmt.Errorf("every card is wounded; the expedition cannot fight")
+	}
+	b := &expeditionBattle{saveID: save.ID, saveName: save.Name, character: save.Character, deck: save.Sheet.Deck, wounds: save.Sheet.Wounds, board: save.Sheet.Abilities, setup: setup, pending: *save.Expedition.PendingBattle, region: rules.Pack.Regions[save.Expedition.Region].Name, round: save.Expedition.Round, night: save.Expedition.Night}
+	return s.resetLoadout(setup.BattleID, setup.Seed, "seat-a", false, save.Character, true, "expedition", nil, b)
+}
+
+// recordExpeditionBattle runs under s.mu once the battle is terminal: it
+// reads the human's piles and energy from the authoritative battle and hands
+// them back to the map.
+func (s *Session) recordExpeditionBattle() {
+	b := s.expedition
+	if b == nil || b.recorded {
+		return
+	}
+	b.recorded = true
+	fail := func(err error) {
+		b.err = err.Error()
+		s.telemetry.Errors = append(s.telemetry.Errors, b.err)
+		s.recordDiagnostic("expedition_error", map[string]any{"error": b.err, "campaign_save": b.saveID, "battle_id": b.battleID})
+	}
+	x, err := loadExpeditionContext(s.config.ContentRoot, s.config.LoadoutRoot)
+	if err != nil {
+		fail(err)
+		return
+	}
+	final, err := s.environment.InspectBattle()
+	if err != nil {
+		fail(err)
+		return
+	}
+	actor, ok := final.Actors[s.humanSeat]
+	if !ok {
+		fail(fmt.Errorf("the human seat is missing from the finished battle"))
+		return
+	}
+	instances := final.Settled.Actors[s.humanSeat].CardInstances
+	definitions := func(ids []string) []string {
+		out := make([]string, 0, len(ids))
+		for _, id := range ids {
+			out = append(out, instances[id].DefinitionID)
+		}
+		return out
+	}
+	end := expedition.BattleEnd{BattleID: b.battleID, Result: s.telemetry.Result, Hand: definitions(actor.Cards.Hand), Draw: definitions(actor.Cards.Deck), Spent: definitions(actor.Cards.Discard), Removed: definitions(actor.Cards.Removed), Energy: actor.Resources.EnergyPoints}
+	outcome, err := loadout.RecordExpeditionBattle(s.config.LoadoutRoot, b.saveID, x.economy, x.catalogs, x.rules[b.character], end)
+	if err != nil {
+		fail(err)
+		return
+	}
+	b.outcome = &outcome
+	s.recordDiagnostic("expedition_recorded", map[string]any{"campaign_save": b.saveID, "outcome": outcome})
 }

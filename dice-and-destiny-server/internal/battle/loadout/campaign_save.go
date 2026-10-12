@@ -11,6 +11,7 @@ import (
 	"strings"
 	"time"
 
+	"diceanddestiny/server/internal/battle/expedition"
 	"diceanddestiny/server/internal/content"
 )
 
@@ -32,7 +33,18 @@ type CampaignSave struct {
 	// converted from, before campaigns had their own saves.
 	MigratedFrom string   `json:"migrated_from,omitempty"`
 	Sheet        Progress `json:"sheet"`
+	// Mode is "expedition" for map campaigns; absent means the original
+	// linear encounter list, which keeps working unchanged.
+	Mode string `json:"mode,omitempty"`
+	// Expedition is the map state of an expedition save: tiles, piles, the
+	// clock, enemies and the Warlord. Only the authority reads or writes it.
+	Expedition *expedition.State `json:"expedition,omitempty"`
 }
+
+const ModeExpedition = "expedition"
+
+// IsExpedition reports a map campaign.
+func (s CampaignSave) IsExpedition() bool { return s.Mode == ModeExpedition && s.Expedition != nil }
 
 const maxCampaignSaveName = 40
 
@@ -236,6 +248,9 @@ func BuyCampaign(root, id string, e Economy, catalogs map[string]content.BattleL
 	s, err := readCampaignSave(root, id, e, catalogs)
 	if err != nil {
 		return s, err
+	}
+	if s.IsExpedition() {
+		return s, fmt.Errorf("an expedition changes its deck only at a site or camp, through the map")
 	}
 	if request.Revision != s.Sheet.Revision {
 		return s, fmt.Errorf("campaign changed; refresh before trading")
