@@ -1042,7 +1042,11 @@ func _build_header(parent: VBoxContainer) -> void:
 		policy_badge.text = str(_minion_summary().get("badge", "")) if _is_single_ability_opponent() else "LEARNED BATTLE · %s · HUMAN %s" % [policy_label, learned_human_seat.to_upper()]
 		policy_badge.add_theme_color_override("font_color", Color("9de0ff"))
 		policy_badge.tooltip_text = str(_minion_summary().get("rules", "")) if _is_single_ability_opponent() else "Frozen policy %s · no training or fallback" % str(_view.learned_policy.get("model_id", "unknown"))
-		if not _view.campaign.is_empty():
+		if _view.campaign.has("expedition"):
+			var x: Dictionary = _view.campaign.get("expedition", {})
+			policy_badge.text = "EXPEDITION · %s %d · %s" % ["NIGHT" if x.get("night", false) else "DAY", (int(x.get("round", 1)) + 1) / 2, str(x.get("name", "")).to_upper()]
+			policy_badge.tooltip_text = "%s · %s%s. The battle started from your map piles with %d energy; the leftovers go back to the map and the fight ends your turn. %s" % [str(x.get("region", "")), str(x.get("kind", "")).capitalize(), " with an Ambush" if x.get("ambush", false) else "", int(x.get("energy_in", 0)), policy_badge.tooltip_text]
+		elif not _view.campaign.is_empty():
 			var encounter: Dictionary = _view.campaign.get("encounter", {})
 			policy_badge.text = "CAMPAIGN %d/%d · %s" % [int(_view.campaign.get("index", 0)) + 1, int(_view.campaign.get("total", 1)), str(encounter.get("name", "")).to_upper()]
 			policy_badge.tooltip_text = "%s Victory earns %d XP. %s" % [str(encounter.get("description", "")), int(encounter.get("xp", 0)), policy_badge.tooltip_text]
@@ -2702,6 +2706,9 @@ func _build_completion() -> void:
 ## A campaign battle's reward comes from the authority's recorded outcome;
 ## the client never computes it.
 func _build_campaign_completion() -> void:
+	if _view.campaign.has("expedition"):
+		_build_expedition_completion()
+		return
 	var outcome: Dictionary = _view.campaign.get("outcome", {})
 	var encounter: Dictionary = _view.campaign.get("encounter", {})
 	var reward := Label.new(); reward.name = "CampaignReward"
@@ -2726,8 +2733,53 @@ func _build_campaign_completion() -> void:
 	proceed.pressed.connect(_return_to_campaign); _center.add_child(proceed)
 	_inspect(proceed, "battle.complete.campaign", "Return to the campaign to change your deck and fight the next encounter")
 
+## An expedition battle's consequences are the authority's recorded report:
+## the piles that came back, the energy kept, rewards, defeat wounds.
+func _build_expedition_completion() -> void:
+	var outcome: Dictionary = _view.campaign.get("outcome", {})
+	var report: Dictionary = outcome.get("report", {}) if outcome.get("report") != null else {}
+	var reward := Label.new(); reward.name = "CampaignReward"
+	reward.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	reward.add_theme_font_size_override("font_size", 19)
+	reward.add_theme_stylebox_override("normal", CINEMATIC.paper()); reward.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	reward.add_theme_color_override("font_shadow_color", Color.TRANSPARENT)
+	# At most three short lines so the Continue button stays inside the result
+	# panel without scrolling.
+	reward.custom_minimum_size.x = 880; reward.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	if outcome.is_empty():
+		reward.text = "The expedition result was not recorded: %s" % str(_view.campaign.get("error", "unknown error"))
+		reward.add_theme_color_override("font_color", Color("8a2f24"))
+	else:
+		var lines: Array = []
+		var gold := int(report.get("gold", 0)) + int(report.get("loot", 0))
+		match str(outcome.get("result", "")):
+			"victory": lines.append("Victory · +%d XP (%d to spend)%s" % [int(outcome.get("xp_awarded", 0)), int(outcome.get("xp", 0)), " · +%d gold" % gold if gold > 0 else ""])
+			"defeat":
+				if report.get("run_over", false): lines.append("Defeat · the Warlord has won: the run is over")
+				elif int(report.get("defeat_wounds", 0)) > 0: lines.append("Defeat · %d defeat wounds on top of your pre-battle wounds; driven back, the round ends with a rest" % int(report.defeat_wounds))
+				else: lines.append("Defeat · driven back; the round ends with a rest")
+			_: lines.append("A draw · no reward")
+		lines.append("Back to the map: hand %d · draw %d · Spent %d · wounds %d · energy %d of %d kept" % [report.get("hand_after", []).size(), int(report.get("draw_after", 0)), int(report.get("spent_after", 0)), int(report.get("wounds", 0)), int(report.get("energy_kept", 0)), int(report.get("energy_in", 0))])
+		var extras: Array = []
+		if int(report.get("early_xp", 0)) > 0: extras.append("Early strike: +%d XP and %d extra relic choice(s) pending" % [int(report.early_xp), int(report.get("relic_choices", 0))])
+		if report.get("region_won", false): extras.append("The region is won; every wound is mended (%d)" % int(report.get("wounds_mended", 0)))
+		if not extras.is_empty(): lines.append(" · ".join(extras))
+		reward.text = "\n".join(lines)
+		reward.add_theme_color_override("font_color", Color("2f6b3a") if str(outcome.get("result", "")) == "victory" else Color("8a2f24"))
+	_center.add_child(reward)
+	var proceed := TOOLTIP_BUTTON.new(); proceed.name = "ContinueCampaign"; proceed.text = "Continue · Back to the map"
+	proceed.pressed.connect(_return_to_campaign); _center.add_child(proceed)
+	_inspect(proceed, "battle.complete.campaign", "Return to the expedition map with the piles and energy the battle left")
+
 func _return_to_campaign() -> void:
 	if _submitting or _model_thinking: return
+	if _view.campaign.has("expedition"):
+		var map = preload("res://app/screens/map/expedition_screen.gd").new()
+		map.last_battle = _view.campaign.duplicate(true)
+		map.save_id = str(_view.campaign.get("save_id", ""))
+		get_tree().root.add_child(map)
+		queue_free()
+		return
 	var screen = preload("res://app/screens/campaign/campaign_screen.gd").new()
 	screen.last_battle = _view.campaign.duplicate(true)
 	screen.save_id = str(_view.campaign.get("save_id", ""))

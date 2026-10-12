@@ -833,7 +833,7 @@ func (s *State) eventChoice(r Rules, a Action) (Rewards, error) {
 	if choice.Requires.Item != "" {
 		s.Inventory[choice.Requires.Item]--
 	}
-	result := &EventResult{Event: ev.ID, Choice: choice.ID}
+	result := &EventResult{Event: ev.ID, Site: s.PendingEvent.Site, Turn: s.Turn.Number, Round: s.Round, Choice: choice.ID}
 	outcome := choice.Outcome
 	if choice.Roll != nil {
 		result.Roll, result.Needed = s.d6(), choice.Roll.Needed

@@ -201,6 +201,9 @@ type RestSummary struct {
 // EventResult is what the last event choice did.
 type EventResult struct {
 	Event   string  `json:"event"`
+	Site    string  `json:"site"`
+	Turn    int     `json:"turn"`
+	Round   int     `json:"round"`
 	Choice  string  `json:"choice"`
 	Text    string  `json:"text"`
 	Roll    int     `json:"roll,omitempty"`
@@ -413,7 +416,7 @@ func (s *State) handDelta(cards map[string]int) int {
 }
 
 func sortedStrings(values []string) []string {
-	out := append([]string(nil), values...)
+	out := append([]string{}, values...)
 	sort.Strings(out)
 	return out
 }

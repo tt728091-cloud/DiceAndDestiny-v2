@@ -2,6 +2,7 @@ package expedition
 
 import (
 	"encoding/json"
+	"fmt"
 	"path/filepath"
 	"reflect"
 	"strings"
@@ -224,6 +225,42 @@ func TestViewNeverLeaksHiddenState(t *testing.T) {
 		if slot.Kind == "core" && slot.Placed {
 			t.Fatal("core slots are not placed yet")
 		}
+	}
+}
+
+// Every list in the view is a JSON array even when empty; only the documented
+// optional blocks may be null or absent. Clients read lists without guards.
+func TestViewListsAreNeverNull(t *testing.T) {
+	r := testRules(t)
+	s := newState(t, r, 11)
+	s.Draw, s.Spent, s.Wounds, s.Hand, s.Log, s.Inventory, s.Statuses = nil, nil, nil, nil, nil, nil, nil
+	s.Turn.CardsUsed = 0
+	for _, v := range []View{s.View(r, 1), func() View {
+		w := newState(t, r, 11)
+		act(t, w, r, Action{Kind: "move", Target: &Hex{1, 0}, Cards: w.Hand[:1]})
+		act(t, w, r, Action{Kind: "explore", Slot: "east", Cards: w.Hand[:2]})
+		return w.View(r, 2)
+	}()} {
+		raw, _ := json.Marshal(v)
+		var generic map[string]any
+		must(t, json.Unmarshal(raw, &generic))
+		var walk func(prefix string, value any)
+		walk = func(prefix string, value any) {
+			switch typed := value.(type) {
+			case map[string]any:
+				for key, child := range typed {
+					if child == nil {
+						t.Fatalf("%s.%s is null in the view: %s", prefix, key, raw)
+					}
+					walk(prefix+"."+key, child)
+				}
+			case []any:
+				for i, child := range typed {
+					walk(fmt.Sprintf("%s[%d]", prefix, i), child)
+				}
+			}
+		}
+		walk("view", generic)
 	}
 }
 

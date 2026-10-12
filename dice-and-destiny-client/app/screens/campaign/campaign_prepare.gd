@@ -12,6 +12,13 @@ const CANVAS := preload("res://app/screens/character/card_tree_canvas.gd")
 const DIFF := preload("res://app/screens/character/card_tree_diff.gd")
 
 var save_id := ""
+## Expedition saves change their deck only at a site or camp: each change
+## costs `expedition_cost` Influence (cards played there this turn) on top of
+## the XP, charged by the authority through `expedition_deck_change`.
+var expedition := false
+var expedition_cost := 0
+var expedition_influence := 0
+var _influence: Label
 var character_id := ""
 ## The authority's campaign_loadout view.
 var data: Dictionary = {}
@@ -66,6 +73,9 @@ func _build() -> void:
 	_title = STYLE.label(titles, "Prepare", 30)
 	_health = STYLE.stat(header, "0", "Health · cards in deck", STYLE.HEALTH).get_child(0)
 	_xp = STYLE.stat(header, "0", "XP to spend", STYLE.GOLD).get_child(0)
+	_influence = STYLE.stat(header, "0", "Influence · per change", STYLE.GAIN).get_child(0)
+	_influence.get_parent().visible = expedition
+	_influence.get_parent().name = "InfluenceStat"
 	for stat in header.get_children().slice(1): stat.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	var back := _button(header, "Back to campaign", _close, "prepare.back"); back.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	back.custom_minimum_size = Vector2(170, 44)
@@ -114,6 +124,10 @@ func reload() -> bool:
 		var authored: Dictionary = runtime.card_authoring()
 		if authored.get("ok") == true: authoring = authored.result
 	_title.text = "Prepare · %s" % str(data.save_name)
+	if expedition:
+		_influence.get_parent().visible = true
+		_influence.text = "%d / %d" % [expedition_influence, expedition_cost]
+		_influence.get_parent().tooltip_text = "Each deck change here costs %d Influence (cards played at this site or camp this turn) besides its XP. You have %d." % [expedition_cost, expedition_influence]
 	var wounds := int(data.get("max_health", data.health)) - int(data.health)
 	_health.text = str(int(data.health)) if wounds == 0 else "%d/%d" % [int(data.health), int(data.max_health)]
 	_xp.text = str(int(data.xp))
@@ -410,7 +424,12 @@ func _trade(offer: Dictionary) -> void:
 
 func _submit(offer: Dictionary, count: int) -> void:
 	var request: Dictionary = offer.request
-	var response: Dictionary = _runtime().campaign_purchase(save_id, str(request.kind), str(request.id), int(data.revision), int(offer.cost) * count, str(request.target_id), str(request.tree), count)
+	var response: Dictionary
+	if expedition:
+		response = _runtime().expedition_deck_change(save_id, str(request.kind), str(request.id), int(data.revision), int(offer.cost) * count, str(request.target_id), str(request.tree), count)
+		if response.get("ok") == true: expedition_influence = int(response.result.get("view", {}).get("turn", {}).get("influence", expedition_influence))
+	else:
+		response = _runtime().campaign_purchase(save_id, str(request.kind), str(request.id), int(data.revision), int(offer.cost) * count, str(request.target_id), str(request.tree), count)
 	if response.get("ok") != true:
 		_error("Not completed: %s" % str(response.get("error", "unknown error")))
 		reload(); return

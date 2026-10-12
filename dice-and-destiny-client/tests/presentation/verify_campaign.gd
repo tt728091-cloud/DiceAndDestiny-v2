@@ -25,6 +25,9 @@ func _run() -> void:
 	_expect(campaign._saves_view.visible and not campaign._play_view.visible and "No campaigns yet" in _text(campaign._save_list), "Campaign opens on the empty save list")
 	_expect(campaign._new_sheet == "starter" and campaign._new_name.text == "Starter campaign" and "100 bonus XP" in campaign._new_note.text, "a new campaign defaults to the Starter sheet")
 	await _capture(campaign, "campaign-saves-empty")
+	# New campaigns default to the Expedition; this test covers the linear loop.
+	await _click(_campaign_control(campaign, "campaign.mode.linear"))
+	_expect(campaign._new_mode.is_empty() and _campaign_control(campaign, "campaign.mode.linear").button_pressed, "the linear encounter list can be chosen")
 	await _click(_campaign_control(campaign, "campaign.begin"))
 	for frame in 4: await process_frame
 	_expect(campaign._play_view.visible and campaign._title.text == "Starter campaign" and not campaign.save_id.is_empty(), "Begin opens the new campaign")
@@ -39,6 +42,7 @@ func _run() -> void:
 	await _click(_campaign_control(campaign, "campaign.sheet.adventurer"))
 	_expect(campaign._new_name.text == "Adventurer campaign", "the default name follows the chosen sheet")
 	campaign._new_name.text = "Second run"; campaign._new_name.text_changed.emit("Second run")
+	await _click(_campaign_control(campaign, "campaign.mode.linear"))
 	await _click(_campaign_control(campaign, "campaign.begin"))
 	for frame in 4: await process_frame
 	_expect(campaign._title.text == "Second run" and campaign._summary.text.begins_with("Adventurer") and campaign.save_id != first_save, "a second campaign starts from the Adventurer sheet")

@@ -11,6 +11,7 @@ const BATTLE_SCREEN := preload("res://app/screens/battle/battle_screen.tscn")
 const LEARNED_GATEWAY := preload("res://local_client/learned_battle/learned_battle_gateway.gd")
 const LEARNED_RUNTIME := preload("res://local_client/learned_battle/learned_battle_runtime.gd")
 const CAMPAIGN_PREPARE := preload("res://app/screens/campaign/campaign_prepare.gd")
+const EXPEDITION_SCREEN := preload("res://app/screens/map/expedition_screen.gd")
 
 ## The campaign save being played; empty shows the list of saves.
 var save_id := ""
@@ -25,9 +26,13 @@ var _saves_view: HBoxContainer
 var _save_list: VBoxContainer
 var _sheet_choice: VBoxContainer
 var _new_name: LineEdit
+var _new_seed: LineEdit
 var _new_note: Label
 var _begin: Button
 var _new_sheet := ""
+## "expedition" (the default) builds a map region; "" keeps the linear list.
+var _new_mode := "expedition"
+var _mode_choice: HBoxContainer
 var _play_view: VBoxContainer
 var _summary: Label
 var _banner: Label
@@ -76,10 +81,22 @@ func _build_saves(body: Node) -> void:
 	STYLE.heading(new_panel, "New campaign")
 	STYLE.label(new_panel, "Choose a starting character sheet. The campaign plays your own copy of it; the original never changes.", 14, STYLE.MUTED)
 	_sheet_choice = VBoxContainer.new(); _sheet_choice.add_theme_constant_override("separation", 8); new_panel.add_child(_sheet_choice)
+	STYLE.label(new_panel, "Mode", 13, STYLE.MUTED)
+	_mode_choice = HBoxContainer.new(); _mode_choice.add_theme_constant_override("separation", 8); new_panel.add_child(_mode_choice)
+	for mode in [["expedition", "Expedition", "Explore a hex map tile by tile; one deck pays for walking, sites and fights; catch the Warlord before the last round ends."], ["", "Linear encounters", "The original list of encounters, fought in order."]]:
+		var button := _button(_mode_choice, mode[1], _pick_mode.bind(mode[0]), "campaign.mode." + ("expedition" if mode[0] == "expedition" else "linear"))
+		button.toggle_mode = true; button.button_pressed = mode[0] == _new_mode; button.tooltip_text = mode[2]
+		button.size_flags_horizontal = Control.SIZE_EXPAND_FILL; button.custom_minimum_size.y = 40
+		button.add_theme_stylebox_override("pressed", STYLE.box("223442", STYLE.GOLD, 10, 8, 2))
+		button.add_theme_stylebox_override("hover_pressed", STYLE.box("2a3e4d", STYLE.GOLD_BRIGHT, 10, 8, 2))
 	STYLE.label(new_panel, "Name", 13, STYLE.MUTED)
 	_new_name = LineEdit.new(); _new_name.name = "CampaignName"; _new_name.max_length = 40; _new_name.placeholder_text = "Name this campaign"; _new_name.custom_minimum_size.y = 42
 	_new_name.text_changed.connect(func(_text): _update_begin())
 	new_panel.add_child(_new_name)
+	STYLE.label(new_panel, "Seed (optional, expeditions only)", 13, STYLE.MUTED)
+	_new_seed = LineEdit.new(); _new_seed.name = "CampaignSeed"; _new_seed.max_length = 19; _new_seed.placeholder_text = "Random"; _new_seed.custom_minimum_size.y = 36
+	_new_seed.tooltip_text = "The same seed builds the same region and draws the same cards. Leave it empty for a random region."
+	new_panel.add_child(_new_seed)
 	_new_note = STYLE.label(new_panel, "", 14, STYLE.GOLD)
 	_begin = STYLE.accent(_button(new_panel, "Begin campaign", _begin_campaign, "campaign.begin"))
 	_begin.custom_minimum_size.y = 52
@@ -142,7 +159,12 @@ func _render_saves() -> void:
 		var progress: Dictionary = save.get("campaign", {})
 		var next: Dictionary = save.get("next_encounter", {})
 		_label(text, "%s · %s · %d XP to spend" % [save.character_name, _health_text(save), int(save.xp)], 16)
-		_label(text, "Run %d · %d victories · next: %s (%d of %d)" % [int(progress.get("runs_completed", 0)) + 1, int(progress.get("victories", 0)), next.get("name", ""), int(progress.get("next_encounter", 0)) + 1, encounters.size()], 14, STYLE.MUTED)
+		if str(save.get("mode", "")) == "expedition":
+			var x: Dictionary = save.get("expedition", {}) if save.get("expedition") != null else {}
+			var state := "won" if str(x.get("result", "")) == "victory" else ("run over" if str(x.get("result", "")) == "defeat" else ("%s %d · %s" % ["Night" if x.get("night", false) else "Day", (int(x.get("round", 1)) + 1) / 2, str(x.get("phase", "turn")).replace("_", " ")]))
+			_label(text, "Expedition · %s · %d victories · %d gold%s" % [state, int(progress.get("victories", 0)), int(x.get("gold", 0)), " · a fight is pending" if x.get("pending_battle", false) else ""], 14, STYLE.MUTED)
+		else:
+			_label(text, "Run %d · %d victories · next: %s (%d of %d)" % [int(progress.get("runs_completed", 0)) + 1, int(progress.get("victories", 0)), next.get("name", ""), int(progress.get("next_encounter", 0)) + 1, encounters.size()], 14, STYLE.MUTED)
 		var id := str(save.id)
 		var play := STYLE.accent(_button(row, "Continue", func(): _open_save(id), "campaign.continue." + id))
 		play.custom_minimum_size = Vector2(130, 48); play.size_flags_vertical = Control.SIZE_SHRINK_CENTER
@@ -168,6 +190,12 @@ func _render_sheets() -> void:
 	if _new_name.text.strip_edges().is_empty(): _new_name.text = _default_name()
 	_update_begin()
 
+func _pick_mode(mode: String) -> void:
+	_new_mode = mode
+	for button in _mode_choice.get_children():
+		if button is Button: button.set_pressed_no_signal(button.get_meta("campaign_control", "") == "campaign.mode." + ("expedition" if mode == "expedition" else "linear"))
+	_update_begin()
+
 func _pick_sheet(id: String) -> void:
 	var was_default := _new_name.text == _default_name()
 	_new_sheet = id
@@ -190,21 +218,38 @@ func _default_name() -> String:
 	return name_text
 
 func _update_begin() -> void:
-	_new_note.text = "Starts with the %s's deck and abilities, plus %d bonus XP." % [_sheet_name(_new_sheet), int(status.get("bonus_xp", 0))]
+	_new_note.text = "Starts with the %s's deck and abilities, plus %d bonus XP.%s" % [_sheet_name(_new_sheet), int(status.get("bonus_xp", 0)), " A new region is built from a random seed." if _new_mode == "expedition" else ""]
 	_begin.disabled = _new_sheet.is_empty() or _new_name.text.strip_edges().is_empty()
 
 func _begin_campaign() -> void:
 	if _begin.disabled: return
-	var response: Dictionary = _runtime().campaign_new(_new_sheet, _new_name.text.strip_edges())
+	var seed_text := _new_seed.text.strip_edges()
+	var seed := int(seed_text) if seed_text.is_valid_int() else 0
+	var response: Dictionary = _runtime().campaign_new(_new_sheet, _new_name.text.strip_edges(), _new_mode, "", seed)
 	if response.get("ok") != true:
 		_show_error(str(response.get("error", "The campaign could not start.")))
 		return
 	_new_name.text = ""
+	if str(response.result.get("mode", "")) == "expedition":
+		_open_expedition(str(response.result.id))
+		return
 	_open_save(str(response.result.id))
 
 func _open_save(id: String) -> void:
+	for save in status.get("saves", []):
+		if str(save.id) == id and str(save.get("mode", "")) == "expedition":
+			_open_expedition(id)
+			return
 	save_id = id; last_battle = {}
 	refresh()
+
+## Expedition saves play on the map screen; the encounter path stays for
+## linear saves.
+func _open_expedition(id: String) -> void:
+	var screen = EXPEDITION_SCREEN.new()
+	screen.save_id = id
+	get_tree().root.add_child(screen)
+	queue_free()
 
 func _show_saves() -> void:
 	save_id = ""; last_battle = {}

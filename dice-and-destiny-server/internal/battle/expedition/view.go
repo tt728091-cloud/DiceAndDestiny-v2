@@ -333,7 +333,7 @@ func (s *State) siteServices(r Rules, st SiteState, def Site) []ViewService {
 	if s.Turn.InfluenceSite != st.ID {
 		influence = 0
 	}
-	var out []ViewService
+	out := []ViewService{}
 	switch def.Type {
 	case "village", "monastery":
 		per := cfg.Mending.VillageInfluencePerWound
@@ -571,7 +571,7 @@ func (s *State) View(r Rules, revision int) View {
 	// Event, camp, battle.
 	if s.PendingEvent != nil {
 		ev := pack.Events[s.PendingEvent.Event]
-		ve := &ViewEvent{Site: s.PendingEvent.Site, Event: ev.ID, Name: ev.Name, Text: ev.Text}
+		ve := &ViewEvent{Site: s.PendingEvent.Site, Event: ev.ID, Name: ev.Name, Text: ev.Text, Choices: []ViewChoice{}}
 		influence := s.Turn.Influence
 		if s.Turn.InfluenceSite != s.PendingEvent.Site {
 			influence = 0
