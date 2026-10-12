@@ -1,0 +1,12 @@
+schema_version: 1
+id: reed_shallows
+name: "Reed Shallows"
+kind: countryside
+hexes:
+  - {offset: [0, 0], terrain: marsh, group: brine_lone}
+  - {offset: [1, 0], terrain: plains}
+  - {offset: [1, -1], terrain: plains}
+  - {offset: [0, -1], terrain: forest}
+  - {offset: [-1, 0], terrain: marsh}
+  - {offset: [-1, 1], terrain: plains, site: shrine_site}
+  - {offset: [0, 1], terrain: hills}

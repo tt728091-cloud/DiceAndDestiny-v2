@@ -1,0 +1,6 @@
+schema_version: 1
+id: barge_site
+name: "Wrecked Barge"
+type: event
+description: "A barge on the mud."
+event: wrecked_barge

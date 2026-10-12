@@ -1,0 +1,48 @@
+schema_version: 1
+# The Expedition: every rule number of the exploration map lives here, never in
+# code (docs/game-design/expedition.md §14). Per-thing numbers live on the
+# things: enemy habit/XP/gold on the group, gear prices on the gear, card map
+# effects on the card, tiles and the Warlord's goal on the region.
+
+# Day, Night, Day, Night. Each round lasts one pass through the deck.
+rounds_per_region: 4
+# Shared by the map and battles: every battle starts with the map hand as it is.
+hand: {size: 4, limit: 6}
+# 1 card = 1 Move, energy_per_move energy = 1 Move; exploring costs explore_cost Move.
+move: {energy_per_move: 5, explore_cost: 2}
+terrain:
+  plains:   {day: 1, night: 1}
+  hills:    {day: 2, night: 2}
+  forest:   {day: 2, night: 3, cover: true}
+  marsh:    {day: 3, night: 3}
+  lake:     {impassable: true}
+  mountain: {impassable: true}
+# Hexes the player and enemies see.
+sight: {day: 2, night: 1}
+# An Ambush rolls loadout + bonus_dice on the first offensive roll; the player
+# keeps max_kept (the five-dice loadout) and later rerolls return to it.
+ambush: {bonus_dice: 3, max_kept: 5}
+# Defenders inside walls and the Warlord at his goal roll extra defensive dice.
+fortified: {extra_defense_dice: 1}
+conqueror: {extra_defense_dice: 1}
+# Losing a normal battle: pre-battle wounds plus these (never the last card).
+defeat: {wounds: 2}
+# At rest: one d6 roll per wound per bandage (or influence_per_roll Influence),
+# success on roll_needed+, +inn_bonus at an inn.
+camp_mending: {roll_needed: 4, inn_bonus: 1, influence_per_roll: 3}
+warlord:
+  start_distance: 5
+  march_per_rest: 2
+  early_reward: {xp_per_round: 20, extra_relic_choices: 1}
+# Influence (cards played at the site this turn) per deck change.
+influence_per_deck_change: {camp: 3, village: 2, monastery: 1, town: 0}
+mending:
+  village_influence_per_wound: 2
+  monastery_influence_per_wound: 1
+  town_gold_per_wound: 15
+gold:
+  drops: {minion_group: [5, 15], lieutenant: 30, treasure: [20, 40], event: [0, 30], warlord: 60}
+  prices: {bandage: 10, consumable: [15, 30], gear: [40, 100], healer_grievous: 50}
+  trainer_gold_per_xp: 3
+# The authored battle statuses the map applies at battle start.
+statuses: {ambush: ambush, fortified: fortified, conqueror: conqueror, lieutenant: lieutenants_favor}

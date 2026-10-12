@@ -1,0 +1,12 @@
+schema_version: 1
+id: saltreed_fen
+name: "Saltreed Fen"
+kind: countryside
+hexes:
+  - {offset: [0, 0], terrain: plains, group: bell_sentinel}
+  - {offset: [1, 0], terrain: plains, site: barge_site}
+  - {offset: [1, -1], terrain: marsh}
+  - {offset: [0, -1], terrain: forest}
+  - {offset: [-1, 0], terrain: lake}
+  - {offset: [-1, 1], terrain: plains, site: saltreed_village}
+  - {offset: [0, 1], terrain: hills}

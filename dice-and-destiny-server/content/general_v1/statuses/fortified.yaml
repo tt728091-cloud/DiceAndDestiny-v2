@@ -1,0 +1,12 @@
+schema_version: 1
+id: fortified
+name: Fortified
+presentation:
+  rules_text: "Defending inside walls. Every defensive roll uses one extra die per stack. Lasts the whole battle; it is never used up. Siege gear removes it before the battle starts."
+  glyph: "⛫"
+activation_mode: automatic
+polarity: positive
+stacking: {stack_limit: 10, overflow_policy: reject_additional_stacks}
+lifecycle: {persistent: true, consume_on_trigger_checkpoint: false, consume_on_play: false, remove_after_resolution: false, remove_on_duration_zero: false}
+modifiers: {defense_dice_bonus: 1}
+triggers: []

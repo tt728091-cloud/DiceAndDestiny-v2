@@ -1,0 +1,12 @@
+schema_version: 1
+id: drowned_reach
+name: "Drowned Reach"
+kind: core
+hexes:
+  - {offset: [0, 0], terrain: marsh, group: eel_pair}
+  - {offset: [1, 0], terrain: mountain}
+  - {offset: [1, -1], terrain: hills}
+  - {offset: [0, -1], terrain: forest}
+  - {offset: [-1, 0], terrain: plains}
+  - {offset: [-1, 1], terrain: lake}
+  - {offset: [0, 1], terrain: plains}

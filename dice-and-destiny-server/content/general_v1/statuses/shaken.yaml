@@ -1,0 +1,12 @@
+schema_version: 1
+id: shaken
+name: Shaken
+presentation:
+  rules_text: "Your hand size and hand limit are 1 lower per stack, on the map and in battle. Expires at your next rest."
+  glyph: "☄"
+activation_mode: automatic
+polarity: negative
+stacking: {stack_limit: 3, overflow_policy: reject_additional_stacks}
+lifecycle: {persistent: true, consume_on_trigger_checkpoint: false, consume_on_play: false, remove_after_resolution: false, remove_on_duration_zero: false}
+modifiers: {hand_size_delta: -1}
+triggers: []

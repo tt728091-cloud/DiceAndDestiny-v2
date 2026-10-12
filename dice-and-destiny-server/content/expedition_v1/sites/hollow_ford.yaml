@@ -1,0 +1,6 @@
+schema_version: 1
+id: hollow_ford
+name: "Hollow Ford"
+type: village
+description: "A fishing village on the start tile. Deck changes for 2 Influence, mending for 2 Influence per wound, bandages for sale. Closed at night except the inn."
+shop: ["bandage"]

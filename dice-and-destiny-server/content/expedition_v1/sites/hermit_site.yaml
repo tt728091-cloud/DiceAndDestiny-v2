@@ -1,0 +1,6 @@
+schema_version: 1
+id: hermit_site
+name: "Hermit's Fire"
+type: event
+description: "A fire on the shore."
+event: hermits_fire

@@ -1,0 +1,12 @@
+schema_version: 1
+id: brinehold_march
+name: "Brinehold March"
+kind: countryside
+hexes:
+  - {offset: [0, 0], terrain: plains, group: bell_marshal}
+  - {offset: [1, 0], terrain: hills}
+  - {offset: [1, -1], terrain: hills, site: brinehold_keep}
+  - {offset: [0, -1], terrain: mountain}
+  - {offset: [-1, 0], terrain: forest, site: sunken_chapel}
+  - {offset: [-1, 1], terrain: marsh}
+  - {offset: [0, 1], terrain: plains, site: hermit_site}

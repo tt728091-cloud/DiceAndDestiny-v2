@@ -1,0 +1,21 @@
+schema_version: 1
+id: hermits_fire
+name: Hermit's Fire
+text: "An old hermit tends a driftwood fire and waves you closer. His sack is heavy with dried fish and his stories are heavier."
+choices:
+  - id: share
+    text: "Sit and trade stories (2 Influence)"
+    requires: {influence: 2}
+    outcome:
+      text: "He tells you where the Regent camps and how he sleeps. You leave wiser."
+      xp: 15
+  - id: rob
+    text: "Take his sack and go"
+    outcome:
+      text: "He does not fight you, but his curse follows you into the dark. You are Shaken."
+      gold: 20
+      status: shaken
+  - id: walk_on
+    text: "Nod and keep walking"
+    outcome:
+      text: "The fire crackles behind you."

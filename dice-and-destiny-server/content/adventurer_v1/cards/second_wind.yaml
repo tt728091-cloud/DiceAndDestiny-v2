@@ -1,4 +1,9 @@
 {
+  "map_effect": {
+    "kind": "energy",
+    "amount": 10,
+    "text": "A second wind for the march."
+  },
   "program": {
     "version": 1,
     "windows": [

@@ -1,0 +1,9 @@
+schema_version: 1
+id: brine_squat
+name: Brine squatters
+description: "Brine Masks holding a village they drove the people from."
+combatant: drowned_oracle_brine_mask
+count: 2
+habit: sleeper
+xp: 30
+gold: 15

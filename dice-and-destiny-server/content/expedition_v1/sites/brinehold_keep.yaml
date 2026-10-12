@@ -1,0 +1,6 @@
+schema_version: 1
+id: brinehold_keep
+name: "Brinehold Keep"
+type: keep
+description: "A Lieutenant's keep. Its garrison is Fortified inside the walls."
+garrison: eel_warden

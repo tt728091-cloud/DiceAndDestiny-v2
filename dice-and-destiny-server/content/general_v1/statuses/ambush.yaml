@@ -1,0 +1,12 @@
+schema_version: 1
+id: ambush
+name: Ambush
+presentation:
+  rules_text: "You struck unseen. Your first offensive roll of this battle rolls one extra die per stack on top of your five; you then choose which five to keep (no roll is used), and later rerolls bring you back to five dice as usual. Ambush is used up by that first roll. If you never roll, it expires at the end of this battle's first Offensive segment."
+  glyph: "➶"
+activation_mode: automatic
+polarity: positive
+stacking: {stack_limit: 10, overflow_policy: reject_additional_stacks}
+lifecycle: {persistent: false, consume_on_trigger_checkpoint: false, consume_on_play: false, remove_after_resolution: false, remove_on_duration_zero: false}
+modifiers: {first_roll_bonus_dice: 1}
+triggers: []

@@ -1,0 +1,18 @@
+schema_version: 1
+id: salt_marches
+name: The Salt Marches
+description: A drowned coast. The Drowned Regent marches on Greywharf; stop him before the fourth night ends.
+start_tile: meadow_crossing
+countryside_tiles: [reed_shallows, cairn_hills, saltreed_fen, stillwater, brinehold_march]
+core_tiles: [greywharf_strand, drowned_reach]
+# Flower centres: the lattice spanned by (2,1) and (-1,3). Core slots lie
+# beyond the countryside, so the countryside stack runs out before them.
+slots:
+  - {id: east, center: [2, 1], kind: countryside}
+  - {id: south, center: [-1, 3], kind: countryside}
+  - {id: west, center: [-3, 2], kind: countryside}
+  - {id: northeast, center: [3, -2], kind: countryside}
+  - {id: far_east, center: [4, 2], kind: countryside}
+  - {id: strand, center: [6, 3], kind: core}
+  - {id: reach, center: [7, 0], kind: core}
+warlord: {group: drowned_regent, goal_tile: greywharf_strand, goal_site: greywharf}

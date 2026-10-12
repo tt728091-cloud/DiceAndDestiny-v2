@@ -706,6 +706,20 @@ func PresentProgramCard(card *BattleCardDefinition, statuses map[string]BattleSt
 	card.Presentation.Timing = CardTimingTags(p.Windows, p.RollRequirement, CardNeedsPriorRoll(p.Steps))
 	card.Presentation.PlayLimit = CardPlayLimit(p.UsesPerRound, p.UsesPerBattle)
 	card.Presentation.Target = CardStatusTarget(p.Steps)
+	if card.MapEffect != nil {
+		// A "both" card: its map effect follows the battle text on the face
+		// and sits before the Play line in the rules.
+		card.Presentation.EffectSummary += "\nMap: " + CardMapEffectFace(card.MapEffect)
+		lines := strings.Split(card.Presentation.RulesText, "\n")
+		at := len(lines)
+		for i, line := range lines {
+			if strings.HasPrefix(line, "Play:") {
+				at = i
+				break
+			}
+		}
+		card.Presentation.RulesText = strings.Join(slices.Insert(lines, at, CardMapEffectRules(card.MapEffect)), "\n")
+	}
 }
 
 func PrepareProgramCard(card BattleCardDefinition, lib *BattleLibrary) BattleCardDefinition {

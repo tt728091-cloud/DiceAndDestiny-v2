@@ -1,0 +1,12 @@
+schema_version: 1
+id: cairn_hills
+name: "Cairn Hills"
+kind: countryside
+hexes:
+  - {offset: [0, 0], terrain: hills, group: eel_hunter}
+  - {offset: [1, 0], terrain: hills}
+  - {offset: [1, -1], terrain: plains, site: drowned_cairn}
+  - {offset: [0, -1], terrain: forest}
+  - {offset: [-1, 0], terrain: mountain}
+  - {offset: [-1, 1], terrain: plains}
+  - {offset: [0, 1], terrain: hills}

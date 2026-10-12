@@ -1,0 +1,10 @@
+schema_version: 1
+id: eel_warden
+name: Eel Warden
+description: "The Warlord's Lieutenant behind the keep's walls. Fortified inside."
+combatant: drowned_oracle_ribbon_eel
+count: 1
+habit: always_alert
+xp: 40
+gold: 30
+lieutenant: true

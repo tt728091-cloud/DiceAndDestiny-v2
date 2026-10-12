@@ -1,0 +1,7 @@
+schema_version: 1
+id: kelp_grotto
+name: "Kelp Grotto"
+type: grotto
+description: "A sea cave stacked with wreck gold. Its guardians are worse after dark."
+guardian: {"day": "bell_sentinel", "night": "eel_pair"}
+loot: {"day": [25, 35], "night": [35, 40]}

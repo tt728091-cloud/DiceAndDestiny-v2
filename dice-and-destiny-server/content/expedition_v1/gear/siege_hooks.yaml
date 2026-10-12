@@ -1,0 +1,8 @@
+schema_version: 1
+id: siege_hooks
+name: Siege Hooks
+kind: consumable
+effect: remove_fortified
+amount: 1
+price: 20
+description: "Spent when you enter a keep, tower or held site: the defenders are not Fortified in that battle."

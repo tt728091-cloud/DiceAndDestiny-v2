@@ -1,0 +1,8 @@
+schema_version: 1
+id: drowned_cairn
+name: "Drowned Cairn"
+type: ruins
+description: "Ruins with a guardian and treasure; cover for an ambush. More dangerous and richer at night."
+guardian: {"day": "brine_lone", "night": "brine_pair"}
+loot: {"day": [20, 30], "night": [30, 40]}
+cover: true

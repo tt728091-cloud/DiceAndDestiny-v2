@@ -1,0 +1,7 @@
+schema_version: 1
+id: saltreed_village
+name: "Saltreed"
+type: village
+description: "A village held by Brine squatters. Beat them to free it; then it trades like any village."
+shop: ["bandage", "siege_hooks"]
+occupied_by: brine_squat

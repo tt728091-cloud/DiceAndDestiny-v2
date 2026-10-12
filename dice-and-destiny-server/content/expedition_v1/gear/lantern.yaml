@@ -1,0 +1,8 @@
+schema_version: 1
+id: lantern
+name: Lantern
+kind: gear
+effect: night_sight
+amount: 1
+price: 40
+description: "+1 sight at night. Enemies still see only their usual range."

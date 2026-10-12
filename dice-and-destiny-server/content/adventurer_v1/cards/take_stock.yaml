@@ -1,4 +1,9 @@
 {
+  "map_effect": {
+    "kind": "draw",
+    "amount": 2,
+    "text": "Take stock of the road ahead."
+  },
   "program": {
     "version": 1,
     "windows": [

@@ -1,0 +1,9 @@
+schema_version: 1
+id: bell_sentinel
+name: Bell Diver
+description: "A Bell Diver that never stops ringing its watch."
+combatant: drowned_oracle_bell_diver
+count: 1
+habit: always_alert
+xp: 25
+gold: 10

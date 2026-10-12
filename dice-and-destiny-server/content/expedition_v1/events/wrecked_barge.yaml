@@ -1,0 +1,25 @@
+schema_version: 1
+id: wrecked_barge
+name: Wrecked Barge
+text: "A salt barge lies broken on the mud, its hold half under water. Something shifts inside."
+choices:
+  - id: search_hold
+    text: "Wade in and search the hold (roll 4+)"
+    roll:
+      needed: 4
+      success:
+        text: "You find a strongbox the tide missed."
+        gold: 25
+      failure:
+        text: "A Brine Mask bursts from the bilge!"
+        fight: brine_lone
+  - id: salvage
+    text: "Pay a mudlark to salvage it for you (5 gold)"
+    requires: {gold: 5}
+    outcome:
+      text: "The mudlark brings back clean linen and a knowing look."
+      item: bandage
+  - id: leave
+    text: "Leave the wreck alone"
+    outcome:
+      text: "You keep to the firm ground and walk on."

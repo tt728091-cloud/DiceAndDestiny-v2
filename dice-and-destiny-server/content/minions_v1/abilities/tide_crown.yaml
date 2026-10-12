@@ -1,0 +1,81 @@
+{
+  "schema_version": 1,
+  "id": "tide_crown",
+  "name": "Tide Crown",
+  "type": "offensive",
+  "presentation": {
+    "rules_text": "Keep every 4, 5 and 6 (Toll) and reroll the other dice up to twice. 3 Tolls deal 5 damage, 4 Tolls deal 7, and all 5 Tolls deal 10. Fewer than 3 Tolls is a miss."
+  },
+  "cost": {
+    "energy": 0
+  },
+  "usage": {
+    "maximum_per_segment": 1
+  },
+  "targeting": {
+    "selector": "one_enemy",
+    "minimum": 1,
+    "maximum": 1
+  },
+  "qualification": {
+    "activation_tiers": [
+      {
+        "id": "crown_5",
+        "requirements": {
+          "all": [
+            {
+              "type": "symbol_count",
+              "symbol_id": "toll",
+              "minimum": 5
+            }
+          ]
+        },
+        "operations": [
+          {
+            "type": "deal_damage",
+            "target": "selected_targets",
+            "amount": 10
+          }
+        ]
+      },
+      {
+        "id": "crown_4",
+        "requirements": {
+          "all": [
+            {
+              "type": "symbol_count",
+              "symbol_id": "toll",
+              "minimum": 4
+            }
+          ]
+        },
+        "operations": [
+          {
+            "type": "deal_damage",
+            "target": "selected_targets",
+            "amount": 7
+          }
+        ]
+      },
+      {
+        "id": "crown_3",
+        "requirements": {
+          "all": [
+            {
+              "type": "symbol_count",
+              "symbol_id": "toll",
+              "minimum": 3
+            }
+          ]
+        },
+        "operations": [
+          {
+            "type": "deal_damage",
+            "target": "selected_targets",
+            "amount": 5
+          }
+        ]
+      }
+    ]
+  }
+}

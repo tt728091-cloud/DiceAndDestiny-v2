@@ -1,0 +1,51 @@
+{
+  "schema_version": 1,
+  "id": "drowned_regent",
+  "name": "The Drowned Regent",
+  "class": "minion",
+  "controller_defaults": {
+    "type": "external"
+  },
+  "resources": {
+    "starting_hand_size": 1,
+    "starting_energy": 0,
+    "hand_limit": 3,
+    "energy_cap": 75
+  },
+  "income": {
+    "cards": 1,
+    "energy": 0
+  },
+  "decklist": [
+    {
+      "card_id": "drowned_standard",
+      "count": 24
+    }
+  ],
+  "dice_loadout": [
+    {
+      "dice_id": "regent_d6",
+      "count": 5
+    }
+  ],
+  "ability_board": {
+    "offensive": [
+      "tide_crown"
+    ],
+    "defensive": [
+      "coral_mantle"
+    ]
+  },
+  "roll_preferences": {
+    "status_effects": "automatic",
+    "offensive": "automatic",
+    "ability_effects": "automatic"
+  },
+  "single_ability_policy": {
+    "target_faces": [
+      4,
+      5,
+      6
+    ]
+  }
+}

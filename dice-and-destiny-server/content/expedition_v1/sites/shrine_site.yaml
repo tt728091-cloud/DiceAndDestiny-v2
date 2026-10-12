@@ -1,0 +1,6 @@
+schema_version: 1
+id: shrine_site
+name: "Wayside Shrine"
+type: event
+description: "A shrine by the road."
+event: wayside_shrine

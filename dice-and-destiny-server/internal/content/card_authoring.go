@@ -79,13 +79,17 @@ func applyAuthoredCards(lib BattleLibrary, saved AuthoredCards) (BattleLibrary, 
 	lib.Cards = maps.Clone(lib.Cards)
 	lib.Statuses = maps.Clone(lib.Statuses)
 	for id, c := range saved.Cards {
-		if id != c.ID || (c.Program == nil && c.Mechanic == nil) {
+		if id != c.ID || (c.Program == nil && c.Mechanic == nil && c.MapEffect == nil) {
 			return lib, fmt.Errorf("invalid authored card %s", id)
 		}
-		if c.Mechanic != nil {
+		switch {
+		case c.Mechanic != nil:
 			lib.Cards[id] = PrepareMechanicCard(c, &lib)
-		} else {
+		case c.Program != nil:
 			lib.Cards[id] = PrepareProgramCard(c, &lib)
+		default:
+			// A map-only card: a blank battle card with a map effect.
+			lib.Cards[id] = PrepareMapCard(c)
 		}
 	}
 	for _, id := range saved.Deleted {

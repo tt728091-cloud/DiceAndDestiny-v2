@@ -1,0 +1,5 @@
+schema_version: 1
+id: stillwater_monastery
+name: "Stillwater Monastery"
+type: monastery
+description: "Monks who ask only 1 Influence per deck change or per wound mended, at any hour."

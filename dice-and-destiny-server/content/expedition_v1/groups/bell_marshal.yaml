@@ -1,0 +1,11 @@
+schema_version: 1
+id: bell_marshal
+name: Bell Marshal
+description: "The Warlord's roaming Lieutenant, dozing between patrols."
+combatant: drowned_oracle_bell_diver
+count: 1
+habit: sleeper
+xp: 40
+gold: 30
+lieutenant: true
+patrol: [[0, 0], [1, 0], [0, 0], [-1, 1]]

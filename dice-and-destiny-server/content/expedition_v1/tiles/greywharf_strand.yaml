@@ -1,0 +1,12 @@
+schema_version: 1
+id: greywharf_strand
+name: "Greywharf Strand"
+kind: core
+hexes:
+  - {offset: [0, 0], terrain: plains, site: greywharf}
+  - {offset: [1, 0], terrain: plains}
+  - {offset: [1, -1], terrain: forest}
+  - {offset: [0, -1], terrain: hills}
+  - {offset: [-1, 0], terrain: lake}
+  - {offset: [-1, 1], terrain: marsh}
+  - {offset: [0, 1], terrain: hills, site: kelp_grotto}

@@ -27,9 +27,9 @@ func TestProgramCardFacesAreShort(t *testing.T) {
 	want := map[string]string{
 		"steady_guard": "Prevent 1\nSaved cards → discard",
 		"nudge":        "Change 1 die by ±1",
-		"second_wind":  "Gain 10 Energy",
+		"second_wind":  "Gain 10 Energy\nMap: +10 Energy",
 		"strong_swing": "+2 damage to 1 ability this Offense",
-		"take_stock":   "Draw 2 cards",
+		"take_stock":   "Draw 2 cards\nMap: Draw 2",
 		"try_again":    "Reroll 1 die",
 		"dispel":       "Remove 1 enemy buff stack",
 		"disrupt":      "Reroll 1 enemy die",

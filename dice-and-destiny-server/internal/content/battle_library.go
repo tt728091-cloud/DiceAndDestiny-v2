@@ -103,6 +103,11 @@ type CardPlayDefinition struct {
 }
 
 type BattleCardDefinition struct {
+	// MapEffect is what the card does on the Expedition map instead of the
+	// plain 1 Move / 1 Influence every card is worth. A card with a map effect
+	// and no battle program or mechanic is a map card: never playable in
+	// battle, still health. Cards with both are "both" cards.
+	MapEffect            *CardMapEffect           `yaml:"map_effect,omitempty" json:"map_effect,omitempty"`
 	Mechanic             *CardMechanic            `yaml:"mechanic,omitempty" json:"mechanic,omitempty"`
 	AccessType           string                   `yaml:"access_type,omitempty" json:"access_type,omitempty"`
 	Program              *CardProgram             `yaml:"program,omitempty" json:"program,omitempty"`
@@ -211,7 +216,27 @@ type StatusTriggerDefinition struct {
 	Operations     []BattleOperation         `yaml:"operations" json:"operations"`
 }
 
+// StatusModifiers are passive, per-stack combat modifiers a status grants its
+// holder for as long as it is present. The engine reads them by field, never by
+// status ID, so new statuses need only content.
+type StatusModifiers struct {
+	// DefenseDiceBonus adds this many dice per stack to every defensive roll
+	// (Fortified, Conqueror).
+	DefenseDiceBonus int `yaml:"defense_dice_bonus,omitempty" json:"defense_dice_bonus,omitempty"`
+	// FirstRollBonusDice adds this many dice per stack to the holder's first
+	// offensive planning roll of the battle; the holder then chooses which
+	// loadout-sized set of dice to keep, and the status is used up (Ambush).
+	FirstRollBonusDice int `yaml:"first_roll_bonus_dice,omitempty" json:"first_roll_bonus_dice,omitempty"`
+	// AttackDamageBonus adds this much damage per stack to every damaging
+	// offensive ability the holder resolves (the Warlord's Lieutenant buff).
+	AttackDamageBonus int `yaml:"attack_damage_bonus,omitempty" json:"attack_damage_bonus,omitempty"`
+	// HandSizeDelta changes the holder's hand size and hand limit per stack
+	// (map statuses such as "Shaken"; negative values shrink the hand).
+	HandSizeDelta int `yaml:"hand_size_delta,omitempty" json:"hand_size_delta,omitempty"`
+}
+
 type BattleStatusDefinition struct {
+	Modifiers      *StatusModifiers          `yaml:"modifiers,omitempty" json:"modifiers,omitempty"`
 	DispelImmune   bool                      `yaml:"dispel_immune,omitempty" json:"dispel_immune,omitempty"`
 	SchemaVersion  int                       `yaml:"schema_version" json:"schema_version"`
 	ID             string                    `yaml:"id" json:"id"`
@@ -270,6 +295,10 @@ type AbilityModifier struct {
 // DefaultEnergyCap is the game-wide energy maximum used when a combatant does
 // not author its own energy_cap.
 const DefaultEnergyCap = 75
+
+// LoadoutDiceCount is the number of combat dice every combatant rolls; an
+// Ambush adds temporary bonus dice to the first roll and then returns to it.
+const LoadoutDiceCount = 5
 
 type CombatantResources struct {
 	StartingHandSize int `yaml:"starting_hand_size" json:"starting_hand_size"`
@@ -529,6 +558,14 @@ func validateBattleLibrary(lib BattleLibrary) error {
 		if status.Lifecycle.Persistent && status.Lifecycle.RemoveAfterResolution {
 			return fmt.Errorf("%w: status %q lifecycle is contradictory", ErrInvalidContent, id)
 		}
+		if m := status.Modifiers; m != nil {
+			if m.DefenseDiceBonus < 0 || m.DefenseDiceBonus > 10 || m.FirstRollBonusDice < 0 || m.FirstRollBonusDice > 10 || m.AttackDamageBonus < 0 || m.AttackDamageBonus > 100 || m.HandSizeDelta < -10 || m.HandSizeDelta > 10 {
+				return fmt.Errorf("%w: status %q has modifiers out of range", ErrInvalidContent, id)
+			}
+			if *m == (StatusModifiers{}) {
+				return fmt.Errorf("%w: status %q declares empty modifiers", ErrInvalidContent, id)
+			}
+		}
 		for _, trigger := range status.Triggers {
 			if trigger.ID == "" || !validTiming(trigger.Segment, trigger.Phase) {
 				return fmt.Errorf("%w: status %q has invalid trigger timing", ErrInvalidContent, id)
@@ -565,6 +602,9 @@ func validateBattleLibrary(lib BattleLibrary) error {
 		}
 		if card.Cost.Energy < 0 || len(card.Play.SourceZones) == 0 || card.Play.Destination == "" || (card.Program == nil && len(card.Play.PlayableDuring) == 0 && !IsBlankCard(card)) {
 			return fmt.Errorf("%w: card %q has invalid cost or play rules", ErrInvalidContent, id)
+		}
+		if err := ValidateCardMapEffect(card.MapEffect); err != nil {
+			return fmt.Errorf("%w: card %q: %v", ErrInvalidContent, id, err)
 		}
 		if card.Mechanic != nil {
 			if err := ValidateCardMechanic(card, lib); err != nil {
@@ -673,7 +713,7 @@ func validateBattleLibrary(lib BattleLibrary) error {
 			}
 			totalDice += entry.Count
 		}
-		if totalDice != 5 {
+		if totalDice != LoadoutDiceCount {
 			return fmt.Errorf("%w: combatant %q dice loadout must contain five dice", ErrInvalidContent, id)
 		}
 		for _, aid := range combatant.AbilityBoard.Offensive {

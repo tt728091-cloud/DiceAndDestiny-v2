@@ -1,0 +1,8 @@
+schema_version: 1
+id: sunken_chapel
+name: "Sunken Chapel"
+type: ruins
+description: "A flooded chapel; its guardian changes with the tide. Cover for an ambush."
+guardian: {"day": "bell_sentinel", "night": "eel_pair"}
+loot: {"day": [20, 30], "night": [30, 40]}
+cover: true

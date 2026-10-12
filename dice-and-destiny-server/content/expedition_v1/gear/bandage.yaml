@@ -1,0 +1,8 @@
+schema_version: 1
+id: bandage
+name: Bandage
+kind: consumable
+effect: mend_roll
+amount: 1
+price: 10
+description: "One camp mending roll for one wound (success on 4+ on a d6, +1 at an inn). Used up when rolled."

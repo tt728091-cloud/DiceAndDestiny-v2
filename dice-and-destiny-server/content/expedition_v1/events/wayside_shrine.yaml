@@ -1,0 +1,23 @@
+schema_version: 1
+id: wayside_shrine
+name: Wayside Shrine
+text: "A shrine of stacked shells leans over the path. Coins glint in its bowl, and a thin voice asks what you will give."
+choices:
+  - id: offering
+    text: "Leave an offering (1 Influence)"
+    requires: {influence: 1}
+    outcome:
+      text: "The shells warm under your hand. One wound closes and the road feels shorter."
+      mend: 1
+      xp: 5
+  - id: take_silver
+    text: "Take the silver"
+    outcome:
+      text: "You pocket the coins. Something unseen rakes your shoulder as you leave."
+      gold: 15
+      wounds: 1
+  - id: pray
+    text: "Bow and move on"
+    outcome:
+      text: "You leave the bowl untouched and feel steadier for it."
+      xp: 5

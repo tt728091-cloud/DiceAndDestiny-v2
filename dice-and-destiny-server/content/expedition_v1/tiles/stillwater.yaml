@@ -1,0 +1,12 @@
+schema_version: 1
+id: stillwater
+name: "Stillwater"
+kind: countryside
+hexes:
+  - {offset: [0, 0], terrain: forest, group: brine_pair}
+  - {offset: [1, 0], terrain: plains}
+  - {offset: [1, -1], terrain: forest}
+  - {offset: [0, -1], terrain: hills}
+  - {offset: [-1, 0], terrain: lake}
+  - {offset: [-1, 1], terrain: marsh}
+  - {offset: [0, 1], terrain: plains, site: stillwater_monastery}
