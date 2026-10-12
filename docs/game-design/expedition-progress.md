@@ -16,7 +16,7 @@ Evidence folder (ignored): `dice-and-destiny-client/.godot/runtime/expedition-ev
 | M4 Ambush, Fortified, Lieutenant buffs, Conqueror | done | see git log (`M4: …`) |
 | M5 Client map screen | done | see git log (`M5: …`) |
 | M6 Content complete and full-region play | done | see git log (`M6: …`) |
-| M7 Docs and wrap-up | not started | — |
+| M7 Docs and wrap-up | done | see git log (`M7: …`) |
 
 ## M0 — Baseline (2026-10-12)
 
@@ -138,6 +138,77 @@ Live play-through (§8.4) — the real game started with `DICE_AND_DESTINY_INSPE
 - `55-deadline-pending`, `56-warlord-pending`, `57-warlord-start`, `58-warlord-result`, `59-warlord-map-after-defeat`, `60-region-end`, `61-campaign-list-ended`: after round 4 "The deadline"; "A fight: The Drowned Regent · Deadline · Enemy: Conqueror ×1"; the Regent with the Conqueror icon; "Defeat · the Warlord has won: the run is over"; "The run is over" overlay; the campaign list shows "Expedition · run over · 0/13 health · 13 wounded".
 - `inspect_game.py errors`: 0 in every step of the final runs. (One earlier run of the driver logged 100 refused commands — my driver pressing Skip during the Ambush keep — against the previous game process; those are the authority correctly refusing an illegal command, not game errors.)
 - Not shown live: an **event scene**. On seed 6 the only placed event site (the Wayside Shrine) lies behind the Brine Mask's hex and every approach provokes it; the inspector-driven proxy lost that fight four times (it does not use the gateway's full heuristics). The event scene, its choice and its outcome are shown by the pointer test's graphical run (`m5-screens/expedition-event-1280.png`, `expedition-event-result-1280.png`) on the same screen against the same authority. A second explore was not shown live either (rounds ran out).
+
+## M7 — Docs and wrap-up (2026-10-12)
+
+- `docs/game-design/campaign.md`: new "Expedition mode" section (saves, loop, Prepare from sites and camp, wounds and draws, ops, tests).
+- `docs/game-design/expedition.md`: new "18. Implementation notes" (where things live, how the open corners were resolved, placeholders, what is not built); the design sections are untouched.
+- `AGENTS.md`: new "Expedition" section with the rules future work must keep (authority-only map, viewer-safe view, configuration not code, battle start from the map, the map rules, tests to keep green and the fixed seeds).
+- `TODO.md`: "Expedition follow-ups" (mixed groups, grievous wounds, companions, regions and relics, more map cards and gear, the placeholder Warlord and art, content versioning, mid-battle relaunch, a live event scene, the pre-existing `verify_offensive_roll_controls.gd` failure).
+- `verify_expedition_map.gd`: the 1920×1080 pass now also plays a map card by mouse (Second Wind: +10 energy, the card leaves the hand and counts as the turn's card).
+- Final checks (`m7-final-checks.log`): see the report below.
+
+## Final report
+
+**Verdict: yes.** A full region is playable end to end in the real game with the mouse: new expedition from the menu, walking and exploring paid with cards and energy, site services and deck changes through Prepare, events, provoked and ambushed fights through the real battle screen with the piles going in and coming back, defeats with forced rests, camps and rest summaries through Day and Night, the Warlord's deadline fight, and both endings (the region won with wounds mended; the run over). Every screen is driven by the authority's viewer-safe status and every action is validated on the Go server.
+
+### Acceptance criteria
+
+Proofs name Go tests (`internal/battle/expedition`, `…/learned`, `…/engine`, `internal/content`), pointer tests (`tests/presentation/`), pointer screenshots (`.godot/runtime/expedition-evidence/m5-screens/`) and live screenshots (`…/m6-live/`).
+
+| # | Criterion | Proof | Result |
+| --- | --- | --- | --- |
+| 1 | New campaign = Expedition save; linear saves unchanged | `verify_expedition_map.gd` (Begin → map; the mode defaults to Expedition), `TestExpeditionRuntimeOpsAndPersistence` (linear saves untouched by expedition ops), `verify_campaign.gd` + `campaign_test.go` (the linear loop) · live `01-campaign-new`, `02-map-start` | PASS |
+| 2 | Same seed → identical state; relaunch restores mid-turn, mid-rest, mid-battle | `TestNewRegionIsDeterministicAndStartsWithTheStartTile`, `TestReloadedStateContinuesIdentically`, `TestExpeditionSeedDeterminismThroughTheRuntime`, `reloadCheck` after every action of `TestFullRegionSeededPlayThroughs`, `verify_expedition_statuses.gd` (relaunch restores the pending battle and Ambush on the same battle id) · live resumes `10`, `24`, `32-map-resumed` (mid-turn, mid-rest, mid-battle: the same first eight-dice roll `28` vs `35`) | PASS — mid-battle means the identical battle start (same id and seed), not mid-battle progress (decision 6, follow-up) |
+| 3 | Start tile only; explore 2 Move next to a slot; countryside before core | `TestExploreFollowsTheStackCountrysideBeforeCore`, `TestMovementCostsPaymentsAndImpassableTerrain` · pointer explore (card + 5 energy) · live `02-explore-payment`, `03-map-explored` | PASS |
+| 4 | Fog: sight 2/1, remembered terrain, hidden contents, no hidden data in the payload | `TestViewNeverLeaksHiddenState`, `TestViewListsAreNeverNull`, `TestConfigValuesDriveTerrainAndSight` · `expedition-map-explored-1920x1080` ("?" behind the marsh), live `18-night-map` (sight 1) | PASS |
+| 5 | Movement costs by Day/Night, cards and energy, impassable, illegal moves refused and never offered | `TestMovementCostsPaymentsAndImpassableTerrain` · pointer: cards and energy payment, "forest costs 3 at night"; the UI disables blocked moves with the authority's reason (`19-challenge-ambush-offered`: "Cannot move: an enemy group stands there") | PASS |
+| 6 | No card → energy; Second Wind +10; Take Stock draws 2 | `TestMapCardsAndEnergyRules` · pointer: Second Wind played by mouse in the 1920×1080 pass (+10 energy) · live `02-map-start` ("Play on map" only on map cards) | PASS |
+| 7 | 1-card rule; unplayed cards stay; draw up to hand size | `TestOneCardRuleEndTurnDrawAndRest` · pointer: End turn disabled with the reason, a discard unlocks it, the hand refills · live `01-end-turn-blocked` | PASS |
+| 8 | Rest: reshuffle, wounds stay out, energy reset, camp services, Warlord 2 hexes and patrols, Day↔Night, round +1; deadline after round 4 | `TestOneCardRuleEndTurnDrawAndRest`, `TestCampMendingRollsUseSeededDice`, `TestPatrolsNightHuntersAndGuards`, `TestWarlordMarchesGoalConquerorChallengeAndDeadline`, `TestFullRegionSeededPlayThroughs/deadline defeat` (every step per rest) · pointer camp + rest summary · live `64-camp-inn-panel`, `65-rest-summary-make-camp`, `55-deadline-pending` | PASS |
+| 9 | Night: forest 3, sight 1, towns/villages closed except the inn, night loot and guardians, night hunters per turn | `TestConfigValuesDriveTerrainAndSight`, `TestSitesInfluenceMendingShopsAndTrainer` (closed at night, inn), `TestRuinsLootLieutenantsAndFreedSites`, `TestPatrolsNightHuntersAndGuards` · pointer night checks · live `18-night-map` | PASS |
+| 10 | Battle starts from the map piles, no opening draw, Income from the map draw pile, nothing reshuffles, discard first | `TestExpeditionBattleBridgeBothWays`, `TestMapCardsAreNeverLegalInBattle` · live `12-provoked-pending` (piles going in), `13-provoked-start` | PASS |
+| 11 | After a battle: piles back exactly, energy min(end, in), turn over, rewards from the authority | `TestExpeditionBattleBridgeBothWays`, `TestBattleBridgeVictoryDefeatAndEnergyCap` · pointer `_fight` checks · live `15`, `40`, `46` map-after-defeat panels | PASS |
+| 12 | Provoked fights immediate and never Ambush; challenges and entries are the action | `TestProvokedFightsStartImmediatelyWithoutAmbush`, `TestGarrisonsAreFortifiedAndSiegeHooksRemoveIt` · pointer provoked fight · live `11-provoke-warning`, `12-provoked-pending` | PASS |
+| 13 | Ambush: unseen start or cover, habit × Day/Night; 8 dice, keep 5, rerolls to 5, max 3 rolls | `TestChallengeAndAmbushByHabitDayNightAndCover`, `TestAmbushRollsBonusDiceThenKeepsFive`, `TestAmbushIsNotReusedAndExpiresUnused` · `verify_expedition_statuses.gd` (pointer) · live `19`, `20`, `35-ambush-ambush-eight-dice` | PASS |
+| 14 | Fortified +1 die, Siege Hooks remove it, Conqueror +1, Lieutenant buffs on the Warlord removed by killing the Lieutenant | `TestGarrisonsAreFortifiedAndSiegeHooksRemoveIt`, `TestWarlordMarchesGoalConquerorChallengeAndDeadline`, `TestRuinsLootLieutenantsAndFreedSites`, `TestFortifiedAndConquerorAddDefensiveDice`, `TestLieutenantsFavorAddsDamagePerStack` · live `56-warlord-pending` ("Enemy: Conqueror ×1"), `57-warlord-start` (icon) | PASS — Siege Hooks and the Lieutenant buff by authority tests; not reached in the live run |
+| 15 | Status checklist by authority and by pointer | Ambush: all items by pointer (`verify_expedition_statuses.gd`) and engine tests. Fortified, Conqueror, Lieutenant's Favor: acquisition, target, no reuse, persistence and expiry by `expedition_statuses_test.go` and the bridge tests; icon, count and hover rules through the same status strip and catalog (Conqueror seen live, `57`) | PASS for Ambush; PARTIAL by pointer for the other three (authority-proven; display via the shared strip) |
+| 16 | Map cards never legal in battle, not offered, still health | `TestMapCardsAreNeverLegalInBattle`, `TestMapOnlyCardsAreBlankBattleCards` · live `57-warlord-start` (Trailblaze in hand, unplayable) | PASS |
+| 17 | Normal defeat: pre-battle wounds + 2 (never the last card), pushed back, enemy stays, forced rest; the Warlord ends the run | `TestBattleBridgeVictoryDefeatAndEnergyCap`, `TestExpeditionBattleBridgeBothWays`, `TestWarlordMarchesGoalConquerorChallengeAndDeadline`, `TestFullRegionSeededPlayThroughs/deadline defeat` · live `14`–`17`, `58`–`61` | PASS |
+| 18 | Influence = cards played at the site that turn; deck changes only at sites/camp for XP + configured Influence with the purchase rules | `TestSitesInfluenceMendingShopsAndTrainer`, `TestApplyDeckChangeKeepsPilesInStep`, `TestExpeditionRuntimeOpsAndPersistence`, `TestFullRegionSeededPlayThroughs/victory` · pointer Prepare (refused without Influence) · live `01-village-influence`, `03-prepare-bought-trailblaze` | PASS |
+| 19 | Mending: camp rolls (bandage or 3 Influence, 4+, inn +1), village 2, monastery 1, town gold; seeded | `TestCampMendingRollsUseSeededDice`, `TestSitesInfluenceMendingShopsAndTrainer` · pointer: 3 cards → one mending roll at camp · live `64-camp-inn-panel` (+1 at the inn) | PASS |
+| 20 | Gold only from the authority; shops sell gear; trainer 3 gold → 1 XP; gold never buys cards | `TestSitesInfluenceMendingShopsAndTrainer`, `TestRuinsLootLieutenantsAndFreedSites`, `TestEventsEnforceRequirementsAndOutcomes` · the shop and trainer buttons are registered and shown with their prices (`01-village-influence`) | PASS — shop/trainer purchases by authority tests; not bought by mouse (no gold on the paths played) |
+| 21 | Event sites present scenes; requirements and outcomes enforced | `TestEventsEnforceRequirementsAndOutcomes` · pointer: `expedition-event-1280`, `expedition-event-result-1280` | PASS — not reached in the live inspector run (see M6) |
+| 22 | The Warlord: route 2 per rest, extra rests speed him, challengeable on the road, goal → Fortified/Conqueror, early reward | `TestWarlordMarchesGoalConquerorChallengeAndDeadline`, `TestFullRegionSeededPlayThroughs` (both) · pointer: the road catch and victory (`expedition-end-victory-1280`), the deadline (`expedition-deadline-1280`) · live `55`–`61` | PASS |
+| 23 | Every §14 number from configuration; changing rounds, hand size, energy per Move, terrain cost, defeat wounds changes behaviour | `TestLoadConfigAcceptsShippedValues`, `TestLoadConfigRejectsBadValues`, `TestConfigValuesDriveTerrainAndSight`, `TestConfigValuesChangeBehaviour` | PASS |
+| 24 | Readable and inside the viewport at 1280×720 and 1920×1080 | `verify_expedition_map.gd` `_check_layout` + the inspected `m5-screens/*.png` (start, explored, village, prepare, provoked, battle results, event, camp, rest, deadline, end at both sizes) | PASS |
+| 25 | Every action in 3–22 by mouse; every control registered | `verify_expedition_map.gd`, `verify_expedition_statuses.gd`; the live run drove the same screens through the inspector's registered controls | PASS — by mouse: move, explore, discard, end turn, site Influence, Prepare, map card, challenge, fight, event choice, make camp, mend roll, break camp, end screens; not clicked: Enter a site, shop, trainer, Siege Hooks (controls exist and are registered; authority-tested) |
+| 26 | `go test ./...`, battle authority, campaign and status tests, `git diff --check`, no writes to `content/authored/` | `m7-final-checks.log` (see commands below); `git status` shows no change under `content/authored/` | PASS |
+
+### Commands and results
+
+See the per-milestone entries for the full lists. Final run (`m7-final-checks.log`):
+
+| Command | Result |
+| --- | --- |
+| `cd dice-and-destiny-server && go test ./...` | 26 packages ok, no FAIL |
+| `./scripts/godot.sh --headless --script res://scripts/verify_battle_authority.gd` | `BATTLE AUTHORITY: start and 5D6 planning roll passed` |
+| `./scripts/godot.sh --headless --script res://tests/presentation/verify_expedition_map.gd` | `EXPEDITION MAP: PASSED` |
+| `./scripts/godot.sh --headless --script res://tests/presentation/verify_expedition_statuses.gd` | `EXPEDITION STATUSES: PASSED` |
+| `./scripts/godot.sh --headless --script res://tests/presentation/verify_campaign.gd` | `CAMPAIGN: PASSED` |
+| `./scripts/godot.sh --headless --script res://tests/presentation/verify_campaign_prepare.gd` | `CAMPAIGN PREPARE: PASSED` |
+| `git diff --check` | clean |
+| `git status dice-and-destiny-server/content/authored/` | no changes written by tests |
+
+Earlier in M6 the wider Godot regression (`m6-godot-regression.log`) also passed: unified defense, steady guard targeting, actor HUD tooltips, automatic pass, curse bloom status.
+
+### Decisions, placeholders, differences from the design
+
+See "Decisions made during implementation" (1–23) and "Placeholders created" above. Nothing in `expedition.md` was changed; the corners it left open were resolved as listed and recorded in its new §18.
+
+### Known issues and follow-ups
+
+`TODO.md` "Expedition follow-ups": mixed groups and >2 enemies, grievous wounds, companions, more regions / the between-region stop / relic selection, more map cards and gear, the placeholder Warlord and art (balance in playtesting), content versioning, mid-battle relaunch, a live event scene, and the pre-existing `verify_offensive_roll_controls.gd` failure.
 
 ## Decisions made during implementation
 

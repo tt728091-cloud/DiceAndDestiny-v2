@@ -591,6 +591,21 @@ func _layout_pass(size: Vector2i, seed: int) -> void:
 	var label := "%dx%d" % [size.x, size.y]
 	await _check_layout(label)
 	await _capture(map, "expedition-map-start-" + label)
+	# A map card played by mouse: its map effect resolves on the authority.
+	var playable := ""
+	for index in map.view.hand.size():
+		if _control(map, "expedition.play.%d" % index) != null and not _control(map, "expedition.play.%d" % index).disabled: playable = "expedition.play.%d" % index
+	_expect(not playable.is_empty(), "a map card in the opening hand offers Play on map")
+	if not playable.is_empty():
+		var card: Dictionary = map.view.hand[int(playable.get_slice(".", 2))]
+		var energy_before := int(map.view.energy)
+		var hand_before: int = map.view.hand.size()
+		await _press(playable)
+		var id := str(card.get("id", ""))
+		var drawn := 2 if id == "take_stock" else 0
+		_expect(map.view.hand.size() == hand_before - 1 + drawn and int(map.view.turn.cards_used) == 1, "the played map card %s left the hand and counts as a card used" % id)
+		if id == "second_wind": _expect(int(map.view.energy) == energy_before + 10, "Second Wind's map effect gives +10 energy (%d → %d)" % [energy_before, int(map.view.energy)])
+		elif id == "take_stock": _expect(true, "Take Stock drew 2")
 	_expect(await _move_to(1, 0), "layout pass: move")
 	await _select(2, 0); await _press("expedition.card.0"); await _press("expedition.energy.plus"); await _press("expedition.explore")
 	await _select(2, 1)
