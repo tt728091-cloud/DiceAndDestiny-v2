@@ -3,6 +3,7 @@ package expedition
 import (
 	"encoding/json"
 	"fmt"
+	"maps"
 	"path/filepath"
 	"reflect"
 	"strings"
@@ -420,12 +421,12 @@ func TestMapCardsAndEnergyRules(t *testing.T) {
 		t.Fatalf("an unaffordable map card stays in hand: %+v energy %d", v.Hand[0], poor.Energy)
 	}
 	act(t, s, r, Action{Kind: "play_map_card", Card: "trailblaze"})
-	if s.Turn.Move != 2 {
-		t.Fatalf("Trailblaze gives Move 2, got %d", s.Turn.Move)
+	if s.Turn.Move != 3 {
+		t.Fatalf("Trailblaze gives Move 3, got %d", s.Turn.Move)
 	}
-	// Forced March (printed cost 0) costs its map-only 10 energy and ignores terrain for the turn.
+	// Forced March (printed cost 0, no map-only extra) ignores terrain for the turn.
 	act(t, s, r, Action{Kind: "play_map_card", Card: "pathfinder_paths_variant_node_1"})
-	if s.Energy != 5 || s.Turn.Move != 6 || !s.Turn.IgnoreTerrain {
+	if s.Energy != 15 || s.Turn.Move != 7 || !s.Turn.IgnoreTerrain {
 		t.Fatalf("Forced March: energy %d move %d ignore %v", s.Energy, s.Turn.Move, s.Turn.IgnoreTerrain)
 	}
 	if cost, _, ok := s.moveCost(r, Hex{1, -1}); !ok || cost != 1 {
@@ -434,9 +435,17 @@ func TestMapCardsAndEnergyRules(t *testing.T) {
 	if _, _, ok := s.moveCost(r, Hex{-1, 0}); ok {
 		t.Fatal("the lake stays impassable under Forced March")
 	}
+	// A map-only extra energy cost is paid on top of the printed cost.
+	extra := r
+	extra.Cards = maps.Clone(r.Cards)
+	march := extra.Cards["pathfinder_paths_variant_node_1"]
+	effect := *march.MapEffect
+	effect.EnergyCost = 10
+	march.MapEffect = &effect
+	extra.Cards["pathfinder_paths_variant_node_1"] = march
 	s.Energy = 5
 	s.Hand = append(s.Hand, "pathfinder_paths_variant_node_1")
-	_, err = s.Act(r, Action{Kind: "play_map_card", Card: "pathfinder_paths_variant_node_1"})
+	_, err = s.Act(extra, Action{Kind: "play_map_card", Card: "pathfinder_paths_variant_node_1"})
 	mustFail(t, err, "costs 10 energy; you have 5")
 	// Scout Ahead reveals contents up to 3 away this turn.
 	s.Night = true

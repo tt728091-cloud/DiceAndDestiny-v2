@@ -126,8 +126,8 @@ func CardMapEffectRules(effect *CardMapEffect) string {
 	if effect.EnergyCost > 0 {
 		text = fmt.Sprintf("Pay %d energy: %s", effect.EnergyCost, strings.ToLower(text[:1])+text[1:])
 	}
-	if effect.Text != "" {
-		text += " — " + effect.Text
+	if flavour := strings.TrimRight(strings.TrimSpace(effect.Text), "."); flavour != "" {
+		text += " — " + flavour
 	}
 	return "Map: " + text + ". Playing it for its effect counts as a card played this turn."
 }

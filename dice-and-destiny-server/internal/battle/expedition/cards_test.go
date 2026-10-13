@@ -46,8 +46,8 @@ func TestAuthoredMapCardsAndTrees(t *testing.T) {
 		amount     int
 		energy     int
 	}{
-		"trailblaze":                      {"move", "", 2, 0},
-		"pathfinder_paths_variant_node_1": {"move", "terrain", 4, 10},
+		"trailblaze":                      {"move", "", 3, 0},
+		"pathfinder_paths_variant_node_1": {"move", "terrain", 4, 0},
 		"pathfinder_paths_variant_node_2": {"move", "night", 2, 0},
 		"pathfinder_paths_variant_node_3": {"scout", "", 3, 0},
 	}

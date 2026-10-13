@@ -80,3 +80,10 @@ func TestStatusModifiersValidation(t *testing.T) {
 		t.Fatalf("out-of-range modifiers accepted: %v", err)
 	}
 }
+
+func TestMapRulesEndOneSentence(t *testing.T) {
+	got := CardMapEffectRules(&CardMapEffect{Kind: "move", Amount: 3, Text: "Blaze a trail."})
+	if strings.Contains(got, "..") || !strings.Contains(got, "Gain 3 Move this turn — Blaze a trail. Playing it") {
+		t.Fatalf("the flavour text ends the sentence once: %q", got)
+	}
+}
