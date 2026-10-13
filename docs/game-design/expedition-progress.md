@@ -20,6 +20,7 @@ Evidence folder (ignored): `dice-and-destiny-client/.godot/runtime/expedition-ev
 | M8 Map screen facelift ("The Surveyor's Chart") | done | see git log (`M8: …`) |
 | M9 Grouped wounds, camp healing, the rest draws the hand | done | see git log (`M9: …`) |
 | M10 Deck-change Influence paid once per visit | done | see git log (`M10: …`) |
+| M11 Map plays cost the card's printed energy | done | see git log (`M11: …`) |
 
 ## M0 — Baseline (2026-10-12)
 
@@ -264,6 +265,10 @@ The user found 3 Influence per change too harsh for the opening campaign: *"make
 - **Client.** Camp: "Change deck · 3 Influence, then change freely until you break camp" → "Change deck · open until you break camp". Site card: "Change deck · 2 Influence for the visit" → "… open until the turn ends". Prepare's header reads "Influence · opens the deck" with "2 / 2" before and "Open" after the first change.
 - **Applied to sites too.** The user asked about camp; the same fee-per-visit rule now applies at villages and monasteries so a village never charges more for a rebuild than a camp does.
 - **Tests.** `TestSitesInfluenceMendingShopsAndTrainer` (camp: the first change pays 3, the next two are free, break camp closes the deck, the next camp charges again), `TestSiteDeckChangesArePaidOncePerVisit` (village: pay 2 once, open in the view, closed after the turn ends), `TestExpeditionRuntimeOpsAndPersistence` (a second purchase through the op costs 10 XP and no Influence), and `verify_expedition_map.gd` (by mouse in Prepare: the first purchase spends the 2 Influence and the header shows "Open", the second purchase goes through on XP alone, the site card says the deck stays open this turn).
+
+## M11 — Map plays cost the card's printed energy (2026-10-13)
+
+The user played Take Stock (printed cost 5 energy) for its map effect and the map energy did not go down. Cause: a map play charged only the map effect's own `energy_cost`, which is 0 unless authored, and ignored the card's printed cost. Now `mapEnergyCost` = the card's printed `cost.energy` plus any map-only `map_effect.energy_cost`; the play action and the view's `energy_cost` / `map_playable` / `map_reason` ("needs 5 energy; you have 4") use the same number, so the hand's button reads "Play (5 energy)". Forced March (printed 0, map-only 10) is unchanged; Warden's March and Sentry's Watch (printed 5) now cost 5 on the map too. Spending a card as 1 Move or 1 Influence still costs no energy. Tests: `TestMapCardsAndEnergyRules` (Take Stock 10 → … −5 and draws 2, refused with 4 energy and kept in hand, the view's price and reason) and a new pointer pass in `verify_expedition_map.gd` (`_map_card_energy_pass`: a fresh expedition waits for Take Stock, the button says 5 energy, a mouse click drops energy by 5 and draws 2).
 
 ## Decisions made during implementation
 

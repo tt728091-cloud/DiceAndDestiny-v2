@@ -394,22 +394,38 @@ func TestMapCardsAndEnergyRules(t *testing.T) {
 	s.Hand = []string{"strong_swing", "second_wind", "take_stock", "pathfinder_paths_variant_node_1", "pathfinder_paths_variant_node_3", "trailblaze"}
 	_, err := s.Act(r, Action{Kind: "play_map_card", Card: "strong_swing"})
 	mustFail(t, err, "has no map effect")
+	// Second Wind's printed cost is 0.
 	act(t, s, r, Action{Kind: "play_map_card", Card: "second_wind"})
 	if s.Energy != 20 || s.Turn.CardsUsed != 1 || countOf(s.Spent, "second_wind") != 1 {
 		t.Fatalf("Second Wind gives +10 energy on the map: energy %d", s.Energy)
 	}
+	// Take Stock's printed cost is 5 energy, paid on the map as in battle.
+	for _, c := range s.View(r, 1).Hand {
+		if c.ID == "take_stock" && (c.EnergyCost != 5 || !c.MapPlayable) {
+			t.Fatalf("the view prices Take Stock at its printed 5 energy: %+v", c)
+		}
+	}
 	draw := len(s.Draw)
 	act(t, s, r, Action{Kind: "play_map_card", Card: "take_stock"})
-	if len(s.Draw) != draw-2 || len(s.Hand) != 6 {
-		t.Fatalf("Take Stock draws 2: draw %d hand %d", len(s.Draw), len(s.Hand))
+	if len(s.Draw) != draw-2 || len(s.Hand) != 6 || s.Energy != 15 {
+		t.Fatalf("Take Stock costs 5 energy and draws 2: energy %d draw %d hand %d", s.Energy, len(s.Draw), len(s.Hand))
+	}
+	// Without the printed energy it cannot be played for its effect, and the
+	// view says why; it can still be spent as 1 Move or 1 Influence.
+	poor := newState(t, r, 2)
+	poor.Hand, poor.Energy = []string{"take_stock"}, 4
+	_, err = poor.Act(r, Action{Kind: "play_map_card", Card: "take_stock"})
+	mustFail(t, err, "Take Stock costs 5 energy; you have 4")
+	if v := poor.View(r, 1); v.Hand[0].MapPlayable || v.Hand[0].MapReason != "needs 5 energy; you have 4" || poor.Energy != 4 || len(poor.Hand) != 1 {
+		t.Fatalf("an unaffordable map card stays in hand: %+v energy %d", v.Hand[0], poor.Energy)
 	}
 	act(t, s, r, Action{Kind: "play_map_card", Card: "trailblaze"})
 	if s.Turn.Move != 2 {
 		t.Fatalf("Trailblaze gives Move 2, got %d", s.Turn.Move)
 	}
-	// Forced March costs 10 energy and ignores terrain for the turn.
+	// Forced March (printed cost 0) costs its map-only 10 energy and ignores terrain for the turn.
 	act(t, s, r, Action{Kind: "play_map_card", Card: "pathfinder_paths_variant_node_1"})
-	if s.Energy != 10 || s.Turn.Move != 6 || !s.Turn.IgnoreTerrain {
+	if s.Energy != 5 || s.Turn.Move != 6 || !s.Turn.IgnoreTerrain {
 		t.Fatalf("Forced March: energy %d move %d ignore %v", s.Energy, s.Turn.Move, s.Turn.IgnoreTerrain)
 	}
 	if cost, _, ok := s.moveCost(r, Hex{1, -1}); !ok || cost != 1 {

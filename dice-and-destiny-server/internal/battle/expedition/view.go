@@ -424,12 +424,12 @@ func (s *State) View(r Rules, revision int) View {
 		if def, ok := r.Cards[id]; ok && def.MapEffect != nil {
 			card.MapEffect = def.MapEffect.Text
 			card.MapOnly = def.Program == nil && def.Mechanic == nil
-			card.EnergyCost = def.MapEffect.EnergyCost
-			card.MapPlayable = s.Phase == PhaseTurn && s.Energy >= def.MapEffect.EnergyCost
+			card.EnergyCost = mapEnergyCost(def)
+			card.MapPlayable = s.Phase == PhaseTurn && s.Energy >= card.EnergyCost
 			if s.Phase != PhaseTurn {
 				card.MapReason = "not during " + s.Phase
 			} else if !card.MapPlayable {
-				card.MapReason = fmt.Sprintf("needs %d energy", def.MapEffect.EnergyCost)
+				card.MapReason = fmt.Sprintf("needs %d energy; you have %d", card.EnergyCost, s.Energy)
 			}
 		}
 		v.Hand = append(v.Hand, card)

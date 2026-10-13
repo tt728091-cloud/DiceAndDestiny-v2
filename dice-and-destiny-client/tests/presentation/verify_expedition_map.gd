@@ -34,6 +34,7 @@ func _run() -> void:
 		_finish_map(); return
 	await _full_flow(seed_used)
 	await _layout_pass(Vector2i(1920, 1080), seed_used)
+	await _map_card_energy_pass(seed_used)
 	await _victory_flow(VICTORY_SEED)
 	_finish_map()
 
@@ -611,6 +612,44 @@ func _victory_pass(seed: int) -> String:
 		map = _find(EXPEDITION_SCRIPT)
 	return result
 
+## Playing a card for its map effect costs its printed energy, as in battle:
+## a fresh expedition discards and ends turns until Take Stock (5 energy) is
+## in hand, plays it by mouse, and checks the energy, the draw and the button.
+func _map_card_energy_pass(seed: int) -> void:
+	root.size = Vector2i(1280, 720)
+	for frame in 3: await process_frame
+	var created: Dictionary = runtime.campaign_new("starter", "Map energy", "expedition", "", seed)
+	_expect(created.get("ok") == true, "a map-energy expedition starts")
+	if created.get("ok") != true: return
+	var screen = load(EXPEDITION_SCRIPT).new(); screen.save_id = str(created.result.id); root.add_child(screen)
+	for frame in 8: await process_frame
+	map = screen
+	var played := false
+	for turn in 6:
+		if map.view.phase != "turn": await _settle_overlays()
+		if map.view.phase != "turn": break
+		var at := -1
+		for index in map.view.hand.size():
+			if str(map.view.hand[index].id) == "take_stock": at = index
+		if at >= 0:
+			var card: Dictionary = map.view.hand[at]
+			var button := _control(map, "expedition.play.%d" % at)
+			_expect(int(card.get("energy_cost", -1)) == 5 and button != null and "5 energy" in button.text, "Take Stock offers its map play at its printed 5 energy (%s)" % (button.text if button != null else "no button"))
+			var energy_before := int(map.view.energy)
+			var hand_before: int = map.view.hand.size()
+			var draw_before: int = map.view.draw.size()
+			await _press("expedition.play.%d" % at)
+			var drawn: int = mini(2, draw_before)
+			_expect(int(map.view.energy) == energy_before - 5, "playing Take Stock on the map cost 5 energy (%d → %d)" % [energy_before, int(map.view.energy)])
+			_expect(map.view.hand.size() == hand_before - 1 + drawn and map.view.draw.size() == draw_before - drawn, "Take Stock drew %d" % drawn)
+			print("expedition map test: Take Stock on the map, energy %d → %d" % [energy_before, int(map.view.energy)])
+			played = true
+			break
+		await _press("expedition.card.0"); await _press("expedition.discard")
+		await _press("expedition.end_turn")
+	_expect(played, "Take Stock reached the hand within six turns")
+	screen.queue_free(); await process_frame
+
 ## A second expedition at 1920×1080 for layout screenshots.
 func _layout_pass(size: Vector2i, seed: int) -> void:
 	root.size = size
@@ -638,7 +677,7 @@ func _layout_pass(size: Vector2i, seed: int) -> void:
 		var drawn := 2 if id == "take_stock" else 0
 		_expect(map.view.hand.size() == hand_before - 1 + drawn and int(map.view.turn.cards_used) == 1, "the played map card %s left the hand and counts as a card used" % id)
 		if id == "second_wind": _expect(int(map.view.energy) == energy_before + 10, "Second Wind's map effect gives +10 energy (%d → %d)" % [energy_before, int(map.view.energy)])
-		elif id == "take_stock": _expect(true, "Take Stock drew 2")
+		elif id == "take_stock": _expect(int(map.view.energy) == energy_before - int(card.get("energy_cost", -1)) and int(card.get("energy_cost", 0)) == 5, "Take Stock drew 2 and cost its printed 5 energy (%d → %d)" % [energy_before, int(map.view.energy)])
 	# Hovering a hex shows the chart's own cartouche (there is no engine tooltip).
 	var village = map._hex_buttons["-1,1"]
 	var hover_at: Vector2 = village.get_global_rect().get_center()

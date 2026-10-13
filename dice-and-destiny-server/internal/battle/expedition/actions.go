@@ -4,6 +4,8 @@ import (
 	"errors"
 	"fmt"
 	"sort"
+
+	"diceanddestiny/server/internal/content"
 )
 
 // Action is one expedition_act request. Unused fields stay empty.
@@ -278,6 +280,17 @@ func (s *State) explore(r Rules, a Action) error {
 
 // --- cards ------------------------------------------------------------------
 
+// mapEnergyCost is what playing a card for its map effect costs: the card's
+// printed energy cost, as in battle, plus any map-only extra its map effect
+// authors. Spending a card as 1 Move or 1 Influence costs no energy.
+func mapEnergyCost(def content.BattleCardDefinition) int {
+	cost := def.Cost.Energy
+	if def.MapEffect != nil {
+		cost += def.MapEffect.EnergyCost
+	}
+	return cost
+}
+
 func (s *State) playMapCard(r Rules, a Action) error {
 	if err := s.requirePhase(PhaseTurn); err != nil {
 		return err
@@ -290,13 +303,14 @@ func (s *State) playMapCard(r Rules, a Action) error {
 		return fmt.Errorf("%s has no map effect; it is worth 1 Move or 1 Influence", r.cardName(a.Card))
 	}
 	e := def.MapEffect
-	if e.EnergyCost > s.Energy {
-		return fmt.Errorf("%s costs %d energy; you have %d", def.Name, e.EnergyCost, s.Energy)
+	cost := mapEnergyCost(def)
+	if cost > s.Energy {
+		return fmt.Errorf("%s costs %d energy; you have %d", def.Name, cost, s.Energy)
 	}
 	s.Hand, _ = removeFirst(s.Hand, a.Card)
 	s.Spent = append(s.Spent, a.Card)
 	s.Turn.CardsUsed++
-	s.Energy -= e.EnergyCost
+	s.Energy -= cost
 	switch e.Kind {
 	case "move":
 		s.Turn.Move += e.Amount

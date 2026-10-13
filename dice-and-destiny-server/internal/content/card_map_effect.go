@@ -7,16 +7,18 @@ import (
 
 // CardMapEffect is a card's effect on the Expedition map. Every card is worth
 // 1 Move or 1 Influence there; a map effect replaces that with something
-// stronger when the card is played as a map card. Map effects that cost
-// energy are rare and big: map energy only refills at rest.
+// stronger when the card is played as a map card. Playing it for its map
+// effect costs the card's printed energy, as in battle; map energy only
+// refills at rest.
 type CardMapEffect struct {
 	// Kind is one of CardMapEffectKinds.
 	Kind string `yaml:"kind" json:"kind"`
 	// Amount is the Move points, cards drawn, energy gained, sight bonus or
 	// scouting range, by kind.
 	Amount int `yaml:"amount" json:"amount"`
-	// EnergyCost is paid from the map energy pool when the card is played
-	// for its effect (0 for most map effects).
+	// EnergyCost is a map-only extra paid from the map energy pool on top of
+	// the card's printed energy cost when it is played for its effect (0 for
+	// most map effects).
 	EnergyCost int `yaml:"energy_cost,omitempty" json:"energy_cost,omitempty"`
 	// IgnoreTerrain makes a move effect pay 1 per hex whatever the terrain
 	// (impassable terrain stays impassable).

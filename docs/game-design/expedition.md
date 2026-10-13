@@ -276,7 +276,9 @@ Every card counts as health and can always be spent for **1 Move or 1 Influence*
 
 **Map cards are unplayable in battle by default.** That's a deliberate weakness: the more you build for exploring, the weaker your fights. Abilities, gear and card upgrades can later cover the gap (for example, a map card that also gains a small battle use). Naming the game's weaknesses on purpose is what creates build paths that feel good to complete.
 
-**Map effects that cost energy are allowed, but rare and big.** In battle, energy comes back every round (Income, cards). On the map it comes back **only when you rest**, so the energy you have at the start of a round is all you get for the round. A map effect that costs energy must therefore be **big** enough to be worth part of that pool (e.g. Move 4 and ignore terrain costs, not Move 3). Most map effects cost no energy. Energy-costing map effects belong on specific card-tree upgrades, and they need careful tuning.
+**Playing a card for its map effect costs its printed energy**, as in battle: Take Stock (5 energy) costs 5 map energy to draw 2 on the map; Second Wind (0) costs nothing. Spending any card as 1 Move or 1 Influence costs no energy. A map effect may also author a map-only `energy_cost`, paid on top of the printed cost.
+
+**Map-only energy costs are allowed, but rare and big.** In battle, energy comes back every round (Income, cards). On the map it comes back **only when you rest**, so the energy you have at the start of a round is all you get for the round. A map effect that costs energy must therefore be **big** enough to be worth part of that pool (e.g. Move 4 and ignore terrain costs, not Move 3). Most map effects cost no energy. Energy-costing map effects belong on specific card-tree upgrades, and they need careful tuning.
 
 **Gear** can also be a card (strong on the map, weak in battle, or the reverse), and every card it adds is more health and a longer round.
 
@@ -399,7 +401,7 @@ Decided in review (2026-10-11 to 2026-10-12):
 - The Warlord is like any enemy: his own habits and weaknesses, by day or night. He's Fortified only when camped in a tower or keep.
 - Cards come in three kinds — battle, map, and both — and card trees grow toward battle, the map, or both, so a player configures each copy. Some new trees are purely about the map.
 - Map cards are unplayable in battle by default — a deliberate weakness for gear, abilities and upgrades to cover later.
-- Map effects may cost energy, but rarely and only for big effects, because map energy refills only at rest.
+- A card played for its map effect costs its printed energy, as in battle; a map-only extra energy cost is allowed but rare and only for big effects, because map energy refills only at rest.
 - XP, cards, gear and relics carry between regions, with a camp and healer stop in between.
 
 ## 18. Implementation notes
