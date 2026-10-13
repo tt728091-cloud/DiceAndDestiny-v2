@@ -47,7 +47,7 @@ The pictures are in [`expedition/`](expedition/).
 | Hand | Opening hand, **as it is** — no top-up |
 | Draw pile | Draw pile (Income draws from it) |
 | Spent cards (played this round) | Discard |
-| Wounds | Removed |
+| Wounds (their cards) | Removed |
 | Current energy | Starting energy |
 
 The battle then plays by today's rules, including no recycling of discard and damage taking cards **discard → draw → hand**. When it ends, whatever is left goes back to the map, the fight **ends your turn**, and you keep at most the energy you brought in (see [Energy](#6-energy)).
@@ -70,7 +70,7 @@ So on the map:
   - Never seen: terrain only, contents unknown.
 - **On the map:** villages, monasteries, towns, ruins, grottos, **event sites**, Lieutenants (roaming on patrol, or **fortified** in a keep), groups of minions, occupied villages to free, and the Warlord.
 - **Event sites** work like Slay the Spire's "?" rooms: stepping on one starts a short scene with 2–3 choices.
-  - Choosing well earns a bonus (gold, XP, gear, a mended wound); choosing badly costs something (a wound, gold, a fight).
+  - Choosing well earns a bonus (gold, XP, gear, mended damage); choosing badly costs something (a wound named after the event, gold, a fight).
   - Some choices need something from you: Influence, gold, a die roll, or giving up a card for the round.
 
 ## 4. A turn
@@ -81,7 +81,7 @@ So on the map:
 2. **Move and explore:** **1 card = 1 Move**; **5 energy = 1 Move**. Pay the terrain cost of each hex you enter. Exploring costs 2 Move. Cards whose effect gains energy (Second Wind) give that energy on the map; ordinary cards can't be turned into energy.
 3. **One action:** use a site (paying Influence), challenge an adjacent enemy, or enter an adventure site.
 4. **A fight**, if one starts, ends your turn.
-5. **End the turn** whenever you like, as long as you've **played or discarded at least 1 card** this turn (a fight counts). Keep the cards you didn't play and **draw up to your hand size**. If your draw pile is empty, you **rest**.
+5. **End the turn** whenever you like, as long as you've **played or discarded at least 1 card** this turn (a fight counts). Keep the cards you didn't play and **draw up to your hand size**. If your draw pile is empty at the end of the turn, the round is over and you **rest** (see [The clock](#5-the-clock)).
 
 **Hand symmetry:** the map and battles share one hand size and one hand limit (6). Anything that raises or lowers them — a level-up, gear, an enemy's "Shaken: hand size −1" status — applies to both. Effects like that are visible statuses with their expiry shown.
 
@@ -100,12 +100,13 @@ So on the map:
 ![The clock](expedition/05-clock.png)
 
 - A region lasts **4 rounds**, alternating **Day and Night** (configurable). Each round lasts **one pass through your deck**. What's limited is cards, not turns.
-- **Rest** happens when your draw pile is empty, or **whenever you choose to make camp** (you give up the cards you didn't use):
+- **Rest** happens when your draw pile is **empty at the end of a turn** (one pass through the deck is one round — the Warlord's clock), **whenever you choose to make camp** (you give up the cards you didn't use), or after a **defeat** (a forced rest). The camp says why: "Camp · the deck ran out — Round N is over: your draw pile ran out at the end of turn N."
   1. Spent cards are shuffled back into your draw pile. Wounds stay out. (This is an explicit recovery outside battle; battles still never recycle.)
   2. **Energy resets** to your character's base.
-  3. Camp services: each bandage (or 3 Influence) is **one roll to mend one wound** (4+ on a d6); change your deck at camp prices.
-  4. The Warlord marches 2 hexes toward his goal; roaming Lieutenants take one step.
-  5. Day ↔ Night. Draw up to your hand size.
+  3. **Your fresh hand is drawn** up to your hand size, right away. The camp always shows a full hand beside the reshuffled draw pile, never an empty hand beside a full pile.
+  4. **Camp:** **basic first aid** on each untreated wound (1d3), then **bandages** on treated wounds (1d6) — see [Defeat and wounds](#9-defeat-and-wounds); play cards from the fresh hand for **Influence** (1 card = 1 Influence, paid out of the round's opening hand, the same cost as Influence at a village); change your deck at camp prices (XP + 3 Influence).
+  5. The Warlord marches 2 hexes toward his goal; roaming Lieutenants take one step.
+  6. Day ↔ Night. **Breaking camp draws nothing**: the hand was drawn at step 3.
 - **Bigger deck = longer rounds.** Buying cards adds health and time. **Wounds shorten rounds.**
 - **Night** differs, like Mage Knight. Night does **not** make ambushes automatic.
 
@@ -115,7 +116,7 @@ So on the map:
 | Sight (you and enemies) | 2 hexes | Adjacent hexes only |
 | Enemy habits | Night hunters rest: they can be ambushed | Sleepers can be ambushed; night hunters roam, moving 1 hex each turn instead of each rest |
 | Grottos and ruins | Normal rewards | Better loot, stronger guardian |
-| Villages and towns | All services | Closed, except the inn: a safe rest, +1 on camp mending rolls |
+| Villages and towns | All services | Closed, except the inn: a safe rest, +1 on every camp healing roll |
 | Monasteries | Open | Open |
 | The Warlord | His own habits and weaknesses | His own habits and weaknesses; Fortified if he's camped in a tower or keep |
 - After the last round you take the normal rest, then **the Warlord comes to you**: a forced fight, starting with a fresh hand, with every buff he still has and no Ambush.
@@ -190,17 +191,28 @@ So on the map:
 
 ![Defeat](expedition/08-defeat.png)
 
+**A wound is a grouping of damage**, exactly as the battle's wound ledger records it ("Wound 1 · 6 damage · Round 5 · Brine Lash · Cards lost: …"): the cards one damage source removed together. The map keeps the same groupings instead of counting cards as wounds. A wound's damage is the number of cards still in it; healing takes cards out of it, and a wound healed to zero damage does not exist any more. **Health lost is the number of wounded cards, not the number of wounds.** Every battle hit that removed cards comes to the map as one wound named after the ability (or card, or attacker) with the battle round it landed in; a defeat is one wound named after the enemy; an event that costs a wound inflicts one wound named after the event.
+
 **Losing a normal battle:**
 
-1. Your wounds go back to their **pre-battle** state, **plus 2 defeat wounds**. A normal defeat can never take your last card.
+1. Your piles and wounds go back to their **pre-battle** state, **plus one defeat wound of 2 damage** (`defeat.wounds` is the damage, not a count). A normal defeat can never take your last live card.
 2. You're **driven back** to the hex you came from. The enemy stays.
-3. **Forced recovery:** the round ends with a rest where you stand. Bandages, gear and camp services help you mend. The clock has moved on.
+3. **Forced recovery:** the round ends with a rest where you stand. The clock has moved on.
+
+**Camp healing.** At every rest, after the reshuffle, the energy reset and the fresh hand:
+
+1. **Basic first aid** — every character has it, free. For each **untreated** wound, roll **1d3** and heal that many points from it (the cards return to the draw pile at a seeded position). A wound healed to zero goes away. Otherwise it is now **treated**, and basic aid cannot be used on it again at this camp.
+2. **Bandages** — a bandage from your pack gives a **treated** wound a second attempt: roll **1d6** and heal that many points. One bandage per wound per camp; the wound is then **bandaged**.
+3. After that, nothing more heals a wound at that camp except special abilities. Influence and deck changes stay open.
+4. **The next camp resets everything:** every wound is untreated again and gets another attempt.
+
+Resting at an **inn** adds **+1** (`camp_healing.inn_bonus`) to each healing roll. Gear and relics can improve the dice.
 
 **Mending, worst to best:**
-1. **Camp:** at rest, each bandage (or 3 Influence) is **one roll to mend one wound**, succeeding on 4+ on a d6. Gear and relics can improve the odds.
-2. **Village:** Influence per wound.
-3. **Monastery:** cheaper, and possible mid-round.
-4. **Town healer:** gold; also treats grievous wounds.
+1. **Camp:** basic aid on every untreated wound, free (1d3 each); then a bandage per treated wound (1d6 each).
+2. **Village:** Influence per point of damage — one card per payment.
+3. **Monastery:** cheaper per point, and possible mid-round.
+4. **Town healer:** gold per point; later also treats grievous wounds.
 
 **Grievous wounds (later extension):** a wound that **cripples a card** instead of removing it. The card stays in your deck and counts as health but works worse (costs more energy, prevents less) until a healer fixes it. A good fit for characters like a barbarian.
 
@@ -220,12 +232,12 @@ To avoid three overlapping systems, there are **two things you save and one thin
 
 | Site | Deck change | Mend wounds | Shop |
 | --- | --- | --- | --- |
-| Camp (any hex, at rest) | XP + 3 Influence per change | A bandage or 3 Influence = 1 roll (4+) per wound | — |
-| Village | XP + 2 Influence | 2 Influence each | Consumables (gold) |
-| Monastery | XP + 1 Influence; best card-tree upgrades | 1 Influence each, mid-round | — |
-| Town / city | XP only: a straight 1:1 swap, no Influence | Healer (gold), grievous wounds | Gear (gold), trainer (gold → XP) |
+| Camp (any hex, at rest) | XP + 3 Influence per change | Basic aid, free: 1d3 per untreated wound; then a bandage: 1d6 per treated wound | — |
+| Village | XP + 2 Influence | 2 Influence per point of damage (one card) | Consumables (gold) |
+| Monastery | XP + 1 Influence; best card-tree upgrades | 1 Influence per point, mid-round | — |
+| Town / city | XP only: a straight 1:1 swap, no Influence | Healer: 15 gold per point; grievous wounds later | Gear (gold), trainer (gold → XP) |
 
-These costs are a first pass. Mage Knight charges 3 Influence per wound at a village and 2 at a monastery. Ours are lower because our Influence is cards from a 4-card hand.
+These costs are a first pass. Mage Knight charges 3 Influence per wound at a village and 2 at a monastery. Ours are lower, and charged per point of damage, because our Influence is cards from a 4-card hand.
 
 **Gold, first pass.** XP keeps its base-10 scale (a base card costs 10 XP). Gold uses its own numbers:
 
@@ -283,13 +295,13 @@ The Starter's real 12-card deck, Day 1.
 
 ![Example: turn 2](expedition/11-example-turn-2.png)
 
-**Turn 2:** I can challenge the Bell Diver with the hand I kept, spend two turns walking around it, or blunder past and be provoked. I fight. The battle starts from my piles; the damage takes **Second Wind and Nudge** — the cards I walked with. My draw pile runs out and I rest. Day 2 starts with 10 live cards.
+**Turn 2:** I can challenge the Bell Diver with the hand I kept, spend two turns walking around it, or blunder past and be provoked. I fight. The battle starts from my piles; one hit takes **Second Wind and Nudge** — the cards I walked with — as one wound of 2 damage. My draw pile runs out and I rest: the fresh hand is drawn, basic aid rolls 1d3 on that wound, and the next round starts with 10 live cards plus whatever it healed.
 
 ## 14. Configurable values
 
 **Every number in this doc is a first guess that will change in playtesting.** None of them belong in code. They live in content files the authority loads, in the same style as `content/progression_v1/campaign.yaml` and `economy.yaml`:
 
-- **Expedition rules:** one file, e.g. `content/progression_v1/expedition.yaml` — rounds, hand size, terrain costs, sight, ambush, fortified, defeat, mending, the Warlord's pace, rewards, Influence costs and gold.
+- **Expedition rules:** one file, e.g. `content/progression_v1/expedition.yaml` — rounds, hand size, terrain costs, sight, ambush, fortified, defeat, camp healing, site mending, the Warlord's pace, rewards, Influence costs and gold.
 - **Per character:** base energy, hand size and limit, energy carry-out — on the character sheet.
 - **Per enemy:** habit, gold drop, XP — on the enemy or encounter definition.
 - **Per card:** its map effect (if any) — in the card's catalog definition, next to its battle `program`.
@@ -310,8 +322,9 @@ terrain:
 sight: { day: 2, night: 1 }
 ambush: { bonus_dice: 3, max_kept: 5 }
 fortified: { extra_defense_dice: 1 }
-defeat: { wounds: 2 }
-camp_mending: { roll_needed: 4, inn_bonus: 1 }
+defeat: { wounds: 2 }         # one defeat wound of this much damage
+camp_healing: { basic_aid_die: 3, bandage_die: 6, inn_bonus: 1 }
+mending: { village_influence_per_wound: 2, monastery_influence_per_wound: 1, town_gold_per_wound: 15 }  # per point of damage
 warlord: { start_distance: 5, march_per_rest: 2, early_reward: { xp_per_round: 20, extra_relic_choices: 1 } }
 influence_per_deck_change: { camp: 3, village: 2, monastery: 1, town: 0 }
 gold:
@@ -332,8 +345,9 @@ gold:
 | Sight (you and enemies) | 2 hexes by day, 1 at night |
 | Ambush bonus dice | +3 on the first offensive roll (keep at most 5) |
 | Fortified | +1 defensive die (alternative: shields prevent 2) |
-| Defeat wounds | 2 |
-| Camp mending | 1 roll per bandage (or 3 Influence), succeeds on 4+ |
+| Defeat wound | one wound of 2 damage |
+| Camp healing | basic aid 1d3 per untreated wound, then a bandage 1d6 per treated wound, once each per wound per camp; inn +1 on each roll |
+| Site mending (per point of damage) | village 2 Influence, monastery 1 Influence, town 15 gold |
 | Warlord start distance / march | ~5 hexes from his goal / 2 hexes per rest |
 | Early-strike reward | +20 XP per unused round, plus 1 extra relic choice |
 | Gold drops and prices | See [Economy](#10-economy) |
@@ -377,8 +391,8 @@ Decided in review (2026-10-11 to 2026-10-12):
 - Mixed groups of enemies are in scope.
 - Ambush needs an unseen approach: start your turn outside the target's sight (enemies see like you do), or attack from cover.
 - Fortified strengthens the defenders' defense (default +1 defensive die).
-- A normal defeat costs 2 wounds on top of your pre-battle wounds.
-- Camp mending: one roll per wound per bandage.
+- A normal defeat costs one defeat wound of 2 damage on top of your pre-battle wounds.
+- Camp healing (revised 2026-10-12, replacing "one roll per wound per bandage"): a wound is a grouping of damage, as in the battle's ledger; at every camp basic aid rolls 1d3 on each untreated wound, then a bandage rolls 1d6 on each treated wound, once each per wound per camp; the next camp resets it; the inn adds +1 to each roll. Site mending heals one point per payment.
 - The Warlord marches toward his goal each rest; extra rests speed him up; catching him early pays per unused round; reaching his goal fortifies him there.
 - Gold comes from enemies, treasure and event sites (Slay the Spire-style "?" scenes with choices). Gold and Influence costs start as a first pass, inspired by Mage Knight, and get tuned in playtesting. Every number is configuration, not code.
 - Night: night hunters roam at night and can be ambushed by day; sleepers can be ambushed at night; grottos and ruins pay more at night with stronger guardians; towns close at night except the inn.
@@ -394,6 +408,6 @@ Built 2026-10-12 on the `expedition-map` branch; the full log of milestones, dec
 
 - **Authority.** Every map rule runs in Go: `internal/battle/expedition` (`State`, `Act`, `View`, `ResolveBattle`), stored inside the campaign save (`loadout.CampaignSave.Expedition`), exposed through the `expedition_*` runtime ops. The client only renders the viewer-safe `View` and submits actions.
 - **Configuration.** `content/progression_v1/expedition.yaml` holds every number in [§14](#14-configurable-values); the region pack is `content/expedition_v1/` (tiles, sites, groups, events, gear, regions). Map effects are `map_effect` on card definitions; the new statuses carry their numbers as per-stack `modifiers`.
-- **Resolved corners** (details in the progress log's decision list): core tiles are dealt to the core slots when the region is built so the Warlord's goal exists; open groups sit at tile centres and patrols are guarded at run time; movement is one hex per action from a per-turn Move pool; Influence is a per-turn, per-site pool of cards played there; rest is an explicit camp phase (`make_camp`/`break_camp`); pending battles persist in the save and relaunch the same battle from its start; Ambush rolls 5+3 and then keeps exactly five; map cards are blank battle cards; the Warlord never provokes and follows a route laid out at build; entering a site is the action; deck changes keep copies in place; mended cards return to the draw pile; a draw records nothing (pre-battle piles come back) and a drawn deadline fight repeats.
+- **Resolved corners** (details in the progress log's decision list): core tiles are dealt to the core slots when the region is built so the Warlord's goal exists; open groups sit at tile centres and patrols are guarded at run time; movement is one hex per action from a per-turn Move pool; Influence is a per-turn, per-site pool of cards played there; rest is an explicit camp phase (`make_camp`/`break_camp`) that draws the fresh hand as it begins, so break camp draws nothing; pending battles persist in the save and relaunch the same battle from its start; Ambush rolls 5+3 and then keeps exactly five; map cards are blank battle cards; the Warlord never provokes and follows a route laid out at build; entering a site is the action; deck changes keep copies in place; mended cards return to the draw pile; a draw records nothing (pre-battle piles come back) and a drawn deadline fight repeats.
 - **Placeholders.** The Warlord "The Drowned Regent" (`drowned_regent`, 18 health, Tide Crown, Coral Mantle), the Pathfinder card tree (Trailblaze, Forced March, Lantern Road, Scout Ahead), the Steady Guard map branches (Warden's March, Sentry's Watch), the Salt Marches region's tile, site, group and event names, and the three gear items. The Warlord was tuned once so a fresh Starter can beat him at all; real balance is for playtesting.
 - **Not built** (follow-ups in `TODO.md`): mixed groups and more than two enemies per battle, grievous wounds, companions, further regions and the between-region stop, relic selection for the pending relic choices, more map cards and gear, art.

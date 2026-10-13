@@ -70,10 +70,14 @@ type DefeatConfig struct {
 	Wounds int `yaml:"wounds" json:"wounds"`
 }
 
-type CampMendingConfig struct {
-	RollNeeded       int `yaml:"roll_needed" json:"roll_needed"`
-	InnBonus         int `yaml:"inn_bonus" json:"inn_bonus"`
-	InfluencePerRoll int `yaml:"influence_per_roll" json:"influence_per_roll"`
+// CampHealingConfig: at rest every character's basic aid heals a
+// basic_aid_die roll of one untreated wound (once per wound per camp); a
+// bandage then heals a bandage_die roll of a treated wound (once per wound
+// per camp); inn_bonus is added to each roll at an inn.
+type CampHealingConfig struct {
+	BasicAidDie int `yaml:"basic_aid_die" json:"basic_aid_die"`
+	BandageDie  int `yaml:"bandage_die" json:"bandage_die"`
+	InnBonus    int `yaml:"inn_bonus" json:"inn_bonus"`
 }
 
 type EarlyReward struct {
@@ -121,7 +125,7 @@ type Config struct {
 	Fortified              DefenseDiceConfig        `yaml:"fortified" json:"fortified"`
 	Conqueror              DefenseDiceConfig        `yaml:"conqueror" json:"conqueror"`
 	Defeat                 DefeatConfig             `yaml:"defeat" json:"defeat"`
-	CampMending            CampMendingConfig        `yaml:"camp_mending" json:"camp_mending"`
+	CampHealing            CampHealingConfig        `yaml:"camp_healing" json:"camp_healing"`
 	Warlord                WarlordConfig            `yaml:"warlord" json:"warlord"`
 	InfluencePerDeckChange map[string]int           `yaml:"influence_per_deck_change" json:"influence_per_deck_change"`
 	Mending                MendingConfig            `yaml:"mending" json:"mending"`
@@ -185,9 +189,9 @@ func (c Config) validate(lib content.BattleLibrary) error {
 		{"fortified.extra_defense_dice", c.Fortified.ExtraDefenseDice, 1, 10},
 		{"conqueror.extra_defense_dice", c.Conqueror.ExtraDefenseDice, 1, 10},
 		{"defeat.wounds", c.Defeat.Wounds, 0, 100},
-		{"camp_mending.roll_needed", c.CampMending.RollNeeded, 1, 6},
-		{"camp_mending.inn_bonus", c.CampMending.InnBonus, 0, 5},
-		{"camp_mending.influence_per_roll", c.CampMending.InfluencePerRoll, 1, 20},
+		{"camp_healing.basic_aid_die", c.CampHealing.BasicAidDie, 1, 20},
+		{"camp_healing.bandage_die", c.CampHealing.BandageDie, 1, 20},
+		{"camp_healing.inn_bonus", c.CampHealing.InnBonus, 0, 5},
 		{"warlord.start_distance", c.Warlord.StartDistance, 1, 50},
 		{"warlord.march_per_rest", c.Warlord.MarchPerRest, 1, 50},
 		{"warlord.early_reward.xp_per_round", c.Warlord.EarlyReward.XPPerRound, 0, maxValue},

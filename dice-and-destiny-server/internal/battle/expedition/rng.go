@@ -38,6 +38,9 @@ func (s *State) rangeIn(r Range) int {
 // d6 rolls a six-sided die.
 func (s *State) d6() int { return 1 + s.intn(6) }
 
+// die rolls a sides-sided die (1..sides).
+func (s *State) die(sides int) int { return 1 + s.intn(max(1, sides)) }
+
 // shuffle is a seeded Fisher–Yates shuffle in place.
 func (s *State) shuffle(list []string) {
 	for i := len(list) - 1; i > 0; i-- {

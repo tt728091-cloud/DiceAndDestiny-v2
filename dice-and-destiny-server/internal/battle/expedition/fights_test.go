@@ -233,7 +233,8 @@ func TestBattleBridgeVictoryDefeatAndEnergyCap(t *testing.T) {
 	if rewards.XP != 20 || report.Gold != 8 || s.Gold != 8 || s.Energy != 15 || report.EnergyKept != 15 {
 		t.Fatalf("victory rewards: %+v %+v energy %d", rewards, report, s.Energy)
 	}
-	if len(s.Wounds) != 3 || len(s.Spent) != 3 || s.Phase != PhaseTurn || s.Turn.Number != 3 || s.PendingBattle != nil {
+	// Without a wound ledger the removed cards come back as one wound.
+	if s.Wounds.Damage() != 3 || len(s.Wounds) != 1 || report.Wounds != 1 || report.WoundCards != 3 || report.NewWounds != 1 || len(s.Spent) != 3 || s.Phase != PhaseTurn || s.Turn.Number != 3 || s.PendingBattle != nil {
 		t.Fatalf("after victory the turn ended and piles returned: wounds %v spent %d phase %s turn %d", s.Wounds, len(s.Spent), s.Phase, s.Turn.Number)
 	}
 	// The hand was [strong_swing] + 3 drawn at end of turn from the 5-card draw pile.
@@ -264,7 +265,8 @@ func TestBattleBridgeVictoryDefeatAndEnergyCap(t *testing.T) {
 	act(t, s3, r, Action{Kind: "challenge", Group: g.ID})
 	_, report, err = s3.ResolveBattle(r, BattleEnd{BattleID: s3.PendingBattle.ID, Result: "defeat", Hand: nil, Draw: nil, Spent: nil, Removed: append(hand, draw...), Energy: 0})
 	must(t, err)
-	if len(s3.Wounds) != 3 || report.DefeatWounds != 2 || s3.Wounds[0] != "second_wind" || s3.LiveCards() != 9 {
+	// The pre-battle wound stays as it was; the defeat is one wound of 2 damage.
+	if s3.Wounds.Damage() != 3 || len(s3.Wounds) != 2 || report.DefeatWounds != 2 || report.NewWounds != 1 || s3.Wounds[0].Cards[0] != "second_wind" || s3.Wounds[1].Damage() != 2 || s3.Wounds[1].Source != "defeat by Brine Mask" || s3.LiveCards() != 9 {
 		t.Fatalf("defeat wounds: %v live %d", s3.Wounds, s3.LiveCards())
 	}
 	if s3.Player != from || report.PushedBack == nil || *report.PushedBack != from || s3.Phase != PhaseCamp || s3.Camp.Reason != "defeat" || !report.ForcedRest {
@@ -273,8 +275,9 @@ func TestBattleBridgeVictoryDefeatAndEnergyCap(t *testing.T) {
 	if gs := s3.group(g.ID); gs.Defeated {
 		t.Fatal("the enemy stays after a defeat")
 	}
-	// Spent cards were reshuffled by the forced rest; the pre-battle piles were restored first.
-	if len(s3.Spent) != 0 || len(s3.Hand) != len(hand) || len(s3.Draw) != len(draw)+len(spent)-2 {
+	// Spent cards were reshuffled by the forced rest and the hand drawn up;
+	// the pre-battle piles were restored first (9 live cards after the defeat).
+	if len(s3.Spent) != 0 || len(s3.Hand) != 4 || len(s3.Draw) != len(hand)+len(draw)+len(spent)-2-4 {
 		t.Fatalf("forced rest after defeat: hand %d draw %d spent %d", len(s3.Hand), len(s3.Draw), len(s3.Spent))
 	}
 	// A defeat never takes the last live card.
@@ -282,7 +285,8 @@ func TestBattleBridgeVictoryDefeatAndEnergyCap(t *testing.T) {
 	placeAll(s4, r)
 	s4.teleport(r, from)
 	s4.Hand, s4.Draw, s4.Spent = []string{"strong_swing"}, []string{"nudge"}, []string{}
-	s4.Wounds = starterDeck[2:]
+	s4.Wounds = nil
+	s4.addWound(starterDeck[2:], "test", 0)
 	act(t, s4, r, Action{Kind: "challenge", Group: g.ID})
 	_, report, err = s4.ResolveBattle(r, BattleEnd{BattleID: s4.PendingBattle.ID, Result: "defeat"})
 	must(t, err)
@@ -299,12 +303,12 @@ func TestBattleBridgeVictoryDefeatAndEnergyCap(t *testing.T) {
 	act(t, s5, r, Action{Kind: "challenge", Group: g.ID})
 	before := reloaded(t, s5)
 	all := append(append(append([]string{}, s5.Hand...), s5.Draw...), s5.Spent...)
-	rewards, report, err = s5.ResolveBattle(r, BattleEnd{BattleID: s5.PendingBattle.ID, Result: "draw", Removed: append(all, s5.Wounds...), Energy: 40})
+	rewards, report, err = s5.ResolveBattle(r, BattleEnd{BattleID: s5.PendingBattle.ID, Result: "draw", Removed: append(all, s5.Wounds.Cards()...), Energy: 40})
 	must(t, err)
 	if rewards.XP != 0 || s5.Gold != 0 || s5.group(g.ID).Defeated || report.Result != "draw" {
 		t.Fatal("a draw earns nothing")
 	}
-	if !reflect.DeepEqual(sortedStrings(s5.Wounds), sortedStrings(before.Wounds)) || s5.LiveCards() != before.LiveCards() || s5.Energy != before.PendingBattle.EnergyIn {
+	if !reflect.DeepEqual(s5.Wounds, before.Wounds) || s5.LiveCards() != before.LiveCards() || s5.Energy != before.PendingBattle.EnergyIn {
 		t.Fatalf("a draw restores the pre-battle piles: wounds %v vs %v, live %d vs %d, energy %d", s5.Wounds, before.Wounds, s5.LiveCards(), before.LiveCards(), s5.Energy)
 	}
 	if s5.PendingBattle != nil || s5.Turn.Number != before.Turn.Number+1 && s5.Phase != PhaseCamp {
@@ -424,7 +428,9 @@ func TestWarlordMarchesGoalConquerorChallengeAndDeadline(t *testing.T) {
 	if !pb.Ambush || statusStacks(pb.EnemyStatuses, "fortified") != 0 || statusStacks(pb.EnemyStatuses, "lieutenants_favor") != 2 {
 		t.Fatalf("road fight: %+v", pb)
 	}
-	s2.Wounds = []string{"nudge"}
+	s2.Wounds = nil
+	s2.addWound([]string{"nudge"}, "test", 0)
+	pb.WoundsBefore = s2.Wounds.Clone()
 	rewards, report, err := s2.ResolveBattle(r, BattleEnd{BattleID: pb.ID, Result: "victory", Hand: s2.Hand, Draw: s2.Draw, Spent: s2.Spent, Removed: []string{"nudge"}, Energy: 3})
 	must(t, err)
 	if rewards.XP != 100+2*20 || report.EarlyXP != 40 || report.RelicChoices != 1 || s2.PendingRelicChoices != 1 || s2.Gold != 60 || !report.RegionWon || s2.Result != "victory" || len(s2.Wounds) != 0 || report.WoundsMended != 1 {
@@ -485,5 +491,66 @@ func TestDeadlineDrawRepeatsTheFight(t *testing.T) {
 	must(t, err)
 	if !report.RegionWon || s.Result != "victory" {
 		t.Fatalf("winning the repeated fight wins the region: %+v", report)
+	}
+}
+
+func TestWoundsRegroupFromTheBattleLedger(t *testing.T) {
+	r := testRules(t)
+	s := newState(t, r, 6)
+	placeAll(s, r)
+	g, _ := s.hexOfGroup("brine_lone")
+	from, ok := quietApproach(s, r, g.Pos)
+	if !ok {
+		t.Fatal("no quiet approach")
+	}
+	s.teleport(r, from)
+	woundCard(t, s, "second_wind")
+	woundCard(t, s, "nudge")
+	// Two earlier wounds: one of two cards (an old hit), one of one.
+	s.Wounds = WoundList{{ID: "w1", Cards: []string{"second_wind", "nudge"}, Size: 3, Source: "an old hit", Round: 1, Turn: 1}}
+	act(t, s, r, Action{Kind: "challenge", Group: g.ID})
+	pb := *s.PendingBattle
+	if len(pb.WoundsBefore) != 1 || pb.WoundsBefore[0].Damage() != 2 {
+		t.Fatalf("the pending battle remembers the wound groupings: %+v", pb.WoundsBefore)
+	}
+	live := append(append(append([]string{}, s.Hand...), s.Draw...), s.Spent...)
+	// The battle takes three more cards in two hits, and the ledger says which.
+	hit1, hit2 := live[:2], live[2:3]
+	rest := live[3:]
+	end := BattleEnd{BattleID: pb.ID, Result: "victory", Hand: rest[:1], Draw: rest[1:], Removed: append(append([]string{"second_wind", "nudge"}, hit1...), hit2...), Energy: 5,
+		Wounds: []BattleWound{{Round: 2, Source: "Brine Lash", Cards: hit1}, {Round: 4, Source: "", Cards: hit2}}}
+	_, report, err := s.ResolveBattle(r, end)
+	must(t, err)
+	if len(s.Wounds) != 3 || report.Wounds != 3 || report.NewWounds != 2 || report.WoundCards != 5 || report.WoundsBefore != 1 {
+		t.Fatalf("one old wound and two new: %+v report %+v", s.Wounds, report)
+	}
+	if w := s.Wounds[0]; w.ID != "w1" || !reflect.DeepEqual(w.Cards, []string{"second_wind", "nudge"}) || w.Size != 3 {
+		t.Fatalf("the old wound keeps its cards and size: %+v", w)
+	}
+	if w := s.Wounds[1]; !reflect.DeepEqual(w.Cards, hit1) || w.Source != "Brine Lash" || w.BattleRound != 2 || w.Size != 2 || w.Round != 1 || w.Turn != s.Turn.Number-1 && w.Turn != s.Turn.Number {
+		t.Fatalf("the first hit is one wound: %+v", w)
+	}
+	if w := s.Wounds[2]; !reflect.DeepEqual(w.Cards, hit2) || w.Source != "Brine Mask" || w.BattleRound != 4 {
+		t.Fatalf("a hit without a named source is named after the enemy: %+v", w)
+	}
+	if s.LiveCards()+s.Wounds.Damage() != 12 || !reflect.DeepEqual(sortedStrings(s.Wounds.Cards()), sortedStrings(end.Removed)) {
+		t.Fatalf("health is the cards: live %d wounds %v", s.LiveCards(), s.Wounds.Cards())
+	}
+	// A legacy flat wound list loads as one wound, in the state and in a pending battle.
+	var legacy State
+	must(t, json.Unmarshal([]byte(`{"wounds":["nudge","nudge","try_again"],"pending_battle":{"id":"x","wounds_before":["nudge"]}}`), &legacy))
+	if len(legacy.Wounds) != 1 || legacy.Wounds.Damage() != 3 || legacy.Wounds[0].Size != 3 || legacy.Wounds[0].Source != "earlier wounds" || len(legacy.PendingBattle.WoundsBefore) != 1 {
+		t.Fatalf("legacy wounds: %+v / %+v", legacy.Wounds, legacy.PendingBattle.WoundsBefore)
+	}
+	var empty State
+	must(t, json.Unmarshal([]byte(`{"wounds":[]}`), &empty))
+	if len(empty.Wounds) != 0 {
+		t.Fatal("an empty list stays empty")
+	}
+	raw, _ := json.Marshal(s)
+	var again State
+	must(t, json.Unmarshal(raw, &again))
+	if !reflect.DeepEqual(again.Wounds, s.Wounds) {
+		t.Fatal("grouped wounds round-trip through JSON")
 	}
 }

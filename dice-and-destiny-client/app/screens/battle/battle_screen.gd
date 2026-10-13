@@ -2766,13 +2766,16 @@ func _build_expedition_completion() -> void:
 			"victory": lines.append("Victory · +%d XP (%d to spend)%s" % [int(outcome.get("xp_awarded", 0)), int(outcome.get("xp", 0)), " · +%d gold" % gold if gold > 0 else ""])
 			"defeat":
 				if report.get("run_over", false): lines.append("Defeat · the Warlord has won: the run is over")
-				elif int(report.get("defeat_wounds", 0)) > 0: lines.append("Defeat · %d defeat wounds on top of your pre-battle wounds; driven back, the round ends with a rest" % int(report.defeat_wounds))
+				elif int(report.get("defeat_wounds", 0)) > 0: lines.append("Defeat · one defeat wound of %d damage on top of your pre-battle wounds; driven back, the round ends with a rest" % int(report.defeat_wounds))
 				else: lines.append("Defeat · driven back; the round ends with a rest")
 			_: lines.append("A draw · nothing is recorded: your pre-battle cards, wounds and energy come back" + (" · the Warlord attacks again" if str(_view.campaign.get("expedition", {}).get("kind", "")) == "deadline" else ""))
-		lines.append("Back to the map: hand %d · draw %d · Spent %d · wounds %d · energy %d of %d kept" % [report.get("hand_after", []).size(), int(report.get("draw_after", 0)), int(report.get("spent_after", 0)), int(report.get("wounds", 0)), int(report.get("energy_kept", 0)), int(report.get("energy_in", 0))])
+		# A wound is one grouping of damage; the health lost is its cards.
+		var wounds := "wounds %d (%d health lost)" % [int(report.get("wounds", 0)), int(report.get("wound_cards", 0))]
+		if str(outcome.get("result", "")) == "victory" and int(report.get("new_wounds", 0)) > 0: wounds += " · +%d new" % int(report.new_wounds)
+		lines.append("Back to the map: hand %d · draw %d · Spent %d · %s · energy %d of %d kept" % [report.get("hand_after", []).size(), int(report.get("draw_after", 0)), int(report.get("spent_after", 0)), wounds, int(report.get("energy_kept", 0)), int(report.get("energy_in", 0))])
 		var extras: Array = []
 		if int(report.get("early_xp", 0)) > 0: extras.append("Early strike: +%d XP, %d relic choice pending" % [int(report.early_xp), int(report.get("relic_choices", 0))])
-		if report.get("region_won", false): extras.append("Region won: %d wounds mended" % int(report.get("wounds_mended", 0)))
+		if report.get("region_won", false): extras.append("Region won: wounds mended: %d health" % int(report.get("wounds_mended", 0)))
 		if not extras.is_empty(): lines.append(" · ".join(extras))
 		reward.text = "\n".join(lines)
 		reward.add_theme_color_override("font_color", Color("2f6b3a") if str(outcome.get("result", "")) == "victory" else Color("8a2f24"))

@@ -128,7 +128,7 @@ func TestExpeditionBattleBridgeBothWays(t *testing.T) {
 		if pb == nil || pb.Kind != "challenge" {
 			t.Fatalf("seed %d: no pending challenge", seed)
 		}
-		mapHand, mapDraw, mapSpent, mapWounds := sortedCopy(before.Expedition.Hand), sortedCopy(before.Expedition.Draw), sortedCopy(before.Expedition.Spent), sortedCopy(before.Expedition.Wounds)
+		mapHand, mapDraw, mapSpent, mapWounds := sortedCopy(before.Expedition.Hand), sortedCopy(before.Expedition.Draw), sortedCopy(before.Expedition.Spent), sortedCopy(before.Expedition.Wounds.Cards())
 		if len(mapSpent) < 4 {
 			t.Fatalf("seed %d: the walk should leave 4 cards in Spent, has %d", seed, len(mapSpent))
 		}
@@ -205,8 +205,31 @@ func TestExpeditionBattleBridgeBothWays(t *testing.T) {
 		switch outcome.Result {
 		case "victory":
 			victories++
-			if !reflect.DeepEqual(sortedCopy(x.Wounds), endRemoved) {
+			if !reflect.DeepEqual(sortedCopy(x.Wounds.Cards()), endRemoved) {
 				t.Fatalf("seed %d: wounds must come back exactly: %v vs %v", seed, x.Wounds, endRemoved)
+			}
+			// Each hit of the battle is one wound on the map, with its cards,
+			// its source's name and the battle round; never a count of cards.
+			ledger := 0
+			for _, w := range final.Wounds {
+				if w.TargetActorID != s.humanSeat || len(w.Cards) == 0 {
+					continue
+				}
+				if ledger >= len(x.Wounds) {
+					t.Fatalf("seed %d: the map lost a battle wound: %+v", seed, x.Wounds)
+				}
+				got := x.Wounds[ledger]
+				want := make([]string, 0, len(w.Cards))
+				for _, c := range w.Cards {
+					want = append(want, c.CardDefinitionID)
+				}
+				if !reflect.DeepEqual(got.Cards, want) || got.Source == "" || got.BattleRound != w.Round || got.Size != len(want) || got.Treated || got.Bandaged {
+					t.Fatalf("seed %d: battle wound %d (%s) came back as %+v, want cards %v", seed, ledger, w.SourceContentID, got, want)
+				}
+				ledger++
+			}
+			if ledger != len(x.Wounds) || outcome.Report.Wounds != len(x.Wounds) || outcome.Report.WoundCards != len(endRemoved) || outcome.Report.NewWounds != ledger {
+				t.Fatalf("seed %d: wound groupings %d vs ledger %d; report %+v", seed, len(x.Wounds), ledger, outcome.Report)
 			}
 			// The fight ended the turn: the end-of-turn draw moved cards from
 			// the battle's draw pile into the hand; if that emptied the draw
@@ -238,8 +261,12 @@ func TestExpeditionBattleBridgeBothWays(t *testing.T) {
 			}
 		case "defeat":
 			defeats++
-			if !reflect.DeepEqual(sortedCopy(x.Wounds[:len(mapWounds)]), mapWounds) || len(x.Wounds) != len(mapWounds)+2 || outcome.Report.DefeatWounds != 2 {
+			cards := x.Wounds.Cards()
+			if !reflect.DeepEqual(sortedCopy(cards[:len(mapWounds)]), mapWounds) || len(cards) != len(mapWounds)+2 || outcome.Report.DefeatWounds != 2 {
 				t.Fatalf("seed %d: defeat wounds are the pre-battle wounds plus 2: %v", seed, x.Wounds)
+			}
+			if last := x.Wounds[len(x.Wounds)-1]; last.Damage() != 2 || last.Source != "defeat by "+pb.Name || outcome.Report.NewWounds != 1 {
+				t.Fatalf("seed %d: a defeat is one wound of 2 damage: %+v", seed, x.Wounds)
 			}
 			if x.Player != pb.Origin || x.Phase != expedition.PhaseCamp || x.Camp.Reason != "defeat" || after.Sheet.XP != 100 || x.Gold != 0 {
 				t.Fatalf("seed %d: defeat pushes back and rests without reward: player %v phase %s", seed, x.Player, x.Phase)

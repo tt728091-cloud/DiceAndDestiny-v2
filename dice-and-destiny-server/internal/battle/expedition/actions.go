@@ -15,9 +15,10 @@ type Action struct {
 	Energy  int      `json:"energy,omitempty"`  // payment
 	Card    string   `json:"card,omitempty"`    // play_map_card
 	Service string   `json:"service,omitempty"` // use_site / camp_service
-	Item    string   `json:"item,omitempty"`    // shop, enter_site (siege), mend roll with a bandage
+	Item    string   `json:"item,omitempty"`    // shop, enter_site (siege), the bandage to spend
 	Gold    int      `json:"gold,omitempty"`    // trainer
-	Count   int      `json:"count,omitempty"`   // mend wounds
+	Count   int      `json:"count,omitempty"`   // mend wounds (points of damage)
+	Wound   string   `json:"wound,omitempty"`   // camp_service: the wound to heal ("" = the first eligible, "all" = every eligible)
 	Choice  string   `json:"choice,omitempty"`  // event_choice
 	Group   string   `json:"group,omitempty"`   // challenge: group instance or "warlord"
 	Site    string   `json:"site,omitempty"`    // enter_site
@@ -360,6 +361,8 @@ func (s *State) endTurn(r Rules) error {
 	drew := s.drawUpTo(r)
 	s.log("Turn %d ends; drew %d.", s.Turn.Number, drew)
 	if len(s.Draw) == 0 {
+		// One pass through the deck is one round: the round ends with a rest.
+		s.log("The draw pile is empty: round %d is over.", s.Round)
 		s.beginRest(r, "deck_empty", 0)
 		return nil
 	}
@@ -384,10 +387,11 @@ func (s *State) makeCamp(r Rules) error {
 	return nil
 }
 
-// beginRest runs rest steps 1 and 2 (reshuffle Spent, reset energy) and opens
-// the camp for services; breakCamp finishes the rest.
+// beginRest runs rest steps 1 to 3 (reshuffle Spent into the draw pile, reset
+// energy, draw the fresh hand) and opens the camp for healing and services;
+// breakCamp finishes the rest. Every wound is untreated again at a new camp.
 func (s *State) beginRest(r Rules, reason string, forfeited int) {
-	camp := &CampState{Reason: reason, EnergyBefore: s.Energy, Forfeited: forfeited, MendRolls: []MendRoll{}, Deadline: s.Round >= r.Config.RoundsPerRegion}
+	camp := &CampState{Reason: reason, Turn: s.Turn.Number, Round: s.Round, EnergyBefore: s.Energy, Forfeited: forfeited, Heals: []HealRoll{}, Deadline: s.Round >= r.Config.RoundsPerRegion}
 	if st := s.siteAt(s.Player); st != nil && r.Pack.Sites[st.ID].HasInn() && !s.siteDefended(r.Pack, st) && !st.Conquered {
 		camp.Inn, camp.Site = true, st.ID
 	}
@@ -396,17 +400,21 @@ func (s *State) beginRest(r Rules, reason string, forfeited int) {
 	s.Spent = []string{}
 	s.shuffle(s.Draw)
 	s.Energy = s.BaseEnergy
+	for i := range s.Wounds {
+		s.Wounds[i].Treated, s.Wounds[i].Bandaged = false, false
+	}
 	s.Camp = camp
 	s.Phase = PhaseCamp
 	s.Turn.Influence, s.Turn.InfluenceSite = 0, "camp"
-	s.log("Rest (%s): %d Spent cards reshuffled, energy reset to %d.", reason, camp.Reshuffled, s.BaseEnergy)
+	camp.Drew = s.drawUpTo(r)
+	camp.HandDrawn, camp.HandSize = true, s.effectiveHandSize(r)
+	s.log("Rest (%s): %d Spent cards reshuffled into the draw pile, energy reset to %d, drew %d.", reason, camp.Reshuffled, s.BaseEnergy, camp.Drew)
 }
 
 func (s *State) campService(r Rules, a Action) error {
 	if err := s.requirePhase(PhaseCamp); err != nil {
 		return err
 	}
-	cfg := r.Config
 	switch a.Service {
 	case "influence":
 		if len(a.Cards) == 0 {
@@ -422,53 +430,137 @@ func (s *State) campService(r Rules, a Action) error {
 			s.Turn.Influence++
 		}
 		return nil
-	case "mend_roll":
-		if len(s.Wounds) == 0 {
-			return errors.New("you have no wounds to mend")
-		}
-		paid := ""
-		if a.Item != "" {
-			g, ok := r.Pack.Gear[a.Item]
-			if !ok || g.Effect != "mend_roll" || s.Inventory[a.Item] < 1 {
-				return fmt.Errorf("you have no %s to spend", a.Item)
-			}
-			s.Inventory[a.Item]--
-			paid = a.Item
-		} else {
-			if s.Turn.Influence < cfg.CampMending.InfluencePerRoll {
-				return fmt.Errorf("a mending roll costs a bandage or %d Influence; you have %d", cfg.CampMending.InfluencePerRoll, s.Turn.Influence)
-			}
-			s.Turn.Influence -= cfg.CampMending.InfluencePerRoll
-			paid = "influence"
-		}
-		card := s.Wounds[0]
-		if a.Card != "" {
-			if countOf(s.Wounds, a.Card) == 0 {
-				return fmt.Errorf("%s is not wounded", r.cardName(a.Card))
-			}
-			card = a.Card
-		}
-		roll := s.d6()
-		bonus := 0
-		if s.Camp.Inn {
-			bonus = cfg.CampMending.InnBonus
-		}
-		result := MendRoll{Card: card, Roll: roll, Bonus: bonus, Needed: cfg.CampMending.RollNeeded, Success: roll+bonus >= cfg.CampMending.RollNeeded, Paid: paid}
-		if result.Success {
-			s.mendWound(card)
-		}
-		s.Camp.MendRolls = append(s.Camp.MendRolls, result)
-		s.log("Mending roll for %s: %d+%d vs %d (%v).", r.cardName(card), roll, bonus, cfg.CampMending.RollNeeded, result.Success)
-		return nil
+	case "basic_aid":
+		return s.campHeal(r, a, "basic_aid")
+	case "bandage":
+		return s.campHeal(r, a, "bandage")
 	}
 	return fmt.Errorf("unknown camp service %q", a.Service)
 }
 
-// mendWound returns a wounded copy to the draw pile at a seeded position.
-func (s *State) mendWound(card string) {
-	s.Wounds, _ = removeFirst(s.Wounds, card)
-	at := s.intn(len(s.Draw) + 1)
-	s.Draw = append(s.Draw[:at], append([]string{card}, s.Draw[at:]...)...)
+// campHeal rolls one healing attempt per eligible wound: basic aid on an
+// untreated wound (then it is treated), a bandage on a treated wound (then it
+// is bandaged). With Wound "all" every eligible wound is tried in order.
+func (s *State) campHeal(r Rules, a Action, method string) error {
+	cfg := r.Config
+	if len(s.Wounds) == 0 {
+		return errors.New("you have no wounds to heal")
+	}
+	eligible := func(w Wound) (bool, string) {
+		switch method {
+		case "basic_aid":
+			if w.Treated {
+				return false, "already treated at this camp; a bandage can heal it further"
+			}
+		case "bandage":
+			if !w.Treated {
+				return false, "treat it with basic aid first"
+			}
+			if w.Bandaged {
+				return false, "already bandaged at this camp"
+			}
+		}
+		return true, ""
+	}
+	var targets []string
+	switch a.Wound {
+	case "all":
+		for _, w := range s.Wounds {
+			if ok, _ := eligible(w); ok {
+				targets = append(targets, w.ID)
+			}
+		}
+		if len(targets) == 0 {
+			return fmt.Errorf("no wound can take %s now", healName(method))
+		}
+	case "":
+		for _, w := range s.Wounds {
+			if ok, _ := eligible(w); ok {
+				targets = append(targets, w.ID)
+				break
+			}
+		}
+		if len(targets) == 0 {
+			return fmt.Errorf("no wound can take %s now", healName(method))
+		}
+	default:
+		w := s.Wounds.find(a.Wound)
+		if w == nil {
+			return fmt.Errorf("you have no wound %q", a.Wound)
+		}
+		if ok, why := eligible(*w); !ok {
+			return fmt.Errorf("%s: %s", healName(method), why)
+		}
+		targets = []string{a.Wound}
+	}
+	item, die := "", cfg.CampHealing.BasicAidDie
+	if method == "bandage" {
+		item = a.Item
+		if item == "" {
+			item = "bandage"
+		}
+		g, ok := r.Pack.Gear[item]
+		if !ok || g.Effect != "mend_roll" {
+			return fmt.Errorf("%s is not something that heals", item)
+		}
+		if s.Inventory[item] < len(targets) {
+			return fmt.Errorf("you have %d %s, not %d", s.Inventory[item], g.Name, len(targets))
+		}
+		die = cfg.CampHealing.BandageDie
+	}
+	bonus := s.innBonus(r)
+	for _, id := range targets {
+		w := s.Wounds.find(id)
+		if method == "bandage" {
+			s.Inventory[item]--
+			w.Bandaged = true
+		} else {
+			w.Treated = true
+		}
+		roll := s.die(die)
+		healed := s.healFromWound(w, roll+bonus)
+		result := HealRoll{Wound: id, Source: w.Source, Method: method, Item: item, Die: die, Roll: roll, Bonus: bonus, Healed: len(healed), Cards: healed, Remaining: w.Damage(), Closed: w.Damage() == 0}
+		s.Camp.Heals = append(s.Camp.Heals, result)
+		s.Camp.Healed += len(healed)
+		s.log("%s on the %s wound: rolled %d%s, healed %d; %d damage remains.", healName(method), w.Source, roll, map[bool]string{true: fmt.Sprintf("+%d", bonus), false: ""}[bonus > 0], len(healed), w.Damage())
+	}
+	s.dropClosedWounds()
+	return nil
+}
+
+func healName(method string) string {
+	if method == "bandage" {
+		return "a bandage"
+	}
+	return "basic aid"
+}
+
+// healFromWound returns up to n of the wound's cards to the draw pile, each at
+// a seeded position, and reports them. The wound keeps the rest.
+func (s *State) healFromWound(w *Wound, n int) []string {
+	healed := []string{}
+	for len(w.Cards) > 0 && len(healed) < n {
+		card := w.Cards[0]
+		w.Cards = append([]string{}, w.Cards[1:]...)
+		at := s.intn(len(s.Draw) + 1)
+		s.Draw = append(s.Draw[:at], append([]string{card}, s.Draw[at:]...)...)
+		healed = append(healed, card)
+	}
+	return healed
+}
+
+// healPoints heals n points of damage, oldest wound first (a site service, an
+// event, or winning the region), and reports the cards that came back.
+func (s *State) healPoints(n int) []string {
+	healed := []string{}
+	for i := range s.Wounds {
+		if len(healed) >= n {
+			break
+		}
+		healed = append(healed, s.healFromWound(&s.Wounds[i], n-len(healed))...)
+	}
+	s.dropClosedWounds()
+	return healed
 }
 
 func (s *State) breakCamp(r Rules) error {
@@ -496,9 +588,24 @@ func (s *State) breakCamp(r Rules) error {
 	s.Round++
 	s.Night = !s.Night
 	summary.RoundAfter, summary.NightAfter = s.Round, s.Night
+	summary.Drew, summary.Healed = s.Camp.Drew, s.Camp.Healed
+	if summary.Camp.Heals == nil {
+		summary.Camp.Heals = []HealRoll{}
+	}
+	if !s.Camp.HandDrawn {
+		// A camp saved before the rest drew the hand: draw it now.
+		summary.Drew = s.drawUpTo(r)
+	} else if grow := s.effectiveHandSize(r) - s.Camp.HandSize; grow > 0 {
+		// A status that shrank the hand expired with the rest: top the hand
+		// up by what it freed, never refilling cards played at camp.
+		for ; grow > 0 && len(s.Hand) < s.effectiveHandSize(r) && len(s.Draw) > 0; grow-- {
+			s.Hand = append(s.Hand, s.Draw[0])
+			s.Draw = s.Draw[1:]
+			summary.Drew++
+		}
+	}
 	s.Camp = nil
 	s.Turn = TurnState{Number: s.Turn.Number + 1, StartHex: s.Player}
-	summary.Drew = s.drawUpTo(r)
 	s.LastRest = summary
 	if s.Round > cfg.RoundsPerRegion {
 		// The deadline: the Warlord comes to the player, in the open.
@@ -636,8 +743,8 @@ func (s *State) useSite(r Rules, a Action) (Rewards, error) {
 		return Rewards{}, nil
 	case "mend":
 		count := max(1, a.Count)
-		if len(s.Wounds) < count {
-			return Rewards{}, fmt.Errorf("you have %d wound(s)", len(s.Wounds))
+		if s.Wounds.Damage() < count {
+			return Rewards{}, fmt.Errorf("you have %d damage to mend", s.Wounds.Damage())
 		}
 		switch def.Type {
 		case "village", "monastery":
@@ -658,11 +765,9 @@ func (s *State) useSite(r Rules, a Action) (Rewards, error) {
 		default:
 			return Rewards{}, fmt.Errorf("%s does not mend wounds", def.Name)
 		}
-		for i := 0; i < count; i++ {
-			s.mendWound(s.Wounds[0])
-		}
+		s.healPoints(count)
 		s.Turn.ActionUsed = true
-		s.log("Mended %d wound(s) at %s.", count, def.Name)
+		s.log("Mended %d damage at %s.", count, def.Name)
 		return Rewards{}, nil
 	case "shop":
 		if !containsString(def.Shop, a.Item) {
@@ -848,14 +953,14 @@ func (s *State) eventChoice(r Rules, a Action) (Rewards, error) {
 	s.PendingEvent = nil
 	s.Phase = PhaseTurn
 	s.LastEvent = result
-	rewards := s.applyOutcome(r, *outcome)
+	rewards := s.applyOutcome(r, *outcome, ev.Name)
 	s.log("%s: %s", ev.Name, outcome.Text)
 	return rewards, nil
 }
 
 // applyOutcome grants gold, XP, items and statuses, inflicts wounds, mends,
 // or starts a fight.
-func (s *State) applyOutcome(r Rules, o Outcome) Rewards {
+func (s *State) applyOutcome(r Rules, o Outcome, source string) Rewards {
 	rewards := Rewards{}
 	s.Gold += o.Gold
 	if o.XP > 0 {
@@ -868,12 +973,10 @@ func (s *State) applyOutcome(r Rules, o Outcome) Rewards {
 	if o.Status != "" {
 		s.addStatus(o.Status, 1)
 	}
-	for i := 0; i < o.Mend && len(s.Wounds) > 0; i++ {
-		s.mendWound(s.Wounds[0])
+	if o.Mend > 0 {
+		s.healPoints(o.Mend)
 	}
-	for i := 0; i < o.Wounds; i++ {
-		s.inflictWound()
-	}
+	s.inflictWound(source, o.Wounds)
 	if o.Fight != "" {
 		def := r.Pack.Groups[o.Fight]
 		g := GroupState{ID: "event/" + o.Fight + "/" + fmt.Sprint(s.Turn.Number), Group: o.Fight, Home: s.Player, Pos: s.Player}
@@ -892,24 +995,30 @@ func (s *State) addStatus(id string, stacks int) {
 	s.Statuses = append(s.Statuses, StatusStack{ID: id, Stacks: stacks})
 }
 
-// inflictWound removes one live card as a wound, discard first, then draw
-// pile, then hand (the damage order), randomly within the pile; never the
-// last live card.
-func (s *State) inflictWound() bool {
-	if s.LiveCards() <= 1 {
-		return false
-	}
-	for _, pile := range []*[]string{&s.Spent, &s.Draw, &s.Hand} {
-		if len(*pile) == 0 {
-			continue
+// inflictWound removes up to points live cards as one wound, discard first,
+// then draw pile, then hand (the damage order), randomly within each pile;
+// never the last live card. It reports the damage dealt.
+func (s *State) inflictWound(source string, points int) int {
+	var cards []string
+	for len(cards) < points && s.LiveCards() > 1 {
+		taken := false
+		for _, pile := range []*[]string{&s.Spent, &s.Draw, &s.Hand} {
+			if len(*pile) == 0 {
+				continue
+			}
+			at := s.intn(len(*pile))
+			card := (*pile)[at]
+			*pile = append(append([]string(nil), (*pile)[:at]...), (*pile)[at+1:]...)
+			cards = append(cards, card)
+			taken = true
+			break
 		}
-		at := s.intn(len(*pile))
-		card := (*pile)[at]
-		*pile = append(append([]string(nil), (*pile)[:at]...), (*pile)[at+1:]...)
-		s.Wounds = append(s.Wounds, card)
-		return true
+		if !taken {
+			break
+		}
 	}
-	return false
+	s.addWound(cards, source, 0)
+	return len(cards)
 }
 
 // --- fights -----------------------------------------------------------------

@@ -79,7 +79,7 @@ func (s *State) startBattle(r Rules, start battleStart) {
 	pb.HandBefore = append([]string{}, s.Hand...)
 	pb.DrawBefore = append([]string{}, s.Draw...)
 	pb.SpentBefore = append([]string{}, s.Spent...)
-	pb.WoundsBefore = append([]string{}, s.Wounds...)
+	pb.WoundsBefore = s.Wounds.Clone()
 	target := start.position
 	if start.group != nil {
 		target = start.group.Pos
@@ -134,6 +134,68 @@ type BattleEnd struct {
 	Spent    []string `json:"spent"`
 	Removed  []string `json:"removed"`
 	Energy   int      `json:"energy"`
+	// Wounds are the battle's wound ledger for the player, in order: each
+	// damage source that removed cards, with the cards it took.
+	Wounds []BattleWound `json:"wounds,omitempty"`
+}
+
+// BattleWound is one grouping of damage the battle recorded.
+type BattleWound struct {
+	Round  int      `json:"round"`
+	Source string   `json:"source"`
+	Cards  []string `json:"cards"`
+}
+
+// woundsAfterBattle regroups the removed pile the battle returned: the
+// pre-battle wounds keep the cards still removed, each battle wound becomes a
+// grouping of the cards it took, and anything the ledger does not explain
+// (battles before the ledger, or a healed-and-rewounded copy) is one more
+// grouping. Health never changes: the groupings hold exactly end.Removed.
+func (s *State) woundsAfterBattle(pb *PendingBattle, end BattleEnd, name string) int {
+	remaining := map[string]int{}
+	for _, id := range end.Removed {
+		remaining[id]++
+	}
+	take := func(ids []string) []string {
+		kept := []string{}
+		for _, id := range ids {
+			if remaining[id] > 0 {
+				remaining[id]--
+				kept = append(kept, id)
+			}
+		}
+		return kept
+	}
+	wounds := WoundList{}
+	for _, w := range pb.WoundsBefore {
+		w.Cards = take(w.Cards)
+		if len(w.Cards) > 0 {
+			wounds = append(wounds, w)
+		}
+	}
+	s.Wounds = wounds
+	added := 0
+	for _, bw := range end.Wounds {
+		cards := take(bw.Cards)
+		source := bw.Source
+		if source == "" {
+			source = name
+		}
+		if s.addWound(cards, source, bw.Round) != nil {
+			added++
+		}
+	}
+	var rest []string
+	for _, id := range end.Removed {
+		if remaining[id] > 0 {
+			remaining[id]--
+			rest = append(rest, id)
+		}
+	}
+	if s.addWound(rest, name, 0) != nil {
+		added++
+	}
+	return added
 }
 
 // ResolveBattle applies the bridge rules to a finished battle: the piles come
@@ -155,7 +217,7 @@ func (s *State) ResolveBattle(r Rules, end BattleEnd) (Rewards, *BattleReport, e
 	switch end.Result {
 	case "victory":
 		s.Hand, s.Draw, s.Spent = append([]string{}, end.Hand...), append([]string{}, end.Draw...), append([]string{}, end.Spent...)
-		s.Wounds = append([]string{}, end.Removed...)
+		report.NewWounds = s.woundsAfterBattle(pb, end, pb.Name)
 		s.Energy = min(end.Energy, pb.EnergyIn)
 		rewards.XP = def.XP
 		s.XPEarned += def.XP
@@ -177,10 +239,7 @@ func (s *State) ResolveBattle(r Rules, end BattleEnd) (Rewards, *BattleReport, e
 				s.PendingRelicChoices += report.RelicChoices
 			}
 			// Winning the region mends every wound, as clearing a campaign does.
-			report.WoundsMended = len(s.Wounds)
-			for len(s.Wounds) > 0 {
-				s.mendWound(s.Wounds[0])
-			}
+			report.WoundsMended = len(s.healPoints(s.Wounds.Damage()))
 			report.RegionWon = true
 			s.log("The Warlord is beaten. The region is won.")
 		} else {
@@ -209,7 +268,7 @@ func (s *State) ResolveBattle(r Rules, end BattleEnd) (Rewards, *BattleReport, e
 	case "defeat":
 		if pb.Warlord {
 			s.Hand, s.Draw, s.Spent = append([]string{}, end.Hand...), append([]string{}, end.Draw...), append([]string{}, end.Spent...)
-			s.Wounds = append([]string{}, end.Removed...)
+			report.NewWounds = s.woundsAfterBattle(pb, end, pb.Name)
 			s.Energy = min(end.Energy, pb.EnergyIn)
 			s.Result = "defeat"
 			s.Phase = PhaseDefeat
@@ -217,14 +276,13 @@ func (s *State) ResolveBattle(r Rules, end BattleEnd) (Rewards, *BattleReport, e
 			s.log("The Warlord has won. The run is over.")
 		} else {
 			// The battle's damage does not stick: pre-battle piles and wounds,
-			// plus the defeat wounds, never the last live card.
+			// plus one defeat wound, never the last live card.
 			s.Hand, s.Draw, s.Spent = append([]string{}, pb.HandBefore...), append([]string{}, pb.DrawBefore...), append([]string{}, pb.SpentBefore...)
-			s.Wounds = append([]string{}, pb.WoundsBefore...)
+			s.Wounds = pb.WoundsBefore.Clone()
 			s.Energy = pb.EnergyIn
-			for i := 0; i < cfg.Defeat.Wounds; i++ {
-				if s.inflictWound() {
-					report.DefeatWounds++
-				}
+			report.DefeatWounds = s.inflictWound("defeat by "+pb.Name, cfg.Defeat.Wounds)
+			if report.DefeatWounds > 0 {
+				report.NewWounds = 1
 			}
 			s.Player = pb.Origin
 			origin := pb.Origin
@@ -236,7 +294,7 @@ func (s *State) ResolveBattle(r Rules, end BattleEnd) (Rewards, *BattleReport, e
 		// the linear campaign: the pre-battle piles, wounds and energy come
 		// back, nobody wins, the enemy stays, and the turn ends.
 		s.Hand, s.Draw, s.Spent = append([]string{}, pb.HandBefore...), append([]string{}, pb.DrawBefore...), append([]string{}, pb.SpentBefore...)
-		s.Wounds = append([]string{}, pb.WoundsBefore...)
+		s.Wounds = pb.WoundsBefore.Clone()
 		s.Energy = pb.EnergyIn
 		if pb.Warlord {
 			s.Player = pb.Origin
@@ -245,7 +303,7 @@ func (s *State) ResolveBattle(r Rules, end BattleEnd) (Rewards, *BattleReport, e
 	}
 	report.EnergyKept = s.Energy
 	report.HandAfter = append([]string{}, s.Hand...)
-	report.DrawAfter, report.SpentAfter, report.Wounds = len(s.Draw), len(s.Spent), len(s.Wounds)
+	report.DrawAfter, report.SpentAfter, report.Wounds, report.WoundCards = len(s.Draw), len(s.Spent), len(s.Wounds), s.Wounds.Damage()
 	s.LastBattle = report
 	if s.Result != "" {
 		s.refreshSight(r)
@@ -296,7 +354,7 @@ func (s *State) Setup(r Rules) (BattleSetup, error) {
 		return BattleSetup{}, errors.New("no battle is pending")
 	}
 	return BattleSetup{BattleID: pb.ID, Opponent: pb.Opponent, Count: pb.Count, Seed: pb.Seed,
-		Hand: append([]string{}, s.Hand...), Draw: append([]string{}, s.Draw...), Spent: append([]string{}, s.Spent...), Wounds: append([]string{}, s.Wounds...),
+		Hand: append([]string{}, s.Hand...), Draw: append([]string{}, s.Draw...), Spent: append([]string{}, s.Spent...), Wounds: s.Wounds.Cards(),
 		Energy: s.Energy, PlayerStatuses: append([]StatusStack{}, pb.PlayerStatuses...), EnemyStatuses: append([]StatusStack{}, pb.EnemyStatuses...),
 		HandSize: s.effectiveHandSize(r), HandLimit: s.effectiveHandLimit(r)}, nil
 }

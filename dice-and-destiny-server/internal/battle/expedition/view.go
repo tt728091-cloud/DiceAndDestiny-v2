@@ -168,21 +168,43 @@ type ViewEvent struct {
 }
 
 type ViewCamp struct {
-	Reason           string     `json:"reason"`
-	Inn              bool       `json:"inn,omitempty"`
-	Site             string     `json:"site,omitempty"`
-	Deadline         bool       `json:"deadline,omitempty"`
-	Reshuffled       int        `json:"reshuffled"`
-	EnergyBefore     int        `json:"energy_before"`
-	Forfeited        int        `json:"forfeited"`
-	MendRolls        []MendRoll `json:"mend_rolls"`
-	RollNeeded       int        `json:"roll_needed"`
-	InnBonus         int        `json:"inn_bonus"`
-	InfluencePerRoll int        `json:"influence_per_roll"`
-	Bandages         int        `json:"bandages"`
-	DeckChange       int        `json:"deck_change"`
-	CanMendRoll      bool       `json:"can_mend_roll"`
-	MendReason       string     `json:"mend_reason,omitempty"`
+	Reason       string     `json:"reason"`
+	Turn         int        `json:"turn"`
+	Round        int        `json:"round"`
+	Inn          bool       `json:"inn,omitempty"`
+	Site         string     `json:"site,omitempty"`
+	Deadline     bool       `json:"deadline,omitempty"`
+	Reshuffled   int        `json:"reshuffled"`
+	EnergyBefore int        `json:"energy_before"`
+	Forfeited    int        `json:"forfeited"`
+	Drew         int        `json:"drew"`
+	Heals        []HealRoll `json:"heals"`
+	Healed       int        `json:"healed"`
+	BasicAidDie  int        `json:"basic_aid_die"`
+	BandageDie   int        `json:"bandage_die"`
+	InnBonus     int        `json:"inn_bonus"`
+	Bandages     int        `json:"bandages"`
+	Untreated    int        `json:"untreated"`   // wounds basic aid can still treat
+	Bandageable  int        `json:"bandageable"` // treated wounds a bandage can still heal
+	CanBasicAid  bool       `json:"can_basic_aid"`
+	CanBandage   bool       `json:"can_bandage"`
+	HealReason   string     `json:"heal_reason,omitempty"`
+	DeckChange   int        `json:"deck_change"`
+}
+
+// ViewWound is one grouping of damage on the stat strip and at camp.
+type ViewWound struct {
+	ID       string   `json:"id"`
+	Damage   int      `json:"damage"` // cards still lost
+	Size     int      `json:"size"`   // the damage when taken
+	Cards    []string `json:"cards"`
+	Source   string   `json:"source"`
+	Taken    string   `json:"taken"`
+	Treated  bool     `json:"treated"`
+	Bandaged bool     `json:"bandaged"`
+	BasicAid bool     `json:"basic_aid"` // basic aid can be used on it now
+	Bandage  bool     `json:"bandage"`   // a bandage can be used on it now
+	Reason   string   `json:"reason,omitempty"`
 }
 
 type ViewPendingBattle struct {
@@ -236,7 +258,8 @@ type View struct {
 	HandLimit    int               `json:"hand_limit"`
 	Draw         []string          `json:"draw"`
 	Spent        []string          `json:"spent"`
-	Wounds       []string          `json:"wounds"`
+	Wounds       []ViewWound       `json:"wounds"`      // groupings of damage
+	WoundCards   []string          `json:"wound_cards"` // every wounded card (the removed pile)
 	CardNames    map[string]string `json:"card_names"`
 	Inventory    []ViewItem        `json:"inventory"`
 	Statuses     []ViewStatus      `json:"statuses"`
@@ -340,7 +363,7 @@ func (s *State) siteServices(r Rules, st SiteState, def Site) []ViewService {
 		if def.Type == "monastery" {
 			per = cfg.Mending.MonasteryInfluencePerWound
 		}
-		sv := ViewService{ID: "mend", Label: fmt.Sprintf("Mend 1 wound (%d Influence)", per), Influence: per, Available: len(s.Wounds) > 0 && influence >= per}
+		sv := ViewService{ID: "mend", Label: fmt.Sprintf("Mend 1 damage (%d Influence)", per), Influence: per, Available: len(s.Wounds) > 0 && influence >= per}
 		if len(s.Wounds) == 0 {
 			sv.Reason = "no wounds"
 		} else if influence < per {
@@ -349,7 +372,7 @@ func (s *State) siteServices(r Rules, st SiteState, def Site) []ViewService {
 		out = append(out, sv)
 	case "town":
 		price := cfg.Mending.TownGoldPerWound
-		sv := ViewService{ID: "mend", Label: fmt.Sprintf("Healer: mend 1 wound (%d gold)", price), Gold: price, Available: len(s.Wounds) > 0 && s.Gold >= price}
+		sv := ViewService{ID: "mend", Label: fmt.Sprintf("Healer: mend 1 damage (%d gold)", price), Gold: price, Available: len(s.Wounds) > 0 && s.Gold >= price}
 		if len(s.Wounds) == 0 {
 			sv.Reason = "no wounds"
 		} else if s.Gold < price {
@@ -380,10 +403,10 @@ func (s *State) View(r Rules, revision int) View {
 	region := pack.Regions[s.Region]
 	v := View{Region: s.Region, RegionName: region.Name, Description: region.Description, Round: s.Round, Rounds: cfg.RoundsPerRegion, Night: s.Night, Phase: s.Phase, Result: s.Result, Revision: revision, Seed: s.Seed,
 		Player: s.Player, Energy: s.Energy, BaseEnergy: s.BaseEnergy, Gold: s.Gold, HandSize: s.effectiveHandSize(r), HandLimit: s.effectiveHandLimit(r),
-		Draw: sortedStrings(s.Draw), Spent: append([]string{}, s.Spent...), Wounds: append([]string{}, s.Wounds...), CardNames: map[string]string{},
+		Draw: sortedStrings(s.Draw), Spent: append([]string{}, s.Spent...), Wounds: s.viewWounds(r), WoundCards: s.Wounds.Cards(), CardNames: map[string]string{},
 		Hand: []ViewCard{}, Inventory: []ViewItem{}, Statuses: []ViewStatus{}, Hexes: []ViewHex{}, Slots: []ViewSlot{}, Moves: []ViewMove{}, Explores: []ViewSlot{}, Challenges: []ViewTarget{}, Enters: []ViewTarget{},
-		Health: s.LiveCards(), MaxHealth: s.LiveCards() + len(s.Wounds), XPEarned: s.XPEarned, RelicChoices: s.PendingRelicChoices,
-		LastBattle: s.LastBattle, LastRest: s.LastRest, LastEvent: s.LastEvent, Log: append([]string{}, s.Log...),
+		Health: s.LiveCards(), MaxHealth: s.LiveCards() + s.Wounds.Damage(), XPEarned: s.XPEarned, RelicChoices: s.PendingRelicChoices,
+		LastBattle: s.LastBattle, LastRest: s.viewLastRest(), LastEvent: s.LastEvent, Log: append([]string{}, s.Log...),
 		Config: ViewConfig{EnergyPerMove: cfg.Move.EnergyPerMove, ExploreCost: cfg.Move.ExploreCost, SightDay: cfg.Sight.Day, SightNight: cfg.Sight.Night, Terrain: cfg.Terrain, DefeatWounds: cfg.Defeat.Wounds, InfluencePerDeckChange: cfg.InfluencePerDeckChange, TrainerGoldPerXP: cfg.Gold.TrainerGoldPerXP}}
 	day := (s.Round + 1) / 2
 	if s.Round > cfg.RoundsPerRegion {
@@ -391,7 +414,7 @@ func (s *State) View(r Rules, revision int) View {
 	} else {
 		v.DayLabel = fmt.Sprintf("%s %d · round %d of %d", dayName(s.Night), day, s.Round, cfg.RoundsPerRegion)
 	}
-	for _, id := range append(append(append([]string{}, s.Hand...), s.Draw...), append(s.Spent, s.Wounds...)...) {
+	for _, id := range append(append(append([]string{}, s.Hand...), s.Draw...), append(append([]string{}, s.Spent...), s.Wounds.Cards()...)...) {
 		v.CardNames[id] = r.cardName(id)
 	}
 	for _, id := range s.Hand {
@@ -595,22 +618,24 @@ func (s *State) View(r Rules, revision int) View {
 	}
 	if s.Camp != nil {
 		c := s.Camp
-		vc := &ViewCamp{Reason: c.Reason, Inn: c.Inn, Site: c.Site, Deadline: c.Deadline, Reshuffled: c.Reshuffled, EnergyBefore: c.EnergyBefore, Forfeited: c.Forfeited, MendRolls: append([]MendRoll{}, c.MendRolls...), RollNeeded: cfg.CampMending.RollNeeded, InnBonus: cfg.CampMending.InnBonus, InfluencePerRoll: cfg.CampMending.InfluencePerRoll, DeckChange: cfg.InfluencePerDeckChange["camp"]}
-		if c.Inn {
-			vc.InnBonus = cfg.CampMending.InnBonus
-		} else {
-			vc.InnBonus = 0
-		}
-		for id, n := range s.Inventory {
-			if g, ok := pack.Gear[id]; ok && g.Effect == "mend_roll" {
-				vc.Bandages += n
+		vc := &ViewCamp{Reason: c.Reason, Turn: c.Turn, Round: c.Round, Inn: c.Inn, Site: c.Site, Deadline: c.Deadline, Reshuffled: c.Reshuffled, EnergyBefore: c.EnergyBefore, Forfeited: c.Forfeited, Drew: c.Drew, Heals: append([]HealRoll{}, c.Heals...), Healed: c.Healed, BasicAidDie: cfg.CampHealing.BasicAidDie, BandageDie: cfg.CampHealing.BandageDie, InnBonus: s.innBonus(r), Bandages: s.bandages(r), DeckChange: cfg.InfluencePerDeckChange["camp"]}
+		for _, w := range v.Wounds {
+			if w.BasicAid {
+				vc.Untreated++
+			}
+			if w.Treated && !w.Bandaged {
+				vc.Bandageable++
 			}
 		}
-		vc.CanMendRoll = len(s.Wounds) > 0 && (vc.Bandages > 0 || s.Turn.Influence >= cfg.CampMending.InfluencePerRoll)
-		if len(s.Wounds) == 0 {
-			vc.MendReason = "no wounds"
-		} else if !vc.CanMendRoll {
-			vc.MendReason = fmt.Sprintf("needs a bandage or %d Influence", cfg.CampMending.InfluencePerRoll)
+		vc.CanBasicAid = vc.Untreated > 0
+		vc.CanBandage = vc.Bandageable > 0 && vc.Bandages > 0
+		switch {
+		case len(s.Wounds) == 0:
+			vc.HealReason = "no wounds"
+		case vc.Untreated == 0 && vc.Bandageable == 0:
+			vc.HealReason = "every wound has been treated and bandaged at this camp"
+		case vc.Untreated == 0 && vc.Bandages == 0:
+			vc.HealReason = "every wound has been treated at this camp; a bandage would heal more"
 		}
 		v.Camp = vc
 	}
@@ -625,4 +650,65 @@ func (s *State) View(r Rules, revision int) View {
 		v.Battle = vb
 	}
 	return v
+}
+
+// viewWounds lists the wounds with what each camp healing step can still do.
+func (s *State) viewWounds(r Rules) []ViewWound {
+	out := []ViewWound{}
+	bandages := s.bandages(r)
+	for _, w := range s.Wounds {
+		vw := ViewWound{ID: w.ID, Damage: w.Damage(), Size: w.Size, Cards: append([]string{}, w.Cards...), Source: w.Source, Treated: w.Treated, Bandaged: w.Bandaged}
+		if w.Round > 0 {
+			// Wounds migrated from a save written before wounds were grouped
+			// have no record of when they were taken.
+			vw.Taken = fmt.Sprintf("%s %d, turn %d", dayName(w.Round%2 == 0), (w.Round+1)/2, w.Turn)
+			if w.BattleRound > 0 {
+				vw.Taken += fmt.Sprintf(" · battle round %d", w.BattleRound)
+			}
+		}
+		if s.Phase == PhaseCamp {
+			vw.BasicAid = !w.Treated
+			vw.Bandage = w.Treated && !w.Bandaged && bandages > 0
+			switch {
+			case !w.Treated:
+			case w.Bandaged:
+				vw.Reason = "treated and bandaged at this camp"
+			case bandages == 0:
+				vw.Reason = "treated at this camp; a bandage would heal more"
+			}
+		}
+		out = append(out, vw)
+	}
+	return out
+}
+
+// bandages counts the gear that grants a camp healing roll.
+func (s *State) bandages(r Rules) int {
+	n := 0
+	for id, count := range s.Inventory {
+		if g, ok := r.Pack.Gear[id]; ok && g.Effect == "mend_roll" {
+			n += count
+		}
+	}
+	return n
+}
+
+// innBonus is the healing bonus at this camp.
+func (s *State) innBonus(r Rules) int {
+	if s.Camp != nil && s.Camp.Inn {
+		return r.Config.CampHealing.InnBonus
+	}
+	return 0
+}
+
+// viewLastRest copies the rest summary with its lists never null (summaries
+// saved before camp healing have no heals list).
+func (s *State) viewLastRest() *RestSummary {
+	if s.LastRest == nil {
+		return nil
+	}
+	rest := *s.LastRest
+	rest.Camp.Heals = append([]HealRoll{}, rest.Camp.Heals...)
+	rest.Patrols = append([]string{}, rest.Patrols...)
+	return &rest
 }

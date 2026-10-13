@@ -9,6 +9,7 @@ import (
 	"diceanddestiny/server/internal/battle/engine"
 	"diceanddestiny/server/internal/battle/expedition"
 	"diceanddestiny/server/internal/battle/loadout"
+	"diceanddestiny/server/internal/battle/state"
 	"diceanddestiny/server/internal/content"
 )
 
@@ -428,7 +429,7 @@ func expeditionView(x expeditionContext, save loadout.CampaignSave) map[string]a
 	lib := x.catalogs[save.Character]
 	view := save.Expedition.View(x.rules[save.Character], save.Sheet.Revision)
 	cards := map[string]any{}
-	for _, id := range append(append(append([]string{}, save.Expedition.Hand...), save.Expedition.Draw...), append(save.Expedition.Spent, save.Expedition.Wounds...)...) {
+	for _, id := range append(append(append([]string{}, save.Expedition.Hand...), save.Expedition.Draw...), append(append([]string{}, save.Expedition.Spent...), save.Expedition.Wounds.Cards()...)...) {
 		if _, done := cards[id]; !done {
 			cards[id] = lib.Cards[id]
 		}
@@ -625,6 +626,22 @@ func (s *Session) recordExpeditionBattle() {
 		return out
 	}
 	end := expedition.BattleEnd{BattleID: b.battleID, Result: s.telemetry.Result, Hand: definitions(actor.Cards.Hand), Draw: definitions(actor.Cards.Deck), Spent: definitions(actor.Cards.Discard), Removed: definitions(actor.Cards.Removed), Energy: actor.Resources.EnergyPoints}
+	// The battle's wound ledger, so the map keeps each hit's cards grouped.
+	lib := x.catalogs[b.character]
+	for _, w := range final.Wounds {
+		if w.TargetActorID != s.humanSeat || len(w.Cards) == 0 {
+			continue
+		}
+		cards := make([]string, 0, len(w.Cards))
+		for _, c := range w.Cards {
+			id := c.CardDefinitionID
+			if id == "" {
+				id = instances[c.CardID].DefinitionID
+			}
+			cards = append(cards, id)
+		}
+		end.Wounds = append(end.Wounds, expedition.BattleWound{Round: w.Round, Source: woundSourceName(lib, final, w), Cards: cards})
+	}
 	outcome, err := loadout.RecordExpeditionBattle(s.config.LoadoutRoot, b.saveID, x.economy, x.catalogs, x.rules[b.character], end)
 	if err != nil {
 		fail(err)
@@ -632,4 +649,21 @@ func (s *Session) recordExpeditionBattle() {
 	}
 	b.outcome = &outcome
 	s.recordDiagnostic("expedition_recorded", map[string]any{"campaign_save": b.saveID, "outcome": outcome})
+}
+
+// woundSourceName names what dealt a battle wound: the ability or card, else
+// the attacker, else the battle itself.
+func woundSourceName(lib content.BattleLibrary, final state.Battle, w state.Wound) string {
+	if a, ok := lib.Abilities[w.SourceContentID]; ok && a.Name != "" {
+		return a.Name
+	}
+	if c, ok := lib.Cards[w.SourceContentID]; ok && c.Name != "" {
+		return c.Name
+	}
+	if actor, ok := final.Actors[w.SourceActorID]; ok {
+		if def, ok := lib.Combatants[actor.DefinitionID]; ok && def.Name != "" {
+			return def.Name
+		}
+	}
+	return ""
 }

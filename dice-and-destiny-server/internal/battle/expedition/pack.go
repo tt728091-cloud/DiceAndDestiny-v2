@@ -140,8 +140,9 @@ type Event struct {
 	Choices       []Choice `yaml:"choices" json:"choices"`
 }
 
-// GearEffects: mend_roll (one camp mending roll), night_sight (+Amount sight at
-// night), remove_fortified (the next garrison fight is not Fortified).
+// GearEffects: mend_roll (one camp healing roll: a bandage heals 1d6 from a
+// treated wound), night_sight (+Amount sight at night), remove_fortified (the
+// next garrison fight is not Fortified).
 var GearEffects = []string{"mend_roll", "night_sight", "remove_fortified"}
 
 type Gear struct {

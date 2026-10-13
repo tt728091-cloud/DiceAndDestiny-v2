@@ -225,7 +225,10 @@ func _draw() -> void:
 		var rect := Rect2(at, Vector2(w + 12, h))
 		draw_style_box(STYLE.chip_style(STYLE.BONE, Color(STYLE.INK, 0.6)), rect)
 		for i in lines.size():
-			draw_string(font, at + Vector2(6, 18 + 20 * i), str(lines[i]), HORIZONTAL_ALIGNMENT_LEFT, -1, 14 if i == 0 else 12, STYLE.INK if i == 0 else STYLE.SEPIA_TEXT)
+			var text := str(lines[i])
+			var danger := "provokes" in text or "Cannot move" in text or "held by" in text or "Ambush" in text or text.begins_with("The Warlord")
+			var colour: Color = STYLE.INK if i == 0 else (STYLE.RUBRIC if danger else STYLE.SEPIA_TEXT)
+			draw_string(font, at + Vector2(6, 18 + 20 * i), text, HORIZONTAL_ALIGNMENT_LEFT, -1, 14 if i == 0 else 12, colour)
 
 func _cell_of(key: String, hexes: Dictionary, model: Dictionary) -> Vector2i:
 	if hexes.has(key): return hexes[key].cell

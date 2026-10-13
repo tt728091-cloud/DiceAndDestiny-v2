@@ -103,13 +103,14 @@ func (s *State) teleport(r Rules, h Hex) {
 	s.refreshSight(r)
 }
 
-// woundCard moves one copy of a card out of whichever pile holds it into the wounds.
+// woundCard moves one copy of a card out of whichever pile holds it into the
+// wounds, as its own one-damage wound.
 func woundCard(t *testing.T, s *State, id string) {
 	t.Helper()
 	for _, pile := range []*[]string{&s.Hand, &s.Draw, &s.Spent} {
 		if next, ok := removeFirst(*pile, id); ok {
 			*pile = next
-			s.Wounds = append(s.Wounds, id)
+			s.addWound([]string{id}, "test", 0)
 			return
 		}
 	}
@@ -470,8 +471,13 @@ func TestOneCardRuleEndTurnDrawAndRest(t *testing.T) {
 		act(t, s, r, Action{Kind: "discard", Cards: append([]string{}, s.Hand...)})
 		act(t, s, r, Action{Kind: "end_turn"})
 	}
-	if s.Phase != PhaseCamp || s.Camp == nil || s.Camp.Reason != "deck_empty" {
+	if s.Phase != PhaseCamp || s.Camp == nil || s.Camp.Reason != "deck_empty" || s.Camp.Round != 1 || s.Camp.Turn < 3 {
 		t.Fatalf("an empty draw pile at end of turn rests: phase %s camp %+v", s.Phase, s.Camp)
+	}
+	// The rest reshuffled Spent and drew the fresh hand right away, so the
+	// camp never shows an empty hand next to a full draw pile.
+	if len(s.Hand) != 4 || s.Camp.Drew < 1 || !s.Camp.HandDrawn || len(s.Draw) != 12-4 {
+		t.Fatalf("the rest draws the hand: hand %d drew %d draw %d", len(s.Hand), s.Camp.Drew, len(s.Draw))
 	}
 	// Rest step 1: Spent reshuffled into the draw pile; wounds stay out.
 	s2 := newState(t, r, 4)
@@ -481,27 +487,38 @@ func TestOneCardRuleEndTurnDrawAndRest(t *testing.T) {
 	s2.Draw = []string{}
 	act(t, s2, r, Action{Kind: "discard", Cards: s2.Hand[:1]})
 	act(t, s2, r, Action{Kind: "end_turn"})
-	if s2.Phase != PhaseCamp || len(s2.Spent) != 0 || len(s2.Draw) != 11-len(s2.Hand) || s2.Wounds[0] != "nudge" || s2.Energy != 10 || s2.LiveCards() != 11 {
+	if s2.Phase != PhaseCamp || len(s2.Spent) != 0 || len(s2.Hand) != 4 || len(s2.Draw) != 11-len(s2.Hand) || s2.Wounds[0].Cards[0] != "nudge" || s2.Energy != 10 || s2.LiveCards() != 11 {
 		t.Fatalf("rest: spent %d draw %d wounds %v energy %d", len(s2.Spent), len(s2.Draw), s2.Wounds, s2.Energy)
 	}
-	if v := s2.View(r, 1); v.Camp == nil || v.Camp.Reason != "deck_empty" || v.Camp.RollNeeded != 4 || v.Camp.DeckChange != 3 {
-		t.Fatalf("camp services are offered: %+v", v.Camp)
+	if v := s2.View(r, 1); v.Camp == nil || v.Camp.Reason != "deck_empty" || v.Camp.BasicAidDie != 3 || v.Camp.BandageDie != 6 || v.Camp.DeckChange != 3 || v.Camp.Drew < 1 || len(v.Wounds) != 1 || !v.Wounds[0].BasicAid || v.Camp.Untreated != 1 {
+		t.Fatalf("camp services are offered: %+v wounds %+v", v.Camp, v.Wounds)
 	}
 	// Energy resets down as well as up.
 	s3 := newState(t, r, 4)
 	s3.Energy = 40
 	act(t, s3, r, Action{Kind: "make_camp"})
-	if s3.Energy != 10 || s3.Camp.Reason != "make_camp" || s3.Camp.Forfeited != 4 || len(s3.Hand) != 0 {
-		t.Fatalf("make camp forfeits the hand and resets energy: %+v hand %v energy %d", s3.Camp, s3.Hand, s3.Energy)
+	if s3.Energy != 10 || s3.Camp.Reason != "make_camp" || s3.Camp.Forfeited != 4 || len(s3.Hand) != 4 || s3.Camp.Drew != 4 || len(s3.Spent) != 0 {
+		t.Fatalf("make camp forfeits the hand, reshuffles it and draws a fresh one: %+v hand %v energy %d", s3.Camp, s3.Hand, s3.Energy)
 	}
-	// Break camp: Warlord marches 2, Day → Night, round 2, hand drawn.
+	// Cards played for Influence at camp are not drawn back: the round starts short.
+	act(t, s3, r, Action{Kind: "camp_service", Service: "influence", Cards: s3.Hand[:1]})
+	// Break camp: Warlord marches 2, Day → Night, round 2, the camp hand carries on.
 	from := s3.Warlord.Pos()
 	act(t, s3, r, Action{Kind: "break_camp"})
-	if s3.Round != 2 || !s3.Night || s3.Phase != PhaseTurn || len(s3.Hand) != 4 || s3.Warlord.Index != 2 || Distance(from, s3.Warlord.Pos()) != 2 {
+	if s3.Round != 2 || !s3.Night || s3.Phase != PhaseTurn || len(s3.Hand) != 3 || s3.Warlord.Index != 2 || Distance(from, s3.Warlord.Pos()) != 2 {
 		t.Fatalf("break camp: round %d night %v hand %d warlord %d→%d", s3.Round, s3.Night, len(s3.Hand), s3.Warlord.Index, s3.Warlord.Index)
 	}
-	if s3.LastRest == nil || s3.LastRest.WarlordSteps != 2 || !s3.LastRest.NightAfter || s3.LastRest.RoundAfter != 2 {
+	if s3.LastRest == nil || s3.LastRest.WarlordSteps != 2 || !s3.LastRest.NightAfter || s3.LastRest.RoundAfter != 2 || s3.LastRest.Drew != 4 {
 		t.Fatalf("rest summary: %+v", s3.LastRest)
+	}
+	// A camp saved before the rest drew the hand draws it when camp breaks.
+	s4 := newState(t, r, 4)
+	act(t, s4, r, Action{Kind: "make_camp"})
+	s4.Hand, s4.Draw = []string{}, append(s4.Draw, s4.Hand...)
+	s4.Camp.HandDrawn, s4.Camp.Drew = false, 0
+	act(t, s4, r, Action{Kind: "break_camp"})
+	if len(s4.Hand) != 4 || s4.LastRest.Drew != 4 {
+		t.Fatalf("legacy camp: hand %d drew %d", len(s4.Hand), s4.LastRest.Drew)
 	}
 }
 
@@ -509,16 +526,17 @@ func TestReloadedStateContinuesIdentically(t *testing.T) {
 	r := testRules(t)
 	s := newState(t, r, 21)
 	s.Inventory["bandage"] = 2
-	woundCard(t, s, "nudge")
-	s.Hand = append(s.Hand, s.Draw[0])
-	s.Draw = s.Draw[1:]
+	// One wound of four cards, so basic aid (1d3) leaves something to bandage;
+	// the draw pile then runs out at the end of the turn and the round rests.
+	s.addWound(s.Draw[:4], "test", 0)
+	s.Draw = s.Draw[4:]
 	steps := []Action{
 		{Kind: "move", Target: &Hex{1, 0}, Cards: []string{s.Hand[0]}},
 		{Kind: "explore", Slot: "east", Cards: []string{s.Hand[1], s.Hand[2]}},
 		{Kind: "discard", Cards: []string{s.Hand[3]}},
 		{Kind: "end_turn"},
-		{Kind: "make_camp"},
-		{Kind: "camp_service", Service: "mend_roll", Item: "bandage"},
+		{Kind: "camp_service", Service: "basic_aid"},
+		{Kind: "camp_service", Service: "bandage"},
 		{Kind: "break_camp"},
 	}
 	twin := reloaded(t, s)
@@ -666,53 +684,119 @@ func TestApplyDeckChangeKeepsPilesInStep(t *testing.T) {
 	}
 }
 
-func TestCampMendingRollsUseSeededDice(t *testing.T) {
+func TestCampHealingBasicAidThenBandages(t *testing.T) {
 	r := testRules(t)
 	s := newState(t, r, 30)
-	for _, id := range []string{"nudge", "nudge", "try_again", "take_stock"} {
-		woundCard(t, s, id)
+	// Two wounds: a hit of four cards and a hit of one.
+	for _, id := range []string{"nudge", "nudge", "try_again", "take_stock", "steady_guard"} {
+		for _, pile := range []*[]string{&s.Hand, &s.Draw, &s.Spent} {
+			if next, ok := removeFirst(*pile, id); ok {
+				*pile = next
+				break
+			}
+		}
 	}
+	big := s.addWound([]string{"nudge", "nudge", "try_again", "take_stock"}, "Brine Lash", 3)
+	small := s.addWound([]string{"steady_guard"}, "defeat by Bell Diver", 0)
+	bigID, smallID := big.ID, small.ID
+	if s.LiveCards() != 7 || s.Wounds.Damage() != 5 || len(s.Wounds) != 2 {
+		t.Fatalf("two wounds of five damage: live %d wounds %+v", s.LiveCards(), s.Wounds)
+	}
+	_, err := s.Act(r, Action{Kind: "camp_service", Service: "basic_aid"})
+	mustFail(t, err, "not during turn")
 	act(t, s, r, Action{Kind: "make_camp"})
-	_, err := s.Act(r, Action{Kind: "camp_service", Service: "mend_roll"})
-	mustFail(t, err, "costs a bandage or 3 Influence")
-	_, err = s.Act(r, Action{Kind: "camp_service", Service: "mend_roll", Item: "bandage"})
-	mustFail(t, err, "you have no bandage")
-	s.Inventory["bandage"] = 3
+	v := s.View(r, 1)
+	if len(v.Wounds) != 2 || v.Wounds[0].Damage != 4 || v.Wounds[0].Size != 4 || v.Wounds[0].Source != "Brine Lash" || v.Wounds[0].Taken != "Day 1, turn 1 · battle round 3" || !v.Wounds[0].BasicAid || v.Wounds[0].Bandage || v.Camp.Untreated != 2 || v.Camp.Bandageable != 0 || !v.Camp.CanBasicAid || v.Camp.CanBandage {
+		t.Fatalf("the camp lists the wounds with basic aid open: %+v camp %+v", v.Wounds, v.Camp)
+	}
+	// A bandage needs a treated wound, and a bandage.
+	_, err = s.Act(r, Action{Kind: "camp_service", Service: "bandage", Wound: bigID})
+	mustFail(t, err, "treat it with basic aid first")
 	twin := reloaded(t, s)
-	results := []MendRoll{}
-	for i := 0; i < 3; i++ {
-		act(t, s, r, Action{Kind: "camp_service", Service: "mend_roll", Item: "bandage"})
-		act(t, twin, r, Action{Kind: "camp_service", Service: "mend_roll", Item: "bandage"})
-		results = append(results, s.Camp.MendRolls[i])
+	// Basic aid on the big wound: 1d3 damage healed, cards back in the draw pile.
+	act(t, s, r, Action{Kind: "camp_service", Service: "basic_aid", Wound: bigID})
+	act(t, twin, r, Action{Kind: "camp_service", Service: "basic_aid", Wound: bigID})
+	if len(s.Camp.Heals) != 1 || !reflect.DeepEqual(s.Camp.Heals, twin.Camp.Heals) || !reflect.DeepEqual(s.Draw, twin.Draw) {
+		t.Fatal("healing rolls and the healed cards' positions come from the seeded RNG")
 	}
-	if !reflect.DeepEqual(s.Camp.MendRolls, twin.Camp.MendRolls) {
-		t.Fatal("mending rolls come from the seeded RNG")
+	h := s.Camp.Heals[0]
+	if h.Method != "basic_aid" || h.Die != 3 || h.Roll < 1 || h.Roll > 3 || h.Bonus != 0 || h.Healed != h.Roll || len(h.Cards) != h.Roll || h.Remaining != 4-h.Roll || h.Closed || h.Wound != bigID || h.Source != "Brine Lash" {
+		t.Fatalf("basic aid heals the roll: %+v", h)
 	}
-	for _, roll := range results {
-		if roll.Roll < 1 || roll.Roll > 6 || roll.Success != (roll.Roll >= 4) || roll.Paid != "bandage" || roll.Bonus != 0 {
-			t.Fatalf("a camp roll succeeds on 4+: %+v", roll)
+	big = s.Wounds.find(bigID)
+	if big == nil || !big.Treated || big.Bandaged || big.Damage() != 4-h.Roll || big.Size != 4 || s.LiveCards() != 7+h.Roll || s.Camp.Healed != h.Roll {
+		t.Fatalf("the wound shrinks and is treated: %+v live %d", big, s.LiveCards())
+	}
+	for _, card := range h.Cards {
+		if countOf(s.Draw, card) == 0 {
+			t.Fatalf("healed card %s is back in the draw pile %v", card, s.Draw)
 		}
 	}
-	mended := 0
-	for _, roll := range results {
-		if roll.Success {
-			mended++
+	// No second basic aid on a treated wound this camp.
+	_, err = s.Act(r, Action{Kind: "camp_service", Service: "basic_aid", Wound: bigID})
+	mustFail(t, err, "already treated")
+	// A bandage on the treated wound: 1d6, needs one in the pack.
+	_, err = s.Act(r, Action{Kind: "camp_service", Service: "bandage", Wound: bigID})
+	mustFail(t, err, "you have 0 Bandage")
+	s.Inventory["bandage"] = 1
+	if v = s.View(r, 1); !v.Camp.CanBandage || v.Camp.Bandageable != 1 || v.Camp.Bandages != 1 || !v.Wounds[0].Bandage {
+		t.Fatalf("a bandage is offered for the treated wound: %+v", v.Camp)
+	}
+	act(t, s, r, Action{Kind: "camp_service", Service: "bandage", Wound: bigID})
+	b := s.Camp.Heals[1]
+	expect := min(6, 4-h.Roll)
+	if b.Method != "bandage" || b.Item != "bandage" || b.Die != 6 || b.Roll < 1 || b.Roll > 6 || b.Healed != min(b.Roll, 4-h.Roll) || s.Inventory["bandage"] != 0 || b.Healed > expect {
+		t.Fatalf("a bandage heals 1d6 and is used up: %+v", b)
+	}
+	if b.Closed != (b.Healed == 4-h.Roll) || (b.Closed && s.Wounds.find(bigID) != nil) || (!b.Closed && !s.Wounds.find(bigID).Bandaged) {
+		t.Fatalf("a wound healed to zero closes; otherwise it is bandaged: %+v wounds %+v", b, s.Wounds)
+	}
+	if s.Wounds.find(bigID) != nil {
+		_, err = s.Act(r, Action{Kind: "camp_service", Service: "bandage", Wound: bigID})
+		mustFail(t, err, "already bandaged")
+	}
+	// "all" treats every untreated wound: only the small one is left.
+	act(t, s, r, Action{Kind: "camp_service", Service: "basic_aid", Wound: "all"})
+	last := s.Camp.Heals[len(s.Camp.Heals)-1]
+	if last.Wound != smallID || last.Healed != 1 || !last.Closed || last.Remaining != 0 || s.Wounds.find(smallID) != nil {
+		t.Fatalf("one damage heals fully and the wound is gone: %+v", last)
+	}
+	_, err = s.Act(r, Action{Kind: "camp_service", Service: "basic_aid", Wound: "all"})
+	mustFail(t, err, "no wound can take basic aid now")
+	if s.LiveCards()+s.Wounds.Damage() != 12 {
+		t.Fatalf("health is conserved: live %d wounds %d", s.LiveCards(), s.Wounds.Damage())
+	}
+	// The next camp resets: the big wound (if any is left) is untreated again.
+	act(t, s, r, Action{Kind: "break_camp"})
+	if w := s.Wounds.find(bigID); w != nil {
+		if !w.Treated || !w.Bandaged {
+			t.Fatalf("the flags persist outside camp until the next rest: %+v", w)
 		}
-	}
-	if len(s.Wounds) != 4-mended || s.Inventory["bandage"] != 0 || s.LiveCards() != 8+mended {
-		t.Fatalf("wounds %v, bandages %d, live %d", s.Wounds, s.Inventory["bandage"], s.LiveCards())
-	}
-	// Three Influence buys a roll too; an inn adds +1.
-	s.Camp.Inn = true
-	s.Hand = []string{"nudge", "nudge", "try_again"}
-	act(t, s, r, Action{Kind: "camp_service", Service: "influence", Cards: s.Hand[:3]})
-	if len(s.Wounds) > 0 {
-		act(t, s, r, Action{Kind: "camp_service", Service: "mend_roll"})
-		last := s.Camp.MendRolls[len(s.Camp.MendRolls)-1]
-		if last.Paid != "influence" || last.Bonus != 1 || last.Success != (last.Roll+1 >= 4) || s.Turn.Influence != 0 {
-			t.Fatalf("influence roll at an inn: %+v", last)
+		act(t, s, r, Action{Kind: "make_camp"})
+		if v = s.View(r, 1); !v.Wounds[0].BasicAid {
+			t.Fatalf("the next camp treats again: %+v", v.Wounds)
 		}
+		before := w.Damage()
+		act(t, s, r, Action{Kind: "camp_service", Service: "basic_aid", Wound: bigID})
+		if w = s.Wounds.find(bigID); w != nil && w.Damage() >= before {
+			t.Fatal("basic aid at the next camp heals again")
+		}
+		act(t, s, r, Action{Kind: "break_camp"})
 	}
+	// An inn adds its bonus to every healing roll.
+	s2 := newState(t, r, 31)
+	s2.Hand, s2.Draw, s2.Spent = []string{}, append(s2.Draw, s2.Hand...), nil
+	w := s2.addWound(s2.Draw[:3], "test", 0)
+	s2.Draw = s2.Draw[3:]
+	act(t, s2, r, Action{Kind: "make_camp"})
+	s2.Camp.Inn = true
+	act(t, s2, r, Action{Kind: "camp_service", Service: "basic_aid", Wound: w.ID})
+	if h = s2.Camp.Heals[0]; h.Bonus != 1 || h.Healed != min(3, h.Roll+1) {
+		t.Fatalf("the inn adds +1: %+v", h)
+	}
+	// The old mending roll is gone.
+	_, err = s2.Act(r, Action{Kind: "camp_service", Service: "mend_roll", Item: "bandage"})
+	mustFail(t, err, "unknown camp service")
 	// Different seeds give different roll sequences over enough rolls.
 	rolls := func(seed uint64) []int {
 		x := newState(t, r, seed)

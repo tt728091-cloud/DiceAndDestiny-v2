@@ -29,8 +29,8 @@ func TestLoadConfigAcceptsShippedValues(t *testing.T) {
 	if cfg.Ambush.BonusDice != 3 || cfg.Ambush.MaxKept != 5 || cfg.Fortified.ExtraDefenseDice != 1 || cfg.Conqueror.ExtraDefenseDice != 1 || cfg.Defeat.Wounds != 2 {
 		t.Fatalf("ambush/fortified/defeat values changed: %+v", cfg)
 	}
-	if cfg.CampMending.RollNeeded != 4 || cfg.CampMending.InnBonus != 1 || cfg.CampMending.InfluencePerRoll != 3 {
-		t.Fatalf("camp mending values changed: %+v", cfg.CampMending)
+	if cfg.CampHealing.BasicAidDie != 3 || cfg.CampHealing.BandageDie != 6 || cfg.CampHealing.InnBonus != 1 {
+		t.Fatalf("camp healing values changed: %+v", cfg.CampHealing)
 	}
 	if cfg.Warlord.StartDistance != 5 || cfg.Warlord.MarchPerRest != 2 || cfg.Warlord.EarlyReward.XPPerRound != 20 || cfg.Warlord.EarlyReward.ExtraRelicChoices != 1 {
 		t.Fatalf("warlord values changed: %+v", cfg.Warlord)
@@ -75,7 +75,8 @@ func TestLoadConfigRejectsBadValues(t *testing.T) {
 		{"impassable with cost", "lake:     {impassable: true}", "lake:     {impassable: true, day: 1}", "impassable terrain \"lake\" has no cost"},
 		{"terrain cost range", "forest:   {day: 2, night: 3, cover: true}", "forest:   {day: 2, night: 0, cover: true}", "terrain.forest.night must be 1–20"},
 		{"ambush keep", "max_kept: 5", "max_kept: 4", "ambush.max_kept must be 5–5"},
-		{"mending roll", "roll_needed: 4", "roll_needed: 7", "camp_mending.roll_needed must be 1–6"},
+		{"basic aid die", "basic_aid_die: 3", "basic_aid_die: 0", "camp_healing.basic_aid_die must be 1–20"},
+		{"bandage die", "bandage_die: 6", "bandage_die: 21", "camp_healing.bandage_die must be 1–20"},
 		{"missing deck-change site", "influence_per_deck_change: {camp: 3, village: 2, monastery: 1, town: 0}", "influence_per_deck_change: {camp: 3, village: 2, monastery: 1}", "influence_per_deck_change.town is missing"},
 		{"unknown deck-change site", "monastery: 1, town: 0}", "monastery: 1, town: 0, inn: 1}", "unknown deck-change site \"inn\""},
 		{"bad gold range", "minion_group: [5, 15]", "minion_group: [15, 5]", "gold.drops.minion_group is not a valid range"},

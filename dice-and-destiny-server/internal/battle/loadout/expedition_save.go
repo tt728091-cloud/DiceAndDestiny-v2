@@ -50,7 +50,7 @@ func countMap(ids []string) map[string]int {
 func syncSheetFromState(save *CampaignSave, e Economy) {
 	p := &save.Sheet
 	all := append(append([]Entry(nil), p.Deck...), p.Wounds...)
-	p.Deck, p.Wounds = woundCopies(all, p.Wounds, countMap(save.Expedition.Wounds))
+	p.Deck, p.Wounds = woundCopies(all, p.Wounds, countMap(save.Expedition.Wounds.Cards()))
 	p.DeckValue = deckValue(p.Deck, save.Character, e)
 	p.WoundValue = deckValue(p.Wounds, save.Character, e)
 }
@@ -63,7 +63,7 @@ func checkStateMatchesSheet(save CampaignSave) error {
 	if !slices.Equal(live, expandEntries(save.Sheet.Deck)) {
 		return fmt.Errorf("campaign save %q: the map piles do not match the deck", save.ID)
 	}
-	wounds := append([]string{}, st.Wounds...)
+	wounds := st.Wounds.Cards()
 	sort.Strings(wounds)
 	if !slices.Equal(wounds, expandEntries(save.Sheet.Wounds)) {
 		return fmt.Errorf("campaign save %q: the map wounds do not match the sheet", save.ID)

@@ -5,4 +5,4 @@ kind: consumable
 effect: mend_roll
 amount: 1
 price: 10
-description: "One camp mending roll for one wound (success on 4+ on a d6, +1 at an inn). Used up when rolled."
+description: "One healing roll at camp: heals 1d6 damage from a wound you have already treated with basic aid (+1 at an inn). Used up when rolled."

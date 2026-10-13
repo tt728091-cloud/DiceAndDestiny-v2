@@ -77,6 +77,7 @@ var _overlay_body: VBoxContainer
 var _overlay_backdrop: TextureRect
 var _overlay_sheet: PanelContainer
 var _overlay_scroll: ScrollContainer
+var _overlay_footer: VBoxContainer  # actions pinned below the scrolling body
 var _all_saves: Button
 var _back: Button
 
@@ -160,8 +161,12 @@ func _build() -> void:
 	_overlay_sheet.add_theme_stylebox_override("panel", paper)
 	_overlay_sheet.size_flags_horizontal = Control.SIZE_SHRINK_CENTER; _overlay_sheet.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	sheet_margin.add_child(_overlay_sheet)
-	_overlay_scroll = ScrollContainer.new(); _overlay_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED; _overlay_scroll.custom_minimum_size = Vector2(560, 120); _overlay_sheet.add_child(_overlay_scroll)
+	var sheet_box := VBoxContainer.new(); sheet_box.add_theme_constant_override("separation", 8); _overlay_sheet.add_child(sheet_box)
+	_overlay_scroll = ScrollContainer.new(); _overlay_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED; _overlay_scroll.custom_minimum_size = Vector2(560, 120); sheet_box.add_child(_overlay_scroll)
 	_overlay_body = VBoxContainer.new(); _overlay_body.add_theme_constant_override("separation", 8); _overlay_body.custom_minimum_size.x = 540; _overlay_body.size_flags_horizontal = Control.SIZE_EXPAND_FILL; _overlay_scroll.add_child(_overlay_body)
+	# The sheet's actions sit under the scrolling body so a long camp (many
+	# wounds, a heal log) never scrolls Break camp out of reach.
+	_overlay_footer = VBoxContainer.new(); _overlay_footer.add_theme_constant_override("separation", 8); _overlay_footer.size_flags_horizontal = Control.SIZE_EXPAND_FILL; sheet_box.add_child(_overlay_footer)
 
 ## The battle's dark gold-edged button, for the stone.
 func _stone_button(parent: Node, text: String, callback: Callable, control_id: String) -> Button:
@@ -296,11 +301,7 @@ func _render_map() -> void:
 			var button = _hex_button(cell.x, cell.y, {"q": cell.x, "r": cell.y, "terrain": ""}, "unexplored")
 			button.slot_kind = str(slot.kind)
 			button.set_meta("slot", str(slot.id))
-			if not explore.is_empty():
-				button.highlight = "explore" if explore.get("ready", false) else "blocked"
-				button.tooltip_text = "Unexplored %s slot %s\nExplore: %d Move%s" % [slot.kind, slot.id, int(view.config.explore_cost), "" if explore.get("ready", false) else "\n" + str(explore.get("why", ""))]
-			else:
-				button.tooltip_text = "Unexplored %s slot %s\nStand next to it to explore" % [slot.kind, slot.id]
+			if not explore.is_empty(): button.highlight = "explore" if explore.get("ready", false) else "blocked"
 	for hex in _list(view, "hexes"):
 		var q: int = int(hex.q); var r: int = int(hex.r)
 		var state := "unknown"
@@ -318,7 +319,8 @@ func _render_map() -> void:
 		button.highlight = highlight
 		button.warlord = bool(hex.get("warlord", false))
 		button.selected = selected_hex == Vector2i(q, r)
-		button.tooltip_text = _hex_tooltip(hex, moves.get(key, {}))
+		# The hover cartouche on the chart is the hex's only tooltip.
+		button.tooltip_text = ""
 		model.hexes[key] = {"data": hex, "state": state, "highlight": highlight, "slot": slot_of.get(key, ""), "cell": Vector2i(q, r)}
 		if hex.get("in_sight", false): model.sight.append(Vector2i(q, r))
 		if hex.get("warlord", false): model["warlord_cell"] = Vector2i(q, r)
@@ -350,17 +352,42 @@ func _hover_hex(key: String) -> void:
 	map_model["hover_lines"] = _hover_lines(key)
 	_marks.wake(); _marks.queue_redraw(); _lines.queue_redraw()
 
+## The hover cartouche: the hex, its terrain and cost, what stands there, and
+## what a move there would mean.
 func _hover_lines(key: String) -> Array:
 	if key.is_empty(): return []
 	if map_model.hexes.has(key):
 		var hex: Dictionary = map_model.hexes[key].data
-		return [_hex_tooltip(hex, {}).split("\n")[0], _terrain_line(hex)]
+		var lines: Array = ["(%d,%d) · %s" % [int(hex.q), int(hex.r), str(hex.get("tile_name", ""))], _terrain_line(hex)]
+		if not hex.get("seen", false): lines.append("Contents unknown")
+		elif not hex.get("in_sight", false): lines.append("Out of sight · remembered")
+		if hex.get("site") != null:
+			var site: Dictionary = hex.site
+			var marks: Array = []
+			if site.get("defended", false): marks.append("held by %s" % site.get("defender_name", "enemies"))
+			if site.get("fortified", false): marks.append("Fortified")
+			if site.get("conquered", false): marks.append("conquered")
+			if site.get("goal", false): marks.append("the Warlord's goal")
+			lines.append("%s (%s)%s" % [site.name, site.type, " · " + " · ".join(marks) if not marks.is_empty() else ""])
+		if hex.get("group") != null:
+			var group: Dictionary = hex.group
+			lines.append("%s ×%d%s%s" % [group.name, int(group.count), " · last seen here" if group.get("remembered", false) else "", " · Ambush possible" if group.get("ambushable", false) else ""])
+		if hex.get("warlord", false): lines.append("The Warlord · %s" % view.get("warlord", {}).get("name", ""))
+		var move: Dictionary = map_model.moves.get(key, {})
+		if not move.is_empty():
+			if not str(move.get("blocked", "")).is_empty(): lines.append("Cannot move: %s" % move.blocked)
+			else: lines.append("Move here · %d Move%s" % [int(move.cost), " · provokes %s!" % move.provokes if not str(move.get("provokes", "")).is_empty() else ""])
+		return lines
 	var slot_id: String = ""
 	for id in map_model.slots:
 		for cell in map_model.slots[id].hexes:
 			if "%d,%d" % [cell.x, cell.y] == key: slot_id = id
 	if slot_id.is_empty(): return []
-	return ["Unexplored %s" % map_model.slots[slot_id].kind, "Explore · %d Move" % map_model.slots[slot_id].explore_cost]
+	var slot: Dictionary = map_model.slots[slot_id]
+	var why := ""
+	if slot.adjacent and not slot.ready: why = " · " + str(slot.why)
+	elif not slot.adjacent: why = " · stand next to it"
+	return ["Unexplored %s" % slot.kind, "Explore · %d Move%s" % [slot.explore_cost, why]]
 
 func _terrain_line(hex: Dictionary) -> String:
 	var terrain := str(hex.get("terrain", ""))
@@ -527,9 +554,16 @@ func _render_stat_strip() -> void:
 	for pile in [["Draw", "draw", "deck"], ["Spent", "spent", "discard"], ["Wounds", "wounds", "removed"]]:
 		var ids: Array = _list(view, pile[1])
 		var cell := HBoxContainer.new(); cell.name = "Pile_" + pile[1]; cell.mouse_filter = Control.MOUSE_FILTER_STOP; cell.add_theme_constant_override("separation", 4); counts.add_child(cell)
-		cell.tooltip_text = "%s (%d)%s" % [pile[0], ids.size(), "\n" + ", ".join(ids.map(func(id): return str(view.get("card_names", {}).get(id, id)))) if not ids.is_empty() else ""]
+		var text := "%s %d" % [pile[0], ids.size()]
+		if pile[1] == "wounds":
+			# A wound is one grouping of damage; the health lost is its cards.
+			var lost: Array = _list(view, "wound_cards")
+			if ids.size() > 0: text += " · %d lost" % lost.size()
+			cell.tooltip_text = _wounds_tooltip(ids, lost)
+		else:
+			cell.tooltip_text = "%s (%d)%s" % [pile[0], ids.size(), "\n" + _card_names(ids) if not ids.is_empty() else ""]
 		CHART.icon_rect(cell, ICONS.texture(pile[2]), 18)
-		var label := STYLE.label(cell, "%s %d" % [pile[0], ids.size()], 14, CHART.HUD_IVORY); label.autowrap_mode = TextServer.AUTOWRAP_OFF
+		var label := STYLE.label(cell, text, 14, CHART.HUD_IVORY); label.autowrap_mode = TextServer.AUTOWRAP_OFF
 		CHART.stone_text(label, false, CHART.WOUNDED if pile[1] == "wounds" and ids.size() > 0 else CHART.HUD_IVORY)
 	# Statuses and inventory.
 	var statuses: Array = _list(view, "statuses")
@@ -547,6 +581,34 @@ func _stat_tile(parent: Node, value: String, caption: String, sub: String, icon:
 	var cap := STYLE.label(cell, caption.to_upper(), 12, STYLE.GOLD); cap.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER; cap.autowrap_mode = TextServer.AUTOWRAP_OFF
 	if not sub.is_empty():
 		var small := STYLE.label(cell, sub, 12, Color("9c9d97")); small.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER; small.autowrap_mode = TextServer.AUTOWRAP_OFF
+
+## Card names from the view's catalog, duplicates grouped as "2 × Steady Guard".
+func _card_names(ids: Array) -> String:
+	var counts := {}
+	var order: Array = []
+	for id in ids:
+		var name := str(view.get("card_names", {}).get(id, id))
+		if not counts.has(name): counts[name] = 0; order.append(name)
+		counts[name] += 1
+	return ", ".join(order.map(func(name): return name if counts[name] == 1 else "%d × %s" % [counts[name], name]))
+
+## One block per wound grouping: its damage, source, when it was taken, its
+## camp treatment, and the cards it holds.
+func _wounds_tooltip(wounds: Array, lost: Array) -> String:
+	if wounds.is_empty(): return "Wounds (0)"
+	var blocks: Array = ["Wounds %d · %d health lost" % [wounds.size(), lost.size()]]
+	for k in wounds.size():
+		var w: Dictionary = wounds[k]
+		var line := "Wound %d · %d damage (of %d) · %s · %s" % [k + 1, int(w.get("damage", 0)), int(w.get("size", 0)), str(w.get("source", "")), str(w.get("taken", ""))]
+		if w.get("treated", false): line += " · treated"
+		if w.get("bandaged", false): line += " · bandaged"
+		blocks.append(line + "\n" + _card_names(_list(w, "cards")))
+	return "\n".join(blocks)
+
+## "untreated", "treated" or "treated · bandaged" for a wound at camp.
+static func _wound_state(w: Dictionary) -> String:
+	if w.get("bandaged", false): return "treated · bandaged"
+	return "treated" if w.get("treated", false) else "untreated"
 
 func _chip(parent: Node, node_name: String, icon_id: String, text: String, tooltip: String, color: Color) -> HBoxContainer:
 	var cell := PanelContainer.new(); cell.name = node_name; cell.mouse_filter = Control.MOUSE_FILTER_STOP; cell.tooltip_text = tooltip
@@ -761,6 +823,7 @@ func _render_journal() -> void:
 # Overlays ---------------------------------------------------------------------
 func _render_overlay() -> void:
 	for child in _overlay_body.get_children(): _overlay_body.remove_child(child); child.queue_free()
+	for child in _overlay_footer.get_children(): _overlay_footer.remove_child(child); child.queue_free()
 	_overlay.visible = false
 	var phase := str(view.get("phase", ""))
 	var body := _overlay_body
@@ -775,11 +838,12 @@ func _render_overlay() -> void:
 		var camp: Dictionary = rest.get("camp", {})
 		_overlay_heading(body, "%s · round %d" % ["Night falls" if rest.get("night_after", false) else "Day breaks", int(rest.get("round_after", 0))], CHART.glyph("moon" if rest.get("night_after", false) else "sun"))
 		CHART.ink_label(body, "%d Spent cards reshuffled; energy %d → %d." % [int(camp.get("reshuffled", 0)), int(camp.get("energy_before", 0)), int(view.get("base_energy", 0))], 14)
-		for roll in _list(camp, "mend_rolls"): CHART.ink_label(body, "Mending roll: %d%s vs %d · %s" % [int(roll.roll), " +%d" % int(roll.bonus) if int(roll.bonus) > 0 else "", int(roll.needed), "mended" if roll.success else "failed"], 14, CHART.GREEN if roll.success else CHART.RUBRIC)
+		if int(rest.get("healed", 0)) > 0: CHART.ink_label(body, "Healed %d health at camp." % int(rest.healed), 14, CHART.GREEN)
+		for roll in _list(camp, "heals"): _heal_line(body, roll)
 		var marched := "The Warlord marched %d hex%s%s." % [int(rest.get("warlord_steps", 0)), "" if int(rest.get("warlord_steps", 0)) == 1 else "es", " and took his goal" if rest.get("goal_taken", false) else ""]
 		CHART.ink_label(body, marched, 14, CHART.RUBRIC if rest.get("goal_taken", false) else CHART.INK)
 		if not _list(rest, "patrols").is_empty(): CHART.ink_label(body, "Patrols moved: %s" % ", ".join(rest.patrols), 14)
-		CHART.ink_label(body, "Drew %d." % int(rest.get("drew", 0)), 14)
+		CHART.ink_label(body, "A fresh hand of %d." % int(rest.get("drew", 0)), 14)
 		if rest.get("deadline", false): CHART.ink_label(body, "The last round is over: the Warlord comes to you.", 14, CHART.RUBRIC)
 		CHART.rim(CHART.paper_button(_button(body, "Continue", func(): dismissed_rest = str(view.get("round", 0)); _render(), "expedition.rest.continue"), 15, true), CHART.GOLD_LEAF)
 	elif view.get("pending_battle") != null:
@@ -802,7 +866,7 @@ func _render_overlay() -> void:
 			for st in _list(pb, "enemy_statuses"): _status_cell(row, "Enemy", st)
 			for st in _list(pb, "player_statuses"): _status_cell(row, "You", st)
 		var piles := HBoxContainer.new(); piles.add_theme_constant_override("separation", 10); body.add_child(piles)
-		for pile in [["hand", _list(view, "hand").size()], ["deck", _list(view, "draw").size()], ["discard", _list(view, "spent").size()], ["removed", _list(view, "wounds").size()]]:
+		for pile in [["hand", _list(view, "hand").size()], ["deck", _list(view, "draw").size()], ["discard", _list(view, "spent").size()], ["removed", _list(view, "wound_cards").size()]]:
 			CHART.icon_rect(piles, ICONS.texture(pile[0]), 16); CHART.numeral_label(piles, "%d" % pile[1], 14)
 		CHART.ink_label(piles, "and %d energy" % int(pb.get("energy_in", 0)), 13, CHART.SEPIA_TEXT, false, false)
 		CHART.rim(CHART.paper_button(_button(body, "Fight", _start_fight, "expedition.fight"), 16, true), CHART.RUBRIC)
@@ -832,26 +896,7 @@ func _render_overlay() -> void:
 	elif phase == "camp" and view.get("camp") != null:
 		context = "camp"
 		var camp: Dictionary = view.camp
-		_overlay_heading(body, "Camp · %s%s" % [str(camp.reason).replace("_", " "), " · at the inn (+%d to mending rolls)" % int(camp.inn_bonus) if camp.get("inn", false) else ""], CHART.glyph("tent"))
-		CHART.ink_label(body, "%d Spent cards reshuffled into the draw pile; energy reset to %d.%s" % [int(camp.reshuffled), int(view.get("base_energy", 0)), " %d unplayed cards forfeited." % int(camp.forfeited) if int(camp.get("forfeited", 0)) > 0 else ""], 14)
-		if camp.get("deadline", false): CHART.ink_label(body, "This was the last round: when you break camp the Warlord comes to you.", 14, CHART.RUBRIC)
-		CHART.ink_label(body, "Wounds %d · bandages %d · Influence %d (play cards for more)" % [_list(view, "wounds").size(), int(camp.bandages), int(view.get("turn", {}).get("influence", 0))], 13, CHART.SEPIA_TEXT)
-		var rolls: Array = _list(camp, "mend_rolls")
-		if not rolls.is_empty():
-			var grid := GridContainer.new(); grid.columns = 4; grid.add_theme_constant_override("h_separation", 10); body.add_child(grid)
-			for roll in rolls:
-				CHART.ink_label(grid, str(view.get("card_names", {}).get(roll.card, roll.card)), 13, CHART.INK, false, false)
-				CHART.numeral_label(grid, "%d%s" % [int(roll.roll), " +%d" % int(roll.bonus) if int(roll.bonus) > 0 else ""], 13)
-				CHART.numeral_label(grid, "vs %d" % int(roll.needed), 13)
-				CHART.ink_label(grid, "%s (%s)" % ["mended" if roll.success else "failed", roll.paid], 13, CHART.GREEN if roll.success else CHART.RUBRIC, false, false)
-		var influence := CHART.paper_button(_button(body, "Play %d selected card%s for Influence" % [selected_cards.size(), "" if selected_cards.size() == 1 else "s"], func(): _act({"kind": "camp_service", "service": "influence", "cards": _payment_cards()}), "expedition.camp.influence"), 14)
-		influence.disabled = selected_cards.is_empty()
-		var bandage := CHART.paper_button(_button(body, "Mend roll with a bandage (%d+)" % int(camp.roll_needed), func(): _act({"kind": "camp_service", "service": "mend_roll", "item": "bandage"}), "expedition.camp.mend_bandage"), 14)
-		bandage.disabled = int(camp.bandages) < 1 or _list(view, "wounds").size() == 0
-		var paid := CHART.paper_button(_button(body, "Mend roll for %d Influence (%d+)" % [int(camp.influence_per_roll), int(camp.roll_needed)], func(): _act({"kind": "camp_service", "service": "mend_roll"}), "expedition.camp.mend_influence"), 14)
-		paid.disabled = int(view.get("turn", {}).get("influence", 0)) < int(camp.influence_per_roll) or _list(view, "wounds").size() == 0
-		CHART.paper_button(_button(body, "Change deck · %d Influence per change" % int(camp.deck_change), _open_prepare, "expedition.prepare"), 14)
-		CHART.rim(CHART.paper_button(_button(body, "Break camp", func(): _act({"kind": "break_camp"}), "expedition.camp.break"), 16, true), CHART.RUBRIC if camp.get("deadline", false) else CHART.GOLD_LEAF)
+		_render_camp(body, camp)
 	elif phase == "victory" or phase == "defeat":
 		context = "region_end"
 		_overlay_heading(body, "The region is won!" if phase == "victory" else "The run is over", ICONS.texture("conqueror") if phase == "victory" else null, CHART.INK if phase == "victory" else CHART.RUBRIC)
@@ -869,6 +914,90 @@ func _overlay_heading(body: Node, text: String, icon: Texture2D, color: Color = 
 	if icon != null: CHART.icon_rect(row, icon, 22)
 	var label := CHART.ink_label(row, text, 22, color, true); label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	CHART.gold_rule(body)
+
+## The camp sheet: why the round ended and what the rest did (the fresh hand
+## is drawn by the authority when the rest begins), every wound grouping with
+## its basic aid and bandage, the heal log, Influence and the camp actions.
+func _render_camp(body: VBoxContainer, camp: Dictionary) -> void:
+	var reason := str(camp.get("reason", ""))
+	var base := int(view.get("base_energy", 0))
+	var inn_bonus := int(camp.get("inn_bonus", 0))
+	var title: String = {"deck_empty": "Camp · the deck ran out", "make_camp": "Camp", "defeat": "Camp · after the defeat"}.get(reason, "Camp")
+	if camp.get("inn", false): title += " · at the inn (+%d to healing rolls)" % inn_bonus
+	_overlay_heading(body, title, CHART.glyph("tent"))
+	var opening := ""
+	match reason:
+		"deck_empty": opening = "Round %d is over: your draw pile ran out at the end of turn %d. %d Spent cards reshuffled into the draw pile; a fresh hand of %d drawn; energy reset to %d." % [int(camp.get("round", 0)), int(camp.get("turn", 0)), int(camp.get("reshuffled", 0)), int(camp.get("drew", 0)), base]
+		"make_camp": opening = "%d unplayed cards forfeited and reshuffled with %d Spent; a fresh hand of %d drawn; energy reset to %d." % [int(camp.get("forfeited", 0)), int(camp.get("reshuffled", 0)), int(camp.get("drew", 0)), base]
+		"defeat": opening = "Driven back; round %d ends here. %d Spent cards reshuffled into the draw pile; a fresh hand of %d drawn; energy reset to %d." % [int(camp.get("round", 0)), int(camp.get("reshuffled", 0)), int(camp.get("drew", 0)), base]
+		_: opening = "%d Spent cards reshuffled into the draw pile; a fresh hand of %d drawn; energy reset to %d." % [int(camp.get("reshuffled", 0)), int(camp.get("drew", 0)), base]
+	CHART.ink_label(body, opening, 14)
+	if camp.get("deadline", false): CHART.ink_label(body, "This was the last round: when you break camp the Warlord comes to you.", 14, CHART.RUBRIC)
+	# Wounds: one row per grouping, with the camp's two healing steps.
+	var wounds: Array = _list(view, "wounds")
+	var lost: Array = _list(view, "wound_cards")
+	CHART.gold_rule(body)
+	if wounds.is_empty():
+		CHART.ink_label(body, "No wounds", 14, CHART.INK, true)
+	else:
+		var heading := "Wounds · %d (%d health lost)" % [wounds.size(), lost.size()]
+		if inn_bonus > 0: heading += " · +%d at the inn" % inn_bonus
+		CHART.ink_label(body, heading, 14, CHART.INK, true)
+		for k in wounds.size(): _camp_wound_row(body, k, wounds[k], camp)
+		if int(camp.get("untreated", 0)) > 1:
+			var all := CHART.paper_button(_button(body, "Treat every wound · basic aid", func(): _act({"kind": "camp_service", "service": "basic_aid", "wound": "all"}), "expedition.camp.aid_all"), 13)
+			all.tooltip_text = "Basic first aid on each of the %d untreated wounds, in order: 1d%d%s damage healed from each" % [int(camp.get("untreated", 0)), int(camp.get("basic_aid_die", 0)), " +%d" % inn_bonus if inn_bonus > 0 else ""]
+	var heals: Array = _list(camp, "heals")
+	if not heals.is_empty():
+		CHART.ink_rule(body)
+		for roll in heals: _heal_line(body, roll)
+	CHART.gold_rule(body)
+	CHART.ink_label(body, "Bandages %d · Influence %d (play cards from your fresh hand for more)" % [int(camp.get("bandages", 0)), int(view.get("turn", {}).get("influence", 0))], 13, CHART.SEPIA_TEXT)
+	var footer := _overlay_footer
+	var influence := CHART.paper_button(_button(footer, "Play %d selected card%s for Influence" % [selected_cards.size(), "" if selected_cards.size() == 1 else "s"], func(): _act({"kind": "camp_service", "service": "influence", "cards": _payment_cards()}), "expedition.camp.influence"), 14)
+	influence.disabled = selected_cards.is_empty()
+	CHART.paper_button(_button(footer, "Change deck · %d Influence per change" % int(camp.get("deck_change", 0)), _open_prepare, "expedition.prepare"), 14)
+	CHART.rim(CHART.paper_button(_button(footer, "Break camp", func(): _act({"kind": "break_camp"}), "expedition.camp.break"), 16, true), CHART.RUBRIC if camp.get("deadline", false) else CHART.GOLD_LEAF)
+
+## One wound at camp: what it is, its cards, and its basic aid and bandage
+## buttons. Eligibility and the dice come from the view, never from the client.
+func _camp_wound_row(body: VBoxContainer, index: int, w: Dictionary, camp: Dictionary) -> void:
+	var id := str(w.get("id", ""))
+	var panel := PanelContainer.new(); panel.name = "Wound_" + id
+	panel.add_theme_stylebox_override("panel", CHART.chip_style(Color(CHART.BONE, 0.55), Color(CHART.INK, 0.25), 8, 5))
+	body.add_child(panel)
+	var box := VBoxContainer.new(); box.add_theme_constant_override("separation", 2); panel.add_child(box)
+	var head := HBoxContainer.new(); head.add_theme_constant_override("separation", 6); box.add_child(head)
+	var line := CHART.ink_label(head, "Wound %d · %d damage · %s · %s" % [index + 1, int(w.get("damage", 0)), str(w.get("source", "")), str(w.get("taken", ""))], 13, CHART.INK, true)
+	line.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	var state := _wound_state(w)
+	CHART.ink_label(head, state, 13, CHART.GREEN if state != "untreated" else CHART.RUBRIC, false, false)
+	CHART.ink_label(box, _card_names(_list(w, "cards")), 12, CHART.SEPIA_TEXT)
+	var row := HBoxContainer.new(); row.add_theme_constant_override("separation", 6); box.add_child(row)
+	var inn_bonus := int(camp.get("inn_bonus", 0))
+	var bonus := " +%d" % inn_bonus if inn_bonus > 0 else ""
+	var aid := CHART.paper_button(_button(row, "Basic aid · heals 1d%d%s" % [int(camp.get("basic_aid_die", 0)), bonus], func(): _act({"kind": "camp_service", "service": "basic_aid", "wound": id}), "expedition.camp.aid." + id), 13)
+	aid.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	aid.disabled = not w.get("basic_aid", false)
+	if aid.disabled: aid.tooltip_text = str(w.get("reason", "")) if not str(w.get("reason", "")).is_empty() else "treated at this camp"
+	else: aid.tooltip_text = "Every character's basic first aid: roll 1d%d%s and heal that much damage from this wound, once per wound per camp" % [int(camp.get("basic_aid_die", 0)), bonus]
+	var bandage := CHART.paper_button(_button(row, "Bandage · heals 1d%d%s · %d left" % [int(camp.get("bandage_die", 0)), bonus, int(camp.get("bandages", 0))], func(): _act({"kind": "camp_service", "service": "bandage", "wound": id}), "expedition.camp.bandage." + id), 13)
+	bandage.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	bandage.disabled = not w.get("bandage", false)
+	if not bandage.disabled: bandage.tooltip_text = "Spend a bandage from your pack: roll 1d%d%s and heal that much damage from this treated wound, once per wound per camp" % [int(camp.get("bandage_die", 0)), bonus]
+	elif not w.get("treated", false): bandage.tooltip_text = "treat it with basic aid first"
+	elif int(camp.get("bandages", 0)) < 1: bandage.tooltip_text = "no bandages"
+	else: bandage.tooltip_text = str(w.get("reason", ""))
+	if not aid.disabled: CHART.rim(aid, CHART.GOLD_LEAF)
+	elif not bandage.disabled: CHART.rim(bandage, CHART.GOLD_LEAF)
+
+## One camp healing roll, as logged at camp and in the rest summary.
+func _heal_line(body: Node, roll: Dictionary) -> Label:
+	var method := "Basic aid" if str(roll.get("method", "")) == "basic_aid" else "A bandage"
+	var closed: bool = roll.get("closed", false)
+	var names := _card_names(_list(roll, "cards"))
+	var text := "%s on the %s wound: rolled %d%s → healed %d%s · %s" % [method, str(roll.get("source", "")), int(roll.get("roll", 0)), " +%d" % int(roll.get("bonus", 0)) if int(roll.get("bonus", 0)) > 0 else "", int(roll.get("healed", 0)), " (%s)" % names if not names.is_empty() else "", "the wound is healed" if closed else "%d damage remains" % int(roll.get("remaining", 0))]
+	return CHART.ink_label(body, text, 13, CHART.GREEN if closed else CHART.INK)
 
 func _status_cell(row: Node, who: String, st: Dictionary) -> void:
 	var cell := HBoxContainer.new(); cell.mouse_filter = Control.MOUSE_FILTER_STOP; cell.tooltip_text = str(st.rules); cell.add_theme_constant_override("separation", 4); row.add_child(cell)
@@ -900,9 +1029,10 @@ func _fit_overlay(measured: bool) -> void:
 	var viewport := get_viewport_rect().grow(-20)
 	var width := minf(1040.0, map_rect.size.x - 40.0)
 	var content: float = (_overlay_body.size.y if measured else _overlay_body.get_combined_minimum_size().y) + 8.0
+	var footer: float = _overlay_footer.get_combined_minimum_size().y + (8.0 if _overlay_footer.get_child_count() > 0 else 0.0)
 	var max_height := maxf(180.0, map_rect.size.y - 24.0)
-	var height := clampf(content + 48.0 + 36.0 + 20.0, 180.0, max_height)
-	_overlay_scroll.custom_minimum_size = Vector2(minf(560.0, width - 80.0), clampf(content, 80.0, height - 48.0 - 36.0))
+	var height := clampf(content + footer + 48.0 + 36.0 + 20.0, 180.0, max_height)
+	_overlay_scroll.custom_minimum_size = Vector2(minf(560.0, width - 80.0), clampf(content, 80.0, height - footer - 48.0 - 36.0))
 	_overlay.size = Vector2(width, height)
 	var at := map_rect.get_center() - _overlay.size * 0.5
 	at = at.clamp(viewport.position, (viewport.end - _overlay.size).max(viewport.position))
@@ -929,15 +1059,17 @@ func _render_battle_result(body: VBoxContainer) -> void:
 		if int(outcome.get("xp_awarded", 0)) > 0: lines.append("+%d XP (now %d)%s" % [int(outcome.xp_awarded), int(outcome.get("xp", 0)), " · +%d early-strike XP" % int(report.get("early_xp", 0)) if int(report.get("early_xp", 0)) > 0 else ""])
 		if int(report.get("gold", 0)) > 0 or int(report.get("loot", 0)) > 0: lines.append("+%d gold%s" % [int(report.get("gold", 0)), " and %d loot" % int(report.get("loot", 0)) if int(report.get("loot", 0)) > 0 else ""])
 		lines.append("Energy: brought %d, ended %d, kept %d" % [int(report.get("energy_in", 0)), int(report.get("energy_end", 0)), int(report.get("energy_kept", 0))])
-		lines.append("Cards back on the map: hand %d, draw %d, Spent %d · wounds %d" % [_list(report, "hand_after").size(), int(report.get("draw_after", 0)), int(report.get("spent_after", 0)), int(report.get("wounds", 0))])
+		var wounds := "wounds %d (%d health lost)" % [int(report.get("wounds", 0)), int(report.get("wound_cards", 0))]
+		if result == "victory" and int(report.get("new_wounds", 0)) > 0: wounds += " · +%d new" % int(report.new_wounds)
+		lines.append("Cards back on the map: hand %d, draw %d, Spent %d · %s" % [_list(report, "hand_after").size(), int(report.get("draw_after", 0)), int(report.get("spent_after", 0)), wounds])
 		for line in lines: CHART.ink_label(body, line, 14)
-		if int(report.get("defeat_wounds", 0)) > 0: CHART.ink_label(body, "Defeat: %d defeat wounds on top of your pre-battle wounds; driven back; the round ends with a rest." % int(report.defeat_wounds), 14, CHART.RUBRIC)
+		if int(report.get("defeat_wounds", 0)) > 0: CHART.ink_label(body, "Defeat: one defeat wound of %d damage on top of your pre-battle wounds; driven back; the round ends with a rest." % int(report.defeat_wounds), 14, CHART.RUBRIC)
 		if result == "draw": CHART.ink_label(body, "A draw: nothing is recorded; your pre-battle cards, wounds and energy are back.%s" % (" The Warlord attacks again." if str(report.get("kind", "")) == "deadline" else ""), 14)
 		if not str(report.get("site_freed", "")).is_empty(): CHART.ink_label(body, "%s is freed." % report.site_freed, 14, CHART.GREEN)
 		if report.get("lieutenant", false) and result == "victory":
 			var row := HBoxContainer.new(); row.add_theme_constant_override("separation", 6); body.add_child(row)
 			CHART.icon_rect(row, ICONS.texture("lieutenant"), 16); CHART.ink_label(row, "A Lieutenant is slain: the Warlord loses a Lieutenant's Favor.", 14)
-		if report.get("region_won", false): CHART.ink_label(body, "The region is won! %d relic choice(s) pending; wounds mended: %d." % [int(report.get("relic_choices", 0)), int(report.get("wounds_mended", 0))], 14, CHART.GREEN)
+		if report.get("region_won", false): CHART.ink_label(body, "The region is won! %d relic choice(s) pending; wounds mended: %d health." % [int(report.get("relic_choices", 0)), int(report.get("wounds_mended", 0))], 14, CHART.GREEN)
 		if report.get("run_over", false): CHART.ink_label(body, "The Warlord has won. The run is over.", 14, CHART.RUBRIC)
 	CHART.rim(CHART.paper_button(_button(body, "Continue", func(): last_battle = {}; _render(), "expedition.battle.continue"), 15, true), CHART.GOLD_LEAF)
 
@@ -993,7 +1125,7 @@ func inspection_state() -> Dictionary:
 		"ready": not view.is_empty(), "screen": "expedition", "save_id": save_id, "stage": "expedition_" + str(view.get("phase", "")), "segment": "expedition",
 		"round": int(view.get("round", 0)), "night": view.get("night", false), "phase": str(view.get("phase", "")), "day_label": str(view.get("day_label", "")),
 		"player": view.get("player", {}), "energy": int(view.get("energy", 0)), "gold": int(view.get("gold", 0)), "xp": int(status.get("xp", 0)),
-		"hand": _list(view, "hand").map(func(c): return str(c.id)), "draw": _list(view, "draw").size(), "spent": _list(view, "spent").size(), "wounds": _list(view, "wounds"),
+		"hand": _list(view, "hand").map(func(c): return str(c.id)), "draw": _list(view, "draw").size(), "spent": _list(view, "spent").size(), "wounds": _list(view, "wounds"), "wound_cards": _list(view, "wound_cards").size(),
 		"turn": turn, "moves": _list(view, "moves"), "explores": _list(view, "explores"), "challenges": _list(view, "challenges"), "enters": _list(view, "enters"),
 		"site_here": view.get("site_here"), "pending_battle": view.get("pending_battle"), "event": view.get("event"), "camp": view.get("camp"), "last_battle": view.get("last_battle"), "last_rest": view.get("last_rest"),
 		"statuses": _list(view, "statuses"), "inventory": _list(view, "inventory"), "warlord": view.get("warlord", {}), "result": str(view.get("result", "")),

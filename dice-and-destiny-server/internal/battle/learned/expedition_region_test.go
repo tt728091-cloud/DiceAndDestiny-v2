@@ -761,8 +761,8 @@ func TestFullRegionSeededPlayThroughs(t *testing.T) {
 			}
 			d.act(expedition.Action{Kind: "make_camp"})
 			s = d.st()
-			if s.Phase != expedition.PhaseCamp || len(s.Spent) != 0 || s.Energy != s.BaseEnergy || len(s.Hand) != 0 {
-				t.Fatalf("make camp: Spent reshuffled, energy reset, hand forfeited: %+v hand %d spent %d energy %d", s.Camp, len(s.Hand), len(s.Spent), s.Energy)
+			if s.Phase != expedition.PhaseCamp || len(s.Spent) != 0 || s.Energy != s.BaseEnergy || len(s.Hand) != min(4, s.LiveCards()) {
+				t.Fatalf("make camp: Spent reshuffled, energy reset, hand forfeited and a fresh hand drawn: %+v hand %d spent %d energy %d", s.Camp, len(s.Hand), len(s.Spent), s.Energy)
 			}
 			before := s.Warlord.Index
 			d.act(expedition.Action{Kind: "break_camp"})

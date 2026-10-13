@@ -25,17 +25,22 @@ ambush: {bonus_dice: 3, max_kept: 5}
 # Defenders inside walls and the Warlord at his goal roll extra defensive dice.
 fortified: {extra_defense_dice: 1}
 conqueror: {extra_defense_dice: 1}
-# Losing a normal battle: pre-battle wounds plus these (never the last card).
+# Losing a normal battle: pre-battle wounds plus one defeat wound of this much
+# damage (never the last live card).
 defeat: {wounds: 2}
-# At rest: one d6 roll per wound per bandage (or influence_per_roll Influence),
-# success on roll_needed+, +inn_bonus at an inn.
-camp_mending: {roll_needed: 4, inn_bonus: 1, influence_per_roll: 3}
+# At rest, every character's basic aid heals a basic_aid_die roll (1d3) of
+# damage from each untreated wound, once per wound per camp; a bandage then
+# heals a bandage_die roll (1d6) from a treated wound, once per wound per
+# camp; +inn_bonus to each roll at an inn. Every wound is untreated again at
+# the next camp.
+camp_healing: {basic_aid_die: 3, bandage_die: 6, inn_bonus: 1}
 warlord:
   start_distance: 5
   march_per_rest: 2
   early_reward: {xp_per_round: 20, extra_relic_choices: 1}
 # Influence (cards played at the site this turn) per deck change.
 influence_per_deck_change: {camp: 3, village: 2, monastery: 1, town: 0}
+# Site mending heals one point of damage (one card) per payment.
 mending:
   village_influence_per_wound: 2
   monastery_influence_per_wound: 1

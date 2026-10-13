@@ -80,6 +80,14 @@ func _screen_checks(size: Vector2i) -> void:
 	var button = map._hex_buttons["0,0"]
 	_expect(button._has_point(button.size * 0.5) and not button._has_point(Vector2.ZERO) and not button._has_point(Vector2(button.size.x, 0)), "clicks count only inside the hexagon")
 	_expect(map._hex_buttons["2,1"].state == "unexplored" and map._hex_buttons["2,1"]._has_point(map._hex_buttons["2,1"].size * 0.5), "an unexplored slot hex is still clickable at its centre")
+	# Hex buttons never show the engine's black tooltip; the chart's cartouche is the hover.
+	var tooltips := 0
+	for key in map._hex_buttons:
+		if not map._hex_buttons[key].tooltip_text.is_empty(): tooltips += 1
+	_expect(tooltips == 0, "no hex button carries an engine tooltip (%d do)" % tooltips)
+	var hover: Array = map._hover_lines("-1,1")
+	_expect(hover.size() >= 3 and "Hollow Ford" in str(hover[2]) and "Move here" in str(hover[-1]), "the hover cartouche names the hex, its terrain, the site and the move: %s" % [hover])
+	_expect(map._hover_lines("2,1").size() == 2 and "Unexplored" in str(map._hover_lines("2,1")[0]), "an unexplored hex hovers as its slot")
 	# The chart layers and model.
 	_expect(map.map_model.hexes.size() == 7 and map.map_model.slots.size() == 8 and map.map_model.sight.size() == 7, "the map model holds the start tile, the slots and the sight set")
 	_expect(map._marks.mouse_filter == Control.MOUSE_FILTER_IGNORE and map._lines.mouse_filter == Control.MOUSE_FILTER_IGNORE and map._sheet.mouse_filter == Control.MOUSE_FILTER_IGNORE, "the chart layers never take the mouse")
@@ -116,6 +124,12 @@ func _screen_checks(size: Vector2i) -> void:
 		if node.is_visible_in_tree(): _expect(viewport.encloses(node.get_global_rect()), "camp text inside the viewport (%s): %s" % [label, node.text.left(30)])
 	var brk := _control(map, "expedition.camp.break")
 	_expect(brk != null and viewport.encloses(brk.get_global_rect()), "Break camp is reachable at %s" % label)
+	# The old mend-roll services are gone; the camp heals wounds by basic aid and bandages.
+	var mends := 0
+	for control in map.find_children("*", "Button", true, false):
+		if str(control.get_meta("expedition_control", "")).begins_with("expedition.camp.mend"): mends += 1
+	_expect(mends == 0, "no mend-roll control exists at camp (%d found)" % mends)
+	_expect("No wounds" in _text(map._overlay) and "fresh hand of %d" % int(map.view.camp.drew) in _text(map._overlay), "an unwounded camp says so and explains the fresh hand")
 	await _click(brk)
 	for frame in 4: await process_frame
 	_expect(map.view.night and map._chart.modulate != Color.WHITE and map._marks.modulate == Color.WHITE, "night grades the chart but not the marks")

@@ -124,62 +124,80 @@ type PendingBattle struct {
 	Seed           uint64        `json:"seed"`
 	Warlord        bool          `json:"warlord,omitempty"`
 	// Piles as they entered the battle, so a defeat can restore them.
-	HandBefore   []string `json:"hand_before"`
-	DrawBefore   []string `json:"draw_before"`
-	SpentBefore  []string `json:"spent_before"`
-	WoundsBefore []string `json:"wounds_before"`
-	UsedSiege    bool     `json:"used_siege,omitempty"`
+	HandBefore   []string  `json:"hand_before"`
+	DrawBefore   []string  `json:"draw_before"`
+	SpentBefore  []string  `json:"spent_before"`
+	WoundsBefore WoundList `json:"wounds_before"`
+	UsedSiege    bool      `json:"used_siege,omitempty"`
 }
 
 // BattleReport is what the last battle changed, for the result panel.
 type BattleReport struct {
-	BattleID     string   `json:"battle_id"`
-	Kind         string   `json:"kind"`
-	Name         string   `json:"name"`
-	Result       string   `json:"result"`
-	XP           int      `json:"xp"`
-	Gold         int      `json:"gold"`
-	EnergyIn     int      `json:"energy_in"`
-	EnergyEnd    int      `json:"energy_end"`
-	EnergyKept   int      `json:"energy_kept"`
-	HandAfter    []string `json:"hand_after"`
-	DrawAfter    int      `json:"draw_after"`
-	SpentAfter   int      `json:"spent_after"`
-	Wounds       int      `json:"wounds"`
-	WoundsBefore int      `json:"wounds_before"`
-	DefeatWounds int      `json:"defeat_wounds,omitempty"`
-	PushedBack   *Hex     `json:"pushed_back,omitempty"`
-	ForcedRest   bool     `json:"forced_rest,omitempty"`
-	RegionWon    bool     `json:"region_won,omitempty"`
-	RunOver      bool     `json:"run_over,omitempty"`
-	EarlyXP      int      `json:"early_xp,omitempty"`
-	RelicChoices int      `json:"relic_choices,omitempty"`
-	WoundsMended int      `json:"wounds_mended,omitempty"`
-	Lieutenant   bool     `json:"lieutenant,omitempty"`
-	Loot         int      `json:"loot,omitempty"`
-	SiteFreed    string   `json:"site_freed,omitempty"`
+	BattleID   string   `json:"battle_id"`
+	Kind       string   `json:"kind"`
+	Name       string   `json:"name"`
+	Result     string   `json:"result"`
+	XP         int      `json:"xp"`
+	Gold       int      `json:"gold"`
+	EnergyIn   int      `json:"energy_in"`
+	EnergyEnd  int      `json:"energy_end"`
+	EnergyKept int      `json:"energy_kept"`
+	HandAfter  []string `json:"hand_after"`
+	DrawAfter  int      `json:"draw_after"`
+	SpentAfter int      `json:"spent_after"`
+	// Wounds counts wound groupings; WoundCards the cards they hold (health
+	// lost). NewWounds are the groupings taken in this battle.
+	Wounds       int    `json:"wounds"`
+	WoundCards   int    `json:"wound_cards"`
+	WoundsBefore int    `json:"wounds_before"`
+	NewWounds    int    `json:"new_wounds,omitempty"`
+	DefeatWounds int    `json:"defeat_wounds,omitempty"`
+	PushedBack   *Hex   `json:"pushed_back,omitempty"`
+	ForcedRest   bool   `json:"forced_rest,omitempty"`
+	RegionWon    bool   `json:"region_won,omitempty"`
+	RunOver      bool   `json:"run_over,omitempty"`
+	EarlyXP      int    `json:"early_xp,omitempty"`
+	RelicChoices int    `json:"relic_choices,omitempty"`
+	WoundsMended int    `json:"wounds_mended,omitempty"`
+	Lieutenant   bool   `json:"lieutenant,omitempty"`
+	Loot         int    `json:"loot,omitempty"`
+	SiteFreed    string `json:"site_freed,omitempty"`
 }
 
-// MendRoll is one camp mending roll.
-type MendRoll struct {
-	Card    string `json:"card"`
-	Roll    int    `json:"roll"`
-	Bonus   int    `json:"bonus"`
-	Needed  int    `json:"needed"`
-	Success bool   `json:"success"`
-	Paid    string `json:"paid"` // bandage or influence
+// HealRoll is one camp healing roll on one wound: basic aid (every
+// character's, once per untreated wound per camp) or a bandage (once per
+// treated wound per camp). Healed cards leave the wound and return to the
+// draw pile; a wound healed to zero closes.
+type HealRoll struct {
+	Wound     string   `json:"wound"`
+	Source    string   `json:"source"`
+	Method    string   `json:"method"` // basic_aid, bandage
+	Item      string   `json:"item,omitempty"`
+	Die       int      `json:"die"`
+	Roll      int      `json:"roll"`
+	Bonus     int      `json:"bonus"`
+	Healed    int      `json:"healed"`
+	Cards     []string `json:"cards"`
+	Remaining int      `json:"remaining"`
+	Closed    bool     `json:"closed,omitempty"`
 }
 
 // CampState is an open rest.
 type CampState struct {
 	Reason       string     `json:"reason"` // deck_empty, make_camp, defeat
+	Turn         int        `json:"turn"`   // the turn that ended with this rest
+	Round        int        `json:"round"`  // the round this rest ends
 	Inn          bool       `json:"inn,omitempty"`
 	Site         string     `json:"site,omitempty"`
 	Deadline     bool       `json:"deadline,omitempty"`
 	Reshuffled   int        `json:"reshuffled"`
 	EnergyBefore int        `json:"energy_before"`
 	Forfeited    int        `json:"forfeited"`
-	MendRolls    []MendRoll `json:"mend_rolls"`
+	Drew         int        `json:"drew"`       // the fresh hand drawn at the rest
+	HandDrawn    bool       `json:"hand_drawn"` // false only in camps saved before the hand was drawn at the rest
+	HandSize     int        `json:"hand_size"`  // the hand size the rest drew to (map statuses still counted)
+	Heals        []HealRoll `json:"heals"`
+	Healed       int        `json:"healed"`
 	DeckChanges  int        `json:"deck_changes"`
 }
 
@@ -194,6 +212,7 @@ type RestSummary struct {
 	RoundAfter   int       `json:"round_after"`
 	NightAfter   bool      `json:"night_after"`
 	Drew         int       `json:"drew"`
+	Healed       int       `json:"healed"`
 	Deadline     bool      `json:"deadline,omitempty"`
 	Statuses     []string  `json:"statuses_expired,omitempty"`
 }
@@ -232,7 +251,8 @@ type State struct {
 	Hand       []string       `json:"hand"`
 	Draw       []string       `json:"draw"`
 	Spent      []string       `json:"spent"`
-	Wounds     []string       `json:"wounds"`
+	Wounds     WoundList      `json:"wounds"`
+	WoundSeq   int            `json:"wound_seq,omitempty"`
 	Energy     int            `json:"energy"`
 	BaseEnergy int            `json:"base_energy"`
 	Gold       int            `json:"gold"`
@@ -278,6 +298,107 @@ func (s *State) Clone() *State {
 func (s *State) LiveCards() int { return len(s.Hand) + len(s.Draw) + len(s.Spent) }
 
 func hexKey(h Hex) string { return h.String() }
+
+// --- wounds -----------------------------------------------------------------
+
+// Wound is one grouping of damage: the cards one damage source removed
+// together (a battle hit, a defeat, an event). It holds as many cards as
+// health it still costs; healing takes cards out of it and a wound with no
+// cards left is gone. Treated and Bandaged are this camp's healing attempts
+// and reset at the next rest.
+type Wound struct {
+	ID          string   `json:"id"`
+	Cards       []string `json:"cards"`
+	Size        int      `json:"size"` // the damage when taken
+	Source      string   `json:"source"`
+	Round       int      `json:"round"`
+	Turn        int      `json:"turn"`
+	BattleRound int      `json:"battle_round,omitempty"`
+	Treated     bool     `json:"treated,omitempty"`
+	Bandaged    bool     `json:"bandaged,omitempty"`
+}
+
+// Damage is the health the wound still costs.
+func (w Wound) Damage() int { return len(w.Cards) }
+
+// WoundList is the player's wounds, oldest first. Saves written before wounds
+// were grouped hold a flat list of card ids; it loads as one wound.
+type WoundList []Wound
+
+func (l *WoundList) UnmarshalJSON(data []byte) error {
+	var groups []Wound
+	if err := json.Unmarshal(data, &groups); err == nil {
+		*l = groups
+		return nil
+	}
+	var flat []string
+	if err := json.Unmarshal(data, &flat); err != nil {
+		return fmt.Errorf("wounds must be a list of wounds or of card ids: %w", err)
+	}
+	if len(flat) == 0 {
+		*l = nil
+		return nil
+	}
+	*l = WoundList{{ID: "w0", Cards: flat, Size: len(flat), Source: "earlier wounds"}}
+	return nil
+}
+
+// Cards lists every wounded card, oldest wound first.
+func (l WoundList) Cards() []string {
+	out := []string{}
+	for _, w := range l {
+		out = append(out, w.Cards...)
+	}
+	return out
+}
+
+// Damage is the health all wounds cost together.
+func (l WoundList) Damage() int { return len(l.Cards()) }
+
+// Clone deep-copies the list.
+func (l WoundList) Clone() WoundList {
+	out := make(WoundList, 0, len(l))
+	for _, w := range l {
+		w.Cards = append([]string{}, w.Cards...)
+		out = append(out, w)
+	}
+	return out
+}
+
+func (l WoundList) find(id string) *Wound {
+	for i := range l {
+		if l[i].ID == id {
+			return &l[i]
+		}
+	}
+	return nil
+}
+
+// addWound records one grouping of damage holding cards (already taken out
+// of the live piles) and returns it.
+func (s *State) addWound(cards []string, source string, battleRound int) *Wound {
+	if len(cards) == 0 {
+		return nil
+	}
+	s.WoundSeq++
+	s.Wounds = append(s.Wounds, Wound{ID: fmt.Sprintf("w%d", s.WoundSeq), Cards: append([]string{}, cards...), Size: len(cards), Source: source, Round: s.Round, Turn: s.Turn.Number, BattleRound: battleRound})
+	return &s.Wounds[len(s.Wounds)-1]
+}
+
+// dropClosedWounds forgets wounds with no cards left.
+func (s *State) dropClosedWounds() {
+	kept := s.Wounds[:0]
+	for _, w := range s.Wounds {
+		if len(w.Cards) > 0 {
+			kept = append(kept, w)
+		}
+	}
+	if len(kept) == 0 {
+		s.Wounds = nil
+		return
+	}
+	s.Wounds = kept
+}
 
 // --- lookups --------------------------------------------------------------
 

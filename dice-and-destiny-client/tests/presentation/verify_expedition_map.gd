@@ -330,6 +330,8 @@ func _fight() -> String:
 	_expect(live == reported, "the piles came back as the battle left them (%d live cards vs %d reported)" % [live, reported])
 	_expect(int(map.view.energy) == int(report.get("energy_kept", -1)) or map.view.phase == "camp", "energy kept is what the authority reports")
 	_expect(map.view.wounds.size() == int(report.get("wounds", -1)), "wounds match the report")
+	_expect(map.view.wound_cards.size() == int(report.get("wound_cards", -1)), "wound_cards match the report (%d on the map, %d reported)" % [map.view.wound_cards.size(), int(report.get("wound_cards", -1))])
+	_expect(int(map.view.max_health) - int(map.view.health) == map.view.wound_cards.size(), "the health lost is the number of wounded cards")
 	_expect(_state().pending_battle == null, "the fight is over")
 	_expect(int(map.view.turn.number) > before_turn or map.view.phase == "camp" or map.view.phase in ["victory", "defeat"], "a fight ends the turn")
 	await _capture(map, "expedition-map-after-battle-%s" % str(result.get("battle_result", "")))
@@ -469,18 +471,48 @@ func _full_flow(seed: int) -> void:
 			if _state().pending_battle != null: await _fight()
 			await _settle_overlays()
 
-	# Make camp: the camp panel, Influence-paid mending, the rest summary.
+	# Make camp: the camp panel explains the rest and shows the fresh hand,
+	# Influence from the fresh hand, basic aid on a wound, the rest summary.
 	if map.view.phase == "turn":
 		var at_inn: bool = map.view.get("site_here") != null and str(map.view.site_here.get("type", "")) in ["village", "town"]
 		await _press("expedition.make_camp")
 		_expect(map.view.phase == "camp" and bool(map.view.camp.get("inn", false)) == at_inn, "Make camp opens the camp; the inn only at a village or town")
-		_expect(_control(map, "expedition.prepare") != null, "the deck can be changed at camp")
+		_expect(_control(map, "expedition.prepare") != null and _control(map, "expedition.camp.break") != null, "the deck can be changed at camp and the camp can be broken")
+		var live: int = map.view.hand.size() + map.view.draw.size() + map.view.spent.size()
+		_expect(map.view.hand.size() == mini(int(map.view.hand_size), live), "the rest drew a fresh hand (%d of %d, %d live cards)" % [map.view.hand.size(), int(map.view.hand_size), live])
+		_expect(str(map.view.camp.reason) == "make_camp" and "Camp" in _text(map._overlay) and "fresh hand of %d" % int(map.view.camp.drew) in _text(map._overlay), "the camp sheet explains the rest: %s" % _text(map._overlay).strip_edges().replace("\n", " | ").left(160))
 		if map.view.wounds.size() > 0 and map.view.hand.size() >= 3:
 			for index in 3: await _press("expedition.card.%d" % index)
 			await _press("expedition.camp.influence")
 			_expect(int(map.view.turn.influence) == 3, "three cards are 3 Influence at camp")
-			await _press("expedition.camp.mend_influence")
-			_expect(map.view.camp.mend_rolls.size() == 1 and int(map.view.turn.influence) == 0, "3 Influence buy one mending roll")
+		if map.view.wounds.size() > 0:
+			var wound: Dictionary = map.view.wounds[0]
+			var wound_id := str(wound.id)
+			var aid_id := "expedition.camp.aid." + wound_id
+			var bandage_id := "expedition.camp.bandage." + wound_id
+			_expect(_control(map, aid_id) != null and not _control(map, aid_id).disabled, "the first wound offers basic aid at camp")
+			var bandage := _control(map, bandage_id)
+			_expect(bandage != null, "the first wound shows its bandage button")
+			if bandage != null and int(map.view.camp.bandages) == 0: _expect(bandage.disabled, "the bandage button is disabled without a bandage")
+			_expect("Wounds %d · %d lost" % [map.view.wounds.size(), map.view.wound_cards.size()] in _text(map._hud), "the stat strip counts wounds and health lost separately")
+			var health_before := int(map.view.health)
+			var damage_before := int(wound.damage)
+			await _press(aid_id)
+			var heals: Array = map.view.camp.heals
+			_expect(heals.size() == 1 and str(heals[0].method) == "basic_aid" and str(heals[0].wound) == wound_id, "basic aid rolled once on that wound: %s" % [heals])
+			if heals.size() == 1:
+				var heal: Dictionary = heals[0]
+				_expect(int(heal.roll) >= 1 and int(heal.roll) <= 3, "basic aid rolls 1d3 (%d)" % int(heal.roll))
+				_expect(int(map.view.health) == health_before + int(heal.healed) and int(heal.healed) >= 1, "the authority healed %d health (%d → %d)" % [int(heal.healed), health_before, int(map.view.health)])
+				var remaining: Dictionary = {}
+				for w in map.view.wounds:
+					if str(w.id) == wound_id: remaining = w
+				if remaining.is_empty(): _expect(bool(heal.closed) and int(heal.healed) == damage_before, "the wound closed when fully healed")
+				else: _expect(not remaining.basic_aid and remaining.treated and int(remaining.damage) == damage_before - int(heal.healed), "the wound is treated and shrank")
+				var aid_after := _control(map, aid_id)
+				_expect(aid_after == null or aid_after.disabled, "basic aid cannot be repeated on that wound at this camp")
+				_expect("healed %d" % int(heal.healed) in _text(map._overlay), "the heal log shows the roll")
+				print("expedition map test: basic aid healed %d" % int(heal.healed))
 		await _capture(map, "expedition-camp-1280")
 		var round_before := int(map.view.round)
 		var night_before: bool = map.view.night
@@ -606,6 +638,13 @@ func _layout_pass(size: Vector2i, seed: int) -> void:
 		_expect(map.view.hand.size() == hand_before - 1 + drawn and int(map.view.turn.cards_used) == 1, "the played map card %s left the hand and counts as a card used" % id)
 		if id == "second_wind": _expect(int(map.view.energy) == energy_before + 10, "Second Wind's map effect gives +10 energy (%d → %d)" % [energy_before, int(map.view.energy)])
 		elif id == "take_stock": _expect(true, "Take Stock drew 2")
+	# Hovering a hex shows the chart's own cartouche (there is no engine tooltip).
+	var village = map._hex_buttons["-1,1"]
+	var hover_at: Vector2 = village.get_global_rect().get_center()
+	var motion := InputEventMouseMotion.new(); motion.position = hover_at; root.push_input(motion, true)
+	for frame in 4: await process_frame
+	_expect(map.map_model.hover == "-1,1" and map.map_model.hover_lines.size() >= 3 and village.tooltip_text.is_empty(), "hovering the village hex drives the cartouche, not a tooltip (%s)" % [map.map_model.hover_lines])
+	await _capture(map, "expedition-hover-" + label)
 	_expect(await _move_to(1, 0), "layout pass: move")
 	await _select(2, 0); await _press("expedition.card.0"); await _press("expedition.energy.plus"); await _press("expedition.explore")
 	await _select(2, 1)
