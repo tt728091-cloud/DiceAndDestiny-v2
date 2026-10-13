@@ -13,11 +13,24 @@ mkdir -p "${WORKSPACE_STATE_ROOT}" "${LOG_ROOT}" "${WORKSPACE_RUNTIME_ROOT}/runs
 
 "${SERVER_ROOT}/scripts/build_native.sh" --if-needed
 
-# A brand-new worktree has no Godot global-class cache yet. Import it once
-# under a workspace-local lock so the first direct game/test run is as reliable
-# as later runs, even if two commands start at the same time.
+# Godot needs an import before the first run of a brand-new worktree (no
+# global-class cache yet) and whenever a checkout or pull brings an asset whose
+# imported file this checkout has not built yet (a new or changed .import).
+# Import under a workspace-local lock so the run is as reliable as later runs,
+# even if two commands start at the same time.
+import_missing() {
+  [[ -f "${CLIENT_ROOT}/.godot/global_script_class_cache.cfg" ]] || return 0
+  local path
+  while IFS= read -r path; do
+    [[ -f "${CLIENT_ROOT}/${path#res://}" ]] || return 0
+  done < <(find "${CLIENT_ROOT}" -path "${CLIENT_ROOT}/.godot" -prune -o -name '*.import' -print0 \
+    | xargs -0 grep -h -o '^dest_files=\["res://[^"]*"' 2>/dev/null \
+    | sed -e 's/^dest_files=\["//' -e 's/"$//')
+  return 1
+}
+
 ensure_imported() {
-  if [[ -f "${CLIENT_ROOT}/.godot/global_script_class_cache.cfg" ]]; then
+  if ! import_missing; then
     return
   fi
   import_log="$(mktemp "${LOG_ROOT}/godot-import.XXXXXX")"
