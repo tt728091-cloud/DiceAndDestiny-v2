@@ -359,7 +359,7 @@ func _full_flow(seed: int) -> void:
 	if map == null: return
 	var state := _state()
 	_expect(state.ready and int(state.placed_tiles) == 1 and state.hand.size() == 4 and int(state.energy) == 10 and int(state.round) == 1 and not state.night, "the map starts with the start tile, four cards and base energy")
-	_expect("Day 1 · round 1 of 4" in map._day.text, "the HUD shows Day 1 · round 1 of 4")
+	_expect(map.chart_day_label() == "Day · 1/4", "the chart's cartouche says Day · 1/4 (%s)" % map.chart_day_label())
 	_expect(_control(map, "expedition.hex.0.0") != null and _control(map, "expedition.hex.2.1") != null, "every placed and unexplored hex is a registered control")
 	_expect(_state().explores.is_empty(), "nothing is explorable from the start hex")
 	await _capture(map, "expedition-map-start-1280")
@@ -524,7 +524,7 @@ func _full_flow(seed: int) -> void:
 		_expect(int(map.view.round) == round_before + 1 and map.view.night != night_before and map.view.get("last_rest") != null and int(map.view.last_rest.warlord_steps) >= 0, "breaking camp advances the round, flips day and night and marches the Warlord")
 		await _press("expedition.rest.continue")
 	if map.view.night:
-		_expect("Night" in map._day.text, "the HUD shows Night")
+		_expect(map.chart_day_label().begins_with("Night · "), "the chart's cartouche says Night (%s)" % map.chart_day_label())
 		for hex in map.view.hexes:
 			if str(hex.get("terrain", "")) == "forest": _expect(int(hex.cost) == 3, "forest costs 3 at night")
 	# Camp through the remaining rounds until the Warlord comes.

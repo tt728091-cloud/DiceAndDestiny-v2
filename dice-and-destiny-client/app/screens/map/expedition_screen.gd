@@ -55,9 +55,7 @@ var _survey_locked := false
 var _legend_filter := ""
 static var _legend_open := false
 
-var _title: Label
-var _day: Label
-var _day_icon: TextureRect
+var _save_label: Label
 var _message: Label
 var _map_panel: PanelContainer
 var _map_area: Control
@@ -100,17 +98,9 @@ func _build() -> void:
 	for side in ["left", "right", "top", "bottom"]: margin.add_theme_constant_override("margin_" + side, 14)
 	add_child(margin)
 	var body := VBoxContainer.new(); body.add_theme_constant_override("separation", 8); margin.add_child(body)
-	# Header on the stone.
-	var header := HBoxContainer.new(); header.add_theme_constant_override("separation", 12); body.add_child(header)
-	var titles := VBoxContainer.new(); titles.size_flags_horizontal = Control.SIZE_EXPAND_FILL; titles.add_theme_constant_override("separation", 0); header.add_child(titles)
-	STYLE.label(titles, "DICE & DESTINY  /  CAMPAIGN  /  EXPEDITION", 12, STYLE.GOLD)
-	_title = STYLE.label(titles, "Expedition", 26); CHART.stone_text(_title, true)
-	var day_row := HBoxContainer.new(); day_row.add_theme_constant_override("separation", 6); titles.add_child(day_row)
-	_day_icon = CHART.icon_rect(day_row, CHART.glyph("sun", "ivory"), 18)
-	_day = STYLE.label(day_row, "", 16, Color("ffe2a0")); CHART.stone_text(_day, false, Color("ffe2a0")); _day.autowrap_mode = TextServer.AUTOWRAP_OFF; _day.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	_all_saves = _stone_button(header, "All campaigns", _show_saves, "expedition.all_campaigns")
-	_back = _stone_button(header, "Back to menu", _back_to_menu, "expedition.back")
-	_message = STYLE.label(body, "", 14, CHART.RED_ON_STONE); CHART.stone_text(_message, false, CHART.RED_ON_STONE)
+	# No banner: the chart's cartouche names the region and the day, and the
+	# campaign name and the way out sit at the top of the ledger, so the map
+	# takes the full height.
 	var columns := HBoxContainer.new(); columns.add_theme_constant_override("separation", 10); columns.size_flags_vertical = Control.SIZE_EXPAND_FILL; body.add_child(columns)
 	# Left: the chart on the table (drag to pan) with the hand beneath it.
 	var left := VBoxContainer.new(); left.size_flags_horizontal = Control.SIZE_EXPAND_FILL; left.size_flags_vertical = Control.SIZE_EXPAND_FILL; left.add_theme_constant_override("separation", 6); columns.add_child(left)
@@ -140,6 +130,14 @@ func _build() -> void:
 	stone.expand_mode = TextureRect.EXPAND_IGNORE_SIZE; stone.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED; stone.modulate = Color(0.5, 0.5, 0.55)
 	stone.mouse_filter = Control.MOUSE_FILTER_IGNORE; right.add_child(stone)
 	var ledger := VBoxContainer.new(); ledger.name = "Ledger"; ledger.add_theme_constant_override("separation", 6); ledger.theme = CHART.ledger_theme(); right.add_child(ledger)
+	var top := HBoxContainer.new(); top.name = "LedgerTop"; top.add_theme_constant_override("separation", 6); ledger.add_child(top)
+	_save_label = STYLE.label(top, "", 15, CINEMATIC.IVORY); CHART.stone_text(_save_label, true)
+	_save_label.autowrap_mode = TextServer.AUTOWRAP_OFF; _save_label.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS; _save_label.clip_text = true
+	_save_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL; _save_label.mouse_filter = Control.MOUSE_FILTER_STOP
+	_all_saves = _stone_button(top, "Campaigns", _show_saves, "expedition.all_campaigns"); _all_saves.tooltip_text = "All campaigns"
+	_back = _stone_button(top, "Menu", _back_to_menu, "expedition.back"); _back.tooltip_text = "Back to the main menu"
+	for button in [_all_saves, _back]: button.add_theme_font_size_override("font_size", 14)
+	_message = STYLE.label(ledger, "", 14, CHART.RED_ON_STONE); CHART.stone_text(_message, false, CHART.RED_ON_STONE); _message.visible = false
 	_hud_scroll = ScrollContainer.new(); _hud_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED; _hud_scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL; ledger.add_child(_hud_scroll)
 	_hud = VBoxContainer.new(); _hud.name = "HUD"; _hud.size_flags_horizontal = Control.SIZE_EXPAND_FILL; _hud.add_theme_constant_override("separation", 8); _hud_scroll.add_child(_hud)
 	_footer = HBoxContainer.new(); _footer.name = "Footer"; _footer.custom_minimum_size.y = 48; _footer.add_theme_constant_override("separation", 6); ledger.add_child(_footer)
@@ -205,13 +203,25 @@ func _act(action: Dictionary) -> bool:
 		_show_error(str(response.get("error", "The action was refused.")))
 		refresh()
 		return false
-	_message.text = ""
+	_set_message("")
 	selected_cards.clear(); energy_payment = 0; use_siege = false; selected_hex = NONE
 	_apply(response.result)
 	return true
 
-func _show_error(text: String) -> void:
+## The ledger's message line shows only while it has something to say.
+func _set_message(text: String) -> void:
 	_message.text = text
+	_message.visible = not text.is_empty()
+
+## The chart cartouche's day line: "Day · 1/4", "Night · 2/4", or the
+## authority's label after the last round ("The deadline").
+func chart_day_label() -> String:
+	var round := int(view.get("round", 0)); var rounds := int(view.get("rounds", 0))
+	if rounds <= 0 or round > rounds: return str(view.get("day_label", ""))
+	return "%s · %d/%d" % ["Night" if view.get("night", false) else "Day", round, rounds]
+
+func _show_error(text: String) -> void:
+	_set_message(text)
 	var inspector = get_node_or_null("/root/GameInspector")
 	if inspector != null and inspector.has_method("record_error"): inspector.record_error("expedition: " + text, {"save_id": save_id})
 
@@ -226,10 +236,9 @@ static func _list(source: Dictionary, key: String) -> Array:
 # Rendering ------------------------------------------------------------------
 func _render() -> void:
 	if view.is_empty(): return
-	_title.text = "%s · %s" % [str(status.get("save_name", "Expedition")), str(view.get("region_name", ""))]
-	_day.text = str(view.get("day_label", ""))
+	_save_label.text = str(status.get("save_name", "Expedition"))
+	_save_label.tooltip_text = "%s · %s · %s" % [str(status.get("save_name", "Expedition")), str(view.get("region_name", "")), str(view.get("day_label", ""))]
 	var night: bool = view.get("night", false)
-	_day_icon.texture = CHART.glyph("moon" if night else "sun", "ivory")
 	_chart.modulate = CHART.NIGHT_GRADE if night else Color.WHITE
 	_vignette.texture = CHART.vignette(night)
 	_render_map()
@@ -253,7 +262,7 @@ func _layout_map() -> void:
 			var rr: int = int(slot.center.r) + offset.y
 			min_r = mini(min_r, rr); max_r = maxi(max_r, rr)
 	var rows := maxi(1, max_r - min_r + 1)
-	_hex_radius = clampf(minf(_map_area.size.x / 25.0, _map_area.size.y / (rows * 1.5 + 2.0)), 28.0, 48.0)
+	_hex_radius = clampf(minf(_map_area.size.x / 25.0, _map_area.size.y / (rows * 1.5 + 2.0)), 28.0, 64.0)
 	# Centre the footprint in the map area.
 	var lo := Vector2(INF, INF); var hi := Vector2(-INF, -INF)
 	_map_origin = Vector2.ZERO; var pan := _pan; _pan = Vector2.ZERO
@@ -1081,7 +1090,7 @@ func _render_battle_result(body: VBoxContainer) -> void:
 func _start_fight() -> void:
 	var pending: Dictionary = status.get("pending_battle", {}) if status.get("pending_battle") != null else {}
 	if pending.is_empty(): return
-	_message.text = "Preparing the fight…"
+	_set_message("Preparing the fight…")
 	await get_tree().process_frame
 	var gateway: RefCounted = LEARNED_GATEWAY.new(_runtime(), "seat-a", "minion:%s:%d" % [str(pending.opponent), int(pending.opponent_count)], str(status.get("character", "starter")))
 	gateway.unified_defense = true
@@ -1136,7 +1145,7 @@ func inspection_state() -> Dictionary:
 		"statuses": _list(view, "statuses"), "inventory": _list(view, "inventory"), "warlord": view.get("warlord", {}), "result": str(view.get("result", "")),
 		"selected_hex": [selected_hex.x, selected_hex.y] if selected_hex != NONE else null, "selected_cards": selected_cards, "energy_payment": energy_payment,
 		"placed_tiles": _list(view, "slots").filter(func(s): return s.get("placed", false)).size(), "seen_hexes": _list(view, "hexes").filter(func(h): return h.get("seen", false)).size(),
-		"message": _message.text, "hex_radius": _hex_radius, "survey": _survey_key or _survey_locked, "legend_open": _legend_open, "marks_processing": _marks.is_processing() if _marks != null else false,
+		"message": _message.text, "chart_day": chart_day_label(), "hex_radius": _hex_radius, "survey": _survey_key or _survey_locked, "legend_open": _legend_open, "marks_processing": _marks.is_processing() if _marks != null else false,
 		"hexes": _list(view, "hexes"), "slots": _list(view, "slots"),
 	}
 

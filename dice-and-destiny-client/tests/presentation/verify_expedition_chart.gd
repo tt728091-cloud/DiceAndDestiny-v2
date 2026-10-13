@@ -69,7 +69,18 @@ func _screen_checks(size: Vector2i) -> void:
 	for frame in 8: await process_frame
 	var label := "%dx%d" % [size.x, size.y]
 	var radius: float = map._hex_radius
-	_expect(radius >= 28.0 and radius <= 48.0, "the hex radius is clamped to 28–48 at %s (%.1f)" % [label, radius])
+	_expect(radius >= 28.0 and radius <= 64.0, "the hex radius is clamped to 28–64 at %s (%.1f)" % [label, radius])
+	# No banner: the map reaches the top of the window, the parchment covers
+	# the whole map area (no table bars at the sides), and the day line is short.
+	var map_rect: Rect2 = map._map_area.get_global_rect()
+	_expect(map_rect.position.y <= 24.0, "the map reaches the top of the window at %s (y %.0f)" % [label, map_rect.position.y])
+	_expect(map._sheet.sheet_rect.encloses(Rect2(Vector2.ZERO, map._map_area.size).grow(-map._sheet.EDGE)), "the parchment fills the map area at %s (%s in %s)" % [label, map._sheet.sheet_rect, map._map_area.size])
+	_expect(map.chart_day_label() == "Day · 1/4", "the cartouche day line is Day · 1/4 (%s)" % map.chart_day_label())
+	var all_saves := _control(map, "expedition.all_campaigns"); var back := _control(map, "expedition.back")
+	var ledger_rect: Rect2 = map._hud_scroll.get_parent().get_global_rect()
+	_expect(all_saves != null and back != null and ledger_rect.encloses(all_saves.get_global_rect()) and ledger_rect.encloses(back.get_global_rect()), "Campaigns and Menu sit at the top of the ledger at %s" % label)
+	_expect(not "round 1 of 4" in _text(map) and not "CAMPAIGN  /  EXPEDITION" in _text(map), "the old banner is gone at %s" % label)
+	await _capture(map, "expedition-chart-layout-" + label)
 	# Every slot hex, placed or not, lies inside the map area without panning.
 	var area: Rect2 = map._map_area.get_global_rect()
 	var inside := true

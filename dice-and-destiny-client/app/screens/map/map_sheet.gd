@@ -1,11 +1,15 @@
 extends Control
 ## The torn parchment chart under the hexes: its shadow on the stone table,
 ## the paper, a cartouche with the region's name and the day line, a gold
-## rule and a compass rose. It is positioned from the screen's hex geometry,
-## so it pans with the hexes.
+## rule and a compass rose. It covers the region's footprint (panning with the
+## hexes) and always the whole visible map area, so no table shows at the
+## sides however wide the window is.
 
 const STYLE := preload("res://app/screens/map/map_style.gd")
 const HEX_OFFSETS := [Vector2i(0, 0), Vector2i(1, 0), Vector2i(1, -1), Vector2i(0, -1), Vector2i(-1, 0), Vector2i(-1, 1), Vector2i(0, 1)]
+
+## The sliver of stone table left showing around the sheet's torn edge.
+const EDGE := 6.0
 
 var screen: Node
 var sheet_rect := Rect2()
@@ -25,7 +29,7 @@ func _draw() -> void:
 	if lo.x == INF: return
 	lo -= Vector2(1.6 * r, 2.9 * r); hi += Vector2(1.6 * r, 1.6 * r)
 	var sz := (hi - lo).max(Vector2(16.0 * r, 12.0 * r))
-	sheet_rect = Rect2(lo, sz)
+	sheet_rect = Rect2(lo, sz).merge(Rect2(Vector2.ZERO, size).grow(-EDGE))
 	# Shadow on the table, then the paper.
 	draw_rect(STYLE.shift(sheet_rect.grow(2.0), Vector2(9, 12)), Color(0, 0, 0, 0.18))
 	draw_rect(STYLE.shift(sheet_rect, Vector2(5, 7)), Color(0, 0, 0, 0.38))
@@ -39,7 +43,7 @@ func _draw() -> void:
 	var night: bool = screen.view.get("night", false)
 	var day_at := at + Vector2(0, 42)
 	STYLE.draw_glyph(self, STYLE.glyph("moon" if night else "sun"), day_at + Vector2(8, -5), 16.0)
-	draw_string(STYLE.serif(), day_at + Vector2(22, 0), str(screen.view.get("day_label", "")), HORIZONTAL_ALIGNMENT_LEFT, -1, 14, STYLE.INK)
+	draw_string(STYLE.serif(), day_at + Vector2(22, 0), screen.chart_day_label(), HORIZONTAL_ALIGNMENT_LEFT, -1, 15, STYLE.INK)
 	# Compass rose at the bottom-right of the visible sheet.
 	var rose := Vector2(minf(sheet_rect.end.x, size.x), minf(sheet_rect.end.y, size.y)) - Vector2(1.5 * r, 1.4 * r)
 	var big := 0.9 * r

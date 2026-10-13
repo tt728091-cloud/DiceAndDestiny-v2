@@ -21,6 +21,7 @@ Evidence folder (ignored): `dice-and-destiny-client/.godot/runtime/expedition-ev
 | M9 Grouped wounds, camp healing, the rest draws the hand | done | see git log (`M9: …`) |
 | M10 Deck-change Influence paid once per visit | done | see git log (`M10: …`) |
 | M11 Map plays cost the card's printed energy | done | see git log (`M11: …`) |
+| M12 Bigger map: no banner, parchment edge to edge, short day line | done | see git log (`M12: …`) |
 
 ## M0 — Baseline (2026-10-12)
 
@@ -269,6 +270,16 @@ The user found 3 Influence per change too harsh for the opening campaign: *"make
 ## M11 — Map plays cost the card's printed energy (2026-10-13)
 
 The user played Take Stock (printed cost 5 energy) for its map effect and the map energy did not go down. Cause: a map play charged only the map effect's own `energy_cost`, which is 0 unless authored, and ignored the card's printed cost. Now `mapEnergyCost` = the card's printed `cost.energy` plus any map-only `map_effect.energy_cost`; the play action and the view's `energy_cost` / `map_playable` / `map_reason` ("needs 5 energy; you have 4") use the same number, so the hand's button reads "Play (5 energy)". Forced March (printed 0, map-only 10) is unchanged; Warden's March and Sentry's Watch (printed 5) now cost 5 on the map too. Spending a card as 1 Move or 1 Influence still costs no energy. Tests: `TestMapCardsAndEnergyRules` (Take Stock 10 → … −5 and draws 2, refused with 4 energy and kept in hand, the view's price and reason) and a new pointer pass in `verify_expedition_map.gd` (`_map_card_energy_pass`: a fresh expedition waits for Take Stock, the button says 5 energy, a mouse click drops energy by 5 and draws 2).
+
+## M12 — Bigger map: no banner, parchment edge to edge, short day line (2026-10-13)
+
+The user asked for a bigger map: the chart's cartouche already names the region and the day, so the screen's banner (breadcrumb, "Starter campaign 3 · The Salt Marches", "Day 1 · round 1 of 4") repeated it and cost the map its top strip, and the parchment sat between bars of stone table at the sides. Also "Day 1 · round 1 of 4" was too much: "Day · 1/4" is enough.
+
+- The banner is gone; the map panel reaches the top of the window. The campaign's name and the two ways out ("Campaigns", "Menu"; same control ids `expedition.all_campaigns` / `expedition.back`) sit in a slim row at the top of the ledger, with the error/status line under them only while it has text.
+- The parchment covers the region's footprint and always the whole visible map area (a 6 px sliver of the torn edge on the stone), so wider windows widen the chart instead of showing table bars.
+- The cartouche's day line is `chart_day_label()`: "Day · 1/4", "Night · 2/4", and the authority's "The deadline" after the last round. The authority's `day_label` is unchanged (battle badge, tooltips).
+- The hex radius cap rose from 48 to 64, so the freed space makes the hexes bigger (about 55 px at 1920×1080).
+- Tests: `verify_expedition_chart.gd` asserts at both window sizes that the map reaches the top, the parchment fills the map area, the day line reads "Day · 1/4", Campaigns and Menu sit in the ledger and the old banner text is gone, and captures `expedition-chart-layout-<size>`; `verify_expedition_map.gd` reads the cartouche's Day/Night line.
 
 ## Decisions made during implementation
 
