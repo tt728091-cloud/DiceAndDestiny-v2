@@ -3936,7 +3936,7 @@
           "card": {
             "map_effect": {
               "kind": "move",
-              "amount": 2,
+              "amount": 3,
               "text": "Blaze a trail."
             },
             "access_type": "general",
@@ -3952,8 +3952,8 @@
             "type": "map",
             "presentation": {
               "illustration_path": "res://assets/battle/cards/battle_focus.png",
-              "effect_summary": "Map only",
-              "rules_text": "Map card. It cannot be played in battle; it still counts as health.",
+              "effect_summary": "Map only\nMove 3",
+              "rules_text": "Map card. It cannot be played in battle; it still counts as health and can be lost to damage.\nMap: Gain 3 Move this turn — Blaze a trail.. Playing it for its effect counts as a card played this turn.",
               "art_key": ""
             },
             "cost": {
@@ -3978,7 +3978,8 @@
             "operations": []
           },
           "x": 0,
-          "y": 0
+          "y": 0,
+          "xp": 10
         },
         {
           "id": "node_1",
@@ -3987,7 +3988,6 @@
               "kind": "move",
               "amount": 4,
               "ignore_terrain": true,
-              "energy_cost": 10,
               "text": "March through anything."
             },
             "access_type": "general",
@@ -4003,8 +4003,8 @@
             "type": "map",
             "presentation": {
               "illustration_path": "res://assets/battle/cards/battle_focus.png",
-              "effect_summary": "Map only",
-              "rules_text": "Map card. It cannot be played in battle; it still counts as health.",
+              "effect_summary": "Map only\nMove 4, any terrain",
+              "rules_text": "Map card. It cannot be played in battle; it still counts as health and can be lost to damage.\nMap: Gain 4 Move this turn; while any of it remains, every passable hex costs 1 Move — March through anything.. Playing it for its effect counts as a card played this turn.",
               "art_key": ""
             },
             "cost": {
@@ -4029,7 +4029,8 @@
             "operations": []
           },
           "x": -320,
-          "y": -360
+          "y": -360,
+          "xp": 15
         },
         {
           "id": "node_2",
@@ -4053,8 +4054,8 @@
             "type": "map",
             "presentation": {
               "illustration_path": "res://assets/battle/cards/battle_focus.png",
-              "effect_summary": "Map only",
-              "rules_text": "Map card. It cannot be played in battle; it still counts as health.",
+              "effect_summary": "Map only\nMove 2, day costs",
+              "rules_text": "Map card. It cannot be played in battle; it still counts as health and can be lost to damage.\nMap: Gain 2 Move this turn; while any of it remains, terrain costs its Day price even at Night — The road stays lit.. Playing it for its effect counts as a card played this turn.",
               "art_key": ""
             },
             "cost": {
@@ -4079,7 +4080,8 @@
             "operations": []
           },
           "x": 0,
-          "y": -360
+          "y": -360,
+          "xp": 13
         },
         {
           "id": "node_3",
@@ -4102,8 +4104,8 @@
             "type": "map",
             "presentation": {
               "illustration_path": "res://assets/battle/cards/battle_focus.png",
-              "effect_summary": "Map only",
-              "rules_text": "Map card. It cannot be played in battle; it still counts as health.",
+              "effect_summary": "Map only\nScout 3",
+              "rules_text": "Map card. It cannot be played in battle; it still counts as health and can be lost to damage.\nMap: Learn the contents of every revealed hex within 3 of you for the rest of this turn — Scout the hexes ahead.. Playing it for its effect counts as a card played this turn.",
               "art_key": ""
             },
             "cost": {
@@ -4128,7 +4130,8 @@
             "operations": []
           },
           "x": 320,
-          "y": -360
+          "y": -360,
+          "xp": 13
         }
       ],
       "edges": [
@@ -9328,7 +9331,7 @@
     "triage"
   ],
   "version": 1,
-  "revision": 48,
+  "revision": 49,
   "cards": {
     "blood_price": {
       "program": {
@@ -12521,7 +12524,6 @@
         "kind": "move",
         "amount": 4,
         "ignore_terrain": true,
-        "energy_cost": 10,
         "text": "March through anything."
       },
       "access_type": "general",
@@ -12537,8 +12539,8 @@
       "type": "map",
       "presentation": {
         "illustration_path": "res://assets/battle/cards/battle_focus.png",
-        "effect_summary": "Map only",
-        "rules_text": "Map card. It cannot be played in battle; it still counts as health.",
+        "effect_summary": "Map only\nMove 4, any terrain",
+        "rules_text": "Map card. It cannot be played in battle; it still counts as health and can be lost to damage.\nMap: Gain 4 Move this turn; while any of it remains, every passable hex costs 1 Move — March through anything.. Playing it for its effect counts as a card played this turn.",
         "art_key": ""
       },
       "cost": {
@@ -12582,8 +12584,8 @@
       "type": "map",
       "presentation": {
         "illustration_path": "res://assets/battle/cards/battle_focus.png",
-        "effect_summary": "Map only",
-        "rules_text": "Map card. It cannot be played in battle; it still counts as health.",
+        "effect_summary": "Map only\nMove 2, day costs",
+        "rules_text": "Map card. It cannot be played in battle; it still counts as health and can be lost to damage.\nMap: Gain 2 Move this turn; while any of it remains, terrain costs its Day price even at Night — The road stays lit.. Playing it for its effect counts as a card played this turn.",
         "art_key": ""
       },
       "cost": {
@@ -12626,8 +12628,8 @@
       "type": "map",
       "presentation": {
         "illustration_path": "res://assets/battle/cards/battle_focus.png",
-        "effect_summary": "Map only",
-        "rules_text": "Map card. It cannot be played in battle; it still counts as health.",
+        "effect_summary": "Map only\nScout 3",
+        "rules_text": "Map card. It cannot be played in battle; it still counts as health and can be lost to damage.\nMap: Learn the contents of every revealed hex within 3 of you for the rest of this turn — Scout the hexes ahead.. Playing it for its effect counts as a card played this turn.",
         "art_key": ""
       },
       "cost": {
@@ -16231,7 +16233,7 @@
     "trailblaze": {
       "map_effect": {
         "kind": "move",
-        "amount": 2,
+        "amount": 3,
         "text": "Blaze a trail."
       },
       "access_type": "general",
@@ -16247,8 +16249,8 @@
       "type": "map",
       "presentation": {
         "illustration_path": "res://assets/battle/cards/battle_focus.png",
-        "effect_summary": "Map only",
-        "rules_text": "Map card. It cannot be played in battle; it still counts as health.",
+        "effect_summary": "Map only\nMove 3",
+        "rules_text": "Map card. It cannot be played in battle; it still counts as health and can be lost to damage.\nMap: Gain 3 Move this turn — Blaze a trail.. Playing it for its effect counts as a card played this turn.",
         "art_key": ""
       },
       "cost": {
