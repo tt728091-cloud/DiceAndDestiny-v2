@@ -286,6 +286,36 @@ func _settle_overlays() -> void:
 		elif map.view.phase == "camp": await _press("expedition.camp.break")
 		else: return
 
+## Every expedition enemy, the Warlord included, has art and the standard
+## enemy layout: the sprite in the scenery, its stat box attached to it and
+## centred over its feet (not parked in the corner), its name on the box and
+## the name's selector button.
+func _check_enemy_layout(battle: Control, pending: Dictionary) -> void:
+	for frame in 4: await process_frame
+	var ids: Array = battle._enemy_ids()
+	_expect(not ids.is_empty(), "the battle has an enemy")
+	if ids.is_empty(): return
+	var id := str(ids[0])
+	var definition := str(battle._view.actor(id).get("definition_id", ""))
+	var profile = load("res://content/battle_visuals/library.tres").fighter(definition)
+	_expect(profile != null and profile.texture != null, "%s has a visual profile with art" % definition)
+	var actor_profile = battle._actor_profiles.get(id)
+	var dock: Control = actor_profile.get_parent() if actor_profile != null else null
+	var fighter: Control = dock.fighter if dock != null and "fighter" in dock else null
+	_expect(fighter != null and is_instance_valid(fighter) and fighter is TextureRect and fighter.texture != null, "%s stands in the scenery with its art" % definition)
+	if fighter == null or dock == null: return
+	_expect(fighter.texture.resource_path == profile.texture.resource_path, "%s uses its own art (%s)" % [definition, fighter.texture.resource_path])
+	var feet: Vector2 = fighter.get_global_rect().position + fighter.get_global_rect().size * fighter.get_meta("ground_anchor", Vector2(0.5, 1.0))
+	var box: Rect2 = dock.get_global_rect()
+	var viewport: Rect2 = battle.get_viewport_rect()
+	_expect(absf(box.get_center().x - feet.x) <= 4.0, "%s's stat box is centred on the sprite (box %.0f, feet %.0f)" % [definition, box.get_center().x, feet.x])
+	_expect(box.position.x > viewport.size.x * 0.2 and box.end.x < viewport.size.x * 0.95 and box.position.y > viewport.size.y * 0.2, "%s's stat box sits in the battlefield, not the corner: %s" % [definition, box])
+	_expect(viewport.encloses(box), "%s's stat box is inside the viewport: %s" % [definition, box])
+	_expect(str(actor_profile.title.text) == str(pending.name) or str(pending.name) in str(actor_profile.title.text), "the box is titled %s (%s)" % [pending.name, actor_profile.title.text])
+	_expect(actor_profile.title.find_child("SelectEnemy_" + id, true, false) != null, "%s can be selected by its name" % definition)
+	print("expedition map test: enemy layout %s · box %s · feet %s" % [definition, box, feet])
+	await _capture(battle, "expedition-enemy-layout-%s" % definition)
+
 ## Fights the map's pending battle through the real battle screen and the
 ## gateway, returns to the map and reads the result.
 func _fight() -> String:
@@ -298,6 +328,7 @@ func _fight() -> String:
 	_expect(battle != null and _find(EXPEDITION_SCRIPT) == null, "Fight opens the real battle screen")
 	if battle == null: return ""
 	_expect(str(battle._view.campaign.expedition.name) == str(pending.name), "the battle carries the expedition context")
+	await _check_enemy_layout(battle, pending)
 	var gateway: RefCounted = battle.gateway
 	var result := _play_out(gateway, battle.initial_result)
 	battle.queue_free(); await process_frame

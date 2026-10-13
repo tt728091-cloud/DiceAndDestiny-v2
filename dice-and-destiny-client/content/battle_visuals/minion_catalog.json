@@ -2645,6 +2645,20 @@
             0.5,
             0.974482
           ]
+        },
+        {
+          "id": "drowned_regent",
+          "name": "The Drowned Regent",
+          "role": "warlord of the Salt Marches",
+          "description": "The Drowned Oracle crowned as sovereign of the marsh: a gilded broken-ivory crown, royal sea-blue drowned robes and tendrils, gilt brass reliquaries, and a hot aqua tide-glow in the chest; derived from the Drowned Oracle art.",
+          "texture": "res://assets/battle/minions/drowned_oracle/drowned_regent.png",
+          "profile": "res://content/battle_visuals/minions/drowned_oracle/drowned_regent.tres",
+          "width": 1435,
+          "height": 1096,
+          "ground_anchor": [
+            0.5,
+            0.979927
+          ]
         }
       ]
     },

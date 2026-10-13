@@ -23,6 +23,7 @@ Evidence folder (ignored): `dice-and-destiny-client/.godot/runtime/expedition-ev
 | M11 Map plays cost the card's printed energy | done | see git log (`M11: …`) |
 | M12 Bigger map: no banner, parchment edge to edge, short day line | done | see git log (`M12: …`) |
 | M13 The card editor edits map effects | done | see git log (`M13: …`) |
+| M14 The Drowned Regent's art and standard enemy layout | done | see git log (`M14: …`) |
 
 ## M0 — Baseline (2026-10-12)
 
@@ -290,6 +291,14 @@ The user could not change Trailblaze from Move 2 to Move 3: the card editor had 
 - **Editor.** The Card tab has an "On the Expedition map" section: for battle cards a "Has a map effect" box, then the effect (Move, Draw cards, Gain energy, See further, Scout contents), its amount, the map-only extra energy, Move's "any terrain costs 1" and "Day costs at Night" options, the map text, and a line with what a map play costs (energy cost + extra). Map-only cards hide the battle play sections; the Effects tab says map cards have no battle effects; every timing helper reads a stand-in instead of a missing program.
 - **Trees.** The tree diff reads map changes ("Map: Move 2 → Move 3", gains/loses, map energy, terrain options), and the forge's quick edit has map steppers (amount, extra energy) and the Move options, so upgrades and cheaper variants can change movement and energy in a click.
 - **Tests.** Go: `TestCardEditorEditsMapEffects` on a disposable copy of the authored content (Trailblaze validates; the Pathfinder tree publishes with Trailblaze at Move 3 for 5 energy and a variant at Move 5 for 15; a map card with battle timing, a map amount of 0, and a card with no effect at all are refused; Nudge gains, changes and loses a map effect). Godot: `verify_card_map_effects.gd` (the map-only card renders every tab without a script error, Move 2 → 3 validates and is handed back by "Use card settings", Nudge gains a map Move, the forge's stepper makes the diff read "Map: Move 2 → Move 3").
+
+## M14 — The Drowned Regent's art and standard enemy layout (2026-10-13)
+
+The Warlord had no visual profile, so the battle scenery had no sprite for him and his stat box fell back to the top-left corner, out of the battlefield and away from where enemies are selected.
+
+- **Art.** `assets/battle/minions/drowned_oracle/drowned_regent.png` is derived from the Drowned Oracle painting (same family and style): the bone crown gilded, the cloth and tendrils graded to royal sea-blue, the reliquaries warmed to gilt, the tide-glow pushed to hot aqua, and the figure mirrored to face the player like the other minions. It is a derived placeholder, not new painted art; replacing the PNG keeps everything else working.
+- **Profile.** `content/battle_visuals/minions/drowned_oracle/drowned_regent.tres` (definition `drowned_regent`, faces left, 400 px tall, ground anchor at his lowest tendril) is registered in `library.tres` and listed in `minion_catalog.json`.
+- **Validation.** `verify_expedition_map.gd`'s fight helper now checks every expedition enemy at battle start: a visual profile with art, its sprite in the scenery, the stat box attached and centred on the sprite's feet, inside the battlefield and the viewport, titled with the enemy's name, with its name selector. The run covers the Brine Mask and the Regent twice (road challenge and deadline); both of his fights complete. Screenshots of the Regent and the Brine Mask at 1920×1080 are in `m14-screens/`. `verify_drowned_oracle_minions.gd`, `verify_brine_mask.gd`, `verify_expedition_statuses.gd` and `verify_expedition_chart.gd` pass.
 
 ## Decisions made during implementation
 
