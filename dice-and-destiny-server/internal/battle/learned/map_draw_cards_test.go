@@ -104,3 +104,46 @@ func TestPlentyDrawsThreeOnTheMap(t *testing.T) {
 		t.Fatalf("Plenty costs 5 energy and draws 3: energy %d hand %d draw %d", s.Energy, len(s.Hand), len(s.Draw))
 	}
 }
+
+// Every card that gains its own side energy in battle gains map energy too,
+// and every card-tree upgrade of a base with a map effect has one (a choice
+// card keeps one of its options on the map).
+func TestEnergyCardsAndTreeUpgradesKeepAMapEffect(t *testing.T) {
+	root := filepath.Join("..", "..", "..", "content")
+	catalogs, err := CharacterCatalogs(root, copyAuthored(t, root))
+	if err != nil {
+		t.Fatal(err)
+	}
+	lib := catalogs["starter"]
+	for id, card := range lib.Cards {
+		if card.Program == nil {
+			continue
+		}
+		for _, s := range card.Program.Steps {
+			if s.Effect == "energy" && s.Target.Owner != "enemy" && (card.MapEffect == nil || card.MapEffect.Kind != "energy") {
+				t.Errorf("%s (%s) gains energy in battle but has no map energy: %+v", card.Name, id, card.MapEffect)
+			}
+		}
+	}
+	trees := 0
+	for treeID, tree := range lib.CardTrees {
+		var base *content.CardTreeNode
+		for i := range tree.Nodes {
+			if tree.Nodes[i].ID == tree.Root {
+				base = &tree.Nodes[i]
+			}
+		}
+		if base == nil || lib.Cards[base.Card.ID].MapEffect == nil {
+			continue
+		}
+		trees++
+		for _, node := range tree.Nodes {
+			if lib.Cards[node.Card.ID].MapEffect == nil {
+				t.Errorf("%s: %s (%s) is an upgrade of %s but has no map effect", treeID, node.Card.Name, node.Card.ID, base.Card.Name)
+			}
+		}
+	}
+	if trees < 3 {
+		t.Fatalf("expected the Take Stock, Second Wind and Pathfinder trees, found %d with a map-effect base", trees)
+	}
+}

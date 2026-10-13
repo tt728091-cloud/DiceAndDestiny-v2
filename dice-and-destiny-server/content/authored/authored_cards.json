@@ -5400,8 +5400,8 @@
             "type": "planning",
             "presentation": {
               "illustration_path": "res://assets/battle/cards/battle_focus.png",
-              "effect_summary": "Gain 10 Energy",
-              "rules_text": "Give 10 energy to one of your characters.\nPlay: Offense, any time; Defense, any time.",
+              "effect_summary": "Gain 10 Energy\nMap: +10 Energy",
+              "rules_text": "Give 10 energy to one of your characters.\nMap: Gain 10 energy on the map — A second wind for the march. Playing it for its effect counts as a card played this turn.\nPlay: Offense, any time; Defense, any time.",
               "art_key": "",
               "timing": [
                 {
@@ -5436,11 +5436,17 @@
             "operations": []
           },
           "x": 0,
-          "y": 0
+          "y": 0,
+          "xp": 10
         },
         {
           "id": "node_1",
           "card": {
+            "map_effect": {
+              "kind": "energy",
+              "amount": 15,
+              "text": "A surge for the march."
+            },
             "program": {
               "version": 1,
               "windows": [
@@ -5478,8 +5484,8 @@
             "type": "planning",
             "presentation": {
               "illustration_path": "res://assets/battle/cards/battle_focus.png",
-              "effect_summary": "Gain 15 Energy",
-              "rules_text": "Give 15 energy to one of your characters.\nPlay: Offense, any time; Defense, any time.",
+              "effect_summary": "Gain 15 Energy\nMap: +15 Energy",
+              "rules_text": "Give 15 energy to one of your characters.\nMap: Gain 15 energy on the map — A surge for the march. Playing it for its effect counts as a card played this turn.\nPlay: Offense, any time; Defense, any time.",
               "art_key": "",
               "timing": [
                 {
@@ -5514,11 +5520,17 @@
             "operations": []
           },
           "x": -160,
-          "y": -360
+          "y": -360,
+          "xp": 13
         },
         {
           "id": "node_2",
           "card": {
+            "map_effect": {
+              "kind": "energy",
+              "amount": 10,
+              "text": "Focus on the road ahead."
+            },
             "program": {
               "version": 1,
               "windows": [
@@ -5592,8 +5604,8 @@
             "type": "planning",
             "presentation": {
               "illustration_path": "res://assets/battle/cards/battle_focus.png",
-              "effect_summary": "+5 Energy: Draw 2 cards\nor Gain 10 Energy",
-              "rules_text": "Choose one option:\nDraw 2 (costs 5 more energy):\n  Draw 2 cards for one of your characters. If the deck runs short, draw what is left; discard is never reshuffled.\nGain 10 energy:\n  Give 10 energy to one of your characters.\nPlay: Offense, any time; Defense, any time.",
+              "effect_summary": "+5 Energy: Draw 2 cards\nor Gain 10 Energy\nMap: +10 Energy",
+              "rules_text": "Choose one option:\nDraw 2 (costs 5 more energy):\n  Draw 2 cards for one of your characters. If the deck runs short, draw what is left; discard is never reshuffled.\nGain 10 energy:\n  Give 10 energy to one of your characters.\nMap: Gain 10 energy on the map — Focus on the road ahead. Playing it for its effect counts as a card played this turn.\nPlay: Offense, any time; Defense, any time.",
               "art_key": "",
               "timing": [
                 {
@@ -5628,11 +5640,17 @@
             "operations": []
           },
           "x": 160,
-          "y": -360
+          "y": -360,
+          "xp": 13
         },
         {
           "id": "node_3",
           "card": {
+            "map_effect": {
+              "kind": "energy",
+              "amount": 15,
+              "text": "Deep breaths, long strides."
+            },
             "program": {
               "version": 1,
               "windows": [
@@ -5706,8 +5724,8 @@
             "type": "planning",
             "presentation": {
               "illustration_path": "res://assets/battle/cards/battle_focus.png",
-              "effect_summary": "+5 Energy: Draw 3 cards\nor Gain 15 Energy",
-              "rules_text": "Choose one option:\nDraw 3 (costs 5 more energy):\n  Draw 3 cards for one of your characters. If the deck runs short, draw what is left; discard is never reshuffled.\nGain 15 energy:\n  Give 15 energy to one of your characters.\nPlay: Offense, any time; Defense, any time.",
+              "effect_summary": "+5 Energy: Draw 3 cards\nor Gain 15 Energy\nMap: +15 Energy",
+              "rules_text": "Choose one option:\nDraw 3 (costs 5 more energy):\n  Draw 3 cards for one of your characters. If the deck runs short, draw what is left; discard is never reshuffled.\nGain 15 energy:\n  Give 15 energy to one of your characters.\nMap: Gain 15 energy on the map — Deep breaths, long strides. Playing it for its effect counts as a card played this turn.\nPlay: Offense, any time; Defense, any time.",
               "art_key": "",
               "timing": [
                 {
@@ -5742,11 +5760,17 @@
             "operations": []
           },
           "x": 0,
-          "y": -720
+          "y": -720,
+          "xp": 17
         },
         {
           "id": "node_4",
           "card": {
+            "map_effect": {
+              "kind": "energy",
+              "amount": 5,
+              "text": "A shallow breath, then on."
+            },
             "program": {
               "version": 1,
               "windows": [
@@ -5784,8 +5808,8 @@
             "type": "planning",
             "presentation": {
               "illustration_path": "res://assets/battle/cards/battle_focus.png",
-              "effect_summary": "Gain 5 Energy",
-              "rules_text": "Give 5 energy to one of your characters.\nPlay: Offense, any time; Defense, any time.",
+              "effect_summary": "Gain 5 Energy\nMap: +5 Energy",
+              "rules_text": "Give 5 energy to one of your characters.\nMap: Gain 5 energy on the map — A shallow breath, then on. Playing it for its effect counts as a card played this turn.\nPlay: Offense, any time; Defense, any time.",
               "art_key": "",
               "timing": [
                 {
@@ -5820,7 +5844,8 @@
             "operations": []
           },
           "x": 0,
-          "y": 360
+          "y": 360,
+          "xp": 8
         }
       ],
       "edges": [
@@ -9356,7 +9381,7 @@
     "triage"
   ],
   "version": 1,
-  "revision": 50,
+  "revision": 51,
   "cards": {
     "blood_price": {
       "program": {
@@ -13726,8 +13751,8 @@
       "type": "planning",
       "presentation": {
         "illustration_path": "res://assets/battle/cards/battle_focus.png",
-        "effect_summary": "Gain 10 Energy",
-        "rules_text": "Give 10 energy to one of your characters.\nPlay: Offense, any time; Defense, any time.",
+        "effect_summary": "Gain 10 Energy\nMap: +10 Energy",
+        "rules_text": "Give 10 energy to one of your characters.\nMap: Gain 10 energy on the map — A second wind for the march. Playing it for its effect counts as a card played this turn.\nPlay: Offense, any time; Defense, any time.",
         "art_key": "",
         "timing": [
           {
@@ -13762,6 +13787,11 @@
       "operations": []
     },
     "second_wind_paths_variant_node_1": {
+      "map_effect": {
+        "kind": "energy",
+        "amount": 15,
+        "text": "A surge for the march."
+      },
       "program": {
         "version": 1,
         "windows": [
@@ -13799,8 +13829,8 @@
       "type": "planning",
       "presentation": {
         "illustration_path": "res://assets/battle/cards/battle_focus.png",
-        "effect_summary": "Gain 15 Energy",
-        "rules_text": "Give 15 energy to one of your characters.\nPlay: Offense, any time; Defense, any time.",
+        "effect_summary": "Gain 15 Energy\nMap: +15 Energy",
+        "rules_text": "Give 15 energy to one of your characters.\nMap: Gain 15 energy on the map — A surge for the march. Playing it for its effect counts as a card played this turn.\nPlay: Offense, any time; Defense, any time.",
         "art_key": "",
         "timing": [
           {
@@ -13835,6 +13865,11 @@
       "operations": []
     },
     "second_wind_paths_variant_node_2": {
+      "map_effect": {
+        "kind": "energy",
+        "amount": 10,
+        "text": "Focus on the road ahead."
+      },
       "program": {
         "version": 1,
         "windows": [
@@ -13908,8 +13943,8 @@
       "type": "planning",
       "presentation": {
         "illustration_path": "res://assets/battle/cards/battle_focus.png",
-        "effect_summary": "+5 Energy: Draw 2 cards\nor Gain 10 Energy",
-        "rules_text": "Choose one option:\nDraw 2 (costs 5 more energy):\n  Draw 2 cards for one of your characters. If the deck runs short, draw what is left; discard is never reshuffled.\nGain 10 energy:\n  Give 10 energy to one of your characters.\nPlay: Offense, any time; Defense, any time.",
+        "effect_summary": "+5 Energy: Draw 2 cards\nor Gain 10 Energy\nMap: +10 Energy",
+        "rules_text": "Choose one option:\nDraw 2 (costs 5 more energy):\n  Draw 2 cards for one of your characters. If the deck runs short, draw what is left; discard is never reshuffled.\nGain 10 energy:\n  Give 10 energy to one of your characters.\nMap: Gain 10 energy on the map — Focus on the road ahead. Playing it for its effect counts as a card played this turn.\nPlay: Offense, any time; Defense, any time.",
         "art_key": "",
         "timing": [
           {
@@ -13944,6 +13979,11 @@
       "operations": []
     },
     "second_wind_paths_variant_node_3": {
+      "map_effect": {
+        "kind": "energy",
+        "amount": 15,
+        "text": "Deep breaths, long strides."
+      },
       "program": {
         "version": 1,
         "windows": [
@@ -14017,8 +14057,8 @@
       "type": "planning",
       "presentation": {
         "illustration_path": "res://assets/battle/cards/battle_focus.png",
-        "effect_summary": "+5 Energy: Draw 3 cards\nor Gain 15 Energy",
-        "rules_text": "Choose one option:\nDraw 3 (costs 5 more energy):\n  Draw 3 cards for one of your characters. If the deck runs short, draw what is left; discard is never reshuffled.\nGain 15 energy:\n  Give 15 energy to one of your characters.\nPlay: Offense, any time; Defense, any time.",
+        "effect_summary": "+5 Energy: Draw 3 cards\nor Gain 15 Energy\nMap: +15 Energy",
+        "rules_text": "Choose one option:\nDraw 3 (costs 5 more energy):\n  Draw 3 cards for one of your characters. If the deck runs short, draw what is left; discard is never reshuffled.\nGain 15 energy:\n  Give 15 energy to one of your characters.\nMap: Gain 15 energy on the map — Deep breaths, long strides. Playing it for its effect counts as a card played this turn.\nPlay: Offense, any time; Defense, any time.",
         "art_key": "",
         "timing": [
           {
@@ -14053,6 +14093,11 @@
       "operations": []
     },
     "second_wind_paths_variant_node_4": {
+      "map_effect": {
+        "kind": "energy",
+        "amount": 5,
+        "text": "A shallow breath, then on."
+      },
       "program": {
         "version": 1,
         "windows": [
@@ -14090,8 +14135,8 @@
       "type": "planning",
       "presentation": {
         "illustration_path": "res://assets/battle/cards/battle_focus.png",
-        "effect_summary": "Gain 5 Energy",
-        "rules_text": "Give 5 energy to one of your characters.\nPlay: Offense, any time; Defense, any time.",
+        "effect_summary": "Gain 5 Energy\nMap: +5 Energy",
+        "rules_text": "Give 5 energy to one of your characters.\nMap: Gain 5 energy on the map — A shallow breath, then on. Playing it for its effect counts as a card played this turn.\nPlay: Offense, any time; Defense, any time.",
         "art_key": "",
         "timing": [
           {

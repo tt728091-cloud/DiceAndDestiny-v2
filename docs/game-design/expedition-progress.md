@@ -26,6 +26,7 @@ Evidence folder (ignored): `dice-and-destiny-client/.godot/runtime/expedition-ev
 | M14 The Drowned Regent's art and standard enemy layout | done | see git log (`M14: …`) |
 | M15 Take Stock's upgrades draw on the map | done | see git log (`M15: …`) |
 | M16 Back from battle without a forced camp; never better off; heal flourish | done | see git log (`M16: …`) |
+| M17 Second Wind's upgrades gain energy on the map | done | see git log (`M17: …`) |
 
 ## M0 — Baseline (2026-10-12)
 
@@ -317,6 +318,12 @@ Three requests from the user's play-through.
 1. **No forced camp after a battle.** After every fight the end-of-turn draw found the draw pile empty and the round rested, even with five cards in hand. The rest rule is now: at the end of a turn the round ends with a rest only when **no card is left in hand or draw pile**; cards still in hand carry on into the next turn (Make camp stays open). After a fight the player returns to the map with what the battle left and keeps playing.
 2. **A battle can never leave the player better off.** The bridge (`capBattlePiles`) caps the returned piles from the best tier down, cumulatively against what went in: hand ≤ hand before; hand+draw ≤ their sum before; hand+draw+Spent ≤ theirs — so removed (wounds) can only grow. A pile over its room keeps a random selection of its own cards (seeded, in order) and the rest drop to the next pile with room (random positions in the draw pile); cards a battle healed go back to the wounds. Energy was already capped at what was brought in. The report's `held_back` counts the moved cards and both result panels mention it. The user's example (4/4/4 in, 5/5/2 out → 4/4/4, the two extras to Spent) is `TestBattleCannotLeaveThePlayerBetterOff`, which also covers kept battle damage, an undone battle heal and replay after reload; `TestNoForcedCampAfterABattleWithCardsLeft` covers the return; the real seeded battles in `TestExpeditionBattleBridgeBothWays` now assert the caps and that wounds never shrink.
 3. **Healing feedback.** A camp heal now plays a short flourish over the camp sheet (`app/screens/map/heal_feedback.gd`, under two seconds per roll, never blocks input): a stone die (d3 or d6) tumbles in and lands on the authority's roll, "Rolled N" pops with the inn bonus, "Healed N" and "The wound is healed!" or what remains, and the healed cards flash green and fly to the draw pile counter. "Treat every wound" plays one flourish per roll in turn. The camp sheet's heal log and the journal are unchanged. `verify_expedition_map.gd` asserts the flourish shows the authority's roll, die, amount and cards and then clears.
+
+## M17 — Second Wind's upgrades gain energy on the map (2026-10-13)
+
+The user held Surge ("Gain 15 Energy") on the map and could only spend it as 1 Move or 1 Influence. Like Take Stock's upgrades (M15), Second Wind's four upgrades predate map effects. Published through the tree operation (catalog revision 50 → 51): Surge +15 energy, Shallow Breath +5, and the two choice cards keep their energy option on the map — Focus +10, Deep Focus +15 (their draw option stays battle-only: a map effect is one effect). A copy of the user's save plays Surge on the map: energy 10 → 25.
+
+`TestEnergyCardsAndTreeUpgradesKeepAMapEffect` now fails for any card that gains its own side energy in battle without a map energy effect, and for any card-tree upgrade whose base has a map effect but which has none — so no tree can lose its map effect on an upgrade again.
 
 ## Decisions made during implementation
 
