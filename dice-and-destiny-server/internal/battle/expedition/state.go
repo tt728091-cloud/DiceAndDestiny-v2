@@ -150,11 +150,14 @@ type BattleReport struct {
 	SpentAfter int      `json:"spent_after"`
 	// Wounds counts wound groupings; WoundCards the cards they hold (health
 	// lost). NewWounds are the groupings taken in this battle.
-	Wounds       int    `json:"wounds"`
-	WoundCards   int    `json:"wound_cards"`
-	WoundsBefore int    `json:"wounds_before"`
-	NewWounds    int    `json:"new_wounds,omitempty"`
-	DefeatWounds int    `json:"defeat_wounds,omitempty"`
+	Wounds       int `json:"wounds"`
+	WoundCards   int `json:"wound_cards"`
+	WoundsBefore int `json:"wounds_before"`
+	NewWounds    int `json:"new_wounds,omitempty"`
+	DefeatWounds int `json:"defeat_wounds,omitempty"`
+	// HeldBack counts the cards the bridge moved to a worse pile because the
+	// battle may not leave the player better off than they went in.
+	HeldBack     int    `json:"held_back,omitempty"`
 	PushedBack   *Hex   `json:"pushed_back,omitempty"`
 	ForcedRest   bool   `json:"forced_rest,omitempty"`
 	RegionWon    bool   `json:"region_won,omitempty"`

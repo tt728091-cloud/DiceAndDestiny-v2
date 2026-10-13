@@ -24,6 +24,7 @@ const LEARNED_GATEWAY := preload("res://local_client/learned_battle/learned_batt
 const CAMPAIGN_PREPARE := preload("res://app/screens/campaign/campaign_prepare.gd")
 const CAMPAIGN_SCREEN := "res://app/screens/campaign/campaign_screen.gd"
 const BattleCardScene := preload("res://presentation/cards/battle_card.gd")
+const HEAL_FEEDBACK := preload("res://app/screens/map/heal_feedback.gd")
 
 const HEX_OFFSETS := [Vector2i(0, 0), Vector2i(1, 0), Vector2i(1, -1), Vector2i(0, -1), Vector2i(-1, 0), Vector2i(-1, 1), Vector2i(0, 1)]
 const TERRAIN_ORDER := ["plains", "hills", "forest", "marsh", "lake", "mountain"]
@@ -76,6 +77,8 @@ var _overlay_backdrop: TextureRect
 var _overlay_sheet: PanelContainer
 var _overlay_scroll: ScrollContainer
 var _overlay_footer: VBoxContainer  # actions pinned below the scrolling body
+## The short dice-roll flourish played over the camp sheet for each heal.
+var _heal_feedback: Control
 var _all_saves: Button
 var _back: Button
 
@@ -165,6 +168,7 @@ func _build() -> void:
 	# The sheet's actions sit under the scrolling body so a long camp (many
 	# wounds, a heal log) never scrolls Break camp out of reach.
 	_overlay_footer = VBoxContainer.new(); _overlay_footer.add_theme_constant_override("separation", 8); _overlay_footer.size_flags_horizontal = Control.SIZE_EXPAND_FILL; sheet_box.add_child(_overlay_footer)
+	_heal_feedback = HEAL_FEEDBACK.new(); _heal_feedback.name = "HealFeedback"; add_child(_heal_feedback)
 
 ## The battle's dark gold-edged button, for the stone.
 func _stone_button(parent: Node, text: String, callback: Callable, control_id: String) -> Button:
@@ -198,6 +202,7 @@ func _apply(result: Dictionary) -> void:
 func _act(action: Dictionary) -> bool:
 	var runtime := _runtime()
 	if runtime == null: return false
+	var heals_before: int = _list(view.get("camp", {}) if view.get("camp") is Dictionary else {}, "heals").size()
 	var response: Dictionary = runtime.expedition_act(save_id, action, int(status.get("revision", 0)))
 	if response.get("ok") != true:
 		_show_error(str(response.get("error", "The action was refused.")))
@@ -206,7 +211,19 @@ func _act(action: Dictionary) -> bool:
 	_set_message("")
 	selected_cards.clear(); energy_payment = 0; use_siege = false; selected_hex = NONE
 	_apply(response.result)
+	if str(action.get("kind", "")) == "camp_service" and str(action.get("service", "")) in ["basic_aid", "bandage"]:
+		_show_heals(_list(view.get("camp", {}) if view.get("camp") is Dictionary else {}, "heals").slice(heals_before))
 	return true
+
+## Plays the dice-roll flourish for the authority's new healing rolls, over the
+## camp sheet, with the healed cards flying to the draw pile counter.
+func _show_heals(heals: Array) -> void:
+	if heals.is_empty(): return
+	await get_tree().process_frame
+	var target_cell: Control = _hud.find_child("Pile_draw", true, false)
+	var target: Vector2 = target_cell.get_global_rect().get_center() if target_cell != null else get_viewport_rect().size * Vector2(0.9, 0.15)
+	var area: Rect2 = _overlay_sheet.get_global_rect() if _overlay.visible else _map_area.get_global_rect()
+	_heal_feedback.play(heals, area, target, view.get("card_names", {}))
 
 ## The ledger's message line shows only while it has something to say.
 func _set_message(text: String) -> void:
@@ -938,7 +955,7 @@ func _render_camp(body: VBoxContainer, camp: Dictionary) -> void:
 	_overlay_heading(body, title, CHART.glyph("tent"))
 	var opening := ""
 	match reason:
-		"deck_empty": opening = "Round %d is over: your draw pile ran out at the end of turn %d. %d Spent cards reshuffled into the draw pile; a fresh hand of %d drawn; energy reset to %d." % [int(camp.get("round", 0)), int(camp.get("turn", 0)), int(camp.get("reshuffled", 0)), int(camp.get("drew", 0)), base]
+		"deck_empty": opening = "Round %d is over: no cards were left in your hand or draw pile at the end of turn %d. %d Spent cards reshuffled into the draw pile; a fresh hand of %d drawn; energy reset to %d." % [int(camp.get("round", 0)), int(camp.get("turn", 0)), int(camp.get("reshuffled", 0)), int(camp.get("drew", 0)), base]
 		"make_camp": opening = "%d unplayed cards forfeited and reshuffled with %d Spent; a fresh hand of %d drawn; energy reset to %d." % [int(camp.get("forfeited", 0)), int(camp.get("reshuffled", 0)), int(camp.get("drew", 0)), base]
 		"defeat": opening = "Driven back; round %d ends here. %d Spent cards reshuffled into the draw pile; a fresh hand of %d drawn; energy reset to %d." % [int(camp.get("round", 0)), int(camp.get("reshuffled", 0)), int(camp.get("drew", 0)), base]
 		_: opening = "%d Spent cards reshuffled into the draw pile; a fresh hand of %d drawn; energy reset to %d." % [int(camp.get("reshuffled", 0)), int(camp.get("drew", 0)), base]
@@ -1076,6 +1093,7 @@ func _render_battle_result(body: VBoxContainer) -> void:
 		if result == "victory" and int(report.get("new_wounds", 0)) > 0: wounds += " · +%d new" % int(report.new_wounds)
 		lines.append("Cards back on the map: hand %d, draw %d, Spent %d · %s" % [_list(report, "hand_after").size(), int(report.get("draw_after", 0)), int(report.get("spent_after", 0)), wounds])
 		for line in lines: CHART.ink_label(body, line, 14)
+		if int(report.get("held_back", 0)) > 0: CHART.ink_label(body, "A battle can't leave you better off than you went in: %d card%s went back to worse piles." % [int(report.held_back), "" if int(report.held_back) == 1 else "s"], 14, CHART.SEPIA_TEXT)
 		if int(report.get("defeat_wounds", 0)) > 0: CHART.ink_label(body, "Defeat: one defeat wound of %d damage on top of your pre-battle wounds; driven back; the round ends with a rest." % int(report.defeat_wounds), 14, CHART.RUBRIC)
 		if result == "draw": CHART.ink_label(body, "A draw: nothing is recorded; your pre-battle cards, wounds and energy are back.%s" % (" The Warlord attacks again." if str(report.get("kind", "")) == "deadline" else ""), 14)
 		if not str(report.get("site_freed", "")).is_empty(): CHART.ink_label(body, "%s is freed." % report.site_freed, 14, CHART.GREEN)
@@ -1145,7 +1163,7 @@ func inspection_state() -> Dictionary:
 		"statuses": _list(view, "statuses"), "inventory": _list(view, "inventory"), "warlord": view.get("warlord", {}), "result": str(view.get("result", "")),
 		"selected_hex": [selected_hex.x, selected_hex.y] if selected_hex != NONE else null, "selected_cards": selected_cards, "energy_payment": energy_payment,
 		"placed_tiles": _list(view, "slots").filter(func(s): return s.get("placed", false)).size(), "seen_hexes": _list(view, "hexes").filter(func(h): return h.get("seen", false)).size(),
-		"message": _message.text, "chart_day": chart_day_label(), "hex_radius": _hex_radius, "survey": _survey_key or _survey_locked, "legend_open": _legend_open, "marks_processing": _marks.is_processing() if _marks != null else false,
+		"message": _message.text, "chart_day": chart_day_label(), "heal_feedback": {"active": _heal_feedback.active(), "last": _heal_feedback.last, "shown": _heal_feedback.shown.size()}, "hex_radius": _hex_radius, "survey": _survey_key or _survey_locked, "legend_open": _legend_open, "marks_processing": _marks.is_processing() if _marks != null else false,
 		"hexes": _list(view, "hexes"), "slots": _list(view, "slots"),
 	}
 

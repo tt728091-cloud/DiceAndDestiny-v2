@@ -414,6 +414,16 @@ func TestWoundsAfterBattleNeverLoseOrDuplicateCards(t *testing.T) {
 		// The end-of-turn draw may have rested; the piles still hold the
 		// same cards either way.
 		checkWoundInvariants(t, s, r, starterDeck, where)
+		// A battle may not heal below the pre-battle damage: what it healed
+		// goes back to the removed pile, so the wounds keep every card the
+		// battle removed plus enough to reach the old damage.
+		if floor := base.Wounds.Damage(); len(tc.removed) < floor {
+			got := s.Wounds.Cards()
+			if s.Wounds.Damage() != floor || report.HeldBack < floor-len(tc.removed) || len(remove(got, tc.removed)) != floor-len(tc.removed) {
+				t.Fatalf("%s: a battle never heals below the pre-battle %d damage: wounds %v, held back %d", where, floor, got, report.HeldBack)
+			}
+			continue
+		}
 		if got, want := sortedStrings(s.Wounds.Cards()), sortedStrings(tc.removed); !reflect.DeepEqual(got, want) {
 			t.Fatalf("%s: the wounds hold exactly the removed pile: %v vs %v", where, got, want)
 		}

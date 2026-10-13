@@ -81,7 +81,7 @@ So on the map:
 2. **Move and explore:** **1 card = 1 Move**; **5 energy = 1 Move**. Pay the terrain cost of each hex you enter. Exploring costs 2 Move. Cards whose effect gains energy (Second Wind) give that energy on the map; ordinary cards can't be turned into energy.
 3. **One action:** use a site (paying Influence), challenge an adjacent enemy, or enter an adventure site.
 4. **A fight**, if one starts, ends your turn.
-5. **End the turn** whenever you like, as long as you've **played or discarded at least 1 card** this turn (a fight counts). Keep the cards you didn't play and **draw up to your hand size**. If your draw pile is empty at the end of the turn, the round is over and you **rest** (see [The clock](#5-the-clock)).
+5. **End the turn** whenever you like, as long as you've **played or discarded at least 1 card** this turn (a fight counts). Keep the cards you didn't play and **draw up to your hand size**. If no card is left in your hand or draw pile at the end of the turn, the round is over and you **rest**; cards still in hand carry on into the next turn (see [The clock](#5-the-clock)).
 
 **Hand symmetry:** the map and battles share one hand size and one hand limit (6). Anything that raises or lowers them — a level-up, gear, an enemy's "Shaken: hand size −1" status — applies to both. Effects like that are visible statuses with their expiry shown.
 
@@ -100,7 +100,7 @@ So on the map:
 ![The clock](expedition/05-clock.png)
 
 - A region lasts **4 rounds**, alternating **Day and Night** (configurable). Each round lasts **one pass through your deck**. What's limited is cards, not turns.
-- **Rest** happens when your draw pile is **empty at the end of a turn** (one pass through the deck is one round — the Warlord's clock), **whenever you choose to make camp** (you give up the cards you didn't use), or after a **defeat** (a forced rest). The camp says why: "Camp · the deck ran out — Round N is over: your draw pile ran out at the end of turn N."
+- **Rest** happens when **no card is left in your hand or draw pile at the end of a turn** (one pass through the deck is one round — the Warlord's clock; an empty draw pile alone never forces a camp while you still hold cards, for example after a battle), **whenever you choose to make camp** (you give up the cards you didn't use), or after a **defeat** (a forced rest). The camp says why: "Camp · the deck ran out — Round N is over: no cards were left in your hand or draw pile at the end of turn N."
   1. Spent cards are shuffled back into your draw pile. Wounds stay out. (This is an explicit recovery outside battle; battles still never recycle.)
   2. **Energy resets** to your character's base.
   3. **Your fresh hand is drawn** up to your hand size, right away. The camp always shows a full hand beside the reshuffled draw pile, never an empty hand beside a full pile.
@@ -192,6 +192,8 @@ So on the map:
 ![Defeat](expedition/08-defeat.png)
 
 **A wound is a grouping of damage**, exactly as the battle's wound ledger records it ("Wound 1 · 6 damage · Round 5 · Brine Lash · Cards lost: …"): the cards one damage source removed together. The map keeps the same groupings instead of counting cards as wounds. A wound's damage is the number of cards still in it; healing takes cards out of it, and a wound healed to zero damage does not exist any more. **Health lost is the number of wounded cards, not the number of wounds.** Every battle hit that removed cards comes to the map as one wound named after the ability (or card, or attacker) with the battle round it landed in; a defeat is one wound named after the enemy; an event that costs a wound inflicts one wound named after the event.
+
+**Coming back from a battle:** the piles come back as the battle left them, but a battle can never leave you better off than you went in. From the worst pile to the best — removed, Spent, draw pile, hand — each tier together with the better ones holds at most what it held going in: your hand at most its pre-battle size, hand and draw pile together at most theirs, and so on, so your wounds can only grow. A pile over its limit keeps a random selection of its own cards and the rest drop to the next pile with room. Energy is likewise at most what you brought in. Example: 4 in hand, 4 in the draw pile, 4 Spent going in; 5, 5 and 2 coming out → a random 4 of the hand, a random 4 of the draw pile, and the other two go to Spent. You return to the map and keep playing with what is left; you only rest when no card is left in hand or draw pile, or when you make camp.
 
 **Losing a normal battle:**
 

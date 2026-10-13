@@ -546,6 +546,26 @@ func _full_flow(seed: int) -> void:
 				_expect(aid_after == null or aid_after.disabled, "basic aid cannot be repeated on that wound at this camp")
 				_expect("healed %d" % int(heal.healed) in _text(map._overlay), "the heal log shows the roll")
 				print("expedition map test: basic aid healed %d" % int(heal.healed))
+				# The roll is shown, not just logged: a die lands on the roll, the
+				# healed cards fly to the draw pile, then the flourish clears.
+				var feedback: Control = map._heal_feedback
+				_expect(feedback.active(), "the heal plays its dice-roll flourish")
+				var band: Control = null
+				var cards_at := Time.get_ticks_msec() + 3000
+				while Time.get_ticks_msec() < cards_at:
+					band = feedback.find_child("HealBand", true, false)
+					if band != null and band.find_children("*", "Control", true, false).any(func(c): return c.has_meta("card_id")): break
+					await process_frame
+				for frame in 3: await process_frame
+				await _capture(map, "expedition-heal-roll-1280")
+				_expect(band != null and band.visible, "the flourish shows over the camp sheet")
+				var shown_cards: Array = band.find_children("*", "Control", true, false).filter(func(c): return c.has_meta("card_id")).map(func(c): return str(c.get_meta("card_id"))) if band != null else []
+				_expect(int(feedback.last.roll) == int(heal.roll) and int(feedback.last.die) == 3 and int(feedback.last.healed) == int(heal.healed) and Array(feedback.last.cards) == Array(heal.cards), "the flourish shows the authority's roll and healed cards: %s vs %s" % [feedback.last, heal])
+				_expect(shown_cards.size() == int(heal.healed), "each healed card appears in the flourish (%s)" % [shown_cards])
+				var deadline := Time.get_ticks_msec() + 5000
+				while feedback.active() and Time.get_ticks_msec() < deadline: await process_frame
+				for frame in 4: await process_frame
+				_expect(not feedback.active() and feedback.find_child("HealBand", true, false) == null, "the flourish clears within seconds")
 		await _capture(map, "expedition-camp-1280")
 		var round_before := int(map.view.round)
 		var night_before: bool = map.view.night

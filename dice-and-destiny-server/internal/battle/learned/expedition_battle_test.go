@@ -202,6 +202,19 @@ func TestExpeditionBattleBridgeBothWays(t *testing.T) {
 			break
 		}
 		x := after.Expedition
+		// Never better off than before: worst to best, each tier with the
+		// better ones holds at most what it held going in.
+		if outcome.Result == "victory" {
+			hand, draw, spent := len(endHand), len(endDeck), len(endDiscard)
+			held := outcome.Report.HeldBack
+			capped := hand <= len(mapHand) && hand+draw <= len(mapHand)+len(mapDraw) && hand+draw+spent <= len(mapHand)+len(mapDraw)+len(mapSpent)
+			if capped != (held == 0) {
+				t.Fatalf("seed %d: held back %d, but the battle piles %d/%d/%d vs %d/%d/%d were %v within the caps", seed, held, hand, draw, spent, len(mapHand), len(mapDraw), len(mapSpent), capped)
+			}
+			if x.Wounds.Damage() < len(mapWounds) {
+				t.Fatalf("seed %d: a battle never leaves fewer wounds than it began with: %d < %d", seed, x.Wounds.Damage(), len(mapWounds))
+			}
+		}
 		switch outcome.Result {
 		case "victory":
 			victories++

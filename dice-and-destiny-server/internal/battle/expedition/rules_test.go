@@ -510,7 +510,15 @@ func TestOneCardRuleEndTurnDrawAndRest(t *testing.T) {
 	s2.Energy = 3
 	s2.Spent = append(s2.Spent, s2.Draw...)
 	s2.Draw = []string{}
+	// With cards still in hand the turn carries on; the round ends only when
+	// neither the hand nor the draw pile holds a card.
+	inHand := len(s2.Hand)
 	act(t, s2, r, Action{Kind: "discard", Cards: s2.Hand[:1]})
+	act(t, s2, r, Action{Kind: "end_turn"})
+	if s2.Phase != PhaseTurn || len(s2.Hand) != inHand-1 || len(s2.Draw) != 0 {
+		t.Fatalf("an empty draw pile with cards in hand does not rest: phase %s hand %d", s2.Phase, len(s2.Hand))
+	}
+	act(t, s2, r, Action{Kind: "discard", Cards: append([]string{}, s2.Hand...)})
 	act(t, s2, r, Action{Kind: "end_turn"})
 	if s2.Phase != PhaseCamp || len(s2.Spent) != 0 || len(s2.Hand) != 4 || len(s2.Draw) != 11-len(s2.Hand) || s2.Wounds[0].Cards[0] != "nudge" || s2.Energy != 10 || s2.LiveCards() != 11 {
 		t.Fatalf("rest: spent %d draw %d wounds %v energy %d", len(s2.Spent), len(s2.Draw), s2.Wounds, s2.Energy)
@@ -554,7 +562,7 @@ func TestReloadedStateContinuesIdentically(t *testing.T) {
 	// One wound of four cards, so basic aid (1d3) leaves something to bandage;
 	// the draw pile then runs out at the end of the turn and the round rests.
 	s.addWound(s.Draw[:4], "test", 0)
-	s.Draw = s.Draw[4:]
+	s.Spent, s.Draw = append([]string{}, s.Draw[4:]...), []string{}
 	steps := []Action{
 		{Kind: "move", Target: &Hex{1, 0}, Cards: []string{s.Hand[0]}},
 		{Kind: "explore", Slot: "east", Cards: []string{s.Hand[1], s.Hand[2]}},

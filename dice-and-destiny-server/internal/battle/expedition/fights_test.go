@@ -554,3 +554,94 @@ func TestWoundsRegroupFromTheBattleLedger(t *testing.T) {
 		t.Fatal("grouped wounds round-trip through JSON")
 	}
 }
+
+// battleWithPiles starts a challenge with the given pre-battle piles.
+func battleWithPiles(t *testing.T, r Rules, seed uint64, hand, draw, spent, wounded []string) *State {
+	t.Helper()
+	s := newState(t, r, seed)
+	placeAll(s, r)
+	g, _ := s.hexOfGroup("brine_lone")
+	s.teleport(r, g.Pos.Add(Hex{1, 0}))
+	s.Hand, s.Draw, s.Spent, s.Wounds = append([]string{}, hand...), append([]string{}, draw...), append([]string{}, spent...), nil
+	s.addWound(wounded, "an old hit", 0)
+	s.Energy = 15
+	act(t, s, r, Action{Kind: "challenge", Group: g.ID})
+	return s
+}
+
+func subset(part, whole []string) bool { return len(remove(whole, part)) == len(whole)-len(part) }
+
+// A battle can never leave the player better off than they went in, pile by
+// pile from the worst (removed) to the best (hand): hand at most what it was,
+// hand+draw at most what they were, and so on. The user's example: 4/4/4 in,
+// 5/5/2 out → a random 4 of the hand, a random 4 of the draw pile, and the
+// other two to Spent.
+func TestBattleCannotLeaveThePlayerBetterOff(t *testing.T) {
+	r := testRules(t)
+	deck := starterDeck
+	s := battleWithPiles(t, r, 6, deck[0:4], deck[4:8], deck[8:12], nil)
+	twin := reloaded(t, s)
+	end := BattleEnd{BattleID: s.PendingBattle.ID, Result: "victory", Hand: []string{deck[0], deck[1], deck[4], deck[8], deck[9]}, Draw: []string{deck[2], deck[3], deck[5], deck[6], deck[10]}, Spent: []string{deck[7], deck[11]}, Energy: 40}
+	_, report, err := s.ResolveBattle(r, end)
+	must(t, err)
+	// The fight ended the turn; the end-of-turn draw found the hand full.
+	if len(s.Hand) != 4 || len(s.Draw) != 4 || len(s.Spent) != 4 || s.Wounds.Damage() != 0 || report.HeldBack != 2 || s.Energy != 15 {
+		t.Fatalf("4/4/4 in, 5/5/2 out → 4/4/4: hand %v draw %v spent %v held back %d energy %d", s.Hand, s.Draw, s.Spent, report.HeldBack, s.Energy)
+	}
+	if !subset(s.Hand, end.Hand) || !subset(s.Draw, end.Draw) || !subset(end.Spent, s.Spent) {
+		t.Fatalf("the kept hand and draw come from their own piles; the rest drop to Spent: hand %v draw %v spent %v", s.Hand, s.Draw, s.Spent)
+	}
+	if s.Phase != PhaseTurn {
+		t.Fatalf("with cards left the player keeps going: phase %s", s.Phase)
+	}
+	_, _, err = twin.ResolveBattle(r, end)
+	must(t, err)
+	if !reflect.DeepEqual(twin.Hand, s.Hand) || !reflect.DeepEqual(twin.Draw, s.Draw) || !reflect.DeepEqual(twin.Spent, s.Spent) {
+		t.Fatal("the random choice comes from the save's RNG and replays after a reload")
+	}
+
+	// Damage taken in battle stays: 1 Spent + 1 wounded in, the Spent card
+	// lost → 0 Spent + 2 wounded out, nothing held back.
+	s = battleWithPiles(t, r, 7, deck[0:4], deck[4:10], deck[10:11], deck[11:12])
+	end = BattleEnd{BattleID: s.PendingBattle.ID, Result: "victory", Hand: deck[0:4], Draw: deck[4:10], Removed: deck[10:12], Energy: 5, Wounds: []BattleWound{{Round: 1, Source: "Brine Lash", Cards: deck[10:11]}}}
+	_, report, err = s.ResolveBattle(r, end)
+	must(t, err)
+	if s.Wounds.Damage() != 2 || len(s.Spent) != 0 || report.HeldBack != 0 {
+		t.Fatalf("battle damage stays: wounds %v spent %v held back %d", s.Wounds, s.Spent, report.HeldBack)
+	}
+
+	// A heal in battle does not carry out: 2 wounded in, 0 out → 2 cards go
+	// back to the removed pile (the wounds keep the old damage).
+	s = battleWithPiles(t, r, 8, deck[0:4], deck[4:10], nil, deck[10:12])
+	end = BattleEnd{BattleID: s.PendingBattle.ID, Result: "victory", Hand: deck[0:6], Draw: deck[6:12], Energy: 5}
+	_, report, err = s.ResolveBattle(r, end)
+	must(t, err)
+	if s.Wounds.Damage() != 2 || s.LiveCards() != 10 || len(s.Hand)+len(s.Draw) > 10 || report.HeldBack < 2 {
+		t.Fatalf("a battle heal does not carry out: wounds %v live %d held back %d", s.Wounds, s.LiveCards(), report.HeldBack)
+	}
+}
+
+// After a fight the player returns to the map with what the battle left: an
+// empty draw pile is no reason to camp while cards remain in hand.
+func TestNoForcedCampAfterABattleWithCardsLeft(t *testing.T) {
+	r := testRules(t)
+	deck := starterDeck
+	s := battleWithPiles(t, r, 9, deck[0:5], nil, deck[5:9], deck[9:12])
+	end := BattleEnd{BattleID: s.PendingBattle.ID, Result: "victory", Hand: deck[0:5], Spent: deck[5:9], Removed: deck[9:12], Energy: 10}
+	_, report, err := s.ResolveBattle(r, end)
+	must(t, err)
+	if s.Phase != PhaseTurn || s.Camp != nil || len(s.Hand) != 5 || report.ForcedRest {
+		t.Fatalf("five cards in hand and an empty draw pile: no camp, keep playing: phase %s hand %d", s.Phase, len(s.Hand))
+	}
+	if !s.View(r, 1).Turn.CanMakeCamp {
+		t.Fatal("Make camp stays available")
+	}
+	// Playing out the hand ends the round with a rest.
+	for s.Phase == PhaseTurn && len(s.Hand) > 0 {
+		act(t, s, r, Action{Kind: "discard", Cards: s.Hand[:1]})
+		act(t, s, r, Action{Kind: "end_turn"})
+	}
+	if s.Phase != PhaseCamp || s.Camp.Reason != "deck_empty" {
+		t.Fatalf("once no card is left the round rests: phase %s", s.Phase)
+	}
+}

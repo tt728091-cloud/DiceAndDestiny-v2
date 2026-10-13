@@ -374,9 +374,11 @@ func (s *State) endTurn(r Rules) error {
 	s.nightHuntersRoam(r)
 	drew := s.drawUpTo(r)
 	s.log("Turn %d ends; drew %d.", s.Turn.Number, drew)
-	if len(s.Draw) == 0 {
-		// One pass through the deck is one round: the round ends with a rest.
-		s.log("The draw pile is empty: round %d is over.", s.Round)
+	if len(s.Draw) == 0 && len(s.Hand) == 0 {
+		// One pass through the deck is one round: when no card is left in
+		// hand or draw pile, the round ends with a rest. Cards still in hand
+		// carry on into the next turn; Make camp is always open.
+		s.log("No cards left in hand or draw pile: round %d is over.", s.Round)
 		s.beginRest(r, "deck_empty", 0)
 		return nil
 	}

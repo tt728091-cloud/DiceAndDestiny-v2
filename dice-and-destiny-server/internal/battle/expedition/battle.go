@@ -146,6 +146,82 @@ type BattleWound struct {
 	Cards  []string `json:"cards"`
 }
 
+// capBattlePiles keeps a battle from leaving the player better off than they
+// went in. From the best pile to the worst — hand, draw pile, Spent, removed —
+// each tier together with the better ones may hold at most what they held
+// going in: the hand at most its pre-battle size, hand and draw together at
+// most theirs, and so on, so wounds can only grow. A pile over its room keeps
+// a random selection of its own cards (in their order); the rest drop to the
+// next pile with room, at random positions in the draw pile. Cards never
+// leave the expedition, and the RNG is the save's own, so a reload replays it.
+func (s *State) capBattlePiles(pb *PendingBattle, end BattleEnd) (BattleEnd, int) {
+	before := []int{len(pb.HandBefore), len(pb.DrawBefore), len(pb.SpentBefore)}
+	piles := [][]string{append([]string{}, end.Hand...), append([]string{}, end.Draw...), append([]string{}, end.Spent...)}
+	var overflow []string
+	limit, kept, moved := 0, 0, 0
+	for i := range piles {
+		limit += before[i]
+		room := limit - kept
+		own := piles[i]
+		if len(own) > room {
+			keep := map[int]bool{}
+			for _, at := range s.pick(len(own), room) {
+				keep[at] = true
+			}
+			var stay []string
+			for at, card := range own {
+				if keep[at] {
+					stay = append(stay, card)
+				} else {
+					overflow = append(overflow, card)
+					moved++
+				}
+			}
+			piles[i] = stay
+		} else {
+			// Room left: cards pushed down from a better pile settle here.
+			for free := room - len(own); free > 0 && len(overflow) > 0; free-- {
+				at := s.intn(len(overflow))
+				card := overflow[at]
+				overflow = append(overflow[:at:at], overflow[at+1:]...)
+				if i == 1 {
+					pos := s.intn(len(piles[i]) + 1)
+					piles[i] = append(piles[i][:pos:pos], append([]string{card}, piles[i][pos:]...)...)
+				} else {
+					piles[i] = append(piles[i], card)
+				}
+			}
+		}
+		kept += len(piles[i])
+	}
+	end.Hand, end.Draw, end.Spent = nonNil(piles[0]), nonNil(piles[1]), nonNil(piles[2])
+	end.Removed = append(append([]string{}, end.Removed...), overflow...)
+	if moved > 0 {
+		s.log("The battle cannot leave you better off: %d card(s) went back to worse piles.", moved)
+	}
+	return end, moved
+}
+
+// pick chooses k distinct indexes of n at random (seeded).
+func (s *State) pick(n, k int) []int {
+	order := make([]int, n)
+	for i := range order {
+		order[i] = i
+	}
+	for i := 0; i < k && i < n; i++ {
+		j := i + s.intn(n-i)
+		order[i], order[j] = order[j], order[i]
+	}
+	return order[:min(k, n)]
+}
+
+func nonNil(list []string) []string {
+	if list == nil {
+		return []string{}
+	}
+	return list
+}
+
 // woundsAfterBattle regroups the removed pile the battle returned: the
 // pre-battle wounds keep the cards still removed, each battle wound becomes a
 // grouping of the cards it took, and anything the ledger does not explain
@@ -216,6 +292,7 @@ func (s *State) ResolveBattle(r Rules, end BattleEnd) (Rewards, *BattleReport, e
 	s.PendingBattle = nil
 	switch end.Result {
 	case "victory":
+		end, report.HeldBack = s.capBattlePiles(pb, end)
 		s.Hand, s.Draw, s.Spent = append([]string{}, end.Hand...), append([]string{}, end.Draw...), append([]string{}, end.Spent...)
 		report.NewWounds = s.woundsAfterBattle(pb, end, pb.Name)
 		s.Energy = min(end.Energy, pb.EnergyIn)
@@ -267,6 +344,7 @@ func (s *State) ResolveBattle(r Rules, end BattleEnd) (Rewards, *BattleReport, e
 		}
 	case "defeat":
 		if pb.Warlord {
+			end, report.HeldBack = s.capBattlePiles(pb, end)
 			s.Hand, s.Draw, s.Spent = append([]string{}, end.Hand...), append([]string{}, end.Draw...), append([]string{}, end.Spent...)
 			report.NewWounds = s.woundsAfterBattle(pb, end, pb.Name)
 			s.Energy = min(end.Energy, pb.EnergyIn)

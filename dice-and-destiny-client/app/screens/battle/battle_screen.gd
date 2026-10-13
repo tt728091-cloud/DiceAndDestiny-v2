@@ -2776,6 +2776,7 @@ func _build_expedition_completion() -> void:
 		var extras: Array = []
 		if int(report.get("early_xp", 0)) > 0: extras.append("Early strike: +%d XP, %d relic choice pending" % [int(report.early_xp), int(report.get("relic_choices", 0))])
 		if report.get("region_won", false): extras.append("Region won: wounds mended: %d health" % int(report.get("wounds_mended", 0)))
+		if int(report.get("held_back", 0)) > 0: extras.append("%d card%s back to worse piles (no better than you came in)" % [int(report.held_back), "" if int(report.held_back) == 1 else "s"])
 		if not extras.is_empty(): lines.append(" · ".join(extras))
 		reward.text = "\n".join(lines)
 		reward.add_theme_color_override("font_color", Color("2f6b3a") if str(outcome.get("result", "")) == "victory" else Color("8a2f24"))
