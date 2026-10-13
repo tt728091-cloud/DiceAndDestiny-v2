@@ -1,19 +1,16 @@
 class_name ExpeditionHexButton
 extends Button
-## One hex of the expedition map: a pointy-top hexagon drawn from the
-## authority's view (terrain, fog, site, enemy, player) that only accepts
-## clicks inside the hexagon. It is a Button so the debug inspector can
-## activate it like any other control.
+## One hex of the expedition chart: the static tile material only — a
+## watercolour wash over the parchment, mottle, pencil hatch for unknown
+## ground, repeated ink motifs, a bevel and the ink grid. Everything that is
+## information rather than geography (chips, pieces, highlights, cost chits)
+## is drawn by the marks layer above. The button accepts clicks only inside
+## the hexagon so the debug inspector can activate it like any other control.
 
-const ICONS := preload("res://presentation/battle/battle_icons.gd")
+const STYLE := preload("res://app/screens/map/map_style.gd")
 
-const TERRAIN_COLORS := {
-	"plains": Color("7da85a"), "hills": Color("a88a55"), "forest": Color("3f6f3c"),
-	"marsh": Color("5f7a62"), "lake": Color("3b6f9c"), "mountain": Color("6e6a73"),
-}
-const SITE_GLYPHS := {
-	"village": "⌂", "monastery": "⛩", "town": "♜", "ruins": "☗", "grotto": "◓", "event": "?", "keep": "♖", "tower": "♖",
-}
+const MOTIF_COUNT := {"forest": 3, "marsh": 3, "plains": 2, "hills": 2, "lake": 2, "mountain": 2}
+const ANCHORS := [Vector2(-0.42, 0.10), Vector2(0.42, 0.10), Vector2(0.0, -0.12)]
 
 var radius := 34.0
 var data: Dictionary = {}
@@ -22,88 +19,81 @@ var selected := false
 var highlight := ""      # "", "move", "explore", "blocked", "provoke", "target"
 var slot_kind := ""      # for unexplored slot hexes
 var warlord := false
+## The screen, for the pan offset that keeps the mottle continuous across hexes.
+var screen: Node
 
 func _init() -> void:
 	flat = true
 	focus_mode = Control.FOCUS_NONE
 	toggle_mode = false
 	mouse_filter = Control.MOUSE_FILTER_STOP
+	texture_repeat = CanvasItem.TEXTURE_REPEAT_ENABLED
 	for name in ["normal", "hover", "pressed", "focus", "disabled", "hover_pressed"]:
 		add_theme_stylebox_override(name, StyleBoxEmpty.new())
 	add_theme_color_override("font_color", Color.TRANSPARENT)
 
 ## Pointy-top hexagon corners around the centre.
 static func corners(center: Vector2, r: float) -> PackedVector2Array:
-	var points := PackedVector2Array()
-	for i in 6:
-		var angle := deg_to_rad(60.0 * i - 30.0)
-		points.append(center + Vector2(cos(angle), sin(angle)) * r)
-	return points
+	return STYLE.corners(center, r)
 
 func _has_point(point: Vector2) -> bool:
 	return Geometry2D.is_point_in_polygon(point, corners(size * 0.5, radius))
 
 func _draw() -> void:
+	if state == "unexplored": return
 	var center := size * 0.5
-	var polygon := corners(center, radius - 1.0)
+	var points := corners(center, radius - 0.6)
 	var terrain := str(data.get("terrain", ""))
-	var fill: Color = TERRAIN_COLORS.get(terrain, Color("3a3f4a"))
+	# a. Wash: the watercolour pool over the parchment.
+	var wash: Color = STYLE.WASH.get(terrain, STYLE.WASH_UNKNOWN)
+	var alpha := 0.72
 	match state:
-		"unexplored":
-			fill = Color("1b2230") if slot_kind != "core" else Color("2b1f2c")
-		"remembered":
-			fill = fill.darkened(0.45).lerp(Color("4a4f58"), 0.35)
-		"unknown":
-			fill = fill.darkened(0.3)
-	draw_colored_polygon(polygon, fill)
-	if state == "remembered" or state == "unknown":
-		# Hatching: revealed terrain out of sight.
-		for i in range(-3, 4):
-			var offset := i * radius * 0.45
-			draw_line(center + Vector2(-radius * 0.7, offset - radius * 0.3), center + Vector2(radius * 0.7, offset + radius * 0.3), Color(0, 0, 0, 0.18), 1.0)
-	var edge := Color("2a2f38")
-	var width := 1.5
-	if state == "in_sight": edge = Color("e6c17c"); width = 2.0
-	if highlight == "move": edge = Color("8fd3ff"); width = 3.0
-	if highlight == "explore": edge = Color("ffd166"); width = 3.0
-	if highlight == "provoke": edge = Color("ff6b6b"); width = 3.0
-	if highlight == "target": edge = Color("ff9f43"); width = 3.0
-	if selected: edge = Color("ffffff"); width = 4.0
-	if state == "unexplored":
-		edge = Color("4a5668"); width = 1.0
-		var outline := corners(center, radius - 1.0)
-		for i in 6:
-			draw_dashed_line(outline[i], outline[(i + 1) % 6], edge, 1.0, 5.0)
-	else:
-		var outline := corners(center, radius - 1.0)
-		outline.append(outline[0])
-		draw_polyline(outline, edge, width, true)
-	var font := get_theme_default_font()
-	if state == "unexplored":
-		if slot_kind == "core":
-			draw_string(font, center + Vector2(-16, 4), "core", HORIZONTAL_ALIGNMENT_CENTER, 32, 11, Color("b08aa8"))
-		return
-	# Contents: site glyph, enemy marker, the player and the Warlord.
-	if data.get("site") != null:
-		var site: Dictionary = data.site
-		var glyph: String = SITE_GLYPHS.get(str(site.get("type", "")), "•")
-		var color := Color("fff0cc")
-		if site.get("defended", false): color = Color("ffb3b3")
-		if site.get("conquered", false): color = Color("ff6b6b")
-		if site.get("cleared", false) or site.get("resolved", false) or site.get("freed", false): color = Color("cfd8dc")
-		draw_string(font, center + Vector2(-9, -6), glyph, HORIZONTAL_ALIGNMENT_CENTER, 18, 18, color)
-	elif state == "unknown":
-		draw_string(font, center + Vector2(-5, 6), "?", HORIZONTAL_ALIGNMENT_CENTER, 10, 16, Color("c9d1d9"))
-	if data.get("group") != null:
-		var group: Dictionary = data.group
-		var color := Color("ff6b6b") if group.get("in_sight", false) else Color("c97a7a")
-		draw_circle(center + Vector2(0, 10), 7.0, color)
-		draw_string(font, center + Vector2(-5, 14), str(group.get("count", 1)), HORIZONTAL_ALIGNMENT_CENTER, 10, 11, Color("1a0a0a"))
-	if warlord:
-		draw_circle(center + Vector2(0, 10), 8.0, Color("d94c8a"))
-		draw_string(font, center + Vector2(-5, 15), "W", HORIZONTAL_ALIGNMENT_CENTER, 10, 12, Color("1a0a10"))
-	if data.get("player", false):
-		draw_circle(center + Vector2(0, -2), 9.0, Color("ffd166"))
-		draw_circle(center + Vector2(0, -2), 9.0, Color("3a2a00"), false, 2.0)
-	if state != "unexplored" and data.has("cost") and bool(data.get("passable", true)):
-		draw_string(font, center + Vector2(radius * 0.35, radius * 0.75), str(int(data.cost)), HORIZONTAL_ALIGNMENT_RIGHT, 16, 10, Color("e9e1d1"))
+		"remembered": wash = wash.lerp(STYLE.PAPER_SHADE, 0.6); alpha = 0.26
+		"unknown": alpha = 0.34
+	draw_colored_polygon(points, Color(wash, alpha))
+	# b. Mottle in world space so the grain never swims when panning.
+	var pan: Vector2 = screen._pan if screen != null and "_pan" in screen else Vector2.ZERO
+	var uvs := PackedVector2Array()
+	for p in points: uvs.append((p + position - pan) / 256.0)
+	var light := 0.16; var dark := 0.12
+	if state == "remembered": light = 0.10; dark = 0.08
+	elif state == "unknown": light = 0.12; dark = 0.10
+	draw_colored_polygon(points, Color(1, 1, 1, light), uvs, STYLE.speckle())
+	var shifted := PackedVector2Array()
+	for uv in uvs: shifted.append(uv + Vector2(0.37, 0.61))
+	draw_colored_polygon(points, Color(0, 0, 0, dark), shifted, STYLE.speckle())
+	# c. Pencil hatch over ground whose contents were never seen.
+	if state == "unknown":
+		var hatch_uvs := PackedVector2Array()
+		for uv in uvs: hatch_uvs.append(uv * 8.0)
+		draw_colored_polygon(points, Color(STYLE.PENCIL, 0.30), hatch_uvs, STYLE.hatch())
+	# d. Motifs, stable per hex.
+	_draw_motifs(center, terrain)
+	# e. Bevel: light on the upper-left edges, shade on the lower-right.
+	var inset := corners(center, radius - 2.0)
+	var faded := state != "in_sight"
+	draw_polyline(PackedVector2Array([inset[3], inset[4], inset[5], inset[0]]), Color(STYLE.PAPER_LIGHT, 0.125 if faded else 0.25), 1.5, true)
+	draw_polyline(PackedVector2Array([inset[0], inset[1], inset[2], inset[3]]), Color(STYLE.INK, 0.175 if faded else 0.35), 1.5, true)
+	# f. Grid.
+	match state:
+		"in_sight": STYLE.draw_ring(self, points, Color(STYLE.INK, 0.35), 1.0)
+		"remembered": STYLE.draw_ring(self, points, Color(STYLE.SEPIA, 0.45), 1.0)
+		_: STYLE.draw_dashed_ring(self, points, Color(STYLE.PENCIL, 0.8), 1.0, 3.0)
+
+func _draw_motifs(center: Vector2, terrain: String) -> void:
+	if not MOTIF_COUNT.has(terrain): return
+	var texture: Texture2D = STYLE.glyph("motif_" + terrain)
+	var modulate := Color.WHITE
+	if state == "remembered": modulate = Color(STYLE.SEPIA, 0.7)
+	elif state == "unknown": modulate = Color(STYLE.PENCIL, 0.55)
+	var rng := RandomNumberGenerator.new()
+	rng.seed = hash(Vector2i(int(data.get("q", 0)), int(data.get("r", 0))))
+	var count: int = MOTIF_COUNT[terrain]
+	for index in count:
+		var anchor: Vector2 = ANCHORS[index] if terrain != "mountain" else [ANCHORS[2], ANCHORS[1]][index]
+		var jitter := Vector2(rng.randf_range(-0.08, 0.08), rng.randf_range(-0.08, 0.08))
+		var size_factor := 0.42
+		if terrain == "mountain": size_factor = 0.60 if index == 0 else 0.34
+		var s := radius * size_factor
+		var at := center + (anchor + jitter) * radius
+		draw_texture_rect(texture, Rect2(at - Vector2.ONE * s * 0.5, Vector2.ONE * s), false, modulate)

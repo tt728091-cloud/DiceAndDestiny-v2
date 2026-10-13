@@ -4,14 +4,30 @@ extends Control
 ## authority validates. The client never computes costs, legality, rewards or
 ## hidden contents. Built in code like the campaign screens; drivable by the
 ## debug inspector (group `inspectable_battle_screen`, every control registered).
+##
+## Look: "The Surveyor's Chart" — a torn parchment chart on the battle's stone
+## table, watercolour-washed hex tiles with ink motifs, bone chips and pewter
+## "?" chips, gold and red pieces drawn by an ungraded marks layer, a stone
+## ledger with a bone-framed stat strip and parchment cards, and overlays as a
+## parchment sheet over a darkened habitat painting.
 
 const STYLE := preload("res://app/screens/character/character_style.gd")
+const CHART := preload("res://app/screens/map/map_style.gd")
+const CINEMATIC := preload("res://presentation/battle/cinematic_theme.gd")
+const ICONS := preload("res://presentation/battle/battle_icons.gd")
 const HEX := preload("res://app/screens/map/hex_button.gd")
+const SHEET := preload("res://app/screens/map/map_sheet.gd")
+const LINES := preload("res://app/screens/map/map_line_layer.gd")
+const MARKS := preload("res://app/screens/map/map_marks_layer.gd")
 const BATTLE_SCREEN := preload("res://app/screens/battle/battle_screen.tscn")
 const LEARNED_GATEWAY := preload("res://local_client/learned_battle/learned_battle_gateway.gd")
 const CAMPAIGN_PREPARE := preload("res://app/screens/campaign/campaign_prepare.gd")
 const CAMPAIGN_SCREEN := "res://app/screens/campaign/campaign_screen.gd"
 const BattleCardScene := preload("res://presentation/cards/battle_card.gd")
+
+const HEX_OFFSETS := [Vector2i(0, 0), Vector2i(1, 0), Vector2i(1, -1), Vector2i(0, -1), Vector2i(-1, 0), Vector2i(-1, 1), Vector2i(0, 1)]
+const TERRAIN_ORDER := ["plains", "hills", "forest", "marsh", "lake", "mountain"]
+const NONE := Vector2i(999, 999)
 
 var save_id := ""
 ## The finished battle's campaign block, handed over by the battle screen.
@@ -19,29 +35,48 @@ var last_battle: Dictionary = {}
 var status: Dictionary = {}
 var view: Dictionary = {}
 
-var selected_hex := Vector2i(999, 999)
+var selected_hex := NONE
 var selected_cards: Array = []
 var energy_payment := 0
 var use_siege := false
 var dismissed_rest := ""
 var dismissed_event := ""
+## What the chart layers draw, built from the view by _render_map.
+var map_model: Dictionary = {}
 var _hex_buttons: Dictionary = {}
 var _hex_radius := 30.0
 var _map_origin := Vector2.ZERO
 var _pan := Vector2.ZERO
 var _dragging := false
 var _previous_catalog: Dictionary = {}
+var _last_player := NONE
+var _survey_key := false
+var _survey_locked := false
+var _legend_filter := ""
+static var _legend_open := false
 
 var _title: Label
 var _day: Label
+var _day_icon: TextureRect
 var _message: Label
+var _map_panel: PanelContainer
 var _map_area: Control
 var _map_canvas: Control
+var _chart: Control
+var _sheet: Control
+var _lines: Control
+var _marks: Control
+var _vignette: TextureRect
+var _scrim: ColorRect
 var _hud: VBoxContainer
 var _hud_scroll: ScrollContainer
+var _footer: HBoxContainer
 var _hand_row: HBoxContainer
 var _overlay: PanelContainer
 var _overlay_body: VBoxContainer
+var _overlay_backdrop: TextureRect
+var _overlay_sheet: PanelContainer
+var _overlay_scroll: ScrollContainer
 var _all_saves: Button
 var _back: Button
 
@@ -64,35 +99,81 @@ func _build() -> void:
 	for side in ["left", "right", "top", "bottom"]: margin.add_theme_constant_override("margin_" + side, 14)
 	add_child(margin)
 	var body := VBoxContainer.new(); body.add_theme_constant_override("separation", 8); margin.add_child(body)
+	# Header on the stone.
 	var header := HBoxContainer.new(); header.add_theme_constant_override("separation", 12); body.add_child(header)
 	var titles := VBoxContainer.new(); titles.size_flags_horizontal = Control.SIZE_EXPAND_FILL; titles.add_theme_constant_override("separation", 0); header.add_child(titles)
 	STYLE.label(titles, "DICE & DESTINY  /  CAMPAIGN  /  EXPEDITION", 12, STYLE.GOLD)
-	_title = STYLE.label(titles, "Expedition", 26)
-	_day = STYLE.label(titles, "", 16, STYLE.GOLD_BRIGHT)
-	_all_saves = _button(header, "All campaigns", _show_saves, "expedition.all_campaigns")
-	_all_saves.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-	_back = _button(header, "Back to menu", _back_to_menu, "expedition.back")
-	_back.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-	_message = STYLE.label(body, "", 14, STYLE.MUTED)
+	_title = STYLE.label(titles, "Expedition", 26); CHART.stone_text(_title, true)
+	var day_row := HBoxContainer.new(); day_row.add_theme_constant_override("separation", 6); titles.add_child(day_row)
+	_day_icon = CHART.icon_rect(day_row, CHART.glyph("sun", "ivory"), 18)
+	_day = STYLE.label(day_row, "", 16, Color("ffe2a0")); CHART.stone_text(_day, false, Color("ffe2a0")); _day.autowrap_mode = TextServer.AUTOWRAP_OFF; _day.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_all_saves = _stone_button(header, "All campaigns", _show_saves, "expedition.all_campaigns")
+	_back = _stone_button(header, "Back to menu", _back_to_menu, "expedition.back")
+	_message = STYLE.label(body, "", 14, CHART.RED_ON_STONE); CHART.stone_text(_message, false, CHART.RED_ON_STONE)
 	var columns := HBoxContainer.new(); columns.add_theme_constant_override("separation", 10); columns.size_flags_vertical = Control.SIZE_EXPAND_FILL; body.add_child(columns)
-	# Left: the map (pan by dragging) with the hand beneath it.
+	# Left: the chart on the table (drag to pan) with the hand beneath it.
 	var left := VBoxContainer.new(); left.size_flags_horizontal = Control.SIZE_EXPAND_FILL; left.size_flags_vertical = Control.SIZE_EXPAND_FILL; left.add_theme_constant_override("separation", 6); columns.add_child(left)
-	var map_panel := PanelContainer.new(); map_panel.add_theme_stylebox_override("panel", STYLE.box("0d141c", "22323f", 4, 10)); map_panel.size_flags_vertical = Control.SIZE_EXPAND_FILL; map_panel.clip_contents = true; left.add_child(map_panel)
-	_map_area = Control.new(); _map_area.name = "MapArea"; _map_area.clip_contents = true; _map_area.mouse_filter = Control.MOUSE_FILTER_PASS; map_panel.add_child(_map_area)
+	_map_panel = PanelContainer.new(); _map_panel.add_theme_stylebox_override("panel", CHART.stone_box(Color(0, 0, 0, 0), CHART.STONE_KEYLINE, 4, 4)); _map_panel.size_flags_vertical = Control.SIZE_EXPAND_FILL; _map_panel.clip_contents = true; left.add_child(_map_panel)
+	_map_area = Control.new(); _map_area.name = "MapArea"; _map_area.clip_contents = true; _map_area.mouse_filter = Control.MOUSE_FILTER_PASS; _map_panel.add_child(_map_area)
 	_map_area.gui_input.connect(_map_input)
 	_map_area.resized.connect(_layout_map)
-	_map_canvas = Control.new(); _map_canvas.name = "MapCanvas"; _map_canvas.mouse_filter = Control.MOUSE_FILTER_PASS; _map_area.add_child(_map_canvas)
-	var hand_panel := PanelContainer.new(); hand_panel.add_theme_stylebox_override("panel", STYLE.box(STYLE.PANEL, "22323f", 8, 10)); hand_panel.custom_minimum_size.y = 196; left.add_child(hand_panel)
+	var table := TextureRect.new(); table.name = "Table"; table.texture = load("res://assets/battle/board_background.png")
+	table.expand_mode = TextureRect.EXPAND_IGNORE_SIZE; table.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED; table.modulate = Color(0.85, 0.85, 0.9)
+	table.mouse_filter = Control.MOUSE_FILTER_IGNORE; table.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT); _map_area.add_child(table)
+	_chart = Control.new(); _chart.name = "Chart"; _chart.mouse_filter = Control.MOUSE_FILTER_PASS; _chart.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT); _map_area.add_child(_chart)
+	_sheet = SHEET.new(); _sheet.name = "Sheet"; _sheet.screen = self; _sheet.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT); _chart.add_child(_sheet)
+	_map_canvas = Control.new(); _map_canvas.name = "MapCanvas"; _map_canvas.mouse_filter = Control.MOUSE_FILTER_PASS; _map_canvas.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT); _chart.add_child(_map_canvas)
+	_lines = LINES.new(); _lines.name = "Lines"; _lines.screen = self; _lines.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT); _chart.add_child(_lines)
+	_vignette = TextureRect.new(); _vignette.name = "Vignette"; _vignette.texture = CHART.vignette(false)
+	_vignette.expand_mode = TextureRect.EXPAND_IGNORE_SIZE; _vignette.stretch_mode = TextureRect.STRETCH_SCALE
+	_vignette.mouse_filter = Control.MOUSE_FILTER_IGNORE; _vignette.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT); _map_area.add_child(_vignette)
+	_marks = MARKS.new(); _marks.name = "Marks"; _marks.screen = self; _marks.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT); _map_area.add_child(_marks)
+	_scrim = ColorRect.new(); _scrim.name = "Scrim"; _scrim.color = Color(0.02, 0.03, 0.04, 0.55); _scrim.mouse_filter = Control.MOUSE_FILTER_STOP
+	_scrim.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT); _scrim.visible = false; _map_area.add_child(_scrim)
+	var hand_panel := PanelContainer.new(); hand_panel.add_theme_stylebox_override("panel", CHART.stone_box(Color(CHART.DARK_SURFACE, 0.92), CHART.BRONZE, 8, 6)); hand_panel.custom_minimum_size.y = 196; left.add_child(hand_panel)
 	var hand_scroll := ScrollContainer.new(); hand_scroll.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED; hand_panel.add_child(hand_scroll)
-	_hand_row = HBoxContainer.new(); _hand_row.name = "Hand"; _hand_row.add_theme_constant_override("separation", 8); hand_scroll.add_child(_hand_row)
-	# Right: the HUD and actions.
-	var right := PanelContainer.new(); right.add_theme_stylebox_override("panel", STYLE.box(STYLE.PANEL, "22323f", 10, 10)); right.custom_minimum_size.x = 390; right.size_flags_vertical = Control.SIZE_EXPAND_FILL; columns.add_child(right)
-	_hud_scroll = ScrollContainer.new(); _hud_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED; right.add_child(_hud_scroll)
+	_hand_row = HBoxContainer.new(); _hand_row.name = "Hand"; _hand_row.add_theme_constant_override("separation", 10); hand_scroll.add_child(_hand_row)
+	# Right: the stone ledger with a pinned footer.
+	var right := PanelContainer.new(); right.add_theme_stylebox_override("panel", CHART.stone_box(CHART.STONE, CHART.STONE_KEYLINE, 10, 6)); right.custom_minimum_size.x = 390; right.size_flags_vertical = Control.SIZE_EXPAND_FILL; columns.add_child(right)
+	var stone := TextureRect.new(); stone.name = "Stone"; stone.texture = load("res://assets/battle/board_background.png")
+	stone.expand_mode = TextureRect.EXPAND_IGNORE_SIZE; stone.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED; stone.modulate = Color(0.5, 0.5, 0.55)
+	stone.mouse_filter = Control.MOUSE_FILTER_IGNORE; right.add_child(stone)
+	var ledger := VBoxContainer.new(); ledger.name = "Ledger"; ledger.add_theme_constant_override("separation", 6); ledger.theme = CHART.ledger_theme(); right.add_child(ledger)
+	_hud_scroll = ScrollContainer.new(); _hud_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED; _hud_scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL; ledger.add_child(_hud_scroll)
 	_hud = VBoxContainer.new(); _hud.name = "HUD"; _hud.size_flags_horizontal = Control.SIZE_EXPAND_FILL; _hud.add_theme_constant_override("separation", 8); _hud_scroll.add_child(_hud)
-	# Centre overlay for events, camp, rest and battle summaries.
-	_overlay = PanelContainer.new(); _overlay.name = "Overlay"; _overlay.add_theme_stylebox_override("panel", STYLE.box("111c27", STYLE.GOLD, 18, 12, 2)); _overlay.visible = false
-	_overlay.set_anchors_preset(Control.PRESET_CENTER); add_child(_overlay)
-	_overlay_body = VBoxContainer.new(); _overlay_body.add_theme_constant_override("separation", 8); _overlay_body.custom_minimum_size.x = 440; _overlay.add_child(_overlay_body)
+	_footer = HBoxContainer.new(); _footer.name = "Footer"; _footer.custom_minimum_size.y = 48; _footer.add_theme_constant_override("separation", 6); ledger.add_child(_footer)
+	# Centre overlay: a bone-framed scene with a painting and a parchment sheet.
+	_overlay = PanelContainer.new(); _overlay.name = "Overlay"; _overlay.add_theme_stylebox_override("panel", CINEMATIC.bone_panel(Color.WHITE, 10)); _overlay.visible = false
+	_overlay.clip_contents = true; _overlay.theme = CHART.ledger_theme()
+	add_child(_overlay)
+	var backdrop := Control.new(); backdrop.name = "Backdrop"; backdrop.mouse_filter = Control.MOUSE_FILTER_IGNORE; _overlay.add_child(backdrop)
+	_overlay_backdrop = TextureRect.new(); _overlay_backdrop.expand_mode = TextureRect.EXPAND_IGNORE_SIZE; _overlay_backdrop.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
+	_overlay_backdrop.mouse_filter = Control.MOUSE_FILTER_IGNORE; _overlay_backdrop.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT); backdrop.add_child(_overlay_backdrop)
+	var overlay_vignette := TextureRect.new(); overlay_vignette.texture = CHART.vignette(true); overlay_vignette.expand_mode = TextureRect.EXPAND_IGNORE_SIZE; overlay_vignette.stretch_mode = TextureRect.STRETCH_SCALE
+	overlay_vignette.mouse_filter = Control.MOUSE_FILTER_IGNORE; overlay_vignette.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT); backdrop.add_child(overlay_vignette)
+	var sheet_margin := MarginContainer.new(); sheet_margin.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	for side in ["left", "right", "top", "bottom"]: sheet_margin.add_theme_constant_override("margin_" + side, 24)
+	_overlay.add_child(sheet_margin)
+	_overlay_sheet = PanelContainer.new(); _overlay_sheet.name = "Sheet"
+	var paper := CINEMATIC.paper()
+	for side in [SIDE_LEFT, SIDE_TOP, SIDE_RIGHT, SIDE_BOTTOM]: paper.set_content_margin(side, 18)
+	_overlay_sheet.add_theme_stylebox_override("panel", paper)
+	_overlay_sheet.size_flags_horizontal = Control.SIZE_SHRINK_CENTER; _overlay_sheet.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	sheet_margin.add_child(_overlay_sheet)
+	_overlay_scroll = ScrollContainer.new(); _overlay_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED; _overlay_scroll.custom_minimum_size = Vector2(560, 120); _overlay_sheet.add_child(_overlay_scroll)
+	_overlay_body = VBoxContainer.new(); _overlay_body.add_theme_constant_override("separation", 8); _overlay_body.custom_minimum_size.x = 540; _overlay_body.size_flags_horizontal = Control.SIZE_EXPAND_FILL; _overlay_scroll.add_child(_overlay_body)
+
+## The battle's dark gold-edged button, for the stone.
+func _stone_button(parent: Node, text: String, callback: Callable, control_id: String) -> Button:
+	var button := _button(parent, text, callback, control_id)
+	button.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	button.add_theme_font_override("font", CHART.serif()); button.add_theme_font_size_override("font_size", 16)
+	button.add_theme_stylebox_override("normal", CINEMATIC.panel(CHART.DARK_SURFACE, CINEMATIC.GOLD))
+	button.add_theme_stylebox_override("hover", CINEMATIC.panel(Color("34372eea"), Color("e5c47b")))
+	button.add_theme_stylebox_override("pressed", CINEMATIC.panel(Color("4a4230f2"), Color("f4d187")))
+	button.add_theme_stylebox_override("disabled", CINEMATIC.panel(CHART.DARK_SURFACE, Color("625d4c")))
+	button.add_theme_color_override("font_color", CINEMATIC.IVORY)
+	return button
 
 # Data -----------------------------------------------------------------------
 func refresh() -> void:
@@ -120,13 +201,12 @@ func _act(action: Dictionary) -> bool:
 		refresh()
 		return false
 	_message.text = ""
-	selected_cards.clear(); energy_payment = 0; use_siege = false; selected_hex = Vector2i(999, 999)
+	selected_cards.clear(); energy_payment = 0; use_siege = false; selected_hex = NONE
 	_apply(response.result)
 	return true
 
 func _show_error(text: String) -> void:
 	_message.text = text
-	_message.add_theme_color_override("font_color", STYLE.LOSS)
 	var inspector = get_node_or_null("/root/GameInspector")
 	if inspector != null and inspector.has_method("record_error"): inspector.record_error("expedition: " + text, {"save_id": save_id})
 
@@ -143,10 +223,17 @@ func _render() -> void:
 	if view.is_empty(): return
 	_title.text = "%s · %s" % [str(status.get("save_name", "Expedition")), str(view.get("region_name", ""))]
 	_day.text = str(view.get("day_label", ""))
+	var night: bool = view.get("night", false)
+	_day_icon.texture = CHART.glyph("moon" if night else "sun", "ivory")
+	_chart.modulate = CHART.NIGHT_GRADE if night else Color.WHITE
+	_vignette.texture = CHART.vignette(night)
 	_render_map()
 	_render_hand()
 	_render_hud()
 	_render_overlay()
+	_scrim.visible = _overlay.visible
+	map_model["overlay_open"] = _overlay.visible
+	_marks.queue_redraw()
 
 ## Pointy-top axial → canvas pixels.
 func _hex_center(q: int, r: int) -> Vector2:
@@ -154,13 +241,20 @@ func _hex_center(q: int, r: int) -> Vector2:
 
 func _layout_map() -> void:
 	if view.is_empty() or _map_area == null: return
-	_hex_radius = clampf(_map_area.size.x / 30.0, 24.0, 40.0)
-	# Centre the region's full footprint (placed or not) in the map area.
+	# The radius fits the region's whole footprint (placed or not) into the map area.
+	var min_r := 999; var max_r := -999
+	for slot in _list(view, "slots"):
+		for offset in HEX_OFFSETS:
+			var rr: int = int(slot.center.r) + offset.y
+			min_r = mini(min_r, rr); max_r = maxi(max_r, rr)
+	var rows := maxi(1, max_r - min_r + 1)
+	_hex_radius = clampf(minf(_map_area.size.x / 25.0, _map_area.size.y / (rows * 1.5 + 2.0)), 28.0, 48.0)
+	# Centre the footprint in the map area.
 	var lo := Vector2(INF, INF); var hi := Vector2(-INF, -INF)
 	_map_origin = Vector2.ZERO; var pan := _pan; _pan = Vector2.ZERO
 	for slot in _list(view, "slots"):
 		for offset in HEX_OFFSETS:
-			var c := _hex_center(int(slot.center.q) + int(offset.x), int(slot.center.r) + int(offset.y))
+			var c := _hex_center(int(slot.center.q) + offset.x, int(slot.center.r) + offset.y)
 			lo = lo.min(c - Vector2.ONE * _hex_radius); hi = hi.max(c + Vector2.ONE * _hex_radius)
 	_pan = pan
 	_map_origin = (_map_area.size - (hi - lo)) * 0.5 - lo
@@ -172,8 +266,7 @@ func _layout_map() -> void:
 		button.size = Vector2.ONE * _hex_radius * 2.0
 		button.position = center - button.size * 0.5
 		button.queue_redraw()
-
-const HEX_OFFSETS := [Vector2i(0, 0), Vector2i(1, 0), Vector2i(1, -1), Vector2i(0, -1), Vector2i(-1, 0), Vector2i(-1, 1), Vector2i(0, 1)]
+	_sheet.queue_redraw(); _lines.queue_redraw(); _marks.queue_redraw()
 
 func _render_map() -> void:
 	for child in _map_canvas.get_children(): _map_canvas.remove_child(child); child.queue_free()
@@ -184,17 +277,28 @@ func _render_map() -> void:
 	for slot in _list(view, "explores"): explores[str(slot.id)] = slot
 	var targets := {}
 	for target in _list(view, "challenges") + _list(view, "enters"): targets["%d,%d" % [int(target.hex.q), int(target.hex.r)]] = target
-	# Unexplored slots first (dashed outlines), then placed hexes on top.
+	var model := {"night": view.get("night", false), "phase": str(view.get("phase", "")), "survey": _survey_key or _survey_locked, "legend_filter": _legend_filter,
+		"hover": "", "selected": "%d,%d" % [selected_hex.x, selected_hex.y] if selected_hex != NONE else "", "hexes": {}, "slots": {}, "moves": moves, "targets": targets,
+		"warlord": view.get("warlord", {}), "sight": [], "overlay_open": false, "hover_lines": [], "warlord_cell": NONE}
+	var player := Vector2i(int(view.get("player", {}).get("q", 0)), int(view.get("player", {}).get("r", 0)))
+	model["player"] = player
+	var slot_of := {}
+	# Unexplored slots first (the line layer draws their wedges), then placed hexes.
 	for slot in _list(view, "slots"):
+		var center := Vector2i(int(slot.center.q), int(slot.center.r))
+		var cells: Array = []
+		for offset in HEX_OFFSETS: cells.append(center + offset)
+		var explore: Dictionary = explores.get(str(slot.id), {})
+		model.slots[str(slot.id)] = {"kind": str(slot.kind), "center": center, "placed": slot.get("placed", false), "adjacent": not explore.is_empty(), "ready": explore.get("ready", false), "why": str(explore.get("why", "")), "explore_cost": int(view.get("config", {}).get("explore_cost", 2)), "hexes": cells}
+		for cell in cells: slot_of["%d,%d" % [cell.x, cell.y]] = str(slot.id)
 		if slot.get("placed", false): continue
-		for offset in HEX_OFFSETS:
-			var q: int = int(slot.center.q) + int(offset.x); var r: int = int(slot.center.r) + int(offset.y)
-			var button = _hex_button(q, r, {"q": q, "r": r, "terrain": ""}, "unexplored")
+		for cell in cells:
+			var button = _hex_button(cell.x, cell.y, {"q": cell.x, "r": cell.y, "terrain": ""}, "unexplored")
 			button.slot_kind = str(slot.kind)
 			button.set_meta("slot", str(slot.id))
-			if explores.has(str(slot.id)):
-				button.highlight = "explore" if slot.get("ready", false) else "blocked"
-				button.tooltip_text = "Unexplored %s slot %s\nExplore: %d Move%s" % [slot.kind, slot.id, int(view.config.explore_cost), "" if explores[str(slot.id)].get("ready", false) else "\n" + str(explores[str(slot.id)].get("why", ""))]
+			if not explore.is_empty():
+				button.highlight = "explore" if explore.get("ready", false) else "blocked"
+				button.tooltip_text = "Unexplored %s slot %s\nExplore: %d Move%s" % [slot.kind, slot.id, int(view.config.explore_cost), "" if explore.get("ready", false) else "\n" + str(explore.get("why", ""))]
 			else:
 				button.tooltip_text = "Unexplored %s slot %s\nStand next to it to explore" % [slot.kind, slot.id]
 	for hex in _list(view, "hexes"):
@@ -204,15 +308,25 @@ func _render_map() -> void:
 		elif hex.get("seen", false): state = "remembered"
 		var button = _hex_button(q, r, hex, state)
 		var key := "%d,%d" % [q, r]
+		var highlight := ""
 		if moves.has(key):
 			var move: Dictionary = moves[key]
-			if not str(move.get("blocked", "")).is_empty(): button.highlight = "blocked"
-			elif not str(move.get("provokes", "")).is_empty(): button.highlight = "provoke"
-			else: button.highlight = "move"
-		if targets.has(key): button.highlight = "target"
+			if not str(move.get("blocked", "")).is_empty(): highlight = "blocked"
+			elif not str(move.get("provokes", "")).is_empty(): highlight = "provoke"
+			else: highlight = "move"
+		if targets.has(key): highlight = "target"
+		button.highlight = highlight
 		button.warlord = bool(hex.get("warlord", false))
 		button.selected = selected_hex == Vector2i(q, r)
 		button.tooltip_text = _hex_tooltip(hex, moves.get(key, {}))
+		model.hexes[key] = {"data": hex, "state": state, "highlight": highlight, "slot": slot_of.get(key, ""), "cell": Vector2i(q, r)}
+		if hex.get("in_sight", false): model.sight.append(Vector2i(q, r))
+		if hex.get("warlord", false): model["warlord_cell"] = Vector2i(q, r)
+	if model.warlord_cell == NONE and view.get("warlord", {}).get("last_seen") != null:
+		model["warlord_cell"] = Vector2i(int(view.warlord.last_seen.q), int(view.warlord.last_seen.r))
+	map_model = model
+	if _last_player != NONE and _last_player != player and view.get("phase", "") == "turn": _marks.start_slide(_last_player)
+	_last_player = player
 	_layout_map()
 
 func _hex_button(q: int, r: int, data: Dictionary, state: String):
@@ -220,18 +334,43 @@ func _hex_button(q: int, r: int, data: Dictionary, state: String):
 	button.name = "Hex_%d_%d" % [q, r]
 	button.data = data
 	button.state = state
+	button.screen = self
 	button.pressed.connect(_select_hex.bind(Vector2i(q, r)))
+	var key := "%d,%d" % [q, r]
+	button.mouse_entered.connect(_hover_hex.bind(key))
+	button.mouse_exited.connect(_hover_hex.bind(""))
 	_map_canvas.add_child(button)
-	_hex_buttons["%d,%d" % [q, r]] = button
+	_hex_buttons[key] = button
 	_register("expedition.hex.%d.%d" % [q, r], button, "Select hex (%d,%d)" % [q, r])
 	return button
 
-func _hex_tooltip(hex: Dictionary, move: Dictionary) -> String:
-	var lines: Array = ["(%d,%d) · %s" % [int(hex.q), int(hex.r), str(hex.get("tile_name", ""))]]
+func _hover_hex(key: String) -> void:
+	if map_model.is_empty(): return
+	map_model["hover"] = key
+	map_model["hover_lines"] = _hover_lines(key)
+	_marks.wake(); _marks.queue_redraw(); _lines.queue_redraw()
+
+func _hover_lines(key: String) -> Array:
+	if key.is_empty(): return []
+	if map_model.hexes.has(key):
+		var hex: Dictionary = map_model.hexes[key].data
+		return [_hex_tooltip(hex, {}).split("\n")[0], _terrain_line(hex)]
+	var slot_id: String = ""
+	for id in map_model.slots:
+		for cell in map_model.slots[id].hexes:
+			if "%d,%d" % [cell.x, cell.y] == key: slot_id = id
+	if slot_id.is_empty(): return []
+	return ["Unexplored %s" % map_model.slots[slot_id].kind, "Explore · %d Move" % map_model.slots[slot_id].explore_cost]
+
+func _terrain_line(hex: Dictionary) -> String:
 	var terrain := str(hex.get("terrain", ""))
 	var config: Dictionary = view.get("config", {}).get("terrain", {}).get(terrain, {})
-	if config.get("impassable", false): lines.append("%s · impassable" % terrain.capitalize())
-	else: lines.append("%s · Day %d / Night %d Move%s" % [terrain.capitalize(), int(config.get("day", 0)), int(config.get("night", 0)), " · cover" if config.get("cover", false) else ""])
+	if config.get("impassable", false): return "%s · impassable" % terrain.capitalize()
+	return "%s · Day %d / Night %d Move%s" % [terrain.capitalize(), int(config.get("day", 0)), int(config.get("night", 0)), " · cover" if config.get("cover", false) else ""]
+
+func _hex_tooltip(hex: Dictionary, move: Dictionary) -> String:
+	var lines: Array = ["(%d,%d) · %s" % [int(hex.q), int(hex.r), str(hex.get("tile_name", ""))]]
+	lines.append(_terrain_line(hex))
 	if not hex.get("seen", false): lines.append("Contents unknown")
 	elif not hex.get("in_sight", false): lines.append("Out of sight · remembered")
 	if hex.get("site") != null:
@@ -273,29 +412,55 @@ func _map_input(event: InputEvent) -> void:
 		_pan += event.relative
 		_layout_map()
 
-func _select_hex(hex: Vector2i) -> void:
-	selected_hex = Vector2i(999, 999) if selected_hex == hex else hex
-	_render()
+func _unhandled_key_input(event: InputEvent) -> void:
+	if event is InputEventKey and event.keycode == KEY_TAB and not event.echo:
+		_survey_key = event.pressed
+		_set_survey()
+		get_viewport().set_input_as_handled()
 
+func _set_survey() -> void:
+	if map_model.is_empty(): return
+	map_model["survey"] = _survey_key or _survey_locked
+	_marks.queue_redraw()
+
+func _select_hex(hex: Vector2i) -> void:
+	selected_hex = NONE if selected_hex == hex else hex
+	for key in _hex_buttons: _hex_buttons[key].selected = key == "%d,%d" % [selected_hex.x, selected_hex.y]
+	if not map_model.is_empty(): map_model["selected"] = "%d,%d" % [selected_hex.x, selected_hex.y] if selected_hex != NONE else ""
+	_render_hud()
+	_marks.wake(); _marks.queue_redraw()
+
+# The hand --------------------------------------------------------------------
 func _render_hand() -> void:
 	for child in _hand_row.get_children(): _hand_row.remove_child(child); child.queue_free()
 	var hand: Array = _list(view, "hand")
-	STYLE.label(_hand_row, "Hand\n%d / %d" % [hand.size(), int(view.get("hand_size", 4))], 13, STYLE.MUTED).custom_minimum_size.x = 56
+	var count := STYLE.label(_hand_row, "Hand\n%d / %d" % [hand.size(), int(view.get("hand_size", 4))], 13, CHART.HUD_IVORY); CHART.stone_text(count); count.custom_minimum_size.x = 56
 	for index in hand.size():
 		var card: Dictionary = hand[index]
-		var column := VBoxContainer.new(); column.add_theme_constant_override("separation", 4); _hand_row.add_child(column)
-		var face := BattleCardScene.new(); column.add_child(face)
+		var is_selected := index in selected_cards
+		var lift := MarginContainer.new(); lift.add_theme_constant_override("margin_top", 0 if is_selected else 6); _hand_row.add_child(lift)
+		var column := VBoxContainer.new(); column.add_theme_constant_override("separation", 4); lift.add_child(column)
+		var frame := PanelContainer.new()
+		var glow := StyleBoxFlat.new(); glow.bg_color = Color(0, 0, 0, 0); glow.set_corner_radius_all(6)
+		if is_selected:
+			glow.border_color = CHART.GOLD_BRIGHT; glow.set_border_width_all(2); glow.shadow_color = Color(CHART.GOLD_BRIGHT, 0.35); glow.shadow_size = 6
+		frame.add_theme_stylebox_override("panel", glow); frame.size_flags_horizontal = Control.SIZE_SHRINK_CENTER; column.add_child(frame)
+		var face := BattleCardScene.new(); frame.add_child(face)
 		face.configure("hand-%d" % index, str(card.id), true, false, true)
 		face.mouse_filter = Control.MOUSE_FILTER_IGNORE; face.focus_mode = Control.FOCUS_NONE
-		if card.get("map_only", false): STYLE.chip(column, "map only", STYLE.AMBER, 11)
-		elif not str(card.get("map_effect", "")).is_empty(): STYLE.chip(column, "map: " + str(card.get("map_effect", "")), STYLE.GAIN, 11)
-		else: STYLE.chip(column, "1 Move / 1 Influence", STYLE.MUTED, 11)
-		var pay := _button(column, "Selected" if index in selected_cards else "Select", _toggle_card.bind(index), "expedition.card.%d" % index)
-		pay.toggle_mode = true; pay.button_pressed = index in selected_cards
+		var tag_text := "1 Move / 1 Influence"; var tag_color := CHART.INK
+		if card.get("map_only", false): tag_text = "map only"; tag_color = CHART.GOLD_PAPER
+		elif not str(card.get("map_effect", "")).is_empty(): tag_text = "map: " + str(card.get("map_effect", "")); tag_color = CHART.GREEN
+		var tag := CHART.ink_label(column, tag_text, 11, tag_color, false, false); tag.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
+		tag.add_theme_stylebox_override("normal", CHART.chip_style())
+		var pay := CHART.paper_button(_button(column, "Selected" if is_selected else "Select", _toggle_card.bind(index), "expedition.card.%d" % index), 14)
+		pay.toggle_mode = true; pay.button_pressed = is_selected
+		if is_selected: CHART.rim(pay, CHART.GOLD_LEAF)
 		pay.tooltip_text = "%s\n\nSelect it to spend it: 1 Move for walking or exploring, 1 Influence at a site, or discard it." % BattlePresentationCatalog.card_tooltip(str(card.id))
 		if not str(card.get("map_effect", "")).is_empty():
-			var play := _button(column, "Play on map" if int(card.get("energy_cost", 0)) == 0 else "Play (%d energy)" % int(card.energy_cost), func(): _act({"kind": "play_map_card", "card": str(card.id)}), "expedition.play.%d" % index)
+			var play := CHART.paper_button(_button(column, "Play on map" if int(card.get("energy_cost", 0)) == 0 else "Play (%d energy)" % int(card.energy_cost), func(): _act({"kind": "play_map_card", "card": str(card.id)}), "expedition.play.%d" % index), 14)
 			play.disabled = not card.get("map_playable", false)
+			if not play.disabled: CHART.rim(play, CHART.GOLD_LEAF)
 			play.tooltip_text = str(card.get("map_reason", "")) if play.disabled else "Play %s for its map effect" % card.name
 
 func _toggle_card(index: int) -> void:
@@ -311,103 +476,225 @@ func _payment_cards() -> Array:
 		if index < hand.size(): ids.append(str(hand[index].id))
 	return ids
 
+# The ledger ------------------------------------------------------------------
 func _render_hud() -> void:
 	for child in _hud.get_children(): _hud.remove_child(child); child.queue_free()
+	for child in _footer.get_children(): _footer.remove_child(child); child.queue_free()
 	var turn: Dictionary = view.get("turn", {})
-	# Resources.
-	var stats := HBoxContainer.new(); stats.add_theme_constant_override("separation", 10); _hud.add_child(stats)
-	STYLE.stat(stats, "%d" % int(view.get("energy", 0)), "Energy · base %d" % int(view.get("base_energy", 0)), STYLE.ENERGY)
-	STYLE.stat(stats, "%d" % int(view.get("gold", 0)), "Gold", STYLE.GOLD)
-	STYLE.stat(stats, "%d" % int(status.get("xp", 0)), "XP", STYLE.GOLD_BRIGHT)
-	STYLE.stat(stats, "%d/%d" % [int(view.get("health", 0)), int(view.get("max_health", 0))], "Health", STYLE.HEALTH)
-	# Piles with hover lists.
-	var piles := HBoxContainer.new(); piles.add_theme_constant_override("separation", 8); _hud.add_child(piles)
-	for pile in [["Draw", "draw"], ["Spent", "spent"], ["Wounds", "wounds"]]:
-		var ids: Array = view.get(pile[1], [])
-		var chip := STYLE.chip(piles, "%s %d" % [pile[0], ids.size()], STYLE.IVORY, 13)
-		chip.mouse_filter = Control.MOUSE_FILTER_STOP
-		chip.tooltip_text = "%s (%d)%s" % [pile[0], ids.size(), "\n" + ", ".join(ids.map(func(id): return str(view.get("card_names", {}).get(id, id)))) if not ids.is_empty() else ""]
-		chip.name = "Pile_" + pile[1]
-	# Statuses.
-	var statuses: Array = _list(view, "statuses")
-	if not statuses.is_empty():
-		var row := HBoxContainer.new(); row.add_theme_constant_override("separation", 6); _hud.add_child(row)
-		for st in statuses:
-			var chip := STYLE.chip(row, "%s ×%d" % [st.name, int(st.stacks)], STYLE.LOSS, 13)
-			chip.mouse_filter = Control.MOUSE_FILTER_STOP; chip.tooltip_text = "%s\n%s" % [st.name, st.rules]; chip.name = "Status_" + str(st.id)
-	# Inventory.
-	var items: Array = _list(view, "inventory")
-	if not items.is_empty():
-		var row := HBoxContainer.new(); row.add_theme_constant_override("separation", 6); _hud.add_child(row)
-		for item in items:
-			var chip := STYLE.chip(row, "%s ×%d" % [item.name, int(item.count)], STYLE.AMBER, 13)
-			chip.mouse_filter = Control.MOUSE_FILTER_STOP; chip.tooltip_text = "%s\n%s" % [item.name, item.description]; chip.name = "Item_" + str(item.id)
-	# The Warlord.
-	var w: Dictionary = view.get("warlord", {})
-	var warlord_text := "Warlord %s: " % w.get("name", "")
-	if w.get("defeated", false): warlord_text += "beaten"
-	elif not w.get("known", false): warlord_text += "not yet seen · marching to %s" % w.get("goal_name", "")
-	else: warlord_text += "%s at (%d,%d) · to %s%s" % ["in sight" if w.get("in_sight", false) else "last seen", int(w.last_seen.q) if w.get("last_seen") != null else 0, int(w.last_seen.r) if w.get("last_seen") != null else 0, w.get("goal_name", ""), " · goal taken" if w.get("goal_taken", false) else ""]
-	warlord_text += " · Lieutenants %d" % int(w.get("lieutenants", 0))
-	STYLE.label(_hud, warlord_text, 13, STYLE.MUTED)
-	# Turn.
 	var phase := str(view.get("phase", ""))
-	var turn_text := "Turn %d · Move %d · cards played/discarded this turn: %d (need ≥ 1)%s" % [int(turn.get("number", 0)), int(turn.get("move", 0)), int(turn.get("cards_used", 0)), " · fought" if turn.get("fought", false) else ""]
-	if int(turn.get("influence", 0)) > 0: turn_text += "\nInfluence %d at %s (this turn only)" % [int(turn.influence), str(turn.get("influence_site", ""))]
-	if turn.get("action_used", false): turn_text += "\nAction taken this turn"
-	turn_text += "\nSight %d hex%s" % [int(turn.get("sight", 1)), "" if int(turn.get("sight", 1)) == 1 else "es"]
-	STYLE.label(_hud, turn_text, 13, STYLE.IVORY)
-	# Payment: selected cards and energy.
-	if phase == "turn":
-		var pay_box := STYLE.section(_hud, 8)
-		pay_box.get_parent().add_theme_stylebox_override("panel", STYLE.box(STYLE.RAISED, "22323f", 8, 8))
-		var per := int(view.get("config", {}).get("energy_per_move", 5))
-		var moves_paid := selected_cards.size() + energy_payment / per
-		STYLE.label(pay_box, "Payment: %d card%s + %d energy = %d Move (pool %d)" % [selected_cards.size(), "" if selected_cards.size() == 1 else "s", energy_payment, moves_paid, int(turn.get("move", 0))], 13, STYLE.GOLD_BRIGHT)
-		var energy_row := HBoxContainer.new(); energy_row.add_theme_constant_override("separation", 6); pay_box.add_child(energy_row)
-		var minus := _button(energy_row, "−%d energy" % per, func(): energy_payment = maxi(0, energy_payment - per); _render(), "expedition.energy.minus")
-		minus.disabled = energy_payment <= 0
-		var plus := _button(energy_row, "+%d energy" % per, func(): energy_payment = mini(int(view.get("energy", 0)) / per * per, energy_payment + per); _render(), "expedition.energy.plus")
-		plus.disabled = energy_payment + per > int(view.get("energy", 0))
-		var discard := _button(energy_row, "Discard selected", func(): _act({"kind": "discard", "cards": _payment_cards()}), "expedition.discard")
-		discard.disabled = selected_cards.is_empty()
-	# Selected hex actions.
+	_render_stat_strip()
+	_render_warlord_line()
+	_render_turn_line(turn)
+	if phase == "turn": _render_payment(turn)
+	_render_legend()
 	_render_selected(phase, turn)
-	# Site here.
 	if view.get("site_here") != null and phase == "turn": _render_site(view.site_here)
-	# Turn actions.
+	_render_journal()
+	# Footer.
 	if phase == "turn":
-		var row := HBoxContainer.new(); row.add_theme_constant_override("separation", 6); _hud.add_child(row)
-		var end := STYLE.accent(_button(row, "End turn", func(): _act({"kind": "end_turn"}), "expedition.end_turn"))
+		var end := CHART.paper_button(_button(_footer, "End turn", func(): _act({"kind": "end_turn"}), "expedition.end_turn"), 16, true)
+		end.size_flags_horizontal = Control.SIZE_EXPAND_FILL; end.icon = CHART.glyph("wax_seal", "wax"); end.add_theme_constant_override("icon_max_width", 16)
 		end.disabled = not turn.get("can_end_turn", false)
+		if not end.disabled: CHART.rim(end, CHART.GOLD_LEAF, 2.5)
 		end.tooltip_text = str(turn.get("end_turn_reason", "Keep your unplayed cards and draw up to your hand size"))
-		var camp := _button(row, "Make camp", func(): _act({"kind": "make_camp"}), "expedition.make_camp")
+		var camp := CHART.paper_button(_button(_footer, "Make camp", func(): _act({"kind": "make_camp"}), "expedition.make_camp"), 15)
+		camp.icon = CHART.glyph("tent"); camp.add_theme_constant_override("icon_max_width", 16)
 		camp.tooltip_text = "Rest now: forfeit the cards in hand, reshuffle Spent, reset energy, camp services, then the Warlord marches and Day/Night flips"
-	if phase == "victory" or phase == "defeat":
-		STYLE.label(_hud, "The expedition is over: %s." % phase, 15, STYLE.GOLD_BRIGHT if phase == "victory" else STYLE.LOSS)
-	# Log.
-	var log_text: Array = _list(view, "log")
-	if not log_text.is_empty():
-		var log_label := STYLE.label(_hud, "\n".join(log_text.slice(maxi(0, log_text.size() - 6))), 12, STYLE.DIM)
-		log_label.name = "Log"
+	elif phase == "victory" or phase == "defeat":
+		var ended := STYLE.label(_footer, "The region is won" if phase == "victory" else "The run is over", 16, Color("ffe2a0") if phase == "victory" else CHART.WOUNDED)
+		CHART.stone_text(ended, true, Color("ffe2a0") if phase == "victory" else CHART.WOUNDED); ended.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		ended.name = "Ended"
+
+func _render_stat_strip() -> void:
+	var outer := PanelContainer.new(); outer.add_theme_stylebox_override("panel", CINEMATIC.panel(CHART.DARK_SURFACE, CHART.BRONZE, 0)); _hud.add_child(outer)
+	var frame := PanelContainer.new(); frame.add_theme_stylebox_override("panel", CINEMATIC.bone_panel(Color.WHITE, 10)); outer.add_child(frame)
+	var box := VBoxContainer.new(); box.add_theme_constant_override("separation", 4); frame.add_child(box)
+	var tiles := HBoxContainer.new(); tiles.add_theme_constant_override("separation", 6); box.add_child(tiles)
+	_stat_tile(tiles, "%d" % int(view.get("energy", 0)), "Energy", "base %d" % int(view.get("base_energy", 0)), null)
+	_stat_tile(tiles, "%d" % int(view.get("gold", 0)), "Gold", "", CHART.glyph("coin", "gold"))
+	_stat_tile(tiles, "%d" % int(status.get("xp", 0)), "XP", "", ICONS.texture("energy"))
+	var health := VBoxContainer.new(); health.size_flags_horizontal = Control.SIZE_EXPAND_FILL; health.alignment = BoxContainer.ALIGNMENT_CENTER; health.add_theme_constant_override("separation", 2); tiles.add_child(health)
+	var bar := ProgressBar.new(); bar.custom_minimum_size = Vector2(0, 22); bar.max_value = maxi(1, int(view.get("max_health", 0))); bar.value = int(view.get("health", 0)); bar.show_percentage = false
+	bar.add_theme_stylebox_override("background", CINEMATIC.bone_health_frame())
+	var fill := StyleBoxFlat.new(); fill.bg_color = CHART.HEALTH_FILL; fill.border_color = CHART.HEALTH_EDGE; fill.set_border_width_all(2); fill.set_corner_radius_all(4)
+	fill.expand_margin_left = -5; fill.expand_margin_right = -5; fill.expand_margin_top = -3; fill.expand_margin_bottom = -3
+	bar.add_theme_stylebox_override("fill", fill); health.add_child(bar)
+	var value := Label.new(); value.text = "%d/%d" % [int(view.get("health", 0)), int(view.get("max_health", 0))]; value.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER; value.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	value.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT); value.add_theme_font_override("font", CHART.numerals()); value.add_theme_font_size_override("font_size", 16); CHART.stone_text(value, true); value.mouse_filter = Control.MOUSE_FILTER_IGNORE; bar.add_child(value)
+	var caption := STYLE.label(health, "HEALTH", 12, STYLE.GOLD); caption.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER; caption.autowrap_mode = TextServer.AUTOWRAP_OFF
+	# Counts with hover lists.
+	var counts := HBoxContainer.new(); counts.add_theme_constant_override("separation", 12); counts.alignment = BoxContainer.ALIGNMENT_CENTER; box.add_child(counts)
+	for pile in [["Draw", "draw", "deck"], ["Spent", "spent", "discard"], ["Wounds", "wounds", "removed"]]:
+		var ids: Array = _list(view, pile[1])
+		var cell := HBoxContainer.new(); cell.name = "Pile_" + pile[1]; cell.mouse_filter = Control.MOUSE_FILTER_STOP; cell.add_theme_constant_override("separation", 4); counts.add_child(cell)
+		cell.tooltip_text = "%s (%d)%s" % [pile[0], ids.size(), "\n" + ", ".join(ids.map(func(id): return str(view.get("card_names", {}).get(id, id)))) if not ids.is_empty() else ""]
+		CHART.icon_rect(cell, ICONS.texture(pile[2]), 18)
+		var label := STYLE.label(cell, "%s %d" % [pile[0], ids.size()], 14, CHART.HUD_IVORY); label.autowrap_mode = TextServer.AUTOWRAP_OFF
+		CHART.stone_text(label, false, CHART.WOUNDED if pile[1] == "wounds" and ids.size() > 0 else CHART.HUD_IVORY)
+	# Statuses and inventory.
+	var statuses: Array = _list(view, "statuses")
+	var items: Array = _list(view, "inventory")
+	if not statuses.is_empty() or not items.is_empty():
+		var row := HBoxContainer.new(); row.add_theme_constant_override("separation", 6); row.alignment = BoxContainer.ALIGNMENT_CENTER; box.add_child(row)
+		for st in statuses: _chip(row, "Status_" + str(st.id), str(st.id), "%s ×%d" % [st.name, int(st.stacks)], "%s\n%s" % [st.name, st.rules], CHART.STATUS)
+		for item in items: _chip(row, "Item_" + str(item.id), "", "%s ×%d" % [item.name, int(item.count)], "%s\n%s" % [item.name, item.description], CHART.ITEM)
+
+func _stat_tile(parent: Node, value: String, caption: String, sub: String, icon: Texture2D) -> void:
+	var cell := VBoxContainer.new(); cell.size_flags_horizontal = Control.SIZE_EXPAND_FILL; cell.alignment = BoxContainer.ALIGNMENT_CENTER; cell.add_theme_constant_override("separation", 0); parent.add_child(cell)
+	var row := HBoxContainer.new(); row.alignment = BoxContainer.ALIGNMENT_CENTER; row.add_theme_constant_override("separation", 4); cell.add_child(row)
+	if icon != null: CHART.icon_rect(row, icon, 16)
+	var number := Label.new(); number.text = value; number.add_theme_font_override("font", CHART.numerals()); number.add_theme_font_size_override("font_size", 26); CHART.stone_text(number, true); number.mouse_filter = Control.MOUSE_FILTER_IGNORE; row.add_child(number)
+	var cap := STYLE.label(cell, caption.to_upper(), 12, STYLE.GOLD); cap.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER; cap.autowrap_mode = TextServer.AUTOWRAP_OFF
+	if not sub.is_empty():
+		var small := STYLE.label(cell, sub, 12, Color("9c9d97")); small.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER; small.autowrap_mode = TextServer.AUTOWRAP_OFF
+
+func _chip(parent: Node, node_name: String, icon_id: String, text: String, tooltip: String, color: Color) -> HBoxContainer:
+	var cell := PanelContainer.new(); cell.name = node_name; cell.mouse_filter = Control.MOUSE_FILTER_STOP; cell.tooltip_text = tooltip
+	var style := StyleBoxFlat.new(); style.bg_color = Color(color, 0.14); style.border_color = Color(color, 0.55); style.set_border_width_all(1); style.set_corner_radius_all(10)
+	style.content_margin_left = 8; style.content_margin_right = 8; style.content_margin_top = 2; style.content_margin_bottom = 2
+	cell.add_theme_stylebox_override("panel", style); parent.add_child(cell)
+	var row := HBoxContainer.new(); row.add_theme_constant_override("separation", 4); cell.add_child(row)
+	if not icon_id.is_empty(): CHART.icon_rect(row, ICONS.texture(icon_id), 16)
+	var label := STYLE.label(row, text, 13, color.lightened(0.25)); label.autowrap_mode = TextServer.AUTOWRAP_OFF
+	return row
+
+func _render_warlord_line() -> void:
+	var w: Dictionary = view.get("warlord", {})
+	var text := "%s · " % w.get("name", "The Warlord")
+	if w.get("defeated", false): text += "beaten"
+	elif not w.get("known", false): text += "not yet seen · marching to %s" % w.get("goal_name", "")
+	else: text += "%s at (%d,%d) · to %s%s" % ["in sight" if w.get("in_sight", false) else "last seen", int(w.last_seen.q) if w.get("last_seen") != null else 0, int(w.last_seen.r) if w.get("last_seen") != null else 0, w.get("goal_name", ""), " · goal taken" if w.get("goal_taken", false) else ""]
+	text += " · Lieutenants %d" % int(w.get("lieutenants", 0))
+	if w.get("fortified", false): text += " · FORTIFIED"
+	if w.get("conqueror", false): text += " · CONQUEROR"
+	var holder := PanelContainer.new(); _hud.add_child(holder)
+	if w.get("in_sight", false):
+		var style := StyleBoxFlat.new(); style.bg_color = Color(CHART.ENEMY_RIM, 0.18); style.border_color = CHART.ENEMY_RIM; style.set_border_width_all(1); style.set_corner_radius_all(4)
+		style.content_margin_left = 6; style.content_margin_right = 6; style.content_margin_top = 6; style.content_margin_bottom = 6
+		holder.add_theme_stylebox_override("panel", style)
+	else: holder.add_theme_stylebox_override("panel", StyleBoxEmpty.new())
+	var row := HBoxContainer.new(); row.add_theme_constant_override("separation", 6); holder.add_child(row)
+	CHART.icon_rect(row, ICONS.texture("conqueror"), 16).size_flags_vertical = Control.SIZE_SHRINK_BEGIN
+	var label := STYLE.label(row, text, 14, CHART.RED_ON_STONE); CHART.stone_text(label, false, CHART.RED_ON_STONE); label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	label.name = "WarlordLine"
+
+func _render_turn_line(turn: Dictionary) -> void:
+	CHART.gold_rule(_hud)
+	var row := HBoxContainer.new(); row.add_theme_constant_override("separation", 6); _hud.add_child(row)
+	CHART.icon_rect(row, CHART.glyph("moon" if view.get("night", false) else "sun", "ivory"), 16).size_flags_vertical = Control.SIZE_SHRINK_BEGIN
+	var used := int(turn.get("cards_used", 0))
+	var text := "Turn %d · Move %d · Played %d (need 1) · Sight %d" % [int(turn.get("number", 0)), int(turn.get("move", 0)), used, int(turn.get("sight", 1))]
+	if int(turn.get("influence", 0)) > 0: text += " · Influence %d at %s" % [int(turn.influence), str(turn.get("influence_site", "")).capitalize().replace("_", " ")]
+	if turn.get("fought", false): text += " · fought"
+	if turn.get("action_used", false): text += " · action taken"
+	var label := STYLE.label(row, text, 14, CHART.HUD_IVORY); CHART.stone_text(label); label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	label.name = "TurnLine"
+	if used < 1 and not turn.get("fought", false): label.add_theme_color_override("font_color", CHART.RED_ON_STONE)
+	CHART.gold_rule(_hud)
+
+func _render_payment(turn: Dictionary) -> void:
+	var card := CHART.paper_card(_hud)
+	var per := int(view.get("config", {}).get("energy_per_move", 5))
+	var moves_paid := selected_cards.size() + energy_payment / per
+	var grid := GridContainer.new(); grid.columns = 2; grid.add_theme_constant_override("h_separation", 12); grid.add_theme_constant_override("v_separation", 4); card.add_child(grid)
+	CHART.ink_label(grid, "Cards selected", 14, CHART.INK, false, false)
+	var cards := CHART.numeral_label(grid, "%d" % selected_cards.size(), 15); cards.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT; cards.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	CHART.ink_label(grid, "Energy", 14, CHART.INK, false, false)
+	var energy := CHART.numeral_label(grid, "%d  (= %d Move)" % [energy_payment, energy_payment / per], 15); energy.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT; energy.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	CHART.ink_rule(card); CHART.ink_rule(card)
+	var total := GridContainer.new(); total.columns = 2; total.add_theme_constant_override("h_separation", 12); card.add_child(total)
+	CHART.ink_label(total, "Move", 15, CHART.INK, true, false)
+	var sum := CHART.numeral_label(total, "%d · pool %d" % [moves_paid, int(turn.get("move", 0))], 16); sum.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT; sum.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	sum.name = "PaymentTotal"
+	var row := HBoxContainer.new(); row.add_theme_constant_override("separation", 6); card.add_child(row)
+	var minus := CHART.paper_button(_button(row, "−%d energy" % per, func(): energy_payment = maxi(0, energy_payment - per); _render(), "expedition.energy.minus"), 14)
+	minus.disabled = energy_payment <= 0; minus.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	var plus := CHART.paper_button(_button(row, "+%d energy" % per, func(): energy_payment = mini(int(view.get("energy", 0)) / per * per, energy_payment + per); _render(), "expedition.energy.plus"), 14)
+	plus.disabled = energy_payment + per > int(view.get("energy", 0)); plus.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	var discard := CHART.paper_button(_button(row, "Discard selected", func(): _act({"kind": "discard", "cards": _payment_cards()}), "expedition.discard"), 14)
+	discard.disabled = selected_cards.is_empty(); discard.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+
+func _render_legend() -> void:
+	var card := CHART.paper_card(_hud, 8)
+	var toggle := CHART.paper_button(_button(card, "Legend", func(): _legend_open = not _legend_open; _render_hud(), "expedition.legend.toggle"), 13)
+	toggle.icon = ICONS.texture("chevron_open" if _legend_open else "chevron_closed"); toggle.add_theme_constant_override("icon_max_width", 14); toggle.alignment = HORIZONTAL_ALIGNMENT_LEFT
+	toggle.flat = true
+	if not _legend_open: return
+	var flow := HFlowContainer.new(); flow.add_theme_constant_override("h_separation", 4); flow.add_theme_constant_override("v_separation", 4); card.add_child(flow)
+	var entries: Array = [["village", "Village"], ["monastery", "Monastery"], ["town", "Town"], ["ruins", "Ruins"], ["grotto", "Grotto"], ["event", "Event ?"], ["keep", "Keep"], ["tower", "Tower"], ["enemy", "Enemy group"], ["warlord", "The Warlord"], ["you", "You"], ["in_sight", "In sight"], ["remembered", "Remembered"], ["unknown", "Unknown"], ["countryside", "Countryside"], ["core", "Core"]]
+	for entry in entries:
+		var id: String = entry[0]
+		var chip := CHART.paper_button(_button(flow, entry[1], func(): pass, "expedition.legend." + id), 13)
+		chip.flat = true
+		chip.add_theme_stylebox_override("normal", CHART.chip_style(Color(0, 0, 0, 0), Color(CHART.INK, 0.25), 6, 2))
+		chip.add_theme_stylebox_override("hover", CHART.chip_style(Color("fff0cc"), Color(CHART.INK, 0.5), 6, 2))
+		chip.icon = _legend_icon(id); chip.add_theme_constant_override("icon_max_width", 18)
+		chip.mouse_entered.connect(func(): _legend_filter = id; map_model["legend_filter"] = id; _marks.queue_redraw(); _lines.queue_redraw())
+		chip.mouse_exited.connect(func(): _legend_filter = ""; map_model["legend_filter"] = ""; _marks.queue_redraw(); _lines.queue_redraw())
+	# The cost table.
+	var terrains: Dictionary = view.get("config", {}).get("terrain", {})
+	var grid := GridContainer.new(); grid.columns = 4; grid.add_theme_constant_override("h_separation", 10); grid.add_theme_constant_override("v_separation", 2); card.add_child(grid)
+	CHART.caption(grid, ""); CHART.caption(grid, "Terrain"); CHART.caption(grid, "Day", CHART.GOLD_PAPER if view.get("night", false) else CHART.INK); CHART.caption(grid, "Night", CHART.INK if view.get("night", false) else CHART.NIGHT_BLUE)
+	var order: Array = TERRAIN_ORDER.duplicate()
+	for key in terrains:
+		if key not in order: order.append(key)
+	for terrain in order:
+		if not terrains.has(terrain): continue
+		var config: Dictionary = terrains[terrain]
+		CHART.icon_rect(grid, CHART.glyph("motif_" + terrain), 16)
+		CHART.ink_label(grid, str(terrain).capitalize() + (" · cover" if config.get("cover", false) else ""), 13, CHART.INK, false, false)
+		if config.get("impassable", false):
+			CHART.ink_label(grid, "✕", 13, CHART.INK, false, false); CHART.ink_label(grid, "✕", 13, CHART.INK, false, false)
+		else:
+			CHART.numeral_label(grid, "%d" % int(config.get("day", 0)), 13, CHART.INK)
+			CHART.numeral_label(grid, "%d" % int(config.get("night", 0)), 13, CHART.NIGHT_BLUE)
+	var survey := CHART.paper_button(_button(card, "Survey (hold Tab)", func(): _survey_locked = not _survey_locked; _set_survey(); _render_hud(), "expedition.survey"), 13)
+	survey.toggle_mode = true; survey.button_pressed = _survey_locked; survey.flat = true
+	if _survey_locked: CHART.rim(survey, CHART.GOLD_LEAF)
+
+func _legend_icon(id: String) -> Texture2D:
+	match id:
+		"village", "monastery", "town", "ruins", "grotto", "keep", "tower": return CHART.glyph("site_" + id)
+		"event": return null
+		"enemy": return ICONS.texture("removed")
+		"warlord": return ICONS.texture("conqueror")
+		"you": return CHART.glyph("pawn", "gold")
+		"in_sight": return CHART.glyph("sun")
+		"remembered": return CHART.glyph("moon", "sepia")
+		"unknown": return CHART.glyph("compass_diamond", "sepia")
+		"countryside": return CHART.glyph("compass_diamond")
+		"core": return CHART.glyph("compass_diamond", "red")
+	return null
 
 func _render_selected(phase: String, turn: Dictionary) -> void:
-	if selected_hex == Vector2i(999, 999) or phase != "turn": return
-	var box := STYLE.section(_hud, 8)
-	box.get_parent().add_theme_stylebox_override("panel", STYLE.box(STYLE.RAISED, STYLE.GOLD, 8, 8))
-	var key := "%d,%d" % [selected_hex.x, selected_hex.y]
-	STYLE.label(box, "Selected hex (%d,%d)" % [selected_hex.x, selected_hex.y], 14, STYLE.GOLD_BRIGHT)
+	if selected_hex == NONE or phase != "turn": return
+	var card := CHART.paper_card(_hud)
 	var hex_data: Dictionary = {}
 	for hex in _list(view, "hexes"):
 		if int(hex.q) == selected_hex.x and int(hex.r) == selected_hex.y: hex_data = hex
-	if not hex_data.is_empty(): STYLE.label(box, _hex_tooltip(hex_data, {}), 12, STYLE.IVORY)
+	var heading := CHART.ink_label(card, "(%d, %d) · %s" % [selected_hex.x, selected_hex.y, str(hex_data.get("tile_name", "Unexplored"))], 15, CHART.INK, true)
+	heading.name = "SelectedHeading"
+	CHART.gold_rule(card)
+	if not hex_data.is_empty():
+		CHART.ink_label(card, _terrain_line(hex_data), 13)
+		if not hex_data.get("seen", false): CHART.ink_label(card, "Contents unknown", 12, CHART.SEPIA_TEXT)
+		elif not hex_data.get("in_sight", false): CHART.ink_label(card, "Out of sight · remembered", 12, CHART.SEPIA_TEXT)
+		var details := _hex_tooltip(hex_data, {}).split("\n")
+		for i in range(2, details.size()):
+			var line := str(details[i])
+			if line.begins_with("Contents unknown") or line.begins_with("Out of sight"): continue
+			var danger := line.begins_with("Held by") or line.begins_with("Ambush possible") or line.begins_with("Conquered")
+			CHART.ink_label(card, line, 13, CHART.RUBRIC if danger else CHART.INK)
 	for move in _list(view, "moves"):
 		if int(move.to.q) != selected_hex.x or int(move.to.r) != selected_hex.y: continue
 		var blocked := str(move.get("blocked", ""))
 		var label := "Move here · %d Move" % int(move.cost) if blocked.is_empty() else "Cannot move: %s" % blocked
-		if blocked.is_empty() and not str(move.get("provokes", "")).is_empty(): label += " · provokes %s" % move.provokes
-		var button := STYLE.accent(_button(box, label, func(): _act({"kind": "move", "target": {"q": selected_hex.x, "r": selected_hex.y}, "cards": _payment_cards(), "energy": energy_payment}), "expedition.move"))
+		if blocked.is_empty() and not str(move.get("provokes", "")).is_empty():
+			label += " · provokes %s" % move.provokes
+			CHART.ink_label(card, "Provokes %s: a fight starts at once" % move.provokes, 13, CHART.RUBRIC)
+		var button := CHART.paper_button(_button(card, label, func(): _act({"kind": "move", "target": {"q": selected_hex.x, "r": selected_hex.y}, "cards": _payment_cards(), "energy": energy_payment}), "expedition.move"), 14, true)
 		button.disabled = not blocked.is_empty()
+		if not button.disabled: CHART.rim(button, CHART.GOLD_LEAF)
 	for slot in _list(view, "explores"):
 		var owns := false
 		for offset in HEX_OFFSETS:
@@ -415,121 +702,214 @@ func _render_selected(phase: String, turn: Dictionary) -> void:
 		if not owns: continue
 		var label := "Explore %s · %d Move" % [slot.id, int(view.config.explore_cost)]
 		if not slot.get("ready", false): label += " (%s)" % slot.get("why", "")
-		var button := STYLE.accent(_button(box, label, func(): _act({"kind": "explore", "slot": str(slot.id), "cards": _payment_cards(), "energy": energy_payment}), "expedition.explore"))
+		var button := CHART.paper_button(_button(card, label, func(): _act({"kind": "explore", "slot": str(slot.id), "cards": _payment_cards(), "energy": energy_payment}), "expedition.explore"), 14, true)
 		button.disabled = not slot.get("ready", false)
+		if not button.disabled: CHART.rim(button, CHART.GOLD_LEAF)
 	for target in _list(view, "challenges"):
 		if int(target.hex.q) != selected_hex.x or int(target.hex.r) != selected_hex.y: continue
-		var label := "Challenge %s%s%s" % [target.name, " · Ambush!" if target.get("ambush", false) else "", " · Fortified" if target.get("fortified", false) else ""]
-		STYLE.accent(_button(box, label, func(): _act({"kind": "challenge", "group": str(target.id)}), "expedition.challenge"), STYLE.LOSS)
+		var label := "Challenge %s%s%s" % [target.name, " · AMBUSH!" if target.get("ambush", false) else "", " · FORTIFIED" if target.get("fortified", false) else ""]
+		CHART.rim(CHART.paper_button(_button(card, label, func(): _act({"kind": "challenge", "group": str(target.id)}), "expedition.challenge"), 14, true), CHART.RUBRIC)
 	for target in _list(view, "enters"):
 		if int(target.hex.q) != selected_hex.x or int(target.hex.r) != selected_hex.y: continue
-		var label := "Enter %s%s%s" % [target.name, " · Ambush!" if target.get("ambush", false) else "", " · Fortified" if target.get("fortified", false) and not use_siege else ""]
-		STYLE.accent(_button(box, label, func(): _act({"kind": "enter_site", "site": str(target.id), "item": "siege_hooks" if use_siege else ""}), "expedition.enter"), STYLE.LOSS)
+		var label := "Enter %s%s%s" % [target.name, " · AMBUSH!" if target.get("ambush", false) else "", " · FORTIFIED" if target.get("fortified", false) and not use_siege else ""]
+		CHART.rim(CHART.paper_button(_button(card, label, func(): _act({"kind": "enter_site", "site": str(target.id), "item": "siege_hooks" if use_siege else ""}), "expedition.enter"), 14, true), CHART.RUBRIC)
 		if target.get("siege", false):
-			var siege := _button(box, "Use Siege Hooks (defenders not Fortified)", func(): use_siege = not use_siege; _render(), "expedition.siege")
+			var siege := CHART.paper_button(_button(card, "Use Siege Hooks (defenders not Fortified)", func(): use_siege = not use_siege; _render(), "expedition.siege"), 13)
 			siege.toggle_mode = true; siege.button_pressed = use_siege
+			if use_siege: CHART.rim(siege, CHART.GOLD_LEAF)
 
 func _render_site(site: Dictionary) -> void:
-	var box := STYLE.section(_hud, 8)
-	box.get_parent().add_theme_stylebox_override("panel", STYLE.box(STYLE.RAISED, "22323f", 8, 8))
-	STYLE.label(box, "%s (%s)" % [site.name, site.type], 15, STYLE.GOLD_BRIGHT)
+	var card := CHART.paper_card(_hud)
+	var head := HBoxContainer.new(); head.add_theme_constant_override("separation", 8); card.add_child(head)
+	var type := str(site.get("type", ""))
+	var glyph := _legend_icon(type)
+	if glyph != null: CHART.icon_rect(head, glyph, 22)
+	var names := VBoxContainer.new(); names.add_theme_constant_override("separation", 0); names.size_flags_horizontal = Control.SIZE_EXPAND_FILL; head.add_child(names)
+	var heading := CHART.ink_label(names, str(site.name), 15, CHART.INK, true); heading.name = "SiteHeading"
+	CHART.caption(names, type)
 	if not site.get("open", false):
-		STYLE.label(box, str(site.get("closed", "closed")), 12, STYLE.MUTED)
+		var closed := CHART.ink_label(card, str(site.get("closed", "closed")), 12, CHART.SEPIA_TEXT); closed.add_theme_font_override("font", CHART.serif_italic())
 		return
-	STYLE.label(box, str(site.get("description", "")), 12, STYLE.MUTED)
-	var influence := _button(box, "Play %d selected card%s here for Influence" % [selected_cards.size(), "" if selected_cards.size() == 1 else "s"], func(): _act({"kind": "use_site", "service": "influence", "cards": _payment_cards()}), "expedition.site.influence")
+	CHART.ink_label(card, str(site.get("description", "")), 13)
+	var influence := CHART.paper_button(_button(card, "Play %d selected card%s here for Influence" % [selected_cards.size(), "" if selected_cards.size() == 1 else "s"], func(): _act({"kind": "use_site", "service": "influence", "cards": _payment_cards()}), "expedition.site.influence"), 14)
 	influence.disabled = selected_cards.is_empty()
+	if not influence.disabled: CHART.rim(influence, CHART.GOLD_LEAF)
 	for service in _list(site, "services"):
 		var id := "expedition.site.%s" % service.id + (".%s" % service.item if not str(service.get("item", "")).is_empty() else "")
 		var action := {"kind": "use_site", "service": str(service.id), "item": str(service.get("item", "")), "count": 1}
 		if service.id == "trainer": action["gold"] = int(service.gold)
-		var button := _button(box, str(service.label), func(): _act(action), id)
+		var button := CHART.paper_button(_button(card, str(service.label), func(): _act(action), id), 14)
 		button.disabled = not service.get("available", false)
 		if not service.get("available", false): button.tooltip_text = str(service.get("reason", ""))
 	if site.get("has_deck_change", false):
-		var prepare := _button(box, "Change deck · %d Influence per change" % int(site.get("deck_change", 0)), _open_prepare, "expedition.prepare")
+		var prepare := CHART.rim(CHART.paper_button(_button(card, "Change deck · %d Influence per change" % int(site.get("deck_change", 0)), _open_prepare, "expedition.prepare"), 14), CHART.GOLD_LEAF)
 		prepare.tooltip_text = "Open Prepare: buy, sell, upgrade or trade down cards and abilities (XP), paying this site's Influence per change"
 
+func _render_journal() -> void:
+	var log_text: Array = _list(view, "log")
+	if log_text.is_empty(): return
+	var caption := STYLE.label(_hud, "JOURNAL", 12, STYLE.GOLD); caption.autowrap_mode = TextServer.AUTOWRAP_OFF
+	CHART.gold_rule(_hud)
+	var box := VBoxContainer.new(); box.name = "Log"; box.add_theme_constant_override("separation", 2); _hud.add_child(box)
+	var recent := log_text.slice(maxi(0, log_text.size() - 6))
+	if recent.size() > 1:
+		var older := STYLE.label(box, "\n".join(recent.slice(0, recent.size() - 1)), 13, CHART.JOURNAL_OLD)
+		older.add_theme_font_override("font", CHART.serif_italic()); CHART.stone_text(older, false, CHART.JOURNAL_OLD)
+	var newest := STYLE.label(box, str(recent[-1]), 13, CHART.HUD_IVORY)
+	newest.add_theme_font_override("font", CHART.serif_italic()); CHART.stone_text(newest)
+
+# Overlays ---------------------------------------------------------------------
 func _render_overlay() -> void:
 	for child in _overlay_body.get_children(): _overlay_body.remove_child(child); child.queue_free()
 	_overlay.visible = false
 	var phase := str(view.get("phase", ""))
 	var body := _overlay_body
+	var context := ""
+	var site_type := ""
 	if not last_battle.is_empty():
-		_overlay.visible = true
+		context = "battle_result"
 		_render_battle_result(body)
-		return
-	if view.get("last_rest") != null and dismissed_rest != str(view.get("round", 0)):
-		_overlay.visible = true
+	elif view.get("last_rest") != null and dismissed_rest != str(view.get("round", 0)):
+		context = "rest"
 		var rest: Dictionary = view.last_rest
 		var camp: Dictionary = rest.get("camp", {})
-		STYLE.label(body, "Rest summary", 20, STYLE.GOLD_BRIGHT)
-		var lines: Array = ["%d Spent cards reshuffled; energy %d → %d." % [int(camp.get("reshuffled", 0)), int(camp.get("energy_before", 0)), int(view.get("base_energy", 0))]]
-		for roll in _list(camp, "mend_rolls"): lines.append("Mending roll: %d%s vs %d · %s" % [int(roll.roll), " +%d" % int(roll.bonus) if int(roll.bonus) > 0 else "", int(roll.needed), "mended" if roll.success else "failed"])
-		lines.append("The Warlord marched %d hex%s%s." % [int(rest.get("warlord_steps", 0)), "" if int(rest.get("warlord_steps", 0)) == 1 else "es", " and took his goal" if rest.get("goal_taken", false) else ""])
-		if not _list(rest, "patrols").is_empty(): lines.append("Patrols moved: %s" % ", ".join(rest.patrols))
-		lines.append("%s · round %d. Drew %d." % ["Night falls" if rest.get("night_after", false) else "Day breaks", int(rest.get("round_after", 0)), int(rest.get("drew", 0))])
-		if rest.get("deadline", false): lines.append("The last round is over: the Warlord comes to you.")
-		STYLE.label(body, "\n".join(lines), 13, STYLE.IVORY)
-		_button(body, "Continue", func(): dismissed_rest = str(view.get("round", 0)); _render(), "expedition.rest.continue")
-		return
-	if view.get("pending_battle") != null:
-		_overlay.visible = true
+		_overlay_heading(body, "%s · round %d" % ["Night falls" if rest.get("night_after", false) else "Day breaks", int(rest.get("round_after", 0))], CHART.glyph("moon" if rest.get("night_after", false) else "sun"))
+		CHART.ink_label(body, "%d Spent cards reshuffled; energy %d → %d." % [int(camp.get("reshuffled", 0)), int(camp.get("energy_before", 0)), int(view.get("base_energy", 0))], 14)
+		for roll in _list(camp, "mend_rolls"): CHART.ink_label(body, "Mending roll: %d%s vs %d · %s" % [int(roll.roll), " +%d" % int(roll.bonus) if int(roll.bonus) > 0 else "", int(roll.needed), "mended" if roll.success else "failed"], 14, CHART.GREEN if roll.success else CHART.RUBRIC)
+		var marched := "The Warlord marched %d hex%s%s." % [int(rest.get("warlord_steps", 0)), "" if int(rest.get("warlord_steps", 0)) == 1 else "es", " and took his goal" if rest.get("goal_taken", false) else ""]
+		CHART.ink_label(body, marched, 14, CHART.RUBRIC if rest.get("goal_taken", false) else CHART.INK)
+		if not _list(rest, "patrols").is_empty(): CHART.ink_label(body, "Patrols moved: %s" % ", ".join(rest.patrols), 14)
+		CHART.ink_label(body, "Drew %d." % int(rest.get("drew", 0)), 14)
+		if rest.get("deadline", false): CHART.ink_label(body, "The last round is over: the Warlord comes to you.", 14, CHART.RUBRIC)
+		CHART.rim(CHART.paper_button(_button(body, "Continue", func(): dismissed_rest = str(view.get("round", 0)); _render(), "expedition.rest.continue"), 15, true), CHART.GOLD_LEAF)
+	elif view.get("pending_battle") != null:
+		context = "fight"
 		var pb: Dictionary = view.pending_battle
-		STYLE.label(body, "A fight: %s" % pb.name, 20, STYLE.LOSS)
-		STYLE.label(body, "%s · %s ×%d%s" % [str(pb.kind).capitalize(), pb.opponent, int(pb.count), " · Ambush!" if pb.get("ambush", false) else ""], 14, STYLE.IVORY)
-		for st in _list(pb, "enemy_statuses"):
-			var chip := STYLE.chip(body, "Enemy: %s ×%d" % [st.name, int(st.stacks)], STYLE.LOSS, 13); chip.mouse_filter = Control.MOUSE_FILTER_STOP; chip.tooltip_text = str(st.rules)
-		for st in _list(pb, "player_statuses"):
-			var chip := STYLE.chip(body, "You: %s ×%d" % [st.name, int(st.stacks)], STYLE.GAIN, 13); chip.mouse_filter = Control.MOUSE_FILTER_STOP; chip.tooltip_text = str(st.rules)
-		STYLE.label(body, "The battle starts from your hand (%d), draw pile (%d), Spent (%d), wounds (%d) and %d energy." % [_list(view, "hand").size(), _list(view, "draw").size(), _list(view, "spent").size(), _list(view, "wounds").size(), int(pb.get("energy_in", 0))], 13, STYLE.MUTED)
-		STYLE.accent(_button(body, "Fight", _start_fight, "expedition.fight"), STYLE.LOSS)
-		return
-	if view.get("event") != null:
-		_overlay.visible = true
+		site_type = str(view.get("site_here", {}).get("type", "")) if view.get("site_here") != null else ""
+		var head := HBoxContainer.new(); head.add_theme_constant_override("separation", 10); body.add_child(head)
+		var piece := Control.new(); piece.custom_minimum_size = Vector2(48, 48); head.add_child(piece)
+		var warlord: bool = pb.get("warlord", false); var count := int(pb.get("count", 1))
+		piece.draw.connect(func():
+			if warlord: CHART.draw_warlord_piece(piece, Vector2(24, 24), 60.0, true, bool(pb.get("fortified", false)))
+			else: CHART.draw_enemy_piece(piece, Vector2(24, 24), 60.0, count, true))
+		var titles := VBoxContainer.new(); titles.add_theme_constant_override("separation", 2); titles.size_flags_horizontal = Control.SIZE_EXPAND_FILL; head.add_child(titles)
+		CHART.ink_label(titles, "A fight · %s ×%d%s" % [pb.name, count, " · AMBUSH!" if pb.get("ambush", false) else ""], 22, CHART.RUBRIC, true)
+		CHART.ink_label(titles, "%s · %s" % [str(pb.kind).capitalize(), pb.opponent], 12, CHART.SEPIA_TEXT)
+		CHART.gold_rule(body)
+		if not _list(pb, "enemy_statuses").is_empty() or not _list(pb, "player_statuses").is_empty():
+			var strip := PanelContainer.new(); strip.add_theme_stylebox_override("panel", CINEMATIC.panel(CHART.DARK_SURFACE, CHART.BRONZE, 6)); body.add_child(strip)
+			var row := HBoxContainer.new(); row.add_theme_constant_override("separation", 8); strip.add_child(row)
+			for st in _list(pb, "enemy_statuses"): _status_cell(row, "Enemy", st)
+			for st in _list(pb, "player_statuses"): _status_cell(row, "You", st)
+		var piles := HBoxContainer.new(); piles.add_theme_constant_override("separation", 10); body.add_child(piles)
+		for pile in [["hand", _list(view, "hand").size()], ["deck", _list(view, "draw").size()], ["discard", _list(view, "spent").size()], ["removed", _list(view, "wounds").size()]]:
+			CHART.icon_rect(piles, ICONS.texture(pile[0]), 16); CHART.numeral_label(piles, "%d" % pile[1], 14)
+		CHART.ink_label(piles, "and %d energy" % int(pb.get("energy_in", 0)), 13, CHART.SEPIA_TEXT, false, false)
+		CHART.rim(CHART.paper_button(_button(body, "Fight", _start_fight, "expedition.fight"), 16, true), CHART.RUBRIC)
+	elif view.get("event") != null:
+		context = "event"
 		var ev: Dictionary = view.event
-		STYLE.label(body, str(ev.name), 20, STYLE.GOLD_BRIGHT)
-		STYLE.label(body, str(ev.text), 14, STYLE.IVORY)
-		STYLE.label(body, "Selected cards (%d) are played here as Influence." % selected_cards.size(), 12, STYLE.MUTED)
+		site_type = "event"
+		_overlay_heading(body, str(ev.name), null)
+		CHART.ink_label(body, str(ev.text), 14)
+		CHART.ink_label(body, "Selected cards (%d) are played here as Influence." % selected_cards.size(), 12, CHART.SEPIA_TEXT)
+		var first := true
 		for choice in _list(ev, "choices"):
-			var button := _button(body, str(choice.text), func(): _act({"kind": "event_choice", "choice": str(choice.id), "cards": _payment_cards()}), "expedition.event." + str(choice.id))
+			var button := CHART.paper_button(_button(body, str(choice.text), func(): _act({"kind": "event_choice", "choice": str(choice.id), "cards": _payment_cards()}), "expedition.event." + str(choice.id)), 15)
 			button.disabled = not choice.get("available", false)
 			if not choice.get("available", false): button.tooltip_text = str(choice.get("reason", ""))
-		return
-	if view.get("last_event") != null and dismissed_event != _event_key(view.last_event):
-		_overlay.visible = true
+			elif first: CHART.rim(button, CHART.GOLD_LEAF); first = false
+	elif view.get("last_event") != null and dismissed_event != _event_key(view.last_event):
+		context = "event"
 		var ev: Dictionary = view.last_event
-		STYLE.label(body, "Event: %s" % ev.get("event", ""), 18, STYLE.GOLD_BRIGHT)
-		if int(ev.get("roll", 0)) > 0: STYLE.label(body, "You rolled %d (needed %d)." % [int(ev.roll), int(ev.needed)], 14, STYLE.IVORY)
-		STYLE.label(body, str(ev.get("text", "")), 14, STYLE.IVORY)
-		_button(body, "Continue", func(): dismissed_event = _event_key(ev); _render(), "expedition.event.continue")
-		return
-	if phase == "camp" and view.get("camp") != null:
-		_overlay.visible = true
+		_overlay_heading(body, "Event · %s" % str(ev.get("event", "")).capitalize().replace("_", " "), null)
+		if int(ev.get("roll", 0)) > 0:
+			var row := HBoxContainer.new(); row.add_theme_constant_override("separation", 8); body.add_child(row)
+			CHART.icon_rect(row, CHART.glyph("die"), 20)
+			CHART.numeral_label(row, "You rolled %d (needed %d)." % [int(ev.roll), int(ev.needed)], 18)
+		CHART.ink_label(body, str(ev.get("text", "")), 14)
+		CHART.rim(CHART.paper_button(_button(body, "Continue", func(): dismissed_event = _event_key(ev); _render(), "expedition.event.continue"), 15, true), CHART.GOLD_LEAF)
+	elif phase == "camp" and view.get("camp") != null:
+		context = "camp"
 		var camp: Dictionary = view.camp
-		STYLE.label(body, "Camp · %s%s" % [str(camp.reason).replace("_", " "), " · at the inn (+%d to mending rolls)" % int(camp.inn_bonus) if camp.get("inn", false) else ""], 20, STYLE.GOLD_BRIGHT)
-		STYLE.label(body, "%d Spent cards reshuffled into the draw pile; energy reset to %d.%s" % [int(camp.reshuffled), int(view.get("base_energy", 0)), " %d unplayed cards forfeited." % int(camp.forfeited) if int(camp.get("forfeited", 0)) > 0 else ""], 13, STYLE.IVORY)
-		if camp.get("deadline", false): STYLE.label(body, "This was the last round: when you break camp the Warlord comes to you.", 13, STYLE.LOSS)
-		STYLE.label(body, "Wounds: %d · bandages: %d · Influence: %d (play cards for more)" % [_list(view, "wounds").size(), int(camp.bandages), int(view.get("turn", {}).get("influence", 0))], 13, STYLE.MUTED)
-		for roll in _list(camp, "mend_rolls"):
-			STYLE.label(body, "Mending roll for %s: %d%s vs %d · %s (%s)" % [view.get("card_names", {}).get(roll.card, roll.card), int(roll.roll), " +%d" % int(roll.bonus) if int(roll.bonus) > 0 else "", int(roll.needed), "mended" if roll.success else "failed", roll.paid], 12, STYLE.GAIN if roll.success else STYLE.LOSS)
-		var influence := _button(body, "Play %d selected card%s for Influence" % [selected_cards.size(), "" if selected_cards.size() == 1 else "s"], func(): _act({"kind": "camp_service", "service": "influence", "cards": _payment_cards()}), "expedition.camp.influence")
+		_overlay_heading(body, "Camp · %s%s" % [str(camp.reason).replace("_", " "), " · at the inn (+%d to mending rolls)" % int(camp.inn_bonus) if camp.get("inn", false) else ""], CHART.glyph("tent"))
+		CHART.ink_label(body, "%d Spent cards reshuffled into the draw pile; energy reset to %d.%s" % [int(camp.reshuffled), int(view.get("base_energy", 0)), " %d unplayed cards forfeited." % int(camp.forfeited) if int(camp.get("forfeited", 0)) > 0 else ""], 14)
+		if camp.get("deadline", false): CHART.ink_label(body, "This was the last round: when you break camp the Warlord comes to you.", 14, CHART.RUBRIC)
+		CHART.ink_label(body, "Wounds %d · bandages %d · Influence %d (play cards for more)" % [_list(view, "wounds").size(), int(camp.bandages), int(view.get("turn", {}).get("influence", 0))], 13, CHART.SEPIA_TEXT)
+		var rolls: Array = _list(camp, "mend_rolls")
+		if not rolls.is_empty():
+			var grid := GridContainer.new(); grid.columns = 4; grid.add_theme_constant_override("h_separation", 10); body.add_child(grid)
+			for roll in rolls:
+				CHART.ink_label(grid, str(view.get("card_names", {}).get(roll.card, roll.card)), 13, CHART.INK, false, false)
+				CHART.numeral_label(grid, "%d%s" % [int(roll.roll), " +%d" % int(roll.bonus) if int(roll.bonus) > 0 else ""], 13)
+				CHART.numeral_label(grid, "vs %d" % int(roll.needed), 13)
+				CHART.ink_label(grid, "%s (%s)" % ["mended" if roll.success else "failed", roll.paid], 13, CHART.GREEN if roll.success else CHART.RUBRIC, false, false)
+		var influence := CHART.paper_button(_button(body, "Play %d selected card%s for Influence" % [selected_cards.size(), "" if selected_cards.size() == 1 else "s"], func(): _act({"kind": "camp_service", "service": "influence", "cards": _payment_cards()}), "expedition.camp.influence"), 14)
 		influence.disabled = selected_cards.is_empty()
-		var bandage := _button(body, "Mend roll with a bandage (%d+)" % int(camp.roll_needed), func(): _act({"kind": "camp_service", "service": "mend_roll", "item": "bandage"}), "expedition.camp.mend_bandage")
+		var bandage := CHART.paper_button(_button(body, "Mend roll with a bandage (%d+)" % int(camp.roll_needed), func(): _act({"kind": "camp_service", "service": "mend_roll", "item": "bandage"}), "expedition.camp.mend_bandage"), 14)
 		bandage.disabled = int(camp.bandages) < 1 or _list(view, "wounds").size() == 0
-		var paid := _button(body, "Mend roll for %d Influence (%d+)" % [int(camp.influence_per_roll), int(camp.roll_needed)], func(): _act({"kind": "camp_service", "service": "mend_roll"}), "expedition.camp.mend_influence")
+		var paid := CHART.paper_button(_button(body, "Mend roll for %d Influence (%d+)" % [int(camp.influence_per_roll), int(camp.roll_needed)], func(): _act({"kind": "camp_service", "service": "mend_roll"}), "expedition.camp.mend_influence"), 14)
 		paid.disabled = int(view.get("turn", {}).get("influence", 0)) < int(camp.influence_per_roll) or _list(view, "wounds").size() == 0
-		_button(body, "Change deck · %d Influence per change" % int(camp.deck_change), _open_prepare, "expedition.prepare")
-		STYLE.accent(_button(body, "Break camp", func(): _act({"kind": "break_camp"}), "expedition.camp.break"))
-		return
-	if phase == "victory" or phase == "defeat":
-		_overlay.visible = true
-		STYLE.label(body, "The region is won!" if phase == "victory" else "The run is over", 22, STYLE.GOLD_BRIGHT if phase == "victory" else STYLE.LOSS)
+		CHART.paper_button(_button(body, "Change deck · %d Influence per change" % int(camp.deck_change), _open_prepare, "expedition.prepare"), 14)
+		CHART.rim(CHART.paper_button(_button(body, "Break camp", func(): _act({"kind": "break_camp"}), "expedition.camp.break"), 16, true), CHART.RUBRIC if camp.get("deadline", false) else CHART.GOLD_LEAF)
+	elif phase == "victory" or phase == "defeat":
+		context = "region_end"
+		_overlay_heading(body, "The region is won!" if phase == "victory" else "The run is over", ICONS.texture("conqueror") if phase == "victory" else null, CHART.INK if phase == "victory" else CHART.RUBRIC)
 		var lb: Dictionary = view.get("last_battle", {}) if view.get("last_battle") != null else {}
-		if phase == "victory": STYLE.label(body, "The Warlord is beaten. XP earned this expedition: %d. Extra relic choices pending: %d. Every wound is mended." % [int(view.get("xp_earned", 0)), int(view.get("pending_relic_choices", 0))], 14, STYLE.IVORY)
-		else: STYLE.label(body, "You lost to the Warlord. This save is marked ended; its XP and cards remain for the records.", 14, STYLE.IVORY)
-		if not lb.is_empty(): STYLE.label(body, "Last battle: %s · %s" % [lb.get("name", ""), lb.get("result", "")], 12, STYLE.MUTED)
-		_button(body, "All campaigns", _show_saves, "expedition.end.campaigns")
+		if phase == "victory": CHART.ink_label(body, "The Warlord is beaten. XP earned this expedition: %d. Extra relic choices pending: %d. Every wound is mended." % [int(view.get("xp_earned", 0)), int(view.get("pending_relic_choices", 0))], 14)
+		else: CHART.ink_label(body, "You lost to the Warlord. This save is marked ended; its XP and cards remain for the records.", 14)
+		if not lb.is_empty(): CHART.ink_label(body, "Last battle: %s · %s" % [lb.get("name", ""), lb.get("result", "")], 12, CHART.SEPIA_TEXT)
+		CHART.rim(CHART.paper_button(_button(body, "All campaigns", _show_saves, "expedition.end.campaigns"), 15, true), CHART.GOLD_LEAF)
+	if context.is_empty(): return
+	_overlay.visible = true
+	_dress_overlay(context, site_type)
+
+func _overlay_heading(body: Node, text: String, icon: Texture2D, color: Color = CHART.INK) -> void:
+	var row := HBoxContainer.new(); row.add_theme_constant_override("separation", 8); body.add_child(row)
+	if icon != null: CHART.icon_rect(row, icon, 22)
+	var label := CHART.ink_label(row, text, 22, color, true); label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	CHART.gold_rule(body)
+
+func _status_cell(row: Node, who: String, st: Dictionary) -> void:
+	var cell := HBoxContainer.new(); cell.mouse_filter = Control.MOUSE_FILTER_STOP; cell.tooltip_text = str(st.rules); cell.add_theme_constant_override("separation", 4); row.add_child(cell)
+	var caption := STYLE.label(cell, who + ":", 12, STYLE.GOLD); caption.autowrap_mode = TextServer.AUTOWRAP_OFF
+	CHART.icon_rect(cell, ICONS.texture(str(st.id)), 20)
+	var label := STYLE.label(cell, "%s ×%d" % [st.name, int(st.stacks)], 14, CINEMATIC.IVORY); label.autowrap_mode = TextServer.AUTOWRAP_OFF; CHART.stone_text(label)
+
+## The painting behind the sheet, and the scene's size and place over the map.
+func _dress_overlay(context: String, site_type: String) -> void:
+	var night: bool = view.get("night", false)
+	var player_hex: Dictionary = {}
+	for hex in _list(view, "hexes"):
+		if hex.get("player", false): player_hex = hex
+	var terrain := str(player_hex.get("terrain", ""))
+	var warlord: bool = view.get("pending_battle") != null and view.pending_battle.get("warlord", false)
+	var painting := CHART.habitat_for(context, terrain, site_type, warlord, night)
+	_overlay_backdrop.texture = CHART.habitat_texture(painting)
+	var tint := Color(0.42, 0.46, 0.6) if night else Color(0.5, 0.5, 0.56)
+	if context == "region_end": tint = Color(0.7, 0.62, 0.45) if str(view.get("phase", "")) == "victory" else Color(0.5, 0.3, 0.3)
+	_overlay_backdrop.modulate = tint
+	# Size the scene to its text: once now, and again after a frame so wrapped
+	# lines are measured at their real width.
+	_fit_overlay(false)
+	_fit_overlay.call_deferred(true)
+
+func _fit_overlay(measured: bool) -> void:
+	if not _overlay.visible or _map_panel == null: return
+	var map_rect := _map_panel.get_global_rect()
+	var viewport := get_viewport_rect().grow(-20)
+	var width := minf(1040.0, map_rect.size.x - 40.0)
+	var content: float = (_overlay_body.size.y if measured else _overlay_body.get_combined_minimum_size().y) + 8.0
+	var max_height := maxf(180.0, map_rect.size.y - 24.0)
+	var height := clampf(content + 48.0 + 36.0 + 20.0, 180.0, max_height)
+	_overlay_scroll.custom_minimum_size = Vector2(minf(560.0, width - 80.0), clampf(content, 80.0, height - 48.0 - 36.0))
+	_overlay.size = Vector2(width, height)
+	var at := map_rect.get_center() - _overlay.size * 0.5
+	at = at.clamp(viewport.position, (viewport.end - _overlay.size).max(viewport.position))
+	_overlay.global_position = at
+	if measured: return
+	# A second measured pass on the next frame.
+	get_tree().process_frame.connect(func(): _fit_overlay(true), CONNECT_ONE_SHOT)
 
 ## One resolved event: its site, the event and the round and turn it resolved
 ## in. Dismissing it keeps it dismissed until another event resolves.
@@ -540,23 +920,26 @@ func _render_battle_result(body: VBoxContainer) -> void:
 	var outcome: Dictionary = last_battle.get("outcome", {})
 	var report: Dictionary = outcome.get("report", {}) if outcome.get("report") != null else {}
 	var expedition: Dictionary = last_battle.get("expedition", {})
-	STYLE.label(body, "Battle: %s · %s" % [expedition.get("name", ""), str(outcome.get("result", last_battle.get("error", "not recorded"))).capitalize()], 20, STYLE.GAIN if outcome.get("result", "") == "victory" else STYLE.LOSS)
+	var result := str(outcome.get("result", last_battle.get("error", "not recorded")))
+	_overlay_heading(body, "Battle · %s · %s" % [expedition.get("name", ""), result.capitalize()], null, CHART.GREEN if result == "victory" else (CHART.RUBRIC if result == "defeat" else CHART.INK))
 	if outcome.is_empty():
-		STYLE.label(body, "The result was not recorded: %s" % last_battle.get("error", "unknown error"), 13, STYLE.LOSS)
+		CHART.ink_label(body, "The result was not recorded: %s" % last_battle.get("error", "unknown error"), 13, CHART.RUBRIC)
 	else:
 		var lines: Array = []
 		if int(outcome.get("xp_awarded", 0)) > 0: lines.append("+%d XP (now %d)%s" % [int(outcome.xp_awarded), int(outcome.get("xp", 0)), " · +%d early-strike XP" % int(report.get("early_xp", 0)) if int(report.get("early_xp", 0)) > 0 else ""])
 		if int(report.get("gold", 0)) > 0 or int(report.get("loot", 0)) > 0: lines.append("+%d gold%s" % [int(report.get("gold", 0)), " and %d loot" % int(report.get("loot", 0)) if int(report.get("loot", 0)) > 0 else ""])
 		lines.append("Energy: brought %d, ended %d, kept %d" % [int(report.get("energy_in", 0)), int(report.get("energy_end", 0)), int(report.get("energy_kept", 0))])
 		lines.append("Cards back on the map: hand %d, draw %d, Spent %d · wounds %d" % [_list(report, "hand_after").size(), int(report.get("draw_after", 0)), int(report.get("spent_after", 0)), int(report.get("wounds", 0))])
-		if int(report.get("defeat_wounds", 0)) > 0: lines.append("Defeat: %d defeat wounds on top of your pre-battle wounds; driven back; the round ends with a rest." % int(report.defeat_wounds))
-		if str(outcome.get("result", "")) == "draw": lines.append("A draw: nothing is recorded; your pre-battle cards, wounds and energy are back.%s" % (" The Warlord attacks again." if str(report.get("kind", "")) == "deadline" else ""))
-		if not str(report.get("site_freed", "")).is_empty(): lines.append("%s is freed." % report.site_freed)
-		if report.get("lieutenant", false) and outcome.get("result", "") == "victory": lines.append("A Lieutenant is slain: the Warlord loses a Lieutenant's Favor.")
-		if report.get("region_won", false): lines.append("The region is won! %d relic choice(s) pending; wounds mended: %d." % [int(report.get("relic_choices", 0)), int(report.get("wounds_mended", 0))])
-		if report.get("run_over", false): lines.append("The Warlord has won. The run is over.")
-		STYLE.label(body, "\n".join(lines), 13, STYLE.IVORY)
-	_button(body, "Continue", func(): last_battle = {}; _render(), "expedition.battle.continue")
+		for line in lines: CHART.ink_label(body, line, 14)
+		if int(report.get("defeat_wounds", 0)) > 0: CHART.ink_label(body, "Defeat: %d defeat wounds on top of your pre-battle wounds; driven back; the round ends with a rest." % int(report.defeat_wounds), 14, CHART.RUBRIC)
+		if result == "draw": CHART.ink_label(body, "A draw: nothing is recorded; your pre-battle cards, wounds and energy are back.%s" % (" The Warlord attacks again." if str(report.get("kind", "")) == "deadline" else ""), 14)
+		if not str(report.get("site_freed", "")).is_empty(): CHART.ink_label(body, "%s is freed." % report.site_freed, 14, CHART.GREEN)
+		if report.get("lieutenant", false) and result == "victory":
+			var row := HBoxContainer.new(); row.add_theme_constant_override("separation", 6); body.add_child(row)
+			CHART.icon_rect(row, ICONS.texture("lieutenant"), 16); CHART.ink_label(row, "A Lieutenant is slain: the Warlord loses a Lieutenant's Favor.", 14)
+		if report.get("region_won", false): CHART.ink_label(body, "The region is won! %d relic choice(s) pending; wounds mended: %d." % [int(report.get("relic_choices", 0)), int(report.get("wounds_mended", 0))], 14, CHART.GREEN)
+		if report.get("run_over", false): CHART.ink_label(body, "The Warlord has won. The run is over.", 14, CHART.RUBRIC)
+	CHART.rim(CHART.paper_button(_button(body, "Continue", func(): last_battle = {}; _render(), "expedition.battle.continue"), 15, true), CHART.GOLD_LEAF)
 
 # Actions that leave the screen --------------------------------------------------
 func _start_fight() -> void:
@@ -614,14 +997,15 @@ func inspection_state() -> Dictionary:
 		"turn": turn, "moves": _list(view, "moves"), "explores": _list(view, "explores"), "challenges": _list(view, "challenges"), "enters": _list(view, "enters"),
 		"site_here": view.get("site_here"), "pending_battle": view.get("pending_battle"), "event": view.get("event"), "camp": view.get("camp"), "last_battle": view.get("last_battle"), "last_rest": view.get("last_rest"),
 		"statuses": _list(view, "statuses"), "inventory": _list(view, "inventory"), "warlord": view.get("warlord", {}), "result": str(view.get("result", "")),
-		"selected_hex": [selected_hex.x, selected_hex.y] if selected_hex != Vector2i(999, 999) else null, "selected_cards": selected_cards, "energy_payment": energy_payment,
+		"selected_hex": [selected_hex.x, selected_hex.y] if selected_hex != NONE else null, "selected_cards": selected_cards, "energy_payment": energy_payment,
 		"placed_tiles": _list(view, "slots").filter(func(s): return s.get("placed", false)).size(), "seen_hexes": _list(view, "hexes").filter(func(h): return h.get("seen", false)).size(),
-		"message": _message.text,
+		"message": _message.text, "hex_radius": _hex_radius, "survey": _survey_key or _survey_locked, "legend_open": _legend_open, "marks_processing": _marks.is_processing() if _marks != null else false,
 		"hexes": _list(view, "hexes"), "slots": _list(view, "slots"),
 	}
 
 func _button(parent: Node, text: String, callback: Callable, control_id: String) -> Button:
 	var button := Button.new(); button.text = text; button.pressed.connect(callback)
+	button.focus_mode = Control.FOCUS_NONE
 	button.set_meta("expedition_control", control_id)
 	parent.add_child(button)
 	_register(control_id, button, text)
