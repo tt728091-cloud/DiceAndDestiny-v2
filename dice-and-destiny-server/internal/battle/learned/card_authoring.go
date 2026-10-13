@@ -25,6 +25,11 @@ func handleCardAuthoring(r runtimeRequest) string {
 		}
 		templates := map[string]content.BattleCardDefinition{}
 		for id, c := range lib.Cards {
+			if content.IsBlankCard(c) && c.MapEffect == nil {
+				// A blank health card (minion decks) has nothing to edit and is
+				// not a template for new cards.
+				continue
+			}
 			editable, err := content.EditableCard(c)
 			if err == nil {
 				if editable.AccessType == "" {
@@ -55,7 +60,7 @@ func handleCardAuthoring(r runtimeRequest) string {
 		for effect := range content.CardCapabilities() {
 			targets[effect] = content.CardTargetCapabilities(effect)
 		}
-		return runtimeSuccess(map[string]any{"dice": lib.Dice, "mechanics": content.CardMechanics(), "abilities": lib.Abilities, "access_types": economy.Access.Types, "card_names": names, "target_rules": targets, "condition_types": []string{"symbol_count", "number_pattern", "exact_faces"}, "patterns": []string{"three_of_a_kind", "exact_pair", "pair_or_better", "small_straight", "large_straight"}, "limits": map[string]int{"steps": 32, "options": 16, "depth": 4, "conditions": 16, "count": 100}, "revision": saved.Revision, "effects": content.CardCapabilities(), "windows": content.CardWindows, "timing_choices": content.CardTimingChoices, "reaction_windows": content.CardReactionWindows, "window_moments": content.CardWindowMoments, "templates": templates, "statuses": lib.Statuses, "symbols": lib.Symbols, "target_owners": []string{"self", "enemy", "any"}, "target_modes": []string{"one", "exact", "up_to", "all"}, "target_selections": []string{"choose", "random"}, "source_zones": []string{"hand", "discard", "deck"}, "target_zones": []string{"hand", "discard", "deck", "removed"}, "destinations": []string{"hand", "discard", "deck", "removed"}, "roll_requirements": []string{"any", "before_first", "after_first"}})
+		return runtimeSuccess(map[string]any{"dice": lib.Dice, "mechanics": content.CardMechanics(), "abilities": lib.Abilities, "access_types": economy.Access.Types, "card_names": names, "target_rules": targets, "condition_types": []string{"symbol_count", "number_pattern", "exact_faces"}, "patterns": []string{"three_of_a_kind", "exact_pair", "pair_or_better", "small_straight", "large_straight"}, "limits": map[string]int{"steps": 32, "options": 16, "depth": 4, "conditions": 16, "count": 100}, "revision": saved.Revision, "effects": content.CardCapabilities(), "windows": content.CardWindows, "timing_choices": content.CardTimingChoices, "reaction_windows": content.CardReactionWindows, "window_moments": content.CardWindowMoments, "templates": templates, "statuses": lib.Statuses, "symbols": lib.Symbols, "target_owners": []string{"self", "enemy", "any"}, "target_modes": []string{"one", "exact", "up_to", "all"}, "target_selections": []string{"choose", "random"}, "source_zones": []string{"hand", "discard", "deck"}, "target_zones": []string{"hand", "discard", "deck", "removed"}, "destinations": []string{"hand", "discard", "deck", "removed"}, "roll_requirements": []string{"any", "before_first", "after_first"}, "map_effect_kinds": content.CardMapEffectKinds})
 	}
 	// Godot round-trips JSON integers as integral floats. Canonicalize numeric
 	// spelling while retaining strict typed and unknown-field validation.
@@ -73,11 +78,16 @@ func handleCardAuthoring(r runtimeRequest) string {
 	if err = d.Decode(&c); err != nil {
 		return runtimeError(err)
 	}
-	if c.Program == nil && c.Mechanic == nil {
-		return runtimeError(fmt.Errorf("authored card requires a program or specialized mechanic"))
+	if c.Program == nil && c.Mechanic == nil && c.MapEffect == nil {
+		return runtimeError(fmt.Errorf("authored card requires a program, a specialized mechanic or a map effect"))
+	}
+	if c.Program == nil && c.Mechanic == nil && !content.IsBlankCard(c) {
+		return runtimeError(fmt.Errorf("a map card has no battle effect: remove its battle operations and play timing"))
 	}
 	c = content.PrepareProgramCard(c, &lib)
 	c = content.PrepareMechanicCard(c, &lib)
+	// A map-only card's face and rules come from its map effect.
+	c = content.PrepareMapCard(c)
 	lib.Cards[c.ID] = c
 	if err = content.ValidateAuthoredCard(c, lib); err != nil {
 		return runtimeError(err)

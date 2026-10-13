@@ -56,10 +56,12 @@ func rebuild() -> void:
 	_stepper(adjust, "Energy cost", int(card.cost.energy), "", 0, 75, func(v): card.cost.energy = v, "forge.energy", int(compare_card.get("cost", {}).get("energy", -1)))
 	if card.get("program") is Dictionary: _program_rows(adjust)
 	elif card.get("mechanic") is Dictionary: _mechanic_rows(adjust)
+	if card.get("map_effect") is Dictionary: _map_rows(adjust)
 	var timing: Dictionary = card.program if card.get("program") is Dictionary else card.get("mechanic", {})
 	if not timing.is_empty():
 		_stepper(adjust, "Uses per round", int(timing.get("uses_per_round", 0)), "0 = unlimited", 0, 100, func(v): timing.uses_per_round = v, "forge.uses_per_round", int(_compare_timing().get("uses_per_round", -1)))
-	_enum_row(adjust, "After play, card goes to", ["discard", "removed", "hand", "deck"], str(card.play.destination), func(v): card.play.destination = v, "forge.play_destination", str(compare_card.get("play", {}).get("destination", "")))
+	if card.get("program") is Dictionary or card.get("mechanic") is Dictionary:
+		_enum_row(adjust, "After play, card goes to", ["discard", "removed", "hand", "deck"], str(card.play.destination), func(v): card.play.destination = v, "forge.play_destination", str(compare_card.get("play", {}).get("destination", "")))
 	if card.get("program") is Dictionary:
 		var additions := STYLE.section(self)
 		STYLE.heading(additions, "Add an effect")
@@ -181,6 +183,26 @@ func _mechanic_rows(parent: VBoxContainer) -> void:
 			"status":
 				var ids: Array = catalog.get("statuses", {}).keys(); ids.sort()
 				_enum_row(parent, caption, ids, str(value), func(v): card.mechanic.params[key] = v, "forge.mechanic." + key, str(old_params.get(key, "")))
+
+## The map effect's numbers: its amount, the map-only extra energy and, for
+## Move, the terrain options. The kind and text live in the full editor.
+func _map_rows(parent: VBoxContainer) -> void:
+	var effect: Dictionary = card.map_effect
+	var old: Dictionary = compare_card.get("map_effect", {}) if compare_card.get("map_effect") is Dictionary else {}
+	var kind := str(effect.get("kind", "move"))
+	var caption: String = {"move": "Map · Move points", "draw": "Map · cards drawn", "energy": "Map · energy gained", "sight": "Map · extra sight", "scout": "Map · scout range"}.get(kind, "Map · amount")
+	_stepper(parent, caption, int(effect.get("amount", 1)), "", 1, 100, func(v): effect.amount = v, "forge.map.amount", int(old.get("amount", -1)) if str(old.get("kind", "")) == kind else -1)
+	_stepper(parent, "Map · extra energy", int(effect.get("energy_cost", 0)), "On top of the energy cost, paid on the map only", 0, 100, func(v):
+		if v == 0: effect.erase("energy_cost")
+		else: effect.energy_cost = v, "forge.map.energy_cost", int(old.get("energy_cost", 0)) if not old.is_empty() else -1)
+	if kind == "move":
+		for key in ["ignore_terrain", "ignore_night"]:
+			var check := CheckBox.new(); check.text = {"ignore_terrain": "Map · any terrain costs 1 Move", "ignore_night": "Map · Day terrain costs at Night"}[key]
+			check.button_pressed = bool(effect.get(key, false)); check.set_meta("tree_field", "forge.map." + key); parent.add_child(check)
+			check.toggled.connect(func(on):
+				if on: effect[key] = true
+				else: effect.erase(key)
+				_changed())
 
 func _stepper(parent: Node, caption: String, value: int, hint: String, low: int, high: int, apply: Callable, key: String, original: int = -1) -> void:
 	var row := HBoxContainer.new(); row.add_theme_constant_override("separation", 6); parent.add_child(row)

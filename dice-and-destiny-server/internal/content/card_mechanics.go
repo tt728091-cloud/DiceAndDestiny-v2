@@ -209,7 +209,9 @@ func EditableCard(c BattleCardDefinition) (BattleCardDefinition, error) {
 		return c, err
 	}
 	c = copy
-	if c.Mechanic != nil {
+	if c.Mechanic != nil || IsMapOnlyCard(c) {
+		// Map-only cards have no battle program to edit; their map effect is
+		// edited as it is.
 		return c, nil
 	}
 	kind := MechanicKind(c)

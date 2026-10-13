@@ -22,6 +22,7 @@ Evidence folder (ignored): `dice-and-destiny-client/.godot/runtime/expedition-ev
 | M10 Deck-change Influence paid once per visit | done | see git log (`M10: …`) |
 | M11 Map plays cost the card's printed energy | done | see git log (`M11: …`) |
 | M12 Bigger map: no banner, parchment edge to edge, short day line | done | see git log (`M12: …`) |
+| M13 The card editor edits map effects | done | see git log (`M13: …`) |
 
 ## M0 — Baseline (2026-10-12)
 
@@ -280,6 +281,15 @@ The user asked for a bigger map: the chart's cartouche already names the region 
 - The cartouche's day line is `chart_day_label()`: "Day · 1/4", "Night · 2/4", and the authority's "The deadline" after the last round. The authority's `day_label` is unchanged (battle badge, tooltips).
 - The hex radius cap rose from 48 to 64, so the freed space makes the hexes bigger (about 55 px at 1920×1080).
 - Tests: `verify_expedition_chart.gd` asserts at both window sizes that the map reaches the top, the parchment fills the map area, the day line reads "Day · 1/4", Campaigns and Menu sit in the ledger and the old banner text is gone, and captures `expedition-chart-layout-<size>`; `verify_expedition_map.gd` reads the cartouche's Day/Night line.
+
+## M13 — The card editor edits map effects (2026-10-13)
+
+The user could not change Trailblaze from Move 2 to Move 3: the card editor had no map-effect controls, and opening the map-only card from its tree flooded the terminal with `Invalid access to property or key 'program'` errors because the editor assumed every card has a battle program. Validation also refused it ("authored card requires a program or specialized mechanic"), and the tree publisher refused map-only nodes, so the Pathfinder tree could never be re-published from the workshop.
+
+- **Authority.** The authoring op accepts a card with a map effect and no battle program or mechanic, as long as it is a blank battle card (no operations, no play timing), and prepares its face and rules from the map effect (`PrepareMapCard`). `EditableCard` leaves map-only cards as they are instead of giving them an empty program. The tree publisher accepts map-only nodes and prepares them the same way. The editor's catalog lists `map_effect_kinds`. A card with no program, mechanic or map effect is still refused. Blank health cards (the Bell Diver's and Ribbon Eel's filler cards, which have no effect at all) are no longer offered as editor templates: they had made `verify_card_creation_guided.gd` fail since 2026-10-09 with the same missing-program crash.
+- **Editor.** The Card tab has an "On the Expedition map" section: for battle cards a "Has a map effect" box, then the effect (Move, Draw cards, Gain energy, See further, Scout contents), its amount, the map-only extra energy, Move's "any terrain costs 1" and "Day costs at Night" options, the map text, and a line with what a map play costs (energy cost + extra). Map-only cards hide the battle play sections; the Effects tab says map cards have no battle effects; every timing helper reads a stand-in instead of a missing program.
+- **Trees.** The tree diff reads map changes ("Map: Move 2 → Move 3", gains/loses, map energy, terrain options), and the forge's quick edit has map steppers (amount, extra energy) and the Move options, so upgrades and cheaper variants can change movement and energy in a click.
+- **Tests.** Go: `TestCardEditorEditsMapEffects` on a disposable copy of the authored content (Trailblaze validates; the Pathfinder tree publishes with Trailblaze at Move 3 for 5 energy and a variant at Move 5 for 15; a map card with battle timing, a map amount of 0, and a card with no effect at all are refused; Nudge gains, changes and loses a map effect). Godot: `verify_card_map_effects.gd` (the map-only card renders every tab without a script error, Move 2 → 3 validates and is handed back by "Use card settings", Nudge gains a map Move, the forge's stepper makes the diff read "Map: Move 2 → Move 3").
 
 ## Decisions made during implementation
 

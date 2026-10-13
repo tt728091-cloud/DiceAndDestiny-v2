@@ -355,8 +355,8 @@ func PreviewCardTree(saved AuthoredCards, lib BattleLibrary, t CardTree) (Author
 		if ProgramContains(saved.Deleted, n.Card.ID) {
 			return saved, lib, fmt.Errorf("card ID was deleted: %s", n.Card.ID)
 		}
-		if n.Card.Program == nil && n.Card.Mechanic == nil {
-			return saved, lib, fmt.Errorf("tree node needs a configurable card")
+		if n.Card.Program == nil && n.Card.Mechanic == nil && !IsMapOnlyCard(n.Card) {
+			return saved, lib, fmt.Errorf("tree node needs a configurable card (a battle program, a specialized mechanic, or a map effect)")
 		}
 		if n.XP < 1 {
 			n.XP = n.Value()
@@ -395,6 +395,7 @@ func PreviewCardTree(saved AuthoredCards, lib BattleLibrary, t CardTree) (Author
 		}
 		n.Card = PrepareProgramCard(n.Card, &lib)
 		n.Card = PrepareMechanicCard(n.Card, &lib)
+		n.Card = PrepareMapCard(n.Card)
 		saved.Cards[n.Card.ID] = n.Card
 		lib.Cards[n.Card.ID] = n.Card
 		retained[n.Card.ID] = true

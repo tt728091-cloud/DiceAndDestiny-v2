@@ -50,6 +50,11 @@ var _title: Label
 var _status: Label
 var _last_notice := ""
 var _card_frame: CenterContainer
+## A map-only card has no battle timing; this stands in for it so timing
+## helpers never read a missing program.
+var _no_timing: Dictionary = {"windows": [], "uses_per_round": 0, "uses_per_battle": 0}
+const MAP_KIND_LABELS := {"move": "Move", "draw": "Draw cards", "energy": "Gain energy", "sight": "See further", "scout": "Scout contents"}
+const MAP_AMOUNT_LABELS := {"move": "Move points", "draw": "Cards drawn", "energy": "Energy gained", "sight": "Extra sight · hexes", "scout": "Scout range · hexes"}
 
 func _ready() -> void:
 	set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
@@ -220,10 +225,13 @@ func _render_fields() -> void:
 	match _tabs.current_tab:
 		0: _card_fields()
 		1:
-			_label(_fields, "Change the values below and validate to refresh the preview." if draft.get("mechanic") is Dictionary else "Effects resolve in order. Options and conditions are part of the card, not separate cards.", 15)
-			_steps = VBoxContainer.new(); _fields.add_child(_steps)
-			if draft.has("mechanic"): _mechanic_fields(_steps)
-			else: PROGRAM_EDITOR.render(self, _steps, draft.program.steps, "steps", 0)
+			if _map_only():
+				_label(_fields, "Map card: it has no battle effects. Set what it does on the Expedition map in the Card tab, under “On the Expedition map”.", 15)
+			else:
+				_label(_fields, "Change the values below and validate to refresh the preview." if draft.get("mechanic") is Dictionary else "Effects resolve in order. Options and conditions are part of the card, not separate cards.", 15)
+				_steps = VBoxContainer.new(); _fields.add_child(_steps)
+				if draft.has("mechanic"): _mechanic_fields(_steps)
+				else: PROGRAM_EDITOR.render(self, _steps, draft.program.steps, "steps", 0)
 		2: _upgrade_fields()
 		3:
 			_label(_fields, "Optional advanced definition. The same authority validation applies. Apply JSON before returning to the guided controls.", 15)
@@ -246,6 +254,8 @@ func _card_fields() -> void:
 	_number(grid, "Buy XP", int(draft.economy.buy), 0, 1000000, func(v): draft.economy.buy = v; draft.economy.sell = mini(int(draft.economy.sell), v) if embedded_draft.is_empty() else v; _changed(true), "buy")
 	_number(grid, "Sell XP · cannot exceed buy price", int(draft.economy.sell), 0, int(draft.economy.buy), func(v): draft.economy.sell = v; _changed(), "sell").editable = embedded_draft.is_empty()
 	_number(grid, "Copies per deck", int(draft.economy.copy_limit), 1, 100, func(v): draft.economy.copy_limit = v; _changed(), "copies")
+	_map_fields()
+	if _map_only(): return
 	var play := _section("Playing the card")
 	grid = STYLE.form(play)
 	_select(grid, "Played card goes to", catalog.destinations, str(draft.play.destination), func(v): draft.play.destination = v; _changed(), "destination")
@@ -346,6 +356,7 @@ func _refresh_window_controls() -> void:
 			if choice == current: pick.select(i)
 		pick.tooltip_text = TIMING_HELP[segment][current]
 func _allowed_windows() -> Array:
+	if _map_only(): return []
 	return _available_windows() if draft.has("mechanic") else _compatible_windows(draft.program.steps)
 # A segment's turn windows; its opt-in reaction window is managed separately.
 func _segment_windows(segment: String) -> Array:
@@ -361,14 +372,15 @@ func _timing_support(segment: String) -> Dictionary:
 	var support := {"": true}
 	for choice in ["before", "after"]:
 		support[choice] = not _intersection(catalog.timing_choices[segment][choice], allowed).is_empty()
-	if segment == "offense" and not draft.has("mechanic") and _needs_roll(draft.program.steps): support.before = false
+	if segment == "offense" and draft.get("program") is Dictionary and _needs_roll(draft.program.steps): support.before = false
 	support["any"] = support.before and support.after
 	return support
 # Mirrors content.CardTiming, including legacy roll requirements.
 func _current_timing(segment: String) -> String:
 	var before := false; var after := false
-	var requirement := "any" if draft.has("mechanic") else str(draft.program.get("roll_requirement", "any"))
-	var needs_roll := not draft.has("mechanic") and _needs_roll(draft.program.steps)
+	var program = draft.get("program")
+	var requirement := str(program.get("roll_requirement", "any")) if program is Dictionary else "any"
+	var needs_roll: bool = program is Dictionary and _needs_roll(program.steps)
 	for w in _timing().windows:
 		for moment in catalog.window_moments.get(w, []):
 			if w == "offensive_planning" and (moment == "offense_before" and (requirement == "after_first" or needs_roll) or moment == "offense_after" and requirement == "before_first"): continue
@@ -385,7 +397,7 @@ func _timing_summary() -> String:
 	return " · ".join(parts) if not parts.is_empty() else "never"
 # Legacy roll requirements become the equivalent before/after windows.
 func _normalize_roll_requirement() -> void:
-	if draft.has("mechanic") or str(draft.program.get("roll_requirement", "any")) == "any": return
+	if not draft.get("program") is Dictionary or str(draft.program.get("roll_requirement", "any")) == "any": return
 	var replacement := "offensive_before_roll" if draft.program.roll_requirement == "before_first" else "offensive_after_roll"
 	draft.program.windows = draft.program.windows.map(func(w): return replacement if w == "offensive_planning" else w)
 	draft.program.roll_requirement = "any"
@@ -396,7 +408,7 @@ func _set_timing(segment: String, choice: String) -> void:
 	if not choice.is_empty(): windows.append_array(_intersection(catalog.timing_choices[segment][choice], _allowed_windows()))
 	_timing().windows = windows
 func _reconcile_windows() -> void:
-	if draft.has("mechanic"): return
+	if not draft.get("program") is Dictionary: return
 	var allowed := _allowed_windows()
 	var wanted := {}
 	var changed: bool = _intersection(_timing().windows, allowed) != _timing().windows
@@ -514,7 +526,8 @@ func _refresh_card_preview() -> void:
 func _set_valid() -> void:
 	_preview.text = str(draft.presentation.rules_text)
 	_title.text = "%s · %d energy" % [draft.name, int(draft.cost.energy)]
-	_status.text = "Play: %s\nAfter play: %s\nBuy: %d XP · Sell: %d XP · Up to %d copies" % [_timing_summary(), draft.play.destination, int(draft.economy.buy), int(draft.economy.sell), int(draft.economy.copy_limit)]
+	var play_line := "Map card · never played in battle" if _map_only() else "Play: %s\nAfter play: %s" % [_timing_summary(), draft.play.destination]
+	_status.text = "%s\nBuy: %d XP · Sell: %d XP · Up to %d copies" % [play_line, int(draft.economy.buy), int(draft.economy.sell), int(draft.economy.copy_limit)]
 	var path := str(draft.presentation.get("illustration_path", ""))
 	_art.texture = load(path) if not path.is_empty() and ResourceLoader.exists(path) else null; _art.visible = false
 	_error.text = "Definition valid." if _last_notice.is_empty() else "Definition valid. " + _last_notice
@@ -567,9 +580,60 @@ func _normalize_draft() -> void:
 	if not draft.economy.get("upgrades") is Array: draft.economy.upgrades = []
 
 func _timing() -> Dictionary:
-	return draft.mechanic if draft.has("mechanic") else draft.program
+	if draft.get("mechanic") is Dictionary: return draft.mechanic
+	if draft.get("program") is Dictionary: return draft.program
+	return _no_timing
+## A map card: no battle program or mechanic, only its map effect.
+func _map_only() -> bool:
+	return not draft.get("program") is Dictionary and not draft.get("mechanic") is Dictionary
 func _available_windows() -> Array:
+	if _map_only(): return []
 	return catalog.mechanics[draft.mechanic.kind].windows if draft.has("mechanic") else catalog.windows
+
+## What the card does on the Expedition map. Map cards must have one; battle
+## cards may add one (played on the map instead of being spent as 1 Move or
+## 1 Influence). Playing it for its map effect costs the card's energy cost
+## plus the optional map-only extra.
+func _map_fields() -> void:
+	var box := _section("On the Expedition map")
+	var has: bool = draft.get("map_effect") is Dictionary
+	var grid := STYLE.form(box)
+	if _map_only():
+		_label(box, "Map card: it cannot be played in battle but still counts as health. Any card can also be spent on the map as 1 Move or 1 Influence.", 14).add_theme_color_override("font_color", STYLE.MUTED)
+	else:
+		_label(grid, "")
+		_check(grid, "Has a map effect · played on the map for this effect instead of being spent as 1 Move or 1 Influence", has, func(on):
+			if on: draft.map_effect = {"kind": "move", "amount": 2, "text": "On the march."}
+			else: draft.erase("map_effect")
+			_changed(true), "map.enabled")
+	if not has: return
+	var effect: Dictionary = draft.map_effect
+	var kinds: Array = catalog.get("map_effect_kinds", MAP_KIND_LABELS.keys())
+	var kind_pick := _select(grid, "Map effect", kinds, str(effect.get("kind", "move")), func(v):
+		effect.kind = v
+		if v != "move": effect.erase("ignore_terrain"); effect.erase("ignore_night")
+		_changed(true), "map.kind")
+	for i in kind_pick.item_count: kind_pick.set_item_text(i, MAP_KIND_LABELS.get(str(kind_pick.get_item_metadata(i)), kind_pick.get_item_text(i)))
+	var kind := str(effect.get("kind", "move"))
+	_number(grid, MAP_AMOUNT_LABELS.get(kind, "Amount"), int(effect.get("amount", 1)), 1, 100, func(v): effect.amount = v; _changed(), "map.amount")
+	_number(grid, "Extra map energy · paid on the map on top of the card's energy cost; 0 for most cards", int(effect.get("energy_cost", 0)), 0, 100, func(v):
+		if v == 0: effect.erase("energy_cost")
+		else: effect.energy_cost = v
+		_changed(true), "map.energy_cost")
+	if kind == "move":
+		_label(grid, "")
+		_check(grid, "Any terrain costs 1 Move while this Move lasts", bool(effect.get("ignore_terrain", false)), func(on):
+			if on: effect.ignore_terrain = true
+			else: effect.erase("ignore_terrain")
+			_changed(), "map.ignore_terrain")
+		_label(grid, "")
+		_check(grid, "Night uses Day terrain costs while this Move lasts", bool(effect.get("ignore_night", false)), func(on):
+			if on: effect.ignore_night = true
+			else: effect.erase("ignore_night")
+			_changed(), "map.ignore_night")
+	_line(grid, "Map text · a short line shown after the map rules", str(effect.get("text", "")), func(v): effect.text = v; _changed(), "map.text")
+	var total := int(draft.cost.energy) + int(effect.get("energy_cost", 0))
+	_label(box, "Playing it on the map for this effect costs %d energy (energy cost %d%s)." % [total, int(draft.cost.energy), " + %d extra" % int(effect.energy_cost) if int(effect.get("energy_cost", 0)) > 0 else ""], 14).add_theme_color_override("font_color", STYLE.MUTED)
 func _mechanic_fields(parent: VBoxContainer) -> void:
 	if draft.mechanic.kind == "roll_table": _roll_table_fields(parent); return
 	var spec: Dictionary = catalog.mechanics[draft.mechanic.kind]

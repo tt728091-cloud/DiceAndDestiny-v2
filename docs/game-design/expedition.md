@@ -306,7 +306,7 @@ The Starter's real 12-card deck, Day 1.
 - **Expedition rules:** one file, e.g. `content/progression_v1/expedition.yaml` — rounds, hand size, terrain costs, sight, ambush, fortified, defeat, camp healing, site mending, the Warlord's pace, rewards, Influence costs and gold.
 - **Per character:** base energy, hand size and limit, energy carry-out — on the character sheet.
 - **Per enemy:** habit, gold drop, XP — on the enemy or encounter definition.
-- **Per card:** its map effect (if any) — in the card's catalog definition, next to its battle `program`.
+- **Per card:** its map effect (if any) — in the card's catalog definition, next to its battle `program`; edited in the card editor's Card tab (“On the Expedition map”: effect, amount, extra map energy, Move's terrain options, text) and in the tree forge's quick steppers.
 - **Per region:** tile stack, Lieutenants, the Warlord and his goal — in the region definition.
 
 A sketch of the rules file (names are illustrative):

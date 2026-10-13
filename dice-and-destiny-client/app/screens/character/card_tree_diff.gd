@@ -19,6 +19,7 @@ static func changes(before: Dictionary, after: Dictionary, catalog: Dictionary) 
 			var a = params_a.get(key, spec.parameters[key].get("default")); var b = params_b.get(key, spec.parameters[key].get("default"))
 			if str(a) != str(b): out.append(_value_change(_caption(key), a, b, key))
 		_timing(out, before.mechanic, after.mechanic)
+	_map(out, before.get("map_effect"), after.get("map_effect"))
 	var dest_a := str(before.get("play", {}).get("destination", "discard")); var dest_b := str(after.get("play", {}).get("destination", "discard"))
 	if dest_a != dest_b: out.append(_entry("After play: %s → %s" % [_word(dest_a), _word(dest_b)], null if dest_b != "removed" else false))
 	var saved_a := str(before.get("saved_card_destination", "")); var saved_b := str(after.get("saved_card_destination", ""))
@@ -155,3 +156,30 @@ static func _word(value: String) -> String:
 
 static func _entry(text: String, better) -> Dictionary:
 	return {"text": text, "tone": "neutral" if better == null else ("gain" if better else "loss")}
+
+
+## Map-effect changes, read from the structured map_effect: gained or lost,
+## a different kind, amount, map-only energy, or terrain options.
+static func _map(out: Array, a, b) -> void:
+	var has_a: bool = a is Dictionary; var has_b: bool = b is Dictionary
+	if not has_a and not has_b: return
+	if not has_a: out.append(_entry("Map: gains %s" % map_face(b), true)); return
+	if not has_b: out.append(_entry("Map: loses %s" % map_face(a), false)); return
+	if str(a.get("kind", "")) != str(b.get("kind", "")):
+		out.append(_entry("Map: %s → %s" % [map_face(a), map_face(b)], null)); return
+	var amount_a := int(a.get("amount", 0)); var amount_b := int(b.get("amount", 0))
+	if amount_a != amount_b: out.append(_entry("Map: %s → %s" % [map_face(a, false), map_face(b, false)], amount_b > amount_a))
+	var cost_a := int(a.get("energy_cost", 0)); var cost_b := int(b.get("energy_cost", 0))
+	if cost_a != cost_b: out.append(_entry("Map energy: %d → %d" % [cost_a, cost_b], cost_b < cost_a))
+	for key in ["ignore_terrain", "ignore_night"]:
+		if bool(a.get(key, false)) != bool(b.get(key, false)):
+			out.append(_entry("Map: %s %s" % [{"ignore_terrain": "any terrain costs 1", "ignore_night": "Day costs at Night"}[key], "on" if bool(b.get(key, false)) else "off"], bool(b.get(key, false))))
+
+## The short map line, as on the card face: "Move 2", "Draw 2", "+10 Energy".
+static func map_face(effect: Dictionary, with_options: bool = true) -> String:
+	var amount := int(effect.get("amount", 0))
+	var text: String = {"move": "Move %d", "draw": "Draw %d", "energy": "+%d Energy", "sight": "+%d sight", "scout": "Scout %d"}.get(str(effect.get("kind", "")), str(effect.get("kind", "")) + " %d") % amount
+	if with_options and str(effect.get("kind", "")) == "move":
+		if effect.get("ignore_terrain", false): text += ", any terrain"
+		elif effect.get("ignore_night", false): text += ", day costs"
+	return text
