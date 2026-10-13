@@ -7983,8 +7983,8 @@
             "type": "planning",
             "presentation": {
               "illustration_path": "res://assets/battle/cards/battle_focus.png",
-              "effect_summary": "Draw 2 cards",
-              "rules_text": "Draw 2 cards for one of your characters. If the deck runs short, draw what is left; discard is never reshuffled.\nPlay: Offense, any time; Defense, any time.",
+              "effect_summary": "Draw 2 cards\nMap: Draw 2",
+              "rules_text": "Draw 2 cards for one of your characters. If the deck runs short, draw what is left; discard is never reshuffled.\nMap: Draw 2 cards from your draw pile (only the cards still there; Spent cards are never reshuffled) — Take stock of the road ahead. Playing it for its effect counts as a card played this turn.\nPlay: Offense, any time; Defense, any time.",
               "art_key": "",
               "timing": [
                 {
@@ -8019,11 +8019,17 @@
             "operations": []
           },
           "x": 0,
-          "y": 0
+          "y": 0,
+          "xp": 10
         },
         {
           "id": "node_1",
           "card": {
+            "map_effect": {
+              "kind": "draw",
+              "amount": 3,
+              "text": "Plenty for the road."
+            },
             "program": {
               "version": 1,
               "windows": [
@@ -8061,8 +8067,8 @@
             "type": "planning",
             "presentation": {
               "illustration_path": "res://assets/battle/cards/battle_focus.png",
-              "effect_summary": "Draw 3 cards",
-              "rules_text": "Draw 3 cards for one of your characters. If the deck runs short, draw what is left; discard is never reshuffled.\nPlay: Offense, any time; Defense, any time.",
+              "effect_summary": "Draw 3 cards\nMap: Draw 3",
+              "rules_text": "Draw 3 cards for one of your characters. If the deck runs short, draw what is left; discard is never reshuffled.\nMap: Draw 3 cards from your draw pile (only the cards still there; Spent cards are never reshuffled) — Plenty for the road. Playing it for its effect counts as a card played this turn.\nPlay: Offense, any time; Defense, any time.",
               "art_key": "",
               "timing": [
                 {
@@ -8097,11 +8103,17 @@
             "operations": []
           },
           "x": -160,
-          "y": -360
+          "y": -360,
+          "xp": 13
         },
         {
           "id": "node_2",
           "card": {
+            "map_effect": {
+              "kind": "draw",
+              "amount": 4,
+              "text": "Gather everything for the road."
+            },
             "program": {
               "version": 1,
               "windows": [
@@ -8139,8 +8151,8 @@
             "type": "planning",
             "presentation": {
               "illustration_path": "res://assets/battle/cards/battle_focus.png",
-              "effect_summary": "Draw 4 cards",
-              "rules_text": "Draw 4 cards for one of your characters. If the deck runs short, draw what is left; discard is never reshuffled.\nPlay: Offense, any time; Defense, any time.",
+              "effect_summary": "Draw 4 cards\nMap: Draw 4",
+              "rules_text": "Draw 4 cards for one of your characters. If the deck runs short, draw what is left; discard is never reshuffled.\nMap: Draw 4 cards from your draw pile (only the cards still there; Spent cards are never reshuffled) — Gather everything for the road. Playing it for its effect counts as a card played this turn.\nPlay: Offense, any time; Defense, any time.",
               "art_key": "",
               "timing": [
                 {
@@ -8175,11 +8187,17 @@
             "operations": []
           },
           "x": -160,
-          "y": -720
+          "y": -720,
+          "xp": 17
         },
         {
           "id": "node_3",
           "card": {
+            "map_effect": {
+              "kind": "draw",
+              "amount": 2,
+              "text": "A quick look at the road."
+            },
             "program": {
               "version": 1,
               "windows": [
@@ -8217,8 +8235,8 @@
             "type": "planning",
             "presentation": {
               "illustration_path": "res://assets/battle/cards/battle_focus.png",
-              "effect_summary": "Draw 2 cards",
-              "rules_text": "Draw 2 cards for one of your characters. If the deck runs short, draw what is left; discard is never reshuffled.\nOnce per round.\nPlay: Offense, any time; Defense, any time.",
+              "effect_summary": "Draw 2 cards\nMap: Draw 2",
+              "rules_text": "Draw 2 cards for one of your characters. If the deck runs short, draw what is left; discard is never reshuffled.\nOnce per round.\nMap: Draw 2 cards from your draw pile (only the cards still there; Spent cards are never reshuffled) — A quick look at the road. Playing it for its effect counts as a card played this turn.\nPlay: Offense, any time; Defense, any time.",
               "art_key": "",
               "timing": [
                 {
@@ -8254,11 +8272,17 @@
             "operations": []
           },
           "x": 160,
-          "y": -360
+          "y": -360,
+          "xp": 14
         },
         {
           "id": "node_4",
           "card": {
+            "map_effect": {
+              "kind": "draw",
+              "amount": 2,
+              "text": "Think the road through twice."
+            },
             "program": {
               "version": 1,
               "windows": [
@@ -8296,8 +8320,8 @@
             "type": "planning",
             "presentation": {
               "illustration_path": "res://assets/battle/cards/battle_focus.png",
-              "effect_summary": "Draw 2 cards",
-              "rules_text": "Draw 2 cards for one of your characters. If the deck runs short, draw what is left; discard is never reshuffled.\nPlay: Offense, any time; Defense, any time.",
+              "effect_summary": "Draw 2 cards\nMap: Draw 2",
+              "rules_text": "Draw 2 cards for one of your characters. If the deck runs short, draw what is left; discard is never reshuffled.\nMap: Draw 2 cards from your draw pile (only the cards still there; Spent cards are never reshuffled) — Think the road through twice. Playing it for its effect counts as a card played this turn.\nPlay: Offense, any time; Defense, any time.",
               "art_key": "",
               "timing": [
                 {
@@ -8332,7 +8356,8 @@
             "operations": []
           },
           "x": 0,
-          "y": 360
+          "y": 360,
+          "xp": 8
         }
       ],
       "edges": [
@@ -9331,7 +9356,7 @@
     "triage"
   ],
   "version": 1,
-  "revision": 49,
+  "revision": 50,
   "cards": {
     "blood_price": {
       "program": {
@@ -15902,8 +15927,8 @@
       "type": "planning",
       "presentation": {
         "illustration_path": "res://assets/battle/cards/battle_focus.png",
-        "effect_summary": "Draw 2 cards",
-        "rules_text": "Draw 2 cards for one of your characters. If the deck runs short, draw what is left; discard is never reshuffled.\nPlay: Offense, any time; Defense, any time.",
+        "effect_summary": "Draw 2 cards\nMap: Draw 2",
+        "rules_text": "Draw 2 cards for one of your characters. If the deck runs short, draw what is left; discard is never reshuffled.\nMap: Draw 2 cards from your draw pile (only the cards still there; Spent cards are never reshuffled) — Take stock of the road ahead. Playing it for its effect counts as a card played this turn.\nPlay: Offense, any time; Defense, any time.",
         "art_key": "",
         "timing": [
           {
@@ -15938,6 +15963,11 @@
       "operations": []
     },
     "take_stock_paths_variant_node_1": {
+      "map_effect": {
+        "kind": "draw",
+        "amount": 3,
+        "text": "Plenty for the road."
+      },
       "program": {
         "version": 1,
         "windows": [
@@ -15975,8 +16005,8 @@
       "type": "planning",
       "presentation": {
         "illustration_path": "res://assets/battle/cards/battle_focus.png",
-        "effect_summary": "Draw 3 cards",
-        "rules_text": "Draw 3 cards for one of your characters. If the deck runs short, draw what is left; discard is never reshuffled.\nPlay: Offense, any time; Defense, any time.",
+        "effect_summary": "Draw 3 cards\nMap: Draw 3",
+        "rules_text": "Draw 3 cards for one of your characters. If the deck runs short, draw what is left; discard is never reshuffled.\nMap: Draw 3 cards from your draw pile (only the cards still there; Spent cards are never reshuffled) — Plenty for the road. Playing it for its effect counts as a card played this turn.\nPlay: Offense, any time; Defense, any time.",
         "art_key": "",
         "timing": [
           {
@@ -16011,6 +16041,11 @@
       "operations": []
     },
     "take_stock_paths_variant_node_2": {
+      "map_effect": {
+        "kind": "draw",
+        "amount": 4,
+        "text": "Gather everything for the road."
+      },
       "program": {
         "version": 1,
         "windows": [
@@ -16048,8 +16083,8 @@
       "type": "planning",
       "presentation": {
         "illustration_path": "res://assets/battle/cards/battle_focus.png",
-        "effect_summary": "Draw 4 cards",
-        "rules_text": "Draw 4 cards for one of your characters. If the deck runs short, draw what is left; discard is never reshuffled.\nPlay: Offense, any time; Defense, any time.",
+        "effect_summary": "Draw 4 cards\nMap: Draw 4",
+        "rules_text": "Draw 4 cards for one of your characters. If the deck runs short, draw what is left; discard is never reshuffled.\nMap: Draw 4 cards from your draw pile (only the cards still there; Spent cards are never reshuffled) — Gather everything for the road. Playing it for its effect counts as a card played this turn.\nPlay: Offense, any time; Defense, any time.",
         "art_key": "",
         "timing": [
           {
@@ -16084,6 +16119,11 @@
       "operations": []
     },
     "take_stock_paths_variant_node_3": {
+      "map_effect": {
+        "kind": "draw",
+        "amount": 2,
+        "text": "A quick look at the road."
+      },
       "program": {
         "version": 1,
         "windows": [
@@ -16121,8 +16161,8 @@
       "type": "planning",
       "presentation": {
         "illustration_path": "res://assets/battle/cards/battle_focus.png",
-        "effect_summary": "Draw 2 cards",
-        "rules_text": "Draw 2 cards for one of your characters. If the deck runs short, draw what is left; discard is never reshuffled.\nOnce per round.\nPlay: Offense, any time; Defense, any time.",
+        "effect_summary": "Draw 2 cards\nMap: Draw 2",
+        "rules_text": "Draw 2 cards for one of your characters. If the deck runs short, draw what is left; discard is never reshuffled.\nOnce per round.\nMap: Draw 2 cards from your draw pile (only the cards still there; Spent cards are never reshuffled) — A quick look at the road. Playing it for its effect counts as a card played this turn.\nPlay: Offense, any time; Defense, any time.",
         "art_key": "",
         "timing": [
           {
@@ -16158,6 +16198,11 @@
       "operations": []
     },
     "take_stock_paths_variant_node_4": {
+      "map_effect": {
+        "kind": "draw",
+        "amount": 2,
+        "text": "Think the road through twice."
+      },
       "program": {
         "version": 1,
         "windows": [
@@ -16195,8 +16240,8 @@
       "type": "planning",
       "presentation": {
         "illustration_path": "res://assets/battle/cards/battle_focus.png",
-        "effect_summary": "Draw 2 cards",
-        "rules_text": "Draw 2 cards for one of your characters. If the deck runs short, draw what is left; discard is never reshuffled.\nPlay: Offense, any time; Defense, any time.",
+        "effect_summary": "Draw 2 cards\nMap: Draw 2",
+        "rules_text": "Draw 2 cards for one of your characters. If the deck runs short, draw what is left; discard is never reshuffled.\nMap: Draw 2 cards from your draw pile (only the cards still there; Spent cards are never reshuffled) — Think the road through twice. Playing it for its effect counts as a card played this turn.\nPlay: Offense, any time; Defense, any time.",
         "art_key": "",
         "timing": [
           {

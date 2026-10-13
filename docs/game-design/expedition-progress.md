@@ -24,6 +24,7 @@ Evidence folder (ignored): `dice-and-destiny-client/.godot/runtime/expedition-ev
 | M12 Bigger map: no banner, parchment edge to edge, short day line | done | see git log (`M12: …`) |
 | M13 The card editor edits map effects | done | see git log (`M13: …`) |
 | M14 The Drowned Regent's art and standard enemy layout | done | see git log (`M14: …`) |
+| M15 Take Stock's upgrades draw on the map | done | see git log (`M15: …`) |
 
 ## M0 — Baseline (2026-10-12)
 
@@ -299,6 +300,14 @@ The Warlord had no visual profile, so the battle scenery had no sprite for him a
 - **Art.** `assets/battle/minions/drowned_oracle/drowned_regent.png` is derived from the Drowned Oracle painting (same family and style): the bone crown gilded, the cloth and tendrils graded to royal sea-blue, the reliquaries warmed to gilt, the tide-glow pushed to hot aqua, and the figure mirrored to face the player like the other minions. It is a derived placeholder, not new painted art; replacing the PNG keeps everything else working.
 - **Profile.** `content/battle_visuals/minions/drowned_oracle/drowned_regent.tres` (definition `drowned_regent`, faces left, 400 px tall, ground anchor at his lowest tendril) is registered in `library.tres` and listed in `minion_catalog.json`.
 - **Validation.** `verify_expedition_map.gd`'s fight helper now checks every expedition enemy at battle start: a visual profile with art, its sprite in the scenery, the stat box attached and centred on the sprite's feet, inside the battlefield and the viewport, titled with the enemy's name, with its name selector. The run covers the Brine Mask and the Regent twice (road challenge and deadline); both of his fights complete. Screenshots of the Regent and the Brine Mask at 1920×1080 are in `m14-screens/`. `verify_drowned_oracle_minions.gd`, `verify_brine_mask.gd`, `verify_expedition_statuses.gd` and `verify_expedition_chart.gd` pass.
+
+## M15 — Take Stock's upgrades draw on the map (2026-10-13)
+
+After a camp the user held only Plenty ("Draw 3 cards") and could not play it on the map. Take Stock has a map draw, but its four published upgrades (Plenty, Hoard, Quick Study, Overthink) were authored before map effects existed and had none, so on the map they were only worth 1 Move or 1 Influence. New variants made in the forge copy their base's map effect, so this was old content, not a rule.
+
+- **Content.** Published through the real tree operation (`publish_card_tree`, catalog revision 49 → 50): each upgrade's map effect is a draw equal to its battle draw — Plenty 3, Hoard 4, Quick Study 2, Overthink 2 — with its own flavour line; playing one on the map costs its printed energy (M11). The tree's copies and the catalog cards carry the regenerated rules ("Map: Draw 3 cards from your draw pile …").
+- **Guard.** `TestEveryBattleDrawCardDrawsOnTheMap` loads the published catalog (on a disposable copy) and fails for any card that draws for its own side in battle without a map draw. `TestPlentyDrawsThreeOnTheMap` plays Plenty on the map with the real rules: 10 → 5 energy, three cards drawn.
+- **The user's save.** A copy of "Starter campaign 2" now shows Plenty with its map draw at 5 energy; it reads "not during battle" only because that save is mid-fight.
 
 ## Decisions made during implementation
 
