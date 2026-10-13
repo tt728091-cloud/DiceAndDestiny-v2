@@ -410,7 +410,7 @@ func _hex_tooltip(hex: Dictionary, move: Dictionary) -> String:
 		if site.get("cleared", false): lines.append("Cleared")
 		if site.get("freed", false): lines.append("Freed")
 		for service in _list(site, "services"): lines.append("· %s%s" % [service.label, "" if service.get("available", false) else " (%s)" % service.get("reason", "")])
-		if site.get("has_deck_change", false): lines.append("· Deck changes: %d Influence each" % int(site.get("deck_change", 0)))
+		if site.get("has_deck_change", false): lines.append("· Deck changes: %d Influence opens the deck for the visit" % int(site.get("deck_change", 0)))
 	if hex.get("group") != null:
 		var group: Dictionary = hex.group
 		lines.append("%s ×%d%s" % [group.name, int(group.count), " (last seen here)" if group.get("remembered", false) else ""])
@@ -804,8 +804,10 @@ func _render_site(site: Dictionary) -> void:
 		button.disabled = not service.get("available", false)
 		if not service.get("available", false): button.tooltip_text = str(service.get("reason", ""))
 	if site.get("has_deck_change", false):
-		var prepare := CHART.rim(CHART.paper_button(_button(card, "Change deck · %d Influence per change" % int(site.get("deck_change", 0)), _open_prepare, "expedition.prepare"), 14), CHART.GOLD_LEAF)
-		prepare.tooltip_text = "Open Prepare: buy, sell, upgrade or trade down cards and abilities (XP), paying this site's Influence per change"
+		var open: bool = site.get("deck_open", false)
+		var label := "Change deck · open until the turn ends" if open else "Change deck · %d Influence for the visit" % int(site.get("deck_change", 0))
+		var prepare := CHART.rim(CHART.paper_button(_button(card, label, _open_prepare, "expedition.prepare"), 14), CHART.GOLD_LEAF)
+		prepare.tooltip_text = "The deck is open: buy, sell, upgrade or trade down as often as your XP allows until the turn ends" if open else "Open Prepare: the first change here spends %d Influence (cards played here this turn); after that, change your deck as often as your XP allows until the turn ends" % int(site.get("deck_change", 0))
 
 func _render_journal() -> void:
 	var log_text: Array = _list(view, "log")
@@ -956,7 +958,9 @@ func _render_camp(body: VBoxContainer, camp: Dictionary) -> void:
 	var footer := _overlay_footer
 	var influence := CHART.paper_button(_button(footer, "Play %d selected card%s for Influence" % [selected_cards.size(), "" if selected_cards.size() == 1 else "s"], func(): _act({"kind": "camp_service", "service": "influence", "cards": _payment_cards()}), "expedition.camp.influence"), 14)
 	influence.disabled = selected_cards.is_empty()
-	CHART.paper_button(_button(footer, "Change deck · %d Influence per change" % int(camp.get("deck_change", 0)), _open_prepare, "expedition.prepare"), 14)
+	var deck_open: bool = camp.get("deck_open", false)
+	var deck := CHART.paper_button(_button(footer, "Change deck · open until you break camp" if deck_open else "Change deck · %d Influence, then change freely until you break camp" % int(camp.get("deck_change", 0)), _open_prepare, "expedition.prepare"), 14)
+	deck.tooltip_text = "The deck is open: buy, sell, upgrade or trade down as often as your XP allows; it closes when you break camp" if deck_open else "Open Prepare: the first change spends %d Influence (cards played at camp); after that, change your deck as often as your XP allows until you break camp" % int(camp.get("deck_change", 0))
 	CHART.rim(CHART.paper_button(_button(footer, "Break camp", func(): _act({"kind": "break_camp"}), "expedition.camp.break"), 16, true), CHART.RUBRIC if camp.get("deadline", false) else CHART.GOLD_LEAF)
 
 ## One wound at camp: what it is, its cards, and its basic aid and bandage
@@ -1105,6 +1109,7 @@ func _open_prepare() -> void:
 	screen.expedition = true
 	screen.expedition_cost = int(view.get("camp", {}).get("deck_change", 0)) if view.get("phase", "") == "camp" else int(view.get("site_here", {}).get("deck_change", 0))
 	screen.expedition_influence = int(view.get("turn", {}).get("influence", 0))
+	screen.expedition_open = bool(view.get("camp", {}).get("deck_open", false)) if view.get("phase", "") == "camp" else bool(view.get("site_here", {}).get("deck_open", false))
 	screen.closed.connect(func(): show(); refresh())
 	get_tree().root.add_child(screen)
 	hide()

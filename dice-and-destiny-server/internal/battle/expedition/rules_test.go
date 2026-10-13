@@ -657,12 +657,57 @@ func TestSitesInfluenceMendingShopsAndTrainer(t *testing.T) {
 	if cost, where, _ := s.DeckChangeCost(r); cost != 3 || where != "camp" {
 		t.Fatalf("camp deck changes cost 3, got %d at %s", cost, where)
 	}
-	mustFail(t, s.PayDeckChange(r), "costs 3 Influence; you have 0")
+	mustFail(t, s.PayDeckChange(r), "opening your deck at the camp costs 3 Influence; you have 0")
 	s.Hand = []string{"nudge", "nudge", "try_again"}
 	act(t, s, r, Action{Kind: "camp_service", Service: "influence", Cards: s.Hand[:3]})
+	if v := s.View(r, 1); v.Camp.DeckOpen {
+		t.Fatal("the deck is not open before the fee is paid")
+	}
 	must(t, s.PayDeckChange(r))
-	if s.Turn.Influence != 0 || s.Camp.DeckChanges != 1 {
-		t.Fatal("a camp deck change spends 3 Influence")
+	if s.Turn.Influence != 0 || s.Camp.DeckChanges != 1 || !s.DeckOpen(r) {
+		t.Fatal("the first camp deck change spends 3 Influence and opens the deck")
+	}
+	// Once open, every further change at this camp costs XP only.
+	must(t, s.PayDeckChange(r))
+	must(t, s.PayDeckChange(r))
+	if s.Turn.Influence != 0 || s.Camp.DeckChanges != 3 || !s.View(r, 1).Camp.DeckOpen {
+		t.Fatalf("changes after the first are free of Influence: influence %d changes %d", s.Turn.Influence, s.Camp.DeckChanges)
+	}
+	// Breaking camp closes the deck; the next camp charges again.
+	act(t, s, r, Action{Kind: "break_camp"})
+	if s.Phase == PhaseTurn {
+		act(t, s, r, Action{Kind: "make_camp"})
+		if s.DeckOpen(r) || s.View(r, 1).Camp.DeckOpen {
+			t.Fatal("the next camp's deck starts closed")
+		}
+		mustFail(t, s.PayDeckChange(r), "opening your deck at the camp costs 3 Influence")
+	}
+}
+
+func TestSiteDeckChangesArePaidOncePerVisit(t *testing.T) {
+	r := testRules(t)
+	s := newState(t, r, 4)
+	placeAll(s, r)
+	village := s.hexOfSite("hollow_ford")
+	s.teleport(r, village)
+	s.Hand = []string{"nudge", "nudge", "try_again", "take_stock"}
+	act(t, s, r, Action{Kind: "use_site", Service: "influence", Cards: s.Hand[:2]})
+	must(t, s.PayDeckChange(r))
+	if s.Turn.Influence != 0 || s.Turn.DeckOpen != "hollow_ford" {
+		t.Fatalf("the first change at the village spends 2 Influence: %d / %q", s.Turn.Influence, s.Turn.DeckOpen)
+	}
+	v := s.View(r, 1)
+	if v.SiteHere == nil || !v.SiteHere.DeckOpen || v.SiteHere.DeckChange != 2 {
+		t.Fatalf("the site view says the deck is open: %+v", v.SiteHere)
+	}
+	must(t, s.PayDeckChange(r))
+	// The visit ends with the turn.
+	act(t, s, r, Action{Kind: "end_turn"})
+	if s.Phase == PhaseTurn {
+		if s.DeckOpen(r) {
+			t.Fatal("the deck closes when the turn ends")
+		}
+		mustFail(t, s.PayDeckChange(r), "costs 2 Influence")
 	}
 }
 

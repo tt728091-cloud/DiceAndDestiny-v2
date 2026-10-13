@@ -384,15 +384,16 @@ func _full_flow(seed: int) -> void:
 		for frame in 3: await process_frame
 		await _tap(_prepare_control(prepare, "prepare.buy.trailblaze"))
 		for frame in 4: await process_frame
-		_expect(prepare._influence.text == "0 / 2" and int(prepare.data.xp) == xp - 10, "buying Trailblaze spent 10 XP and 2 Influence")
+		_expect(prepare._influence.text == "Open" and prepare.expedition_open and prepare.expedition_influence == 0 and int(prepare.data.xp) == xp - 10, "buying Trailblaze spent 10 XP and the 2 Influence that open the deck")
 		await _capture(prepare, "expedition-prepare-1280")
 		await _tap(_prepare_control(prepare, "prepare.buy.trailblaze"))
-		for frame in 3: await process_frame
-		_expect("Influence" in prepare._message.text, "a second change without Influence is refused by the authority")
+		for frame in 4: await process_frame
+		_expect(not "Not completed" in prepare._message.text and int(prepare.data.xp) == xp - 20 and prepare._influence.text == "Open", "a second change with the deck open costs XP only (%s)" % prepare._message.text)
 		await _click(_prepare_control(prepare, "prepare.back"))
 		for frame in 6: await process_frame
 	map = _find(EXPEDITION_SCRIPT)
-	_expect(map != null and int(_state().draw) == draw + 1 and int(_state().xp) == xp - 10 and int(map.view.turn.influence) == 0, "the bought card tops the draw pile and the Influence is spent")
+	_expect(map != null and int(_state().draw) == draw + 2 and int(_state().xp) == xp - 20 and int(map.view.turn.influence) == 0, "both bought cards top the draw pile and the Influence is spent")
+	_expect(map != null and _control(map, "expedition.prepare") != null and "open until the turn ends" in _control(map, "expedition.prepare").text, "the site card says the deck stays open this turn")
 	_expect(await _press("expedition.end_turn"), "the turn ends after cards were played")
 	state = _state()
 	_expect(int(state.turn.number) == 2 and state.hand.size() == 4, "the hand refills to four")

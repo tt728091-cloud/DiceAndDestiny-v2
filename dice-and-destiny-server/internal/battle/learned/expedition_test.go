@@ -155,13 +155,21 @@ func TestExpeditionRuntimeOpsAndPersistence(t *testing.T) {
 	if num(bought["xp"]) != 90 || num(bv["turn"].(map[string]any)["influence"]) != 0 || num(bv["health"]) != 13 {
 		t.Fatalf("deck change: xp %v influence %v health %v", bought["xp"], bv["turn"], bv["health"])
 	}
+	if site := bv["site_here"].(map[string]any); site["deck_open"] != true {
+		t.Fatalf("the first change opens the deck for this visit: %v", site)
+	}
+	// With the deck open, a second change costs XP only, no more Influence.
+	second := runtimeOp(t, with(map[string]any{"op": "expedition_deck_change", "campaign_save": saveID, "purchase": map[string]any{"kind": "buy_card", "id": "trailblaze", "revision": num(bought["revision"]), "expected_cost": 10}}), "")
+	if num(second["xp"]) != 80 || num(second["view"].(map[string]any)["health"]) != 14 {
+		t.Fatalf("a second change at the open deck: xp %v health %v", second["xp"], second["view"].(map[string]any)["health"])
+	}
 	save = readSave(t, contentRoot, loadoutRoot, saveID)
-	if save.Expedition.Draw[0] != "trailblaze" || deckHealth(save.Sheet.Deck) != 13 || save.Sheet.XP != 90 {
-		t.Fatalf("the bought card tops the draw pile and the sheet agrees: %v", save.Expedition.Draw)
+	if save.Expedition.Draw[0] != "trailblaze" || save.Expedition.Draw[1] != "trailblaze" || deckHealth(save.Sheet.Deck) != 14 || save.Sheet.XP != 80 {
+		t.Fatalf("the bought cards top the draw pile and the sheet agrees: %v", save.Expedition.Draw)
 	}
 	// Prepare's read-only view still works for expedition saves.
 	prepare := runtimeOp(t, with(map[string]any{"op": "campaign_loadout", "campaign_save": saveID}), "")
-	if num(prepare["xp"]) != 90 {
+	if num(prepare["xp"]) != 80 {
 		t.Fatalf("campaign_loadout on an expedition: %v", prepare["xp"])
 	}
 	// The linear save is untouched by all of this and keeps its encounter path.

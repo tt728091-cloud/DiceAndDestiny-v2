@@ -104,7 +104,7 @@ So on the map:
   1. Spent cards are shuffled back into your draw pile. Wounds stay out. (This is an explicit recovery outside battle; battles still never recycle.)
   2. **Energy resets** to your character's base.
   3. **Your fresh hand is drawn** up to your hand size, right away. The camp always shows a full hand beside the reshuffled draw pile, never an empty hand beside a full pile.
-  4. **Camp:** **basic first aid** on each untreated wound (1d3), then **bandages** on treated wounds (1d6) — see [Defeat and wounds](#9-defeat-and-wounds); play cards from the fresh hand for **Influence** (1 card = 1 Influence, paid out of the round's opening hand, the same cost as Influence at a village); change your deck at camp prices (XP + 3 Influence).
+  4. **Camp:** **basic first aid** on each untreated wound (1d3), then **bandages** on treated wounds (1d6) — see [Defeat and wounds](#9-defeat-and-wounds); play cards from the fresh hand for **Influence** (1 card = 1 Influence, paid out of the round's opening hand, the same cost as Influence at a village); open your deck with **3 Influence**, then change it as often as your XP allows until you break camp.
   5. The Warlord marches 2 hexes toward his goal; roaming Lieutenants take one step.
   6. Day ↔ Night. **Breaking camp draws nothing**: the hand was drawn at step 3.
 - **Bigger deck = longer rounds.** Buying cards adds health and time. **Wounds shorten rounds.**
@@ -228,13 +228,13 @@ To avoid three overlapping systems, there are **two things you save and one thin
 | **Gold** — buys things | Enemies, treasure, ruins, dungeons, event sites | Gear, consumables (bandages), healers. A trainer converts gold to XP at a poor rate. Gold can never upgrade a card directly. |
 | **Influence** — never saved | The cards you play at a site this turn (1 card = 1 Influence) | Site services: deck changes, mending, recruiting |
 
-**Deck changes cost time and place.** Changing your deck (buy, sell, upgrade, swap) happens only at sites, and costs XP **plus** Influence by site tier. A player can shape their deck however they like, but not rebuild it for free before every fight.
+**Deck changes cost time and place.** Changing your deck (buy, sell, upgrade, swap) happens only at sites, and costs XP **plus** an Influence fee by site tier. The fee is paid **once per visit**: the first change opens the deck, and every further change there costs XP only until you leave (break camp, or end the turn at a site). A player can shape their deck however they like, but not rebuild it for free before every fight.
 
 | Site | Deck change | Mend wounds | Shop |
 | --- | --- | --- | --- |
-| Camp (any hex, at rest) | XP + 3 Influence per change | Basic aid, free: 1d3 per untreated wound; then a bandage: 1d6 per treated wound | — |
-| Village | XP + 2 Influence | 2 Influence per point of damage (one card) | Consumables (gold) |
-| Monastery | XP + 1 Influence; best card-tree upgrades | 1 Influence per point, mid-round | — |
+| Camp (any hex, at rest) | 3 Influence opens the deck until you break camp; then XP per change | Basic aid, free: 1d3 per untreated wound; then a bandage: 1d6 per treated wound | — |
+| Village | 2 Influence opens the deck this turn; then XP per change | 2 Influence per point of damage (one card) | Consumables (gold) |
+| Monastery | 1 Influence opens the deck this turn; then XP per change; best card-tree upgrades | 1 Influence per point, mid-round | — |
 | Town / city | XP only: a straight 1:1 swap, no Influence | Healer: 15 gold per point; grievous wounds later | Gear (gold), trainer (gold → XP) |
 
 These costs are a first pass. Mage Knight charges 3 Influence per wound at a village and 2 at a monastery. Ours are lower, and charged per point of damage, because our Influence is cards from a 4-card hand.
@@ -326,7 +326,7 @@ defeat: { wounds: 2 }         # one defeat wound of this much damage
 camp_healing: { basic_aid_die: 3, bandage_die: 6, inn_bonus: 1 }
 mending: { village_influence_per_wound: 2, monastery_influence_per_wound: 1, town_gold_per_wound: 15 }  # per point of damage
 warlord: { start_distance: 5, march_per_rest: 2, early_reward: { xp_per_round: 20, extra_relic_choices: 1 } }
-influence_per_deck_change: { camp: 3, village: 2, monastery: 1, town: 0 }
+deck_change_influence: { camp: 3, village: 2, monastery: 1, town: 0 }   # paid once per visit
 gold:
   drops: { minion_group: [5, 15], lieutenant: 30, treasure: [20, 40], event: [0, 30], warlord: 60 }
   prices: { bandage: 10, consumable: [15, 30], gear: [40, 100], healer_grievous: 50 }
@@ -351,7 +351,7 @@ gold:
 | Warlord start distance / march | ~5 hexes from his goal / 2 hexes per rest |
 | Early-strike reward | +20 XP per unused round, plus 1 extra relic choice |
 | Gold drops and prices | See [Economy](#10-economy) |
-| Influence per deck change | Camp 3, village 2, monastery 1, town 0 |
+| Influence to open the deck (once per visit) | Camp 3, village 2, monastery 1, town 0 |
 | Tiles per region | Start + ~5 countryside + 2 core |
 
 ## 15. What it would take to build
@@ -385,7 +385,7 @@ Decided in review (2026-10-11 to 2026-10-12):
 - Ambush gives extra dice on the first roll (visible status); night doesn't make ambushes automatic; a turn-1 stun is reserved for rare abilities.
 - Fog of war: revealed terrain shown greyed out, contents unknown until seen.
 - Day and Night rounds with different rules.
-- Influence is cards played at a site; deck changes cost XP plus Influence, cheaper at better sites; gold buys gear and services and never upgrades cards directly.
+- Influence is cards played at a site; deck changes cost XP plus a once-per-visit Influence fee, cheaper at better sites; gold buys gear and services and never upgrades cards directly.
 - Losing a normal battle costs wounds and a round but never ends the run; only the Warlord does.
 - Random tiles; Lieutenants roam or sit fortified; the Warlord has an agenda and can be caught.
 - Mixed groups of enemies are in scope.

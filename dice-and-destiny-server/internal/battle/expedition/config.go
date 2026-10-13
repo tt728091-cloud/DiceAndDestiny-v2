@@ -115,22 +115,22 @@ type StatusIDs struct {
 // Config holds every rule number of the Expedition. Nothing in this package
 // hard-codes a value that appears here.
 type Config struct {
-	Version                int                      `yaml:"schema_version" json:"-"`
-	RoundsPerRegion        int                      `yaml:"rounds_per_region" json:"rounds_per_region"`
-	Hand                   HandConfig               `yaml:"hand" json:"hand"`
-	Move                   MoveConfig               `yaml:"move" json:"move"`
-	Terrain                map[string]TerrainConfig `yaml:"terrain" json:"terrain"`
-	Sight                  DayNight                 `yaml:"sight" json:"sight"`
-	Ambush                 AmbushConfig             `yaml:"ambush" json:"ambush"`
-	Fortified              DefenseDiceConfig        `yaml:"fortified" json:"fortified"`
-	Conqueror              DefenseDiceConfig        `yaml:"conqueror" json:"conqueror"`
-	Defeat                 DefeatConfig             `yaml:"defeat" json:"defeat"`
-	CampHealing            CampHealingConfig        `yaml:"camp_healing" json:"camp_healing"`
-	Warlord                WarlordConfig            `yaml:"warlord" json:"warlord"`
-	InfluencePerDeckChange map[string]int           `yaml:"influence_per_deck_change" json:"influence_per_deck_change"`
-	Mending                MendingConfig            `yaml:"mending" json:"mending"`
-	Gold                   GoldConfig               `yaml:"gold" json:"gold"`
-	Statuses               StatusIDs                `yaml:"statuses" json:"statuses"`
+	Version             int                      `yaml:"schema_version" json:"-"`
+	RoundsPerRegion     int                      `yaml:"rounds_per_region" json:"rounds_per_region"`
+	Hand                HandConfig               `yaml:"hand" json:"hand"`
+	Move                MoveConfig               `yaml:"move" json:"move"`
+	Terrain             map[string]TerrainConfig `yaml:"terrain" json:"terrain"`
+	Sight               DayNight                 `yaml:"sight" json:"sight"`
+	Ambush              AmbushConfig             `yaml:"ambush" json:"ambush"`
+	Fortified           DefenseDiceConfig        `yaml:"fortified" json:"fortified"`
+	Conqueror           DefenseDiceConfig        `yaml:"conqueror" json:"conqueror"`
+	Defeat              DefeatConfig             `yaml:"defeat" json:"defeat"`
+	CampHealing         CampHealingConfig        `yaml:"camp_healing" json:"camp_healing"`
+	Warlord             WarlordConfig            `yaml:"warlord" json:"warlord"`
+	DeckChangeInfluence map[string]int           `yaml:"deck_change_influence" json:"deck_change_influence"`
+	Mending             MendingConfig            `yaml:"mending" json:"mending"`
+	Gold                GoldConfig               `yaml:"gold" json:"gold"`
+	Statuses            StatusIDs                `yaml:"statuses" json:"statuses"`
 }
 
 // Terrain names every terrain the config must define.
@@ -225,15 +225,15 @@ func (c Config) validate(lib content.BattleLibrary) error {
 		}
 	}
 	for _, site := range deckChangeSites {
-		v, ok := c.InfluencePerDeckChange[site]
+		v, ok := c.DeckChangeInfluence[site]
 		if !ok {
-			return fmt.Errorf("expedition config: influence_per_deck_change.%s is missing", site)
+			return fmt.Errorf("expedition config: deck_change_influence.%s is missing", site)
 		}
-		if err := inRange("influence_per_deck_change."+site, v, 0, 20); err != nil {
+		if err := inRange("deck_change_influence."+site, v, 0, 20); err != nil {
 			return err
 		}
 	}
-	for site := range c.InfluencePerDeckChange {
+	for site := range c.DeckChangeInfluence {
 		if !containsString(deckChangeSites, site) {
 			return fmt.Errorf("expedition config: unknown deck-change site %q", site)
 		}

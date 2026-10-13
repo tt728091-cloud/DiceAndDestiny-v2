@@ -37,8 +37,8 @@ func TestLoadConfigAcceptsShippedValues(t *testing.T) {
 	}
 	want := map[string]int{"camp": 3, "village": 2, "monastery": 1, "town": 0}
 	for site, n := range want {
-		if cfg.InfluencePerDeckChange[site] != n {
-			t.Fatalf("influence per deck change at %s is %d, not %d", site, cfg.InfluencePerDeckChange[site], n)
+		if cfg.DeckChangeInfluence[site] != n {
+			t.Fatalf("influence to open the deck at %s is %d, not %d", site, cfg.DeckChangeInfluence[site], n)
 		}
 	}
 	if cfg.Mending.VillageInfluencePerWound != 2 || cfg.Mending.MonasteryInfluencePerWound != 1 {
@@ -77,7 +77,7 @@ func TestLoadConfigRejectsBadValues(t *testing.T) {
 		{"ambush keep", "max_kept: 5", "max_kept: 4", "ambush.max_kept must be 5–5"},
 		{"basic aid die", "basic_aid_die: 3", "basic_aid_die: 0", "camp_healing.basic_aid_die must be 1–20"},
 		{"bandage die", "bandage_die: 6", "bandage_die: 21", "camp_healing.bandage_die must be 1–20"},
-		{"missing deck-change site", "influence_per_deck_change: {camp: 3, village: 2, monastery: 1, town: 0}", "influence_per_deck_change: {camp: 3, village: 2, monastery: 1}", "influence_per_deck_change.town is missing"},
+		{"missing deck-change site", "deck_change_influence: {camp: 3, village: 2, monastery: 1, town: 0}", "deck_change_influence: {camp: 3, village: 2, monastery: 1}", "deck_change_influence.town is missing"},
 		{"unknown deck-change site", "monastery: 1, town: 0}", "monastery: 1, town: 0, inn: 1}", "unknown deck-change site \"inn\""},
 		{"bad gold range", "minion_group: [5, 15]", "minion_group: [15, 5]", "gold.drops.minion_group is not a valid range"},
 		{"missing price", "bandage: 10, ", "", "gold.prices.bandage is missing"},

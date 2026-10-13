@@ -38,8 +38,10 @@ warlord:
   start_distance: 5
   march_per_rest: 2
   early_reward: {xp_per_round: 20, extra_relic_choices: 1}
-# Influence (cards played at the site this turn) per deck change.
-influence_per_deck_change: {camp: 3, village: 2, monastery: 1, town: 0}
+# Influence (cards played at the site or camp this turn) that opens the deck
+# for one visit: pay once, then change it as often as XP allows until the
+# camp breaks or, at a site, the turn ends.
+deck_change_influence: {camp: 3, village: 2, monastery: 1, town: 0}
 # Site mending heals one point of damage (one card) per payment.
 mending:
   village_influence_per_wound: 2

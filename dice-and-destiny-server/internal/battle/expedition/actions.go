@@ -405,7 +405,7 @@ func (s *State) beginRest(r Rules, reason string, forfeited int) {
 	}
 	s.Camp = camp
 	s.Phase = PhaseCamp
-	s.Turn.Influence, s.Turn.InfluenceSite = 0, "camp"
+	s.Turn.Influence, s.Turn.InfluenceSite, s.Turn.DeckOpen = 0, "camp", ""
 	camp.Drew = s.drawUpTo(r)
 	camp.HandDrawn, camp.HandSize = true, s.effectiveHandSize(r)
 	s.log("Rest (%s): %d Spent cards reshuffled into the draw pile, energy reset to %d, drew %d.", reason, camp.Reshuffled, s.BaseEnergy, camp.Drew)
@@ -801,14 +801,15 @@ func (s *State) useSite(r Rules, a Action) (Rewards, error) {
 	return Rewards{}, fmt.Errorf("unknown site service %q", a.Service)
 }
 
-// DeckChangeCost is the Influence one deck change costs where the player is,
-// or an error when deck changes are not possible here and now.
+// DeckChangeCost is the Influence that opens the deck for changes where the
+// player is (paid once per visit: at camp until camp breaks, at a site until
+// the turn ends), or an error when deck changes are not possible here and now.
 func (s *State) DeckChangeCost(r Rules) (int, string, error) {
 	if s.Result != "" || s.PendingBattle != nil {
 		return 0, "", errors.New("deck changes wait until the expedition is in a turn")
 	}
 	if s.Phase == PhaseCamp {
-		return r.Config.InfluencePerDeckChange["camp"], "camp", nil
+		return r.Config.DeckChangeInfluence["camp"], "camp", nil
 	}
 	if s.Phase != PhaseTurn {
 		return 0, "", errors.New("deck changes happen at a site or at camp")
@@ -827,24 +828,46 @@ func (s *State) DeckChangeCost(r Rules) (int, string, error) {
 	if s.Turn.InfluenceSite != st.ID {
 		s.Turn.Influence, s.Turn.InfluenceSite = 0, st.ID
 	}
-	return r.Config.InfluencePerDeckChange[tier], tier, nil
+	return r.Config.DeckChangeInfluence[tier], tier, nil
 }
 
-// PayDeckChange spends the Influence for one deck change (after the loadout
-// layer has accepted the purchase).
+// deckVisit names the current deck-change visit: the camp, or the site the
+// player stands on.
+func (s *State) deckVisit(r Rules) string {
+	if s.Phase == PhaseCamp {
+		return "camp"
+	}
+	if st, _, _ := s.siteHere(r); st != nil {
+		return st.ID
+	}
+	return ""
+}
+
+// DeckOpen reports whether this visit's deck-change fee is already paid.
+func (s *State) DeckOpen(r Rules) bool {
+	visit := s.deckVisit(r)
+	return visit != "" && s.Turn.DeckOpen == visit
+}
+
+// PayDeckChange records one deck change (after the loadout layer has accepted
+// the purchase). The first change of a visit spends the Influence that opens
+// the deck; every further change there costs XP only.
 func (s *State) PayDeckChange(r Rules) error {
 	cost, where, err := s.DeckChangeCost(r)
 	if err != nil {
 		return err
 	}
-	if s.Turn.Influence < cost {
-		return fmt.Errorf("a deck change at the %s costs %d Influence; you have %d (play cards here for Influence first)", where, cost, s.Turn.Influence)
+	if !s.DeckOpen(r) {
+		if s.Turn.Influence < cost {
+			return fmt.Errorf("opening your deck at the %s costs %d Influence; you have %d (play cards here for Influence first)", where, cost, s.Turn.Influence)
+		}
+		s.Turn.Influence -= cost
+		s.Turn.DeckOpen = s.deckVisit(r)
+		s.log("Deck opened at the %s for %d Influence: change it freely until you leave.", where, cost)
 	}
-	s.Turn.Influence -= cost
 	if s.Camp != nil {
 		s.Camp.DeckChanges++
 	}
-	s.log("Deck change at the %s for %d Influence.", where, cost)
 	return nil
 }
 

@@ -744,7 +744,7 @@ func (s Site) OpenAtNight() bool { return s.Type != "village" && s.Type != "town
 // bonus to camp mending rolls).
 func (s Site) HasInn() bool { return s.Type == "village" || s.Type == "town" }
 
-// DeckChangeTier maps a site type to the influence_per_deck_change key.
+// DeckChangeTier maps a site type to the deck_change_influence key.
 func (s Site) DeckChangeTier() string {
 	switch s.Type {
 	case "village", "monastery", "town":

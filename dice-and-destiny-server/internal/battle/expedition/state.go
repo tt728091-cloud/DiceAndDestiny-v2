@@ -94,6 +94,9 @@ type TurnState struct {
 	ScoutRange    int    `json:"scout_range,omitempty"`
 	IgnoreTerrain bool   `json:"ignore_terrain,omitempty"`
 	IgnoreNight   bool   `json:"ignore_night,omitempty"`
+	// DeckOpen is where this visit's deck-change fee was paid ("camp" or a
+	// site id): further changes there cost XP only until the visit ends.
+	DeckOpen string `json:"deck_open,omitempty"`
 }
 
 // PendingEvent is an open event scene.

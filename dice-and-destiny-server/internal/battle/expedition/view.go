@@ -60,8 +60,9 @@ type ViewSite struct {
 	Open          bool          `json:"open"`
 	Closed        string        `json:"closed,omitempty"`
 	Services      []ViewService `json:"services,omitempty"`
-	DeckChange    int           `json:"deck_change,omitempty"`
+	DeckChange    int           `json:"deck_change,omitempty"` // Influence that opens the deck for this visit
 	HasDeckChange bool          `json:"has_deck_change,omitempty"`
+	DeckOpen      bool          `json:"deck_open,omitempty"` // the fee is paid; changes cost XP only until the turn ends
 }
 
 type ViewGroup struct {
@@ -189,7 +190,8 @@ type ViewCamp struct {
 	CanBasicAid  bool       `json:"can_basic_aid"`
 	CanBandage   bool       `json:"can_bandage"`
 	HealReason   string     `json:"heal_reason,omitempty"`
-	DeckChange   int        `json:"deck_change"`
+	DeckChange   int        `json:"deck_change"` // Influence that opens the deck until camp breaks
+	DeckOpen     bool       `json:"deck_open"`   // the fee is paid; changes cost XP only until camp breaks
 }
 
 // ViewWound is one grouping of damage on the stat strip and at camp.
@@ -289,14 +291,14 @@ type View struct {
 
 // ViewConfig repeats the rule numbers the HUD explains.
 type ViewConfig struct {
-	EnergyPerMove          int                      `json:"energy_per_move"`
-	ExploreCost            int                      `json:"explore_cost"`
-	SightDay               int                      `json:"sight_day"`
-	SightNight             int                      `json:"sight_night"`
-	Terrain                map[string]TerrainConfig `json:"terrain"`
-	DefeatWounds           int                      `json:"defeat_wounds"`
-	InfluencePerDeckChange map[string]int           `json:"influence_per_deck_change"`
-	TrainerGoldPerXP       int                      `json:"trainer_gold_per_xp"`
+	EnergyPerMove       int                      `json:"energy_per_move"`
+	ExploreCost         int                      `json:"explore_cost"`
+	SightDay            int                      `json:"sight_day"`
+	SightNight          int                      `json:"sight_night"`
+	Terrain             map[string]TerrainConfig `json:"terrain"`
+	DefeatWounds        int                      `json:"defeat_wounds"`
+	DeckChangeInfluence map[string]int           `json:"deck_change_influence"`
+	TrainerGoldPerXP    int                      `json:"trainer_gold_per_xp"`
 }
 
 var habitText = map[string]string{
@@ -343,7 +345,7 @@ func (s *State) viewSite(r Rules, st SiteState) *ViewSite {
 		if v.Open {
 			v.Services = s.siteServices(r, st, def)
 			if tier := def.DeckChangeTier(); tier != "" {
-				v.HasDeckChange, v.DeckChange = true, r.Config.InfluencePerDeckChange[tier]
+				v.HasDeckChange, v.DeckChange, v.DeckOpen = true, r.Config.DeckChangeInfluence[tier], s.Turn.DeckOpen == st.ID
 			}
 		}
 	}
@@ -407,7 +409,7 @@ func (s *State) View(r Rules, revision int) View {
 		Hand: []ViewCard{}, Inventory: []ViewItem{}, Statuses: []ViewStatus{}, Hexes: []ViewHex{}, Slots: []ViewSlot{}, Moves: []ViewMove{}, Explores: []ViewSlot{}, Challenges: []ViewTarget{}, Enters: []ViewTarget{},
 		Health: s.LiveCards(), MaxHealth: s.LiveCards() + s.Wounds.Damage(), XPEarned: s.XPEarned, RelicChoices: s.PendingRelicChoices,
 		LastBattle: s.LastBattle, LastRest: s.viewLastRest(), LastEvent: s.LastEvent, Log: append([]string{}, s.Log...),
-		Config: ViewConfig{EnergyPerMove: cfg.Move.EnergyPerMove, ExploreCost: cfg.Move.ExploreCost, SightDay: cfg.Sight.Day, SightNight: cfg.Sight.Night, Terrain: cfg.Terrain, DefeatWounds: cfg.Defeat.Wounds, InfluencePerDeckChange: cfg.InfluencePerDeckChange, TrainerGoldPerXP: cfg.Gold.TrainerGoldPerXP}}
+		Config: ViewConfig{EnergyPerMove: cfg.Move.EnergyPerMove, ExploreCost: cfg.Move.ExploreCost, SightDay: cfg.Sight.Day, SightNight: cfg.Sight.Night, Terrain: cfg.Terrain, DefeatWounds: cfg.Defeat.Wounds, DeckChangeInfluence: cfg.DeckChangeInfluence, TrainerGoldPerXP: cfg.Gold.TrainerGoldPerXP}}
 	day := (s.Round + 1) / 2
 	if s.Round > cfg.RoundsPerRegion {
 		v.DayLabel = "The deadline"
@@ -618,7 +620,7 @@ func (s *State) View(r Rules, revision int) View {
 	}
 	if s.Camp != nil {
 		c := s.Camp
-		vc := &ViewCamp{Reason: c.Reason, Turn: c.Turn, Round: c.Round, Inn: c.Inn, Site: c.Site, Deadline: c.Deadline, Reshuffled: c.Reshuffled, EnergyBefore: c.EnergyBefore, Forfeited: c.Forfeited, Drew: c.Drew, Heals: append([]HealRoll{}, c.Heals...), Healed: c.Healed, BasicAidDie: cfg.CampHealing.BasicAidDie, BandageDie: cfg.CampHealing.BandageDie, InnBonus: s.innBonus(r), Bandages: s.bandages(r), DeckChange: cfg.InfluencePerDeckChange["camp"]}
+		vc := &ViewCamp{Reason: c.Reason, Turn: c.Turn, Round: c.Round, Inn: c.Inn, Site: c.Site, Deadline: c.Deadline, Reshuffled: c.Reshuffled, EnergyBefore: c.EnergyBefore, Forfeited: c.Forfeited, Drew: c.Drew, Heals: append([]HealRoll{}, c.Heals...), Healed: c.Healed, BasicAidDie: cfg.CampHealing.BasicAidDie, BandageDie: cfg.CampHealing.BandageDie, InnBonus: s.innBonus(r), Bandages: s.bandages(r), DeckChange: cfg.DeckChangeInfluence["camp"], DeckOpen: s.Turn.DeckOpen == "camp"}
 		for _, w := range v.Wounds {
 			if w.BasicAid {
 				vc.Untreated++
