@@ -61,7 +61,7 @@ func _add_die(index: int) -> void:
 	bound.hide(); slot.add_child(bound); _bound_labels.append(bound)
 	_build_mark_map(slot, index)
 	# Carved-stone body beneath the engraved symbol, Curse mark and corner number.
-	var stone := STONE_DIE.new(); stone.mode = STONE_DIE.Mode.BODY; button.add_child(stone); _stones.append(stone)
+	var stone := STONE_DIE.new(); stone.mode = STONE_DIE.Mode.BODY; stone.grain_seed = 11 + index * 7 + (101 if enemy_dice else 0); button.add_child(stone); _stones.append(stone)
 	var symbol := STONE_DIE.new(); symbol.name = "NormalSymbol"; symbol.mode = STONE_DIE.Mode.GLYPH; symbol.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	button.add_child(symbol); _normal_symbols.append(symbol)
 	var curse := Label.new(); curse.name = "CurseSymbol"; curse.mouse_filter = Control.MOUSE_FILTER_IGNORE

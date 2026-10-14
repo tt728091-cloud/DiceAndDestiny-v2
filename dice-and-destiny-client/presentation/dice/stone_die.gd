@@ -32,6 +32,9 @@ var face := 0
 var enemy := false
 ## Extra glyph cut into the lower-right corner, e.g. the Curse mark.
 var mark := ""
+## Which patch of the stone grain this die shows. Set from the die's slot so a
+## rebuilt tray keeps the same look; -1 falls back to the node's own id.
+var grain_seed := -1
 var _state := Vector2i(-1, -1)
 
 static var _grain: Texture2D
@@ -81,6 +84,9 @@ static func dress(control: Control, die: String, shown_face: int, enemy_owned :=
 	var stone = control.get_node_or_null("StoneDie")
 	if stone == null:
 		stone = load(SCRIPT_PATH).new(); stone.name = "StoneDie"
+		# A stable grain patch per die slot and owner, so panels rebuilt during
+		# play keep the same stone look.
+		stone.grain_seed = 23 + control.get_index() * 7 + (101 if enemy_owned else 0)
 		control.add_child(stone); control.move_child(stone, 0)
 		var empty := StyleBoxEmpty.new()
 		var states := ["normal", "hover", "pressed", "hover_pressed", "disabled", "focus"] if control is BaseButton else ["normal"]
@@ -382,7 +388,8 @@ static func grain() -> Texture2D:
 
 func _grain_uvs(points: PackedVector2Array) -> PackedVector2Array:
 	# Each die samples its own patch so neighbouring dice are not identical.
-	var shift := Vector2(fposmod(get_instance_id() * 0.37, 1.0), fposmod(get_instance_id() * 0.61, 1.0))
+	var key: int = grain_seed if grain_seed >= 0 else get_instance_id()
+	var shift := Vector2(fposmod(key * 0.37, 1.0), fposmod(key * 0.61, 1.0))
 	var uvs := PackedVector2Array()
 	for point in points: uvs.append(point / 96.0 + shift)
 	return uvs

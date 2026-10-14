@@ -68,6 +68,9 @@ var _submitting := false
 var _selected_indices: Array = []
 var _selection_roll_number := -1
 var _player_roll_feedback: Dictionary = {}
+## Opponent planning steps applied without a board rebuild (see
+## _model_planning_step_private); read by tests and the inspector.
+var _model_quiet_steps := 0
 var _selected_source := ""
 var _entomb_visual_state: Dictionary = {}
 var _selected_card: Dictionary = {}
@@ -522,8 +525,26 @@ func _apply_model_result(result: Dictionary) -> void:
 	_selected_indices.clear()
 	_director.queue_result(result, _director.last_sequence(), previous_actors)
 	_present_finalized_defense(defense_before)
+	# The opponent's offensive planning (roll, keep, reroll, ability, cards) is
+	# private: nothing the player sees changes until the reveal. Rebuilding the
+	# whole board after each of those steps froze the screen ~250 ms per step
+	# and recreated every die. Keep the board and go straight to the next step;
+	# it rebuilds once when the opponent hands the decision back.
+	if _model_planning_step_private(result):
+		_model_quiet_steps += 1
+		call_deferred("_schedule_model_if_needed", result)
+		return
 	_render()
 	call_deferred("_schedule_model_if_needed", result)
+
+## True for an opponent planning step that leaves the viewer's board as it
+## was: still the opponent's decision, inside private offensive planning,
+## with no presentation beat or held panel waiting.
+func _model_planning_step_private(result: Dictionary) -> bool:
+	return bool(result.get("learned_policy", {}).get("model_turn", false)) \
+		and _view.segment == "offensive" and _view.stage == "planning" \
+		and not _director.has_beats() and _held_defense_view == null \
+		and _error_message.is_empty() and not _model_error and not _history_review and not _history_replay
 
 func _render(force: bool = false) -> void:
 	_sync_program_card_selection()
@@ -3153,10 +3174,12 @@ func _start_player_roll(indices: Array) -> void:
 	# take as long as the whole tumble (measured ~450 ms in a two-enemy round
 	# 2), so the dice would land before they were ever seen moving. Start the
 	# clock again once that frame is on screen.
-	RenderingServer.frame_post_draw.connect(_restart_player_roll_clock.bind(_player_roll_feedback), CONNECT_ONE_SHOT)
+	if not RenderingServer.frame_post_draw.is_connected(_restart_player_roll_clock):
+		RenderingServer.frame_post_draw.connect(_restart_player_roll_clock, CONNECT_ONE_SHOT)
 
-func _restart_player_roll_clock(feedback: Dictionary) -> void:
-	if not is_inside_tree() or not is_same(feedback, _player_roll_feedback) or feedback.is_empty(): return
+func _restart_player_roll_clock() -> void:
+	var feedback := _player_roll_feedback
+	if not is_inside_tree() or feedback.is_empty() or feedback.has("visible_from_ms"): return
 	feedback.started_ms = Time.get_ticks_msec()
 	feedback["visible_from_ms"] = feedback.started_ms
 	if not is_instance_valid(_player_dice_dock): return

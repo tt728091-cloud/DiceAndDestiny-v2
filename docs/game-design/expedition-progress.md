@@ -28,6 +28,7 @@ Evidence folder (ignored): `dice-and-destiny-client/.godot/runtime/expedition-ev
 | M16 Back from battle without a forced camp; never better off; heal flourish | done | see git log (`M16: …`) |
 | M17 Second Wind's upgrades gain energy on the map | done | see git log (`M17: …`) |
 | M18 Visible dice rolls, Influence on the map HUD, dice fairness check | done | see git log (`M18: …`) |
+| M19 No lag before the offensive roll; stable dice texture | done | see git log (`M19: …`) |
 
 ## M0 — Baseline (2026-10-12)
 
@@ -301,7 +302,7 @@ The user could not change Trailblaze from Move 2 to Move 3: the card editor had 
 The Warlord had no visual profile, so the battle scenery had no sprite for him and his stat box fell back to the top-left corner, out of the battlefield and away from where enemies are selected.
 
 - **Art.** `assets/battle/minions/drowned_oracle/drowned_regent.png` is derived from the Drowned Oracle painting (same family and style): the bone crown gilded, the cloth and tendrils graded to royal sea-blue, the reliquaries warmed to gilt, the tide-glow pushed to hot aqua, and the figure mirrored to face the player like the other minions. It is a derived placeholder, not new painted art; replacing the PNG keeps everything else working.
-- **Profile.** `content/battle_visuals/minions/drowned_oracle/drowned_regent.tres` (definition `drowned_regent`, faces left, 400 px tall, ground anchor at his lowest tendril) is registered in `library.tres` and listed in `minion_catalog.json`.
+- **Profile.** `content/battle_visuals/minions/drowned_oracle/drowned_regent.tres` (definition `drowned_regent`, faces left, 400 px tall, ground anchor at his lowest tendril) is registered in `library.tres` (an M14 entry in `minion_catalog.json` was removed in M19: that gallery is the fixed set of generated minions).
 - **Validation.** `verify_expedition_map.gd`'s fight helper now checks every expedition enemy at battle start: a visual profile with art, its sprite in the scenery, the stat box attached and centred on the sprite's feet, inside the battlefield and the viewport, titled with the enemy's name, with its name selector. The run covers the Brine Mask and the Regent twice (road challenge and deadline); both of his fights complete. Screenshots of the Regent and the Brine Mask at 1920×1080 are in `m14-screens/`. `verify_drowned_oracle_minions.gd`, `verify_brine_mask.gd`, `verify_expedition_statuses.gd` and `verify_expedition_chart.gd` pass.
 
 ## M15 — Take Stock's upgrades draw on the map (2026-10-13)
@@ -331,6 +332,17 @@ The user held Surge ("Gain 15 Energy") on the map and could only spend it as 1 M
 - **The offensive roll animation was not seen.** The tumble is timed from the roll command, but the board rebuild after a roll (~200 ms) plus the first frame that draws it (~240 ms) took about as long as the whole 0.45 s tumble in a two-enemy round 2, so the dice landed before they were drawn moving. The battle screen now restarts the roll clock when the first frame after the rebuild is on screen (`_restart_player_roll_clock`, on `frame_post_draw`), and the tumble is a real one: 0.75 s (`player_roll_seconds`), up to ±20° of decaying shake, a small bounce, and faces that slow as they settle. Measured in a window: 19 drawn rolling frames over 0.5 s with the fix against 9 over 0.26 s without (and none when the stall is longer).
 - **Influence on the explore screen.** The stat strip gains an INFLUENCE tile (green when you hold any) naming where it counts ("Hollow Ford", "camp") with a tooltip on when it is lost, and the site card says "Your Influence here this turn: N". `verify_expedition_map.gd` asserts both after the two village cards.
 - **Dice fairness check (no change).** The user saw re-rolled dice land on the same face several times. The authority's seeded generator (SHA-256 over seed and a saved cursor) advances its cursor on every re-roll in both plain and expedition battles (Go probes: 374 single-die re-rolls repeated 16%, 30 expedition re-rolls 27%, fair 16.7%), and across the user's own transcript 499 re-rolled dice repeated 15.6% (the player 24 of 122, 19.7%) with faces evenly spread (1,077 dice, chi-square 4.0 on 5 degrees of freedom). The streaks were chance.
+
+## M19 — No lag before the offensive roll; stable dice texture (2026-10-13)
+
+The user waited 3–5 s after Defense before they could roll, while the dice changed texture over and over. Measured in a window (Bell Diver, round 3): 4.1 s from the end of Defense to a legal roll, with the authority already in offensive planning at 0 ms, so all of it was presentation — the Income summary (2.0 s, `income_animation_seconds`), the segment transition (0.65 s, `combat_transition_seconds`), then the opponent's private planning steps (roll, keep, rerolls, ability) one by one, each followed by a full board rebuild of ~250 ms (six rebuilds, ~1.5 s of frozen frames). Each rebuild recreated the dice, and every stone die chose its grain patch from its node id, so the texture changed every time.
+
+- **Quiet opponent planning.** `_apply_model_result` no longer rebuilds the board for an opponent step inside private offensive planning while the opponent still holds the decision and nothing is waiting to be shown (`_model_planning_step_private`); it goes straight to the next step and rebuilds once when the decision comes back. Defense steps still render (the player sees those rolls).
+- **Stable dice grain.** Stone dice take their grain patch from their slot (and owner) — the tray sets `grain_seed`, and `STONE_DIE.dress` does the same for panel dice — so a rebuild no longer changes how the dice look.
+- **Result.** 3.2 s (was 4.1 s), two slow frames (was six), two tray rebuilds (was seven). What remains is the deliberate Income summary and transition, both project settings.
+- **Also:** the roll-clock restart from M18 now connects to `frame_post_draw` once (headless runs had logged "already connected").
+- **Correction to M14:** the Drowned Regent is no longer listed in `minion_catalog.json`, the fixed ten-per-faction gallery of generated minion art (`verify_minion_art_catalog.gd` had failed since M14); his visual profile stays registered in `library.tres`, which is what battles use.
+- **Test.** `verify_model_planning_quiet.gd` drives a Bell Diver battle through three opponent planning hand-backs and asserts opponent steps are applied without a rebuild (12 quiet steps, 0 rebuilds caused by them) and that every die slot keeps its grain across rebuilds.
 
 ## Decisions made during implementation
 
