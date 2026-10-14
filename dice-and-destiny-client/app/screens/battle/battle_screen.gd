@@ -3148,7 +3148,20 @@ func _play_source_card(source_id: String) -> void:
 
 func _start_player_roll(indices: Array) -> void:
 	if _history_review or _history_replay or indices.is_empty(): return
-	_player_roll_feedback = {"battle_id": _view.battle_id, "round": _view.round_number, "indices": indices.duplicate(), "started_ms": Time.get_ticks_msec(), "duration_ms": ceili(COMBAT_TIMING.seconds("player_roll_seconds", 0.45) * 1000.0)}
+	_player_roll_feedback = {"battle_id": _view.battle_id, "round": _view.round_number, "indices": indices.duplicate(), "started_ms": Time.get_ticks_msec(), "duration_ms": ceili(COMBAT_TIMING.seconds("player_roll_seconds", 0.75) * 1000.0)}
+	# The board rebuild after a roll and the first frame that draws it can
+	# take as long as the whole tumble (measured ~450 ms in a two-enemy round
+	# 2), so the dice would land before they were ever seen moving. Start the
+	# clock again once that frame is on screen.
+	RenderingServer.frame_post_draw.connect(_restart_player_roll_clock.bind(_player_roll_feedback), CONNECT_ONE_SHOT)
+
+func _restart_player_roll_clock(feedback: Dictionary) -> void:
+	if not is_inside_tree() or not is_same(feedback, _player_roll_feedback) or feedback.is_empty(): return
+	feedback.started_ms = Time.get_ticks_msec()
+	feedback["visible_from_ms"] = feedback.started_ms
+	if not is_instance_valid(_player_dice_dock): return
+	for tray in _player_dice_dock.find_children("*", "BattleDiceTray", true, false):
+		if not tray.is_queued_for_deletion(): tray.animate_roll(feedback.indices, int(feedback.started_ms), int(feedback.duration_ms))
 
 func _player_roll_active() -> bool:
 	return not _player_roll_feedback.is_empty() and not _history_review and not _history_replay and _player_roll_feedback.battle_id == _view.battle_id and int(_player_roll_feedback.round) == _view.round_number and Time.get_ticks_msec() < int(_player_roll_feedback.started_ms) + int(_player_roll_feedback.duration_ms)

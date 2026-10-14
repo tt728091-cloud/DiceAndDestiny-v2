@@ -27,6 +27,7 @@ Evidence folder (ignored): `dice-and-destiny-client/.godot/runtime/expedition-ev
 | M15 Take Stock's upgrades draw on the map | done | see git log (`M15: …`) |
 | M16 Back from battle without a forced camp; never better off; heal flourish | done | see git log (`M16: …`) |
 | M17 Second Wind's upgrades gain energy on the map | done | see git log (`M17: …`) |
+| M18 Visible dice rolls, Influence on the map HUD, dice fairness check | done | see git log (`M18: …`) |
 
 ## M0 — Baseline (2026-10-12)
 
@@ -324,6 +325,12 @@ Three requests from the user's play-through.
 The user held Surge ("Gain 15 Energy") on the map and could only spend it as 1 Move or 1 Influence. Like Take Stock's upgrades (M15), Second Wind's four upgrades predate map effects. Published through the tree operation (catalog revision 50 → 51): Surge +15 energy, Shallow Breath +5, and the two choice cards keep their energy option on the map — Focus +10, Deep Focus +15 (their draw option stays battle-only: a map effect is one effect). A copy of the user's save plays Surge on the map: energy 10 → 25.
 
 `TestEnergyCardsAndTreeUpgradesKeepAMapEffect` now fails for any card that gains its own side energy in battle without a map energy effect, and for any card-tree upgrade whose base has a map effect but which has none — so no tree can lose its map effect on an upgrade again.
+
+## M18 — Visible dice rolls, Influence on the map HUD, dice fairness check (2026-10-13)
+
+- **The offensive roll animation was not seen.** The tumble is timed from the roll command, but the board rebuild after a roll (~200 ms) plus the first frame that draws it (~240 ms) took about as long as the whole 0.45 s tumble in a two-enemy round 2, so the dice landed before they were drawn moving. The battle screen now restarts the roll clock when the first frame after the rebuild is on screen (`_restart_player_roll_clock`, on `frame_post_draw`), and the tumble is a real one: 0.75 s (`player_roll_seconds`), up to ±20° of decaying shake, a small bounce, and faces that slow as they settle. Measured in a window: 19 drawn rolling frames over 0.5 s with the fix against 9 over 0.26 s without (and none when the stall is longer).
+- **Influence on the explore screen.** The stat strip gains an INFLUENCE tile (green when you hold any) naming where it counts ("Hollow Ford", "camp") with a tooltip on when it is lost, and the site card says "Your Influence here this turn: N". `verify_expedition_map.gd` asserts both after the two village cards.
+- **Dice fairness check (no change).** The user saw re-rolled dice land on the same face several times. The authority's seeded generator (SHA-256 over seed and a saved cursor) advances its cursor on every re-roll in both plain and expedition battles (Go probes: 374 single-die re-rolls repeated 16%, 30 expedition re-rolls 27%, fair 16.7%), and across the user's own transcript 499 re-rolled dice repeated 15.6% (the player 24 of 122, 19.7%) with faces evenly spread (1,077 dice, chi-square 4.0 on 5 degrees of freedom). The streaks were chance.
 
 ## Decisions made during implementation
 

@@ -190,9 +190,16 @@ func _update_roll() -> void:
 		button.disabled = rolling or not _interactive or index >= _dice.size() or (index < _owned.size() and bool(_owned[index].get("entombed", false)))
 		if index not in _rolling_indices or index >= _dice.size(): continue
 		var final_face := int(_dice[index].get("face", _dice[index].get("number", 0)))
-		_show_face(index, 1 + (elapsed / 55 + index * 2) % 6 if rolling else final_face)
+		# Faces flicker quickly, then slow down as the die settles.
+		var t := clampf(float(elapsed) / maxf(1.0, float(_roll_duration_ms)), 0.0, 1.0)
+		var settle := 1.0 - t
+		var step := 45 + int(110.0 * t * t)
+		_show_face(index, 1 + (elapsed / step + index * 2) % 6 if rolling else final_face)
 		button.pivot_offset = button.size * 0.5
-		button.rotation = sin(float(elapsed) * 0.035 + index) * 0.055 if rolling else 0.0
+		# A real shake that decays: up to ±20° and a small bounce, each die
+		# out of phase with its neighbours.
+		button.rotation = sin(float(elapsed) * 0.045 + index * 1.7) * 0.35 * settle if rolling else 0.0
+		button.scale = Vector2.ONE * (1.0 + 0.14 * absf(sin(float(elapsed) * 0.028 + index)) * settle) if rolling else Vector2.ONE
 		if rolling: button.tooltip_text = "Rolling…"
 	if not rolling:
 		_rolling_indices.clear()

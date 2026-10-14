@@ -566,6 +566,15 @@ func _render_stat_strip() -> void:
 	_stat_tile(tiles, "%d" % int(view.get("energy", 0)), "Energy", "base %d" % int(view.get("base_energy", 0)), null)
 	_stat_tile(tiles, "%d" % int(view.get("gold", 0)), "Gold", "", CHART.glyph("coin", "gold"))
 	_stat_tile(tiles, "%d" % int(status.get("xp", 0)), "XP", "", ICONS.texture("energy"))
+	# Influence: the cards played at this site (or camp) this turn. It is lost
+	# when the turn ends or you leave, so the strip says where it counts.
+	var turn: Dictionary = view.get("turn", {})
+	var influence := int(turn.get("influence", 0))
+	var where := str(turn.get("influence_site", ""))
+	var place := "camp" if where == "camp" else (_site_name(where) if not where.is_empty() else "")
+	var tile := _stat_tile(tiles, "%d" % influence, "Influence", place if influence > 0 else "this turn", CHART.glyph("crown", "gold") if CHART.SHAPES.has("crown") else null, Color("9fe0a8") if influence > 0 else Color.TRANSPARENT)
+	tile.name = "InfluenceTile"; tile.mouse_filter = Control.MOUSE_FILTER_STOP
+	tile.tooltip_text = ("%d Influence at %s this turn: spend it there on deck changes, mending or services. It is lost when the turn ends or you leave." % [influence, place]) if influence > 0 else "Influence: play cards at a site (or at camp) for 1 Influence each. It lasts for this turn at that place."
 	var health := VBoxContainer.new(); health.size_flags_horizontal = Control.SIZE_EXPAND_FILL; health.alignment = BoxContainer.ALIGNMENT_CENTER; health.add_theme_constant_override("separation", 2); tiles.add_child(health)
 	var bar := ProgressBar.new(); bar.custom_minimum_size = Vector2(0, 22); bar.max_value = maxi(1, int(view.get("max_health", 0))); bar.value = int(view.get("health", 0)); bar.show_percentage = false
 	bar.add_theme_stylebox_override("background", CINEMATIC.bone_health_frame())
@@ -599,16 +608,25 @@ func _render_stat_strip() -> void:
 		for st in statuses: _chip(row, "Status_" + str(st.id), str(st.id), "%s ×%d" % [st.name, int(st.stacks)], "%s\n%s" % [st.name, st.rules], CHART.STATUS)
 		for item in items: _chip(row, "Item_" + str(item.id), "", "%s ×%d" % [item.name, int(item.count)], "%s\n%s" % [item.name, item.description], CHART.ITEM)
 
-func _stat_tile(parent: Node, value: String, caption: String, sub: String, icon: Texture2D) -> void:
+func _stat_tile(parent: Node, value: String, caption: String, sub: String, icon: Texture2D, color: Color = Color.TRANSPARENT) -> VBoxContainer:
 	var cell := VBoxContainer.new(); cell.size_flags_horizontal = Control.SIZE_EXPAND_FILL; cell.alignment = BoxContainer.ALIGNMENT_CENTER; cell.add_theme_constant_override("separation", 0); parent.add_child(cell)
 	var row := HBoxContainer.new(); row.alignment = BoxContainer.ALIGNMENT_CENTER; row.add_theme_constant_override("separation", 4); cell.add_child(row)
 	if icon != null: CHART.icon_rect(row, icon, 16)
-	var number := Label.new(); number.text = value; number.add_theme_font_override("font", CHART.numerals()); number.add_theme_font_size_override("font_size", 26); CHART.stone_text(number, true); number.mouse_filter = Control.MOUSE_FILTER_IGNORE; row.add_child(number)
+	var number := Label.new(); number.text = value; number.add_theme_font_override("font", CHART.numerals()); number.add_theme_font_size_override("font_size", 26); CHART.stone_text(number, true, color if color.a > 0 else CHART.HUD_IVORY); number.mouse_filter = Control.MOUSE_FILTER_IGNORE; row.add_child(number)
 	var cap := STYLE.label(cell, caption.to_upper(), 12, STYLE.GOLD); cap.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER; cap.autowrap_mode = TextServer.AUTOWRAP_OFF
 	if not sub.is_empty():
 		var small := STYLE.label(cell, sub, 12, Color("9c9d97")); small.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER; small.autowrap_mode = TextServer.AUTOWRAP_OFF
+		small.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS; small.clip_text = true; small.custom_minimum_size.x = 56
+	return cell
 
 ## Card names from the view's catalog, duplicates grouped as "2 × Steady Guard".
+## A site's display name from the view, or a tidy version of its id.
+func _site_name(id: String) -> String:
+	for hex in _list(view, "hexes"):
+		var site = hex.get("site")
+		if site is Dictionary and str(site.get("id", "")) == id: return str(site.get("name", id))
+	return id.capitalize().replace("_", " ")
+
 func _card_names(ids: Array) -> String:
 	var counts := {}
 	var order: Array = []
@@ -819,6 +837,10 @@ func _render_site(site: Dictionary) -> void:
 		var closed := CHART.ink_label(card, str(site.get("closed", "closed")), 12, CHART.SEPIA_TEXT); closed.add_theme_font_override("font", CHART.serif_italic())
 		return
 	CHART.ink_label(card, str(site.get("description", "")), 13)
+	var turn_state: Dictionary = view.get("turn", {})
+	var here := int(turn_state.get("influence", 0)) if str(turn_state.get("influence_site", "")) == str(site.get("id", "")) else 0
+	var held := CHART.ink_label(card, "Your Influence here this turn: %d" % here, 14, CHART.GREEN if here > 0 else CHART.SEPIA_TEXT, here > 0)
+	held.name = "SiteInfluence"
 	var influence := CHART.paper_button(_button(card, "Play %d selected card%s here for Influence" % [selected_cards.size(), "" if selected_cards.size() == 1 else "s"], func(): _act({"kind": "use_site", "service": "influence", "cards": _payment_cards()}), "expedition.site.influence"), 14)
 	influence.disabled = selected_cards.is_empty()
 	if not influence.disabled: CHART.rim(influence, CHART.GOLD_LEAF)
