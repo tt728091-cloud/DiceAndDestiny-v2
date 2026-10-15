@@ -349,6 +349,7 @@ The user waited 3–5 s after Defense before they could roll, while the dice cha
 From [phase-0-handoff.md](phase-0-handoff.md).
 
 - **The gold→XP trainer is gone.** Gold never buys XP. `gold.trainer_gold_per_xp`, the town's trainer service, `Action.gold` and the client's trainer special case were removed; the strict loader now refuses a config that still names the rate, and a `use_site` request for `trainer` is refused as an unknown service. `TestSitesInfluenceMendingShopsAndTrainer` is now `TestSitesInfluenceMendingAndShops`.
+- **Every XP spend is refundable.** Expedition deck changes (and linear Prepare) go through `Purchase.InCampaign()`: a sale refunds the copy's full value and a legacy card upgrade costs exactly the value it adds, so nothing sinks into UpgradeSpent. `campaign_refund_test.go` round-trips every tree connection, batch, store/equip and ability path through `ExpeditionDeckChange` at camp; see [campaign.md](campaign.md#every-xp-spend-is-refundable).
 
 ## Decisions made during implementation
 

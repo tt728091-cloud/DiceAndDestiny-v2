@@ -255,8 +255,9 @@ func BuyCampaign(root, id string, e Economy, catalogs map[string]content.BattleL
 	if request.Revision != s.Sheet.Revision {
 		return s, fmt.Errorf("campaign changed; refresh before trading")
 	}
-	// The campaign uses only card-tree cards, whatever the client asks.
-	request.TreeCardsOnly = true
+	// The campaign uses only card-tree cards and refunds every XP spend in
+	// full, whatever the client asks.
+	request = request.InCampaign()
 	next, cost, err := applyPurchase(cloneProgress(s.Sheet), s.Character, e, catalogs[s.Character], request)
 	if err != nil {
 		return s, err

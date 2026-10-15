@@ -78,6 +78,19 @@ type Purchase struct {
 	// Count trades several equipped copies along one tree connection at once,
 	// all or none (tree_card_deck only); the cost is the total for all of them.
 	Count int `json:"count,omitempty"`
+	// Campaign marks a transaction on a campaign or expedition sheet. It is
+	// set by the authority, never read from a request. There every XP spend is
+	// fully refundable: a sale refunds the copy's full value and a legacy card
+	// upgrade costs exactly the value it adds, so nothing sinks into
+	// UpgradeSpent for good.
+	Campaign bool `json:"-"`
+}
+
+// InCampaign returns the request as a campaign or expedition sheet makes it:
+// tree cards only, and every XP spend refundable.
+func (r Purchase) InCampaign() Purchase {
+	r.TreeCardsOnly, r.Campaign = true, true
+	return r
 }
 
 // maxBatch bounds a batched tree trade; a deck holds at most MaxCopies of a card.
@@ -484,14 +497,9 @@ func applyPurchase(p Progress, character string, e Economy, lib content.BattleLi
 	var err error
 	cost := 0
 	cfg := e.Characters[character]
-	if request.TreeCardsOnly {
-		added := request.ID
-		if request.Kind == "upgrade_card" {
-			added = request.TargetID
-		}
-		if (request.Kind == "buy_card" || request.Kind == "buy_collection_card" || request.Kind == "equip_collection_card" || request.Kind == "upgrade_card") && !IsTreeCard(lib.CardTrees, added) {
-			return p, 0, fmt.Errorf("the campaign uses only card-tree cards; %s can be sold but not added", added)
-		}
+	// upgrade_card checks the card it actually adds once its path is resolved.
+	if request.TreeCardsOnly && (request.Kind == "buy_card" || request.Kind == "buy_collection_card" || request.Kind == "equip_collection_card") && !IsTreeCard(lib.CardTrees, request.ID) {
+		return p, 0, fmt.Errorf("the campaign uses only card-tree cards; %s can be sold but not added", request.ID)
 	}
 	if request.Count < 0 || request.Count > maxBatch || request.Count > 1 && request.Kind != "tree_card_deck" {
 		return p, 0, fmt.Errorf("only tree trades take a copy count (1–%d)", maxBatch)
@@ -526,7 +534,9 @@ func applyPurchase(p Progress, character string, e Economy, lib content.BattleLi
 			return p, 0, fmt.Errorf("no owned copy to sell")
 		}
 		cost = e.Value(character, Entry{CardID: request.ID, Tree: tree})
-		if c, ok := e.Authored[request.ID]; ok && tree == "" {
+		// The editors honour an authored sale price; a campaign refunds the
+		// copy's full value, the XP its sheet counts it at.
+		if c, ok := e.Authored[request.ID]; ok && tree == "" && !request.Campaign {
 			cost = c.Sell
 		}
 		if request.Kind == "sell_collection_card" {
@@ -570,10 +580,18 @@ func applyPurchase(p Progress, character string, e Economy, lib content.BattleLi
 		if _, _, variant := content.TreeCardOwner(lib.CardTrees, upgrade.To); variant {
 			return p, 0, fmt.Errorf("acquire this variant through Card Trees")
 		}
+		if request.TreeCardsOnly && !IsTreeCard(lib.CardTrees, upgrade.To) {
+			return p, 0, fmt.Errorf("the campaign uses only card-tree cards; %s can be sold but not added", upgrade.To)
+		}
 		if err := e.Access.Check(character, "cards", upgrade.To); err != nil {
 			return p, 0, err
 		}
 		cost = upgrade.XP
+		if request.Campaign {
+			// A legacy upgrade has no way back, so a campaign charges only the
+			// value it adds: selling the result refunds every XP it cost.
+			cost = e.Value(character, Entry{CardID: upgrade.To}) - e.Value(character, Entry{CardID: request.ID})
+		}
 		p.Deck = changeCount(p.Deck, request.ID, -1)
 		p.Deck = changeCount(p.Deck, upgrade.To, 1)
 	case "downgrade_ability":

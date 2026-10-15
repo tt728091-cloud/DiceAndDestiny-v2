@@ -209,7 +209,7 @@ func ExpeditionDeckChange(root, id string, e Economy, catalogs map[string]conten
 	if _, _, err = state.DeckChangeCost(rules); err != nil {
 		return save, err
 	}
-	request.TreeCardsOnly = true
+	request = request.InCampaign()
 	lib := catalogs[save.Character]
 	next, cost, err := applyPurchase(cloneProgress(save.Sheet), save.Character, e, lib, request)
 	if err != nil {

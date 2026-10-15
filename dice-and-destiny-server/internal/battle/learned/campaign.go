@@ -274,7 +274,7 @@ func campaignLoadout(contentRoot, loadoutRoot, saveID string) (map[string]any, e
 		return nil, err
 	}
 	offer := func(request loadout.Purchase) map[string]any {
-		request.TreeCardsOnly = true
+		request = request.InCampaign()
 		cost, why := loadout.PreviewPurchase(p, character, e, lib, request)
 		change := -cost
 		if request.Kind == "sell_card" || request.Kind == "sell_collection_card" || request.Kind == "downgrade_ability" {
@@ -317,7 +317,7 @@ func campaignLoadout(contentRoot, loadoutRoot, saveID string) (map[string]any, e
 					// XP, copy limits and deck rules all apply to the batch.
 					o["max_count"] = 0
 					for n := entry.Count; n >= 1; n-- {
-						if _, why := loadout.PreviewPurchase(p, character, e, lib, loadout.Purchase{Kind: "tree_card_deck", ID: entry.CardID, TargetID: target.Card.ID, Tree: ref.Tree, Count: n, TreeCardsOnly: true}); why == nil {
+						if _, why := loadout.PreviewPurchase(p, character, e, lib, loadout.Purchase{Kind: "tree_card_deck", ID: entry.CardID, TargetID: target.Card.ID, Tree: ref.Tree, Count: n}.InCampaign()); why == nil {
 							o["max_count"] = n
 							break
 						}

@@ -62,6 +62,17 @@ Unaffordable or illegal options stay visible but disabled, with the authority's 
 
 The authority prepares this view with the `campaign_loadout` op. It dry-runs every offer through `loadout.PreviewPurchase`, the same rules `loadout.Buy` applies, so the screen never offers a trade the authority would refuse. Tree trades use the `tree_card_deck` purchase kind (`loadout.UpgradeDeckTreeCard`), which keeps the copy equipped. Its `count` trades several copies in one all-or-nothing purchase, with `expected_cost` the batch total; other kinds refuse a count. Each trade offer carries `max_count`: the largest batch the authority would accept now, given copies held, XP, copy limits and deck rules. The older `tree_card` kind used by the Card Trees workshop moves the result into the collection.
 
+## Every XP spend is refundable
+
+On a campaign or expedition sheet, any XP spend can be undone for exactly the XP it cost. Nothing loses XP.
+
+- **Selling** a copy (from the deck or storage) refunds its full value: the XP the sheet counts it at. That includes a legacy card whose authored sale price is lower; only the admin editors keep that lower price.
+- **Tree trades** cost the XP between the two cards, and trading down refunds it. Card-tree cards have equal buy and sell values.
+- **Ability upgrades** cost their configured XP, and downgrading refunds it.
+- **Storing and equipping** move a copy without changing any figure.
+- **A legacy card upgrade** (a non-tree card left in an older save) charges only the value it adds, so selling the result refunds it. Its target must be a card-tree card.
+- The authority marks these transactions itself (`Purchase.InCampaign`). A request can't opt in or out.
+
 ## Card-tree cards only
 
 Campaign decks may use only **card-tree cards**: tree bases, variants and shared cards in any published tree. Standalone and legacy cards (for example Blade Warden's Tip It) cannot be used, but any owned card can still be sold or stored for its XP.
@@ -129,6 +140,7 @@ Runtime ops:
   - deletion removes only that save, and save IDs cannot escape the folder;
   - older progress converts into a save once.
   - batched tree trades: the full batch works, batches beyond the copies held or the XP available are refused without changes, and `max_count` matches the limit.
+- `internal/battle/learned/campaign_refund_test.go` round-trips every XP spend over the shipped content, for both starting sheets, through the linear `BuyCampaign` and the expedition's `ExpeditionDeckChange` (at camp, with the Influence fee paid in cards). It buys every tree's base, trades up to and across every connection, trades back down and sells the base; batches every held card's copies up one connection and back; stores and re-equips a copy; and upgrades and downgrades every ability path. Each step moves XP by exactly its price, and XP, Budget and UpgradeSpent end every round trip as they began. `internal/battle/loadout/refund_test.go` covers legacy sale prices and legacy upgrades, campaign against editor.
 - `tests/presentation/verify_campaign.gd` drives the loop with the pointer:
   - menu → Campaign → New campaign (Starter, default name) → a second campaign from the Adventurer sheet;
   - Progression-mode purchases do not reach the campaign;
