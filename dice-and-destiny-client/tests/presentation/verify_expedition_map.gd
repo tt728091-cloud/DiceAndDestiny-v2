@@ -410,6 +410,8 @@ func _full_flow(seed: int) -> void:
 	_expect(site_line != null and site_line.text == "Your Influence here this turn: 2", "the village card says how much Influence you hold there")
 	await _capture(map, "expedition-village-1280")
 	var xp := int(_state().xp)
+	var total := int(map.status.get("xp_total", -1))
+	_expect(total > xp, "total XP (%d) counts the deck's XP on top of the %d XP to spend" % [total, xp])
 	var draw := int(_state().draw)
 	await _press("expedition.prepare")
 	for frame in 6: await process_frame
@@ -429,6 +431,12 @@ func _full_flow(seed: int) -> void:
 		for frame in 6: await process_frame
 	map = _find(EXPEDITION_SCRIPT)
 	_expect(map != null and int(_state().draw) == draw + 2 and int(_state().xp) == xp - 20 and int(map.view.turn.influence) == 0, "both bought cards top the draw pile and the Influence is spent")
+	# The XP tile names both of the authority's figures; spending moves XP
+	# inside the total, so the total is unchanged.
+	var xp_tile: Control = map.find_child("XPTile", true, false) if map != null else null
+	var xp_tip := xp_tile.tooltip_text if xp_tile != null else ""
+	_expect(xp_tile != null and ("XP to spend: %d" % int(map.status.xp)) in xp_tip and ("Total XP: %d" % int(map.status.xp_total)) in xp_tip, "the XP tile's tooltip shows XP to spend and total XP from the view (%s)" % xp_tip.get_slice("\n", 0))
+	_expect(map != null and int(map.status.xp_total) == total and int(_state().xp_total) == total, "spending XP at the site leaves total XP at %d" % total)
 	_expect(map != null and _control(map, "expedition.prepare") != null and "open until the turn ends" in _control(map, "expedition.prepare").text, "the site card says the deck stays open this turn")
 	_expect(await _press("expedition.end_turn"), "the turn ends after cards were played")
 	state = _state()

@@ -111,7 +111,42 @@ func writeCampaignSave(root string, s CampaignSave) error {
 	if err != nil {
 		return err
 	}
+	if err = keepsTotalXP(filename, s); err != nil {
+		return err
+	}
 	return writeJSON(filename, s)
+}
+
+// keepsTotalXP refuses a write that would lower a save's total XP (the
+// sheet's Budget). Spending and refunds move XP inside the total and only
+// rewards raise it, so nothing a campaign or expedition does may lower it.
+func keepsTotalXP(filename string, s CampaignSave) error {
+	data, err := os.ReadFile(filename)
+	if os.IsNotExist(err) {
+		return nil
+	}
+	if err != nil {
+		return err
+	}
+	var saved struct {
+		Sheet struct {
+			Budget *int `json:"total_budget"`
+		} `json:"sheet"`
+	}
+	if err = json.Unmarshal(data, &saved); err != nil {
+		return fmt.Errorf("campaign save %q: %w", s.ID, err)
+	}
+	if saved.Sheet.Budget == nil {
+		return nil
+	}
+	if s.Sheet.Budget == nil || *s.Sheet.Budget < *saved.Sheet.Budget {
+		total := 0
+		if s.Sheet.Budget != nil {
+			total = *s.Sheet.Budget
+		}
+		return fmt.Errorf("campaign save %q: total XP may never drop (%d → %d); the change was not saved", s.ID, *saved.Sheet.Budget, total)
+	}
+	return nil
 }
 
 // ReadCampaignSave loads one save, repriced against the current catalog.

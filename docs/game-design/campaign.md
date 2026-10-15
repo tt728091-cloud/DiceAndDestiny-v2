@@ -62,6 +62,14 @@ Unaffordable or illegal options stay visible but disabled, with the authority's 
 
 The authority prepares this view with the `campaign_loadout` op. It dry-runs every offer through `loadout.PreviewPurchase`, the same rules `loadout.Buy` applies, so the screen never offers a trade the authority would refuse. Tree trades use the `tree_card_deck` purchase kind (`loadout.UpgradeDeckTreeCard`), which keeps the copy equipped. Its `count` trades several copies in one all-or-nothing purchase, with `expected_cost` the batch total; other kinds refuse a count. Each trade offer carries `max_count`: the largest batch the authority would accept now, given copies held, XP, copy limits and deck rules. The older `tree_card` kind used by the Card Trees workshop moves the result into the collection.
 
+## Total XP
+
+A campaign or expedition sheet's **total XP** is its `Budget` (`total_budget` in the save): everything the hero has, spent and unspent. That is the XP to spend plus the XP in the deck, stored cards, wounded cards and upgrades. Later phases (the omen meter, the Rising) read this figure.
+
+- Rewards (victories, map rewards) raise it. Spending, refunds, wounds and healing move XP inside it. Repricing a card on read keeps it and moves the difference into the XP to spend.
+- **It never drops.** Every campaign or expedition write is checked against the save on disk, and one that would lower the total is refused (`writeCampaignSave`).
+- The authority sends it as `xp_total`: for each save in `campaign_status`, and in the expedition status (`expedition_status`, `expedition_act`, `expedition_deck_change`). Hovering the map's XP tile shows "XP to spend: N · Total XP: M". The client never computes it.
+
 ## Every XP spend is refundable
 
 On a campaign or expedition sheet, any XP spend can be undone for exactly the XP it cost. Nothing loses XP.
@@ -141,6 +149,7 @@ Runtime ops:
   - older progress converts into a save once.
   - batched tree trades: the full batch works, batches beyond the copies held or the XP available are refused without changes, and `max_count` matches the limit.
 - `internal/battle/learned/campaign_refund_test.go` round-trips every XP spend over the shipped content, for both starting sheets, through the linear `BuyCampaign` and the expedition's `ExpeditionDeckChange` (at camp, with the Influence fee paid in cards). It buys every tree's base, trades up to and across every connection, trades back down and sells the base; batches every held card's copies up one connection and back; stores and re-equips a copy; and upgrades and downgrades every ability path. Each step moves XP by exactly its price, and XP, Budget and UpgradeSpent end every round trip as they began. `internal/battle/loadout/refund_test.go` covers legacy sale prices and legacy upgrades, campaign against editor.
+- `internal/battle/learned/campaign_total_xp_test.go` credits XP with wounds, spends, upgrades, sells and reloads, in both modes: total XP never drops, the ledger adds up to it, and the status reports it as `xp_total`. `TestCampaignWritesNeverLowerTotalXP` (`loadout/refund_test.go`) checks that a write lowering it is refused and changes nothing. `verify_expedition_map.gd` reads both figures from the XP tile's tooltip.
 - `tests/presentation/verify_campaign.gd` drives the loop with the pointer:
   - menu → Campaign → New campaign (Starter, default name) → a second campaign from the Adventurer sheet;
   - Progression-mode purchases do not reach the campaign;

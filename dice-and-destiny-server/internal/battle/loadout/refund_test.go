@@ -2,6 +2,7 @@ package loadout
 
 import (
 	"encoding/json"
+	"os"
 	"strings"
 	"testing"
 
@@ -100,5 +101,36 @@ func TestCampaignRefundsEveryXPSpend(t *testing.T) {
 	var decoded Purchase
 	if err = json.Unmarshal([]byte(`{"kind":"sell_card","id":"legacy","Campaign":true,"campaign":true}`), &decoded); err != nil || decoded.Campaign {
 		t.Fatalf("a request set the campaign flag: %+v (%v)", decoded, err)
+	}
+}
+
+// A campaign or expedition write never lowers the save's total XP (Phase 0,
+// 0.3); keeping or raising it is fine, and a refused write changes nothing.
+func TestCampaignWritesNeverLowerTotalXP(t *testing.T) {
+	root := t.TempDir()
+	at := func(budget int) CampaignSave {
+		return CampaignSave{Version: 1, ID: "hero-total", Name: "Total", Character: "hero", Sheet: Progress{Budget: &budget, XP: budget / 2}}
+	}
+	if err := writeCampaignSave(root, at(200)); err != nil {
+		t.Fatal(err)
+	}
+	if err := writeCampaignSave(root, at(150)); err == nil || !strings.Contains(err.Error(), "total XP may never drop (200 → 150)") {
+		t.Fatalf("a write lowering total XP was not refused: %v", err)
+	}
+	missing := at(0)
+	missing.Sheet.Budget = nil
+	if err := writeCampaignSave(root, missing); err == nil {
+		t.Fatal("a write dropping the total XP field was not refused")
+	}
+	filename, _ := campaignSavePath(root, "hero-total")
+	var saved CampaignSave
+	raw, _ := os.ReadFile(filename)
+	if err := json.Unmarshal(raw, &saved); err != nil || saved.Sheet.Budget == nil || *saved.Sheet.Budget != 200 || saved.Sheet.XP != 100 {
+		t.Fatalf("a refused write changed the save: %+v (%v)", saved.Sheet, err)
+	}
+	for _, budget := range []int{200, 230} {
+		if err := writeCampaignSave(root, at(budget)); err != nil {
+			t.Fatalf("keeping or raising total XP to %d was refused: %v", budget, err)
+		}
 	}
 }

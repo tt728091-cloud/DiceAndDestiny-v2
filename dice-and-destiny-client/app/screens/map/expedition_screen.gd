@@ -565,7 +565,10 @@ func _render_stat_strip() -> void:
 	var tiles := HBoxContainer.new(); tiles.add_theme_constant_override("separation", 6); box.add_child(tiles)
 	_stat_tile(tiles, "%d" % int(view.get("energy", 0)), "Energy", "base %d" % int(view.get("base_energy", 0)), null)
 	_stat_tile(tiles, "%d" % int(view.get("gold", 0)), "Gold", "", CHART.glyph("coin", "gold"))
-	_stat_tile(tiles, "%d" % int(status.get("xp", 0)), "XP", "", ICONS.texture("energy"))
+	# XP to spend, and the authority's total: everything the hero has, spent and unspent.
+	var xp_tile := _stat_tile(tiles, "%d" % int(status.get("xp", 0)), "XP", "", ICONS.texture("energy"))
+	xp_tile.name = "XPTile"; xp_tile.mouse_filter = Control.MOUSE_FILTER_STOP
+	xp_tile.tooltip_text = "XP to spend: %d · Total XP: %d\nTotal XP is everything you have: XP to spend plus the XP in your cards, wounded cards and upgrades. Selling or trading down gives XP back; only rewards raise the total." % [int(status.get("xp", 0)), int(status.get("xp_total", 0))]
 	# Influence: the cards played at this site (or camp) this turn. It is lost
 	# when the turn ends or you leave, so the strip says where it counts.
 	var turn: Dictionary = view.get("turn", {})
@@ -1177,7 +1180,7 @@ func inspection_state() -> Dictionary:
 	return {
 		"ready": not view.is_empty(), "screen": "expedition", "save_id": save_id, "stage": "expedition_" + str(view.get("phase", "")), "segment": "expedition",
 		"round": int(view.get("round", 0)), "night": view.get("night", false), "phase": str(view.get("phase", "")), "day_label": str(view.get("day_label", "")),
-		"player": view.get("player", {}), "energy": int(view.get("energy", 0)), "gold": int(view.get("gold", 0)), "xp": int(status.get("xp", 0)),
+		"player": view.get("player", {}), "energy": int(view.get("energy", 0)), "gold": int(view.get("gold", 0)), "xp": int(status.get("xp", 0)), "xp_total": int(status.get("xp_total", 0)),
 		"hand": _list(view, "hand").map(func(c): return str(c.id)), "draw": _list(view, "draw").size(), "spent": _list(view, "spent").size(), "wounds": _list(view, "wounds"), "wound_cards": _list(view, "wound_cards").size(),
 		"turn": turn, "moves": _list(view, "moves"), "explores": _list(view, "explores"), "challenges": _list(view, "challenges"), "enters": _list(view, "enters"),
 		"site_here": view.get("site_here"), "pending_battle": view.get("pending_battle"), "event": view.get("event"), "camp": view.get("camp"), "last_battle": view.get("last_battle"), "last_rest": view.get("last_rest"),

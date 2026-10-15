@@ -37,13 +37,22 @@ type Economy struct {
 	DefaultCardPrice  int                            `yaml:"default_card_price"`
 	Characters        map[string]CharacterEconomy    `yaml:"characters"`
 }
+
+// Progress is a character sheet and its XP ledger.
+//
+// Budget is the sheet's total XP: everything the hero has, spent and unspent
+// (XP + DeckValue + CollectionValue + WoundValue + UpgradeSpent). On a
+// campaign or expedition sheet it is the canonical total XP that later phases
+// read (the omen meter, the Rising): spending and refunds move XP inside it,
+// only rewards raise it, repricing on read keeps it, and a write that would
+// lower it is refused (writeCampaignSave).
 type Progress struct {
 	Collection              []Entry              `json:"collection,omitempty"`
 	CollectionValue         int                  `json:"collection_value"`
 	AuthoredAbilityRevision int                  `json:"authored_ability_revision,omitempty"`
 	SharedDeck              bool                 `json:"shared_deck,omitempty"`
 	FreeDeckBudget          int                  `json:"free_deck_budget,omitempty"`
-	Budget                  *int                 `json:"total_budget,omitempty"`
+	Budget                  *int                 `json:"total_budget,omitempty"` // total XP; see Progress
 	DeckValue               int                  `json:"deck_value"`
 	UpgradeSpent            int                  `json:"upgrade_spent"`
 	AdminRevision           int                  `json:"admin_revision"`

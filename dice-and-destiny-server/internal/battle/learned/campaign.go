@@ -191,7 +191,7 @@ func campaignStatus(contentRoot, loadoutRoot string) (map[string]any, error) {
 			"mode": mode, "expedition": exp,
 			"id": save.ID, "name": save.Name, "character": save.Character, "character_name": lib.Combatants[save.Character].Name,
 			"created_at": save.CreatedAt, "playable": campaign.Allows(save.Character),
-			"xp": save.Sheet.XP, "earned_xp": save.Sheet.EarnedXP, "health": deckHealth(save.Sheet.Deck),
+			"xp": save.Sheet.XP, "earned_xp": save.Sheet.EarnedXP, "xp_total": *save.Sheet.Budget, "health": deckHealth(save.Sheet.Deck),
 			"wounds": deckHealth(save.Sheet.Wounds), "max_health": deckHealth(save.Sheet.Deck) + deckHealth(save.Sheet.Wounds),
 			"campaign": state, "next_encounter": next,
 			"type_conflicts": c.access.Problems(save.Character, save.Sheet.Deck, save.Sheet.Abilities),
@@ -444,7 +444,8 @@ func expeditionView(x expeditionContext, save loadout.CampaignSave) map[string]a
 	}
 	return map[string]any{
 		"save_id": save.ID, "save_name": save.Name, "character": save.Character, "character_name": lib.Combatants[save.Character].Name,
-		"revision": save.Sheet.Revision, "xp": save.Sheet.XP, "earned_xp": save.Sheet.EarnedXP,
+		// xp_total is the sheet's total XP (Budget): spent and unspent.
+		"revision": save.Sheet.Revision, "xp": save.Sheet.XP, "earned_xp": save.Sheet.EarnedXP, "xp_total": *save.Sheet.Budget,
 		"health": deckHealth(save.Sheet.Deck), "max_health": deckHealth(save.Sheet.Deck) + deckHealth(save.Sheet.Wounds),
 		"view": view, "pending_battle": pending,
 		// Card and status definitions for presentation (faces, hover rules).
@@ -495,7 +496,7 @@ func expeditionDeckChange(contentRoot, loadoutRoot, saveID string, request loado
 	if err != nil {
 		return nil, err
 	}
-	return map[string]any{"id": save.ID, "revision": save.Sheet.Revision, "xp": save.Sheet.XP, "view": save.Expedition.View(x.rules[save.Character], save.Sheet.Revision)}, nil
+	return map[string]any{"id": save.ID, "revision": save.Sheet.Revision, "xp": save.Sheet.XP, "xp_total": *save.Sheet.Budget, "view": save.Expedition.View(x.rules[save.Character], save.Sheet.Revision)}, nil
 }
 
 // --- expedition battles ---------------------------------------------------------
