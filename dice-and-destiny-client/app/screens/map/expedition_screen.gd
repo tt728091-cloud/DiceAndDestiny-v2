@@ -568,6 +568,7 @@ func _render_stat_strip() -> void:
 	# XP to spend, and the authority's total: everything the hero has, spent and unspent.
 	var xp_tile := _stat_tile(tiles, "%d" % int(status.get("xp", 0)), "XP", "", ICONS.texture("energy"))
 	xp_tile.name = "XPTile"; xp_tile.mouse_filter = Control.MOUSE_FILTER_STOP
+	_register("expedition.stat.xp", xp_tile, "XP")
 	xp_tile.tooltip_text = "XP to spend: %d · Total XP: %d\nTotal XP is everything you have: XP to spend plus the XP in your cards, wounded cards and upgrades. Selling or trading down gives XP back; only rewards raise the total." % [int(status.get("xp", 0)), int(status.get("xp_total", 0))]
 	# Influence: the cards played at this site (or camp) this turn. It is lost
 	# when the turn ends or you leave, so the strip says where it counts.

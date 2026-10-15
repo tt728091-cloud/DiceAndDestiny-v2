@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"maps"
 	"os"
 	"path/filepath"
 	"sync"
@@ -498,6 +499,7 @@ func EffectiveEconomy(root string, e Economy) (Economy, error) {
 func cloneProgress(p Progress) Progress {
 	p.Deck = append([]Entry{}, p.Deck...)
 	p.Collection = append([]Entry(nil), p.Collection...)
+	p.Wounds = append([]Entry(nil), p.Wounds...)
 	p.Abilities = content.AbilityBoard{Offensive: append([]string(nil), p.Abilities.Offensive...), Defensive: append([]string(nil), p.Abilities.Defensive...)}
 	return p
 }
@@ -512,6 +514,9 @@ func applyPurchase(p Progress, character string, e Economy, lib content.BattleLi
 	}
 	if request.Count < 0 || request.Count > maxBatch || request.Count > 1 && request.Kind != "tree_card_deck" {
 		return p, 0, fmt.Errorf("only tree trades take a copy count (1–%d)", maxBatch)
+	}
+	if err := frozenWounds(p, lib, request); err != nil {
+		return p, 0, err
 	}
 	switch request.Kind {
 	case "buy_card", "buy_collection_card":
@@ -658,6 +663,63 @@ func applyPurchase(p Progress, character string, e Economy, lib content.BattleLi
 		return p, 0, fmt.Errorf("unknown transaction kind")
 	}
 	return p, cost, nil
+}
+
+// frozenWounds refuses a request that needs more live copies of a card than
+// the sheet holds while other copies of it are wounded. Purchases only ever
+// take live copies (deck or storage), so wounded copies stay frozen: never
+// sold, upgraded, traded down or stored until they are mended.
+func frozenWounds(p Progress, lib content.BattleLibrary, r Purchase) error {
+	switch r.Kind {
+	case "sell_card", "unequip_collection_card", "tree_card", "tree_card_deck", "upgrade_card":
+	default:
+		return nil
+	}
+	count := func(entries []Entry) int {
+		n := 0
+		for _, e := range entries {
+			if e.CardID == r.ID {
+				n += e.Count
+			}
+		}
+		return n
+	}
+	if count(p.Wounds) == 0 {
+		return nil
+	}
+	live := count(p.Deck)
+	if r.Kind == "tree_card" {
+		live += count(p.Collection)
+	}
+	if live >= max(1, r.Count) {
+		return nil
+	}
+	name := r.ID
+	if c, ok := lib.Cards[r.ID]; ok && c.Name != "" {
+		name = c.Name
+	}
+	copies := "copies"
+	if live == 1 {
+		copies = "copy"
+	}
+	return fmt.Errorf("wounded copies can't be sold, upgraded, traded or stored until mended; %s has %d live %s", name, live, copies)
+}
+
+// keepsWounds refuses a purchase that changed the sheet's wounded copies.
+// Every campaign and expedition write checks it: selling or trading a
+// wounded copy would shed its wound.
+func keepsWounds(before, after Progress) error {
+	count := func(entries []Entry) map[string]int {
+		out := map[string]int{}
+		for _, e := range entries {
+			out[e.CardID+"|"+e.Tree] += e.Count
+		}
+		return out
+	}
+	if !maps.Equal(count(before.Wounds), count(after.Wounds)) {
+		return fmt.Errorf("wounded copies cannot be traded until mended")
+	}
+	return nil
 }
 
 // settlePurchase charges or refunds the transaction and checks the result.

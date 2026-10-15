@@ -134,3 +134,23 @@ func TestCampaignWritesNeverLowerTotalXP(t *testing.T) {
 		}
 	}
 }
+
+// Both campaign modes refuse a purchase that changed the wounded copies,
+// including a change of a shared copy's tree (Phase 0, 0.4).
+func TestKeepsWoundsRefusesAnyChange(t *testing.T) {
+	before := Progress{Wounds: []Entry{{CardID: "fate", Count: 1, Tree: "a"}, {CardID: "nudge", Count: 2}}}
+	for name, wounds := range map[string][]Entry{
+		"one healed":   {{CardID: "fate", Count: 1, Tree: "a"}, {CardID: "nudge", Count: 1}},
+		"tree changed": {{CardID: "fate", Count: 1, Tree: "b"}, {CardID: "nudge", Count: 2}},
+		"all gone":     nil,
+		"one more":     {{CardID: "fate", Count: 1, Tree: "a"}, {CardID: "nudge", Count: 3}},
+	} {
+		if err := keepsWounds(before, Progress{Wounds: wounds}); err == nil || !strings.Contains(err.Error(), "until mended") {
+			t.Fatalf("%s: a change to the wounds was accepted: %v", name, err)
+		}
+	}
+	reordered := Progress{Wounds: []Entry{{CardID: "nudge", Count: 1}, {CardID: "fate", Count: 1, Tree: "a"}, {CardID: "nudge", Count: 1}}}
+	if err := keepsWounds(before, reordered); err != nil {
+		t.Fatalf("the same wounds in another order were refused: %v", err)
+	}
+}

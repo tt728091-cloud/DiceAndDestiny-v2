@@ -222,8 +222,8 @@ func ExpeditionDeckChange(root, id string, e Economy, catalogs map[string]conten
 		return save, err
 	}
 	// Wounded copies never move: a purchase that would touch them is refused.
-	if !slices.Equal(expandEntries(next.Wounds), expandEntries(save.Sheet.Wounds)) {
-		return save, fmt.Errorf("wounded copies cannot be traded until mended")
+	if err = keepsWounds(save.Sheet, next); err != nil {
+		return save, err
 	}
 	if err = state.PayDeckChange(rules); err != nil {
 		return save, err

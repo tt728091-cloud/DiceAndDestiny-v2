@@ -351,6 +351,7 @@ From [phase-0-handoff.md](phase-0-handoff.md).
 - **The gold→XP trainer is gone.** Gold never buys XP. `gold.trainer_gold_per_xp`, the town's trainer service, `Action.gold` and the client's trainer special case were removed; the strict loader now refuses a config that still names the rate, and a `use_site` request for `trainer` is refused as an unknown service. `TestSitesInfluenceMendingShopsAndTrainer` is now `TestSitesInfluenceMendingAndShops`.
 - **Every XP spend is refundable.** Expedition deck changes (and linear Prepare) go through `Purchase.InCampaign()`: a sale refunds the copy's full value and a legacy card upgrade costs exactly the value it adds, so nothing sinks into UpgradeSpent. `campaign_refund_test.go` round-trips every tree connection, batch, store/equip and ability path through `ExpeditionDeckChange` at camp; see [campaign.md](campaign.md#every-xp-spend-is-refundable).
 - **Total XP.** The sheet's `Budget` is the canonical total XP; campaign and expedition writes refuse to lower it, the expedition status sends it as `xp_total`, and the map's XP tile shows "XP to spend: N · Total XP: M" on hover. See [campaign.md](campaign.md#total-xp).
+- **Wounded copies are frozen.** Purchases only take live copies (a trade needing more is refused while others are wounded), the linear `BuyCampaign` now refuses wound changes like `ExpeditionDeckChange`, and Prepare shows wounded rows as frozen with the reason. Tested in `campaign_wounds_test.go` for both modes.
 
 ## Decisions made during implementation
 

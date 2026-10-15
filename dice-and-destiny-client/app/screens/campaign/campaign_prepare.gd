@@ -176,7 +176,7 @@ func _render_list() -> void:
 	for entry in _sorted(data.deck):
 		_list_row(entry, "card")
 	if not data.get("wounds", []).is_empty():
-		STYLE.heading(_list, "Wounded · out of play until the campaign is cleared")
+		STYLE.heading(_list, "Wounded · frozen until mended")
 		for entry in _sorted(data.wounds): _wounded_row(entry)
 	if not data.collection.is_empty():
 		STYLE.heading(_list, "Stored · not in your deck")
@@ -209,13 +209,13 @@ func _list_row(entry: Dictionary, kind: String) -> void:
 	row.pressed.connect(func(): _select({"kind": kind, "id": id, "tree": tree}))
 	_row_xp(row, int(entry.sell.cost), int(entry.count))
 
-## A wounded copy: shown for its XP, but it can't be played, traded or sold
-## until clearing the campaign mends it.
+## A wounded copy: shown for its XP, but frozen until it is mended. It can't
+## be played, sold, upgraded, traded down or stored (the authority refuses it).
 func _wounded_row(entry: Dictionary) -> void:
 	var id := str(entry.card_id)
-	var row := _row_button(_list, "%s\n×%d  ·  wounded" % [_card_name(id), int(entry.count)], STYLE.icon(STYLE.card_texture(id), 34, 46), "prepare.wounded." + id)
+	var row := _row_button(_list, "%s\n×%d  ·  wounded · frozen" % [_card_name(id), int(entry.count)], STYLE.icon(STYLE.card_texture(id), 34, 46), "prepare.wounded." + id)
 	row.disabled = true; row.toggle_mode = false
-	row.tooltip_text = "Removed in an earlier battle. Wounds carry over between battles and start each battle in your removed pile. Clearing the campaign's last encounter mends them."
+	row.tooltip_text = "Frozen until mended: a wounded copy can't be played, sold, upgraded, traded down or stored. It keeps its XP and starts each battle in your removed pile. " + ("Heal wounds at camp or mend them at a site." if expedition else "Clearing the campaign's last encounter mends every wound.")
 	row.add_theme_color_override("font_disabled_color", STYLE.LOSS.lightened(0.2))
 	_row_xp(row, int(entry.value), int(entry.count))
 
@@ -264,6 +264,10 @@ func _render_owned(id: String, entry: Dictionary, stored: bool) -> void:
 	_card_face(_details, id)
 	STYLE.label(_details, _card_name(id), 22, STYLE.GOLD_BRIGHT)
 	STYLE.label(_details, "%d %s · worth %d XP each" % [int(entry.count), "stored" if stored else "in your deck", int(entry.sell.cost)], 15, STYLE.MUTED)
+	var wounded := int(_entry("wounds", id, str(entry.tree)).get("count", 0))
+	if wounded > 0 and not stored:
+		var frozen := STYLE.label(_details, "%d wounded cop%s frozen until mended. These trades use your %d live cop%s." % [wounded, "y is" if wounded == 1 else "ies are", int(entry.count), "y" if int(entry.count) == 1 else "ies"], 14, STYLE.LOSS)
+		frozen.name = "FrozenWounds"
 	if stored:
 		var copies := STYLE.section(_details); STYLE.heading(copies, "Stored copy")
 		_offer_button(copies, entry.equip, "Add a copy to your deck", "prepare.equip." + id)

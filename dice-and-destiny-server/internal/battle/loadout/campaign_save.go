@@ -303,6 +303,10 @@ func BuyCampaign(root, id string, e Economy, catalogs map[string]content.BattleL
 	if next, err = settlePurchase(next, s.Character, e, catalogs[s.Character], request.Kind, cost); err != nil {
 		return s, err
 	}
+	// Wounded copies never move: a purchase that would touch them is refused.
+	if err = keepsWounds(s.Sheet, next); err != nil {
+		return s, err
+	}
 	s.Sheet = next
 	return s, writeCampaignSave(root, s)
 }

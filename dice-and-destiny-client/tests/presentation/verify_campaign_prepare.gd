@@ -1,7 +1,8 @@
 extends "res://tests/presentation/verify_campaign.gd"
 ## The campaign's Prepare screen through pointer input: select a deck card, see
 ## its tree, upgrade and trade a copy down in place, preview a tree card, buy a
-## base, sell, store and re-add a copy, and upgrade an ability.
+## base, sell, store and re-add a copy, and upgrade an ability. Then a save
+## holding a wounded copy: it is frozen, and only live copies trade.
 
 const PREPARE_SCRIPT := "res://app/screens/campaign/campaign_prepare.gd"
 
@@ -140,7 +141,62 @@ func _run() -> void:
 	_expect(int(status.result.saves[0].xp) == xp, "the campaign save agrees")
 	var editors: Dictionary = runtime.character_catalogs("progression")
 	_expect(int(editors.result.starter.progression.xp) == 100 and int(editors.result.starter.owned_decklist.reduce(func(total, e): return total + int(e.count), 0)) == 12, "Prepare never touched the editors' Progression save")
+
+	# Wounded copies are frozen: a second save whose last battle wounded one
+	# of its three Steady Guards.
+	var hurt: Dictionary = runtime.campaign_new("starter", "Wounded test")
+	_expect(hurt.get("ok") == true and _wound_copy(str(hurt.result.id), "steady_guard"), "a campaign save holds one wounded Steady Guard")
+	campaign.queue_free(); await process_frame
+	campaign = preload("res://app/screens/campaign/campaign_screen.gd").new()
+	campaign.save_id = str(hurt.result.id); root.add_child(campaign)
+	for frame in 6: await process_frame
+	await _click(campaign._deck)
+	for frame in 8: await process_frame
+	prepare = _find(PREPARE_SCRIPT)
+	_expect(prepare != null and prepare._health.text == "11/12", "Prepare counts the wounded copy in max health")
+	if prepare == null: _finish(); return
+	var frozen := _prepare_control(prepare, "prepare.wounded.steady_guard")
+	_expect(frozen != null and frozen.disabled and "can't be played, sold, upgraded, traded down or stored" in frozen.tooltip_text and "last encounter mends" in frozen.tooltip_text, "the wounded copy's row is disabled and says why (%s)" % (frozen.tooltip_text if frozen != null else "missing"))
+	await _tap(_prepare_control(prepare, "prepare.card.steady_guard"))
+	for frame in 4: await process_frame
+	var note: Label = prepare._details.find_child("FrozenWounds", true, false)
+	_expect(note != null and "1 wounded copy is frozen" in note.text and "2 live copies" in note.text, "the live Steady Guards say the wounded copy is frozen")
+	await _capture(prepare, "prepare-wounded-frozen")
+	var xp_before := int(prepare.data.xp)
+	for copy in 2:
+		await _tap(_prepare_control(prepare, "prepare.sell.steady_guard"))
+		for frame in 4: await process_frame
+	_expect(int(prepare.data.xp) == xp_before + 20 and prepare._health.text == "9/10", "both live copies sell for their XP")
+	_expect(_prepare_control(prepare, "prepare.card.steady_guard") == null and _prepare_control(prepare, "prepare.sell.steady_guard") == null and _prepare_control(prepare, "prepare.store.steady_guard") == null, "with only the wounded copy left, nothing offers to sell, trade or store it")
+	frozen = _prepare_control(prepare, "prepare.wounded.steady_guard")
+	_expect(frozen != null and frozen.disabled and prepare.data.wounds.size() == 1 and int(prepare.data.wounds[0].count) == 1, "the wounded copy stays, frozen")
 	_finish()
+
+## Moves one copy of a card from a campaign save's deck to its wounds, as the
+## authority records a battle's removed pile. The authority reprices on read.
+func _wound_copy(save_id: String, card_id: String) -> bool:
+	var path := WorkspacePaths.runtime_dir("user/character_loadouts").path_join("campaigns/%s.json" % save_id)
+	var save = JSON.parse_string(FileAccess.get_file_as_string(path))
+	if not save is Dictionary: return false
+	var found := false
+	for entry in save.sheet.decklist:
+		if str(entry.card_id) == card_id and int(entry.count) > 1: entry.count = int(entry.count) - 1; found = true
+	save.sheet.wounds = [{"card_id": card_id, "count": 1}]
+	var file := FileAccess.open(path, FileAccess.WRITE)
+	if file == null or not found: return false
+	file.store_string(JSON.stringify(_whole_numbers(save)))
+	file.close()
+	return true
+
+## JSON numbers parse as floats; the authority's save wants integers back.
+func _whole_numbers(value):
+	if value is Dictionary:
+		var out := {}
+		for key in value: out[key] = _whole_numbers(value[key])
+		return out
+	if value is Array: return value.map(func(item): return _whole_numbers(item))
+	if value is float and value == floorf(value): return int(value)
+	return value
 
 func _finish() -> void:
 	print("CAMPAIGN PREPARE: " + ("FAILED" if failed else "PASSED")); quit(1 if failed else 0)
