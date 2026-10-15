@@ -847,7 +847,6 @@ func _render_site(site: Dictionary) -> void:
 	for service in _list(site, "services"):
 		var id := "expedition.site.%s" % service.id + (".%s" % service.item if not str(service.get("item", "")).is_empty() else "")
 		var action := {"kind": "use_site", "service": str(service.id), "item": str(service.get("item", "")), "count": 1}
-		if service.id == "trainer": action["gold"] = int(service.gold)
 		var button := CHART.paper_button(_button(card, str(service.label), func(): _act(action), id), 14)
 		button.disabled = not service.get("available", false)
 		if not service.get("available", false): button.tooltip_text = str(service.get("reason", ""))

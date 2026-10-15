@@ -97,10 +97,11 @@ type MendingConfig struct {
 	TownGoldPerWound           int `yaml:"town_gold_per_wound" json:"town_gold_per_wound"`
 }
 
+// GoldConfig holds gold drops and prices. Gold buys convenience and
+// recovery, never XP.
 type GoldConfig struct {
-	Drops            map[string]Range `yaml:"drops" json:"drops"`
-	Prices           map[string]Range `yaml:"prices" json:"prices"`
-	TrainerGoldPerXP int              `yaml:"trainer_gold_per_xp" json:"trainer_gold_per_xp"`
+	Drops  map[string]Range `yaml:"drops" json:"drops"`
+	Prices map[string]Range `yaml:"prices" json:"prices"`
 }
 
 // StatusIDs names the authored battle statuses the expedition applies.
@@ -199,7 +200,6 @@ func (c Config) validate(lib content.BattleLibrary) error {
 		{"mending.village_influence_per_wound", c.Mending.VillageInfluencePerWound, 1, 20},
 		{"mending.monastery_influence_per_wound", c.Mending.MonasteryInfluencePerWound, 1, 20},
 		{"mending.town_gold_per_wound", c.Mending.TownGoldPerWound, 1, maxValue},
-		{"gold.trainer_gold_per_xp", c.Gold.TrainerGoldPerXP, 1, maxValue},
 	}
 	for _, check := range checks {
 		if err := inRange(check.name, check.v, check.lo, check.hi); err != nil {

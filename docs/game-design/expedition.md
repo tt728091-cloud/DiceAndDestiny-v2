@@ -222,12 +222,14 @@ Resting at an **inn** adds **+1** (`camp_healing.inn_bonus`) to each healing rol
 
 ![Economy](expedition/09-economy.png)
 
+*The illustration is from the first draft: since then the trainer was removed (gold never buys XP), the deck-change fee is paid once per visit, and camp healing changed. The tables below are current.*
+
 To avoid three overlapping systems, there are **two things you save and one thing you spend on the spot**:
 
 | | Earned from | Spent on |
 | --- | --- | --- |
 | **XP** — grows your deck | Fights, objectives | Buying cards, card-tree upgrades, ability upgrades. Nothing else. |
-| **Gold** — buys things | Enemies, treasure, ruins, dungeons, event sites | Gear, consumables (bandages), healers. A trainer converts gold to XP at a poor rate. Gold can never upgrade a card directly. |
+| **Gold** — buys things | Enemies, treasure, ruins, dungeons, event sites | Gear, consumables (bandages), healers. Gold never buys XP and can never upgrade a card directly. |
 | **Influence** — never saved | The cards you play at a site this turn (1 card = 1 Influence) | Site services: deck changes, mending, recruiting |
 
 **Deck changes cost time and place.** Changing your deck (buy, sell, upgrade, swap) happens only at sites, and costs XP **plus** an Influence fee by site tier. The fee is paid **once per visit**: the first change opens the deck, and every further change there costs XP only until you leave (break camp, or end the turn at a site). A player can shape their deck however they like, but not rebuild it for free before every fight.
@@ -237,7 +239,7 @@ To avoid three overlapping systems, there are **two things you save and one thin
 | Camp (any hex, at rest) | 3 Influence opens the deck until you break camp; then XP per change | Basic aid, free: 1d3 per untreated wound; then a bandage: 1d6 per treated wound | — |
 | Village | 2 Influence opens the deck this turn; then XP per change | 2 Influence per point of damage (one card) | Consumables (gold) |
 | Monastery | 1 Influence opens the deck this turn; then XP per change; best card-tree upgrades | 1 Influence per point, mid-round | — |
-| Town / city | XP only: a straight 1:1 swap, no Influence | Healer: 15 gold per point; grievous wounds later | Gear (gold), trainer (gold → XP) |
+| Town / city | XP only: a straight 1:1 swap, no Influence | Healer: 15 gold per point; grievous wounds later | Gear (gold) |
 
 These costs are a first pass. Mage Knight charges 3 Influence per wound at a village and 2 at a monastery. Ours are lower, and charged per point of damage, because our Influence is cards from a 4-card hand.
 
@@ -249,9 +251,7 @@ These costs are a first pass. Mage Knight charges 3 Influence per wound at a vil
 | Lieutenant | 30 | | Consumable | 15–30 |
 | Treasure / ruins | 20–40 | | Gear | 40–100 |
 | Event site | 0–30 | | Healer (grievous wound) | 50 |
-| Warlord | 60 | | Trainer | 3 gold → 1 XP |
-
-At the trainer, 30 gold buys a base card's worth of XP (10). A minion fight pays 20–30 XP, so fighting stays the main way to grow your deck, and gold is a slow back door.
+| Warlord | 60 | | | |
 
 ## 11. Growth and gear
 
@@ -334,7 +334,6 @@ deck_change_influence: { camp: 3, village: 2, monastery: 1, town: 0 }   # paid o
 gold:
   drops: { minion_group: [5, 15], lieutenant: 30, treasure: [20, 40], event: [0, 30], warlord: 60 }
   prices: { bandage: 10, consumable: [15, 30], gear: [40, 100], healer_grievous: 50 }
-  trainer_gold_per_xp: 3
 ```
 
 | Value | First guess |
@@ -405,6 +404,7 @@ Decided in review (2026-10-11 to 2026-10-12):
 - Map cards are unplayable in battle by default — a deliberate weakness for gear, abilities and upgrades to cover later.
 - A card played for its map effect costs its printed energy, as in battle; a map-only extra energy cost is allowed but rare and only for big effects, because map energy refills only at rest.
 - XP, cards, gear and relics carry between regions, with a camp and healer stop in between.
+- Gold never buys XP; the trainer was removed (2026-10, open-world plan).
 
 ## 18. Implementation notes
 

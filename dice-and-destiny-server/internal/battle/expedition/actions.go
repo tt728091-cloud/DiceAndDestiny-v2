@@ -18,7 +18,6 @@ type Action struct {
 	Card    string   `json:"card,omitempty"`    // play_map_card
 	Service string   `json:"service,omitempty"` // use_site / camp_service
 	Item    string   `json:"item,omitempty"`    // shop, enter_site (siege), the bandage to spend
-	Gold    int      `json:"gold,omitempty"`    // trainer
 	Count   int      `json:"count,omitempty"`   // mend wounds (points of damage)
 	Wound   string   `json:"wound,omitempty"`   // camp_service: the wound to heal ("" = the first eligible, "all" = every eligible)
 	Choice  string   `json:"choice,omitempty"`  // event_choice
@@ -797,22 +796,6 @@ func (s *State) useSite(r Rules, a Action) (Rewards, error) {
 		s.Inventory[a.Item]++
 		s.log("Bought %s for %d gold.", g.Name, g.Price)
 		return Rewards{}, nil
-	case "trainer":
-		if def.Type != "town" {
-			return Rewards{}, fmt.Errorf("%s has no trainer", def.Name)
-		}
-		rate := cfg.Gold.TrainerGoldPerXP
-		if a.Gold < rate || a.Gold%rate != 0 {
-			return Rewards{}, fmt.Errorf("the trainer converts %d gold into 1 XP", rate)
-		}
-		if s.Gold < a.Gold {
-			return Rewards{}, fmt.Errorf("you have %d gold", s.Gold)
-		}
-		s.Gold -= a.Gold
-		xp := a.Gold / rate
-		s.XPEarned += xp
-		s.log("Trained: %d gold for %d XP.", a.Gold, xp)
-		return Rewards{XP: xp}, nil
 	}
 	return Rewards{}, fmt.Errorf("unknown site service %q", a.Service)
 }

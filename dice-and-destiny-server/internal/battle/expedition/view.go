@@ -298,7 +298,6 @@ type ViewConfig struct {
 	Terrain             map[string]TerrainConfig `json:"terrain"`
 	DefeatWounds        int                      `json:"defeat_wounds"`
 	DeckChangeInfluence map[string]int           `json:"deck_change_influence"`
-	TrainerGoldPerXP    int                      `json:"trainer_gold_per_xp"`
 }
 
 var habitText = map[string]string{
@@ -381,12 +380,6 @@ func (s *State) siteServices(r Rules, st SiteState, def Site) []ViewService {
 			sv.Reason = "not enough gold"
 		}
 		out = append(out, sv)
-		rate := cfg.Gold.TrainerGoldPerXP
-		tr := ViewService{ID: "trainer", Label: fmt.Sprintf("Trainer: %d gold → 1 XP", rate), Gold: rate, Available: s.Gold >= rate}
-		if !tr.Available {
-			tr.Reason = "not enough gold"
-		}
-		out = append(out, tr)
 	}
 	for _, item := range def.Shop {
 		g := r.Pack.Gear[item]
@@ -409,7 +402,7 @@ func (s *State) View(r Rules, revision int) View {
 		Hand: []ViewCard{}, Inventory: []ViewItem{}, Statuses: []ViewStatus{}, Hexes: []ViewHex{}, Slots: []ViewSlot{}, Moves: []ViewMove{}, Explores: []ViewSlot{}, Challenges: []ViewTarget{}, Enters: []ViewTarget{},
 		Health: s.LiveCards(), MaxHealth: s.LiveCards() + s.Wounds.Damage(), XPEarned: s.XPEarned, RelicChoices: s.PendingRelicChoices,
 		LastBattle: s.LastBattle, LastRest: s.viewLastRest(), LastEvent: s.LastEvent, Log: append([]string{}, s.Log...),
-		Config: ViewConfig{EnergyPerMove: cfg.Move.EnergyPerMove, ExploreCost: cfg.Move.ExploreCost, SightDay: cfg.Sight.Day, SightNight: cfg.Sight.Night, Terrain: cfg.Terrain, DefeatWounds: cfg.Defeat.Wounds, DeckChangeInfluence: cfg.DeckChangeInfluence, TrainerGoldPerXP: cfg.Gold.TrainerGoldPerXP}}
+		Config: ViewConfig{EnergyPerMove: cfg.Move.EnergyPerMove, ExploreCost: cfg.Move.ExploreCost, SightDay: cfg.Sight.Day, SightNight: cfg.Sight.Night, Terrain: cfg.Terrain, DefeatWounds: cfg.Defeat.Wounds, DeckChangeInfluence: cfg.DeckChangeInfluence}}
 	day := (s.Round + 1) / 2
 	if s.Round > cfg.RoundsPerRegion {
 		v.DayLabel = "The deadline"

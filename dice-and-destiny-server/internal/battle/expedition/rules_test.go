@@ -596,7 +596,7 @@ func TestReloadedStateContinuesIdentically(t *testing.T) {
 	}
 }
 
-func TestSitesInfluenceMendingShopsAndTrainer(t *testing.T) {
+func TestSitesInfluenceMendingAndShops(t *testing.T) {
 	r := testRules(t)
 	s := newState(t, r, 9)
 	placeAll(s, r)
@@ -652,19 +652,29 @@ func TestSitesInfluenceMendingShopsAndTrainer(t *testing.T) {
 		t.Fatalf("camping at a village uses the inn: %+v", s.Camp)
 	}
 	act(t, s, r, Action{Kind: "break_camp"})
-	// Town: healer for gold, trainer 3 gold → 1 XP, gear for sale; no Influence needed for deck changes.
+	// Town: healer for gold, gear for sale; no Influence needed for deck
+	// changes. Gold never buys XP: there is no trainer.
 	town := s.hexOfSite("greywharf")
 	s.teleport(r, town)
 	s.Night = false
 	s.Gold = 100
-	_, err = s.Act(r, Action{Kind: "use_site", Service: "trainer", Gold: 4})
-	mustFail(t, err, "converts 3 gold into 1 XP")
-	rewards := act(t, s, r, Action{Kind: "use_site", Service: "trainer", Gold: 9})
-	if rewards.XP != 3 || s.Gold != 91 || s.XPEarned != 3 {
-		t.Fatalf("trainer: %+v gold %d", rewards, s.Gold)
+	here := s.View(r, 1).SiteHere
+	if here == nil || len(here.Services) == 0 {
+		t.Fatalf("the town lists its services: %+v", here)
+	}
+	for _, sv := range here.Services {
+		if sv.ID == "trainer" || strings.Contains(sv.Label, "XP") {
+			t.Fatalf("the town offers gold for XP: %+v", sv)
+		}
+	}
+	xpBefore := s.XPEarned
+	rewards, err := s.Act(r, Action{Kind: "use_site", Service: "trainer"})
+	mustFail(t, err, `unknown site service "trainer"`)
+	if rewards.XP != 0 || s.Gold != 100 || s.XPEarned != xpBefore {
+		t.Fatalf("a refused trainer request changed the state: %+v gold %d xp %d", rewards, s.Gold, s.XPEarned)
 	}
 	act(t, s, r, Action{Kind: "use_site", Service: "mend"})
-	if len(s.Wounds) != 0 || s.Gold != 91-r.Config.Mending.TownGoldPerWound {
+	if len(s.Wounds) != 0 || s.Gold != 100-r.Config.Mending.TownGoldPerWound {
 		t.Fatalf("the healer takes gold: wounds %v gold %d", s.Wounds, s.Gold)
 	}
 	act(t, s, r, Action{Kind: "use_site", Service: "shop", Item: "lantern"})

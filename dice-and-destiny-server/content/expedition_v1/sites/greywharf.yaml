@@ -2,5 +2,5 @@ schema_version: 1
 id: greywharf
 name: "Greywharf"
 type: town
-description: "The Warlord's goal. Deck changes for XP alone, a healer for gold, a trainer (3 gold per XP), and gear for sale. Closed at night except the inn."
+description: "The Warlord's goal. Deck changes for XP alone, a healer for gold, and gear for sale. Closed at night except the inn."
 shop: ["bandage", "lantern", "siege_hooks"]

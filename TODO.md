@@ -65,7 +65,7 @@ Out of scope of the first Expedition build (2026-10-12; see `docs/game-design/ex
 
 Accepted for later; none of them changes battle rules.
 
-- [ ] **Remove the gold→XP trainer** (`gold.trainer_gold_per_xp` in `expedition.yaml`, Greywharf's trainer service, its view/client entry, tests and docs). Hard rule: gold never buys power; XP alone measures and controls character power.
+- [x] **Remove the gold→XP trainer** (`gold.trainer_gold_per_xp` in `expedition.yaml`, Greywharf's trainer service, its view/client entry, tests and docs). Hard rule: gold never buys power; XP alone measures and controls character power.
 - [ ] **Tile generator screen.** A UI screen that generates and shows world layouts for review, to experiment with before building the world. Start simple: no wave function collapse or dynamic filler; a finished world may stay static. See `docs/game-design/open-world-plan.html` §3.
 - [ ] **Skippable cutscenes.** If the game gets cutscenes (e.g. before the opening scenario), the player may watch or skip them. The opening scenario itself is mandatory.
 

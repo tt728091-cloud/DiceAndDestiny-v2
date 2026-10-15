@@ -50,6 +50,5 @@ mending:
 gold:
   drops: {minion_group: [5, 15], lieutenant: 30, treasure: [20, 40], event: [0, 30], warlord: 60}
   prices: {bandage: 10, consumable: [15, 30], gear: [40, 100], healer_grievous: 50}
-  trainer_gold_per_xp: 3
 # The authored battle statuses the map applies at battle start.
 statuses: {ambush: ambush, fortified: fortified, conqueror: conqueror, lieutenant: lieutenants_favor}

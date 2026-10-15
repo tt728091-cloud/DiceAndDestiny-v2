@@ -128,7 +128,7 @@ Replace the campaign's linear encounter list with an explorable hex map, built t
   - Beating him early pays **+20 XP per unused round** plus **one extra relic choice** (if relics aren't implemented yet, record the extra choice as a pending reward and say so).
 - **Economy:**
   - **XP** only grows the deck (buy cards, tree upgrades, ability upgrades).
-  - **Gold** buys gear, consumables and healers. A trainer converts 3 gold → 1 XP. Gold never upgrades a card directly.
+  - **Gold** buys gear, consumables and healers. A trainer converts 3 gold → 1 XP. Gold never upgrades a card directly. *(2026-10-14: the trainer was removed; gold never buys XP. See [phase-0-handoff.md](phase-0-handoff.md), task 0.1.)*
   - **Influence** is never stored: it's cards played at a site this turn (1 card = 1 Influence).
   - Deck changes happen only at sites and cost XP + Influence: camp 3, village 2, monastery 1, town 0.
   - Mending:
@@ -249,7 +249,7 @@ Paths are relative to the repo root.
 
 ### 5.2 Configuration (no numbers in code)
 
-Create `dice-and-destiny-server/content/progression_v1/expedition.yaml`. Load it strictly, in the style of `LoadCampaign` and `LoadEconomy`: `KnownFields(true)`, `schema_version`, and range validation with clear errors. It holds every rule number: rounds, hand size and limit, energy per Move, explore cost, terrain costs by Day/Night, sight, ambush bonus dice and max kept, fortified extra defense dice, defeat wounds, camp mending (roll needed, inn bonus), Warlord start distance and march per rest, the early-strike reward, Influence per deck change by site, the mending costs, gold drops and prices, and the trainer rate. `expedition.md` §14 has a sketch and the first values.
+Create `dice-and-destiny-server/content/progression_v1/expedition.yaml`. Load it strictly, in the style of `LoadCampaign` and `LoadEconomy`: `KnownFields(true)`, `schema_version`, and range validation with clear errors. It holds every rule number: rounds, hand size and limit, energy per Move, explore cost, terrain costs by Day/Night, sight, ambush bonus dice and max kept, fortified extra defense dice, defeat wounds, camp mending (roll needed, inn bonus), Warlord start distance and march per rest, the early-strike reward, Influence per deck change by site, the mending costs, gold drops and prices, and the trainer rate. `expedition.md` §14 has a sketch and the first values. *(2026-10-14: the trainer was removed; gold never buys XP. See [phase-0-handoff.md](phase-0-handoff.md), task 0.1.)*
 
 **Per-thing data:**
 - Character base energy, hand size/limit and energy carry-out: on the character definition or sheet.
@@ -533,7 +533,7 @@ Do them in order. A milestone is complete only when its tests pass and its evide
     - town healer: gold.
 
     Results come from the seeded RNG on the authority.
-20. Gold comes only from the authority (enemies, treasure, events). Shops sell the gear. The trainer converts 3 gold → 1 XP. Gold can't buy or upgrade cards directly.
+20. Gold comes only from the authority (enemies, treasure, events). Shops sell the gear. The trainer converts 3 gold → 1 XP. Gold can't buy or upgrade cards directly. *(2026-10-14: the trainer was removed; gold never buys XP. See [phase-0-handoff.md](phase-0-handoff.md), task 0.1.)*
 21. Event sites present their scenes. Each choice's requirements and outcomes are enforced by the authority.
 
 **The Warlord**
@@ -579,7 +579,7 @@ Do them in order. A milestone is complete only when its tests pass and its evide
   - deck change costs by site;
   - mending odds and inn bonus;
   - gold drops and prices;
-  - the trainer rate;
+  - the trainer rate; *(2026-10-14: the trainer was removed; gold never buys XP. See [phase-0-handoff.md](phase-0-handoff.md), task 0.1.)*
   - events;
   - defeat rule edge cases (last card, already heavily wounded);
   - the energy carry-out cap;

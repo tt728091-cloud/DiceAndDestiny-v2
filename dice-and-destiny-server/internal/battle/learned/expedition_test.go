@@ -150,6 +150,13 @@ func TestExpeditionRuntimeOpsAndPersistence(t *testing.T) {
 	if num(paid["view"].(map[string]any)["turn"].(map[string]any)["influence"]) != 2 {
 		t.Fatal("two cards played at the village are 2 Influence")
 	}
+	// Gold never buys XP. A stale client may still send the removed trainer's
+	// gold field: the request decodes (unknown fields are ignored) and the
+	// service is refused like any unknown one, changing nothing.
+	runtimeOp(t, with(map[string]any{"op": "expedition_act", "campaign_save": saveID, "revision": rev, "action": map[string]any{"kind": "use_site", "service": "trainer", "gold": 9}}), `unknown site service "trainer"`)
+	if unchanged := readSave(t, contentRoot, loadoutRoot, saveID); unchanged.Sheet.Revision != rev || unchanged.Sheet.XP != 100 || unchanged.Expedition.Turn.Influence != 2 {
+		t.Fatalf("a refused trainer request changed the save: revision %d xp %d", unchanged.Sheet.Revision, unchanged.Sheet.XP)
+	}
 	bought := runtimeOp(t, with(map[string]any{"op": "expedition_deck_change", "campaign_save": saveID, "purchase": map[string]any{"kind": "buy_card", "id": "trailblaze", "revision": rev, "expected_cost": 10}}), "")
 	bv := bought["view"].(map[string]any)
 	if num(bought["xp"]) != 90 || num(bv["turn"].(map[string]any)["influence"]) != 0 || num(bv["health"]) != 13 {

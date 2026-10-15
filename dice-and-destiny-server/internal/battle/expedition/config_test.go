@@ -50,7 +50,7 @@ func TestLoadConfigAcceptsShippedValues(t *testing.T) {
 	if d := cfg.Gold.Drops["lieutenant"]; d.Min != 30 || d.Max != 30 {
 		t.Fatalf("a scalar range reads as min == max: %v", d)
 	}
-	if cfg.Gold.TrainerGoldPerXP != 3 || cfg.Gold.Prices["bandage"].Min != 10 {
+	if cfg.Gold.Prices["bandage"].Min != 10 {
 		t.Fatalf("gold economy changed: %+v", cfg.Gold)
 	}
 	if cfg.Statuses.Ambush != "ambush" || cfg.Statuses.Fortified != "fortified" || cfg.Statuses.Conqueror != "conqueror" || cfg.Statuses.Lieutenant != "lieutenants_favor" {
@@ -81,6 +81,8 @@ func TestLoadConfigRejectsBadValues(t *testing.T) {
 		{"unknown deck-change site", "monastery: 1, town: 0}", "monastery: 1, town: 0, inn: 1}", "unknown deck-change site \"inn\""},
 		{"bad gold range", "minion_group: [5, 15]", "minion_group: [15, 5]", "gold.drops.minion_group is not a valid range"},
 		{"missing price", "bandage: 10, ", "", "gold.prices.bandage is missing"},
+		// Gold never buys XP: the removed trainer rate is an unknown field now.
+		{"gold for XP", "healer_grievous: 50}", "healer_grievous: 50}\n  trainer_gold_per_xp: 3", "field trainer_gold_per_xp not found"},
 		{"bad range shape", "treasure: [20, 40]", "treasure: [20, 30, 40]", "a range is one number or [min, max]"},
 		{"unknown status", "ambush: ambush,", "ambush: surprise,", "names unknown status \"surprise\""},
 		{"status without the right modifier", "fortified: fortified,", "fortified: blind,", "status \"blind\" must add defensive dice per stack"},
