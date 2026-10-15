@@ -1,0 +1,511 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Dice and Destiny — Open World Plan</title>
+<style>
+  :root {
+    --paper: #fbf6ea; --ink: #2f2a22; --muted: #6b604c; --rule: #ddd0b0;
+    --gold: #a57432; --red: #8b2e24; --green: #3f6b3a; --amber: #9a6a12; --card: #f4ecd8;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: #e9e0c9; color: var(--ink); font: 16px/1.55 Georgia, "Iowan Old Style", serif; }
+  .wrap { display: grid; grid-template-columns: 260px minmax(0, 1fr); max-width: 1280px; margin: 0 auto; }
+  nav { position: sticky; top: 0; align-self: start; height: 100vh; overflow: auto; padding: 28px 18px; font: 14px/1.5 -apple-system, "Segoe UI", sans-serif; }
+  nav a { display: block; color: var(--ink); text-decoration: none; padding: 3px 8px; border-radius: 5px; }
+  nav a:hover { background: var(--card); }
+  nav .title { font: 600 15px/1.3 Georgia, serif; margin: 0 8px 14px; }
+  main { background: var(--paper); padding: 40px 56px 80px; box-shadow: 0 0 0 1px var(--rule); min-height: 100vh; }
+  h1 { font-size: 34px; margin: 0 0 6px; }
+  h2 { font-size: 25px; margin: 54px 0 10px; padding-top: 14px; border-top: 2px solid var(--rule); }
+  h3 { font-size: 18px; margin: 26px 0 8px; }
+  .sub { color: var(--muted); margin: 0 0 22px; }
+  p, li { max-width: 78ch; }
+  table { border-collapse: collapse; margin: 12px 0 18px; width: 100%; font-size: 15px; }
+  th, td { border: 1px solid var(--rule); padding: 7px 10px; text-align: left; vertical-align: top; }
+  th { background: var(--card); }
+  code { background: var(--card); padding: 1px 5px; border-radius: 4px; font-size: 14px; }
+  .badge { display: inline-block; font: 600 11px/1 -apple-system, sans-serif; letter-spacing: .04em; text-transform: uppercase; padding: 4px 7px; border-radius: 4px; vertical-align: 3px; margin-left: 8px; }
+  .decided { background: #dbe8d2; color: var(--green); }
+  .explore { background: #f3e2b8; color: var(--amber); }
+  .open { background: #efd6cf; color: var(--red); }
+  .sidelined { background: #e4e0d8; color: #5f5a50; }
+  .rule { border-left: 4px solid var(--red); background: #f6e7e0; padding: 10px 14px; margin: 10px 0; border-radius: 0 6px 6px 0; }
+  .ac { background: #eef3e8; border: 1px solid #c9d8bd; border-radius: 8px; padding: 10px 16px 6px; margin: 14px 0; }
+  .ac h4 { margin: 0 0 4px; font: 600 13px/1.4 -apple-system, sans-serif; text-transform: uppercase; letter-spacing: .05em; color: var(--green); }
+  .ac ul { margin: 4px 0 8px; padding-left: 20px; }
+  .ac li { font-size: 15px; }
+  figure { margin: 18px 0; background: #fffdf6; border: 1px solid var(--rule); border-radius: 10px; padding: 14px; }
+  figure svg { width: 100%; height: auto; max-height: 420px; display: block; }
+  figcaption { color: var(--muted); font-size: 14px; margin-top: 6px; }
+  .svgsm { font: 13px -apple-system, sans-serif; }
+  svg text:not([fill]) { fill: #2f2a22; }
+  .svgxs { font: 11px -apple-system, sans-serif; }
+  .svgbig { font: 700 34px Georgia, serif; }
+  .legend { font: 14px -apple-system, sans-serif; color: var(--muted); }
+  .cols { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+  @media (max-width: 900px) { .wrap { grid-template-columns: 1fr; } nav { display: none; } main { padding: 24px; } .cols { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+<nav>
+  <div class="title">Open World Plan</div>
+  <a href="#principles">1. Principles</a>
+  <a href="#journey">2. Opening scenario → open world</a>
+  <a href="#world">3. The world and its generation</a>
+  <a href="#time">4. Time: months and seasons</a>
+  <a href="#necromancer">5. The Necromancer and the Rising</a>
+  <a href="#towns">6. Towns, quests and prosperity</a>
+  <a href="#reputation">7. Reputation</a>
+  <a href="#progression">8. Progression: XP, gear, training</a>
+  <a href="#potions">9. Potions</a>
+  <a href="#gold">10. Gold</a>
+  <a href="#dungeons">11. Dungeons</a>
+  <a href="#scouting">12. Scouting and the Bestiary</a>
+  <a href="#enemies">13. Enemies and balance</a>
+  <a href="#defeat">14. Defeat</a>
+  <a href="#todo">15. To-do and removed</a>
+  <a href="#questions">16. Open questions and playtest items</a>
+  <a href="#impact">17. What changes in today's game</a>
+</nav>
+<main>
+<h1>Dice and Destiny — Open World Plan</h1>
+<p class="sub">Planning draft, 14 October 2026. Collected from a review of Mage Knight's exploration against our Expedition and seven rounds of discussion. Nothing here is implemented yet; the opening scenario (the Salt Marches Expedition, milestones M0–M19) is.</p>
+<p class="legend"><span class="badge decided">Decided</span> agreed in review · <span class="badge explore">Explore</span> liked, needs design or scenarios · <span class="badge open">Open</span> not settled; see §16 · <span class="badge sidelined">Sidelined</span> not now; decide while building</p>
+
+<!-- 1 -->
+<h2 id="principles">1. Principles <span class="badge decided">Decided</span></h2>
+<p>These are hard rules. Every later section must obey them.</p>
+<div class="rule"><b>XP is the only driver of character power</b>, on the map and in battle. Cards, abilities, gear effects, training and potion skill are all bought with XP. Every sale refunds 100% of the XP spent; nothing anywhere ever loses XP.</div>
+<div class="rule"><b>Gold is for convenience and recovery, and it can buy gear of any kind.</b> Buying gear adds no power; only the XP spent in it does. Gold never buys XP. Rare and epic gear stays hard to come by: rare drops, quests, or an expert smith.</div>
+<div class="rule"><b>The server is the authority.</b> The world lives only on the server, generated deterministically from a seed. The client renders viewer-safe views and submits actions; it never computes outcomes or sees hidden state. Every change goes through an authority action. This holds for every piece of code we write.</div>
+<div class="rule"><b>Battle rules stay as they are</b>, with one deliberate addition: potions usable during battle (§9). Map rules may set up a battle (statuses, piles, energy) but never change how it plays.</div>
+<div class="rule"><b>Every number lives in configuration</b>, never in code: content YAML loaded strictly by the authority.</div>
+<div class="rule"><b>Ongoing effects are visible statuses</b> with their rules and expiry shown (AGENTS.md), including effects from gear and potions in battle.</div>
+<p>Scope: single-player, one hero per save, one world per save. Local multiplayer is a distant maybe, so world-state formats should not hard-code a single hero, and world time is stored as a world clock rather than inside one hero's deck.</p>
+
+<!-- 2 -->
+<h2 id="journey">2. Opening scenario → open world <span class="badge decided">Decided</span></h2>
+<ul>
+  <li><b>The opening scenario is the mandatory first quest.</b> It's today's Salt Marches Expedition: timed (4 rounds), Lieutenants who buff the boss, a deadline fight. It teaches the game's mechanics.</li>
+  <li><b>The hometown is in the opening scenario.</b> The scenario's map becomes the first part of the open world, and one of its towns is your home.</li>
+  <li><b>The Drowned Regent is one of the Necromancer's creatures.</b> Beating him reveals that the Necromancer exists and opens the world.</li>
+  <li><b>Timing:</b> the scenario starts in late summer and runs into autumn; its ending carries a short story time skip, and the world opens in late fall.</li>
+  <li><b>The scenario keeps its own rules</b> (defeat wound of 2, no dropped purse). The new defeat rules (§14) apply in the open world.</li>
+  <li>Cutscenes, if any, can be watched or skipped (to-do).</li>
+</ul>
+<div class="ac"><h4>Acceptance criteria</h4><ul>
+  <li>A new game always begins with the opening scenario; finishing it continues on the same map, with the hometown marked.</li>
+  <li>The opening scenario always starts in late summer; the open world always begins in late fall.</li>
+  <li>Defeat in the opening scenario never drops gold or inflicts a critical wound.</li>
+</ul></div>
+
+<!-- 3 -->
+<h2 id="world">3. The world and its generation <span class="badge decided">Decided</span></h2>
+<ul>
+  <li><b>One continuous hex map</b> that grows tile by tile as you explore, continuing from the opening scenario.</li>
+  <li><b>The hometown sits against a coast or a mountain range.</b> Danger rises along 2–3 <b>spokes</b> fanning out from it, so every direction is open early and every direction gets hard. The Necromancer's lair lies far out on the open side, hidden.</li>
+  <li><b>Visible danger:</b> fog tiles at the edge of your sight show a skull tier, so you choose your risk instead of stumbling into it.</li>
+</ul>
+<figure><svg viewBox="0 0 640 300" role="img" aria-label="Danger spokes from the hometown">
+<defs><linearGradient id="danger" gradientUnits="userSpaceOnUse" x1="110" x2="560" y1="0" y2="0">
+<stop offset="0" stop-color="#e8dcb5"/><stop offset="0.55" stop-color="#d9a066"/><stop offset="1" stop-color="#9c3b2c"/></linearGradient></defs>
+<path d="M0,0 L60,0 C40,60 80,110 55,160 C35,210 75,250 50,300 L0,300 Z" fill="#9fb9c8"/>
+<text x="10" y="290" class="svgsm" fill="#2f4a5a">coast</text>
+<line x1="110" y1="150" x2="560" y2="40" stroke="url(#danger)" stroke-width="46" stroke-linecap="round" opacity="0.85"/><line x1="110" y1="150" x2="560" y2="150" stroke="url(#danger)" stroke-width="46" stroke-linecap="round" opacity="0.85"/><line x1="110" y1="150" x2="560" y2="260" stroke="url(#danger)" stroke-width="46" stroke-linecap="round" opacity="0.85"/><text x="268" y="116" text-anchor="middle" class="svgsm" fill="#2f2a22">☠</text><text x="380" y="89" text-anchor="middle" class="svgsm" fill="#2f2a22">☠☠</text><text x="497" y="60" text-anchor="middle" class="svgsm" fill="#2f2a22">☠☠☠</text><text x="268" y="155" text-anchor="middle" class="svgsm" fill="#2f2a22">☠</text><text x="380" y="155" text-anchor="middle" class="svgsm" fill="#2f2a22">☠☠</text><text x="497" y="155" text-anchor="middle" class="svgsm" fill="#2f2a22">☠☠☠</text><text x="268" y="194" text-anchor="middle" class="svgsm" fill="#2f2a22">☠</text><text x="380" y="221" text-anchor="middle" class="svgsm" fill="#2f2a22">☠☠</text><text x="497" y="250" text-anchor="middle" class="svgsm" fill="#2f2a22">☠☠☠</text>
+<circle cx="110" cy="150" r="20" fill="#2f2a22"/><text x="110" y="156" text-anchor="middle" class="svgsm" fill="#f3e9cf">Home</text>
+<text x="600" y="155" text-anchor="middle" class="svgbig" fill="#2f2a22">?</text>
+<text x="600" y="178" text-anchor="middle" class="svgxs">hidden lair</text>
+</svg><figcaption>Danger spokes: the coast closes one side; each spoke runs from gentle to hard.</figcaption></figure>
+<h3>How we start: simple</h3>
+<p>We start basic: generate tiles, build the world, and review how it plays. A <b>tile generator screen</b> in the UI lets us experiment with layouts. No wave function collapse and no dynamic filler for now. Once the world exists we decide whether to add those, or simply keep a finished world static.</p>
+<h3>Where generation could go later <span class="badge explore">Explore</span></h3>
+<ol>
+  <li><b>Macro layout</b>, made when the world is created: landmark coordinates, regions, roads between towns, dungeon sites, the hidden lair. It's needed up front because the checker verifies it.</li>
+  <li><b>Hand-made chunks</b> (scenario places, towns, dungeon entrances) placed by rules, such as "Town A is 4–7 tiles from Town B, joined by a road".</li>
+  <li><b>Filler</b> between chunks, made only when you explore there, from the world seed plus the coordinates. Biome tile stacks that match edges first; wave function collapse only if we ever need it.</li>
+  <li><b>The checker</b> runs over layers 1–2 and rejects a seed (the generator tries the next) unless: every gate's source exists and is reachable (a gear's materials, its smith, the reputation to earn), every quest can be completed, roads connect, and distances hold.</li>
+</ol>
+<h3>What comes back after you clear it</h3>
+<ul>
+  <li>The world starts populated. Anything you clear stays clear, like the monster on an old farm.</li>
+  <li><b>Sources</b> can bring enemies back: a monastery's graveyard rises again, a spider nest refills a mill. Each source has a visible sign and <b>a permanent fix</b> (consecrate the graveyard, burn the nest).</li>
+  <li><b>The Necromancer</b> sends new creatures into cleared land (§5).</li>
+  <li><b>World events</b> may also change areas. It isn't a hard rule that only the Necromancer does.</li>
+</ul>
+<div class="ac"><h4>Acceptance criteria</h4><ul>
+  <li>The world (generated from a seed, or fixed) lives on the server; the same seed always produces the same world; the client never receives the layout, only views of what the hero has seen.</li>
+  <li>The tile generator screen can generate and show a layout for review without starting a game.</li>
+  <li>Every world the generator accepts passes the checker: every gated card's gear and materials are obtainable, every quest is completable.</li>
+  <li>A cleared site stays cleared unless a visible source or an authored event re-infests it.</li>
+  <li>The danger tier at the fog's edge matches the real difficulty of what lies there.</li>
+</ul></div>
+
+<!-- 4 -->
+<h2 id="time">4. Time: months and seasons <span class="badge decided">Decided</span> <span class="badge explore">Explore</span></h2>
+<ul>
+  <li><b>One round = one pass through your deck = the Day or the Night half of a month.</b> A month is a Day round plus a Night round; a year is 12 months, or 24 rounds.</li>
+  <li>Four seasons of three months each change terrain, sight, enemy habits and events. Seasonal quests have deadlines in months.</li>
+  <li><b>Time runs the same everywhere</b>, including inside dungeons, so nothing pauses threat countdowns.</li>
+</ul>
+<figure><svg viewBox="0 0 520 390" role="img" aria-label="Calendar wheel"><path d="M190.0,50.0 A140,140 0 0 1 260.0,68.8 L226.0,127.6 A72,72 0 0 0 190.0,118.0 Z" fill="#a9bfd0" stroke="#fbf6ea" stroke-width="2"/><line x1="208.6" y1="120.5" x2="226.2" y2="54.8" stroke="#fbf6ea" stroke-width="0.8" stroke-dasharray="2 3"/><text x="217.4" y="91.6" text-anchor="middle" class="svgsm">Jan</text><path d="M260.0,68.8 A140,140 0 0 1 311.2,120.0 L252.4,154.0 A72,72 0 0 0 226.0,127.6 Z" fill="#a9bfd0" stroke="#fbf6ea" stroke-width="2"/><line x1="240.9" y1="139.1" x2="289.0" y2="91.0" stroke="#fbf6ea" stroke-width="0.8" stroke-dasharray="2 3"/><text x="265.0" y="119.0" text-anchor="middle" class="svgsm">Feb</text><path d="M311.2,120.0 A140,140 0 0 1 330.0,190.0 L262.0,190.0 A72,72 0 0 0 252.4,154.0 Z" fill="#b3cf98" stroke="#fbf6ea" stroke-width="2"/><line x1="259.5" y1="171.4" x2="325.2" y2="153.8" stroke="#fbf6ea" stroke-width="0.8" stroke-dasharray="2 3"/><text x="292.4" y="166.6" text-anchor="middle" class="svgsm">Mar</text><path d="M330.0,190.0 A140,140 0 0 1 311.2,260.0 L252.4,226.0 A72,72 0 0 0 262.0,190.0 Z" fill="#b3cf98" stroke="#fbf6ea" stroke-width="2"/><line x1="259.5" y1="208.6" x2="325.2" y2="226.2" stroke="#fbf6ea" stroke-width="0.8" stroke-dasharray="2 3"/><text x="292.4" y="221.4" text-anchor="middle" class="svgsm">Apr</text><path d="M311.2,260.0 A140,140 0 0 1 260.0,311.2 L226.0,252.4 A72,72 0 0 0 252.4,226.0 Z" fill="#b3cf98" stroke="#fbf6ea" stroke-width="2"/><line x1="240.9" y1="240.9" x2="289.0" y2="289.0" stroke="#fbf6ea" stroke-width="0.8" stroke-dasharray="2 3"/><text x="265.0" y="269.0" text-anchor="middle" class="svgsm">May</text><path d="M260.0,311.2 A140,140 0 0 1 190.0,330.0 L190.0,262.0 A72,72 0 0 0 226.0,252.4 Z" fill="#e6c873" stroke="#fbf6ea" stroke-width="2"/><line x1="208.6" y1="259.5" x2="226.2" y2="325.2" stroke="#fbf6ea" stroke-width="0.8" stroke-dasharray="2 3"/><text x="217.4" y="296.4" text-anchor="middle" class="svgsm">Jun</text><path d="M190.0,330.0 A140,140 0 0 1 120.0,311.2 L154.0,252.4 A72,72 0 0 0 190.0,262.0 Z" fill="#e6c873" stroke="#fbf6ea" stroke-width="2"/><line x1="171.4" y1="259.5" x2="153.8" y2="325.2" stroke="#fbf6ea" stroke-width="0.8" stroke-dasharray="2 3"/><text x="162.6" y="296.4" text-anchor="middle" class="svgsm">Jul</text><path d="M120.0,311.2 A140,140 0 0 1 68.8,260.0 L127.6,226.0 A72,72 0 0 0 154.0,252.4 Z" fill="#e6c873" stroke="#fbf6ea" stroke-width="2"/><line x1="139.1" y1="240.9" x2="91.0" y2="289.0" stroke="#fbf6ea" stroke-width="0.8" stroke-dasharray="2 3"/><text x="115.0" y="269.0" text-anchor="middle" class="svgsm">Aug</text><path d="M68.8,260.0 A140,140 0 0 1 50.0,190.0 L118.0,190.0 A72,72 0 0 0 127.6,226.0 Z" fill="#d4935a" stroke="#fbf6ea" stroke-width="2"/><line x1="120.5" y1="208.6" x2="54.8" y2="226.2" stroke="#fbf6ea" stroke-width="0.8" stroke-dasharray="2 3"/><text x="87.6" y="221.4" text-anchor="middle" class="svgsm">Sep</text><path d="M50.0,190.0 A140,140 0 0 1 68.8,120.0 L127.6,154.0 A72,72 0 0 0 118.0,190.0 Z" fill="#d4935a" stroke="#fbf6ea" stroke-width="2"/><line x1="120.5" y1="171.4" x2="54.8" y2="153.8" stroke="#fbf6ea" stroke-width="0.8" stroke-dasharray="2 3"/><text x="87.6" y="166.6" text-anchor="middle" class="svgsm">Oct</text><path d="M68.8,120.0 A140,140 0 0 1 120.0,68.8 L154.0,127.6 A72,72 0 0 0 127.6,154.0 Z" fill="#d4935a" stroke="#fbf6ea" stroke-width="2"/><line x1="139.1" y1="139.1" x2="91.0" y2="91.0" stroke="#fbf6ea" stroke-width="0.8" stroke-dasharray="2 3"/><text x="115.0" y="119.0" text-anchor="middle" class="svgsm">Nov</text><path d="M120.0,68.8 A140,140 0 0 1 190.0,50.0 L190.0,118.0 A72,72 0 0 0 154.0,127.6 Z" fill="#a9bfd0" stroke="#fbf6ea" stroke-width="2"/><line x1="171.4" y1="120.5" x2="153.8" y2="54.8" stroke="#fbf6ea" stroke-width="0.8" stroke-dasharray="2 3"/><text x="162.6" y="91.6" text-anchor="middle" class="svgsm">Dec</text><path d="M79.7,300.3 A156,156 0 0 1 34.0,190.0" fill="none" stroke="#8b2e24" stroke-width="7" stroke-linecap="round" /><path d="M34.5,177.8 A156,156 0 0 1 79.7,79.7" fill="none" stroke="#8b2e24" stroke-width="7" stroke-linecap="round" stroke-dasharray="3 9" opacity="0.8"/><text x="-86.3" y="321.8" class="svgsm" fill="#8b2e24">Opening scenario (4 rounds)</text><circle cx="79.7" cy="79.7" r="7" fill="#2f2a22"/><text x="-51.6" y="62.4" class="svgsm">story skip → world opens, late fall</text><text x="190" y="182" text-anchor="middle" class="svgsm">1 month =</text><text x="190" y="198" text-anchor="middle" class="svgsm">Day + Night</text><text x="190" y="214" text-anchor="middle" class="svgxs">(dashes)</text><rect x="400" y="120" width="16" height="16" rx="3" fill="#a9bfd0"/><text x="424" y="133" class="svgsm">Winter</text><rect x="400" y="146" width="16" height="16" rx="3" fill="#b3cf98"/><text x="424" y="159" class="svgsm">Spring</text><rect x="400" y="172" width="16" height="16" rx="3" fill="#e6c873"/><text x="424" y="185" class="svgsm">Summer</text><rect x="400" y="198" width="16" height="16" rx="3" fill="#d4935a"/><text x="424" y="211" class="svgsm">Autumn</text></svg><figcaption>The calendar. The red arc is the opening scenario (two months); the dotted arc is the story skip to late fall, when the world opens.</figcaption></figure>
+<h3>Seasonal effects, first pass (to be tuned in playtests)</h3>
+<table>
+<tr><th>Season</th><th>Map</th><th>Enemies and events</th></tr>
+<tr><td>Spring</td><td>Rivers flood: fords close. Thaw: marsh +1 Move.</td><td>Beasts with young are aggressive; planting quests; flood events.</td></tr>
+<tr><td>Summer</td><td>Long days: +1 sight by day. Deserts punishing by day. Drought dries some marshes (−1 Move).</td><td>Forest fires; heat events; night hunters roam more.</td></tr>
+<tr><td>Autumn</td><td>Morning fog: −1 sight on some days. Harvest roads busy.</td><td>Harvest festivals; fuller shops; migrating herds; bandits after the harvest.</td></tr>
+<tr><td>Winter</td><td>Snow: +1 Move on most terrain. Lakes and marshes freeze and become walkable. Shorter sight.</td><td>Some beasts hibernate (can be ambushed in dens); wolves bolder; camping in the open heals less unless at an inn.</td></tr>
+</table>
+<div class="ac"><h4>Acceptance criteria</h4><ul>
+  <li>The current month, season and Day/Night are always visible, and each season's effects are shown with their rules.</li>
+  <li>Every time-based rule (quest timers, critical wound duration, Dark Tiers) counts the same world clock.</li>
+</ul></div>
+
+<!-- 5 -->
+<h2 id="necromancer">5. The Necromancer and the Rising <span class="badge decided">Decided</span></h2>
+<p>A Zelda-style big bad. You may roam, quest and grow as long as you like, but the world reacts.</p>
+<ul>
+  <li><b>His lair is fixed but hidden.</b> Clues from quests, rumours and the hometown's spymaster reveal it.</li>
+  <li><b>He raises creatures and sends them at towns</b>, often ones that like you. Each raid brings an <b>emergency quest with a countdown</b>. Ignore it and the town is ravaged and the creature moves on; when you pass later, you see the evidence.</li>
+  <li><b>He grows by world time in steps with a ceiling</b> (Dark Tiers, e.g. five). Patient players can eventually outgrow a world that has stopped getting worse.</li>
+  <li><b>Soul anchors</b> hidden deep in dungeons hold his power. Destroying one lowers his Dark Tier or slows his raids. This is deliberately different from the opening scenario's Lieutenants.</li>
+  <li><b>Farming is allowed</b>, but it has stakes: every raid costs towns, and every XP you gain brings the Rising closer.</li>
+</ul>
+<h3>The omen meter and the spymaster</h3>
+<p>The Rising starts at a total-XP threshold. An omen meter tracks it ("The dead stir…" at 50%, "Fires in the east" at 75%, "He is coming" at 90%) so the finale never surprises anyone. The <b>spymaster</b> in the hometown is an important character with personal reputation: the better your standing, the earlier and more precise the warnings, the rumours of anchors, and the next target during the Rising.</p>
+<h3>The Rising: the main ending</h3>
+<ol>
+  <li>When total XP reaches the threshold, he leaves his lair with an army of the raised and attacks towns one by one.</li>
+  <li>A town under attack holds out for a number of turns set by its <b>reputation with you</b> and its prosperity. A town that thinks little of you abandons the fight immediately. A town you <b>conquered</b> abandons it at once unless you are already inside when the attack begins.</li>
+  <li>You can defend each town as he arrives, or <b>catch him in the open field</b> between towns.</li>
+  <li>The last stand is in your hometown. <b>Losing there loses the scenario.</b></li>
+</ol>
+<table>
+<tr><th>Weakens his army</th><th>Strengthens it</th></tr>
+<tr><td>Soul anchors destroyed · towns that prosper and fight beside you · high reputation (militia join you)</td><td>Towns lost to his raids · sources left uncleansed</td></tr>
+</table>
+<p>None of these scale him to your level. His strength only comes from what happened in the world.</p>
+<table>
+<tr><th>Town's reputation with you</th><th>Turns it holds out without you</th></tr>
+<tr><td>Hostile or Wary</td><td>0: it abandons the fight</td></tr>
+<tr><td>Neutral</td><td>1</td></tr>
+<tr><td>Friendly</td><td>2</td></tr>
+<tr><td>Devoted</td><td>3</td></tr>
+<tr><td>Prosperous town</td><td>+1</td></tr>
+</table>
+<p>Accepted as the starting point; tuned in playtests.</p>
+<p><span class="badge sidelined">Sidelined</span> <b>Strike first:</b> assault his fortress (a large dungeon) before the Rising. Devastating at first; each anchor destroyed removes a guardian or ward; an early win pays a large bonus.</p>
+<div class="ac"><h4>Acceptance criteria</h4><ul>
+  <li>The Rising starts exactly when total XP reaches the configured threshold, and the omen meter's stages show beforehand.</li>
+  <li>Each raid creates a visible emergency quest with a countdown; a missed countdown ravages the town and leaves visible evidence.</li>
+  <li>His tier never exceeds the configured ceiling; destroying an anchor visibly weakens him.</li>
+  <li>Hold-out turns per town follow its reputation; a conquered town without the hero inside falls immediately.</li>
+  <li>Only losing the hometown's last stand ends the scenario.</li>
+</ul></div>
+
+<!-- 6 -->
+<h2 id="towns">6. Towns, quests and prosperity <span class="badge decided">Decided</span></h2>
+<p>You never build anything yourself. You make towns prosper by meeting the needs of their people.</p>
+<table>
+<tr><th>Need</th><th>Asked by</th><th>Timer</th><th>If it fails</th></tr>
+<tr><td>Walls: clear the woods so the villagers can log</td><td>The mayor</td><td>None</td><td>Nothing lost; it waits</td></tr>
+<tr><td>Farms: clear the infested farms</td><td>The farmers</td><td>Seasonal: before spring</td><td>Food shortage; prices rise until next season</td></tr>
+<tr><td>Rescue a kidnapped daughter</td><td>Her father</td><td>Urgent: X rounds from her capture</td><td>A failure branch (below)</td></tr>
+</table>
+<ul>
+  <li>Several needs run at once, and not all can be met in time. Choosing is the game.</li>
+  <li>Each need met raises the town's visible <b>prosperity</b> and the asker's personal reputation. Prosperity improves the town: better shops, trainers moving in, more spies, and longer resistance in the Rising.</li>
+  <li><b>Conquer or liberate.</b> Liberating a town held by enemies raises town and regional reputation. Conquering a free town makes it yours (gold each round, a safe camp, services at base price whatever they think of you), but the town's reputation crashes, the region's drops, and important characters react by their personal weight (the blacksmith may refuse you, or leave).</li>
+  <li><b>At −10, a town rejects you</b>: you can't enter or interact. Redemption quests come from outsiders, such as a priest on the road or an exile camped outside the walls.</li>
+</ul>
+<h3>Quest types</h3>
+<p>Hunt (stop a roaming threat in time) · Liberate (free an occupied town) · Delve (fetch something from a dungeon) · Survey (explore N tiles of a wild region) · Defend (be at a town when the raid arrives) · Deliver (carry an item that sits in your deck as a card that does nothing in battle but counts as health; if damage removes it, the delivery fails) · Personal (an important character's errand).</p>
+<h3>The quest system</h3>
+<p>Every quest is described the same way, as a small graph. A failure branch is just another stage.</p>
+<pre><code>quest   → stages
+stage   → objective · timer (none / seasonal / urgent) · outcomes
+outcome (success / failure / abandoned) → next stage, or the end
+          + consequences (reputation, prosperity, world change, new spawn)</code></pre>
+<figure><svg viewBox="0 0 700 250" role="img" aria-label="Quest graph example">
+<defs><marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#2f2a22"/></marker></defs>
+<rect x="10" y="90" width="170" height="54" rx="8" fill="#efe3c2" stroke="#7a6a4a"/><text x="95.0" y="112" text-anchor="middle" class="svgsm" font-weight="600">Stage 1 · Rescue her</text><text x="95.0" y="130" text-anchor="middle" class="svgxs">urgent · 3 rounds</text>
+<rect x="250" y="10" width="190" height="54" rx="8" fill="#d8e6cf" stroke="#7a6a4a"/><text x="345.0" y="32" text-anchor="middle" class="svgsm" font-weight="600">Returned home</text><text x="345.0" y="50" text-anchor="middle" class="svgxs">+personal rep · +prosperity</text>
+<rect x="250" y="170" width="190" height="54" rx="8" fill="#f0d2c4" stroke="#7a6a4a"/><text x="345.0" y="192" text-anchor="middle" class="svgsm" font-weight="600">Stage 2 · She has turned</text><text x="345.0" y="210" text-anchor="middle" class="svgxs">a werewolf now · no timer</text>
+<rect x="510" y="120" width="180" height="54" rx="8" fill="#d8e6cf" stroke="#7a6a4a"/><text x="600.0" y="142" text-anchor="middle" class="svgsm" font-weight="600">Cure her</text><text x="600.0" y="160" text-anchor="middle" class="svgxs">rare reagent · big reward</text>
+<rect x="510" y="190" width="180" height="54" rx="8" fill="#f0d2c4" stroke="#7a6a4a"/><text x="600.0" y="212" text-anchor="middle" class="svgsm" font-weight="600">Hunt the beast</text><text x="600.0" y="230" text-anchor="middle" class="svgxs">town mourns · father hostile</text>
+<line x1="180" y1="105" x2="250" y2="40" stroke="#2f2a22" stroke-width="1.6" marker-end="url(#ah)"/><text x="215.0" y="66.5" text-anchor="middle" class="svgxs" fill="#2f2a22">success</text>
+<line x1="180" y1="130" x2="250" y2="195" stroke="#8b2e24" stroke-width="1.6" marker-end="url(#ah)"/><text x="215.0" y="156.5" text-anchor="middle" class="svgxs" fill="#8b2e24">failure (timer)</text>
+<line x1="440" y1="190" x2="510" y2="150" stroke="#2f2a22" stroke-width="1.6" marker-end="url(#ah)"/><text x="475.0" y="164.0" text-anchor="middle" class="svgxs" fill="#2f2a22">success</text>
+<line x1="440" y1="205" x2="510" y2="215" stroke="#8b2e24" stroke-width="1.6" marker-end="url(#ah)"/><text x="475.0" y="204.0" text-anchor="middle" class="svgxs" fill="#8b2e24">failure</text>
+</svg><figcaption>A failure branch: the captured daughter becomes a werewolf, and the quest continues in a new form.</figcaption></figure>
+<ul>
+  <li><b>Generated worlds need quest templates</b> whose roles are filled when the world is built: "rescue <code>{person}</code> from <code>{captor}</code> at <code>{site}</code>". The scenario's hand-made places keep hand-written quests.</li>
+  <li>Some quests have failure branches, some simply fail.</li>
+</ul>
+<h3>Quest format and editor <span class="badge explore">Explore</span></h3>
+<p>Quests can be data, not code, the same way card programs are: the engine implements a fixed vocabulary of verbs once, and every quest is a combination of them. An editor then needs only pickers and a graph view, so it isn't too dynamic to build.</p>
+<table>
+<tr><th>Part</th><th>What it holds</th><th>Examples</th></tr>
+<tr><td>Where</td><td>The places and people involved; template roles in a generated world</td><td><code>{site}</code>, <code>{person}</code>, a region</td></tr>
+<tr><td>Why (hook)</td><td>How the hero learns of it</td><td>A rumour, a request, an event, a Necromancer raid, another quest's failure</td></tr>
+<tr><td>When (trigger)</td><td>World conditions that start it</td><td>Month or season, a reputation tier, prosperity, Dark Tier, a site's state, an earlier quest's outcome</td></tr>
+<tr><td>Stages</td><td>Objectives from a fixed list</td><td>Defeat a group, reach a hex, deliver an item, clear a dungeon, be somewhere by a date, spend Influence with someone</td></tr>
+<tr><td>Timer</td><td>None, seasonal or urgent</td><td>"Before spring", "3 rounds"</td></tr>
+<tr><td>Outcomes</td><td>Success, failure, abandoned → next stage or the end</td><td>The werewolf branch above</td></tr>
+<tr><td>Consequences</td><td>Effects from a fixed list</td><td>Reputation, prosperity, gold, gear, a training unlock, a spawn, a site razed or freed, another quest started</td></tr>
+</table>
+<ol>
+  <li><b>A YAML format</b> with a strict loader and validator, like the region pack.</li>
+  <li><b>A read-only graph view</b> in the client to see a quest's branches.</li>
+  <li><b>A full quest editor</b>, like the tree forge, once the format stops changing.</li>
+</ol>
+<p>When a quest needs something special, we add a new verb to the vocabulary rather than special-case code, so every later quest can use it.</p>
+<h3>Proving the format with the opening scenario</h3>
+<p>The opening scenario is the first test: if the format can describe the Salt Marches, it works. Much of it is data already (the region pack, the Warlord's goal, Lieutenant groups, the occupied village, the event scenes with choices, rolls and outcomes). Described as quests:</p>
+<ul>
+  <li><b>Main quest, "Stop the Drowned Regent":</b> urgent, 4 rounds. Success (beat him) opens the world, with the early-strike bonus per unused round. Failure (lose the deadline fight) ends the run.</li>
+  <li><b>Side quests:</b> each Lieutenant, whose death removes one of his buffs, and freeing Saltreed from the Brine squatters.</li>
+  <li><b>Small one-stage quests:</b> the three event sites (Wayside Shrine, Wrecked Barge, Hermit's Fire), whose choices are already outcomes with consequences.</li>
+</ul>
+<p>One example is thin: the scenario has no failure branches, reputation or seasonal timers. So the test also writes two paper quests in the same format, the kidnapped daughter and the spring farms. The first step only <i>describes</i> the scenario in the format and shows it in the read-only graph view. Moving the scenario's rules from Go code onto quest data is a later refactor, decided once the format holds up.</p>
+<div class="ac"><h4>Acceptance criteria</h4><ul>
+  <li>Every quest shows its timer type and remaining time; the authority advances timers on the world clock.</li>
+  <li>A failed stage with an authored failure branch continues into that branch; one without it ends the quest with its consequences.</li>
+  <li>Quest templates in a generated world always bind to sites and people that exist and can be reached (checked by the checker).</li>
+  <li>A town at −10 offers no services or interactions.</li>
+</ul></div>
+
+<!-- 7 -->
+<h2 id="reputation">7. Reputation <span class="badge decided">Decided</span></h2>
+<ul>
+  <li><b>Standings</b>, each from −10 to +10: <b>Region</b> (one per region), <b>Town</b> (one per settlement), <b>Faction</b> (faiths and guilds across the world; your character's identity sets the starting values), <b>Personal</b> (important characters only).</li>
+  <li><b>A person's opinion</b> is a weighted mix of standings, with the weights authored in content. Ordinary townsfolk use their town (or region) only. Important characters mix them.</li>
+</ul>
+<pre><code>Oda, master blacksmith:   30% Ironmere   +60% personal   +10% Order of the Anvil
+                          30% × (+8)     +60% × (+3)     +10% × (−2)    = +4 → Friendly</code></pre>
+<ul>
+  <li><b>Tiers:</b> Hostile, Wary, Neutral, Friendly, Devoted. They change Influence prices (e.g. Wary +1, Friendly −1, Devoted −2), gate services (Oda forges only for Friendly or better), set how long a town holds out in the Rising, and decide where you wake after a defeat.</li>
+  <li><b>What moves the standings:</b> event choices, quests, personal errands, and deeds that affect several standings at once (robbing a hermit costs both region and faith).</li>
+  <li><b>Visibility:</b> by default you see tiers, feedback on every change ("Oda thinks better of you ▲"), and what each person values ("Oda values: his town, you, the Anvil"). An insight item or ability reveals the exact numbers and the weighted breakdown; the server sends numbers only to a hero who has it.</li>
+</ul>
+<div class="ac"><h4>Acceptance criteria</h4><ul>
+  <li>Every reputation change shows the direction of change for each affected person or place.</li>
+  <li>Opinions are computed only by the authority from the authored weights; numbers appear in the view only with insight.</li>
+  <li>Influence prices and service gates follow the tier.</li>
+</ul></div>
+
+<!-- 8 -->
+<h2 id="progression">8. Progression: XP, gear, training <span class="badge decided">Decided</span></h2>
+<figure><svg viewBox="0 0 640 120" role="img" aria-label="XP budget">
+<rect x="10" y="30" width="620" height="40" rx="6" fill="#efe3c2" stroke="#7a6a4a"/>
+<rect x="10" y="30" width="150" height="40" rx="6" fill="#c9a24a"/><text x="85" y="55" text-anchor="middle" class="svgsm">cards</text>
+<rect x="160" y="30" width="110" height="40" fill="#b88a3a"/><text x="215" y="55" text-anchor="middle" class="svgsm">abilities</text>
+<rect x="270" y="30" width="120" height="40" fill="#a57432"/><text x="330" y="55" text-anchor="middle" class="svgsm" fill="#fbf6ea">gear nodes</text>
+<rect x="390" y="30" width="70" height="40" fill="#8f6230"/><text x="425" y="55" text-anchor="middle" class="svgxs" fill="#fbf6ea">potion skill</text>
+<text x="545" y="55" text-anchor="middle" class="svgsm">unspent</text>
+<path d="M10,80 L460,80" stroke="#2f2a22" stroke-width="1.5"/><text x="235" y="100" text-anchor="middle" class="svgsm">spent XP = the hero's power</text>
+<path d="M10,20 L630,20" stroke="#2f2a22" stroke-width="1.5"/><text x="320" y="14" text-anchor="middle" class="svgsm">total XP earned (only grows; every sale refunds 100%)</text>
+</svg><figcaption>XP is spent but never lost: selling anything returns 100%. Spent XP is the hero's power; unspent XP is power not yet used.</figcaption></figure>
+<h3>Changing your build</h3>
+<ul>
+  <li><b>In the hometown:</b> a full rework, free (no fee).</li>
+  <li><b>Elsewhere:</b> at sites and camp, as today, paying <b>gold or Influence</b>, never XP.</li>
+  <li>Gear swaps follow the same rules as deck changes.</li>
+</ul>
+<h3>Gates on the best cards</h3>
+<ul>
+  <li>A card-tree node can require <b>gear</b> and/or <b>training</b>. This is what stops a hero reaching straight for the best cards.</li>
+  <li><b>Training:</b> a trainer at one specific site (e.g. the +3 energy variant at a monastery) takes a <b>gold fee</b> to unblock one upgrade step: from the card's current step to the step the training opens. Training enables nothing by itself; XP still buys the upgrade.</li>
+  <li><b>Proficiency:</b> each character has a proficiency list (the Starter lacks Heavy Armour, for example); some gear nodes need a proficiency, and training can add one.</li>
+</ul>
+<h3>Gear</h3>
+<ul>
+  <li><b>Any gear can be worn.</b> Wearing it does nothing until you spend XP on it.</li>
+  <li>Each item has a <b>small base effect bought with XP</b>, then a <b>gear tree</b> of further XP-bought nodes: abilities, <b>ability augments</b> (a poison-tipped spear: base +1 damage to your base ability; further XP adds poison to an ability), unlocks of existing card-tree nodes (Bulwark's prevent 3 needs Fine Plate), whole new card trees, and stat boosts (e.g. +10 starting energy).</li>
+  <li><b>Higher-ranked gear holds more XP potential.</b> Under-investing is intentional: an inexperienced hero gets only part of a great item's value.</li>
+  <li><b>Gold can buy gear of any kind</b>, because buying gear adds no power; the XP spent in it does. Shops stock common gear. Rare and epic gear is hard to find: rare drops, quests, or an expert blacksmith who needs materials and reputation.</li>
+  <li><b>Gear remembers its nodes.</b> Taking it off refunds all its XP; putting it back on shows what its remembered nodes cost, and you can free XP elsewhere and reselect them.</li>
+  <li><b>Losing gear</b> (selling, theft, breaking) downgrades the cards it gates to the highest step on their path that doesn't need it, refunding the XP. A warning lists the affected cards before you give gear up. A <b>frozen</b> card (wounded or crippled, §14) can never be downgraded to shed a wound.</li>
+  <li><b>Swapping out gear that gates a wounded or crippled card</b> is still allowed, so no one is stuck with gear they don't want. The same rule covers both kinds of wound: the frozen copy stays as it is (a crippled copy remains a blank card worth one health; a wounded copy stays in the removed pile), with its XP still tied up in it. <i>Proposed:</i> when the wound heals, if the gear is still gone, the card then downgrades and its XP is refunded. Gear lost by theft or breaking follows the same rule.</li>
+  <li><b>Gear effect vocabulary</b>, shared by all gear: gate a node · add an ability or augment · add a map ability (Improvisation, Survey, flight…) · change a stat (hand size, base energy, energy kept through a rest, sight, potion slots) · change terrain costs · modify healing · add a battle-start status.</li>
+</ul>
+<div class="cols">
+<figure><svg viewBox="0 0 440 315" role="img" aria-label="Equipment slots"><circle cx="225" cy="70" r="0" /><path d="M225,48 m-14,0 a14,14 0 1,0 28,0 a14,14 0 1,0 -28,0" fill="none"/><rect x="170" y="10" width="110" height="34" rx="6" fill="#efe3c2" stroke="#7a6a4a"/><text x="225" y="32" text-anchor="middle" class="svgsm">Head</text><rect x="300" y="60" width="110" height="34" rx="6" fill="#efe3c2" stroke="#7a6a4a"/><text x="355" y="82" text-anchor="middle" class="svgsm">Cloak</text><rect x="170" y="95" width="110" height="34" rx="6" fill="#efe3c2" stroke="#7a6a4a"/><text x="225" y="117" text-anchor="middle" class="svgsm">Body</text><rect x="40" y="150" width="110" height="34" rx="6" fill="#efe3c2" stroke="#7a6a4a"/><text x="95" y="172" text-anchor="middle" class="svgsm">Gloves</text><rect x="170" y="180" width="110" height="34" rx="6" fill="#efe3c2" stroke="#7a6a4a"/><text x="225" y="202" text-anchor="middle" class="svgsm">Belt</text><rect x="170" y="265" width="110" height="34" rx="6" fill="#efe3c2" stroke="#7a6a4a"/><text x="225" y="287" text-anchor="middle" class="svgsm">Feet</text><rect x="20" y="60" width="110" height="34" rx="6" fill="#efe3c2" stroke="#7a6a4a"/><text x="75" y="82" text-anchor="middle" class="svgsm">Main hand</text><rect x="300" y="150" width="110" height="34" rx="6" fill="#efe3c2" stroke="#7a6a4a"/><text x="355" y="172" text-anchor="middle" class="svgsm">Off hand</text><rect x="300" y="230" width="110" height="34" rx="6" fill="#efe3c2" stroke="#7a6a4a"/><text x="355" y="252" text-anchor="middle" class="svgsm">Trinket / relic</text><rect x="300" y="275" width="110" height="34" rx="6" fill="#efe3c2" stroke="#7a6a4a"/><text x="355" y="297" text-anchor="middle" class="svgsm">Trinket / relic</text><rect x="20" y="250" width="110" height="34" rx="6" fill="#d8e6cf" stroke="#7a6a4a"/><text x="75" y="272" text-anchor="middle" class="svgsm">Potion slot</text></svg><figcaption>Starting slots. The slot list is configuration, so adding a slot is one line.</figcaption></figure>
+<div>
+<table>
+<tr><th>Slot</th><th>Notes</th></tr>
+<tr><td>Main hand, Off hand</td><td>A two-handed weapon fills both. With a one-handed weapon, the off hand takes a second weapon or a shield.</td></tr>
+<tr><td>Head, Cloak, Body, Gloves, Belt, Feet</td><td>One item each.</td></tr>
+<tr><td>Trinket / relic ×2</td><td>Relics and trinkets are one thing.</td></tr>
+<tr><td>Potion slot ×1</td><td>Gear (e.g. a belt) may add more.</td></tr>
+</table>
+</div>
+</div>
+<div class="ac"><h4>Acceptance criteria</h4><ul>
+  <li>Every purchase can be sold back for exactly the XP paid; no action anywhere reduces total XP.</li>
+  <li>A hero's power (the fairness check) equals the XP they have spent.</li>
+  <li>Removing gear refunds its XP, downgrades the gated cards with a prior warning, and keeps the item's remembered nodes.</li>
+  <li>A gated node can't be bought without its gear, training or proficiency; the Prepare screen shows what it requires.</li>
+  <li>Deck and gear changes are free in the hometown and cost gold or Influence elsewhere.</li>
+</ul></div>
+
+<!-- 9 -->
+<h2 id="potions">9. Potions <span class="badge decided">Decided</span></h2>
+<ul>
+  <li><b>Potions are not cards.</b> They sit in their own potion slot (one to start; gear may add more), ready until drunk, as in Slay the Spire.</li>
+  <li><b>Usable at any time, on the map and in battle.</b> This is the one deliberate addition to battle rules, and we'll need to build it.</li>
+  <li><b>Every potion works at a base level, and XP makes it better.</b> A basic healing potion heals 1d3, returning the healed cards from the removed pile to <b>discard</b>: the weakest version. XP spent in that potion skill improves it (1d4 and up, and better destinations), the way cards have better upgrades. The XP is refundable like everything else.</li>
+  <li>Gold buys and restocks potions. Effects include healing and map effects such as +2 Move; the full list is still to be designed.</li>
+  <li><b>Enemies</b> will probably get potions too, once the player's potions work.</li>
+</ul>
+<div class="ac"><h4>Acceptance criteria</h4><ul>
+  <li>A potion can be drunk on the map and at any point in battle the design allows; its effect is applied by the authority.</li>
+  <li>Any lasting potion effect in battle is a visible status with its expiry.</li>
+  <li>The potion's strength follows the hero's spent XP in that potion skill.</li>
+  <li>A base healing potion moves its healed cards from removed to discard, and pile counts agree with the authority.</li>
+</ul></div>
+
+<!-- 10 -->
+<h2 id="gold">10. Gold <span class="badge decided">Decided</span></h2>
+<table>
+<tr><th>Gold buys</th><th>Gold never buys</th></tr>
+<tr><td>Consumables and potions (bandages, torches, antidotes, rations)<br>Gear of any kind (rare and epic gear is rarely for sale)<br>Services: healers, the high healer for critical wounds, trainer fees, deck and gear change fees</td><td>XP (the gold→XP trainer is removed)<br>Power: only XP spent in cards, abilities and gear counts<br>Reputation (no unlimited donations)</td></tr>
+</table>
+<ul>
+  <li>Gold matters most early, when common gear, travel and healing help.</li>
+  <li>Recurring costs (potions, healing, fees, the dropped purse) keep it flowing out, and limited potion slots stop it piling up into battle power.</li>
+</ul>
+
+<!-- 11 -->
+<h2 id="dungeons">11. Dungeons <span class="badge decided">Decided</span></h2>
+<ul>
+  <li><b>A ruins or dungeon site opens its own mini-map</b>, explored with the same move, explore and fog rules. It's a map, not a sequence of rooms.</li>
+  <li><b>A briefing on entry</b> states the objective, any turn limit, the number of safe resting spots, that you can only leave through the entrance, and what failure means.</li>
+  <li><b>Exit only at the entrance</b>, except for one-way shortcuts back to the surface found deeper in.</li>
+  <li><b>Rest only at sanctuaries.</b> If your deck runs out anywhere else, you take an <b>Exhausted rest</b>: no camp healing, Fatigue (your next fight starts with some draw-pile cards in discard), and the dungeon grows more dangerous.</li>
+  <li><b>Time counts the same as outside</b>; an emergency quest can arrive while you're underground. Dungeon objectives count turns.</li>
+  <li>Some dungeons keep a partial clear when you leave. Others have an objective (chasing a villain) that fails if you leave, because he leaves too.</li>
+  <li><b>Inside:</b> enemies (darkness means sight 1 without a torch), traps as event scenes, locked doors, sanctuaries, and deeper down gear materials, better gear and soul anchors.</li>
+</ul>
+<div class="ac"><h4>Acceptance criteria</h4><ul>
+  <li>The briefing shows every dungeon rule before the hero commits.</li>
+  <li>The hero can only leave by the entrance or a found shortcut; rests only happen at sanctuaries or as an Exhausted rest.</li>
+  <li>World time advances inside dungeons exactly as outside.</li>
+</ul></div>
+
+<!-- 12 -->
+<h2 id="scouting">12. Scouting and the Bestiary <span class="badge decided">Decided</span> <span class="badge explore">Explore</span></h2>
+<table>
+<tr><th>Layer</th><th>What you learn</th><th>How you get it</th></tr>
+<tr><td>0 · Danger</td><td>Skull tier at the fog's edge</td><td>Seeing the hex</td></tr>
+<tr><td>1 · Sighted</td><td>Name, group size, current health</td><td>It's within your sight</td></tr>
+<tr><td>2 · Scouted</td><td>Traits ("Venomous: ignores armour"), abilities, reward, <b>power vs. yours</b> ("Threat 240 · you 200")</td><td>Scout cards, a spyglass, rumours, spies</td></tr>
+<tr><td>3 · Known</td><td>The family's identity, permanently</td><td>Fighting one: the <b>Bestiary</b></td></tr>
+</table>
+<ul>
+  <li><b>The Bestiary is per hero.</b> Enemy families may be ranked differently in each generated world (bears weak in one, strong in another).</li>
+  <li><b>Families keep a fixed identity</b> (a poison family is always about poison; an armoured one is always armoured) but come in different XP ranks, up to warlord-level elites. Rank names are authored per family.</li>
+  <li>The Bestiary teaches a family's identity; a rank you haven't met still needs scouting to know its power.</li>
+  <li>The server sends only the layers a hero has earned.</li>
+</ul>
+
+<!-- 13 -->
+<h2 id="enemies">13. Enemies and balance <span class="badge decided">Decided</span></h2>
+<ul>
+  <li><b>Enemy budgets use the same XP price table</b> as player cards and abilities. A hero with 200 XP spent against a 200-budget enemy is roughly an even fight.</li>
+  <li><b>XP per win</b> is a configurable share of the enemy's budget, tuned once we know the game's length (10–20 hours).</li>
+  <li>The Rising's XP threshold and the drip rate are tuned together in playtests.</li>
+  <li>Our battle simulator (<code>mlsim</code>) can check balance: heroes against enemies at equal budgets should hit a target win rate.</li>
+  <li><b>Known challenge:</b> enemies need AI that uses a deck dynamically. The learned model we've tried partly works; we'll keep exploring.</li>
+</ul>
+
+<!-- 14 -->
+<h2 id="defeat">14. Defeat <span class="badge decided">Decided</span></h2>
+<p>Defeat is part of the life cycle, not the end of a run. That lets us throw hard enemies and counters (poison against a plate-wearer) at the hero.</p>
+<h3>Outcomes, authored per enemy family</h3>
+<ul>
+  <li><b>Default:</b> you wake in the <b>nearest Friendly-or-better town</b> (the hometown if none) with a critical wound.</li>
+  <li><b>Robbers</b> strip your gold.</li>
+  <li><b>Parasites</b> plant something in you: a different critical wound plus a timed quest to deal with it before it hatches.</li>
+  <li><span class="badge sidelined">Sidelined</span> <b>Captured:</b> you wake in their lair with an escape quest. Not now; decide while building.</li>
+</ul>
+<h3>Critical wounds</h3>
+<ul>
+  <li>Size: <b>10% of your deck, rounded down, at least 1 card</b>. It's a fixed proportion, so it can't be outscaled into a downward spiral.</li>
+  <li>The cards are <b>crippled</b>: blank cards that do nothing, yet stay in your deck and count as health. They follow every normal card rule, including removal by damage; a removed crippled card goes to the removed pile with the critical wound still on it. On the map they sit in your hand and can't be played for Move or Influence.</li>
+  <li><b>Frozen cards:</b> a crippled card, and any wounded card, is frozen until healed. It can't be sold, upgraded or downgraded, so selling cards can never shed wounds.</li>
+  <li>Duration: a secret roll of 1–4 months. A rare, powerful healer can shorten it for gold (recovery, not power).</li>
+  <li>Critical and grievous wounds are the same idea; only defeats cause them. Some characters (a barbarian?) might embrace them for power later.</li>
+</ul>
+<h3>The dropped purse (open world only)</h3>
+<p>A share of your gold (around 20% as a starting guess, tuned in playtests) drops on the hex where you fell. Return and win there to recover it. A second defeat before you do loses the first purse for good.</p>
+<h3>Against a downward spiral</h3>
+<ul><li>A defeat never takes your last few live cards.</li><li>The enemy recovers but doesn't chase you.</li><li>You recover safely in a friendly town.</li></ul>
+
+<!-- 15 -->
+<h2 id="todo">15. To-do and removed</h2>
+<div class="cols">
+<div>
+<h3>To-do (in <code>TODO.md</code>)</h3>
+<ul>
+  <li>Remove the gold→XP trainer.</li>
+  <li>Skippable cutscenes.</li>
+  <li>A tile generator screen for experimenting with world layouts.</li>
+  <li>Round Tactics (a maybe: one Day/Night tactic per round).</li>
+  <li>End-of-turn location sites (a glade heals, a mine yields).</li>
+  <li>Better site information; garrisons that keep the damage you dealt.</li>
+  <li>Energy carry-over through a rest, as gear.</li>
+  <li>Trainers unlock tree nodes.</li>
+  <li>Gear-unlocked map abilities (Improvisation, Influence, flight, Survey, healing).</li>
+  <li>Day and Night trade-offs per terrain.</li>
+</ul>
+</div>
+<div>
+<h3>Removed</h3>
+<ul>
+  <li>Levels from lifetime XP (XP stays the only currency for growth).</li>
+  <li>Gear you destroy for a big effect.</li>
+  <li>Map-only followers.</li>
+  <li>The shared dice pool ("The Source").</li>
+</ul>
+</div>
+</div>
+
+<!-- 16 -->
+<h2 id="questions">16. Open questions and playtest items <span class="badge open">Open</span></h2>
+<h3>Design tasks</h3>
+<ul>
+  <li><b>Quest format</b> (§6): describe the opening scenario plus two paper quests in it, then the read-only graph view, then the editor.</li>
+  <li><b>Enemy AI</b> that uses a deck (§13).</li>
+  <li><b>Enemy potions</b>, after the player's potions work.</li>
+</ul>
+<h3>Worked out in playtesting</h3>
+<ul>
+  <li><b>World time:</b> how raid countdowns, Dark Tier steps and seasonal deadlines overlap, and whether the pressure feels right.</li>
+</ul>
+<h3>Sidelined</h3>
+<ul>
+  <li><b>Strike first</b> (the early fortress assault) and the <b>captured</b> defeat. We'll decide on them while building.</li>
+</ul>
+<h3>Numbers for playtesting</h3>
+<p>The Rising's XP threshold · XP per win (share of budget) · Dark Tier count and spacing · critical wound duration odds · seasonal effects · Influence and gold fees · gear XP costs · potion prices and skill steps · reputation shifts per deed · the dropped purse's share (~20%) · hold-out turns per tier.</p>
+
+<!-- 17 -->
+<h2 id="impact">17. What changes in today's game</h2>
+<table>
+<tr><th>Today (opening scenario, M0–M19)</th><th>Change</th></tr>
+<tr><td>Gold→XP trainer at Greywharf (<code>trainer_gold_per_xp: 3</code>)</td><td>Remove (to-do).</td></tr>
+<tr><td>Rounds are Day/Night only</td><td>Add the calendar: the scenario runs late summer into autumn.</td></tr>
+<tr><td>The Drowned Regent is a standalone placeholder</td><td>Make him one of the Necromancer's creatures; his defeat opens the world.</td></tr>
+<tr><td>Region victory ends the expedition</td><td>The map continues into the open world, with a hometown marked.</td></tr>
+<tr><td>XP is spent on deck changes, with an Influence fee at sites</td><td>Make sure every sale refunds 100%; the hometown allows free full reworks; fees elsewhere are gold or Influence, never XP.</td></tr>
+<tr><td>Gear: Bandage, Lantern, Siege Hooks</td><td>Slots, base effects bought with XP, gear trees and gates.</td></tr>
+<tr><td>No potions</td><td>Potion slot, usable on the map and in battle.</td></tr>
+</table>
+</main>
+</div>
+</body>
+</html>

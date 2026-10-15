@@ -60,3 +60,19 @@ Out of scope of the first Expedition build (2026-10-12; see `docs/game-design/ex
 - [ ] **Mid-battle relaunch** restarts the pending battle from its start with the same seed (the learned runtime keeps battles in memory); persisting battle progress would make a relaunch resume mid-battle.
 - [ ] **A live event scene through the inspector**: the shipped region's only event near the start sits behind a group; the pointer test shows it, the live play-through did not reach it.
 - [ ] `tests/phase3/verify_offensive_roll_controls.gd` fails on the pristine client (stale "Roll 5 Dice" label); unrelated to the Expedition, recorded during M4.
+
+## Expedition ideas from the Mage Knight review (2026-10-14)
+
+Accepted for later; none of them changes battle rules.
+
+- [ ] **Remove the gold→XP trainer** (`gold.trainer_gold_per_xp` in `expedition.yaml`, Greywharf's trainer service, its view/client entry, tests and docs). Hard rule: gold never buys power; XP alone measures and controls character power.
+- [ ] **Tile generator screen.** A UI screen that generates and shows world layouts for review, to experiment with before building the world. Start simple: no wave function collapse or dynamic filler; a finished world may stay static. See `docs/game-design/open-world-plan.html` §3.
+- [ ] **Skippable cutscenes.** If the game gets cutscenes (e.g. before the opening scenario), the player may watch or skip them. The opening scenario itself is mandatory.
+
+- [ ] **Round Tactics (maybe).** At break camp, pick one of a few Day or Night tactics, each a visible status that bends the deck for the round (Mage Knight's Rethink, Preparation, Sparing Power…). Unsure it's needed on top of the battle mechanics; revisit later.
+- [ ] **End-of-turn location sites.** Ending a turn on a site pays: a glade heals 1 point of a wound, a mine yields something stored.
+- [ ] **Better adventure-site information.** Some ruins show their exact reward once seen; some guardians stay unknown until entered; a garrison that beats you keeps the cards you removed, so the next attempt meets it weaker (battle setup only).
+- [ ] **Energy carry-over as gear.** A gear item lets you keep more energy than normal through a rest into the next Day/Night round.
+- [ ] **Trainers unlock tree nodes.** Some upgrades (e.g. a +3 energy variant) are learnable only at one site: pay its trainer gold to unlock the node, then pay XP for the upgrade as usual.
+- [ ] **New map abilities, unlocked by gear.** Improvisation (e.g. boots: discard two cards for Move 3), Influence cards, flight/ignore terrain, lake and mountain crossing, Survey (look at the next two tiles and pick one), map healing.
+- [ ] **Day and Night with real trade-offs per terrain.** Some terrain is easier at night (a desert or salt flat), some sites better by day, so both halves of the cycle have positives and negatives.
