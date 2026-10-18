@@ -230,14 +230,15 @@ func _draw() -> void:
 	var pointer_near := not hover.is_empty() and get_local_mouse_position().distance_to(_center(_cell_of(hover, hexes, model))) <= r * 1.2
 	if pointer_near and not overlay_open and model.get("hover_lines", []).size() > 0:
 		_hover_box(model.hover_lines, true)
-	# L. The calendar, while the pointer is over the chart's cartouche.
+	# L. The calendar, under the chart's cartouche while the pointer is on it.
 	elif model.get("cartouche_hover", false) and not overlay_open and model.get("cartouche_lines", []).size() > 0:
-		_hover_box(model.cartouche_lines, false)
+		var cartouche: Rect2 = screen._sheet.cartouche_rect
+		_hover_box(model.cartouche_lines, false, cartouche.position + Vector2(0, cartouche.size.y + 6))
 
-## The bone hover box beside the pointer, kept inside the chart: the first
-## line in ink, the rest in sepia (danger lines red for hexes), long lines
-## wrapped at MAX_HOVER_WIDTH.
-func _hover_box(source: Array, danger_lines: bool) -> void:
+## The bone hover box beside the pointer (or at an anchor), kept inside the
+## chart: the first line in ink, the rest in sepia (danger lines red for
+## hexes), long lines wrapped at MAX_HOVER_WIDTH.
+func _hover_box(source: Array, danger_lines: bool, anchor := Vector2(-1, -1)) -> void:
 	var font := STYLE.serif()
 	var lines: Array = []
 	for i in source.size():
@@ -245,7 +246,7 @@ func _hover_box(source: Array, danger_lines: bool) -> void:
 	var w := 0.0
 	for line in lines: w = maxf(w, font.get_string_size(line[0], HORIZONTAL_ALIGNMENT_LEFT, -1, 14 if line[1] == 0 else 12).x)
 	var h := 14.0 + 20.0 * lines.size()
-	var at := get_local_mouse_position() + Vector2(18, 14)
+	var at := anchor if anchor.x >= 0.0 else get_local_mouse_position() + Vector2(18, 14)
 	at = at.clamp(Vector2.ZERO, (size - Vector2(w + 12, h)).max(Vector2.ZERO))
 	hover_box = Rect2(at, Vector2(w + 12, h))
 	draw_style_box(STYLE.chip_style(STYLE.BONE, Color(STYLE.INK, 0.6)), hover_box)

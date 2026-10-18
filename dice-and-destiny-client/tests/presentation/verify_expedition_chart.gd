@@ -79,6 +79,7 @@ func _calendar_hover(map: Control, label: String) -> void:
 	var box: Rect2 = map._marks.hover_box
 	var global_box := Rect2(map._marks.get_global_position() + box.position, box.size)
 	_expect(box.has_area() and Rect2(Vector2.ZERO, map._marks.size).encloses(box) and root.get_visible_rect().encloses(global_box), "the calendar's hover box stays inside the chart and the viewport at %s (%s)" % [label, global_box])
+	_expect(absf(global_box.position.y - cartouche.get_global_rect().end.y - 6.0) < 1.0 and absf(global_box.position.x - cartouche.get_global_rect().position.x) < 1.0, "the calendar hangs under the cartouche at %s (%s under %s)" % [label, global_box, cartouche.get_global_rect()])
 	await _capture(map, "expedition-calendar-" + label)
 	motion = InputEventMouseMotion.new(); motion.position = map._hud_scroll.get_global_rect().get_center(); root.push_input(motion, true)
 	for frame in 4: await process_frame
