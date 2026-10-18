@@ -166,7 +166,7 @@ func TestNewRegionIsDeterministicAndStartsWithTheStartTile(t *testing.T) {
 	if len(a.Placed) != 1 || a.Placed[0].Tile != "meadow_crossing" || a.Placed[0].Center != (Hex{}) {
 		t.Fatalf("only the start tile is placed: %+v", a.Placed)
 	}
-	if len(a.Stack) != 5 || len(a.CoreDeal) != 2 || len(a.Hand) != 4 || len(a.Draw) != 8 || a.Energy != 10 || a.Round != 1 || a.Night || a.Phase != PhaseTurn {
+	if len(a.Stack) != 5 || len(a.CoreDeal) != 2 || len(a.Hand) != 4 || len(a.Draw) != 8 || a.Energy != 10 || a.Round() != 1 || a.Night() || a.Phase != PhaseTurn {
 		t.Fatalf("unexpected start: stack %d core %d hand %d draw %d energy %d", len(a.Stack), len(a.CoreDeal), len(a.Hand), len(a.Draw), a.Energy)
 	}
 	if len(a.Warlord.Route) != r.Config.Warlord.StartDistance+1 || a.Warlord.Route[len(a.Warlord.Route)-1] != a.Warlord.Goal {
@@ -192,7 +192,7 @@ func TestViewNeverLeaksHiddenState(t *testing.T) {
 	r := testRules(t)
 	s := newState(t, r, 11)
 	// Explore east at night so most of the new tile is out of sight.
-	s.Night = true
+	setNight(s, true)
 	s.refreshSight(r)
 	act(t, s, r, Action{Kind: "move", Target: &Hex{1, 0}, Cards: s.Hand[:1]})
 	act(t, s, r, Action{Kind: "explore", Slot: "east", Cards: s.Hand[:2]})
@@ -360,7 +360,7 @@ func TestMovementCostsPaymentsAndImpassableTerrain(t *testing.T) {
 		t.Fatal("the leftover Move paid for the plains")
 	}
 	// Night: forest costs 3.
-	s.Night = true
+	setNight(s, true)
 	s.Turn.Move = 2
 	_, err = s.Act(r, Action{Kind: "move", Target: &Hex{1, -1}})
 	mustFail(t, err, "costs 3 Move; you have 2")
@@ -381,7 +381,7 @@ func TestMovementCostsPaymentsAndImpassableTerrain(t *testing.T) {
 		}
 	}
 	// Move pool is lost at end of turn.
-	s.Night = false
+	setNight(s, false)
 	s.Turn.Move, s.Turn.CardsUsed = 4, 1
 	act(t, s, r, Action{Kind: "end_turn"})
 	if s.Turn.Move != 0 {
@@ -448,7 +448,7 @@ func TestMapCardsAndEnergyRules(t *testing.T) {
 	_, err = s.Act(extra, Action{Kind: "play_map_card", Card: "pathfinder_paths_variant_node_1"})
 	mustFail(t, err, "costs 15 energy; you have 5")
 	// Scout Ahead reveals contents up to 3 away this turn.
-	s.Night = true
+	setNight(s, true)
 	s.Seen = map[string]bool{}
 	s.refreshSight(r)
 	placeAll(s, r)
@@ -538,8 +538,8 @@ func TestOneCardRuleEndTurnDrawAndRest(t *testing.T) {
 	// Break camp: Warlord marches 2, Day → Night, round 2, the camp hand carries on.
 	from := s3.Warlord.Pos()
 	act(t, s3, r, Action{Kind: "break_camp"})
-	if s3.Round != 2 || !s3.Night || s3.Phase != PhaseTurn || len(s3.Hand) != 3 || s3.Warlord.Index != 2 || Distance(from, s3.Warlord.Pos()) != 2 {
-		t.Fatalf("break camp: round %d night %v hand %d warlord %d→%d", s3.Round, s3.Night, len(s3.Hand), s3.Warlord.Index, s3.Warlord.Index)
+	if s3.Round() != 2 || !s3.Night() || s3.Phase != PhaseTurn || len(s3.Hand) != 3 || s3.Warlord.Index != 2 || Distance(from, s3.Warlord.Pos()) != 2 {
+		t.Fatalf("break camp: round %d night %v hand %d warlord %d→%d", s3.Round(), s3.Night(), len(s3.Hand), s3.Warlord.Index, s3.Warlord.Index)
 	}
 	if s3.LastRest == nil || s3.LastRest.WarlordSteps != 2 || !s3.LastRest.NightAfter || s3.LastRest.RoundAfter != 2 || s3.LastRest.Drew != 4 {
 		t.Fatalf("rest summary: %+v", s3.LastRest)
@@ -637,7 +637,7 @@ func TestSitesInfluenceMendingAndShops(t *testing.T) {
 	// Monastery: 1 Influence per wound, open at night.
 	monastery := s.hexOfSite("stillwater_monastery")
 	s.teleport(r, monastery)
-	s.Night = true
+	setNight(s, true)
 	s.refreshSight(r)
 	act(t, s, r, Action{Kind: "use_site", Service: "mend", Cards: s.Hand[:1]})
 	if len(s.Wounds) != 1 {
@@ -656,7 +656,7 @@ func TestSitesInfluenceMendingAndShops(t *testing.T) {
 	// changes. Gold never buys XP: there is no trainer.
 	town := s.hexOfSite("greywharf")
 	s.teleport(r, town)
-	s.Night = false
+	setNight(s, false)
 	s.Gold = 100
 	here := s.View(r, 1).SiteHere
 	if here == nil || len(here.Services) == 0 {
@@ -1029,7 +1029,7 @@ func TestPatrolsNightHuntersAndGuards(t *testing.T) {
 	if g, _ := s.hexOfGroup("eel_hunter"); g.Pos != hunter.Pos {
 		t.Fatal("night hunters rest by day")
 	}
-	s.Night = true
+	setNight(s, true)
 	act(t, s, r, Action{Kind: "discard", Cards: s.Hand[:1]})
 	act(t, s, r, Action{Kind: "end_turn"})
 	if g, _ := s.hexOfGroup("eel_hunter"); g.Pos == hunter.Pos || g.Patrol != 1 {
@@ -1054,7 +1054,7 @@ func TestPatrolsNightHuntersAndGuards(t *testing.T) {
 		}
 	}
 	for round := 0; round < 4; round++ {
-		s2.Night = true
+		setNight(s2, true)
 		act(t, s2, r, Action{Kind: "make_camp"})
 		act(t, s2, r, Action{Kind: "break_camp"})
 		for _, g := range s2.Groups {
@@ -1110,8 +1110,8 @@ func TestConfigValuesChangeBehaviour(t *testing.T) {
 	act(t, s, r, Action{Kind: "break_camp"})
 	act(t, s, r, Action{Kind: "make_camp"})
 	act(t, s, r, Action{Kind: "break_camp"})
-	if s.PendingBattle == nil || s.PendingBattle.Kind != "deadline" || s.Round != 3 {
-		t.Fatalf("rounds_per_region 2: %+v round %d", s.PendingBattle, s.Round)
+	if s.PendingBattle == nil || s.PendingBattle.Kind != "deadline" || s.Round() != 3 {
+		t.Fatalf("rounds_per_region 2: %+v round %d", s.PendingBattle, s.Round())
 	}
 	// Defeat wounds 1 from config.
 	s2 := newState(t, r, 1)

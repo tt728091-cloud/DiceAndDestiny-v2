@@ -434,7 +434,7 @@ func TestWoundsAfterBattleNeverLoseOrDuplicateCards(t *testing.T) {
 			if w.ID == "w1" && w.Source != "an old hit" {
 				t.Fatalf("%s: the old wound changed its source: %+v", where, w)
 			}
-			if w.ID != "w1" && (w.Source == "" || w.Round != s.Round || w.Size != len(w.Cards)) {
+			if w.ID != "w1" && (w.Source == "" || w.Round != s.Round() || w.Size != len(w.Cards)) {
 				t.Fatalf("%s: a new wound is named, dated and sized: %+v", where, w)
 			}
 			if w.Treated || w.Bandaged {

@@ -81,7 +81,7 @@ func TestChallengeAndAmbushByHabitDayNightAndCover(t *testing.T) {
 			for _, approach := range []string{"seen", "unseen", "cover"} {
 				s := newState(t, r, 6)
 				placeAll(s, r)
-				s.Night = night
+				setNight(s, night)
 				// Use the lone Brine Mask's hex and rewrite its habit for the case.
 				g, _ := s.hexOfGroup("brine_lone")
 				r2 := r
@@ -200,7 +200,7 @@ func TestGarrisonsAreFortifiedAndSiegeHooksRemoveIt(t *testing.T) {
 	for _, night := range []bool{false, true} {
 		s4 := newState(t, r, 6)
 		placeAll(s4, r)
-		s4.Night = night
+		setNight(s4, night)
 		cairn := s4.hexOfSite("drowned_cairn")
 		s4.teleport(r, cairn.Add(Hex{0, 1}))
 		act(t, s4, r, Action{Kind: "enter_site", Site: "drowned_cairn"})
@@ -379,7 +379,7 @@ func TestWarlordMarchesGoalConquerorChallengeAndDeadline(t *testing.T) {
 	}
 	// The conquered town's services are gone.
 	s.teleport(r, s.Warlord.Goal.Add(Hex{1, 0}))
-	s.Night = false
+	setNight(s, false)
 	before := s.Player
 	s.teleport(r, s.Warlord.Goal)
 	if _, _, closed := s.siteHere(r); !strings.Contains(closed, "held by the Warlord") {

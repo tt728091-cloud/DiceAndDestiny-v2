@@ -364,7 +364,7 @@ func (s *State) viewSite(r Rules, st SiteState) *ViewSite {
 			gid = def.OccupiedBy
 		case "ruins", "grotto":
 			gid = def.Guardian.Day
-			if s.Night {
+			if s.Night() {
 				gid = def.Guardian.Night
 			}
 		}
@@ -429,20 +429,27 @@ func (s *State) siteServices(r Rules, st SiteState, def Site) []ViewService {
 
 // View builds the viewer-safe status.
 func (s *State) View(r Rules, revision int) View {
+	if s.LegacyRound > 0 {
+		// A save from before the world clock: show it as it will be once the
+		// next action migrates it, without changing the save here.
+		migrated := s.Clone()
+		migrated.migrateClock(r)
+		return migrated.View(r, revision)
+	}
 	cfg, pack := r.Config, r.Pack
 	region := pack.Regions[s.Region]
-	v := View{Region: s.Region, RegionName: region.Name, Description: region.Description, Round: s.Round, Rounds: s.rounds(r), Night: s.Night, Phase: s.Phase, Result: s.Result, Revision: revision, Seed: s.Seed,
+	v := View{Region: s.Region, RegionName: region.Name, Description: region.Description, Round: s.Round(), Rounds: s.rounds(r), Night: s.Night(), Phase: s.Phase, Result: s.Result, Revision: revision, Seed: s.Seed,
 		Player: s.Player, Energy: s.Energy, BaseEnergy: s.BaseEnergy, Gold: s.Gold, HandSize: s.effectiveHandSize(r), HandLimit: s.effectiveHandLimit(r),
 		Draw: sortedStrings(s.Draw), Spent: append([]string{}, s.Spent...), Wounds: s.viewWounds(r), WoundCards: s.Wounds.Cards(), CardNames: map[string]string{},
 		Hand: []ViewCard{}, Inventory: []ViewItem{}, Statuses: []ViewStatus{}, Hexes: []ViewHex{}, Slots: []ViewSlot{}, Moves: []ViewMove{}, Explores: []ViewSlot{}, Challenges: []ViewTarget{}, Enters: []ViewTarget{}, Marks: []ViewMark{},
 		Health: s.LiveCards(), MaxHealth: s.LiveCards() + s.Wounds.Damage(), XPEarned: s.XPEarned, RelicChoices: s.PendingRelicChoices,
 		LastBattle: s.LastBattle, LastRest: s.viewLastRest(), LastEvent: s.LastEvent, Log: append([]string{}, s.Log...),
 		Config: ViewConfig{EnergyPerMove: cfg.Move.EnergyPerMove, EnergyPerInfluence: cfg.Influence.EnergyPerInfluence, ExploreCost: cfg.Move.ExploreCost, SightDay: cfg.Sight.Day, SightNight: cfg.Sight.Night, Terrain: cfg.Terrain, DefeatWounds: cfg.Defeat.Wounds, DeckChangeInfluence: cfg.DeckChangeInfluence}}
-	day := (s.Round + 1) / 2
-	if s.Round > s.rounds(r) {
+	day := (s.Round() + 1) / 2
+	if s.Round() > s.rounds(r) {
 		v.DayLabel = "The deadline"
 	} else {
-		v.DayLabel = fmt.Sprintf("%s %d · round %d of %d", dayName(s.Night), day, s.Round, s.rounds(r))
+		v.DayLabel = fmt.Sprintf("%s %d · round %d of %d", dayName(s.Night()), day, s.Round(), s.rounds(r))
 	}
 	for _, id := range append(append(append([]string{}, s.Hand...), s.Draw...), append(append([]string{}, s.Spent...), s.Wounds.Cards()...)...) {
 		v.CardNames[id] = r.cardName(id)
@@ -593,7 +600,7 @@ func (s *State) View(r Rules, revision int) View {
 						gid = def.OccupiedBy
 					case "ruins", "grotto":
 						gid = def.Guardian.Day
-						if s.Night {
+						if s.Night() {
 							gid = def.Guardian.Night
 						}
 					}
@@ -729,7 +736,7 @@ func (s *State) turnEffects(r Rules) []string {
 	out := []string{}
 	if t.IgnoreTerrain {
 		out = append(out, "every hex costs 1 Move")
-	} else if t.IgnoreNight && s.Night {
+	} else if t.IgnoreNight && s.Night() {
 		out = append(out, "Day terrain costs")
 	}
 	if t.CheapTerrain != "" {

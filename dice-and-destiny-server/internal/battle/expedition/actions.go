@@ -38,6 +38,7 @@ type Rewards struct {
 // Act applies one action. It validates everything first and returns a clear
 // error without changing the state when the action is illegal.
 func (s *State) Act(r Rules, a Action) (Rewards, error) {
+	s.migrateClock(r)
 	if s.Result != "" {
 		return Rewards{}, fmt.Errorf("the expedition is over (%s)", s.Result)
 	}
@@ -151,7 +152,7 @@ func (s *State) moveCost(r Rules, h Hex) (int, string, bool) {
 	if s.Turn.IgnoreTerrain || s.Turn.CheapTerrain == th.Terrain {
 		return 1, "", true
 	}
-	night := s.Night && !s.Turn.IgnoreNight
+	night := s.Night() && !s.Turn.IgnoreNight
 	cost, _ := r.Config.TerrainCost(th.Terrain, night)
 	return cost, "", true
 }
@@ -402,7 +403,7 @@ func (s *State) endTurn(r Rules) error {
 		// One pass through the deck is one round: when no card is left in
 		// hand or draw pile, the round ends with a rest. Cards still in hand
 		// carry on into the next turn; Make camp is always open.
-		s.log("No cards left in hand or draw pile: round %d is over.", s.Round)
+		s.log("No cards left in hand or draw pile: round %d is over.", s.Round())
 		s.beginRest(r, "deck_empty", 0)
 		return nil
 	}
@@ -446,7 +447,7 @@ func (s *State) makeCamp(r Rules) error {
 // energy, draw the fresh hand) and opens the camp for healing and services;
 // breakCamp finishes the rest. Every wound is untreated again at a new camp.
 func (s *State) beginRest(r Rules, reason string, forfeited int) {
-	camp := &CampState{Reason: reason, Turn: s.Turn.Number, Round: s.Round, EnergyBefore: s.Energy, Forfeited: forfeited, Heals: []HealRoll{}, Deadline: s.Round >= s.rounds(r)}
+	camp := &CampState{Reason: reason, Turn: s.Turn.Number, Round: s.Round(), EnergyBefore: s.Energy, Forfeited: forfeited, Heals: []HealRoll{}, Deadline: s.Round() >= s.rounds(r)}
 	if st := s.siteAt(s.Player); st != nil && r.Pack.Sites[st.ID].HasInn() && !s.siteDefended(r.Pack, st) && !st.Conquered {
 		camp.Inn, camp.Site = true, st.ID
 	}
@@ -662,9 +663,8 @@ func (s *State) breakCamp(r Rules) error {
 		s.Marks = nil
 	}
 	// 5. Day <-> Night, the round advances, draw up to hand size.
-	s.Round++
-	s.Night = !s.Night
-	summary.RoundAfter, summary.NightAfter = s.Round, s.Night
+	s.advanceClock()
+	summary.RoundAfter, summary.NightAfter = s.Round(), s.Night()
 	summary.Drew, summary.Healed = s.Camp.Drew, s.Camp.Healed
 	if summary.Camp.Heals == nil {
 		summary.Camp.Heals = []HealRoll{}
@@ -684,7 +684,7 @@ func (s *State) breakCamp(r Rules) error {
 	s.Camp = nil
 	s.Turn = TurnState{Number: s.Turn.Number + 1, StartHex: s.Player}
 	s.LastRest = summary
-	if s.Round > s.rounds(r) {
+	if s.Round() > s.rounds(r) {
 		// The deadline: the Warlord comes to the player, in the open.
 		summary.Deadline = true
 		s.Warlord.Arrived = true
@@ -697,7 +697,7 @@ func (s *State) breakCamp(r Rules) error {
 	}
 	s.Phase = PhaseTurn
 	s.refreshSight(r)
-	s.log("%s %d begins.", dayName(s.Night), (s.Round+1)/2)
+	s.log("%s %d begins.", dayName(s.Night()), (s.Round()+1)/2)
 	return nil
 }
 
@@ -760,7 +760,7 @@ func (s *State) patrolStep(r Rules, g *GroupState) bool {
 
 // nightHuntersRoam steps every night hunter once per turn at night.
 func (s *State) nightHuntersRoam(r Rules) {
-	if !s.Night {
+	if !s.Night() {
 		return
 	}
 	for i := range s.Groups {
@@ -785,7 +785,7 @@ func (s *State) siteHere(r Rules) (*SiteState, Site, string) {
 	if s.siteDefended(r.Pack, st) {
 		return st, def, fmt.Sprintf("%s is held by enemies", def.Name)
 	}
-	if s.Night && !def.OpenAtNight() {
+	if s.Night() && !def.OpenAtNight() {
 		return st, def, fmt.Sprintf("%s is closed at night; only the inn is open (make camp here)", def.Name)
 	}
 	return st, def, ""
@@ -909,6 +909,7 @@ func (s *State) DeckOpen(r Rules) bool {
 // the purchase). The first change of a visit spends the Influence that opens
 // the deck; every further change there costs XP only.
 func (s *State) PayDeckChange(r Rules) error {
+	s.migrateClock(r)
 	cost, where, err := s.DeckChangeCost(r)
 	if err != nil {
 		return err
@@ -1019,7 +1020,7 @@ func (s *State) eventChoice(r Rules, a Action) (Rewards, error) {
 	if choice.Requires.Item != "" {
 		s.Inventory[choice.Requires.Item]--
 	}
-	result := &EventResult{Event: ev.ID, Site: s.PendingEvent.Site, Turn: s.Turn.Number, Round: s.Round, Choice: choice.ID}
+	result := &EventResult{Event: ev.ID, Site: s.PendingEvent.Site, Turn: s.Turn.Number, Round: s.Round(), Choice: choice.ID}
 	outcome := choice.Outcome
 	if choice.Roll != nil {
 		result.Roll, result.Needed = s.d6(), choice.Roll.Needed
@@ -1162,7 +1163,7 @@ func (s *State) siteBattle(r Rules, st *SiteState, item string, lured bool) erro
 		groupID = def.OccupiedBy
 	case "ruins", "grotto":
 		groupID = def.Guardian.Day
-		if s.Night {
+		if s.Night() {
 			groupID = def.Guardian.Night
 		}
 	}

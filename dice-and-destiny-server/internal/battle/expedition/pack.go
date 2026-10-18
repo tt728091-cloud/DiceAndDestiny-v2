@@ -162,6 +162,12 @@ type Slot struct {
 	Kind   string `yaml:"kind" json:"kind"` // countryside, core
 }
 
+// CalendarStart is the month a region's first round falls in. A region always
+// starts on the Day half of that month, in year 1.
+type CalendarStart struct {
+	Month string `yaml:"month" json:"month"`
+}
+
 type WarlordDefinition struct {
 	Group    string `yaml:"group" json:"group"`
 	GoalTile string `yaml:"goal_tile" json:"goal_tile"`
@@ -180,6 +186,7 @@ type Region struct {
 	CoreTiles        []string          `yaml:"core_tiles" json:"core_tiles"`
 	Slots            []Slot            `yaml:"slots" json:"slots"`
 	Warlord          WarlordDefinition `yaml:"warlord" json:"warlord"`
+	CalendarStart    CalendarStart     `yaml:"calendar_start" json:"calendar_start"`
 }
 
 var stableID = regexp.MustCompile(`^[a-z][a-z0-9_]*$`)
@@ -641,6 +648,9 @@ func (p Pack) validateAdjacency(tiles []string) error {
 func (p Pack) validateRegion(cfg Config, r Region) error {
 	if r.SchemaVersion != 1 || r.Name == "" || r.Description == "" {
 		return fmt.Errorf("expedition content: region %q needs schema_version 1, a name and a description", r.ID)
+	}
+	if _, ok := cfg.Calendar.MonthIndex(r.CalendarStart.Month); !ok {
+		return fmt.Errorf("expedition content: region %q calendar_start.month %q is not a month of the calendar", r.ID, r.CalendarStart.Month)
 	}
 	start, ok := p.Tiles[r.StartTile]
 	if !ok || start.Kind != "start" {

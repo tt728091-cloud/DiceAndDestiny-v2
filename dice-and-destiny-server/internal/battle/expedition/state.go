@@ -281,9 +281,18 @@ type State struct {
 	Region      string `json:"region"`
 	Seed        uint64 `json:"seed"`
 	RNGPosition uint64 `json:"rng_position"`
-	Round       int    `json:"round"`
-	Night       bool   `json:"night"`
 	Phase       string `json:"phase"`
+
+	// Clock is world time, kept apart from the hero's piles; RegionStart is
+	// the clock half at which this region's first round began. The round and
+	// Day/Night are derived from them (clock.go), never stored.
+	Clock       WorldClock `json:"clock"`
+	RegionStart int        `json:"region_start"`
+	// LegacyRound and LegacyNight are the round and Day/Night that saves
+	// written before the world clock stored. They are only read: the first
+	// rules call migrates them onto the clock and clears them.
+	LegacyRound int  `json:"round,omitempty"`
+	LegacyNight bool `json:"night,omitempty"`
 
 	Placed   []PlacedTile      `json:"placed"`
 	Stack    []string          `json:"stack"`
@@ -433,7 +442,7 @@ func (s *State) addWound(cards []string, source string, battleRound int) *Wound 
 		return nil
 	}
 	s.WoundSeq++
-	s.Wounds = append(s.Wounds, Wound{ID: fmt.Sprintf("w%d", s.WoundSeq), Cards: append([]string{}, cards...), Size: len(cards), Source: source, Round: s.Round, Turn: s.Turn.Number, BattleRound: battleRound})
+	s.Wounds = append(s.Wounds, Wound{ID: fmt.Sprintf("w%d", s.WoundSeq), Cards: append([]string{}, cards...), Size: len(cards), Source: source, Round: s.Round(), Turn: s.Turn.Number, BattleRound: battleRound})
 	return &s.Wounds[len(s.Wounds)-1]
 }
 
