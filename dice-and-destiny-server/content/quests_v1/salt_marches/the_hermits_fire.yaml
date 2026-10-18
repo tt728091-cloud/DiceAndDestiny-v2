@@ -1,0 +1,35 @@
+schema_version: 1
+id: the_hermits_fire
+name: "The Hermit's Fire"
+set: salt_marches
+kind: small
+status: scenario
+region: salt_marches
+# One outcome edge per choice of the event; the choices' texts, rolls and
+# rewards are read from the event file, never copied here.
+hook: {verb: event, event: hermits_fire}
+trigger:
+  - {verb: scenario_start, region: salt_marches}
+start: scene
+stages:
+  - id: scene
+    objective: {verb: resolve_event, site: hermit_site}
+    outcomes:
+      - outcome: success
+        when: {verb: event_choice, event: hermits_fire, choice: share}
+        consequences:
+          - {verb: event_outcome, event: hermits_fire, choice: share}
+        next: end
+      - outcome: success
+        when: {verb: event_choice, event: hermits_fire, choice: rob}
+        consequences:
+          - {verb: event_outcome, event: hermits_fire, choice: rob}
+        next: end
+      - outcome: success
+        when: {verb: event_choice, event: hermits_fire, choice: walk_on}
+        consequences:
+          - {verb: event_outcome, event: hermits_fire, choice: walk_on}
+        next: end
+      - outcome: abandoned
+        when: {verb: quest_outcome, quest: stop_the_drowned_regent}
+        next: end

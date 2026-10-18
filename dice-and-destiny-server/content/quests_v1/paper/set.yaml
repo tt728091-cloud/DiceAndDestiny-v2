@@ -1,0 +1,4 @@
+schema_version: 1
+id: paper
+name: Paper quests
+text: "Design-only quests that test the format: template roles for generated worlds, a failure branch and a seasonal timer. Nothing runs them, and every number in them is a placeholder."

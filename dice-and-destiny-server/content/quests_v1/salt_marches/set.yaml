@@ -1,0 +1,4 @@
+schema_version: 1
+id: salt_marches
+name: The Salt Marches
+text: "The opening scenario described as quests. The Go rules in internal/battle/expedition still run it; these files only describe it, and they refer to the scenario's numbers and content instead of copying them."
