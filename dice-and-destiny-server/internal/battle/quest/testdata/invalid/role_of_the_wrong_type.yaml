@@ -1,0 +1,17 @@
+# want: role "person" is a person; this takes a group
+schema_version: 1
+id: role_of_the_wrong_type
+name: A paper fixture
+set: fixture
+kind: personal
+status: paper
+roles:
+  person: {type: person, text: "Who asks."}
+hook: {verb: request, from: {role: person}}
+trigger: [{verb: season, in: [autumn]}]
+start: one
+stages:
+  - id: one
+    objective: {verb: defeat_group, group: {role: person}}
+    outcomes:
+      - {outcome: success, next: end}

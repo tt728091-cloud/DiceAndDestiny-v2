@@ -1,0 +1,17 @@
+# want: this stage resolves event "wayside_shrine", not "hermits_fire"
+schema_version: 1
+id: event_of_another_site
+name: A fixture
+set: fixture
+kind: side
+status: scenario
+hook: {verb: scenario_start, region: salt_marches}
+trigger: [{verb: scenario_start}]
+start: one
+stages:
+  - id: one
+    objective: {verb: resolve_event, site: shrine_site}
+    outcomes:
+      - outcome: success
+        when: {verb: event_choice, event: hermits_fire, choice: share}
+        next: end

@@ -1,0 +1,21 @@
+# A valid paper quest with a role, a seasonal timer and a failure.
+schema_version: 1
+id: base_paper
+name: A paper fixture
+set: fixture
+kind: personal
+status: paper
+roles:
+  person: {type: person, text: "Who asks."}
+  town: {type: town, text: "Where {person} lives."}
+hook: {verb: request, from: {role: person}}
+trigger: [{verb: season, in: [autumn]}]
+start: one
+stages:
+  - id: one
+    objective: {verb: defeat_group, group: brine_lone}
+    timer: {type: seasonal, before: spring}
+    outcomes:
+      - {outcome: success, consequences: [{verb: prosperity, town: {role: town}, amount: 1}], next: end}
+      - {outcome: failure, next: end}
+      - {outcome: abandoned, when: {verb: quest_outcome, quest: base_quest}, next: end}

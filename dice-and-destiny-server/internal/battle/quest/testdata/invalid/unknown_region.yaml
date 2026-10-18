@@ -1,0 +1,16 @@
+# want: unknown region "salt_flats"
+schema_version: 1
+id: unknown_region
+name: A fixture
+set: fixture
+kind: side
+status: scenario
+region: salt_flats
+hook: {verb: scenario_start, region: salt_marches}
+trigger: [{verb: scenario_start}]
+start: one
+stages:
+  - id: one
+    objective: {verb: defeat_group, group: brine_lone}
+    outcomes:
+      - {outcome: success, next: end}

@@ -1,0 +1,15 @@
+# want: unknown verb "slay_group"
+schema_version: 1
+id: unknown_verb
+name: A fixture
+set: fixture
+kind: side
+status: scenario
+hook: {verb: scenario_start, region: salt_marches}
+trigger: [{verb: scenario_start}]
+start: one
+stages:
+  - id: one
+    objective: {verb: slay_group, group: brine_lone}
+    outcomes:
+      - {outcome: success, next: end}

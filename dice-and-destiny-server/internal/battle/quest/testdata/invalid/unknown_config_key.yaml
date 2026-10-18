@@ -1,0 +1,17 @@
+# want: unknown config key "rounds_per_quest"
+schema_version: 1
+id: unknown_config_key
+name: A fixture
+set: fixture
+kind: side
+status: scenario
+hook: {verb: scenario_start, region: salt_marches}
+trigger: [{verb: scenario_start}]
+start: one
+stages:
+  - id: one
+    objective: {verb: defeat_group, group: brine_lone}
+    timer: {type: urgent, rounds: {config: rounds_per_quest}, from: quest_start}
+    outcomes:
+      - {outcome: success, next: end}
+      - {outcome: failure, next: end}

@@ -1,0 +1,15 @@
+# want: end_run cannot be used as an objective
+schema_version: 1
+id: verb_in_the_wrong_part
+name: A fixture
+set: fixture
+kind: side
+status: scenario
+hook: {verb: scenario_start, region: salt_marches}
+trigger: [{verb: scenario_start}]
+start: one
+stages:
+  - id: one
+    objective: {verb: end_run}
+    outcomes:
+      - {outcome: success, next: end}
