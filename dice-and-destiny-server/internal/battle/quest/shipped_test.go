@@ -18,6 +18,9 @@ func TestShippedQuestsLoad(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	if cat.Sets[0].ID != "salt_marches" || cat.Sets[1].ID != "paper" {
+		t.Fatalf("the scenario set comes first: %s, %s", cat.Sets[0].ID, cat.Sets[1].ID)
+	}
 	want := map[string][]string{
 		"salt_marches": {"free_saltreed", "hunt_the_bell_marshal", "stop_the_drowned_regent", "take_brinehold_keep", "the_hermits_fire", "the_wayside_shrine", "the_wrecked_barge"},
 		"paper":        {"kidnapped_daughter", "spring_farms"},

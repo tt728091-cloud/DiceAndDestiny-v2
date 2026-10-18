@@ -10,19 +10,21 @@ import (
 	"testing"
 )
 
-const fixtureSet = "schema_version: 1\nid: fixture\nname: Fixtures\ntext: \"Test quests.\"\n"
+const fixtureSet = "schema_version: 1\nid: fixture\nname: Fixtures\ntext: \"Test quests.\"\norder: ORDER\n"
 
 // fixtureRoot is a content root holding one quest set with the given files
 // (name → YAML).
 func fixtureRoot(t *testing.T, sets map[string]map[string]string) string {
 	t.Helper()
 	root := t.TempDir()
+	order := 0
 	for set, files := range sets {
 		dir := filepath.Join(root, Dir, set)
 		if err := os.MkdirAll(dir, 0o755); err != nil {
 			t.Fatal(err)
 		}
-		header := strings.ReplaceAll(fixtureSet, "fixture", set)
+		order++
+		header := strings.ReplaceAll(strings.ReplaceAll(fixtureSet, "fixture", set), "ORDER", fmt.Sprint(order))
 		if err := os.WriteFile(filepath.Join(dir, "set.yaml"), []byte(header), 0o644); err != nil {
 			t.Fatal(err)
 		}
@@ -104,8 +106,13 @@ func TestLoaderRefusesBadSetsAndFiles(t *testing.T) {
 		{"unknown field in set.yaml", map[string]map[string]string{"fixture": {"base_quest.yaml": base}}, func(root string) {
 			path := filepath.Join(root, Dir, "fixture", "set.yaml")
 			raw, _ := os.ReadFile(path)
-			_ = os.WriteFile(path, append(raw, []byte("order: 1\n")...), 0o644)
-		}, "field order not found"},
+			_ = os.WriteFile(path, append(raw, []byte("colour: red\n")...), 0o644)
+		}, "field colour not found"},
+		{"set without an order", map[string]map[string]string{"fixture": {"base_quest.yaml": base}}, func(root string) {
+			path := filepath.Join(root, Dir, "fixture", "set.yaml")
+			raw, _ := os.ReadFile(path)
+			_ = os.WriteFile(path, []byte(strings.Replace(string(raw), "order: 1", "order: 0", 1)), 0o644)
+		}, "an order of at least 1"},
 		{"empty set", map[string]map[string]string{"fixture": {}}, nil, `set "fixture" holds no quests`},
 	}
 	for _, c := range cases {

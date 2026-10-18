@@ -111,12 +111,14 @@ func (q Quest) Stage(id string) (Stage, bool) {
 	return Stage{}, false
 }
 
-// Set is one folder of quests (set.yaml names it).
+// Set is one folder of quests (set.yaml names it). Order places it in the
+// catalog (scenario sets before paper ones).
 type Set struct {
 	SchemaVersion int    `yaml:"schema_version" json:"-"`
 	ID            string `yaml:"id" json:"id"`
 	Name          string `yaml:"name" json:"name"`
 	Text          string `yaml:"text" json:"text"`
+	Order         int    `yaml:"order" json:"order"`
 	// Quests lists the set's quest ids in file order.
 	Quests []string `yaml:"-" json:"quests"`
 }

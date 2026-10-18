@@ -57,6 +57,14 @@ func LoadQuests(root string, cfg expedition.Config, pack expedition.Pack) (Catal
 	if len(cat.Sets) == 0 {
 		return cat, fmt.Errorf("quest content: %s holds no quest sets", Dir)
 	}
+	orders := map[int]string{}
+	for _, set := range cat.Sets {
+		if other, dup := orders[set.Order]; dup {
+			return cat, fmt.Errorf("quest content: %s/%s/set.yaml: order: %d is also %s's", Dir, set.ID, set.Order, other)
+		}
+		orders[set.Order] = set.ID
+	}
+	sort.Slice(cat.Sets, func(i, j int) bool { return cat.Sets[i].Order < cat.Sets[j].Order })
 	values, err := configValues(cfg)
 	if err != nil {
 		return cat, err
@@ -89,8 +97,8 @@ func loadSet(root, name string) (Set, []Quest, error) {
 	if set.SchemaVersion != 1 {
 		return set, nil, fmt.Errorf("quest content: %s: schema_version must be 1", rel)
 	}
-	if set.ID != name || set.Name == "" || set.Text == "" {
-		return set, nil, fmt.Errorf("quest content: %s: a set needs its folder's id (%q), a name and text", rel, name)
+	if set.ID != name || set.Name == "" || set.Text == "" || set.Order < 1 {
+		return set, nil, fmt.Errorf("quest content: %s: a set needs its folder's id (%q), a name, text and an order of at least 1", rel, name)
 	}
 	set.Quests = []string{}
 	entries, err := os.ReadDir(filepath.Join(root, Dir, name))

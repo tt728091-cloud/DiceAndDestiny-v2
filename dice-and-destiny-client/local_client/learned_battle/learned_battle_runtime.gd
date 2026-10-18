@@ -234,6 +234,13 @@ func expedition_deck_change(save_id: String, kind: String, id: String, revision:
 	if _native_authority == null: return {"ok": false, "error": _initialization_error}
 	return _request({"op": "expedition_deck_change", "campaign_save": save_id, "purchase": {"kind": kind, "id": id, "revision": revision, "expected_cost": cost, "target_id": target_id, "tree": tree, "count": count}, "loadout_root": WorkspacePaths.runtime_dir("user/character_loadouts"), "content_root": ProjectSettings.globalize_path("res://../dice-and-destiny-server/content")})
 
+## Read-only: the quest catalog described for the admin graph viewer (sets,
+## quests, stage and end nodes, labelled outcome edges, engine badges). It
+## reads only content; nothing in it drives a rule.
+func quest_catalog() -> Dictionary:
+	if _native_authority == null: return {"ok": false, "error": _initialization_error}
+	return _request({"op": "quest_catalog", "content_root": ProjectSettings.globalize_path("res://../dice-and-destiny-server/content")})
+
 ## Permanently deletes one campaign save.
 func campaign_delete(save_id: String) -> Dictionary:
 	if _native_authority == null: return {"ok": false, "error": _initialization_error}
