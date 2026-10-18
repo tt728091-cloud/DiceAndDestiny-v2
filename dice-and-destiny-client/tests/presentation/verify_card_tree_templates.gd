@@ -28,7 +28,7 @@ func _run() -> void:
 		var expected: Dictionary = ui.catalog.templates[template_id].duplicate(true)
 		expected.id = original.card.id; expected.name = ui._node(node_id).card.name; expected.economy.buy = maxi(1, int(expected.economy.buy)); expected.economy.sell = expected.economy.buy; expected.economy.upgrades = []
 		_expect(JSON.stringify(ui._node(node_id).card) == JSON.stringify(expected), "complete independent settings copied from " + template_id)
-		_expect(ui._node(node_id).x == original.x and ui._node(node_id).y == original.y and ui.draft.edges == edges, "identity, position and graph preserved")
+		_expect(ui._node(node_id).card.id == original.card.id and ui.draft.edges == edges, "identity and graph preserved")
 	_expect(ui._node("base") == base and ui.catalog.templates.reinforce == source, "base and source definitions unchanged")
 	_expect(ui._dirty and ui._publish.disabled, "template changes require validation and publication")
 	for width in [1280, 1920]:

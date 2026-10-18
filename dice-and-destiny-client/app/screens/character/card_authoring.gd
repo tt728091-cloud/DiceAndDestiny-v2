@@ -53,8 +53,12 @@ var _card_frame: CenterContainer
 ## A map-only card has no battle timing; this stands in for it so timing
 ## helpers never read a missing program.
 var _no_timing: Dictionary = {"windows": [], "uses_per_round": 0, "uses_per_battle": 0}
-const MAP_KIND_LABELS := {"move": "Move", "draw": "Draw cards", "energy": "Gain energy", "sight": "See further", "scout": "Scout contents"}
-const MAP_AMOUNT_LABELS := {"move": "Move points", "draw": "Cards drawn", "energy": "Energy gained", "sight": "Extra sight · hexes", "scout": "Scout range · hexes"}
+const MAP_KIND_LABELS := {"move": "Move", "draw": "Draw cards", "energy": "Gain energy", "sight": "See further", "scout": "Scout contents", "look": "Look at the draw pile", "influence": "Influence", "sneak": "Sneak (no provoked fights)", "hide": "Hide", "fall_back": "Fall back from a provoked fight", "high_ground": "High ground (Ambush from cover)", "mark": "Hunter's mark", "extend_time": "Gain rounds", "lure": "Lure defenders out", "haggle": "Haggle", "field_medic": "Field medic", "spare_bandage": "Spare bandages"}
+const MAP_AMOUNT_LABELS := {"move": "Move points", "draw": "Cards drawn", "energy": "Energy gained", "sight": "Extra sight · hexes", "scout": "Scout range · hexes", "look": "Cards looked at", "influence": "Influence it counts as", "hide": "Hexes enemies see less", "high_ground": "Extra Ambush dice", "mark": "Rests the mark lasts", "extend_time": "Rounds added", "haggle": "Influence off each payment", "field_medic": "Bonus to basic-aid rolls", "spare_bandage": "Spare bandages"}
+## Kinds whose amount is unused (it stays 0).
+const MAP_NO_AMOUNT := ["sneak", "fall_back", "lure"]
+## Options that belong to one kind; changing the kind drops the others.
+const MAP_KIND_OPTIONS := {"move": ["ignore_terrain", "ignore_night", "choose_terrain", "cross_cost", "carry_over", "explore_discount", "explore_reach", "sneak"], "sight": ["reveal_tiles"], "look": ["draw", "bottom"]}
 
 func _ready() -> void:
 	set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
@@ -507,22 +511,28 @@ func _tone() -> void:
 func _refresh_card_preview() -> void:
 	if not is_instance_valid(_card_frame) or draft.is_empty(): return
 	for child in _card_frame.get_children(): _card_frame.remove_child(child); child.queue_free()
+	render_card_face(_card_frame, draft)
+
+## Renders an unpublished card definition as its battle card face. Shared with
+## the card tree workshop, so a tree card shows the same face as this editor.
+static func render_card_face(frame: Control, definition: Dictionary) -> BattleCard:
 	var cards = BattlePresentationCatalog._catalog.get("cards")
 	if not cards is Dictionary:
 		cards = {}; BattlePresentationCatalog._catalog["cards"] = cards
-	var shown: Dictionary = draft.duplicate(true)
+	var shown: Dictionary = definition.duplicate(true)
 	if str(shown.get("name", "")).strip_edges().is_empty(): shown.name = "New card"
-	# Render under the draft's own ID so default artwork matches what battle shows,
+	# Render under the card's own ID so default artwork matches what battle shows,
 	# then restore whatever catalog entry that ID had.
-	var key := str(draft.get("id", "")).strip_edges()
+	var key := str(definition.get("id", "")).strip_edges()
 	if key.is_empty(): key = PREVIEW_ID
 	var had: bool = cards.has(key); var previous = cards.get(key)
 	cards[key] = shown
-	var card := BattleCard.new(); _card_frame.add_child(card); card.configure("preview", key, true)
+	var card := BattleCard.new(); frame.add_child(card); card.configure("preview", key, true)
 	card.mouse_filter = Control.MOUSE_FILTER_IGNORE; card.focus_mode = Control.FOCUS_NONE
 	card.scale = Vector2(1.25, 1.25); card.custom_minimum_size = BattleCard.STANDARD_SIZE * 1.25
 	if had: cards[key] = previous
 	else: cards.erase(key)
+	return card
 func _set_valid() -> void:
 	_preview.text = str(draft.presentation.rules_text)
 	_title.text = "%s · %d energy" % [draft.name, int(draft.cost.energy)]
@@ -611,11 +621,16 @@ func _map_fields() -> void:
 	var kinds: Array = catalog.get("map_effect_kinds", MAP_KIND_LABELS.keys())
 	var kind_pick := _select(grid, "Map effect", kinds, str(effect.get("kind", "move")), func(v):
 		effect.kind = v
-		if v != "move": effect.erase("ignore_terrain"); effect.erase("ignore_night")
+		for owner in MAP_KIND_OPTIONS:
+			if owner != v:
+				for option in MAP_KIND_OPTIONS[owner]: effect.erase(option)
+		if v in MAP_NO_AMOUNT: effect.amount = 0
+		elif v != "high_ground": effect.amount = maxi(1, int(effect.get("amount", 1)))
 		_changed(true), "map.kind")
 	for i in kind_pick.item_count: kind_pick.set_item_text(i, MAP_KIND_LABELS.get(str(kind_pick.get_item_metadata(i)), kind_pick.get_item_text(i)))
 	var kind := str(effect.get("kind", "move"))
-	_number(grid, MAP_AMOUNT_LABELS.get(kind, "Amount"), int(effect.get("amount", 1)), 1, 100, func(v): effect.amount = v; _changed(), "map.amount")
+	if not kind in MAP_NO_AMOUNT:
+		_number(grid, MAP_AMOUNT_LABELS.get(kind, "Amount"), int(effect.get("amount", 1)), 0 if kind == "high_ground" else 1, 10 if kind in ["look", "high_ground"] else 100, func(v): effect.amount = v; _changed(), "map.amount")
 	_number(grid, "Extra map energy · paid on the map on top of the card's energy cost; 0 for most cards", int(effect.get("energy_cost", 0)), 0, 100, func(v):
 		if v == 0: effect.erase("energy_cost")
 		else: effect.energy_cost = v
@@ -631,9 +646,35 @@ func _map_fields() -> void:
 			if on: effect.ignore_night = true
 			else: effect.erase("ignore_night")
 			_changed(), "map.ignore_night")
+		_map_flag(grid, effect, "choose_terrain", "The player names a terrain: it costs 1 Move for the rest of the turn")
+		_map_flag(grid, effect, "carry_over", "Move left at the end of the turn carries over to the next turn this round")
+		_map_flag(grid, effect, "sneak", "Walking past enemies provokes no fight this turn")
+		_map_count(grid, effect, "cross_cost", "Cross one lake or mountain hex for this much Move · 0 for none", 0, 10)
+		_map_count(grid, effect, "explore_discount", "Exploring costs this much less this turn", 0, 10)
+		_map_count(grid, effect, "explore_reach", "Explore empty slots up to this many hexes away · 0 for the normal reach", 0, 10)
+	elif kind == "sight":
+		_map_flag(grid, effect, "reveal_tiles", "Also reveal every enemy on the tiles in sight")
+	elif kind == "look":
+		_map_count(grid, effect, "draw", "Cards drawn from those looked at · 0 or 1", 0, 1)
+		_map_flag(grid, effect, "bottom", "Any of the rest may go to the bottom")
 	_line(grid, "Map text · a short line shown after the map rules", str(effect.get("text", "")), func(v): effect.text = v; _changed(), "map.text")
 	var total := int(draft.cost.energy) + int(effect.get("energy_cost", 0))
 	_label(box, "Playing it on the map for this effect costs %d energy (energy cost %d%s)." % [total, int(draft.cost.energy), " + %d extra" % int(effect.energy_cost) if int(effect.get("energy_cost", 0)) > 0 else ""], 14).add_theme_color_override("font_color", STYLE.MUTED)
+## A map-effect option that is either on or absent.
+func _map_flag(grid: Node, effect: Dictionary, field: String, title: String) -> void:
+	_label(grid, "")
+	_check(grid, title, bool(effect.get(field, false)), func(on):
+		if on: effect[field] = true
+		else: effect.erase(field)
+		_changed(), "map." + field)
+
+## A map-effect number that is absent when 0.
+func _map_count(grid: Node, effect: Dictionary, field: String, title: String, minimum: int, maximum: int) -> void:
+	_number(grid, title, int(effect.get(field, 0)), minimum, maximum, func(v):
+		if v == 0: effect.erase(field)
+		else: effect[field] = v
+		_changed(), "map." + field)
+
 func _mechanic_fields(parent: VBoxContainer) -> void:
 	if draft.mechanic.kind == "roll_table": _roll_table_fields(parent); return
 	var spec: Dictionary = catalog.mechanics[draft.mechanic.kind]

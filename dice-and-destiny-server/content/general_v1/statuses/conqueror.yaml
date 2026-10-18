@@ -2,11 +2,11 @@ schema_version: 1
 id: conqueror
 name: Conqueror
 presentation:
-  rules_text: "The Warlord holds his conquered goal. Every defensive roll uses one extra die per stack. Lasts the whole battle; it is never used up."
+  rules_text: "The Warlord holds his conquered goal. Every defensive roll uses one extra die per stack. Lasts the whole battle; it is never used up. If removed, it comes back at the start of the next round (Ongoing Effects)."
   glyph: "♛"
 activation_mode: automatic
 polarity: positive
 stacking: {stack_limit: 10, overflow_policy: reject_additional_stacks}
-lifecycle: {persistent: true, consume_on_trigger_checkpoint: false, consume_on_play: false, remove_after_resolution: false, remove_on_duration_zero: false}
+lifecycle: {persistent: true, consume_on_trigger_checkpoint: false, consume_on_play: false, remove_after_resolution: false, remove_on_duration_zero: false, restore_each_round: true}
 modifiers: {defense_dice_bonus: 1}
 triggers: []

@@ -13,14 +13,15 @@ func TestAbilityDowngradeRefundPersistenceAndBattle(t *testing.T) {
 	contentRoot := filepath.Join(testServerRoot(t), "content")
 	catalogs, _ := CharacterCatalogs(contentRoot)
 	e, _ := loadout.LoadEconomy(contentRoot, catalogs)
-	e.StartingXP = 25 // Downgrading must work with no unspent XP.
+	guard := e.Characters["adventurer"].AbilityUpgrades["adventurer_guard"].XP
+	e.StartingXP = guard // Downgrading must work with no unspent XP.
 	root := t.TempDir()
 	lib := catalogs["adventurer"]
 	p, err := loadout.ReadProgress(root, "adventurer", e, lib)
 	if err != nil {
 		t.Fatal(err)
 	}
-	p, err = loadout.Buy(root, "adventurer", e, lib, loadout.Purchase{Kind: "upgrade_ability", ID: "adventurer_guard", Revision: p.Revision, ExpectedCost: 25})
+	p, err = loadout.Buy(root, "adventurer", e, lib, loadout.Purchase{Kind: "upgrade_ability", ID: "adventurer_guard", Revision: p.Revision, ExpectedCost: guard})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -31,12 +32,12 @@ func TestAbilityDowngradeRefundPersistenceAndBattle(t *testing.T) {
 	if _, err = s.ResetCharacterLoadout("before-downgrade", 941, "seat-a", false, "adventurer", true, "progression"); err != nil {
 		t.Fatal(err)
 	}
-	request := loadout.Purchase{Kind: "downgrade_ability", ID: "adventurer_guard_plus", TargetID: "adventurer_guard", Revision: p.Revision, ExpectedCost: 25}
+	request := loadout.Purchase{Kind: "downgrade_ability", ID: "adventurer_guard_plus", TargetID: "adventurer_guard", Revision: p.Revision, ExpectedCost: guard}
 	p, err = loadout.Buy(root, "adventurer", e, lib, request)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if p.XP != 25 || p.UpgradeSpent != 0 || *p.Budget != 145 || totalProgress(p.Deck) != 12 || !reflect.DeepEqual(p.Abilities.Defensive, []string{"adventurer_guard"}) {
+	if p.XP != guard || p.UpgradeSpent != 0 || *p.Budget != 120+guard || totalProgress(p.Deck) != 12 || !reflect.DeepEqual(p.Abilities.Defensive, []string{"adventurer_guard"}) {
 		t.Fatalf("invalid refund: %+v", p)
 	}
 	if !reflect.DeepEqual(s.current.Result.Snapshot.Actors["seat-a"].DefensiveAbilities, []string{"adventurer_guard_plus"}) {
@@ -68,16 +69,16 @@ func TestAbilityDowngradeRefundPersistenceAndBattle(t *testing.T) {
 		}
 		finishOwnedBattle(t, s)
 	}
-	p, err = loadout.Buy(root, "adventurer", e, lib, loadout.Purchase{Kind: "upgrade_ability", ID: "adventurer_guard", Revision: p.Revision, ExpectedCost: 25})
-	if err != nil || p.XP != 0 || p.UpgradeSpent != 25 {
+	p, err = loadout.Buy(root, "adventurer", e, lib, loadout.Purchase{Kind: "upgrade_ability", ID: "adventurer_guard", Revision: p.Revision, ExpectedCost: guard})
+	if err != nil || p.XP != 0 || p.UpgradeSpent != guard {
 		t.Fatal("could not repurchase upgrade")
 	}
 	request.Revision = p.Revision
-	request.ExpectedCost = 26
+	request.ExpectedCost = guard + 1
 	if _, err = loadout.Buy(root, "adventurer", e, lib, request); err == nil {
 		t.Fatal("incorrect refund quote accepted")
 	}
-	request.ExpectedCost = 25
+	request.ExpectedCost = guard
 	request.TargetID = "adventurer_strike"
 	if _, err = loadout.Buy(root, "adventurer", e, lib, request); err == nil {
 		t.Fatal("unconfigured downgrade accepted")

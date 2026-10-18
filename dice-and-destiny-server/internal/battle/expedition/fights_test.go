@@ -230,7 +230,7 @@ func TestBattleBridgeVictoryDefeatAndEnergyCap(t *testing.T) {
 	end := BattleEnd{BattleID: pb.ID, Result: "victory", Hand: []string{"strong_swing"}, Draw: []string{"take_stock", "nudge", "nudge", "try_again", "try_again"}, Spent: []string{"steady_guard", "steady_guard", "steady_guard"}, Removed: []string{"second_wind", "strong_swing", "take_stock"}, Energy: 28}
 	rewards, report, err := s.ResolveBattle(r, end)
 	must(t, err)
-	if rewards.XP != 20 || report.Gold != 8 || s.Gold != 8 || s.Energy != 15 || report.EnergyKept != 15 {
+	if rewards.XP != 30 || report.Gold != 8 || s.Gold != 8 || s.Energy != 15 || report.EnergyKept != 15 {
 		t.Fatalf("victory rewards: %+v %+v energy %d", rewards, report, s.Energy)
 	}
 	// Without a wound ledger the removed cards come back as one wound.
@@ -433,7 +433,7 @@ func TestWarlordMarchesGoalConquerorChallengeAndDeadline(t *testing.T) {
 	pb.WoundsBefore = s2.Wounds.Clone()
 	rewards, report, err := s2.ResolveBattle(r, BattleEnd{BattleID: pb.ID, Result: "victory", Hand: s2.Hand, Draw: s2.Draw, Spent: s2.Spent, Removed: []string{"nudge"}, Energy: 3})
 	must(t, err)
-	if rewards.XP != 100+2*20 || report.EarlyXP != 40 || report.RelicChoices != 1 || s2.PendingRelicChoices != 1 || s2.Gold != 60 || !report.RegionWon || s2.Result != "victory" || len(s2.Wounds) != 0 || report.WoundsMended != 1 {
+	if rewards.XP != 150+2*30 || report.EarlyXP != 60 || report.RelicChoices != 1 || s2.PendingRelicChoices != 1 || s2.Gold != 60 || !report.RegionWon || s2.Result != "victory" || len(s2.Wounds) != 0 || report.WoundsMended != 1 {
 		t.Fatalf("early victory in round 2: %+v %+v", rewards, report)
 	}
 	// The deadline: after round 4's rest he comes to the player, no Ambush, not Fortified.
@@ -452,7 +452,7 @@ func TestWarlordMarchesGoalConquerorChallengeAndDeadline(t *testing.T) {
 	}
 	rewards, report, err = s3.ResolveBattle(r, BattleEnd{BattleID: pb.ID, Result: "victory", Hand: s3.Hand, Draw: s3.Draw, Spent: s3.Spent})
 	must(t, err)
-	if rewards.XP != 100 || report.EarlyXP != 0 || report.RelicChoices != 0 {
+	if rewards.XP != 150 || report.EarlyXP != 0 || report.RelicChoices != 0 {
 		t.Fatalf("no early bonus at the deadline: %+v", report)
 	}
 	raw, _ := json.Marshal(s3.View(r, 1))

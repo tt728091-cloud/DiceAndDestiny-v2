@@ -53,7 +53,7 @@ func _run() -> void:
 	await process_frame
 	# 2. A battle card gains a map effect.
 	var catalog: Dictionary = runtime.card_authoring().result
-	_check(Array(catalog.get("map_effect_kinds", [])) == ["move", "draw", "energy", "sight", "scout"], "the editor gets the map effect kinds")
+	_check(Array(catalog.get("map_effect_kinds", [])) == ["move", "draw", "energy", "sight", "scout", "look", "influence", "sneak", "hide", "fall_back", "high_ground", "mark", "extend_time", "lure", "haggle", "field_medic", "spare_bandage"], "the editor gets the map effect kinds")
 	editor = load(EDITOR).new(); editor.embedded_draft = catalog.templates.nudge.duplicate(true); root.add_child(editor)
 	for frame in 4: await process_frame
 	var enabled: CheckBox = _control(editor, "map.enabled")

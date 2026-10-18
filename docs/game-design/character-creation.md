@@ -78,7 +78,7 @@ deck. Switching modes changes the editing controls, not the equipped cards.
 Both begin with the combatant template (Adventurer: three Steady Guard).
 
 - Each character has an authoritative XP balance. The current development
-  allowance is **100 XP**, granted once on initial progression creation. Reopening
+  allowance is **150 XP**, granted once on initial progression creation. Reopening
   the screen, reloading definitions, changing modes, and restarting battles do not
   refill it. Victory rewards are still the next phase.
 - Progression deck/library rows and the inspector show each card's unit price,
@@ -86,7 +86,7 @@ Both begin with the combatant template (Adventurer: three Steady Guard).
   Unowned library cards show the unit price with a zero owned total. Values refresh
   after trades, upgrades, and admin price changes. Ability rows show their total
   configured upgrade-path cost; starter abilities currently have no base XP charge
-  and are labeled **0 XP total · included starter ability**. Guard+ shows 25 XP.
+  and are labeled **0 XP total · included starter ability**. Guard+ shows 38 XP.
   For converging future upgrade paths, the displayed configured value is the least
   expensive path, rather than a historical spending receipt. Sandbox stays free.
 - The default card price is **10 XP**; per-character overrides are supported.
@@ -115,14 +115,14 @@ Both begin with the combatant template (Adventurer: three Steady Guard).
   Shipped cards progress through card trees (see `card-trees.md`); the economy's
   per-character `card_upgrades` remain supported, but no shipped card uses them.
 - Upgrading an ability replaces its existing offensive/defensive slot. The first
-  configured example is **Guard → Guard+ for 25 XP**. Progression Adventurer starts
+  configured example is **Guard → Guard+ for 38 XP**. Progression Adventurer starts
   with only base Guard so the ability upgrade can be tested. Card decks are
   shared; the existing mode-specific ability boards remain separate. Other characters can buy cards; they
   show no further upgrade until paths are authored for their abilities/cards.
 - Upgraded abilities also offer **Downgrade → previous tier · +N XP**. This
   reverses a configured ability-upgrade edge, restores the previous ability in
   the same slot, and refunds that edge's configured XP cost. Guard+ → Guard
-  currently returns 25 XP. The preview shows both rules and the resulting balance;
+  currently returns 38 XP. The preview shows both rules and the resulting balance;
   cancelling changes nothing. Health and total budget stay unchanged, while
   upgrade investment becomes available XP again. The restored tier can be
   upgraded again. Every downgrade requires an equipped upgraded tier, a valid
@@ -266,12 +266,12 @@ are needed for supported prices, allowances, and upgrade paths:
 
 ```yaml
 schema_version: 1
-starting_xp: 100
+starting_xp: 150
 default_card_price: 10
 characters:
   adventurer:
     ability_upgrades:
-      adventurer_guard: {to: adventurer_guard_plus, xp: 25}
+      adventurer_guard: {to: adventurer_guard_plus, xp: 38}
 ```
 
 Optional `starting_decklist` and `starting_abilities` override the initial
@@ -496,7 +496,7 @@ program does not branch on the card's name or ID.
   rejected instead of silently ignored. A genuinely new mechanic still needs
   one engine capability; creating more cards from these capabilities does not.
 - Card-pile selection is restricted to owned live cards; enemy dice must be
-  revealed. Removed cards return only through a revive trade (see `card-configuration.md`). Movement never duplicates cards.
+  revealed. Removed cards return only through an authored revive (see `card-configuration.md`). Movement never duplicates cards.
 - Sacrifice is an exact, chosen, unconditional cost at the start of a sequence,
   with one sacrifice step per sequence. It excludes the played card. Selecting
   targets does not pay a partial cost; after all targets are selected, removal

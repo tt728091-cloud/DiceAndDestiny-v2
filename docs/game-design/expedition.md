@@ -159,7 +159,7 @@ So on the map:
 - **Effect (default):** a visible **Ambush** status, used up on your first offensive roll. That roll uses **5 + 3 = 8 dice**; you may keep at most 5; each reroll goes back to 5 dice total (keep 3, reroll 2).
 - Rare, strong versions (skills, relics) may add more dice, bonus damage, or **stun the enemy for round 1**. Battles stay **simultaneous**: nobody acts first.
 
-**Fortified:** a visible status on defenders inside walls that strengthens their **defense**. Default: their defensive roll uses **1 extra die**. Alternative to test: each shield result prevents **2 instead of 1**. Siege gear removes it.
+**Fortified:** a visible status on defenders inside walls that strengthens their **defense**. Default: their defensive roll uses **1 extra die**. Alternative to test: each shield result prevents **2 instead of 1**. Siege gear removes it. A card that removes it in battle takes it off only for the rest of that round: Fortified, Conqueror and Lieutenant's Favor come back at every round's Ongoing Effects (`restore_each_round`).
 
 ## 8. The Warlord
 
@@ -174,7 +174,7 @@ So on the map:
 **Catch him early.** On the road he's an enemy on a hex like any other:
 - challenge him from an adjacent hex, **unfortified**;
 - like any enemy, **each Warlord has his own habits and weaknesses**, by day or by night (one may be a night hunter, another may sleep in a camp). Learn them, approach unseen when his habit allows it, and you earn an **Ambush**. At night he's **Fortified** only if he's camped in a tower or keep;
-- beating him before the deadline pays **+20 XP for each round you didn't use**, plus **one extra relic choice**.
+- beating him before the deadline pays **+30 XP for each round you didn't use**, plus **one extra relic choice**.
 
 **If he reaches his goal**, he takes the town:
 - its services are gone;
@@ -230,7 +230,7 @@ To avoid three overlapping systems, there are **two things you save and one thin
 | --- | --- | --- |
 | **XP** — grows your deck | Fights, objectives | Buying cards, card-tree upgrades, ability upgrades. Nothing else. |
 | **Gold** — buys things | Enemies, treasure, ruins, dungeons, event sites | Gear, consumables (bandages), healers. Gold never buys XP and can never upgrade a card directly. |
-| **Influence** — never saved | The cards you play at a site this turn (1 card = 1 Influence) | Site services: deck changes, mending, recruiting |
+| **Influence** — never saved | The cards you play at a site this turn (1 card = 1 Influence), or energy (`influence.energy_per_influence`, 5 energy = 1 Influence) | Site services: deck changes, mending, recruiting |
 
 **Deck changes cost time and place.** Changing your deck (buy, sell, upgrade, swap) happens only at sites, and costs XP **plus** an Influence fee by site tier. The fee is paid **once per visit**: the first change opens the deck, and every further change there costs XP only until you leave (break camp, or end the turn at a site). A player can shape their deck however they like, but not rebuild it for free before every fight.
 
@@ -243,7 +243,7 @@ To avoid three overlapping systems, there are **two things you save and one thin
 
 These costs are a first pass. Mage Knight charges 3 Influence per wound at a village and 2 at a monastery. Ours are lower, and charged per point of damage, because our Influence is cards from a 4-card hand.
 
-**Gold, first pass.** XP keeps its base-10 scale (a base card costs 10 XP). Gold uses its own numbers:
+**Gold, first pass.** XP uses the card value rules (a base card costs 15 XP, a blank card 10; see [card-value-rules.md](card-value-rules.md)). Gold uses its own numbers:
 
 | Source | Gold | | Price | Gold |
 | --- | ---: | --- | --- | ---: |
@@ -271,7 +271,7 @@ Every card counts as health and can always be spent for **1 Move or 1 Influence*
 | Kind | In battle | On the map | Examples |
 | --- | --- | --- | --- |
 | **Battle cards** (today's cards) | Their battle effect | 1 Move or 1 Influence | Strong Swing, Steady Guard |
-| **Map cards** (new) | No battle effect — still health, but a dead draw in a fight | A map effect stronger than 1 Move | Trailblaze (Move 2), Scout Ahead (see hexes up to 3 away) |
+| **Map cards** (new) | No battle effect — still health, but a dead draw in a fight | A map effect stronger than 1 Move | Trailblaze (Move 4), Scout Ahead (see hexes up to 3 away) |
 | **Both** | Their battle effect | Their own map effect | Take Stock (draw 2), Second Wind (+10 energy) |
 
 **Card trees grow in both directions.** Existing trees gain **map** and **both** branches where they make sense, and a few **new trees** are purely about the map (for example a Pathfinder tree: Trailblaze → Forced March / Lantern Road / Scout Ahead). When you upgrade a copy, you choose what it becomes: stronger in battle, useful on the map, or a bit of both. Upgrading at a site costs XP plus Influence as usual, so turning your deck toward exploring or fighting takes time and place. (New card names are placeholders.)
@@ -329,7 +329,7 @@ fortified: { extra_defense_dice: 1 }
 defeat: { wounds: 2 }         # one defeat wound of this much damage
 camp_healing: { basic_aid_die: 3, bandage_die: 6, inn_bonus: 1 }
 mending: { village_influence_per_wound: 2, monastery_influence_per_wound: 1, town_gold_per_wound: 15 }  # per point of damage
-warlord: { start_distance: 5, march_per_rest: 2, early_reward: { xp_per_round: 20, extra_relic_choices: 1 } }
+warlord: { start_distance: 5, march_per_rest: 2, early_reward: { xp_per_round: 30, extra_relic_choices: 1 } }
 deck_change_influence: { camp: 3, village: 2, monastery: 1, town: 0 }   # paid once per visit
 gold:
   drops: { minion_group: [5, 15], lieutenant: 30, treasure: [20, 40], event: [0, 30], warlord: 60 }
@@ -352,7 +352,7 @@ gold:
 | Camp healing | basic aid 1d3 per untreated wound, then a bandage 1d6 per treated wound, once each per wound per camp; inn +1 on each roll |
 | Site mending (per point of damage) | village 2 Influence, monastery 1 Influence, town 15 gold |
 | Warlord start distance / march | ~5 hexes from his goal / 2 hexes per rest |
-| Early-strike reward | +20 XP per unused round, plus 1 extra relic choice |
+| Early-strike reward | +30 XP per unused round, plus 1 extra relic choice |
 | Gold drops and prices | See [Economy](#10-economy) |
 | Influence to open the deck (once per visit) | Camp 3, village 2, monastery 1, town 0 |
 | Tiles per region | Start + ~5 countryside + 2 core |
@@ -413,5 +413,11 @@ Built 2026-10-12 on the `expedition-map` branch; the full log of milestones, dec
 - **Authority.** Every map rule runs in Go: `internal/battle/expedition` (`State`, `Act`, `View`, `ResolveBattle`), stored inside the campaign save (`loadout.CampaignSave.Expedition`), exposed through the `expedition_*` runtime ops. The client only renders the viewer-safe `View` and submits actions.
 - **Configuration.** `content/progression_v1/expedition.yaml` holds every number in [§14](#14-configurable-values); the region pack is `content/expedition_v1/` (tiles, sites, groups, events, gear, regions). Map effects are `map_effect` on card definitions; the new statuses carry their numbers as per-stack `modifiers`.
 - **Resolved corners** (details in the progress log's decision list): core tiles are dealt to the core slots when the region is built so the Warlord's goal exists; open groups sit at tile centres and patrols are guarded at run time; movement is one hex per action from a per-turn Move pool; Influence is a per-turn, per-site pool of cards played there; rest is an explicit camp phase (`make_camp`/`break_camp`) that draws the fresh hand as it begins, so break camp draws nothing; pending battles persist in the save and relaunch the same battle from its start; Ambush rolls 5+3 and then keeps exactly five; map cards are blank battle cards; the Warlord never provokes and follows a route laid out at build; entering a site is the action; deck changes keep copies in place; mended cards return to the draw pile; a draw records nothing (pre-battle piles come back) and a drawn deadline fight repeats.
-- **Placeholders.** The Warlord "The Drowned Regent" (`drowned_regent`, 18 health, Tide Crown, Coral Mantle), the Pathfinder card tree (Trailblaze, Forced March, Lantern Road, Scout Ahead), the Steady Guard map branches (Warden's March, Sentry's Watch), the Salt Marches region's tile, site, group and event names, and the three gear items. The Warlord was tuned once so a fresh Starter can beat him at all; real balance is for playtesting.
+- **Map card trees (2026-10-17).** Pathfinder (moving and exploring), Lookout (sight, scouting, Hunter's Mark, Lure, extra rounds), Unseen (Hide, Sneak, Fall Back, High Ground), Wayfarer (Influence, Haggle, camp healing) and Foresight (look at the top of the draw pile; also in battle). Their effects are `map_effect` kinds and options (see `content.CardMapEffectKinds`); the prices are in `card-value-rules.md` §7. Rules worth knowing:
+  - Effects that last past the play are visible map statuses (`carried_move`, `hidden`, `spare_bandage`, named in `expedition.yaml` `statuses`) or marks (`marks` in the view). Map-only statuses never enter a battle.
+  - A look effect waits for `resolve_look` (draw, bottom, top order) before anything else; the view shows only the looked-at cards, never the draw pile's order.
+  - Fall Back is the one card playable while a provoked battle is pending: it cancels the fight and returns the player to the hex they came from.
+  - Hunter's Mark shows the marked enemy's hex (the Warlord's even off the explored map) but nothing around it; Run Him Down adds a round to the quest's deadline once per quest.
+  - Haggle lowers each Influence payment by 1, never below 1.
+- **Placeholders.** The Warlord "The Drowned Regent" (`drowned_regent`, 18 health, Tide Crown, Coral Mantle), the Salt Marches region's tile, site, group and event names, and the three gear items. The Warlord was tuned once so a fresh Starter can beat him at all; real balance is for playtesting.
 - **Not built** (follow-ups in `TODO.md`): mixed groups and more than two enemies per battle, grievous wounds, companions, further regions and the between-region stop, relic selection for the pending relic choices, more map cards and gear, art.

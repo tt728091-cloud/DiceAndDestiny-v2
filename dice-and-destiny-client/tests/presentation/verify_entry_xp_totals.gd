@@ -26,8 +26,8 @@ func _run() -> void:
 	screen.inspect_entry("abilities","adventurer_guard")
 	for frame in 5: await process_frame
 	await _click(_control(screen,"upgrade.adventurer_guard")); await _click(screen._purchase_confirm)
-	_expect("25 XP total" in _text(_control(screen,"entry.abilities.adventurer_guard_plus")), "upgraded ability shows tier cost")
-	_expect("25 XP total" in _text(screen._details), "ability inspector shows total")
+	_expect("38 XP total" in _text(_control(screen,"entry.abilities.adventurer_guard_plus")), "upgraded ability shows tier cost")
+	_expect("38 XP total" in _text(screen._details), "ability inspector shows total")
 	for width in [1024,1280,1920]:
 		root.size = Vector2i(width, 768 if width == 1024 else width * 9 / 16)
 		for tab in [0,1]:

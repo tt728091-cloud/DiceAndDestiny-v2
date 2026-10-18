@@ -3,6 +3,7 @@ package expedition
 import (
 	"fmt"
 	"sort"
+	"strings"
 )
 
 // The view is everything the client may know. It never contains the tile
@@ -17,6 +18,28 @@ type ViewCard struct {
 	MapPlayable bool   `json:"map_playable"`
 	MapReason   string `json:"map_reason,omitempty"`
 	EnergyCost  int    `json:"energy_cost,omitempty"`
+	// MapKind is the map effect's kind; Targets what it must be played on
+	// (terrains, enemies to mark or sites to lure from), chosen by the player.
+	MapKind string      `json:"map_kind,omitempty"`
+	Targets []MapTarget `json:"targets,omitempty"`
+}
+
+// ViewLook is the top of the draw pile a look effect shows the player.
+type ViewLook struct {
+	Card     string     `json:"card"`
+	CardName string     `json:"card_name"`
+	Cards    []ViewCard `json:"cards"` // top first
+	Draw     int        `json:"draw"`
+	Bottom   bool       `json:"bottom,omitempty"`
+}
+
+// ViewMark is an enemy a Hunter's Mark follows: where it is now.
+type ViewMark struct {
+	Target    string `json:"target"`
+	Name      string `json:"name"`
+	RestsLeft int    `json:"rests_left"`
+	Hex       *Hex   `json:"hex,omitempty"`
+	OffMap    bool   `json:"off_map,omitempty"` // on a part of the region not explored yet
 }
 
 type ViewStatus struct {
@@ -101,6 +124,9 @@ type ViewWarlord struct {
 	Gold         int    `json:"gold"`
 	Defeated     bool   `json:"defeated,omitempty"`
 	MarchPerRest int    `json:"march_per_rest"`
+	// Marked: a Hunter's Mark shows where he is (Position), even off the map.
+	Marked   bool `json:"marked,omitempty"`
+	Position *Hex `json:"position,omitempty"`
 }
 
 type ViewHex struct {
@@ -169,29 +195,31 @@ type ViewEvent struct {
 }
 
 type ViewCamp struct {
-	Reason       string     `json:"reason"`
-	Turn         int        `json:"turn"`
-	Round        int        `json:"round"`
-	Inn          bool       `json:"inn,omitempty"`
-	Site         string     `json:"site,omitempty"`
-	Deadline     bool       `json:"deadline,omitempty"`
-	Reshuffled   int        `json:"reshuffled"`
-	EnergyBefore int        `json:"energy_before"`
-	Forfeited    int        `json:"forfeited"`
-	Drew         int        `json:"drew"`
-	Heals        []HealRoll `json:"heals"`
-	Healed       int        `json:"healed"`
-	BasicAidDie  int        `json:"basic_aid_die"`
-	BandageDie   int        `json:"bandage_die"`
-	InnBonus     int        `json:"inn_bonus"`
-	Bandages     int        `json:"bandages"`
-	Untreated    int        `json:"untreated"`   // wounds basic aid can still treat
-	Bandageable  int        `json:"bandageable"` // treated wounds a bandage can still heal
-	CanBasicAid  bool       `json:"can_basic_aid"`
-	CanBandage   bool       `json:"can_bandage"`
-	HealReason   string     `json:"heal_reason,omitempty"`
-	DeckChange   int        `json:"deck_change"` // Influence that opens the deck until camp breaks
-	DeckOpen     bool       `json:"deck_open"`   // the fee is paid; changes cost XP only until camp breaks
+	Reason        string     `json:"reason"`
+	Turn          int        `json:"turn"`
+	Round         int        `json:"round"`
+	Inn           bool       `json:"inn,omitempty"`
+	Site          string     `json:"site,omitempty"`
+	Deadline      bool       `json:"deadline,omitempty"`
+	Reshuffled    int        `json:"reshuffled"`
+	EnergyBefore  int        `json:"energy_before"`
+	Forfeited     int        `json:"forfeited"`
+	Drew          int        `json:"drew"`
+	Heals         []HealRoll `json:"heals"`
+	Healed        int        `json:"healed"`
+	BasicAidDie   int        `json:"basic_aid_die"`
+	BandageDie    int        `json:"bandage_die"`
+	InnBonus      int        `json:"inn_bonus"`
+	AidBonus      int        `json:"aid_bonus,omitempty"` // Field Medic: added to basic-aid rolls
+	SpareBandages int        `json:"spare_bandages,omitempty"`
+	Bandages      int        `json:"bandages"`
+	Untreated     int        `json:"untreated"`   // wounds basic aid can still treat
+	Bandageable   int        `json:"bandageable"` // treated wounds a bandage can still heal
+	CanBasicAid   bool       `json:"can_basic_aid"`
+	CanBandage    bool       `json:"can_bandage"`
+	HealReason    string     `json:"heal_reason,omitempty"`
+	DeckChange    int        `json:"deck_change"` // Influence that opens the deck until camp breaks
+	DeckOpen      bool       `json:"deck_open"`   // the fee is paid; changes cost XP only until camp breaks
 }
 
 // ViewWound is one grouping of damage on the stat strip and at camp.
@@ -236,6 +264,9 @@ type ViewTurn struct {
 	CanMakeCamp   bool   `json:"can_make_camp"`
 	IgnoreTerrain bool   `json:"ignore_terrain,omitempty"`
 	IgnoreNight   bool   `json:"ignore_night,omitempty"`
+	ExploreCost   int    `json:"explore_cost"`
+	// Effects lists this turn's map card effects for the HUD.
+	Effects []string `json:"effects"`
 }
 
 type View struct {
@@ -285,6 +316,8 @@ type View struct {
 	LastBattle *BattleReport      `json:"last_battle,omitempty"`
 	LastRest   *RestSummary       `json:"last_rest,omitempty"`
 	LastEvent  *EventResult       `json:"last_event,omitempty"`
+	Look       *ViewLook          `json:"look,omitempty"`
+	Marks      []ViewMark         `json:"marks"`
 	Log        []string           `json:"log"`
 	Config     ViewConfig         `json:"config"`
 }
@@ -292,6 +325,7 @@ type View struct {
 // ViewConfig repeats the rule numbers the HUD explains.
 type ViewConfig struct {
 	EnergyPerMove       int                      `json:"energy_per_move"`
+	EnergyPerInfluence  int                      `json:"energy_per_influence"`
 	ExploreCost         int                      `json:"explore_cost"`
 	SightDay            int                      `json:"sight_day"`
 	SightNight          int                      `json:"sight_night"`
@@ -344,7 +378,7 @@ func (s *State) viewSite(r Rules, st SiteState) *ViewSite {
 		if v.Open {
 			v.Services = s.siteServices(r, st, def)
 			if tier := def.DeckChangeTier(); tier != "" {
-				v.HasDeckChange, v.DeckChange, v.DeckOpen = true, r.Config.DeckChangeInfluence[tier], s.Turn.DeckOpen == st.ID
+				v.HasDeckChange, v.DeckChange, v.DeckOpen = true, s.influencePrice(r, r.Config.DeckChangeInfluence[tier]), s.Turn.DeckOpen == st.ID
 			}
 		}
 	}
@@ -364,6 +398,7 @@ func (s *State) siteServices(r Rules, st SiteState, def Site) []ViewService {
 		if def.Type == "monastery" {
 			per = cfg.Mending.MonasteryInfluencePerWound
 		}
+		per = s.influencePrice(r, per)
 		sv := ViewService{ID: "mend", Label: fmt.Sprintf("Mend 1 damage (%d Influence)", per), Influence: per, Available: len(s.Wounds) > 0 && influence >= per}
 		if len(s.Wounds) == 0 {
 			sv.Reason = "no wounds"
@@ -396,18 +431,18 @@ func (s *State) siteServices(r Rules, st SiteState, def Site) []ViewService {
 func (s *State) View(r Rules, revision int) View {
 	cfg, pack := r.Config, r.Pack
 	region := pack.Regions[s.Region]
-	v := View{Region: s.Region, RegionName: region.Name, Description: region.Description, Round: s.Round, Rounds: cfg.RoundsPerRegion, Night: s.Night, Phase: s.Phase, Result: s.Result, Revision: revision, Seed: s.Seed,
+	v := View{Region: s.Region, RegionName: region.Name, Description: region.Description, Round: s.Round, Rounds: s.rounds(r), Night: s.Night, Phase: s.Phase, Result: s.Result, Revision: revision, Seed: s.Seed,
 		Player: s.Player, Energy: s.Energy, BaseEnergy: s.BaseEnergy, Gold: s.Gold, HandSize: s.effectiveHandSize(r), HandLimit: s.effectiveHandLimit(r),
 		Draw: sortedStrings(s.Draw), Spent: append([]string{}, s.Spent...), Wounds: s.viewWounds(r), WoundCards: s.Wounds.Cards(), CardNames: map[string]string{},
-		Hand: []ViewCard{}, Inventory: []ViewItem{}, Statuses: []ViewStatus{}, Hexes: []ViewHex{}, Slots: []ViewSlot{}, Moves: []ViewMove{}, Explores: []ViewSlot{}, Challenges: []ViewTarget{}, Enters: []ViewTarget{},
+		Hand: []ViewCard{}, Inventory: []ViewItem{}, Statuses: []ViewStatus{}, Hexes: []ViewHex{}, Slots: []ViewSlot{}, Moves: []ViewMove{}, Explores: []ViewSlot{}, Challenges: []ViewTarget{}, Enters: []ViewTarget{}, Marks: []ViewMark{},
 		Health: s.LiveCards(), MaxHealth: s.LiveCards() + s.Wounds.Damage(), XPEarned: s.XPEarned, RelicChoices: s.PendingRelicChoices,
 		LastBattle: s.LastBattle, LastRest: s.viewLastRest(), LastEvent: s.LastEvent, Log: append([]string{}, s.Log...),
-		Config: ViewConfig{EnergyPerMove: cfg.Move.EnergyPerMove, ExploreCost: cfg.Move.ExploreCost, SightDay: cfg.Sight.Day, SightNight: cfg.Sight.Night, Terrain: cfg.Terrain, DefeatWounds: cfg.Defeat.Wounds, DeckChangeInfluence: cfg.DeckChangeInfluence}}
+		Config: ViewConfig{EnergyPerMove: cfg.Move.EnergyPerMove, EnergyPerInfluence: cfg.Influence.EnergyPerInfluence, ExploreCost: cfg.Move.ExploreCost, SightDay: cfg.Sight.Day, SightNight: cfg.Sight.Night, Terrain: cfg.Terrain, DefeatWounds: cfg.Defeat.Wounds, DeckChangeInfluence: cfg.DeckChangeInfluence}}
 	day := (s.Round + 1) / 2
-	if s.Round > cfg.RoundsPerRegion {
+	if s.Round > s.rounds(r) {
 		v.DayLabel = "The deadline"
 	} else {
-		v.DayLabel = fmt.Sprintf("%s %d · round %d of %d", dayName(s.Night), day, s.Round, cfg.RoundsPerRegion)
+		v.DayLabel = fmt.Sprintf("%s %d · round %d of %d", dayName(s.Night), day, s.Round, s.rounds(r))
 	}
 	for _, id := range append(append(append([]string{}, s.Hand...), s.Draw...), append(append([]string{}, s.Spent...), s.Wounds.Cards()...)...) {
 		v.CardNames[id] = r.cardName(id)
@@ -418,11 +453,16 @@ func (s *State) View(r Rules, revision int) View {
 			card.MapEffect = def.MapEffect.Text
 			card.MapOnly = def.Program == nil && def.Mechanic == nil
 			card.EnergyCost = mapEnergyCost(def)
-			card.MapPlayable = s.Phase == PhaseTurn && s.Energy >= card.EnergyCost
-			if s.Phase != PhaseTurn {
-				card.MapReason = "not during " + s.Phase
+			card.MapKind = def.MapEffect.Kind
+			ready, why := s.mapCardReady(r, def.MapEffect)
+			card.MapPlayable = ready && s.Energy >= card.EnergyCost
+			if !ready {
+				card.MapReason = why
 			} else if !card.MapPlayable {
 				card.MapReason = fmt.Sprintf("needs %d energy; you have %d", card.EnergyCost, s.Energy)
+			}
+			if card.MapPlayable {
+				card.Targets = s.mapCardTargets(r, def.MapEffect)
 			}
 		}
 		v.Hand = append(v.Hand, card)
@@ -438,7 +478,7 @@ func (s *State) View(r Rules, revision int) View {
 	}
 	// Turn.
 	canEnd, why := s.canEndTurn()
-	v.Turn = ViewTurn{Number: s.Turn.Number, Move: s.Turn.Move, CardsUsed: s.Turn.CardsUsed, Fought: s.Turn.Fought, ActionUsed: s.Turn.ActionUsed, Influence: s.Turn.Influence, InfluenceSite: s.Turn.InfluenceSite, Sight: s.sightRange(r), CanEndTurn: s.Phase == PhaseTurn && canEnd, EndTurnReason: why, CanMakeCamp: s.Phase == PhaseTurn, IgnoreTerrain: s.Turn.IgnoreTerrain, IgnoreNight: s.Turn.IgnoreNight}
+	v.Turn = ViewTurn{Number: s.Turn.Number, Move: s.Turn.Move, CardsUsed: s.Turn.CardsUsed, Fought: s.Turn.Fought, ActionUsed: s.Turn.ActionUsed, Influence: s.Turn.Influence, InfluenceSite: s.Turn.InfluenceSite, Sight: s.sightRange(r), CanEndTurn: s.Phase == PhaseTurn && canEnd && s.PendingLook == nil, EndTurnReason: why, CanMakeCamp: s.Phase == PhaseTurn && s.PendingLook == nil, IgnoreTerrain: s.Turn.IgnoreTerrain, IgnoreNight: s.Turn.IgnoreNight, ExploreCost: s.exploreCost(r), Effects: s.turnEffects(r)}
 	// Hexes.
 	seenWarlord := s.Warlord.Seen && !s.Warlord.Defeated
 	warlordPos := s.Warlord.Pos()
@@ -566,9 +606,35 @@ func (s *State) View(r Rules, revision int) View {
 			v.SiteHere = s.viewSite(r, *st)
 		}
 	}
+	// Marks.
+	for _, m := range s.Marks {
+		vm := ViewMark{Target: m.Target, Name: m.Name, RestsLeft: m.RestsLeft}
+		var at Hex
+		switch {
+		case m.Target == "warlord":
+			at = s.Warlord.Pos()
+		case strings.HasPrefix(m.Target, "site:"):
+			if st := s.site(strings.TrimPrefix(m.Target, "site:")); st != nil {
+				at = st.Pos
+			}
+		default:
+			if g := s.group(m.Target); g != nil {
+				at = g.Pos
+			}
+		}
+		vm.Hex = &at
+		if _, _, placed := s.tileAt(pack, at); !placed {
+			vm.OffMap = true
+		}
+		v.Marks = append(v.Marks, vm)
+	}
 	// The Warlord.
 	wdef := pack.Groups[s.Warlord.Group]
 	v.Warlord = ViewWarlord{Name: wdef.Name, Known: seenWarlord, InSight: warlordInSight, GoalSite: s.Warlord.GoalSite, GoalName: pack.Sites[s.Warlord.GoalSite].Name, GoalTaken: s.Warlord.GoalTaken, Lieutenants: s.livingLieutenants(pack), Habit: wdef.Habit, HabitText: habitText[wdef.Habit], XP: wdef.XP, Gold: wdef.Gold, Defeated: s.Warlord.Defeated, MarchPerRest: cfg.Warlord.MarchPerRest, Conqueror: s.Warlord.GoalTaken}
+	if s.marked("warlord") && !s.Warlord.Defeated {
+		pos := warlordPos
+		v.Warlord.Marked, v.Warlord.Position = true, &pos
+	}
 	if seenWarlord {
 		v.Warlord.LastSeen = s.Warlord.LastSeen
 		if warlordInSight && s.Warlord.Index < len(s.Warlord.Route)-1 && !s.Warlord.GoalTaken {
@@ -594,14 +660,16 @@ func (s *State) View(r Rules, revision int) View {
 		if s.Turn.InfluenceSite != s.PendingEvent.Site {
 			influence = 0
 		}
+		influence += s.Energy / cfg.Influence.EnergyPerInfluence
 		for _, c := range ev.Choices {
-			vc := ViewChoice{ID: c.ID, Text: c.Text, Influence: c.Requires.Influence, Gold: c.Requires.Gold, Item: c.Requires.Item, Available: true}
+			need := s.influencePrice(r, c.Requires.Influence)
+			vc := ViewChoice{ID: c.ID, Text: c.Text, Influence: need, Gold: c.Requires.Gold, Item: c.Requires.Item, Available: true}
 			if c.Roll != nil {
 				vc.Roll = c.Roll.Needed
 			}
 			switch {
-			case influence+len(s.Hand) < c.Requires.Influence:
-				vc.Available, vc.Reason = false, fmt.Sprintf("needs %d Influence (cards played here)", c.Requires.Influence)
+			case influence+len(s.Hand) < need:
+				vc.Available, vc.Reason = false, fmt.Sprintf("needs %d Influence (cards or energy played here)", need)
 			case s.Gold < c.Requires.Gold:
 				vc.Available, vc.Reason = false, fmt.Sprintf("needs %d gold", c.Requires.Gold)
 			case c.Requires.Item != "" && s.Inventory[c.Requires.Item] < 1:
@@ -613,7 +681,7 @@ func (s *State) View(r Rules, revision int) View {
 	}
 	if s.Camp != nil {
 		c := s.Camp
-		vc := &ViewCamp{Reason: c.Reason, Turn: c.Turn, Round: c.Round, Inn: c.Inn, Site: c.Site, Deadline: c.Deadline, Reshuffled: c.Reshuffled, EnergyBefore: c.EnergyBefore, Forfeited: c.Forfeited, Drew: c.Drew, Heals: append([]HealRoll{}, c.Heals...), Healed: c.Healed, BasicAidDie: cfg.CampHealing.BasicAidDie, BandageDie: cfg.CampHealing.BandageDie, InnBonus: s.innBonus(r), Bandages: s.bandages(r), DeckChange: cfg.DeckChangeInfluence["camp"], DeckOpen: s.Turn.DeckOpen == "camp"}
+		vc := &ViewCamp{Reason: c.Reason, Turn: c.Turn, Round: c.Round, Inn: c.Inn, Site: c.Site, Deadline: c.Deadline, Reshuffled: c.Reshuffled, EnergyBefore: c.EnergyBefore, Forfeited: c.Forfeited, Drew: c.Drew, Heals: append([]HealRoll{}, c.Heals...), Healed: c.Healed, BasicAidDie: cfg.CampHealing.BasicAidDie, BandageDie: cfg.CampHealing.BandageDie, InnBonus: s.innBonus(r), AidBonus: c.AidBonus, SpareBandages: s.statusStacks(cfg.Statuses.SpareBandage), Bandages: s.bandages(r), DeckChange: s.influencePrice(r, cfg.DeckChangeInfluence["camp"]), DeckOpen: s.Turn.DeckOpen == "camp"}
 		for _, w := range v.Wounds {
 			if w.BasicAid {
 				vc.Untreated++
@@ -644,7 +712,58 @@ func (s *State) View(r Rules, revision int) View {
 		}
 		v.Battle = vb
 	}
+	if look := s.PendingLook; look != nil {
+		vl := &ViewLook{Card: look.Card, CardName: r.cardName(look.Card), Cards: []ViewCard{}, Draw: look.Draw, Bottom: look.Bottom}
+		for _, id := range look.Cards {
+			vl.Cards = append(vl.Cards, ViewCard{ID: id, Name: r.cardName(id)})
+			v.CardNames[id] = r.cardName(id)
+		}
+		v.Look = vl
+	}
 	return v
+}
+
+// turnEffects names this turn's map card effects for the HUD.
+func (s *State) turnEffects(r Rules) []string {
+	t := s.Turn
+	out := []string{}
+	if t.IgnoreTerrain {
+		out = append(out, "every hex costs 1 Move")
+	} else if t.IgnoreNight && s.Night {
+		out = append(out, "Day terrain costs")
+	}
+	if t.CheapTerrain != "" {
+		out = append(out, t.CheapTerrain+" costs 1 Move")
+	}
+	if t.CrossCost > 0 && !t.Crossed {
+		out = append(out, fmt.Sprintf("enter one lake or mountain hex for %d Move", t.CrossCost))
+	}
+	if t.CarryOver {
+		out = append(out, "leftover Move carries over")
+	}
+	if t.ExploreDiscount > 0 {
+		out = append(out, fmt.Sprintf("exploring costs %d", s.exploreCost(r)))
+	}
+	if t.ExploreReach > 1 {
+		out = append(out, fmt.Sprintf("explore up to %d hexes away", t.ExploreReach))
+	}
+	if t.Sneak {
+		out = append(out, "no provoked fights")
+	}
+	if t.HighGround {
+		text := "next fight from cover"
+		if t.AmbushBonus > 0 {
+			text += fmt.Sprintf(" (Ambush +%d dice)", t.AmbushBonus)
+		}
+		out = append(out, text)
+	}
+	if t.RevealTiles {
+		out = append(out, "enemies on tiles in sight revealed")
+	}
+	if t.Haggle > 0 && t.HaggleAt == s.visitHere(r) {
+		out = append(out, fmt.Sprintf("Influence payments here cost %d less", t.Haggle))
+	}
+	return out
 }
 
 // viewWounds lists the wounds with what each camp healing step can still do.
@@ -677,9 +796,10 @@ func (s *State) viewWounds(r Rules) []ViewWound {
 	return out
 }
 
-// bandages counts the gear that grants a camp healing roll.
+// bandages counts the gear that grants a camp healing roll, with the spare
+// (temporary) bandages.
 func (s *State) bandages(r Rules) int {
-	n := 0
+	n := s.statusStacks(r.Config.Statuses.SpareBandage)
 	for id, count := range s.Inventory {
 		if g, ok := r.Pack.Gear[id]; ok && g.Effect == "mend_roll" {
 			n += count

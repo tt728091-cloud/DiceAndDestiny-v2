@@ -266,7 +266,7 @@ func TestExpeditionBattleBridgeBothWays(t *testing.T) {
 			if x.Energy != min(actor.Resources.EnergyPoints, energyIn) || outcome.Report.EnergyKept != x.Energy {
 				t.Fatalf("seed %d: energy kept is min(end %d, in %d), got %d", seed, actor.Resources.EnergyPoints, energyIn, x.Energy)
 			}
-			if outcome.XP != f.x.rules["starter"].Pack.Groups[pb.Group].XP || after.Sheet.XP != 100+outcome.XP || x.Gold != f.x.rules["starter"].Pack.Groups[pb.Group].Gold {
+			if outcome.XP != f.x.rules["starter"].Pack.Groups[pb.Group].XP || after.Sheet.XP != before.Sheet.XP+outcome.XP || x.Gold != f.x.rules["starter"].Pack.Groups[pb.Group].Gold {
 				t.Fatalf("seed %d: victory rewards: %+v xp %d gold %d", seed, outcome, after.Sheet.XP, x.Gold)
 			}
 			if deckHealth(after.Sheet.Deck) != len(endHand)+len(endDeck)+len(endDiscard) || deckHealth(after.Sheet.Wounds) != len(endRemoved) {
@@ -281,7 +281,7 @@ func TestExpeditionBattleBridgeBothWays(t *testing.T) {
 			if last := x.Wounds[len(x.Wounds)-1]; last.Damage() != 2 || last.Source != "defeat by "+pb.Name || outcome.Report.NewWounds != 1 {
 				t.Fatalf("seed %d: a defeat is one wound of 2 damage: %+v", seed, x.Wounds)
 			}
-			if x.Player != pb.Origin || x.Phase != expedition.PhaseCamp || x.Camp.Reason != "defeat" || after.Sheet.XP != 100 || x.Gold != 0 {
+			if x.Player != pb.Origin || x.Phase != expedition.PhaseCamp || x.Camp.Reason != "defeat" || after.Sheet.XP != before.Sheet.XP || x.Gold != 0 {
 				t.Fatalf("seed %d: defeat pushes back and rests without reward: player %v phase %s", seed, x.Player, x.Phase)
 			}
 			if g := after.Expedition.Groups; !groupAlive(g, pb.Target) {

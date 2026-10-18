@@ -49,7 +49,7 @@ func _run() -> void:
 	await _click(disabled_button)
 	_expect(screen._purchase_overlay.visible and not screen._comparison.visible, "click opens existing review without hover overlap")
 	await _click(screen._purchase_confirm)
-	_expect(screen.character.ability_board.defensive == ["adventurer_guard_plus"] and int(screen.catalogs.adventurer.progression.xp) == xp_before - 25, "ability upgrade still purchases once")
+	_expect(screen.character.ability_board.defensive == ["adventurer_guard_plus"] and int(screen.catalogs.adventurer.progression.xp) == xp_before - 38, "ability upgrade still purchases once")
 	var downgrade := _control(screen, "downgrade.adventurer_guard_plus.adventurer_guard")
 	await _hover(downgrade)
 	_expect(screen._comparison.visible and "Downgrade" in screen._comparison._title.text, "downgrade also compares tiers")

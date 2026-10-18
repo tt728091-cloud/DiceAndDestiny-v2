@@ -10,7 +10,7 @@ schema_version: 1
 # player's own copy; the original sheet never changes. The first is the default.
 characters: [starter, adventurer]
 # A new campaign starts with its sheet's deck and abilities plus this much XP.
-bonus_xp: 100
+bonus_xp: 150
 encounters:
   # Ordered by difficulty; see docs/game-design/enemies/bell-diver-and-ribbon-eel.md.
   - id: tide_pool
@@ -18,16 +18,16 @@ encounters:
     description: A lone Brine Mask stirs in the shallows.
     opponent: drowned_oracle_brine_mask
     opponent_count: 1
-    xp: 20
+    xp: 30
   - id: sunken_belfry
     name: Sunken Belfry
     description: A Bell Diver tolls in the drowned tower, slow and hard to crack.
     opponent: drowned_oracle_bell_diver
     opponent_count: 1
-    xp: 25
+    xp: 38
   - id: kelp_narrows
     name: Kelp Narrows
     description: A Ribbon Eel snares whatever swims past; it almost never misses.
     opponent: drowned_oracle_ribbon_eel
     opponent_count: 1
-    xp: 30
+    xp: 45

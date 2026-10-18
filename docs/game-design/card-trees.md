@@ -8,9 +8,9 @@ Open **Character Creation → Card Trees** to manage a character's tree cards. O
 
 ## Authoring
 
-The workshop draws each tree as a constellation: cards are medallions with their art, energy pip and ownership badges, joined by paths that show the XP step (`+3 XP`, `−2 XP`) and any deck rules. Upgrades sit above the base and cheaper variants below it. Hovering a card highlights its routes back to the base and shows full rules plus what changed from its predecessor.
+The workshop draws each tree as a constellation: cards are medallions with their art, energy pip and ownership badges, joined by paths that show the XP step (`+5 XP`, `−5 XP`) and any deck rules. Upgrades sit above the base and cheaper variants below it. Hovering a card highlights its routes back to the base and shows full rules plus what changed from its predecessor.
 
-Navigation: drag the background (or a card, in the player view) to pan; scroll or pinch to zoom; two-finger trackpad swipes pan. **Center** (or **F**) fits the tree. Right-click a card, connection or the background for its actions.
+Navigation: drag the background to pan (players can also drag a card to pan; editors drag cards sideways, see below); scroll or pinch to zoom; two-finger trackpad swipes pan. **Center** (or **F**) fits the tree. Right-click a card, connection or the background for its actions.
 
 ### Starting a tree
 
@@ -21,7 +21,7 @@ Navigation: drag the background (or a card, in the player view) to pan; scroll o
 
 ### Growing it
 
-Select a card and choose **Upgrade ↑** (U) or **Cheaper ↓** (D). The forge copies the card and offers only valid one-step adjustments to its own fields: energy, each effect's values (for example *Prevent damage 1 → 2*), saved-card destinations, targets, choice energy, uses per round, play destination, and one-click compatible additions such as *+ Draw 1 card*. Each change is validated immediately; the panel previews the rules text and the change list, suggests a short, unique name (for example *Swift Ward*: an adjective for the change plus a noun for the effect, never repeating the base name; see `card_name_suggester.gd`) and suggests +3 XP (upgrade) or −2 XP (cheaper, minimum 1 XP). **Create upgrade** adds the card one row above or below and connects it. **Open full card editor…** covers every other setting and returns to the forge. **Quick edit** uses the same controls on an existing card. The editor does not infer balance from price.
+Select a card and choose **Upgrade ↑** (U) or **Cheaper ↓** (D). The forge copies the card and offers only valid one-step adjustments to its own fields: energy, each effect's values (for example *Prevent damage 1 → 2*), saved-card destinations, targets, choice energy, uses per round, play destination, and one-click compatible additions such as *+ Draw 1 card*. Each change is validated immediately; the panel previews the rules text and the change list, suggests a short, unique name (for example *Swift Ward*: an adjective for the change plus a noun for the effect, never repeating the base name; see `card_name_suggester.gd`) and suggests +5 XP (upgrade) or −5 XP (cheaper, minimum 1 XP), one unit of value in [card-value-rules.md](card-value-rules.md). **Create upgrade** adds the card one row above or below and connects it. **Open full card editor…** covers every other setting and returns to the forge. **Quick edit** uses the same controls on an existing card. The editor does not infer balance from price.
 
 A card is a complete definition, not a patch. Editing one card never changes its descendants. Tree card buy/sell values are equal and at least 1 XP; their prices are managed here rather than in the separate economy price overrides.
 
@@ -31,7 +31,7 @@ A card is a complete definition, not a patch. Editing one card never changes its
 
 Each branch can branch again. To combine branches, connect each chosen predecessor to the shared destination: drag the **⊕** knob on a card onto another card, use **Connect from here…** in a card's right-click menu, or pick a predecessor under **Connections**. Connections into the base, duplicates and loops are refused immediately. A shared destination has one complete definition, so both routes produce the same card. Connections optionally permit returning to their predecessor; the path shows a small reverse chevron when they do.
 
-Drag cards to arrange them (positions snap to a 20-unit grid). **Auto-arrange** lays the tree out by XP: each upgrade one row up, each cheaper variant one row down, converging cards centred under their predecessors.
+The layout is automatic and the same in every view (`card_tree_layout.gd`): **every distinct XP value is its own row**, higher XP higher up, with the base's row in the middle; cards with the same XP share a row. Columns are a layered drawing. A path that skips rows reserves a lane in each row it crosses, so no card sits on a path it isn't part of. Rows are ordered to reduce crossings, and each card then sits as close to the cards it joins as the spacing allows. Cards sharing a row keep at least one card-width apart. Changing a card's XP moves it to its row immediately. Editors can drag a card **sideways** along its row: the node is saved as `pinned` with its x, and its row still follows its XP. **Return to automatic place** (card menu) or **Auto-arrange** (toolbar) drops the pins.
 
 **Undo/Redo** (⌘Z / ⇧⌘Z, or Ctrl+Z / Ctrl+Y) covers every draft edit, including moves, rules and card settings. **Delete** removes the selected card or connection. Validation runs live: problems mark the affected card in red and appear beside the status line, and **Publish tree & cards** enables once the draft is valid.
 

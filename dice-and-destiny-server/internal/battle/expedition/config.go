@@ -52,6 +52,11 @@ type MoveConfig struct {
 	ExploreCost   int `yaml:"explore_cost" json:"explore_cost"`
 }
 
+// InfluenceConfig: energy can stand in for cards played at a site or camp.
+type InfluenceConfig struct {
+	EnergyPerInfluence int `yaml:"energy_per_influence" json:"energy_per_influence"`
+}
+
 type DayNight struct {
 	Day   int `yaml:"day" json:"day"`
 	Night int `yaml:"night" json:"night"`
@@ -111,6 +116,10 @@ type StatusIDs struct {
 	Conqueror string `yaml:"conqueror" json:"conqueror"`
 	// Lieutenant is the Warlord's buff: one stack per living Lieutenant.
 	Lieutenant string `yaml:"lieutenant" json:"lieutenant"`
+	// Map-only statuses that map cards give the player.
+	CarriedMove  string `yaml:"carried_move" json:"carried_move"`
+	Hidden       string `yaml:"hidden" json:"hidden"`
+	SpareBandage string `yaml:"spare_bandage" json:"spare_bandage"`
 }
 
 // Config holds every rule number of the Expedition. Nothing in this package
@@ -120,6 +129,7 @@ type Config struct {
 	RoundsPerRegion     int                      `yaml:"rounds_per_region" json:"rounds_per_region"`
 	Hand                HandConfig               `yaml:"hand" json:"hand"`
 	Move                MoveConfig               `yaml:"move" json:"move"`
+	Influence           InfluenceConfig          `yaml:"influence" json:"influence"`
 	Terrain             map[string]TerrainConfig `yaml:"terrain" json:"terrain"`
 	Sight               DayNight                 `yaml:"sight" json:"sight"`
 	Ambush              AmbushConfig             `yaml:"ambush" json:"ambush"`
@@ -183,6 +193,7 @@ func (c Config) validate(lib content.BattleLibrary) error {
 		{"hand.limit", c.Hand.Limit, c.Hand.Size, 20},
 		{"move.energy_per_move", c.Move.EnergyPerMove, 1, maxValue},
 		{"move.explore_cost", c.Move.ExploreCost, 0, 100},
+		{"influence.energy_per_influence", c.Influence.EnergyPerInfluence, 1, maxValue},
 		{"sight.day", c.Sight.Day, 1, 10},
 		{"sight.night", c.Sight.Night, 1, 10},
 		{"ambush.bonus_dice", c.Ambush.BonusDice, 1, 10},
@@ -256,7 +267,7 @@ func (c Config) validate(lib content.BattleLibrary) error {
 			return fmt.Errorf("expedition config: gold.prices.%s is not a valid range", name)
 		}
 	}
-	statuses := map[string]string{"ambush": c.Statuses.Ambush, "fortified": c.Statuses.Fortified, "conqueror": c.Statuses.Conqueror, "lieutenant": c.Statuses.Lieutenant}
+	statuses := map[string]string{"ambush": c.Statuses.Ambush, "fortified": c.Statuses.Fortified, "conqueror": c.Statuses.Conqueror, "lieutenant": c.Statuses.Lieutenant, "carried_move": c.Statuses.CarriedMove, "hidden": c.Statuses.Hidden, "spare_bandage": c.Statuses.SpareBandage}
 	names := make([]string, 0, len(statuses))
 	for name := range statuses {
 		names = append(names, name)
@@ -284,6 +295,18 @@ func (c Config) validate(lib content.BattleLibrary) error {
 		case "lieutenant":
 			if m == nil || m.AttackDamageBonus < 1 {
 				return fmt.Errorf("expedition config: status %q must add attack damage per stack", id)
+			}
+		case "carried_move":
+			if m == nil || m.CarriedMove != 1 || !m.MapOnly() {
+				return fmt.Errorf("expedition config: status %q must carry 1 Move per stack, on the map only", id)
+			}
+		case "hidden":
+			if m == nil || m.HiddenSight != 1 || !m.MapOnly() {
+				return fmt.Errorf("expedition config: status %q must hide 1 hex per stack, on the map only", id)
+			}
+		case "spare_bandage":
+			if m == nil || m.CampBandages != 1 || !m.MapOnly() {
+				return fmt.Errorf("expedition config: status %q must hold 1 camp bandage per stack, on the map only", id)
 			}
 		}
 	}

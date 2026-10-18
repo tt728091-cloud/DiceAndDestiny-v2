@@ -56,7 +56,16 @@ type SettledActorRuntime struct {
 	MaxRolls            int
 	// AmbushChoose is how many dice the actor must keep from a first roll
 	// that rolled bonus dice (an Ambush); zero when no choice is pending.
-	AmbushChoose        int `json:",omitempty"`
+	AmbushChoose int `json:",omitempty"`
+	// DeckTop and DeckBottom are draw-pile cards whose place the owner
+	// knows (looked at and put back): draws take DeckTop first, in order,
+	// and DeckBottom only once nothing else is left. The rest of the draw
+	// pile is drawn at random. Entries that left the draw pile are ignored.
+	DeckTop    []string `json:",omitempty"`
+	DeckBottom []string `json:",omitempty"`
+	// RestoreStatuses holds the stacks of restore-each-round statuses the
+	// actor started the battle with; Ongoing Effects tops them back up.
+	RestoreStatuses     map[string]int `json:",omitempty"`
 	QualifiedAbilityIDs []string
 	SelectedAbilityID   string
 	SelectedTierID      string
@@ -296,6 +305,7 @@ func cloneSettledActor(value SettledActorRuntime) SettledActorRuntime {
 		c.Feedback = append([]ProgramDieFeedback(nil), c.Feedback...)
 		c.Selected = copyStrings(c.Selected)
 		c.Drawn = copyStrings(c.Drawn)
+		c.Looked = copyStrings(c.Looked)
 		value.CardExecution = &c
 	}
 	uses2 := map[string]int{}
@@ -303,6 +313,15 @@ func cloneSettledActor(value SettledActorRuntime) SettledActorRuntime {
 		uses2[k] = v
 	}
 	value.CardUses = uses2
+	value.DeckTop = copyStrings(value.DeckTop)
+	value.DeckBottom = copyStrings(value.DeckBottom)
+	if value.RestoreStatuses != nil {
+		restore := make(map[string]int, len(value.RestoreStatuses))
+		for k, v := range value.RestoreStatuses {
+			restore[k] = v
+		}
+		value.RestoreStatuses = restore
+	}
 	value.SelectedToxins = copyStrings(value.SelectedToxins)
 	value.OffensiveAbilityIDs = copyStrings(value.OffensiveAbilityIDs)
 	value.DefensiveAbilityIDs = copyStrings(value.DefensiveAbilityIDs)
@@ -350,7 +369,9 @@ type CardExecution struct {
 	Drawn    []string
 	// Removed lists cards this play sacrificed, so a later step cannot revive them.
 	Removed []string `json:",omitempty"`
-	Paid    bool
+	// Looked lists the draw-pile cards this play looked at, top first.
+	Looked []string `json:",omitempty"`
+	Paid   bool
 }
 
 type ProgramDieFeedback struct {

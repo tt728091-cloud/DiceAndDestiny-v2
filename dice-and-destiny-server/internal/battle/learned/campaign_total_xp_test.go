@@ -86,11 +86,11 @@ func TestTotalXPNeverDropsAndIsReported(t *testing.T) {
 			}
 			return save
 		}
-		bought := change(loadout.Purchase{Kind: "buy_card", ID: "nudge", ExpectedCost: 10})
+		bought := change(loadout.Purchase{Kind: "buy_card", ID: "nudge", ExpectedCost: 15})
 		x.check(bought, total, "buying a card")
-		upgraded := change(loadout.Purchase{Kind: "upgrade_ability", ID: "adventurer_guard", ExpectedCost: 25})
+		upgraded := change(loadout.Purchase{Kind: "upgrade_ability", ID: "adventurer_guard", ExpectedCost: 38})
 		x.check(upgraded, total, "upgrading an ability")
-		sold := change(loadout.Purchase{Kind: "sell_card", ID: "try_again", ExpectedCost: 10})
+		sold := change(loadout.Purchase{Kind: "sell_card", ID: "try_again", ExpectedCost: 13})
 		x.check(sold, total, "selling a card")
 		x.check(f.save(t), total, "reloading the save")
 	})
@@ -141,9 +141,9 @@ func TestTotalXPNeverDropsAndIsReported(t *testing.T) {
 			}
 			return next
 		}
-		x.check(buy(loadout.Purchase{Kind: "buy_card", ID: "nudge", ExpectedCost: 10}), total, "buying a card")
-		x.check(buy(loadout.Purchase{Kind: "upgrade_ability", ID: "adventurer_guard", ExpectedCost: 25}), total, "upgrading an ability")
-		x.check(buy(loadout.Purchase{Kind: "sell_card", ID: "try_again", ExpectedCost: 10}), total, "selling a card")
+		x.check(buy(loadout.Purchase{Kind: "buy_card", ID: "nudge", ExpectedCost: 15}), total, "buying a card")
+		x.check(buy(loadout.Purchase{Kind: "upgrade_ability", ID: "adventurer_guard", ExpectedCost: 38}), total, "upgrading an ability")
+		x.check(buy(loadout.Purchase{Kind: "sell_card", ID: "try_again", ExpectedCost: 13}), total, "selling a card")
 		x.check(readSave(t, contentRoot, root, save.ID), total, "reloading the save")
 	})
 }

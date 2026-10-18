@@ -6,20 +6,20 @@ func _run() -> void:
 	runtime.selected_loadout_mode = "progression"
 	var screen = SCREEN.new(); screen.loadout_mode = "progression"; root.add_child(screen)
 	for frame in 8: await process_frame
-	_expect("100 XP available + 120 XP in deck = 220 XP" in _text(screen._summary), "starter value is included in card budget")
+	_expect("150 XP available + 120 XP in deck = 270 XP" in _text(screen._summary), "starter value is included in card budget")
 	screen.inspect_entry("cards", "steady_guard")
 	for frame in 4: await process_frame
 	await _click(_control(screen, "sell.steady_guard"))
-	_expect("XP: 100 → 110" in _text(screen._purchase_details) and "Health: 12 → 11" in _text(screen._purchase_details), "sale previews credit and health loss")
+	_expect("XP: 150 → 160" in _text(screen._purchase_details) and "Health: 12 → 11" in _text(screen._purchase_details), "sale previews credit and health loss")
 	_expect(screen._purchase_confirm.text == "Receive 10 XP", "sale confirmation states received XP")
 	await _capture(screen, "sell-preview")
 	await _click(screen._purchase_cancel)
-	_expect(screen._card_count("steady_guard") == 3 and int(screen.catalogs.adventurer.progression.xp) == 100, "cancelling sale preserves cards and XP")
+	_expect(screen._card_count("steady_guard") == 3 and int(screen.catalogs.adventurer.progression.xp) == 150, "cancelling sale preserves cards and XP")
 	await _click(_control(screen, "sell.steady_guard")); await _click(screen._purchase_confirm)
 	_expect(screen._card_count("steady_guard") == 2 and screen._health() == 11, "sale removes exactly one copy")
-	_expect("110 XP available + 110 XP in deck = 220 XP" in _text(screen._summary), "sale moves value from deck to available XP")
+	_expect("160 XP available + 110 XP in deck = 270 XP" in _text(screen._summary), "sale moves value from deck to available XP")
 	await _click(_control(screen, "buy.steady_guard")); await _click(screen._purchase_confirm)
-	_expect(screen._health() == 12 and int(screen.catalogs.adventurer.progression.xp) == 100, "equal-price buyback restores budget")
+	_expect(screen._health() == 12 and int(screen.catalogs.adventurer.progression.xp) == 150, "equal-price buyback restores budget")
 	# Sell every starter copy using the actual UI, including the last card.
 	var deck: Array = screen.character.decklist.duplicate(true)
 	for entry in deck:
@@ -31,7 +31,7 @@ func _run() -> void:
 				_expect("This empties your deck" in _text(screen._purchase_details), "last-card sale explains battle requirement")
 			await _click(screen._purchase_confirm)
 	_expect(screen._health() == 0 and screen._deck_buttons.is_empty(), "all starter cards can be sold")
-	_expect(int(screen.catalogs.adventurer.progression.xp) == 220, "full starter sale returns 120 XP on top of 100 allowance")
+	_expect(int(screen.catalogs.adventurer.progression.xp) == 270, "full starter sale returns 120 XP on top of 150 allowance")
 	_expect(_control(screen, "sell.second_wind").disabled, "cannot sell unowned card")
 	for width in [1024,1280,1920]:
 		root.size = Vector2i(width, 768 if width == 1024 else width * 9 / 16)
@@ -41,7 +41,7 @@ func _run() -> void:
 	screen.queue_free(); await process_frame
 	screen = SCREEN.new(); screen.loadout_mode = "progression"; root.add_child(screen)
 	for frame in 8: await process_frame
-	_expect(screen._health() == 0 and int(screen.catalogs.adventurer.progression.xp) == 220, "empty deck and refunded XP persist")
+	_expect(screen._health() == 0 and int(screen.catalogs.adventurer.progression.xp) == 270, "empty deck and refunded XP persist")
 	screen.queue_free(); await process_frame
 	var menu = MENU.instantiate(); root.add_child(menu)
 	for frame in 8: await process_frame
@@ -59,7 +59,7 @@ func _run() -> void:
 	screen.inspect_entry("cards", "tip_it")
 	for frame in 4: await process_frame
 	await _click(_control(screen, "buy.tip_it")); await _click(screen._purchase_confirm)
-	_expect(screen._health() == 1 and int(screen.catalogs.adventurer.progression.xp) == 210, "empty deck can be rebuilt from library")
+	_expect(screen._health() == 1 and int(screen.catalogs.adventurer.progression.xp) == 260, "empty deck can be rebuilt from library")
 	await _click(_control(screen, "back"))
 	_expect(not menu._menu_actions[0].disabled and not menu._loadout_hint.visible, "buyback re-enables battle start")
 	await _click(menu._menu_actions[0])

@@ -43,7 +43,10 @@ type CardTarget struct {
 	ExcludeCards    []string `json:"exclude_cards,omitempty" yaml:"exclude_cards,omitempty"`
 	ExcludeRecovery bool     `json:"exclude_recovery,omitempty" yaml:"exclude_recovery,omitempty"`
 	DrawnThisPlay   bool     `json:"drawn_this_play,omitempty" yaml:"drawn_this_play,omitempty"`
-	Qualified       bool     `json:"qualified,omitempty" yaml:"qualified,omitempty"`
+	// Looked limits a deck target to the cards an earlier look_deck step of
+	// this play looked at that are still in the draw pile.
+	Looked    bool `json:"looked,omitempty" yaml:"looked,omitempty"`
+	Qualified bool `json:"qualified,omitempty" yaml:"qualified,omitempty"`
 }
 type CardEconomy struct {
 	Buy       int           `json:"buy" yaml:"buy"`
@@ -94,13 +97,16 @@ func CardCapabilities() map[string]CardEffectSpec {
 		"energy":             {"Gain energy", "actor", map[string]CardParameter{"amount": number(1, 1, 100)}, all},
 		"prevent":            {"Prevent damage", "source", map[string]CardParameter{"amount": number(3, 1, 100), "destination": dest}, defense},
 		"save_cards":         {"Save chosen threatened cards", "threatened_card", map[string]CardParameter{"destination": dest}, defense},
-		"move_cards":         {"Move cards", "card", map[string]CardParameter{"destination": choice("hand", "hand", "deck", "discard", "removed")}, all},
+		"move_cards":         {"Move cards", "card", map[string]CardParameter{"destination": choice("hand", "hand", "deck", "deck_bottom", "discard", "removed")}, all},
+		"look_deck":          {"Look at the top of your draw pile", "actor", map[string]CardParameter{"amount": number(3, 1, 10)}, all},
+		"order_deck":         {"Put looked-at cards back on top in your order", "card", map[string]CardParameter{}, all},
 		"sacrifice":          {"Sacrifice cards as a cost", "card", map[string]CardParameter{}, all},
 		"set_die":            {"Set die face", "offensive_die", map[string]CardParameter{"faces": {Type: "integers", Default: []int{6}, Minimum: 1, Maximum: 100}}, offense},
 		"adjust_die":         {"Adjust die face", "offensive_die", map[string]CardParameter{"deltas": {Type: "integers", Default: []int{-1, 1}, Minimum: -100, Maximum: 100}, "minimum": number(1, 1, 100), "maximum": number(5, 1, 100), "wrap": {Type: "boolean", Default: false}}, offense},
 		"flip_die":           {"Flip die face", "offensive_die", map[string]CardParameter{"sum": number(7, 2, 200)}, offense},
 		"copy_die":           {"Copy another die face", "offensive_die", map[string]CardParameter{}, offense},
 		"reroll":             {"Reroll offensive dice", "offensive_die", map[string]CardParameter{"result": choice("replace", "replace", "higher", "lower"), "consume_roll": {Type: "boolean", Default: false}}, offense},
+		"extra_roll":         {"Gain offensive roll attempts", "actor", map[string]CardParameter{"amount": number(1, 1, 3)}, []string{"offensive_before_roll", "offensive_planning", "offensive_after_roll"}},
 		"reroll_defense":     {"Reroll defensive dice", "defensive_die", map[string]CardParameter{"result": choice("replace", "replace", "higher", "lower")}, []string{"defense_reaction"}},
 		"remove_status":      {"Remove statuses", "status", map[string]CardParameter{"stacks": number(0, 0, 100)}, all},
 		"apply_status":       {"Apply status", "actor", map[string]CardParameter{"status_id": {Type: "status", Default: ""}, "stacks": number(1, 1, 100)}, all},
@@ -187,8 +193,8 @@ func ValidateCardProgram(card BattleCardDefinition, lib BattleLibrary) error {
 	if err := validateProgramSteps(p.Steps, p.Windows, lib, 0, false); err != nil {
 		return err
 	}
-	if revive, cost := ProgramReviveCount(p.Steps), ProgramRemovalCost(card); revive > cost {
-		return fmt.Errorf("reviving %d removed cards is a trade: remove at least %d cards as its cost (this card's removed play destination plus sacrifices), found %d", revive, revive, cost)
+	if err := validateLookSteps(p.Steps, false); err != nil {
+		return err
 	}
 	if c := card.Economy; c != nil {
 		if c.Buy < 0 || c.Buy > 1000000 || c.Sell < 0 || c.Sell > c.Buy || c.CopyLimit < 1 || c.CopyLimit > 100 {
@@ -207,6 +213,37 @@ func ValidateCardProgram(card BattleCardDefinition, lib BattleLibrary) error {
 	}
 	return nil
 }
+
+// validateLookSteps checks that looked-at targets follow a look_deck step in
+// the same play, and that look results stay in the draw pile they came from.
+func validateLookSteps(steps []CardStep, looked bool) error {
+	for _, s := range steps {
+		if s.Effect == "look_deck" {
+			if s.Target.Owner != "self" {
+				return fmt.Errorf("look_deck looks at your own draw pile")
+			}
+			looked = true
+		}
+		if s.Target.Looked {
+			if !looked {
+				return fmt.Errorf("looked-at targeting needs an earlier look_deck step")
+			}
+			if len(s.Target.Zones) != 1 || s.Target.Zones[0] != "deck" {
+				return fmt.Errorf("looked-at cards are in your draw pile (zones: deck)")
+			}
+		}
+		if s.Effect == "order_deck" && !s.Target.Looked {
+			return fmt.Errorf("order_deck arranges the cards an earlier look_deck step looked at")
+		}
+		for _, o := range s.Choices {
+			if err := validateLookSteps(o.Steps, looked); err != nil {
+				return err
+			}
+		}
+	}
+	return nil
+}
+
 func validateProgramSteps(steps []CardStep, windows []string, lib BattleLibrary, depth int, priorDraw bool) error {
 	if depth > 4 || len(steps) == 0 || len(steps) > 32 {
 		return fmt.Errorf("effect sequence is empty or exceeds nesting/step limit")
@@ -321,7 +358,7 @@ func validateProgramSteps(steps []CardStep, windows []string, lib BattleLibrary,
 		if (t.Mode == "exact" || t.Mode == "up_to") && (t.Count < 1 || t.Count > 100) {
 			return fmt.Errorf("target count must be 1–100")
 		}
-		if spec.Target != "card" && (len(t.Zones) > 0 || len(t.ExcludeCards) > 0 || t.ExcludeRecovery || t.DrawnThisPlay) {
+		if spec.Target != "card" && (len(t.Zones) > 0 || len(t.ExcludeCards) > 0 || t.ExcludeRecovery || t.DrawnThisPlay || t.Looked) {
 			return fmt.Errorf("card filters require card targets")
 		}
 		if spec.Target == "card" {
@@ -333,7 +370,7 @@ func validateProgramSteps(steps []CardStep, windows []string, lib BattleLibrary,
 			}
 			for _, z := range t.Zones {
 				if z == "removed" {
-					// Reviving is an authored trade (see ProgramReviveCount).
+					// Reviving heals: removed cards return only by a fixed count, to a live pile.
 					if s.Effect != "move_cards" || ProgramString(s, "destination") == "removed" || len(t.Zones) != 1 || t.Mode == "all" {
 						return fmt.Errorf("removed cards can only be revived on their own, by a fixed number of cards, to a live pile")
 					}
@@ -428,7 +465,9 @@ func programTargetWords(t CardTarget, noun string, statuses map[string]BattleSta
 		count += " random"
 	}
 	text := count + " of " + owner + " " + noun
-	if len(t.Zones) > 0 {
+	if t.Looked {
+		text = count + " of the cards you looked at"
+	} else if len(t.Zones) > 0 {
 		text += " in " + strings.Join(t.Zones, "/")
 	}
 	if t.DrawnThisPlay {
@@ -527,8 +566,18 @@ func CardProgramRulesWithStatuses(p *CardProgram, statuses map[string]BattleStat
 				text = fmt.Sprintf("Prevent %d damage from %s. %s", ProgramInt(s, "amount"), target("incoming attacks"), programDestinationWords(s))
 			case "save_cards":
 				text = "Save " + target("threatened cards") + ". " + programDestinationWords(s)
+			case "look_deck":
+				text = fmt.Sprintf("Look at the top %s of your draw pile.", counted(ProgramInt(s, "amount"), "card", "cards"))
+			case "order_deck":
+				text = "Put " + target("cards") + " back on top of your draw pile in the order you choose; the others stay under them in their order."
 			case "move_cards":
 				text = "Move " + target("cards") + " to " + ProgramString(s, "destination") + "."
+				switch {
+				case s.Target.Looked && ProgramString(s, "destination") == "hand":
+					text = "Draw " + target("cards") + "."
+				case ProgramString(s, "destination") == "deck_bottom":
+					text = "Put " + target("cards") + " on the bottom of your draw pile."
+				}
 				if ProgramContains(s.Target.Zones, "removed") {
 					revived := s.Target
 					revived.Zones = nil
@@ -552,6 +601,8 @@ func CardProgramRulesWithStatuses(p *CardProgram, statuses map[string]BattleStat
 				text = "Set " + target("offensive dice") + " to another die's current face on the same character."
 			case "flip_die":
 				text = fmt.Sprintf("Flip %s: the old and new faces must total %d.", target("offensive dice"), ProgramInt(s, "sum"))
+			case "extra_roll":
+				text = fmt.Sprintf("Gain %s this Offense (normally 3).", counted(ProgramInt(s, "amount"), "more offensive roll attempt", "more offensive roll attempts"))
 			case "reroll", "reroll_defense":
 				noun := "offensive dice"
 				if s.Effect == "reroll_defense" {

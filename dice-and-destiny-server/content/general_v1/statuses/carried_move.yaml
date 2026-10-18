@@ -1,0 +1,12 @@
+schema_version: 1
+id: carried_move
+name: Carried Move
+presentation:
+  rules_text: "Map only. Move you had left at the end of a turn: you start your next turn with 1 extra Move per stack. Used up when that turn starts; a rest clears it."
+  glyph: "➤"
+activation_mode: automatic
+polarity: positive
+stacking: {stack_limit: 100, overflow_policy: reject_additional_stacks}
+lifecycle: {persistent: true, consume_on_trigger_checkpoint: false, consume_on_play: false, remove_after_resolution: false, remove_on_duration_zero: false}
+modifiers: {carried_move: 1}
+triggers: []

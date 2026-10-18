@@ -9,7 +9,7 @@ choices:
     outcome:
       text: "The shells warm under your hand. One wound closes and the road feels shorter."
       mend: 1
-      xp: 5
+      xp: 8
   - id: take_silver
     text: "Take the silver"
     outcome:
@@ -20,4 +20,4 @@ choices:
     text: "Bow and move on"
     outcome:
       text: "You leave the bowl untouched and feel steadier for it."
-      xp: 5
+      xp: 8

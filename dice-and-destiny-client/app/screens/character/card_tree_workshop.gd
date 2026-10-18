@@ -7,8 +7,6 @@ const DIFF = preload("res://app/screens/character/card_tree_diff.gd")
 const FORGE = preload("res://app/screens/character/card_tree_forge.gd")
 const NAMES = preload("res://app/screens/character/card_name_suggester.gd")
 const COMPARISON = preload("res://app/screens/character/upgrade_comparison.gd")
-const ROW := 360.0
-const GAP := 330.0
 const START_EFFECTS := ["prevent", "draw", "energy", "remove_status", "curse"]
 var admin_token := ""
 var character_id := "adventurer"
@@ -19,6 +17,7 @@ var _tree_pick: OptionButton
 var _base_pick: OptionButton
 var _canvas: Control
 var _details: VBoxContainer
+var _details_scroll: ScrollContainer
 var _message: Label
 var _validity: Label
 var _confirm: HBoxContainer
@@ -73,7 +72,7 @@ func _ready() -> void:
 		_button(toolbar, "Steady Guard example", func(): _guard(_example), "example").tooltip_text = "Creates an unpublished example tree with its own new base card."
 		_undo_button = _button(toolbar, "Undo", _undo_step, "undo"); _undo_button.tooltip_text = "Undo (⌘Z / Ctrl+Z)"
 		_redo_button = _button(toolbar, "Redo", _redo_step, "redo"); _redo_button.tooltip_text = "Redo (⇧⌘Z / Ctrl+Y)"
-		_button(toolbar, "Auto-arrange", _arrange, "arrange").tooltip_text = "Lay the tree out by XP: upgrades above, cheaper variants below."
+		_button(toolbar, "Auto-arrange", func(): _unpin([]), "arrange").tooltip_text = "Return every dragged card to its automatic place. Rows always follow XP."
 	_button(toolbar, "Center", func(): _canvas.home(), "center").tooltip_text = "Fit the whole tree (F)."
 	var identity := HBoxContainer.new(); identity.add_theme_constant_override("separation", 8); identity.visible = _admin(); body.add_child(identity)
 	var tree_caption := STYLE.label(identity, "Tree", 15, STYLE.MUTED); tree_caption.autowrap_mode = TextServer.AUTOWRAP_OFF; tree_caption.size_flags_vertical = Control.SIZE_SHRINK_CENTER
@@ -91,13 +90,15 @@ func _ready() -> void:
 	_canvas = CANVAS.new(); _canvas.custom_minimum_size = Vector2(420, 260); _canvas.size_flags_horizontal = Control.SIZE_EXPAND_FILL; _canvas.size_flags_stretch_ratio = 2.2; _canvas.editable = _admin(); split.add_child(_canvas)
 	_canvas.node_selected.connect(func(id):
 		if _forge.get("node", "") != id: _forge = {}
-		_adding = {}; _selected = id; _edge = ""; _render())
+		_adding = {}; _selected = id; _edge = ""; _render()
+		# Start a newly selected card at its card face.
+		if is_instance_valid(_details_scroll): _details_scroll.scroll_vertical = 0)
 	_canvas.edge_selected.connect(func(id): _forge = {}; _adding = {}; _edge = id; _selected = ""; _render())
 	_canvas.node_drag_started.connect(func(_id): _snapshot())
 	_canvas.node_moved.connect(func(_node_id, _at): _changed())
 	_canvas.connect_requested.connect(_connect_cards)
 	_canvas.context_requested.connect(_context_menu)
-	var scroll := ScrollContainer.new(); scroll.custom_minimum_size.x = 400; scroll.size_flags_horizontal = Control.SIZE_EXPAND_FILL; scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED; split.add_child(scroll)
+	var scroll := ScrollContainer.new(); _details_scroll = scroll; scroll.custom_minimum_size.x = 400; scroll.size_flags_horizontal = Control.SIZE_EXPAND_FILL; scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED; split.add_child(scroll)
 	_details = VBoxContainer.new(); _details.size_flags_horizontal = Control.SIZE_EXPAND_FILL; _details.add_theme_constant_override("separation", 10); scroll.add_child(_details)
 	var status := HBoxContainer.new(); status.add_theme_constant_override("separation", 12); body.add_child(status)
 	_message = STYLE.label(status, "", 16); _message.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -340,11 +341,10 @@ func _edge_tooltip(e: Dictionary) -> String:
 func _card_preview(parent: Node, node: Dictionary) -> void:
 	var card: Dictionary = node.card
 	var box := STYLE.section(parent)
-	var top := HBoxContainer.new(); top.add_theme_constant_override("separation", 14); box.add_child(top)
-	var frame := PanelContainer.new(); frame.add_theme_stylebox_override("panel", STYLE.box(Color("0b131a"), STYLE.GOLD if node.id == draft.root else STYLE.BRONZE, 4, 8, 2)); top.add_child(frame)
-	var art := TextureRect.new(); art.texture = STYLE.texture(str(card.presentation.get("illustration_path", "")))
-	art.custom_minimum_size = Vector2(118, 166); art.expand_mode = TextureRect.EXPAND_IGNORE_SIZE; art.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED; frame.add_child(art)
-	var text := VBoxContainer.new(); text.size_flags_horizontal = Control.SIZE_EXPAND_FILL; text.add_theme_constant_override("separation", 4); top.add_child(text)
+	# The full card face, as battle and the card editor show it (draft edits included).
+	var face := CenterContainer.new(); face.set_meta("tree_field", "preview.card_face"); box.add_child(face)
+	CARD_EDITOR.render_card_face(face, card)
+	var text := VBoxContainer.new(); text.size_flags_horizontal = Control.SIZE_EXPAND_FILL; text.add_theme_constant_override("separation", 4); box.add_child(text)
 	STYLE.heading(text, "Base card" if node.id == draft.root else "Shared card" if _is_shared(node) else "Tree variant")
 	_label(text, str(card.name), 23, STYLE.GOLD_BRIGHT)
 	var predecessors := _predecessors(str(node.id))
@@ -635,7 +635,8 @@ func _forge_panel() -> void:
 	forge.compare_cards = compares.map(func(c): return _valued(c))
 	if mode == "edit" and _is_shared(node): forge.notice = _shared_edit_notice(node)
 	_details.add_child(forge)
-	var price := _value(node) + (3 if mode == "upgrade" else -2)
+	# One step is about one unit of value: +5 XP up, −5 XP down (docs/game-design/card-value-rules.md).
+	var price := _value(node) + (5 if mode == "upgrade" else -5)
 	forge.start(mode, price, _forge.get("fresh", false)); _forge.fresh = false
 	forge.committed.connect(_commit_forge)
 	forge.cancelled.connect(func(): _forge = {}; _render(); _message.text = "No changes made.")
@@ -656,43 +657,14 @@ func _commit_forge(card: Dictionary) -> void:
 	while draft.nodes.any(func(n): return n.id == "node_" + str(i)): i += 1
 	var id := "node_" + str(i)
 	card.id = str(draft.id) + "_variant_" + id
-	var at := _place_new(node, int(card.economy.buy) >= _value(node))
 	# New variants are exclusive to this tree, even when forged from a shared card.
-	var created := {"id": id, "card": card, "x": at.x, "y": at.y}
+	# The canvas places every card by its XP.
+	var created := {"id": id, "card": card, "x": 0.0, "y": 0.0}
 	_store(created, card)
 	draft.nodes.append(created)
 	_connect(str(node.id), id)
 	_forge = {}; _selected = id; _changed(); _render(); _canvas.home()
 	_message.text = "Created %s. Keep building from it, or right-click any card for more." % card.name
-
-## New cards sit one row above (upgrades) or below (cheaper) their parent.
-## Exclusive siblings in that row are re-centred under the parent when space allows.
-func _place_new(parent: Dictionary, up: bool) -> Vector2:
-	var row_y := float(parent.y) + (-ROW if up else ROW)
-	var siblings: Array = []
-	for e in draft.edges:
-		if e.from != parent.id: continue
-		var child := _node(str(e.to))
-		if child.is_empty() or absf(float(child.y) - row_y) > 60: continue
-		if draft.edges.filter(func(x): return x.to == child.id).size() == 1: siblings.append(child)
-	siblings.sort_custom(func(a, b): return float(a.x) < float(b.x))
-	var k := siblings.size() + 1
-	var xs: Array = []
-	for i in k: xs.append(snappedf(float(parent.x) + (i - (k - 1) * 0.5) * GAP, 20.0))
-	var moving := siblings.map(func(s): return s.id)
-	var clear := true
-	for n in draft.nodes:
-		if n.id in moving or absf(float(n.y) - row_y) > 150: continue
-		for x in xs:
-			if absf(float(n.x) - float(x)) < GAP - 20: clear = false
-	if clear:
-		for i in siblings.size(): siblings[i].x = xs[i]; siblings[i].y = row_y
-		return Vector2(xs[k - 1], row_y)
-	for step in 16:
-		for sign in ([1.0] if step == 0 else [1.0, -1.0]):
-			var x := snappedf(float(parent.x) + sign * step * GAP, 20.0)
-			if not draft.nodes.any(func(n): return absf(float(n.y) - row_y) < 150 and absf(float(n.x) - x) < GAP - 20): return Vector2(x, row_y)
-	return Vector2(float(parent.x) + 16 * GAP, row_y)
 
 # Graph editing ---------------------------------------------------------------
 func _connect(from: String, to: String) -> String:
@@ -825,64 +797,13 @@ func _unique_name(base: String) -> String:
 	while used.has(candidate.to_lower()): candidate = "%s %d" % [base, n]; n += 1
 	return candidate
 
-## Layered layout by XP direction: each upgrade one row up, each cheaper variant
-## one row down; converging cards centre under their predecessors.
-func _arrange() -> void:
-	if not _admin() or draft.get("nodes", []).is_empty(): return
+## Drops dragged positions (every card when ids is empty); rows still follow XP.
+func _unpin(ids: Array) -> void:
+	var pinned: Array = draft.get("nodes", []).filter(func(n): return bool(n.get("pinned", false)) and (ids.is_empty() or ids.has(n.id)))
+	if pinned.is_empty(): _message.text = "Every card is already in its automatic place."; return
 	_snapshot()
-	var buy := {}
-	for n in draft.nodes: buy[n.id] = _value(n)
-	var indegree := {}
-	for n in draft.nodes: indegree[n.id] = 0
-	for e in draft.edges: indegree[e.to] = int(indegree.get(e.to, 0)) + 1
-	var queue: Array = [str(draft.root)]
-	for n in draft.nodes:
-		if n.id != draft.root and indegree[n.id] == 0: queue.append(str(n.id))
-	var order: Array = []
-	while not queue.is_empty():
-		var id: String = queue.pop_front(); order.append(id)
-		for e in draft.edges:
-			if e.from != id: continue
-			indegree[e.to] -= 1
-			if indegree[e.to] == 0: queue.append(str(e.to))
-	var rank := {str(draft.root): 0}
-	for id in order:
-		if not rank.has(id): rank[id] = 0
-		for e in draft.edges:
-			if e.from != id: continue
-			var r: int = rank[id] + (1 if buy[e.to] >= buy[id] else -1)
-			if not rank.has(e.to) or absi(r) > absi(rank[e.to]): rank[e.to] = r
-	var rows := {}
-	for id in order:
-		if not rows.has(rank[id]): rows[rank[id]] = []
-		rows[rank[id]].append(id)
-	var x := {str(draft.root): 0.0}
-	var zero: Array = rows.get(0, []).filter(func(id): return id != draft.root)
-	for i in zero.size(): x[zero[i]] = (i + 1) * GAP
-	var ranks: Array = rows.keys().filter(func(r): return r > 0); ranks.sort()
-	var lower: Array = rows.keys().filter(func(r): return r < 0); lower.sort(); lower.reverse()
-	for r in ranks + lower:
-		var ids: Array = rows[r]
-		var desired := {}
-		for id in ids:
-			var total := 0.0; var count := 0
-			for e in draft.edges:
-				if e.to == id and x.has(e.from): total += float(x[e.from]); count += 1
-			desired[id] = total / count if count > 0 else 0.0
-		ids.sort_custom(func(a, b): return desired[a] < desired[b])
-		var placed: Array = []
-		for i in ids.size():
-			var px: float = desired[ids[i]]
-			if i > 0: px = maxf(px, placed[i - 1] + GAP)
-			placed.append(px)
-		var shift := 0.0
-		for i in ids.size(): shift += desired[ids[i]] - placed[i]
-		shift /= ids.size()
-		for i in ids.size(): x[ids[i]] = placed[i] + shift
-	for n in draft.nodes:
-		n.x = snappedf(float(x.get(n.id, 0.0)), 20.0); n.y = -float(rank.get(n.id, 0)) * ROW
-	_changed(); _render(); _canvas.home()
-	_message.text = "Arranged by XP: upgrades above, cheaper variants below."
+	for n in pinned: n.erase("pinned")
+	_changed(); _render(); _message.text = "Returned %d card%s to the automatic layout." % [pinned.size(), "" if pinned.size() == 1 else "s"]
 
 # Undo ------------------------------------------------------------------------
 func _snapshot() -> void:
@@ -959,6 +880,7 @@ func _context_menu(kind: String, id: String, at: Vector2) -> void:
 				_menu.add_separator(); _menu_actions.append(func(): pass)
 				add.call("Connect from here…", func(): _canvas.connect_from = id; _canvas._overlay.queue_redraw(), false)
 				add.call("Center on card", func(): _canvas.focus_node(id), false)
+				add.call("Return to automatic place", func(): _unpin([id]), not bool(node.get("pinned", false)))
 				_menu.add_separator(); _menu_actions.append(func(): pass)
 				add.call("Remove card", func(): _remove_node(id), id == str(draft.root))
 			else:
@@ -982,7 +904,6 @@ func _context_menu(kind: String, id: String, at: Vector2) -> void:
 			add.call("Center view", func(): _canvas.home(), false)
 			if _admin():
 				add.call("Add an existing card…", func(): _open_add_existing(_selected), draft.get("nodes", []).is_empty())
-				add.call("Auto-arrange", _arrange, draft.get("nodes", []).is_empty())
 				add.call("Undo", _undo_step, _undo.is_empty())
 				add.call("Redo", _redo_step, _redo.is_empty())
 	if _menu.item_count == 0: return
@@ -1270,8 +1191,7 @@ func _add_existing(card_id: String, from: String, xp: int) -> void:
 	var i := 1
 	while draft.nodes.any(func(n): return n.id == "node_" + str(i)): i += 1
 	var id := "node_" + str(i)
-	var at := _place_new(parent, xp >= _value(parent))
-	draft.nodes.append({"id": id, "card": card, "x": at.x, "y": at.y, "xp": maxi(1, xp), "shared": true})
+	draft.nodes.append({"id": id, "card": card, "x": 0.0, "y": 0.0, "xp": maxi(1, xp), "shared": true})
 	_connect(from, id)
 	_adding = {}; _selected = id; _changed(); _render(); _canvas.home()
 	_message.text = "Added shared card %s at %d XP. It keeps one definition in every tree that uses it." % [card.name, maxi(1, xp)]
@@ -1355,7 +1275,7 @@ func _example() -> void:
 	for n in draft.nodes:
 		var response: Dictionary = _runtime().card_authoring("validate_card", n.card)
 		if response.get("ok", false): n.card.presentation = response.result.card.presentation
-	_arrange(); _undo.clear(); _update_undo_buttons()
+	_undo.clear(); _update_undo_buttons()
 	_selected = "base"; _changed(); _render(); _canvas.home()
 	_message.text = "Example draft with a new base card, %s (5 energy · prevent 1). Steady Guard is unchanged. Edit, then publish when ready." % name
 

@@ -86,9 +86,14 @@ func TestExpeditionRuntimeOpsAndPersistence(t *testing.T) {
 			t.Fatalf("expedition_status leaks %s", forbidden)
 		}
 	}
+	ctx, err := loadCampaignContext(contentRoot, loadoutRoot)
+	if err != nil {
+		t.Fatal(err)
+	}
+	startXP, trailblaze := ctx.campaign.BonusXP, cardPrice(t, contentRoot, loadoutRoot, "trailblaze")
 	v := view["view"].(map[string]any)
 	revision := num(view["revision"])
-	if num(view["xp"]) != 100 || num(view["health"]) != 12 || len(v["hand"].([]any)) != 4 || num(v["energy"]) != 10 || num(v["seed"]) != 5 {
+	if num(view["xp"]) != startXP || num(view["health"]) != 12 || len(v["hand"].([]any)) != 4 || num(v["energy"]) != 10 || num(v["seed"]) != 5 {
 		t.Fatalf("status: xp %v health %v hand %d energy %v", view["xp"], view["health"], len(v["hand"].([]any)), v["energy"])
 	}
 	catalog := view["catalog"].(map[string]any)
@@ -120,8 +125,8 @@ func TestExpeditionRuntimeOpsAndPersistence(t *testing.T) {
 	}
 	// Deck changes: refused through the linear purchase op; allowed through
 	// the map at a site with the Influence paid; the new card tops the draw pile.
-	runtimeOp(t, with(map[string]any{"op": "campaign_purchase", "campaign_save": saveID, "purchase": map[string]any{"kind": "buy_card", "id": "trailblaze", "revision": num(moved["revision"]), "expected_cost": 10}}), "only at a site or camp")
-	runtimeOp(t, with(map[string]any{"op": "expedition_deck_change", "campaign_save": saveID, "purchase": map[string]any{"kind": "buy_card", "id": "trailblaze", "revision": num(moved["revision"]), "expected_cost": 10}}), "there is no site here")
+	runtimeOp(t, with(map[string]any{"op": "campaign_purchase", "campaign_save": saveID, "purchase": map[string]any{"kind": "buy_card", "id": "trailblaze", "revision": num(moved["revision"]), "expected_cost": trailblaze}}), "only at a site or camp")
+	runtimeOp(t, with(map[string]any{"op": "expedition_deck_change", "campaign_save": saveID, "purchase": map[string]any{"kind": "buy_card", "id": "trailblaze", "revision": num(moved["revision"]), "expected_cost": trailblaze}}), "there is no site here")
 	// Walk back to the start and on to the village at (-1,1).
 	rev := num(moved["revision"])
 	hand = mv["hand"].([]any)
@@ -136,7 +141,7 @@ func TestExpeditionRuntimeOpsAndPersistence(t *testing.T) {
 	if site["id"] != "hollow_ford" || site["open"] != true || num(site["deck_change"]) != 2 {
 		t.Fatalf("the village offers deck changes for 2 Influence: %v", site)
 	}
-	runtimeOp(t, with(map[string]any{"op": "expedition_deck_change", "campaign_save": saveID, "purchase": map[string]any{"kind": "buy_card", "id": "trailblaze", "revision": rev, "expected_cost": 10}}), "costs 2 Influence; you have 0")
+	runtimeOp(t, with(map[string]any{"op": "expedition_deck_change", "campaign_save": saveID, "purchase": map[string]any{"kind": "buy_card", "id": "trailblaze", "revision": rev, "expected_cost": trailblaze}}), "costs 2 Influence; you have 0")
 	// End the turn at the village so the hand refills, then pay Influence.
 	ended := runtimeOp(t, with(map[string]any{"op": "expedition_act", "campaign_save": saveID, "revision": rev, "action": map[string]any{"kind": "end_turn"}}), "")
 	rev = num(ended["revision"])
@@ -154,34 +159,34 @@ func TestExpeditionRuntimeOpsAndPersistence(t *testing.T) {
 	// gold field: the request decodes (unknown fields are ignored) and the
 	// service is refused like any unknown one, changing nothing.
 	runtimeOp(t, with(map[string]any{"op": "expedition_act", "campaign_save": saveID, "revision": rev, "action": map[string]any{"kind": "use_site", "service": "trainer", "gold": 9}}), `unknown site service "trainer"`)
-	if unchanged := readSave(t, contentRoot, loadoutRoot, saveID); unchanged.Sheet.Revision != rev || unchanged.Sheet.XP != 100 || unchanged.Expedition.Turn.Influence != 2 {
+	if unchanged := readSave(t, contentRoot, loadoutRoot, saveID); unchanged.Sheet.Revision != rev || unchanged.Sheet.XP != startXP || unchanged.Expedition.Turn.Influence != 2 {
 		t.Fatalf("a refused trainer request changed the save: revision %d xp %d", unchanged.Sheet.Revision, unchanged.Sheet.XP)
 	}
-	bought := runtimeOp(t, with(map[string]any{"op": "expedition_deck_change", "campaign_save": saveID, "purchase": map[string]any{"kind": "buy_card", "id": "trailblaze", "revision": rev, "expected_cost": 10}}), "")
+	bought := runtimeOp(t, with(map[string]any{"op": "expedition_deck_change", "campaign_save": saveID, "purchase": map[string]any{"kind": "buy_card", "id": "trailblaze", "revision": rev, "expected_cost": trailblaze}}), "")
 	bv := bought["view"].(map[string]any)
-	if num(bought["xp"]) != 90 || num(bv["turn"].(map[string]any)["influence"]) != 0 || num(bv["health"]) != 13 {
+	if num(bought["xp"]) != startXP-trailblaze || num(bv["turn"].(map[string]any)["influence"]) != 0 || num(bv["health"]) != 13 {
 		t.Fatalf("deck change: xp %v influence %v health %v", bought["xp"], bv["turn"], bv["health"])
 	}
 	if site := bv["site_here"].(map[string]any); site["deck_open"] != true {
 		t.Fatalf("the first change opens the deck for this visit: %v", site)
 	}
 	// With the deck open, a second change costs XP only, no more Influence.
-	second := runtimeOp(t, with(map[string]any{"op": "expedition_deck_change", "campaign_save": saveID, "purchase": map[string]any{"kind": "buy_card", "id": "trailblaze", "revision": num(bought["revision"]), "expected_cost": 10}}), "")
-	if num(second["xp"]) != 80 || num(second["view"].(map[string]any)["health"]) != 14 {
+	second := runtimeOp(t, with(map[string]any{"op": "expedition_deck_change", "campaign_save": saveID, "purchase": map[string]any{"kind": "buy_card", "id": "trailblaze", "revision": num(bought["revision"]), "expected_cost": trailblaze}}), "")
+	if num(second["xp"]) != startXP-2*trailblaze || num(second["view"].(map[string]any)["health"]) != 14 {
 		t.Fatalf("a second change at the open deck: xp %v health %v", second["xp"], second["view"].(map[string]any)["health"])
 	}
 	save = readSave(t, contentRoot, loadoutRoot, saveID)
-	if save.Expedition.Draw[0] != "trailblaze" || save.Expedition.Draw[1] != "trailblaze" || deckHealth(save.Sheet.Deck) != 14 || save.Sheet.XP != 80 {
+	if save.Expedition.Draw[0] != "trailblaze" || save.Expedition.Draw[1] != "trailblaze" || deckHealth(save.Sheet.Deck) != 14 || save.Sheet.XP != startXP-2*trailblaze {
 		t.Fatalf("the bought cards top the draw pile and the sheet agrees: %v", save.Expedition.Draw)
 	}
 	// Prepare's read-only view still works for expedition saves.
 	prepare := runtimeOp(t, with(map[string]any{"op": "campaign_loadout", "campaign_save": saveID}), "")
-	if num(prepare["xp"]) != 80 {
+	if num(prepare["xp"]) != startXP-2*trailblaze {
 		t.Fatalf("campaign_loadout on an expedition: %v", prepare["xp"])
 	}
 	// The linear save is untouched by all of this and keeps its encounter path.
 	old := readSave(t, contentRoot, loadoutRoot, str(linear["id"]))
-	if old.IsExpedition() || old.Sheet.XP != 100 || deckHealth(old.Sheet.Deck) != 12 {
+	if old.IsExpedition() || old.Sheet.XP != startXP || deckHealth(old.Sheet.Deck) != 12 {
 		t.Fatalf("the linear save changed: %+v", old)
 	}
 	c, err := loadCampaignContext(contentRoot, loadoutRoot)

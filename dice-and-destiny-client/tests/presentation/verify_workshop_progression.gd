@@ -12,11 +12,11 @@ func _run() -> void:
 	screen.inspect_entry("cards", card.id)
 	for frame in 5: await process_frame
 	await _click(_control(screen, "buy." + card.id)); await _click(screen._purchase_confirm)
-	_expect(screen._card_count(card.id) == 1 and int(screen.catalogs.adventurer.progression.xp) == 80, "authored buy price charged")
+	_expect(screen._card_count(card.id) == 1 and int(screen.catalogs.adventurer.progression.xp) == 130, "authored buy price charged")
 	_expect(_control(screen, "buy." + card.id).disabled, "copy cap disables purchase")
 	_expect(_control(screen, "sell." + card.id).text.contains("7 XP"), "independent sale price displayed")
 	await _click(_control(screen, "sell." + card.id)); await _click(screen._purchase_confirm)
-	_expect(screen._card_count(card.id) == 0 and int(screen.catalogs.adventurer.progression.xp) == 87, "authored sale price credited")
+	_expect(screen._card_count(card.id) == 0 and int(screen.catalogs.adventurer.progression.xp) == 137, "authored sale price credited")
 	await _click(_control(screen, "buy." + card.id)); await _click(screen._purchase_confirm)
 	var first = _control(screen, "upgrade." + card.id + ".reinforce")
 	var second = _control(screen, "upgrade." + card.id + ".emergency_ward")
@@ -25,7 +25,7 @@ func _run() -> void:
 	_expect(screen._purchase_details.get_child_count() > 0 and screen._pending_purchase.target_id == "emergency_ward", "review quotes selected branch")
 	await _click(screen._purchase_confirm)
 	_expect(screen._card_count(card.id) == 0 and screen._card_count("emergency_ward") == 1, "selected branch replaces only owned card")
-	_expect(int(screen.catalogs.adventurer.progression.xp) == 59, "selected branch charges 8 XP")
+	_expect(int(screen.catalogs.adventurer.progression.xp) == 109, "selected branch charges 8 XP")
 	screen.queue_free(); await process_frame
 	var sandbox = SCREEN.new(); sandbox.loadout_mode = "sandbox"; root.add_child(sandbox)
 	for frame in 5: await process_frame

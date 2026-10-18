@@ -23,6 +23,9 @@ type CardTreeNode struct {
 	Card BattleCardDefinition `json:"card"`
 	X    float64              `json:"x"`
 	Y    float64              `json:"y"`
+	// Pinned keeps X where an editor dragged the card. Unpinned cards are
+	// placed automatically; Y always follows the card's XP row.
+	Pinned bool `json:"pinned,omitempty"`
 	// XP is this tree's value for the card: what a copy obtained through this
 	// tree is worth. The tree owns it, so a shared card can cost a different
 	// amount in each tree. Older stores fall back to the card's own economy.

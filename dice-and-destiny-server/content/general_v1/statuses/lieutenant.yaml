@@ -2,10 +2,10 @@ schema_version: 1
 id: lieutenant
 name: Lieutenant
 presentation:
-  rules_text: "One of the Warlord's Lieutenants. While it lives, the Warlord carries one stack of Lieutenant's Favor. Lasts the whole battle; slaying this enemy removes that stack from the Warlord's future battles."
+  rules_text: "One of the Warlord's Lieutenants. While it lives, the Warlord carries one stack of Lieutenant's Favor. Lasts the whole battle; if removed, it comes back at the start of the next round (Ongoing Effects). Slaying this enemy removes that stack from the Warlord's future battles."
   glyph: "⚐"
 activation_mode: automatic
 polarity: positive
 stacking: {stack_limit: 1, overflow_policy: reject_additional_stacks}
-lifecycle: {persistent: true, consume_on_trigger_checkpoint: false, consume_on_play: false, remove_after_resolution: false, remove_on_duration_zero: false}
+lifecycle: {persistent: true, consume_on_trigger_checkpoint: false, consume_on_play: false, remove_after_resolution: false, remove_on_duration_zero: false, restore_each_round: true}
 triggers: []

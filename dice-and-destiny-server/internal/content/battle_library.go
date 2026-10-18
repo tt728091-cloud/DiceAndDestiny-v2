@@ -204,6 +204,10 @@ type StatusLifecycle struct {
 	ConsumeOnPlay              bool `yaml:"consume_on_play" json:"consume_on_play"`
 	RemoveAfterResolution      bool `yaml:"remove_after_resolution" json:"remove_after_resolution"`
 	RemoveOnDurationZero       bool `yaml:"remove_on_duration_zero" json:"remove_on_duration_zero"`
+	// RestoreEachRound brings a persistent status back to the stacks it
+	// started the battle with at every round's Ongoing Effects, so removing
+	// it lasts only for the rest of that round (map conditions: Fortified).
+	RestoreEachRound bool `yaml:"restore_each_round,omitempty" json:"restore_each_round,omitempty"`
 }
 
 type StatusTriggerDefinition struct {
@@ -233,6 +237,26 @@ type StatusModifiers struct {
 	// HandSizeDelta changes the holder's hand size and hand limit per stack
 	// (map statuses such as "Shaken"; negative values shrink the hand).
 	HandSizeDelta int `yaml:"hand_size_delta,omitempty" json:"hand_size_delta,omitempty"`
+	// CarriedMove is Move per stack the holder adds to their next map turn
+	// (leftover Move carried over; map only).
+	CarriedMove int `yaml:"carried_move,omitempty" json:"carried_move,omitempty"`
+	// HiddenSight lowers how far enemies see the holder, per stack, on the
+	// map (Hide; map only).
+	HiddenSight int `yaml:"hidden_sight,omitempty" json:"hidden_sight,omitempty"`
+	// CampBandages is temporary bandages per stack the holder may use at camp
+	// (map only).
+	CampBandages int `yaml:"camp_bandages,omitempty" json:"camp_bandages,omitempty"`
+}
+
+// MapOnly reports modifiers that only the Expedition map reads: a status
+// holding only these never enters a battle.
+func (m *StatusModifiers) MapOnly() bool {
+	if m == nil {
+		return false
+	}
+	battle := *m
+	battle.CarriedMove, battle.HiddenSight, battle.CampBandages = 0, 0, 0
+	return battle == (StatusModifiers{}) && *m != (StatusModifiers{})
 }
 
 type BattleStatusDefinition struct {
@@ -555,11 +579,11 @@ func validateBattleLibrary(lib BattleLibrary) error {
 		if status.ActivationMode != "automatic" && status.ActivationMode != "player_activated" && status.ActivationMode != "hybrid" {
 			return fmt.Errorf("%w: status %q has invalid activation_mode", ErrInvalidContent, id)
 		}
-		if status.Lifecycle.Persistent && status.Lifecycle.RemoveAfterResolution {
+		if status.Lifecycle.Persistent && status.Lifecycle.RemoveAfterResolution || status.Lifecycle.RestoreEachRound && !status.Lifecycle.Persistent {
 			return fmt.Errorf("%w: status %q lifecycle is contradictory", ErrInvalidContent, id)
 		}
 		if m := status.Modifiers; m != nil {
-			if m.DefenseDiceBonus < 0 || m.DefenseDiceBonus > 10 || m.FirstRollBonusDice < 0 || m.FirstRollBonusDice > 10 || m.AttackDamageBonus < 0 || m.AttackDamageBonus > 100 || m.HandSizeDelta < -10 || m.HandSizeDelta > 10 {
+			if m.DefenseDiceBonus < 0 || m.DefenseDiceBonus > 10 || m.FirstRollBonusDice < 0 || m.FirstRollBonusDice > 10 || m.AttackDamageBonus < 0 || m.AttackDamageBonus > 100 || m.HandSizeDelta < -10 || m.HandSizeDelta > 10 || m.CarriedMove < 0 || m.CarriedMove > 10 || m.HiddenSight < 0 || m.HiddenSight > 10 || m.CampBandages < 0 || m.CampBandages > 10 {
 				return fmt.Errorf("%w: status %q has modifiers out of range", ErrInvalidContent, id)
 			}
 			if *m == (StatusModifiers{}) {

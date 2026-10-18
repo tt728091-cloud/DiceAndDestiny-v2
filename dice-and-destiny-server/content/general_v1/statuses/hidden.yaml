@@ -1,0 +1,12 @@
+schema_version: 1
+id: hidden
+name: Hidden
+presentation:
+  rules_text: "Map only. Enemies see you 1 hex less per stack, so you can start a turn outside their sight and strike unseen. Expires at the end of your next turn or at your next rest."
+  glyph: "◐"
+activation_mode: automatic
+polarity: positive
+stacking: {stack_limit: 10, overflow_policy: reject_additional_stacks}
+lifecycle: {persistent: true, consume_on_trigger_checkpoint: false, consume_on_play: false, remove_after_resolution: false, remove_on_duration_zero: false}
+modifiers: {hidden_sight: 1}
+triggers: []

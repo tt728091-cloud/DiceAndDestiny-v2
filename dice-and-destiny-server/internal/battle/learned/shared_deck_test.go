@@ -2,6 +2,7 @@ package learned
 
 import (
 	"encoding/json"
+	"fmt"
 	"os"
 	"path/filepath"
 	"reflect"
@@ -98,20 +99,20 @@ func TestSharedDeckMigration(t *testing.T) {
 			p.SharedDeck = false
 			p.Deck = []loadout.Entry{{CardID: "steady_guard", Count: 3}, {CardID: "nudge", Count: 2}, {CardID: "try_again", Count: 2}, {CardID: "strong_swing", Count: 2}, {CardID: "take_stock", Count: 2}, {CardID: "second_wind", Count: 1}}
 			p.DeckValue = 120
-			budget := 220
+			budget := e.StartingXP + 120
 			p.Budget = &budget
 			if scenario == "custom-progression" {
 				p.Deck[0].Count = 4
 				p.DeckValue = 130
-				p.XP = 90
+				p.XP = e.StartingXP - 10
 			}
 			filename := filepath.Join(dir, "progression", "adventurer.json")
 			data, _ := json.Marshal(p)
 			if err = os.WriteFile(filename, data, 0600); err != nil {
 				t.Fatal(err)
 			}
-			// Cover real saved admin override 220, without losing the user's 100 XP.
-			if err = os.WriteFile(filepath.Join(dir, "economy_admin.json"), []byte(`{"revision":1,"budgets":{"adventurer":220}}`), 0600); err != nil {
+			// Cover a real saved admin override (starting XP + the 120 XP deck) without losing the user's XP.
+			if err = os.WriteFile(filepath.Join(dir, "economy_admin.json"), []byte(fmt.Sprintf(`{"revision":1,"budgets":{"adventurer":%d}}`, budget)), 0600); err != nil {
 				t.Fatal(err)
 			}
 			if scenario == "newer-sandbox" || scenario == "newer-progression" {

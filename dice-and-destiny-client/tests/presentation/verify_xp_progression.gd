@@ -12,7 +12,7 @@ func _run() -> void:
 	_expect(screen._card_count("steady_guard") == 3, "both modes start with the same Steady Guard copies")
 	_expect(screen.character.ability_board.defensive == ["adventurer_guard"], "progression starts with base Guard")
 	var initial_xp := int(screen.catalogs.adventurer.progression.xp)
-	_expect(initial_xp == 100, "configured starter XP displayed")
+	_expect(initial_xp == 150, "configured starter XP displayed")
 	screen._tabs.current_tab = 0
 	screen.inspect_entry("abilities", "adventurer_guard")
 	for frame in 4: await process_frame
@@ -25,7 +25,7 @@ func _run() -> void:
 	await _capture(screen, "xp-guard-upgrade-preview")
 	await _click(screen._purchase_confirm)
 	_expect(screen.character.ability_board.defensive == ["adventurer_guard_plus"], "Guard is replaced in its ability slot")
-	_expect(screen._health() == 12 and int(screen.catalogs.adventurer.progression.xp) == initial_xp - 25, "ability upgrade preserves health and spends configured XP")
+	_expect(screen._health() == 12 and int(screen.catalogs.adventurer.progression.xp) == initial_xp - 38, "ability upgrade preserves health and spends configured XP")
 	screen._tabs.current_tab = 1
 	screen._library_search.text = "Tip It"; screen._library_search.text_changed.emit("Tip It")
 	for frame in 4: await process_frame
@@ -34,14 +34,14 @@ func _run() -> void:
 	_expect("Health: 12 → 13" in _text(screen._purchase_details), "card purchase previews health increase")
 	await _click(screen._purchase_confirm)
 	_expect(screen._card_count("tip_it") == 1 and screen._health() == 13, "new card bought and equipped")
-	_expect(int(screen.catalogs.adventurer.progression.xp) == initial_xp - 35, "card purchase charged once")
+	_expect(int(screen.catalogs.adventurer.progression.xp) == initial_xp - 48, "card purchase charged once")
 	for width in [1024,1280,1920]:
 		root.size = Vector2i(width, 768 if width == 1024 else width * 9 / 16)
 		for frame in 6: await process_frame
 		_expect(screen._details.get_global_rect().end.x <= root.get_visible_rect().size.x - 20, "XP inspector fits viewport")
 		await _capture(screen, "xp-editor-%d" % width)
 	var response: Dictionary = runtime.character_catalogs("progression")
-	_expect(int(response.result.adventurer.progression.xp) == initial_xp - 35, "reloading does not grant more XP")
+	_expect(int(response.result.adventurer.progression.xp) == initial_xp - 48, "reloading does not grant more XP")
 	var purchased_deck: Array = screen.character.decklist.duplicate(true)
 	screen._mode_choice.select(0); screen._mode_choice.item_selected.emit(0)
 	for frame in 6: await process_frame
@@ -54,7 +54,7 @@ func _run() -> void:
 	await _capture(screen, "shared-deck-sandbox")
 	screen._mode_choice.select(1); screen._mode_choice.item_selected.emit(1)
 	for frame in 6: await process_frame
-	_expect(screen._card_count("tip_it") == 1 and screen._card_count("steady_guard") == 4 and int(screen.catalogs.adventurer.progression.xp) == initial_xp - 35, "mode switching preserves purchases")
+	_expect(screen._card_count("tip_it") == 1 and screen._card_count("steady_guard") == 4 and int(screen.catalogs.adventurer.progression.xp) == initial_xp - 48, "mode switching preserves purchases")
 	await _capture(screen, "shared-deck-progression")
 	screen.queue_free(); await process_frame
 	var menu = MENU.instantiate(); root.add_child(menu)
@@ -78,9 +78,9 @@ func _run() -> void:
 	screen = SCREEN.new(); screen.loadout_mode = "progression"; root.add_child(screen)
 	for frame in 8: await process_frame
 	screen.inspect_entry("cards", "tip_it")
-	for attempt in 6:
+	for attempt in (initial_xp - 48) / 10:
 		for frame in 3: await process_frame
 		await _click(_control(screen, "buy.tip_it")); await _click(screen._purchase_confirm)
-	_expect(int(screen.catalogs.adventurer.progression.xp) == 5 and _control(screen, "buy.tip_it").disabled, "insufficient XP disables purchase")
+	_expect(int(screen.catalogs.adventurer.progression.xp) == (initial_xp - 48) % 10 and _control(screen, "buy.tip_it").disabled, "insufficient XP disables purchase")
 	screen.queue_free(); await process_frame
 	print("XP PROGRESSION: " + ("FAILED" if failed else "PASSED")); quit(1 if failed else 0)

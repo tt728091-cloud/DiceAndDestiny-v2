@@ -8,7 +8,7 @@ choices:
     requires: {influence: 2}
     outcome:
       text: "He tells you where the Regent camps and how he sleeps. You leave wiser."
-      xp: 15
+      xp: 23
   - id: rob
     text: "Take his sack and go"
     outcome:

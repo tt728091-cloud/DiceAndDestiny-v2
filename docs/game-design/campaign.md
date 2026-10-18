@@ -6,7 +6,7 @@ The campaign is the battle → XP → deck change → next battle loop. Open it 
 
 Every campaign is a named **save slot**: the player's own character sheet, copied from a starting character sheet when the campaign begins. You can keep as many campaigns as you like, for the same or different characters.
 
-- **New campaign:** choose a starting sheet (Starter or Adventurer), name it (the default is "Starter campaign", "Starter campaign 2", …) and **Begin campaign**. The save starts with the sheet's deck and ability board plus `bonus_xp` (100) to spend.
+- **New campaign:** choose a starting sheet (Starter or Adventurer), name it (the default is "Starter campaign", "Starter campaign 2", …) and **Begin campaign**. The save starts with the sheet's deck and ability board plus `bonus_xp` (150) to spend.
 - **Continue** opens a save's encounter path. **Delete** removes it after a confirmation. Other campaigns and the original sheet are never affected.
 - **The original sheet is never changed.** The character template, Character Creation's Progression and Sandbox saves, and admin budget overrides never touch a campaign save, and campaign play never touches them.
 - **Card and ability definitions are not copied.** A save stores card and ability IDs, so catalog edits (repricing, rules changes) reach campaigns already in progress. A repriced card keeps the save's total XP and moves the difference into XP to spend. Locking definitions per campaign belongs to future content versioning (see `TODO.md`).
@@ -56,7 +56,7 @@ Cards removed in a battle are **wounds**, and they carry over between campaign b
   - **Upgrade** (pay the XP difference) or **Trade down** (get the difference back). Copies move along a tree connection and stay in your deck, so health never changes. With more than one copy that could go, a prompt asks how many: 1 up to "All N", defaulting to all, with the total XP shown. Cancel and Esc spend nothing.
   - **Buy another copy** (tree bases only), **Sell a copy** for its full XP, or **Store a copy** (−1 health, keeps its XP). Stored copies can be added back or sold.
 - **Add a new card** lists every card-tree base with its card face and price. Buying one adds it to your deck.
-- **Abilities** show the equipped tier's rules and the next or previous tier, with **Upgrade** or **Downgrade** (refund). Starter and Adventurer can upgrade Guard to Guard+ for 25 XP.
+- **Abilities** show the equipped tier's rules and the next or previous tier, with **Upgrade** or **Downgrade** (refund). Starter and Adventurer can upgrade Guard to Guard+ for 38 XP.
 
 Unaffordable or illegal options stay visible but disabled, with the authority's reason ("Not enough XP.", copy limits, deck requirements).
 
@@ -99,7 +99,7 @@ Both campaign characters' starting decks are already all card-tree cards.
 | Field | Meaning |
 | --- | --- |
 | `characters` | Starting sheets a new campaign can copy. Each must have the General type, so campaign decks only use General cards and trees. The first is the default. |
-| `bonus_xp` | XP a new campaign save starts with, on top of the sheet's deck and abilities (100). |
+| `bonus_xp` | XP a new campaign save starts with, on top of the sheet's deck and abilities (150). |
 | `encounters[].id` / `name` / `description` | Stable ID and the text shown on the path. |
 | `encounters[].opponent` | A scripted minion combatant (one with `single_ability_policy`), such as `drowned_oracle_brine_mask`. |
 | `encounters[].opponent_count` | 1 or 2 copies of that minion. |

@@ -23,20 +23,19 @@ func _run() -> void:
 	_expect(prepare != null and not campaign.visible, "Prepare opens from the campaign")
 	if prepare == null: _finish(); return
 	_expect(prepare.save_id == campaign.save_id and prepare.character_id == "starter" and prepare._title.text == "Prepare · Prepare test", "Prepare is about the campaign save")
-	_expect(prepare._health.text == "12" and prepare._xp.text == "100", "Prepare shows health and XP")
+	_expect(prepare._health.text == "12" and prepare._xp.text == "150", "Prepare shows health and XP")
 	_expect(_prepare_control(prepare, "prepare.card.steady_guard") != null and _prepare_control(prepare, "prepare.ability.adventurer_guard") != null, "the deck and abilities are listed")
 	_expect(_prepare_control(prepare, "prepare.card.tip_it") == null, "only the character's own cards are listed")
 	var guard_row := _prepare_control(prepare, "prepare.card.steady_guard")
-	_expect("10 XP × 3" in _text(guard_row) and "30 XP" in _text(guard_row), "each deck row shows XP per card × copies and the total")
-	_expect("Your deck · 12 cards · 120 XP".to_upper() in _text(prepare._list), "the deck heading totals the deck's XP")
+	_expect("15 XP × 3" in _text(guard_row) and "45 XP" in _text(guard_row), "each deck row shows XP per card × copies and the total")
+	_expect("Your deck · 12 cards · 176 XP".to_upper() in _text(prepare._list), "the deck heading totals the deck's XP")
 
-	# Select Steady Guard: its tree appears with upgrades and a trade-down.
+	# Select Steady Guard: its tree appears with its upgrades (it is the tree's weakest card).
 	await _tap(_prepare_control(prepare, "prepare.card.steady_guard"))
 	for frame in 6: await process_frame
 	_expect(prepare._canvas.visible and prepare._center_title.text == "Steady Guard paths", "selecting a card shows its tree")
 	_expect(prepare._canvas.selected == "base" and prepare._canvas.node_states.get("base") == "owned", "the selected card is highlighted as owned")
 	var up: Dictionary = prepare._trades_from("steady_guard", "").filter(func(t): return int(t.cost) > 0 and t.available)[0]
-	var down: Dictionary = prepare._trades_from("steady_guard", "").filter(func(t): return int(t.cost) < 0 and t.available)[0]
 	_expect(prepare._canvas.node_states.get(str(up.to_node)) == "available", "reachable upgrades glow in the tree")
 	await _capture(prepare, "prepare-steady-guard")
 
@@ -53,7 +52,7 @@ func _run() -> void:
 	_expect("Upgrade 3 copies · %d XP" % (3 * int(up.cost)) == _prepare_control(prepare, "prepare.batch.confirm").text, "the prompt totals the XP for the batch")
 	await _capture(prepare, "prepare-count-prompt")
 	await _click(_prepare_control(prepare, "prepare.batch.cancel"))
-	_expect(prepare._batch == null and prepare._xp.text == "100" and prepare._deck_count("steady_guard") == 3, "cancelling the prompt spends nothing")
+	_expect(prepare._batch == null and prepare._xp.text == "150" and prepare._deck_count("steady_guard") == 3, "cancelling the prompt spends nothing")
 	await _tap(_prepare_control(prepare, "prepare.trade.steady_guard." + target))
 	var escape := InputEventAction.new(); escape.action = "ui_cancel"; escape.pressed = true; root.push_input(escape)
 	for frame in 2: await process_frame
@@ -63,19 +62,19 @@ func _run() -> void:
 	_expect(_prepare_control(prepare, "prepare.batch.confirm").text == "Upgrade 1 copy · %d XP" % int(up.cost), "choosing one updates the total")
 	await _click(_prepare_control(prepare, "prepare.batch.confirm"))
 	for frame in 4: await process_frame
-	_expect(prepare._health.text == "12" and prepare._xp.text == str(100 - int(up.cost)), "an upgrade keeps health and spends the XP difference")
+	_expect(prepare._health.text == "12" and prepare._xp.text == str(150 - int(up.cost)), "an upgrade keeps health and spends the XP difference")
 	_expect(prepare.selection.id == target and prepare._deck_count("steady_guard") == 2 and prepare._deck_count(target) == 1, "the upgraded copy stays in the deck and is selected")
 	_expect(prepare._message.text.contains("Steady Guard →"), "the trade is confirmed in words")
 	await _capture(prepare, "prepare-after-upgrade")
 
-	# Trade a Steady Guard copy down for a refund.
-	await _tap(_prepare_control(prepare, "prepare.card.steady_guard"))
-	await _tap(_prepare_control(prepare, "prepare.trade.steady_guard." + str(down.request.target_id)))
-	_expect(prepare._batch != null and _prepare_control(prepare, "prepare.batch.count.2").text == "All 2", "trading down also asks how many")
-	await _click(_prepare_control(prepare, "prepare.batch.count.1"))
-	await _click(_prepare_control(prepare, "prepare.batch.confirm"))
+	# Trade the upgraded copy back down for a refund.
+	var down: Dictionary = prepare._trades_from(target, "").filter(func(t): return int(t.cost) < 0 and t.available)[0]
+	await _tap(_prepare_control(prepare, "prepare.card." + target))
+	await _tap(_prepare_control(prepare, "prepare.trade.%s.%s" % [target, str(down.request.target_id)]))
+	if prepare._batch != null: await _click(_prepare_control(prepare, "prepare.batch.confirm"))
 	for frame in 4: await process_frame
-	var xp := 100 - int(up.cost) - int(down.cost)
+	_expect(prepare._deck_count("steady_guard") == 3 and prepare._deck_count(target) == 0, "the copy trades back down to Steady Guard")
+	var xp := 150 - int(up.cost) - int(down.cost)
 	_expect(prepare._xp.text == str(xp) and prepare._health.text == "12", "trading down refunds XP and keeps health")
 
 	# Add a new card from the bases, then sell one copy and store another.
@@ -83,14 +82,16 @@ func _run() -> void:
 	for frame in 4: await process_frame
 	_expect(prepare._center_content.find_child("Bases", true, false) != null and prepare._center_content.find_child("Bases", true, false).get_child_count() == prepare.data.bases.size(), "Add a new card lists every tree base")
 	await _capture(prepare, "prepare-add")
+	var dispel_price := int(prepare._base_offer("dispel").get("cost", 0))
 	await _tap(_prepare_control(prepare, "prepare.buy.dispel"))
 	for frame in 4: await process_frame
-	xp -= 10
+	xp -= dispel_price
 	_expect(prepare._health.text == "13" and prepare._xp.text == str(xp) and prepare.selection.id == "dispel", "buying a base adds it to the deck")
+	var nudge_price := int(prepare._base_offer("nudge").get("cost", 0))
 	await _tap(_prepare_control(prepare, "prepare.card.nudge"))
 	await _tap(_prepare_control(prepare, "prepare.sell.nudge"))
 	for frame in 4: await process_frame
-	xp += 10
+	xp += nudge_price
 	_expect(prepare._health.text == "12" and prepare._xp.text == str(xp) and prepare._deck_count("nudge") == 1, "selling refunds the card's XP")
 	await _tap(_prepare_control(prepare, "prepare.store.nudge"))
 	for frame in 4: await process_frame
@@ -117,12 +118,12 @@ func _run() -> void:
 	_expect(not prepare._canvas.visible and "NEXT TIER" in _text(prepare._center_content), "an ability shows its rules and next tier")
 	await _tap(_prepare_control(prepare, "prepare.upgrade_ability.adventurer_guard"))
 	for frame in 4: await process_frame
-	xp -= 25
+	xp -= 38
 	_expect(prepare._xp.text == str(xp) and prepare.selection.id == "adventurer_guard_plus", "upgrading an ability spends XP and selects the new tier")
 	await _capture(prepare, "prepare-ability")
 	await _tap(_prepare_control(prepare, "prepare.downgrade_ability.adventurer_guard_plus"))
 	for frame in 4: await process_frame
-	xp += 25
+	xp += 38
 	_expect(prepare._xp.text == str(xp) and prepare.selection.id == "adventurer_guard", "selling an ability tier back refunds it")
 
 	# Unaffordable trades are disabled with a reason.
@@ -140,7 +141,7 @@ func _run() -> void:
 	var status: Dictionary = runtime.campaign_status()
 	_expect(int(status.result.saves[0].xp) == xp, "the campaign save agrees")
 	var editors: Dictionary = runtime.character_catalogs("progression")
-	_expect(int(editors.result.starter.progression.xp) == 100 and int(editors.result.starter.owned_decklist.reduce(func(total, e): return total + int(e.count), 0)) == 12, "Prepare never touched the editors' Progression save")
+	_expect(int(editors.result.starter.progression.xp) == 150 and int(editors.result.starter.owned_decklist.reduce(func(total, e): return total + int(e.count), 0)) == 12, "Prepare never touched the editors' Progression save")
 
 	# Wounded copies are frozen: a second save whose last battle wounded one
 	# of its three Steady Guards.
@@ -166,7 +167,7 @@ func _run() -> void:
 	for copy in 2:
 		await _tap(_prepare_control(prepare, "prepare.sell.steady_guard"))
 		for frame in 4: await process_frame
-	_expect(int(prepare.data.xp) == xp_before + 20 and prepare._health.text == "9/10", "both live copies sell for their XP")
+	_expect(int(prepare.data.xp) == xp_before + 30 and prepare._health.text == "9/10", "both live copies sell for their XP")
 	_expect(_prepare_control(prepare, "prepare.card.steady_guard") == null and _prepare_control(prepare, "prepare.sell.steady_guard") == null and _prepare_control(prepare, "prepare.store.steady_guard") == null, "with only the wounded copy left, nothing offers to sell, trade or store it")
 	frozen = _prepare_control(prepare, "prepare.wounded.steady_guard")
 	_expect(frozen != null and frozen.disabled and prepare.data.wounds.size() == 1 and int(prepare.data.wounds[0].count) == 1, "the wounded copy stays, frozen")

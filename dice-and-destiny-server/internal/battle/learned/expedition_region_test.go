@@ -680,7 +680,7 @@ func TestFullRegionSeededPlayThroughs(t *testing.T) {
 			t.Fatalf("a new expedition starts on the start tile with four cards and base energy: round %d hand %d energy %d placed %d hexes %d", s.Round, len(s.Hand), s.Energy, len(s.Placed), len(v.Hexes))
 		}
 		// Turn 1: the village next door. A card pays the step; two more are
-		// Influence; a deck change through the site spends it and 10 XP.
+		// Influence; a deck change through the site spends it and the card's XP.
 		if !d.step(expedition.Hex{Q: -1, R: 1}) {
 			t.Fatal("the village is one plains step away")
 		}
@@ -689,7 +689,9 @@ func TestFullRegionSeededPlayThroughs(t *testing.T) {
 			t.Fatalf("the paid card went to Spent: %+v", s.Turn)
 		}
 		save := d.save()
-		if _, err := loadout.ExpeditionDeckChange(d.f.loadoutRoot, d.f.saveID, d.f.x.economy, d.f.x.catalogs, d.rules, loadout.Purchase{Kind: "buy_card", ID: "trailblaze", Revision: save.Sheet.Revision, ExpectedCost: 10}); err == nil || !strings.Contains(err.Error(), "Influence") {
+		startXP := save.Sheet.XP
+		trailblaze := d.f.x.economy.Value(save.Character, loadout.Entry{CardID: "trailblaze", Count: 1})
+		if _, err := loadout.ExpeditionDeckChange(d.f.loadoutRoot, d.f.saveID, d.f.x.economy, d.f.x.catalogs, d.rules, loadout.Purchase{Kind: "buy_card", ID: "trailblaze", Revision: save.Sheet.Revision, ExpectedCost: trailblaze}); err == nil || !strings.Contains(err.Error(), "Influence") {
 			t.Fatalf("a deck change without Influence is refused: %v", err)
 		}
 		d.act(expedition.Action{Kind: "use_site", Service: "influence", Cards: s.Hand[:2]})
@@ -698,14 +700,14 @@ func TestFullRegionSeededPlayThroughs(t *testing.T) {
 			t.Fatalf("two cards played at the village are 2 Influence there: %+v", s.Turn)
 		}
 		save = d.save()
-		bought, err := loadout.ExpeditionDeckChange(d.f.loadoutRoot, d.f.saveID, d.f.x.economy, d.f.x.catalogs, d.rules, loadout.Purchase{Kind: "buy_card", ID: "trailblaze", Revision: save.Sheet.Revision, ExpectedCost: 10})
+		bought, err := loadout.ExpeditionDeckChange(d.f.loadoutRoot, d.f.saveID, d.f.x.economy, d.f.x.catalogs, d.rules, loadout.Purchase{Kind: "buy_card", ID: "trailblaze", Revision: save.Sheet.Revision, ExpectedCost: trailblaze})
 		if err != nil {
 			t.Fatal(err)
 		}
 		d.reloadCheck(bought)
 		s = d.st()
-		if s.Draw[0] != "trailblaze" || s.Turn.Influence != 0 || bought.Sheet.XP != 90 || s.LiveCards() != 13 {
-			t.Fatalf("the bought card tops the draw pile, the Influence and 10 XP are spent: draw %v xp %d", s.Draw, bought.Sheet.XP)
+		if s.Draw[0] != "trailblaze" || s.Turn.Influence != 0 || bought.Sheet.XP != startXP-trailblaze || s.LiveCards() != 13 {
+			t.Fatalf("the bought card tops the draw pile, the Influence and the XP are spent: draw %v xp %d", s.Draw, bought.Sheet.XP)
 		}
 		d.act(expedition.Action{Kind: "end_turn"})
 		s = d.st()
@@ -728,7 +730,7 @@ func TestFullRegionSeededPlayThroughs(t *testing.T) {
 		}
 		save = d.save()
 		warlordXP := d.rules.Pack.Groups[s.Warlord.Group].XP
-		if save.Sheet.XP != 90+warlordXP+report.EarlyXP || s.XPEarned != warlordXP+report.EarlyXP {
+		if save.Sheet.XP != startXP-trailblaze+warlordXP+report.EarlyXP || s.XPEarned != warlordXP+report.EarlyXP {
 			t.Fatalf("XP: sheet %d earned %d (warlord %d early %d)", save.Sheet.XP, s.XPEarned, warlordXP, report.EarlyXP)
 		}
 		if err := d.try(expedition.Action{Kind: "end_turn"}); err == nil || !strings.Contains(err.Error(), "over") {
@@ -800,7 +802,7 @@ func TestFullRegionSeededPlayThroughs(t *testing.T) {
 		if err := d.try(expedition.Action{Kind: "make_camp"}); err == nil || !strings.Contains(err.Error(), "over") {
 			t.Fatalf("an ended run accepts no more actions: %v", err)
 		}
-		if _, err := loadout.ExpeditionDeckChange(d.f.loadoutRoot, d.f.saveID, d.f.x.economy, d.f.x.catalogs, d.rules, loadout.Purchase{Kind: "buy_card", ID: "trailblaze", Revision: d.save().Sheet.Revision, ExpectedCost: 10}); err == nil {
+		if _, err := loadout.ExpeditionDeckChange(d.f.loadoutRoot, d.f.saveID, d.f.x.economy, d.f.x.catalogs, d.rules, loadout.Purchase{Kind: "buy_card", ID: "trailblaze", Revision: d.save().Sheet.Revision, ExpectedCost: d.f.x.economy.Value(d.save().Character, loadout.Entry{CardID: "trailblaze", Count: 1})}); err == nil {
 			t.Fatal("an ended run accepts no deck changes")
 		}
 		t.Logf("defeat seed %d: fights %v, actions %d", regionDefeatSeed, d.fights, d.actions)

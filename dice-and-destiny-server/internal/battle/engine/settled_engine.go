@@ -136,6 +136,9 @@ func (e Engine) initializeSettled(battle *state.Battle) ([]event.Event, error) {
 		return nil, nil
 	}
 	var events []event.Event
+	if library, err := settledLibrary(battle); err == nil {
+		recordRestoredStatuses(battle, library)
+	}
 	for _, actorID := range sortedSettledActorIDs(battle) {
 		actor := battle.Actors[actorID]
 		for i := 0; i < actor.Resources.StartingHandSize; i++ {
@@ -161,6 +164,7 @@ func (e Engine) progressSettledOngoing(battle *state.Battle, library content.Bat
 		return e.initializeSettled(battle)
 	}
 	if battle.Settled.Stage == "" {
+		restoreRoundStatuses(battle, library)
 		captureIncubation(battle)
 		battle.Settled.Stage = stageOngoingCollect
 		battle.Flow.Stage = stageOngoingCollect
@@ -3006,6 +3010,47 @@ func statusStackTotal(lib content.BattleLibrary, id string, n int) int {
 	}
 	return min(lib.Statuses[id].Stacking.StackLimit, n)
 }
+
+// recordRestoredStatuses notes, at battle start, the stacks of each
+// restore-each-round status (map conditions such as Fortified).
+func recordRestoredStatuses(battle *state.Battle, library content.BattleLibrary) {
+	for _, actorID := range sortedSettledActorIDs(battle) {
+		for _, status := range battle.Actors[actorID].Statuses {
+			if !library.Statuses[status.DefinitionID].Lifecycle.RestoreEachRound {
+				continue
+			}
+			runtime := battle.Settled.Actors[actorID]
+			if runtime.RestoreStatuses == nil {
+				runtime.RestoreStatuses = map[string]int{}
+			}
+			runtime.RestoreStatuses[status.DefinitionID] = status.Stacks
+			battle.Settled.Actors[actorID] = runtime
+		}
+	}
+}
+
+// restoreRoundStatuses tops restore-each-round statuses back up to their
+// battle-start stacks at the start of Ongoing Effects, so a removal lasts
+// only until the next round.
+func restoreRoundStatuses(battle *state.Battle, library content.BattleLibrary) {
+	for _, actorID := range sortedSettledActorIDs(battle) {
+		if battle.Actors[actorID].DefeatState != state.ActorNotDefeated {
+			continue
+		}
+		restore := battle.Settled.Actors[actorID].RestoreStatuses
+		ids := make([]string, 0, len(restore))
+		for id := range restore {
+			ids = append(ids, id)
+		}
+		sort.Strings(ids)
+		for _, id := range ids {
+			if missing := restore[id] - statusStackCount(battle.Actors[actorID].Statuses, id); missing > 0 {
+				applyStatus(battle, library, actorID, id, missing)
+			}
+		}
+	}
+}
+
 func applyStatus(battle *state.Battle, library content.BattleLibrary, actorID, statusID string, stacks int) {
 	actor := battle.Actors[actorID]
 	for i, status := range actor.Statuses {
@@ -3107,15 +3152,89 @@ func (e Engine) drawSettledCard(battle *state.Battle, actorID, stream string) (s
 		// Empty draws do not recycle discard or consume randomness.
 		return "", nil
 	}
-	index, err := e.namedIntn(battle, stream, len(actor.Cards.Deck))
-	if err != nil {
-		return "", err
+	rt := battle.Settled.Actors[actorID]
+	top, bottom := knownDeckPlaces(actor.Cards.Deck, rt)
+	var card string
+	switch pool := unplacedDeck(actor.Cards.Deck, top, bottom); {
+	case len(top) > 0:
+		// A card the owner looked at and put back on top comes first.
+		card, top = top[0], top[1:]
+	case len(pool) > 0:
+		index, err := e.namedIntn(battle, stream, len(pool))
+		if err != nil {
+			return "", err
+		}
+		card = pool[index]
+	default:
+		card, bottom = bottom[0], bottom[1:]
 	}
-	card := actor.Cards.Deck[index]
+	index := indexString(actor.Cards.Deck, card)
 	actor.Cards.Deck = append(actor.Cards.Deck[:index], actor.Cards.Deck[index+1:]...)
 	actor.Cards.Hand = append(actor.Cards.Hand, card)
 	battle.Actors[actorID] = actor
+	rt.DeckTop, rt.DeckBottom = top, bottom
+	battle.Settled.Actors[actorID] = rt
 	return card, nil
+}
+
+// knownDeckPlaces returns the actor's known top and bottom of the draw pile,
+// keeping only cards still in it.
+func knownDeckPlaces(deck []string, rt state.SettledActorRuntime) ([]string, []string) {
+	keep := func(list []string) []string {
+		var out []string
+		for _, id := range list {
+			if containsString(deck, id) && !containsString(out, id) {
+				out = append(out, id)
+			}
+		}
+		return out
+	}
+	top := keep(rt.DeckTop)
+	var bottom []string
+	for _, id := range keep(rt.DeckBottom) {
+		if !containsString(top, id) {
+			bottom = append(bottom, id)
+		}
+	}
+	return top, bottom
+}
+
+// unplacedDeck is the draw pile without its known top and bottom, in order.
+func unplacedDeck(deck, top, bottom []string) []string {
+	var out []string
+	for _, id := range deck {
+		if !containsString(top, id) && !containsString(bottom, id) {
+			out = append(out, id)
+		}
+	}
+	return out
+}
+
+// lookAtDeck makes the top n cards of the draw pile known: the known top
+// first, then cards drawn at random from the rest (as draws would be), and
+// returns them top first.
+func (e Engine) lookAtDeck(battle *state.Battle, actorID string, n int) ([]string, error) {
+	deck := battle.Actors[actorID].Cards.Deck
+	rt := battle.Settled.Actors[actorID]
+	top, bottom := knownDeckPlaces(deck, rt)
+	for len(top) < n {
+		pool := unplacedDeck(deck, top, bottom)
+		if len(pool) == 0 {
+			if len(bottom) == 0 {
+				break
+			}
+			top, bottom = append(top, bottom[0]), bottom[1:]
+			continue
+		}
+		index, err := e.namedIntn(battle, "card_look", len(pool))
+		if err != nil {
+			return nil, err
+		}
+		top = append(top, pool[index])
+	}
+	rt.DeckTop, rt.DeckBottom = top, bottom
+	battle.Settled.Actors[actorID] = rt
+	return append([]string(nil), top[:min(n, len(top))]...), nil
 }
 func spendEnergy(battle *state.Battle, actorID string, amount int) {
 	actor := battle.Actors[actorID]

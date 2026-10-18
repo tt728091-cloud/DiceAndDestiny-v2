@@ -10,6 +10,8 @@ rounds_per_region: 4
 hand: {size: 4, limit: 6}
 # 1 card = 1 Move, energy_per_move energy = 1 Move; exploring costs explore_cost Move.
 move: {energy_per_move: 5, explore_cost: 2}
+# Energy can pay for Influence at a site or camp: energy_per_influence energy = 1 Influence.
+influence: {energy_per_influence: 5}
 terrain:
   plains:   {day: 1, night: 1}
   hills:    {day: 2, night: 2}
@@ -37,7 +39,7 @@ camp_healing: {basic_aid_die: 3, bandage_die: 6, inn_bonus: 1}
 warlord:
   start_distance: 5
   march_per_rest: 2
-  early_reward: {xp_per_round: 20, extra_relic_choices: 1}
+  early_reward: {xp_per_round: 30, extra_relic_choices: 1}
 # Influence (cards played at the site or camp this turn) that opens the deck
 # for one visit: pay once, then change it as often as XP allows until the
 # camp breaks or, at a site, the turn ends.
@@ -51,4 +53,6 @@ gold:
   drops: {minion_group: [5, 15], lieutenant: 30, treasure: [20, 40], event: [0, 30], warlord: 60}
   prices: {bandage: 10, consumable: [15, 30], gear: [40, 100], healer_grievous: 50}
 # The authored battle statuses the map applies at battle start.
-statuses: {ambush: ambush, fortified: fortified, conqueror: conqueror, lieutenant: lieutenants_favor}
+# carried_move, hidden and spare_bandage are map-only statuses some map cards
+# give the player; they never enter a battle.
+statuses: {ambush: ambush, fortified: fortified, conqueror: conqueror, lieutenant: lieutenants_favor, carried_move: carried_move, hidden: hidden, spare_bandage: spare_bandage}

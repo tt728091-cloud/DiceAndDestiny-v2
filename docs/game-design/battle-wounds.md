@@ -39,10 +39,12 @@ do not expose future wounds. Unknown historical losses remain dark.
   retroactively invented.
 
 Program cards that remove cards as a cost (sacrifices, or a `removed` play
-destination) record their own wound, sourced to the card. A **revive trade**
+destination) record their own wound, sourced to the card. A **revive**
 (`card-configuration.md`) returns a removed card and removes it from the wound
 that recorded it, so that wound shrinks; a wound with no cards left is healed and
-disappears. This is the only healing so far. Between-battle deck changes,
+disappears. Since 2026-10-16 a revive no longer has to remove a card of its own
+(the old revive trade), so it can raise health; a card that still removes
+itself or sacrifices records its own wound as before. Between-battle deck changes,
 bandages, permanent wounds and recovery rolls are not implemented; they can
 reference the same wound and card-instance IDs without pooling distinct hits.
 

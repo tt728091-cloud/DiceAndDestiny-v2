@@ -305,6 +305,9 @@ func TestGuidedCardCapabilityMatrix(t *testing.T) {
 		if effect == "sacrifice" {
 			s.Target.Mode = "exact"
 		}
+		if effect == "order_deck" {
+			s.Target.Zones, s.Target.Looked = []string{"deck"}, true
+		}
 		if effect == "apply_status" {
 			s.Params["status_id"] = "protect"
 		}
@@ -328,6 +331,11 @@ func TestGuidedCardCapabilityMatrix(t *testing.T) {
 						c.Program = &p
 						p.Windows = []string{window}
 						p.Steps = []content.CardStep{s}
+						if effect == "order_deck" {
+							// Order arranges cards an earlier look step looked at.
+							s.Target.Zones, s.Target.Looked = []string{"deck"}, true
+							p.Steps = []content.CardStep{{Effect: "look_deck", Target: content.CardTarget{Owner: "self", Mode: "one", Selection: "choose"}, Params: map[string]any{"amount": 3}}, s}
+						}
 						want := content.ProgramContains(content.CardStepWindows(s), window)
 						if spec.Target != "none" {
 							want = want && content.ProgramContains(rules.Owners, owner) && content.ProgramContains(rules.Modes, mode) && content.ProgramContains(rules.Selections, selection)
@@ -407,7 +415,8 @@ func TestGuidedCardCapabilityMatrix(t *testing.T) {
 			c.Program = &p
 			p.Steps = steps
 			p.Windows = windows
-			want := len(windows) > 0 && b != "sacrifice"
+			// Ordering needs an earlier look step in the same play.
+			want := len(windows) > 0 && b != "sacrifice" && a != "order_deck" && (b != "order_deck" || a == "look_deck")
 			if got := content.ValidateCardProgram(c, lib); (got == nil) != want {
 				t.Fatalf("ordered %s -> %s: expected=%v err=%v", a, b, want, got)
 			}

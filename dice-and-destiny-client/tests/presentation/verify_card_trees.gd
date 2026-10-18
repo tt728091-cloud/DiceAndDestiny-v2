@@ -25,6 +25,16 @@ func _confirm_trade(ui, key: String) -> void:
 	await _click(_tree_control(ui, "trade.confirm")); await _frames()
 func _value(ui, key: String) -> String:
 	return _tree_control(ui, key + ".value", "tree_field").text
+## Every distinct XP value has its own row, and higher XP sits higher.
+func _expect_xp_rows(ui) -> void:
+	var row_of := {}
+	for n in ui.draft.nodes:
+		var xp := int(ui._value(n))
+		_expect(not row_of.has(xp) or row_of[xp] == float(n.y), "cards with the same XP share a row: " + str(n.card.name))
+		row_of[xp] = float(n.y)
+	for a in ui.draft.nodes:
+		for b in ui.draft.nodes:
+			if int(ui._value(a)) > int(ui._value(b)): _expect(float(a.y) < float(b.y), "%s (higher XP) sits above %s" % [a.card.name, b.card.name])
 func _run() -> void:
 	root.size = Vector2i(1920, 1080)
 	var screen = SCREEN.new(); screen.loadout_mode = "progression"; root.add_child(screen); await _frames()
@@ -42,7 +52,7 @@ func _run() -> void:
 	_expect(str(ui.draft.nodes[0].card.presentation.rules_text).contains("Prevent 1"), "new base has validated rules")
 	# Quick upgrade: adjust the copied card in place rather than rebuilding it.
 	await _click(_tree_control(ui, "add_up")); await _frames()
-	_expect(_value(ui, "forge.energy") == "5" and _value(ui, "forge.xp") == "13", "forge copies base energy and suggests +3 XP")
+	_expect(_value(ui, "forge.energy") == "5" and _value(ui, "forge.xp") == "15", "forge copies base energy and suggests +5 XP")
 	await _click(_tree_control(ui, "forge.energy.dec")); await _frames()
 	_expect(_tree_control(ui, "forge.changes", "tree_field").text.contains("Energy 5 → 4") and _tree_control(ui, "forge.name", "tree_field").text == "Swift Ward", "forge shows change and suggests a short name without the base name")
 	await _click(_tree_control(ui, "forge.step.0.amount.inc")); await _frames()
@@ -51,13 +61,15 @@ func _run() -> void:
 	await _click(_tree_control(ui, "forge.commit")); await _frames()
 	var up: Dictionary = ui._node("node_1")
 	_expect(ui.draft.nodes.size() == 2 and ui.draft.edges.size() == 1 and ui._selected == "node_1", "forge creates and selects the upgrade")
-	_expect(int(up.card.cost.energy) == 4 and int(up.card.program.steps[0].params.amount) == 2 and up.card.program.steps.size() == 2 and int(up.card.economy.buy) == 13, "upgrade keeps exactly the chosen adjustments")
+	_expect(int(up.card.cost.energy) == 4 and int(up.card.program.steps[0].params.amount) == 2 and up.card.program.steps.size() == 2 and int(up.card.economy.buy) == 15, "upgrade keeps exactly the chosen adjustments")
 	_expect(up.card.id == "quick_ward_paths_variant_node_1" and float(up.y) < 0.0, "upgrade placed above with a tree variant ID")
+	var face: Control = _tree_control(ui, "preview.card_face", "tree_field")
+	_expect(face.get_child_count() == 1 and face.get_child(0) is BattleCard and face.get_child(0).definition_id == up.card.id, "selected card shows its full card face")
 	await _canvas_click(ui, "base")
 	await _click(_tree_control(ui, "add_down")); await _frames()
 	await _click(_tree_control(ui, "forge.energy.inc")); await _frames()
 	await _click(_tree_control(ui, "forge.commit")); await _frames()
-	_expect(ui.draft.nodes.size() == 3 and float(ui._node("node_2").y) > 0.0 and int(ui._node("node_2").card.economy.buy) == 8, "cheaper variant placed below with -2 XP")
+	_expect(ui.draft.nodes.size() == 3 and float(ui._node("node_2").y) > 0.0 and int(ui._node("node_2").card.economy.buy) == 5, "cheaper variant placed below with -5 XP")
 	await _key(KEY_Z, true); _expect(ui.draft.nodes.size() == 2, "undo removes the variant")
 	await _key(KEY_Z, true, true); _expect(ui.draft.nodes.size() == 3, "redo restores the variant")
 	# Drag the ring knob onto another card to connect it; loops and links into the base are refused.
@@ -72,20 +84,22 @@ func _run() -> void:
 	ui._context_menu("node", "base", Vector2(400, 400)); await _frames()
 	_expect(ui._menu.visible and ui._menu.get_item_text(0) == "Upgrade ↑", "right-click card menu")
 	ui._menu.hide()
-	await _click(_tree_control(ui, "arrange")); await _frames()
-	_expect(ui._node("base").x == 0.0 and ui._node("base").y == 0.0 and ui._node("node_1").y < 0.0 and ui._node("node_2").y > 0.0, "auto-arrange keeps XP direction")
+	_expect(ui._node("base").x == 0.0 and ui._node("base").y == 0.0 and ui._node("node_1").y < 0.0 and ui._node("node_2").y > 0.0, "layout keeps XP direction")
+	_expect_xp_rows(ui)
 	await create_timer(0.9).timeout; await _frames()
 	_expect(ui._validity.text.begins_with("✓") and not ui._publish.disabled, "live validation enables publishing: " + ui._validity.text)
 	await _click(ui._publish); await _frames()
 	_expect(ui._message.text.begins_with("Published") and ui.catalog.templates.has("quick_ward"), "tree with new base publishes: " + ui._message.text)
 	_expect(ui.catalog.templates.steady_guard == steady_guard_before, "publishing a new base leaves Steady Guard unchanged")
 	var node_control := _tree_control(ui, "node_1", "tree_node")
-	await _drag(node_control.get_global_rect().get_center(), node_control.get_global_rect().get_center() + Vector2(-40, 0))
+	await _canvas_click(ui, "node_1")
+	await _click(_tree_control(ui, "node.xp.inc")); await _frames()
 	await _click(_tree_control(ui, "new")); await _frames()
 	_expect(ui._confirm.visible, "new tree protects draft")
 	await _click(_tree_control(ui, "discard")); await _frames()
 	await _click(_tree_control(ui, "example")); await _frames()
 	_expect(ui.draft.nodes.size() == 5 and ui.draft.edges.size() == 5, "example offers upgrade, cheaper, and combined paths")
+	await _frames(); _expect_xp_rows(ui)
 	# The shipped Steady Guard owns the plain name, so the example takes the next free one.
 	_expect(ui.draft.id == "steady_guard_2_paths" and ui._node("base").card.id == "steady_guard_2" and ui._node("base").card.name == "Steady Guard 2", "example uses its own new base card")
 	_expect(not ui.draft.nodes.any(func(n): return n.card.id == "steady_guard"), "example does not edit Steady Guard")
@@ -118,9 +132,12 @@ func _run() -> void:
 	_expect(int(ui._node("node_3").card.economy.buy) == 17, "cancelled quick edit leaves the card unchanged")
 	await _canvas_click(ui, "base")
 	node_control = _tree_control(ui, "node_1", "tree_node")
-	var old_x: float = ui._node("node_1").x
+	var old_at := Vector2(ui._node("node_1").x, ui._node("node_1").y)
+	var old_pan: Vector2 = ui._canvas.pan
 	await _drag(node_control.get_global_rect().get_center(), node_control.get_global_rect().get_center() + Vector2(-30, 0))
-	_expect(ui._node("node_1").x < old_x - 10, "admin node drag changes saved layout")
+	_expect(ui._node("node_1").x < old_at.x and ui._node("node_1").y == old_at.y and bool(ui._node("node_1").get("pinned", false)) and ui._canvas.pan == old_pan, "editors drag a card sideways; its row stays its XP and it is pinned")
+	await _click(_tree_control(ui, "arrange")); await _frames()
+	_expect(not ui._node("node_1").has("pinned") and Vector2(ui._node("node_1").x, ui._node("node_1").y) == old_at, "auto-arrange returns dragged cards to the automatic layout")
 	await _canvas_click(ui, "node_1")
 	_expect(ui._selected == "node_1", "canvas selects branch by pointer")
 	await _canvas_click(ui, "base")

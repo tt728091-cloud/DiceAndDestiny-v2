@@ -1,8 +1,10 @@
 extends Control
-## Constellation view of one card tree. Cards are medallions joined by paths;
-## upgrades sit above the base and cheaper variants below it.
+## Constellation view of one card tree. Cards are medallions joined by paths.
+## Every distinct XP value is its own row, rising with XP (card_tree_layout.gd),
+## so upgrades sit above the base and cheaper variants below it.
 signal node_selected(id: String)
 signal edge_selected(id: String)
+## Editors drag a card sideways along its XP row; the card is then pinned there.
 signal node_moved(id: String, at: Vector2)
 signal node_drag_started(id: String)
 signal connect_requested(from: String, to: String)
@@ -12,9 +14,10 @@ const NODE = preload("res://app/screens/character/card_tree_node.gd")
 const CHIP = preload("res://app/screens/character/card_tree_edge_chip.gd")
 const STYLE = preload("res://app/screens/character/character_style.gd")
 const DIFF = preload("res://app/screens/character/card_tree_diff.gd")
+const LAYOUT = preload("res://app/screens/character/card_tree_layout.gd")
 const GRID := 20.0
 const TILE := 1400.0
-const MIN_ZOOM := 0.25
+const MIN_ZOOM := 0.18
 const MAX_ZOOM := 1.8
 
 var tree: Dictionary = {}
@@ -52,6 +55,8 @@ var _hover_edges: Dictionary = {}
 var _stars: Array = []
 var _nebula: Array = []
 var _transitions: Array = []
+## Edge ID -> the points its path bends through around other cards' rows.
+var _bends: Dictionary = {}
 
 func _ready() -> void:
 	clip_contents = true; mouse_filter = Control.MOUSE_FILTER_STOP
@@ -98,11 +103,15 @@ func home() -> void:
 		var n: Dictionary = nodes[i]
 		var r := _radius(str(n.id))
 		var rect := Rect2(Vector2(n.x, n.y) - Vector2(NODE.WIDTH * 0.5, r + 30), Vector2(NODE.WIDTH, r * 2 + 120))
+		# The drawn card, name plate included, once it exists.
+		var drawn = _nodes.get(str(n.id))
+		if drawn != null: rect = Rect2(Vector2(n.x, n.y) - drawn.center_offset() - Vector2(0, 12), drawn.size + Vector2(0, 12))
 		bounds = rect if i == 0 else bounds.merge(rect)
 	bounds = bounds.grow(60)
 	# Leave room for the title plate above and the legend below.
 	var room := size - Vector2(0, 110)
-	zoom = clampf(minf(room.x / bounds.size.x, room.y / bounds.size.y), 0.3, 1.0)
+	# Tall trees (one row per XP value) may fit only zoomed well out; zoom in to read.
+	zoom = clampf(minf(room.x / bounds.size.x, room.y / bounds.size.y), MIN_ZOOM, 1.0)
 	pan = -bounds.get_center() * zoom + Vector2(0, 18); _place()
 
 func focus_node(id: String) -> void:
@@ -126,6 +135,11 @@ func _world_point(global: Vector2) -> Vector2:
 
 func show_tree(value: Dictionary, owned: Dictionary, focus: String = "") -> void:
 	tree = value; counts = owned; selected = focus
+	# Rows always follow XP; columns are automatic unless an editor pinned the card.
+	var layout := LAYOUT.arrange(tree)
+	var at: Dictionary = layout.at; _bends = layout.bends
+	for n in tree.get("nodes", []):
+		var p: Vector2 = at.get(str(n.id), Vector2.ZERO); n.x = p.x; n.y = p.y
 	if not is_instance_valid(_world): return
 	for child in _world.get_children(): _world.remove_child(child); child.queue_free()
 	_nodes.clear(); _chips.clear(); _press = {}
@@ -179,23 +193,53 @@ func _refresh_chips() -> void:
 	for edge in tree.get("edges", []):
 		var chip = _chips.get(str(edge.id))
 		if chip == null: continue
-		var ends := _edge_ends(edge)
-		if ends.is_empty(): chip.hide(); continue
+		var path := _edge_path(edge)
+		if path.is_empty(): chip.hide(); continue
 		# Prefer the midpoint, but slide along the path to keep name plates readable.
-		var best: Vector2 = (ends[0] + ends[1]) * 0.5
+		var best: Vector2 = _along(path, 0.5)
 		for t in [0.5, 0.42, 0.58, 0.34, 0.66, 0.26, 0.74, 0.18, 0.82, 0.1, 0.9]:
-			var at: Vector2 = ends[0].lerp(ends[1], t)
+			var at: Vector2 = _along(path, t)
 			var rect := Rect2(at - chip.size * 0.5, chip.size)
 			if not _nodes.values().any(func(node): return node.footprint().intersects(rect)): best = at; break
 		chip.position = best - chip.size * 0.5
 
-func _edge_ends(edge: Dictionary) -> Array:
+## The drawn path from one card's ring to the other's, bending smoothly
+## through the layout's lanes (empty when the cards overlap).
+func _edge_path(edge: Dictionary) -> PackedVector2Array:
 	var a := _node(str(edge.from)); var b := _node(str(edge.to))
-	if a.is_empty() or b.is_empty(): return []
-	var pa := Vector2(a.x, a.y); var pb := Vector2(b.x, b.y)
-	if pa.distance_to(pb) < 1.0: return []
-	var dir := (pb - pa).normalized()
-	return [pa + dir * (_radius(str(a.id)) + 10), pb - dir * (_radius(str(b.id)) + 10)]
+	if a.is_empty() or b.is_empty(): return PackedVector2Array()
+	var pts: Array = [Vector2(a.x, a.y)]
+	pts.append_array(_bends.get(str(edge.id), []))
+	pts.append(Vector2(b.x, b.y))
+	if pts.size() == 2 and pts[0].distance_to(pts[1]) < 1.0: return PackedVector2Array()
+	pts[0] = pts[0] + (pts[1] - pts[0]).normalized() * (_radius(str(a.id)) + 10)
+	pts[-1] = pts[-1] - (pts[-1] - pts[-2]).normalized() * (_radius(str(b.id)) + 10)
+	if pts.size() == 2: return PackedVector2Array(pts)
+	var out := PackedVector2Array()
+	for i in pts.size() - 1:
+		var p0: Vector2 = pts[maxi(i - 1, 0)]; var p1: Vector2 = pts[i]; var p2: Vector2 = pts[i + 1]; var p3: Vector2 = pts[mini(i + 2, pts.size() - 1)]
+		for step in 12:
+			var t := step / 12.0
+			out.append(0.5 * (2.0 * p1 + (p2 - p0) * t + (2.0 * p0 - 5.0 * p1 + 4.0 * p2 - p3) * t * t + (3.0 * p1 - p0 - 3.0 * p2 + p3) * t * t * t))
+	out.append(pts[-1])
+	return out
+
+## The point a fraction of the way along a path, by length.
+func _along(path: PackedVector2Array, f: float) -> Vector2:
+	return _along_at(path, f)[0]
+
+## [point, direction] a fraction of the way along a path.
+func _along_at(path: PackedVector2Array, f: float) -> Array:
+	var total := 0.0
+	for i in path.size() - 1: total += path[i].distance_to(path[i + 1])
+	var goal := total * clampf(f, 0.0, 1.0)
+	for i in path.size() - 1:
+		var length := path[i].distance_to(path[i + 1])
+		if goal <= length or i == path.size() - 2:
+			var dir := (path[i + 1] - path[i]).normalized()
+			return [path[i] + dir * minf(goal, length), dir]
+		goal -= length
+	return [path[0] if not path.is_empty() else Vector2.ZERO, Vector2.UP]
 
 func _leave(id: String) -> void:
 	if _hover == id: _set_hover("")
@@ -216,7 +260,8 @@ func play_transition(from_id: String, to_id: String) -> void:
 	_transitions.append({"from": from_id, "to": to_id, "start": Time.get_ticks_msec() / 1000.0})
 
 # Pointer handling. A press on a card selects it on release unless the pointer
-# moved; editors drag cards, players drag the view. The ring knob draws links.
+# moved; editors drag cards along their XP row, players drag the view. The ring
+# knob draws links.
 func _node_input(event: InputEvent, node) -> void:
 	var id: String = node.node_id
 	# Derive global points from the control; synthetic events may omit global_position.
@@ -234,7 +279,7 @@ func _node_input(event: InputEvent, node) -> void:
 			elif press.moved:
 				if editable:
 					var n := _node(id)
-					n.x = snappedf(float(n.x), GRID); n.y = snappedf(float(n.y), GRID)
+					n.x = snappedf(float(n.x), GRID); n.pinned = true
 					node.place(Vector2(n.x, n.y)); _refresh_chips(); queue_redraw()
 					node_moved.emit(id, Vector2(n.x, n.y))
 			elif not connect_from.is_empty():
@@ -253,9 +298,10 @@ func _node_input(event: InputEvent, node) -> void:
 		if _press.link:
 			_link_end = _world_point(global); _mark_link_target(_node_at(global, id)); queue_redraw()
 		elif editable:
+			# Sideways only: a card's row is its XP.
 			var n := _node(id)
-			var at: Vector2 = _press.origin + (_world_point(global) - _world_point(_press.start))
-			n.x = at.x; n.y = at.y; node.place(at); _refresh_chips(); queue_redraw()
+			var at := Vector2(_press.origin.x + (_world_point(global) - _world_point(_press.start)).x, _press.origin.y)
+			n.x = at.x; node.place(at); _refresh_chips(); queue_redraw()
 		else:
 			_fit_on_resize = false; pan = _press.pan + (global - _press.start); _place()
 	elif _forward(event, node): node.accept_event()
@@ -361,7 +407,7 @@ func _draw() -> void:
 		if not a.is_empty():
 			var from := Vector2(a.x, a.y); var to := _link_end
 			if _link_target != "": var b := _node(_link_target); to = Vector2(b.x, b.y)
-			_dashes(from, to, STYLE.GOLD_BRIGHT, 4.0, t * 60.0)
+			_dashes(PackedVector2Array([from, to]), STYLE.GOLD_BRIGHT, 4.0, t * 60.0)
 			draw_circle(to, 6, STYLE.GOLD_BRIGHT)
 	_draw_transitions(t)
 	draw_set_transform(Vector2.ZERO, 0, Vector2.ONE)
@@ -391,45 +437,51 @@ func _draw_sigil(c: Vector2, t: float) -> void:
 		draw_colored_polygon(PackedVector2Array([c + d * 0.96, c + d + perp, c + d * 1.04, c + d - perp]), Color(gold, 0.18))
 
 func _draw_edge(edge: Dictionary, t: float) -> void:
-	var ends := _edge_ends(edge)
-	if ends.is_empty(): return
-	var s: Vector2 = ends[0]; var e: Vector2 = ends[1]
-	var dir := (e - s).normalized()
+	var path := _edge_path(edge)
+	if path.is_empty(): return
 	var state := str(edge_states.get(edge.id, "authored"))
 	var highlighted: bool = _hover_edges.has(edge.id) or edge.id == selected_edge or (not selected.is_empty() and (edge.from == selected or edge.to == selected))
 	var core: Color
 	match state:
 		"owned":
-			draw_line(s, e, Color(STYLE.GOLD, 0.12), 20, true); draw_line(s, e, Color(STYLE.GOLD, 0.28), 11, true)
-			draw_line(s, e, Color("3a2c14"), 7, true); core = Color("f6d48a"); draw_line(s, e, core, 4, true)
+			draw_polyline(path, Color(STYLE.GOLD, 0.12), 20, true); draw_polyline(path, Color(STYLE.GOLD, 0.28), 11, true)
+			draw_polyline(path, Color("3a2c14"), 7, true); core = Color("f6d48a"); draw_polyline(path, core, 4, true)
 		"available":
-			draw_line(s, e, Color("1a2029"), 9, true); draw_line(s, e, Color(STYLE.GOLD, 0.25), 3, true)
-			core = STYLE.GOLD; _dashes(s, e, core, 4.0, t * 42.0)
+			draw_polyline(path, Color("1a2029"), 9, true); draw_polyline(path, Color(STYLE.GOLD, 0.25), 3, true)
+			core = STYLE.GOLD; _dashes(path, core, 4.0, t * 42.0)
 		"locked":
-			draw_line(s, e, Color("1a2029"), 9, true); core = Color("9a5a50"); draw_line(s, e, core, 3, true)
+			draw_polyline(path, Color("1a2029"), 9, true); core = Color("9a5a50"); draw_polyline(path, core, 3, true)
 		"unowned":
-			draw_line(s, e, Color("161c25"), 9, true); core = Color("3d4858"); draw_line(s, e, core, 3, true)
+			draw_polyline(path, Color("161c25"), 9, true); core = Color("3d4858"); draw_polyline(path, core, 3, true)
 		_:
-			draw_line(s, e, Color("241e14"), 10, true); core = Color("b08d57"); draw_line(s, e, core, 3.5, true)
+			draw_polyline(path, Color("241e14"), 10, true); core = Color("b08d57"); draw_polyline(path, core, 3.5, true)
 	if highlighted:
-		draw_line(s, e, Color(STYLE.GOLD_BRIGHT, 0.16), 18, true)
-		core = STYLE.GOLD_BRIGHT; draw_line(s, e, core, 4, true)
-	var perp := Vector2(-dir.y, dir.x)
-	var tip := s.lerp(e, 0.72)
+		draw_polyline(path, Color(STYLE.GOLD_BRIGHT, 0.16), 18, true)
+		core = STYLE.GOLD_BRIGHT; draw_polyline(path, core, 4, true)
+	var head := _along_at(path, 0.72)
+	var tip: Vector2 = head[0]; var dir: Vector2 = head[1]; var perp := Vector2(-dir.y, dir.x)
 	draw_polyline(PackedVector2Array([tip - dir * 13 + perp * 9, tip, tip - dir * 13 - perp * 9]), core, 3.5, true)
 	if edge.get("reversible", false):
-		var back := s.lerp(e, 0.26)
+		var tail := _along_at(path, 0.26)
+		var back: Vector2 = tail[0]; dir = tail[1]; perp = Vector2(-dir.y, dir.x)
 		draw_polyline(PackedVector2Array([back + dir * 10 + perp * 7, back, back + dir * 10 - perp * 7]), Color(core, 0.45), 2.5, true)
 
-func _dashes(from: Vector2, to: Vector2, color: Color, width: float, offset: float) -> void:
-	var length := from.distance_to(to)
-	if length < 1: return
-	var dir := (to - from) / length
+func _dashes(path: PackedVector2Array, color: Color, width: float, offset: float) -> void:
 	var d := fposmod(offset, 30.0) - 30.0
-	while d < length:
-		var a := maxf(d, 0.0); var b := minf(d + 16.0, length)
-		if b > a: draw_line(from + dir * a, from + dir * b, color, width, true)
-		d += 30.0
+	var walked := 0.0
+	for i in path.size() - 1:
+		var from := path[i]; var length := from.distance_to(path[i + 1])
+		if length < 0.01: continue
+		var dir := (path[i + 1] - from) / length
+		# Dashes 16 long every 30, measured along the whole path.
+		var k := floorf((walked - d) / 30.0)
+		while true:
+			var start := d + k * 30.0 - walked
+			if start >= length: break
+			var a := maxf(start, 0.0); var b := minf(start + 16.0, length)
+			if b > a: draw_line(from + dir * a, from + dir * b, color, width, true)
+			k += 1.0
+		walked += length
 
 func _draw_transitions(t: float) -> void:
 	var keep: Array = []
@@ -438,13 +490,22 @@ func _draw_transitions(t: float) -> void:
 		var p: float = (t - tr.start) / 0.9
 		if a.is_empty() or b.is_empty() or p > 1.6: continue
 		keep.append(tr)
-		var from := Vector2(a.x, a.y); var to := Vector2(b.x, b.y)
+		var to := Vector2(b.x, b.y)
+		# Follow the connection's drawn path (either direction), else a straight line.
+		var path := PackedVector2Array([Vector2(a.x, a.y), to])
+		for e in tree.get("edges", []):
+			if (e.from == tr.from and e.to == tr.to) or (e.from == tr.to and e.to == tr.from):
+				var drawn := _edge_path(e)
+				if not drawn.is_empty():
+					path = drawn
+					if e.from == tr.to: path.reverse()
+				break
 		if p < 1.0:
 			var eased := ease(p, -2.0)
 			for k in 6:
 				var q := maxf(0.0, eased - k * 0.04)
-				draw_circle(from.lerp(to, q), 14 - k * 2, Color(STYLE.GOLD_BRIGHT, 0.5 - k * 0.07))
-			draw_circle(from.lerp(to, eased), 24, Color(STYLE.GOLD_BRIGHT, 0.25))
+				draw_circle(_along(path, q), 14 - k * 2, Color(STYLE.GOLD_BRIGHT, 0.5 - k * 0.07))
+			draw_circle(_along(path, eased), 24, Color(STYLE.GOLD_BRIGHT, 0.25))
 		else:
 			var burst := (p - 1.0) / 0.6
 			draw_arc(to, _radius(str(b.id)) + 10 + burst * 70, 0, TAU, 64, Color(STYLE.GOLD_BRIGHT, 1.0 - burst), 4, true)

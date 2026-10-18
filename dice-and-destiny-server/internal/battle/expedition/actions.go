@@ -13,20 +13,21 @@ type Action struct {
 	Kind    string   `json:"kind"`
 	Target  *Hex     `json:"target,omitempty"`  // move
 	Slot    string   `json:"slot,omitempty"`    // explore
-	Cards   []string `json:"cards,omitempty"`   // payment, Influence, discard
-	Energy  int      `json:"energy,omitempty"`  // payment
-	Card    string   `json:"card,omitempty"`    // play_map_card
+	Cards   []string `json:"cards,omitempty"`   // payment, Influence, discard; resolve_look: the cards back on top, top first
+	Bottom  []string `json:"bottom,omitempty"`  // resolve_look: the cards put on the bottom
+	Energy  int      `json:"energy,omitempty"`  // payment (Move or Influence)
+	Card    string   `json:"card,omitempty"`    // play_map_card; resolve_look: the card drawn
 	Service string   `json:"service,omitempty"` // use_site / camp_service
 	Item    string   `json:"item,omitempty"`    // shop, enter_site (siege), the bandage to spend
 	Count   int      `json:"count,omitempty"`   // mend wounds (points of damage)
 	Wound   string   `json:"wound,omitempty"`   // camp_service: the wound to heal ("" = the first eligible, "all" = every eligible)
-	Choice  string   `json:"choice,omitempty"`  // event_choice
-	Group   string   `json:"group,omitempty"`   // challenge: group instance or "warlord"
-	Site    string   `json:"site,omitempty"`    // enter_site
+	Choice  string   `json:"choice,omitempty"`  // event_choice; play_map_card: the terrain chosen
+	Group   string   `json:"group,omitempty"`   // challenge, or a mark: group instance, "warlord" or "site:<id>"
+	Site    string   `json:"site,omitempty"`    // enter_site, or the site a lure targets
 }
 
 // ActionKinds the authority accepts.
-var ActionKinds = []string{"move", "explore", "play_map_card", "use_site", "event_choice", "challenge", "enter_site", "discard", "end_turn", "make_camp", "camp_service", "break_camp"}
+var ActionKinds = []string{"move", "explore", "play_map_card", "resolve_look", "use_site", "event_choice", "challenge", "enter_site", "discard", "end_turn", "make_camp", "camp_service", "break_camp"}
 
 // Rewards are what an action earned outside the map state: XP belongs to the
 // campaign sheet, which the loadout layer credits.
@@ -40,8 +41,11 @@ func (s *State) Act(r Rules, a Action) (Rewards, error) {
 	if s.Result != "" {
 		return Rewards{}, fmt.Errorf("the expedition is over (%s)", s.Result)
 	}
-	if s.PendingBattle != nil {
+	if s.PendingBattle != nil && !s.fallBackAction(r, a) {
 		return Rewards{}, errors.New("a battle is pending; fight it first")
+	}
+	if s.PendingLook != nil && a.Kind != "resolve_look" {
+		return Rewards{}, errors.New("finish arranging the cards you are looking at first")
 	}
 	switch a.Kind {
 	case "move":
@@ -50,6 +54,8 @@ func (s *State) Act(r Rules, a Action) (Rewards, error) {
 		return Rewards{}, s.explore(r, a)
 	case "play_map_card":
 		return Rewards{}, s.playMapCard(r, a)
+	case "resolve_look":
+		return Rewards{}, s.resolveLook(r, a)
 	case "use_site":
 		return s.useSite(r, a)
 	case "event_choice":
@@ -70,6 +76,16 @@ func (s *State) Act(r Rules, a Action) (Rewards, error) {
 		return Rewards{}, s.breakCamp(r)
 	}
 	return Rewards{}, fmt.Errorf("unknown expedition action %q", a.Kind)
+}
+
+// fallBackAction reports a Fall back card played against a pending provoked
+// fight: the only action open while a battle waits.
+func (s *State) fallBackAction(r Rules, a Action) bool {
+	if a.Kind != "play_map_card" {
+		return false
+	}
+	def, ok := r.Cards[a.Card]
+	return ok && def.MapEffect != nil && def.MapEffect.Kind == "fall_back"
 }
 
 func (s *State) requirePhase(phase string) error {
@@ -127,9 +143,12 @@ func (s *State) moveCost(r Rules, h Hex) (int, string, bool) {
 	}
 	terrain := r.Config.Terrain[th.Terrain]
 	if terrain.Impassable {
+		if s.Turn.CrossCost > 0 && !s.Turn.Crossed {
+			return s.Turn.CrossCost, "", true
+		}
 		return 0, fmt.Sprintf("%s is impassable", th.Terrain), false
 	}
-	if s.Turn.IgnoreTerrain {
+	if s.Turn.IgnoreTerrain || s.Turn.CheapTerrain == th.Terrain {
 		return 1, "", true
 	}
 	night := s.Night && !s.Turn.IgnoreNight
@@ -142,6 +161,9 @@ func (s *State) moveCost(r Rules, h Hex) (int, string, bool) {
 // provokedBy returns the living open group the player provokes by stepping
 // from one hex next to it to another hex next to it.
 func (s *State) provokedBy(from, to Hex) *GroupState {
+	if s.Turn.Sneak {
+		return nil
+	}
 	var found *GroupState
 	for i := range s.Groups {
 		g := &s.Groups[i]
@@ -183,6 +205,15 @@ func (s *State) move(r Rules, a Action) error {
 	s.applyPayment(r, a.Cards, a.Energy)
 	s.Turn.Move -= cost
 	from := s.Player
+	if s.impassable(r, to) {
+		// Crossing a lake or mountain: once per turn, and a turn that ends
+		// there sends the player back to the hex they entered it from.
+		s.Turn.Crossed = true
+		if !s.impassable(r, from) {
+			back := from
+			s.Turn.CrossFrom = &back
+		}
+	}
 	s.Player = to
 	s.refreshSight(r)
 	s.log("Moved to %s for %d Move.", to, cost)
@@ -196,6 +227,22 @@ func (s *State) move(r Rules, a Action) error {
 		s.log("%s: %s", r.Pack.Sites[st.ID].Name, r.Pack.Events[s.PendingEvent.Event].Name)
 	}
 	return nil
+}
+
+// impassable reports a lake or mountain hex.
+func (s *State) impassable(r Rules, h Hex) bool {
+	_, th, placed := s.tileAt(r.Pack, h)
+	return placed && r.Config.Terrain[th.Terrain].Impassable
+}
+
+// returnFromCrossing sends a player whose turn ends on a lake or mountain back
+// to the hex they entered it from (no Move spent, no fight provoked).
+func (s *State) returnFromCrossing(r Rules) {
+	if s.Turn.CrossFrom != nil && s.impassable(r, s.Player) {
+		s.Player = *s.Turn.CrossFrom
+		s.log("You cannot stay on the water or the rock: back to %s.", s.Player)
+		s.refreshSight(r)
+	}
 }
 
 // --- explore ----------------------------------------------------------------
@@ -221,6 +268,19 @@ func (s *State) exploreOptions(r Rules) []exploreOption {
 		adjacent := false
 		for _, h := range TileHexes(center) {
 			adjacent = adjacent || Adjacent(s.Player, h)
+		}
+		if !adjacent && s.Turn.ExploreReach > 1 {
+			// Far Explore: a slot within reach that touches a placed tile.
+			near, touches := false, false
+			for _, h := range TileHexes(center) {
+				near = near || Distance(s.Player, h) <= s.Turn.ExploreReach
+				for _, n := range Neighbors(h) {
+					if _, _, placed := s.tileAt(r.Pack, n); placed {
+						touches = true
+					}
+				}
+			}
+			adjacent = near && touches
 		}
 		if !adjacent {
 			continue
@@ -255,7 +315,7 @@ func (s *State) explore(r Rules, a Action) error {
 	if !option.Ready {
 		return errors.New(option.Why)
 	}
-	cost := r.Config.Move.ExploreCost
+	cost := s.exploreCost(r)
 	paid, err := s.checkPayment(r, a.Cards, a.Energy)
 	if err != nil {
 		return err
@@ -277,6 +337,11 @@ func (s *State) explore(r Rules, a Action) error {
 	return nil
 }
 
+// exploreCost is this turn's Move cost of exploring.
+func (s *State) exploreCost(r Rules) int {
+	return max(0, r.Config.Move.ExploreCost-s.Turn.ExploreDiscount)
+}
+
 // --- cards ------------------------------------------------------------------
 
 // mapEnergyCost is what playing a card for its map effect costs: the card's
@@ -288,51 +353,6 @@ func mapEnergyCost(def content.BattleCardDefinition) int {
 		cost += def.MapEffect.EnergyCost
 	}
 	return cost
-}
-
-func (s *State) playMapCard(r Rules, a Action) error {
-	if err := s.requirePhase(PhaseTurn); err != nil {
-		return err
-	}
-	if countOf(s.Hand, a.Card) == 0 {
-		return fmt.Errorf("%s is not in your hand", r.cardName(a.Card))
-	}
-	def, ok := r.Cards[a.Card]
-	if !ok || def.MapEffect == nil {
-		return fmt.Errorf("%s has no map effect; it is worth 1 Move or 1 Influence", r.cardName(a.Card))
-	}
-	e := def.MapEffect
-	cost := mapEnergyCost(def)
-	if cost > s.Energy {
-		return fmt.Errorf("%s costs %d energy; you have %d", def.Name, cost, s.Energy)
-	}
-	s.Hand, _ = removeFirst(s.Hand, a.Card)
-	s.Spent = append(s.Spent, a.Card)
-	s.Turn.CardsUsed++
-	s.Energy -= cost
-	switch e.Kind {
-	case "move":
-		s.Turn.Move += e.Amount
-		if e.IgnoreTerrain {
-			s.Turn.IgnoreTerrain = true
-		}
-		if e.IgnoreNight {
-			s.Turn.IgnoreNight = true
-		}
-	case "draw":
-		s.drawCards(e.Amount)
-	case "energy":
-		s.Energy += e.Amount
-	case "sight":
-		s.Turn.SightBonus += e.Amount
-	case "scout":
-		if e.Amount > s.Turn.ScoutRange {
-			s.Turn.ScoutRange = e.Amount
-		}
-	}
-	s.refreshSight(r)
-	s.log("Played %s on the map.", def.Name)
-	return nil
 }
 
 func (s *State) discard(r Rules, a Action) error {
@@ -370,6 +390,11 @@ func (s *State) endTurn(r Rules) error {
 	if ok, why := s.canEndTurn(); !ok {
 		return errors.New(why)
 	}
+	s.returnFromCrossing(r)
+	if s.Turn.CarryOver && s.Turn.Move > 0 {
+		s.addStatus(r.Config.Statuses.CarriedMove, s.Turn.Move)
+		s.log("%d Move carries over to your next turn.", s.Turn.Move)
+	}
 	s.nightHuntersRoam(r)
 	drew := s.drawUpTo(r)
 	s.log("Turn %d ends; drew %d.", s.Turn.Number, drew)
@@ -388,13 +413,28 @@ func (s *State) endTurn(r Rules) error {
 func (s *State) nextTurn(r Rules) {
 	s.Turn = TurnState{Number: s.Turn.Number + 1, StartHex: s.Player}
 	s.Phase = PhaseTurn
+	s.startTurnStatuses(r)
 	s.refreshSight(r)
+}
+
+// startTurnStatuses applies the map statuses a new turn reads: carried Move
+// joins the turn's pool, and Hidden ends once the turn after Hide is over.
+func (s *State) startTurnStatuses(r Rules) {
+	if n := s.statusStacks(r.Config.Statuses.CarriedMove); n > 0 {
+		s.Turn.Move += n
+		s.takeStatus(r.Config.Statuses.CarriedMove, n)
+	}
+	if s.HiddenUntil > 0 && s.Turn.Number > s.HiddenUntil {
+		s.takeStatus(r.Config.Statuses.Hidden, s.statusStacks(r.Config.Statuses.Hidden))
+		s.HiddenUntil = 0
+	}
 }
 
 func (s *State) makeCamp(r Rules) error {
 	if err := s.requirePhase(PhaseTurn); err != nil {
 		return err
 	}
+	s.returnFromCrossing(r)
 	forfeited := len(s.Hand)
 	s.Spent = append(s.Spent, s.Hand...)
 	s.Hand = []string{}
@@ -406,7 +446,7 @@ func (s *State) makeCamp(r Rules) error {
 // energy, draw the fresh hand) and opens the camp for healing and services;
 // breakCamp finishes the rest. Every wound is untreated again at a new camp.
 func (s *State) beginRest(r Rules, reason string, forfeited int) {
-	camp := &CampState{Reason: reason, Turn: s.Turn.Number, Round: s.Round, EnergyBefore: s.Energy, Forfeited: forfeited, Heals: []HealRoll{}, Deadline: s.Round >= r.Config.RoundsPerRegion}
+	camp := &CampState{Reason: reason, Turn: s.Turn.Number, Round: s.Round, EnergyBefore: s.Energy, Forfeited: forfeited, Heals: []HealRoll{}, Deadline: s.Round >= s.rounds(r)}
 	if st := s.siteAt(s.Player); st != nil && r.Pack.Sites[st.ID].HasInn() && !s.siteDefended(r.Pack, st) && !st.Conquered {
 		camp.Inn, camp.Site = true, st.ID
 	}
@@ -432,19 +472,10 @@ func (s *State) campService(r Rules, a Action) error {
 	}
 	switch a.Service {
 	case "influence":
-		if len(a.Cards) == 0 {
-			return errors.New("choose cards to play for Influence")
+		if len(a.Cards) == 0 && a.Energy == 0 {
+			return errors.New("choose cards or energy to play for Influence")
 		}
-		if _, err := s.checkPayment(r, a.Cards, 0); err != nil {
-			return err
-		}
-		for _, id := range a.Cards {
-			s.Hand, _ = removeFirst(s.Hand, id)
-			s.Spent = append(s.Spent, id)
-			s.Turn.CardsUsed++
-			s.Turn.Influence++
-		}
-		return nil
+		return s.payInfluence(r, a.Cards, a.Energy)
 	case "basic_aid":
 		return s.campHeal(r, a, "basic_aid")
 	case "bandage":
@@ -509,25 +540,43 @@ func (s *State) campHeal(r Rules, a Action, method string) error {
 		targets = []string{a.Wound}
 	}
 	item, die := "", cfg.CampHealing.BasicAidDie
+	spare := cfg.Statuses.SpareBandage
 	if method == "bandage" {
 		item = a.Item
+		if item == "" && s.statusStacks(spare) > 0 {
+			// Temporary bandages go first: they are gone when the camp breaks.
+			item = spare
+		}
 		if item == "" {
 			item = "bandage"
 		}
-		g, ok := r.Pack.Gear[item]
-		if !ok || g.Effect != "mend_roll" {
-			return fmt.Errorf("%s is not something that heals", item)
-		}
-		if s.Inventory[item] < len(targets) {
-			return fmt.Errorf("you have %d %s, not %d", s.Inventory[item], g.Name, len(targets))
+		if item == spare {
+			if s.statusStacks(spare) < len(targets) {
+				return fmt.Errorf("you have %d spare bandage(s), not %d", s.statusStacks(spare), len(targets))
+			}
+		} else {
+			g, ok := r.Pack.Gear[item]
+			if !ok || g.Effect != "mend_roll" {
+				return fmt.Errorf("%s is not something that heals", item)
+			}
+			if s.Inventory[item] < len(targets) {
+				return fmt.Errorf("you have %d %s, not %d", s.Inventory[item], g.Name, len(targets))
+			}
 		}
 		die = cfg.CampHealing.BandageDie
 	}
 	bonus := s.innBonus(r)
+	if method == "basic_aid" && s.Camp != nil {
+		bonus += s.Camp.AidBonus
+	}
 	for _, id := range targets {
 		w := s.Wounds.find(id)
 		if method == "bandage" {
-			s.Inventory[item]--
+			if item == spare {
+				s.takeStatus(spare, 1)
+			} else {
+				s.Inventory[item]--
+			}
 			w.Bandaged = true
 		} else {
 			w.Treated = true
@@ -594,11 +643,24 @@ func (s *State) breakCamp(r Rules) error {
 			summary.Patrols = append(summary.Patrols, s.Groups[i].ID)
 		}
 	}
-	// Map statuses expire at rest.
+	// Map statuses expire at rest; a Hunter's Mark lasts its number of rests.
 	for _, st := range s.Statuses {
 		summary.Statuses = append(summary.Statuses, st.ID)
 	}
 	s.Statuses = []StatusStack{}
+	s.HiddenUntil = 0
+	marks := s.Marks[:0]
+	for _, m := range s.Marks {
+		if m.RestsLeft--; m.RestsLeft > 0 {
+			marks = append(marks, m)
+		} else {
+			s.log("Your mark on %s has faded.", m.Name)
+		}
+	}
+	s.Marks = marks
+	if len(s.Marks) == 0 {
+		s.Marks = nil
+	}
 	// 5. Day <-> Night, the round advances, draw up to hand size.
 	s.Round++
 	s.Night = !s.Night
@@ -622,7 +684,7 @@ func (s *State) breakCamp(r Rules) error {
 	s.Camp = nil
 	s.Turn = TurnState{Number: s.Turn.Number + 1, StartHex: s.Player}
 	s.LastRest = summary
-	if s.Round > cfg.RoundsPerRegion {
+	if s.Round > s.rounds(r) {
 		// The deadline: the Warlord comes to the player, in the open.
 		summary.Deadline = true
 		s.Warlord.Arrived = true
@@ -741,16 +803,10 @@ func (s *State) useSite(r Rules, a Action) (Rewards, error) {
 	if s.Turn.InfluenceSite != st.ID {
 		s.Turn.Influence, s.Turn.InfluenceSite = 0, st.ID
 	}
-	// Cards offered with any service become Influence here first.
-	if len(a.Cards) > 0 {
-		if _, err := s.checkPayment(r, a.Cards, 0); err != nil {
+	// Cards and energy offered with any service become Influence here first.
+	if len(a.Cards) > 0 || a.Energy > 0 {
+		if err := s.payInfluence(r, a.Cards, a.Energy); err != nil {
 			return Rewards{}, err
-		}
-		for _, id := range a.Cards {
-			s.Hand, _ = removeFirst(s.Hand, id)
-			s.Spent = append(s.Spent, id)
-			s.Turn.CardsUsed++
-			s.Turn.Influence++
 		}
 	}
 	switch a.Service {
@@ -767,6 +823,7 @@ func (s *State) useSite(r Rules, a Action) (Rewards, error) {
 			if def.Type == "monastery" {
 				per = cfg.Mending.MonasteryInfluencePerWound
 			}
+			per = s.influencePrice(r, per)
 			if s.Turn.Influence < per*count {
 				return Rewards{}, fmt.Errorf("mending %d wound(s) here costs %d Influence; you have %d", count, per*count, s.Turn.Influence)
 			}
@@ -808,7 +865,7 @@ func (s *State) DeckChangeCost(r Rules) (int, string, error) {
 		return 0, "", errors.New("deck changes wait until the expedition is in a turn")
 	}
 	if s.Phase == PhaseCamp {
-		return r.Config.DeckChangeInfluence["camp"], "camp", nil
+		return s.influencePrice(r, r.Config.DeckChangeInfluence["camp"]), "camp", nil
 	}
 	if s.Phase != PhaseTurn {
 		return 0, "", errors.New("deck changes happen at a site or at camp")
@@ -827,7 +884,7 @@ func (s *State) DeckChangeCost(r Rules) (int, string, error) {
 	if s.Turn.InfluenceSite != st.ID {
 		s.Turn.Influence, s.Turn.InfluenceSite = 0, st.ID
 	}
-	return r.Config.DeckChangeInfluence[tier], tier, nil
+	return s.influencePrice(r, r.Config.DeckChangeInfluence[tier]), tier, nil
 }
 
 // deckVisit names the current deck-change visit: the camp, or the site the
@@ -934,14 +991,19 @@ func (s *State) eventChoice(r Rules, a Action) (Rewards, error) {
 	if s.Turn.InfluenceSite != st.ID {
 		s.Turn.Influence, s.Turn.InfluenceSite = 0, st.ID
 	}
-	// Cards offered become Influence at this site first.
+	// Cards and energy offered become Influence at this site first.
 	if len(a.Cards) > 0 {
 		if _, err := s.checkPayment(r, a.Cards, 0); err != nil {
 			return Rewards{}, err
 		}
 	}
-	if s.Turn.Influence+len(a.Cards) < choice.Requires.Influence {
-		return Rewards{}, fmt.Errorf("that choice needs %d Influence (cards played here); you have %d", choice.Requires.Influence, s.Turn.Influence+len(a.Cards))
+	per := r.Config.Influence.EnergyPerInfluence
+	if a.Energy < 0 || a.Energy > s.Energy || a.Energy%per != 0 {
+		return Rewards{}, fmt.Errorf("energy pays for Influence %d at a time (you have %d)", per, s.Energy)
+	}
+	needed := s.influencePrice(r, choice.Requires.Influence)
+	if s.Turn.Influence+len(a.Cards)+a.Energy/per < needed {
+		return Rewards{}, fmt.Errorf("that choice needs %d Influence (cards played here); you have %d", needed, s.Turn.Influence+len(a.Cards)+a.Energy/per)
 	}
 	if s.Gold < choice.Requires.Gold {
 		return Rewards{}, fmt.Errorf("that choice needs %d gold; you have %d", choice.Requires.Gold, s.Gold)
@@ -949,13 +1011,10 @@ func (s *State) eventChoice(r Rules, a Action) (Rewards, error) {
 	if choice.Requires.Item != "" && s.Inventory[choice.Requires.Item] < 1 {
 		return Rewards{}, fmt.Errorf("that choice needs a %s", r.Pack.Gear[choice.Requires.Item].Name)
 	}
-	for _, id := range a.Cards {
-		s.Hand, _ = removeFirst(s.Hand, id)
-		s.Spent = append(s.Spent, id)
-		s.Turn.CardsUsed++
-		s.Turn.Influence++
+	if err := s.payInfluence(r, a.Cards, a.Energy); err != nil {
+		return Rewards{}, err
 	}
-	s.Turn.Influence -= choice.Requires.Influence
+	s.Turn.Influence -= needed
 	s.Gold -= choice.Requires.Gold
 	if choice.Requires.Item != "" {
 		s.Inventory[choice.Requires.Item]--
@@ -1088,6 +1147,12 @@ func (s *State) enterSite(r Rules, a Action) error {
 	if !Adjacent(s.Player, st.Pos) {
 		return errors.New("that site is not next to you")
 	}
+	return s.siteBattle(r, st, a.Item, false)
+}
+
+// siteBattle fights a site's defenders. Keeps, towers and occupied sites are
+// Fortified unless siege gear (item) is spent or they were lured out.
+func (s *State) siteBattle(r Rules, st *SiteState, item string, lured bool) error {
 	def := r.Pack.Sites[st.ID]
 	groupID := ""
 	switch def.Type {
@@ -1105,13 +1170,13 @@ func (s *State) enterSite(r Rules, a Action) error {
 	g := GroupState{ID: st.ID + "/" + groupID, Group: groupID, Home: st.Pos, Pos: st.Pos}
 	start := battleStart{kind: "guardian", group: &g, groupDef: &gdef, origin: s.Player, position: st.Pos, site: st.ID, transient: true}
 	if def.Type != "ruins" && def.Type != "grotto" {
-		start.kind, start.fortified = "garrison", true
-		if a.Item != "" {
-			gear, ok := r.Pack.Gear[a.Item]
-			if !ok || gear.Effect != "remove_fortified" || s.Inventory[a.Item] < 1 {
-				return fmt.Errorf("you have no %s to use", a.Item)
+		start.kind, start.fortified = "garrison", !lured
+		if item != "" && !lured {
+			gear, ok := r.Pack.Gear[item]
+			if !ok || gear.Effect != "remove_fortified" || s.Inventory[item] < 1 {
+				return fmt.Errorf("you have no %s to use", item)
 			}
-			s.Inventory[a.Item]--
+			s.Inventory[item]--
 			start.fortified, start.usedSiege = false, true
 		}
 	}

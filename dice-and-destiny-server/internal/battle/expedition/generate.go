@@ -193,6 +193,10 @@ func (s *State) refreshSight(r Rules) {
 	if s.Turn.ScoutRange > reach {
 		reach = s.Turn.ScoutRange
 	}
+	defer s.followMarks(r)
+	if s.Turn.RevealTiles {
+		defer s.revealTiles(r, s.sightRange(r))
+	}
 	for _, h := range s.placedHexes(pack) {
 		if Distance(s.Player, h) <= reach {
 			s.Seen[hexKey(h)] = true

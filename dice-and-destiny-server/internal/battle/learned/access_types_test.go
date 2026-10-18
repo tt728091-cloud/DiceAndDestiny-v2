@@ -59,7 +59,7 @@ func TestAccessTypesAndAdminOverrides(t *testing.T) {
 		t.Fatal("reassignment failed")
 	}
 	p = all["adventurer"]
-	if _, err = loadout.Buy(root, "adventurer", e, catalogs["adventurer"], loadout.Purchase{Kind: "upgrade_ability", ID: "adventurer_guard", ExpectedCost: 25, Revision: p.Revision}); err == nil {
+	if _, err = loadout.Buy(root, "adventurer", e, catalogs["adventurer"], loadout.Purchase{Kind: "upgrade_ability", ID: "adventurer_guard", ExpectedCost: guardUpgradeXP(e), Revision: p.Revision}); err == nil {
 		t.Fatal("restricted ability upgrade accepted")
 	}
 	settings.CardTypes["pinprick"] = "general"
@@ -147,7 +147,7 @@ func TestTypeRestrictedUpgradeTargetsAndAbilityBattleConflict(t *testing.T) {
 	if _, err = loadout.Buy(root, "adventurer", e, lib, loadout.Purchase{Kind: "upgrade_card", ID: "steady_guard", ExpectedCost: 10, Revision: p.Revision}); err == nil {
 		t.Fatal("cross-type card upgrade accepted")
 	}
-	p, err = loadout.Buy(root, "adventurer", e, lib, loadout.Purchase{Kind: "upgrade_ability", ID: "adventurer_guard", ExpectedCost: 25, Revision: p.Revision})
+	p, err = loadout.Buy(root, "adventurer", e, lib, loadout.Purchase{Kind: "upgrade_ability", ID: "adventurer_guard", ExpectedCost: guardUpgradeXP(e), Revision: p.Revision})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -157,7 +157,7 @@ func TestTypeRestrictedUpgradeTargetsAndAbilityBattleConflict(t *testing.T) {
 		t.Fatal(err)
 	}
 	p, _ = loadout.ReadProgress(root, "adventurer", e, lib)
-	if _, err = loadout.Buy(root, "adventurer", e, lib, loadout.Purchase{Kind: "downgrade_ability", ID: "adventurer_guard_plus", TargetID: "adventurer_guard", ExpectedCost: 25, Revision: p.Revision}); err == nil {
+	if _, err = loadout.Buy(root, "adventurer", e, lib, loadout.Purchase{Kind: "downgrade_ability", ID: "adventurer_guard_plus", TargetID: "adventurer_guard", ExpectedCost: guardUpgradeXP(e), Revision: p.Revision}); err == nil {
 		t.Fatal("cross-type downgrade accepted")
 	}
 	session, err := NewSession(SessionConfig{ContentRoot: contentRoot, RunStateRoot: t.TempDir(), LoadoutRoot: root, OpponentDefinition: "drowned_oracle_brine_mask"})
@@ -178,8 +178,8 @@ func TestTypeRestrictedUpgradeTargetsAndAbilityBattleConflict(t *testing.T) {
 		t.Fatal(err)
 	}
 	p, _ = loadout.ReadProgress(root, "adventurer", e, lib)
-	p, err = loadout.Buy(root, "adventurer", e, lib, loadout.Purchase{Kind: "downgrade_ability", ID: "adventurer_guard_plus", TargetID: "adventurer_guard", ExpectedCost: 25, Revision: p.Revision})
-	if err != nil || p.XP != 100 {
+	p, err = loadout.Buy(root, "adventurer", e, lib, loadout.Purchase{Kind: "downgrade_ability", ID: "adventurer_guard_plus", TargetID: "adventurer_guard", ExpectedCost: guardUpgradeXP(e), Revision: p.Revision})
+	if err != nil || p.XP != e.StartingXP {
 		t.Fatal("cannot resolve conflict with eligible downgrade", err, p.XP)
 	}
 	if _, err = session.ResetCharacterLoadout("resolved-conflict", 42, "seat-a", false, "adventurer", true, "progression"); err != nil {

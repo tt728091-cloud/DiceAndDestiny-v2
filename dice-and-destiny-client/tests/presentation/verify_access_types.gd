@@ -38,7 +38,7 @@ func _run() -> void:
 	for frame in 4: await process_frame
 	_expect("pinprick" in screen._eligible_card_ids(), "Curse gains reassigned card")
 	await _click(_control(screen, "buy.pinprick")); await _click(screen._purchase_confirm)
-	_expect(screen._card_count("pinprick") == 1 and int(screen.catalogs.curse.progression.xp) == 90, "new pool owner can buy")
+	_expect(screen._card_count("pinprick") == 1 and int(screen.catalogs.curse.progression.xp) == 140, "new pool owner can buy")
 	await _click(screen._admin_button)
 	await _choose_type(screen, "cards", "pinprick", "general")
 	await _choose_type(screen, "abilities", "adventurer_guard_plus", "venom")

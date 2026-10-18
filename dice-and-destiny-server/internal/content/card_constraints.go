@@ -20,7 +20,7 @@ func CardTargetCapabilities(effect string) CardTargetSpec {
 		spec.SelfCountMax = 1
 	case "card":
 		spec.Owners = []string{"self"}
-		spec.Filters = []string{"zones", "exclude_cards", "exclude_recovery", "drawn_this_play"}
+		spec.Filters = []string{"zones", "exclude_cards", "exclude_recovery", "drawn_this_play", "looked"}
 		spec.Notes = "Only your live cards can be selected. Removed cards cannot be recovered. The played card is excluded."
 	case "offensive_die":
 		spec.Filters = []string{"faces"}
@@ -37,6 +37,13 @@ func CardTargetCapabilities(effect string) CardTargetSpec {
 		spec.Owners = []string{}
 		spec.Modes = []string{}
 		spec.Selections = []string{}
+	}
+	if effect == "look_deck" {
+		spec.Owners = []string{"self"}
+		spec.Notes = "Looks at your own draw pile; later steps can target the looked-at cards."
+	}
+	if effect == "order_deck" {
+		spec.Notes += " Arranges the cards an earlier Look step looked at (zones: deck, looked)."
 	}
 	if effect == "sacrifice" {
 		spec.Modes = []string{"exact"}

@@ -23,10 +23,16 @@ func reviveStep(mode string, count int) content.CardStep {
 // damage wound that removed nudge-0, nudge-1 and strong_swing-0.
 func reviveFixture(t *testing.T, steps ...content.CardStep) (state.Battle, content.BattleLibrary) {
 	t.Helper()
+	return reviveFixtureTo(t, "removed", steps...)
+}
+
+// reviveFixtureTo is reviveFixture with the revive card's play destination.
+func reviveFixtureTo(t *testing.T, destination string, steps ...content.CardStep) (state.Battle, content.BattleLibrary) {
+	t.Helper()
 	b, lib := generalFixture(t)
 	b.Segment.Current = segment.Offensive
 	b.Settled.Initialized = true
-	c := content.BattleCardDefinition{SchemaVersion: 1, ID: "revive_test", Name: "Revive Test", Cost: content.BattleCost{Energy: 2}, Play: content.CardPlayDefinition{SourceZones: []string{"hand"}, Destination: "removed"}, Targeting: content.TargetingDefinition{Selector: "card_program", Minimum: 1, Maximum: 1}, Program: &content.CardProgram{Version: 1, Windows: []string{"offensive_planning"}, RollRequirement: "any", Steps: steps}}
+	c := content.BattleCardDefinition{SchemaVersion: 1, ID: "revive_test", Name: "Revive Test", Cost: content.BattleCost{Energy: 2}, Play: content.CardPlayDefinition{SourceZones: []string{"hand"}, Destination: destination}, Targeting: content.TargetingDefinition{Selector: "card_program", Minimum: 1, Maximum: 1}, Program: &content.CardProgram{Version: 1, Windows: []string{"offensive_planning"}, RollRequirement: "any", Steps: steps}}
 	c = content.PrepareProgramCard(c, &lib)
 	if err := content.ValidateCardProgram(c, lib); err != nil {
 		t.Fatal(err)
@@ -151,7 +157,9 @@ func TestReviveNeedsARemovedCardAndSkipsRecoveryCards(t *testing.T) {
 	}
 }
 
-func TestReviveMustBeATrade(t *testing.T) {
+// A revive selects removed cards on their own, by a fixed count, to a live
+// pile. Healing needs no trade (TestReviveWithoutATradeHeals).
+func TestReviveShapeIsValidated(t *testing.T) {
 	_, lib := generalFixture(t)
 	base := content.BattleCardDefinition{SchemaVersion: 1, ID: "bad_revive", Name: "Bad Revive", Play: content.CardPlayDefinition{SourceZones: []string{"hand"}, Destination: "removed"}, Targeting: content.TargetingDefinition{Selector: "card_program", Minimum: 1, Maximum: 1}, Program: &content.CardProgram{Version: 1, Windows: []string{"offensive_planning"}, RollRequirement: "any"}}
 	mixed := reviveStep("one", 1)
@@ -160,15 +168,6 @@ func TestReviveMustBeATrade(t *testing.T) {
 	toRemoved := reviveStep("one", 1)
 	toRemoved.Params["destination"] = "removed"
 	for name, c := range map[string]func(content.BattleCardDefinition) content.BattleCardDefinition{
-		"free heal": func(c content.BattleCardDefinition) content.BattleCardDefinition {
-			c.Play.Destination = "discard"
-			c.Program.Steps = []content.CardStep{reviveStep("one", 1)}
-			return c
-		},
-		"two for one": func(c content.BattleCardDefinition) content.BattleCardDefinition {
-			c.Program.Steps = []content.CardStep{reviveStep("up_to", 2)}
-			return c
-		},
 		"mixed piles": func(c content.BattleCardDefinition) content.BattleCardDefinition {
 			c.Program.Steps = []content.CardStep{mixed}
 			return c
@@ -202,5 +201,27 @@ func TestReviveMustBeATrade(t *testing.T) {
 	}
 	if ok.Presentation.EffectSummary != "Revive 1 removed card\nRemoves itself (−1 health)" {
 		t.Errorf("face = %q", ok.Presentation.EffectSummary)
+	}
+}
+
+// Healing: a revive no longer has to remove a card of its own. The played card
+// goes to discard, the revived card returns to hand and health rises by one.
+func TestReviveWithoutATradeHeals(t *testing.T) {
+	b, lib := reviveFixtureTo(t, "discard", reviveStep("up_to", 2))
+	health := b.Actors["player"].CurrentHealth()
+	if err := playProgramCard(NewEngine(), &b, lib, "player", "revive_test", func(c programChoice) bool { return c.Card == "nudge-0" || c.Card == "nudge-1" }); err != nil {
+		t.Fatal(err)
+	}
+	a := b.Actors["player"]
+	if a.CurrentHealth() != health+2 || !containsString(a.Cards.Hand, "nudge-0") || !containsString(a.Cards.Hand, "nudge-1") || !containsString(a.Cards.Discard, "revive_test") {
+		t.Fatalf("a revive without a trade must heal: health %d->%d %+v", health, a.CurrentHealth(), a.Cards)
+	}
+	if got := woundCards(&b, "hit"); !reflect.DeepEqual(got, []string{"strong_swing-0"}) {
+		t.Fatalf("the wound must shrink by both revived cards: %v", got)
+	}
+	for _, w := range b.Wounds {
+		if w.SourceContentID == "revive_test" {
+			t.Fatalf("no trade, so no new wound: %+v", w)
+		}
 	}
 }

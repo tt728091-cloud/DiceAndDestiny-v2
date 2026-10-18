@@ -28,6 +28,7 @@ const NOUNS := {
 	"reroll": ["Toss", "Throw", "Cast", "Roll"],
 	"reroll_enemy": ["Jolt", "Scatter", "Upset"],
 	"reroll_defense": ["Parry", "Deflect", "Feint"],
+	"extra_roll": ["Second Chance", "Another Go", "Encore"],
 	"adjust_die": ["Touch", "Tilt", "Push", "Tap"],
 	"adjust_enemy": ["Shove", "Bump", "Knock"],
 	"set_die": ["Weight", "Fix", "Mark"],

@@ -8,6 +8,7 @@ import (
 	"diceanddestiny/server/internal/content"
 	"encoding/json"
 	"fmt"
+	"strings"
 	"testing"
 )
 
@@ -650,5 +651,163 @@ func TestProgramSacrificeReservedCardCommitsOnce(t *testing.T) {
 	}
 	if len(seen) != 3 {
 		t.Fatalf("want 3 distinct wounds, got %d", len(seen))
+	}
+}
+
+// An extra roll attempt raises this Offense's roll count, even after the last
+// roll (the count returns to 3 at the next round's Ongoing Effects).
+func TestProgramExtraRollAttempt(t *testing.T) {
+	b, lib := programFixture(t, selfStep("extra_roll", map[string]any{"amount": 1}))
+	adventurerRoll(&b, lib, []int{2, 3, 4, 5, 6})
+	rt := b.Settled.Actors["player"]
+	rt.RollsUsed, rt.MaxRolls = 3, 3
+	b.Settled.Actors["player"] = rt
+	// The real Offense planning window, as the round opens it.
+	openSettledWindowForActors(&b, "offensive-planning", stageOffensivePlan, "planning", []command.Type{command.TypePlanningCards, command.TypePlanningRoll, command.TypePlanningKeep, command.TypePlanningReroll, command.TypePlanningAbility, command.TypePlanningTargets, command.TypePlanningPass}, []string{"player"}, true)
+	rerolls := func() bool {
+		for _, a := range settledLegalActions(&b, lib, "player", b.Flow.PendingInput["player"]) {
+			if a.Type == command.TypePlanningReroll {
+				return true
+			}
+		}
+		return false
+	}
+	if rerolls() {
+		t.Fatal("no reroll should be left after the third roll")
+	}
+	if err := playProgramCard(NewEngine(), &b, lib, "player", b.Actors["player"].Cards.Hand[len(b.Actors["player"].Cards.Hand)-1], nil); err != nil {
+		t.Fatal(err)
+	}
+	if got := b.Settled.Actors["player"].MaxRolls; got != 4 {
+		t.Fatalf("max rolls = %d, want 4", got)
+	}
+	if !rerolls() {
+		t.Fatal("the extra attempt must offer a fourth roll")
+	}
+	text := content.CardProgramRulesWithStatuses(lib.Cards["custom_test"].Program, nil)
+	if !strings.Contains(text, "Gain 1 more offensive roll attempt this Offense") {
+		t.Fatalf("rules text: %q", text)
+	}
+}
+
+// stockDeck puts n plain card instances in the player's draw pile.
+func stockDeck(b *state.Battle, lib content.BattleLibrary, n int) {
+	var def string
+	for id, c := range lib.Cards {
+		if c.Program != nil && id != "custom_test" && (def == "" || id < def) {
+			def = id
+		}
+	}
+	a := b.Actors["player"]
+	rt := b.Settled.Actors["player"]
+	for i := 0; i < n; i++ {
+		id := fmt.Sprintf("deck-%d", i)
+		a.Cards.Deck = append(a.Cards.Deck, id)
+		rt.CardInstances[id] = state.CardInstance{InstanceID: id, DefinitionID: def}
+	}
+	b.Actors["player"] = a
+	b.Settled.Actors["player"] = rt
+}
+
+func lookedStep(effect string, mode string, count int, params map[string]any) content.CardStep {
+	return content.CardStep{Effect: effect, Target: content.CardTarget{Owner: "self", Mode: mode, Count: count, Selection: "choose", Zones: []string{"deck"}, Looked: true}, Params: params}
+}
+
+// Read Ahead: look at the top 3 of the draw pile, draw one of them, and put
+// the rest back on top in the chosen order; draws then follow that order.
+func TestProgramLookDrawAndOrder(t *testing.T) {
+	b, lib := programFixture(t,
+		selfStep("look_deck", map[string]any{"amount": 3}),
+		lookedStep("move_cards", "exact", 1, map[string]any{"destination": "hand"}),
+		lookedStep("order_deck", "up_to", 2, map[string]any{}))
+	stockDeck(&b, lib, 6)
+	openSettledWindowForActors(&b, "offensive-planning", stageOffensivePlan, "planning", []command.Type{command.TypePlanningCards, command.TypePlanningRoll, command.TypePlanningPass}, []string{"player"}, true)
+	hand := b.Actors["player"].Cards.Hand
+	card := hand[len(hand)-1]
+	steps := []string{}
+	err := playProgramCard(NewEngine(), &b, lib, "player", card, func(c programChoice) bool {
+		steps = append(steps, c.Label)
+		x := b.Settled.Actors["player"].CardExecution
+		if x == nil || len(x.Looked) < 3 {
+			return false
+		}
+		queue := programQueue(x)
+		if queue[0].Effect == "move_cards" {
+			return c.Card == x.Looked[1] // draw the second card
+		}
+		// Order: the third card first; then confirm.
+		return c.Card == x.Looked[2] && len(x.Selected) == 0
+	})
+	if err != nil {
+		t.Fatalf("%v (choices %v)", err, steps)
+	}
+	rt := b.Settled.Actors["player"]
+	if rt.CardExecution != nil {
+		t.Fatal("the card did not finish")
+	}
+	if !strings.Contains(strings.Join(steps, "|"), "from the top") {
+		t.Fatalf("looked-at choices should name their place: %v", steps)
+	}
+	if len(rt.DeckTop) != 2 {
+		t.Fatalf("known top = %v, want the two cards put back", rt.DeckTop)
+	}
+	drawn := b.Actors["player"].Cards.Hand
+	if !containsString(drawn, rt.DeckTop[0]) && containsString(b.Actors["player"].Cards.Deck, rt.DeckTop[0]) {
+		first, err := NewEngine().drawSettledCard(&b, "player", "card_draw")
+		if err != nil || first != rt.DeckTop[0] {
+			t.Fatalf("the next draw must be the card put on top: got %q, want %q (%v)", first, rt.DeckTop[0], err)
+		}
+		second, _ := NewEngine().drawSettledCard(&b, "player", "card_draw")
+		if second != rt.DeckTop[1] {
+			t.Fatalf("then the card under it: got %q, want %q", second, rt.DeckTop[1])
+		}
+	}
+	text := content.CardProgramRulesWithStatuses(lib.Cards["custom_test"].Program, nil)
+	for _, want := range []string{"Look at the top 3 cards of your draw pile.", "Draw 1 of the cards you looked at.", "back on top of your draw pile in the order you choose"} {
+		if !strings.Contains(text, want) {
+			t.Fatalf("rules text %q lacks %q", text, want)
+		}
+	}
+}
+
+// Clear the Path: a looked-at card put on the bottom is drawn last and is no
+// longer offered when the rest are put back.
+func TestProgramLookBottom(t *testing.T) {
+	b, lib := programFixture(t,
+		selfStep("look_deck", map[string]any{"amount": 3}),
+		lookedStep("move_cards", "up_to", 3, map[string]any{"destination": "deck_bottom"}),
+		lookedStep("order_deck", "up_to", 3, map[string]any{}))
+	stockDeck(&b, lib, 6)
+	openSettledWindowForActors(&b, "offensive-planning", stageOffensivePlan, "planning", []command.Type{command.TypePlanningCards, command.TypePlanningRoll, command.TypePlanningPass}, []string{"player"}, true)
+	hand := b.Actors["player"].Cards.Hand
+	var bottom string
+	orderOffered := []string{}
+	err := playProgramCard(NewEngine(), &b, lib, "player", hand[len(hand)-1], func(c programChoice) bool {
+		x := b.Settled.Actors["player"].CardExecution
+		if programQueue(x)[0].Effect == "move_cards" {
+			if len(x.Selected) > 0 {
+				return false
+			}
+			bottom = x.Looked[0]
+			return c.Card == bottom
+		}
+		orderOffered = append(orderOffered, c.Card)
+		return false
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if containsString(orderOffered, bottom) {
+		t.Fatal("a card put on the bottom must not be offered for the top")
+	}
+	if got := b.Settled.Actors["player"].DeckBottom; len(got) != 1 || got[0] != bottom {
+		t.Fatalf("known bottom = %v, want [%s]", got, bottom)
+	}
+	last := ""
+	for len(b.Actors["player"].Cards.Deck) > 0 {
+		last, _ = NewEngine().drawSettledCard(&b, "player", "card_draw")
+	}
+	if last != bottom {
+		t.Fatalf("the bottom card must be drawn last: got %q, want %q", last, bottom)
 	}
 }

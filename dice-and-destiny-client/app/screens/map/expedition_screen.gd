@@ -42,6 +42,11 @@ var energy_payment := 0
 var use_siege := false
 var dismissed_rest := ""
 var dismissed_event := ""
+# The arrangement being built for a look effect: indexes into view.look.cards.
+var _look_key := ""
+var _look_draw := -1
+var _look_top: Array = []
+var _look_bottom: Array = []
 ## What the chart layers draw, built from the view by _render_map.
 var map_model: Dictionary = {}
 var _hex_buttons: Dictionary = {}
@@ -310,7 +315,7 @@ func _render_map() -> void:
 	for target in _list(view, "challenges") + _list(view, "enters"): targets["%d,%d" % [int(target.hex.q), int(target.hex.r)]] = target
 	var model := {"night": view.get("night", false), "phase": str(view.get("phase", "")), "survey": _survey_key or _survey_locked, "legend_filter": _legend_filter,
 		"hover": "", "selected": "%d,%d" % [selected_hex.x, selected_hex.y] if selected_hex != NONE else "", "hexes": {}, "slots": {}, "moves": moves, "targets": targets,
-		"warlord": view.get("warlord", {}), "sight": [], "overlay_open": false, "hover_lines": [], "warlord_cell": NONE}
+		"warlord": view.get("warlord", {}), "marks": _list(view, "marks"), "sight": [], "overlay_open": false, "hover_lines": [], "warlord_cell": NONE}
 	var player := Vector2i(int(view.get("player", {}).get("q", 0)), int(view.get("player", {}).get("r", 0)))
 	model["player"] = player
 	var slot_of := {}
@@ -511,10 +516,26 @@ func _render_hand() -> void:
 		if is_selected: CHART.rim(pay, CHART.GOLD_LEAF)
 		pay.tooltip_text = "%s\n\nSelect it to spend it: 1 Move for walking or exploring, 1 Influence at a site, or discard it." % BattlePresentationCatalog.card_tooltip(str(card.id))
 		if not str(card.get("map_effect", "")).is_empty():
-			var play := CHART.paper_button(_button(column, "Play on map" if int(card.get("energy_cost", 0)) == 0 else "Play (%d energy)" % int(card.energy_cost), func(): _act({"kind": "play_map_card", "card": str(card.id)}), "expedition.play.%d" % index), 14)
+			var play := CHART.paper_button(_button(column, "Play on map" if int(card.get("energy_cost", 0)) == 0 else "Play (%d energy)" % int(card.energy_cost), func(): pass, "expedition.play.%d" % index), 14)
+			play.pressed.connect(_play_map_card.bind(card, play))
 			play.disabled = not card.get("map_playable", false)
 			if not play.disabled: CHART.rim(play, CHART.GOLD_LEAF)
 			play.tooltip_text = str(card.get("map_reason", "")) if play.disabled else "Play %s for its map effect" % card.name
+
+## Plays a card for its map effect. A card that needs a target (a terrain, an
+## enemy to mark, a site to lure from) offers the authority's list first.
+func _play_map_card(card: Dictionary, anchor: Control) -> void:
+	var targets: Array = _list(card, "targets")
+	if targets.is_empty():
+		_act({"kind": "play_map_card", "card": str(card.id)})
+		return
+	var field: String = {"mark": "group", "lure": "site"}.get(str(card.get("map_kind", "")), "choice")
+	var menu := PopupMenu.new(); menu.name = "MapTargets"; add_child(menu)
+	for i in targets.size(): menu.add_item(str(targets[i].label), i)
+	menu.id_pressed.connect(func(i: int): _act({"kind": "play_map_card", "card": str(card.id), field: str(targets[i].id)}))
+	menu.popup_hide.connect(func(): menu.queue_free.call_deferred())
+	var at := anchor.get_global_rect()
+	menu.popup(Rect2i(Vector2i(at.position) - Vector2i(0, 26 * targets.size() + 12), Vector2i(maxi(240, int(at.size.x)), 0)))
 
 func _toggle_card(index: int) -> void:
 	if index in selected_cards: selected_cards.erase(index)
@@ -687,6 +708,13 @@ func _render_warlord_line() -> void:
 	CHART.icon_rect(row, ICONS.texture("conqueror"), 16).size_flags_vertical = Control.SIZE_SHRINK_BEGIN
 	var label := STYLE.label(row, text, 14, CHART.RED_ON_STONE); CHART.stone_text(label, false, CHART.RED_ON_STONE); label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	label.name = "WarlordLine"
+	# Hunter's Marks: where each marked enemy is now.
+	for m in _list(view, "marks"):
+		var at = m.get("hex")
+		var where := "at (%d,%d)" % [int(at.q), int(at.r)] if at is Dictionary else ""
+		if m.get("off_map", false): where += ", beyond the explored map"
+		var mark := STYLE.label(_hud, "Marked: %s %s · %d rest%s left" % [m.name, where, int(m.rests_left), "" if int(m.rests_left) == 1 else "s"], 13, CHART.GOLD_PAPER)
+		CHART.stone_text(mark, false, CHART.GOLD_PAPER); mark.name = "Mark_" + str(m.target).replace(":", "_")
 
 func _render_turn_line(turn: Dictionary) -> void:
 	CHART.gold_rule(_hud)
@@ -700,6 +728,11 @@ func _render_turn_line(turn: Dictionary) -> void:
 	var label := STYLE.label(row, text, 14, CHART.HUD_IVORY); CHART.stone_text(label); label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	label.name = "TurnLine"
 	if used < 1 and not turn.get("fought", false): label.add_theme_color_override("font_color", CHART.RED_ON_STONE)
+	# This turn's map card effects (cheap terrain, no provoking, ...).
+	var effects: Array = _list(turn, "effects")
+	if not effects.is_empty():
+		var line := STYLE.label(_hud, "This turn: " + " · ".join(effects), 13, Color("9fe0a8")); CHART.stone_text(line, false, Color("9fe0a8"))
+		line.name = "TurnEffects"
 	CHART.gold_rule(_hud)
 
 func _render_payment(turn: Dictionary) -> void:
@@ -848,6 +881,9 @@ func _render_site(site: Dictionary) -> void:
 	var influence := CHART.paper_button(_button(card, "Play %d selected card%s here for Influence" % [selected_cards.size(), "" if selected_cards.size() == 1 else "s"], func(): _act({"kind": "use_site", "service": "influence", "cards": _payment_cards()}), "expedition.site.influence"), 14)
 	influence.disabled = selected_cards.is_empty()
 	if not influence.disabled: CHART.rim(influence, CHART.GOLD_LEAF)
+	var per_influence := int(view.get("config", {}).get("energy_per_influence", 5))
+	var bought := CHART.paper_button(_button(card, "Pay %d energy for 1 Influence" % per_influence, func(): _act({"kind": "use_site", "service": "influence", "energy": per_influence}), "expedition.site.energy_influence"), 14)
+	bought.disabled = int(view.get("energy", 0)) < per_influence
 	for service in _list(site, "services"):
 		var id := "expedition.site.%s" % service.id + (".%s" % service.item if not str(service.get("item", "")).is_empty() else "")
 		var action := {"kind": "use_site", "service": str(service.id), "item": str(service.get("item", "")), "count": 1}
@@ -885,6 +921,9 @@ func _render_overlay() -> void:
 	if not last_battle.is_empty():
 		context = "battle_result"
 		_render_battle_result(body)
+	elif view.get("look") != null:
+		context = "look"
+		_render_look(body, view.look)
 	elif view.get("last_rest") != null and dismissed_rest != str(view.get("round", 0)):
 		context = "rest"
 		var rest: Dictionary = view.last_rest
@@ -923,6 +962,11 @@ func _render_overlay() -> void:
 			CHART.icon_rect(piles, ICONS.texture(pile[0]), 16); CHART.numeral_label(piles, "%d" % pile[1], 14)
 		CHART.ink_label(piles, "and %d energy" % int(pb.get("energy_in", 0)), 13, CHART.SEPIA_TEXT, false, false)
 		CHART.rim(CHART.paper_button(_button(body, "Fight", _start_fight, "expedition.fight"), 16, true), CHART.RUBRIC)
+		# A provoked fight can still be refused with a Fall back card.
+		for held in _list(view, "hand"):
+			if str(held.get("map_kind", "")) == "fall_back" and held.get("map_playable", false):
+				var back := CHART.paper_button(_button(body, "Fall back · play %s and step back to the hex you came from" % held.name, func(): _act({"kind": "play_map_card", "card": str(held.id)}), "expedition.fall_back"), 15)
+				CHART.rim(back, CHART.GOLD_LEAF)
 	elif view.get("event") != null:
 		context = "event"
 		var ev: Dictionary = view.event
@@ -932,7 +976,7 @@ func _render_overlay() -> void:
 		CHART.ink_label(body, "Selected cards (%d) are played here as Influence." % selected_cards.size(), 12, CHART.SEPIA_TEXT)
 		var first := true
 		for choice in _list(ev, "choices"):
-			var button := CHART.paper_button(_button(body, str(choice.text), func(): _act({"kind": "event_choice", "choice": str(choice.id), "cards": _payment_cards()}), "expedition.event." + str(choice.id)), 15)
+			var button := CHART.paper_button(_button(body, str(choice.text), func(): _act({"kind": "event_choice", "choice": str(choice.id), "cards": _payment_cards(), "energy": _event_energy(choice)}), "expedition.event." + str(choice.id)), 15)
 			button.disabled = not choice.get("available", false)
 			if not choice.get("available", false): button.tooltip_text = str(choice.get("reason", ""))
 			elif first: CHART.rim(button, CHART.GOLD_LEAF); first = false
@@ -961,6 +1005,63 @@ func _render_overlay() -> void:
 	if context.is_empty(): return
 	_overlay.visible = true
 	_dress_overlay(context, site_type)
+
+## The energy an event choice needs on top of this site's Influence and the
+## selected cards (5 energy = 1 Influence); the authority checks the payment.
+func _event_energy(choice: Dictionary) -> int:
+	var per := int(view.get("config", {}).get("energy_per_influence", 5))
+	var turn: Dictionary = view.get("turn", {})
+	var here := int(turn.get("influence", 0)) if str(turn.get("influence_site", "")) == str(view.get("event", {}).get("site", "")) else 0
+	var short := maxi(0, int(choice.get("influence", 0)) - here - selected_cards.size())
+	return short * per if short * per <= int(view.get("energy", 0)) else 0
+
+## A look effect: the top of the draw pile, top first. The player picks the
+## card to draw, the cards for the bottom, and the order the rest go back on
+## top; anything left keeps its order under the placed cards.
+func _render_look(body: VBoxContainer, look: Dictionary) -> void:
+	var cards: Array = _list(look, "cards")
+	var key := "%s:%s" % [look.card, ",".join(cards.map(func(c): return str(c.id)))]
+	if key != _look_key: _look_key = key; _look_draw = -1; _look_top = []; _look_bottom = []
+	var draws := int(look.get("draw", 0)) > 0
+	var bottom_ok: bool = look.get("bottom", false)
+	_overlay_heading(body, "%s · the top %d of your draw pile" % [look.card_name, cards.size()], ICONS.texture("deck"))
+	var how := "Top card first. " + ("Choose the card to draw. " if draws else "") + ("Send any to the bottom. " if bottom_ok else "") + "Then click the rest in the order you want them back on top; any you leave stay under them in their order."
+	CHART.ink_label(body, how, 13, CHART.SEPIA_TEXT)
+	for i in cards.size():
+		var c: Dictionary = cards[i]
+		var row := HBoxContainer.new(); row.name = "Look_%d" % i; row.add_theme_constant_override("separation", 6); body.add_child(row)
+		var state := ""
+		if i == _look_draw: state = "drawn"
+		elif i in _look_bottom: state = "bottom"
+		elif i in _look_top: state = "back on top · %d" % (_look_top.find(i) + 1)
+		var name_label := CHART.ink_label(row, "%d. %s%s" % [i + 1, c.name, "  →  " + state if not state.is_empty() else ""], 14, CHART.GREEN if not state.is_empty() else CHART.INK, true)
+		name_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL; name_label.mouse_filter = Control.MOUSE_FILTER_STOP
+		name_label.tooltip_text = BattlePresentationCatalog.card_tooltip(str(c.id))
+		if draws:
+			var take := CHART.paper_button(_button(row, "Draw", func(): _look_place(i, "draw"), "expedition.look.draw.%d" % i), 13)
+			if i == _look_draw: CHART.rim(take, CHART.GOLD_LEAF)
+		var next := CHART.paper_button(_button(row, "Put back next", func(): _look_place(i, "top"), "expedition.look.top.%d" % i), 13)
+		next.disabled = i in _look_top
+		if bottom_ok:
+			var low := CHART.paper_button(_button(row, "Bottom", func(): _look_place(i, "bottom"), "expedition.look.bottom.%d" % i), 13)
+			if i in _look_bottom: CHART.rim(low, CHART.GOLD_LEAF)
+	var footer := _overlay_footer
+	CHART.paper_button(_button(footer, "Start over", func(): _look_draw = -1; _look_top = []; _look_bottom = []; _render(), "expedition.look.reset"), 14)
+	var done := CHART.paper_button(_button(footer, "Done", func():
+		_act({"kind": "resolve_look", "card": str(cards[_look_draw].id) if _look_draw >= 0 else "", "cards": _look_top.map(func(i): return str(cards[i].id)), "bottom": _look_bottom.map(func(i): return str(cards[i].id))}), "expedition.look.done"), 16, true)
+	done.disabled = draws and _look_draw < 0
+	if not done.disabled: CHART.rim(done, CHART.GOLD_LEAF)
+	else: done.tooltip_text = "Choose the card to draw first"
+
+## Places one looked-at card: drawn, back on top next, or on the bottom.
+func _look_place(index: int, where: String) -> void:
+	_look_top.erase(index); _look_bottom.erase(index)
+	if _look_draw == index: _look_draw = -1
+	match where:
+		"draw": _look_draw = index
+		"top": _look_top.append(index)
+		"bottom": _look_bottom.append(index)
+	_render()
 
 func _overlay_heading(body: Node, text: String, icon: Texture2D, color: Color = CHART.INK) -> void:
 	var row := HBoxContainer.new(); row.add_theme_constant_override("separation", 8); body.add_child(row)
@@ -1005,10 +1106,16 @@ func _render_camp(body: VBoxContainer, camp: Dictionary) -> void:
 		CHART.ink_rule(body)
 		for roll in heals: _heal_line(body, roll)
 	CHART.gold_rule(body)
-	CHART.ink_label(body, "Bandages %d · Influence %d (play cards from your fresh hand for more)" % [int(camp.get("bandages", 0)), int(view.get("turn", {}).get("influence", 0))], 13, CHART.SEPIA_TEXT)
+	var pack := "Bandages %d" % int(camp.get("bandages", 0))
+	if int(camp.get("spare_bandages", 0)) > 0: pack += " (%d spare, gone when camp breaks)" % int(camp.spare_bandages)
+	if int(camp.get("aid_bonus", 0)) > 0: pack += " · Field Medic: +%d to basic aid" % int(camp.aid_bonus)
+	CHART.ink_label(body, "%s · Influence %d (play cards from your fresh hand, or energy, for more)" % [pack, int(view.get("turn", {}).get("influence", 0))], 13, CHART.SEPIA_TEXT)
 	var footer := _overlay_footer
 	var influence := CHART.paper_button(_button(footer, "Play %d selected card%s for Influence" % [selected_cards.size(), "" if selected_cards.size() == 1 else "s"], func(): _act({"kind": "camp_service", "service": "influence", "cards": _payment_cards()}), "expedition.camp.influence"), 14)
 	influence.disabled = selected_cards.is_empty()
+	var per_influence := int(view.get("config", {}).get("energy_per_influence", 5))
+	var bought := CHART.paper_button(_button(footer, "Pay %d energy for 1 Influence" % per_influence, func(): _act({"kind": "camp_service", "service": "influence", "energy": per_influence}), "expedition.camp.energy_influence"), 14)
+	bought.disabled = int(view.get("energy", 0)) < per_influence
 	var deck_open: bool = camp.get("deck_open", false)
 	var deck := CHART.paper_button(_button(footer, "Change deck · open until you break camp" if deck_open else "Change deck · %d Influence, then change freely until you break camp" % int(camp.get("deck_change", 0)), _open_prepare, "expedition.prepare"), 14)
 	deck.tooltip_text = "The deck is open: buy, sell, upgrade or trade down as often as your XP allows; it closes when you break camp" if deck_open else "Open Prepare: the first change spends %d Influence (cards played at camp); after that, change your deck as often as your XP allows until you break camp" % int(camp.get("deck_change", 0))
@@ -1031,7 +1138,8 @@ func _camp_wound_row(body: VBoxContainer, index: int, w: Dictionary, camp: Dicti
 	var row := HBoxContainer.new(); row.add_theme_constant_override("separation", 6); box.add_child(row)
 	var inn_bonus := int(camp.get("inn_bonus", 0))
 	var bonus := " +%d" % inn_bonus if inn_bonus > 0 else ""
-	var aid := CHART.paper_button(_button(row, "Basic aid · heals 1d%d%s" % [int(camp.get("basic_aid_die", 0)), bonus], func(): _act({"kind": "camp_service", "service": "basic_aid", "wound": id}), "expedition.camp.aid." + id), 13)
+	var aid_bonus := inn_bonus + int(camp.get("aid_bonus", 0))
+	var aid := CHART.paper_button(_button(row, "Basic aid · heals 1d%d%s" % [int(camp.get("basic_aid_die", 0)), " +%d" % aid_bonus if aid_bonus > 0 else ""], func(): _act({"kind": "camp_service", "service": "basic_aid", "wound": id}), "expedition.camp.aid." + id), 13)
 	aid.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	aid.disabled = not w.get("basic_aid", false)
 	if aid.disabled: aid.tooltip_text = str(w.get("reason", "")) if not str(w.get("reason", "")).is_empty() else "treated at this camp"

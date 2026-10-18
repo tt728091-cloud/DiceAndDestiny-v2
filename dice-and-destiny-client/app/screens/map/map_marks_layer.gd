@@ -197,6 +197,14 @@ func _draw() -> void:
 				if group.get("roams", false): STYLE.draw_glyph(self, STYLE.glyph("footprints"), other + Vector2(0, 0.44 * r), 0.22 * r, Color(1, 1, 1, 0.8))
 		if has_warlord:
 			STYLE.draw_warlord_piece(self, other, r, bool(warlord.get("in_sight", false)), bool(warlord.get("fortified", false)))
+	# Hunter's Marks beyond the explored map: the enemy's position, nothing more.
+	for m in model.get("marks", []):
+		var at = m.get("hex")
+		if not m.get("off_map", false) or not at is Dictionary: continue
+		var mc := _center(Vector2i(int(at.q), int(at.r))) + Vector2(0, 0.36 * r)
+		draw_arc(mc, 0.62 * r, 0.0, TAU, 32, STYLE.GOLD_LEAF, 2.0, true)
+		if str(m.get("target", "")) == "warlord": STYLE.draw_warlord_piece(self, mc, r, false, false)
+		else: STYLE.draw_enemy_piece(self, mc, r, 1, false)
 	# The player, sliding when they just moved.
 	if hexes.has(player_key):
 		var base := _center(player) + Vector2(0, 0.36 * r)

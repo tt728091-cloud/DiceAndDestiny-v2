@@ -405,6 +405,9 @@ func programCandidates(b *state.Battle, lib content.BattleLibrary, actor, card s
 					if s.Target.DrawnThisPlay && (x == nil || !containsString(x.Drawn, id)) {
 						continue
 					}
+					if s.Target.Looked && (x == nil || !containsString(x.Looked, id) || containsString(rt.DeckBottom, id)) {
+						continue
+					}
 					// Cards this play removed are its cost; it cannot revive them.
 					if operation.CardZone(z) == operation.ZoneRemoved && x != nil && containsString(x.Removed, id) {
 						continue
@@ -415,6 +418,9 @@ func programCandidates(b *state.Battle, lib content.BattleLibrary, actor, card s
 					c := base
 					c.Card = id
 					c.Label = def.Name + " · " + z
+					if s.Target.Looked {
+						c.Label = fmt.Sprintf("%s%s · card %d from the top", lookedVerb(s), def.Name, indexString(x.Looked, id)+1)
+					}
 					out = append(out, c)
 				}
 			}
@@ -722,6 +728,15 @@ func (e Engine) applyProgramStep(b *state.Battle, lib content.BattleLibrary, act
 			}
 		case "energy":
 			gainEnergy(b, t.Actor, content.ProgramInt(s, "amount"))
+		case "extra_roll":
+			// More roll attempts this Offense; the count resets to 3 each round.
+			result.MaxRollDeltas = map[string]int{t.Actor: content.ProgramInt(s, "amount")}
+		case "look_deck":
+			looked, err := e.lookAtDeck(b, t.Actor, content.ProgramInt(s, "amount"))
+			if err != nil {
+				return err
+			}
+			x.Looked = looked
 		case "move_cards", "sacrifice":
 			dest := content.ProgramString(s, "destination")
 			if s.Effect == "sacrifice" {
@@ -730,9 +745,21 @@ func (e Engine) applyProgramStep(b *state.Battle, lib content.BattleLibrary, act
 			a := b.Actors[t.Actor]
 			zone := programCardZone(b, t.Actor, t.Card)
 			switch {
+			case dest == "deck_bottom":
+				// The card joins (or stays in) the draw pile, at the known bottom.
+				if zone != "" && zone != operation.ZoneRemoved {
+					if zone != operation.ZoneDeck {
+						moveCard(&a.Cards, t.Card, zone, operation.ZoneDeck)
+						b.Actors[t.Actor] = a
+					}
+					rt := b.Settled.Actors[t.Actor]
+					rt.DeckTop = removeString(rt.DeckTop, t.Card)
+					rt.DeckBottom = append(removeString(rt.DeckBottom, t.Card), t.Card)
+					b.Settled.Actors[t.Actor] = rt
+				}
 			case zone == operation.ZoneRemoved && content.ProgramContains(s.Target.Zones, string(operation.ZoneRemoved)) && dest != string(operation.ZoneRemoved):
-				// An authored revive trade returns the card and heals it from
-				// the wound that removed it; the card's own cost removes others.
+				// An authored revive returns the card and heals it from the
+				// wound that removed it (a card's own cost may remove others).
 				moveCard(&a.Cards, t.Card, zone, operation.CardZone(dest))
 				b.Actors[t.Actor] = a
 				b.HealWoundCard(t.Actor, t.Card)
@@ -806,6 +833,13 @@ func (e Engine) applyProgramStep(b *state.Battle, lib content.BattleLibrary, act
 			}
 		}
 	}
+	if s.Effect == "order_deck" {
+		var chosen []string
+		for _, t := range targets {
+			chosen = append(chosen, t.Card)
+		}
+		orderLookedCards(b, actor, chosen)
+	}
 	if s.Effect == "reroll" && content.ProgramBool(s, "consume_roll") {
 		seen := map[string]bool{}
 		for _, t := range targets {
@@ -819,6 +853,40 @@ func (e Engine) applyProgramStep(b *state.Battle, lib content.BattleLibrary, act
 	}
 	return nil
 }
+
+// lookedVerb names what choosing a looked-at card does in this step.
+func lookedVerb(s content.CardStep) string {
+	switch {
+	case s.Effect == "order_deck":
+		return "Next on top: "
+	case content.ProgramString(s, "destination") == "hand":
+		return "Draw "
+	case content.ProgramString(s, "destination") == "deck_bottom":
+		return "To the bottom: "
+	}
+	return ""
+}
+
+// orderLookedCards puts the chosen looked-at cards on top of the draw pile in
+// the order chosen; the rest of the known top keeps its order under them.
+func orderLookedCards(b *state.Battle, actor string, chosen []string) {
+	rt := b.Settled.Actors[actor]
+	top, bottom := knownDeckPlaces(b.Actors[actor].Cards.Deck, rt)
+	order := []string{}
+	for _, id := range chosen {
+		if containsString(b.Actors[actor].Cards.Deck, id) && !containsString(order, id) {
+			order = append(order, id)
+		}
+	}
+	for _, id := range top {
+		if !containsString(order, id) {
+			order = append(order, id)
+		}
+	}
+	rt.DeckTop, rt.DeckBottom = order, bottom
+	b.Settled.Actors[actor] = rt
+}
+
 func programRerollFace(s content.CardStep, old, next int) int {
 	switch content.ProgramString(s, "result") {
 	case "higher":

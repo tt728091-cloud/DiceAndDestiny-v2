@@ -23,7 +23,7 @@ func _run() -> void:
 
 	# No campaigns yet: start one from the Starter sheet with the default name.
 	_expect(campaign._saves_view.visible and not campaign._play_view.visible and "No campaigns yet" in _text(campaign._save_list), "Campaign opens on the empty save list")
-	_expect(campaign._new_sheet == "starter" and campaign._new_name.text == "Starter campaign" and "100 bonus XP" in campaign._new_note.text, "a new campaign defaults to the Starter sheet")
+	_expect(campaign._new_sheet == "starter" and campaign._new_name.text == "Starter campaign" and "150 bonus XP" in campaign._new_note.text, "a new campaign defaults to the Starter sheet")
 	await _capture(campaign, "campaign-saves-empty")
 	# New campaigns default to the Expedition; this test covers the linear loop.
 	await _click(_campaign_control(campaign, "campaign.mode.linear"))
@@ -33,7 +33,7 @@ func _run() -> void:
 	_expect(campaign._play_view.visible and campaign._title.text == "Starter campaign" and not campaign.save_id.is_empty(), "Begin opens the new campaign")
 	var first_save: String = campaign.save_id
 	_expect(campaign._path.find_children("Encounter*", "PanelContainer", false, false).size() == 3, "three encounters are on the path")
-	_expect("Starter · 12 health · 100 XP to spend" in campaign._summary.text, "the campaign starts from the Starter sheet with 100 bonus XP")
+	_expect("Starter · 12 health · 150 XP to spend" in campaign._summary.text, "the campaign starts from the Starter sheet with 150 bonus XP")
 	_expect("ENCOUNTER 1  ·  NEXT" in _text(campaign._path) and "Brine Mask" in _text(campaign._path), "first encounter is next and names its opponent")
 	_expect(campaign._fight.text == "Fight · Tide Pool" and not campaign._banner.visible and not campaign._fight.disabled, "Fight offers the first encounter")
 
@@ -56,7 +56,7 @@ func _run() -> void:
 	var bought: Dictionary = runtime.purchase_progression("starter", "buy_card", "tip_it", int(catalogs.starter.progression.revision), int(catalogs.starter.economy.card_prices.get("tip_it", catalogs.starter.economy.default_card_price)))
 	_expect(bought.get("ok") == true, "Progression mode buys into its own save")
 	await _click(_campaign_control(campaign, "campaign.continue." + first_save))
-	_expect(campaign._title.text == "Starter campaign" and "12 health · 100 XP to spend" in campaign._summary.text and not campaign._fight.disabled, "the campaign save ignores the editors' purchases")
+	_expect(campaign._title.text == "Starter campaign" and "12 health · 150 XP to spend" in campaign._summary.text and not campaign._fight.disabled, "the campaign save ignores the editors' purchases")
 
 	# Delete the second campaign after confirming.
 	await _click(campaign._all_saves)
@@ -73,7 +73,7 @@ func _run() -> void:
 	await _capture(campaign, "campaign-start")
 
 	# Fight until a victory; a defeat on the way must earn nothing and repeat.
-	var xp := 100
+	var xp := 150
 	var saw_defeat := false
 	var won := false
 	for attempt in 30:
@@ -96,7 +96,7 @@ func _run() -> void:
 		won = result.battle_result == "victory"
 		print("campaign attempt %d: %s" % [attempt + 1, result.battle_result])
 		if won:
-			_expect(reward != null and "+20 XP · 120 XP to spend" in reward.text, "victory awards the encounter's XP")
+			_expect(reward != null and "+30 XP · 180 XP to spend" in reward.text, "victory awards the encounter's XP")
 			var wounded := int(result.campaign.outcome.get("wounds", 0))
 			_expect(wounded == int(battle._view.actor("blade").get("max_health", 0)) - int(battle._view.actor("blade").get("current_health", 0)), "every card removed in the battle becomes a wound")
 			if wounded > 0: _expect(reward != null and "%d wounded" % wounded in reward.text, "the result names the wounds that carry over")
@@ -113,8 +113,8 @@ func _run() -> void:
 		_expect(campaign._fight.text == "Fight · Tide Pool" and "%d XP to spend" % xp in campaign._summary.text, "after a loss the same encounter waits")
 	_expect(won, "a campaign victory within thirty battles")
 	if not won: _finish(); return
-	xp += 20
-	_expect(campaign._banner.visible and "+20 XP" in campaign._banner.text, "campaign banner reports the reward")
+	xp += 30
+	_expect(campaign._banner.visible and "+30 XP" in campaign._banner.text, "campaign banner reports the reward")
 	_expect("%d XP to spend" % xp in campaign._summary.text and campaign._fight.text == "Fight · Sunken Belfry", "victory advances to the second encounter")
 	_expect("ENCOUNTER 1  ·  CLEARED" in _text(campaign._path), "the first encounter shows cleared")
 	await _capture(campaign, "campaign-after-victory")

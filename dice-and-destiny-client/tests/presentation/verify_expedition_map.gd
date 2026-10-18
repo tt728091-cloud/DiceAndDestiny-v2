@@ -413,6 +413,7 @@ func _full_flow(seed: int) -> void:
 	var total := int(map.status.get("xp_total", -1))
 	_expect(total > xp, "total XP (%d) counts the deck's XP on top of the %d XP to spend" % [total, xp])
 	var draw := int(_state().draw)
+	var price := 0
 	await _press("expedition.prepare")
 	for frame in 6: await process_frame
 	var prepare: Control = _find(PREPARE_SCRIPT)
@@ -420,17 +421,18 @@ func _full_flow(seed: int) -> void:
 	if prepare != null:
 		await _tap(_prepare_control(prepare, "prepare.add"))
 		for frame in 3: await process_frame
+		price = int(prepare._base_offer("trailblaze").get("cost", 0))
 		await _tap(_prepare_control(prepare, "prepare.buy.trailblaze"))
 		for frame in 4: await process_frame
-		_expect(prepare._influence.text == "Open" and prepare.expedition_open and prepare.expedition_influence == 0 and int(prepare.data.xp) == xp - 10, "buying Trailblaze spent 10 XP and the 2 Influence that open the deck")
+		_expect(price > 0 and prepare._influence.text == "Open" and prepare.expedition_open and prepare.expedition_influence == 0 and int(prepare.data.xp) == xp - price, "buying Trailblaze spent its %d XP and the 2 Influence that open the deck" % price)
 		await _capture(prepare, "expedition-prepare-1280")
 		await _tap(_prepare_control(prepare, "prepare.buy.trailblaze"))
 		for frame in 4: await process_frame
-		_expect(not "Not completed" in prepare._message.text and int(prepare.data.xp) == xp - 20 and prepare._influence.text == "Open", "a second change with the deck open costs XP only (%s)" % prepare._message.text)
+		_expect(not "Not completed" in prepare._message.text and int(prepare.data.xp) == xp - 2 * price and prepare._influence.text == "Open", "a second change with the deck open costs XP only (%s)" % prepare._message.text)
 		await _click(_prepare_control(prepare, "prepare.back"))
 		for frame in 6: await process_frame
 	map = _find(EXPEDITION_SCRIPT)
-	_expect(map != null and int(_state().draw) == draw + 2 and int(_state().xp) == xp - 20 and int(map.view.turn.influence) == 0, "both bought cards top the draw pile and the Influence is spent")
+	_expect(map != null and int(_state().draw) == draw + 2 and int(_state().xp) == xp - 2 * price and int(map.view.turn.influence) == 0, "both bought cards top the draw pile and the Influence is spent")
 	# The XP tile names both of the authority's figures; spending moves XP
 	# inside the total, so the total is unchanged.
 	var xp_tile: Control = map.find_child("XPTile", true, false) if map != null else null
@@ -739,7 +741,7 @@ func _layout_pass(size: Vector2i, seed: int) -> void:
 		var id := str(card.get("id", ""))
 		var drawn := 2 if id == "take_stock" else 0
 		_expect(map.view.hand.size() == hand_before - 1 + drawn and int(map.view.turn.cards_used) == 1, "the played map card %s left the hand and counts as a card used" % id)
-		if id == "second_wind": _expect(int(map.view.energy) == energy_before + 10, "Second Wind's map effect gives +10 energy (%d → %d)" % [energy_before, int(map.view.energy)])
+		if id == "second_wind": _expect(int(map.view.energy) == energy_before - int(card.get("energy_cost", 0)) + 15, "Second Wind's map effect costs its printed energy and gives +15 (%d → %d)" % [energy_before, int(map.view.energy)])
 		elif id == "take_stock": _expect(int(map.view.energy) == energy_before - int(card.get("energy_cost", -1)) and int(card.get("energy_cost", 0)) == 5, "Take Stock drew 2 and cost its printed 5 energy (%d → %d)" % [energy_before, int(map.view.energy)])
 	# Hovering a hex shows the chart's own cartouche (there is no engine tooltip).
 	var village = map._hex_buttons["-1,1"]

@@ -5,7 +5,7 @@ description: "The Warlord's roaming Lieutenant, dozing between patrols."
 combatant: drowned_oracle_bell_diver
 count: 1
 habit: sleeper
-xp: 40
+xp: 60
 gold: 30
 lieutenant: true
 patrol: [[0, 0], [1, 0], [0, 0], [-1, 1]]

@@ -48,21 +48,19 @@ func _run() -> void:
 	_tree_line(ui, "forge.name", "Linked Ward")
 	await _click(_tree_control(ui, "forge.commit")); await _frames()
 	var guard_node: String = ui._selected
-	_expect(int(ui._node(guard_node).xp) == guard_base + 3 and int(ui._node(guard_node).card.economy.buy) == guard_base + 3, "upgrade node XP set like the suggested price (+3)")
+	_expect(int(ui._node(guard_node).xp) == guard_base + 5 and int(ui._node(guard_node).card.economy.buy) == guard_base + 5, "upgrade node XP set like the suggested price (+5)")
 	_tree_line(ui, "share.id", SHARED)
 	await _click(_tree_control(ui, "share_card")); await _frames()
 	var shared: Dictionary = ui._node(guard_node)
 	_expect(shared.get("shared", false) and shared.card.id == SHARED, "Share this card turns the variant into a shared card with its own ID")
-	_expect(int(shared.xp) == guard_base + 3 and int(shared.card.economy.buy) == 0 and int(shared.card.economy.sell) == 0, "shared card keeps the tree's XP on the node and no price of its own")
+	_expect(int(shared.xp) == guard_base + 5 and int(shared.card.economy.buy) == 0 and int(shared.card.economy.sell) == 0, "shared card keeps the tree's XP on the node and no price of its own")
 	_expect(ui._canvas._nodes[guard_node].shared, "shared node draws the chain-link badge")
-	# Undo/redo and auto-arrange preserve the node fields.
+	# Undo/redo preserve the node fields.
 	await _key(KEY_Z, true); _expect(not ui._node(guard_node).get("shared", false), "undo restores the exclusive variant")
-	await _key(KEY_Z, true, true); _expect(ui._node(guard_node).get("shared", false) and int(ui._node(guard_node).xp) == guard_base + 3, "redo restores shared and xp")
-	await _click(_tree_control(ui, "arrange")); await _frames()
-	_expect(ui._node(guard_node).get("shared", false) and int(ui._node(guard_node).xp) == guard_base + 3, "auto-arrange keeps shared and xp")
+	await _key(KEY_Z, true, true); _expect(ui._node(guard_node).get("shared", false) and int(ui._node(guard_node).xp) == guard_base + 5, "redo restores shared and xp")
 	await _publish(ui, "tree A")
 	_expect(ui.catalog.templates.has(SHARED) and int(ui.catalog.templates[SHARED].economy.buy) == 0, "published shared card has no price of its own")
-	_expect(_published_node(ui, "guard_tree").get("shared", false) and int(_published_node(ui, "guard_tree").xp) == guard_base + 3, "published tree keeps xp and shared")
+	_expect(_published_node(ui, "guard_tree").get("shared", false) and int(_published_node(ui, "guard_tree").xp) == guard_base + 5, "published tree keeps xp and shared")
 
 	# Tree B grows from Nudge and lends the same card at a different XP.
 	await _click(_tree_control(ui, "new")); await _frames()
@@ -145,9 +143,9 @@ func _run() -> void:
 	_expect(ui._message.text.contains("Shared card updates") and ui._message.text.contains("Guard paths"), "publish reports the other trees updated: " + ui._message.text)
 	_expect(int(ui.catalog.templates[SHARED].cost.energy) == energy + 1, "catalog shows the new energy")
 	_expect(int(_published_node(ui, "guard_tree").card.cost.energy) == energy + 1, "the other tree shows the new energy")
-	_expect(int(_published_node(ui, "guard_tree").xp) == guard_base + 3 and int(_published_node(ui, "nudge_tree").xp) == nudge_base + 15, "each tree keeps its own XP")
+	_expect(int(_published_node(ui, "guard_tree").xp) == guard_base + 5 and int(_published_node(ui, "nudge_tree").xp) == nudge_base + 15, "each tree keeps its own XP")
 	_choose(ui._tree_pick, "guard_tree"); await _frames()
-	_expect(int(_shared_node(ui).card.cost.energy) == energy + 1 and ui._canvas._nodes[guard_node].xp == guard_base + 3, "reloaded tree A shows the new definition at its XP")
+	_expect(int(_shared_node(ui).card.cost.energy) == energy + 1 and ui._canvas._nodes[guard_node].xp == guard_base + 5, "reloaded tree A shows the new definition at its XP")
 	await _canvas_click(ui, guard_node)
 	_expect(_tree_control(ui, "preview.shared", "tree_field").text.contains("Nudge paths"), "badge details list the other tree from tree A")
 	await _click(_tree_control(ui, "back")); await _frames()
@@ -158,7 +156,7 @@ func _run() -> void:
 	var xp: int = int(ui.state.progression.xp)
 	_expect(ui.state.offers.guard_tree.edge_1.get("tree", "") == "guard_tree", "offers name their tree")
 	await _confirm_trade(ui, "edge_1")
-	_expect(int(ui._collection_counts().get("guard_tree/" + SHARED, 0)) == 1 and int(ui.state.progression.xp) == xp - 3, "trade into the shared card in tree A: " + ui._message.text)
+	_expect(int(ui._collection_counts().get("guard_tree/" + SHARED, 0)) == 1 and int(ui.state.progression.xp) == xp - 5, "trade into the shared card in tree A: " + ui._message.text)
 	_expect(ui._canvas.node_states.get(guard_node) == "owned", "tree A counts its copy as owned")
 	_choose(ui._tree_pick, "nudge_tree"); await _frames()
 	_expect(ui._canvas.node_states.get(nudge_node) != "owned" and ui._canvas._nodes[nudge_node].stored_count == 0, "tree B does not count tree A's copy")
@@ -180,7 +178,7 @@ func _run() -> void:
 	_expect(guard_row != null and nudge_row != null, "deck lists the two trees' copies separately")
 	if guard_row == null or nudge_row == null: quit(1); return
 	_expect(_text(guard_row).contains("via Guard paths") and _text(nudge_row).contains("via Nudge paths"), "deck lines name their trees")
-	_expect(_text(guard_row).contains("%d XP" % (guard_base + 3)) and _text(nudge_row).contains("%d XP" % (nudge_base + 15)), "each line has its tree's XP value")
+	_expect(_text(guard_row).contains("%d XP" % (guard_base + 5)) and _text(nudge_row).contains("%d XP" % (nudge_base + 15)), "each line has its tree's XP value")
 	await _click(nudge_row); await _frames()
 	xp = int(screen.catalogs.adventurer.progression.xp)
 	var sell := _control(screen, "sell.nudge_tree/" + SHARED)
@@ -199,7 +197,7 @@ func _run() -> void:
 	var sheet = screen.get_node("AdminPlayerSheet")
 	_expect(sheet._rows.has("guard_tree/" + SHARED) and sheet._rows.has("nudge_tree/" + SHARED), "admin sheet has a row per tree")
 	if sheet._rows.has("guard_tree/" + SHARED):
-		_expect(sheet._rows["guard_tree/" + SHARED].get_text(4) == str(guard_base + 3) and sheet._rows["guard_tree/" + SHARED].get_text(5) == "1", "admin row shows tree A's XP and copies")
+		_expect(sheet._rows["guard_tree/" + SHARED].get_text(4) == str(guard_base + 5) and sheet._rows["guard_tree/" + SHARED].get_text(5) == "1", "admin row shows tree A's XP and copies")
 		_expect(sheet._rows["nudge_tree/" + SHARED].get_text(4) == str(nudge_base + 15) and sheet._rows["nudge_tree/" + SHARED].get_text(5) == "0", "admin row shows tree B's XP and copies")
 		sheet._search.text = SHARED; sheet._search.text_changed.emit(SHARED); await _frames()
 		var item: TreeItem = sheet._rows["nudge_tree/" + SHARED]
@@ -221,10 +219,10 @@ func _run() -> void:
 	await _click(_tree_control(ui, "add_down")); await _frames()
 	await _click(_tree_control(ui, "forge.commit")); await _frames()
 	var cheap: String = ui._selected; var cheap_id: String = ui._node(cheap).card.id
-	_expect(int(ui._node(cheap).xp) == guard_base - 2 and not ui._node(cheap).get("shared", false), "cheaper copy gets -2 XP and stays exclusive")
+	_expect(int(ui._node(cheap).xp) == guard_base - 5 and not ui._node(cheap).get("shared", false), "cheaper copy gets -5 XP and stays exclusive")
 	await _publish(ui, "cheaper variant")
 	var progress: Dictionary = runtime.card_trees().result.progression
-	var traded: Dictionary = runtime.purchase_progression("adventurer", "tree_card", "steady_guard", int(progress.revision), -2, cheap_id, "guard_tree")
+	var traded: Dictionary = runtime.purchase_progression("adventurer", "tree_card", "steady_guard", int(progress.revision), -5, cheap_id, "guard_tree")
 	_expect(traded.get("ok", false), "player owns the exclusive variant: " + str(traded.get("error", "")))
 	await _click(_tree_control(ui, "refresh")); await _frames()
 	await _canvas_click(ui, cheap)

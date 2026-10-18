@@ -50,7 +50,7 @@ func TestCardEditorEditsMapEffects(t *testing.T) {
 	}
 	result := catalog["result"].(map[string]any)
 	kinds, _ := json.Marshal(result["map_effect_kinds"])
-	if string(kinds) != `["move","draw","energy","sight","scout"]` {
+	if string(kinds) != `["move","draw","energy","sight","scout","look","influence","sneak","hide","fall_back","high_ground","mark","extend_time","lure","haggle","field_medic","spare_bandage"]` {
 		t.Fatalf("the editor gets the map effect kinds: %s", kinds)
 	}
 	templates := result["templates"].(map[string]any)

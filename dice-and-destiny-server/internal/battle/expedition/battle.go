@@ -25,7 +25,9 @@ func (s *State) ambushAllowed(r Rules, kind string, habit string, target Hex) bo
 	if kind == "provoked" || kind == "deadline" {
 		return false
 	}
-	unseen := Distance(s.Turn.StartHex, target) > r.Config.SightRange(s.Night)
+	// Enemies see as the player does, less any Hidden stacks; High Ground
+	// counts as attacking from cover.
+	unseen := Distance(s.Turn.StartHex, target) > max(0, r.Config.SightRange(s.Night)-s.hiddenSight(r)) || s.Turn.HighGround
 	if _, th, ok := s.tileAt(r.Pack, s.Player); ok {
 		if r.Config.Terrain[th.Terrain].Cover {
 			unseen = true
@@ -61,7 +63,7 @@ func (s *State) startBattle(r Rules, start battleStart) {
 	default:
 		def = r.Pack.Groups[start.group.Group]
 	}
-	pb := &PendingBattle{Kind: start.kind, Group: def.ID, Opponent: def.Combatant, Count: def.Count, Name: def.Name, Site: start.site, Origin: start.origin, Position: start.position, Warlord: start.warlord, UsedSiege: start.usedSiege}
+	pb := &PendingBattle{Kind: start.kind, Group: def.ID, Opponent: def.Combatant, Count: def.Count, Name: def.Name, Site: start.site, Origin: start.origin, Position: start.position, Warlord: start.warlord, UsedSiege: start.usedSiege, FoughtBefore: s.Turn.Fought, ActionBefore: s.Turn.ActionUsed}
 	if start.group != nil {
 		pb.Target = start.group.ID
 	} else {
@@ -88,11 +90,11 @@ func (s *State) startBattle(r Rules, start battleStart) {
 	}
 	pb.Ambush = s.ambushAllowed(r, start.kind, def.Habit, target)
 	if pb.Ambush {
-		pb.PlayerStatuses = append(pb.PlayerStatuses, StatusStack{ID: cfg.Statuses.Ambush, Stacks: cfg.Ambush.BonusDice})
+		pb.PlayerStatuses = append(pb.PlayerStatuses, StatusStack{ID: cfg.Statuses.Ambush, Stacks: cfg.Ambush.BonusDice + s.Turn.AmbushBonus})
 	}
-	for _, st := range s.Statuses {
-		pb.PlayerStatuses = append(pb.PlayerStatuses, st)
-	}
+	// High Ground covers the turn's next fight only.
+	s.Turn.HighGround, s.Turn.AmbushBonus = false, 0
+	pb.PlayerStatuses = append(pb.PlayerStatuses, s.battleStatuses(r)...)
 	fortified := start.fortified
 	if start.warlord {
 		if s.Warlord.GoalTaken {
@@ -304,7 +306,7 @@ func (s *State) ResolveBattle(r Rules, end BattleEnd) (Rewards, *BattleReport, e
 			s.Warlord.Defeated = true
 			s.Result = "victory"
 			s.Phase = PhaseVictory
-			unused := max(0, cfg.RoundsPerRegion-s.Round)
+			unused := max(0, s.rounds(r)-s.Round)
 			if pb.Kind == "deadline" {
 				unused = 0
 			}

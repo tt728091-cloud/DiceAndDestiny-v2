@@ -101,11 +101,12 @@ func TestAdminEconomyPreservesUpgradeInvestmentAndMigrates(t *testing.T) {
 	root := t.TempDir()
 	lib := catalogs["adventurer"]
 	p, _ := loadout.ReadProgress(root, "adventurer", e, lib)
-	p, err := loadout.Buy(root, "adventurer", e, lib, loadout.Purchase{Kind: "upgrade_ability", ID: "adventurer_guard", Revision: p.Revision, ExpectedCost: 25})
+	guard := guardUpgradeXP(e)
+	p, err := loadout.Buy(root, "adventurer", e, lib, loadout.Purchase{Kind: "upgrade_ability", ID: "adventurer_guard", Revision: p.Revision, ExpectedCost: guard})
 	if err != nil {
 		t.Fatal(err)
 	}
-	if *p.Budget != 220 || p.UpgradeSpent != 25 {
+	if *p.Budget != e.StartingXP+120 || p.UpgradeSpent != guard {
 		t.Fatal("upgrade spending not recorded")
 	}
 	// Simulate a pre-ledger save: retain existing XP, deck and upgraded board.
@@ -121,7 +122,7 @@ func TestAdminEconomyPreservesUpgradeInvestmentAndMigrates(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if *p.Budget != 220 || p.XP != 75 || p.UpgradeSpent != 25 {
+	if *p.Budget != e.StartingXP+120 || p.XP != e.StartingXP-guard || p.UpgradeSpent != guard {
 		t.Fatalf("migration changed investment: %+v", p)
 	}
 	settings := loadout.AdminSettings{CardPrices: map[string]int{"steady_guard": 12}, Budgets: map[string]int{"adventurer": 260}}
@@ -132,12 +133,12 @@ func TestAdminEconomyPreservesUpgradeInvestmentAndMigrates(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if p.XP != 109 || p.DeckValue != 126 || p.UpgradeSpent != 25 || *p.Budget != 260 {
+	if p.XP != 260-126-guard || p.DeckValue != 126 || p.UpgradeSpent != guard || *p.Budget != 260 {
 		t.Fatalf("upgrade revaluation failed: %+v", p)
 	}
 	// Budget reductions are also supported when all equipped investments fit.
 	settings.Revision = 1
-	settings.Budgets["adventurer"] = 151
+	settings.Budgets["adventurer"] = 126 + guard
 	if err := loadout.SaveAdmin(root, e, catalogs, settings); err != nil {
 		t.Fatal(err)
 	}

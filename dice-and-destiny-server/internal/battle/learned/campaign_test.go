@@ -55,6 +55,23 @@ func campaignLoadoutRoot(t *testing.T) string {
 	return root
 }
 
+// guardUpgradeXP is the configured price of Guard → Guard+, so tests follow
+// the economy instead of hard-coding it.
+func guardUpgradeXP(e loadout.Economy) int {
+	return e.Characters["adventurer"].AbilityUpgrades["adventurer_guard"].XP
+}
+
+// cardPrice is a card's current XP price, so purchases in tests follow the
+// published card values instead of hard-coding them.
+func cardPrice(t *testing.T, contentRoot, loadoutRoot, id string) int {
+	t.Helper()
+	c, err := loadCampaignContext(contentRoot, loadoutRoot)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return c.economy.Value(campaignCharacter, loadout.Entry{CardID: id, Count: 1})
+}
+
 func startCampaign(t *testing.T, contentRoot, loadoutRoot, character, name string) loadout.CampaignSave {
 	t.Helper()
 	save, err := newCampaign(contentRoot, loadoutRoot, character, name)
@@ -112,8 +129,8 @@ func TestCampaignAwardsVictoryXPAndAdvancesEncounters(t *testing.T) {
 		t.Fatal(err)
 	}
 	encounters := c.campaign.Encounters
-	if len(encounters) != 3 || c.campaign.Characters[0] != campaignCharacter || !c.campaign.Allows("adventurer") || c.campaign.BonusXP != 100 {
-		t.Fatalf("expected three encounters for Starter and Adventurer with 100 bonus XP: %+v", c.campaign)
+	if len(encounters) != 3 || c.campaign.Characters[0] != campaignCharacter || !c.campaign.Allows("adventurer") || c.campaign.BonusXP != 150 {
+		t.Fatalf("expected three encounters for Starter and Adventurer with 150 bonus XP: %+v", c.campaign)
 	}
 	save := startCampaign(t, contentRoot, loadoutRoot, campaignCharacter, "Test run")
 	if save.Sheet.XP != c.campaign.BonusXP {
@@ -346,7 +363,7 @@ func TestCampaignSavesAreIndependentCopies(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, err = campaignPurchase(contentRoot, root, a.ID, loadout.Purchase{Kind: "buy_card", ID: "dispel", Revision: traded.Sheet.Revision, ExpectedCost: 10}); err != nil {
+	if _, err = campaignPurchase(contentRoot, root, a.ID, loadout.Purchase{Kind: "buy_card", ID: "dispel", Revision: traded.Sheet.Revision, ExpectedCost: cardPrice(t, contentRoot, root, "dispel")}); err != nil {
 		t.Fatal(err)
 	}
 	if got := readSave(t, contentRoot, root, a.ID).Sheet; deckHealth(got.Deck) != 13 || got.XP == b.Sheet.XP {
@@ -409,7 +426,7 @@ func TestCampaignProgressMigratesIntoASave(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if p, err = loadout.Buy(root, campaignCharacter, c.economy, lib, loadout.Purchase{Kind: "buy_card", ID: "dispel", Revision: p.Revision, ExpectedCost: 10}); err != nil {
+	if p, err = loadout.Buy(root, campaignCharacter, c.economy, lib, loadout.Purchase{Kind: "buy_card", ID: "dispel", Revision: p.Revision, ExpectedCost: cardPrice(t, contentRoot, root, "dispel")}); err != nil {
 		t.Fatal(err)
 	}
 	filename := filepath.Join(root, "progression", campaignCharacter+".json")
@@ -448,13 +465,17 @@ func TestCampaignLoadoutOffersMatchPurchases(t *testing.T) {
 	root := campaignLoadoutRoot(t)
 	save := startCampaign(t, contentRoot, root, campaignCharacter, "Offers")
 	// Spend most XP so some offers are refused for cost.
-	revision := save.Sheet.Revision
+	revision, xp := save.Sheet.Revision, save.Sheet.XP
 	for _, id := range []string{"dispel", "salve", "reclaim", "disrupt", "blood_price", "take_stock", "nudge", "try_again"} {
-		bought, err := campaignPurchase(contentRoot, root, save.ID, loadout.Purchase{Kind: "buy_card", ID: id, Revision: revision, ExpectedCost: 10})
+		price := cardPrice(t, contentRoot, root, id)
+		if price > xp {
+			continue
+		}
+		bought, err := campaignPurchase(contentRoot, root, save.ID, loadout.Purchase{Kind: "buy_card", ID: id, Revision: revision, ExpectedCost: price})
 		if err != nil {
 			t.Fatal(err)
 		}
-		revision = bought.Sheet.Revision
+		revision, xp = bought.Sheet.Revision, bought.Sheet.XP
 	}
 	view, err := campaignLoadout(contentRoot, root, save.ID)
 	if err != nil {
@@ -560,7 +581,7 @@ func TestCampaignBatchTreeTrades(t *testing.T) {
 	if _, err := trade(up, 4, save.Sheet.Revision); err == nil {
 		t.Fatal("traded more copies than the deck holds")
 	}
-	if _, err := campaignPurchase(contentRoot, root, save.ID, loadout.Purchase{Kind: "sell_card", ID: "steady_guard", Count: 2, Revision: save.Sheet.Revision, ExpectedCost: 20}); err == nil {
+	if _, err := campaignPurchase(contentRoot, root, save.ID, loadout.Purchase{Kind: "sell_card", ID: "steady_guard", Count: 2, Revision: save.Sheet.Revision, ExpectedCost: 2 * cardPrice(t, contentRoot, root, "steady_guard")}); err == nil {
 		t.Fatal("a count was accepted outside tree trades")
 	}
 	after, err := trade(up, 3, save.Sheet.Revision)
@@ -581,19 +602,61 @@ func TestCampaignBatchTreeTrades(t *testing.T) {
 	}
 	// With too little XP for the whole batch, the offer caps the count and a
 	// larger batch is refused without changing anything.
-	revision := after.Sheet.Revision
-	for _, id := range []string{"dispel", "salve", "reclaim", "disrupt", "blood_price", "nudge"} {
-		bought, err := campaignPurchase(contentRoot, root, save.ID, loadout.Purchase{Kind: "buy_card", ID: id, Revision: revision, ExpectedCost: 10})
+	// Buy cards (Nudge first, so there is one to upgrade) while the Guard
+	// upgrade and a small Nudge trade stay affordable.
+	ctx, err := loadCampaignContext(contentRoot, root)
+	if err != nil {
+		t.Fatal(err)
+	}
+	guardUpgrade := guardUpgradeXP(ctx.economy)
+	revision, xp := after.Sheet.Revision, after.Sheet.XP
+	// Keep the dearest Nudge upgrade affordable once after the Guard upgrade;
+	// every other card costs at least 12 XP, so what is left stays under
+	// three of it.
+	reserve := 1
+	for i, id := range []string{"nudge", "dispel", "salve", "reclaim", "disrupt", "blood_price", "take_stock", "try_again"} {
+		price := cardPrice(t, contentRoot, root, id)
+		if xp-price < guardUpgrade+reserve {
+			continue
+		}
+		bought, err := campaignPurchase(contentRoot, root, save.ID, loadout.Purchase{Kind: "buy_card", ID: id, Revision: revision, ExpectedCost: price})
 		if err != nil {
 			t.Fatal(err)
 		}
-		revision = bought.Sheet.Revision
+		revision, xp = bought.Sheet.Revision, bought.Sheet.XP
+		if i == 0 {
+			offers, err := campaignLoadout(contentRoot, root, save.ID)
+			if err != nil {
+				t.Fatal(err)
+			}
+			for _, o := range offers["trades"].([]map[string]any) {
+				if r := o["request"].(map[string]any); r["id"] == "nudge" {
+					reserve = max(reserve, o["cost"].(int))
+				}
+			}
+		}
 	}
-	if _, err = campaignPurchase(contentRoot, root, save.ID, loadout.Purchase{Kind: "upgrade_ability", ID: "adventurer_guard", Revision: revision, ExpectedCost: 25}); err != nil {
+	if _, err = campaignPurchase(contentRoot, root, save.ID, loadout.Purchase{Kind: "upgrade_ability", ID: "adventurer_guard", Revision: revision, ExpectedCost: guardUpgrade}); err != nil {
 		t.Fatal(err)
 	}
 	poor := readSave(t, contentRoot, root, save.ID)
-	nudge := upgradeOf("nudge")
+	// Pick a Nudge upgrade the remaining XP covers at least once but not three times.
+	var nudge map[string]any
+	view, err := campaignLoadout(contentRoot, root, save.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, o := range view["trades"].([]map[string]any) {
+		if r := o["request"].(map[string]any); r["id"] == "nudge" {
+			if c := o["cost"].(int); c > 0 && poor.Sheet.XP >= c && poor.Sheet.XP < 3*c {
+				nudge = o
+				break
+			}
+		}
+	}
+	if nudge == nil {
+		t.Fatalf("no Nudge upgrade fits %d XP", poor.Sheet.XP)
+	}
 	limit := min(3, poor.Sheet.XP/nudge["cost"].(int))
 	if nudge["max_count"].(int) != limit || limit >= 3 || limit < 1 {
 		t.Fatalf("max_count %v should be capped by %d XP to %d", nudge["max_count"], poor.Sheet.XP, limit)

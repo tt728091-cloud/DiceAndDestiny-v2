@@ -79,7 +79,15 @@ func faceStep(s CardStep, statuses map[string]BattleStatusDefinition) string {
 			return text
 		}
 		cards := faceTarget(t, "card", "cards")
-		if len(t.Zones) > 0 {
+		if t.Looked {
+			switch ProgramString(s, "destination") {
+			case "hand":
+				return "Draw " + cards
+			case "deck_bottom":
+				return "Bottom " + cards
+			}
+		}
+		if len(t.Zones) > 0 && !t.Looked {
 			cards += " from " + strings.Join(t.Zones, "/")
 		}
 		if t.DrawnThisPlay {
@@ -106,6 +114,12 @@ func faceStep(s CardStep, statuses map[string]BattleStatusDefinition) string {
 			return "Flip " + faceTarget(t, "die", "dice") + "\n(1↔6 · 2↔5 · 3↔4)"
 		}
 		return "Flip " + faceTarget(t, "die", "dice") + fmt.Sprintf(" (faces total %d)", ProgramInt(s, "sum"))
+	case "extra_roll":
+		return "+" + counted(ProgramInt(s, "amount"), "roll attempt", "roll attempts")
+	case "look_deck":
+		return fmt.Sprintf("Look at the top %d", ProgramInt(s, "amount"))
+	case "order_deck":
+		return "Put the rest back in any order"
 	case "reroll", "reroll_defense":
 		text := "Reroll " + faceTarget(t, "die", "dice")
 		if s.Effect == "reroll_defense" {

@@ -392,13 +392,13 @@ func TestMovementCostsPaymentsAndImpassableTerrain(t *testing.T) {
 func TestMapCardsAndEnergyRules(t *testing.T) {
 	r := testRules(t)
 	s := newState(t, r, 2)
-	s.Hand = []string{"strong_swing", "second_wind", "take_stock", "pathfinder_paths_variant_node_1", "pathfinder_paths_variant_node_3", "trailblaze"}
+	s.Hand = []string{"strong_swing", "second_wind", "take_stock", "pathfinder_paths_variant_node_1", "lookout_paths_variant_node_1", "trailblaze"}
 	_, err := s.Act(r, Action{Kind: "play_map_card", Card: "strong_swing"})
 	mustFail(t, err, "has no map effect")
-	// Second Wind's printed cost is 0.
+	// Second Wind's printed cost is 10 energy, paid on the map as in battle.
 	act(t, s, r, Action{Kind: "play_map_card", Card: "second_wind"})
-	if s.Energy != 20 || s.Turn.CardsUsed != 1 || countOf(s.Spent, "second_wind") != 1 {
-		t.Fatalf("Second Wind gives +10 energy on the map: energy %d", s.Energy)
+	if s.Energy != 15 || s.Turn.CardsUsed != 1 || countOf(s.Spent, "second_wind") != 1 {
+		t.Fatalf("Second Wind costs 10 and gives +15 energy on the map: energy %d", s.Energy)
 	}
 	// Take Stock's printed cost is 5 energy, paid on the map as in battle.
 	for _, c := range s.View(r, 1).Hand {
@@ -408,7 +408,7 @@ func TestMapCardsAndEnergyRules(t *testing.T) {
 	}
 	draw := len(s.Draw)
 	act(t, s, r, Action{Kind: "play_map_card", Card: "take_stock"})
-	if len(s.Draw) != draw-2 || len(s.Hand) != 6 || s.Energy != 15 {
+	if len(s.Draw) != draw-2 || len(s.Hand) != 6 || s.Energy != 10 {
 		t.Fatalf("Take Stock costs 5 energy and draws 2: energy %d draw %d hand %d", s.Energy, len(s.Draw), len(s.Hand))
 	}
 	// Without the printed energy it cannot be played for its effect, and the
@@ -421,12 +421,12 @@ func TestMapCardsAndEnergyRules(t *testing.T) {
 		t.Fatalf("an unaffordable map card stays in hand: %+v energy %d", v.Hand[0], poor.Energy)
 	}
 	act(t, s, r, Action{Kind: "play_map_card", Card: "trailblaze"})
-	if s.Turn.Move != 3 {
-		t.Fatalf("Trailblaze gives Move 3, got %d", s.Turn.Move)
+	if s.Turn.Move != 4 || s.Energy != 5 {
+		t.Fatalf("Trailblaze costs 5 energy for Move 4: move %d energy %d", s.Turn.Move, s.Energy)
 	}
-	// Forced March (printed cost 0, no map-only extra) ignores terrain for the turn.
+	// Forced March (printed cost 5, no map-only extra) ignores terrain for the turn.
 	act(t, s, r, Action{Kind: "play_map_card", Card: "pathfinder_paths_variant_node_1"})
-	if s.Energy != 15 || s.Turn.Move != 7 || !s.Turn.IgnoreTerrain {
+	if s.Energy != 0 || s.Turn.Move != 8 || !s.Turn.IgnoreTerrain {
 		t.Fatalf("Forced March: energy %d move %d ignore %v", s.Energy, s.Turn.Move, s.Turn.IgnoreTerrain)
 	}
 	if cost, _, ok := s.moveCost(r, Hex{1, -1}); !ok || cost != 1 {
@@ -446,7 +446,7 @@ func TestMapCardsAndEnergyRules(t *testing.T) {
 	s.Energy = 5
 	s.Hand = append(s.Hand, "pathfinder_paths_variant_node_1")
 	_, err = s.Act(extra, Action{Kind: "play_map_card", Card: "pathfinder_paths_variant_node_1"})
-	mustFail(t, err, "costs 10 energy; you have 5")
+	mustFail(t, err, "costs 15 energy; you have 5")
 	// Scout Ahead reveals contents up to 3 away this turn.
 	s.Night = true
 	s.Seen = map[string]bool{}
@@ -455,7 +455,7 @@ func TestMapCardsAndEnergyRules(t *testing.T) {
 	s.Seen = map[string]bool{}
 	s.refreshSight(r)
 	before := len(s.Seen)
-	act(t, s, r, Action{Kind: "play_map_card", Card: "pathfinder_paths_variant_node_3"})
+	act(t, s, r, Action{Kind: "play_map_card", Card: "lookout_paths_variant_node_1"})
 	after := len(s.Seen)
 	if after <= before || s.Turn.ScoutRange != 3 {
 		t.Fatalf("Scout Ahead should reveal more hexes: %d → %d", before, after)
@@ -917,7 +917,7 @@ func TestEventsEnforceRequirementsAndOutcomes(t *testing.T) {
 	mustFail(t, err, "needs 1 Influence")
 	woundCard(t, s, "nudge")
 	rewards := act(t, s, r, Action{Kind: "event_choice", Choice: "offering", Cards: s.Hand[:1]})
-	if rewards.XP != 5 || len(s.Wounds) != 0 || s.Phase != PhaseTurn || !s.site("shrine_site").Resolved || s.LastEvent == nil || s.LastEvent.Choice != "offering" {
+	if rewards.XP != 8 || len(s.Wounds) != 0 || s.Phase != PhaseTurn || !s.site("shrine_site").Resolved || s.LastEvent == nil || s.LastEvent.Choice != "offering" {
 		t.Fatalf("offering: %+v wounds %v phase %s", rewards, s.Wounds, s.Phase)
 	}
 	back := approachFrom(t, s, r, shrine)

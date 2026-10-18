@@ -199,8 +199,8 @@ func checkFrozenWounds(t *testing.T, trade func(loadout.Purchase) (loadout.Campa
 	refused(loadout.Purchase{Kind: "tree_card_deck", ID: "steady_guard", TargetID: guardUp, Count: 3}, 3*guardCost, "Steady Guard has 2 live copies")
 	ok(loadout.Purchase{Kind: "unequip_collection_card", ID: "steady_guard"}, 0)
 	ok(loadout.Purchase{Kind: "equip_collection_card", ID: "steady_guard"}, 0)
-	ok(loadout.Purchase{Kind: "sell_card", ID: "steady_guard"}, 10)
-	ok(loadout.Purchase{Kind: "sell_card", ID: "steady_guard"}, 10)
+	ok(loadout.Purchase{Kind: "sell_card", ID: "steady_guard"}, 15)
+	ok(loadout.Purchase{Kind: "sell_card", ID: "steady_guard"}, 15)
 
 	// Only wounded copies are left: every kind is refused.
 	for _, r := range []loadout.Purchase{

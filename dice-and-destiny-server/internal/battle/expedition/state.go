@@ -94,6 +94,20 @@ type TurnState struct {
 	ScoutRange    int    `json:"scout_range,omitempty"`
 	IgnoreTerrain bool   `json:"ignore_terrain,omitempty"`
 	IgnoreNight   bool   `json:"ignore_night,omitempty"`
+	// Map card effects that last for the rest of this turn.
+	CheapTerrain    string `json:"cheap_terrain,omitempty"`    // this terrain costs 1 Move
+	CrossCost       int    `json:"cross_cost,omitempty"`       // Move to enter one lake or mountain hex (0: none)
+	Crossed         bool   `json:"crossed,omitempty"`          // that hex has been entered
+	CrossFrom       *Hex   `json:"cross_from,omitempty"`       // where a turn ending on it sends the player back
+	CarryOver       bool   `json:"carry_over,omitempty"`       // leftover Move carries to the next turn
+	ExploreDiscount int    `json:"explore_discount,omitempty"` // exploring costs this much less
+	ExploreReach    int    `json:"explore_reach,omitempty"`    // empty slots this many hexes away can be explored
+	Sneak           bool   `json:"sneak,omitempty"`            // walking past enemies provokes no fight
+	HighGround      bool   `json:"high_ground,omitempty"`      // the next fight counts as from cover
+	AmbushBonus     int    `json:"ambush_bonus,omitempty"`     // extra Ambush dice for that fight
+	RevealTiles     bool   `json:"reveal_tiles,omitempty"`     // enemies on tiles in sight are revealed
+	HaggleAt        string `json:"haggle_at,omitempty"`        // the visit ("camp" or a site) Haggle covers
+	Haggle          int    `json:"haggle,omitempty"`           // Influence off each payment there (never below 1)
 	// DeckOpen is where this visit's deck-change fee was paid ("camp" or a
 	// site id): further changes there cost XP only until the visit ends.
 	DeckOpen string `json:"deck_open,omitempty"`
@@ -132,6 +146,28 @@ type PendingBattle struct {
 	SpentBefore  []string  `json:"spent_before"`
 	WoundsBefore WoundList `json:"wounds_before"`
 	UsedSiege    bool      `json:"used_siege,omitempty"`
+	// The turn's fight flags before the battle, so Fall back can undo it.
+	FoughtBefore bool `json:"fought_before,omitempty"`
+	ActionBefore bool `json:"action_before,omitempty"`
+}
+
+// Mark is an enemy a Hunter's Mark lets the player follow: they see where it
+// is, but not the map around it, until RestsLeft rests have passed. Target is
+// "warlord", an open group's instance id, or "site:<id>" for a Lieutenant
+// holding a site.
+type Mark struct {
+	Target    string `json:"target"`
+	Name      string `json:"name"`
+	RestsLeft int    `json:"rests_left"`
+}
+
+// PendingLook is a look effect waiting for the player to arrange the cards:
+// Cards are the top of the draw pile, top first.
+type PendingLook struct {
+	Card   string   `json:"card"`
+	Cards  []string `json:"cards"`
+	Draw   int      `json:"draw"`
+	Bottom bool     `json:"bottom,omitempty"`
 }
 
 // BattleReport is what the last battle changed, for the result panel.
@@ -205,6 +241,7 @@ type CampState struct {
 	Heals        []HealRoll `json:"heals"`
 	Healed       int        `json:"healed"`
 	DeckChanges  int        `json:"deck_changes"`
+	AidBonus     int        `json:"aid_bonus,omitempty"` // Field Medic: added to every basic-aid roll
 }
 
 // RestSummary is shown after breaking camp.
@@ -276,6 +313,15 @@ type State struct {
 	LastBattle    *BattleReport  `json:"last_battle,omitempty"`
 	LastRest      *RestSummary   `json:"last_rest,omitempty"`
 	LastEvent     *EventResult   `json:"last_event,omitempty"`
+	PendingLook   *PendingLook   `json:"pending_look,omitempty"`
+
+	// Marks are the enemies a Hunter's Mark follows; ExtraRounds the rounds
+	// added to the deadline (TimeExtended once one has been added this quest);
+	// HiddenUntil the last turn the Hidden status lasts.
+	Marks        []Mark `json:"marks,omitempty"`
+	ExtraRounds  int    `json:"extra_rounds,omitempty"`
+	TimeExtended bool   `json:"time_extended,omitempty"`
+	HiddenUntil  int    `json:"hidden_until,omitempty"`
 
 	Result              string   `json:"result,omitempty"`
 	PendingRelicChoices int      `json:"pending_relic_choices,omitempty"`

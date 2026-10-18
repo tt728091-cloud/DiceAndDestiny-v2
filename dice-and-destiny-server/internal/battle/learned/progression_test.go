@@ -62,7 +62,7 @@ func TestProgressionPurchasesPersistenceAndSharedDeck(t *testing.T) {
 	if countProgress(p.Deck, "steady_guard") != 2 || countProgress(p.Deck, "emergency_ward") != 1 || totalProgress(p.Deck) != beforeHealth {
 		t.Fatal("upgrade did not replace exactly one card")
 	}
-	p, err = loadout.Buy(dir, "adventurer", economy, lib, loadout.Purchase{Kind: "upgrade_ability", ID: "adventurer_guard", Revision: p.Revision, ExpectedCost: 25})
+	p, err = loadout.Buy(dir, "adventurer", economy, lib, loadout.Purchase{Kind: "upgrade_ability", ID: "adventurer_guard", Revision: p.Revision, ExpectedCost: guardUpgradeXP(economy)})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -75,7 +75,7 @@ func TestProgressionPurchasesPersistenceAndSharedDeck(t *testing.T) {
 		{Kind: "buy_card", ID: "tip_it", Revision: p.Revision - 1, ExpectedCost: 10},
 		{Kind: "buy_card", ID: "missing", Revision: p.Revision, ExpectedCost: 10},
 		{Kind: "buy_card", ID: "tip_it", Revision: p.Revision, ExpectedCost: 1},
-		{Kind: "upgrade_ability", ID: "adventurer_guard", Revision: p.Revision, ExpectedCost: 25},
+		{Kind: "upgrade_ability", ID: "adventurer_guard", Revision: p.Revision, ExpectedCost: guardUpgradeXP(economy)},
 		{Kind: "upgrade_card", ID: "tip_it", Revision: p.Revision, ExpectedCost: 10},
 		{Kind: "grant_xp", ID: "tip_it", Revision: p.Revision, ExpectedCost: 10},
 	} {
@@ -129,7 +129,7 @@ func TestProgressionBattlePinsUpgradedAbilitiesAndReplay(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	p, err = loadout.Buy(dir, "adventurer", economy, lib, loadout.Purchase{Kind: "upgrade_ability", ID: "adventurer_guard", Revision: p.Revision, ExpectedCost: 25})
+	p, err = loadout.Buy(dir, "adventurer", economy, lib, loadout.Purchase{Kind: "upgrade_ability", ID: "adventurer_guard", Revision: p.Revision, ExpectedCost: guardUpgradeXP(economy)})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -253,8 +253,8 @@ func TestProgressionSellEntireStarterDeckAndRebuild(t *testing.T) {
 			if len(p.Deck) != 0 || p.XP != budget {
 				t.Fatalf("liquidation mismatch: %+v budget %d", p, budget)
 			}
-			if character == "adventurer" && budget != 220 {
-				t.Fatal("Adventurer's 120 XP starter plus 100 XP allowance must equal 220")
+			if character == "adventurer" && budget != economy.StartingXP+120 {
+				t.Fatalf("Adventurer's 120 XP starter plus %d XP allowance must equal %d", economy.StartingXP, economy.StartingXP+120)
 			}
 			reopened, err := loadout.ReadProgress(dir, character, economy, lib)
 			if err != nil || !reflect.DeepEqual(p, reopened) {
@@ -323,7 +323,7 @@ func TestProgressionSalePriceOverridesAndStaleRequests(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if p.XP != 110 || countProgress(p.Deck, "emergency_ward") != 0 {
+	if p.XP != economy.StartingXP+10 || countProgress(p.Deck, "emergency_ward") != 0 {
 		t.Fatal("upgraded card did not sell at its configured purchase price")
 	}
 	if _, err = loadout.Buy(dir, "adventurer", economy, lib, sale); err == nil {
@@ -333,7 +333,7 @@ func TestProgressionSalePriceOverridesAndStaleRequests(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if p.XP != 90 || countProgress(p.Deck, "emergency_ward") != 1 {
+	if p.XP != economy.StartingXP-10 || countProgress(p.Deck, "emergency_ward") != 1 {
 		t.Fatal("sale and rebuy must cancel out")
 	}
 	// Concurrent sales of one owned copy can only credit once.

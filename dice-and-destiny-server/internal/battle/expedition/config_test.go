@@ -32,7 +32,7 @@ func TestLoadConfigAcceptsShippedValues(t *testing.T) {
 	if cfg.CampHealing.BasicAidDie != 3 || cfg.CampHealing.BandageDie != 6 || cfg.CampHealing.InnBonus != 1 {
 		t.Fatalf("camp healing values changed: %+v", cfg.CampHealing)
 	}
-	if cfg.Warlord.StartDistance != 5 || cfg.Warlord.MarchPerRest != 2 || cfg.Warlord.EarlyReward.XPPerRound != 20 || cfg.Warlord.EarlyReward.ExtraRelicChoices != 1 {
+	if cfg.Warlord.StartDistance != 5 || cfg.Warlord.MarchPerRest != 2 || cfg.Warlord.EarlyReward.XPPerRound != 30 || cfg.Warlord.EarlyReward.ExtraRelicChoices != 1 {
 		t.Fatalf("warlord values changed: %+v", cfg.Warlord)
 	}
 	want := map[string]int{"camp": 3, "village": 2, "monastery": 1, "town": 0}
