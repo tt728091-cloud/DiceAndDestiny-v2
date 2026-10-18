@@ -113,7 +113,7 @@ def play_battle(base, token, max_actions, stop_presentation_type=None, stop_stag
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("command", choices=["health", "state", "controls", "errors", "screenshot", "activate", "wait", "play"])
+    parser.add_argument("command", choices=["health", "state", "controls", "errors", "screenshot", "activate", "wait", "play", "pointer"])
     parser.add_argument("value", nargs="?")
     parser.add_argument("--base")
     parser.add_argument("--token")
@@ -127,6 +127,7 @@ def main():
     parser.add_argument("--max-actions", type=int, default=500)
     parser.add_argument("--stop-presentation-type")
     parser.add_argument("--stop-stage")
+    parser.add_argument("--click", action="store_true", help="for pointer: press and release the left button there")
     args = parser.parse_args()
 
     base = args.base
@@ -154,6 +155,13 @@ def main():
         if not args.value:
             parser.error("activate requires a semantic control ID")
         result = request(base, token, "POST", f"/controls/{args.value}/activate", {"text": args.text} if args.text is not None else {})
+    elif args.command == "pointer":
+        # pointer X,Y: move the game's pointer to viewport pixels (control
+        # bounds use the same coordinates); --click also clicks there.
+        if not args.value or "," not in args.value:
+            parser.error("pointer requires X,Y in viewport pixels")
+        x, y = (float(part) for part in args.value.split(",", 1))
+        result = request(base, token, "POST", "/pointer", {"x": x, "y": y, "click": args.click})
     elif args.command == "wait":
         condition = {"timeout_ms": args.timeout_ms}
         for key in ("segment", "stage", "control_id"):
