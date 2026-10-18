@@ -159,7 +159,7 @@ So on the map:
 - **Effect (default):** a visible **Ambush** status, used up on your first offensive roll. That roll uses **5 + 3 = 8 dice**; you may keep at most 5; each reroll goes back to 5 dice total (keep 3, reroll 2).
 - Rare, strong versions (skills, relics) may add more dice, bonus damage, or **stun the enemy for round 1**. Battles stay **simultaneous**: nobody acts first.
 
-**Fortified:** a visible status on defenders inside walls that strengthens their **defense**. Default: their defensive roll uses **1 extra die**. Alternative to test: each shield result prevents **2 instead of 1**. Siege gear removes it. A card that removes it in battle takes it off only for the rest of that round: Fortified, Conqueror and Lieutenant's Favor come back at every round's Ongoing Effects (`restore_each_round`).
+**Fortified:** a visible status on defenders inside walls that strengthens their **defense**. Default: their defensive roll uses **1 extra die**. Alternative to test: each shield result prevents **2 instead of 1**. Siege gear removes it. A card that removes it in battle takes it off only for the rest of that round: Fortified, Conqueror and Lieutenant's Favor come back at every round's Ongoing Effects (`restore_each_round`). Siege Dispel (Dispel tree) is the exception: it clears Fortified or Conqueror for the rest of the battle.
 
 ## 8. The Warlord
 

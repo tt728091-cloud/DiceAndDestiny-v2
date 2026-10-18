@@ -332,6 +332,9 @@ func (e Engine) finalizeTriggerBatch(battle *state.Battle, library content.Battl
 	}
 	for _, removal := range batch.RemoveStacks {
 		removeStatus(battle, removal.ActorID, removal.StatusID, removal.Stacks)
+		if removal.ForBattle {
+			keepStatusRemoved(battle, removal.ActorID, removal.StatusID)
+		}
 	}
 	for _, instanceID := range batch.StatusInstanceIDs {
 		actorID, statusID := findStatusInstance(battle, instanceID)
@@ -3049,6 +3052,17 @@ func restoreRoundStatuses(battle *state.Battle, library content.BattleLibrary) {
 			}
 		}
 	}
+}
+
+// keepStatusRemoved lowers a restore-each-round status's restore target to
+// its current stacks, so a removal for the battle is never topped back up.
+func keepStatusRemoved(battle *state.Battle, actorID, statusID string) {
+	runtime := battle.Settled.Actors[actorID]
+	if _, ok := runtime.RestoreStatuses[statusID]; !ok {
+		return
+	}
+	runtime.RestoreStatuses[statusID] = min(runtime.RestoreStatuses[statusID], statusStackCount(battle.Actors[actorID].Statuses, statusID))
+	battle.Settled.Actors[actorID] = runtime
 }
 
 func applyStatus(battle *state.Battle, library content.BattleLibrary, actorID, statusID string, stacks int) {

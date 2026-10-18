@@ -362,7 +362,7 @@ Reviewed 2026-10-17. Each tree is a 2 × 4 grid. The rows are sizes on the preve
 - **Map conditions come back each round.** Fortified, Conqueror, Lieutenant's Favor and the Lieutenant marker are `restore_each_round` statuses: at every round's Ongoing Effects they return to their battle-start stacks, so a removal lasts for the rest of that round. Lieutenant's Favor adds its damage when the Warlord's attack is finalized, so dispelling it in Defense does not change that attack.
 - **No status is immune to removal** today; the `dispel_immune` flag stays available for later.
 - **Removed (2026-10-17):** Crude Remedy and Labored Rite (the base column covers them), and Poultice, Disenchant and the old Panacea and Nullify ("1 or 2 stacks from up to 2 statuses"); the names Panacea and Nullify moved to the clear-2 cards.
-- **Later idea:** a Siege Dispel-style card made for Fortified.
+- **Siege Dispel** (added 2026-10-18), 9 energy, **30 XP**, an upgrade from Shatter: after your defense roll, clear one enemy's Fortified or Conqueror **for the rest of the battle**. The status doesn't come back at Ongoing Effects (the `for_battle` switch on Remove statuses). It can't help this round's defense, so it pays off from the next round on: narrower than Shatter, but lasting. The price is a placeholder (about Shatter's) until battles on the map are measured.
 
 ### The map trees (reviewed 2026-10-17)
 

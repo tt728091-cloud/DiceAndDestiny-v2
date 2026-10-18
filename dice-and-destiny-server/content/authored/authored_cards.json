@@ -1551,6 +1551,89 @@
           "x": 320,
           "y": -1260,
           "xp": 41
+        },
+        {
+          "id": "node_11",
+          "card": {
+            "access_type": "general",
+            "program": {
+              "version": 1,
+              "windows": [
+                "defense_after_roll",
+                "damage_reaction"
+              ],
+              "roll_requirement": "any",
+              "uses_per_round": 0,
+              "uses_per_battle": 0,
+              "steps": [
+                {
+                  "effect": "remove_status",
+                  "target": {
+                    "owner": "enemy",
+                    "mode": "one",
+                    "count": 1,
+                    "selection": "choose",
+                    "polarity": "positive",
+                    "status_ids": [
+                      "fortified",
+                      "conqueror"
+                    ]
+                  },
+                  "params": {
+                    "for_battle": true,
+                    "stacks": 0
+                  }
+                }
+              ]
+            },
+            "economy": {
+              "buy": 30,
+              "sell": 30,
+              "copy_limit": 20,
+              "upgrades": null
+            },
+            "schema_version": 1,
+            "id": "dispel_paths_variant_node_11",
+            "name": "Siege Dispel",
+            "type": "action",
+            "presentation": {
+              "illustration_path": "res://assets/battle/cards/antidote.png",
+              "effect_summary": "Clear 1 enemy Fortified or Conqueror for the battle",
+              "rules_text": "Remove all stacks from one of an enemy's buffs (positive statuses) matching Fortified, Conqueror. What is removed stays gone for the rest of the battle, even from a status that returns each round.\nPlay: Defense, after your first defense roll.",
+              "art_key": "",
+              "timing": [
+                {
+                  "segment": "defense",
+                  "when": "after"
+                }
+              ],
+              "target": "Enemy"
+            },
+            "cost": {
+              "energy": 9
+            },
+            "play": {
+              "source_zones": [
+                "hand"
+              ],
+              "destination": "discard",
+              "playable_during": []
+            },
+            "targeting": {
+              "selector": "card_program",
+              "minimum": 1,
+              "maximum": 1
+            },
+            "reaction_window": {
+              "opens": false,
+              "pass_required": false
+            },
+            "operations": []
+          },
+          "x": -320,
+          "y": -720,
+          "pinned": true,
+          "xp": 30
         }
       ],
       "edges": [
@@ -1621,6 +1704,13 @@
           "id": "edge_10",
           "from": "node_3",
           "to": "node_10",
+          "reversible": true,
+          "requirements": []
+        },
+        {
+          "id": "edge_11",
+          "from": "node_5",
+          "to": "node_11",
           "reversible": true,
           "requirements": []
         }
@@ -11535,7 +11625,7 @@
     "triage"
   ],
   "version": 1,
-  "revision": 106,
+  "revision": 107,
   "cards": {
     "blood_price": {
       "program": {
@@ -12623,6 +12713,82 @@
       },
       "cost": {
         "energy": 11
+      },
+      "play": {
+        "source_zones": [
+          "hand"
+        ],
+        "destination": "discard",
+        "playable_during": []
+      },
+      "targeting": {
+        "selector": "card_program",
+        "minimum": 1,
+        "maximum": 1
+      },
+      "reaction_window": {
+        "opens": false,
+        "pass_required": false
+      },
+      "operations": []
+    },
+    "dispel_paths_variant_node_11": {
+      "access_type": "general",
+      "program": {
+        "version": 1,
+        "windows": [
+          "defense_after_roll",
+          "damage_reaction"
+        ],
+        "roll_requirement": "any",
+        "uses_per_round": 0,
+        "uses_per_battle": 0,
+        "steps": [
+          {
+            "effect": "remove_status",
+            "target": {
+              "owner": "enemy",
+              "mode": "one",
+              "count": 1,
+              "selection": "choose",
+              "polarity": "positive",
+              "status_ids": [
+                "fortified",
+                "conqueror"
+              ]
+            },
+            "params": {
+              "for_battle": true,
+              "stacks": 0
+            }
+          }
+        ]
+      },
+      "economy": {
+        "buy": 30,
+        "sell": 30,
+        "copy_limit": 20,
+        "upgrades": null
+      },
+      "schema_version": 1,
+      "id": "dispel_paths_variant_node_11",
+      "name": "Siege Dispel",
+      "type": "action",
+      "presentation": {
+        "illustration_path": "res://assets/battle/cards/antidote.png",
+        "effect_summary": "Clear 1 enemy Fortified or Conqueror for the battle",
+        "rules_text": "Remove all stacks from one of an enemy's buffs (positive statuses) matching Fortified, Conqueror. What is removed stays gone for the rest of the battle, even from a status that returns each round.\nPlay: Defense, after your first defense roll.",
+        "art_key": "",
+        "timing": [
+          {
+            "segment": "defense",
+            "when": "after"
+          }
+        ],
+        "target": "Enemy"
+      },
+      "cost": {
+        "energy": 9
       },
       "play": {
         "source_zones": [

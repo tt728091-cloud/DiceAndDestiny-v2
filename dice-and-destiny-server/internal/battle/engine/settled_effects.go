@@ -470,6 +470,9 @@ func (e Engine) applyEffectMutations(battle *state.Battle, library content.Battl
 		} else {
 			removeStatus(battle, removal.ActorID, removal.StatusID, removal.Stacks)
 		}
+		if removal.ForBattle {
+			keepStatusRemoved(battle, removal.ActorID, removal.StatusID)
+		}
 	}
 	for _, prevention := range result.Preventions {
 		source := effectDamageSourceByID(battle, prevention.ProposalID)
