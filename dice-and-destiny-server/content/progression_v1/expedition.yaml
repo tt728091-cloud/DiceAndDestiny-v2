@@ -56,3 +56,27 @@ gold:
 # carried_move, hidden and spare_bandage are map-only statuses some map cards
 # give the player; they never enter a battle.
 statuses: {ambush: ambush, fortified: fortified, conqueror: conqueror, lieutenant: lieutenants_favor, carried_move: carried_move, hidden: hidden, spare_bandage: spare_bandage}
+# The world clock: one round is the Day or the Night half of a month, so a
+# month is a Day round and a Night round. Months run in calendar order and the
+# first opens the year; each region names the month it starts in. The month
+# names are placeholders. Seasonal effects arrive in Phase 4; until then every
+# season's effects list stays empty (the loader refuses entries).
+calendar:
+  seasons:
+    - {id: spring, name: Spring, rules_text: "Thaw and new growth; the roads open again. No seasonal map effects yet.", effects: []}
+    - {id: summer, name: Summer, rules_text: "Long days and warm nights on the marsh roads. No seasonal map effects yet.", effects: []}
+    - {id: autumn, name: Autumn, rules_text: "Storms come in off the sea and the nights draw in. No seasonal map effects yet.", effects: []}
+    - {id: winter, name: Winter, rules_text: "Frost on the fens; travellers keep close to the inns. No seasonal map effects yet.", effects: []}
+  months:
+    - {id: early_spring, name: Early Spring, season: spring}
+    - {id: mid_spring,   name: Midspring,    season: spring}
+    - {id: late_spring,  name: Late Spring,  season: spring}
+    - {id: early_summer, name: Early Summer, season: summer}
+    - {id: mid_summer,   name: Midsummer,    season: summer}
+    - {id: late_summer,  name: Late Summer,  season: summer}
+    - {id: early_autumn, name: Early Autumn, season: autumn}
+    - {id: mid_autumn,   name: Midautumn,    season: autumn}
+    - {id: late_autumn,  name: Late Autumn,  season: autumn}
+    - {id: early_winter, name: Early Winter, season: winter}
+    - {id: mid_winter,   name: Midwinter,    season: winter}
+    - {id: late_winter,  name: Late Winter,  season: winter}
