@@ -121,6 +121,29 @@ So on the map:
 | The Warlord | His own habits and weaknesses | His own habits and weaknesses; Fortified if he's camped in a tower or keep |
 - After the last round you take the normal rest, then **the Warlord comes to you**: a forced fight, starting with a fresh hand, with every buff he still has and no Ambush.
 
+### The world clock and the calendar
+
+Time is a **world clock**, stored in the save as its own object (`clock.half`), apart from the hero's piles, so a later save with several heroes needs no new format. It counts **half-months** since the world began: half 0 is the Day of month 1 in year 1, and odd halves are Night. **One round is one half**: a month is a Day round and a Night round, so a year is twice as many rounds as it has months (24).
+
+- **The calendar** is configuration: `calendar` in `content/progression_v1/expedition.yaml` lists the seasons (name, the tooltip's `rules_text`, an `effects` list) and the months in calendar order, each naming its season. The shipped calendar has twelve months, three per season, and the year opens in Early Spring. The month names ("Early Summer", "Midsummer", "Late Summer"…) are placeholders.
+- **Seasonal effects arrive in Phase 4.** Until then every season's `effects` list is empty and the loader refuses any entry, so nothing in the config can claim an effect the engine doesn't apply. Each season's `rules_text` says "No seasonal map effects yet."
+- **A region names its start month** in `calendar_start: {month: …}` on the region. A region always starts on the Day half of that month, in year 1; the loader refuses an unknown month. The save also records `region_start`, the half its first round began.
+- **The round is derived:** round = clock half − region start + 1. It stays the deadline counter, compared against `rounds_per_region` plus any rounds `extend_time` added. Day or Night is the clock's. The rest moves the clock on one half; nothing else stores time, and the clock never draws a random number.
+- **Every time-based rule counts the same clock**: today the deadline; later quest timers, critical-wound durations and Dark Tiers.
+- **The map shows the calendar.** The chart's cartouche reads "Late Summer · Day · 1/4"; hovering it shows the month, the season and the year, Day or Night with today's sight and terrain costs, and the season's rules and effects. The rest's heading names the new half and month ("Night falls · Late Summer · round 2"). Every string comes from the authority's view.
+
+The Salt Marches start in late summer and run into autumn:
+
+| Round | Clock | Shown as |
+| --- | --- | --- |
+| 1 | Late Summer, Day | Late Summer · Day |
+| 2 | Late Summer, Night | Late Summer · Night |
+| 3 | Early Autumn, Day | Early Autumn · Day |
+| 4 | Early Autumn, Night | Early Autumn · Night |
+| deadline | Midautumn, Day | The deadline (Midautumn) |
+
+An `extend_time` card simply lets the clock run one half further before the deadline.
+
 ## 6. Energy
 
 ![Energy](expedition/06-energy.png)
@@ -339,6 +362,8 @@ gold:
 | Value | First guess |
 | --- | --- |
 | Rounds per region | 4 (Day, Night, Day, Night) |
+| Calendar | 12 months of a Day and a Night round, 3 per season; the year opens in Early Spring; no seasonal effects until Phase 4 |
+| Region start | The Salt Marches: Late Summer (`calendar_start` on the region) |
 | Hand size (map and battle) | 4 |
 | Hand limit (map and battle) | 6 |
 | Base energy (Starter) | 10 |
@@ -405,6 +430,7 @@ Decided in review (2026-10-11 to 2026-10-12):
 - A card played for its map effect costs its printed energy, as in battle; a map-only extra energy cost is allowed but rare and only for big effects, because map energy refills only at rest.
 - XP, cards, gear and relics carry between regions, with a camp and healer stop in between.
 - Gold never buys XP; the trainer was removed (2026-10, open-world plan).
+- 2026-10: the round counter is derived from a world clock; the Salt Marches start in late summer.
 
 ## 18. Implementation notes
 
