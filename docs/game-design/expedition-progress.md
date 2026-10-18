@@ -365,6 +365,13 @@ From [phase-1bc-handoff.md](phase-1bc-handoff.md). Design: [expedition.md §5](e
 6. **The view carries the clock.** `clock` (year, month and its name, season and its name, `season_rules`, `season_effects` — always a list — Day/Night, label) sits beside `round`, `rounds`, `night` and `day_label` ("Late Summer · Day · round 1 of 4"; "The deadline" after the last round). The rest summary's `clock_after` is filled in by the view from `round_after`, so the save stores no time of its own there. The log says "Night falls in Late Summer." or "Early Autumn begins."
 7. **The map shows the calendar.** The cartouche's day line is the clock label and the round ("Late Summer · Day · 1/4"; at the deadline "The deadline (Midautumn)"). A pass-through hover area over the cartouche (`expedition.cartouche`) shows the calendar in the chart's own bone hover box, wrapped and kept inside the chart. The rest heading names the new half and month. The inspector state carries `clock`. Wound "taken" labels keep their "Day 1, turn 1" form.
 
+## Phase 1C — The quest format, on paper (2026-10-18)
+
+From [phase-1bc-handoff.md](phase-1bc-handoff.md). Reference: [quest-format.md](quest-format.md).
+
+- **Description only.** `internal/battle/quest` loads `content/quests_v1/` strictly, validates it against the vocabulary, the config and the region pack, and describes it for the read-only `quest_catalog` op and Character Creation's Quests tab. No expedition rule, timer, reward or view field reads quest data, and `expedition` never imports `quest` (`TestExpeditionDoesNotReadQuests`); every expedition and learned test outcome is unchanged.
+- **The Salt Marches as quests** refer to the scenario's numbers and content instead of copying them; `TestSaltMarchesQuestsMatchScenario` ties them to the live scenario. The main quest's deadline is its timer's failure branch (a second stage, the deadline fight), as the Go rules run it.
+
 ## Decisions made during implementation
 
 1. **Tile stack and the Warlord's goal.** The region's slots are typed (countryside or core). Countryside tiles form a seeded stack drawn in order into any empty countryside slot the player explores. Core tiles are dealt (seeded shuffle) to the core slots when the region is built, and a core slot can be explored only once the countryside stack is empty ("countryside tiles first, then core tiles"). Reason: the Warlord's route must be "laid out at region build" ~5 hexes from his goal, which is a site on a core tile; dealing the core tiles at build is the only way the goal hex exists before it is explored. The player never learns a core slot's tile before exploring it (viewer-safe status omits it).
