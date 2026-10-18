@@ -34,6 +34,18 @@ func loadSingleAbilityPolicy(root, id string) (*singleAbilityPolicy, error) {
 	return &singleAbilityPolicy{definition: def}, nil
 }
 
+// LoadScriptedMinion returns a content-configured minion's policy for tooling
+// that drives battles outside a Session, such as the balance lab.
+func LoadScriptedMinion(contentRoot, id string) (interface {
+	Select(mlsim.Transition) (int, time.Duration, error)
+}, error) {
+	policy, err := loadSingleAbilityPolicy(contentRoot, id)
+	if err != nil {
+		return nil, err
+	}
+	return policy, nil
+}
+
 func (p *singleAbilityPolicy) Metadata() PolicyMetadata {
 	return PolicyMetadata{ModelID: p.definition.ID, Algorithm: "single_ability", Architecture: "keep-target-face", ObservationSchema: mlsim.ObservationSchemaVersion, EnvironmentSchema: mlsim.EnvironmentSchemaVersion, ActionSchema: mlsim.ActionSchemaVersion}
 }

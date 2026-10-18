@@ -315,9 +315,9 @@ func _process(_delta: float) -> void:
 		return
 	var elapsed := Time.get_ticks_msec() - _model_started_ms
 	if _model_thread.is_alive():
-		if elapsed > MODEL_TIMEOUT_MS and not _model_timeout_warning:
+		if elapsed > _model_timeout_ms() and not _model_timeout_warning:
 			_model_timeout_warning = true
-			_error_message = "Learned-policy inference exceeded %d ms. No fallback action will be submitted." % MODEL_TIMEOUT_MS
+			_error_message = "Learned-policy inference exceeded %d ms. No fallback action will be submitted." % _model_timeout_ms()
 			_render()
 		return
 	var result = _model_thread.wait_to_finish()
@@ -1060,9 +1060,9 @@ func _build_header(parent: VBoxContainer) -> void:
 		var policy_schema := str(_view.learned_policy.get("observation_schema", ""))
 		var policy_label := "NEW V2" if policy_schema == "dice-and-destiny-observation-v2" else "OLD V1"
 		policy_badge.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-		policy_badge.text = str(_minion_summary().get("badge", "")) if _is_single_ability_opponent() else "LEARNED BATTLE · %s · HUMAN %s" % [policy_label, learned_human_seat.to_upper()]
+		policy_badge.text = str(_minion_summary().get("badge", "")) if _is_single_ability_opponent() else "LOOK-AHEAD MIRROR · HUMAN %s" % learned_human_seat.to_upper() if _is_lookahead_opponent() else "LEARNED BATTLE · %s · HUMAN %s" % [policy_label, learned_human_seat.to_upper()]
 		policy_badge.add_theme_color_override("font_color", Color("9de0ff"))
-		policy_badge.tooltip_text = str(_minion_summary().get("rules", "")) if _is_single_ability_opponent() else "Frozen policy %s · no training or fallback" % str(_view.learned_policy.get("model_id", "unknown"))
+		policy_badge.tooltip_text = str(_minion_summary().get("rules", "")) if _is_single_ability_opponent() else "Look-ahead player · plays your character and deck · simulates each choice; nothing trained" if _is_lookahead_opponent() else "Frozen policy %s · no training or fallback" % str(_view.learned_policy.get("model_id", "unknown"))
 		if _view.campaign.has("expedition"):
 			var x: Dictionary = _view.campaign.get("expedition", {})
 			policy_badge.text = "EXPEDITION · %s %d · %s" % ["NIGHT" if x.get("night", false) else "DAY", (int(x.get("round", 1)) + 1) / 2, str(x.get("name", "")).to_upper()]
@@ -1211,7 +1211,7 @@ func _build_enemy_column(_parent: HBoxContainer) -> void:
 	if learned_battle_mode or _multiple_enemies():
 		profile.title.text = _actor_display_name(_focused_enemy).trim_prefix("Learned ")
 	if learned_battle_mode:
-		profile.title.tooltip_text = "%s · one attack · one defense" % str(_minion_summary().get("keeps", "")) if _is_single_ability_opponent() else "Learned Policy"
+		profile.title.tooltip_text = "%s · one attack · one defense" % str(_minion_summary().get("keeps", "")) if _is_single_ability_opponent() else "Look-ahead player" if _is_lookahead_opponent() else "Learned Policy"
 	var income := _income_actor_data(_focused_enemy)
 	if not income.is_empty(): profile.prepare_income(income)
 	else:
@@ -3865,6 +3865,14 @@ func _segment_name(id: String) -> String:
 func _is_single_ability_opponent() -> bool:
 	return _view.learned_policy.get("controller_kind", "") == "single_ability"
 
+## The look-ahead opponent simulates the battle before each choice and may
+## think for several seconds; frozen policies answer within MODEL_TIMEOUT_MS.
+func _is_lookahead_opponent() -> bool:
+	return _view.learned_policy.get("controller_kind", "") == "lookahead"
+
+func _model_timeout_ms() -> int:
+	return preload("res://local_client/learned_battle/learned_battle_runtime.gd").LOOKAHEAD_TIMEOUT_MS if _is_lookahead_opponent() else MODEL_TIMEOUT_MS
+
 func _minion_summary() -> Dictionary:
 	return preload("res://local_client/learned_battle/learned_battle_runtime.gd").minion_summary(str(_view.learned_policy.get("model_id", "")))
 
@@ -3878,6 +3886,7 @@ func _actor_display_name(actor_id: String) -> String:
 		if definition_id.is_empty():
 			definition_id = "blade_warden" if actor_id == "blade" or (actor_id == _focused_enemy and learned_battle_mode) else "venom_goblin" if actor_id == _focused_enemy else actor_id
 		display_name = definition_id.replace("_", " ").capitalize()
+	if actor_id == _focused_enemy and learned_battle_mode and _is_lookahead_opponent(): return "Look-ahead " + display_name
 	if actor_id == _focused_enemy and learned_battle_mode and not _is_single_ability_opponent(): return "Learned " + display_name
 	if _multiple_enemies() and actor_id in _enemy_ids():
 		var siblings: Array = _enemy_ids().filter(func(id): return _view.actor(id).get("definition_id") == actor.get("definition_id"))

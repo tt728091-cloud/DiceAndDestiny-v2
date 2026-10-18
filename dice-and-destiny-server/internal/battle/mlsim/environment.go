@@ -529,6 +529,27 @@ func (e *Environment) Current() Transition {
 	return e.current
 }
 
+// PreferActor hands the current decision to seatID when that seat also has
+// legal commands. Simultaneous private windows (offensive planning) accept
+// either seat first; a look-ahead player plans first so a copy of the battle
+// never contains the other seat's private planning.
+func (e *Environment) PreferActor(seatID string) (Transition, bool, error) {
+	if e.current.Terminal || e.current.TruncationReason != "" || e.current.ActorID == seatID {
+		return e.current, false, nil
+	}
+	view, err := e.Observe(seatID)
+	if err != nil {
+		return e.current, false, err
+	}
+	if len(view.LegalActions) == 0 {
+		return e.current, false, nil
+	}
+	e.legalActions = append([]command.Command(nil), view.LegalActions...)
+	e.current = Transition{ActorID: seatID, Result: e.compactResult(view), Metrics: e.metrics}
+	transition, err := e.transportTransition(e.current)
+	return transition, true, err
+}
+
 func (e *Environment) Metrics() EpisodeMetrics {
 	return e.metrics
 }

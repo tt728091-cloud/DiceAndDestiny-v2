@@ -27,6 +27,7 @@ type runtimeRequest struct {
 	UnifiedDefense     bool                  `json:"unified_defense"`
 	OpponentDefinition string                `json:"opponent_definition,omitempty"`
 	OpponentCount      int                   `json:"opponent_count,omitempty"`
+	OpponentPolicy     string                `json:"opponent_policy,omitempty"`
 	Op                 string                `json:"op"`
 	ReplaceSession     bool                  `json:"replace_session,omitempty"`
 	ModelPath          string                `json:"model_path,omitempty"`
@@ -252,6 +253,7 @@ func HandleRuntimeRequest(requestJSON string) string {
 			LoadoutRoot:        request.LoadoutRoot,
 			OpponentDefinition: request.OpponentDefinition,
 			OpponentCount:      request.OpponentCount,
+			OpponentPolicy:     request.OpponentPolicy,
 			ContentRoot:        request.ContentRoot,
 			RunStateRoot:       request.RunStateRoot,
 			ModelPath:          request.ModelPath,
@@ -261,7 +263,8 @@ func HandleRuntimeRequest(requestJSON string) string {
 		}
 		differentConfig := learnedRuntime.session != nil && (config.LoadoutRoot != learnedRuntime.config.LoadoutRoot || config.ModelPath != learnedRuntime.config.ModelPath ||
 			config.ModelSHA256 != learnedRuntime.config.ModelSHA256 ||
-			config.ContentRoot != learnedRuntime.config.ContentRoot || config.OpponentDefinition != learnedRuntime.config.OpponentDefinition || config.OpponentCount != learnedRuntime.config.OpponentCount)
+			config.ContentRoot != learnedRuntime.config.ContentRoot || config.OpponentDefinition != learnedRuntime.config.OpponentDefinition || config.OpponentCount != learnedRuntime.config.OpponentCount ||
+			config.OpponentPolicy != learnedRuntime.config.OpponentPolicy)
 		if differentConfig && !request.ReplaceSession {
 			return runtimeError(fmt.Errorf("learned runtime is already initialized with a different model or content root"))
 		}
