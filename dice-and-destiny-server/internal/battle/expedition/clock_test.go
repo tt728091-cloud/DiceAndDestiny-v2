@@ -223,3 +223,58 @@ func TestRegionCalendarStartIsValidated(t *testing.T) {
 		})
 	}
 }
+
+func TestViewShowsTheClock(t *testing.T) {
+	r := testRules(t)
+	s := newState(t, r, 3)
+	v := viewJSON(t, s, r)
+	clock, ok := v["clock"].(map[string]any)
+	if !ok {
+		t.Fatalf("the view has a clock object: %v", v["clock"])
+	}
+	want := map[string]any{"year": 1.0, "month": "late_summer", "month_name": "Late Summer", "season": "summer", "season_name": "Summer", "night": false, "label": "Late Summer · Day"}
+	for key, value := range want {
+		if clock[key] != value {
+			t.Fatalf("clock.%s is %v, not %v (%v)", key, clock[key], value, clock)
+		}
+	}
+	if rules, _ := clock["season_rules"].(string); !strings.Contains(rules, "No seasonal map effects yet") {
+		t.Fatalf("the season's rules text reaches the view: %q", rules)
+	}
+	if effects := requireList(t, v, "clock", "season_effects"); len(effects) != 0 {
+		t.Fatalf("season_effects is an empty list: %v", effects)
+	}
+	if v["day_label"] != "Late Summer · Day · round 1 of 4" || v["round"] != 1.0 || v["rounds"] != 4.0 || v["night"] != false {
+		t.Fatalf("day_label and the round fields: %v / %v / %v / %v", v["day_label"], v["round"], v["rounds"], v["night"])
+	}
+	// The rest names the half that begins, in the log and in its summary.
+	act(t, s, r, Action{Kind: "make_camp"})
+	act(t, s, r, Action{Kind: "break_camp"})
+	view := s.View(r, 1)
+	if view.DayLabel != "Late Summer · Night · round 2 of 4" || view.Clock.Label != "Late Summer · Night" || !view.Clock.Night {
+		t.Fatalf("after the first rest: %q / %+v", view.DayLabel, view.Clock)
+	}
+	if after := view.LastRest.ClockAfter; after == nil || after.MonthName != "Late Summer" || !after.Night || view.LastRest.RoundAfter != 2 {
+		t.Fatalf("the rest summary carries the half that began: %+v", view.LastRest.ClockAfter)
+	}
+	if s.LastRest.ClockAfter != nil {
+		t.Fatal("the saved rest summary stores no time of its own")
+	}
+	if last := s.Log[len(s.Log)-1]; last != "Night falls in Late Summer." {
+		t.Fatalf("the rest's log line: %q", last)
+	}
+	act(t, s, r, Action{Kind: "make_camp"})
+	act(t, s, r, Action{Kind: "break_camp"})
+	view = s.View(r, 1)
+	if view.DayLabel != "Early Autumn · Day · round 3 of 4" || view.LastRest.ClockAfter.MonthName != "Early Autumn" || view.LastRest.ClockAfter.Night || s.Log[len(s.Log)-1] != "Early Autumn begins." {
+		t.Fatalf("after the second rest: %q, %+v, %q", view.DayLabel, view.LastRest.ClockAfter, s.Log[len(s.Log)-1])
+	}
+	act(t, s, r, Action{Kind: "make_camp"})
+	act(t, s, r, Action{Kind: "break_camp"})
+	act(t, s, r, Action{Kind: "make_camp"})
+	act(t, s, r, Action{Kind: "break_camp"})
+	view = s.View(r, 1)
+	if view.DayLabel != "The deadline" || view.Clock.MonthName != "Midautumn" || view.Clock.Night {
+		t.Fatalf("at the deadline: %q, %+v", view.DayLabel, view.Clock)
+	}
+}

@@ -1,9 +1,10 @@
 extends Control
 ## The torn parchment chart under the hexes: its shadow on the stone table,
-## the paper, a cartouche with the region's name and the day line, a gold
-## rule and a compass rose. It covers the region's footprint (panning with the
-## hexes) and always the whole visible map area, so no table shows at the
-## sides however wide the window is.
+## the paper, a cartouche with the region's name and the calendar line (the
+## authority's month, Day/Night and round), a gold rule and a compass rose.
+## It covers the region's footprint (panning with the hexes) and always the
+## whole visible map area, so no table shows at the sides however wide the
+## window is.
 
 const STYLE := preload("res://app/screens/map/map_style.gd")
 const HEX_OFFSETS := [Vector2i(0, 0), Vector2i(1, 0), Vector2i(1, -1), Vector2i(0, -1), Vector2i(-1, 0), Vector2i(-1, 1), Vector2i(0, 1)]
@@ -13,32 +14,51 @@ const EDGE := 6.0
 
 var screen: Node
 var sheet_rect := Rect2()
+## Where the cartouche (name, rule and calendar line) sits; the screen lays
+## its hover area over it.
+var cartouche_rect := Rect2()
+var _cartouche_at := Vector2.ZERO
 var _paper: StyleBoxTexture
 
 func _init() -> void:
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
 
-func _draw() -> void:
-	if screen == null or screen.view.is_empty(): return
+## Places the sheet over the region's footprint and the cartouche in its
+## visible top-left corner; false while there is nothing to draw.
+func layout() -> bool:
+	# Not laid out yet: the screen lays the sheet out again once it is sized.
+	if screen == null or screen.view.is_empty() or size.x <= 2.0 * EDGE or size.y <= 2.0 * EDGE: return false
 	var r: float = screen._hex_radius
 	var lo := Vector2(INF, INF); var hi := Vector2(-INF, -INF)
 	for slot in screen._list(screen.view, "slots"):
 		for offset in HEX_OFFSETS:
 			var c: Vector2 = screen._hex_center(int(slot.center.q) + offset.x, int(slot.center.r) + offset.y)
 			lo = lo.min(c - Vector2.ONE * r); hi = hi.max(c + Vector2.ONE * r)
-	if lo.x == INF: return
+	if lo.x == INF: return false
 	lo -= Vector2(1.6 * r, 2.9 * r); hi += Vector2(1.6 * r, 1.6 * r)
 	var sz := (hi - lo).max(Vector2(16.0 * r, 12.0 * r))
 	sheet_rect = Rect2(lo, sz).merge(Rect2(Vector2.ZERO, size).grow(-EDGE))
+	# Kept inside the visible area however the chart is panned.
+	_cartouche_at = Vector2(maxf(sheet_rect.position.x, 0.0) + 1.2 * r, maxf(sheet_rect.position.y, 0.0) + 0.8 * r)
+	var title_w := STYLE.serif_bold().get_string_size(_title(), HORIZONTAL_ALIGNMENT_LEFT, -1, 18).x
+	var day_w := 22.0 + STYLE.serif().get_string_size(screen.chart_day_label(), HORIZONTAL_ALIGNMENT_LEFT, -1, 15).x
+	cartouche_rect = Rect2(_cartouche_at - Vector2(4, 2), Vector2(maxf(9.0 * r, maxf(title_w, day_w)) + 8, 54))
+	return true
+
+func _title() -> String:
+	return str(screen.view.get("region_name", "")).to_upper()
+
+func _draw() -> void:
+	if not layout(): return
+	var r: float = screen._hex_radius
 	# Shadow on the table, then the paper.
 	draw_rect(STYLE.shift(sheet_rect.grow(2.0), Vector2(9, 12)), Color(0, 0, 0, 0.18))
 	draw_rect(STYLE.shift(sheet_rect, Vector2(5, 7)), Color(0, 0, 0, 0.38))
 	if _paper == null: _paper = STYLE.chart_paper()
 	_paper.draw(get_canvas_item(), sheet_rect)
-	# Cartouche: region name, day line, gold rule — kept inside the visible area.
-	var at := Vector2(maxf(sheet_rect.position.x, 0.0) + 1.2 * r, maxf(sheet_rect.position.y, 0.0) + 0.8 * r)
-	var title := str(screen.view.get("region_name", "")).to_upper()
-	draw_string(STYLE.serif_bold(), at + Vector2(0, 18), title, HORIZONTAL_ALIGNMENT_LEFT, -1, 18, STYLE.INK)
+	# Cartouche: region name, gold rule, calendar line.
+	var at := _cartouche_at
+	draw_string(STYLE.serif_bold(), at + Vector2(0, 18), _title(), HORIZONTAL_ALIGNMENT_LEFT, -1, 18, STYLE.INK)
 	draw_line(at + Vector2(0, 24), at + Vector2(9.0 * r, 24), STYLE.GOLD_LEAF, 1.0, true)
 	var night: bool = screen.view.get("night", false)
 	var day_at := at + Vector2(0, 42)

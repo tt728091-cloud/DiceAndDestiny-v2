@@ -69,6 +69,8 @@ var _map_canvas: Control
 var _chart: Control
 var _sheet: Control
 var _lines: Control
+## The hover area over the chart's cartouche: hovering it shows the calendar.
+var _cartouche: Control
 var _marks: Control
 var _vignette: TextureRect
 var _scrim: ColorRect
@@ -123,6 +125,10 @@ func _build() -> void:
 	_sheet = SHEET.new(); _sheet.name = "Sheet"; _sheet.screen = self; _sheet.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT); _chart.add_child(_sheet)
 	_map_canvas = Control.new(); _map_canvas.name = "MapCanvas"; _map_canvas.mouse_filter = Control.MOUSE_FILTER_PASS; _map_canvas.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT); _chart.add_child(_map_canvas)
 	_lines = LINES.new(); _lines.name = "Lines"; _lines.screen = self; _lines.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT); _chart.add_child(_lines)
+	# Passes clicks and drags on to the map area, so the chart still pans under it.
+	_cartouche = Control.new(); _cartouche.name = "Cartouche"; _cartouche.mouse_filter = Control.MOUSE_FILTER_PASS; _chart.add_child(_cartouche)
+	_cartouche.mouse_entered.connect(_hover_cartouche.bind(true)); _cartouche.mouse_exited.connect(_hover_cartouche.bind(false))
+	_register("expedition.cartouche", _cartouche, "The calendar: month, season, Day or Night")
 	_vignette = TextureRect.new(); _vignette.name = "Vignette"; _vignette.texture = CHART.vignette(false)
 	_vignette.expand_mode = TextureRect.EXPAND_IGNORE_SIZE; _vignette.stretch_mode = TextureRect.STRETCH_SCALE
 	_vignette.mouse_filter = Control.MOUSE_FILTER_IGNORE; _vignette.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT); _map_area.add_child(_vignette)
@@ -235,12 +241,51 @@ func _set_message(text: String) -> void:
 	_message.text = text
 	_message.visible = not text.is_empty()
 
-## The chart cartouche's day line: "Day · 1/4", "Night · 2/4", or the
-## authority's label after the last round ("The deadline").
+## The chart cartouche's day line: the authority's clock label and the round
+## ("Late Summer · Day · 1/4"), or after the last round its label with the
+## month ("The deadline (Midautumn)").
 func chart_day_label() -> String:
+	var clock := _clock()
 	var round := int(view.get("round", 0)); var rounds := int(view.get("rounds", 0))
-	if rounds <= 0 or round > rounds: return str(view.get("day_label", ""))
-	return "%s · %d/%d" % ["Night" if view.get("night", false) else "Day", round, rounds]
+	if rounds <= 0 or round > rounds:
+		var month := str(clock.get("month_name", ""))
+		return "%s (%s)" % [str(view.get("day_label", "")), month] if not month.is_empty() else str(view.get("day_label", ""))
+	return "%s · %d/%d" % [str(clock.get("label", "")), round, rounds]
+
+## The view's world clock (month, season, Day/Night, year), as the authority sent it.
+func _clock() -> Dictionary:
+	return view.get("clock") if view.get("clock") is Dictionary else {}
+
+## The cartouche's hover: the month and Day/Night, the season and year,
+## today's sight and terrain costs (the legend's numbers), and the season's
+## rules and effects. Every value is the authority's; nothing is computed here.
+func cartouche_lines() -> Array:
+	var clock := _clock()
+	if clock.is_empty(): return []
+	var night: bool = clock.get("night", false)
+	var half := "Night" if night else "Day"
+	var lines: Array = [str(clock.get("label", "")), "%s · Year %d" % [str(clock.get("season_name", "")), int(clock.get("year", 0))]]
+	lines.append("%s · sight %d" % [half, int(view.get("turn", {}).get("sight", 0))])
+	var terrains: Dictionary = view.get("config", {}).get("terrain", {})
+	var costs: Array = []
+	var order: Array = TERRAIN_ORDER.duplicate()
+	for key in terrains:
+		if key not in order: order.append(key)
+	for terrain in order:
+		if not terrains.has(terrain): continue
+		var config: Dictionary = terrains[terrain]
+		costs.append("%s %s" % [str(terrain).capitalize(), "✕" if config.get("impassable", false) else str(int(config.get("night" if night else "day", 0)))])
+	if not costs.is_empty(): lines.append("%s Move: %s" % [half, " · ".join(costs)])
+	lines.append("%s: %s" % [str(clock.get("season_name", "")), str(clock.get("season_rules", ""))])
+	var effects: Array = _list(clock, "season_effects")
+	lines.append("Seasonal effects: " + ("none yet" if effects.is_empty() else " · ".join(effects)))
+	return lines
+
+func _hover_cartouche(on: bool) -> void:
+	if map_model.is_empty(): return
+	map_model["cartouche_hover"] = on
+	map_model["cartouche_lines"] = cartouche_lines() if on else []
+	_marks.wake(); _marks.queue_redraw()
 
 func _show_error(text: String) -> void:
 	_set_message(text)
@@ -302,6 +347,8 @@ func _layout_map() -> void:
 		button.size = Vector2.ONE * _hex_radius * 2.0
 		button.position = center - button.size * 0.5
 		button.queue_redraw()
+	_sheet.layout()
+	_cartouche.position = _sheet.cartouche_rect.position; _cartouche.size = _sheet.cartouche_rect.size
 	_sheet.queue_redraw(); _lines.queue_redraw(); _marks.queue_redraw()
 
 func _render_map() -> void:
@@ -315,7 +362,8 @@ func _render_map() -> void:
 	for target in _list(view, "challenges") + _list(view, "enters"): targets["%d,%d" % [int(target.hex.q), int(target.hex.r)]] = target
 	var model := {"night": view.get("night", false), "phase": str(view.get("phase", "")), "survey": _survey_key or _survey_locked, "legend_filter": _legend_filter,
 		"hover": "", "selected": "%d,%d" % [selected_hex.x, selected_hex.y] if selected_hex != NONE else "", "hexes": {}, "slots": {}, "moves": moves, "targets": targets,
-		"warlord": view.get("warlord", {}), "marks": _list(view, "marks"), "sight": [], "overlay_open": false, "hover_lines": [], "warlord_cell": NONE}
+		"warlord": view.get("warlord", {}), "marks": _list(view, "marks"), "sight": [], "overlay_open": false, "hover_lines": [], "warlord_cell": NONE,
+		"cartouche_hover": map_model.get("cartouche_hover", false), "cartouche_lines": cartouche_lines() if map_model.get("cartouche_hover", false) else []}
 	var player := Vector2i(int(view.get("player", {}).get("q", 0)), int(view.get("player", {}).get("r", 0)))
 	model["player"] = player
 	var slot_of := {}
@@ -928,7 +976,9 @@ func _render_overlay() -> void:
 		context = "rest"
 		var rest: Dictionary = view.last_rest
 		var camp: Dictionary = rest.get("camp", {})
-		_overlay_heading(body, "%s · round %d" % ["Night falls" if rest.get("night_after", false) else "Day breaks", int(rest.get("round_after", 0))], CHART.glyph("moon" if rest.get("night_after", false) else "sun"))
+		var after: Dictionary = rest.get("clock_after") if rest.get("clock_after") is Dictionary else {}
+		var month := " · " + str(after.month_name) if not str(after.get("month_name", "")).is_empty() else ""
+		_overlay_heading(body, "%s%s · round %d" % ["Night falls" if rest.get("night_after", false) else "Day breaks", month, int(rest.get("round_after", 0))], CHART.glyph("moon" if rest.get("night_after", false) else "sun"))
 		CHART.ink_label(body, "%d Spent cards reshuffled; energy %d → %d." % [int(camp.get("reshuffled", 0)), int(camp.get("energy_before", 0)), int(view.get("base_energy", 0))], 14)
 		if int(rest.get("healed", 0)) > 0: CHART.ink_label(body, "Healed %d health at camp." % int(rest.healed), 14, CHART.GREEN)
 		for roll in _list(camp, "heals"): _heal_line(body, roll)
@@ -1296,7 +1346,7 @@ func inspection_state() -> Dictionary:
 		"statuses": _list(view, "statuses"), "inventory": _list(view, "inventory"), "warlord": view.get("warlord", {}), "result": str(view.get("result", "")),
 		"selected_hex": [selected_hex.x, selected_hex.y] if selected_hex != NONE else null, "selected_cards": selected_cards, "energy_payment": energy_payment,
 		"placed_tiles": _list(view, "slots").filter(func(s): return s.get("placed", false)).size(), "seen_hexes": _list(view, "hexes").filter(func(h): return h.get("seen", false)).size(),
-		"message": _message.text, "chart_day": chart_day_label(), "heal_feedback": {"active": _heal_feedback.active(), "last": _heal_feedback.last, "shown": _heal_feedback.shown.size()}, "hex_radius": _hex_radius, "survey": _survey_key or _survey_locked, "legend_open": _legend_open, "marks_processing": _marks.is_processing() if _marks != null else false,
+		"message": _message.text, "chart_day": chart_day_label(), "clock": _clock(), "cartouche": {"hover": map_model.get("cartouche_hover", false), "lines": map_model.get("cartouche_lines", [])}, "heal_feedback": {"active": _heal_feedback.active(), "last": _heal_feedback.last, "shown": _heal_feedback.shown.size()}, "hex_radius": _hex_radius, "survey": _survey_key or _survey_locked, "legend_open": _legend_open, "marks_processing": _marks.is_processing() if _marks != null else false,
 		"hexes": _list(view, "hexes"), "slots": _list(view, "slots"),
 	}
 

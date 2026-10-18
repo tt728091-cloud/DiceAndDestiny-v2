@@ -254,10 +254,13 @@ type RestSummary struct {
 	Patrols      []string  `json:"patrols"`
 	RoundAfter   int       `json:"round_after"`
 	NightAfter   bool      `json:"night_after"`
-	Drew         int       `json:"drew"`
-	Healed       int       `json:"healed"`
-	Deadline     bool      `json:"deadline,omitempty"`
-	Statuses     []string  `json:"statuses_expired,omitempty"`
+	// ClockAfter is the half that began, filled in by the view from
+	// RoundAfter (the save stores no time of its own here).
+	ClockAfter *ViewClock `json:"clock_after,omitempty"`
+	Drew       int        `json:"drew"`
+	Healed     int        `json:"healed"`
+	Deadline   bool       `json:"deadline,omitempty"`
+	Statuses   []string   `json:"statuses_expired,omitempty"`
 }
 
 // EventResult is what the last event choice did.

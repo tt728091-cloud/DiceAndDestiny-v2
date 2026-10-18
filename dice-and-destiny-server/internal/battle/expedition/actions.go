@@ -697,8 +697,17 @@ func (s *State) breakCamp(r Rules) error {
 	}
 	s.Phase = PhaseTurn
 	s.refreshSight(r)
-	s.log("%s %d begins.", dayName(s.Night()), (s.Round()+1)/2)
+	s.log("%s", halfBegins(r.Config.Calendar, s.Clock))
 	return nil
+}
+
+// halfBegins is the log line for a new half: "Night falls in Late Summer."
+// or, on a Day half (the start of a month), "Early Autumn begins."
+func halfBegins(cal CalendarConfig, c WorldClock) string {
+	if c.Night() {
+		return fmt.Sprintf("Night falls in %s.", c.Month(cal).Name)
+	}
+	return fmt.Sprintf("%s begins.", c.Month(cal).Name)
 }
 
 func dayName(night bool) string {

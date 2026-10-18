@@ -269,18 +269,41 @@ type ViewTurn struct {
 	Effects []string `json:"effects"`
 }
 
+// ViewClock is the world clock as the map shows it: the month, the season
+// with its tooltip rules and effects, Day or Night, and the label.
+type ViewClock struct {
+	Year          int      `json:"year"`
+	Month         string   `json:"month"`
+	MonthName     string   `json:"month_name"`
+	Season        string   `json:"season"`
+	SeasonName    string   `json:"season_name"`
+	SeasonRules   string   `json:"season_rules"`
+	SeasonEffects []string `json:"season_effects"`
+	Night         bool     `json:"night"`
+	Label         string   `json:"label"`
+}
+
+func viewClock(cfg Config, c WorldClock) ViewClock {
+	cal := cfg.Calendar
+	month, season := c.Month(cal), c.Season(cal)
+	// Seasonal effects arrive in Phase 4; the loader refuses any until then.
+	return ViewClock{Year: c.Year(cal), Month: month.ID, MonthName: month.Name, Season: season.ID, SeasonName: season.Name, SeasonRules: season.RulesText,
+		SeasonEffects: []string{}, Night: c.Night(), Label: c.Label(cal)}
+}
+
 type View struct {
-	Region      string `json:"region"`
-	RegionName  string `json:"region_name"`
-	Description string `json:"description"`
-	Round       int    `json:"round"`
-	Rounds      int    `json:"rounds"`
-	Night       bool   `json:"night"`
-	DayLabel    string `json:"day_label"`
-	Phase       string `json:"phase"`
-	Result      string `json:"result,omitempty"`
-	Revision    int    `json:"revision"`
-	Seed        uint64 `json:"seed"`
+	Region      string    `json:"region"`
+	RegionName  string    `json:"region_name"`
+	Description string    `json:"description"`
+	Round       int       `json:"round"`
+	Rounds      int       `json:"rounds"`
+	Night       bool      `json:"night"`
+	DayLabel    string    `json:"day_label"`
+	Clock       ViewClock `json:"clock"`
+	Phase       string    `json:"phase"`
+	Result      string    `json:"result,omitempty"`
+	Revision    int       `json:"revision"`
+	Seed        uint64    `json:"seed"`
 
 	Player       Hex               `json:"player"`
 	Energy       int               `json:"energy"`
@@ -443,13 +466,13 @@ func (s *State) View(r Rules, revision int) View {
 		Draw: sortedStrings(s.Draw), Spent: append([]string{}, s.Spent...), Wounds: s.viewWounds(r), WoundCards: s.Wounds.Cards(), CardNames: map[string]string{},
 		Hand: []ViewCard{}, Inventory: []ViewItem{}, Statuses: []ViewStatus{}, Hexes: []ViewHex{}, Slots: []ViewSlot{}, Moves: []ViewMove{}, Explores: []ViewSlot{}, Challenges: []ViewTarget{}, Enters: []ViewTarget{}, Marks: []ViewMark{},
 		Health: s.LiveCards(), MaxHealth: s.LiveCards() + s.Wounds.Damage(), XPEarned: s.XPEarned, RelicChoices: s.PendingRelicChoices,
-		LastBattle: s.LastBattle, LastRest: s.viewLastRest(), LastEvent: s.LastEvent, Log: append([]string{}, s.Log...),
+		LastBattle: s.LastBattle, LastRest: s.viewLastRest(r), LastEvent: s.LastEvent, Log: append([]string{}, s.Log...),
 		Config: ViewConfig{EnergyPerMove: cfg.Move.EnergyPerMove, EnergyPerInfluence: cfg.Influence.EnergyPerInfluence, ExploreCost: cfg.Move.ExploreCost, SightDay: cfg.Sight.Day, SightNight: cfg.Sight.Night, Terrain: cfg.Terrain, DefeatWounds: cfg.Defeat.Wounds, DeckChangeInfluence: cfg.DeckChangeInfluence}}
-	day := (s.Round() + 1) / 2
+	v.Clock = viewClock(cfg, s.Clock)
 	if s.Round() > s.rounds(r) {
 		v.DayLabel = "The deadline"
 	} else {
-		v.DayLabel = fmt.Sprintf("%s %d · round %d of %d", dayName(s.Night()), day, s.Round(), s.rounds(r))
+		v.DayLabel = fmt.Sprintf("%s · round %d of %d", v.Clock.Label, s.Round(), s.rounds(r))
 	}
 	for _, id := range append(append(append([]string{}, s.Hand...), s.Draw...), append(append([]string{}, s.Spent...), s.Wounds.Cards()...)...) {
 		v.CardNames[id] = r.cardName(id)
@@ -824,13 +847,16 @@ func (s *State) innBonus(r Rules) int {
 }
 
 // viewLastRest copies the rest summary with its lists never null (summaries
-// saved before camp healing have no heals list).
-func (s *State) viewLastRest() *RestSummary {
+// saved before camp healing have no heals list) and the clock of the half
+// the rest began, read from the round it records.
+func (s *State) viewLastRest(r Rules) *RestSummary {
 	if s.LastRest == nil {
 		return nil
 	}
 	rest := *s.LastRest
 	rest.Camp.Heals = append([]HealRoll{}, rest.Camp.Heals...)
 	rest.Patrols = append([]string{}, rest.Patrols...)
+	after := viewClock(r.Config, s.roundClock(rest.RoundAfter))
+	rest.ClockAfter = &after
 	return &rest
 }
