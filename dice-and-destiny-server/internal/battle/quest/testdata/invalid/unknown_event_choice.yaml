@@ -1,0 +1,17 @@
+# want: unknown choice "dance" of event "wayside_shrine"
+schema_version: 1
+id: unknown_event_choice
+name: A fixture
+set: fixture
+kind: side
+status: scenario
+hook: {verb: scenario_start, region: salt_marches}
+trigger: [{verb: scenario_start}]
+start: one
+stages:
+  - id: one
+    objective: {verb: resolve_event, site: shrine_site}
+    outcomes:
+      - outcome: success
+        when: {verb: event_choice, event: wayside_shrine, choice: dance}
+        next: end

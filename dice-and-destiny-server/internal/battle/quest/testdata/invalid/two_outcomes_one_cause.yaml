@@ -1,0 +1,16 @@
+# want: two success outcomes have the same cause
+schema_version: 1
+id: two_outcomes_one_cause
+name: A fixture
+set: fixture
+kind: side
+status: scenario
+hook: {verb: scenario_start, region: salt_marches}
+trigger: [{verb: scenario_start}]
+start: one
+stages:
+  - id: one
+    objective: {verb: defeat_group, group: brine_lone}
+    outcomes:
+      - {outcome: success, next: end}
+      - {outcome: success, label: Again, next: end}

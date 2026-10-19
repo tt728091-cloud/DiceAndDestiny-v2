@@ -1,0 +1,15 @@
+# want: unknown site or town "salt_tower"
+schema_version: 1
+id: unknown_site
+name: A fixture
+set: fixture
+kind: side
+status: scenario
+hook: {verb: scenario_start, region: salt_marches}
+trigger: [{verb: scenario_start}]
+start: one
+stages:
+  - id: one
+    objective: {verb: liberate_site, site: salt_tower}
+    outcomes:
+      - {outcome: success, next: end}

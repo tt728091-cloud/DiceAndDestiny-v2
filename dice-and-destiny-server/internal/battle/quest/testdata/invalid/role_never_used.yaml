@@ -1,0 +1,18 @@
+# want: role "town" is declared but never used
+schema_version: 1
+id: role_never_used
+name: A paper fixture
+set: fixture
+kind: personal
+status: paper
+roles:
+  person: {type: person, text: "Who asks."}
+  town: {type: town, text: "A town."}
+hook: {verb: request, from: {role: person}}
+trigger: [{verb: season, in: [autumn]}]
+start: one
+stages:
+  - id: one
+    objective: {verb: defeat_group, group: brine_lone}
+    outcomes:
+      - {outcome: success, next: end}

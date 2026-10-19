@@ -676,8 +676,8 @@ func TestFullRegionSeededPlayThroughs(t *testing.T) {
 		d.afterAct = d.reloadCheck
 		s := d.st()
 		v := d.view()
-		if s.Round != 1 || s.Night || s.Phase != expedition.PhaseTurn || len(s.Hand) != 4 || s.Energy != 10 || len(s.Placed) != 1 || len(v.Hexes) != 7 {
-			t.Fatalf("a new expedition starts on the start tile with four cards and base energy: round %d hand %d energy %d placed %d hexes %d", s.Round, len(s.Hand), s.Energy, len(s.Placed), len(v.Hexes))
+		if s.Round() != 1 || s.Night() || s.Phase != expedition.PhaseTurn || len(s.Hand) != 4 || s.Energy != 10 || len(s.Placed) != 1 || len(v.Hexes) != 7 {
+			t.Fatalf("a new expedition starts on the start tile with four cards and base energy: round %d hand %d energy %d placed %d hexes %d", s.Round(), len(s.Hand), s.Energy, len(s.Placed), len(v.Hexes))
 		}
 		// Turn 1: the village next door. A card pays the step; two more are
 		// Influence; a deck change through the site spends it and the card's XP.
@@ -721,7 +721,7 @@ func TestFullRegionSeededPlayThroughs(t *testing.T) {
 			t.Fatalf("seed %d: the Warlord hunt ends in victory: %q, fights %v, state %s", regionVictorySeed, result, d.fights, s.Result)
 		}
 		report := s.LastBattle
-		unused := d.rules.Config.RoundsPerRegion - s.Round
+		unused := d.rules.Config.RoundsPerRegion - s.Round()
 		if !report.RegionWon || report.EarlyXP != unused*d.rules.Config.Warlord.EarlyReward.XPPerRound || report.RelicChoices != d.rules.Config.Warlord.EarlyReward.ExtraRelicChoices || s.PendingRelicChoices != report.RelicChoices {
 			t.Fatalf("an early victory pays per unused round (%d) and a relic choice: %+v", unused, report)
 		}
@@ -758,8 +758,8 @@ func TestFullRegionSeededPlayThroughs(t *testing.T) {
 		start := s.Warlord.Pos()
 		for round := 1; round <= d.rules.Config.RoundsPerRegion; round++ {
 			s = d.st()
-			if s.Round != round || s.Night != (round%2 == 0) {
-				t.Fatalf("round %d: state round %d night %v", round, s.Round, s.Night)
+			if s.Round() != round || s.Night() != (round%2 == 0) {
+				t.Fatalf("round %d: state round %d night %v", round, s.Round(), s.Night())
 			}
 			d.act(expedition.Action{Kind: "make_camp"})
 			s = d.st()
@@ -769,8 +769,8 @@ func TestFullRegionSeededPlayThroughs(t *testing.T) {
 			before := s.Warlord.Index
 			d.act(expedition.Action{Kind: "break_camp"})
 			s = d.st()
-			if s.Round != round+1 || s.Night != (round%2 == 1) || s.LastRest == nil {
-				t.Fatalf("break camp advances the round and flips Day/Night: round %d night %v", s.Round, s.Night)
+			if s.Round() != round+1 || s.Night() != (round%2 == 1) || s.LastRest == nil {
+				t.Fatalf("break camp advances the round and flips Day/Night: round %d night %v", s.Round(), s.Night())
 			}
 			if !s.Warlord.GoalTaken && s.Warlord.Index != before+d.rules.Config.Warlord.MarchPerRest && !s.Warlord.Arrived {
 				t.Fatalf("the Warlord marches %d per rest: %d → %d", d.rules.Config.Warlord.MarchPerRest, before, s.Warlord.Index)
@@ -830,7 +830,7 @@ func TestProbeWarlordOdds(t *testing.T) {
 		d := newRegionDriver(t, uint64(seed), fmt.Sprintf("Probe %d", seed))
 		result := d.huntWarlord()
 		s := d.st()
-		t.Logf("seed %d: %s · round %d · region %s · fights %v", seed, result, s.Round, s.Result, d.fights)
+		t.Logf("seed %d: %s · round %d · region %s · fights %v", seed, result, s.Round(), s.Result, d.fights)
 		if result == "victory" {
 			wins++
 		}

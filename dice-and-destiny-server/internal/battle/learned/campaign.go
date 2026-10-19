@@ -185,7 +185,7 @@ func campaignStatus(contentRoot, loadoutRoot string) (map[string]any, error) {
 		var exp map[string]any
 		if save.IsExpedition() {
 			x := save.Expedition
-			exp = map[string]any{"region": x.Region, "round": x.Round, "night": x.Night, "phase": x.Phase, "result": x.Result, "pending_battle": x.PendingBattle != nil, "gold": x.Gold}
+			exp = map[string]any{"region": x.Region, "round": x.Round(), "night": x.Night(), "phase": x.Phase, "result": x.Result, "pending_battle": x.PendingBattle != nil, "gold": x.Gold}
 		}
 		views = append(views, map[string]any{
 			"mode": mode, "expedition": exp,
@@ -585,7 +585,7 @@ func (s *Session) ResetExpeditionBattle(saveID string) (map[string]any, error) {
 	if len(setup.Hand)+len(setup.Draw)+len(setup.Spent) == 0 {
 		return nil, fmt.Errorf("every card is wounded; the expedition cannot fight")
 	}
-	b := &expeditionBattle{saveID: save.ID, saveName: save.Name, character: save.Character, deck: save.Sheet.Deck, wounds: save.Sheet.Wounds, board: save.Sheet.Abilities, setup: setup, pending: *save.Expedition.PendingBattle, region: rules.Pack.Regions[save.Expedition.Region].Name, round: save.Expedition.Round, night: save.Expedition.Night}
+	b := &expeditionBattle{saveID: save.ID, saveName: save.Name, character: save.Character, deck: save.Sheet.Deck, wounds: save.Sheet.Wounds, board: save.Sheet.Abilities, setup: setup, pending: *save.Expedition.PendingBattle, region: rules.Pack.Regions[save.Expedition.Region].Name, round: save.Expedition.Round(), night: save.Expedition.Night()}
 	return s.resetLoadout(setup.BattleID, setup.Seed, "seat-a", false, save.Character, true, "expedition", nil, b)
 }
 

@@ -1,0 +1,17 @@
+# want: a seasonal timer needs a season of the calendar, not "monsoon"
+schema_version: 1
+id: seasonal_unknown_season
+name: A fixture
+set: fixture
+kind: side
+status: scenario
+hook: {verb: scenario_start, region: salt_marches}
+trigger: [{verb: scenario_start}]
+start: one
+stages:
+  - id: one
+    objective: {verb: defeat_group, group: brine_lone}
+    timer: {type: seasonal, before: monsoon}
+    outcomes:
+      - {outcome: success, next: end}
+      - {outcome: failure, next: end}

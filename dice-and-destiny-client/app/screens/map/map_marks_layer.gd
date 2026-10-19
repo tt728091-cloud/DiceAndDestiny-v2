@@ -2,16 +2,21 @@ extends Control
 ## Everything on the chart that is information rather than geography, drawn
 ## above the night-graded paper so gold and red keep their saturation: the
 ## legend veil, the sight ring, highlights, the Warlord's route, the hover
-## path, site chips, "?" chips, cost chits, the pieces, survey labels and the
-## hover cartouche. All of it comes from the screen's map_model, which the
-## screen builds from the authority's viewer-safe view.
+## path, site chips, "?" chips, cost chits, the pieces, survey labels, the
+## hover cartouche and the calendar hover. All of it comes from the screen's
+## map_model, which the screen builds from the authority's viewer-safe view.
 
 const STYLE := preload("res://app/screens/map/map_style.gd")
 const ICONS := preload("res://presentation/battle/battle_icons.gd")
 const SITE_TYPES := ["village", "monastery", "town", "ruins", "grotto", "event", "keep", "tower"]
 
+## The widest a hover box's text runs before it wraps.
+const MAX_HOVER_WIDTH := 380.0
+
 var screen: Node
 var slide := {"from": Vector2i.ZERO, "t": 1.0, "active": false}
+## Where the hover box was last drawn (empty while none shows), for layout checks.
+var hover_box := Rect2()
 var _tween: Tween
 
 func _init() -> void:
@@ -22,7 +27,7 @@ func _process(_delta: float) -> void:
 	queue_redraw()
 	if screen == null: set_process(false); return
 	var model: Dictionary = screen.map_model
-	if not slide.active and str(model.get("selected", "")).is_empty() and str(model.get("hover", "")).is_empty(): set_process(false)
+	if not slide.active and str(model.get("selected", "")).is_empty() and str(model.get("hover", "")).is_empty() and not model.get("cartouche_hover", false): set_process(false)
 
 func wake() -> void:
 	set_process(true)
@@ -221,22 +226,49 @@ func _draw() -> void:
 			if not hexes.has(key): continue
 			STYLE.draw_centered(self, STYLE.serif_bold(), _center(slot.center) + Vector2(0, 0.74 * r), str(hexes[key].data.get("tile_name", "")).to_upper(), 13, Color(STYLE.INK, 0.85), 2, STYLE.BONE)
 	# K. Hover cartouche, only while the pointer is really over the hovered hex.
+	hover_box = Rect2()
 	var pointer_near := not hover.is_empty() and get_local_mouse_position().distance_to(_center(_cell_of(hover, hexes, model))) <= r * 1.2
 	if pointer_near and not overlay_open and model.get("hover_lines", []).size() > 0:
-		var lines: Array = model.hover_lines
-		var font := STYLE.serif()
-		var w := 0.0
-		for i in lines.size(): w = maxf(w, font.get_string_size(str(lines[i]), HORIZONTAL_ALIGNMENT_LEFT, -1, 14 if i == 0 else 12).x)
-		var h := 14.0 + 20.0 * lines.size()
-		var at := get_local_mouse_position() + Vector2(18, 14)
-		at = at.clamp(Vector2.ZERO, (size - Vector2(w + 12, h)).max(Vector2.ZERO))
-		var rect := Rect2(at, Vector2(w + 12, h))
-		draw_style_box(STYLE.chip_style(STYLE.BONE, Color(STYLE.INK, 0.6)), rect)
-		for i in lines.size():
-			var text := str(lines[i])
-			var danger := "provokes" in text or "Cannot move" in text or "held by" in text or "Ambush" in text or text.begins_with("The Warlord")
-			var colour: Color = STYLE.INK if i == 0 else (STYLE.RUBRIC if danger else STYLE.SEPIA_TEXT)
-			draw_string(font, at + Vector2(6, 18 + 20 * i), text, HORIZONTAL_ALIGNMENT_LEFT, -1, 14 if i == 0 else 12, colour)
+		_hover_box(model.hover_lines, true)
+	# L. The calendar, under the chart's cartouche while the pointer is on it.
+	elif model.get("cartouche_hover", false) and not overlay_open and model.get("cartouche_lines", []).size() > 0:
+		var cartouche: Rect2 = screen._sheet.cartouche_rect
+		_hover_box(model.cartouche_lines, false, cartouche.position + Vector2(0, cartouche.size.y + 6))
+
+## The bone hover box beside the pointer (or at an anchor), kept inside the
+## chart: the first line in ink, the rest in sepia (danger lines red for
+## hexes), long lines wrapped at MAX_HOVER_WIDTH.
+func _hover_box(source: Array, danger_lines: bool, anchor := Vector2(-1, -1)) -> void:
+	var font := STYLE.serif()
+	var lines: Array = []
+	for i in source.size():
+		for part in _wrap(font, str(source[i]), 14 if i == 0 else 12, MAX_HOVER_WIDTH): lines.append([part, i])
+	var w := 0.0
+	for line in lines: w = maxf(w, font.get_string_size(line[0], HORIZONTAL_ALIGNMENT_LEFT, -1, 14 if line[1] == 0 else 12).x)
+	var h := 14.0 + 20.0 * lines.size()
+	var at := anchor if anchor.x >= 0.0 else get_local_mouse_position() + Vector2(18, 14)
+	at = at.clamp(Vector2.ZERO, (size - Vector2(w + 12, h)).max(Vector2.ZERO))
+	hover_box = Rect2(at, Vector2(w + 12, h))
+	draw_style_box(STYLE.chip_style(STYLE.BONE, Color(STYLE.INK, 0.6)), hover_box)
+	for k in lines.size():
+		var text: String = lines[k][0]
+		var first: bool = lines[k][1] == 0
+		var danger := danger_lines and ("provokes" in text or "Cannot move" in text or "held by" in text or "Ambush" in text or text.begins_with("The Warlord"))
+		var colour: Color = STYLE.INK if first else (STYLE.RUBRIC if danger else STYLE.SEPIA_TEXT)
+		draw_string(font, at + Vector2(6, 18 + 20 * k), text, HORIZONTAL_ALIGNMENT_LEFT, -1, 14 if first else 12, colour)
+
+## Greedy word wrap of one line to a pixel width.
+static func _wrap(font: Font, text: String, font_size: int, width: float) -> Array:
+	if font.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, font_size).x <= width: return [text]
+	var out: Array = []
+	var line := ""
+	for word in text.split(" "):
+		var next := word if line.is_empty() else line + " " + word
+		if not line.is_empty() and font.get_string_size(next, HORIZONTAL_ALIGNMENT_LEFT, -1, font_size).x > width:
+			out.append(line); line = word
+		else: line = next
+	if not line.is_empty(): out.append(line)
+	return out
 
 func _cell_of(key: String, hexes: Dictionary, model: Dictionary) -> Vector2i:
 	if hexes.has(key): return hexes[key].cell

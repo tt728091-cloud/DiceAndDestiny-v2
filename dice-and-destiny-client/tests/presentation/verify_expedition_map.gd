@@ -278,6 +278,9 @@ func _walk(to: Vector2i) -> bool:
 	return false
 
 ## Dismisses rest and event summaries and finishes a camp.
+static func _list_of(source: Dictionary, key: String) -> Array:
+	return source.get(key) if source.get(key) is Array else []
+
 func _settle_overlays() -> void:
 	for round in 4:
 		if _control(map, "expedition.rest.continue") != null: await _press("expedition.rest.continue")
@@ -390,7 +393,8 @@ func _full_flow(seed: int) -> void:
 	if map == null: return
 	var state := _state()
 	_expect(state.ready and int(state.placed_tiles) == 1 and state.hand.size() == 4 and int(state.energy) == 10 and int(state.round) == 1 and not state.night, "the map starts with the start tile, four cards and base energy")
-	_expect(map.chart_day_label() == "Day · 1/4", "the chart's cartouche says Day · 1/4 (%s)" % map.chart_day_label())
+	_expect(map.chart_day_label() == "Late Summer · Day · 1/4", "the chart's cartouche says Late Summer · Day · 1/4 (%s)" % map.chart_day_label())
+	_expect(str(state.clock.get("month", "")) == "late_summer" and str(state.clock.get("season", "")) == "summer" and int(state.clock.get("year", 0)) == 1 and _list_of(state.clock, "season_effects").is_empty(), "the inspector state carries the authority's clock: %s" % [state.clock])
 	_expect(_control(map, "expedition.hex.0.0") != null and _control(map, "expedition.hex.2.1") != null, "every placed and unexplored hex is a registered control")
 	_expect(_state().explores.is_empty(), "nothing is explorable from the start hex")
 	await _capture(map, "expedition-map-start-1280")
@@ -589,15 +593,24 @@ func _full_flow(seed: int) -> void:
 		_expect(int(map.view.round) == round_before + 1 and map.view.night != night_before and map.view.get("last_rest") != null and int(map.view.last_rest.warlord_steps) >= 0, "breaking camp advances the round, flips day and night and marches the Warlord")
 		await _press("expedition.rest.continue")
 	if map.view.night:
-		_expect(map.chart_day_label().begins_with("Night · "), "the chart's cartouche says Night (%s)" % map.chart_day_label())
+		var want_night := "Late Summer · Night · 2/4" if int(map.view.round) == 2 else "Early Autumn · Night · 4/4"
+		_expect(map.chart_day_label() == want_night, "the chart's cartouche says %s (%s)" % [want_night, map.chart_day_label()])
 		for hex in map.view.hexes:
 			if str(hex.get("terrain", "")) == "forest": _expect(int(hex.cost) == 3, "forest costs 3 at night")
-	# Camp through the remaining rounds until the Warlord comes.
+	# Camp through the remaining rounds until the Warlord comes. The second
+	# rest opens Early Autumn: the rest heading names it and so does the chart.
+	var autumn_checked := false
 	for round in 6:
+		if int(map.view.round) == 3 and map.view.phase == "turn" and not autumn_checked:
+			_expect(map.chart_day_label() == "Early Autumn · Day · 3/4", "after two rests the chart's cartouche says Early Autumn · Day · 3/4 (%s)" % map.chart_day_label())
+			autumn_checked = true
 		if _state().pending_battle != null or map.view.phase in ["victory", "defeat"]: break
 		if map.view.phase == "turn": await _press("expedition.make_camp")
 		if map.view.phase == "camp": await _press("expedition.camp.break")
+		if int(map.view.round) == 3 and _control(map, "expedition.rest.continue") != null:
+			_expect("Day breaks · Early Autumn · round 3" in _text(map._overlay), "the rest heading names the new half and month: %s" % _text(map._overlay).strip_edges().left(80))
 		await _settle_overlays()
+	_expect(autumn_checked, "round 3 (after the second rest) was seen on the map")
 	var deadline: Dictionary = _state().pending_battle if _state().pending_battle != null else {}
 	_expect(str(deadline.get("kind", "")) == "deadline" and deadline.get("warlord", false) and not deadline.get("ambush", false), "after the last round the Warlord comes: %s" % [deadline])
 	await _capture(map, "expedition-deadline-1280")

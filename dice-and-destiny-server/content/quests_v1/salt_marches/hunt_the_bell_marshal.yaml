@@ -1,0 +1,23 @@
+schema_version: 1
+id: hunt_the_bell_marshal
+name: Hunt the Bell Marshal
+set: salt_marches
+kind: side
+status: scenario
+region: salt_marches
+hook: {verb: scenario_start, region: salt_marches}
+trigger:
+  - {verb: scenario_start, region: salt_marches}
+start: hunt
+stages:
+  - id: hunt
+    objective: {verb: defeat_group, group: bell_marshal}
+    outcomes:
+      - outcome: success
+        text: "One of the Warlord's Lieutenants is gone, and with him one of his favours."
+        consequences:
+          - {verb: remove_enemy_status, group: drowned_regent, status: {config: statuses.lieutenant}, stacks: 1}
+        next: end
+      - outcome: abandoned
+        when: {verb: quest_outcome, quest: stop_the_drowned_regent}
+        next: end

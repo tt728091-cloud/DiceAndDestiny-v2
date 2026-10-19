@@ -122,6 +122,95 @@ type StatusIDs struct {
 	SpareBandage string `yaml:"spare_bandage" json:"spare_bandage"`
 }
 
+// SeasonConfig is one season of the world clock. RulesText is what the
+// season's tooltip shows. Effects is the hook for seasonal map effects
+// (Phase 4); until the engine applies them the loader refuses any entry, so
+// the config can never claim an effect that does not happen.
+type SeasonConfig struct {
+	ID        string `yaml:"id" json:"id"`
+	Name      string `yaml:"name" json:"name"`
+	RulesText string `yaml:"rules_text" json:"rules_text"`
+	Effects   []any  `yaml:"effects" json:"effects"`
+}
+
+// MonthConfig is one month: a Day half and a Night half of world time.
+type MonthConfig struct {
+	ID     string `yaml:"id" json:"id"`
+	Name   string `yaml:"name" json:"name"`
+	Season string `yaml:"season" json:"season"`
+}
+
+// CalendarConfig is the world clock's calendar: the seasons, and the months
+// in calendar order (the first opens the year). One round is the Day or the
+// Night half of a month, so a year is two halves per month.
+type CalendarConfig struct {
+	Seasons []SeasonConfig `yaml:"seasons" json:"seasons"`
+	Months  []MonthConfig  `yaml:"months" json:"months"`
+}
+
+// HalvesPerYear is how many rounds (Day and Night halves) a year holds.
+func (c CalendarConfig) HalvesPerYear() int { return 2 * len(c.Months) }
+
+// MonthIndex finds a month's place in the year (0 for the first month).
+func (c CalendarConfig) MonthIndex(id string) (int, bool) {
+	for i, m := range c.Months {
+		if m.ID == id {
+			return i, true
+		}
+	}
+	return 0, false
+}
+
+// Season returns a season by id.
+func (c CalendarConfig) Season(id string) (SeasonConfig, bool) {
+	for _, s := range c.Seasons {
+		if s.ID == id {
+			return s, true
+		}
+	}
+	return SeasonConfig{}, false
+}
+
+func (c CalendarConfig) validate() error {
+	if len(c.Months) == 0 {
+		return fmt.Errorf("expedition config: calendar.months needs at least one month")
+	}
+	seasons := map[string]bool{}
+	for _, s := range c.Seasons {
+		if !stableID.MatchString(s.ID) || seasons[s.ID] {
+			return fmt.Errorf("expedition config: calendar season %q needs a unique snake_case id", s.ID)
+		}
+		seasons[s.ID] = true
+		if s.Name == "" || s.RulesText == "" {
+			return fmt.Errorf("expedition config: calendar season %q needs a name and rules_text", s.ID)
+		}
+		if len(s.Effects) > 0 {
+			return fmt.Errorf("expedition config: calendar season %q lists effects, but seasonal effects arrive in Phase 4; leave effects empty", s.ID)
+		}
+	}
+	months := map[string]bool{}
+	used := map[string]bool{}
+	for _, m := range c.Months {
+		if !stableID.MatchString(m.ID) || months[m.ID] {
+			return fmt.Errorf("expedition config: calendar month %q needs a unique snake_case id", m.ID)
+		}
+		months[m.ID] = true
+		if m.Name == "" {
+			return fmt.Errorf("expedition config: calendar month %q needs a name", m.ID)
+		}
+		if !seasons[m.Season] {
+			return fmt.Errorf("expedition config: calendar month %q names unknown season %q", m.ID, m.Season)
+		}
+		used[m.Season] = true
+	}
+	for _, s := range c.Seasons {
+		if !used[s.ID] {
+			return fmt.Errorf("expedition config: calendar season %q has no month", s.ID)
+		}
+	}
+	return nil
+}
+
 // Config holds every rule number of the Expedition. Nothing in this package
 // hard-codes a value that appears here.
 type Config struct {
@@ -142,6 +231,7 @@ type Config struct {
 	Mending             MendingConfig            `yaml:"mending" json:"mending"`
 	Gold                GoldConfig               `yaml:"gold" json:"gold"`
 	Statuses            StatusIDs                `yaml:"statuses" json:"statuses"`
+	Calendar            CalendarConfig           `yaml:"calendar" json:"calendar"`
 }
 
 // Terrain names every terrain the config must define.
@@ -266,6 +356,9 @@ func (c Config) validate(lib content.BattleLibrary) error {
 		if r.Min < 1 || r.Max < r.Min || r.Max > maxValue {
 			return fmt.Errorf("expedition config: gold.prices.%s is not a valid range", name)
 		}
+	}
+	if err := c.Calendar.validate(); err != nil {
+		return err
 	}
 	statuses := map[string]string{"ambush": c.Statuses.Ambush, "fortified": c.Statuses.Fortified, "conqueror": c.Statuses.Conqueror, "lieutenant": c.Statuses.Lieutenant, "carried_move": c.Statuses.CarriedMove, "hidden": c.Statuses.Hidden, "spare_bandage": c.Statuses.SpareBandage}
 	names := make([]string, 0, len(statuses))

@@ -1,0 +1,17 @@
+# want: a scenario quest uses real ids, not template roles
+schema_version: 1
+id: role_on_a_scenario_quest
+name: A fixture
+set: fixture
+kind: side
+status: scenario
+roles:
+  town: {type: town, text: "A town."}
+hook: {verb: scenario_start, region: salt_marches}
+trigger: [{verb: scenario_start}]
+start: one
+stages:
+  - id: one
+    objective: {verb: defeat_group, group: brine_lone}
+    outcomes:
+      - {outcome: success, next: end}

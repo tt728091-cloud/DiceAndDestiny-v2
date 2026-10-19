@@ -1,0 +1,60 @@
+schema_version: 1
+id: kidnapped_daughter
+name: The Kidnapped Daughter
+set: paper
+kind: personal
+status: paper
+# A template: the roles are filled when a world is built. Every number here
+# is a placeholder.
+roles:
+  person:  {type: person, text: "Her father, who asks for help."}
+  captive: {type: person, text: "The daughter who was taken."}
+  captor:  {type: group, text: "The group that took her."}
+  site:    {type: site, text: "The captor's lair."}
+  town:    {type: town, text: "The father's town."}
+  beast:   {type: group, text: "{captive} as a werewolf, once she has turned; the failure branch spawns it."}
+hook: {verb: request, from: {role: person}, text: "{person} begs you to bring {captive} home from {site}."}
+trigger:
+  - {verb: reputation_tier, with: {role: person}, at_least: neutral}   # placeholder tier
+start: rescue
+stages:
+  - id: rescue
+    title: Rescue her
+    text: "{captor} hold {captive} at {site}."
+    objective: {verb: defeat_group, group: {role: captor}, at: {role: site}}
+    timer: {type: urgent, rounds: 3, from: stage_start}   # placeholder: 3 rounds
+    outcomes:
+      - outcome: success
+        label: Returned home
+        text: "{captive} is home, and {town} hears of it."
+        consequences:
+          - {verb: reputation, with: {role: person}, amount: 2}   # placeholder
+          - {verb: prosperity, town: {role: town}, amount: 1}     # placeholder
+        next: end
+      - outcome: failure
+        label: Too late
+        text: "You came too late: {captive} has turned."
+        consequences:
+          - {verb: spawn, group: {role: beast}, from: {role: captive}, at: {role: site}}
+        next: turned
+  - id: turned
+    title: She has turned
+    text: "{captive} roams near {site} as a werewolf. A rare reagent could still cure her."
+    objective: {verb: deliver_item, item: moonpetal_draught, to: {role: beast}}   # placeholder item
+    outcomes:
+      - outcome: success
+        label: Cure her
+        text: "The draught takes hold and {captive} wakes as herself."
+        consequences:
+          - {verb: xp, amount: 40}                                 # placeholder
+          - {verb: reputation, with: {role: person}, amount: 4}    # placeholder
+          - {verb: prosperity, town: {role: town}, amount: 1}      # placeholder
+        next: end
+      - outcome: failure
+        label: Hunt the beast
+        when: {verb: defeat_group, group: {role: beast}}
+        text: "The beast is dead. {town} mourns, and {person} will not forgive you."
+        consequences:
+          - {verb: prosperity, town: {role: town}, amount: -1}     # placeholder
+          - {verb: reputation, with: {role: person}, amount: -4}   # placeholder: hostile
+        next: end

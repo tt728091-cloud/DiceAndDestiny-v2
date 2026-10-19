@@ -1,0 +1,15 @@
+# want: an outcome needs a next stage or "end"
+schema_version: 1
+id: missing_outcome_next
+name: A fixture
+set: fixture
+kind: side
+status: scenario
+hook: {verb: scenario_start, region: salt_marches}
+trigger: [{verb: scenario_start}]
+start: one
+stages:
+  - id: one
+    objective: {verb: defeat_group, group: brine_lone}
+    outcomes:
+      - {outcome: success}

@@ -114,6 +114,13 @@ func HandleRuntimeRequest(requestJSON string) string {
 		}
 		return runtimeSuccess(view)
 	}
+	if request.Op == "quest_catalog" {
+		view, err := questCatalog(request.ContentRoot)
+		if err != nil {
+			return runtimeError(err)
+		}
+		return runtimeSuccess(view)
+	}
 	if request.Op == "campaign_delete" {
 		if err := loadout.DeleteCampaignSave(request.LoadoutRoot, request.CampaignSave); err != nil {
 			return runtimeError(err)
