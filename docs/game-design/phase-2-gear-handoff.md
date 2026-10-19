@@ -101,7 +101,7 @@
 | `terrain_cost` | `terrain`, `amount` (negative = cheaper), optional `when: day\|night` | `moveCost` |
 | `camp_heal_bonus` | `roll` ∈ `basic_aid`, `bandage`; `amount` | `campHeal` |
 | `battle_start_status` | `status`, `stacks` | `startBattle` |
-| `ability_bonus` | `ability`, `damage`, `status` (the visible status that carries it) | battle setup (Task 2.4) |
+| `ability_bonus` | `ability`, `status` (the visible status that carries it), and either `damage` or `applies: {status, stacks}` (an on-hit status) | battle setup (Task 2.4) |
 | `map_ability` | `ability` ∈ `improvisation`; its numbers (e.g. `discard: 2`, `move: 3`) | a new map action (Task 2.4) |
 | `potion_slots` | reserved for Phase 2-II: the loader refuses it with "potions arrive in Phase 2-II" |
 
@@ -176,7 +176,7 @@
 - A new map action (e.g. `improvise`), legal only while a worn item grants it: discard `discard` cards from hand to Spent for `move` Move this turn (numbers on the gear node). It counts as playing cards for the "a turn needs a card played or discarded" rule. Once per turn unless the node says otherwise.
 - The view lists available map abilities with their rules; the map screen offers a clearly labelled control in the hand area.
 
-**Tests:** a battle started with the spear worn has the status, and Strike's resolved damage is +1 at every tier while other abilities are unchanged; with the status removed the bonus stops; the tooltip shows the bonus. Improvise: legal only with the boots worn, moves the cards to Spent, grants the Move, refused twice in a turn, refused without enough cards; a Godot pointer test clicks the control.
+**Tests:** a battle started with the spear worn has the status, and Strike's resolved damage is +1 at every tier while other abilities are unchanged; with the status removed the bonus stops; the tooltip shows the bonus. With the spear's basic-poison node bought, a Strike hit applies 1 Poison (respecting its cap) and the tooltip says so. The Volatile Poison node is refused for a hero without `venom_toxins`, and the gear tree (Prepare and the workshop's player view) shows it locked with the reason. Improvise: legal only with the boots worn, moves the cards to Spent, grants the Move, refused twice in a turn, refused without enough cards; a Godot pointer test clicks the control.
 
 ## Task 2.5: Gates on card-tree nodes
 
@@ -201,7 +201,8 @@
 
 **Proficiency:**
 - A proficiency list lives in configuration (`content/progression_v1/economy.yaml`, e.g. `proficiencies: [light_armour, heavy_armour, blades, …]`), and each character gets `characters.<id>.proficiencies` (`loadout.CharacterEconomy`, `progression.go:~20`).
-- **Decision (placeholder, the user may change it):** the Starter has every proficiency except `heavy_armour`; the Adventurer has all of them. So the Starter needs training before investing in Fine Plate.
+- **Decision (placeholder, the user will expand it later):** the Starter has every proficiency except `heavy_armour` and `venom_toxins`; the Adventurer has every one except `venom_toxins`. So the Starter needs training before investing in Fine Plate, and **no current character can use advanced poisons**.
+- **`venom_toxins` is the Venom-type proficiency.** Gear nodes that apply Venom's special poisons (today: Volatile Poison) require it. A hero without it sees those nodes on the gear tree, clearly locked with the reason ("Needs Venom toxin training"), and can't buy them. No site trains it in this phase; it exists so the lock is real and visible.
 
 **Training:**
 - Trainings are region-pack content (`content/expedition_v1/training/*.yaml`): `id`, `name`, `description`, and what it gives: `grants_proficiency: <id>` and/or it satisfies `{training: <id>}` gates on card-tree nodes.
@@ -244,12 +245,13 @@ All names below are working names; **choose original final names** (no Dice Thro
 | Item (working name) | Slot · rank · gold | Base node | Further nodes |
 | --- | --- | --- | --- |
 | **Fine Plate** | body · rare · stock 1 at Greywharf | a visible battle-start status: +1 defensive die (`defense_dice_bonus` 1) | Unlock Bulwark (`unlock_card_node`); needs `heavy_armour` |
-| **Spear** | main hand (one-handed) · common | `ability_bonus`: +1 damage to Strike (`adventurer_strike`) via a visible status | a second +1 to Strike |
+| **Spear** (poison-tipped) | main hand (one-handed) · common | `ability_bonus`: +1 damage to Strike (`adventurer_strike`) via a visible status | (a) basic poison: Strike also applies 1 Poison (`poison`) on hit; (b) after (a), advanced poison: Strike applies 1 Volatile Poison (`volatile_poison`) on hit instead, **needs `venom_toxins`** |
 | **Trail boots** | feet · common | `map_ability`: Improvisation (discard 2 for Move 3) | marsh costs 1 less Move |
 | **Ember pouch** | belt · common | `energy_kept_at_rest` 5 | `energy_kept_at_rest` +5 |
 | **Lantern** (migrated) | trinket · common · 40 | `sight_night` +1 | `sight_day` +1 |
 
-- **Decision: no status-applying offence on gear yet.** The plan mentions a poison-tipped spear; status application is reserved for player types (Venom, Curse), so the spear's tree is damage-only until the user rules on gear that applies statuses. Keep the vocabulary able to express it later (`ability_bonus` with a `status_id` payload exists in the engine) but don't ship it.
+- **Gear may apply statuses (user decision, 2026-10-19).** Basic Poison is common and any hero can buy it on gear. Venom's special poisons stay reserved for Venom: gear can carry them, but the node needs the `venom_toxins` proficiency, so other heroes see it locked. (The rule that General **cards** don't apply statuses is unchanged; this is about gear.)
+- The on-hit poison uses the engine's existing per-ability bonus (`ProgramBonus` with `status_id` + `stacks`, the same path as Task 2.4's damage bonus), carried by the item's visible status, whose rules text must say what Strike applies. Respect each status's stack limit.
 - Put the items in Greywharf's and Saltreed's shops (Fine Plate only at Greywharf, stock 1).
 
 **Tests:** the shipped items validate; a scripted playthrough buys and wears each one and sees its effect where it applies (map value or battle setup).
@@ -315,7 +317,7 @@ Save screenshots in `dice-and-destiny-client/.godot/runtime/expedition-evidence/
 - Potions, potion slots and potion skill (Phase 2-II).
 - The hometown's free rework, the story skip, content versioning for saves (Phase 3).
 - Theft, breakage, materials, expert smiths and reputation-gated stock (later phases); the downgrade code should be reusable for theft and breakage, but nothing triggers them yet.
-- Gear that applies statuses to enemies (waiting on a user decision).
+- Training that grants `venom_toxins` (a later Venom/character phase).
 - Linear-campaign gear; enemy gear.
 - 1A: enemy budgets, the fairness readout, fight logs.
 - Pushing or merging the branch.
