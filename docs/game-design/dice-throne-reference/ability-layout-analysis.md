@@ -264,7 +264,7 @@ With our die, main = Sword, side = Shield, apex = Gold coin.
 | Template | Board | Flex | Based on |
 |---|---|---|---|
 | **Standard** | 8: main ladder, SS, LS, 3 flex, apex ×4, ult | Easy + Medium + Hard, e.g. main ×1 + side ×3, main ×2 + apex ×2, main ×3 + apex ×2 | Tactician, Cyclops, Thor, Captain Marvel, Vampire Lord |
-| **Compact** | 7: main ladder, SS/LS in one, 3 flex, apex ×4, ult | Same bands as Standard | Pale Lady, Horseman, Pirate, Rogue, Jean Grey, Miles, Black Panther, Storm |
+| **Compact** | 7: main ladder, SS/LS in one, 3 flex, apex ×4, ult (see "Board structures" below) | Same bands as Standard | Pale Lady, Horseman, Pirate, Rogue, Jean Grey, Miles, Black Panther, Storm |
 | **Lean** | 7: main ladder, SS, LS, 2 flex, apex ×4, ult | Two Medium: main ×2 + apex ×2 and main ×2 + side ×3 | Gunslinger, Samurai (identical), Artificer, Treant |
 | **Wide** | 8: main ladder, SS/LS in one, 4 flex, apex ×4, ult | Easy/Medium-heavy, one Hard | Wolverine |
 | **Double ladder** | 8: main ladder, side ladder ×3/×4/×5, SS, LS, 2 flex, apex ×4, ult | Medium + Hard | Barbarian (Necromancer variant) |
@@ -307,20 +307,38 @@ way to save and pick these board skeletons.
 
 ## Pricing damage from odds
 
-`analysis/board_balance.py` prices a board from one anchor damage and a
-steepness `alpha`:
+`analysis/board_balance.py` takes a die, a board and a target average per
+turn, and gives each ability's damage in four steps:
 
-    damage = anchor × (anchor odds ÷ ability odds) ^ alpha
+1. **Price.** Each ability's relative payoff is (1 ÷ chase odds) ^ alpha.
+   Chase odds are the chance to roll it when every roll goes after it alone.
+   The anchor is a guaranteed hit (odds 1), so every board and die share it.
+   `alpha` sets how much more harder abilities pay.
+2. **Play.** The board is played exactly: after each roll the player keeps
+   the dice that give the best expected result, then uses the strongest
+   ability they hit. This gives each ability's **use share**, how often it is
+   the one used. Use shares and misses add up to 100%. Chase odds overlap and
+   can't be added.
+3. **Scale.** Use share × relative payoff, summed, is the board's average.
+   Every payoff is multiplied by target ÷ average. Scaling keeps the same best
+   play, so the board then averages exactly the target. The multiplier is
+   what a guaranteed hit is worth on that board.
+4. **Round.** Damage is whole cards, and rounding changes play. Every
+   rounding where a harder ability never pays less than an easier one is
+   played again. The tool keeps the one within 2% of the target whose use
+   shares drift least from the exact board.
 
-It then plays the board exactly: after each roll the player keeps the dice
-that give the best expected result, then uses the strongest ability they hit.
-It reports the average damage per turn, how often each ability is the one used
-and its **worth** (how much the average drops without it).
+It also reports each ability's **worth** (how much the average drops without
+it). The anchor and the target only set the scale; `alpha` alone decides how
+lopsided a board is.
+
+    python3 -I board_balance.py --board lean_treant --target 6.2
+    python3 -I board_balance.py --die 2-2-1-1 --costs "A3/A4/A5, A2+B2, SS/LS, D4, D5"
 
 Abilities on one board are not alternatives picked before rolling. The player
 takes whatever the dice reach, and the cheap abilities are a safety net, so
 "equal chase average" (alpha = 1) is not the fair point. On the 3-2-1
-Standard board with 3 Sword = 10:
+Standard board, scaled so 3 Sword = 10:
 
 | alpha | 5 Coin ultimate | Average per turn | Turns with no hit | Result |
 |---|---|---|---|---|
@@ -384,6 +402,138 @@ Guarded Strike is the board's best ability but does not dominate. Measured
 Strike is close to dead: at 4 damage it loses to the 5-Sword Strike and the
 small straight for the same odds. At 5 damage it is used on 14% of turns; at
 6 it becomes the top ability (30%) and pushes Guarded Strike down to 19%.
+
+## The 3-2-1 templates in depth
+
+All 27 {3,2,1} boards (Black Widow mapped by role) are 7 or 8 abilities. Each
+one falls into exactly one template:
+
+| Template | Extra abilities | Heroes |
+|---|---|---|
+| Lean | 2 | Gunslinger, Samurai, Artificer, Treant, Black Widow (and our Starter) |
+| Standard (straights split) | 3 | Raveness, Tactician, Vampire Lord, Iceman, Cyclops, Thor, Ninja, Moon Elf, Captain Marvel, Santa |
+| Compact (straights combined) | 3 | Pale Lady, Headless Horseman, Cursed Pirate, Storm, Rogue, Jean Grey, Miles Morales, Black Panther |
+| Wide | 4 | Wolverine |
+| Double Ladder | side ladder + 2 | Barbarian, Necromancer (Necromancer adds a third) |
+| Combo | 4, no ladder | Alchemist |
+
+"Extra abilities" are everything except the main ladder, straights, apex ×4
+and the ultimate.
+
+**Board structures.** Every board has the 5-apex ultimate and apex ×4, and
+is 7 or 8 abilities long. The rest of the core is the main ladder (or none)
+and the straights, as one ability or two. Whatever is left is open for extra
+abilities, so combining the straights buys one more extra at the same board
+size. In play a combined straight works the same as two. The 27 boards use
+eight structures:
+
+| Size | Straights | Ladders | Extras | Heroes |
+|---|---|---|---|---|
+| 7 | two | main | 2 | Gunslinger, Samurai, Artificer, Treant, Black Widow |
+| 7 | one | main | 3 | Pale Lady, Horseman, Pirate, Rogue, Jean Grey, Miles, Black Panther |
+| 7 | one | none | 4 | Alchemist |
+| 8 | two | main | 3 | Raveness, Tactician, Vampire Lord, Iceman, Cyclops, Thor, Ninja, Moon Elf, Captain Marvel, Santa |
+| 8 | two | main + side | 2 | Barbarian |
+| 8 | one | main | 4 | Wolverine |
+| 8 | one | main + side | 3 | Necromancer |
+| 8 | one | main + 6-die straight | 3 | Storm |
+
+The extras use 18 different costs, and the 27 boards have 26 different sets
+of extras (only Gunslinger and Samurai match). Six costs appear on five or
+more boards; eight appear on two or fewer.
+
+### Slots by job
+
+Printed costs repeat because each cost does the same job on most boards:
+
+| Slot | Cost | Odds | Boards | What it does on Dice Throne boards |
+|---|---|---|---|---|
+| Ladder | main ×3/×4/×5 | 98% / 88% / 51% | 26 | Damage, +1 per die: median 4 / 5 / 7 (4/5/6 and 5/6/7 most common) |
+| Guarded hit | main ×2 + side ×3 | 56% | 11, all 5 Lean boards | About 7 damage plus a defensive or resource token (Evasive, Invisibility, CP) |
+| Pierce | main ×2 + apex ×2 | 58% | 11 | Small undefendable or pure damage (usually 3–4) plus a key status |
+| Heavy | main ×3 + apex ×2 | 35% | 11 | About 7 damage plus a rider, often bonus dice |
+| Recovery | side ×3, side ×3 + apex, side ×4 | 84%, 60%, 54% | 17 | Mostly heal 2–4, draw, resources; little or no damage |
+| Easy hit | main + side ×3, main + side ×2 + apex | 79%, 77% | 9 | About 5 damage plus a rider; two give an extra roll phase |
+| Straights | SS, LS | 62%, 26% | 27 | Median 6 and 8 |
+| Apex ×4 | apex ×4 | 10% | 27 | 5–7 undefendable damage plus the hero's biggest status burst |
+| Ultimate | apex ×5 | 1.3% | 27 | 10–15 damage, median 12 |
+
+Of the 18 three-extra boards, 12 have an Easy slot and 13 a Hard slot, and
+7 have exactly one Easy, one Medium and one Hard. Damage barely rises from
+Medium to Hard (about 7 either way). The harder abilities pay through riders.
+
+Pierce prints about half the damage of Guarded hit at the same odds, because
+undefendable damage skips a defense that usually blocks 2–3. Our engine has
+no undefendable damage, so for us this slot needs another payoff (a status,
+a resource, or full damage).
+
+### Pricing at the Starter's level
+
+`python3 -I board_balance.py --board <template> --alpha 0.2 --target 6.2`
+scales each template to the Starter's 6.2 per turn:
+
+| Slot | Lean | Standard | Wide | Double Ladder | Combo |
+|---|---|---|---|---|---|
+| Ladder 3 / 4 / 5 | 5.5 / 5.6 / 6.3 | 5.4 / 5.5 / 6.2 | 5.4 / 5.5 / 6.1 | 5.3 / 5.4 / 6.0 | — |
+| Side ladder 3 / 4 / 5 | — | — | — | 5.4 / 6.0 / 7.5 | — |
+| Easy hit (main + side ×3) | — | 5.7 | — | — | — |
+| Recovery | — | — | 6.0 (side ×3 + apex) | — | 5.9 (side ×3) |
+| Full house (main ×3 + side ×2) | — | — | — | — | 6.2 |
+| Guarded hit | 6.1 | — | 6.0 | — | — |
+| Pierce | 6.1 | 6.0 | 6.0 | 5.9 | — |
+| Main ×4 + apex | — | — | — | — | 6.5 |
+| Heavy (or main + apex ×3) | — | 6.7 | 6.6 | 6.5 | 7.2 |
+| SS / LS | 6.0 / 7.2 | 5.9 / 7.0 | 5.9 / 7.0 | 5.8 / 6.9 | 6.2 / 7.4 |
+| Apex ×4 / ultimate | 8.6 / 13.0 | 8.5 / 12.8 | 8.4 / 12.8 | 8.3 / 12.5 | 8.9 / 13.4 |
+| Turns with no hit | 0.7% | 0.6% | 0.6% | 0.5% | 4.7% |
+
+- **Ladder templates can share one price list.** Going from 2 to 4 extra
+  abilities changes each ability's value by only about 2%. More abilities
+  give more choices, not more power.
+- **Combo needs about 14% more per ability.** Without a ladder it misses on
+  4.7% of turns, and Side ×3 becomes its safety net (the board's most
+  valuable ability).
+- **Damage alone can't tell the middle abilities apart.** Everything from 56%
+  to 88% prices at 5.5–6.1. Whole-number damage collapses them all to 6, so
+  each slot is told apart by its rider (Protect, energy, a status), as on
+  Dice Throne boards.
+- **The extra Wide slot adds almost nothing as damage** (worth 0.01 per turn).
+  It only earns its place doing a different job, like Wolverine's healing.
+- **Ladders step by convention, not by the curve.** The curve gives
+  5.5 / 5.6 / 6.3; Dice Throne and the Starter print +1 per die (4 / 5 / 6),
+  a cheaper base and the same top. The ×4 tier is worth almost nothing
+  either way.
+
+The Starter is the Lean template without an ultimate. Against Lean's prices
+its Guarded Strike (7 with Protect) is 0.9 over, Measured Strike (5 with
+energy) 1.1 under, the large straight (8) 0.8 over and Decisive Blow (10)
+1.4 over.
+
+### The Lean boards' second extra
+
+Four Lean variants share eight abilities and differ in one extra. At 6.2 per
+turn (`--board lean`, `lean_artificer`, `lean_treant`, `lean_black_widow`):
+
+| Board | Second extra | Chase odds | Exact damage | Whole | Used | Worth | Multiplier | No hit |
+|---|---|---|---|---|---|---|---|---|
+| Black Widow | 1 Sword + 2 Shield + 1 Coin | 77.5% | 5.7 | 5 | 7.1% | 0.07 | 5.45 | 0.4% |
+| Artificer | 3 Shield + 1 Coin | 60.1% | 6.1 | 6 | 9.6% | 0.03 | 5.49 | 0.8% |
+| Gunslinger, Samurai | 2 Sword + 2 Coin | 57.6% | 6.1 | 6 | 14.0% | 0.05 | 5.47 | 0.7% |
+| Treant | 2 Shield + 2 Coin | 46.8% | 6.4 | 6 | 8.1% | 0.05 | 5.48 | 0.8% |
+
+- **The boards are almost equal.** Their multipliers differ by under 1%, so
+  one extra barely changes a board's overall strength.
+- **The harder extra pays more, but by less than a card.** Treant's extra is
+  worth 6.4 and Black Widow's 5.7. Whole numbers turn that into 6 against 5,
+  and put Treant level with Artificer and Gunslinger. The difference has to
+  come from riders (energy at 0.2 a point, Protect) to show at all.
+- **Black Widow's safety net is priced lowest and is worth the most.** It
+  sits inside the straights, so it rescues missed straight and 2 Sword +
+  3 Shield turns, and halves the board's no-hit rate. The curve already gives
+  it the lowest price; the extra worth is why it shouldn't get more.
+- **Rounding moves about a fifth of turns.** The ladder's 5.5 / 5.6 both
+  become 5, so 4 Sword is used far less (14% → 5%). Damage between 5 and 8
+  is too coarse to keep these small steps.
 
 ## Caveats
 
