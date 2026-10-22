@@ -31,6 +31,7 @@ go run ./cmd/balance-lab -hero starter -opponent drowned_oracle_brine_mask \
 - `-opponent starter -foe greedy` runs a hero opponent played by `greedy` (or `greedy-v1`).
 - `-seats both` plays every seed from each seat.
 - `-card-value N` sets what holding a card is worth to the version-2 players.
+- The rider rates (`lookahead.Rates`) are `-status-value` (a status an ability gives its user, per stack; default 0.5), `-protect-value` (Protect only; default the status value), `-energy-gain-value` and `-energy-spend-value` (default 0.1 each). `-energy-value N` sets both energy rates.
 - `-bias ability=N` makes the greedy player favour an ability.
 - Every player plays the same seeds, so results can be compared seed by seed.
 
@@ -220,6 +221,35 @@ go run ./cmd/card-balance -from results.json -html report.html                # 
   - Reinforce, Triage, Field Dressing.
 
   Overthink measured worse than a blank card. The AI plays it when holding it would be better, so that result is not a verdict on the card.
+
+## AI value network (2026-10-21)
+
+The first pass of [`ai-value-network-plan.md`](ai-value-network-plan.md) (phases A0–A4; brief: [`ai-value-network-handoff.md`](ai-value-network-handoff.md)). All runs are on an M3 Max (16 cores) shared with other work. Results files and binaries live under the server's ignored `ml/runs/`.
+
+### Rider rates (T2, phase A0b)
+
+One `Rates` value now feeds the greedy player, its dice solver and the ability tier values. The defaults are the version-2 values (status 0.5 per stack, energy 0.1 gained and spent); with them, greedy and look-ahead play is identical battle for battle to before.
+
+The variants value riders at the board pricing's rates (2026-10-15: Protect 1 per stack, energy 0.2 per point). Each is the greedy player against greedy v2, seeds 1–1,000 from both seats (2,000 paired battles per matchup):
+
+| Variant | Starter mirror: score (paired difference, 95% CI) | Vs Brine Mask: score (paired difference, 95% CI) | Guarded Strike / Measured Strike picks per battle (mirror · Brine Mask) |
+|---|---|---|---|
+| Today's rates | 0.495 | 0.922 | 0.39 / 0.05 · 0.31 / 0.05 |
+| (a) Protect 1, energy gained 0.2 | 0.466 (−0.029, −0.052 … −0.007, z −2.5) | 0.921 (−0.002, −0.014 … +0.010) | 1.34 / 0.09 · 1.30 / 0.08 |
+| (b) (a) plus energy spent 0.2 | 0.393 (−0.102, −0.126 … −0.079, z −8.5) | 0.904 (−0.018, −0.031 … −0.006, z −2.9) | 1.46 / 0.09 · 1.47 / 0.09 |
+
+- **Decision: today's rates stay.** Adoption needed the lower 95% bound of the paired difference to be at least −0.01 in both matchups; both variants fail in the mirror, and (b) also against Brine Mask. The in-game opponent is unchanged.
+- Valuing Protect at 1 more than triples Guarded Strike (5 damage and 2 Protect) at the expense of the straights, and the greedy player loses more for it, as with Measured Strike before. Raising the energy rate also makes it spend less, so battles run longer (mirror rounds 3.6 → 4.2–4.4).
+- A stronger player may use these riders better; the value network measures them instead (Measured values, below).
+- In variant (a) "energy gained" is one rate for every gain: ability tiers and energy cards alike.
+
+```bash
+LAB=ml/runs/bin/balance-lab-a9228fc   # go build -o $LAB ./cmd/balance-lab at commit a9228fc
+P=greedy,greedy@protect-value=1@energy-gain-value=0.2,greedy@protect-value=1@energy-gain-value=0.2@energy-spend-value=0.2
+$LAB -hero starter -opponent starter -foe greedy -players $P -seats both -battles 1000 -workers 3 -out t2/starter-mirror.json
+$LAB -hero starter -opponent drowned_oracle_brine_mask -foe script -players $P -seats both -battles 1000 -workers 3 -out t2/starter-brine.json
+$LAB -compare t2/starter-mirror.json:greedy@protect-value=1@energy-gain-value=0.2,t2/starter-mirror.json:greedy
+```
 
 ## Limits and next steps
 

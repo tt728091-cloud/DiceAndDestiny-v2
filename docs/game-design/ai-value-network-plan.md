@@ -224,6 +224,14 @@ win-rate test.
 - Then repeat: play with the current network, retrain on those games, test in
   the lab. Stop when a round's gain is inside the noise.
 
+## Progress notes
+
+- 2026-10-21, T2 (A0b): the AI's rider rates live in one Go place,
+  `lookahead.Rates`. They move to the board work's
+  `content/progression_v1/riders.yaml` once that merges. Greedy at the
+  board-pricing rates lost to greedy v2 in the Starter mirror, so the
+  version-2 rates stay (results in `balance-lab.md`).
+
 ## Rules that stay
 
 - The network sees only the viewer-safe view, and the search keeps
