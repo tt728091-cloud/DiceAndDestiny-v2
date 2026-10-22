@@ -26,16 +26,19 @@ go run ./cmd/balance-lab -hero starter -opponent drowned_oracle_brine_mask \
 ```
 
 - `-budget` is the number of simulated futures per decision.
+- `-think-ms N` replaces the budget with a hard time limit per decision, for comparing players at equal cost. `-search-workers N` plays each decision's futures on N goroutines (in-game: CPUs − 1); `-workers` is the number of battles at once, so keep `-workers` × `-search-workers` within the machine.
 - `-rounds N` stops each future after N rounds and scores the health race; it is about twice as fast.
+- A player can override these flags for itself: `-players lookahead@rounds=0,lookahead@rounds=1@think-ms=50`. All listed players run interleaved, seed by seed, so time-limited players share the machine's load evenly.
 - `-trace` prints every look-ahead override.
 - `-opponent starter -foe greedy` runs a hero opponent played by `greedy` (or `greedy-v1`).
 - `-seats both` plays every seed from each seat.
 - `-card-value N` sets what holding a card is worth to the version-2 players.
 - The rider rates (`lookahead.Rates`) are `-status-value` (a status an ability gives its user, per stack; default 0.5), `-protect-value` (Protect only; default the status value), `-energy-gain-value` and `-energy-spend-value` (default 0.1 each). `-energy-value N` sets both energy rates.
 - `-bias ability=N` makes the greedy player favour an ability.
-- Every player plays the same seeds, so results can be compared seed by seed.
+- Every player plays the same seeds, so results can be compared seed by seed: `-compare a.json[:player],b.json[:player]` pairs two players' battles by seed and seat and prints the mean score difference with its 95% interval, z and each side's win/draw/loss.
+- `-record dir` saves value-network training positions from every battle (see below).
 
-The command reads the published cards and never writes outside `-out`.
+The command reads the published cards and never writes outside `-out` and `-record`.
 
 ## Fairness
 
@@ -249,6 +252,49 @@ P=greedy,greedy@protect-value=1@energy-gain-value=0.2,greedy@protect-value=1@ene
 $LAB -hero starter -opponent starter -foe greedy -players $P -seats both -battles 1000 -workers 3 -out t2/starter-mirror.json
 $LAB -hero starter -opponent drowned_oracle_brine_mask -foe script -players $P -seats both -battles 1000 -workers 3 -out t2/starter-brine.json
 $LAB -compare t2/starter-mirror.json:greedy@protect-value=1@energy-gain-value=0.2,t2/starter-mirror.json:greedy
+```
+
+### Value network data (T3, phase A1)
+
+**Encoder (`value-v1`, `internal/battle/valuenet`).** 148 inputs, read only from the seat's viewer-safe snapshot, the battle's pinned catalog and the dice each side holds (public table setup that the snapshot lists only for the viewer). No card, ability, status or character ID is an input:
+
+- each side: health in each pile (as shares of its maximum), maximum health, energy, hand limit, dice;
+- each side's board: the dice solver's `Fresh()` value and its chance of ending with no ability qualified (without cards), the offensive abilities it can afford, the best tier's value and the tiers' pooled effect summary (`mlsim.V2OperationSummary`), active card bonuses;
+- each side's defenses: how many, and the best one's expected prevention, energy, damage and statuses per roll (every die resolves its own outcome);
+- each side's statuses by polarity: count, stacks, fill (stacks ÷ cap), persistent, consumable and expiring stacks, the effect summary of their triggers and operations, and their defense-dice and attack-damage modifiers;
+- the own hand pooled: cards, affordable cards, cost (0, 1–5, 6–10, 11+), timing (before the roll, after it, defense, damage reaction) and effect (damage bonus, prevention, energy, draw, dice, extra rolls, statuses on self or enemy, status removal, other), plus `Fresh()` with the dice cards in hand;
+- the round and whether the seat is the one the authority is waiting on.
+
+The feature names and a schema hash are published with it (`valuenet.Features()`, `valuenet.SchemaHash()`); the encoder pins its own rates, so tuning the players never moves its inputs. Tests: forking a position with several seeds (re-dealt hidden hand, reseeded dice) and tampering with the opponent's hidden hand and private dice leave every input unchanged (Starter, Venom and Curse); encoding and recording are byte-deterministic; the width matches the schema.
+
+**Recording.** `balance-lab -record <dir>` saves both seats' views at the start of every round's offensive planning (before anyone rolls), and when the battle ends each seat's result (1 / 0.5 / 0) and final health margin. Datasets are float32 shards with a JSON header (features, meta columns, shard SHA-256s, content hashes), sorted so the same battles always give the same bytes.
+
+**Data.** Greedy self-play over every pairing the lab supports: the six heroes against themselves and each other, and each hero against the four minions (45 pairings), seeds 100,001–100,350 from both seats. Look-ahead v2 (`-budget 96`) against greedy or the minion's script on nine training pairings, seeds from 200,001. Training seeds never overlap the evaluation seeds (1–400).
+
+**Held out: Venom (hero) and Bell Diver (opponent).** Each has its own die (`venom_d6`, `bell_d6`) and Venom its own statuses. Every battle that involves either, in either seat, is kept out of training and validation.
+
+| Player | Hero | Training battles | Training positions | Held-out battles | Held-out positions |
+|---|---|---|---|---|---|
+| greedy | Starter | 5,600 | 43,622 | 1,400 | 12,756 |
+| greedy | Adventurer | 4,900 | 42,000 | 1,400 | 13,932 |
+| greedy | Curse | 4,200 | 46,962 | 1,400 | 17,706 |
+| greedy | Blade Warden | 3,500 | 30,350 | 700 | 6,634 |
+| greedy | Venom Goblin | 2,800 | 21,640 | 700 | 6,848 |
+| greedy | Venom | — | — | 4,900 | 49,866 |
+| look-ahead | Starter | 700 | 5,024 | — | — |
+| look-ahead | Adventurer | 250 | 1,926 | — | — |
+| look-ahead | Blade Warden, Venom Goblin, Curse | 260 | 2,304 | — | — |
+| **Total** | | **22,210** | **193,828** | **10,500** | **107,742** |
+
+Positions per battle run from about 6.5 (Starter vs minions) to 14 (Curse mirror). The per-pairing table is printed by `./scripts/ml.sh value-train --data 'runs/value-v1/*' --held-out-hero venom --held-out-opponent drowned_oracle_bell_diver --mix-only`.
+
+```bash
+LAB=ml/runs/bin/balance-lab-301be9a   # commit 301be9a
+# greedy, for each pairing (heroes: starter adventurer curse venom blade_warden venom_goblin)
+$LAB -hero H -opponent O -foe greedy -players greedy -seats both -battles 350 -first-seed 100001 -workers 14 -record ml/runs/value-v1/greedy-H-vs-O
+$LAB -hero H -opponent MINION -foe script -players greedy -seats both -battles 350 -first-seed 100001 -workers 14 -record ml/runs/value-v1/greedy-H-vs-MINION
+# look-ahead, e.g.
+$LAB -hero starter -opponent starter -foe greedy -players lookahead -budget 96 -seats both -battles 100 -first-seed 200001 -workers 14 -record ml/runs/value-v1/lookahead-starter-vs-starter
 ```
 
 ## Limits and next steps
