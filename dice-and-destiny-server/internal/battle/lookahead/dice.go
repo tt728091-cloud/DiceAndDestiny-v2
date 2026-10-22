@@ -19,23 +19,23 @@ import (
 // best qualified ability under optimal play: reroll some dice, play a card on
 // a die, or stop. Qualification uses the engine's own rules. An ability tier
 // is worth its damage plus any active card bonus on it, plus a little for
-// side benefits; every dice card played costs its energy at EnergyValue plus
-// CardValue for the card itself, so a card is kept for later unless using it
-// now is worth more. Only pools of identical dice are solved; mixed pools
+// side benefits (at Rates); every dice card played costs its energy at
+// Rates.EnergySpend plus CardValue for the card itself, so a card is kept for
+// later unless using it now is worth more. Only pools of identical dice are solved; mixed pools
 // fall back to playouts.
 //
 // A DiceSolver caches its tables and is not safe for concurrent use.
 type DiceSolver struct {
 	// UseCards counts dice cards in hand. Without it the solver plans
 	// rerolls only (the first version) and prices a card when asked.
-	UseCards    bool
-	EnergyValue float64
-	CardValue   float64
-	tables      map[string]*diceTable
+	UseCards  bool
+	Rates     Rates
+	CardValue float64
+	tables    map[string]*diceTable
 }
 
 func NewDiceSolver() *DiceSolver {
-	return &DiceSolver{UseCards: true, EnergyValue: 0.1, CardValue: 0.25, tables: map[string]*diceTable{}}
+	return &DiceSolver{UseCards: true, Rates: DefaultRates(), CardValue: 0.25, tables: map[string]*diceTable{}}
 }
 
 // tierValue is one activation tier wrapped as a single-tier ability so the
@@ -161,7 +161,7 @@ type diceTable struct {
 	stopTier    map[int]tierValue
 	layers      map[int][]float64
 	waits       map[int][]float64
-	energyValue float64
+	energySpend float64
 	cardValue   float64
 }
 
@@ -207,7 +207,7 @@ func (s *DiceSolver) PlanWith(b *state.Battle, seat string, extra map[string]flo
 		return nil, err
 	}
 	tools, ts := s.diceTools(b, lib, seat, 0)
-	table := s.table(definition, len(rt.FinalDice), offensiveTierValues(b, lib, seat, extra), tools)
+	table := s.table(definition, len(rt.FinalDice), offensiveTierValues(b, lib, seat, extra, s.Rates), tools)
 	plan := &DicePlan{RollsLeft: rt.MaxRolls - rt.RollsUsed, table: table, tools: ts, slotAt: map[int]int{}}
 	counts := make([]int, len(table.faces))
 	for _, die := range rt.FinalDice {
@@ -335,7 +335,7 @@ func (s *DiceSolver) FreshWith(b *state.Battle, seat string, extra map[string]fl
 		return 0, err
 	}
 	tools, ts := s.diceTools(b, lib, seat, spend)
-	table := s.table(definition, dice, offensiveTierValues(b, lib, seat, extra), tools)
+	table := s.table(definition, dice, offensiveTierValues(b, lib, seat, extra, s.Rates), tools)
 	rolls := b.Settled.Actors[seat].MaxRolls
 	if rolls <= 0 {
 		rolls = 3
@@ -397,7 +397,7 @@ func (s *DiceSolver) diceTool(def content.BattleCardDefinition) (diceTool, bool)
 	if !after || step.Condition != nil || step.Target.Owner != "self" || step.Target.Selection == "random" || (step.Target.Count != 0 && step.Target.Count != 1) {
 		return diceTool{}, false
 	}
-	tool := diceTool{card: def.ID, cost: def.Cost.Energy, price: s.EnergyValue*float64(def.Cost.Energy) + s.CardValue}
+	tool := diceTool{card: def.ID, cost: def.Cost.Energy, price: s.Rates.EnergySpend*float64(def.Cost.Energy) + s.CardValue}
 	switch step.Effect {
 	case "reroll":
 		tool.reroll = true
@@ -414,12 +414,12 @@ func (s *DiceSolver) diceTool(def content.BattleCardDefinition) (diceTool, bool)
 }
 
 func (s *DiceSolver) table(definition state.DiceDefinition, dice int, tiers []tierValue, tools []diceTool) *diceTable {
-	key := tableKey(definition.ID, dice, tiers, tools, s.EnergyValue, s.CardValue)
+	key := tableKey(definition.ID, dice, tiers, tools, s.Rates.EnergySpend, s.CardValue)
 	if t := s.tables[key]; t != nil {
 		return t
 	}
 	t := newDiceTable(definition, dice, tiers, tools)
-	t.energyValue, t.cardValue = s.EnergyValue, s.CardValue
+	t.energySpend, t.cardValue = s.Rates.EnergySpend, s.CardValue
 	s.tables[key] = t
 	return t
 }
@@ -449,7 +449,7 @@ func (t *diceTable) slot(face int) int {
 }
 
 func (t *diceTable) price(cost int) float64 {
-	return t.energyValue*float64(cost) + t.cardValue
+	return t.energySpend*float64(cost) + t.cardValue
 }
 
 func (t *diceTable) toolIndex(card string, reroll bool) int {
@@ -654,7 +654,7 @@ func factorial(n int) float64 {
 }
 
 // offensiveTierValues values each tier of the seat's offensive abilities.
-func offensiveTierValues(b *state.Battle, lib content.BattleLibrary, seat string, extra map[string]float64) []tierValue {
+func offensiveTierValues(b *state.Battle, lib content.BattleLibrary, seat string, extra map[string]float64, rates Rates) []tierValue {
 	rt := b.Settled.Actors[seat]
 	energy := b.Actors[seat].Resources.EnergyPoints
 	var out []tierValue
@@ -669,7 +669,7 @@ func offensiveTierValues(b *state.Battle, lib content.BattleLibrary, seat string
 			q := *def.Qualification
 			q.ActivationTiers = []content.AbilityTier{tier}
 			check.Qualification = &q
-			value := TierValue(tier.Operations, b.Actors[seat].Resources.MaxEnergyPoints) + bonus
+			value := rates.TierValue(tier.Operations) + bonus
 			if value <= 0 {
 				value = 0.5
 			}
@@ -677,26 +677,6 @@ func offensiveTierValues(b *state.Battle, lib content.BattleLibrary, seat string
 		}
 	}
 	return out
-}
-
-// TierValue scores an ability tier's operations: damage counts in full, a
-// status the actor gives itself half a point per stack, energy a tenth of a
-// point per point gained.
-func TierValue(ops []content.BattleOperation, _ int) float64 {
-	value := 0.0
-	for _, op := range ops {
-		switch op.Type {
-		case "deal_damage":
-			value += float64(amount(op.Amount))
-		case "apply_status":
-			if op.Target == "self" {
-				value += 0.5 * float64(max(op.StackCount, 1))
-			}
-		case "gain_resource":
-			value += 0.1 * float64(amount(op.Amount))
-		}
-	}
-	return value
 }
 
 // cardDamageBonus totals active card bonuses (such as Strong Swing) on one
@@ -715,9 +695,9 @@ func cardDamageBonus(modifiers []state.RuntimeAbilityModifier, ability string) f
 	return float64(total)
 }
 
-func tableKey(dieID string, dice int, tiers []tierValue, tools []diceTool, energyValue, cardValue float64) string {
+func tableKey(dieID string, dice int, tiers []tierValue, tools []diceTool, energySpend, cardValue float64) string {
 	var sb strings.Builder
-	fmt.Fprintf(&sb, "%s/%d/%g/%g", dieID, dice, energyValue, cardValue)
+	fmt.Fprintf(&sb, "%s/%d/%g/%g", dieID, dice, energySpend, cardValue)
 	for _, t := range tiers {
 		fmt.Fprintf(&sb, "|%s:%s=%g", t.ability, t.tier, t.value)
 	}

@@ -119,7 +119,7 @@ func (s *SearchPolicy) workers() ([]*searchWorker, error) {
 		if err != nil {
 			return nil, err
 		}
-		hero := &GreedyPolicy{Solver: NewDiceSolver(), EnergyValue: s.Rollout.EnergyValue, CardValue: s.Rollout.CardValue, DrawValue: s.Rollout.DrawValue, DiceCards: s.Rollout.DiceCards, Bias: s.Rollout.Bias}
+		hero := &GreedyPolicy{Solver: NewDiceSolver(), Rates: s.Rollout.Rates, CardValue: s.Rollout.CardValue, DrawValue: s.Rollout.DrawValue, DiceCards: s.Rollout.DiceCards, Bias: s.Rollout.Bias}
 		s.pool = append(s.pool, &searchWorker{sim: sim, hero: hero, opponent: s.NewOpponent()})
 	}
 	return s.pool[:max(1, s.Workers)], nil
@@ -410,7 +410,7 @@ func (s *SearchPolicy) candidates(d *Decision, options []int, anchor int) ([]int
 		case action.Type == command.TypePlanningAbility && d.Battle.Segment.Current == "offensive":
 			var payload command.PlanningAbilityPayload
 			if json.Unmarshal(action.Payload, &payload) == nil {
-				abilities = append(abilities, scored{i, abilityTierValue(lib, payload.AbilityID, payload.TierID) + cardDamageBonus(rt.AbilityModifiers, payload.AbilityID) + s.Rollout.Bias[payload.AbilityID]})
+				abilities = append(abilities, scored{i, abilityTierValue(lib, payload.AbilityID, payload.TierID, s.Rollout.Rates) + cardDamageBonus(rt.AbilityModifiers, payload.AbilityID) + s.Rollout.Bias[payload.AbilityID]})
 				continue
 			}
 		case plan != nil && CardChoice(action).Kind == "offensive_die":

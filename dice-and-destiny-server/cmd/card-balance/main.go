@@ -100,7 +100,7 @@ func main() {
 
 	greedy := func() lookahead.Policy {
 		g := lookahead.NewGreedyPolicy()
-		g.EnergyValue, g.DrawValue, g.CardValue = *energyValue, *drawValue, *cardValue
+		g.Rates.EnergyGain, g.Rates.EnergySpend, g.DrawValue, g.CardValue = *energyValue, *energyValue, *drawValue, *cardValue
 		return g
 	}
 	variants := []string{"", *blank}

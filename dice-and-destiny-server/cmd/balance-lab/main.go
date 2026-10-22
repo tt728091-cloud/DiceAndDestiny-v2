@@ -32,7 +32,8 @@ func main() {
 	first := flag.Uint64("first-seed", 1, "first battle seed")
 	workers := flag.Int("workers", max(1, runtime.NumCPU()-2), "parallel battles")
 	out := flag.String("out", "", "optional JSON results path")
-	base := playerConfig{budget: 96, searchWorkers: 1, energyValue: 0.1, cardValue: 0.25, drawValue: 0.25}
+	rates := lookahead.DefaultRates()
+	base := playerConfig{budget: 96, searchWorkers: 1, energyValue: -1, energyGain: rates.EnergyGain, energySpend: rates.EnergySpend, statusValue: rates.Status, protectValue: -1, cardValue: 0.25, drawValue: 0.25}
 	base.register(flag.CommandLine)
 	tally := flag.String("tally", "", "instead of simulating, score your games against the look-ahead mirror from this battle log (\"default\" reads this workspace's log)")
 	compare := flag.String("compare", "", "instead of simulating, pair two results files battle by battle: a.json[:player],b.json[:player]")
@@ -155,8 +156,12 @@ func main() {
 type playerConfig struct {
 	budget, thinkMS, searchWorkers, rounds int
 	trace                                  bool
-	energyValue, cardValue, drawValue      float64
-	bias                                   string
+	cardValue, drawValue                   float64
+	// energyValue, when not negative, sets both energy rates; protectValue,
+	// when not negative, overrides the status rate for Protect.
+	energyValue, energyGain, energySpend float64
+	statusValue, protectValue            float64
+	bias                                 string
 }
 
 func (c *playerConfig) register(fs *flag.FlagSet) {
@@ -166,7 +171,11 @@ func (c *playerConfig) register(fs *flag.FlagSet) {
 	fs.IntVar(&c.rounds, "rounds", c.rounds, "look-ahead horizon in rounds (0 plays each future to the end)")
 	fs.BoolVar(&c.trace, "trace", c.trace, "print every look-ahead override")
 	fs.StringVar(&c.bias, "bias", c.bias, "experiment: favour abilities in the greedy player's choices, e.g. measured_strike=2")
-	fs.Float64Var(&c.energyValue, "energy-value", c.energyValue, "damage one energy point is worth to the greedy player (and the look-ahead's simulated play)")
+	fs.Float64Var(&c.energyValue, "energy-value", c.energyValue, "shortcut: sets -energy-gain-value and -energy-spend-value (negative leaves them)")
+	fs.Float64Var(&c.energyGain, "energy-gain-value", c.energyGain, "damage one energy point gained is worth to the greedy player (and the look-ahead's simulated play)")
+	fs.Float64Var(&c.energySpend, "energy-spend-value", c.energySpend, "damage one energy point spent on a card costs the greedy player")
+	fs.Float64Var(&c.statusValue, "status-value", c.statusValue, "damage one stack of a status an ability gives its user is worth to the greedy player")
+	fs.Float64Var(&c.protectValue, "protect-value", c.protectValue, "damage one stack of Protect is worth to the greedy player (negative: the -status-value)")
 	fs.Float64Var(&c.cardValue, "card-value", c.cardValue, "damage holding a card for later is worth to the current greedy player")
 	fs.Float64Var(&c.drawValue, "draw-value", c.drawValue, "damage one drawn card is worth to the greedy player")
 }
@@ -188,9 +197,22 @@ func parsePlayer(spec string, base playerConfig) (string, playerConfig, error) {
 	return parts[0], c, nil
 }
 
+// rates are the player's exchange rates.
+func (c playerConfig) rates() lookahead.Rates {
+	r := lookahead.DefaultRates()
+	r.Status, r.EnergyGain, r.EnergySpend = c.statusValue, c.energyGain, c.energySpend
+	if c.energyValue >= 0 {
+		r.EnergyGain, r.EnergySpend = c.energyValue, c.energyValue
+	}
+	if c.protectValue >= 0 {
+		r = r.WithStatus("protect", c.protectValue)
+	}
+	return r
+}
+
 // describe records a player's settings in the results file.
 func (c playerConfig) describe(name string) string {
-	text := fmt.Sprintf("energy-value=%g card-value=%g draw-value=%g", c.energyValue, c.cardValue, c.drawValue)
+	text := fmt.Sprintf("rates(%s) card-value=%g draw-value=%g", c.rates(), c.cardValue, c.drawValue)
 	if c.bias != "" {
 		text += " bias=" + c.bias
 	}
@@ -213,7 +235,7 @@ func playerFactory(name string, foe lookahead.PolicyFactory, heroFoe bool, c pla
 		} else {
 			g.CardValue = c.cardValue
 		}
-		g.EnergyValue, g.DrawValue, g.Bias = c.energyValue, c.drawValue, bias
+		g.Rates, g.DrawValue, g.Bias = c.rates(), c.drawValue, bias
 		return g
 	}
 	switch name {

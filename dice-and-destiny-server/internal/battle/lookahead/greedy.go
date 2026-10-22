@@ -25,11 +25,12 @@ import (
 // It is fast enough to drive the look-ahead player's simulated futures.
 type GreedyPolicy struct {
 	Solver *DiceSolver
-	// EnergyValue is what one energy point is worth in damage, and CardValue
-	// what holding a card for later is worth; a card must add more than its
-	// energy at EnergyValue plus CardValue to be played.
-	EnergyValue float64
-	CardValue   float64
+	// Rates value riders in damage: energy gained and spent, and statuses
+	// the player's abilities give itself. CardValue is what holding a card
+	// for later is worth; a card must add more than its energy at
+	// Rates.EnergySpend plus CardValue to be played.
+	Rates     Rates
+	CardValue float64
 	// DrawValue is what one drawn card is worth.
 	DrawValue float64
 	// DiceCards lets the dice solver plan the dice cards in hand. Without it
@@ -55,12 +56,12 @@ func (p *GreedyPolicy) fresh(b *state.Battle, seat string, extra map[string]floa
 }
 
 func (p *GreedyPolicy) syncSolver() {
-	p.Solver.UseCards, p.Solver.EnergyValue, p.Solver.CardValue = p.DiceCards, p.EnergyValue, p.CardValue
+	p.Solver.UseCards, p.Solver.Rates, p.Solver.CardValue = p.DiceCards, p.Rates, p.CardValue
 }
 
 // price is what playing a card costing `energy` is worth giving up.
 func (p *GreedyPolicy) price(energy int) float64 {
-	return float64(energy)*p.EnergyValue + p.CardValue
+	return float64(energy)*p.Rates.EnergySpend + p.CardValue
 }
 
 func (p *GreedyPolicy) withBias(extra map[string]float64) map[string]float64 {
@@ -78,13 +79,13 @@ func (p *GreedyPolicy) withBias(extra map[string]float64) map[string]float64 {
 }
 
 func NewGreedyPolicy() *GreedyPolicy {
-	return &GreedyPolicy{Solver: NewDiceSolver(), EnergyValue: 0.1, CardValue: 0.25, DrawValue: 0.25, DiceCards: true}
+	return &GreedyPolicy{Solver: NewDiceSolver(), Rates: DefaultRates(), CardValue: 0.25, DrawValue: 0.25, DiceCards: true}
 }
 
 // NewGreedyPolicyV1 is the first version: dice cards are judged against the
 // dice as if no card were in hand, and holding a card is worth nothing.
 func NewGreedyPolicyV1() *GreedyPolicy {
-	return &GreedyPolicy{Solver: NewDiceSolver(), EnergyValue: 0.1, DrawValue: 0.25}
+	return &GreedyPolicy{Solver: NewDiceSolver(), Rates: DefaultRates(), DrawValue: 0.25}
 }
 
 func (p *GreedyPolicy) Name() string {
@@ -212,7 +213,7 @@ func (p *GreedyPolicy) selectBestAbility(d *Decision, lib content.BattleLibrary,
 		if json.Unmarshal(d.Actions[i].Payload, &payload) != nil {
 			continue
 		}
-		v := abilityTierValue(lib, payload.AbilityID, payload.TierID) + cardDamageBonus(rt.AbilityModifiers, payload.AbilityID) + p.Bias[payload.AbilityID]
+		v := abilityTierValue(lib, payload.AbilityID, payload.TierID, p.Rates) + cardDamageBonus(rt.AbilityModifiers, payload.AbilityID) + p.Bias[payload.AbilityID]
 		if v > bestValue {
 			best, bestValue = i, v
 		}
@@ -223,7 +224,7 @@ func (p *GreedyPolicy) selectBestAbility(d *Decision, lib content.BattleLibrary,
 	return fallback(d.Actions, options)
 }
 
-func abilityTierValue(lib content.BattleLibrary, abilityID, tierID string) float64 {
+func abilityTierValue(lib content.BattleLibrary, abilityID, tierID string, rates Rates) float64 {
 	def, ok := lib.Abilities[abilityID]
 	if !ok || def.Qualification == nil {
 		return 0
@@ -231,7 +232,7 @@ func abilityTierValue(lib content.BattleLibrary, abilityID, tierID string) float
 	best := 0.0
 	for i, tier := range def.Qualification.ActivationTiers {
 		if tierID == tier.ID || (tierID == "" && i == 0) {
-			if v := TierValue(tier.Operations, 0); v > best {
+			if v := rates.TierValue(tier.Operations); v > best {
 				best = v
 			}
 		}
@@ -389,7 +390,7 @@ func (p *GreedyPolicy) continueCard(d *Decision, options []int) (int, error) {
 	return options[0], nil
 }
 
-// resourceGain values energy and draw effects: energy at EnergyValue per
+// resourceGain values energy and draw effects: energy at Rates.EnergyGain per
 // point that fits under the cap, each card drawn at DrawValue.
 func (p *GreedyPolicy) resourceGain(b *state.Battle, seat string, definition content.BattleCardDefinition) float64 {
 	actor := b.Actors[seat]
@@ -401,7 +402,7 @@ func (p *GreedyPolicy) resourceGain(b *state.Battle, seat string, definition con
 			if limit := actor.Resources.MaxEnergyPoints; limit > 0 && room > limit {
 				room = limit
 			}
-			gain += float64(room-actor.Resources.EnergyPoints) * p.EnergyValue
+			gain += float64(room-actor.Resources.EnergyPoints) * p.Rates.EnergyGain
 		case "draw":
 			gain += p.DrawValue * float64(min(content.ProgramInt(step, "amount"), len(actor.Cards.Deck)))
 		}
@@ -440,7 +441,7 @@ func (p *GreedyPolicy) defense(d *Decision, lib content.BattleLibrary, options [
 			if cardEffect(definition) != effect || definition.Cost.Energy > energy {
 				continue
 			}
-			if effect == "energy" && p.resourceGain(d.Battle, d.Seat, definition) <= float64(definition.Cost.Energy)*p.EnergyValue {
+			if effect == "energy" && p.resourceGain(d.Battle, d.Seat, definition) <= float64(definition.Cost.Energy)*p.Rates.EnergySpend {
 				continue
 			}
 			return i, nil
