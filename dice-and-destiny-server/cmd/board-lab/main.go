@@ -13,10 +13,12 @@
 //
 // -pure plays the boards alone instead (pure.go): blank decks, one defense,
 // no riders, every default board against a reference board, beside the race
-// model's prediction.
+// model's prediction. -roundrobin scores every default board against every
+// other that way under three defenses and tunes the field (roundrobin.go).
 //
 //	go run ./cmd/board-lab -battles 200 -random 300 -random-battles 40 -markdown /tmp/board-lab.md
 //	go run ./cmd/board-lab -pure -battles 2000 -health 15 -markdown /tmp/pure.md
+//	go run ./cmd/board-lab -roundrobin -battles 1000 -sample 16 -markdown /tmp/round-robin.md
 package main
 
 import (
@@ -84,6 +86,10 @@ func main() {
 	reference := flag.String("reference", "standard:standard_d6", "pure duel: the reference board, template:die at default picks")
 	defense := flag.String("defense", "holdfast", "pure duel: both sides' one defense, or none")
 	templates := flag.String("templates", "", "pure duel: only these templates (comma separated)")
+	roundrobin := flag.Bool("roundrobin", false, "round robin: every default board against every other with blank decks, under each duel defense, by the race model; then tune every board's target to level")
+	healths := flag.String("healths", "12-30", "round robin: the starting healths each cell is averaged over")
+	tuneRounds := flag.Int("tune-rounds", 3, "round robin: tuning rounds")
+	sample := flag.Int("sample", 16, "round robin: pairings per defense played as real battles (-battles each) to check the model")
 	flag.Parse()
 
 	debug.SetGCPercent(400)
@@ -103,6 +109,10 @@ func main() {
 	l := lab{contentRoot: *contentRoot, builder: builder, workers: *workers, first: *first}
 	if *pure {
 		runPure(l, *health, *reference, *defense, *battles, *templates, *out, *markdown)
+		return
+	}
+	if *roundrobin {
+		runRoundRobin(l, *healths, *tuneRounds, *sample, *battles, *seed, *out, *markdown)
 		return
 	}
 	started := time.Now()

@@ -437,6 +437,22 @@ per turn after the reference's Holdfast roll on the standard die. Ladder
 Pair normally carries two defenses; here it has Holdfast only, like every
 other board.
 
+**Round robin** (2026-10-22, `go run ./cmd/board-lab -roundrobin`; full
+tables in [board-round-robin.md](board-round-robin.md)). This plays every
+default board against every other the same way, under three defenses: none,
+Light Guard (one die: prevents 0, 1 or 2) and Holdfast. Each cell is the race
+model averaged over health 12–30, and 48 sampled pairings were checked
+against real battles (typical gap 0.014, which is the battles' own noise).
+- **Priced now:** overall scores run 0.442–0.556. 26 of 759 pairings are
+  lopsided (one side wins 60%+), all under Holdfast and all won by the
+  hard-hitting boards: Spellbook, Combo and Two Mains on the Forge Die.
+- **No board needs removing:** changing each board's damage by at most about
+  3% brings every board to 0.475–0.524 with no lopsided pairing.
+- **A single rule nearly matches that:** pricing on damage through the three
+  defenses gives 0.474–0.529 with 2 lopsided pairings. Its misses are Grove
+  Die boards, caused by Holdfast being swingier on the Grove Die.
+- **Whole damage limits precision** to about ±0.025 overall.
+
 **Hearth and standard, with and without Nudge** (1000 battles per cell
 against the reference; a cell is good to about ±0.03, a difference between
 two cells to about ±0.045):
