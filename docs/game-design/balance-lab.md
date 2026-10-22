@@ -229,6 +229,45 @@ go run ./cmd/card-balance -from results.json -html report.html                # 
 
 The first pass of [`ai-value-network-plan.md`](ai-value-network-plan.md) (phases A0–A4; brief: [`ai-value-network-handoff.md`](ai-value-network-handoff.md)). All runs are on an M3 Max (16 cores) shared with other work. Results files and binaries live under the server's ignored `ml/runs/`.
 
+### Equal-time benchmark (T1, phase A0)
+
+Players are compared at the same thinking time. `-think-ms` is a hard limit per decision: successive halving gets the first half, a promising option's extra futures run to three quarters and the fresh-futures check to the limit; a future still running at the limit is abandoned, and every option keeps only the futures all of them finished. Without `-think-ms` the search is unchanged (battle for battle identical to before).
+
+**Think time: 100 ms per decision on 7 goroutines, 2 battles at a time.** The logged in-game v2 opponent takes 74.5 ms at the median (p90 248 ms, max 1.2 s) on 15 goroutines with budget 160, which in the lab plays about 163 futures per searched decision (56 ms per decision). 100 ms on 7 goroutines plays 231 futures at Rounds 0 on an otherwise idle machine, so the lab matches the game in both wall time and work. During these runs the board thread's `board-lab` shared the machine, so the players got about half of that (the futures columns). All players run interleaved, seed by seed, so they shared the load equally.
+
+Controls are version-2 look-ahead at Rounds 0 (v2 itself), 1 and 2, all with today's health-race evaluator `tanh(2 × margin)`; greedy is shown for reference. Seeds 1–400 from both seats (800 paired battles per player).
+
+**Starter mirror (opponent greedy):**
+
+| Player | Score | Win / draw / loss | vs v2 (95% CI, z) | Futures per searched decision | ms per decision |
+|---|---|---|---|---|---|
+| greedy | 0.501 | 323 / 156 / 321 | −0.011 (−0.017 … −0.005, z −3.4) | — | 0.1 |
+| v2 (Rounds 0) | 0.512 | 334 / 151 / 315 | — | 125 | 50.9 |
+| **Rounds 1** | **0.605** | 413 / 142 / 245 | **+0.093 (+0.064 … +0.122, z +6.3)** | 246 | 47.8 |
+| Rounds 2 | 0.522 | 342 / 151 / 307 | +0.010 (−0.001 … +0.021, z +1.8) | 143 | 49.5 |
+
+**Starter vs Brine Mask:**
+
+| Player | Score | Win / draw / loss | vs v2 (95% CI, z) | Futures per searched decision | ms per decision |
+|---|---|---|---|---|---|
+| greedy | 0.914 | 712 / 39 / 49 | −0.012 (−0.018 … −0.005, z −3.6) | — | 0.1 |
+| v2 (Rounds 0) | 0.926 | 726 / 30 / 44 | — | 215 | 50.9 |
+| **Rounds 1** | **0.953** | 745 / 34 / 21 | **+0.026 (+0.012 … +0.041, z +3.6)** | 406 | 49.8 |
+| Rounds 2 | 0.924 | 724 / 31 / 45 | −0.002 (−0.009 … +0.006, z −0.5) | 245 | 51.0 |
+
+- **The best control is Rounds 1.** At equal time, stopping each future after one round and scoring the health race beats full playouts clearly in both matchups: it plays about twice the futures, and the near-term health race is a better guide than a greedy playout to the end. Rounds 2 is barely different from full playouts, because most battles last only three or four rounds.
+- At this budget full playouts gain only +0.011 over greedy; the 2026-10-15 run (1 s per decision) found +0.039.
+- ms per decision averages every decision, including the ones decided without search.
+- **Other hero mirrors.** Every hero the lab knows runs: Starter, Adventurer, Curse, Venom, Blade Warden and Venom Goblin (greedy plays no Curse, Venom, Blade Warden or Venom Goblin cards). The Venom, Blade Warden and Curse mirrors are benchmarked below at 200 seeds from both seats.
+
+```bash
+LAB=ml/runs/bin/balance-lab-6d7b580   # commit 6d7b580
+P=greedy,lookahead@rounds=0,lookahead@rounds=1,lookahead@rounds=2
+$LAB -hero starter -opponent starter -foe greedy -players $P -think-ms 100 -search-workers 7 -workers 2 -seats both -battles 400 -out t1/starter-mirror.json
+$LAB -hero starter -opponent drowned_oracle_brine_mask -foe script -players $P -think-ms 100 -search-workers 7 -workers 2 -seats both -battles 400 -out t1/starter-brine.json
+$LAB -compare t1/starter-mirror.json:lookahead@rounds=1,t1/starter-mirror.json:lookahead@rounds=0
+```
+
 ### Rider rates (T2, phase A0b)
 
 One `Rates` value now feeds the greedy player, its dice solver and the ability tier values. The defaults are the version-2 values (status 0.5 per stack, energy 0.1 gained and spent); with them, greedy and look-ahead play is identical battle for battle to before.
