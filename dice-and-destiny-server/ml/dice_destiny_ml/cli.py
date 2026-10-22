@@ -6,7 +6,7 @@ import sys
 from dataclasses import asdict
 from pathlib import Path
 
-from . import value_train
+from . import policy_train, value_train
 from .ablation import run_phase2_matrix
 from .bridge import AuthorityBridge
 from .campaign import (
@@ -76,12 +76,16 @@ def main(argv: list[str] | None = None) -> int:
             "champion-registry-init",
             "global-hillclimb-seed-banks",
             "value-train",
+            "policy-train",
         }
         and not binary.exists()
     ):
         parser.error(f"simulator binary not found: {binary}; run scripts/ml.sh so it is built first")
     if args.command == "value-train":
         value_train.run(args)
+        return 0
+    if args.command == "policy-train":
+        policy_train.run(args)
         return 0
     if args.command == "manifest-v3":
         manifest = build_observation_manifest_v3(
@@ -669,6 +673,12 @@ def build_parser() -> argparse.ArgumentParser:
         help="train the value-v1 network on recorded positions and check it on a held-out hero and opponent",
     )
     value_train.add_arguments(value_parser)
+
+    policy_parser = subparsers.add_parser(
+        "policy-train",
+        help="train the policy-v2 network on recorded decisions and score it by value lost per decision",
+    )
+    policy_train.add_arguments(policy_parser)
 
     export_parser = subparsers.add_parser(
         "export-policy",

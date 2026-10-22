@@ -227,6 +227,63 @@ func (s *DiceSolver) PlanWith(b *state.Battle, seat string, extra map[string]flo
 	return plan, nil
 }
 
+// PlanTurn is PlanWith built from the facts FreshTurn uses (a viewer-safe
+// view of the seat's own turn) and the dice showing, with rollsLeft
+// rerolls left. It returns nil when the dice cannot be solved exactly.
+func (s *DiceSolver) PlanTurn(lib content.BattleLibrary, t Turn, dice []state.RolledDie, rollsLeft int, extra map[string]float64) *DicePlan {
+	if len(t.Die.Faces) == 0 || len(dice) == 0 {
+		return nil
+	}
+	for _, die := range dice {
+		if die.DieID != t.Die.ID {
+			return nil
+		}
+	}
+	tools, ts := s.tools(lib, t.Cards, t.Energy-t.Spend)
+	table := s.table(t.Die, len(dice), tierValues(lib, t.Abilities, t.Energy, t.Modifiers, extra, s.Rates), tools)
+	plan := &DicePlan{RollsLeft: max(rollsLeft, 0), table: table, tools: ts, slotAt: map[int]int{}}
+	counts := make([]int, len(table.faces))
+	for _, die := range dice {
+		slot := table.slot(die.Face)
+		if slot < 0 {
+			return nil
+		}
+		counts[slot]++
+		plan.slotAt[die.Index] = slot
+	}
+	plan.set = table.sets.lookup(counts)
+	plan.Stop = table.stop[plan.set]
+	best := table.stopTier[plan.set]
+	plan.BestAbility, plan.BestTier = best.ability, best.tier
+	return plan
+}
+
+// Miss is the chance that optimal play from here ends with no ability
+// qualified.
+func (p *DicePlan) Miss() float64 {
+	return p.table.layerMiss(p.RollsLeft, p.tools)[p.set]
+}
+
+// RerollMiss is the chance of ending with no ability after rerolling the
+// dice at these indices and playing on optimally.
+func (p *DicePlan) RerollMiss(indices []int) float64 {
+	if p.RollsLeft <= 0 || len(indices) == 0 {
+		if p.table.stopTier[p.set].ability == "" {
+			return 1
+		}
+		return 0
+	}
+	kept := append([]int(nil), p.table.sets.list[p.set]...)
+	for _, index := range indices {
+		slot, ok := p.slotAt[index]
+		if !ok || kept[slot] == 0 {
+			return 1
+		}
+		kept[slot]--
+	}
+	return p.table.waitMiss(p.RollsLeft, p.tools)[p.table.sets.lookup(kept)]
+}
+
 // Best returns the value of optimal play from here.
 func (p *DicePlan) Best() float64 {
 	return p.table.layer(p.RollsLeft, p.tools)[p.set]

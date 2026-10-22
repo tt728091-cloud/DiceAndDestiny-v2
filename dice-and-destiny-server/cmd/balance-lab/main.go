@@ -223,6 +223,13 @@ type playerConfig struct {
 	// valueModel is a value network file that judges the look-ahead's
 	// horizon (with rounds > 0).
 	valueModel string
+	// policyModel is a policy network file for the network player (and the
+	// look-ahead's anchor); policyMargin is how much better than the greedy
+	// pick an option must score to replace it. topRerolls and topAbilities
+	// widen the options (0 keeps each player's default).
+	policyModel              string
+	policyMargin             float64
+	topRerolls, topAbilities int
 }
 
 func (c *playerConfig) register(fs *flag.FlagSet) {
@@ -233,6 +240,10 @@ func (c *playerConfig) register(fs *flag.FlagSet) {
 	fs.BoolVar(&c.trace, "trace", c.trace, "print every look-ahead override")
 	fs.StringVar(&c.bias, "bias", c.bias, "experiment: favour abilities in the greedy player's choices, e.g. measured_strike=2")
 	fs.StringVar(&c.valueModel, "value-model", c.valueModel, "value network file (value-v1) that judges the look-ahead's horizon; needs -rounds > 0")
+	fs.StringVar(&c.policyModel, "policy-model", c.policyModel, "policy network file (policy-v2) for the network player")
+	fs.Float64Var(&c.policyMargin, "policy-margin", c.policyMargin, "how much better than the greedy pick an option's network score must be to replace it")
+	fs.IntVar(&c.topRerolls, "top-rerolls", c.topRerolls, "the solver's best rerolls and die choices considered (0: the player's default)")
+	fs.IntVar(&c.topAbilities, "top-abilities", c.topAbilities, "the best ability choices considered (0: the player's default)")
 	fs.Float64Var(&c.energyValue, "energy-value", c.energyValue, "shortcut: sets -energy-gain-value and -energy-spend-value (negative leaves them)")
 	fs.Float64Var(&c.energyGain, "energy-gain-value", c.energyGain, "damage one energy point gained is worth to the greedy player (and the look-ahead's simulated play)")
 	fs.Float64Var(&c.energySpend, "energy-spend-value", c.energySpend, "damage one energy point spent on a card costs the greedy player")
@@ -288,6 +299,12 @@ func (c playerConfig) describe(name string) string {
 			text += " value-model=" + c.valueModel
 		}
 	}
+	if c.policyModel != "" {
+		text += fmt.Sprintf(" policy-model=%s policy-margin=%g", c.policyModel, c.policyMargin)
+	}
+	if c.topRerolls > 0 || c.topAbilities > 0 {
+		text += fmt.Sprintf(" top-rerolls=%d top-abilities=%d", c.topRerolls, c.topAbilities)
+	}
 	return text
 }
 
@@ -316,6 +333,27 @@ func playerFactory(name string, foe lookahead.PolicyFactory, heroFoe bool, c pla
 				g.Label = "greedy-v1"
 			}
 			return g, nil
+		}, nil
+	case "network":
+		if c.policyModel == "" {
+			return nil, fmt.Errorf("network: -policy-model is required")
+		}
+		model, err := valuenet.LoadPolicyFile(c.policyModel)
+		if err != nil {
+			return nil, err
+		}
+		fmt.Fprintf(os.Stderr, "network plays %s (sha256 %s)\n", c.policyModel, model.SHA256)
+		return func() (lookahead.Policy, error) {
+			options := lookahead.NewSearchPolicy(func() lookahead.Policy { return greedy(false) }, 0)
+			options.Rollout = greedy(false)
+			options.TopRerolls, options.TopAbilities = 8, 4
+			if c.topRerolls > 0 {
+				options.TopRerolls = c.topRerolls
+			}
+			if c.topAbilities > 0 {
+				options.TopAbilities = c.topAbilities
+			}
+			return valuenet.NewNetworkPlayer(model, options, c.policyMargin), nil
 		}, nil
 	case "lookahead", "lookahead-v1":
 		v1 := name == "lookahead-v1"
