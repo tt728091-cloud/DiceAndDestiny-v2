@@ -336,13 +336,21 @@ func (rc *Recorder) Decision(d *lookahead.Decision) {
 
 // measure plays the options by successive halving.
 func (rc *Recorder) measure(d *lookahead.Decision, options []int, seed uint64) ([][]float64, error) {
+	return Measure(rc.Reference, d, options, rc.Futures, seed)
+}
+
+// Measure plays a decision's options with the reference's playout settings
+// by successive halving: every option gets a quarter of `futures`, the
+// better half half of them, and the best two all of them. Future j of every
+// option uses the same seed.
+func Measure(reference *lookahead.SearchPolicy, d *lookahead.Decision, options []int, futures int, seed uint64) ([][]float64, error) {
 	values := make([][]float64, len(options))
 	alive := make([]int, len(options))
 	for k := range alive {
 		alive[k] = k
 	}
 	have := 0
-	for _, target := range []int{rc.Futures / 4, rc.Futures / 2, rc.Futures} {
+	for _, target := range []int{futures / 4, futures / 2, futures} {
 		if target <= have {
 			continue
 		}
@@ -350,7 +358,7 @@ func (rc *Recorder) measure(d *lookahead.Decision, options []int, seed uint64) (
 		for i, k := range alive {
 			list[i] = options[k]
 		}
-		more, err := rc.Reference.OptionValues(d, list, target-have, seed+uint64(have)*0x9e3779b97f4a7c15)
+		more, err := reference.OptionValues(d, list, target-have, seed+uint64(have)*0x9e3779b97f4a7c15)
 		if err != nil {
 			return nil, err
 		}
@@ -363,7 +371,7 @@ func (rc *Recorder) measure(d *lookahead.Decision, options []int, seed uint64) (
 			continue
 		}
 		keep := max(2, (len(alive)+1)/2)
-		if target == rc.Futures/2 {
+		if target == futures/2 {
 			keep = 2
 		}
 		alive = alive[:keep]

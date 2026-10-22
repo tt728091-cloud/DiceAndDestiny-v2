@@ -380,17 +380,29 @@ def run(args: argparse.Namespace) -> dict:
                         epochs=args.epochs, patience=args.patience, validation=args.validation, noise_floor=args.noise_floor, seed=args.seed)
     model, ss, os_, history = train(train_data, valid_data, settings)
     results = {"settings": asdict(settings), "history": history}
+    # The margin a pick must beat greedy's by is chosen on validation.
+    margin, margins = 0.0, {}
+    if valid_data.decisions:
+        q = scores(model, valid_data, ss, os_)
+        for m in (0.0, 0.0025, 0.005, 0.01, 0.02, 0.04, 0.08):
+            margins[m] = evaluate(valid_data, q, m)["all"]["network"]
+        margin = min(margins, key=lambda m: (margins[m], m))
+        print("validation value lost by margin: " + ", ".join(f"{m:g}: {v:.4f}" for m, v in margins.items()) + f" -> margin {margin:g}")
+    results["margin"] = margin
     for name, part in (("validation", valid_data), ("held out", out_data)):
         if part.decisions:
-            results[name] = evaluate(part, scores(model, part, ss, os_))
-            print(report(name, results[name]))
+            results[name] = evaluate(part, scores(model, part, ss, os_), margin)
+            print(report(f"{name} (margin {margin:g})", results[name]))
     for bench in args.benchmark or []:
         b = load(Path(bench))
-        results[f"benchmark {bench}"] = evaluate(b, scores(model, b, ss, os_))
-        print(report(f"benchmark {bench}", results[f"benchmark {bench}"]))
+        q = scores(model, b, ss, os_)
+        results[f"benchmark {bench}"] = evaluate(b, q, margin)
+        print(report(f"benchmark {bench} (margin {margin:g})", results[f"benchmark {bench}"]))
+        if margin != 0:
+            print(f"(at margin 0: network {evaluate(b, q)['all']['network']:.4f})")
     if args.output:
         payload = export(model, ss, os_, data.header, valid_data if valid_data.decisions else train_data,
-                         {"metrics": {k: v for k, v in results.items() if k != "history"}, "held_out": sorted(held), "data": [str(p) for p in args.data]})
+                         {"margin": margin, "metrics": {k: v for k, v in results.items() if k != "history"}, "held_out": sorted(held), "data": [str(p) for p in args.data]})
         raw = json.dumps(payload).encode()
         Path(args.output).write_bytes(raw)
         print(f"wrote {args.output} (sha256 {hashlib.sha256(raw).hexdigest()}, {len(raw) // 1024} KB)")

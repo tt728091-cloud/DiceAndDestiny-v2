@@ -220,6 +220,20 @@ func (e *PolicyEvaluator) Scores(d *lookahead.Decision, options []int, anchor in
 	return out, nil
 }
 
+// SegmentAdvisor is an evaluator that only advises in some segments: elsewhere
+// it scores every option alike, so the search keeps the greedy pick.
+type SegmentAdvisor struct {
+	*PolicyEvaluator
+	Segments map[string]bool
+}
+
+func (a SegmentAdvisor) Scores(d *lookahead.Decision, options []int, greedy int) ([]float64, error) {
+	if !a.Segments[string(d.Battle.Segment.Current)] {
+		return make([]float64, len(options)), nil
+	}
+	return a.PolicyEvaluator.Scores(d, options, greedy)
+}
+
 // NetworkPlayer plays the policy network's pick among the search's options
 // (no search). It keeps the greedy player's pick unless the network rates
 // another option higher by more than Margin.
@@ -227,7 +241,10 @@ type NetworkPlayer struct {
 	Label   string
 	Options *lookahead.SearchPolicy
 	Margin  float64
-	eval    *PolicyEvaluator
+	// Segments, when set, limits the network to decisions in these
+	// segments (offensive, defensive); elsewhere it keeps the greedy pick.
+	Segments map[string]bool
+	eval     *PolicyEvaluator
 	// Changed counts decisions where it left the greedy pick.
 	Changed int
 }
@@ -244,6 +261,9 @@ func (p *NetworkPlayer) Name() string { return p.Label }
 func (p *NetworkPlayer) AdvisedCount() int { return p.Changed }
 
 func (p *NetworkPlayer) Choose(d *lookahead.Decision) (int, error) {
+	if p.Segments != nil && !p.Segments[string(d.Battle.Segment.Current)] {
+		return p.Options.Rollout.Choose(d)
+	}
 	options, anchor, err := p.Options.Options(d)
 	if err != nil || len(options) < 2 {
 		return anchor, err

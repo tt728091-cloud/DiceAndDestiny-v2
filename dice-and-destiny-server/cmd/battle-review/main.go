@@ -36,7 +36,7 @@ func main() {
 	loadoutRoot := flag.String("loadout-root", filepath.Join(workspace, "character_loadouts"), "the game's character loadouts (decks must be unchanged since the games)")
 	authoredRoot := flag.String("authored-root", filepath.Join(serverRoot, "content", "authored"), "published cards (read only)")
 	character := flag.String("character", "", "only battles with this character (default all)")
-	version := flag.String("version", "", "only battles against this AI version: v1 or v2 (default all)")
+	version := flag.String("version", "", "only battles against this AI version: v1, v2 or v3 (default all)")
 	only := flag.String("games", "", "only these game numbers, e.g. 8,9,10,11 (default all)")
 	out := flag.String("out", filepath.Join(workspace, "battle-reviews", "lookahead-mirror-review.html"), "HTML report path")
 	flag.Parse()
@@ -65,10 +65,7 @@ func main() {
 			continue
 		}
 		number++
-		v := "v1"
-		if battle.Model.Architecture == learned.LookaheadArchitecture {
-			v = "v2"
-		}
+		v := learned.LookaheadVersion(battle.Model.Architecture)
 		if (*character != "" && battle.Character != *character) || (*version != "" && v != *version) || (*only != "" && !listed(*only, number)) {
 			continue
 		}
@@ -139,10 +136,11 @@ func review(config learned.SessionConfig, battle learned.LoggedBattle) (*game, e
 	if err != nil {
 		return nil, err
 	}
-	// Compare with the heuristic of the AI version that played the game.
-	greedy, version := lookahead.NewGreedyPolicy(), "v2"
-	if battle.Model.Architecture != learned.LookaheadArchitecture {
-		greedy, version = lookahead.NewGreedyPolicyV1(), "v1"
+	// Compare with the heuristic of the AI version that played the game
+	// (versions 2 and 3 share one).
+	greedy, version := lookahead.NewGreedyPolicy(), learned.LookaheadVersion(battle.Model.Architecture)
+	if version == "v1" {
+		greedy = lookahead.NewGreedyPolicyV1()
 	}
 	g.Version = version
 	solver := lookahead.NewDiceSolver()

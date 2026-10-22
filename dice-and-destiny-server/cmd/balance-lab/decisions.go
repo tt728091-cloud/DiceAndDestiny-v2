@@ -20,13 +20,24 @@ import (
 type labelConfig struct {
 	futures, rounds, topRerolls, topAbilities, searchWorkers int
 	sample                                                   float64
+	// policyModel and segments, when set, let a policy network make the
+	// deciding seat's own moves in the reference futures (in those
+	// segments; greedy elsewhere): the values of the next policy iteration.
+	policyModel, segments string
+}
+
+// reference is the player config the reference futures are played with.
+func (lc labelConfig) reference(base playerConfig) playerConfig {
+	c := base
+	c.rounds, c.searchWorkers, c.thinkMS, c.valueModel, c.trace = lc.rounds, lc.searchWorkers, 0, "", false
+	c.policyModel, c.networkFutures, c.networkSegments = lc.policyModel, lc.policyModel != "", lc.segments
+	return c
 }
 
 // newRecorders returns the observer factory for -label: each runner gets its
 // own recorder and reference player.
 func newRecorders(writer *decisions.Writer, hero, opponent string, foe lookahead.PolicyFactory, heroFoe bool, base playerConfig, lc labelConfig) (func() lookahead.Observer, error) {
-	c := base
-	c.rounds, c.searchWorkers, c.thinkMS, c.valueModel, c.trace = lc.rounds, lc.searchWorkers, 0, "", false
+	c := lc.reference(base)
 	factory, err := playerFactory("lookahead", foe, heroFoe, c)
 	if err != nil {
 		return nil, err
@@ -263,4 +274,106 @@ func expandPaths(spec string) ([]string, error) {
 		out = append(out, matches...)
 	}
 	return out, nil
+}
+
+// runRelabel measures recorded decisions again with another reference (the
+// -label-* settings), keeping each decision's options, and writes them to a
+// new file in the same order.
+func runRelabel(paths []string, out, contentRoot string, base playerConfig, lc labelConfig, workers int) error {
+	type item struct {
+		r decisions.Record
+		b *state.Battle
+	}
+	var items []item
+	if err := decisions.Read(paths, func(r decisions.Record, b *state.Battle) error {
+		items = append(items, item{r, b})
+		return nil
+	}); err != nil {
+		return err
+	}
+	c := lc.reference(base)
+	describe := fmt.Sprintf("futures=%d (halving) rounds=%d top-rerolls=%d top-abilities=%d %s (relabelled)", lc.futures, lc.rounds, lc.topRerolls, lc.topAbilities, c.describe("lookahead"))
+	factories := map[string]lookahead.PolicyFactory{}
+	for _, it := range items {
+		if factories[it.r.Opponent] != nil {
+			continue
+		}
+		opponent := it.r.Opponent
+		_, scriptErr := learned.LoadScriptedMinion(contentRoot, opponent)
+		foe := func() (lookahead.Policy, error) {
+			if scriptErr != nil {
+				return lookahead.NewGreedyPolicy(), nil
+			}
+			m, err := learned.LoadScriptedMinion(contentRoot, opponent)
+			if err != nil {
+				return nil, err
+			}
+			return lookahead.Scripted{Label: opponent, Policy: m}, nil
+		}
+		f, err := playerFactory("lookahead", foe, scriptErr != nil, c)
+		if err != nil {
+			return err
+		}
+		factories[opponent] = f
+	}
+	results := make([]decisions.Record, len(items))
+	jobs := make(chan int)
+	var wg sync.WaitGroup
+	var mu sync.Mutex
+	done := 0
+	for w := 0; w < max(1, workers); w++ {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			sim, err := lookahead.NewSimulator()
+			if err != nil {
+				fail(err)
+			}
+			references := map[string]*lookahead.SearchPolicy{}
+			for i := range jobs {
+				it := items[i]
+				reference := references[it.r.Opponent]
+				if reference == nil {
+					p, err := factories[it.r.Opponent]()
+					if err != nil {
+						fail(err)
+					}
+					reference = p.(*lookahead.SearchPolicy)
+					references[it.r.Opponent] = reference
+				}
+				seed := it.r.Seed*1_000_003 + uint64(it.r.Step)*7919 + 17
+				d := &lookahead.Decision{Sim: sim, Battle: it.b, Seat: it.r.Seat, Actions: it.r.Actions, Rand: rand.New(rand.NewSource(int64(seed)))}
+				values, err := decisions.Measure(reference, d, it.r.Options, lc.futures, seed)
+				if err != nil {
+					fail(err)
+				}
+				r := it.r
+				r.Summarize(values)
+				r.Reference = describe
+				results[i] = r
+				mu.Lock()
+				done++
+				if done%50 == 0 {
+					fmt.Fprintf(os.Stderr, "\r%d/%d decisions", done, len(items))
+				}
+				mu.Unlock()
+			}
+		}()
+	}
+	for i := range items {
+		jobs <- i
+	}
+	close(jobs)
+	wg.Wait()
+	writer, err := decisions.Create(out)
+	if err != nil {
+		return err
+	}
+	for i, r := range results {
+		if err := writer.Write(r, items[i].b); err != nil {
+			return err
+		}
+	}
+	fmt.Fprintf(os.Stderr, "\nrelabelled %d decisions into %s\n", writer.Count, out)
+	return writer.Close()
 }

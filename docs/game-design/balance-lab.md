@@ -526,6 +526,55 @@ ml/runs/value-probe -value-model ml/runs/value-v1-models/value-v1-a.json -worker
 ml/runs/value-probe -value-model ml/runs/value-v1-models/value-v1-a.json -held-out=false -only greedy-starter-vs- -workers 1
 ```
 
+## AI network v2 (2026-10-22)
+
+Steps N1–N6 of [`ai-value-network-plan.md`](ai-value-network-plan.md) ("Network v2"; brief: [`ai-network-v2-handoff.md`](ai-network-v2-handoff.md)). The machine (M3 Max, 16 cores) was fully loaded by these runs and, at times, the board thread's; budget-mode results do not depend on load, and time-limited players always run interleaved.
+
+### Decision benchmark (N1)
+
+Instead of asking how well a network predicts who wins, the benchmark asks how much value a player's move loses in real decisions.
+
+- **Recording.** `balance-lab -label FILE` records the hero's decisions in real battles (with `-label-sample`, a share of them). For each decision it measures every option on the same futures (one seed per future for every option, as the search does), by successive halving: a quarter of `-label-futures` for every option, half for the better half, all of them for the best two. Futures follow `-label-rounds` (default 1, the health race). Options are the search's, wider: the solver's best 8 rerolls and die choices (`-label-top-rerolls`), best 4 ability choices (`-label-top-abilities`), and every other useful move. The recorder works on a copy of the decision with its own randomness, so a recorded battle plays exactly as it would unrecorded (`TestRecorderLeavesBattlesUnchanged`), and it records only the hero, who plans first, so no record holds the other side's private dice. Records keep the whole battle state (the pinned catalog once per file), so new encoders can read old records.
+- **Scoring.** `balance-lab -score FILES -players …` asks each player for its move on every recorded decision and reports the **value lost**: the measured best option's value minus the chosen option's, on the search's scale (win +1, loss −1, plus 0.2 × the final health margin; half of it is win chance). It also reports how often the player chose the best option and how often it kept greedy's pick, overall and by kind of decision. The best option is picked on the same futures that measure it, so every player's loss carries the same small upward bias; differences between players are fair.
+- **Training arrays.** `cmd/decision-data` turns records into the network's inputs (below) and targets.
+
+### Rider values by paired futures (N2)
+
+`value-probe -paired` measures riders without a network. At the start of each of the hero's rounds (before anyone rolls) it forks the battle into identically seeded copies, adds one rider to a copy through the engine's own paths, and plays every copy to the end with the greedy player (the minions with their scripts). Copies share their seeds, so they roll the same dice until the rider changes what happens. A rider's worth is its mean change in result divided by the unit's, one more card removed from the opponent, with a 95% interval by the delta method over positions.
+
+Ten matchups (Starter mirror, Starter against Brine Mask and Drowned Regent, Adventurer against Ribbon Eel, Curse, Blade Warden, Venom and Venom Goblin mirrors, Curse against Starter, Venom against Bell Diver), seeds 500,001–500,040 from both seats: 3,834 positions, 8 paired futures per position and change. The unit moves the result by +0.128 (6.4 points of win chance).
+
+| Rider | Damage-equivalent (95%) | 2026-10-15 rate |
+|---|---|---|
+| self +1 Protect | **0.87 ± 0.07** | 1.0 |
+| +5 energy | 0.02 ± 0.01 | 1.0 (0.2 per point) |
+| +1 card in hand (from the draw pile) | 0.04 ± 0.09 | — |
+| enemy +1 Poison | 1.18 ± 0.08 | — |
+| enemy +1 Volatile Poison | 2.49 ± 0.14 | — |
+| enemy +1 Bleed | 0.86 ± 0.06 | — |
+| enemy +1 Blind | 0.99 ± 0.08 | — |
+| enemy +1 Cursed Entangle | 0.56 ± 0.07 | — |
+| enemy +1 Entangle | 0.45 ± 0.05 | — |
+| enemy +1 Incubation | 0.15 ± 0.02 | — |
+| enemy +1 Curse Count | 0.12 ± 0.03 | — |
+| enemy +1 Grave Debt | 0.02 ± 0.01 | — |
+| enemy +1 Shaken | 0.00 | — |
+| self +1 Fortified (map condition) | 4.25 ± 0.24 | — |
+| self +1 Conqueror (map condition) | 4.25 ± 0.24 | — |
+| self +1 Lieutenant's Favor (map condition) | 2.49 ± 0.14 | — |
+| self +1 Ambush, Catalyst, Lieutenant | 0.08, 0.09, 0.00 | — |
+
+- **Protect is measured: 0.87 damage per stack** (interval ±0.07), a little under the agreed 1. The greedy player spends Protect whenever it is offered, so this is the value of a player who uses it.
+- **Energy is not measured yet.** The greedy player barely spends energy (it plays no Venom, Curse, Blade Warden or Venom Goblin cards), so 5 energy is worth almost nothing *to it*. That is a fact about the player, not the rider.
+- **Decision 2 applied:** Protect qualifies (interval within ±0.25, measured with a player who uses it), so the board pricing's Protect rate should become 0.87; that rate lives in the board thread's `riders.yaml`, so this is handed over, not changed here. Energy keeps the agreed 0.2 per point until the network player, which does spend energy, measures it (N6).
+- Status values are averages over these matchups; a status matters more against characters with fewer ways to shed it.
+
+```bash
+go build -o ml/runs/bin/value-probe-paired ./cmd/value-probe
+ml/runs/bin/value-probe-paired -paired -matchups starter:starter:greedy,starter:drowned_oracle_brine_mask:script,starter:drowned_regent:script,adventurer:drowned_oracle_ribbon_eel:script,curse:curse:greedy,blade_warden:blade_warden:greedy,venom:venom:greedy,venom_goblin:venom_goblin:greedy,curse:starter:greedy,venom:drowned_oracle_bell_diver:script \
+  -first-seed 500001 -battles 40 -workers 3 -futures 8 -out ml/runs/riders/paired-v1.json
+```
+
 ## Limits and next steps
 
 - **Dice solver:** handles pools of identical dice. Mixed pools fall back to plain simulation.

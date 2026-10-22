@@ -12,6 +12,7 @@ import (
 	"path/filepath"
 	"runtime"
 	"runtime/debug"
+	"runtime/pprof"
 	"strings"
 	"time"
 
@@ -46,12 +47,39 @@ func main() {
 	flag.IntVar(&lc.topAbilities, "label-top-abilities", 4, "-label: the best ability choices measured")
 	flag.IntVar(&lc.searchWorkers, "label-workers", 1, "-label: goroutines each decision's reference futures play on")
 	flag.Float64Var(&lc.sample, "label-sample", 1, "-label: share of the hero's decisions with two or more options to record")
+	flag.StringVar(&lc.policyModel, "label-policy-model", "", "-label: a policy network makes the deciding seat's own moves in the reference futures")
+	flag.StringVar(&lc.segments, "label-network-segments", "", "-label: limit -label-policy-model to these segments (offensive, defensive; joined by +)")
+	relabel := flag.String("relabel", "", "instead of simulating, measure recorded decisions (files or globs) again with the -label-* settings into the new -label file")
 	score := flag.String("score", "", "instead of simulating, score -players on recorded decisions (comma-separated files or globs from -label): value lost per decision against the reference's best option")
+	cpuProfile := flag.String("cpuprofile", "", "write a CPU profile to this file")
 	tally := flag.String("tally", "", "instead of simulating, score your games against the look-ahead mirror from this battle log (\"default\" reads this workspace's log)")
 	compare := flag.String("compare", "", "instead of simulating, pair two results files battle by battle: a.json[:player],b.json[:player]")
 	flag.Parse()
 	if *compare != "" {
 		if err := printComparison(*compare); err != nil {
+			fail(err)
+		}
+		return
+	}
+	if *cpuProfile != "" {
+		f, err := os.Create(*cpuProfile)
+		if err != nil {
+			fail(err)
+		}
+		if err := pprof.StartCPUProfile(f); err != nil {
+			fail(err)
+		}
+		defer pprof.StopCPUProfile()
+	}
+	if *relabel != "" {
+		paths, err := expandPaths(*relabel)
+		if err != nil {
+			fail(err)
+		}
+		if *label == "" {
+			fail(fmt.Errorf("-relabel needs -label for the output file"))
+		}
+		if err := runRelabel(paths, *label, *contentRoot, base, lc, *workers); err != nil {
 			fail(err)
 		}
 		return
@@ -234,10 +262,12 @@ type playerConfig struct {
 	policyMargin             float64
 	topRerolls, topAbilities int
 	// advisorTop is how many of the network's best options the look-ahead
-	// searches; networkFutures lets the network play the look-ahead's
-	// simulated futures (its own moves, and a hero opponent's).
+	// searches; networkFutures lets the network make the look-ahead's own
+	// moves in its simulated futures.
 	advisorTop     int
 	networkFutures bool
+	// networkSegments limits the network player to these segments.
+	networkSegments string
 }
 
 func (c *playerConfig) register(fs *flag.FlagSet) {
@@ -253,7 +283,8 @@ func (c *playerConfig) register(fs *flag.FlagSet) {
 	fs.IntVar(&c.topRerolls, "top-rerolls", c.topRerolls, "the solver's best rerolls and die choices considered (0: the player's default)")
 	fs.IntVar(&c.topAbilities, "top-abilities", c.topAbilities, "the best ability choices considered (0: the player's default)")
 	fs.IntVar(&c.advisorTop, "advisor-top", c.advisorTop, "with -policy-model, the look-ahead searches the network's best N options (with the greedy pick; 0 means 3)")
-	fs.BoolVar(&c.networkFutures, "network-futures", c.networkFutures, "with -policy-model, the network plays the look-ahead's simulated futures")
+	fs.StringVar(&c.networkSegments, "network-segments", c.networkSegments, "the network decides (or advises the look-ahead) only in these segments (offensive, defensive; joined by +), greedy elsewhere")
+	fs.BoolVar(&c.networkFutures, "network-futures", c.networkFutures, "with -policy-model, the network makes the look-ahead's own moves in its simulated futures")
 	fs.Float64Var(&c.energyValue, "energy-value", c.energyValue, "shortcut: sets -energy-gain-value and -energy-spend-value (negative leaves them)")
 	fs.Float64Var(&c.energyGain, "energy-gain-value", c.energyGain, "damage one energy point gained is worth to the greedy player (and the look-ahead's simulated play)")
 	fs.Float64Var(&c.energySpend, "energy-spend-value", c.energySpend, "damage one energy point spent on a card costs the greedy player")
@@ -278,6 +309,18 @@ func parsePlayer(spec string, base playerConfig) (string, playerConfig, error) {
 		return "", c, fmt.Errorf("player %q: %w", spec, err)
 	}
 	return parts[0], c, nil
+}
+
+// segments are the segments the network decides in (nil: all).
+func (c playerConfig) segments() map[string]bool {
+	if c.networkSegments == "" {
+		return nil
+	}
+	out := map[string]bool{}
+	for _, seg := range strings.Split(c.networkSegments, "+") {
+		out[seg] = true
+	}
+	return out
 }
 
 // rates are the player's exchange rates.
@@ -363,7 +406,9 @@ func playerFactory(name string, foe lookahead.PolicyFactory, heroFoe bool, c pla
 			if c.topAbilities > 0 {
 				options.TopAbilities = c.topAbilities
 			}
-			return valuenet.NewNetworkPlayer(model, options, c.policyMargin), nil
+			player := valuenet.NewNetworkPlayer(model, options, c.policyMargin)
+			player.Segments = c.segments()
+			return player, nil
 		}, nil
 	case "lookahead", "lookahead-v1":
 		v1 := name == "lookahead-v1"
@@ -390,17 +435,16 @@ func playerFactory(name string, foe lookahead.PolicyFactory, heroFoe bool, c pla
 			options := lookahead.NewSearchPolicy(func() lookahead.Policy { return greedy(false) }, 0)
 			options.Rollout = greedy(false)
 			options.TopRerolls, options.TopAbilities = 8, 4
-			return valuenet.NewNetworkPlayer(policy, options, c.policyMargin)
+			player := valuenet.NewNetworkPlayer(policy, options, c.policyMargin)
+			player.Segments = c.segments()
+			return player
 		}
 		return func() (lookahead.Policy, error) {
 			// The look-ahead models a minion with its own script and a hero
 			// with the greedy player of its own version (a fresh instance per
-			// worker: players cache state), or with the network.
+			// worker: players cache state).
 			model := func() lookahead.Policy {
 				if heroFoe {
-					if policy != nil && c.networkFutures {
-						return networkPlayer()
-					}
 					return greedy(v1)
 				}
 				m, _ := foe()
@@ -423,6 +467,9 @@ func playerFactory(name string, foe lookahead.PolicyFactory, heroFoe bool, c pla
 			if policy != nil {
 				search.Label = "lookahead+network"
 				search.Advisor = policy.NewEvaluator()
+				if segments := c.segments(); segments != nil {
+					search.Advisor = valuenet.SegmentAdvisor{PolicyEvaluator: policy.NewEvaluator(), Segments: segments}
+				}
 				search.AdvisorMargin, search.AdvisorTop = c.policyMargin, c.advisorTop
 				if c.advisorTop <= 0 {
 					search.AdvisorTop = 3
@@ -469,9 +516,10 @@ func printComparison(spec string) error {
 
 // readSummary loads one player's combined summary from a results file.
 func readSummary(spec string) (lookahead.Summary, error) {
+	// The player name follows the file's ".json:" (names may hold paths).
 	path, player := spec, ""
-	if i := strings.LastIndex(spec, ":"); i > 0 && !strings.ContainsRune(spec[i:], '/') {
-		path, player = spec[:i], spec[i+1:]
+	if i := strings.Index(spec, ".json:"); i > 0 {
+		path, player = spec[:i+len(".json")], spec[i+len(".json:"):]
 	}
 	raw, err := os.ReadFile(path)
 	if err != nil {
@@ -525,10 +573,7 @@ func printTally(path string) error {
 		if json.Unmarshal([]byte(line), &record) != nil || record.Kind != "battle_completed" || record.Payload.Model.ModelID != learned.LookaheadModelID {
 			continue
 		}
-		version := "v1"
-		if record.Payload.Model.Architecture == learned.LookaheadArchitecture {
-			version = "v2"
-		}
+		version := learned.LookaheadVersion(record.Payload.Model.Architecture)
 		k := key{version, record.Payload.Character, record.Payload.HumanSeat}
 		if scores[k] == nil {
 			scores[k] = &score{}
