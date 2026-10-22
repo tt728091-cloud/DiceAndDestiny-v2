@@ -194,7 +194,10 @@ func main() {
 	for _, s := range summaries {
 		fmt.Printf("%-10s cards per battle: %s\n", s.Player, lookahead.CardsLine(s))
 		if s.Searched > 0 {
-			fmt.Printf("%-10s searched %d decisions, overrode the greedy choice %d times (%.1f%%), %.0f futures per searched decision\n", s.Player, s.Searched, s.Overrides, 100*float64(s.Overrides)/float64(s.Searched), float64(s.Futures)/float64(s.Searched))
+			fmt.Printf("%-10s searched %d decisions, overrode the default choice %d times (%.1f%%), %.0f futures per searched decision\n", s.Player, s.Searched, s.Overrides, 100*float64(s.Overrides)/float64(s.Searched), float64(s.Futures)/float64(s.Searched))
+		}
+		if s.Advised > 0 {
+			fmt.Printf("%-10s the network replaced the greedy pick %d times (%.2f per battle)\n", s.Player, s.Advised, float64(s.Advised)/float64(s.Battles))
 		}
 	}
 	if *out != "" {
@@ -230,6 +233,11 @@ type playerConfig struct {
 	policyModel              string
 	policyMargin             float64
 	topRerolls, topAbilities int
+	// advisorTop is how many of the network's best options the look-ahead
+	// searches; networkFutures lets the network play the look-ahead's
+	// simulated futures (its own moves, and a hero opponent's).
+	advisorTop     int
+	networkFutures bool
 }
 
 func (c *playerConfig) register(fs *flag.FlagSet) {
@@ -244,6 +252,8 @@ func (c *playerConfig) register(fs *flag.FlagSet) {
 	fs.Float64Var(&c.policyMargin, "policy-margin", c.policyMargin, "how much better than the greedy pick an option's network score must be to replace it")
 	fs.IntVar(&c.topRerolls, "top-rerolls", c.topRerolls, "the solver's best rerolls and die choices considered (0: the player's default)")
 	fs.IntVar(&c.topAbilities, "top-abilities", c.topAbilities, "the best ability choices considered (0: the player's default)")
+	fs.IntVar(&c.advisorTop, "advisor-top", c.advisorTop, "with -policy-model, the look-ahead searches the network's best N options (with the greedy pick; 0 means 3)")
+	fs.BoolVar(&c.networkFutures, "network-futures", c.networkFutures, "with -policy-model, the network plays the look-ahead's simulated futures")
 	fs.Float64Var(&c.energyValue, "energy-value", c.energyValue, "shortcut: sets -energy-gain-value and -energy-spend-value (negative leaves them)")
 	fs.Float64Var(&c.energyGain, "energy-gain-value", c.energyGain, "damage one energy point gained is worth to the greedy player (and the look-ahead's simulated play)")
 	fs.Float64Var(&c.energySpend, "energy-spend-value", c.energySpend, "damage one energy point spent on a card costs the greedy player")
@@ -368,12 +378,29 @@ func playerFactory(name string, foe lookahead.PolicyFactory, heroFoe bool, c pla
 			}
 			fmt.Fprintf(os.Stderr, "%s judges its horizon with %s (sha256 %s)\n", name, c.valueModel, network.SHA256)
 		}
+		var policy *valuenet.PolicyModel
+		if c.policyModel != "" {
+			var err error
+			if policy, err = valuenet.LoadPolicyFile(c.policyModel); err != nil {
+				return nil, err
+			}
+			fmt.Fprintf(os.Stderr, "%s is advised by %s (sha256 %s)\n", name, c.policyModel, policy.SHA256)
+		}
+		networkPlayer := func() lookahead.Policy {
+			options := lookahead.NewSearchPolicy(func() lookahead.Policy { return greedy(false) }, 0)
+			options.Rollout = greedy(false)
+			options.TopRerolls, options.TopAbilities = 8, 4
+			return valuenet.NewNetworkPlayer(policy, options, c.policyMargin)
+		}
 		return func() (lookahead.Policy, error) {
 			// The look-ahead models a minion with its own script and a hero
 			// with the greedy player of its own version (a fresh instance per
-			// worker: players cache state).
+			// worker: players cache state), or with the network.
 			model := func() lookahead.Policy {
 				if heroFoe {
+					if policy != nil && c.networkFutures {
+						return networkPlayer()
+					}
 					return greedy(v1)
 				}
 				m, _ := foe()
@@ -392,6 +419,17 @@ func playerFactory(name string, foe lookahead.PolicyFactory, heroFoe bool, c pla
 			search.Workers = max(1, c.searchWorkers)
 			if network != nil {
 				search.Evaluator = network.Evaluators()
+			}
+			if policy != nil {
+				search.Label = "lookahead+network"
+				search.Advisor = policy.NewEvaluator()
+				search.AdvisorMargin, search.AdvisorTop = c.policyMargin, c.advisorTop
+				if c.advisorTop <= 0 {
+					search.AdvisorTop = 3
+				}
+				if c.networkFutures {
+					search.NewRollout = networkPlayer
+				}
 			}
 			if c.trace {
 				search.Trace = func(line string) { fmt.Fprintln(os.Stderr, line) }

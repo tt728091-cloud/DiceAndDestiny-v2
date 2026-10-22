@@ -44,6 +44,7 @@ type Summary struct {
 	Searched      int            `json:"searched_decisions,omitempty"`
 	Overrides     int            `json:"overrides,omitempty"`
 	Futures       int            `json:"futures,omitempty"`
+	Advised       int            `json:"advised,omitempty"`
 	CardsPlayed   map[string]int `json:"cards_played"`
 	Abilities     map[string]int `json:"abilities_selected"`
 	Records       []BattleRecord `json:"records"`
@@ -119,7 +120,7 @@ func RunInterleaved(m Matchup, entrants []Entrant, foe PolicyFactory, seatsB []b
 					continue
 				}
 				after := searchCounts(hero)
-				record.Searched, record.Overrides, record.Futures = after[0]-before[0], after[1]-before[1], after[2]-before[2]
+				record.Searched, record.Overrides, record.Futures, record.Advised = after[0]-before[0], after[1]-before[1], after[2]-before[2], after[3]-before[3]
 				results[jb.entrant][jb.slot] = record
 				mu.Lock()
 				done++
@@ -152,15 +153,24 @@ func RunInterleaved(m Matchup, entrants []Entrant, foe PolicyFactory, seatsB []b
 
 // searchCounts reads a player's running search statistics: searched
 // decisions, overrides and futures.
-func searchCounts(p Policy) [3]int {
-	var out [3]int
+func searchCounts(p Policy) [4]int {
+	var out [4]int
 	if c, ok := p.(counter); ok {
 		out[0], out[1] = c.Counts()
 	}
 	if c, ok := p.(futureCounter); ok {
 		out[2] = c.FutureCount()
 	}
+	if c, ok := p.(advisedCounter); ok {
+		out[3] = c.AdvisedCount()
+	}
 	return out
+}
+
+// advisedCounter is implemented by players whose network can change their
+// default move.
+type advisedCounter interface {
+	AdvisedCount() int
 }
 
 // Summarize totals records; the win-rate interval is Wilson's 95% interval.
@@ -184,6 +194,7 @@ func Summarize(records []BattleRecord) Summary {
 		s.Searched += r.Searched
 		s.Overrides += r.Overrides
 		s.Futures += r.Futures
+		s.Advised += r.Advised
 		for k, v := range r.CardsPlayed {
 			s.CardsPlayed[k] += v
 		}

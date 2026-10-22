@@ -81,20 +81,43 @@ type SearchPolicy struct {
 	// Trace, when set, receives a line for every override.
 	Trace func(line string)
 
+	// Advisor, when set, is a policy network consulted at each searched
+	// decision: its pick replaces the greedy player's as the anchor when it
+	// scores more than AdvisorMargin above it, and its AdvisorTop best
+	// options (with both picks) are the candidates. Advised counts the
+	// decisions where its pick became the anchor.
+	Advisor       Advisor
+	AdvisorMargin float64
+	AdvisorTop    int
+	Advised       int
+	// NewRollout, when set, builds each worker's player for the searching
+	// seat's own simulated moves instead of a copy of Rollout.
+	NewRollout func() Policy
+
 	pool []*searchWorker
+}
+
+// Advisor scores a decision's options (indices into d.Actions; greedy is the
+// greedy player's pick) for the search.
+type Advisor interface {
+	Scores(d *Decision, options []int, greedy int) ([]float64, error)
 }
 
 // searchWorker owns everything one goroutine needs to play futures; players
 // cache solver tables and are not shared.
 type searchWorker struct {
 	sim      *Simulator
-	hero     *GreedyPolicy
+	hero     Policy
 	opponent Policy
 	judge    Evaluator
 }
 
 // Counts reports how many decisions were searched and overridden.
 func (s *SearchPolicy) Counts() (searched, overrides int) { return s.Searched, s.Overrides }
+
+// AdvisedCount reports the decisions where the Advisor's pick became the
+// anchor.
+func (s *SearchPolicy) AdvisedCount() int { return s.Advised }
 
 // FutureCount reports how many futures the searched decisions played.
 func (s *SearchPolicy) FutureCount() int { return s.Futures }
@@ -125,7 +148,10 @@ func (s *SearchPolicy) workers() ([]*searchWorker, error) {
 		if err != nil {
 			return nil, err
 		}
-		hero := &GreedyPolicy{Solver: NewDiceSolver(), Rates: s.Rollout.Rates, CardValue: s.Rollout.CardValue, DrawValue: s.Rollout.DrawValue, DiceCards: s.Rollout.DiceCards, Bias: s.Rollout.Bias}
+		var hero Policy = &GreedyPolicy{Solver: NewDiceSolver(), Rates: s.Rollout.Rates, CardValue: s.Rollout.CardValue, DrawValue: s.Rollout.DrawValue, DiceCards: s.Rollout.DiceCards, Bias: s.Rollout.Bias}
+		if s.NewRollout != nil {
+			hero = s.NewRollout()
+		}
 		w := &searchWorker{sim: sim, hero: hero, opponent: s.NewOpponent()}
 		if s.Evaluator != nil {
 			w.judge = s.Evaluator()
@@ -151,7 +177,12 @@ func (s *SearchPolicy) Choose(d *Decision) (int, error) {
 	if err != nil {
 		return 0, err
 	}
-	candidates, err := s.candidates(d, options, anchor)
+	var candidates []int
+	if s.Advisor != nil {
+		candidates, anchor, err = s.advise(d, options, anchor)
+	} else {
+		candidates, err = s.candidates(d, options, anchor)
+	}
 	if err != nil {
 		return 0, err
 	}
@@ -405,9 +436,60 @@ func diceFaces(b *state.Battle, seat string) []int {
 	return out
 }
 
+// advise asks the Advisor about the decision's wide options (the solver's
+// best 8 rerolls and die choices, best 4 ability choices, every other move):
+// its pick becomes the anchor when it scores more than AdvisorMargin above
+// the greedy pick, and the candidates are its AdvisorTop best options with
+// both picks. If it fails, the search goes on without it.
+func (s *SearchPolicy) advise(d *Decision, options []int, greedy int) ([]int, int, error) {
+	wide, err := s.candidatesWith(d, options, greedy, 8, 4)
+	if err != nil || len(wide) < 2 {
+		return wide, greedy, err
+	}
+	scores, err := s.Advisor.Scores(d, wide, greedy)
+	if err != nil || len(scores) != len(wide) {
+		c, err := s.candidates(d, options, greedy)
+		return c, greedy, err
+	}
+	order := make([]int, len(wide))
+	at := 0
+	for k := range order {
+		order[k] = k
+		if wide[k] == greedy {
+			at = k
+		}
+	}
+	sort.SliceStable(order, func(a, b int) bool { return scores[order[a]] > scores[order[b]] })
+	anchor := greedy
+	if scores[order[0]]-scores[at] > s.AdvisorMargin {
+		anchor = wide[order[0]]
+		s.Advised++
+	}
+	keep := map[int]bool{anchor: true, greedy: true}
+	for k := 0; k < len(order) && k < max(s.AdvisorTop, 1); k++ {
+		keep[wide[order[k]]] = true
+	}
+	var out []int
+	for i := range keep {
+		out = append(out, i)
+	}
+	sort.Ints(out)
+	return out, anchor, nil
+}
+
 // candidates keeps every option except the solver's weaker rerolls, die
 // targets and ability choices, and always includes the greedy player's pick.
 func (s *SearchPolicy) candidates(d *Decision, options []int, anchor int) ([]int, error) {
+	topAbilities := s.TopAbilities
+	if topAbilities <= 0 {
+		topAbilities = 2
+	}
+	return s.candidatesWith(d, options, anchor, s.TopRerolls, topAbilities)
+}
+
+// candidatesWith is candidates with the solver's best topRerolls rerolls and
+// die choices and best topAbilities ability choices.
+func (s *SearchPolicy) candidatesWith(d *Decision, options []int, anchor int, topRerolls, topAbilities int) ([]int, error) {
 	plan, err := s.Rollout.plan(d.Battle, d.Seat, nil)
 	if err != nil {
 		return nil, err
@@ -451,13 +533,9 @@ func (s *SearchPolicy) candidates(d *Decision, options []int, anchor int) ([]int
 			out = append(out, list[k].index)
 		}
 	}
-	top(rerolls, s.TopRerolls)
-	if s.TopAbilities > 0 {
-		top(abilities, s.TopAbilities)
-	} else {
-		top(abilities, 2)
-	}
-	top(dice, s.TopRerolls)
+	top(rerolls, topRerolls)
+	top(abilities, topAbilities)
+	top(dice, topRerolls)
 	found := false
 	for _, i := range out {
 		found = found || i == anchor

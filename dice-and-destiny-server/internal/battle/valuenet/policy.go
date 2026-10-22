@@ -240,6 +240,9 @@ func NewNetworkPlayer(m *PolicyModel, options *lookahead.SearchPolicy, margin fl
 
 func (p *NetworkPlayer) Name() string { return p.Label }
 
+// AdvisedCount reports the decisions where it left the greedy pick.
+func (p *NetworkPlayer) AdvisedCount() int { return p.Changed }
+
 func (p *NetworkPlayer) Choose(d *lookahead.Decision) (int, error) {
 	options, anchor, err := p.Options.Options(d)
 	if err != nil || len(options) < 2 {
