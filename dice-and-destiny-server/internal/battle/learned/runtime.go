@@ -79,7 +79,7 @@ func HandleRuntimeRequest(requestJSON string) string {
 		"ability_authoring", "validate_ability", "publish_ability", "assign_abilities",
 		"card_authoring", "validate_card", "publish_card", "character_catalogs",
 		"save_character_deck", "progression_catalogs", "progression_purchase", "save_economy_admin", "campaign_status", "campaign_loadout", "campaign_new", "campaign_delete", "campaign_purchase",
-		"expedition_status", "expedition_act", "expedition_deck_change", "board_builder", "board_price":
+		"expedition_status", "expedition_act", "expedition_deck_change", "board_builder", "board_price", "board_save":
 		catalogRuntimeMu.Lock()
 		defer catalogRuntimeMu.Unlock()
 	}
@@ -118,7 +118,7 @@ func HandleRuntimeRequest(requestJSON string) string {
 		}
 		return runtimeSuccess(view)
 	}
-	if request.Op == "board_builder" || request.Op == "board_price" {
+	if request.Op == "board_builder" || request.Op == "board_price" || request.Op == "board_save" {
 		choice, err := decodeBoardChoice(request.Board)
 		if err != nil {
 			return runtimeError(err)
@@ -126,6 +126,8 @@ func HandleRuntimeRequest(requestJSON string) string {
 		var view map[string]any
 		if request.Op == "board_builder" {
 			view, err = boardBuilderView(request.ContentRoot, request.LoadoutRoot, choice.Die)
+		} else if request.Op == "board_save" {
+			view, err = boardSave(request.ContentRoot, request.LoadoutRoot, choice, request.Revision)
 		} else {
 			view, err = boardPriceView(request.ContentRoot, choice, request.IncludePolicy)
 		}

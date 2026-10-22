@@ -9,6 +9,7 @@ import (
 
 	"diceanddestiny/server/internal/battle/boardprice"
 	"diceanddestiny/server/internal/battle/loadout"
+	"diceanddestiny/server/internal/content"
 )
 
 // The Board Builder over the custom adventurer's content catalog (never a
@@ -90,7 +91,16 @@ func boardBuilderView(contentRoot, loadoutRoot, dieID string) (map[string]any, e
 		if err != nil {
 			return nil, err
 		}
-		sheet = map[string]any{"revision": progress.Revision, "dice": lib.Combatants[loadout.CustomAdventurer].DiceLoadout[0].DiceID, "ability_board": progress.Abilities}
+		choice := progress.BoardChoice
+		if choice == nil {
+			// A sheet without a Board Builder choice holds the default board:
+			// the Lean template on its die at default picks.
+			resolved, _, _, err := b.Resolve(b.Default("lean", lib.Combatants[loadout.CustomAdventurer].DiceLoadout[0].DiceID))
+			if err == nil {
+				choice = &resolved
+			}
+		}
+		sheet = map[string]any{"revision": progress.Revision, "dice": lib.Combatants[loadout.CustomAdventurer].DiceLoadout[0].DiceID, "ability_board": progress.Abilities, "choice": choice}
 		if dieID == "" {
 			dieID = lib.Combatants[loadout.CustomAdventurer].DiceLoadout[0].DiceID
 		}
@@ -211,5 +221,47 @@ func boardPriceView(contentRoot string, choice boardprice.Choice, includePolicy 
 		}
 		slots = append(slots, slot)
 	}
-	return map[string]any{"choice": resolved, "report": report, "slots": slots, "die_name": die.Name}, nil
+	abilities, board, err := b.Generate(resolved, report)
+	if err != nil {
+		return nil, err
+	}
+	return map[string]any{"choice": resolved, "report": report, "slots": slots, "die_name": die.Name, "abilities": abilities, "ability_board": board}, nil
+}
+
+// boardSave confirms a board: the authority re-prices the choice, generates
+// its abilities and writes the die, the board and the abilities to the
+// custom adventurer's sheet (never to the authored catalog).
+func boardSave(contentRoot, loadoutRoot string, choice boardprice.Choice, revision int) (map[string]any, error) {
+	if loadoutRoot == "" {
+		return nil, fmt.Errorf("saving a board requires loadout storage")
+	}
+	b, err := boardBuilder(contentRoot)
+	if err != nil {
+		return nil, err
+	}
+	resolved, report, err := b.Price(choice)
+	if err != nil {
+		return nil, err
+	}
+	abilities, board, err := b.Generate(resolved, report)
+	if err != nil {
+		return nil, err
+	}
+	catalogs, err := CharacterCatalogs(contentRoot, loadoutRoot)
+	if err != nil {
+		return nil, err
+	}
+	economy, err := loadout.LoadEconomy(contentRoot, catalogs)
+	if err != nil {
+		return nil, err
+	}
+	generated := map[string]content.BattleAbilityDefinition{}
+	for _, a := range abilities {
+		generated[a.ID] = a
+	}
+	progress, err := loadout.SaveSheetBoard(loadoutRoot, loadout.CustomAdventurer, economy, catalogs[loadout.CustomAdventurer], loadout.SheetBoard{Dice: resolved.Die, Abilities: board, Generated: generated, Choice: &resolved}, revision)
+	if err != nil {
+		return nil, err
+	}
+	return map[string]any{"revision": progress.Revision, "dice": progress.Dice, "ability_board": progress.Abilities, "board_choice": progress.BoardChoice, "abilities": abilities, "whole_average": report.WholeAverage, "whole_no_hit": report.WholeNoHit}, nil
 }

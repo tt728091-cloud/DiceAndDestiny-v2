@@ -7,6 +7,7 @@ import (
 	"os"
 	"slices"
 
+	"diceanddestiny/server/internal/battle/boardprice"
 	"diceanddestiny/server/internal/battle/engine"
 	"diceanddestiny/server/internal/content"
 )
@@ -16,16 +17,14 @@ import (
 // authored dice and boards.
 const CustomAdventurer = "custom_adventurer"
 
-// GeneratedAbilityPrefix marks priced abilities a sheet may carry. Only these
-// IDs may come from a player's save, never authored content.
-const GeneratedAbilityPrefix = "board_"
-
 // SheetBoard is what a battle pins from a sheet: the die, the board and the
 // generated abilities the board uses.
 type SheetBoard struct {
 	Dice      string                                     `json:"dice,omitempty"`
 	Abilities content.AbilityBoard                       `json:"ability_board"`
 	Generated map[string]content.BattleAbilityDefinition `json:"generated_abilities,omitempty"`
+	// Choice is the Board Builder choice behind the board, when it has one.
+	Choice *boardprice.Choice `json:"board_choice,omitempty"`
 }
 
 // ReadSheetBoard reads the die and board from a character's saved sheet
@@ -84,8 +83,8 @@ func ApplySheetBoard(lib content.BattleLibrary, character string, sheet SheetBoa
 	out.Abilities = maps.Clone(lib.Abilities)
 	out.Combatants = maps.Clone(lib.Combatants)
 	for id, ability := range sheet.Generated {
-		if id != ability.ID || len(id) <= len(GeneratedAbilityPrefix) || id[:len(GeneratedAbilityPrefix)] != GeneratedAbilityPrefix {
-			return lib, fmt.Errorf("generated ability %q must use the %s prefix", id, GeneratedAbilityPrefix)
+		if id != ability.ID || len(id) <= len(boardprice.GeneratedPrefix) || id[:len(boardprice.GeneratedPrefix)] != boardprice.GeneratedPrefix {
+			return lib, fmt.Errorf("generated ability %q must use the %s prefix", id, boardprice.GeneratedPrefix)
 		}
 		if ability.Type != "offensive" || ability.ConfigurationVersion != 1 {
 			return lib, fmt.Errorf("generated ability %q must be a configured offensive ability", id)
@@ -178,6 +177,7 @@ func SaveSheetBoard(root, character string, e Economy, lib content.BattleLibrary
 	if len(used) > 0 {
 		next.GeneratedAbilities = used
 	}
+	next.BoardChoice = sheet.Choice
 	next.Revision++
 	filename, _ := progressPath(root, character)
 	if err := writeProgress(filename, next); err != nil {

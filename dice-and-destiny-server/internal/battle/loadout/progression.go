@@ -9,6 +9,7 @@ import (
 	"path/filepath"
 	"sync"
 
+	"diceanddestiny/server/internal/battle/boardprice"
 	"diceanddestiny/server/internal/content"
 	"gopkg.in/yaml.v3"
 )
@@ -82,6 +83,9 @@ type Progress struct {
 	// stored with the player and never in the authored catalog. Battles pin
 	// them in their catalog.
 	GeneratedAbilities map[string]content.BattleAbilityDefinition `json:"generated_abilities,omitempty"`
+	// BoardChoice is the Board Builder choice the generated abilities were
+	// priced from, so the builder reopens on it.
+	BoardChoice *boardprice.Choice `json:"board_choice,omitempty"`
 }
 type Purchase struct {
 	// Tree names the card tree for shared-card trades and their copies.
@@ -513,6 +517,12 @@ func cloneProgress(p Progress) Progress {
 	p.Collection = append([]Entry(nil), p.Collection...)
 	p.Wounds = append([]Entry(nil), p.Wounds...)
 	p.GeneratedAbilities = maps.Clone(p.GeneratedAbilities)
+	if p.BoardChoice != nil {
+		choice := *p.BoardChoice
+		choice.Slots = append([]boardprice.SlotPick(nil), choice.Slots...)
+		choice.Defenses = append([]string(nil), choice.Defenses...)
+		p.BoardChoice = &choice
+	}
 	p.Abilities = content.AbilityBoard{Offensive: append([]string(nil), p.Abilities.Offensive...), Defensive: append([]string(nil), p.Abilities.Defensive...)}
 	return p
 }

@@ -44,7 +44,10 @@ func (b *Builder) tierLabel(die Die, t Tier) string {
 	}
 	parts := make([]string, len(t.Counts))
 	for i, c := range t.Counts {
-		parts[i] = fmt.Sprintf("%s ×%d", b.SymbolName(die, c.Role), c.Count)
+		parts[i] = b.SymbolName(die, c.Role)
+		if c.Count > 1 {
+			parts[i] += fmt.Sprintf(" ×%d", c.Count)
+		}
 	}
 	return strings.Join(parts, " + ")
 }
