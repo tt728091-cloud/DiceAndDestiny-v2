@@ -375,6 +375,49 @@ cd ml && OMP_NUM_THREADS=2 uv run --python 3.12 python -m dice_destiny_ml.value_
 # sha256 4f8c370d57a7a75bec03926fb815f59b7525ac2f2098e1be3bc7f8b8f7c3337f, 476 KB
 ```
 
+### Value network in the search (T5, phase A3)
+
+With `SearchPolicy.Evaluator` set, every future stops at the first offensive-planning start after `Rounds` (the positions the network learned from), and the network's win probability p scores it as 2p − 1, on the same scale as `tanh(2 × margin)`; its expected final margin takes the health margin's place in `MarginWeight`. A position it cannot encode falls back to the health race. Without an evaluator the search is unchanged (battle for battle identical to before).
+
+Same settings as T1 (100 ms per decision, 7 goroutines, 2 battles at a time), all players interleaved in one run per matchup, seeds 1–400 from both seats (held-out matchup: seeds 1–150). "Value" is the T4 network (`value-v1-a.json`, sha256 `4f8c370d…`).
+
+**Starter mirror (opponent greedy, 800 paired battles):**
+
+| Player | Score | vs v2 (95% CI, z) | vs Rounds 1 (95% CI, z) | Futures per searched decision | ms per decision |
+|---|---|---|---|---|---|
+| v2 (Rounds 0) | 0.505 | — | −0.084 (z −5.7) | 81 | 53.0 |
+| Rounds 1 (best T1 control) | 0.589 | +0.084 (+0.055 … +0.113, z +5.7) | — | 154 | 48.1 |
+| Rounds 2 | 0.510 | +0.005 (−0.003 … +0.013, z +1.2) | | 90 | 51.0 |
+| **Value, Rounds 1** | 0.588 | +0.083 (+0.052 … +0.113, z +5.2) | **−0.001 (−0.022 … +0.020, z −0.1)** | 149 | 47.9 |
+| Value, Rounds 2 | 0.515 | +0.010 (+0.001 … +0.019, z +2.2) | −0.074 (−0.103 … −0.045, z −5.0) | 92 | 51.4 |
+
+**Starter vs Brine Mask (800 paired battles):**
+
+| Player | Score | vs v2 (95% CI, z) | vs Rounds 1 (95% CI, z) | Futures per searched decision | ms per decision |
+|---|---|---|---|---|---|
+| v2 (Rounds 0) | 0.927 | — | | 175 | 52.5 |
+| Rounds 1 | 0.948 | +0.021 (+0.007 … +0.035, z +2.9) | — | 332 | 50.5 |
+| Rounds 2 | 0.930 | +0.003 (−0.003 … +0.009, z +1.0) | | 196 | 52.2 |
+| **Value, Rounds 1** | 0.951 | +0.024 (+0.009 … +0.038, z +3.3) | +0.003 (−0.006 … +0.011, z +0.6) | 309 | 48.9 |
+| Value, Rounds 2 | 0.929 | +0.003 (−0.002 … +0.007, z +1.2) | −0.019 (−0.033 … −0.005, z −2.6) | 197 | 51.3 |
+
+**Held-out matchup, Venom vs Bell Diver (300 paired battles):** too one-sided to tell players apart. v2 scores 0.985, Rounds 1 and 2 0.998, the value player at Rounds 1 1.000 (+0.002 over Rounds 1, 95% CI −0.002 … +0.005) and at Rounds 2 0.998.
+
+**Exit: failed.** The value player beats v2 clearly (+0.083, z +5.2) but not the best control: at Rounds 1 it plays as well as the health race and no better (−0.001, z −0.1); the rule needed z ≥ 2.5 over both. It loses nothing against Brine Mask (lower bound −0.006 against Rounds 1, +0.009 against v2). **Nothing shipped in-game**; the opponent stays version 2.
+
+- The network judges positions far better offline (log loss 0.40 against 0.54 for the health race) but chooses no better. The search compares options on the same futures and only overrides the greedy player on a clear paired gain, so what matters is how the evaluator ranks one round ahead, and there the health race already carries most of the signal.
+- The value player costs slightly fewer futures than the health race at equal time (149 against 154 per decision): futures run on to the next planning start and each evaluation takes about 75 µs.
+- At equal time, cutting futures after one round is worth far more than the evaluator at the cut (+0.084 in the mirror). If the in-game opponent should get stronger now, Rounds 1 with the health race is the measured candidate. That was not part of this handoff, so it is not shipped.
+
+```bash
+LAB=ml/runs/bin/balance-lab-3b79cdf   # commit 3b79cdf
+M=ml/runs/value-v1-models/value-v1-a.json
+P=lookahead@rounds=0,lookahead@rounds=1,lookahead@rounds=2,lookahead@rounds=1@value-model=$M,lookahead@rounds=2@value-model=$M
+$LAB -hero starter -opponent starter -foe greedy -players $P -think-ms 100 -search-workers 7 -workers 2 -seats both -battles 400 -out t5/starter-mirror.json
+$LAB -hero starter -opponent drowned_oracle_brine_mask -foe script -players $P -think-ms 100 -search-workers 7 -workers 2 -seats both -battles 400 -out t5/starter-brine.json
+$LAB -hero venom -opponent drowned_oracle_bell_diver -foe script -players $P -think-ms 100 -search-workers 7 -workers 2 -seats both -battles 150 -out t5/venom-bell.json
+```
+
 ## Limits and next steps
 
 - **Dice solver:** handles pools of identical dice. Mixed pools fall back to plain simulation.

@@ -232,6 +232,20 @@ win-rate test.
   board-pricing rates lost to greedy v2 in the Starter mirror, so the
   version-2 rates stay (results in `balance-lab.md`).
 
+- 2026-10-21, T1 (A0): `balance-lab -think-ms` compares players at equal
+  time. At 100 ms per decision (the in-game median and work), Rounds 1
+  with the health race is the best control: +0.093 over full playouts in
+  the Starter mirror (z +6.3), +0.026 against Brine Mask (z +3.6).
+- 2026-10-21, T3 (A1): the `value-v1` encoder (148 effect-only inputs from
+  the viewer-safe view) and `balance-lab -record`. 193,828 training
+  positions from greedy self-play over 45 pairings plus 1,210 look-ahead
+  battles; Venom and Bell Diver held out.
+- 2026-10-21, T4 (A2): the network beats both baselines on the held-out
+  set (log loss 0.415 against 0.506 and 0.541) with the first setting.
+- 2026-10-22, T5 (A3): exit failed. The value player gains +0.083 over v2
+  in the Starter mirror but nothing over Rounds 1 with the health race
+  (−0.001, z −0.1). Nothing shipped; the in-game opponent stays v2.
+
 ## Rules that stay
 
 - The network sees only the viewer-safe view, and the search keeps
