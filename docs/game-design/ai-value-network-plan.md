@@ -333,6 +333,30 @@ boards against their prices) runs on the network.
   No rates changed; the next pass needs positions where riders vary on
   their own.
 
+- 2026-10-22, Network v2 (brief `ai-network-v2-handoff.md`; results in
+  `balance-lab.md`, "AI network v2"):
+  - **Decision 1:** the in-game opponent is version 3 (Rounds 1 with the
+    health race, budget 400): +0.075 over v2 in the Starter mirror (z 3.25),
+    +0.024 against Brine Mask, a quarter less time.
+  - **N1:** `balance-lab -label` / `-score` / `-relabel`; benchmark v1
+    (12 matchups, 4,110 decisions). Greedy loses 0.030 per decision, the
+    Rounds 1 search 0.011; the search's remaining loss is mostly offense.
+  - **N2:** `value-probe -paired`. Protect 0.87 (greedy players) and 0.61
+    (network players) per stack; energy 0.02–0.14 per 5 points; enemy
+    Poison 1.18. Handed over: Protect 0.6; energy stays 0.2 for now.
+  - **N3–N4:** value-v2 and option-v1 encoders, `cmd/decision-data`,
+    `policy_train.py`, the Go `NetworkPlayer`. Three rounds of policy
+    iteration (37,500 labelled decisions). The network on defense beats
+    greedy by +0.09 in the Starter mirror and plays the 100 ms search to a
+    draw head to head (0.498) at about 1 ms per decision; on everything it
+    beats greedy in every trained matchup (+0.06 to +0.37) but not the
+    search. Offense does not improve with more rounds of the same labels.
+  - **N5:** the network inside the search adds +0.013 (z 1.1). Exit not
+    passed; nothing network-based ships.
+  - **Next:** the network sets the solver's exchange rates per position
+    (coherent offense, and rider values in context); train on every
+    character (Venom included); N2 again with that player for energy.
+
 ## Rules that stay
 
 - The network sees only the viewer-safe view, and the search keeps

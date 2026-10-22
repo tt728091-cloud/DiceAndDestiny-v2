@@ -611,6 +611,44 @@ On defense the network alone is as strong as 100 ms of search. On offense it los
 
 **An engine fault the network found.** In Venom battles the authority sometimes lists a card play it then refuses: Venom mirror, seed 117, round 1, the offensive reselect window, "Measured Dose" committed with `status_id: gain` and the Venom as target is listed by `LegalActions` and rejected with `command "planning_commit_cards" is not allowed`. The network made it in 25 of 2,000 Venom mirror battles and 10 of 2,000 against Bell Diver; greedy never plays it. A human could press it too. It is engine behaviour outside this thread's scope, so it is reported, not changed; the lab now keeps such battles as errors, leaves them out of every score and comparison, and reports them.
 
+**Round 3:** the player is round 2's network on everything, and its options are measured with that network making all its own later moves (12 matchups, 13,432 decisions). It did not help: on everything the network scores +0.007 (round 3's data alone), +0.043 (rounds 2–3) and +0.054 (rounds 1–3) over greedy in the Starter mirror, against round 2's +0.061; on defense alone every round gives +0.092–0.095. Leaving the dice decisions (rerolls, die choices) to the exact solver (`-solver-dice`) gives +0.072 with round 2's network, so dice account for part of the offense loss and its card and ability choices for the rest.
+
+**Head to head.** Every comparison above is against the greedy player, which the search models exactly. Played against each other, neither knows the other: the Rounds 1 search (budget 250, about 100 ms per decision) as the hero against a network opponent (`-foe network@…`; it never searches, so it never sees the hero's private dice), Starter mirror, seeds 1,001–1,300 from both seats:
+
+| Search against | Search's score (95% CI) |
+|---|---|
+| the network on defense, greedy elsewhere | **0.498** (0.462 … 0.535) |
+| the network on everything except dice | 0.527 (0.491 … 0.563) |
+
+**The network on defense plays as well as 100 ms of search, at about 1 ms per decision.** It is not stronger.
+
+**The network inside the search** (its pick as the default on defense, its best options searched; budget 250, Starter mirror, seeds 1,001–1,300 from both seats): +0.013 over the plain search (−0.011 … +0.037, z +1.1). The search already finds most of what the network knows about defense.
+
+**N5's exit is not passed:** no network player beats the Rounds 1 search by z ≥ 2.5 in the Starter mirror, so nothing network-based ships in-game. What stops it:
+
+- **Offense.** Each label assumes the rest of the turn is played by someone else, while dice and card plays depend on each other within a turn: the solver plans a turn as a whole, the network move by move. Round 3 shows more rounds of the same labels do not fix it. The next design lets the network set the solver's exchange rates for the position (what a status stack, an energy point or a card in hand is worth in damage) instead of overriding its moves, so every turn is still planned exactly.
+- **Characters it has not seen.** Venom (held out) is not learned; a network for the game trains on every character.
+- **Label noise and myopia.** One-round futures do not count energy or what a card in hand will do later.
+
+```bash
+# Benchmark v1 (per matchup; the 12 are in ml/runs/bench/v1/run.sh), seeds from 300,001
+$LAB -hero starter -opponent starter -foe greedy -players lookahead@rounds=1@budget=250 -seats both -battles 20 -first-seed 300001 \
+  -workers 4 -label bench/v1/starter-vs-starter.jsonl.gz -label-futures 512 -label-sample 0.3 -label-workers 2
+$LAB -score 'bench/v1/*.jsonl.gz' -players greedy,lookahead@rounds=1@budget=250,network@policy-model=M.json
+# Round 1 labels (ml/runs/train/d1/run.sh): look-ahead heroes, greedy continuation, 128 futures, seeds from 400,001
+$LAB … -players lookahead@rounds=1@budget=100 -battles 30 -first-seed 400001 -label … -label-futures 128 -label-sample 1
+# Rounds 2 and 3 (ml/runs/train/d2, d3): the previous network plays and continues the futures
+$LAB … -players network@policy-model=N1b.json@network-segments=defensive -first-seed 600001 -label … -label-futures 96 -label-sample 0.5 \
+  -label-policy-model N1b.json -label-network-segments defensive
+go run ./cmd/decision-data -in 'train/d1/*.jsonl.gz' -out data/d1
+cd ml && uv run python -m dice_destiny_ml.policy_train --data runs/data/d1 runs/data/d2 --benchmark runs/data/b1 --output N2.json
+# Games: the network alone, by segment, and head to head
+$LAB -hero starter -opponent starter -foe greedy -players greedy,network@policy-model=N2.json@network-segments=defensive,network@policy-model=N2.json -seats both -battles 2000
+$LAB -hero starter -opponent starter -foe network@policy-model=N2.json@network-segments=defensive -players lookahead@rounds=1@budget=250 -seats both -battles 300 -first-seed 1001
+```
+
+The models are in the ignored `ml/runs/lab/n4/` (round 2 on rounds 1–2 data: `policy-n2-d12.json`).
+
 ### Rider values by paired futures (N2)
 
 `value-probe -paired` measures riders without a network. At the start of each of the hero's rounds (before anyone rolls) it forks the battle into identically seeded copies, adds one rider to a copy through the engine's own paths, and plays every copy to the end with the greedy player (the minions with their scripts). Copies share their seeds, so they roll the same dice until the rider changes what happens. A rider's worth is its mean change in result divided by the unit's, one more card removed from the opponent, with a 95% interval by the delta method over positions.
@@ -639,8 +677,18 @@ Ten matchups (Starter mirror, Starter against Brine Mask and Drowned Regent, Adv
 
 - **Protect is measured: 0.87 damage per stack** (interval ±0.07), a little under the agreed 1. The greedy player spends Protect whenever it is offered, so this is the value of a player who uses it.
 - **Energy is not measured yet.** The greedy player barely spends energy (it plays no Venom, Curse, Blade Warden or Venom Goblin cards), so 5 energy is worth almost nothing *to it*. That is a fact about the player, not the rider.
-- **Decision 2 applied:** Protect qualifies (interval within ±0.25, measured with a player who uses it), so the board pricing's Protect rate should become 0.87; that rate lives in the board thread's `riders.yaml`, so this is handed over, not changed here. Energy keeps the agreed 0.2 per point until the network player, which does spend energy, measures it (N6).
+- **Decision 2 applied** (below, with the network's measurements): Protect qualifies; the rate lives in the board thread's `riders.yaml`, so it is handed over, not changed here.
 - Status values are averages over these matchups; a status matters more against characters with fewer ways to shed it.
+
+**With the network playing both sides** (round 2's network, dice left to the solver; the same matchups without Venom, 3,285 positions; `-policy-model`, `-changes`):
+
+| Rider | Greedy players | Network players | 2026-10-15 rate |
+|---|---|---|---|
+| self +1 Protect | 0.87 ± 0.07 | **0.61 ± 0.07** | 1.0 |
+| +5 energy | 0.02 ± 0.01 | **0.14 ± 0.05** | 1.0 (0.2 per point) |
+| +1 card in hand (from the draw pile) | 0.04 ± 0.09 | **0.39 ± 0.10** | half a health in `card-value-rules.md` |
+
+A rider's worth depends on who plays it: the stronger player, who already defends better, gets less from Protect and more from energy and cards. **Hand-over to the board thread (decision 2):** Protect 0.6 per stack, from the stronger player; energy keeps the agreed 0.2 per point until a player that plays energy cards well measures it (this one still loses on offense), though both measurements put it far lower; a card in hand measures close to the card rules' half a health.
 
 ```bash
 go build -o ml/runs/bin/value-probe-paired ./cmd/value-probe

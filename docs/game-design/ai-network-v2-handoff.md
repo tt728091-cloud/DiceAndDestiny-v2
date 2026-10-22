@@ -1,7 +1,9 @@
 # Handoff: AI network v2
 
-**Status:** in progress (written 2026-10-22, AI thread, branch
-`ai-value-network`).
+**Status:** first pass done 2026-10-22 (AI thread, branch
+`ai-value-network`). V3 shipped; N1, N2 and three rounds of N3–N4 built and
+measured; N5's exit not passed, nothing network-based shipped. Progress
+notes in the plan, results in `balance-lab.md`.
 
 **Plan of record:** [`ai-value-network-plan.md`](ai-value-network-plan.md),
 section "Network v2", steps N1–N6. Results go in
