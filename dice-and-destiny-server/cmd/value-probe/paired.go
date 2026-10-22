@@ -14,6 +14,7 @@ import (
 	"diceanddestiny/server/internal/battle/learned"
 	"diceanddestiny/server/internal/battle/lookahead"
 	"diceanddestiny/server/internal/battle/state"
+	"diceanddestiny/server/internal/battle/valuenet"
 )
 
 // Paired mode measures riders without a network: at the start of a round's
@@ -39,7 +40,11 @@ type pairedSample struct {
 type pairedConfig struct {
 	futures int
 	every   int // probe every n-th round start of the hero
-	player  string
+	// policyModel, when set, makes both heroes' moves (in the battles and
+	// in every future) with the policy network, dice left to the solver;
+	// changes limits the riders tried (comma-separated names; empty: all).
+	policyModel string
+	changes     string
 }
 
 // pairedProber plays the futures for one runner.
@@ -125,6 +130,15 @@ func (p *pairedProber) Decision(d *lookahead.Decision) {
 		return
 	}
 	names, fns := pairedChanges(b, d.Seat, foes[0], p.engine)
+	if p.cfg.changes != "" {
+		var kept []string
+		for _, name := range names {
+			if name == "unit" || strings.Contains(","+p.cfg.changes+",", ","+name+",") {
+				kept = append(kept, name)
+			}
+		}
+		names = kept
+	}
 	own := b.Actors[d.Seat]
 	s := pairedSample{Matchup: p.matchup, Round: b.Segment.Round, Futures: p.cfg.futures, Deltas: map[string]float64{},
 		Health: float64(own.CurrentHealth()) / float64(max(lookahead.MaxHealth(own), 1))}
@@ -199,9 +213,23 @@ func runPaired(contentRoot, authoredRoot, runState, matchups string, first uint6
 			fail(fmt.Errorf("-matchups wants hero:opponent:foe, got %q", spec))
 		}
 		hero, opponent, foeKind := parts[0], parts[1], parts[2]
+		player := func() lookahead.Policy { return lookahead.NewGreedyPolicy() }
+		if cfg.policyModel != "" {
+			model, err := valuenet.LoadPolicyFile(cfg.policyModel)
+			if err != nil {
+				fail(err)
+			}
+			player = func() lookahead.Policy {
+				options := lookahead.NewSearchPolicy(func() lookahead.Policy { return lookahead.NewGreedyPolicy() }, 0)
+				options.TopRerolls, options.TopAbilities = 8, 4
+				p := valuenet.NewNetworkPlayer(model, options, 0.02)
+				p.SolverDice = true
+				return p
+			}
+		}
 		foe := func() lookahead.Policy {
 			if foeKind != "script" {
-				return lookahead.NewGreedyPolicy()
+				return player()
 			}
 			minion, err := learned.LoadScriptedMinion(contentRoot, opponent)
 			if err != nil {
@@ -220,9 +248,9 @@ func runPaired(contentRoot, authoredRoot, runState, matchups string, first uint6
 				if err != nil {
 					fail(err)
 				}
-				return &pairedProber{cfg: cfg, engine: eng, sim: sim, hero: lookahead.NewGreedyPolicy(), foe: foe, collect: collect, matchup: matchup}
+				return &pairedProber{cfg: cfg, engine: eng, sim: sim, hero: player(), foe: foe, collect: collect, matchup: matchup}
 			}}
-		greedy := func() (lookahead.Policy, error) { return lookahead.NewGreedyPolicy(), nil }
+		greedy := func() (lookahead.Policy, error) { return player(), nil }
 		foeFactory := func() (lookahead.Policy, error) { return foe(), nil }
 		if _, err := lookahead.RunInterleaved(m, []lookahead.Entrant{{Name: "greedy", Hero: greedy}}, foeFactory, []bool{false, true}, first, battles, workers, nil); err != nil {
 			fail(fmt.Errorf("%s: %w", matchup, err))

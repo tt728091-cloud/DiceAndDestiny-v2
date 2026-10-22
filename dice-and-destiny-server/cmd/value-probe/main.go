@@ -48,6 +48,8 @@ func main() {
 	var pc pairedConfig
 	flag.IntVar(&pc.futures, "futures", 8, "-paired: futures per position and change")
 	flag.IntVar(&pc.every, "every", 1, "-paired: probe every n-th round start of the hero")
+	flag.StringVar(&pc.policyModel, "policy-model", "", "-paired: a policy network (policy-v2) plays both sides instead of the greedy player, dice left to the solver")
+	flag.StringVar(&pc.changes, "changes", "", "-paired: only these changes (comma-separated names as reported), besides the unit")
 	flag.Parse()
 	if *paired {
 		runState, err := os.MkdirTemp("", "value-probe-run-state-")

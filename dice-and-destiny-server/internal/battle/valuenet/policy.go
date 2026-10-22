@@ -8,6 +8,7 @@ import (
 	"math"
 	"os"
 
+	"diceanddestiny/server/internal/battle/command"
 	"diceanddestiny/server/internal/battle/lookahead"
 )
 
@@ -220,6 +221,17 @@ func (e *PolicyEvaluator) Scores(d *lookahead.Decision, options []int, anchor in
 	return out, nil
 }
 
+// DiceDecision reports a decision about the seat's offensive dice: one of
+// its options is a reroll or a die choice.
+func DiceDecision(d *lookahead.Decision, options []int) bool {
+	for _, i := range options {
+		if d.Actions[i].Type == command.TypePlanningReroll || lookahead.CardChoice(d.Actions[i]).Kind == "offensive_die" {
+			return true
+		}
+	}
+	return false
+}
+
 // SegmentAdvisor is an evaluator that only advises in some segments;
 // elsewhere it gives no advice and the search picks its options as usual.
 type SegmentAdvisor struct {
@@ -244,7 +256,10 @@ type NetworkPlayer struct {
 	// Segments, when set, limits the network to decisions in these
 	// segments (offensive, defensive); elsewhere it keeps the greedy pick.
 	Segments map[string]bool
-	eval     *PolicyEvaluator
+	// SolverDice leaves dice decisions (any option a reroll or a die
+	// choice) to the greedy player's exact dice solver.
+	SolverDice bool
+	eval       *PolicyEvaluator
 	// Changed counts decisions where it left the greedy pick.
 	Changed int
 }
@@ -267,6 +282,9 @@ func (p *NetworkPlayer) Choose(d *lookahead.Decision) (int, error) {
 	options, anchor, err := p.Options.Options(d)
 	if err != nil || len(options) < 2 {
 		return anchor, err
+	}
+	if p.SolverDice && DiceDecision(d, options) {
+		return anchor, nil
 	}
 	scores, err := p.eval.Scores(d, options, anchor)
 	if err != nil {

@@ -558,6 +558,59 @@ Instead of asking how well a network predicts who wins, the benchmark asks how m
 - **Scoring.** `balance-lab -score FILES -players …` asks each player for its move on every recorded decision and reports the **value lost**: the measured best option's value minus the chosen option's, on the search's scale (win +1, loss −1, plus 0.2 × the final health margin; half of it is win chance). It also reports how often the player chose the best option and how often it kept greedy's pick, overall and by kind of decision. The best option is picked on the same futures that measure it, so every player's loss carries the same small upward bias; differences between players are fair.
 - **Training arrays.** `cmd/decision-data` turns records into the network's inputs (below) and targets.
 
+### Benchmark v1 and headroom
+
+Benchmark v1: decisions of the Rounds 1 look-ahead (budget 250) against the greedy player or a minion's script, 30% of its decisions with two or more options, seeds 300,001–300,020 from both seats, 512 futures for the best two options. 12 matchups, 4,110 decisions; the held-out characters (Venom, Bell Diver) are in their own slice (1,025 decisions).
+
+Value lost per decision on the first six finished matchups (2,152 decisions):
+
+| Kind | Decisions | Greedy | Rounds 1 search (budget 250) |
+|---|---|---|---|
+| All | 2,152 | 0.0298 | **0.0109** |
+| Choosing a defense | 394 | 0.0480 | 0.0036 |
+| Defense reactions | 253 | 0.0237 | 0.0023 |
+| Offensive reaction cards (Curse) | 61 | 0.1661 | 0.0029 |
+| Offensive cards | 339 | 0.0198 | 0.0133 |
+| Offensive dice | 660 | 0.0224 | 0.0196 |
+
+- **Greedy's biggest errors are on defense**: it always rolls its defensive ability first, when playing Steady Guard or Take Stock first is often worth several points of win chance; and Curse's greedy player never uses its reaction cards. The search already fixes most of these.
+- **What the search leaves is offense**: about 80% of its remaining loss is dice and card decisions, where options differ by little and its futures cannot separate them.
+- Futures stopped after one round score some equivalent moves differently: two kinds of pass that lead to the same battle get different health-race values because the cut falls at a different moment; played to the end they are identical. Re-measured with full playouts (`-relabel … -label-rounds 0`), the Starter mirror's 320 decisions rank the players the same way (greedy 0.0293, the search 0.0229, round 1's network 0.0190), with wider intervals (±0.006–0.007).
+
+### Policy network (N3, N4)
+
+`cmd/decision-data` reads each record from the deciding seat's view: value-v2 (value-v1's 148 inputs plus the decision point: segment and stage, the seat's dice and the solver's view of them, the expected damage, statuses and energy of the solver's play, the selected ability, attacks in flight) and option-v1 for each option (what the move does: its kind, whether greedy picks it, the solver's value and expected results for a reroll, die choice or dice card, an ability tier's value and effects, a defense's expected effect, a card's cost, timing and effects; never IDs). Viewer safety (forks and hidden-hand or private-dice changes leave every input unchanged at every kind of decision), determinism and width are tested.
+
+`ml/dice_destiny_ml/policy_train.py` trains a state trunk (2 × 128) and an option scorer (128, 64) on each option's measured value against greedy's pick, weighted by its precision, plus value and result heads; it picks the margin by which a pick must beat greedy's on validation. The Go player (`valuenet.NetworkPlayer`, lab player `network`) plays the network's pick among the search's options, with no search at all.
+
+**Round 1 (N1b):** labels from the Rounds 1 look-ahead's battles, its options measured with greedy making the later moves (7 matchups, 12,333 decisions, 128 futures). On the benchmark it loses 0.0184 per decision against greedy's 0.0308 (held-out slice: 0.0210 against 0.0268). In battles (network alone against greedy, Starter mirror, seeds 1–2,000 from both seats):
+
+| The network decides | Score − greedy (95% CI, z) |
+|---|---|
+| defense only | **+0.092** (+0.077 … +0.107, z +11.8) |
+| everything | −0.002 (z −0.3) |
+| offense only | −0.052 (z −5.7) |
+
+On defense the network alone is as strong as 100 ms of search. On offense it loses even though each of its offense moves measures better than greedy's: every label assumes greedy finishes the turn, and the dice solver's plan for a turn is consistent while the network's step-by-step changes are not.
+
+**Round 2 (N2):** the player is round 1's network on defense with greedy elsewhere, and its options are measured with that player making its own later moves (12 matchups, 11,731 decisions, 96 futures, half of each battle's decisions). Trained on rounds 1 and 2 together:
+
+| Matchup (seeds from both seats) | Network on defense | Network on everything |
+|---|---|---|
+| Starter mirror (1–2,000) | +0.095 (z +12.2) | **+0.061** (z +6.8) |
+| Starter vs Brine Mask (1–1,000) | +0.026 (z +5.2) | +0.018 (z +3.0) |
+| Starter vs Drowned Regent | +0.121 (z +11.9) | +0.107 (z +9.1) |
+| Starter vs Bell Diver (held out) | +0.040 (z +7.5) | +0.029 (z +4.6) |
+| Curse mirror | +0.234 (z +19.5) | +0.236 (z +17.6) |
+| Blade Warden mirror | +0.261 (z +20.3) | **+0.366** (z +29.2) |
+| Venom mirror (held out) | −0.051 (z −4.0) | +0.053 (z +3.7) |
+| Venom vs Bell Diver (held out) | −0.012 (z −2.2) | −0.070 (z −8.9) |
+
+- One round of policy iteration turned the network's full play from −0.002 into +0.061 in the Starter mirror; the network now beats greedy on everything in every trained matchup, by a lot where greedy ignores a character's cards (Curse, Blade Warden).
+- It does not yet carry over to Venom, which it never saw: Venom has its own statuses and cards. A deployed network trains on every character.
+
+**An engine fault the network found.** In Venom battles the authority sometimes lists a card play it then refuses: Venom mirror, seed 117, round 1, the offensive reselect window, "Measured Dose" committed with `status_id: gain` and the Venom as target is listed by `LegalActions` and rejected with `command "planning_commit_cards" is not allowed`. The network made it in 25 of 2,000 Venom mirror battles and 10 of 2,000 against Bell Diver; greedy never plays it. A human could press it too. It is engine behaviour outside this thread's scope, so it is reported, not changed; the lab now keeps such battles as errors, leaves them out of every score and comparison, and reports them.
+
 ### Rider values by paired futures (N2)
 
 `value-probe -paired` measures riders without a network. At the start of each of the hero's rounds (before anyone rolls) it forks the battle into identically seeded copies, adds one rider to a copy through the engine's own paths, and plays every copy to the end with the greedy player (the minions with their scripts). Copies share their seeds, so they roll the same dice until the rider changes what happens. A rider's worth is its mean change in result divided by the unit's, one more card removed from the opponent, with a 95% interval by the delta method over positions.

@@ -28,7 +28,7 @@ func main() {
 	authoredRoot := flag.String("authored-root", filepath.Join(serverRoot, "content", "authored"), "published cards root (read only)")
 	hero := flag.String("hero", "starter", "hero combatant definition")
 	opponent := flag.String("opponent", "drowned_oracle_brine_mask", "opponent combatant definition")
-	foePlayer := flag.String("foe", "script", "opponent player: script (a minion's own script), greedy, greedy-v1, proxy or random")
+	foePlayer := flag.String("foe", "script", "opponent player: script (a minion's own script), greedy, greedy-v1, proxy, random, or network@policy-model=FILE[@…] (a policy network; hero look-aheads still model it as greedy)")
 	players := flag.String("players", "proxy,greedy,lookahead", "comma-separated players: random, proxy, greedy, greedy-v1, lookahead, lookahead-v1; a player may override player flags, e.g. lookahead@rounds=1@think-ms=50")
 	seats := flag.String("seats", "a", "hero seat: a, b, or both (each seed played from each seat)")
 	battles := flag.Int("battles", 200, "battles per player")
@@ -119,7 +119,23 @@ func main() {
 		}
 		matchup.Observe = dataset.Observer
 	}
+	// A network opponent (-foe network@policy-model=…) never searches, so it
+	// never sees the hero's private planning; the hero's look-ahead still
+	// models it as the greedy player, as it would a human.
+	var networkFoe lookahead.PolicyFactory
+	if strings.HasPrefix(*foePlayer, "network") {
+		name, config, err := parsePlayer(*foePlayer, base)
+		if err != nil {
+			fail(err)
+		}
+		if networkFoe, err = playerFactory(name, nil, true, config); err != nil {
+			fail(err)
+		}
+	}
 	foe := func() (lookahead.Policy, error) {
+		if networkFoe != nil {
+			return networkFoe()
+		}
 		switch *foePlayer {
 		case "greedy":
 			return lookahead.NewGreedyPolicy(), nil
@@ -269,8 +285,10 @@ type playerConfig struct {
 	// moves in its simulated futures.
 	advisorTop     int
 	networkFutures bool
-	// networkSegments limits the network player to these segments.
+	// networkSegments limits the network player to these segments;
+	// solverDice leaves its dice decisions to the solver.
 	networkSegments string
+	solverDice      bool
 }
 
 func (c *playerConfig) register(fs *flag.FlagSet) {
@@ -287,6 +305,7 @@ func (c *playerConfig) register(fs *flag.FlagSet) {
 	fs.IntVar(&c.topAbilities, "top-abilities", c.topAbilities, "the best ability choices considered (0: the player's default)")
 	fs.IntVar(&c.advisorTop, "advisor-top", c.advisorTop, "with -policy-model, the look-ahead searches the network's best N options (with the greedy pick; 0 means 3)")
 	fs.StringVar(&c.networkSegments, "network-segments", c.networkSegments, "the network decides (or advises the look-ahead) only in these segments (offensive, defensive; joined by +), greedy elsewhere")
+	fs.BoolVar(&c.solverDice, "solver-dice", c.solverDice, "the network leaves dice decisions (rerolls, die choices) to the dice solver")
 	fs.BoolVar(&c.networkFutures, "network-futures", c.networkFutures, "with -policy-model, the network makes the look-ahead's own moves in its simulated futures")
 	fs.Float64Var(&c.energyValue, "energy-value", c.energyValue, "shortcut: sets -energy-gain-value and -energy-spend-value (negative leaves them)")
 	fs.Float64Var(&c.energyGain, "energy-gain-value", c.energyGain, "damage one energy point gained is worth to the greedy player (and the look-ahead's simulated play)")
@@ -410,7 +429,7 @@ func playerFactory(name string, foe lookahead.PolicyFactory, heroFoe bool, c pla
 				options.TopAbilities = c.topAbilities
 			}
 			player := valuenet.NewNetworkPlayer(model, options, c.policyMargin)
-			player.Segments = c.segments()
+			player.Segments, player.SolverDice = c.segments(), c.solverDice
 			return player, nil
 		}, nil
 	case "lookahead", "lookahead-v1":
@@ -439,7 +458,7 @@ func playerFactory(name string, foe lookahead.PolicyFactory, heroFoe bool, c pla
 			options.Rollout = greedy(false)
 			options.TopRerolls, options.TopAbilities = 8, 4
 			player := valuenet.NewNetworkPlayer(policy, options, c.policyMargin)
-			player.Segments = c.segments()
+			player.Segments, player.SolverDice = c.segments(), c.solverDice
 			return player
 		}
 		return func() (lookahead.Policy, error) {
