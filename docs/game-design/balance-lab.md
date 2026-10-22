@@ -414,6 +414,7 @@ Same settings as T1 (100 ms per decision, 7 goroutines, 2 battles at a time), al
 
 **Exit: failed.** The value player beats v2 clearly (+0.083, z +5.2) but not the best control: at Rounds 1 it plays as well as the health race and no better (−0.001, z −0.1); the rule needed z ≥ 2.5 over both. It loses nothing against Brine Mask (lower bound −0.006 against Rounds 1, +0.009 against v2). **Nothing shipped in-game**; the opponent stays version 2.
 
+- **Timing at in-game settings** (budget 160, 15 goroutines, one battle at a time, Starter mirror seeds 1–30 from both seats): the value player at Rounds 1 takes 21.5 ms per decision (29.9 ms per searched decision) against v2's 57.9 ms (80.7 ms), and Rounds 1 with the health race 19.9 ms (27.3 ms). This part of the exit passes; only the strength test failed.
 - The network judges positions far better offline (log loss 0.40 against 0.54 for the health race) but chooses no better. The search compares options on the same futures and only overrides the greedy player on a clear paired gain, so what matters is how the evaluator ranks one round ahead, and there the health race already carries most of the signal.
 - The value player costs slightly fewer futures than the health race at equal time (149 against 154 per decision): futures run on to the next planning start and each evaluation takes about 75 µs.
 - At equal time, cutting futures after one round is worth far more than the evaluator at the cut (+0.084 in the mirror). If the in-game opponent should get stronger now, Rounds 1 with the health race is the measured candidate. That was not part of this handoff, so it is not shipped.
@@ -425,6 +426,7 @@ P=lookahead@rounds=0,lookahead@rounds=1,lookahead@rounds=2,lookahead@rounds=1@va
 $LAB -hero starter -opponent starter -foe greedy -players $P -think-ms 100 -search-workers 7 -workers 2 -seats both -battles 400 -out t5/starter-mirror.json
 $LAB -hero starter -opponent drowned_oracle_brine_mask -foe script -players $P -think-ms 100 -search-workers 7 -workers 2 -seats both -battles 400 -out t5/starter-brine.json
 $LAB -hero venom -opponent drowned_oracle_bell_diver -foe script -players $P -think-ms 100 -search-workers 7 -workers 2 -seats both -battles 150 -out t5/venom-bell.json
+$LAB -hero starter -opponent starter -foe greedy -players lookahead@rounds=0,lookahead@rounds=1,lookahead@rounds=1@value-model=$M -budget 160 -search-workers 15 -workers 1 -seats both -battles 30 -out t5/ingame-timing.json
 ```
 
 ### Measured values (T6, phase A4)
