@@ -49,9 +49,9 @@ type SearchPolicy struct {
 	// maximum) to the win/draw/loss score, to separate options that win
 	// equally often.
 	MarginWeight float64
-	// TopRerolls keeps only the solver's best rerolls (and the best ability
-	// choices) as options.
-	TopRerolls int
+	// TopRerolls keeps only the solver's best rerolls (and die choices) as
+	// options, and TopAbilities the best ability choices (2 when zero).
+	TopRerolls, TopAbilities int
 	// MinT is the paired t-statistic an option needs to override the anchor.
 	MinT float64
 	// MaxBudget caps the extra futures spent confirming a promising option
@@ -205,27 +205,12 @@ func (s *SearchPolicy) Choose(d *Decision) (int, error) {
 			wg.Add(1)
 			go func(w *searchWorker) {
 				defer wg.Done()
-				policies := map[string]Policy{}
-				for id := range d.Battle.Actors {
-					policies[id] = w.opponent
-				}
-				policies[d.Seat] = w.hero
-				playout := Playout{Sim: w.sim, Hero: d.Seat, Policies: policies, Rounds: s.Rounds, Evaluate: s.evaluate, Judge: w.judge, Deadline: deadline}
+				future := s.future(w, d, deadline)
 				for jb := range next {
 					a := arms[jb.k]
-					seed := base + (a.offset+uint64(jb.j))*0x9e3779b97f4a7c15
-					b := Fork(d.Battle, d.Seat, seed)
-					action := d.Actions[a.index]
-					v, judged, expected, err := playout.Play(&b, &action, rand.New(rand.NewSource(int64(seed))))
-					switch {
-					case errors.Is(err, errDeadline):
+					v, err := future(a.index, base+(a.offset+uint64(jb.j))*0x9e3779b97f4a7c15)
+					if errors.Is(err, errDeadline) {
 						continue
-					case err != nil:
-						v = -2
-					case judged:
-						v += s.MarginWeight * expected
-					default:
-						v += s.MarginWeight * margin(&b, d.Seat)
 					}
 					a.values[jb.j] = v
 					finished[jb.k][jb.j] = true
@@ -355,6 +340,34 @@ func (s *SearchPolicy) Choose(d *Decision) (int, error) {
 	return anchor, nil
 }
 
+// future returns a function that plays one future of the decision: the
+// listed action, then the playout policies, on a fork of the battle seeded
+// with seed. It scores the end as the search does (the result or the judge's
+// value, plus MarginWeight times the margin); a future that fails scores -2.
+// Only errDeadline is returned as an error.
+func (s *SearchPolicy) future(w *searchWorker, d *Decision, deadline time.Time) func(index int, seed uint64) (float64, error) {
+	policies := map[string]Policy{}
+	for id := range d.Battle.Actors {
+		policies[id] = w.opponent
+	}
+	policies[d.Seat] = w.hero
+	playout := Playout{Sim: w.sim, Hero: d.Seat, Policies: policies, Rounds: s.Rounds, Evaluate: s.evaluate, Judge: w.judge, Deadline: deadline}
+	return func(index int, seed uint64) (float64, error) {
+		b := Fork(d.Battle, d.Seat, seed)
+		action := d.Actions[index]
+		v, judged, expected, err := playout.Play(&b, &action, rand.New(rand.NewSource(int64(seed))))
+		switch {
+		case errors.Is(err, errDeadline):
+			return 0, err
+		case err != nil:
+			return -2, nil
+		case judged:
+			return v + s.MarginWeight*expected, nil
+		}
+		return v + s.MarginWeight*margin(&b, d.Seat), nil
+	}
+}
+
 // Describe summarizes a command for people.
 func Describe(b *state.Battle, seat string, action command.Command) string {
 	instances := b.Settled.Actors[seat].CardInstances
@@ -439,7 +452,11 @@ func (s *SearchPolicy) candidates(d *Decision, options []int, anchor int) ([]int
 		}
 	}
 	top(rerolls, s.TopRerolls)
-	top(abilities, 2)
+	if s.TopAbilities > 0 {
+		top(abilities, s.TopAbilities)
+	} else {
+		top(abilities, 2)
+	}
 	top(dice, s.TopRerolls)
 	found := false
 	for _, i := range out {

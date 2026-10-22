@@ -15,6 +15,7 @@ import (
 	"strings"
 	"time"
 
+	"diceanddestiny/server/internal/battle/decisions"
 	"diceanddestiny/server/internal/battle/learned"
 	"diceanddestiny/server/internal/battle/lookahead"
 	"diceanddestiny/server/internal/battle/valuenet"
@@ -37,11 +38,30 @@ func main() {
 	rates := lookahead.DefaultRates()
 	base := playerConfig{budget: 96, searchWorkers: 1, energyValue: -1, energyGain: rates.EnergyGain, energySpend: rates.EnergySpend, statusValue: rates.Status, protectValue: -1, cardValue: 0.25, drawValue: 0.25}
 	base.register(flag.CommandLine)
+	label := flag.String("label", "", "record the hero's decisions with reference values for each option into this new file (.jsonl.gz): the decision benchmark and the network's training labels")
+	var lc labelConfig
+	flag.IntVar(&lc.futures, "label-futures", 512, "-label: futures for the two best options (every option gets a quarter, the better half a half)")
+	flag.IntVar(&lc.rounds, "label-rounds", 1, "-label: the reference's horizon in rounds (0 plays to the end)")
+	flag.IntVar(&lc.topRerolls, "label-top-rerolls", 8, "-label: the solver's best rerolls and die choices measured")
+	flag.IntVar(&lc.topAbilities, "label-top-abilities", 4, "-label: the best ability choices measured")
+	flag.IntVar(&lc.searchWorkers, "label-workers", 1, "-label: goroutines each decision's reference futures play on")
+	flag.Float64Var(&lc.sample, "label-sample", 1, "-label: share of the hero's decisions with two or more options to record")
+	score := flag.String("score", "", "instead of simulating, score -players on recorded decisions (comma-separated files or globs from -label): value lost per decision against the reference's best option")
 	tally := flag.String("tally", "", "instead of simulating, score your games against the look-ahead mirror from this battle log (\"default\" reads this workspace's log)")
 	compare := flag.String("compare", "", "instead of simulating, pair two results files battle by battle: a.json[:player],b.json[:player]")
 	flag.Parse()
 	if *compare != "" {
 		if err := printComparison(*compare); err != nil {
+			fail(err)
+		}
+		return
+	}
+	if *score != "" {
+		paths, err := expandPaths(*score)
+		if err != nil {
+			fail(err)
+		}
+		if err := runScore(paths, *contentRoot, strings.Split(*players, ","), base, *workers); err != nil {
 			fail(err)
 		}
 		return
@@ -90,14 +110,26 @@ func main() {
 		}
 		return nil, fmt.Errorf("unknown opponent player %q", *foePlayer)
 	}
+	// A hero opponent is modelled by the look-ahead the way the game does: by
+	// the greedy player of the look-ahead's own version.
+	heroFoe := *foePlayer != "script"
+	var labels *decisions.Writer
+	if *label != "" {
+		if matchup.Observe != nil {
+			fail(fmt.Errorf("-label and -record cannot run together"))
+		}
+		if labels, err = decisions.Create(*label); err != nil {
+			fail(err)
+		}
+		if matchup.Observe, err = newRecorders(labels, *hero, *opponent, foe, heroFoe, base, lc); err != nil {
+			fail(err)
+		}
+	}
 	seatList := map[string][]bool{"a": {false}, "b": {true}, "both": {false, true}}[*seats]
 	if seatList == nil {
 		fail(fmt.Errorf("unknown -seats %q", *seats))
 	}
 	fmt.Printf("%s vs %s (%s) · unified defense · seeds %d–%d · hero seat %s · %d workers\n\n", *hero, *opponent, *foePlayer, *first, *first+uint64(*battles)-1, *seats, *workers)
-	// A hero opponent is modelled by the look-ahead the way the game does: by
-	// the greedy player of the look-ahead's own version.
-	heroFoe := *foePlayer != "script"
 	var entrants []lookahead.Entrant
 	var configs []playerConfig
 	for _, spec := range strings.Split(*players, ",") {
@@ -126,6 +158,12 @@ func main() {
 		fail(err)
 	}
 	fmt.Fprintf(os.Stderr, "finished in %s\n", time.Since(started).Round(time.Second))
+	if labels != nil {
+		if err := labels.Close(); err != nil {
+			fail(err)
+		}
+		fmt.Fprintf(os.Stderr, "recorded %d decisions in %s\n", labels.Count, *label)
+	}
 	if dataset != nil {
 		var settings []string
 		for e, entrant := range entrants {

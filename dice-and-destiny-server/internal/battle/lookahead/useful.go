@@ -139,6 +139,16 @@ func CardIDs(action command.Command) []string {
 	return p.CardIDs
 }
 
+// EquivalenceKey is the same for commands that differ only in which copy of
+// a card they play.
+func EquivalenceKey(b *state.Battle, seat string, action command.Command) string {
+	var instances map[string]state.CardInstance
+	if b.Settled != nil {
+		instances = b.Settled.Actors[seat].CardInstances
+	}
+	return distinctKey(action, instances)
+}
+
 // distinctKey treats copies of the same card as one option: the command
 // with every card instance replaced by its definition.
 func distinctKey(action command.Command, instances map[string]state.CardInstance) string {

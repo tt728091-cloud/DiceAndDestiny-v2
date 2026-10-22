@@ -53,6 +53,11 @@ func (s *Simulator) Next(b *state.Battle) (string, []command.Command) {
 	return "", nil
 }
 
+// Legal lists the seat's legal commands in the engine's order.
+func (s *Simulator) Legal(b *state.Battle, seat string) []command.Command {
+	return s.engine.LegalActions(b, seat)
+}
+
 // Apply submits one listed command to the copy.
 func (s *Simulator) Apply(b *state.Battle, cmd command.Command) error {
 	_, err := s.engine.ApplyBattleCommand(b, cmd)

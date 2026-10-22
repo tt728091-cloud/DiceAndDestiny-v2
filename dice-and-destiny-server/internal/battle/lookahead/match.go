@@ -33,10 +33,21 @@ type Matchup struct {
 }
 
 // Observer watches a runner's battles: every decision before the player
-// makes it, and each battle's end. One runner uses it at a time.
+// makes it, and each battle's end. One runner uses it at a time. An
+// observer may also have Begin(seed, heroSeat), called as each battle
+// starts, and Chose(d, index), called with each move made.
 type Observer interface {
 	Decision(d *Decision)
 	Finish(final *state.Battle, record BattleRecord, hero, foe Policy)
+}
+
+// battleStarter and moveObserver are the optional parts of an Observer.
+type battleStarter interface {
+	Begin(seed uint64, heroSeat string)
+}
+
+type moveObserver interface {
+	Chose(d *Decision, index int)
 }
 
 // seats returns the hero's and the opponent's seats.
@@ -130,6 +141,9 @@ func (r *Runner) Play(seed uint64, hero, foe Policy) (BattleRecord, error) {
 	if err != nil {
 		return record, err
 	}
+	if b, ok := r.observer.(battleStarter); ok {
+		b.Begin(seed, heroSeat)
+	}
 	rng := rand.New(rand.NewSource(int64(seed)*7919 + 17))
 	for !tr.Terminal && tr.TruncationReason == "" {
 		if r.matchup.HeroPlansFirst && tr.ActorID != heroSeat && tr.Result.Snapshot != nil && tr.Result.Snapshot.Stage == "planning" {
@@ -157,6 +171,9 @@ func (r *Runner) Play(seed uint64, hero, foe Policy) (BattleRecord, error) {
 		}
 		if index < 0 || index >= len(d.Actions) {
 			return record, fmt.Errorf("%s chose index %d of %d", policy.Name(), index, len(d.Actions))
+		}
+		if c, ok := r.observer.(moveObserver); ok {
+			c.Chose(d, index)
 		}
 		if tr.ActorID == heroSeat {
 			record.HeroDecisions++

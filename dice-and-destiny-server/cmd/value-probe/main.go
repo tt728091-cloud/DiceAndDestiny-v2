@@ -43,7 +43,21 @@ func main() {
 	heldOut := flag.Bool("held-out", true, "replay the datasets involving the model's held-out hero or opponent; false replays the training datasets instead")
 	only := flag.String("only", "", "replay only datasets whose directory name contains this text")
 	out := flag.String("out", "", "optional JSON path for every probed position")
+	paired := flag.Bool("paired", false, "measure riders without a network: identically seeded copies with and without each rider, played to the end by the greedy player")
+	matchups := flag.String("matchups", "starter:starter:greedy,starter:drowned_oracle_brine_mask:script", "-paired: hero:opponent:foe (greedy or script), comma-separated")
+	var pc pairedConfig
+	flag.IntVar(&pc.futures, "futures", 8, "-paired: futures per position and change")
+	flag.IntVar(&pc.every, "every", 1, "-paired: probe every n-th round start of the hero")
 	flag.Parse()
+	if *paired {
+		runState, err := os.MkdirTemp("", "value-probe-run-state-")
+		if err != nil {
+			fail(err)
+		}
+		defer os.RemoveAll(runState)
+		runPaired(*contentRoot, *authoredRoot, runState, *matchups, *first, *battles, *workers, pc, *out)
+		return
+	}
 	if *modelPath == "" {
 		fail(fmt.Errorf("-value-model is required"))
 	}

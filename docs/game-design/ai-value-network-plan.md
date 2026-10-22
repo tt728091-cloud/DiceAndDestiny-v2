@@ -5,10 +5,11 @@ hybrid: the exact dice solver and the search stay, and a small learned network
 judges positions and guides the search. It builds on the balance lab and does
 not revive the PPO stack.
 
-Status: ready to build (2026-10-21). Build brief for A0–A4:
-`ai-value-network-handoff.md`. Companion plan:
-`dice-and-board-selection-plan.md`, which needs the measured rider values this
-plan produces (phase A4).
+Status (2026-10-22): A0–A4 are built (brief: `ai-value-network-handoff.md`).
+A3 failed its exit and A4 measured little, so A4b–A6 are replaced by
+**Network v2** (N1–N6, below; brief: `ai-network-v2-handoff.md`). Companion
+plan: `dice-and-board-selection-plan.md`, which needs the measured rider
+values (now N2).
 
 ## What the AI is for
 
@@ -189,40 +190,120 @@ SHA-256.
 **Exit:** an exchange-rate table in `balance-lab.md`, with the lab result for
 greedy at the new rates.
 
-### A4b — Balance finder (medium)
+## Network v2 (N1–N6, from 2026-10-22)
 
-- **Card audit:**
-  - for every card in a pool, the network's value change from having it in
-    hand, against its XP price under `card-value-rules.md`;
-  - plus the existing `cmd/card-balance` win-rate test for the outliers.
-- **Ability and board audit:**
-  - for every ability on a board, the change in the board's value without
-    it (its worth), against what pricing expected;
-  - for every die and template, the lab score.
-- **Output:** a ranked list of the most over- and under-priced cards,
-  abilities and boards, saved as a report in `balance-lab.md`. Fixes go
-  through the normal pricing docs, never hand edits inside the lab.
+The first network judged positions well (log loss 0.40 against 0.54) and
+changed nothing, for four reasons (details in `balance-lab.md`, T5 and T6):
 
-**Exit:** the first report, with each top outlier confirmed or rejected by a
-win-rate test.
+- **No leverage.** The greedy player made about 96% of the moves and played
+  every simulated future; the network only scored where futures stopped.
+- **The wrong gate.** Log loss rewards telling battles apart (who is
+  fighting whom), but the search needs to tell moves apart, one round ahead.
+- **Data that cannot teach move values.** One snapshot per round at planning
+  start, 95% greedy play, statuses that never vary on their own, 61 of 148
+  inputs constant.
+- **The parts that choose moves came last** (A5, A6) and were optional.
 
-### A5 — Policy prior (medium)
+**Goal.** The network is the AI: it picks moves (a policy), judges positions
+(a value) and plays the simulated futures, and the search improves on it.
+It learns from the search's measured value of every option (expert
+iteration, as in AlphaZero), and the decision benchmark gates it offline.
+The user's three uses stay: balancing, the opponent, valuing riders.
 
-- Train a second output on the look-ahead's own choices: which candidate it
-  picked, and how close the others came.
-- Use it to choose which options get search time, replacing the hand rules
-  (`TopRerolls` 3, top 2 abilities).
+**Decisions (2026-10-22; the user asked the AI thread to choose):**
 
-**Exit:** a gain at equal time, as in A3.
+1. **Rounds 1 with the health race ships in-game now** as version 3, if it
+   beats version 2 at in-game settings (budget mode, so the result does not
+   depend on machine load). It was +0.084 in the Starter mirror at equal
+   time and is faster. It is also the control the network must beat; the
+   network replaces it when it passes N5.
+2. **Measured rider values replace the agreed rates in board pricing**
+   (Protect 1, energy 0.2) for each rider whose 95% interval is within
+   ±0.25 damage. Riders measured less precisely keep the agreed rate. The
+   rates live in the board thread's `riders.yaml`, so this thread hands
+   over the table and the board thread makes the change.
 
-### A6 — Deeper search and self-play loop (large, optional)
+### N1 — Decision benchmark and headroom (small)
 
-- Replace flat search with a shallow tree:
-  - chance branches for dice;
-  - a re-dealt hidden hand per branch;
-  - network values at the leaves.
-- Then repeat: play with the current network, retrain on those games, test in
-  the lab. Stop when a round's gain is inside the noise.
+- `balance-lab -label` records a hero's decisions with each option's
+  reference value: every option on the same futures, by successive halving
+  (a quarter of the futures for every option, half for the better half, all
+  512 for the best two), Rounds 1 with the health race. Options are the
+  search's, wider: the solver's best 8 rerolls and die choices, best 4
+  ability choices, every useful card or other move.
+- `balance-lab -score` asks players for their choice on each recorded
+  decision and reports the value they lose against the best option, by kind
+  of decision (dice, ability, card, defense).
+- **Benchmark v1:** decisions of the Rounds 1 look-ahead (budget 250) in 12
+  matchups, seeds from 300,001; Venom and Bell Diver held out as before.
+- **Headroom:** greedy's and the search's loss by kind on the benchmark, and
+  in the lab Rounds 1 at budget 250 against 1,000 (does more search help?)
+  and Rounds 0 at 250 (equal futures: is the health race the better judge?).
+
+**Exit:** the table. Value lost per decision replaces log loss as the
+offline gate.
+
+### N2 — Rider values by paired futures (small, no network)
+
+- On recorded battle positions, fork twice with the same seed and add the
+  rider to one copy at the moment it is normally granted (Protect at the
+  defense, energy at Income, a status when an ability would give it). Play
+  both to the end with the same players.
+- The mean difference ÷ the same measurement for one card removed from the
+  opponent is the rider's damage-equivalent, with a 95% interval.
+- Riders: Protect, +5 energy, +1 card in hand, each status on each side.
+
+**Exit:** a table in `balance-lab.md`; handed to the board thread
+(decision 2).
+
+### N3 — Training data (medium)
+
+- The N1 recorder at fewer futures (128–256) on every decision of
+  look-ahead battles over all pairings except the held-out ones. Records
+  keep the battle state, so the encoder can change without re-measuring.
+- **`value-v2` encoder:** value-v1 plus the decision point (segment and
+  stage, rolls left, the dice showing and their solver value, incoming and
+  outgoing attacks and the cards they threaten). Same viewer-safety tests.
+- **Option features:** what the move does, never IDs: its kind, the greedy
+  player's own score for it against its best, whether greedy picks it, a
+  card's cost, timing and effect summary, an ability tier's effect summary,
+  a reroll's dice count, solver value and no-hit chance.
+
+**Exit:** the dataset and its mix report.
+
+### N4 — Network v2: policy and value (medium)
+
+- One MLP reads the state and an option and predicts that option's value
+  relative to the greedy player's pick (trained on the measured gaps,
+  weighted by their precision), with a second head for the battle result.
+- **Gate:** on benchmark v1 (never trained on), the network's own pick loses
+  less value than greedy's and than the Rounds 1 search's at 100 ms.
+
+**Exit:** the benchmark table. If the network cannot beat greedy here, stop
+and report before any lab runs.
+
+### N5 — The network gets the jobs (medium)
+
+Each change is an equal-time lab test against Rounds 1 with the health race
+(100 ms, Starter mirror 400 seeds from both seats, Brine Mask, the other
+mirrors):
+
+- (a) the network picks the default move and the options to search,
+  replacing greedy and the hand rules;
+- (b) the network plays the futures for both sides;
+- (c) the value head judges where futures stop.
+
+**Exit and ship:** z ≥ 2.5 over Rounds 1 in the Starter mirror, a lower 95%
+bound ≥ −0.01 against Brine Mask, and in-game time no worse than version 3.
+If it passes, the in-game opponent becomes version 4 with the model's
+SHA-256 in the logs.
+
+### N6 — Self-play loop
+
+Label new data with the N5 player (its futures played by the network),
+retrain, gate on the benchmark, test in the lab. Stop when a round's gain is
+inside the noise. Then the balance finder (the old A4b: cards, abilities and
+boards against their prices) runs on the network.
 
 ## Progress notes
 
@@ -275,6 +356,6 @@ win-rate test.
   look-ahead, so its outcomes undervalue things only a stronger player uses
   well (the Measured Strike experiment). The look-ahead subset and A6 address
   this.
-- **Truncation alone may be enough.** If `Rounds` = 1 with the health-margin
-  evaluator already matches the network, stop at A0. That outcome is
-  recorded as a result, not a failure.
+- **Truncation alone matched the first network** (T5). The user's goal is a
+  network that plays: a tie with the health race is a reason to change the
+  network's job (N4–N6), not to stop.
