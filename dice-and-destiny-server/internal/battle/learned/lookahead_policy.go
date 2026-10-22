@@ -18,9 +18,11 @@ const OpponentPolicyLookahead = "lookahead"
 // LookaheadModelID names the look-ahead opponent in telemetry and the client.
 const LookaheadModelID = "lookahead-mirror"
 
-// LookaheadArchitecture names the look-ahead version in battle logs; logs from
-// the first version say "flat-monte-carlo-greedy-anchor".
-const LookaheadArchitecture = LookaheadArchitectureV2
+// LookaheadArchitecture names the look-ahead version in battle logs. Version
+// 3 (2026-10-22) stops each simulated future after one round and scores the
+// health race; logs from earlier versions say LookaheadArchitectureV2 or
+// "flat-monte-carlo-greedy-anchor" (version 1).
+const LookaheadArchitecture = "flat-monte-carlo-health-race-v3"
 
 // LookaheadArchitectureV2 is version 2's label (2026-10-15): futures played
 // to the end of the battle.
@@ -28,16 +30,19 @@ const LookaheadArchitectureV2 = "flat-monte-carlo-greedy-anchor-v2"
 
 // LookaheadVersion names the look-ahead version that logged a battle.
 func LookaheadVersion(architecture string) string {
-	if architecture == LookaheadArchitectureV2 {
+	switch architecture {
+	case LookaheadArchitecture:
+		return "v3"
+	case LookaheadArchitectureV2:
 		return "v2"
 	}
 	return "v1"
 }
 
-// lookaheadBudget and lookaheadRounds are the in-game search settings.
+// lookaheadBudget and lookaheadRounds are version 3's search settings.
 const (
-	lookaheadBudget = 160
-	lookaheadRounds = 0
+	lookaheadBudget = 400
+	lookaheadRounds = 1
 )
 
 // statePolicy is a session policy that needs the full battle state. It must
@@ -61,6 +66,9 @@ func newLookaheadPolicy() (*lookaheadPolicy, error) {
 	if err != nil {
 		return nil, err
 	}
+	// Version 3: each future stops after one round and scores the health
+	// race, which is cheaper and judges better than playing on to the end
+	// (balance-lab.md, "In-game opponent version 3").
 	search := lookahead.NewSearchPolicy(func() lookahead.Policy { return lookahead.NewGreedyPolicy() }, lookaheadBudget)
 	search.Rounds = lookaheadRounds
 	search.Workers = max(1, runtime.NumCPU()-1)
@@ -73,7 +81,8 @@ func (p *lookaheadPolicy) Metadata() PolicyMetadata {
 		ModelID:   LookaheadModelID,
 		Algorithm: "lookahead",
 		// v2: the dice solver plans dice cards in hand and overrides are
-		// re-tested on fresh futures. Logged battles name the version.
+		// re-tested on fresh futures; v3: futures stop after one round.
+		// Logged battles name the version.
 		Architecture:      LookaheadArchitecture,
 		EnvironmentSchema: mlsim.EnvironmentSchemaVersion,
 		ObservationSchema: mlsim.ObservationSchemaVersion,

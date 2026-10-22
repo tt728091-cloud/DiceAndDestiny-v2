@@ -26,9 +26,12 @@ type PolicyFactory func() (Policy, error)
 // Summary aggregates one player's battles. Settings describes how the player
 // was configured, for reproducing it.
 type Summary struct {
-	Player        string         `json:"player"`
-	Settings      string         `json:"settings,omitempty"`
-	Battles       int            `json:"battles"`
+	Player   string `json:"player"`
+	Settings string `json:"settings,omitempty"`
+	Battles  int    `json:"battles"`
+	// Errors counts battles the authority broke off by refusing a command it
+	// had listed (left out of every score).
+	Errors        int            `json:"errors,omitempty"`
 	Wins          int            `json:"wins"`
 	Draws         int            `json:"draws"`
 	Losses        int            `json:"losses"`
@@ -115,6 +118,14 @@ func RunInterleaved(m Matchup, entrants []Entrant, foe PolicyFactory, seatsB []b
 				before := searchCounts(hero)
 				var record BattleRecord
 				record, err = runner.Play(seed, hero, foePolicy)
+				if err != nil && strings.Contains(err.Error(), "rejected enumerated action") {
+					// The authority refused a command it listed as legal: an
+					// engine fault, not the player's. The battle is kept as an
+					// error, left out of every score and comparison, and
+					// reported.
+					record = BattleRecord{Seed: seed, Seat: runner.heroSeat(), Result: "error", Error: err.Error()}
+					err = nil
+				}
 				if err != nil {
 					err = fmt.Errorf("%s seed %d: %w", entrants[jb.entrant].Name, seed, err)
 					continue
@@ -175,9 +186,18 @@ type advisedCounter interface {
 
 // Summarize totals records; the win-rate interval is Wilson's 95% interval.
 func Summarize(records []BattleRecord) Summary {
-	s := Summary{Battles: len(records), CardsPlayed: map[string]int{}, Abilities: map[string]int{}, Records: records}
+	s := Summary{CardsPlayed: map[string]int{}, Abilities: map[string]int{}, Records: records}
 	decisions, think := 0, 0.0
+	var valid []BattleRecord
 	for _, r := range records {
+		if r.Result == "error" {
+			s.Errors++
+			continue
+		}
+		valid = append(valid, r)
+	}
+	s.Battles = len(valid)
+	for _, r := range valid {
 		switch r.Result {
 		case "win":
 			s.Wins++
@@ -202,12 +222,12 @@ func Summarize(records []BattleRecord) Summary {
 			s.Abilities[k] += v
 		}
 	}
-	n := float64(len(records))
+	n := float64(len(valid))
 	if n == 0 {
 		return s
 	}
 	s.WinRate = float64(s.Wins) / n
-	s.WinRateLow, s.WinRateHigh = wilson(s.Wins, len(records))
+	s.WinRateLow, s.WinRateHigh = wilson(s.Wins, len(valid))
 	s.Score = (float64(s.Wins) + 0.5*float64(s.Draws)) / n
 	s.MeanRounds /= n
 	s.MeanHealth /= n
@@ -265,6 +285,7 @@ type Comparison struct {
 	A, B           string
 	Pairs          int
 	Unpaired       int
+	Errors         int // pairs left out because either battle was an error
 	ScoreA, ScoreB float64
 	A3, B3         [3]int // wins, draws, losses
 	Better, Worse  int    // battles where A scored more / less than B
@@ -284,6 +305,17 @@ func Compare(a, b Summary) (Comparison, error) {
 		other[key{r.Seed, r.Seat}] = r
 	}
 	c := Comparison{A: a.Player, B: b.Player}
+	var kept []BattleRecord
+	for _, ra := range a.Records {
+		rb, ok := other[key{ra.Seed, ra.Seat}]
+		if ra.Result == "error" || (ok && rb.Result == "error") {
+			c.Errors++
+			delete(other, key{ra.Seed, ra.Seat})
+			continue
+		}
+		kept = append(kept, ra)
+	}
+	a.Records = kept
 	var diffs []float64
 	tally := func(t *[3]int, r BattleRecord) {
 		switch RecordScore(r) {
@@ -344,7 +376,11 @@ func (c Comparison) String() string {
 	var sb strings.Builder
 	fmt.Fprintf(&sb, "A %s: score %.3f (win/draw/loss %d/%d/%d)\n", c.A, c.ScoreA, c.A3[0], c.A3[1], c.A3[2])
 	fmt.Fprintf(&sb, "B %s: score %.3f (win/draw/loss %d/%d/%d)\n", c.B, c.ScoreB, c.B3[0], c.B3[1], c.B3[2])
-	fmt.Fprintf(&sb, "%d paired battles (%d unpaired); A better on %d, worse on %d\n", c.Pairs, c.Unpaired, c.Better, c.Worse)
+	fmt.Fprintf(&sb, "%d paired battles (%d unpaired", c.Pairs, c.Unpaired)
+	if c.Errors > 0 {
+		fmt.Fprintf(&sb, ", %d left out: authority errors", c.Errors)
+	}
+	fmt.Fprintf(&sb, "); A better on %d, worse on %d\n", c.Better, c.Worse)
 	fmt.Fprintf(&sb, "A − B: %+.4f (95%% CI %+.4f … %+.4f), z = %.2f\n", c.Diff, c.Low, c.High, c.Z)
 	return sb.String()
 }

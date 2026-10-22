@@ -50,6 +50,12 @@ type moveObserver interface {
 	Chose(d *Decision, index int)
 }
 
+// heroSeat is the hero's seat in the runner's next battle.
+func (r *Runner) heroSeat() string {
+	hero, _ := r.matchup.seats()
+	return hero
+}
+
 // seats returns the hero's and the opponent's seats.
 func (m Matchup) seats() (string, string) {
 	if m.HeroInSeatB {
@@ -75,6 +81,7 @@ type BattleRecord struct {
 	FoeMax        int            `json:"foe_max"`
 	HeroDecisions int            `json:"hero_decisions"`
 	HeroThinkMS   float64        `json:"hero_think_ms"`
+	Error         string         `json:"error,omitempty"`
 	Searched      int            `json:"searched,omitempty"`
 	Overrides     int            `json:"overrides,omitempty"`
 	Futures       int            `json:"futures,omitempty"`

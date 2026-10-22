@@ -224,6 +224,9 @@ func main() {
 		if s.Searched > 0 {
 			fmt.Printf("%-10s searched %d decisions, overrode the default choice %d times (%.1f%%), %.0f futures per searched decision\n", s.Player, s.Searched, s.Overrides, 100*float64(s.Overrides)/float64(s.Searched), float64(s.Futures)/float64(s.Searched))
 		}
+		if s.Errors > 0 {
+			fmt.Printf("%-10s %d battles broken off: the authority refused a command it had listed (left out of the scores)\n", s.Player, s.Errors)
+		}
 		if s.Advised > 0 {
 			fmt.Printf("%-10s the network replaced the greedy pick %d times (%.2f per battle)\n", s.Player, s.Advised, float64(s.Advised)/float64(s.Battles))
 		}

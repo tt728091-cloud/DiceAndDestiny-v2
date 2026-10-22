@@ -99,7 +99,8 @@ type SearchPolicy struct {
 }
 
 // Advisor scores a decision's options (indices into d.Actions; greedy is the
-// greedy player's pick) for the search.
+// greedy player's pick) for the search. Nil scores give no advice: the
+// search picks its options as it does without an Advisor.
 type Advisor interface {
 	Scores(d *Decision, options []int, greedy int) ([]float64, error)
 }
@@ -465,7 +466,7 @@ func (s *SearchPolicy) advise(d *Decision, options []int, greedy int) ([]int, in
 		return wide, greedy, err
 	}
 	scores, err := s.Advisor.Scores(d, wide, greedy)
-	if err != nil || len(scores) != len(wide) {
+	if err != nil || scores == nil || len(scores) != len(wide) {
 		c, err := s.candidates(d, options, greedy)
 		return c, greedy, err
 	}

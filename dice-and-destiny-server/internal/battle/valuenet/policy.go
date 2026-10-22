@@ -220,8 +220,8 @@ func (e *PolicyEvaluator) Scores(d *lookahead.Decision, options []int, anchor in
 	return out, nil
 }
 
-// SegmentAdvisor is an evaluator that only advises in some segments: elsewhere
-// it scores every option alike, so the search keeps the greedy pick.
+// SegmentAdvisor is an evaluator that only advises in some segments;
+// elsewhere it gives no advice and the search picks its options as usual.
 type SegmentAdvisor struct {
 	*PolicyEvaluator
 	Segments map[string]bool
@@ -229,7 +229,7 @@ type SegmentAdvisor struct {
 
 func (a SegmentAdvisor) Scores(d *lookahead.Decision, options []int, greedy int) ([]float64, error) {
 	if !a.Segments[string(d.Battle.Segment.Current)] {
-		return make([]float64, len(options)), nil
+		return nil, nil
 	}
 	return a.PolicyEvaluator.Scores(d, options, greedy)
 }

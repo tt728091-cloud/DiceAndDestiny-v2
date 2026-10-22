@@ -59,7 +59,7 @@ go run ./cmd/balance-lab -tally default
 
 Over 20 games, 15 or more wins (draws count half) means you clearly outplay it (p ≈ 0.04). About 10 means it plays at your level.
 
-The tally splits games by AI version. The game's opponent is version 2 from 2026-10-15; earlier logged games were version 1.
+The tally splits games by AI version. The game's opponent is version 3 from 2026-10-22 (below); logged games before that were version 2 (from 2026-10-15) or version 1.
 
 Review your games move by move:
 
@@ -529,6 +529,26 @@ ml/runs/value-probe -value-model ml/runs/value-v1-models/value-v1-a.json -held-o
 ## AI network v2 (2026-10-22)
 
 Steps N1–N6 of [`ai-value-network-plan.md`](ai-value-network-plan.md) ("Network v2"; brief: [`ai-network-v2-handoff.md`](ai-network-v2-handoff.md)). The machine (M3 Max, 16 cores) was fully loaded by these runs and, at times, the board thread's; budget-mode results do not depend on load, and time-limited players always run interleaved.
+
+### In-game opponent version 3 (decision 1)
+
+The user left the choice to the AI thread; the measured candidate from T1 and T5 ships. Version 3 is version 2's search with every simulated future stopped after one round and scored by the health race, at budget 400 (version 2: futures to the end, budget 160). Both at in-game settings in budget mode (so machine load cannot change the result), seeds 1–200 from both seats:
+
+| Matchup | v2 (Rounds 0, budget 160) | v3 (Rounds 1, budget 400) | v3 − v2 (95% CI, z) | ms per decision, v2 → v3 |
+|---|---|---|---|---|
+| Starter mirror (opponent greedy) | 0.551 | 0.626 | **+0.075** (+0.030 … +0.120, z +3.25) | 907 → 719 |
+| Starter vs Brine Mask | 0.931 | 0.955 | **+0.024** (+0.002 … +0.045, z +2.15) | 700 → 503 |
+
+- Version 3 wins clearly in the mirror, loses nothing against Brine Mask, and takes about a quarter less time per decision. (The ms are from a machine loaded several times over and only compare the two.)
+- It overrides the greedy player more often (8–12% of searched decisions against 2–4%).
+- `LookaheadArchitecture` is now `flat-monte-carlo-health-race-v3`; `-tally` and `battle-review` name v1, v2 and v3 games apart.
+
+```bash
+LAB=ml/runs/bin/balance-lab-fdd231c   # commit fdd231c
+P=lookahead@rounds=0@budget=160,lookahead@rounds=1@budget=400
+$LAB -hero starter -opponent starter -foe greedy -players $P -seats both -battles 200 -workers 5 -out v3b/starter-mirror.json
+$LAB -hero starter -opponent drowned_oracle_brine_mask -foe script -players $P -seats both -battles 200 -workers 5 -out v3b/starter-brine.json
+```
 
 ### Decision benchmark (N1)
 
