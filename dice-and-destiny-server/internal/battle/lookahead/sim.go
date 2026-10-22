@@ -13,6 +13,7 @@ import (
 
 	"diceanddestiny/server/internal/battle/command"
 	"diceanddestiny/server/internal/battle/engine"
+	"diceanddestiny/server/internal/battle/snapshot"
 	"diceanddestiny/server/internal/battle/state"
 	"diceanddestiny/server/internal/content"
 )
@@ -64,6 +65,12 @@ func (s *Simulator) View(b *state.Battle, seat string, actions []command.Command
 	result := s.engine.OpenResult(b, seat)
 	result.LegalActions = actions
 	return result
+}
+
+// Snapshot is the viewer-safe snapshot View carries, without the legal
+// actions: opponents' hands are counts, private planning is hidden.
+func (s *Simulator) Snapshot(b *state.Battle, seat string) snapshot.Battle {
+	return snapshot.FromBattleForViewerWithoutContentCatalog(*b, seat)
 }
 
 // Fork copies a battle for look-ahead with fresh randomness, so the copy

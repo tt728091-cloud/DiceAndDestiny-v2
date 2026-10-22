@@ -28,6 +28,15 @@ type Matchup struct {
 	HeroInSeatB bool
 	// HeroDeck and FoeDeck replace a side's content decklist when set.
 	HeroDeck, FoeDeck []loadout.Entry
+	// Observe, when set, builds an observer for each runner.
+	Observe func() Observer
+}
+
+// Observer watches a runner's battles: every decision before the player
+// makes it, and each battle's end. One runner uses it at a time.
+type Observer interface {
+	Decision(d *Decision)
+	Finish(final *state.Battle, record BattleRecord, hero, foe Policy)
 }
 
 // seats returns the hero's and the opponent's seats.
@@ -66,9 +75,10 @@ type BattleRecord struct {
 // Runner plays real battles through the ML environment, the same authority
 // path game sessions use; only the choices come from the policies.
 type Runner struct {
-	matchup Matchup
-	env     *mlsim.Environment
-	sim     *Simulator
+	matchup  Matchup
+	env      *mlsim.Environment
+	sim      *Simulator
+	observer Observer
 }
 
 func NewRunner(m Matchup) (*Runner, error) {
@@ -87,7 +97,11 @@ func NewRunner(m Matchup) (*Runner, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &Runner{matchup: m, env: env, sim: sim}, nil
+	runner := &Runner{matchup: m, env: env, sim: sim}
+	if m.Observe != nil {
+		runner.observer = m.Observe()
+	}
+	return runner, nil
 }
 
 // Play runs one battle to the end with the hero in seat A.
@@ -133,6 +147,9 @@ func (r *Runner) Play(seed uint64, hero, foe Policy) (BattleRecord, error) {
 		if tr.ActorID == heroSeat {
 			policy = hero
 		}
+		if r.observer != nil {
+			r.observer.Decision(d)
+		}
 		started := time.Now()
 		index, err := policy.Choose(d)
 		if err != nil {
@@ -167,6 +184,9 @@ func (r *Runner) Play(seed uint64, hero, foe Policy) (BattleRecord, error) {
 		record.Result = "draw"
 	default:
 		record.Result = "loss"
+	}
+	if r.observer != nil {
+		r.observer.Finish(&final, record, hero, foe)
 	}
 	return record, nil
 }

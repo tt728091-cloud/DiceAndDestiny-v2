@@ -161,6 +161,8 @@ type diceTable struct {
 	stopTier    map[int]tierValue
 	layers      map[int][]float64
 	waits       map[int][]float64
+	missLayers  map[int][]float64
+	missWaits   map[int][]float64
 	energySpend float64
 	cardValue   float64
 }
@@ -206,7 +208,7 @@ func (s *DiceSolver) PlanWith(b *state.Battle, seat string, extra map[string]flo
 	if err != nil {
 		return nil, err
 	}
-	tools, ts := s.diceTools(b, lib, seat, 0)
+	tools, ts := s.tools(lib, s.handCards(b, lib, seat), b.Actors[seat].Resources.EnergyPoints)
 	table := s.table(definition, len(rt.FinalDice), offensiveTierValues(b, lib, seat, extra, s.Rates), tools)
 	plan := &DicePlan{RollsLeft: rt.MaxRolls - rt.RollsUsed, table: table, tools: ts, slotAt: map[int]int{}}
 	counts := make([]int, len(table.faces))
@@ -325,48 +327,97 @@ func (s *DiceSolver) FreshWith(b *state.Battle, seat string, extra map[string]fl
 	if len(actor.DiceLoadout) != 1 {
 		return 0, nil
 	}
-	dieID, dice := actor.DiceLoadout[0].DiceID, actor.DiceLoadout[0].Count
-	definition, ok := b.DiceDefinitions[dieID]
-	if !ok || len(definition.Faces) == 0 || dice <= 0 {
-		return 0, nil
-	}
 	lib, err := library(b)
 	if err != nil {
 		return 0, err
 	}
-	tools, ts := s.diceTools(b, lib, seat, spend)
-	table := s.table(definition, dice, offensiveTierValues(b, lib, seat, extra, s.Rates), tools)
-	rolls := b.Settled.Actors[seat].MaxRolls
+	rt := b.Settled.Actors[seat]
+	turn := Turn{
+		Die:       b.DiceDefinitions[actor.DiceLoadout[0].DiceID],
+		Dice:      actor.DiceLoadout[0].Count,
+		Rolls:     rt.MaxRolls,
+		Energy:    actor.Resources.EnergyPoints,
+		Spend:     spend,
+		Abilities: rt.OffensiveAbilityIDs,
+		Modifiers: rt.AbilityModifiers,
+		Cards:     s.handCards(b, lib, seat),
+	}
+	value, _ := s.FreshTurn(lib, turn, extra)
+	return value, nil
+}
+
+// Turn is everything that decides the value of an offensive turn that has
+// not started: the die and how many, the rolls, the energy (less Spend,
+// already committed to a card being considered), the offensive abilities and
+// the card bonuses on them, and the dice cards in hand. Built from a
+// viewer-safe view, it lets anyone value a side's board without its hidden
+// state.
+type Turn struct {
+	Die       state.DiceDefinition
+	Dice      int
+	Rolls     int // zero means the usual three
+	Energy    int
+	Spend     int
+	Abilities []string
+	Modifiers []state.RuntimeAbilityModifier
+	// Cards counts the copies of each card in hand that can still be played
+	// this round; nil plans the turn without cards.
+	Cards map[string]int
+}
+
+// FreshTurn values a turn that has not started under optimal play, and the
+// chance that play ends with no ability qualified (a miss).
+func (s *DiceSolver) FreshTurn(lib content.BattleLibrary, t Turn, extra map[string]float64) (value, miss float64) {
+	if len(t.Die.Faces) == 0 || t.Dice <= 0 {
+		return 0, 1
+	}
+	tools, ts := s.tools(lib, t.Cards, t.Energy-t.Spend)
+	table := s.table(t.Die, t.Dice, tierValues(lib, t.Abilities, t.Energy, t.Modifiers, extra, s.Rates), tools)
+	rolls := t.Rolls
 	if rolls <= 0 {
 		rolls = 3
 	}
-	return table.wait(rolls, ts)[table.sets.lookup(make([]int, len(table.faces)))], nil
+	start := table.sets.lookup(make([]int, len(table.faces)))
+	return table.wait(rolls, ts)[start], table.waitMiss(rolls, ts)[start]
 }
 
-// diceTools lists the seat's dice cards in hand and the energy to play them
-// (less `spend`). Cards that need a condition, pick dice at random, wrap
-// around or target other dice are left to the playouts.
-func (s *DiceSolver) diceTools(b *state.Battle, lib content.BattleLibrary, seat string, spend int) ([]diceTool, toolState) {
+// handCards counts the seat's cards in hand by definition, limited to the
+// plays each has left this round.
+func (s *DiceSolver) handCards(b *state.Battle, lib content.BattleLibrary, seat string) map[string]int {
+	rt := b.Settled.Actors[seat]
+	return HandCards(lib, b.Actors[seat].Cards.Hand, rt.CardInstances, rt.CardUses, b.Segment.Round)
+}
+
+// HandCards counts cards in hand by definition, limited to the plays each
+// has left this round (uses are keyed "round:card", as the authority keeps
+// them).
+func HandCards(lib content.BattleLibrary, hand []string, instances map[string]state.CardInstance, uses map[string]int, round int) map[string]int {
+	out := map[string]int{}
+	for _, instance := range hand {
+		out[instances[instance].DefinitionID]++
+	}
+	for card, n := range out {
+		if def := lib.Cards[card]; def.Program != nil && def.Program.UsesPerRound > 0 {
+			out[card] = min(n, max(0, def.Program.UsesPerRound-uses[fmt.Sprintf("%d:%s", round, card)]))
+		}
+	}
+	return out
+}
+
+// tools lists the dice cards among `cards` and the energy to play them.
+// Cards that need a condition, pick dice at random, wrap around or target
+// other dice are left to the playouts.
+func (s *DiceSolver) tools(lib content.BattleLibrary, cards map[string]int, energy int) ([]diceTool, toolState) {
 	var ts toolState
-	ts.energy = max(0, b.Actors[seat].Resources.EnergyPoints-spend)
+	ts.energy = max(0, energy)
 	if !s.UseCards {
 		return nil, ts
 	}
-	rt := b.Settled.Actors[seat]
-	counts := map[string]int{}
 	var tools []diceTool
-	for _, instance := range b.Actors[seat].Cards.Hand {
-		id := rt.CardInstances[instance].DefinitionID
-		if counts[id] > 0 {
-			counts[id]++
-			continue
+	for card := range cards {
+		if tool, ok := s.diceTool(lib.Cards[card]); ok {
+			tools = append(tools, tool)
 		}
-		tool, ok := s.diceTool(lib.Cards[id])
-		if !ok {
-			continue
-		}
-		counts[id] = 1
-		tools = append(tools, tool)
 	}
 	sort.Slice(tools, func(i, j int) bool { return tools[i].card < tools[j].card })
 	if len(tools) > maxTools {
@@ -374,11 +425,7 @@ func (s *DiceSolver) diceTools(b *state.Battle, lib content.BattleLibrary, seat 
 	}
 	needed := 0
 	for i, tool := range tools {
-		n := counts[tool.card]
-		if limit := lib.Cards[tool.card].Program.UsesPerRound; limit > 0 {
-			n = min(n, max(0, limit-rt.CardUses[fmt.Sprintf("%d:%s", b.Segment.Round, tool.card)]))
-		}
-		ts.counts[i] = min(n, 15)
+		ts.counts[i] = min(cards[tool.card], 15)
 		needed += ts.counts[i] * tool.cost
 	}
 	ts.energy = min(ts.energy, needed, 511)
@@ -429,7 +476,8 @@ func newDiceTable(definition state.DiceDefinition, dice int, tiers []tierValue, 
 	sort.Slice(faces, func(i, j int) bool { return faces[i].Face < faces[j].Face })
 	t := &diceTable{dieID: definition.ID, n: dice, faces: faces, tiers: tiers, tools: tools,
 		sets: newMultisets(dice, len(faces)), keeps: map[int][]int{}, outs: map[int][]outcome{}, join: map[int][]int{},
-		stop: map[int]float64{}, stopTier: map[int]tierValue{}, layers: map[int][]float64{}, waits: map[int][]float64{}}
+		stop: map[int]float64{}, stopTier: map[int]tierValue{}, layers: map[int][]float64{}, waits: map[int][]float64{},
+		missLayers: map[int][]float64{}, missWaits: map[int][]float64{}}
 	for i, size := range t.sets.size {
 		if size == dice {
 			t.full = append(t.full, i)
@@ -581,6 +629,111 @@ func (t *diceTable) wait(rolls int, ts toolState) []float64 {
 	return values
 }
 
+// layerMiss is, for every full multiset, the chance that optimal play from
+// there (the choices layer makes) ends with no ability qualified.
+func (t *diceTable) layerMiss(rolls int, ts toolState) []float64 {
+	key := ts.key(rolls)
+	if v, ok := t.missLayers[key]; ok {
+		return v
+	}
+	var wait, waitMiss []float64
+	if rolls > 0 {
+		wait, waitMiss = t.wait(rolls, ts), t.waitMiss(rolls, ts)
+	}
+	lower := make([][]float64, len(t.tools))
+	lowerMiss := make([][]float64, len(t.tools))
+	for i := range t.tools {
+		if t.usable(ts, i) {
+			next := ts.use(i, t.tools[i].cost)
+			lower[i], lowerMiss[i] = t.layer(rolls, next), t.layerMiss(rolls, next)
+		}
+	}
+	miss := make([]float64, len(t.sets.list))
+	for _, m := range t.full {
+		v, p := t.stop[m], 0.0
+		if t.stopTier[m].ability == "" {
+			p = 1
+		}
+		if wait != nil {
+			for _, kept := range t.keepsOf(m) {
+				if wait[kept] > v {
+					v, p = wait[kept], waitMiss[kept]
+				}
+			}
+		}
+		for i, tool := range t.tools {
+			if lower[i] == nil {
+				continue
+			}
+			if w, q := t.toolMiss(m, tool, lower[i], lowerMiss[i]); w > v {
+				v, p = w, q
+			}
+		}
+		miss[m] = p
+	}
+	t.missLayers[key] = miss
+	return miss
+}
+
+// toolMiss is toolValue together with the miss chance of its best use.
+func (t *diceTable) toolMiss(m int, tool diceTool, lower, lowerMiss []float64) (float64, float64) {
+	best, miss := math.Inf(-1), 1.0
+	counts := t.sets.list[m]
+	for from, c := range counts {
+		if c == 0 {
+			continue
+		}
+		if tool.reroll {
+			total, totalMiss := 0.0, 0.0
+			for to := range t.faces {
+				next := t.sets.replace(m, from, to)
+				total += lower[next]
+				totalMiss += lowerMiss[next]
+			}
+			if v := total / float64(len(t.faces)); v > best {
+				best, miss = v, totalMiss/float64(len(t.faces))
+			}
+			continue
+		}
+		for _, delta := range tool.deltas {
+			face := t.faces[from].Face + delta
+			to := t.slot(face)
+			if to < 0 || face < tool.min || face > tool.max {
+				continue
+			}
+			if next := t.sets.replace(m, from, to); lower[next] > best {
+				best, miss = lower[next], lowerMiss[next]
+			}
+		}
+	}
+	return best - tool.price, miss
+}
+
+// waitMiss is wait's miss chance: for every kept multiset, the chance of
+// ending with no ability after rolling the rest.
+func (t *diceTable) waitMiss(rolls int, ts toolState) []float64 {
+	key := ts.key(rolls)
+	if w, ok := t.missWaits[key]; ok {
+		return w
+	}
+	t.wait(rolls, ts)
+	next := t.layerMiss(rolls-1, ts)
+	values := make([]float64, len(t.sets.list))
+	for kept, size := range t.sets.size {
+		if size >= t.n {
+			continue
+		}
+		total := 0.0
+		joined := t.joinOf(kept)
+		for j, o := range t.outcomes(t.n - size) {
+			total += o.prob * next[joined[j]]
+		}
+		values[kept] = total
+	}
+	t.missWaits[key] = values
+	return values
+}
+
 func (t *diceTable) keepsOf(m int) []int {
 	if k, ok := t.keeps[m]; ok {
 		return k
@@ -656,14 +809,19 @@ func factorial(n int) float64 {
 // offensiveTierValues values each tier of the seat's offensive abilities.
 func offensiveTierValues(b *state.Battle, lib content.BattleLibrary, seat string, extra map[string]float64, rates Rates) []tierValue {
 	rt := b.Settled.Actors[seat]
-	energy := b.Actors[seat].Resources.EnergyPoints
+	return tierValues(lib, rt.OffensiveAbilityIDs, b.Actors[seat].Resources.EnergyPoints, rt.AbilityModifiers, extra, rates)
+}
+
+// tierValues values each tier of the offensive abilities the energy pays for:
+// its operations at the rates plus any card bonus on the ability (and extra).
+func tierValues(lib content.BattleLibrary, abilities []string, energy int, modifiers []state.RuntimeAbilityModifier, extra map[string]float64, rates Rates) []tierValue {
 	var out []tierValue
-	for _, id := range rt.OffensiveAbilityIDs {
+	for _, id := range abilities {
 		def, ok := lib.Abilities[id]
 		if !ok || def.Qualification == nil || def.Cost.Energy > energy {
 			continue
 		}
-		bonus := cardDamageBonus(rt.AbilityModifiers, id) + extra[id]
+		bonus := cardDamageBonus(modifiers, id) + extra[id]
 		for _, tier := range def.Qualification.ActivationTiers {
 			check := def
 			q := *def.Qualification

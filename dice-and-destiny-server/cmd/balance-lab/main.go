@@ -17,6 +17,7 @@ import (
 
 	"diceanddestiny/server/internal/battle/learned"
 	"diceanddestiny/server/internal/battle/lookahead"
+	"diceanddestiny/server/internal/battle/valuenet"
 )
 
 func main() {
@@ -32,6 +33,7 @@ func main() {
 	first := flag.Uint64("first-seed", 1, "first battle seed")
 	workers := flag.Int("workers", max(1, runtime.NumCPU()-2), "parallel battles")
 	out := flag.String("out", "", "optional JSON results path")
+	record := flag.String("record", "", "record value-v1 training positions of every battle into this new directory (e.g. ml/runs/value-v1/<dataset>)")
 	rates := lookahead.DefaultRates()
 	base := playerConfig{budget: 96, searchWorkers: 1, energyValue: -1, energyGain: rates.EnergyGain, energySpend: rates.EnergySpend, statusValue: rates.Status, protectValue: -1, cardValue: 0.25, drawValue: 0.25}
 	base.register(flag.CommandLine)
@@ -62,6 +64,13 @@ func main() {
 	}
 	defer os.RemoveAll(runState)
 	matchup := lookahead.Matchup{ContentRoot: *contentRoot, AuthoredRoot: *authoredRoot, RunStateRoot: runState, Hero: *hero, Opponent: *opponent, Unified: true, HeroPlansFirst: true}
+	var dataset *valuenet.Dataset
+	if *record != "" {
+		if dataset, err = valuenet.NewDataset(*record); err != nil {
+			fail(err)
+		}
+		matchup.Observe = dataset.Observer
+	}
 	foe := func() (lookahead.Policy, error) {
 		switch *foePlayer {
 		case "greedy":
@@ -117,6 +126,17 @@ func main() {
 		fail(err)
 	}
 	fmt.Fprintf(os.Stderr, "finished in %s\n", time.Since(started).Round(time.Second))
+	if dataset != nil {
+		var settings []string
+		for e, entrant := range entrants {
+			settings = append(settings, entrant.Name+": "+configs[e].describe(entrant.Name))
+		}
+		header, err := dataset.Close(valuenet.DatasetHeader{Hero: *hero, Opponent: *opponent, Foe: *foePlayer, Settings: settings, Command: strings.Join(os.Args, " ")})
+		if err != nil {
+			fail(err)
+		}
+		fmt.Fprintf(os.Stderr, "recorded %d positions from %d battles in %s\n", header.Rows, header.Battles, *record)
+	}
 	var summaries []lookahead.Summary
 	for e, entrant := range entrants {
 		settings := configs[e].describe(entrant.Name)
