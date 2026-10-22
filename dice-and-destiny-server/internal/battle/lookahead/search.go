@@ -8,6 +8,7 @@ import (
 	"math/rand"
 	"sort"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"diceanddestiny/server/internal/battle/command"
@@ -229,36 +230,19 @@ func (s *SearchPolicy) Choose(d *Decision) (int, error) {
 				finished[k][j] = true
 			}
 		}
-		type job struct{ k, j int }
-		next := make(chan job)
-		var wg sync.WaitGroup
-		for _, w := range pool {
-			wg.Add(1)
-			go func(w *searchWorker) {
-				defer wg.Done()
-				future := s.future(w, d, deadline)
-				for jb := range next {
-					a := arms[jb.k]
-					v, err := future(a.index, base+(a.offset+uint64(jb.j))*0x9e3779b97f4a7c15)
-					if errors.Is(err, errDeadline) {
-						continue
-					}
-					a.values[jb.j] = v
-					finished[jb.k][jb.j] = true
+		runJobs(pool, (n-from)*len(arms), until, func(w *searchWorker) func(t int) {
+			future := s.future(w, d, deadline)
+			return func(t int) {
+				j, k := from+t/len(arms), t%len(arms)
+				a := arms[k]
+				v, err := future(a.index, base+(a.offset+uint64(j))*0x9e3779b97f4a7c15)
+				if errors.Is(err, errDeadline) {
+					return
 				}
-			}(w)
-		}
-	dispatch:
-		for j := from; j < n; j++ {
-			for k := range arms {
-				if !until.IsZero() && !time.Now().Before(until) {
-					break dispatch
-				}
-				next <- job{k, j}
+				a.values[j] = v
+				finished[k][j] = true
 			}
-		}
-		close(next)
-		wg.Wait()
+		})
 		common := n
 		for k := range arms {
 			done := from
@@ -369,6 +353,40 @@ func (s *SearchPolicy) Choose(d *Decision) (int, error) {
 		return alive[0].index, nil
 	}
 	return anchor, nil
+}
+
+// runJobs runs jobs 0..total-1 in order on the pool's workers; each worker
+// builds its job function once. With until set no job starts after it. A
+// single worker runs the jobs inline: handing each future to a goroutine
+// cost about a third of the search's time.
+func runJobs(pool []*searchWorker, total int, until time.Time, build func(w *searchWorker) func(t int)) {
+	var next atomic.Int64
+	work := func(w *searchWorker) {
+		job := build(w)
+		for {
+			if !until.IsZero() && !time.Now().Before(until) {
+				return
+			}
+			t := int(next.Add(1) - 1)
+			if t >= total {
+				return
+			}
+			job(t)
+		}
+	}
+	if len(pool) == 1 {
+		work(pool[0])
+		return
+	}
+	var wg sync.WaitGroup
+	for _, w := range pool {
+		wg.Add(1)
+		go func(w *searchWorker) {
+			defer wg.Done()
+			work(w)
+		}(w)
+	}
+	wg.Wait()
 }
 
 // future returns a function that plays one future of the decision: the

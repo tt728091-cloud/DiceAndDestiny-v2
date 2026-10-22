@@ -45,7 +45,15 @@ type tierValue struct {
 	tier    string
 	check   content.BattleAbilityDefinition
 	value   float64
+	// parts are what the tier does: damage (with card bonuses), stacks of
+	// statuses on its user and on others, and energy gained.
+	parts [4]float64
 }
+
+// Parts are the expected results of the solver's play from a dice moment:
+// the chance of ending with no ability, then the damage, stacks of statuses
+// on the roller and on others, and energy the chosen tier gives.
+type Parts [5]float64
 
 // diceTool is a dice card the solver can plan with.
 type diceTool struct {
@@ -163,6 +171,8 @@ type diceTable struct {
 	waits       map[int][]float64
 	missLayers  map[int][]float64
 	missWaits   map[int][]float64
+	partLayers  map[int][]Parts
+	partWaits   map[int][]Parts
 	energySpend float64
 	cardValue   float64
 }
@@ -282,6 +292,33 @@ func (p *DicePlan) RerollMiss(indices []int) float64 {
 		kept[slot]--
 	}
 	return p.table.waitMiss(p.RollsLeft, p.tools)[p.table.sets.lookup(kept)]
+}
+
+// Parts are the expected results of optimal play from here.
+func (p *DicePlan) Parts() Parts {
+	return p.table.layerParts(p.RollsLeft, p.tools)[p.set]
+}
+
+// StopParts are the results of selecting the best ability now.
+func (p *DicePlan) StopParts() Parts {
+	return p.table.stopParts(p.set)
+}
+
+// RerollParts are the expected results of rerolling the dice at these
+// indices and playing on optimally.
+func (p *DicePlan) RerollParts(indices []int) Parts {
+	if p.RollsLeft <= 0 || len(indices) == 0 {
+		return p.StopParts()
+	}
+	kept := append([]int(nil), p.table.sets.list[p.set]...)
+	for _, index := range indices {
+		slot, ok := p.slotAt[index]
+		if !ok || kept[slot] == 0 {
+			return Parts{1}
+		}
+		kept[slot]--
+	}
+	return p.table.waitParts(p.RollsLeft, p.tools)[p.table.sets.lookup(kept)]
 }
 
 // Best returns the value of optimal play from here.
@@ -534,7 +571,7 @@ func newDiceTable(definition state.DiceDefinition, dice int, tiers []tierValue, 
 	t := &diceTable{dieID: definition.ID, n: dice, faces: faces, tiers: tiers, tools: tools,
 		sets: newMultisets(dice, len(faces)), keeps: map[int][]int{}, outs: map[int][]outcome{}, join: map[int][]int{},
 		stop: map[int]float64{}, stopTier: map[int]tierValue{}, layers: map[int][]float64{}, waits: map[int][]float64{},
-		missLayers: map[int][]float64{}, missWaits: map[int][]float64{}}
+		missLayers: map[int][]float64{}, missWaits: map[int][]float64{}, partLayers: map[int][]Parts{}, partWaits: map[int][]Parts{}}
 	for i, size := range t.sets.size {
 		if size == dice {
 			t.full = append(t.full, i)
@@ -766,6 +803,126 @@ func (t *diceTable) toolMiss(m int, tool diceTool, lower, lowerMiss []float64) (
 	return best - tool.price, miss
 }
 
+// stopParts are the parts of stopping with the full multiset m.
+func (t *diceTable) stopParts(m int) Parts {
+	tier := t.stopTier[m]
+	if tier.ability == "" {
+		return Parts{1}
+	}
+	return Parts{0, tier.parts[0], tier.parts[1], tier.parts[2], tier.parts[3]}
+}
+
+// layerParts is, for every full multiset, the expected Parts of optimal
+// play from there (the choices layer makes).
+func (t *diceTable) layerParts(rolls int, ts toolState) []Parts {
+	key := ts.key(rolls)
+	if v, ok := t.partLayers[key]; ok {
+		return v
+	}
+	var wait []float64
+	var waitParts []Parts
+	if rolls > 0 {
+		wait, waitParts = t.wait(rolls, ts), t.waitParts(rolls, ts)
+	}
+	lower := make([][]float64, len(t.tools))
+	lowerParts := make([][]Parts, len(t.tools))
+	for i := range t.tools {
+		if t.usable(ts, i) {
+			next := ts.use(i, t.tools[i].cost)
+			lower[i], lowerParts[i] = t.layer(rolls, next), t.layerParts(rolls, next)
+		}
+	}
+	out := make([]Parts, len(t.sets.list))
+	for _, m := range t.full {
+		v, p := t.stop[m], t.stopParts(m)
+		if wait != nil {
+			for _, kept := range t.keepsOf(m) {
+				if wait[kept] > v {
+					v, p = wait[kept], waitParts[kept]
+				}
+			}
+		}
+		for i, tool := range t.tools {
+			if lower[i] == nil {
+				continue
+			}
+			if w, q := t.toolParts(m, tool, lower[i], lowerParts[i]); w > v {
+				v, p = w, q
+			}
+		}
+		out[m] = p
+	}
+	t.partLayers[key] = out
+	return out
+}
+
+// toolParts is toolValue together with the Parts of its best use.
+func (t *diceTable) toolParts(m int, tool diceTool, lower []float64, lowerParts []Parts) (float64, Parts) {
+	best, parts := math.Inf(-1), Parts{1}
+	counts := t.sets.list[m]
+	for from, c := range counts {
+		if c == 0 {
+			continue
+		}
+		if tool.reroll {
+			total := 0.0
+			var sum Parts
+			for to := range t.faces {
+				next := t.sets.replace(m, from, to)
+				total += lower[next]
+				for k := range sum {
+					sum[k] += lowerParts[next][k]
+				}
+			}
+			if v := total / float64(len(t.faces)); v > best {
+				best = v
+				for k := range sum {
+					parts[k] = sum[k] / float64(len(t.faces))
+				}
+			}
+			continue
+		}
+		for _, delta := range tool.deltas {
+			face := t.faces[from].Face + delta
+			to := t.slot(face)
+			if to < 0 || face < tool.min || face > tool.max {
+				continue
+			}
+			if next := t.sets.replace(m, from, to); lower[next] > best {
+				best, parts = lower[next], lowerParts[next]
+			}
+		}
+	}
+	return best - tool.price, parts
+}
+
+// waitParts is wait's Parts: for every kept multiset, the expected Parts of
+// rolling the rest and playing on.
+func (t *diceTable) waitParts(rolls int, ts toolState) []Parts {
+	key := ts.key(rolls)
+	if w, ok := t.partWaits[key]; ok {
+		return w
+	}
+	t.wait(rolls, ts)
+	next := t.layerParts(rolls-1, ts)
+	values := make([]Parts, len(t.sets.list))
+	for kept, size := range t.sets.size {
+		if size >= t.n {
+			continue
+		}
+		var total Parts
+		joined := t.joinOf(kept)
+		for j, o := range t.outcomes(t.n - size) {
+			for k := range total {
+				total[k] += o.prob * next[joined[j]][k]
+			}
+		}
+		values[kept] = total
+	}
+	t.partWaits[key] = values
+	return values
+}
+
 // waitMiss is wait's miss chance: for every kept multiset, the chance of
 // ending with no ability after rolling the rest.
 func (t *diceTable) waitMiss(rolls int, ts toolState) []float64 {
@@ -888,10 +1045,45 @@ func tierValues(lib content.BattleLibrary, abilities []string, energy int, modif
 			if value <= 0 {
 				value = 0.5
 			}
-			out = append(out, tierValue{ability: id, tier: tier.ID, check: check, value: value})
+			out = append(out, tierValue{ability: id, tier: tier.ID, check: check, value: value, parts: tierParts(tier.Operations, bonus)})
 		}
 	}
 	return out
+}
+
+// TierParts are what an ability tier does: damage (with bonus), status
+// stacks on its user and on others, and energy gained.
+func TierParts(def content.BattleAbilityDefinition, tierID string, bonus float64) [4]float64 {
+	if def.Qualification == nil {
+		return [4]float64{}
+	}
+	for i, tier := range def.Qualification.ActivationTiers {
+		if tier.ID == tierID || (tierID == "" && i == 0) {
+			return tierParts(tier.Operations, bonus)
+		}
+	}
+	return [4]float64{}
+}
+
+// tierParts splits a tier's operations into damage (plus bonus), status
+// stacks on its user and on others, and energy gained.
+func tierParts(ops []content.BattleOperation, bonus float64) [4]float64 {
+	parts := [4]float64{bonus}
+	for _, op := range ops {
+		switch op.Type {
+		case "deal_damage":
+			parts[0] += float64(amount(op.Amount))
+		case "apply_status":
+			if op.Target == "self" {
+				parts[1] += float64(max(op.StackCount, 1))
+			} else {
+				parts[2] += float64(max(op.StackCount, 1))
+			}
+		case "gain_resource":
+			parts[3] += float64(amount(op.Amount))
+		}
+	}
+	return parts
 }
 
 // cardDamageBonus totals active card bonuses (such as Strong Swing) on one
@@ -914,7 +1106,7 @@ func tableKey(dieID string, dice int, tiers []tierValue, tools []diceTool, energ
 	var sb strings.Builder
 	fmt.Fprintf(&sb, "%s/%d/%g/%g", dieID, dice, energySpend, cardValue)
 	for _, t := range tiers {
-		fmt.Fprintf(&sb, "|%s:%s=%g", t.ability, t.tier, t.value)
+		fmt.Fprintf(&sb, "|%s:%s=%g%v", t.ability, t.tier, t.value, t.parts)
 	}
 	for _, t := range tools {
 		fmt.Fprintf(&sb, "|tool %s %v %v %d-%d %d", t.card, t.reroll, t.deltas, t.min, t.max, t.cost)

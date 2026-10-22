@@ -1,9 +1,6 @@
 package lookahead
 
-import (
-	"sync"
-	"time"
-)
+import "time"
 
 // Options lists a decision's options the way the search narrows them (see
 // candidates: TopRerolls and TopAbilities set how many of the solver's
@@ -36,26 +33,13 @@ func (s *SearchPolicy) OptionValues(d *Decision, options []int, futures int, bas
 	for k := range values {
 		values[k] = make([]float64, futures)
 	}
-	type job struct{ k, j int }
-	next := make(chan job)
-	var wg sync.WaitGroup
-	for _, w := range pool {
-		wg.Add(1)
-		go func(w *searchWorker) {
-			defer wg.Done()
-			future := s.future(w, d, time.Time{})
-			for jb := range next {
-				values[jb.k][jb.j], _ = future(options[jb.k], base+uint64(jb.j)*0x9e3779b97f4a7c15)
-			}
-		}(w)
-	}
-	for j := 0; j < futures; j++ {
-		for k := range options {
-			next <- job{k, j}
+	runJobs(pool, futures*len(options), time.Time{}, func(w *searchWorker) func(t int) {
+		future := s.future(w, d, time.Time{})
+		return func(t int) {
+			j, k := t/len(options), t%len(options)
+			values[k][j], _ = future(options[k], base+uint64(j)*0x9e3779b97f4a7c15)
 		}
-	}
-	close(next)
-	wg.Wait()
+	})
 	s.Futures += futures * len(options)
 	return values, nil
 }

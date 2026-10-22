@@ -26,6 +26,7 @@ type point struct {
 	stage                                   [6]float64
 	rolling, rollsLeft, rollsUsed           float64
 	best, stop, miss, gain                  float64
+	parts                                   [5]float64
 	selected, selectedValue                 float64
 	incoming, incomingBase, incomingPrevent float64
 	incomingCount, incomingStatus           float64
@@ -46,6 +47,7 @@ func (p *point) emit(put func(name string, v float64)) {
 	}{
 		{"rolling", p.rolling}, {"rolls_left", p.rollsLeft}, {"rolls_used", p.rollsUsed},
 		{"dice_best", p.best}, {"dice_stop", p.stop}, {"dice_miss", p.miss}, {"dice_gain", p.gain},
+		{"dice_parts.damage", p.parts[1]}, {"dice_parts.self_status", p.parts[2]}, {"dice_parts.enemy_status", p.parts[3]}, {"dice_parts.energy", p.parts[4]},
 		{"selected", p.selected}, {"selected_value", p.selectedValue},
 		{"incoming", p.incoming}, {"incoming_base", p.incomingBase}, {"incoming_prevented", p.incomingPrevent},
 		{"incoming_count", p.incomingCount}, {"incoming_status", p.incomingStatus},
@@ -102,7 +104,7 @@ func (e *Encoder) plan(pos Position) *planView {
 	if plan == nil {
 		return nil
 	}
-	return &planView{plan: plan, best: plan.Best(), miss: plan.Miss()}
+	return &planView{plan: plan, best: plan.Best(), miss: plan.Miss(), parts: plan.Parts()}
 }
 
 func (e *Encoder) point(pos Position) point {
@@ -128,6 +130,7 @@ func (e *Encoder) point(pos Position) point {
 	if plan := e.plan(pos); plan != nil {
 		p.best, p.stop, p.miss = plan.best/10, plan.plan.Stop/10, plan.miss
 		p.gain = (plan.best - plan.plan.Stop) / 5
+		p.parts = [5]float64{plan.parts[0], plan.parts[1] / 10, plan.parts[2] / 3, plan.parts[3] / 3, plan.parts[4] / 10}
 	}
 	if a.SelectedAbility != "" {
 		p.selected = 1
@@ -183,6 +186,7 @@ func (e *Encoder) point(pos Position) point {
 type planView struct {
 	plan       *lookahead.DicePlan
 	best, miss float64
+	parts      lookahead.Parts
 }
 
 // handCards counts the seat's own cards in hand that can still be played

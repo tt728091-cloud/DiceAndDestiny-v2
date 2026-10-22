@@ -26,7 +26,8 @@ type option struct {
 	kind                                [12]float64
 	anchor                              float64
 	rerolled, rerollValue, rerollGain   float64
-	rerollMiss, rerollMissGain          float64
+	parts                               [5]float64
+	partDamage                          float64
 	tierValue, tierGain, abilityCost    float64
 	tierEffect                          [7]float64
 	defense                             [4]float64
@@ -46,7 +47,8 @@ func (o *option) emit(put func(name string, v float64)) {
 		v    float64
 	}{
 		{"rerolled", o.rerolled}, {"reroll_value", o.rerollValue}, {"reroll_gain", o.rerollGain},
-		{"reroll_miss", o.rerollMiss}, {"reroll_miss_gain", o.rerollMissGain},
+		{"parts_gain.miss", o.parts[0]}, {"parts_gain.damage", o.parts[1]}, {"parts_gain.self_status", o.parts[2]},
+		{"parts_gain.enemy_status", o.parts[3]}, {"parts_gain.energy", o.parts[4]}, {"parts.damage", o.partDamage},
 		{"tier_value", o.tierValue}, {"tier_gain", o.tierGain}, {"ability_cost", o.abilityCost},
 	} {
 		put("option."+field.name, field.v)
@@ -135,8 +137,7 @@ func (e *Encoder) EncodeOptions(pos Position, actions []command.Command, options
 				if !math.IsInf(v, 0) {
 					o.rerolled = float64(len(p.RerollIndices)) / 5
 					o.rerollValue, o.rerollGain = v/10, (v-plan.best)/5
-					miss := plan.plan.RerollMiss(p.RerollIndices)
-					o.rerollMiss, o.rerollMissGain = miss, miss-plan.miss
+					o.setParts(plan.plan.RerollParts(p.RerollIndices), plan.parts)
 					o.solverRelative = 1
 				}
 			}
@@ -162,6 +163,8 @@ func (e *Encoder) EncodeOptions(pos Position, actions []command.Command, options
 				if plan != nil {
 					o.solverRelative = 1
 					o.rerollValue, o.rerollGain = tiers[k]/10, (tiers[k]-plan.best)/5
+					parts := lookahead.TierParts(def, p.TierID, damageBonus(own.AbilityModifiers, p.AbilityID))
+					o.setParts(lookahead.Parts{0, parts[0], parts[1], parts[2], parts[3]}, plan.parts)
 				}
 			}
 			if def.Resolution != nil {
@@ -204,6 +207,7 @@ func (e *Encoder) EncodeOptions(pos Position, actions []command.Command, options
 		}
 		if (action.Type == command.TypePlanningPass || action.Type == command.TypePlanningLockIn) && plan != nil {
 			o.rerollValue, o.rerollGain, o.solverRelative = plan.plan.Stop/10, (plan.plan.Stop-plan.best)/5, 1
+			o.setParts(plan.plan.StopParts(), plan.parts)
 		}
 		row := out[k*width : (k+1)*width]
 		j := 0
@@ -216,6 +220,17 @@ func (e *Encoder) EncodeOptions(pos Position, actions []command.Command, options
 		})
 	}
 	return nil
+}
+
+// setParts records an option's expected results against the plan's: the
+// change in miss chance, damage, status stacks on self and on others and
+// energy, and its damage.
+func (o *option) setParts(parts, now lookahead.Parts) {
+	scale := [5]float64{1, 5, 3, 3, 10}
+	for k := range parts {
+		o.parts[k] = (parts[k] - now[k]) / scale[k]
+	}
+	o.partDamage = parts[1] / 10
 }
 
 func optionKind(action command.Command) int {
