@@ -418,6 +418,75 @@ $LAB -hero starter -opponent drowned_oracle_brine_mask -foe script -players $P -
 $LAB -hero venom -opponent drowned_oracle_bell_diver -foe script -players $P -think-ms 100 -search-workers 7 -workers 2 -seats both -battles 150 -out t5/venom-bell.json
 ```
 
+### Measured values (T6, phase A4)
+
+`cmd/value-probe` replays the held-out battles (the same seeds and greedy play, so exactly the held-out positions). At every round's offensive-planning start it changes one thing on a fork of the battle (fresh randomness), encodes the acting seat's view and reads the network's change in win chance. The changes go through the engine's own paths where it has one:
+
+- **+5 energy:** the engine's energy gain (within the cap);
+- **+1 card in hand:** the engine's ordinary draw from the draw pile;
+- **+1 stack of each status in the catalog:** the engine's status path with its stacking rules; positive statuses on the acting seat, negative ones on its opponent. Card-preparation markers (a stack without its card's bonus cannot occur) and map-only statuses are left out;
+- **the unit, one more card removed from the opponent:** picked the way damage picks (discard pile, then draw pile, then hand), with the public counts others see during private planning moved too.
+
+Each change ÷ the unit's change is its damage-equivalent. Per-position ratios use the positions where the unit moves the win chance by at least 0.005; "ratio of means" uses every position. On the held-out positions one more card removed is worth **+0.038 win chance** on average (+0.051 when the acting seat is below half health).
+
+**Held-out positions (Venom or Bell Diver battles, 53,871):**
+
+| Change | Positions | Mean | Median | IQR | Ratio of means | 2026-10-15 rate |
+|---|---|---|---|---|---|---|
+| +5 energy | 53871 | 0.00 | -0.01 | -0.04 … 0.03 | -0.01 | 1.0 (0.2 per point) |
+| +1 card in hand (from the draw pile) | 42941 | 0.54 | 0.61 | 0.39 … 0.78 | 0.58 | — |
+| enemy +1 Bleed (bleed) | 53871 | -0.35 | -0.22 | -0.72 … 0.04 | -0.14 | — |
+| enemy +1 Blind (blind) | 53871 | -2.27 | -1.57 | -4.05 … -0.03 | -1.29 | — |
+| enemy +1 Curse Count (curse_count) | 53871 | -0.30 | -0.17 | -0.64 … 0.08 | -0.12 | — |
+| enemy +1 Cursed Entangle (cursed_entangle) | 53871 | -0.34 | -0.22 | -0.69 … 0.05 | -0.15 | — |
+| enemy +1 Entangle (entangle) | 53871 | -2.18 | -1.74 | -4.09 … -0.27 | -1.17 | — |
+| enemy +1 Grave Debt (grave_debt) | 53871 | -0.36 | -0.24 | -0.75 … 0.03 | -0.15 | — |
+| enemy +1 Incubation (incubation) | 53871 | -0.34 | -0.22 | -0.69 … 0.05 | -0.15 | — |
+| enemy +1 Poison (poison) | 53871 | -0.19 | -0.03 | -0.65 … 0.23 | -0.01 | — |
+| enemy +1 Shaken (shaken) | 53871 | -0.36 | -0.24 | -0.75 … 0.02 | -0.16 | — |
+| enemy +1 Volatile Poison (volatile_poison) | 53871 | -0.28 | -0.15 | -0.71 … 0.12 | -0.08 | — |
+| self +1 Ambush (ambush) | 53871 | 0.00 | 0.00 | 0.00 … 0.00 | 0.00 | — |
+| self +1 Catalyst (catalyst) | 53871 | 0.00 | 0.00 | 0.00 … 0.00 | 0.00 | — |
+| self +1 Conqueror (conqueror) | 53871 | -1.02 | -1.03 | -1.31 … -0.76 | -1.03 | — |
+| self +1 Fortified (fortified) | 53871 | -1.02 | -1.03 | -1.31 … -0.76 | -1.03 | — |
+| self +1 Lieutenant (lieutenant) | 53871 | 0.00 | 0.00 | 0.00 … 0.00 | 0.00 | — |
+| self +1 Lieutenant's Favor (lieutenants_favor) | 53871 | 0.00 | 0.00 | 0.00 … 0.00 | 0.00 | — |
+| self +1 Protect Status (protect) | 53871 | 0.00 | 0.00 | 0.00 … 0.00 | 0.00 | 1.0 |
+
+Medians by round and own health (positions in brackets):
+
+| Change | rounds 1–2 | rounds 3–5 | rounds 6+ | health ≥ half | health < half |
+|---|---|---|---|---|---|
+| unit: win-chance change per card removed (mean) | +0.0412 (21000) | +0.0355 (27969) | +0.0372 (4902) | +0.0343 (42139) | +0.0508 (11732) |
+| +5 energy | 0.00 (21000) | -0.01 (27969) | -0.02 (4902) | -0.00 (42139) | -0.01 (11732) |
+| +1 card in hand (from the draw pile) | 0.60 (20767) | 0.62 (20563) | 0.73 (1611) | 0.61 (39183) | 0.64 (3758) |
+| enemy +1 Blind (blind) | -2.49 (21000) | -1.15 (27969) | 0.20 (4902) | -2.24 (42139) | -0.00 (11732) |
+| enemy +1 Poison (poison) | -0.09 (21000) | 0.00 (27969) | -0.02 (4902) | -0.05 (42139) | 0.00 (11732) |
+| self +1 Fortified (fortified) | -1.18 (21000) | -0.87 (27969) | -0.78 (4902) | -1.14 (42139) | -0.67 (11732) |
+| self +1 Protect Status (protect) | 0.00 (21000) | 0.00 (27969) | 0.00 (4902) | 0.00 (42139) | 0.00 (11732) |
+
+**How to read it.** These are the network's values, and most of them are not yet values of the riders:
+
+- **Self-statuses are not identified.** No positive status ever exists at an offensive-planning start in the training data: Protect expires at the round's Ongoing Effects, before planning, and Ambush, Lieutenant and the other map conditions never occur in lab battles. 61 of the 148 inputs never vary in training, every positive-status input among them, so the network learned nothing from them: Protect, Ambush, Catalyst, Lieutenant and Lieutenant's Favor measure exactly 0. Fortified and Conqueror move only through the defense's expected prevention, which in training varies only between characters, so their negative value is a character effect.
+- **Enemy debuffs come out negative.** In training these statuses appear only when the seat's own character inflicts them (Curse's statuses; poison, bleed and entangle from Venom Goblin's and Blade Warden's abilities), so the network learned "the enemy carries this debuff, so I am that character", not the debuff's effect.
+- **Energy is nearly worthless to these players:** −0.01 per 5 energy on held-out positions and +0.04 on Starter positions, against 1.0 in board pricing. The data's greedy player plays no Venom, Curse, Blade Warden or Venom Goblin cards, and the held-out battles are mostly those characters.
+- **A card moved from the draw pile to the hand** is worth 0.58 (median 0.61) on held-out positions and 0.21 (median 0.03) on Starter positions. Card pricing counts a drawn card as half a health.
+
+For comparison, on in-distribution positions (the Starter's training battles, 21,811 positions: `-held-out=false -only greedy-starter-vs-`) the unit is +0.056 win chance, +5 energy 0.04 (median 0.04), a card in hand 0.21 (median 0.03), Protect 0.00, Poison on the enemy −0.21 and Blind on the enemy −1.12: the same pattern.
+
+| Rider | 2026-10-15 exchange rate | Measured, held out (ratio of means) | Measured, Starter positions |
+|---|---|---|---|
+| +1 Protect on self | 1.0 | 0.00 (not identified) | 0.00 (not identified) |
+| +5 energy | 1.0 (0.2 per point) | −0.01 | 0.04 |
+
+**No rates or content were changed.** To measure riders the next pass needs positions where they vary on their own: record more decision points (before defense, mid-round) or add riders to recorded positions at random and play those positions out, and data from players that use them (the look-ahead, phase A6). Until then these numbers should not replace the agreed rates.
+
+```bash
+go build -o ml/runs/value-probe ./cmd/value-probe
+ml/runs/value-probe -value-model ml/runs/value-v1-models/value-v1-a.json -workers 2 -out ml/runs/lab/t6-probe.json
+ml/runs/value-probe -value-model ml/runs/value-v1-models/value-v1-a.json -held-out=false -only greedy-starter-vs- -workers 1
+```
+
 ## Limits and next steps
 
 - **Dice solver:** handles pools of identical dice. Mixed pools fall back to plain simulation.

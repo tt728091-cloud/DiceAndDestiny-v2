@@ -245,6 +245,12 @@ win-rate test.
 - 2026-10-22, T5 (A3): exit failed. The value player gains +0.083 over v2
   in the Starter mirror but nothing over Rounds 1 with the health race
   (−0.001, z −0.1). Nothing shipped; the in-game opponent stays v2.
+- 2026-10-22, T6 (A4): `cmd/value-probe` measures riders on the held-out
+  positions. Most are not identified yet: positive statuses never exist
+  at a planning start in the data, enemy debuffs only appear with the
+  character that inflicts them, and the greedy data barely uses energy.
+  No rates changed; the next pass needs positions where riders vary on
+  their own.
 
 ## Rules that stay
 
