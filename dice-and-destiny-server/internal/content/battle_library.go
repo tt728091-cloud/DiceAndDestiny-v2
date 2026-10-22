@@ -44,6 +44,9 @@ type BattleDieDefinition struct {
 	DieType       string          `yaml:"die_type" json:"die_type"`
 	SideCount     int             `yaml:"side_count" json:"side_count"`
 	Faces         []BattleDieFace `yaml:"faces" json:"faces"`
+	// Roles maps each symbol to its role (main, side, odd, odd_b, apex). The
+	// loader computes it from face counts (DieRoles); it is never authored.
+	Roles map[string]string `yaml:"-" json:"roles,omitempty"`
 }
 
 type BattleDieFace struct {
@@ -472,6 +475,7 @@ func LoadBattleLibrary(root string) (BattleLibrary, error) {
 	if err := loadBattleItems(filepath.Join(root, "dice"), &lib.Dice); err != nil {
 		return BattleLibrary{}, err
 	}
+	annotateDieRoles(&lib)
 	if err := loadBattleItems(filepath.Join(root, "cards"), &lib.Cards); err != nil {
 		return BattleLibrary{}, err
 	}

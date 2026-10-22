@@ -313,6 +313,54 @@ static func _build_glyph(symbol_id: String) -> Dictionary:
 			return {"solid": [["line", loop, 11.0]]}
 		"murk":
 			return {"solid": [["ring", Vector2(50, 50), 30.0, 6.0], ["circle", Vector2(50, 50), 7.0]]}
+		# Board-selection dice. Placeholder shapes until their art is drawn.
+		"hearth_spark":
+			return {"solid": [["poly", PackedVector2Array([Vector2(50, 4), Vector2(60, 40), Vector2(96, 50), Vector2(60, 60), Vector2(50, 96), Vector2(40, 60), Vector2(4, 50), Vector2(40, 40)])]], "inner": [["circle", Vector2(50, 50), 7.0]]}
+		"hearth_cinder":
+			return {"solid": [["poly", _path("M50 4 C62 26 84 40 84 64 C84 84 68 96 50 96 C32 96 16 84 16 64 C16 40 38 26 50 4 Z")]], "inner": [["poly", _path("M50 48 C56 58 66 64 66 76 C66 84 58 88 50 88 C42 88 34 84 34 76 C34 64 44 58 50 48 Z")]]}
+		"hearth_kiln":
+			return {"solid": [["poly", _path("M12 92 L12 50 C12 24 30 8 50 8 C70 8 88 24 88 50 L88 92 Z")]], "inner": [["poly", _path("M36 92 L36 66 C36 56 42 50 50 50 C58 50 64 56 64 66 L64 92 Z")]]}
+		"grove_bramble":
+			return {"solid": [["line", PackedVector2Array([Vector2(16, 16), Vector2(84, 84)]), 10.0], ["line", PackedVector2Array([Vector2(84, 16), Vector2(16, 84)]), 10.0], ["line", PackedVector2Array([Vector2(50, 6), Vector2(50, 94)]), 8.0], ["line", PackedVector2Array([Vector2(6, 50), Vector2(94, 50)]), 8.0]]}
+		"grove_root":
+			return {"solid": [["line", PackedVector2Array([Vector2(50, 6), Vector2(50, 60)]), 11.0], ["line", PackedVector2Array([Vector2(50, 56), Vector2(22, 92)]), 9.0], ["line", PackedVector2Array([Vector2(50, 56), Vector2(78, 92)]), 9.0], ["line", PackedVector2Array([Vector2(50, 60), Vector2(50, 94)]), 8.0]]}
+		"grove_bloom":
+			var petals := []
+			for step in 5:
+				var angle := -PI / 2.0 + TAU * step / 5.0
+				petals.append(["circle", Vector2(50, 50) + Vector2(cos(angle), sin(angle)) * 26.0, 20.0])
+			return {"solid": petals, "inner": [["circle", Vector2(50, 50), 12.0]]}
+		"grove_acorn":
+			return {"solid": [["poly", _rounded(Rect2(14, 18, 72, 26), 12.0)], ["poly", _ellipse(Vector2(50, 62), Vector2(26, 32))], ["line", PackedVector2Array([Vector2(50, 18), Vector2(56, 4)]), 6.0]], "inner": [["line", PackedVector2Array([Vector2(24, 34), Vector2(76, 34)]), 4.0]]}
+		"forge_anvil":
+			return {"solid": [["poly", PackedVector2Array([Vector2(6, 24), Vector2(94, 24), Vector2(80, 46), Vector2(62, 50), Vector2(66, 76), Vector2(34, 76), Vector2(38, 50), Vector2(20, 44)])], ["poly", _rounded(Rect2(22, 76, 56, 16), 4.0)]]}
+		"forge_tongs":
+			return {"solid": [["line", PackedVector2Array([Vector2(18, 92), Vector2(74, 14)]), 9.0], ["line", PackedVector2Array([Vector2(82, 92), Vector2(26, 14)]), 9.0], ["circle", Vector2(50, 53), 10.0]], "inner": [["circle", Vector2(50, 53), 4.0]]}
+		"forge_rivet":
+			return {"solid": [["poly", PackedVector2Array([Vector2(50, 6), Vector2(88, 28), Vector2(88, 72), Vector2(50, 94), Vector2(12, 72), Vector2(12, 28)])]], "inner": [["ring", Vector2(50, 50), 18.0, 6.0]]}
+		"forge_ingot":
+			return {"solid": [["poly", PackedVector2Array([Vector2(26, 26), Vector2(74, 26), Vector2(94, 78), Vector2(6, 78)])]], "inner": [["line", PackedVector2Array([Vector2(30, 40), Vector2(70, 40)]), 4.0]]}
+		"loom_thread":
+			var strands := []
+			for base in [30.0, 50.0, 70.0]:
+				var points := PackedVector2Array()
+				for step in 41:
+					var x := 8.0 + step * 2.1
+					points.append(Vector2(x, base + 7.0 * sin(PI * (x - 8.0) / 21.0)))
+				strands.append(["line", points, 7.0])
+			return {"solid": strands}
+		"loom_needle":
+			return {"solid": [["poly", PackedVector2Array([Vector2(92, 8), Vector2(28, 84), Vector2(8, 92), Vector2(16, 72)])]], "inner": [["poly", _ellipse(Vector2(76, 26), Vector2(4, 9))]]}
+		"loom_spindle":
+			return {"solid": [["poly", _ellipse(Vector2(50, 50), Vector2(24, 40))], ["line", PackedVector2Array([Vector2(50, 2), Vector2(50, 98)]), 6.0]], "inner": [["line", PackedVector2Array([Vector2(30, 36), Vector2(70, 36)]), 4.0], ["line", PackedVector2Array([Vector2(28, 50), Vector2(72, 50)]), 4.0], ["line", PackedVector2Array([Vector2(30, 64), Vector2(70, 64)]), 4.0]]}
+		"loom_knot":
+			# A three-lobed loop of cord.
+			var cord := PackedVector2Array()
+			for step in 61:
+				var t := TAU * step / 60.0
+				var r := 26.0 + 16.0 * cos(3.0 * t)
+				cord.append(Vector2(50.0 + r * cos(t), 50.0 + r * sin(t)))
+			return {"solid": [["line", cord, 9.0]]}
 	return {}
 
 ## Absolute M/L/H/V/C/Q/Z path data sampled into one point list.
