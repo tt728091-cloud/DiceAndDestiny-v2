@@ -228,7 +228,8 @@ defense, cards, riders and statuses all interact.
 - If a whole family runs strong or weak, adjust its target. If one slot
   does, adjust its rider rate. Never hand-edit one ability's damage.
 
-Record results in `balance-lab.md`.
+Results are recorded below, under "First pass · B7 results" (the handoff
+moved them here from `balance-lab.md`).
 
 ### B8 — Campaign and expedition (medium)
 
@@ -236,6 +237,203 @@ Record results in `balance-lab.md`.
   stored in the campaign save.
 - Rebuild rules, if any, follow the run design. Wounds, XP and deck rules
   are unchanged.
+
+## First pass (built 2026-10-21, B1–B7)
+
+Built from `dice-and-board-selection-handoff.md` on branch
+`dice-board-selection`. B8 (the choice at campaign and expedition start) is
+not built.
+
+- **Dice (B1).** Four new dice in the `custom_adventurer_v1` pack, one per
+  family order: Hearth Die 2-3-1 (Spark, Cinder, Kiln), Grove Die 3-1-1-1
+  (Bramble, Root, Bloom, Acorn), Forge Die 2-2-1-1 (Anvil, Tongs, Rivet,
+  Ingot) and Loom Die 2-1-2-1 (Thread, Needle, Spindle, Knot); 3-2-1 reuses
+  `standard_d6`. Their engraved glyphs are placeholders. `content.DieRoles`
+  names each symbol's role from face counts (main, side, odd, odd_b, apex),
+  and the loaders publish it in the catalog (`roles` on each die). The pack
+  joins only battles the custom adventurer fights in: the frozen v2/v3
+  observation encoders refuse catalogs with more than 8 symbols.
+- **Custom adventurer (B2).** `custom_adventurer`: the Starter's deck and
+  resources, the standard die and a default Lean board (exactly
+  `boardprice.Generate` of Lean at default picks). Its sheet
+  (`loadout.Progress`) holds the die (`dice`, five of it), the generated
+  abilities (`generated_abilities`, `board_` IDs only) and the Board Builder
+  choice (`board_choice`); battles pin them in their catalog. The ability
+  workshop never publishes this character's board.
+- **Role defenses (B2).** `roll_dice` may name `dice: owner` with outcomes
+  by `roles`; the engine resolves roles from the die that rolled. Holdfast
+  and Holdfast+ (Guard and Guard+ by role) prevent main 1, side 2, odd 1,
+  second odd 3, and give 5 energy on any apex: 3.5 per 3-dice roll on every
+  board die, as Guard does on the standard die. That is the only whole-number
+  solution for one role defense on every family; the second odd symbol
+  carrying 3 is the price of that.
+- **Menus (B3).** `content/progression_v1/board_templates.yaml` (pricing
+  numbers, bands, jobs, dice, defenses, flex cost menus, 13 templates) and
+  `riders.yaml` (exchange rates and 8 riders). Every entry has `unlock: open`.
+  Draw (1 per card) and heal (1 per card) rates are first guesses; heal
+  riders use the new `heal_cards` operation (most recently removed card
+  first, to discard, leaving its wound).
+- **Pricing (B4).** `internal/battle/boardprice` ports `board_balance.py`
+  (parity: Starter, Lean and Monk multipliers 5.4850, 5.4706 and 7.5231,
+  whole damage exact, use shares within 0.0015). `board_price` and
+  `board_builder` ops are read-only; a Wide board prices in about 30 ms.
+- **Generated abilities (B5).** `Builder.Generate`: IDs from the role cost,
+  names from the cost in the die's symbols, full `rules_text`; `board_save`
+  re-prices and writes them to the sheet.
+- **Board Builder (B6).** A Character Creation tab for the custom
+  adventurer: die picker with roles and odds, template picker with averages
+  and no-hit rates, slot editor with live re-pricing, use bars and the keep
+  table, Confirm through the authority.
+
+### B7 results
+
+**Read the Starter column with the controls.** On this harness any hero
+other than the Starter scores about 0.36 against the Starter even with the
+Starter's own board, die and deck (the Adventurer too; reproduced bit for
+bit on a clean `main` with the unchanged `cmd/balance-lab`), while every
+mirror scores about 0.50. It is a pre-existing asymmetry of the greedy lab
+(the AI work's area), not of the boards. The Adventurer, the Starter's board
+plus Guard+, plays an equal board level (0.505), so it is the fair Starter
+reference here.
+
+**Findings.**
+
+- Against the Adventurer, 18 of the 23 default boards are inside 0.45–0.55.
+  Families: {3,2,1} 0.500, {2,2,1,1} 0.508, {3,1,1,1} 0.464 (slightly weak;
+  all three Grove templates are at or below 0.477). Outside: Standard on the
+  Hearth Die (0.407) and on the Loom Die (0.425) are weak; Double Ladder on
+  the Hearth Die (0.588), Ladder Pair on the Forge Die (0.570) and Combo on
+  the standard die (0.552) are strong.
+- Every default board beats every minion (0.83–0.94).
+- Random boards (random flex costs and riders on every slot that takes one)
+  average 0.396 against the Adventurer, below the defaults (no riders).
+  Every rider lowers the score a little per slot; energy the most (+5
+  energy −0.05, +10 energy −0.04), then Heal 2 and Draw 1 (about −0.03),
+  Protect least (+1 Protect about 0). At these rates riders are slightly
+  overpriced for the greedy player, whose own values (Protect 0.5 per stack,
+  energy 0.1 per point, `lookahead` `TierValue`) are below the pricing rates.
+- The rider sweep finds no rider that is always best or always worst. "No
+  rider" is best on 6 of 13 templates against either reference; the energy
+  riders are the most frequent worst (7 of 13 against the Starter, 5 against
+  the Adventurer).
+- Following the plan, nothing was tuned by hand. Candidates once A4's
+  measured rates land: a lower energy rate, and a small target raise for the
+  {3,1,1,1} family.
+
+`go run ./cmd/board-lab` · greedy hero (look-ahead's `GreedyPolicy`) · the Starter and the Adventurer as greedy players, minions by their own scripts · unified defense · paired seeds (each seed from both seats).
+
+Score = (wins + ½ draws) / battles for the custom adventurer. Starter mirror band 0.45–0.55.
+
+**Controls** (1000 battles each):
+
+| Matchup | Score |
+|---|---|
+| Starter vs the Starter (greedy mirror) | 0.495 |
+| Custom Adventurer with the Starter's own board, standard die, vs the Starter | 0.362 |
+| The Adventurer (the Starter's board plus Guard+) vs the Starter | 0.362 |
+| Custom Adventurer with the Starter's own board, standard die, vs the Adventurer | 0.505 |
+
+**Every die × template at default picks** (200 battles per cell; band = inside 0.45–0.55):
+
+| Template | Die | Avg / turn | No hit | Starter | Adventurer | Bell Diver | Brine Mask | Ribbon Eel | Starter band | Adventurer band |
+|---|---|---|---|---|---|---|---|---|---|---|
+| Lean | Standard D6 3-2-1 | 6.14 | 1.3% | 0.390 | 0.537 | 0.870 | 0.890 | 0.865 | **out** | in |
+| Lean | Hearth 2-3-1 | 6.16 | 1.4% | 0.398 | 0.490 | 0.855 | 0.870 | 0.877 | **out** | in |
+| Standard | Standard D6 3-2-1 | 6.16 | 1.3% | 0.357 | 0.475 | 0.855 | 0.877 | 0.855 | **out** | in |
+| Standard | Hearth 2-3-1 | 6.23 | 1.7% | 0.315 | 0.407 | 0.865 | 0.848 | 0.833 | **out** | **out** |
+| Compact | Standard D6 3-2-1 | 6.16 | 1.3% | 0.360 | 0.485 | 0.875 | 0.865 | 0.858 | **out** | in |
+| Compact | Hearth 2-3-1 | 6.23 | 1.7% | 0.372 | 0.480 | 0.885 | 0.890 | 0.845 | **out** | in |
+| Wide | Standard D6 3-2-1 | 6.19 | 1.3% | 0.367 | 0.515 | 0.870 | 0.905 | 0.877 | **out** | in |
+| Wide | Hearth 2-3-1 | 6.24 | 1.1% | 0.352 | 0.482 | 0.890 | 0.873 | 0.880 | **out** | in |
+| Double Ladder | Standard D6 3-2-1 | 6.25 | 0.9% | 0.270 | 0.455 | 0.840 | 0.873 | 0.835 | **out** | in |
+| Double Ladder | Hearth 2-3-1 | 6.25 | 1.0% | 0.440 | 0.588 | 0.902 | 0.882 | 0.868 | **out** | **out** |
+| Combo | Standard D6 3-2-1 | 6.31 | 5.6% | 0.445 | 0.552 | 0.890 | 0.902 | 0.873 | **out** | **out** |
+| Combo | Hearth 2-3-1 | 6.23 | 5.1% | 0.398 | 0.530 | 0.887 | 0.895 | 0.843 | **out** | in |
+| Rainbow | Grove 3-1-1-1 | 6.27 | 0.8% | 0.345 | 0.477 | 0.860 | 0.897 | 0.843 | **out** | in |
+| Wide Rainbow | Grove 3-1-1-1 | 6.17 | 0.7% | 0.340 | 0.458 | 0.830 | 0.835 | 0.840 | **out** | in |
+| Suits | Grove 3-1-1-1 | 6.29 | 0.5% | 0.292 | 0.458 | 0.868 | 0.882 | 0.833 | **out** | in |
+| Standard | Forge 2-2-1-1 | 6.29 | 1.4% | 0.398 | 0.542 | 0.935 | 0.848 | 0.860 | **out** | in |
+| Standard | Loom 2-1-2-1 | 6.08 | 1.8% | 0.280 | 0.425 | 0.845 | 0.870 | 0.853 | **out** | **out** |
+| Two Mains | Forge 2-2-1-1 | 6.22 | 6.5% | 0.415 | 0.495 | 0.895 | 0.870 | 0.850 | **out** | in |
+| Two Mains | Loom 2-1-2-1 | 6.08 | 5.4% | 0.357 | 0.458 | 0.848 | 0.845 | 0.825 | **out** | in |
+| Spellbook | Forge 2-2-1-1 | 6.17 | 6.1% | 0.320 | 0.510 | 0.848 | 0.858 | 0.835 | **out** | in |
+| Spellbook | Loom 2-1-2-1 | 6.31 | 7.0% | 0.412 | 0.532 | 0.895 | 0.887 | 0.873 | **out** | in |
+| Ladder Pair | Forge 2-2-1-1 | 6.26 | 0.6% | 0.395 | 0.570 | 0.875 | 0.885 | 0.863 | **out** | **out** |
+| Ladder Pair | Loom 2-1-2-1 | 6.26 | 0.5% | 0.378 | 0.532 | 0.895 | 0.885 | 0.865 | **out** | in |
+
+- Against the Starter, 23 of the default boards are outside the band: Lean on the Standard D6 (0.390); Lean on the Hearth Die (0.398); Standard on the Standard D6 (0.357); Standard on the Hearth Die (0.315); Compact on the Standard D6 (0.360); Compact on the Hearth Die (0.372); Wide on the Standard D6 (0.367); Wide on the Hearth Die (0.352); Double Ladder on the Standard D6 (0.270); Double Ladder on the Hearth Die (0.440); Combo on the Standard D6 (0.445); Combo on the Hearth Die (0.398); Rainbow on the Grove Die (0.345); Wide Rainbow on the Grove Die (0.340); Suits on the Grove Die (0.292); Standard on the Forge Die (0.398); Standard on the Loom Die (0.280); Two Mains on the Forge Die (0.415); Two Mains on the Loom Die (0.357); Spellbook on the Forge Die (0.320); Spellbook on the Loom Die (0.412); Ladder Pair on the Forge Die (0.395); Ladder Pair on the Loom Die (0.378). Mean by family: {2211} 0.369; {3111} 0.326; {321} 0.372;
+- Against the Adventurer, 5 of the default boards are outside the band: Standard on the Hearth Die (0.407); Double Ladder on the Hearth Die (0.588); Combo on the Standard D6 (0.552); Standard on the Loom Die (0.425); Ladder Pair on the Forge Die (0.570). Mean by family: {2211} 0.508; {3111} 0.464; {321} 0.500;
+
+**300 random boards** (`RandomBoard`, seed 7, 40 battles each; a single board's 95% interval is about ±0.15, so the spread includes noise):
+
+| Opponent | Mean | Median | 10th–90th percentile | Inside the band |
+|---|---|---|---|---|
+| Starter | 0.283 | 0.275 | 0.163–0.412 | 13 of 300 |
+| Adventurer | 0.396 | 0.400 | 0.250–0.537 | 83 of 300 |
+
+Rider effect on the score against the Starter across the random boards (least squares on how many slots carry each rider; "No rider" is the baseline):
+
+| Rider | Slots carrying it | Effect per slot | ±95% |
+|---|---|---|---|
+| +1 Protect | 275 | -0.002 | 0.013 |
+| +2 Protect | 280 | -0.017 | 0.013 |
+| +5 energy | 363 | -0.045 | 0.012 |
+| +10 energy | 193 | -0.030 | 0.015 |
+| Draw 1 | 292 | -0.024 | 0.013 |
+| Heal 1 | 288 | -0.010 | 0.012 |
+| Heal 2 | 182 | -0.035 | 0.015 |
+
+Rider effect on the score against the Adventurer across the random boards (least squares on how many slots carry each rider; "No rider" is the baseline):
+
+| Rider | Slots carrying it | Effect per slot | ±95% |
+|---|---|---|---|
+| +1 Protect | 275 | -0.001 | 0.015 |
+| +2 Protect | 280 | -0.015 | 0.015 |
+| +5 energy | 363 | -0.051 | 0.014 |
+| +10 energy | 193 | -0.042 | 0.017 |
+| Draw 1 | 292 | -0.027 | 0.015 |
+| Heal 1 | 288 | -0.010 | 0.014 |
+| Heal 2 | 182 | -0.033 | 0.018 |
+
+**Rider sweep against the Starter** (each template's first flex slot, on the first die of its family, with every rider; 200 battles each):
+
+| Template | Slot | No rider | +1 Protect | +2 Protect | +5 energy | +10 energy | Draw 1 | Heal 1 | Heal 2 | Best | Worst |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| Combo | flex_easy | 0.445 | 0.412 | 0.432 | 0.388 | 0.385 | 0.417 | 0.422 | 0.440 | No rider | +10 energy |
+| Compact | flex_easy | 0.360 | 0.375 | 0.375 | 0.357 | 0.357 | 0.360 | 0.365 | 0.375 | +1 Protect | +5 energy |
+| Double Ladder | flex_medium | 0.270 | 0.328 | 0.335 | 0.318 | 0.315 | 0.323 | 0.335 | 0.305 | +2 Protect | No rider |
+| Ladder Pair | flex_medium | 0.395 | 0.395 | 0.388 | 0.388 | 0.385 | 0.390 | 0.390 | 0.388 | No rider | +10 energy |
+| Lean | flex_a | 0.390 | 0.400 | 0.403 | 0.385 | 0.388 | 0.403 | 0.398 | 0.383 | +2 Protect | Heal 2 |
+| Standard | flex_a | 0.398 | 0.378 | 0.367 | 0.375 | 0.370 | 0.372 | 0.360 | 0.338 | No rider | Heal 2 |
+| Rainbow | flex_a | 0.345 | 0.347 | 0.352 | 0.340 | 0.350 | 0.350 | 0.360 | 0.360 | Heal 1 | +5 energy |
+| Spellbook | flex_a | 0.320 | 0.318 | 0.310 | 0.310 | 0.307 | 0.312 | 0.312 | 0.300 | No rider | Heal 2 |
+| Standard | flex_easy | 0.357 | 0.357 | 0.362 | 0.350 | 0.352 | 0.350 | 0.355 | 0.367 | Heal 2 | +5 energy |
+| Suits | flex_a | 0.292 | 0.343 | 0.338 | 0.300 | 0.320 | 0.347 | 0.352 | 0.360 | Heal 2 | No rider |
+| Two Mains | flex_hard | 0.415 | 0.388 | 0.393 | 0.372 | 0.357 | 0.370 | 0.375 | 0.385 | No rider | +10 energy |
+| Wide | flex_a | 0.367 | 0.357 | 0.352 | 0.350 | 0.350 | 0.350 | 0.352 | 0.360 | No rider | +5 energy |
+| Wide Rainbow | flex_a | 0.340 | 0.360 | 0.383 | 0.347 | 0.362 | 0.352 | 0.362 | 0.372 | +2 Protect | No rider |
+
+No rider is best or worst on every template. Best on: Heal 1 1; Heal 2 2; No rider 6; +1 Protect 1; +2 Protect 3; worst on: +10 energy 3; +5 energy 4; Heal 2 3; No rider 3; (of 13 templates). A score's 95% interval is about ±0.07.
+
+**Rider sweep against the Adventurer** (each template's first flex slot, on the first die of its family, with every rider; 200 battles each):
+
+| Template | Slot | No rider | +1 Protect | +2 Protect | +5 energy | +10 energy | Draw 1 | Heal 1 | Heal 2 | Best | Worst |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| Combo | flex_easy | 0.552 | 0.573 | 0.580 | 0.555 | 0.520 | 0.562 | 0.573 | 0.595 | Heal 2 | +10 energy |
+| Compact | flex_easy | 0.485 | 0.455 | 0.465 | 0.438 | 0.458 | 0.445 | 0.448 | 0.458 | No rider | +5 energy |
+| Double Ladder | flex_medium | 0.455 | 0.477 | 0.475 | 0.480 | 0.470 | 0.480 | 0.495 | 0.455 | Heal 1 | No rider |
+| Ladder Pair | flex_medium | 0.570 | 0.575 | 0.580 | 0.580 | 0.578 | 0.573 | 0.583 | 0.583 | Heal 1 | No rider |
+| Lean | flex_a | 0.537 | 0.547 | 0.515 | 0.532 | 0.507 | 0.525 | 0.535 | 0.525 | +1 Protect | +10 energy |
+| Standard | flex_a | 0.542 | 0.522 | 0.507 | 0.520 | 0.502 | 0.497 | 0.495 | 0.477 | No rider | Heal 2 |
+| Rainbow | flex_a | 0.477 | 0.480 | 0.500 | 0.480 | 0.490 | 0.495 | 0.495 | 0.490 | +2 Protect | No rider |
+| Spellbook | flex_a | 0.510 | 0.492 | 0.468 | 0.482 | 0.463 | 0.475 | 0.485 | 0.480 | No rider | +10 energy |
+| Standard | flex_easy | 0.475 | 0.455 | 0.463 | 0.453 | 0.453 | 0.450 | 0.455 | 0.458 | No rider | Draw 1 |
+| Suits | flex_a | 0.458 | 0.520 | 0.485 | 0.475 | 0.463 | 0.492 | 0.505 | 0.465 | +1 Protect | No rider |
+| Two Mains | flex_hard | 0.495 | 0.465 | 0.443 | 0.438 | 0.430 | 0.432 | 0.438 | 0.463 | No rider | +10 energy |
+| Wide | flex_a | 0.515 | 0.470 | 0.482 | 0.470 | 0.485 | 0.485 | 0.482 | 0.487 | No rider | +1 Protect |
+| Wide Rainbow | flex_a | 0.458 | 0.468 | 0.482 | 0.482 | 0.482 | 0.482 | 0.477 | 0.492 | Heal 2 | No rider |
+
+No rider is best or worst on every template. Best on: Heal 1 2; Heal 2 2; No rider 6; +1 Protect 2; +2 Protect 1; worst on: Draw 1 1; +10 energy 4; +5 energy 1; Heal 2 1; No rider 5; +1 Protect 1; (of 13 templates). A score's 95% interval is about ±0.07.
 
 ## Links to the AI plan
 
