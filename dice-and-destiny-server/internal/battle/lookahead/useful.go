@@ -13,18 +13,36 @@ import (
 // battle. It drops pure bookkeeping moves: marking dice as kept (a reroll
 // names its dice anyway), re-selecting the ability, tier and targets that are
 // already selected, and cancelling a card just started (start-then-cancel
-// changes nothing and can loop). Copies of the same card count once. The
-// engine already refuses prevention against an attack with no damage left,
-// so that waste never reaches a player. If nothing would remain, every
-// command is returned.
+// changes nothing and can loop). Copies of the same card count once, and a
+// start that names a die counts as the card's plain start followed by that
+// target, so only the plain start is kept: the authority sorts commands by
+// labels that hold the character's name, so which of the two comes first
+// depends on the name. The engine already refuses prevention against an
+// attack with no damage left, so that waste never reaches a player. If
+// nothing would remain, every command is returned.
 func Useful(b *state.Battle, seat string, actions []command.Command) []int {
 	var runtime state.SettledActorRuntime
 	if b.Settled != nil {
 		runtime = b.Settled.Actors[seat]
 	}
+	choices := make([]Choice, len(actions))
+	plain := map[string]bool{}
+	for i, action := range actions {
+		choices[i] = CardChoice(action)
+		if choices[i].Verb == "start" && choices[i].Kind == "" {
+			if ids := CardIDs(action); len(ids) == 1 {
+				plain[ids[0]] = true
+			}
+		}
+	}
 	var out []int
 	seen := map[string]bool{}
 	for i, action := range actions {
+		if choices[i].Verb == "start" && choices[i].Kind == "offensive_die" {
+			if ids := CardIDs(action); len(ids) == 1 && plain[ids[0]] {
+				continue
+			}
+		}
 		switch action.Type {
 		case command.TypePlanningKeep:
 			if runtime.AmbushChoose == 0 {
@@ -42,7 +60,7 @@ func Useful(b *state.Battle, seat string, actions []command.Command) []int {
 				continue
 			}
 		}
-		if CardChoice(action).Verb == "cancel" {
+		if choices[i].Verb == "cancel" {
 			continue
 		}
 		key := distinctKey(action, runtime.CardInstances)
@@ -69,6 +87,7 @@ type Choice struct {
 	Die     int    `json:"die"`
 	Face    *int   `json:"face"`
 	Kind    string `json:"kind"`
+	Actor   string `json:"actor"`
 }
 
 // cardPayload holds the card fields of planning_commit_cards and

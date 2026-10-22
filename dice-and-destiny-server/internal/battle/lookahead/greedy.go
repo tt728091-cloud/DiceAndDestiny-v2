@@ -274,10 +274,19 @@ func (p *GreedyPolicy) cardGain(d *Decision, lib content.BattleLibrary, index in
 		}
 		return plan.Best() - base - cost, nil
 	case "adjust_die", "reroll":
-		// PlayCard already charges the card's price.
+		// PlayCard and the die values already charge the card's price.
 		plan, err := p.plan(d.Battle, d.Seat, nil)
 		if err != nil || plan == nil {
 			return 0, err
+		}
+		if choice.Kind == "offensive_die" {
+			// A start that names its die is worth that die, not the card's
+			// best use: the list is sorted by labels that hold the
+			// character's name, so the first such start is arbitrary.
+			if choice.Actor != "" && choice.Actor != d.Seat {
+				break
+			}
+			return dieChoiceValue(plan, definition, choice) - base, nil
 		}
 		v, _ := plan.PlayCard(definition, rt.FinalDice)
 		return v - base, nil
@@ -359,6 +368,20 @@ func executingCard(b *state.Battle, seat string) content.BattleCardDefinition {
 		return content.BattleCardDefinition{}
 	}
 	return lib.Cards[rt.CardInstances[rt.CardExecution.CardID].DefinitionID]
+}
+
+// choiceCard is the card a die choice belongs to: the card the action
+// starts, or else the card being played.
+func choiceCard(b *state.Battle, seat string, action command.Command) content.BattleCardDefinition {
+	cards := CardIDs(action)
+	if CardChoice(action).Verb != "start" || len(cards) != 1 {
+		return executingCard(b, seat)
+	}
+	lib, err := library(b)
+	if err != nil {
+		return content.BattleCardDefinition{}
+	}
+	return lib.Cards[b.Settled.Actors[seat].CardInstances[cards[0]].DefinitionID]
 }
 
 // continueCard picks the next step of a card being played: for a die
