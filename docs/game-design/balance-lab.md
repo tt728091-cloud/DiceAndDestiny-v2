@@ -258,7 +258,15 @@ Controls are version-2 look-ahead at Rounds 0 (v2 itself), 1 and 2, all with tod
 - **The best control is Rounds 1.** At equal time, stopping each future after one round and scoring the health race beats full playouts clearly in both matchups: it plays about twice the futures, and the near-term health race is a better guide than a greedy playout to the end. Rounds 2 is barely different from full playouts, because most battles last only three or four rounds.
 - At this budget full playouts gain only +0.011 over greedy; the 2026-10-15 run (1 s per decision) found +0.039.
 - ms per decision averages every decision, including the ones decided without search.
-- **Other hero mirrors.** Every hero the lab knows runs: Starter, Adventurer, Curse, Venom, Blade Warden and Venom Goblin (greedy plays no Curse, Venom, Blade Warden or Venom Goblin cards). The Venom, Blade Warden and Curse mirrors are benchmarked below at 200 seeds from both seats.
+- **Other hero mirrors.** Every hero the lab knows runs: Starter, Adventurer, Curse, Venom, Blade Warden and Venom Goblin. Seeds 1–200 from both seats (400 paired battles per player), opponent greedy:
+
+  | Mirror | greedy | v2 (Rounds 0) | Rounds 1 (vs v2, z) | Rounds 2 (vs v2, z) | Futures per searched decision (R0 / R1 / R2) |
+  |---|---|---|---|---|---|
+  | Venom | 0.489 | 0.706 | **0.823** (+0.116, z +4.4) | 0.805 (+0.099, z +3.9) | 109 / 305 / 156 |
+  | Blade Warden | 0.521 | 0.691 | **0.950** (+0.259, z +10.8) | 0.877 (+0.186, z +8.3) | 148 / 425 / 203 |
+  | Curse | 0.504 | 0.752 | **0.826** (+0.074, z +3.0) | 0.781 (+0.029, z +1.3) | 105 / 390 / 157 |
+
+  Rounds 1 is the best control in every mirror. The greedy player plays no Venom, Curse, Blade Warden or Venom Goblin cards, and the look-ahead finds them through its candidates, so in these mirrors any look-ahead beats the greedy opponent by a wide margin.
 
 ```bash
 LAB=ml/runs/bin/balance-lab-6d7b580   # commit 6d7b580
@@ -266,6 +274,7 @@ P=greedy,lookahead@rounds=0,lookahead@rounds=1,lookahead@rounds=2
 $LAB -hero starter -opponent starter -foe greedy -players $P -think-ms 100 -search-workers 7 -workers 2 -seats both -battles 400 -out t1/starter-mirror.json
 $LAB -hero starter -opponent drowned_oracle_brine_mask -foe script -players $P -think-ms 100 -search-workers 7 -workers 2 -seats both -battles 400 -out t1/starter-brine.json
 $LAB -compare t1/starter-mirror.json:lookahead@rounds=1,t1/starter-mirror.json:lookahead@rounds=0
+# other mirrors: -hero H -opponent H -foe greedy -battles 200 with the same players and flags (H = venom, blade_warden, curse)
 ```
 
 ### Rider rates (T2, phase A0b)
