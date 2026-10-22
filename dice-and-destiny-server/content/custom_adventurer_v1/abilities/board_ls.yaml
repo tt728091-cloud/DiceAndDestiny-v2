@@ -8,7 +8,7 @@
   "name": "Long Run",
   "type": "offensive",
   "presentation": {
-    "rules_text": "Large straight: five consecutive numbers (1-5 or 2-6). Deal 8 damage. Misses without the required straight.",
+    "rules_text": "Large straight: five consecutive numbers (1-5 or 2-6). Deal 7 damage. Misses without the required straight.",
     "art_key": ""
   },
   "cost": {
@@ -38,7 +38,7 @@
           {
             "type": "deal_damage",
             "target": "selected_targets",
-            "amount": 8
+            "amount": 7
           }
         ]
       }

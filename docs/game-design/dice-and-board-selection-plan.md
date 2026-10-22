@@ -61,6 +61,17 @@ The method agreed for `board_balance.py`:
 4. Round to whole damage, keeping harder ≥ easier, within 2% of the target.
    Play the rounded board again and report it.
 
+**Ladder step (added 2026-10-22).** Each harder tier of one ability deals at
+least 1 more damage than the tier below it (`ladder_step` in
+`board_templates.yaml`); otherwise nobody chases 4 Sword when it pays what 3
+Sword pays. The curve alone is too flat for that (the Starter's ladder prices
+5.5 / 5.6 / 6.3), so before rounding a ladder too flat for the step is spread
+around its average: the closest damages (least squares) that keep the step,
+never below the minimum damage. The multiplier is then solved again so the
+stepped board still averages the target, and only roundings that keep the
+step are played. Rounding drift is measured against the stepped board.
+`board_balance.py` has no step; the Go parity test runs without it.
+
 **Riders.** A slot's priced value is damage plus its rider at the exchange
 rates: today Protect 1 and energy 0.2, replaced by measured rates from A4.
 Damage = value − rider, with a floor so no attack deals 0. Riders change play,
@@ -277,6 +288,9 @@ not built.
   (parity: Starter, Lean and Monk multipliers 5.4850, 5.4706 and 7.5231,
   whole damage exact, use shares within 0.0015). `board_price` and
   `board_builder` ops are read-only; a Wide board prices in about 30 ms.
+  Since 2026-10-22 ladders keep the ladder step (above): Lean's Sword ladder
+  went from 5 / 5 / 6 to 4 / 5 / 7, and 4 Sword is used on 24% of turns
+  instead of 5.5%.
 - **Generated abilities (B5).** `Builder.Generate`: IDs from the role cost,
   names from the cost in the die's symbols, full `rules_text`; `board_save`
   re-prices and writes them to the sheet.
@@ -296,29 +310,41 @@ mirror scores about 0.50. It is a pre-existing asymmetry of the greedy lab
 plus Guard+, plays an equal board level (0.505), so it is the fair Starter
 reference here.
 
-**Findings.**
+**Findings** (re-run 2026-10-22 with the ladder step; the controls use the
+Starter's authored board, so they are from the 2026-10-21 run).
 
-- Against the Adventurer, 18 of the 23 default boards are inside 0.45–0.55.
-  Families: {3,2,1} 0.500, {2,2,1,1} 0.508, {3,1,1,1} 0.464 (slightly weak;
-  all three Grove templates are at or below 0.477). Outside: Standard on the
-  Hearth Die (0.407) and on the Loom Die (0.425) are weak; Double Ladder on
-  the Hearth Die (0.588), Ladder Pair on the Forge Die (0.570) and Combo on
-  the standard die (0.552) are strong.
-- Every default board beats every minion (0.83–0.94).
-- Random boards (random flex costs and riders on every slot that takes one)
-  average 0.396 against the Adventurer, below the defaults (no riders).
-  Every rider lowers the score a little per slot; energy the most (+5
-  energy −0.05, +10 energy −0.04), then Heal 2 and Draw 1 (about −0.03),
-  Protect least (+1 Protect about 0). At these rates riders are slightly
-  overpriced for the greedy player, whose own values (Protect 0.5 per stack,
-  energy 0.1 per point, `lookahead` `TierValue`) are below the pricing rates.
+- The step makes the ladder worth chasing: on Lean, 4 Sword is used on 24%
+  of turns (5.5% before). Boards without a stepped ladder (Combo, Two Mains,
+  Spellbook, Standard on the 2-2-1-1 dice) price as before and score exactly
+  as before.
+- Against the Adventurer, 13 of the 23 default boards are inside 0.45–0.55
+  (18 before). Families: {3,2,1} 0.553, {2,2,1,1} 0.519, {3,1,1,1} 0.469.
+  Every standard-die ladder board is inside (0.480–0.517). Outside: every
+  Hearth Die ladder board is strong (Lean 0.618, Standard 0.605, Compact
+  0.605, Wide 0.645, Double Ladder 0.625), Ladder Pair is strong on both
+  dice (Forge 0.573, Loom 0.618), Combo on the standard die stays strong
+  (0.552), and Suits (0.445) and Standard on the Loom Die (0.425) are weak.
+- The Hearth Die and the standard die are one family, so pricing gives their
+  boards the same damage; the gap comes from outside the pricing. A likely
+  cause, not yet tested: the deck's two Nudge cards (±1, results 1–5) turn
+  2 and 6 into Cinder on the Hearth Die but only 4 into Sword on the
+  standard die, and with the step a fifth Cinder deals 7 instead of 6.
+- Against the Starter (raw, see the controls) 6 boards now reach the band,
+  all Hearth Die ladders and Ladder Pair on the Loom Die.
+- Every default board beats every minion (0.825–0.935).
+- Random boards average 0.414 against the Adventurer (0.396 before) and
+  0.296 against the Starter. Every rider still lowers the score a little per
+  slot, energy the most (+5 energy −0.06 to −0.07), Protect and Heal 1 least;
+  at these rates riders are slightly overpriced for the greedy player, whose
+  own values (Protect 0.5 per stack, energy 0.1 per point, `lookahead`
+  `TierValue`) are below the pricing rates.
 - The rider sweep finds no rider that is always best or always worst. "No
-  rider" is best on 6 of 13 templates against either reference; the energy
-  riders are the most frequent worst (7 of 13 against the Starter, 5 against
-  the Adventurer).
+  rider" is best on 6 of 13 templates against either reference; +10 energy
+  is the most frequent worst (5 of 13 against the Starter, 7 against the
+  Adventurer).
 - Following the plan, nothing was tuned by hand. Candidates once A4's
-  measured rates land: a lower energy rate, and a small target raise for the
-  {3,1,1,1} family.
+  measured rates land: a lower energy rate, a small target raise for the
+  {3,1,1,1} family, and a look at the Hearth Die with dice-changing cards.
 
 `go run ./cmd/board-lab` · greedy hero (look-ahead's `GreedyPolicy`) · the Starter and the Adventurer as greedy players, minions by their own scripts · unified defense · paired seeds (each seed from both seats).
 
@@ -337,103 +363,103 @@ Score = (wins + ½ draws) / battles for the custom adventurer. Starter mirror ba
 
 | Template | Die | Avg / turn | No hit | Starter | Adventurer | Bell Diver | Brine Mask | Ribbon Eel | Starter band | Adventurer band |
 |---|---|---|---|---|---|---|---|---|---|---|
-| Lean | Standard D6 3-2-1 | 6.14 | 1.3% | 0.390 | 0.537 | 0.870 | 0.890 | 0.865 | **out** | in |
-| Lean | Hearth 2-3-1 | 6.16 | 1.4% | 0.398 | 0.490 | 0.855 | 0.870 | 0.877 | **out** | in |
-| Standard | Standard D6 3-2-1 | 6.16 | 1.3% | 0.357 | 0.475 | 0.855 | 0.877 | 0.855 | **out** | in |
-| Standard | Hearth 2-3-1 | 6.23 | 1.7% | 0.315 | 0.407 | 0.865 | 0.848 | 0.833 | **out** | **out** |
-| Compact | Standard D6 3-2-1 | 6.16 | 1.3% | 0.360 | 0.485 | 0.875 | 0.865 | 0.858 | **out** | in |
-| Compact | Hearth 2-3-1 | 6.23 | 1.7% | 0.372 | 0.480 | 0.885 | 0.890 | 0.845 | **out** | in |
-| Wide | Standard D6 3-2-1 | 6.19 | 1.3% | 0.367 | 0.515 | 0.870 | 0.905 | 0.877 | **out** | in |
-| Wide | Hearth 2-3-1 | 6.24 | 1.1% | 0.352 | 0.482 | 0.890 | 0.873 | 0.880 | **out** | in |
-| Double Ladder | Standard D6 3-2-1 | 6.25 | 0.9% | 0.270 | 0.455 | 0.840 | 0.873 | 0.835 | **out** | in |
-| Double Ladder | Hearth 2-3-1 | 6.25 | 1.0% | 0.440 | 0.588 | 0.902 | 0.882 | 0.868 | **out** | **out** |
+| Lean | Standard D6 3-2-1 | 6.10 | 0.6% | 0.372 | 0.480 | 0.860 | 0.880 | 0.877 | **out** | in |
+| Lean | Hearth 2-3-1 | 6.23 | 0.9% | 0.455 | 0.618 | 0.885 | 0.917 | 0.850 | in | **out** |
+| Standard | Standard D6 3-2-1 | 6.23 | 0.8% | 0.393 | 0.485 | 0.868 | 0.870 | 0.868 | **out** | in |
+| Standard | Hearth 2-3-1 | 6.23 | 0.9% | 0.480 | 0.605 | 0.890 | 0.895 | 0.865 | in | **out** |
+| Compact | Standard D6 3-2-1 | 6.23 | 0.8% | 0.393 | 0.485 | 0.868 | 0.870 | 0.868 | **out** | in |
+| Compact | Hearth 2-3-1 | 6.23 | 0.9% | 0.480 | 0.605 | 0.890 | 0.895 | 0.865 | in | **out** |
+| Wide | Standard D6 3-2-1 | 6.23 | 0.9% | 0.398 | 0.485 | 0.860 | 0.875 | 0.863 | **out** | in |
+| Wide | Hearth 2-3-1 | 6.25 | 0.9% | 0.497 | 0.645 | 0.907 | 0.910 | 0.882 | in | **out** |
+| Double Ladder | Standard D6 3-2-1 | 6.32 | 0.5% | 0.440 | 0.517 | 0.892 | 0.865 | 0.895 | **out** | in |
+| Double Ladder | Hearth 2-3-1 | 6.32 | 0.5% | 0.510 | 0.625 | 0.885 | 0.910 | 0.875 | in | **out** |
 | Combo | Standard D6 3-2-1 | 6.31 | 5.6% | 0.445 | 0.552 | 0.890 | 0.902 | 0.873 | **out** | **out** |
 | Combo | Hearth 2-3-1 | 6.23 | 5.1% | 0.398 | 0.530 | 0.887 | 0.895 | 0.843 | **out** | in |
-| Rainbow | Grove 3-1-1-1 | 6.27 | 0.8% | 0.345 | 0.477 | 0.860 | 0.897 | 0.843 | **out** | in |
-| Wide Rainbow | Grove 3-1-1-1 | 6.17 | 0.7% | 0.340 | 0.458 | 0.830 | 0.835 | 0.840 | **out** | in |
-| Suits | Grove 3-1-1-1 | 6.29 | 0.5% | 0.292 | 0.458 | 0.868 | 0.882 | 0.833 | **out** | in |
+| Rainbow | Grove 3-1-1-1 | 6.21 | 0.3% | 0.352 | 0.477 | 0.853 | 0.868 | 0.860 | **out** | in |
+| Wide Rainbow | Grove 3-1-1-1 | 6.32 | 0.5% | 0.370 | 0.485 | 0.877 | 0.870 | 0.877 | **out** | in |
+| Suits | Grove 3-1-1-1 | 6.23 | 0.2% | 0.365 | 0.445 | 0.853 | 0.863 | 0.887 | **out** | **out** |
 | Standard | Forge 2-2-1-1 | 6.29 | 1.4% | 0.398 | 0.542 | 0.935 | 0.848 | 0.860 | **out** | in |
 | Standard | Loom 2-1-2-1 | 6.08 | 1.8% | 0.280 | 0.425 | 0.845 | 0.870 | 0.853 | **out** | **out** |
 | Two Mains | Forge 2-2-1-1 | 6.22 | 6.5% | 0.415 | 0.495 | 0.895 | 0.870 | 0.850 | **out** | in |
 | Two Mains | Loom 2-1-2-1 | 6.08 | 5.4% | 0.357 | 0.458 | 0.848 | 0.845 | 0.825 | **out** | in |
 | Spellbook | Forge 2-2-1-1 | 6.17 | 6.1% | 0.320 | 0.510 | 0.848 | 0.858 | 0.835 | **out** | in |
 | Spellbook | Loom 2-1-2-1 | 6.31 | 7.0% | 0.412 | 0.532 | 0.895 | 0.887 | 0.873 | **out** | in |
-| Ladder Pair | Forge 2-2-1-1 | 6.26 | 0.6% | 0.395 | 0.570 | 0.875 | 0.885 | 0.863 | **out** | **out** |
-| Ladder Pair | Loom 2-1-2-1 | 6.26 | 0.5% | 0.378 | 0.532 | 0.895 | 0.885 | 0.865 | **out** | in |
+| Ladder Pair | Forge 2-2-1-1 | 6.31 | 0.3% | 0.415 | 0.573 | 0.877 | 0.887 | 0.907 | **out** | **out** |
+| Ladder Pair | Loom 2-1-2-1 | 6.31 | 0.2% | 0.465 | 0.618 | 0.868 | 0.892 | 0.890 | in | **out** |
 
-- Against the Starter, 23 of the default boards are outside the band: Lean on the Standard D6 (0.390); Lean on the Hearth Die (0.398); Standard on the Standard D6 (0.357); Standard on the Hearth Die (0.315); Compact on the Standard D6 (0.360); Compact on the Hearth Die (0.372); Wide on the Standard D6 (0.367); Wide on the Hearth Die (0.352); Double Ladder on the Standard D6 (0.270); Double Ladder on the Hearth Die (0.440); Combo on the Standard D6 (0.445); Combo on the Hearth Die (0.398); Rainbow on the Grove Die (0.345); Wide Rainbow on the Grove Die (0.340); Suits on the Grove Die (0.292); Standard on the Forge Die (0.398); Standard on the Loom Die (0.280); Two Mains on the Forge Die (0.415); Two Mains on the Loom Die (0.357); Spellbook on the Forge Die (0.320); Spellbook on the Loom Die (0.412); Ladder Pair on the Forge Die (0.395); Ladder Pair on the Loom Die (0.378). Mean by family: {2211} 0.369; {3111} 0.326; {321} 0.372;
-- Against the Adventurer, 5 of the default boards are outside the band: Standard on the Hearth Die (0.407); Double Ladder on the Hearth Die (0.588); Combo on the Standard D6 (0.552); Standard on the Loom Die (0.425); Ladder Pair on the Forge Die (0.570). Mean by family: {2211} 0.508; {3111} 0.464; {321} 0.500;
+- Against the Starter, 17 of the default boards are outside the band: Lean on the Standard D6 (0.372); Standard on the Standard D6 (0.393); Compact on the Standard D6 (0.393); Wide on the Standard D6 (0.398); Double Ladder on the Standard D6 (0.440); Combo on the Standard D6 (0.445); Combo on the Hearth Die (0.398); Rainbow on the Grove Die (0.352); Wide Rainbow on the Grove Die (0.370); Suits on the Grove Die (0.365); Standard on the Forge Die (0.398); Standard on the Loom Die (0.280); Two Mains on the Forge Die (0.415); Two Mains on the Loom Die (0.357); Spellbook on the Forge Die (0.320); Spellbook on the Loom Die (0.412); Ladder Pair on the Forge Die (0.415). Mean by family: {2211} 0.383; {3111} 0.362; {321} 0.438;
+- Against the Adventurer, 10 of the default boards are outside the band: Lean on the Hearth Die (0.618); Standard on the Hearth Die (0.605); Compact on the Hearth Die (0.605); Wide on the Hearth Die (0.645); Double Ladder on the Hearth Die (0.625); Combo on the Standard D6 (0.552); Suits on the Grove Die (0.445); Standard on the Loom Die (0.425); Ladder Pair on the Forge Die (0.573); Ladder Pair on the Loom Die (0.618). Mean by family: {2211} 0.519; {3111} 0.469; {321} 0.553;
 
 **300 random boards** (`RandomBoard`, seed 7, 40 battles each; a single board's 95% interval is about ±0.15, so the spread includes noise):
 
 | Opponent | Mean | Median | 10th–90th percentile | Inside the band |
 |---|---|---|---|---|
-| Starter | 0.283 | 0.275 | 0.163–0.412 | 13 of 300 |
-| Adventurer | 0.396 | 0.400 | 0.250–0.537 | 83 of 300 |
+| Starter | 0.296 | 0.287 | 0.163–0.425 | 23 of 300 |
+| Adventurer | 0.414 | 0.400 | 0.263–0.575 | 76 of 300 |
 
 Rider effect on the score against the Starter across the random boards (least squares on how many slots carry each rider; "No rider" is the baseline):
 
 | Rider | Slots carrying it | Effect per slot | ±95% |
 |---|---|---|---|
-| +1 Protect | 275 | -0.002 | 0.013 |
-| +2 Protect | 280 | -0.017 | 0.013 |
-| +5 energy | 363 | -0.045 | 0.012 |
-| +10 energy | 193 | -0.030 | 0.015 |
-| Draw 1 | 292 | -0.024 | 0.013 |
-| Heal 1 | 288 | -0.010 | 0.012 |
-| Heal 2 | 182 | -0.035 | 0.015 |
+| +1 Protect | 275 | -0.014 | 0.014 |
+| +2 Protect | 280 | -0.025 | 0.014 |
+| +5 energy | 363 | -0.060 | 0.013 |
+| +10 energy | 193 | -0.033 | 0.016 |
+| Draw 1 | 292 | -0.033 | 0.014 |
+| Heal 1 | 288 | -0.019 | 0.013 |
+| Heal 2 | 182 | -0.030 | 0.016 |
 
 Rider effect on the score against the Adventurer across the random boards (least squares on how many slots carry each rider; "No rider" is the baseline):
 
 | Rider | Slots carrying it | Effect per slot | ±95% |
 |---|---|---|---|
-| +1 Protect | 275 | -0.001 | 0.015 |
-| +2 Protect | 280 | -0.015 | 0.015 |
-| +5 energy | 363 | -0.051 | 0.014 |
-| +10 energy | 193 | -0.042 | 0.017 |
-| Draw 1 | 292 | -0.027 | 0.015 |
-| Heal 1 | 288 | -0.010 | 0.014 |
-| Heal 2 | 182 | -0.033 | 0.018 |
+| +1 Protect | 275 | -0.019 | 0.016 |
+| +2 Protect | 280 | -0.028 | 0.016 |
+| +5 energy | 363 | -0.069 | 0.015 |
+| +10 energy | 193 | -0.045 | 0.018 |
+| Draw 1 | 292 | -0.041 | 0.016 |
+| Heal 1 | 288 | -0.024 | 0.015 |
+| Heal 2 | 182 | -0.039 | 0.019 |
 
 **Rider sweep against the Starter** (each template's first flex slot, on the first die of its family, with every rider; 200 battles each):
 
 | Template | Slot | No rider | +1 Protect | +2 Protect | +5 energy | +10 energy | Draw 1 | Heal 1 | Heal 2 | Best | Worst |
 |---|---|---|---|---|---|---|---|---|---|---|---|
 | Combo | flex_easy | 0.445 | 0.412 | 0.432 | 0.388 | 0.385 | 0.417 | 0.422 | 0.440 | No rider | +10 energy |
-| Compact | flex_easy | 0.360 | 0.375 | 0.375 | 0.357 | 0.357 | 0.360 | 0.365 | 0.375 | +1 Protect | +5 energy |
-| Double Ladder | flex_medium | 0.270 | 0.328 | 0.335 | 0.318 | 0.315 | 0.323 | 0.335 | 0.305 | +2 Protect | No rider |
-| Ladder Pair | flex_medium | 0.395 | 0.395 | 0.388 | 0.388 | 0.385 | 0.390 | 0.390 | 0.388 | No rider | +10 energy |
-| Lean | flex_a | 0.390 | 0.400 | 0.403 | 0.385 | 0.388 | 0.403 | 0.398 | 0.383 | +2 Protect | Heal 2 |
+| Compact | flex_easy | 0.393 | 0.403 | 0.395 | 0.403 | 0.395 | 0.400 | 0.400 | 0.400 | +1 Protect | No rider |
+| Double Ladder | flex_medium | 0.440 | 0.438 | 0.440 | 0.438 | 0.432 | 0.440 | 0.453 | 0.448 | Heal 1 | +10 energy |
+| Ladder Pair | flex_medium | 0.415 | 0.407 | 0.425 | 0.405 | 0.405 | 0.403 | 0.412 | 0.410 | +2 Protect | Draw 1 |
+| Lean | flex_a | 0.372 | 0.347 | 0.345 | 0.345 | 0.343 | 0.333 | 0.343 | 0.333 | No rider | Draw 1 |
 | Standard | flex_a | 0.398 | 0.378 | 0.367 | 0.375 | 0.370 | 0.372 | 0.360 | 0.338 | No rider | Heal 2 |
-| Rainbow | flex_a | 0.345 | 0.347 | 0.352 | 0.340 | 0.350 | 0.350 | 0.360 | 0.360 | Heal 1 | +5 energy |
+| Rainbow | flex_a | 0.352 | 0.347 | 0.343 | 0.340 | 0.340 | 0.338 | 0.340 | 0.343 | No rider | Draw 1 |
 | Spellbook | flex_a | 0.320 | 0.318 | 0.310 | 0.310 | 0.307 | 0.312 | 0.312 | 0.300 | No rider | Heal 2 |
-| Standard | flex_easy | 0.357 | 0.357 | 0.362 | 0.350 | 0.352 | 0.350 | 0.355 | 0.367 | Heal 2 | +5 energy |
-| Suits | flex_a | 0.292 | 0.343 | 0.338 | 0.300 | 0.320 | 0.347 | 0.352 | 0.360 | Heal 2 | No rider |
+| Standard | flex_easy | 0.393 | 0.403 | 0.395 | 0.403 | 0.395 | 0.400 | 0.400 | 0.400 | +1 Protect | No rider |
+| Suits | flex_a | 0.365 | 0.367 | 0.347 | 0.370 | 0.345 | 0.357 | 0.352 | 0.355 | +5 energy | +10 energy |
 | Two Mains | flex_hard | 0.415 | 0.388 | 0.393 | 0.372 | 0.357 | 0.370 | 0.375 | 0.385 | No rider | +10 energy |
-| Wide | flex_a | 0.367 | 0.357 | 0.352 | 0.350 | 0.350 | 0.350 | 0.352 | 0.360 | No rider | +5 energy |
-| Wide Rainbow | flex_a | 0.340 | 0.360 | 0.383 | 0.347 | 0.362 | 0.352 | 0.362 | 0.372 | +2 Protect | No rider |
+| Wide | flex_a | 0.398 | 0.398 | 0.395 | 0.398 | 0.395 | 0.400 | 0.400 | 0.400 | Draw 1 | +2 Protect |
+| Wide Rainbow | flex_a | 0.370 | 0.375 | 0.378 | 0.375 | 0.365 | 0.370 | 0.380 | 0.372 | Heal 1 | +10 energy |
 
-No rider is best or worst on every template. Best on: Heal 1 1; Heal 2 2; No rider 6; +1 Protect 1; +2 Protect 3; worst on: +10 energy 3; +5 energy 4; Heal 2 3; No rider 3; (of 13 templates). A score's 95% interval is about ±0.07.
+No rider is best or worst on every template. Best on: Draw 1 1; +5 energy 1; Heal 1 2; No rider 6; +1 Protect 2; +2 Protect 1; worst on: Draw 1 3; +10 energy 5; Heal 2 2; No rider 2; +2 Protect 1; (of 13 templates). A score's 95% interval is about ±0.07.
 
 **Rider sweep against the Adventurer** (each template's first flex slot, on the first die of its family, with every rider; 200 battles each):
 
 | Template | Slot | No rider | +1 Protect | +2 Protect | +5 energy | +10 energy | Draw 1 | Heal 1 | Heal 2 | Best | Worst |
 |---|---|---|---|---|---|---|---|---|---|---|---|
 | Combo | flex_easy | 0.552 | 0.573 | 0.580 | 0.555 | 0.520 | 0.562 | 0.573 | 0.595 | Heal 2 | +10 energy |
-| Compact | flex_easy | 0.485 | 0.455 | 0.465 | 0.438 | 0.458 | 0.445 | 0.448 | 0.458 | No rider | +5 energy |
-| Double Ladder | flex_medium | 0.455 | 0.477 | 0.475 | 0.480 | 0.470 | 0.480 | 0.495 | 0.455 | Heal 1 | No rider |
-| Ladder Pair | flex_medium | 0.570 | 0.575 | 0.580 | 0.580 | 0.578 | 0.573 | 0.583 | 0.583 | Heal 1 | No rider |
-| Lean | flex_a | 0.537 | 0.547 | 0.515 | 0.532 | 0.507 | 0.525 | 0.535 | 0.525 | +1 Protect | +10 energy |
+| Compact | flex_easy | 0.485 | 0.487 | 0.480 | 0.487 | 0.480 | 0.485 | 0.485 | 0.485 | +1 Protect | +2 Protect |
+| Double Ladder | flex_medium | 0.517 | 0.522 | 0.517 | 0.517 | 0.510 | 0.512 | 0.520 | 0.522 | +1 Protect | +10 energy |
+| Ladder Pair | flex_medium | 0.573 | 0.573 | 0.585 | 0.565 | 0.555 | 0.557 | 0.575 | 0.570 | +2 Protect | +10 energy |
+| Lean | flex_a | 0.480 | 0.472 | 0.468 | 0.460 | 0.458 | 0.455 | 0.463 | 0.460 | No rider | Draw 1 |
 | Standard | flex_a | 0.542 | 0.522 | 0.507 | 0.520 | 0.502 | 0.497 | 0.495 | 0.477 | No rider | Heal 2 |
-| Rainbow | flex_a | 0.477 | 0.480 | 0.500 | 0.480 | 0.490 | 0.495 | 0.495 | 0.490 | +2 Protect | No rider |
+| Rainbow | flex_a | 0.477 | 0.468 | 0.468 | 0.458 | 0.472 | 0.463 | 0.475 | 0.470 | No rider | +5 energy |
 | Spellbook | flex_a | 0.510 | 0.492 | 0.468 | 0.482 | 0.463 | 0.475 | 0.485 | 0.480 | No rider | +10 energy |
-| Standard | flex_easy | 0.475 | 0.455 | 0.463 | 0.453 | 0.453 | 0.450 | 0.455 | 0.458 | No rider | Draw 1 |
-| Suits | flex_a | 0.458 | 0.520 | 0.485 | 0.475 | 0.463 | 0.492 | 0.505 | 0.465 | +1 Protect | No rider |
+| Standard | flex_easy | 0.485 | 0.487 | 0.480 | 0.487 | 0.480 | 0.485 | 0.485 | 0.485 | +1 Protect | +2 Protect |
+| Suits | flex_a | 0.445 | 0.438 | 0.425 | 0.445 | 0.422 | 0.432 | 0.422 | 0.427 | No rider | +10 energy |
 | Two Mains | flex_hard | 0.495 | 0.465 | 0.443 | 0.438 | 0.430 | 0.432 | 0.438 | 0.463 | No rider | +10 energy |
-| Wide | flex_a | 0.515 | 0.470 | 0.482 | 0.470 | 0.485 | 0.485 | 0.482 | 0.487 | No rider | +1 Protect |
-| Wide Rainbow | flex_a | 0.458 | 0.468 | 0.482 | 0.482 | 0.482 | 0.482 | 0.477 | 0.492 | Heal 2 | No rider |
+| Wide | flex_a | 0.485 | 0.485 | 0.480 | 0.485 | 0.480 | 0.485 | 0.485 | 0.490 | Heal 2 | +2 Protect |
+| Wide Rainbow | flex_a | 0.485 | 0.477 | 0.490 | 0.477 | 0.475 | 0.477 | 0.485 | 0.477 | +2 Protect | +10 energy |
 
-No rider is best or worst on every template. Best on: Heal 1 2; Heal 2 2; No rider 6; +1 Protect 2; +2 Protect 1; worst on: Draw 1 1; +10 energy 4; +5 energy 1; Heal 2 1; No rider 5; +1 Protect 1; (of 13 templates). A score's 95% interval is about ±0.07.
+No rider is best or worst on every template. Best on: Heal 2 2; No rider 6; +1 Protect 3; +2 Protect 2; worst on: Draw 1 1; +10 energy 7; +5 energy 1; Heal 2 1; +2 Protect 3; (of 13 templates). A score's 95% interval is about ±0.07.
 
 ## Links to the AI plan
 

@@ -39,6 +39,9 @@ type PricingConfig struct {
 	Dice          int     `yaml:"dice" json:"dice"`
 	Tolerance     float64 `yaml:"tolerance" json:"tolerance"`
 	MinimumDamage int     `yaml:"minimum_damage" json:"minimum_damage"`
+	// LadderStep is how much more damage each harder tier of one ability
+	// deals than the tier below it.
+	LadderStep int `yaml:"ladder_step" json:"ladder_step"`
 }
 
 // Band is a difficulty band of chase odds: Min inclusive, Max exclusive.
@@ -175,7 +178,7 @@ func decodeStrict(path string, v any) error {
 
 func (m Menus) validate(lib content.BattleLibrary) error {
 	p := m.Pricing
-	if p.Target <= 0 || p.Target > 100 || p.Alpha < 0 || p.Alpha > 2 || p.Rolls < 1 || p.Rolls > 5 || p.Dice != content.LoadoutDiceCount || p.Tolerance <= 0 || p.Tolerance >= 1 || p.MinimumDamage < 1 {
+	if p.Target <= 0 || p.Target > 100 || p.Alpha < 0 || p.Alpha > 2 || p.Rolls < 1 || p.Rolls > 5 || p.Dice != content.LoadoutDiceCount || p.Tolerance <= 0 || p.Tolerance >= 1 || p.MinimumDamage < 1 || p.LadderStep < 0 || p.LadderStep > 10 {
 		return fmt.Errorf("board pricing values are out of range")
 	}
 	for id, band := range m.Bands {

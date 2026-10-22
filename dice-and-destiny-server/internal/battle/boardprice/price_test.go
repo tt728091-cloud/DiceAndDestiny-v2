@@ -76,12 +76,14 @@ func testDie(t testing.TB, id string) Die {
 func near(a, b, tolerance float64) bool { return math.Abs(a-b) <= tolerance }
 
 // The Go port reproduces board_balance.py: use shares and the multiplier to
-// ±0.01, whole damage exactly.
+// ±0.01, whole damage exactly. The script has no ladder step, so parity runs
+// without one.
 func TestPriceMatchesPythonReference(t *testing.T) {
 	m := testMenus(t)
 	for name, want := range parityBoards {
 		opts := m.Options()
 		opts.Target = want.target
+		opts.LadderStep = 0
 		report, err := Price(testDie(t, want.die), costBoard(t, want.costs), opts)
 		if err != nil {
 			t.Fatalf("%s: %v", name, err)

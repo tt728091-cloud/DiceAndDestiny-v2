@@ -338,7 +338,7 @@ func _render_preview() -> void:
 	var target := float(menus.get("pricing", {}).get("target", 0))
 	STYLE.stat(_stats, "%.2f" % float(report.get("whole_average", 0)), "avg damage / turn · target %.1f" % target, STYLE.GOLD_BRIGHT)
 	STYLE.stat(_stats, "%.1f%%" % (float(report.get("whole_no_hit", 0)) * 100.0), "no hit", STYLE.LOSS)
-	STYLE.stat(_stats, "×%.2f" % float(report.get("multiplier", 0)), "a sure hit is worth", STYLE.IVORY)
+	STYLE.stat(_stats, "×%.2f" % float(report.get("damage_multiplier", 0)), "a sure hit is worth", STYLE.IVORY)
 	_clear(_abilities)
 	var abilities: Array = priced.get("abilities", [])
 	for i in abilities.size():

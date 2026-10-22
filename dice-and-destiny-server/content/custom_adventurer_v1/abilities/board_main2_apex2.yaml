@@ -8,7 +8,7 @@
   "name": "Sword ×2 + Gold Coin ×2",
   "type": "offensive",
   "presentation": {
-    "rules_text": "2 Sword + 2 Gold Coin: deal 6 damage. Sword is on faces 1–3; Gold Coin is on face 6. The fifth die may be anything. Misses without the required symbols.",
+    "rules_text": "2 Sword + 2 Gold Coin: deal 5 damage. Sword is on faces 1–3; Gold Coin is on face 6. The fifth die may be anything. Misses without the required symbols.",
     "art_key": ""
   },
   "cost": {
@@ -44,7 +44,7 @@
           {
             "type": "deal_damage",
             "target": "selected_targets",
-            "amount": 6
+            "amount": 5
           }
         ]
       }

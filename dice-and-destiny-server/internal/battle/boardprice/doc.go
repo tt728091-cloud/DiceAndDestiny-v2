@@ -26,8 +26,15 @@
 //     sharing) for each tier's use share; the multiplier is target ÷
 //     Σ(use × relative) and each tier's value is relative × multiplier;
 //  4. damage is value − rider (riders at the exchange rates), never below the
-//     minimum, rounded by playing every monotone floor/ceiling rounding and
-//     keeping the one within 2% of the target whose use shares drift least.
+//     minimum;
+//  5. every harder tier of one ability deals at least the ladder step (1)
+//     more than the tier below it: a ladder too flat for that is spread
+//     around its average and the multiplier solved again so the board still
+//     averages the target (the reference script has no step; parity runs
+//     without it);
+//  6. rounded by playing every monotone floor/ceiling rounding that keeps
+//     the steps and keeping the one within 2% of the target whose use
+//     shares drift least.
 //
 // Qualification is the engine's own (engine.QualifiedAbilityTier). Reports
 // are cached by board key.
@@ -37,8 +44,9 @@
 //   - Price(die, board, options) (Report, error): Options carry the target,
 //     alpha and rates (Menus.Options gives the agreed ones). The Report gives
 //     per tier: chase, relative, use (exact and whole), value, rider value,
-//     damage and whole damage; and Σ, the multiplier, the averages and the
-//     no-hit rates, plus the keep policy after rolls 1 and 2.
+//     damage and whole damage; and Σ, the multiplier (and the stepped
+//     board's damage multiplier), the averages and the no-hit rates, plus
+//     the keep policy after rolls 1 and 2.
 //   - Builder.RandomBoard(rng, family) returns a seeded random Choice: a die,
 //     a template and slot picks (cost and rider) plus defenses.
 //     Builder.Generate turns a priced choice into content ability
