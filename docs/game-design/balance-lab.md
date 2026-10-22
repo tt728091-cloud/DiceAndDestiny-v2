@@ -159,6 +159,34 @@ With the fresh-futures check, the look-ahead overrides on about 1.3% of decision
 - **Most decisions are close.** For a typical decision, sensible options differ by under 4 points of win chance.
 - **The overrides point at heuristic gaps:** Take Stock, Guarded Strike over Small Straight, and Try Again instead of a normal reroll.
 
+### Character names no longer change play (fixed 2026-10-22)
+
+The players misplayed Nudge and Try Again for any character whose display name sorts before "Play":
+
+- **Why:** the authority sorts legal commands by their text, and a dice card lists a plain start ("Play Nudge") beside one start per die ("Adventurer · die 1: 2 → 1"). The greedy player valued every start of the card at its best use and took the first listed. For the Adventurer that was die 1, whatever it showed.
+- **Who it hit:** the Adventurer, and the Board Builder's custom adventurer. Curse and Blade Warden were unaffected: their decks hold no die-targeting cards.
+- **The fix:**
+  - `Useful` drops a die-naming start when the card also has a plain start. The plain start then picks the die by the solver, as it always did for the Starter.
+  - A die-naming start without a plain start is valued by its own die.
+  - The search scores die-naming starts with their own card.
+- **Test:** `TestRenamingAHeroChangesNoBattle` checks that a copy of the Starter named "Aardvark" plays every battle exactly as the Starter does.
+
+Greedy, seeds 1–1,000 from both seats:
+
+| Hero | vs Drowned Regent (before → after) | vs Brine Mask (before → after) | vs Starter, opponent greedy (before → after) |
+|---|---|---|---|
+| Starter | 0.501 → 0.501 | 0.922 → 0.922 | 0.495 → 0.495 |
+| Adventurer | 0.390 → **0.501** | 0.869 → **0.922** | 0.370 → **0.495** |
+
+The Starter's battles are unchanged, battle for battle. The greedy Adventurer now plays them exactly like the Starter: it never picks its one extra option, Guard+.
+
+The look-ahead (`-budget 48`) was checked on seeds 1–30 from both seats against the Starter with the greedy player:
+- The Starter's battles are unchanged.
+- A copy of the Starter named "Aardvark" scored 0.342 before the fix. It now plays every battle exactly like the Starter (0.500).
+- The Adventurer went from 0.325 to 0.508. It differs from the Starter in 4 of the 60 battles because the look-ahead also searches Guard+.
+
+Earlier lab numbers for the Adventurer came from this bug, including the board lab's finding that every hero scores about 0.36 against the Starter.
+
 ## Card balance (Starter pool, 2026-10-15)
 
 `cmd/card-balance` adds one copy of a card to the Starter's 12-card deck and plays 3,000 seeds against each opponent:

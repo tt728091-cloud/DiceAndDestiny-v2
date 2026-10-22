@@ -427,7 +427,7 @@ func (s *SearchPolicy) candidates(d *Decision, options []int, anchor int) ([]int
 			}
 		case plan != nil && CardChoice(action).Kind == "offensive_die":
 			choice := CardChoice(action)
-			dice = append(dice, scored{i, dieChoiceValue(plan, executingCard(d.Battle, d.Seat), choice)})
+			dice = append(dice, scored{i, dieChoiceValue(plan, choiceCard(d.Battle, d.Seat, action), choice)})
 			continue
 		}
 		out = append(out, i)
