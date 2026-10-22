@@ -886,7 +886,7 @@ func validateTier(tier AbilityTier, lib BattleLibrary) error {
 	return validateBattleOperations(tier.Operations, lib)
 }
 func validateBattleOperations(ops []BattleOperation, lib BattleLibrary) error {
-	supported := map[string]bool{"special_effect": true, "general_card": true, "curse_card": true, "curse_action": true, "provoke": true, "apply_incubation": true, "incubation_or_poison": true, "venom_card": true, "reroll_die": true, "noop": true, "deal_damage": true, "prevent_damage": true, "scale_damage": true, "apply_status": true, "remove_status": true, "remove_status_stack": true, "gain_resource": true, "draw_cards": true, "modify_die": true, "apply_ability_modifier": true, "adjust_max_rolls": true, "cancel_source": true, "roll_dice": true}
+	supported := map[string]bool{"special_effect": true, "general_card": true, "curse_card": true, "curse_action": true, "provoke": true, "apply_incubation": true, "incubation_or_poison": true, "venom_card": true, "reroll_die": true, "noop": true, "deal_damage": true, "prevent_damage": true, "scale_damage": true, "apply_status": true, "remove_status": true, "remove_status_stack": true, "gain_resource": true, "draw_cards": true, "heal_cards": true, "modify_die": true, "apply_ability_modifier": true, "adjust_max_rolls": true, "cancel_source": true, "roll_dice": true}
 	for _, op := range ops {
 		if !supported[op.Type] {
 			return fmt.Errorf("unsupported operation type %q", op.Type)
@@ -929,6 +929,13 @@ func validateBattleOperations(ops []BattleOperation, lib BattleLibrary) error {
 		case "deal_damage", "prevent_damage", "draw_cards":
 			if err := validateOperationAmount(op.Amount, false); err != nil {
 				return fmt.Errorf("%s: %v", op.Type, err)
+			}
+		case "heal_cards":
+			if _, ok := op.Amount.(string); ok || op.Target != "self" {
+				return fmt.Errorf("heal_cards needs a fixed amount and targets self")
+			}
+			if err := validateOperationAmount(op.Amount, false); err != nil {
+				return fmt.Errorf("heal_cards: %v", err)
 			}
 		case "gain_resource":
 			if op.Resource != "energy" {

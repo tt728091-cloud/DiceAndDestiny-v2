@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"strconv"
 
+	"diceanddestiny/server/internal/battle/operation"
 	"diceanddestiny/server/internal/battle/state"
 	"diceanddestiny/server/internal/content"
 )
@@ -42,13 +43,15 @@ type effectResult struct {
 	ImmediateStatusApplications []state.SettledStatusApplication
 	ResourceDeltas              map[string]int
 	DrawCounts                  map[string]int
-	MaxRollDeltas               map[string]int
-	AbilityModifiers            []effectAbilityModifier
-	DieChanges                  []effectDieChange
-	Preventions                 []effectPrevention
-	Scales                      []effectScale
-	CanceledActors              []string
-	Reactable                   bool
+	// HealCounts are removed cards each actor returns to discard.
+	HealCounts       map[string]int
+	MaxRollDeltas    map[string]int
+	AbilityModifiers []effectAbilityModifier
+	DieChanges       []effectDieChange
+	Preventions      []effectPrevention
+	Scales           []effectScale
+	CanceledActors   []string
+	Reactable        bool
 }
 
 type effectAbilityModifier struct {
@@ -88,6 +91,7 @@ func (r *effectResult) merge(other effectResult) {
 	r.ImmediateStatusApplications = append(r.ImmediateStatusApplications, other.ImmediateStatusApplications...)
 	mergeIntMap(&r.ResourceDeltas, other.ResourceDeltas)
 	mergeIntMap(&r.DrawCounts, other.DrawCounts)
+	mergeIntMap(&r.HealCounts, other.HealCounts)
 	mergeIntMap(&r.MaxRollDeltas, other.MaxRollDeltas)
 }
 
@@ -243,6 +247,15 @@ func (e Engine) executeEffect(battle *state.Battle, library content.BattleLibrar
 		result.DrawCounts = map[string]int{}
 		for _, targetID := range targets {
 			result.DrawCounts[targetID] += amount
+		}
+	case "heal_cards":
+		amount, err := operationAmount(op, ctx.RolledFace)
+		if err != nil {
+			return result, err
+		}
+		result.HealCounts = map[string]int{}
+		for _, targetID := range targets {
+			result.HealCounts[targetID] += amount
 		}
 	case "adjust_max_rolls":
 		amount, err := operationAmount(op, ctx.RolledFace)
@@ -412,6 +425,9 @@ func (e Engine) applyEffectMutations(battle *state.Battle, library content.Battl
 			}
 		}
 	}
+	for actorID, count := range result.HealCounts {
+		healRemovedCards(battle, actorID, count)
+	}
 	for actorID, delta := range result.MaxRollDeltas {
 		runtime := battle.Settled.Actors[actorID]
 		runtime.MaxRolls = max(1, runtime.MaxRolls+delta)
@@ -554,4 +570,20 @@ func consolidateEffectDamage(damage []state.SettledDamageSource, applications []
 		}
 	}
 	return result
+}
+
+// healRemovedCards returns up to count of an actor's removed cards to the
+// discard pile, most recently removed first. Each healed card leaves the wound
+// that removed it; with no removed cards the heal does nothing.
+func healRemovedCards(battle *state.Battle, actorID string, count int) {
+	for n := 0; n < count; n++ {
+		actor := battle.Actors[actorID]
+		if len(actor.Cards.Removed) == 0 {
+			return
+		}
+		card := actor.Cards.Removed[len(actor.Cards.Removed)-1]
+		moveCard(&actor.Cards, card, operation.ZoneRemoved, operation.ZoneDiscard)
+		battle.Actors[actorID] = actor
+		battle.HealWoundCard(actorID, card)
+	}
 }

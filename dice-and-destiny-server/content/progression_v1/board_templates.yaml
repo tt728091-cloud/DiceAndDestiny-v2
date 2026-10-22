@@ -1,0 +1,306 @@
+schema_version: 1
+# Board Builder menus: the dice a player may pick, the defenses, the cost menus
+# of each die family and the board templates. The authority prices every board
+# from these (internal/battle/boardprice); see
+# docs/game-design/dice-and-board-selection-plan.md and
+# docs/game-design/dice-throne-reference/ability-layout-analysis.md.
+#
+# Costs are written in roles, so a template works on any symbol order of its
+# family: main (the 3-face symbol, or the first 2-face one), side (the other
+# 2-face symbol), odd (the first 1-face symbol not on face 6), odd_b (the
+# second, 3-1-1-1 dice only) and apex (the 1-face symbol on face 6). "main3"
+# is three main symbols, "main2+side3" both at once, "main3/main4/main5" a
+# ladder (one ability, a tier per cost), and SS / LS the small and large
+# straights ("SS/LS" is both in one ability).
+#
+# unlock: every entry is open in the first pass; later menus will be limited
+# the way gear is, with more choices as the character gains power.
+
+# The pricing method (agreed 2026-10-21; board_balance.py is the reference).
+pricing:
+  target: 6.2        # average damage per turn: the Starter's level
+  alpha: 0.2         # relative payoff = (1 / chase odds) ^ alpha
+  rolls: 3           # roll attempts per offensive turn
+  dice: 5            # dice rolled
+  tolerance: 0.02    # whole damage stays within 2% of the target
+  minimum_damage: 1  # no attack deals 0, whatever its rider
+
+# Difficulty bands by chase odds: min inclusive, max exclusive.
+bands:
+  easy: {name: Easy, min: 0.75, max: 1.01}
+  medium: {name: Medium, min: 0.50, max: 0.75}
+  hard: {name: Hard, min: 0.0, max: 0.50}
+
+# Slot jobs, by what the slot does on the board.
+jobs:
+  ladder: {name: Ladder}
+  side_ladder: {name: Second ladder}
+  full_house: {name: Full house}
+  mirror: {name: Mirror}
+  rainbow: {name: Rainbow}
+  flex: {name: Flex}
+  straight: {name: Straight}
+  apex: {name: Apex}
+  ultimate: {name: Ultimate}
+
+dice:
+  - {id: standard_d6, unlock: open}   # 3-2-1
+  - {id: hearth_d6, unlock: open}     # 2-3-1
+  - {id: grove_d6, unlock: open}      # 3-1-1-1
+  - {id: forge_d6, unlock: open}      # 2-2-1-1
+  - {id: loom_d6, unlock: open}       # 2-1-2-1
+
+# Role-based defenses, each priced to Guard's expected prevention on the
+# standard die (3.5 per roll) on every die.
+defenses:
+  - {ability: holdfast, unlock: open}
+  - {ability: holdfast_plus, unlock: open}
+
+# The costs a flex slot may take, per family. A slot takes those inside its
+# difficulty band(s) on the chosen die.
+families:
+  "321":
+    flex_costs:
+      - {cost: main1+side1+apex1, unlock: open}
+      - {cost: side3, unlock: open}
+      - {cost: main3+apex1, unlock: open}
+      - {cost: main1+side3, unlock: open}
+      - {cost: main1+side2+apex1, unlock: open}
+      - {cost: main3+side2, unlock: open}
+      - {cost: side3+apex1, unlock: open}
+      - {cost: main2+apex2, unlock: open}
+      - {cost: main1+side1+apex2, unlock: open}
+      - {cost: main2+side2+apex1, unlock: open}
+      - {cost: main2+side3, unlock: open}
+      - {cost: side4, unlock: open}
+      - {cost: main4+apex1, unlock: open}
+      - {cost: side2+apex2, unlock: open}
+      - {cost: main2+side1+apex2, unlock: open}
+      - {cost: main3+apex2, unlock: open}
+      - {cost: main1+apex3, unlock: open}
+      - {cost: side3+apex2, unlock: open}
+  "3111":
+    flex_costs:
+      - {cost: main3+odd1, unlock: open}
+      - {cost: main3+odd_b1, unlock: open}
+      - {cost: main3+apex1, unlock: open}
+      - {cost: main2+odd1+apex1, unlock: open}
+      - {cost: main2+odd_b1+apex1, unlock: open}
+      - {cost: odd2, unlock: open}
+      - {cost: odd_b2, unlock: open}
+      - {cost: main1+odd2, unlock: open}
+      - {cost: main1+odd_b2, unlock: open}
+      - {cost: main1+odd1+odd_b1+apex1, unlock: open}
+      - {cost: main2+odd2, unlock: open}
+      - {cost: main2+odd_b2, unlock: open}
+      - {cost: odd2+apex1, unlock: open}
+      - {cost: odd_b2+apex1, unlock: open}
+      - {cost: odd3, unlock: open}
+      - {cost: odd_b3, unlock: open}
+      - {cost: main1+apex3, unlock: open}
+  "2211":
+    flex_costs:
+      - {cost: side3, unlock: open}
+      - {cost: main2+side2, unlock: open}
+      - {cost: odd2, unlock: open}
+      - {cost: main1+side1+odd1+apex1, unlock: open}
+      - {cost: main3+odd1, unlock: open}
+      - {cost: main3+apex1, unlock: open}
+      - {cost: side3+odd1, unlock: open}
+      - {cost: side3+apex1, unlock: open}
+      - {cost: main4, unlock: open}
+      - {cost: side4, unlock: open}
+      - {cost: main2+odd2, unlock: open}
+      - {cost: main2+apex2, unlock: open}
+      - {cost: side2+odd2, unlock: open}
+      - {cost: side2+apex2, unlock: open}
+      - {cost: main2+side2+odd1, unlock: open}
+      - {cost: main2+side2+apex1, unlock: open}
+      - {cost: main3+side2, unlock: open}
+      - {cost: main2+side3, unlock: open}
+      - {cost: odd3, unlock: open}
+      - {cost: apex3, unlock: open}
+
+# Templates per family. Core slots are fixed apart from their rider (rider:
+# true lets the player pick one); flex slots take any cost of their family
+# menu inside their band(s). cost is the default pick. defenses is how many
+# defenses the board carries.
+templates:
+  # {3,2,1}: 3-2-1 and 2-3-1 dice
+  - id: lean
+    name: Lean
+    family: "321"
+    defenses: 1
+    unlock: open
+    slots:
+      - {id: ladder, job: ladder, cost: main3/main4/main5, rider: true}
+      - {id: flex_a, job: flex, bands: [medium], cost: main2+side3}
+      - {id: flex_b, job: flex, bands: [medium], cost: main2+apex2}
+      - {id: small_straight, job: straight, cost: SS, rider: true}
+      - {id: large_straight, job: straight, cost: LS, rider: true}
+      - {id: apex, job: apex, cost: apex4, rider: true}
+      - {id: ultimate, job: ultimate, cost: apex5, rider: true}
+  - id: standard
+    name: Standard
+    family: "321"
+    defenses: 1
+    unlock: open
+    slots:
+      - {id: ladder, job: ladder, cost: main3/main4/main5, rider: true}
+      - {id: flex_easy, job: flex, bands: [easy], cost: main1+side3}
+      - {id: flex_medium, job: flex, bands: [medium], cost: main2+apex2}
+      - {id: flex_hard, job: flex, bands: [hard], cost: main3+apex2}
+      - {id: small_straight, job: straight, cost: SS, rider: true}
+      - {id: large_straight, job: straight, cost: LS, rider: true}
+      - {id: apex, job: apex, cost: apex4, rider: true}
+      - {id: ultimate, job: ultimate, cost: apex5, rider: true}
+  - id: compact
+    name: Compact
+    family: "321"
+    defenses: 1
+    unlock: open
+    slots:
+      - {id: ladder, job: ladder, cost: main3/main4/main5, rider: true}
+      - {id: flex_easy, job: flex, bands: [easy], cost: main1+side3}
+      - {id: flex_medium, job: flex, bands: [medium], cost: main2+apex2}
+      - {id: flex_hard, job: flex, bands: [hard], cost: main3+apex2}
+      - {id: straights, job: straight, cost: SS/LS, rider: true}
+      - {id: apex, job: apex, cost: apex4, rider: true}
+      - {id: ultimate, job: ultimate, cost: apex5, rider: true}
+  - id: wide
+    name: Wide
+    family: "321"
+    defenses: 1
+    unlock: open
+    slots:
+      - {id: ladder, job: ladder, cost: main3/main4/main5, rider: true}
+      - {id: flex_a, job: flex, bands: [easy, medium], cost: side3+apex1}
+      - {id: flex_b, job: flex, bands: [easy, medium], cost: main2+apex2}
+      - {id: flex_c, job: flex, bands: [easy, medium], cost: main2+side3}
+      - {id: flex_hard, job: flex, bands: [hard], cost: main3+apex2}
+      - {id: straights, job: straight, cost: SS/LS, rider: true}
+      - {id: apex, job: apex, cost: apex4, rider: true}
+      - {id: ultimate, job: ultimate, cost: apex5, rider: true}
+  - id: double_ladder
+    name: Double Ladder
+    family: "321"
+    defenses: 1
+    unlock: open
+    slots:
+      - {id: ladder, job: ladder, cost: main3/main4/main5, rider: true}
+      - {id: side_ladder, job: side_ladder, cost: side3/side4/side5, rider: true}
+      - {id: flex_medium, job: flex, bands: [medium], cost: main2+apex2}
+      - {id: flex_hard, job: flex, bands: [hard], cost: main3+apex2}
+      - {id: small_straight, job: straight, cost: SS, rider: true}
+      - {id: large_straight, job: straight, cost: LS, rider: true}
+      - {id: apex, job: apex, cost: apex4, rider: true}
+      - {id: ultimate, job: ultimate, cost: apex5, rider: true}
+  - id: combo
+    name: Combo
+    family: "321"
+    defenses: 1
+    unlock: open
+    slots:
+      - {id: full_house, job: full_house, cost: main3+side2, rider: true}
+      - {id: flex_easy, job: flex, bands: [easy], cost: side3}
+      - {id: flex_medium, job: flex, bands: [medium], cost: main4+apex1}
+      - {id: flex_hard, job: flex, bands: [hard], cost: main1+apex3}
+      - {id: straights, job: straight, cost: SS/LS, rider: true}
+      - {id: apex, job: apex, cost: apex4, rider: true}
+      - {id: ultimate, job: ultimate, cost: apex5, rider: true}
+  # {3,1,1,1}: 3-1-1-1 dice
+  - id: rainbow
+    name: Rainbow
+    family: "3111"
+    defenses: 1
+    unlock: open
+    slots:
+      - {id: ladder, job: ladder, cost: main3/main4/main5, rider: true}
+      - {id: rainbow, job: rainbow, cost: main1+odd1+odd_b1+apex1, rider: true}
+      - {id: flex_a, job: flex, bands: [easy, medium], cost: odd_b2}
+      - {id: flex_b, job: flex, bands: [medium, hard], cost: main2+odd2}
+      - {id: small_straight, job: straight, cost: SS, rider: true}
+      - {id: large_straight, job: straight, cost: LS, rider: true}
+      - {id: apex, job: apex, cost: apex4, rider: true}
+      - {id: ultimate, job: ultimate, cost: apex5, rider: true}
+  - id: wide_rainbow
+    name: Wide Rainbow
+    family: "3111"
+    defenses: 1
+    unlock: open
+    slots:
+      - {id: ladder, job: ladder, cost: main3/main4/main5, rider: true}
+      - {id: flex_a, job: flex, bands: [easy, medium], cost: odd_b2}
+      - {id: flex_b, job: flex, bands: [medium], cost: main2+odd2}
+      - {id: flex_c, job: flex, bands: [medium], cost: main1+odd1+odd_b1+apex1}
+      - {id: flex_hard, job: flex, bands: [hard], cost: main1+apex3}
+      - {id: straights, job: straight, cost: SS/LS, rider: true}
+      - {id: apex, job: apex, cost: apex4, rider: true}
+      - {id: ultimate, job: ultimate, cost: apex5, rider: true}
+  - id: suits
+    name: Suits
+    family: "3111"
+    defenses: 1
+    unlock: open
+    slots:
+      - {id: ladder, job: ladder, cost: main3/main4/main5, rider: true}
+      - {id: flex_a, job: flex, bands: [medium], cost: main1+odd2}
+      - {id: flex_b, job: flex, bands: [medium], cost: main2+odd_b2}
+      - {id: flex_c, job: flex, bands: [medium], cost: main2+odd1+apex1}
+      - {id: straights, job: straight, cost: SS/LS, rider: true}
+      - {id: apex, job: apex, cost: apex4, rider: true}
+      - {id: ultimate, job: ultimate, cost: apex5, rider: true}
+  # {2,2,1,1}: 2-2-1-1 and 2-1-2-1 dice
+  - id: paired_standard
+    name: Standard
+    family: "2211"
+    defenses: 1
+    unlock: open
+    slots:
+      - {id: ladder, job: ladder, cost: main3/main4/main5, rider: true}
+      - {id: flex_a, job: flex, bands: [easy, medium], cost: odd2}
+      - {id: flex_b, job: flex, bands: [medium], cost: main1+side1+odd1+apex1}
+      - {id: flex_hard, job: flex, bands: [hard], cost: main2+side2+apex1}
+      - {id: small_straight, job: straight, cost: SS, rider: true}
+      - {id: large_straight, job: straight, cost: LS, rider: true}
+      - {id: apex, job: apex, cost: apex4, rider: true}
+      - {id: ultimate, job: ultimate, cost: apex5, rider: true}
+  - id: two_mains
+    name: Two Mains
+    family: "2211"
+    defenses: 1
+    unlock: open
+    slots:
+      - {id: mirror_main, job: mirror, cost: main3+apex1, rider: true}
+      - {id: mirror_side, job: mirror, cost: side3+apex1, rider: true}
+      - {id: flex_hard, job: flex, bands: [hard], cost: main3+side2}
+      - {id: flex_medium, job: flex, bands: [medium], cost: odd2}
+      - {id: straights, job: straight, cost: SS/LS, rider: true}
+      - {id: apex, job: apex, cost: apex4, rider: true}
+      - {id: ultimate, job: ultimate, cost: apex5, rider: true}
+  - id: spellbook
+    name: Spellbook
+    family: "2211"
+    defenses: 1
+    unlock: open
+    slots:
+      - {id: flex_a, job: flex, bands: [medium], cost: side4}
+      - {id: flex_b, job: flex, bands: [hard], cost: side2+apex2}
+      - {id: flex_c, job: flex, bands: [medium], cost: main1+side1+odd1+apex1}
+      - {id: flex_d, job: flex, bands: [hard], cost: main2+odd2}
+      - {id: straights, job: straight, cost: SS/LS, rider: true}
+      - {id: apex, job: apex, cost: apex4, rider: true}
+      - {id: ultimate, job: ultimate, cost: apex5, rider: true}
+  - id: ladder_pair
+    name: Ladder Pair
+    family: "2211"
+    defenses: 2
+    unlock: open
+    slots:
+      - {id: ladder, job: ladder, cost: main3/main4/main5, rider: true}
+      - {id: side_ladder, job: side_ladder, cost: side2/side3/side4, rider: true}
+      - {id: flex_medium, job: flex, bands: [easy, medium], cost: odd2}
+      - {id: small_straight, job: straight, cost: SS, rider: true}
+      - {id: large_straight, job: straight, cost: LS, rider: true}
+      - {id: apex, job: apex, cost: apex3, rider: true}
+      - {id: ultimate, job: ultimate, cost: apex5, rider: true}

@@ -115,3 +115,42 @@ func TestRoleOutcomesValidate(t *testing.T) {
 		}
 	}
 }
+
+// heal_cards (a board rider) returns removed cards to discard, most recently
+// removed first, and heals each from the wound that removed it.
+func TestHealCardsReturnsMostRecentlyRemovedCards(t *testing.T) {
+	lib := roleDiceLibrary(t)
+	b := settledStatusBattle(t, lib, "", 0)
+	player := b.Actors["player"]
+	player.Cards.Removed = []string{"old", "mid", "new"}
+	player.Cards.Discard = nil
+	b.Actors["player"] = player
+	b.Wounds = []state.Wound{
+		{ID: "w1", TargetActorID: "player", Cards: []state.WoundCard{{CardID: "old"}, {CardID: "mid"}}},
+		{ID: "w2", TargetActorID: "player", Cards: []state.WoundCard{{CardID: "new"}}},
+	}
+	e := NewEngine()
+	ctx := effectContext{SourceActorID: "player", SourceContentID: "board_ss", SourceContentType: "ability"}
+	result, err := e.executeEffects(&b, lib, ctx, []content.BattleOperation{{Type: "heal_cards", Target: "self", Amount: 2}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := e.applyEffectMutations(&b, lib, "", result); err != nil {
+		t.Fatal(err)
+	}
+	got := b.Actors["player"].Cards
+	if len(got.Removed) != 1 || got.Removed[0] != "old" || len(got.Discard) != 2 || got.Discard[0] != "new" || got.Discard[1] != "mid" {
+		t.Fatalf("piles after heal 2: removed %v, discard %v", got.Removed, got.Discard)
+	}
+	if len(b.Wounds) != 1 || b.Wounds[0].ID != "w1" || len(b.Wounds[0].Cards) != 1 || b.Wounds[0].Cards[0].CardID != "old" {
+		t.Fatalf("wounds after heal 2: %+v", b.Wounds)
+	}
+	// With nothing left to heal past the last card, the heal stops.
+	result, _ = e.executeEffects(&b, lib, ctx, []content.BattleOperation{{Type: "heal_cards", Target: "self", Amount: 3}})
+	if err := e.applyEffectMutations(&b, lib, "", result); err != nil {
+		t.Fatal(err)
+	}
+	if got := b.Actors["player"].Cards; len(got.Removed) != 0 || len(got.Discard) != 3 || len(b.Wounds) != 0 {
+		t.Fatalf("over-heal: removed %v, discard %v, wounds %v", got.Removed, got.Discard, b.Wounds)
+	}
+}
