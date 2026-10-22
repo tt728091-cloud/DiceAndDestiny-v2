@@ -13,13 +13,21 @@ type counter interface {
 	Counts() (searched, overrides int)
 }
 
+// futureCounter is implemented by players that report the futures they
+// played.
+type futureCounter interface {
+	FutureCount() int
+}
+
 // PolicyFactory builds a fresh player for one worker (players cache state
 // and are not shared between goroutines).
 type PolicyFactory func() (Policy, error)
 
-// Summary aggregates one player's battles.
+// Summary aggregates one player's battles. Settings describes how the player
+// was configured, for reproducing it.
 type Summary struct {
 	Player        string         `json:"player"`
+	Settings      string         `json:"settings,omitempty"`
 	Battles       int            `json:"battles"`
 	Wins          int            `json:"wins"`
 	Draws         int            `json:"draws"`
@@ -35,6 +43,7 @@ type Summary struct {
 	ThinkMS       float64        `json:"mean_ms_per_decision"`
 	Searched      int            `json:"searched_decisions,omitempty"`
 	Overrides     int            `json:"overrides,omitempty"`
+	Futures       int            `json:"futures,omitempty"`
 	CardsPlayed   map[string]int `json:"cards_played"`
 	Abilities     map[string]int `json:"abilities_selected"`
 	Records       []BattleRecord `json:"records"`
@@ -43,51 +52,83 @@ type Summary struct {
 // RunBattles plays seeds [first, first+count) for the hero policy against the
 // foe policy on `workers` goroutines, each with its own runner.
 func RunBattles(m Matchup, hero, foe PolicyFactory, first uint64, count, workers int, progress func(done int)) (Summary, error) {
+	var report func(done, total int)
+	if progress != nil {
+		report = func(done, _ int) { progress(done) }
+	}
+	results, err := RunInterleaved(m, []Entrant{{Hero: hero}}, foe, []bool{m.HeroInSeatB}, first, count, workers, report)
+	if err != nil {
+		return Summary{}, err
+	}
+	return Summarize(results[0]), nil
+}
+
+// Entrant is one hero player in an interleaved run.
+type Entrant struct {
+	Name string
+	Hero PolicyFactory
+}
+
+// RunInterleaved plays seeds [first, first+count) from each listed hero seat
+// (false: seat A) for every entrant against the foe, on `workers`
+// goroutines. Battles are dealt seed by seed, seat by seat and entrant by
+// entrant, so time-limited players share the machine's load evenly. It
+// returns each entrant's records, seat by seat in seed order.
+func RunInterleaved(m Matchup, entrants []Entrant, foe PolicyFactory, seatsB []bool, first uint64, count, workers int, progress func(done, total int)) ([][]BattleRecord, error) {
 	if workers < 1 {
 		workers = 1
 	}
-	records := make([]BattleRecord, count)
-	jobs := make(chan int)
+	type job struct{ entrant, slot int }
+	results := make([][]BattleRecord, len(entrants))
+	for e := range results {
+		results[e] = make([]BattleRecord, count*len(seatsB))
+	}
+	jobs := make(chan job)
 	var wg sync.WaitGroup
 	var mu sync.Mutex
 	var firstErr error
-	done, searched, overrides := 0, 0, 0
+	done, total := 0, count*len(seatsB)*len(entrants)
 	for w := 0; w < workers; w++ {
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
 			runner, err := NewRunner(m)
-			var heroPolicy, foePolicy Policy
-			if err == nil {
-				heroPolicy, err = hero()
-			}
+			var foePolicy Policy
 			if err == nil {
 				foePolicy, err = foe()
 			}
-			for i := range jobs {
+			heroes := make([]Policy, len(entrants))
+			for jb := range jobs {
 				if err != nil {
 					continue
 				}
+				hero := heroes[jb.entrant]
+				if hero == nil {
+					if hero, err = entrants[jb.entrant].Hero(); err != nil {
+						continue
+					}
+					heroes[jb.entrant] = hero
+				}
+				seed := first + uint64(jb.slot%count)
+				runner.matchup.HeroInSeatB = seatsB[jb.slot/count]
+				before := searchCounts(hero)
 				var record BattleRecord
-				record, err = runner.Play(first+uint64(i), heroPolicy, foePolicy)
+				record, err = runner.Play(seed, hero, foePolicy)
 				if err != nil {
-					err = fmt.Errorf("seed %d: %w", first+uint64(i), err)
+					err = fmt.Errorf("%s seed %d: %w", entrants[jb.entrant].Name, seed, err)
 					continue
 				}
-				records[i] = record
+				after := searchCounts(hero)
+				record.Searched, record.Overrides, record.Futures = after[0]-before[0], after[1]-before[1], after[2]-before[2]
+				results[jb.entrant][jb.slot] = record
 				mu.Lock()
 				done++
 				if progress != nil {
-					progress(done)
+					progress(done, total)
 				}
 				mu.Unlock()
 			}
 			mu.Lock()
-			if c, ok := heroPolicy.(counter); ok {
-				a, b := c.Counts()
-				searched += a
-				overrides += b
-			}
 			if err != nil && firstErr == nil {
 				firstErr = err
 			}
@@ -95,16 +136,31 @@ func RunBattles(m Matchup, hero, foe PolicyFactory, first uint64, count, workers
 		}()
 	}
 	for i := 0; i < count; i++ {
-		jobs <- i
+		for seat := range seatsB {
+			for e := range entrants {
+				jobs <- job{entrant: e, slot: seat*count + i}
+			}
+		}
 	}
 	close(jobs)
 	wg.Wait()
 	if firstErr != nil {
-		return Summary{}, firstErr
+		return nil, firstErr
 	}
-	summary := Summarize(records)
-	summary.Searched, summary.Overrides = searched, overrides
-	return summary, nil
+	return results, nil
+}
+
+// searchCounts reads a player's running search statistics: searched
+// decisions, overrides and futures.
+func searchCounts(p Policy) [3]int {
+	var out [3]int
+	if c, ok := p.(counter); ok {
+		out[0], out[1] = c.Counts()
+	}
+	if c, ok := p.(futureCounter); ok {
+		out[2] = c.FutureCount()
+	}
+	return out
 }
 
 // Summarize totals records; the win-rate interval is Wilson's 95% interval.
@@ -125,6 +181,9 @@ func Summarize(records []BattleRecord) Summary {
 		s.MeanFoeHealth += float64(r.FoeHealth)
 		decisions += r.HeroDecisions
 		think += r.HeroThinkMS
+		s.Searched += r.Searched
+		s.Overrides += r.Overrides
+		s.Futures += r.Futures
 		for k, v := range r.CardsPlayed {
 			s.CardsPlayed[k] += v
 		}
@@ -161,14 +220,121 @@ func wilson(successes, n int) (float64, float64) {
 	return center - half, center + half
 }
 
-// Table renders summaries as a plain-text table.
+// Table renders summaries as a plain-text table. "fut/srch" is the mean
+// number of futures a searched decision played.
 func Table(summaries []Summary) string {
 	var sb strings.Builder
-	fmt.Fprintf(&sb, "%-12s %7s %5s %5s %5s %8s %15s %6s %7s %7s %8s %9s\n", "player", "battles", "win", "draw", "loss", "win %", "95% CI", "score", "rounds", "hp left", "foe hp", "ms/dec")
+	fmt.Fprintf(&sb, "%-12s %7s %5s %5s %5s %8s %15s %6s %7s %7s %8s %9s %8s\n", "player", "battles", "win", "draw", "loss", "win %", "95% CI", "score", "rounds", "hp left", "foe hp", "ms/dec", "fut/srch")
 	for _, s := range summaries {
-		fmt.Fprintf(&sb, "%-12s %7d %5d %5d %5d %7.1f%% %6.1f–%5.1f%% %6.3f %7.2f %7.2f %8.2f %9.2f\n",
-			s.Player, s.Battles, s.Wins, s.Draws, s.Losses, 100*s.WinRate, 100*s.WinRateLow, 100*s.WinRateHigh, s.Score, s.MeanRounds, s.MeanHealth, s.MeanFoeHealth, s.ThinkMS)
+		futures := ""
+		if s.Searched > 0 {
+			futures = fmt.Sprintf("%.0f", float64(s.Futures)/float64(s.Searched))
+		}
+		fmt.Fprintf(&sb, "%-12s %7d %5d %5d %5d %7.1f%% %6.1f–%5.1f%% %6.3f %7.2f %7.2f %8.2f %9.2f %8s\n",
+			s.Player, s.Battles, s.Wins, s.Draws, s.Losses, 100*s.WinRate, 100*s.WinRateLow, 100*s.WinRateHigh, s.Score, s.MeanRounds, s.MeanHealth, s.MeanFoeHealth, s.ThinkMS, futures)
 	}
+	return sb.String()
+}
+
+// RecordScore scores one battle for the hero: win 1, draw 0.5, loss 0. A
+// truncated battle counts as a draw.
+func RecordScore(r BattleRecord) float64 {
+	switch r.Result {
+	case "win":
+		return 1
+	case "loss":
+		return 0
+	}
+	return 0.5
+}
+
+// Comparison pairs two players' battles on the same seed and hero seat.
+// Diff is A's score minus B's, per battle.
+type Comparison struct {
+	A, B           string
+	Pairs          int
+	Unpaired       int
+	ScoreA, ScoreB float64
+	A3, B3         [3]int // wins, draws, losses
+	Better, Worse  int    // battles where A scored more / less than B
+	Diff, Low      float64
+	High, Z        float64
+}
+
+// Compare pairs a's and b's records by seed and hero seat and reports the
+// mean score difference with its 95% interval and z.
+func Compare(a, b Summary) (Comparison, error) {
+	type key struct {
+		seed uint64
+		seat string
+	}
+	other := map[key]BattleRecord{}
+	for _, r := range b.Records {
+		other[key{r.Seed, r.Seat}] = r
+	}
+	c := Comparison{A: a.Player, B: b.Player}
+	var diffs []float64
+	tally := func(t *[3]int, r BattleRecord) {
+		switch RecordScore(r) {
+		case 1:
+			t[0]++
+		case 0:
+			t[2]++
+		default:
+			t[1]++
+		}
+	}
+	for _, ra := range a.Records {
+		rb, ok := other[key{ra.Seed, ra.Seat}]
+		if !ok {
+			c.Unpaired++
+			continue
+		}
+		delete(other, key{ra.Seed, ra.Seat})
+		sa, sb := RecordScore(ra), RecordScore(rb)
+		c.ScoreA += sa
+		c.ScoreB += sb
+		tally(&c.A3, ra)
+		tally(&c.B3, rb)
+		switch {
+		case sa > sb:
+			c.Better++
+		case sa < sb:
+			c.Worse++
+		}
+		diffs = append(diffs, sa-sb)
+	}
+	c.Unpaired += len(other)
+	c.Pairs = len(diffs)
+	if c.Pairs < 2 {
+		return c, fmt.Errorf("only %d paired battles between %s and %s", c.Pairs, a.Player, b.Player)
+	}
+	n := float64(c.Pairs)
+	c.ScoreA /= n
+	c.ScoreB /= n
+	var sq float64
+	for _, d := range diffs {
+		c.Diff += d
+	}
+	c.Diff /= n
+	for _, d := range diffs {
+		sq += (d - c.Diff) * (d - c.Diff)
+	}
+	se := math.Sqrt(sq / (n - 1) / n)
+	c.Low, c.High = c.Diff-1.96*se, c.Diff+1.96*se
+	if se > 0 {
+		c.Z = c.Diff / se
+	}
+	return c, nil
+}
+
+// String renders a comparison for people.
+func (c Comparison) String() string {
+	var sb strings.Builder
+	fmt.Fprintf(&sb, "A %s: score %.3f (win/draw/loss %d/%d/%d)\n", c.A, c.ScoreA, c.A3[0], c.A3[1], c.A3[2])
+	fmt.Fprintf(&sb, "B %s: score %.3f (win/draw/loss %d/%d/%d)\n", c.B, c.ScoreB, c.B3[0], c.B3[1], c.B3[2])
+	fmt.Fprintf(&sb, "%d paired battles (%d unpaired); A better on %d, worse on %d\n", c.Pairs, c.Unpaired, c.Better, c.Worse)
+	fmt.Fprintf(&sb, "A − B: %+.4f (95%% CI %+.4f … %+.4f), z = %.2f\n", c.Diff, c.Low, c.High, c.Z)
 	return sb.String()
 }
 

@@ -1,12 +1,18 @@
 package lookahead
 
 import (
+	"errors"
 	"fmt"
 	"math/rand"
+	"time"
 
 	"diceanddestiny/server/internal/battle/command"
 	"diceanddestiny/server/internal/battle/state"
 )
+
+// errDeadline reports a playout stopped by its deadline; its value is
+// unknown and must be dropped, not scored.
+var errDeadline = errors.New("playout deadline passed")
 
 // Playout plays a forked battle forward with the given policies until it
 // ends or the horizon is reached, and returns the result from the hero's
@@ -20,6 +26,8 @@ type Playout struct {
 	Rounds   int
 	MaxSteps int
 	Evaluate func(b *state.Battle, hero string) float64
+	// Deadline, when set, abandons the playout once it passes (errDeadline).
+	Deadline time.Time
 }
 
 // Run applies first (if any) to b and plays on. b is consumed.
@@ -43,6 +51,9 @@ func (p Playout) Run(b *state.Battle, first *command.Command, rng *rand.Rand) (f
 		}
 		if steps >= limit {
 			return 0, fmt.Errorf("playout exceeded %d steps", limit)
+		}
+		if !p.Deadline.IsZero() && time.Now().After(p.Deadline) {
+			return 0, errDeadline
 		}
 		seat, actions := p.Sim.Next(b)
 		if len(actions) == 0 {

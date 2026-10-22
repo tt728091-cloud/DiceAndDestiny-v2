@@ -2,6 +2,7 @@ package lookahead
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"math"
 	"math/rand"
@@ -57,12 +58,21 @@ type SearchPolicy struct {
 	// MaxThink stops confirming a promising option after this long; zero
 	// means no limit.
 	MaxThink time.Duration
+	// Think, when set, is a hard limit on each decision's thinking time and
+	// replaces Budget and MaxBudget: options are compared on as many futures
+	// as fit. Successive halving gets the first half of the time, a
+	// promising survivor's extra futures run to three quarters, and the
+	// fresh-futures check to the limit. A future still running at the limit
+	// is abandoned, and the options keep only the futures all of them
+	// finished.
+	Think time.Duration
 	// Confirm re-tests a would-be override on fresh futures before using it.
 	Confirm bool
 	// Searched, Overrides and Rejected count decisions that were simulated,
 	// those where the search overrode the greedy player, and would-be
-	// overrides that failed the fresh-futures check.
-	Searched, Overrides, Rejected int
+	// overrides that failed the fresh-futures check; Futures counts the
+	// futures played.
+	Searched, Overrides, Rejected, Futures int
 	// Trace, when set, receives a line for every override.
 	Trace func(line string)
 
@@ -79,6 +89,13 @@ type searchWorker struct {
 
 // Counts reports how many decisions were searched and overridden.
 func (s *SearchPolicy) Counts() (searched, overrides int) { return s.Searched, s.Overrides }
+
+// FutureCount reports how many futures the searched decisions played.
+func (s *SearchPolicy) FutureCount() int { return s.Futures }
+
+// thinkCap bounds the futures per option in a time-limited decision, for
+// positions so close to the end that futures cost almost nothing.
+const thinkCap = 4096
 
 // NewSearchPolicy builds a look-ahead player; newOpponent models the other
 // seats (a scripted minion's own script, or NewGreedyPolicy for a hero).
@@ -110,6 +127,12 @@ func (s *SearchPolicy) workers() ([]*searchWorker, error) {
 
 func (s *SearchPolicy) Choose(d *Decision) (int, error) {
 	started := time.Now()
+	var deadline time.Time
+	if s.Think > 0 {
+		deadline = started.Add(s.Think)
+	}
+	// at is the moment a share of the thinking time has passed.
+	at := func(share float64) time.Time { return started.Add(time.Duration(share * float64(s.Think))) }
 	options := Useful(d.Battle, d.Seat, d.Actions)
 	if len(options) == 1 {
 		return options[0], nil
@@ -143,20 +166,29 @@ func (s *SearchPolicy) Choose(d *Decision) (int, error) {
 			alive = append(alive, &arm{index: c})
 		}
 	}
-	// extend plays every listed arm's futures up to n, in parallel. Future j
+	// extend plays the listed arms' futures up to n, in parallel. Future j
 	// uses the same seed for every arm, so arms are compared on equal luck.
-	extend := func(arms []*arm, n int) {
-		type job struct {
-			a *arm
-			j int
-		}
-		var jobs []job
+	// With `until` set no future starts after it, and every arm keeps only
+	// the futures all of them finished (a partial last round is dropped).
+	extend := func(arms []*arm, n int, until time.Time) {
+		from := n
 		for _, a := range arms {
-			for j := len(a.values); j < n; j++ {
+			from = min(from, len(a.values))
+		}
+		if from >= n {
+			return
+		}
+		finished := make([][]bool, len(arms))
+		for k, a := range arms {
+			for len(a.values) < n {
 				a.values = append(a.values, 0)
-				jobs = append(jobs, job{a, j})
+			}
+			finished[k] = make([]bool, n)
+			for j := 0; j < from; j++ {
+				finished[k][j] = true
 			}
 		}
+		type job struct{ k, j int }
 		next := make(chan job)
 		var wg sync.WaitGroup
 		for _, w := range pool {
@@ -168,29 +200,59 @@ func (s *SearchPolicy) Choose(d *Decision) (int, error) {
 					policies[id] = w.opponent
 				}
 				policies[d.Seat] = w.hero
-				playout := Playout{Sim: w.sim, Hero: d.Seat, Policies: policies, Rounds: s.Rounds, Evaluate: s.evaluate}
+				playout := Playout{Sim: w.sim, Hero: d.Seat, Policies: policies, Rounds: s.Rounds, Evaluate: s.evaluate, Deadline: deadline}
 				for jb := range next {
-					seed := base + (jb.a.offset+uint64(jb.j))*0x9e3779b97f4a7c15
+					a := arms[jb.k]
+					seed := base + (a.offset+uint64(jb.j))*0x9e3779b97f4a7c15
 					b := Fork(d.Battle, d.Seat, seed)
-					action := d.Actions[jb.a.index]
+					action := d.Actions[a.index]
 					v, err := playout.Run(&b, &action, rand.New(rand.NewSource(int64(seed))))
-					if err != nil {
+					switch {
+					case errors.Is(err, errDeadline):
+						continue
+					case err != nil:
 						v = -2
-					} else {
+					default:
 						v += s.MarginWeight * margin(&b, d.Seat)
 					}
-					jb.a.values[jb.j] = v
+					a.values[jb.j] = v
+					finished[jb.k][jb.j] = true
 				}
 			}(w)
 		}
-		for _, jb := range jobs {
-			next <- jb
+	dispatch:
+		for j := from; j < n; j++ {
+			for k := range arms {
+				if !until.IsZero() && !time.Now().Before(until) {
+					break dispatch
+				}
+				next <- job{k, j}
+			}
 		}
 		close(next)
 		wg.Wait()
+		common := n
+		for k := range arms {
+			done := from
+			for done < n && finished[k][done] {
+				done++
+			}
+			common = min(common, done)
+			for j := from; j < n; j++ {
+				if finished[k][j] {
+					s.Futures++
+				}
+			}
+		}
+		for _, a := range arms {
+			a.values = a.values[:common]
+		}
 	}
 	pairedDiff := func(a, anchor *arm) (mean, t float64) {
 		n := len(a.values)
+		if n < 2 {
+			return 0, 0
+		}
 		var sum, sq float64
 		for j := 0; j < n; j++ {
 			x := a.values[j] - anchor.values[j]
@@ -211,10 +273,15 @@ func (s *SearchPolicy) Choose(d *Decision) (int, error) {
 	phases := max(1, int(math.Ceil(math.Log2(float64(len(alive)+1)))))
 	step := max(4, s.Budget/((len(alive)+1)*phases))
 	n, spent := 0, 0
-	for {
-		n += step
-		extend(append([]*arm{anchorArm}, alive...), n)
-		spent += step * (len(alive) + 1)
+	for phase := 1; ; phase++ {
+		if s.Think > 0 {
+			extend(append([]*arm{anchorArm}, alive...), thinkCap, at(0.5*float64(phase)/float64(phases)))
+			n = len(anchorArm.values)
+		} else {
+			n += step
+			extend(append([]*arm{anchorArm}, alive...), n, time.Time{})
+			spent += step * (len(alive) + 1)
+		}
 		sort.SliceStable(alive, func(i, j int) bool {
 			mi, _ := diff(alive[i])
 			mj, _ := diff(alive[j])
@@ -226,15 +293,29 @@ func (s *SearchPolicy) Choose(d *Decision) (int, error) {
 		alive = alive[:(len(alive)+1)/2]
 	}
 	// A promising survivor gets more futures, up to MaxBudget (and MaxThink),
-	// before the verdict.
+	// or to three quarters of the thinking time, before the verdict.
 	for {
 		mean, t := diff(alive[0])
-		if mean <= 0 || t < 1 || t >= s.MinT || spent >= s.MaxBudget || (s.MaxThink > 0 && time.Since(started) > s.MaxThink) {
+		if mean <= 0 || t < 1 || t >= s.MinT {
 			break
 		}
 		more := max(step, n/2)
+		if s.Think > 0 {
+			if !time.Now().Before(at(0.75)) {
+				break
+			}
+			extend([]*arm{anchorArm, alive[0]}, min(n+more, thinkCap), at(0.75))
+			if len(anchorArm.values) <= n {
+				break
+			}
+			n = len(anchorArm.values)
+			continue
+		}
+		if spent >= s.MaxBudget || (s.MaxThink > 0 && time.Since(started) > s.MaxThink) {
+			break
+		}
 		n += more
-		extend([]*arm{anchorArm, alive[0]}, n)
+		extend([]*arm{anchorArm, alive[0]}, n, time.Time{})
 		spent += 2 * more
 	}
 	mean, t := diff(alive[0])
@@ -244,7 +325,7 @@ func (s *SearchPolicy) Choose(d *Decision) (int, error) {
 		fresh := max(len(alive[0].values), 24)
 		freshAnchor := &arm{index: anchor, offset: 1 << 32}
 		freshChallenger := &arm{index: alive[0].index, offset: 1 << 32}
-		extend([]*arm{freshAnchor, freshChallenger}, fresh)
+		extend([]*arm{freshAnchor, freshChallenger}, fresh, deadline)
 		if m, ft := pairedDiff(freshChallenger, freshAnchor); m <= 0 || ft < s.MinT {
 			s.Rejected++
 			return anchor, nil

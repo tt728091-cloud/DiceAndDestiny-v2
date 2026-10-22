@@ -26,21 +26,23 @@ func main() {
 	hero := flag.String("hero", "starter", "hero combatant definition")
 	opponent := flag.String("opponent", "drowned_oracle_brine_mask", "opponent combatant definition")
 	foePlayer := flag.String("foe", "script", "opponent player: script (a minion's own script), greedy, greedy-v1, proxy or random")
-	players := flag.String("players", "proxy,greedy,lookahead", "comma-separated players: random, proxy, greedy, greedy-v1, lookahead, lookahead-v1")
+	players := flag.String("players", "proxy,greedy,lookahead", "comma-separated players: random, proxy, greedy, greedy-v1, lookahead, lookahead-v1; a player may override player flags, e.g. lookahead@rounds=1@think-ms=50")
 	seats := flag.String("seats", "a", "hero seat: a, b, or both (each seed played from each seat)")
 	battles := flag.Int("battles", 200, "battles per player")
 	first := flag.Uint64("first-seed", 1, "first battle seed")
 	workers := flag.Int("workers", max(1, runtime.NumCPU()-2), "parallel battles")
-	budget := flag.Int("budget", 96, "look-ahead simulated futures per decision")
-	rounds := flag.Int("rounds", 0, "look-ahead horizon in rounds (0 plays each future to the end)")
 	out := flag.String("out", "", "optional JSON results path")
-	trace := flag.Bool("trace", false, "print every look-ahead override")
-	bias := flag.String("bias", "", "experiment: favour abilities in the greedy player's choices, e.g. measured_strike=2")
-	energyValue := flag.Float64("energy-value", 0.1, "damage one energy point is worth to the greedy player (and the look-ahead's simulated play)")
-	cardValue := flag.Float64("card-value", 0.25, "damage holding a card for later is worth to the current greedy player")
-	drawValue := flag.Float64("draw-value", 0.25, "damage one drawn card is worth to the greedy player")
+	base := playerConfig{budget: 96, searchWorkers: 1, energyValue: 0.1, cardValue: 0.25, drawValue: 0.25}
+	base.register(flag.CommandLine)
 	tally := flag.String("tally", "", "instead of simulating, score your games against the look-ahead mirror from this battle log (\"default\" reads this workspace's log)")
+	compare := flag.String("compare", "", "instead of simulating, pair two results files battle by battle: a.json[:player],b.json[:player]")
 	flag.Parse()
+	if *compare != "" {
+		if err := printComparison(*compare); err != nil {
+			fail(err)
+		}
+		return
+	}
 	if *tally != "" {
 		path := *tally
 		if path == "default" {
@@ -86,45 +88,54 @@ func main() {
 	// A hero opponent is modelled by the look-ahead the way the game does: by
 	// the greedy player of the look-ahead's own version.
 	heroFoe := *foePlayer != "script"
-	var summaries []lookahead.Summary
-	for _, name := range strings.Split(*players, ",") {
-		name = strings.TrimSpace(name)
-		factory, err := playerFactory(name, foe, heroFoe, *budget, *rounds, *trace, *energyValue, *cardValue, *drawValue, parseBias(*bias))
+	var entrants []lookahead.Entrant
+	var configs []playerConfig
+	for _, spec := range strings.Split(*players, ",") {
+		spec = strings.TrimSpace(spec)
+		name, config, err := parsePlayer(spec, base)
 		if err != nil {
 			fail(err)
 		}
-		started := time.Now()
-		var records []lookahead.BattleRecord
-		searched, overrides := 0, 0
-		for _, seatB := range seatList {
-			m := matchup
-			m.HeroInSeatB = seatB
-			summary, err := lookahead.RunBattles(m, factory, foe, *first, *battles, *workers, func(done int) {
-				if done%25 == 0 || done == *battles {
-					fmt.Fprintf(os.Stderr, "\r%-12s %d/%d battles", name, done, *battles)
-				}
-			})
-			fmt.Fprintln(os.Stderr)
-			if err != nil {
-				fail(fmt.Errorf("%s: %w", name, err))
-			}
-			records = append(records, summary.Records...)
-			searched, overrides = searched+summary.Searched, overrides+summary.Overrides
-			if len(seatList) > 1 {
-				summary.Player = fmt.Sprintf("%s (seat %s)", name, map[bool]string{false: "A", true: "B"}[seatB])
+		factory, err := playerFactory(name, foe, heroFoe, config)
+		if err != nil {
+			fail(err)
+		}
+		entrants = append(entrants, lookahead.Entrant{Name: spec, Hero: factory})
+		configs = append(configs, config)
+	}
+	// Players are interleaved seed by seed, so time-limited players share the
+	// machine's load evenly.
+	started := time.Now()
+	results, err := lookahead.RunInterleaved(matchup, entrants, foe, seatList, *first, *battles, *workers, func(done, total int) {
+		if done%25 == 0 || done == total {
+			fmt.Fprintf(os.Stderr, "\r%d/%d battles", done, total)
+		}
+	})
+	fmt.Fprintln(os.Stderr)
+	if err != nil {
+		fail(err)
+	}
+	fmt.Fprintf(os.Stderr, "finished in %s\n", time.Since(started).Round(time.Second))
+	var summaries []lookahead.Summary
+	for e, entrant := range entrants {
+		settings := configs[e].describe(entrant.Name)
+		if len(seatList) > 1 {
+			for k, seatB := range seatList {
+				summary := lookahead.Summarize(results[e][k**battles : (k+1)**battles])
+				summary.Player = fmt.Sprintf("%s (seat %s)", entrant.Name, map[bool]string{false: "A", true: "B"}[seatB])
+				summary.Settings = settings
 				summaries = append(summaries, summary)
 			}
 		}
-		summary := lookahead.Summarize(records)
-		summary.Player, summary.Searched, summary.Overrides = name, searched, overrides
+		summary := lookahead.Summarize(results[e])
+		summary.Player, summary.Settings = entrant.Name, settings
 		summaries = append(summaries, summary)
-		fmt.Fprintf(os.Stderr, "%-12s finished in %s\n", name, time.Since(started).Round(time.Second))
 	}
 	fmt.Println(lookahead.Table(summaries))
 	for _, s := range summaries {
 		fmt.Printf("%-10s cards per battle: %s\n", s.Player, lookahead.CardsLine(s))
 		if s.Searched > 0 {
-			fmt.Printf("%-10s searched %d decisions, overrode the greedy choice %d times (%.1f%%)\n", s.Player, s.Searched, s.Overrides, 100*float64(s.Overrides)/float64(s.Searched))
+			fmt.Printf("%-10s searched %d decisions, overrode the greedy choice %d times (%.1f%%), %.0f futures per searched decision\n", s.Player, s.Searched, s.Overrides, 100*float64(s.Overrides)/float64(s.Searched), float64(s.Futures)/float64(s.Searched))
 		}
 	}
 	if *out != "" {
@@ -138,15 +149,71 @@ func main() {
 	}
 }
 
-func playerFactory(name string, foe lookahead.PolicyFactory, heroFoe bool, budget, rounds int, trace bool, energyValue, cardValue, drawValue float64, bias map[string]float64) (lookahead.PolicyFactory, error) {
+// playerConfig holds the flags that shape one player. The command line
+// sets them for every player; a player listed as name@flag=value@... changes
+// its own copy.
+type playerConfig struct {
+	budget, thinkMS, searchWorkers, rounds int
+	trace                                  bool
+	energyValue, cardValue, drawValue      float64
+	bias                                   string
+}
+
+func (c *playerConfig) register(fs *flag.FlagSet) {
+	fs.IntVar(&c.budget, "budget", c.budget, "look-ahead simulated futures per decision")
+	fs.IntVar(&c.thinkMS, "think-ms", c.thinkMS, "look-ahead hard time limit per decision in ms, instead of -budget (0 uses -budget)")
+	fs.IntVar(&c.searchWorkers, "search-workers", c.searchWorkers, "goroutines each look-ahead decision plays its futures on")
+	fs.IntVar(&c.rounds, "rounds", c.rounds, "look-ahead horizon in rounds (0 plays each future to the end)")
+	fs.BoolVar(&c.trace, "trace", c.trace, "print every look-ahead override")
+	fs.StringVar(&c.bias, "bias", c.bias, "experiment: favour abilities in the greedy player's choices, e.g. measured_strike=2")
+	fs.Float64Var(&c.energyValue, "energy-value", c.energyValue, "damage one energy point is worth to the greedy player (and the look-ahead's simulated play)")
+	fs.Float64Var(&c.cardValue, "card-value", c.cardValue, "damage holding a card for later is worth to the current greedy player")
+	fs.Float64Var(&c.drawValue, "draw-value", c.drawValue, "damage one drawn card is worth to the greedy player")
+}
+
+// parsePlayer reads "name@flag=value@flag=value" into the player's name and
+// its copy of the player flags.
+func parsePlayer(spec string, base playerConfig) (string, playerConfig, error) {
+	parts := strings.Split(spec, "@")
+	c := base
+	fs := flag.NewFlagSet(parts[0], flag.ContinueOnError)
+	c.register(fs)
+	var args []string
+	for _, part := range parts[1:] {
+		args = append(args, "-"+part)
+	}
+	if err := fs.Parse(args); err != nil {
+		return "", c, fmt.Errorf("player %q: %w", spec, err)
+	}
+	return parts[0], c, nil
+}
+
+// describe records a player's settings in the results file.
+func (c playerConfig) describe(name string) string {
+	text := fmt.Sprintf("energy-value=%g card-value=%g draw-value=%g", c.energyValue, c.cardValue, c.drawValue)
+	if c.bias != "" {
+		text += " bias=" + c.bias
+	}
+	if strings.HasPrefix(name, "lookahead") {
+		search := fmt.Sprintf("budget=%d", c.budget)
+		if c.thinkMS > 0 {
+			search = fmt.Sprintf("think-ms=%d", c.thinkMS)
+		}
+		text = fmt.Sprintf("%s rounds=%d search-workers=%d %s", search, c.rounds, max(1, c.searchWorkers), text)
+	}
+	return text
+}
+
+func playerFactory(name string, foe lookahead.PolicyFactory, heroFoe bool, c playerConfig) (lookahead.PolicyFactory, error) {
+	bias := parseBias(c.bias)
 	greedy := func(v1 bool) *lookahead.GreedyPolicy {
 		g := lookahead.NewGreedyPolicy()
 		if v1 {
 			g = lookahead.NewGreedyPolicyV1()
 		} else {
-			g.CardValue = cardValue
+			g.CardValue = c.cardValue
 		}
-		g.EnergyValue, g.DrawValue, g.Bias = energyValue, drawValue, bias
+		g.EnergyValue, g.DrawValue, g.Bias = c.energyValue, c.drawValue, bias
 		return g
 	}
 	switch name {
@@ -179,19 +246,79 @@ func playerFactory(name string, foe lookahead.PolicyFactory, heroFoe bool, budge
 			if _, err := foe(); err != nil {
 				return nil, err
 			}
-			search := lookahead.NewSearchPolicy(model, budget)
+			search := lookahead.NewSearchPolicy(model, c.budget)
 			if v1 {
-				search = lookahead.NewSearchPolicyV1(model, budget)
+				search = lookahead.NewSearchPolicyV1(model, c.budget)
 			}
 			search.Rollout = greedy(v1)
-			search.Rounds = rounds
-			if trace {
+			search.Rounds = c.rounds
+			search.Think = time.Duration(c.thinkMS) * time.Millisecond
+			search.Workers = max(1, c.searchWorkers)
+			if c.trace {
 				search.Trace = func(line string) { fmt.Fprintln(os.Stderr, line) }
 			}
 			return search, nil
 		}, nil
 	}
 	return nil, fmt.Errorf("unknown player %q", name)
+}
+
+// printComparison pairs two players' battles by seed and hero seat. Each
+// side is a results file written by -out, optionally followed by
+// ":player" when the file holds several players.
+func printComparison(spec string) error {
+	parts := strings.Split(spec, ",")
+	if len(parts) != 2 {
+		return fmt.Errorf("-compare needs two results files, got %q", spec)
+	}
+	var sides [2]lookahead.Summary
+	for i, part := range parts {
+		s, err := readSummary(strings.TrimSpace(part))
+		if err != nil {
+			return err
+		}
+		sides[i] = s
+	}
+	c, err := lookahead.Compare(sides[0], sides[1])
+	if err != nil {
+		return err
+	}
+	for i, s := range sides {
+		fmt.Printf("%c: %s · %s\n", 'A'+i, parts[i], s.Settings)
+	}
+	fmt.Print(c.String())
+	return nil
+}
+
+// readSummary loads one player's combined summary from a results file.
+func readSummary(spec string) (lookahead.Summary, error) {
+	path, player := spec, ""
+	if i := strings.LastIndex(spec, ":"); i > 0 && !strings.ContainsRune(spec[i:], '/') {
+		path, player = spec[:i], spec[i+1:]
+	}
+	raw, err := os.ReadFile(path)
+	if err != nil {
+		return lookahead.Summary{}, err
+	}
+	var summaries []lookahead.Summary
+	if err := json.Unmarshal(raw, &summaries); err != nil {
+		return lookahead.Summary{}, fmt.Errorf("%s: %w", path, err)
+	}
+	var combined []lookahead.Summary
+	var names []string
+	for _, s := range summaries {
+		if strings.Contains(s.Player, " (seat ") {
+			continue
+		}
+		if player == "" || s.Player == player {
+			combined = append(combined, s)
+		}
+		names = append(names, s.Player)
+	}
+	if len(combined) != 1 {
+		return lookahead.Summary{}, fmt.Errorf("%s holds players %v; name one as %s:player", path, names, path)
+	}
+	return combined[0], nil
 }
 
 // printTally scores the human's finished battles against the look-ahead

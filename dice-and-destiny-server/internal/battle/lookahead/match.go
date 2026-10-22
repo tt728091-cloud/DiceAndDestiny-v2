@@ -55,6 +55,9 @@ type BattleRecord struct {
 	FoeMax        int            `json:"foe_max"`
 	HeroDecisions int            `json:"hero_decisions"`
 	HeroThinkMS   float64        `json:"hero_think_ms"`
+	Searched      int            `json:"searched,omitempty"`
+	Overrides     int            `json:"overrides,omitempty"`
+	Futures       int            `json:"futures,omitempty"`
 	Actions       map[string]int `json:"hero_actions"`
 	CardsPlayed   map[string]int `json:"hero_cards_played"`
 	Abilities     map[string]int `json:"hero_abilities"`
