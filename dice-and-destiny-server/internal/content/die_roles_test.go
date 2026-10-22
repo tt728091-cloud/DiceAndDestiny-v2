@@ -7,13 +7,13 @@ import (
 )
 
 // The board-selection dice: one per family order, in the custom adventurer's
-// pack, with the rarest symbol on face 6.
+// own pack, with the rarest symbol on face 6.
 func TestBoardSelectionDiceLoadWithExpectedRoles(t *testing.T) {
 	lib, err := LoadBattleLibrary(filepath.Join("..", "..", "content", "battle_v1"))
 	if err != nil {
 		t.Fatal(err)
 	}
-	for _, pack := range []string{"venom_v1", "curse_v1", "adventurer_v1", "general_v1"} {
+	for _, pack := range []string{"venom_v1", "curse_v1", "adventurer_v1", "general_v1", "custom_adventurer_v1"} {
 		if lib, err = LoadBattleExtension(lib, filepath.Join("..", "..", "content", pack)); err != nil {
 			t.Fatalf("%s: %v", pack, err)
 		}

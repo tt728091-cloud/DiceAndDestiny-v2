@@ -1,0 +1,15 @@
+schema_version: 1
+id: board_main2_apex2
+name: Sword ×2 + Gold Coin ×2
+type: offensive
+presentation:
+  rules_text: "2 Sword + 2 Gold Coin: deal 6 damage. Sword is faces 1–3; Gold Coin is face 6. The fifth die may be anything. Misses without the required symbols."
+cost: {energy: 0}
+usage: {maximum_per_segment: 1}
+targeting: {selector: one_enemy, minimum: 1, maximum: 1}
+qualification:
+  activation_tiers:
+    - id: main2_apex2
+      requirements: {all: [{type: symbol_count, symbol_id: sword, minimum: 2}, {type: symbol_count, symbol_id: gold_coin, minimum: 2}]}
+      operations: [{type: deal_damage, target: selected_targets, amount: 6}]
+configuration_version: 1

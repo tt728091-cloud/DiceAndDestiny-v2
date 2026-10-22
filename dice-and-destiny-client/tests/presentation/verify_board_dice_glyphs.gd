@@ -9,7 +9,7 @@ func _initialize() -> void: call_deferred("_run")
 func _run() -> void:
 	var response: Dictionary = root.get_node("LearnedBattleRuntime").character_catalogs()
 	_expect(response.get("ok", false), "character catalogs load: %s" % str(response.get("error", "")))
-	var dice: Dictionary = response.get("result", {}).get("starter", {}).get("dice", {})
+	var dice: Dictionary = response.get("result", {}).get("custom_adventurer", {}).get("dice", {})
 	var checked := 0
 	for die_id in ["standard_d6", "hearth_d6", "grove_d6", "forge_d6", "loom_d6"]:
 		_expect(dice.has(die_id), "%s is in the catalog" % die_id)

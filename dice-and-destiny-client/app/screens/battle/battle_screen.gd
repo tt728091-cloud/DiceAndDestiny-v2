@@ -1553,17 +1553,17 @@ func _compact_defense_data(actor_id: String, counts: Dictionary, shown_source: D
 	var dice: Array = []; var gains: Array = []
 	var energy_gained := 0
 	var energy_limit := int(_view.content_definition("abilities", ability_id).get("resolution", {}).get("energy_gain_limit", 0))
-	var die_id := "standard_d6"
-	for op in operations:
-		if op.get("type") == "roll_dice": die_id = str(op.get("dice_id", die_id))
+	# The die the summary draws: the one the defense rolled (the defender's own die).
+	var die_id := _defense_die_for(actor_id, ability_id, selection, 0)
 	# Fixed defenses resolve once without a rolled face.
 	if faces.is_empty() and not operations.any(func(op): return op.get("type") == "roll_dice"):
 		faces = [0]
-	for face in faces:
+	for face_index in faces.size():
+		var face = faces[face_index]
 		var benefits: Array[String] = []
 		var die_prevented := 0
 		var gain_start := gains.size()
-		for op in _resolved_operations(operations, int(face)):
+		for op in _resolved_operations(operations, int(face), _defense_die_for(actor_id, ability_id, selection, face_index)):
 			match str(op.get("type", "")):
 				"prevent_damage":
 					var amount := _configured_amount(op.get("amount", 0), int(face)); prevented += amount; die_prevented += amount; pending = maxi(0, pending - amount); benefits.append("Prevent %d" % amount)
@@ -1738,9 +1738,7 @@ func _build_defense_panel(parent: VBoxContainer, actor_id: String, revealed: boo
 	parent.add_child(dice_row)
 	var die := TOOLTIP_BUTTON.new(); die.custom_minimum_size = Vector2(120, 105); die.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 	_style_defense_die(die)
-	var defense_die_id := str(_view.content_definition("abilities", ability_id).get("resolution", {}).get("roll", {}).get("dice_id", "standard_d6"))
-	for op in _view.content_definition("abilities", ability_id).get("resolution", {}).get("operations", []):
-		if op.get("type") == "roll_dice": defense_die_id = str(op.get("dice_id", defense_die_id))
+	var defense_die_id := _defense_die_for(actor_id, ability_id, selection, 0)
 	if face > 0:
 		var die_data := _as_dictionary(roll.get("die", {})); var die_id := str(die_data.get("die_id", defense_die_id))
 		die.text = "%s\n%d" % [BattlePresentationCatalog.symbol_for_die_face(die_id, face), face]
@@ -1771,7 +1769,7 @@ func _build_defense_panel(parent: VBoxContainer, actor_id: String, revealed: boo
 		extra.add_theme_font_size_override("font_size", 26)
 		dice_row.add_child(extra)
 		_inspect(extra, "battle.defense_die.%s.%d" % [actor_id, extra_index], "Second defense die")
-	var preview := _defense_preview(ability_id, base, face)
+	var preview := _defense_preview(ability_id, base, face, str(_as_dictionary(roll.get("die", {})).get("die_id", defense_die_id)))
 	var result_data := _compact_defense_data(actor_id, _status_counts(), source)
 	if not result_data.is_empty(): preview = {"rolled": true, "prevented": result_data.prevented, "pending": result_data.after}
 	var chosen := Label.new(); chosen.text = "%s · %d block" % [ability.name, int(preview.get("prevented", 0))] if bool(preview.get("rolled", false)) else ability.name; chosen.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER; parent.add_child(chosen)
@@ -2189,7 +2187,7 @@ func _effect_roll_outcome(roll: Dictionary) -> String:
 		if not trigger is Dictionary or (not trigger_id.is_empty() and str(trigger.get("id", "")) != trigger_id): continue
 		for operation in _as_array(trigger.get("operations", [])):
 			if operation is Dictionary and str(operation.get("type", "")) == "roll_dice" and (operation_id.is_empty() or str(operation.get("id", "")) == operation_id):
-				resolved.append_array(_resolved_operations([operation], face))
+				resolved.append_array(_resolved_operations([operation], face, str(_as_dictionary(roll.get("die", {})).get("die_id", ""))))
 	var descriptions: Array[String] = []
 	for operation in resolved:
 		if not operation is Dictionary: continue
@@ -3803,12 +3801,12 @@ func _card_legal(definition: String) -> bool:
 
 	return not _submitting and not _history_review and _view.card_playable_now(definition)
 
-func _defense_preview(ability_id: String, base: int, rolled_face: int) -> Dictionary:
+func _defense_preview(ability_id: String, base: int, rolled_face: int, die_id: String = "") -> Dictionary:
 	var ability := _view.content_definition("abilities", ability_id)
 	var resolution := _as_dictionary(ability.get("resolution", {}))
 	var pending := base
 	var prevented := 0
-	for operation in _resolved_operations(_as_array(resolution.get("operations", [])), rolled_face):
+	for operation in _resolved_operations(_as_array(resolution.get("operations", [])), rolled_face, die_id):
 		if not operation is Dictionary: continue
 		match str(operation.get("type", "")):
 			"prevent_damage":
@@ -3819,26 +3817,45 @@ func _defense_preview(ability_id: String, base: int, rolled_face: int) -> Dictio
 				pending = floori(float(pending * int(operation.get("numerator", 1))) / float(denominator))
 	return {"pending": pending, "prevented": prevented, "rolled": _contains_roll_operation(_as_array(resolution.get("operations", [])))}
 
+## The die a defense rolled for its index-th face: the rolled die itself when
+## the authority published it, else the defender's own die for dice: owner,
+## else the die the roll names.
+func _defense_die_for(actor_id: String, ability_id: String, selection: Dictionary, index: int) -> String:
+	var rolled := _as_array(selection.get("rolled_dice", []))
+	if index < rolled.size() and rolled[index] is Dictionary and not str(rolled[index].get("die_id", "")).is_empty(): return str(rolled[index].die_id)
+	var resolution := _as_dictionary(_view.content_definition("abilities", ability_id).get("resolution", {}))
+	var die_id := str(_as_dictionary(resolution.get("roll", {})).get("dice_id", "standard_d6"))
+	for op in _as_array(resolution.get("operations", [])):
+		if not op is Dictionary or op.get("type") != "roll_dice": continue
+		if str(op.get("dice", "")) != "owner": return str(op.get("dice_id", die_id))
+		var loadout := _as_array(_view.actor(actor_id).get("dice_loadout", []))
+		if not loadout.is_empty() and loadout[0] is Dictionary: return str(loadout[0].get("dice_id", die_id))
+	return die_id
+
 func _contains_roll_operation(operations: Array) -> bool:
 	for operation in operations:
 		if operation is Dictionary and str(operation.get("type", "")) == "roll_dice": return true
 	return false
 
-func _resolved_operations(operations: Array, rolled_face: int) -> Array:
+## die_id is the die that rolled the face; role outcomes (dice: owner) match
+## by the role the authority published for that die's symbol.
+func _resolved_operations(operations: Array, rolled_face: int, die_id: String = "") -> Array:
 	var result: Array = []
 	for operation in operations:
 		if not operation is Dictionary: continue
 		if str(operation.get("type", "")) != "roll_dice":
 			result.append(operation); continue
 		for outcome in _as_array(operation.get("outcomes", [])):
-			if outcome is Dictionary and _outcome_contains_face(outcome, rolled_face):
-				result.append_array(_resolved_operations(_as_array(outcome.get("operations", [])), rolled_face))
+			if outcome is Dictionary and _outcome_contains_face(outcome, rolled_face, die_id):
+				result.append_array(_resolved_operations(_as_array(outcome.get("operations", [])), rolled_face, die_id))
 	return result
 
-func _outcome_contains_face(outcome: Dictionary, rolled_face: int) -> bool:
+func _outcome_contains_face(outcome: Dictionary, rolled_face: int, die_id: String = "") -> bool:
 	for configured_face in _as_array(outcome.get("faces", [])):
 		if int(configured_face) == rolled_face: return true
-	return false
+	var roles := _as_array(outcome.get("roles", []))
+	if roles.is_empty() or die_id.is_empty(): return false
+	return BattlePresentationCatalog.role_for_die_face(die_id, rolled_face) in roles
 
 func _configured_amount(value, rolled_face: int) -> int:
 	return rolled_face if value is String and value == "rolled_face" else int(value)

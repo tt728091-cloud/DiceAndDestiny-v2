@@ -1,0 +1,15 @@
+schema_version: 1
+id: board_apex5
+name: Gold Coin ×5
+type: offensive
+presentation:
+  rules_text: "5 Gold Coin: deal 12 damage. Gold Coin is face 6. Misses with fewer than 5 Gold Coin."
+cost: {energy: 0}
+usage: {maximum_per_segment: 1}
+targeting: {selector: one_enemy, minimum: 1, maximum: 1}
+qualification:
+  activation_tiers:
+    - id: apex5
+      requirements: {all: [{type: symbol_count, symbol_id: gold_coin, minimum: 5}]}
+      operations: [{type: deal_damage, target: selected_targets, amount: 12}]
+configuration_version: 1

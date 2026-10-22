@@ -4,8 +4,13 @@ import (
 	"fmt"
 	"path/filepath"
 
+	"diceanddestiny/server/internal/battle"
+	"diceanddestiny/server/internal/battle/loadout"
 	"diceanddestiny/server/internal/content"
 )
+
+// PlayableCharacters are the characters a player can pick, in roster order.
+var PlayableCharacters = []string{"adventurer", "venom", "curse", "blade_warden", "starter", loadout.CustomAdventurer}
 
 // CharacterCatalogs reads definitions without creating/resetting a battle,
 // initializing a policy, drawing cards, or writing any player state.
@@ -14,12 +19,15 @@ func CharacterCatalogs(root string, authoredRoots ...string) (map[string]content
 		return nil, fmt.Errorf("content_root is required")
 	}
 	result := map[string]content.BattleLibrary{}
-	for _, id := range []string{"adventurer", "venom", "curse", "blade_warden", "starter"} {
+	for _, id := range PlayableCharacters {
 		lib, err := content.LoadBattleLibrary(filepath.Join(root, "battle_v1"))
 		if err != nil {
 			return nil, err
 		}
 		packs := []string{"venom_v1", "curse_v1", "adventurer_v1", "general_v1", "minions_v1"}
+		if id == loadout.CustomAdventurer {
+			packs = append(packs, battle.CustomAdventurerPack)
+		}
 		for _, pack := range packs {
 			lib, err = content.LoadBattleExtension(lib, filepath.Join(root, pack))
 			if err != nil {
@@ -30,6 +38,12 @@ func CharacterCatalogs(root string, authoredRoots ...string) (map[string]content
 			lib, err = content.OverlayAuthoredCards(lib, authoredRoots[0])
 			if err != nil {
 				return nil, err
+			}
+			if id == loadout.CustomAdventurer {
+				// The sheet's chosen die and priced board.
+				if lib, err = loadout.OverlayCustomBoard(lib, authoredRoots[0]); err != nil {
+					return nil, err
+				}
 			}
 		}
 		if _, ok := lib.Combatants[id]; !ok {

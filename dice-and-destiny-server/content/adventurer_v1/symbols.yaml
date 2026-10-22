@@ -1,23 +1,2 @@
 schema_version: 1
-# Symbols of the board-selection dice (custom adventurer). Each die has its own
-# set; roles (main / side / odd / apex) come from face counts, never from IDs.
-symbols:
-  # Hearth die (2-3-1)
-  - {id: hearth_spark, name: Spark, presentation_key: hearth_spark, glyph: "✦"}
-  - {id: hearth_cinder, name: Cinder, presentation_key: hearth_cinder, glyph: "▲"}
-  - {id: hearth_kiln, name: Kiln, presentation_key: hearth_kiln, glyph: "⌂"}
-  # Grove die (3-1-1-1)
-  - {id: grove_bramble, name: Bramble, presentation_key: grove_bramble, glyph: "✣"}
-  - {id: grove_root, name: Root, presentation_key: grove_root, glyph: "⊥"}
-  - {id: grove_bloom, name: Bloom, presentation_key: grove_bloom, glyph: "✿"}
-  - {id: grove_acorn, name: Acorn, presentation_key: grove_acorn, glyph: "◐"}
-  # Forge die (2-2-1-1)
-  - {id: forge_anvil, name: Anvil, presentation_key: forge_anvil, glyph: "▬"}
-  - {id: forge_tongs, name: Tongs, presentation_key: forge_tongs, glyph: "✕"}
-  - {id: forge_rivet, name: Rivet, presentation_key: forge_rivet, glyph: "◦"}
-  - {id: forge_ingot, name: Ingot, presentation_key: forge_ingot, glyph: "▰"}
-  # Loom die (2-1-2-1)
-  - {id: loom_thread, name: Thread, presentation_key: loom_thread, glyph: "〰"}
-  - {id: loom_needle, name: Needle, presentation_key: loom_needle, glyph: "↗"}
-  - {id: loom_spindle, name: Spindle, presentation_key: loom_spindle, glyph: "◎"}
-  - {id: loom_knot, name: Knot, presentation_key: loom_knot, glyph: "∞"}
+symbols: []

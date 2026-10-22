@@ -144,3 +144,9 @@ func annotateDieRoles(lib *BattleLibrary) {
 		lib.Dice[id] = die
 	}
 }
+
+// ValidateLibrary checks a whole catalog, for callers that add definitions to
+// a loaded one (a player's generated abilities).
+func ValidateLibrary(lib BattleLibrary) error {
+	return validateBattleLibrary(lib)
+}
