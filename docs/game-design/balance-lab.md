@@ -297,6 +297,45 @@ $LAB -hero H -opponent MINION -foe script -players greedy -seats both -battles 3
 $LAB -hero starter -opponent starter -foe greedy -players lookahead -budget 96 -seats both -battles 100 -first-seed 200001 -workers 14 -record ml/runs/value-v1/lookahead-starter-vs-starter
 ```
 
+### Training and offline check (T4, phase A2)
+
+`ml/dice_destiny_ml/value_train.py` (`./scripts/ml.sh value-train`, or `uv run python -m dice_destiny_ml.value_train` from `ml/`) trains an MLP of two hidden layers of 128 with two heads: the win probability (sigmoid, log loss on 1 / 0.5 / 0) and the final health margin (tanh, squared error). Inputs are standardized on the training rows and the scaling is folded into the first layer at export. Train and validation split by battle (10% of battles validate); every battle with the held-out hero or opponent is kept out of both. The export (`dice-and-destiny-value-v1`) holds the tensors, the encoder's schema hash and width, the datasets' header SHA-256s, the training content hashes, the metrics, and a few check rows the Go loader must reproduce.
+
+Baselines on the held-out set: a logistic fit on the health margin (own health share minus the opponent's; fitted on the training rows: slope 7.08) and today's evaluator `tanh(2 × margin)` read as a probability `(1 + tanh) / 2`.
+
+**One training setting was tried, and it passed:** GELU, 2 × 128, margin weight 1, Adam 1e-3, weight decay 1e-5, batch 1,024, early stopping on validation log loss (best at epoch 11 of 16, 8 s on two threads).
+
+| Set (positions) | Network: log loss / Brier | Logistic on margin | `tanh(2 × margin)` |
+|---|---|---|---|
+| Validation (19,378) | **0.397** / 0.095 | 0.517 / 0.140 | 0.542 / 0.147 |
+| Held out: Venom or Bell Diver (107,742) | **0.415** / 0.117 | 0.506 / 0.153 | 0.541 / 0.164 |
+| Held-out matchup, Venom vs Bell Diver (8,110) | **0.228** / 0.051 | 0.508 / 0.162 | 0.546 / 0.174 |
+
+Calibration on the held-out set (positions: mean predicted → mean outcome):
+
+| Predicted | Network | Logistic on margin | `tanh(2 × margin)` |
+|---|---|---|---|
+| 0.0–0.1 | 20,118: 0.042 → 0.036 | 8,680: 0.048 → 0.021 | 1,903: 0.071 → 0.002 |
+| 0.1–0.2 | 10,168: 0.143 → 0.115 | 8,113: 0.149 → 0.101 | 5,180: 0.154 → 0.019 |
+| 0.2–0.3 | 7,077: 0.243 → 0.247 | 8,992: 0.255 → 0.224 | 7,822: 0.250 → 0.078 |
+| 0.3–0.4 | 5,496: 0.349 → 0.400 | 7,472: 0.350 → 0.320 | 12,435: 0.350 → 0.216 |
+| 0.4–0.5 | 6,415: 0.454 → 0.454 | 7,792: 0.436 → 0.432 | 13,709: 0.444 → 0.392 |
+| 0.5–0.6 | 7,402: 0.553 → 0.501 | 33,436: 0.515 → 0.516 | 39,353: 0.519 → 0.537 |
+| 0.6–0.7 | 7,606: 0.649 → 0.520 | 7,472: 0.650 → 0.680 | 12,435: 0.650 → 0.784 |
+| 0.7–0.8 | 5,813: 0.750 → 0.614 | 8,992: 0.745 → 0.776 | 7,822: 0.750 → 0.922 |
+| 0.8–0.9 | 7,359: 0.856 → 0.736 | 8,113: 0.851 → 0.899 | 5,180: 0.846 → 0.981 |
+| 0.9–1.0 | 30,288: 0.969 → 0.940 | 8,680: 0.952 → 0.979 | 1,903: 0.929 → 0.998 |
+
+- The network separates positions far better than the health race (a third of the held-out positions sit above 0.9 or below 0.1, against a tenth for the logistic fit).
+- On the unseen characters it is overconfident from 0.6 to 0.9: positions it rates 0.75 win 61% of the time. `tanh(2 × margin)` is badly underconfident: its 0.85 wins 98%.
+
+```bash
+cd ml && OMP_NUM_THREADS=2 uv run --python 3.12 python -m dice_destiny_ml.value_train \
+  --data 'runs/value-v1/*' --held-out-hero venom --held-out-opponent drowned_oracle_bell_diver \
+  --output runs/value-v1-models/value-v1-a.json --activation gelu --margin-weight 1.0
+# sha256 4f8c370d57a7a75bec03926fb815f59b7525ac2f2098e1be3bc7f8b8f7c3337f, 476 KB
+```
+
 ## Limits and next steps
 
 - **Dice solver:** handles pools of identical dice. Mixed pools fall back to plain simulation.
