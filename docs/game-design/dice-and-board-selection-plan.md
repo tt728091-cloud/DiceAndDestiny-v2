@@ -352,6 +352,90 @@ lands.
   layout is simply easier to play well); if every board deals its price, a
   measured per-die correction belongs in the pricing, not in hand edits.
   Then the weak outliers above, the energy rate, and the Grove Die family.
+  **Answered by the pure duel below:** the board and die alone show no
+  Hearth edge, and what separates boards is the damage that gets through
+  the defense, not the average.
+
+**Pure board duel** (2026-10-22, `go run ./cmd/board-lab -pure`). This duel
+measures the board and its die alone:
+- **Both sides:** the custom adventurer's resources, a deck of blank cards (health only, nothing to play), Holdfast as the one defense, and no riders.
+- **Opponent:** a reference board, the Standard template on the standard die (6.23 per turn). Greedy players, paired seeds, 2000 battles per board, so a cell is good to about ±0.02.
+- **Scratch content:** the battles run on a copy of the content with a blank card and the reference character added; the real content is never written.
+- **Controls:** the reference against itself scores 0.497, 0.510 and 0.499 in the three runs.
+
+With it comes a **race model**. Each round both sides attack with the
+board's priced odds per tier (`UseWhole`), the other side's defense roll
+comes off, and the model computes the chance of reaching the other's health
+first. It is exact and takes milliseconds. Across all 69 cells it predicts
+the battles to within their noise: typical error 0.006–0.007, correlation
+0.98–0.99. It can therefore stand in for the battles when checking a board.
+
+- **The board and die alone show no Hearth edge.** Equal averages give
+  equal scores on both dice: Standard 0.497/0.495, Compact 0.497/0.495, Wide
+  0.495/0.504, Double Ladder 0.521/0.525. Lean differs (0.435 standard,
+  0.499 Hearth) only because its rounding leaves the standard die at 6.10
+  against 6.23; Combo's rounding goes the other way. The rest of the Hearth
+  edge in the full lab comes from the cards (Try Again, Strong Swing and
+  the extra prevention of Steady Guard), not from the board.
+- **Average damage per turn is the wrong thing to equalize.** What decides a
+  board is the damage that gets *through* the defense. Holdfast takes about
+  3.5 of the ~6.2, so about 2.8 gets through. The score follows that number
+  (correlation 0.97–0.98) far better than the average (0.62–0.65).
+  - **Small gaps grow:** a 2% lower average is about 5% less through the
+    defense and about 5 points of win rate. Lean on the standard die (6.10)
+    scores 0.435 and Standard on the Loom Die (6.08) 0.447, both inside the
+    pricing's 2% tolerance.
+  - **Chunky boards gain:** a flat defense takes a bigger share of small hits,
+    so boards that hit rarely but hard come out ahead. Combo on the standard
+    die (5.6% no hit) scores 0.578, Spellbook on the Loom Die 0.599 and Two
+    Mains on the Forge Die 0.558. The smooth Grove Die boards lose: Rainbow
+    0.463, Suits 0.476.
+  - **Longer battles widen every gap.** At 30 health the scores span
+    0.414–0.651; at 15 they span 0.435–0.599.
+  - **Without a defense the chunky boards flip to weak** (35 health, the same
+    battle length): Spellbook on the Forge Die 0.416, Two Mains on the Loom
+    Die 0.429. Every combatant in the game has a defense (the engine requires
+    one), so this is only a stress test. It does mean no price on the
+    average can make chunky and smooth boards equal against both strong and
+    weak defenses.
+- **Proposed fix:** price each board on its damage through a standard
+  defense roll (Holdfast's, which equals Guard's 3.5 on the standard die),
+  aiming every board at the reference's 2.78, with a tighter whole-number
+  tolerance on that number. The race model then checks each board in
+  milliseconds against 0.5 ± 0.02 at 15 health, and the full lab with cards
+  is rerun afterwards to see what the cards add. Not implemented yet.
+
+| Template | Die | Avg / turn | Through Holdfast | No hit | Holdfast, 15 health: model | battles | Holdfast, 30 health: model | battles | No defense, 35 health: model | battles |
+|---|---|---|---|---|---|---|---|---|---|---|
+| Lean | Standard D6 3-2-1 | 6.10 | 2.64 | 0.6% | 0.445 | 0.435 | 0.421 | 0.414 | 0.447 | 0.449 |
+| Lean | Hearth 2-3-1 | 6.23 | 2.78 | 0.9% | 0.499 | 0.499 | 0.497 | 0.501 | 0.485 | 0.482 |
+| Standard | Standard D6 3-2-1 | 6.23 | 2.78 | 0.8% | 0.500 | 0.497 | 0.500 | 0.510 | 0.500 | 0.499 |
+| Standard | Hearth 2-3-1 | 6.23 | 2.78 | 0.9% | 0.499 | 0.495 | 0.499 | 0.506 | 0.498 | 0.499 |
+| Compact | Standard D6 3-2-1 | 6.23 | 2.78 | 0.8% | 0.500 | 0.497 | 0.500 | 0.510 | 0.500 | 0.499 |
+| Compact | Hearth 2-3-1 | 6.23 | 2.78 | 0.9% | 0.499 | 0.495 | 0.499 | 0.506 | 0.498 | 0.499 |
+| Wide | Standard D6 3-2-1 | 6.23 | 2.78 | 0.9% | 0.500 | 0.495 | 0.500 | 0.506 | 0.500 | 0.499 |
+| Wide | Hearth 2-3-1 | 6.25 | 2.80 | 0.9% | 0.508 | 0.504 | 0.511 | 0.515 | 0.503 | 0.498 |
+| Double Ladder | Standard D6 3-2-1 | 6.32 | 2.85 | 0.5% | 0.528 | 0.521 | 0.540 | 0.537 | 0.525 | 0.522 |
+| Double Ladder | Hearth 2-3-1 | 6.32 | 2.85 | 0.5% | 0.528 | 0.525 | 0.541 | 0.538 | 0.523 | 0.526 |
+| Combo | Standard D6 3-2-1 | 6.31 | 3.01 | 5.6% | 0.581 | 0.578 | 0.617 | 0.612 | 0.517 | 0.507 |
+| Combo | Hearth 2-3-1 | 6.23 | 2.91 | 5.1% | 0.543 | 0.538 | 0.564 | 0.562 | 0.477 | 0.480 |
+| Rainbow | Grove 3-1-1-1 | 6.21 | 2.73 | 0.3% | 0.464 | 0.463 | 0.448 | 0.449 | 0.484 | 0.477 |
+| Wide Rainbow | Grove 3-1-1-1 | 6.32 | 2.85 | 0.5% | 0.508 | 0.503 | 0.512 | 0.524 | 0.522 | 0.505 |
+| Suits | Grove 3-1-1-1 | 6.23 | 2.75 | 0.2% | 0.472 | 0.476 | 0.459 | 0.461 | 0.491 | 0.495 |
+| Standard | Forge 2-2-1-1 | 6.29 | 2.84 | 1.4% | 0.523 | 0.527 | 0.533 | 0.540 | 0.510 | 0.518 |
+| Standard | Loom 2-1-2-1 | 6.08 | 2.65 | 1.8% | 0.446 | 0.447 | 0.422 | 0.421 | 0.450 | 0.456 |
+| Two Mains | Forge 2-2-1-1 | 6.22 | 2.95 | 6.5% | 0.562 | 0.558 | 0.590 | 0.577 | 0.463 | 0.472 |
+| Two Mains | Loom 2-1-2-1 | 6.08 | 2.77 | 5.4% | 0.496 | 0.490 | 0.494 | 0.478 | 0.436 | 0.429 |
+| Spellbook | Forge 2-2-1-1 | 6.17 | 2.89 | 6.1% | 0.543 | 0.551 | 0.561 | 0.566 | 0.411 | 0.416 |
+| Spellbook | Loom 2-1-2-1 | 6.31 | 3.05 | 7.0% | 0.600 | 0.599 | 0.643 | 0.651 | 0.504 | 0.501 |
+| Ladder Pair | Forge 2-2-1-1 | 6.31 | 2.84 | 0.3% | 0.522 | 0.539 | 0.531 | 0.533 | 0.519 | 0.521 |
+| Ladder Pair | Loom 2-1-2-1 | 6.31 | 2.84 | 0.2% | 0.522 | 0.533 | 0.531 | 0.534 | 0.521 | 0.529 |
+
+Inside 0.45–0.55: 17 of 23 boards at 15 health with Holdfast, 15 at 30
+health, and 20 with no defense. "Through Holdfast" is the average damage
+per turn after the reference's Holdfast roll on the standard die. Ladder
+Pair normally carries two defenses; here it has Holdfast only, like every
+other board.
 
 **Hearth and standard, with and without Nudge** (1000 battles per cell
 against the reference; a cell is good to about ±0.03, a difference between

@@ -11,7 +11,12 @@
 // authority's own save, so battles pin it exactly as the game does. Published
 // cards are read from the authored root and never written.
 //
+// -pure plays the boards alone instead (pure.go): blank decks, one defense,
+// no riders, every default board against a reference board, beside the race
+// model's prediction.
+//
 //	go run ./cmd/board-lab -battles 200 -random 300 -random-battles 40 -markdown /tmp/board-lab.md
+//	go run ./cmd/board-lab -pure -battles 2000 -health 15 -markdown /tmp/pure.md
 package main
 
 import (
@@ -74,6 +79,11 @@ func main() {
 	workers := flag.Int("workers", max(1, runtime.NumCPU()-2), "parallel battles")
 	out := flag.String("out", "", "optional JSON results path")
 	markdown := flag.String("markdown", "", "optional Markdown report path")
+	pure := flag.Bool("pure", false, "pure duel: blank decks, one defense, no riders, every default board against a reference board")
+	health := flag.Int("health", 15, "pure duel: blank cards in each deck (the health)")
+	reference := flag.String("reference", "standard:standard_d6", "pure duel: the reference board, template:die at default picks")
+	defense := flag.String("defense", "holdfast", "pure duel: both sides' one defense, or none")
+	templates := flag.String("templates", "", "pure duel: only these templates (comma separated)")
 	flag.Parse()
 
 	debug.SetGCPercent(400)
@@ -91,6 +101,10 @@ func main() {
 		fail(err)
 	}
 	l := lab{contentRoot: *contentRoot, builder: builder, workers: *workers, first: *first}
+	if *pure {
+		runPure(l, *health, *reference, *defense, *battles, *templates, *out, *markdown)
+		return
+	}
 	started := time.Now()
 	var controlLines []string
 	if *controls > 0 {
