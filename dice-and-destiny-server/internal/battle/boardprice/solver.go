@@ -129,7 +129,7 @@ func arrangements(s multiset) float64 {
 
 // faces lists the hand's faces in ascending order.
 func (t *handTable) faces(set int) []int {
-	var out []int
+	out := []int{} // a list even when nothing is kept
 	for f, c := range t.sets[set] {
 		for n := 0; n < int(c); n++ {
 			out = append(out, f+1)

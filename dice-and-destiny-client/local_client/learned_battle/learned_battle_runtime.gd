@@ -298,3 +298,20 @@ func ability_authoring(op: String = "ability_authoring", ability: Dictionary = {
 
 func card_trees(op: String = "card_trees", tree: Dictionary = {}, revision: int = 0, character: String = "adventurer", token: String = "") -> Dictionary:
 	return _request({"op": op, "card_tree": tree, "catalog_revision": revision, "character": character, "admin_token": token, "loadout_root": WorkspacePaths.runtime_dir("user/character_loadouts"), "content_root": ProjectSettings.globalize_path("res://../dice-and-destiny-server/content")})
+
+## Board Builder (custom adventurer). The authority prices every board; the
+## client only shows its report.
+## Read-only menus, the die's faces, roles and cost odds, and the sheet's board.
+func board_builder(board: Dictionary = {}) -> Dictionary:
+	if _native_authority == null: return {"ok": false, "error": _initialization_error}
+	return _request({"op": "board_builder", "board": board, "loadout_root": WorkspacePaths.runtime_dir("user/character_loadouts"), "content_root": ProjectSettings.globalize_path("res://../dice-and-destiny-server/content")})
+
+## Read-only: prices a board choice; include_policy adds the keep table.
+func board_price(board: Dictionary, include_policy: bool = false) -> Dictionary:
+	if _native_authority == null: return {"ok": false, "error": _initialization_error}
+	return _request({"op": "board_price", "board": board, "include_policy": include_policy, "content_root": ProjectSettings.globalize_path("res://../dice-and-destiny-server/content")})
+
+## Confirms a board: the authority re-prices it and writes it to the sheet.
+func board_save(board: Dictionary, revision: int) -> Dictionary:
+	if _native_authority == null: return {"ok": false, "error": _initialization_error}
+	return _request({"op": "board_save", "board": board, "revision": revision, "loadout_root": WorkspacePaths.runtime_dir("user/character_loadouts"), "content_root": ProjectSettings.globalize_path("res://../dice-and-destiny-server/content")})

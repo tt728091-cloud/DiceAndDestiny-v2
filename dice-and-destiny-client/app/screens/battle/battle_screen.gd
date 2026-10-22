@@ -926,6 +926,7 @@ func _build_incoming_attack_list() -> void:
 		var group := VBoxContainer.new(); group.add_theme_constant_override("separation", 4); body.add_child(group)
 		var row := preload("res://presentation/battle/incoming_attack_row.gd").new()
 		group.add_child(row); row.configure(presenter)
+		_inspect(row, str(row.get_meta("inspection_id")), "Incoming attack: select it to choose a defense")
 		_incoming_attack_rows[id] = row; presenter.incoming_row = row
 		row.set_meta("source_order", _incoming_attack_rows.size())
 		if id == active and row.defense_rank() < 2: focus_row = row

@@ -56,6 +56,14 @@ func boardBuilder(contentRoot string) (*boardprice.Builder, error) {
 	return builder, nil
 }
 
+// orEmpty keeps viewer lists as lists, never null.
+func orEmpty(values []string) []string {
+	if values == nil {
+		return []string{}
+	}
+	return values
+}
+
 func decodeBoardChoice(raw json.RawMessage) (boardprice.Choice, error) {
 	var choice boardprice.Choice
 	if len(raw) == 0 {
@@ -149,7 +157,7 @@ func boardBuilderView(contentRoot, loadoutRoot, dieID string) (map[string]any, e
 	for _, t := range b.Menus.Templates {
 		var slots []map[string]any
 		for _, s := range t.Slots {
-			slots = append(slots, map[string]any{"id": s.ID, "job": s.Job, "job_name": b.Menus.Jobs[s.Job].Name, "cost": s.Cost, "bands": s.Bands, "flex": s.Flex(), "takes_rider": s.TakesRider()})
+			slots = append(slots, map[string]any{"id": s.ID, "job": s.Job, "job_name": b.Menus.Jobs[s.Job].Name, "cost": s.Cost, "bands": orEmpty(s.Bands), "flex": s.Flex(), "takes_rider": s.TakesRider()})
 		}
 		templates = append(templates, map[string]any{"id": t.ID, "name": t.Name, "family": t.Family, "defenses": t.Defenses, "slots": slots, "unlock": t.Unlock})
 		if t.Family != die.Layout.Family {
@@ -200,7 +208,11 @@ func boardPriceView(contentRoot string, choice boardprice.Choice, includePolicy 
 				riders = append(riders, r.ID)
 			}
 		}
-		slot := map[string]any{"slot": s.ID, "job": s.Job, "job_name": b.Menus.Jobs[s.Job].Name, "cost": pick.Cost, "label": b.Label(die, cost), "rider": pick.Rider, "rider_name": rider.Name, "riders": riders, "flex": s.Flex(), "bands": s.Bands}
+		var tierLabels []map[string]any
+		for _, tier := range cost {
+			tierLabels = append(tierLabels, map[string]any{"tier": tier.String(), "label": b.Label(die, boardprice.Cost{tier})})
+		}
+		slot := map[string]any{"tiers": tierLabels, "slot": s.ID, "job": s.Job, "job_name": b.Menus.Jobs[s.Job].Name, "cost": pick.Cost, "label": b.Label(die, cost), "rider": pick.Rider, "rider_name": rider.Name, "riders": orEmpty(riders), "flex": s.Flex(), "bands": orEmpty(s.Bands)}
 		if s.Flex() {
 			taken := map[string]bool{}
 			for j, other := range resolved.Slots {
