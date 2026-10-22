@@ -40,6 +40,11 @@ type SearchPolicy struct {
 	// Rounds limits each future to this many rounds and scores the position
 	// there; zero plays every future to the end of the battle.
 	Rounds int
+	// Evaluator, when set, builds each worker's judge of the horizon (a value
+	// network): futures then stop at the first offensive-planning start
+	// after Rounds and the judge's expected margin replaces the health
+	// margin there. Nil scores the health race (version 2).
+	Evaluator func() Evaluator
 	// MarginWeight adds the health difference (as fractions of each side's
 	// maximum) to the win/draw/loss score, to separate options that win
 	// equally often.
@@ -85,6 +90,7 @@ type searchWorker struct {
 	sim      *Simulator
 	hero     *GreedyPolicy
 	opponent Policy
+	judge    Evaluator
 }
 
 // Counts reports how many decisions were searched and overridden.
@@ -120,7 +126,11 @@ func (s *SearchPolicy) workers() ([]*searchWorker, error) {
 			return nil, err
 		}
 		hero := &GreedyPolicy{Solver: NewDiceSolver(), Rates: s.Rollout.Rates, CardValue: s.Rollout.CardValue, DrawValue: s.Rollout.DrawValue, DiceCards: s.Rollout.DiceCards, Bias: s.Rollout.Bias}
-		s.pool = append(s.pool, &searchWorker{sim: sim, hero: hero, opponent: s.NewOpponent()})
+		w := &searchWorker{sim: sim, hero: hero, opponent: s.NewOpponent()}
+		if s.Evaluator != nil {
+			w.judge = s.Evaluator()
+		}
+		s.pool = append(s.pool, w)
 	}
 	return s.pool[:max(1, s.Workers)], nil
 }
@@ -200,18 +210,20 @@ func (s *SearchPolicy) Choose(d *Decision) (int, error) {
 					policies[id] = w.opponent
 				}
 				policies[d.Seat] = w.hero
-				playout := Playout{Sim: w.sim, Hero: d.Seat, Policies: policies, Rounds: s.Rounds, Evaluate: s.evaluate, Deadline: deadline}
+				playout := Playout{Sim: w.sim, Hero: d.Seat, Policies: policies, Rounds: s.Rounds, Evaluate: s.evaluate, Judge: w.judge, Deadline: deadline}
 				for jb := range next {
 					a := arms[jb.k]
 					seed := base + (a.offset+uint64(jb.j))*0x9e3779b97f4a7c15
 					b := Fork(d.Battle, d.Seat, seed)
 					action := d.Actions[a.index]
-					v, err := playout.Run(&b, &action, rand.New(rand.NewSource(int64(seed))))
+					v, judged, expected, err := playout.Play(&b, &action, rand.New(rand.NewSource(int64(seed))))
 					switch {
 					case errors.Is(err, errDeadline):
 						continue
 					case err != nil:
 						v = -2
+					case judged:
+						v += s.MarginWeight * expected
 					default:
 						v += s.MarginWeight * margin(&b, d.Seat)
 					}

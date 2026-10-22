@@ -173,28 +173,14 @@ type recorder struct {
 	err     error
 }
 
-// PlanningStart reports the first moment of a round's offensive planning:
-// nobody has rolled yet.
-func PlanningStart(b *state.Battle) bool {
-	if b.Settled == nil || b.Settled.Window == nil || b.Segment.Current != "offensive" || b.Settled.Window.Stage != "planning" {
-		return false
-	}
-	for _, rt := range b.Settled.Actors {
-		if len(rt.FinalDice) > 0 || rt.RollsUsed > 0 {
-			return false
-		}
-	}
-	return true
-}
-
 func (r *recorder) Decision(d *lookahead.Decision) {
 	b := d.Battle
-	if r.err != nil || b.Segment.Round == r.round || !PlanningStart(b) {
+	if r.err != nil || b.Segment.Round == r.round || !lookahead.PlanningStart(b) {
 		return
 	}
 	r.round = b.Segment.Round
 	for _, seat := range sortedActors(b) {
-		pos, err := NewPosition(d.Sim, b, seat, d.Seat)
+		pos, err := NewPosition(b, seat, d.Seat)
 		if err != nil {
 			r.err = err
 			return

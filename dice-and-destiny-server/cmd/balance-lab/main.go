@@ -182,6 +182,9 @@ type playerConfig struct {
 	energyValue, energyGain, energySpend float64
 	statusValue, protectValue            float64
 	bias                                 string
+	// valueModel is a value network file that judges the look-ahead's
+	// horizon (with rounds > 0).
+	valueModel string
 }
 
 func (c *playerConfig) register(fs *flag.FlagSet) {
@@ -191,6 +194,7 @@ func (c *playerConfig) register(fs *flag.FlagSet) {
 	fs.IntVar(&c.rounds, "rounds", c.rounds, "look-ahead horizon in rounds (0 plays each future to the end)")
 	fs.BoolVar(&c.trace, "trace", c.trace, "print every look-ahead override")
 	fs.StringVar(&c.bias, "bias", c.bias, "experiment: favour abilities in the greedy player's choices, e.g. measured_strike=2")
+	fs.StringVar(&c.valueModel, "value-model", c.valueModel, "value network file (value-v1) that judges the look-ahead's horizon; needs -rounds > 0")
 	fs.Float64Var(&c.energyValue, "energy-value", c.energyValue, "shortcut: sets -energy-gain-value and -energy-spend-value (negative leaves them)")
 	fs.Float64Var(&c.energyGain, "energy-gain-value", c.energyGain, "damage one energy point gained is worth to the greedy player (and the look-ahead's simulated play)")
 	fs.Float64Var(&c.energySpend, "energy-spend-value", c.energySpend, "damage one energy point spent on a card costs the greedy player")
@@ -242,6 +246,9 @@ func (c playerConfig) describe(name string) string {
 			search = fmt.Sprintf("think-ms=%d", c.thinkMS)
 		}
 		text = fmt.Sprintf("%s rounds=%d search-workers=%d %s", search, c.rounds, max(1, c.searchWorkers), text)
+		if c.valueModel != "" {
+			text += " value-model=" + c.valueModel
+		}
 	}
 	return text
 }
@@ -274,6 +281,17 @@ func playerFactory(name string, foe lookahead.PolicyFactory, heroFoe bool, c pla
 		}, nil
 	case "lookahead", "lookahead-v1":
 		v1 := name == "lookahead-v1"
+		var network *valuenet.Model
+		if c.valueModel != "" {
+			if c.rounds <= 0 {
+				return nil, fmt.Errorf("%s: -value-model needs -rounds > 0", name)
+			}
+			var err error
+			if network, err = valuenet.LoadFile(c.valueModel); err != nil {
+				return nil, err
+			}
+			fmt.Fprintf(os.Stderr, "%s judges its horizon with %s (sha256 %s)\n", name, c.valueModel, network.SHA256)
+		}
 		return func() (lookahead.Policy, error) {
 			// The look-ahead models a minion with its own script and a hero
 			// with the greedy player of its own version (a fresh instance per
@@ -296,6 +314,9 @@ func playerFactory(name string, foe lookahead.PolicyFactory, heroFoe bool, c pla
 			search.Rounds = c.rounds
 			search.Think = time.Duration(c.thinkMS) * time.Millisecond
 			search.Workers = max(1, c.searchWorkers)
+			if network != nil {
+				search.Evaluator = network.Evaluators()
+			}
 			if c.trace {
 				search.Trace = func(line string) { fmt.Fprintln(os.Stderr, line) }
 			}

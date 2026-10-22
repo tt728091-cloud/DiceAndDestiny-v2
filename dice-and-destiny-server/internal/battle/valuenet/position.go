@@ -37,9 +37,9 @@ type DiceSetup struct {
 }
 
 // NewPosition builds the seat's position. It reads the battle only through
-// the simulator's viewer-safe snapshot, the pinned catalog and the dice
-// loadouts.
-func NewPosition(sim *lookahead.Simulator, b *state.Battle, seat, acting string) (Position, error) {
+// the viewer-safe snapshot (lookahead.ViewSnapshot, as Simulator.View), the
+// pinned catalog and the dice loadouts.
+func NewPosition(b *state.Battle, seat, acting string) (Position, error) {
 	lib, err := engine.SettledLibrary(b)
 	if err != nil {
 		return Position{}, err
@@ -50,7 +50,7 @@ func NewPosition(sim *lookahead.Simulator, b *state.Battle, seat, acting string)
 			dice[id] = DiceSetup{Die: b.DiceDefinitions[actor.DiceLoadout[0].DiceID], Count: actor.DiceLoadout[0].Count}
 		}
 	}
-	return Position{Seat: seat, Acting: acting, View: sim.Snapshot(b, seat), Library: lib, Dice: dice}, nil
+	return Position{Seat: seat, Acting: acting, View: lookahead.ViewSnapshot(b, seat), Library: lib, Dice: dice}, nil
 }
 
 // opponent is the other team's actor with the most health left (as a share

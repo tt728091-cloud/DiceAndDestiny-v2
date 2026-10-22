@@ -89,7 +89,7 @@ func planningDecisions(t *testing.T, hero string, seed uint64) []*lookahead.Deci
 
 func encode(t *testing.T, enc *valuenet.Encoder, d *lookahead.Decision, b *state.Battle, seat string) []float32 {
 	t.Helper()
-	pos, err := valuenet.NewPosition(d.Sim, b, seat, d.Seat)
+	pos, err := valuenet.NewPosition(b, seat, d.Seat)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -127,7 +127,7 @@ func TestSchemaWidth(t *testing.T) {
 		t.Fatalf("schema hash %q", valuenet.SchemaHash())
 	}
 	d := planningDecisions(t, "starter", 3)[0]
-	pos, err := valuenet.NewPosition(d.Sim, d.Battle, d.Seat, d.Seat)
+	pos, err := valuenet.NewPosition(d.Battle, d.Seat, d.Seat)
 	if err != nil {
 		t.Fatal(err)
 	}

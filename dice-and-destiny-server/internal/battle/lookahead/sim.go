@@ -70,6 +70,12 @@ func (s *Simulator) View(b *state.Battle, seat string, actions []command.Command
 // Snapshot is the viewer-safe snapshot View carries, without the legal
 // actions: opponents' hands are counts, private planning is hidden.
 func (s *Simulator) Snapshot(b *state.Battle, seat string) snapshot.Battle {
+	return ViewSnapshot(b, seat)
+}
+
+// ViewSnapshot is the seat's viewer-safe snapshot, the one Simulator.View
+// carries.
+func ViewSnapshot(b *state.Battle, seat string) snapshot.Battle {
 	return snapshot.FromBattleForViewerWithoutContentCatalog(*b, seat)
 }
 
