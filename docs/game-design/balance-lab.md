@@ -253,6 +253,69 @@ go run ./cmd/card-balance -from results.json -html report.html                # 
 
   Overthink measured worse than a blank card. The AI plays it when holding it would be better, so that result is not a verdict on the card.
 
+## Cards on top of the board (2026-10-22)
+
+How much each hero's deck adds to its board. The hero plays its mirror twice on the same seeds, from both seats:
+- **with its deck**;
+- **with no cards** (`-block-cards=all`): it never plays a card, so its cards only count as health, like blank cards. Its dice solver also stops planning around the dice cards it holds, and its look-ahead's simulated moves don't play them either.
+
+Setup:
+- **Hero:** the in-game opponent (version 3: `lookahead@rounds=1@budget=400`).
+- **Opponent:** greedy, with its full deck.
+- **Size:** 100 seeds, both seats, so 200 battles per side. Differences are paired battle by battle.
+- **Damage:** the lab now records each side's damage by source from the authority's event stream: before defense, prevented by the defense roll, prevented by reactions (cards and Protect), and landed. A turn counts once it resolves: an attack, or a miss followed by another turn. A turn cut short by the battle's end doesn't count.
+- **Errors:** no battle hit an engine error.
+
+| Hero | Win score: deck / no cards | Attack before defense per turn | Other damage per turn (statuses, retaliation) | Damage landed per turn | Damage taken per enemy turn | Net health per round, cards add |
+|---|---|---|---|---|---|---|
+| Starter | 0.64 / 0.23 | 7.03 / 5.87 (**+1.16**) | 0 / 0 | 3.55 / 2.35 (+1.20) | 2.86 / 3.39 (−0.53) | **+1.74** ±0.30 |
+| Curse | 0.88 / 0.57 | 4.58 / 4.40 (+0.18) | 1.31 / 1.10 | 3.73 / 3.39 (+0.34) | 2.95 / 3.21 (−0.26) | **+0.62** ±0.11 |
+| Venom | 0.81 / 0.55 | 4.20 / 3.99 (+0.21) | 2.59 / 2.19 | 4.58 / 4.05 (+0.52) | 3.43 / 3.89 (−0.46) | **+0.84** ±0.21 |
+| Blade Warden | 0.97 / 0.62 | 6.44 / 6.47 (−0.03) | 1.17 / 0.41 | 4.35 / 3.52 (+0.84) | 2.37 / 3.14 (−0.77) | **+1.44** ±0.22 |
+
+The Curse, Venom and Blade Warden rows come from the first build, which counted every turn that rolled. That build's fixes (turn counting and the solver) change none of their battles: the greedy no-card runs replay identically, and their decks hold no card the solver plans with. Under 1% of their turns were cut short. A first Starter run without the solver fix is kept in `ml/runs/cards/before-solver-fix`.
+
+- **The board estimate holds in battle.** With no cards, the Starter's board deals 5.87 per turn before defense with the search and 5.93 with greedy, and misses 1.5% of its turns (greedy). The board calculator, played with the AI's own values (Protect 0.5 a stack, energy 0.1 a point), gives 5.86 per turn and 1.4% misses, with the same mix of abilities within a few points. Run it as `board_balance.py --costs "A3/A4/A5, A2+B3, A2+C2, SS, LS, C4" --printed "4/5/6, 6, 4.5, 6, 8, 10"`.
+  - **A first build skipped that fix.** Kept from its cards, the player still planned its keeps around the Nudges and Try Agains in hand. It missed 5% of its turns and averaged 5.74.
+- **Every deck is worth about 0.3–0.4 win score in its mirror** (+0.27 to +0.41).
+- **Only the Starter's cards add attack damage.**
+  - **Starter:** +1.16 per turn before defense (+20%), and all of it gets through the defense: +1.20 landed (+51%). The defense takes a flat ~3.4 either way, as the board lab's pure duel found for boards. Large Straights rise from 17% of attacks without cards to 40% with them, and Nudge alone makes the difference: blocking only Nudge drops them to 19% (table below).
+  - **The other decks** leave the attack nearly unchanged (+0.18, +0.21, −0.03). They add statuses instead: poison for Venom, bleed for Blade Warden (Sharpen Blade). They also add defense:
+    - prevention per enemy attack: Emergency Ward 1.04; Venom's cards 0.43 (Antivenom Draught, Coagulate, Emergency Molt); Curse's 0.14 (Spiteful Ward);
+    - smaller incoming attacks before defense, by 0.37–0.51 per enemy turn. This is probably the cards that act on the opponent: Curse's cursed dice, Antivenom Draught removing poison stacks, Tip It. The Starter's opponent also attacks 0.28 weaker against the deck, likely because more damage removes more of its own cards (cards are health), leaving it fewer Strong Swings and Nudges.
+- **Only the search plays the Curse, Venom and Blade Warden cards.** Greedy plays none of them (its deck and no-card battles are identical), so in those three mirrors the greedy opponent never plays its own cards either. In the Starter mirror it plays its dice cards but never Steady Guard or Take Stock. Greedy's Starter numbers:
+  - win score 0.53 with the deck, 0.23 without;
+  - attack before defense 7.01 against 5.93 per turn;
+  - damage taken barely moves (−0.04 per enemy turn).
+
+**The Starter's cards one at a time.** The full deck against the same deck with one card type blocked, on the same seeds (both seats, 200 battles each). "Health per play" is the card's swing in health per round, dealt plus saved, times rounds per battle, divided by its plays per battle. It is net of the energy the card uses, since a blocked card's energy goes to the other cards. The card rules' effect is from `card-value-rules.md`: 1 health = 2 units.
+
+| Card | Plays per battle | Win score | Attack before defense per turn | Damage taken per enemy turn | Health per play (95%) | Card rules' effect, in health |
+|---|---|---|---|---|---|---|
+| Nudge | 0.89 | +0.12 ±0.07 | +0.47 | −0.07 | **+2.6** ±0.9 | 1.2 (2.4U) |
+| Take Stock | 0.24 | +0.04 ±0.03 | +0.10 | −0.02 | +3.0 ±1.9 | 1.0 (draw 2) |
+| Second Wind | 0.49 | +0.04 ±0.04 | +0.16 | −0.05 | +2.0 ±1.2 | 1.5 (15 energy) |
+| Strong Swing | 0.75 | +0.02 ±0.06 | +0.33 | +0.12 | +1.3 ±0.9 | about 1.5 (+2 damage, 1.24 lands) |
+| Steady Guard | 1.30 | +0.07 ±0.06 | −0.01 | −0.37 | +1.2 ±0.55 | 1.0 (prevent 1) |
+| Try Again | 0.48 | +0.03 ±0.05 | +0.15 | −0.02 | +1.1 ±1.4 | 0.35 (0.7U) |
+
+- **Steady Guard and Strong Swing play at about their printed effect.**
+- **Nudge plays at about twice its printed effect.** It is the only single card that clearly moves the win score: it turns near-straights into Large Straights (8 damage) and saves misses.
+- **Take Stock, Second Wind and Try Again:** positive, but too noisy here to price. Take Stock is played only 0.24 times a battle.
+- **The cards add up:** blocked one at a time, they sum to +1.85 health per round, against +1.74 for the whole deck.
+- **Every card measures above the rules' net:** each base card is meant to net +1U (half a health) after its energy, and every card here measures more. This is one mirror (12 health, under 4 rounds), with the search playing both its own cards and the greedy opponent's.
+- **These are values in the mirror.** The 2026-10-15 card balance run found prevention worth more against minions and offense less.
+
+```bash
+go build -o ml/runs/bin/balance-lab-cards ./cmd/balance-lab
+S=lookahead@rounds=1@budget=400
+LAB=ml/runs/bin/balance-lab-cards
+$LAB -hero starter -opponent starter -foe greedy -players "$S,$S@block-cards=all,greedy,greedy@block-cards=all" -seats both -battles 100 -workers 15 -out cards/starter.json
+# the same for curse, venom and blade_warden; then one card at a time (each against starter.json):
+$LAB -hero starter -opponent starter -foe greedy -players $S@block-cards=nudge -seats both -battles 100 -workers 15 -out cards/each-nudge.json
+python3 ml/scripts/card_value_report.py cards   # the paired tables above
+```
+
 ## AI value network (2026-10-21)
 
 The first pass of [`ai-value-network-plan.md`](ai-value-network-plan.md) (phases A0–A4; brief: [`ai-value-network-handoff.md`](ai-value-network-handoff.md)). All runs are on an M3 Max (16 cores) shared with other work. Results files and binaries live under the server's ignored `ml/runs/`.

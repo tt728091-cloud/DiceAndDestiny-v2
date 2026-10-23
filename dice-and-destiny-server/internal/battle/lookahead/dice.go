@@ -31,7 +31,10 @@ type DiceSolver struct {
 	UseCards  bool
 	Rates     Rates
 	CardValue float64
-	tables    map[string]*diceTable
+	// Skip names cards the solver never plans with (for a player that
+	// never plays them).
+	Skip   func(definitionID string) bool
+	tables map[string]*diceTable
 }
 
 func NewDiceSolver() *DiceSolver {
@@ -479,7 +482,15 @@ func (s *DiceSolver) FreshTurn(lib content.BattleLibrary, t Turn, extra map[stri
 // plays each has left this round.
 func (s *DiceSolver) handCards(b *state.Battle, lib content.BattleLibrary, seat string) map[string]int {
 	rt := b.Settled.Actors[seat]
-	return HandCards(lib, b.Actors[seat].Cards.Hand, rt.CardInstances, rt.CardUses, b.Segment.Round)
+	cards := HandCards(lib, b.Actors[seat].Cards.Hand, rt.CardInstances, rt.CardUses, b.Segment.Round)
+	if s.Skip != nil {
+		for card := range cards {
+			if s.Skip(card) {
+				delete(cards, card)
+			}
+		}
+	}
+	return cards
 }
 
 // HandCards counts cards in hand by definition, limited to the plays each

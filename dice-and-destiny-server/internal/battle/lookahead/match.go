@@ -9,6 +9,7 @@ import (
 	"diceanddestiny/server/internal/battle/command"
 	"diceanddestiny/server/internal/battle/loadout"
 	"diceanddestiny/server/internal/battle/mlsim"
+	"diceanddestiny/server/internal/battle/segment"
 	"diceanddestiny/server/internal/battle/state"
 )
 
@@ -89,6 +90,17 @@ type BattleRecord struct {
 	Actions       map[string]int `json:"hero_actions"`
 	CardsPlayed   map[string]int `json:"hero_cards_played"`
 	Abilities     map[string]int `json:"hero_abilities"`
+	// HeroTurns and FoeTurns count each side's offensive turns that
+	// resolved: an ability was selected, or none was and the battle went
+	// on (a miss). A turn rolled but cut short by the battle's end is not
+	// counted. Dealt and Taken are the committed damage against the
+	// opponent and the hero by source (an ability, card or status): before
+	// defense, prevented by the defense roll, prevented by reactions (cards
+	// and Protect) and after both.
+	HeroTurns int                           `json:"hero_turns"`
+	FoeTurns  int                           `json:"foe_turns"`
+	Dealt     map[string]mlsim.SourceDamage `json:"dealt,omitempty"`
+	Taken     map[string]mlsim.SourceDamage `json:"taken,omitempty"`
 }
 
 // Runner plays real battles through the ML environment, the same authority
@@ -153,6 +165,7 @@ func (r *Runner) Play(seed uint64, hero, foe Policy) (BattleRecord, error) {
 		b.Begin(seed, heroSeat)
 	}
 	rng := rand.New(rand.NewSource(int64(seed)*7919 + 17))
+	turns := turnCounter{}
 	for !tr.Terminal && tr.TruncationReason == "" {
 		if r.matchup.HeroPlansFirst && tr.ActorID != heroSeat && tr.Result.Snapshot != nil && tr.Result.Snapshot.Stage == "planning" {
 			if tr, _, err = r.env.PreferActor(heroSeat); err != nil {
@@ -183,6 +196,7 @@ func (r *Runner) Play(seed uint64, hero, foe Policy) (BattleRecord, error) {
 		if c, ok := r.observer.(moveObserver); ok {
 			c.Chose(d, index)
 		}
+		turns.note(tr.ActorID, full.Segment.Current, d.Actions[index].Type)
 		if tr.ActorID == heroSeat {
 			record.HeroDecisions++
 			record.HeroThinkMS += float64(time.Since(started).Microseconds()) / 1000
@@ -196,6 +210,12 @@ func (r *Runner) Play(seed uint64, hero, foe Policy) (BattleRecord, error) {
 	if err != nil {
 		return record, err
 	}
+	record.HeroTurns, record.FoeTurns = turns.resolved(heroSeat), turns.resolved(foeSeat)
+	damage, err := r.env.CommittedDamage()
+	if err != nil {
+		return record, err
+	}
+	record.Dealt, record.Taken = damage[foeSeat], damage[heroSeat]
 	hero0, foe0 := final.Actors[heroSeat], final.Actors[foeSeat]
 	record.Rounds = final.Segment.Round
 	record.HeroHealth, record.HeroMax = hero0.CurrentHealth(), MaxHealth(hero0)
@@ -214,6 +234,44 @@ func (r *Runner) Play(seed uint64, hero, foe Policy) (BattleRecord, error) {
 		r.observer.Finish(&final, record, hero, foe)
 	}
 	return record, nil
+}
+
+// turnCounter counts each seat's offensive turns that resolved. A turn
+// starts with the seat's first offensive roll; it resolved once the seat
+// selects an offensive ability, or once its next turn starts (it missed).
+type turnCounter map[string]*seatTurns
+
+type seatTurns struct {
+	done           int
+	open, selected bool
+}
+
+func (c turnCounter) note(seat string, seg segment.Segment, action command.Type) {
+	t := c[seat]
+	if t == nil {
+		t = &seatTurns{}
+		c[seat] = t
+	}
+	switch {
+	case action == command.TypePlanningRoll:
+		if t.open {
+			t.done++
+		}
+		t.open, t.selected = true, false
+	case action == command.TypePlanningAbility && seg == segment.Offensive && t.open && !t.selected:
+		t.selected = true
+	}
+}
+
+func (c turnCounter) resolved(seat string) int {
+	t := c[seat]
+	if t == nil {
+		return 0
+	}
+	if t.open && t.selected {
+		return t.done + 1
+	}
+	return t.done
 }
 
 func noteAction(record *BattleRecord, b *state.Battle, seat string, action command.Command) {

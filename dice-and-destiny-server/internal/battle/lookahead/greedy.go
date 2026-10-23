@@ -37,6 +37,9 @@ type GreedyPolicy struct {
 	// (the first version) a dice card is judged against the dice as if it
 	// did not exist.
 	DiceCards bool
+	// SkipCards names cards the dice solver never plans with: a player
+	// that is kept from playing them (CardFilter) must not count on them.
+	SkipCards func(definitionID string) bool
 	// Bias adds value to chosen abilities, for "what if it favoured X"
 	// experiments; empty in normal play.
 	Bias map[string]float64
@@ -56,7 +59,7 @@ func (p *GreedyPolicy) fresh(b *state.Battle, seat string, extra map[string]floa
 }
 
 func (p *GreedyPolicy) syncSolver() {
-	p.Solver.UseCards, p.Solver.Rates, p.Solver.CardValue = p.DiceCards, p.Rates, p.CardValue
+	p.Solver.UseCards, p.Solver.Rates, p.Solver.CardValue, p.Solver.Skip = p.DiceCards, p.Rates, p.CardValue, p.SkipCards
 }
 
 // price is what playing a card costing `energy` is worth giving up.

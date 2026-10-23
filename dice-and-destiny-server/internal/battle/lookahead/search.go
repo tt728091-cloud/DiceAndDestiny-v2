@@ -150,7 +150,7 @@ func (s *SearchPolicy) workers() ([]*searchWorker, error) {
 		if err != nil {
 			return nil, err
 		}
-		var hero Policy = &GreedyPolicy{Solver: NewDiceSolver(), Rates: s.Rollout.Rates, CardValue: s.Rollout.CardValue, DrawValue: s.Rollout.DrawValue, DiceCards: s.Rollout.DiceCards, Bias: s.Rollout.Bias}
+		var hero Policy = &GreedyPolicy{Solver: NewDiceSolver(), Rates: s.Rollout.Rates, CardValue: s.Rollout.CardValue, DrawValue: s.Rollout.DrawValue, DiceCards: s.Rollout.DiceCards, SkipCards: s.Rollout.SkipCards, Bias: s.Rollout.Bias}
 		if s.NewRollout != nil {
 			hero = s.NewRollout()
 		}

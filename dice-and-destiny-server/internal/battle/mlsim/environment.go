@@ -127,6 +127,16 @@ type DamageMetrics struct {
 	ActualTotal   int `json:"actual_total"`
 }
 
+// SourceDamage is the committed damage of one source (an ability, card or
+// status) against one seat over an episode.
+type SourceDamage struct {
+	Hits               int `json:"hits"`
+	Base               int `json:"base"`
+	Prevention         int `json:"prevention"`
+	ReactionPrevention int `json:"reaction_prevention"`
+	Final              int `json:"final"`
+}
+
 type DamageBySeatMetrics struct {
 	SeatA DamageMetrics `json:"seat-a"`
 	SeatB DamageMetrics `json:"seat-b"`
@@ -425,7 +435,7 @@ func (e *Environment) recordCommittedDamage(events []event.Event) {
 		if battleEvent.Type != event.TypeDamageCommitted || battleEvent.Data == nil {
 			continue
 		}
-		sources, ok := battleEvent.Data["sources"].([]state.SettledDamageSource)
+		sources, ok := committedList[state.SettledDamageSource](battleEvent.Data, "sources")
 		if !ok {
 			continue
 		}
@@ -445,7 +455,7 @@ func (e *Environment) recordCommittedDamage(events []event.Event) {
 			metrics.RawTotal += source.BaseAmount
 			metrics.ResolvedTotal += source.FinalAmount
 		}
-		removals, ok := battleEvent.Data["removals"].([]state.ProposedCardRemoval)
+		removals, ok := committedList[state.ProposedCardRemoval](battleEvent.Data, "removals")
 		if !ok {
 			continue
 		}
@@ -460,6 +470,72 @@ func (e *Environment) recordCommittedDamage(events []event.Event) {
 			metrics.ActualTotal++
 		}
 	}
+}
+
+// committedList reads one list of a damage_committed event. Events from
+// automatic progression are frozen through JSON, so their lists arrive as
+// decoded JSON instead of typed slices.
+func committedList[T any](data map[string]any, key string) ([]T, bool) {
+	switch v := data[key].(type) {
+	case []T:
+		return v, true
+	case nil:
+		return nil, false
+	default:
+		raw, err := json.Marshal(v)
+		if err != nil {
+			return nil, false
+		}
+		var out []T
+		if json.Unmarshal(raw, &out) != nil {
+			return nil, false
+		}
+		return out, true
+	}
+}
+
+// CommittedDamage reads the episode's committed damage by target seat and
+// source content (an ability, card or status ID) from the authority's
+// persisted event stream. It holds every commit, while training-mode step
+// results carry no events.
+func (e *Environment) CommittedDamage() (map[string]map[string]SourceDamage, error) {
+	if e.authority == nil || e.replay.BattleID == "" {
+		return nil, errors.New("environment has not been reset")
+	}
+	raw, err := e.authority.InspectBattleEventsJSON(e.replay.BattleID)
+	if err != nil {
+		return nil, err
+	}
+	var events []struct {
+		Type event.Type `json:"type"`
+		Data struct {
+			Sources []state.SettledDamageSource `json:"sources"`
+		} `json:"data"`
+	}
+	if err := json.Unmarshal(raw, &events); err != nil {
+		return nil, err
+	}
+	out := map[string]map[string]SourceDamage{}
+	for _, ev := range events {
+		if ev.Type != event.TypeDamageCommitted {
+			continue
+		}
+		for _, source := range ev.Data.Sources {
+			bySource := out[source.TargetActorID]
+			if bySource == nil {
+				bySource = map[string]SourceDamage{}
+				out[source.TargetActorID] = bySource
+			}
+			d := bySource[source.SourceContentID]
+			d.Hits++
+			d.Base += source.BaseAmount
+			d.Prevention += source.Prevention
+			d.ReactionPrevention += source.ReactionPrevention
+			d.Final += source.FinalAmount
+			bySource[source.SourceContentID] = d
+		}
+	}
+	return out, nil
 }
 
 func (e *Environment) damageMetricsForSeat(seatID string) *DamageMetrics {

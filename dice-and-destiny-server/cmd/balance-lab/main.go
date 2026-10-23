@@ -289,6 +289,9 @@ type playerConfig struct {
 	// solverDice leaves its dice decisions to the solver.
 	networkSegments string
 	solverDice      bool
+	// blockCards keeps the player from playing these cards ("all", or card
+	// IDs joined by +); they still count as health, like blank cards.
+	blockCards string
 }
 
 func (c *playerConfig) register(fs *flag.FlagSet) {
@@ -307,6 +310,7 @@ func (c *playerConfig) register(fs *flag.FlagSet) {
 	fs.StringVar(&c.networkSegments, "network-segments", c.networkSegments, "the network decides (or advises the look-ahead) only in these segments (offensive, defensive; joined by +), greedy elsewhere")
 	fs.BoolVar(&c.solverDice, "solver-dice", c.solverDice, "the network leaves dice decisions (rerolls, die choices) to the dice solver")
 	fs.BoolVar(&c.networkFutures, "network-futures", c.networkFutures, "with -policy-model, the network makes the look-ahead's own moves in its simulated futures")
+	fs.StringVar(&c.blockCards, "block-cards", c.blockCards, "the player never plays these cards (all, or card IDs joined by +), in its simulated futures too; they still count as health")
 	fs.Float64Var(&c.energyValue, "energy-value", c.energyValue, "shortcut: sets -energy-gain-value and -energy-spend-value (negative leaves them)")
 	fs.Float64Var(&c.energyGain, "energy-gain-value", c.energyGain, "damage one energy point gained is worth to the greedy player (and the look-ahead's simulated play)")
 	fs.Float64Var(&c.energySpend, "energy-spend-value", c.energySpend, "damage one energy point spent on a card costs the greedy player")
@@ -380,10 +384,58 @@ func (c playerConfig) describe(name string) string {
 	if c.topRerolls > 0 || c.topAbilities > 0 {
 		text += fmt.Sprintf(" top-rerolls=%d top-abilities=%d", c.topRerolls, c.topAbilities)
 	}
+	if c.blockCards != "" {
+		text += " block-cards=" + c.blockCards
+	}
 	return text
 }
 
+// playerFactory builds a player; with -block-cards it never plays those
+// cards, and a look-ahead's own simulated moves don't either.
 func playerFactory(name string, foe lookahead.PolicyFactory, heroFoe bool, c playerConfig) (lookahead.PolicyFactory, error) {
+	factory, err := basePlayerFactory(name, foe, heroFoe, c)
+	if err != nil || c.blockCards == "" {
+		return factory, err
+	}
+	var blocked func(string) bool
+	if c.blockCards != "all" {
+		ids := map[string]bool{}
+		for _, id := range strings.Split(c.blockCards, "+") {
+			ids[id] = true
+		}
+		blocked = func(id string) bool { return ids[id] }
+	}
+	// The dice solver must not plan with a card the player never plays.
+	skip := blocked
+	if skip == nil {
+		skip = func(string) bool { return true }
+	}
+	return func() (lookahead.Policy, error) {
+		p, err := factory()
+		if err != nil {
+			return nil, err
+		}
+		switch inner := p.(type) {
+		case *lookahead.GreedyPolicy:
+			inner.SkipCards = skip
+		case *lookahead.SearchPolicy:
+			if inner.NewRollout != nil {
+				return nil, fmt.Errorf("%s: -block-cards does not combine with -network-futures", name)
+			}
+			r := inner.Rollout
+			r.SkipCards = skip
+			inner.NewRollout = func() lookahead.Policy {
+				g := &lookahead.GreedyPolicy{Solver: lookahead.NewDiceSolver(), Rates: r.Rates, CardValue: r.CardValue, DrawValue: r.DrawValue, DiceCards: r.DiceCards, SkipCards: skip, Bias: r.Bias}
+				return &lookahead.CardFilter{Inner: g, Label: g.Name(), Blocked: blocked}
+			}
+		default:
+			return nil, fmt.Errorf("%s: -block-cards works with the greedy and look-ahead players", name)
+		}
+		return &lookahead.CardFilter{Inner: p, Label: p.Name() + "/block-cards=" + c.blockCards, Blocked: blocked}, nil
+	}, nil
+}
+
+func basePlayerFactory(name string, foe lookahead.PolicyFactory, heroFoe bool, c playerConfig) (lookahead.PolicyFactory, error) {
 	bias := parseBias(c.bias)
 	greedy := func(v1 bool) *lookahead.GreedyPolicy {
 		g := lookahead.NewGreedyPolicy()
