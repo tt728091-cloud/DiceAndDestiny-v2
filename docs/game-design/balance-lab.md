@@ -412,6 +412,85 @@ python3 ml/scripts/card_exchange_report.py ml/runs/blanks/greedy-budget --rates=
 python3 ml/scripts/card_exchange_report.py ml/runs/blanks/greedy-brine --metric=health              # minions: health left
 ```
 
+## Energy costs of the Starter's base cards (2026-10-23)
+
+**Should the base cards cost more or less energy?** Each card is measured at a range of energy costs, in blank cards per copy (the yardstick of the section above).
+
+**Method:**
+- **The cost variants:** a scratch copy of the published cards (`-authored-root`) holds each card at other costs under new IDs, for example `nudge_e9`. Only the hero's deck uses them; the opponent keeps the normal cards.
+- **The control:** a copy at the card's current cost plays exactly like the original.
+- **What's reused:** decks with a card swapped for blanks don't contain that card, so its cost can't change them, and the blank curves from the section above still apply.
+- **How a change is measured:** paired battle by battle against the copy at the current cost, which is much tighter than the absolute value.
+- **Players and sizes:**
+  - **Greedy,** 6,000 battles per cost (seeds 1–3000, both seats), for the cards it plays.
+  - **The in-game AI,** 600 battles, for Take Stock and Steady Guard.
+
+**Blanks per copy at each energy cost** (current cost in bold; blank = not measured). One blank is 10 XP, and a 15-XP card should be worth 1.5. The change from one cost to the next is good to about ±0.05 per copy (greedy). The absolute values carry the card's own ±0.15–0.25.
+
+| Card (player) | 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| Nudge (greedy) | | | | | 1.89 | 1.89 | 1.82 | **1.79** | 1.67 | 1.66 | 1.63 | 1.57 | 1.56 |
+| Strong Swing (greedy) | | | | | | | 1.86 | 1.82 | 1.77 | 1.69 | **1.61** | 1.27 | 0.97 |
+| Try Again (greedy) | 1.29 | 1.28 | 1.24 | **1.22** | 1.21 | 1.16 | | | | | | | |
+| Second Wind, gain 15 (greedy) | | | | | | 1.33 | 1.34 | 1.31 | 1.32 | | **1.28** | | 1.09 |
+| Take Stock (greedy) | 1.62 | 1.45 | 1.34 | 1.0* | 1.0* | **1.0*** | | | | | | | |
+| Take Stock (in-game AI, ±0.35) | 1.75 | | 1.15 | | | **1.00** | | | | | | | |
+| Steady Guard (in-game AI, ±0.15) | 1.52 | | | 1.40 | | **1.31** | | | | | | | |
+
+\* Greedy only plays Take Stock when it costs 2 or less, so at 3–5 it measures as a blank. That is a limit of greedy, not of the card.
+
+**Second Wind's gain** (greedy; it costs 10 unless shown):
+
+| Version | Net energy | Blanks per copy |
+|---|---|---|
+| Pay 0, gain 5 | +5 | 1.28 |
+| Pay 5, gain 10 | +5 | 1.28 |
+| **Pay 10, gain 15 (now)** | **+5** | **1.28** |
+| Gain 12 | +2 | 0.94 |
+| Gain 18 | +8 | 1.31 |
+| Gain 20 | +10 | 1.33 |
+
+- **Single points of energy matter, at thresholds.** You start a battle with 10 energy and gain 5 a round, so the thresholds come from what fits in those amounts.
+  - **Nudge** loses most between 7 and 8 (−0.13 per copy). From 4 to 7, and from 8 to 12, it changes little. The likely reason is that 7 + 3 lets a Nudge and a Try Again share the 10 you start with. Supporting this:
+    - Nudge at 8 with Try Again at 2 (still 10) loses only 0.004 win score, against 0.017 for Nudge at 8 alone.
+    - Nudge at 6 with Try Again at 4 plays like today's deck.
+  - **Strong Swing** loses about 0.08 per copy for each point up to 10, then falls off a cliff:
+    - 11 energy: 1.27, played 0.45 times a battle;
+    - 12 energy: 0.97, played 0.06 times.
+
+    A card that costs more than the 10 you start with has to be saved for across turns.
+  - **Take Stock** loses 0.14–0.17 per copy for each point from 0 to 2. Every point counts.
+  - **Try Again** barely depends on its cost (0.03 per point). Its effect is what limits it.
+  - **Second Wind** doesn't depend on its cost at all, because it pays you back. Only its net gain matters, and more than +5 adds little in the Starter deck, which has little to spend extra energy on.
+- **Costs share one pool.** Changing several costs mostly adds up; for example, Nudge 9, Strong Swing 9 and Take Stock 2 together give +0.047, against +0.043 summed. The exception is a cheaper card that draws more cards alongside a costlier card to spend on. Nudge 12 with a free Take Stock gives +0.016, against +0.056 summed: the free draws bring cards you can't pay for.
+- **What each card's cost would need to be to be worth its 15 XP (1.5 blanks):**
+
+  | Card | Now | Suggestion | Value there |
+  |---|---|---|---|
+  | Take Stock | 5 (worth 10 XP) | **1** | about 1.45–1.6 (greedy 1.45 at 1; in-game AI 1.75 at 0, 1.15 at 2) |
+  | Nudge | 7 | **10** (16 XP), or 11 to reach 15 XP (1.57) | 1.63 at 10 |
+  | Strong Swing | 10 | **keep 10** and price it 16 | 9 makes it stronger (1.69); 11 or more breaks it |
+  | Steady Guard | 5 (worth 13 XP) | **1** (0–2) | 1.52 at 0, 1.40 at 3, 1.31 at 5 (in-game AI): about 0.04 per point |
+  | Try Again | 3 | **3 with Nudge 7, 0 with Nudge 10**, and price it 12–13 | about 1.2–1.4; no cost brings it to 1.5, which needs a stronger effect |
+  | Second Wind | 10 → 15 | **keep** and price it 13 | cost doesn't matter, and a bigger gain doesn't help here |
+
+  **Try Again depends on Nudge's cost.** Measured again with Nudge at 10, Try Again's best cost moves:
+
+  | Try Again cost | 0 | 1 | 2 | 4 | 5 |
+  |---|---|---|---|---|---|
+  | Change per copy vs cost 3, with Nudge 7 | +0.07 | +0.06 | +0.03 | 0.00 | −0.06 |
+  | Change per copy vs cost 3, with Nudge 10 | **+0.16** | +0.04 | +0.04 | +0.02 | **+0.05** |
+
+  With Nudge at 10, a free Try Again makes the pair cost exactly 10, and a 5-cost one makes it 15 (the starting 10 plus one round's income). Both gain. So **Nudge 10 goes with Try Again 0**, as Nudge 7 goes with Try Again 3.
+- **Not measured with the in-game AI:** Nudge, Strong Swing, Try Again and Second Wind, where greedy's dice play matched it on Nudge. The in-game AI runs have wide error bars (600 battles each). All of this is the Starter mirror; minion fights value effects lower (section above).
+
+```bash
+python3 ml/scripts/card_cost_variants.py ml/runs/energy/authored nudge:4,5,6,8,9,10,11,12 take_stock:0,1,2   # scratch published cards with cost variants
+ml/runs/bin/balance-lab-blanks -hero starter -opponent starter -foe greedy -players greedy -authored-root ml/runs/energy/authored \
+  -hero-deck steady_guard:3,nudge_e10:2,try_again:2,strong_swing:2,take_stock:2,second_wind:1 -seats both -battles 3000 -out nudge@10.json
+python3 ml/scripts/card_exchange_report.py ml/runs/blanks/greedy-energy-costs --costs=ml/runs/blanks/greedy
+```
+
 ## AI value network (2026-10-21)
 
 The first pass of [`ai-value-network-plan.md`](ai-value-network-plan.md) (phases A0–A4; brief: [`ai-value-network-handoff.md`](ai-value-network-handoff.md)). All runs are on an M3 Max (16 cores) shared with other work. Results files and binaries live under the server's ignored `ml/runs/`.
