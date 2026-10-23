@@ -2,6 +2,7 @@ package lookahead_test
 
 import (
 	"encoding/json"
+	"maps"
 	"math"
 	"testing"
 
@@ -32,6 +33,31 @@ func stage(d *lookahead.Decision) string {
 		return ""
 	}
 	return d.Battle.Settled.Window.Stage
+}
+
+// withCardCost pins a card's energy cost in a battle's own catalog, so a
+// position checked by hand keeps the cost it was checked at.
+func withCardCost(t *testing.T, b *state.Battle, card string, energy int) {
+	t.Helper()
+	lib, err := engine.SettledLibrary(b)
+	if err != nil {
+		t.Fatal(err)
+	}
+	def, ok := lib.Cards[card]
+	if !ok {
+		t.Fatalf("%s is not in the battle's catalog", card)
+	}
+	def.Cost.Energy = energy
+	lib.Cards = maps.Clone(lib.Cards)
+	lib.Cards[card] = def
+	raw, err := json.Marshal(lib)
+	if err != nil {
+		t.Fatal(err)
+	}
+	b.SettledCatalog, b.SettledCatalogHash = raw, [32]byte{}
+	if got, err := engine.SettledLibrary(b); err != nil || got.Cards[card].Cost.Energy != energy {
+		t.Fatalf("pinning %s at %d energy: %v", card, energy, err)
+	}
 }
 
 // firstRollDecision returns the hero's opening offensive decision, before
@@ -143,8 +169,10 @@ func TestDiceSolverByHand(t *testing.T) {
 		t.Fatal(err)
 	}
 	rt := b.Settled.Actors[d.Seat]
-	// No energy, so no dice card in hand can be played.
+	// No cards in hand and no energy (some dice cards are free), so only
+	// the dice count.
 	actor := b.Actors[d.Seat]
+	actor.Cards.Hand = nil
 	actor.Resources.EnergyPoints = 0
 	b.Actors[d.Seat] = actor
 	setDice(&b, d.Seat, []int{3, 1, 4, 3, 2}, rt.MaxRolls-1)
@@ -180,6 +208,9 @@ func TestDiceSolverKeepsNudgesForLater(t *testing.T) {
 	if err := d.Sim.Apply(&b, rollCommand(t, d)); err != nil {
 		t.Fatal(err)
 	}
+	// The position was checked with Nudge at 7 energy, its cost then; the
+	// test pins that cost, so card tuning doesn't move these numbers.
+	withCardCost(t, &b, "nudge", 7)
 	rt := b.Settled.Actors[d.Seat]
 	actor := b.Actors[d.Seat]
 	var nudges []string
@@ -211,8 +242,8 @@ func TestDiceSolverKeepsNudgesForLater(t *testing.T) {
 			t.Errorf("%s: %.6f, want %.6f", name, got, want)
 		}
 	}
-	// Nudge costs 7 energy (card-value-rules.md); each play is charged
-	// 0.1 per energy plus CardValue (0 here).
+	// Each Nudge play is charged 0.1 per energy (7 here) plus CardValue
+	// (0 here).
 	close("best", plan.Best(), 7.227777777777778)
 	close("reroll one 6", plan.Reroll([]int{1}), 7.227777777777778)
 	close("reroll both 6s", plan.Reroll([]int{1, 2}), 7.131327160493827)

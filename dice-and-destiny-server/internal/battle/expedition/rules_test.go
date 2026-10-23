@@ -391,6 +391,12 @@ func TestMovementCostsPaymentsAndImpassableTerrain(t *testing.T) {
 
 func TestMapCardsAndEnergyRules(t *testing.T) {
 	r := testRules(t)
+	// The rules are under test, not the cards' tuning: Take Stock is pinned
+	// at 5 energy, so the energy arithmetic below stays fixed.
+	r.Cards = maps.Clone(r.Cards)
+	takeStock := r.Cards["take_stock"]
+	takeStock.Cost.Energy = 5
+	r.Cards["take_stock"] = takeStock
 	s := newState(t, r, 2)
 	s.Hand = []string{"strong_swing", "second_wind", "take_stock", "pathfinder_paths_variant_node_1", "lookout_paths_variant_node_1", "trailblaze"}
 	_, err := s.Act(r, Action{Kind: "play_map_card", Card: "strong_swing"})
@@ -400,7 +406,7 @@ func TestMapCardsAndEnergyRules(t *testing.T) {
 	if s.Energy != 15 || s.Turn.CardsUsed != 1 || countOf(s.Spent, "second_wind") != 1 {
 		t.Fatalf("Second Wind costs 10 and gives +15 energy on the map: energy %d", s.Energy)
 	}
-	// Take Stock's printed cost is 5 energy, paid on the map as in battle.
+	// Take Stock's printed cost (5 here) is paid on the map as in battle.
 	for _, c := range s.View(r, 1).Hand {
 		if c.ID == "take_stock" && (c.EnergyCost != 5 || !c.MapPlayable) {
 			t.Fatalf("the view prices Take Stock at its printed 5 energy: %+v", c)

@@ -491,6 +491,77 @@ ml/runs/bin/balance-lab-blanks -hero starter -opponent starter -foe greedy -play
 python3 ml/scripts/card_exchange_report.py ml/runs/blanks/greedy-energy-costs --costs=ml/runs/blanks/greedy
 ```
 
+## Re-costed base cards (2026-10-23)
+
+**Applied to the published cards** (`content/authored`, revision 108), as suggested by the section above:
+- Take Stock 5 → 1;
+- Steady Guard 5 → 1;
+- Nudge 7 → 10;
+- Try Again 3 → 0.
+
+Strong Swing (10) and Second Wind (pay 10, gain 15) are unchanged. Only the base cards changed: their tree upgrades keep their costs for now (see the end of this section). Both sides of the mirror now use the new costs, as in the game, so every card was measured again.
+
+**Every card on the re-costed deck** (blanks per copy, 10 XP per blank; in-game AI 400–600 battles per point, greedy 2,000):
+
+| Card | Energy | In-game AI | Greedy | Worth | XP now | Fit |
+|---|---|---|---|---|---|---|
+| Take Stock | 1 | **1.47** ±0.32 | 1.27 | 15 XP | 15 | fits |
+| Steady Guard | 1 | **1.65** ±0.21 | never plays it | 16–17 XP | 15 | a little strong |
+| Try Again | 0 | — | 1.38 | 14 XP | 13 | fits |
+| Second Wind | 10, gains 15 | — | 1.59 | 16 XP | 15 | fits (a little strong) |
+| Strong Swing | 10 | — | 1.74 | 17 XP | 15 | strong |
+| Nudge | 10 | — | 1.91 | 19 XP | 15 | strong |
+
+- **Every card gets played now** (in-game AI, plays per battle, old costs → new):
+
+  | Card | Old costs | New costs |
+  |---|---|---|
+  | Take Stock | 0.21 | **0.98** |
+  | Steady Guard | 1.30 | **1.79** |
+  | Try Again | 0.52 | **0.80** |
+  | Nudge | 0.86 | 0.95 |
+  | Second Wind | 0.46 | 0.60 |
+  | Strong Swing | 0.81 | 0.88 |
+- **Every card's value rose, the ones not re-costed too.** Both sides play more cards and battles get shorter: 3.88 → 3.77 rounds for the in-game AI, 3.65 → 3.48 for greedy. Effects then count for more against a blank's raw health. Second Wind is also worth more because the deck now needs more energy (Nudge at 10).
+- **Energy can't bring Nudge or Strong Swing down to 15 XP** (greedy, on the re-costed deck):
+
+  | Energy | 10 | 11 | 12 | 13 | 14 |
+  |---|---|---|---|---|---|
+  | Nudge, blanks per copy | 1.91 | 1.82 | 1.81 | 1.79 | 1.66 |
+  | Strong Swing, blanks per copy | 1.74 | 1.43 (played half as often) | | | |
+
+  Their fix is the price (Nudge about 19, Strong Swing about 17) or a weaker effect.
+- **Take Stock stays at 1.**
+  - **Greedy** would put it at 0: 1.54 there against 1.27 at 1, and 1.20 at 2.
+  - **The in-game AI,** which plays it better, already values it at 1.47 at 1. At 0 it measured 1.75 on the old deck.
+- **Changing one card moves every other card's value.** With Take Stock at 0 for both sides (a scratch copy, greedy), the others climbed further:
+  - Take Stock 1.52;
+  - Nudge 2.05;
+  - Strong Swing 1.86;
+  - Second Wind 1.67.
+
+  And Nudge at 12 then fell to 1.59: 12 was the first cost where it no longer fit the starting 10 alongside the free cards. **Change one card at a time and measure again.**
+- **Suggested XP at these costs (not applied):**
+
+  | Card | Suggested XP |
+  |---|---|
+  | Nudge | 19 |
+  | Strong Swing | 17 |
+  | Steady Guard | 16 |
+  | Second Wind | 16 |
+  | Take Stock | 15 |
+  | Try Again | 13–14 |
+- **Still to decide:**
+  - **The 48 tree upgrades of these four bases** (Take Stock 7, Steady Guard 26, Nudge 10, Try Again 5) keep their old costs. The project rule says upgrades shift with their base.
+  - **The unit formula** in `card-value-rules.md` §6 no longer matches these cards. Their rows there are marked.
+
+```bash
+# the re-costed deck: full greedy sweep, the in-game AI on Steady Guard and Take Stock
+python3 ml/runs/blanks/sweep.py ml/runs/blanks/plan-greedy-new.json        # (and plan-search-new-*.json)
+python3 ml/scripts/card_exchange_report.py ml/runs/blanks/greedy-new
+python3 ml/scripts/card_exchange_report.py ml/runs/blanks/greedy-new-costs --costs=ml/runs/blanks/greedy-new --now=nudge:10,try_again:0,take_stock:1,steady_guard:1
+```
+
 ## AI value network (2026-10-21)
 
 The first pass of [`ai-value-network-plan.md`](ai-value-network-plan.md) (phases A0–A4; brief: [`ai-value-network-handoff.md`](ai-value-network-handoff.md)). All runs are on an M3 Max (16 cores) shared with other work. Results files and binaries live under the server's ignored `ml/runs/`.

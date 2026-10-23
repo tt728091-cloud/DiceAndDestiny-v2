@@ -123,11 +123,11 @@ The map has its own unit values (agreed 2026-10-17), because energy is scarcer t
 | Card | Energy | Effect | Pays | Gets | Net | XP |
 |---|---|---|---|---|---|---|
 | Second Wind | 10 | Gain 15 energy | 2U | 3U | +1U | 15 |
-| Take Stock | 5 | Draw 2 | 1U | 2U | +1U | 15 |
-| Steady Guard | 5 | Prevent 1 | 1U | 2U | +1U | 15 |
+| Take Stock | **1** † | Draw 2 | 0.2U | 2U | +1.8U | 15 |
+| Steady Guard | **1** † | Prevent 1 | 0.2U | 2U | +1.8U | 15 |
 | Strong Swing | 10 | +2 damage before the roll | 2U | about 3U (1.24 lands, the rest still mills) | +1U | 15 |
-| Nudge | 7 | ±1 on one die (1–5) | 1.4U | 2.4U | +1U | 15 |
-| Try Again | 3 | Reroll 1 die | 0.6U | 0.7U (measured; set by hand) | +0.1U | 13 |
+| Nudge | **10** † | ±1 on one die (1–5) | 2U | 2.4U | +0.4U | 15 |
+| Try Again | **0** † | Reroll 1 die | 0U | 0.7U (measured; set by hand) | +0.7U | 13 |
 | Disrupt | 10 | Reroll 1 enemy die | 2U | 3U | +1U | 15 |
 | Reclaim | 5 | A chosen card from discard to hand | 1U | 1.5U | +0.5U | 13 |
 | Salve | 5 | Remove 1 debuff stack, before the roll | 1U | 2U (assumed) | +1U | 15 |
@@ -135,7 +135,11 @@ The map has its own unit values (agreed 2026-10-17), because energy is scarcer t
 | Blood Price | 0 | Sacrifice 1 from hand, then draw 4 or gain 20 energy | 3U | 4U | +1U | 15 |
 | Trailblaze | 0 | Map: 3 Move | 1U | 3U | +2U map, 0 battle | 15 (open) |
 
-**Nudge at 7 energy is deliberate.** Energy currently arrives in 5s (start 10, +5 per round, every other cost a multiple of 5), so 7 tends to play like 10. Keep it as a test of finer energy costs while balancing adds strain on the energy pool.
+† **Re-costed 2026-10-23 from battle measurements** (balance-lab.md, "Energy costs of the Starter's base cards" and "Re-costed base cards"). Each card was valued in blank cards (pure health, 10 XP each) at a range of energy costs, and these are the costs at which it is worth about its price.
+- **The unit formula disagrees:** at these costs its Net column no longer gives the XP shown. The measured values override the formula for these four, and their XP is under review.
+- **Only the base cards moved:** their tree upgrades keep their old costs until that's decided.
+- **Single points of energy do matter.** They change a card's value most where they decide what fits in the starting 10 or a round's 5 (for example Nudge 7 + Try Again 3, or Nudge 10 + Try Again 0). The earlier note that energy below 5 is wasted came from a test player that didn't play those cards well.
+- **Nudge** was at 7 before as a deliberate test of finer energy costs.
 
 ## 7. Every tree
 
@@ -180,7 +184,7 @@ Take Stock ─┬─ Plenty ── Hoard
 
 | Card | Change | Energy | Effect value | Net | Up-front | XP |
 |---|---|---|---|---|---|---|
-| Take Stock | base | 5 | draw 2 = 2U | +1.00U | — | **15** |
+| Take Stock | base | **1** (re-costed, §6) | draw 2 = 2U | +1.80U | — | **15** |
 | Plenty | draw 3 | 5 | draw 3 = 3U | +2.00U | — | **20** |
 | Hoard † | draw 4 | 5 | draw 4 = 4U | +3.00U | — | **25** |
 | Glance | free, draw 1, once per round | 0 | draw 1 = 1U | +1.00U | +1 vs Take Stock | **16** |
@@ -210,6 +214,8 @@ Worst to best: discard/before (the base), discard/any time, pile/before, pile/an
 | Prevent 2 | 7 | **Hold Fast 23** | Firm Stance 24 | Hunker Down 25 | Stalwart 26 |
 | Prevent 3 | 9 | **Shield Wall 31** | Brace 32 | Dig In 33 | Bulwark 34 |
 | Prevent 4 | 11 | **Fortress 39** | Rampart 40 | Entrench 41 | Citadel 42 |
+
+Steady Guard itself now costs **1** energy (re-costed 2026-10-23, §6); the rest of its family keeps the costs above.
 | Save a chosen card | 5 | Snatch 16 | Pull Clear 17 | Steady Hands 18 | Triage 19 |
 | Choose prevent 2, or 4 for 4 more | 7 | Double Up 42 | Shore Up 43 | Buttress 44 | Reinforce 45 |
 
@@ -261,7 +267,7 @@ Reviewed 2026-10-16. Prices are set by hand, the user's call. The measurements a
 |---|---|---|---|---|
 | Lift | 7 | +1 only (1–5) | 0.73 dmg | **12** |
 | Press Down | 7 | −1 only (1–5) | 0.84 dmg | **13** |
-| Nudge | 7 | ±1 on one die (1–5), base | 1.18 dmg | **15** |
+| Nudge | **10** (re-costed, §6) | ±1 on one die (1–5), base | 1.18 dmg | **15** |
 | Reach | 7 | ±1, can reach 6 | 1.34 dmg | **17** |
 | Weighted † | 7 | set one die to 6 | 0.87 dmg | **20** |
 | Mimic † | 7 | copy another die's face | 1.03 dmg | **22** |
@@ -286,7 +292,7 @@ Reviewed 2026-10-16. The tree is no longer free. The measurement scores rerolls 
 | Card | Energy | Effect | Measured | XP |
 |---|---|---|---|---|
 | Scrap Toss | 3 | reroll a die showing 1–3 | 0.26 dmg | **12** |
-| Try Again | 3 | reroll 1 of your dice, base | 0.36 dmg | **13** |
+| Try Again | **0** (re-costed, §6) | reroll 1 of your dice, base | 0.36 dmg | **13** |
 | Double Toss | 5 | reroll up to 2 of your dice | 0.45 dmg | **15** |
 | Full Parry | 5 | reroll any of your defensive dice | 0.69 prevented | **16** |
 | One More Roll | 7 | +1 offensive roll attempt this Offense (4 instead of 3), any time | not measured | **17** |

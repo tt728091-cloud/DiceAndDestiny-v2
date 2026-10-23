@@ -7,7 +7,7 @@ standard deck scores: the crossing m*, from a line fitted to the variants
 around it. Per copy, a card with c copies is worth m*/c blanks.
 
     python3 ml/scripts/card_exchange_report.py RESULTS_DIR [--rates=DIR] [--metric=health]
-    python3 ml/scripts/card_exchange_report.py COSTS_DIR --costs=DIR
+    python3 ml/scripts/card_exchange_report.py COSTS_DIR --costs=DIR [--now=card:energy,...]
 
 With --costs=DIR, variants named "<card>@<energy>" (the card swapped for a
 copy at another energy cost) are valued in blanks per copy against DIR's
@@ -263,10 +263,14 @@ def report(root, rates_from=None):
 
 
 METRIC = "score"
-args = [a for a in sys.argv[1:] if not a.startswith("--metric=")]
+args = [a for a in sys.argv[1:] if not a.startswith("--metric=") and not a.startswith("--now=")]
 for a in sys.argv[1:]:
     if a.startswith("--metric="):
         METRIC = a.split("=", 1)[1]
+    if a.startswith("--now="):
+        for pair in a.split("=", 1)[1].split(","):
+            card, e = pair.split(":")
+            ENERGY[card] = int(e)
 args = args or ["ml/runs/blanks/greedy"]
 if len(args) == 2 and args[1].startswith("--costs="):
     print(f"## {args[0]} (card values from {args[1][8:]})")
