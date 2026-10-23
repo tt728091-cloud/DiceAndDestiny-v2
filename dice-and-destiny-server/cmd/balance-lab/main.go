@@ -18,6 +18,7 @@ import (
 
 	"diceanddestiny/server/internal/battle/decisions"
 	"diceanddestiny/server/internal/battle/learned"
+	"diceanddestiny/server/internal/battle/loadout"
 	"diceanddestiny/server/internal/battle/lookahead"
 	"diceanddestiny/server/internal/battle/valuenet"
 )
@@ -35,6 +36,8 @@ func main() {
 	first := flag.Uint64("first-seed", 1, "first battle seed")
 	workers := flag.Int("workers", max(1, runtime.NumCPU()-2), "parallel battles")
 	out := flag.String("out", "", "optional JSON results path")
+	heroDeck := flag.String("hero-deck", "", "replace the hero's decklist: card:count pairs, comma-separated (e.g. nudge:2,trailblaze:3)")
+	foeDeck := flag.String("foe-deck", "", "replace the opponent's decklist, as -hero-deck")
 	record := flag.String("record", "", "record value-v1 training positions of every battle into this new directory (e.g. ml/runs/value-v1/<dataset>)")
 	rates := lookahead.DefaultRates()
 	base := playerConfig{budget: 96, searchWorkers: 1, energyValue: -1, energyGain: rates.EnergyGain, energySpend: rates.EnergySpend, statusValue: rates.Status, protectValue: -1, cardValue: 0.25, drawValue: 0.25}
@@ -112,6 +115,12 @@ func main() {
 	}
 	defer os.RemoveAll(runState)
 	matchup := lookahead.Matchup{ContentRoot: *contentRoot, AuthoredRoot: *authoredRoot, RunStateRoot: runState, Hero: *hero, Opponent: *opponent, Unified: true, HeroPlansFirst: true}
+	if matchup.HeroDeck, err = parseDeck(*heroDeck); err != nil {
+		fail(err)
+	}
+	if matchup.FoeDeck, err = parseDeck(*foeDeck); err != nil {
+		fail(err)
+	}
 	var dataset *valuenet.Dataset
 	if *record != "" {
 		if dataset, err = valuenet.NewDataset(*record); err != nil {
@@ -173,7 +182,11 @@ func main() {
 	if seatList == nil {
 		fail(fmt.Errorf("unknown -seats %q", *seats))
 	}
-	fmt.Printf("%s vs %s (%s) · unified defense · seeds %d–%d · hero seat %s · %d workers\n\n", *hero, *opponent, *foePlayer, *first, *first+uint64(*battles)-1, *seats, *workers)
+	fmt.Printf("%s vs %s (%s) · unified defense · seeds %d–%d · hero seat %s · %d workers\n", *hero, *opponent, *foePlayer, *first, *first+uint64(*battles)-1, *seats, *workers)
+	if *heroDeck != "" || *foeDeck != "" {
+		fmt.Printf("hero deck %q · opponent deck %q\n", *heroDeck, *foeDeck)
+	}
+	fmt.Println()
 	var entrants []lookahead.Entrant
 	var configs []playerConfig
 	for _, spec := range strings.Split(*players, ",") {
@@ -256,6 +269,34 @@ func main() {
 			fail(err)
 		}
 	}
+}
+
+// parseDeck reads card:count pairs (a bare card ID counts once); empty
+// keeps the content decklist.
+func parseDeck(spec string) ([]loadout.Entry, error) {
+	if strings.TrimSpace(spec) == "" {
+		return nil, nil
+	}
+	var deck []loadout.Entry
+	for _, part := range strings.Split(spec, ",") {
+		id, count, found := strings.Cut(strings.TrimSpace(part), ":")
+		n := 1
+		if found {
+			if _, err := fmt.Sscanf(count, "%d", &n); err != nil || n < 0 {
+				return nil, fmt.Errorf("deck entry %q: bad count", part)
+			}
+		}
+		if id == "" {
+			return nil, fmt.Errorf("deck entry %q: no card", part)
+		}
+		if n > 0 {
+			deck = append(deck, loadout.Entry{CardID: id, Count: n})
+		}
+	}
+	if len(deck) == 0 {
+		return nil, fmt.Errorf("deck %q has no cards", spec)
+	}
+	return deck, nil
 }
 
 // playerConfig holds the flags that shape one player. The command line

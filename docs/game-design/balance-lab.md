@@ -316,6 +316,102 @@ $LAB -hero starter -opponent starter -foe greedy -players $S@block-cards=nudge -
 python3 ml/scripts/card_value_report.py cards   # the paired tables above
 ```
 
+## Cards against blank cards (2026-10-23)
+
+**How many blank cards is each card worth?** A blank card is pure health: Trailblaze, a map card that can't be played in battle but still counts as health.
+
+**Method:**
+- Each variant replaces every copy of one card in the Starter's deck with *m* blanks.
+- The card is worth as many blanks as it takes to score what the standard deck scores: the crossing, from a line through the variants nearest it.
+- Per copy, that's the crossing divided by the copies.
+- The card rules price a card's body (1 health, 2 units) at 10 XP, so a blank is 10 XP and a card worth *r* blanks is worth 10·*r* XP. The current base price, 15 XP, says every base card is worth 1.5 blanks.
+
+**Setup:**
+- **Matchup:** the Starter mirror; the opponent is greedy with the standard deck.
+- **Hero:** greedy, with 2,000–4,000 battles per variant; or the in-game AI (version 3), with 600–800.
+- **Seeds:** the same for every variant, from both seats.
+- **Tool:** `balance-lab -hero-deck` sets the hero's deck.
+
+**Check:** greedy never plays Steady Guard or Take Stock, and both measure 0.99 blanks per copy. A card that's never played is exactly a blank, as it should be.
+
+**Blanks per copy** (95% intervals: greedy about ±0.1–0.15, the in-game AI as shown; "—" not measured):
+
+| Card | XP now | Starter mirror, in-game AI | Starter mirror, greedy | Fair 20-card mirror, greedy | vs the Warlord, greedy | vs Brine Mask (health left), greedy | Suggested XP |
+|---|---|---|---|---|---|---|---|
+| Nudge | 15 | **1.68** ±0.33 | 1.79 | 1.86 | 1.60 | 1.27 | **17** |
+| Strong Swing | 15 | — | 1.61 | 1.65 | 1.43 | 1.20 | **15–16** |
+| Steady Guard | 15 | **1.31** ±0.18 | never played | — | — | — | **13** |
+| Second Wind | 15 | — | 1.28 | 1.09 | 1.19 | 1.00 | **12–13** |
+| Try Again | 13 | — | 1.22 | 1.34 | 1.19 | 1.04 | **12** |
+| Take Stock | 15 | **1.00** ±0.40 | never played | — | — | — | **10** |
+
+- **The ratios.** In the Starter mirror, a Nudge is worth about 1.7–1.8 blank cards: two Nudges ≈ 3½ blanks, and five Nudges ≈ 9 blanks. Three blanks are worth almost two Nudges, not one.
+- **Suggested XP** is 10 per blank, taken from the close fights: the mirror, with the in-game AI where it was measured, and the Warlord.
+  - **The rules' base price (15 XP = 1.5 blanks)** is about right on average, but it spreads the cards wrong. Nudge is underpriced. Steady Guard and Second Wind are a little overpriced, and Take Stock is overpriced by a third: the in-game AI plays it only about once every four battles, and drawing 2 for 5 energy adds nothing beyond the card's own health here.
+  - **Against weak minions every effect is worth less** (Brine Mask: 1.0–1.3), because the fight is won either way and only health saved counts. Pricing for the Expedition, which is mostly minion fights, would push every effect toward the price of a blank.
+- **Whole decks, in blank cards:**
+  - **Starter deck:** its 12 cards play like **15½ blank cards** with greedy (a 15-blank deck scores 0.468, 16 blanks 0.542, the Starter deck 0.497). With the in-game AI, about **16**.
+  - **All-blank decks:** 10 blanks score 0.15 and 20 blanks 0.77, about 0.065 per blank around 15.
+
+**Not measured:** Strong Swing, Second Wind and Try Again with the in-game AI. For Nudge it agrees with greedy within the noise (1.68 against 1.79), and greedy plays dice cards the same way, so greedy's numbers stand in for those three.
+
+**Theories tested** (greedy unless noted; same seeds throughout):
+
+1. **Every copy is worth the same.**
+   - **Fewer copies:** taking out one of the two Nudges costs 1.75 blanks, against 1.79 per copy for both. Strong Swing: 1.60 against 1.61.
+   - **Extra copies:** adding a third or fourth Nudge, Strong Swing, Try Again or Second Wind scores within 0.013 of the per-copy prediction, in all eight cases.
+2. **Deck size doesn't change the rates.** With both sides on 20 cards (battles of 6.8 rounds instead of 3.7), the rates are the same within the noise: Nudge 1.86, Strong Swing 1.65, Try Again 1.34, Second Wind 1.09. An earlier test that gave only the hero 20 cards inflated them (Nudge 2.08), because the hero won 90% and scores near the top bunch together.
+3. **The opponent does change them.** Against the Warlord, an even fight for the Starter (0.517), attack cards are worth about 0.2 blanks less than in the mirror. Against Brine Mask, they're worth little beyond their own health.
+4. **Energy matters.** Second Wind (+15 energy for 10) is worth 1.57 blanks per copy in an energy-hungry deck (4 Nudges, 4 Strong Swings) against 1.28 in the standard deck.
+5. **Swaps lose a little.** Dropping one card entirely for more copies of another scores 0.02–0.035 below the prediction:
+   - 2 Nudges → 3 Try Agains;
+   - 2 Strong Swings → 2 more Nudges;
+   - 2 Try Agains → 2 more Second Winds.
+
+   Variety, synergy (Nudge sets up the Large Straight that Strong Swing boosts) and energy all play a part. It's half a blank at most.
+6. **Same price today, very different strength.** Five 12-card decks that all cost 172–176 XP today score 0.29–0.67. The measured rates predict every one within 0.035:
+
+   | Deck (12 cards) | XP now | Worth in blanks | Predicted | Scored |
+   |---|---|---|---|---|
+   | 4 Nudge, 4 Strong Swing, 2 Second Wind, 2 Try Again | 176 | 18.6 | 0.70 | 0.67 |
+   | 3 Nudge, 3 Strong Swing, 2 Second Wind, 2 Try Again, 1 Steady Guard, 1 Take Stock | 176 | 17.2 | 0.62 | 0.62 |
+   | 2 Nudge, 2 Strong Swing, 4 Try Again, 4 Second Wind | 172 | 16.8 | 0.59 | 0.57 |
+   | Standard deck | 176 | 15.5 | 0.50 | 0.50 |
+   | 4 Try Again, 2 Second Wind, 3 Take Stock, 3 Steady Guard | 172 | 13.4 | 0.35 | 0.32 |
+   | 4 Steady Guard, 4 Take Stock, 2 Try Again, 2 Second Wind | 176 | 12.9 | 0.32 | 0.29 |
+
+   Greedy never plays Steady Guard or Take Stock, so the last two rows overstate the gap for a stronger player. The in-game AI check below covers that.
+7. **Same measured value, much closer strength.** Decks rebuilt to the standard deck's value at the measured rates score 0.45–0.54:
+   - 11 cards with 4 Nudges: 0.450;
+   - 14 cards with 4 Try Agains and 3 Second Winds: 0.475;
+   - 11 cards with 4 Strong Swings: 0.457;
+   - 15 blanks: 0.468; 16 blanks: 0.542.
+
+   The ones that pile up one expensive card come in 0.03–0.065 under, which is theories 4 and 5 again.
+
+8. **The in-game AI confirms it.** It played the two most different same-price decks, 500 battles each, and played Steady Guard 1.9 and Take Stock 0.9 times a battle in the second. The standard deck scores 0.611. For the measured rates:
+   - each deck is valued in blanks (16.2 for the standard deck);
+   - in-game AI rates where measured, greedy's for the rest;
+   - each blank ≈ 0.065 win score.
+
+   | Deck (176 XP now) | Today's prices predict | Measured rates predict | Scored |
+   |---|---|---|---|
+   | 4 Nudge, 4 Strong Swing, 2 Second Wind, 2 Try Again | 0.61 | 0.74 | **0.681** ±0.036 |
+   | 4 Steady Guard, 4 Take Stock, 2 Try Again, 2 Second Wind | 0.61 | 0.48 | **0.427** ±0.039 |
+
+   The measured rates predicted a 0.25 gap between the two, and the gap was 0.25. Both decks pile up cards, and both sit about 0.05 under the prediction, as in theory 5.
+
+```bash
+go build -o ml/runs/bin/balance-lab-blanks ./cmd/balance-lab
+# one variant: both Nudges replaced by 3 blanks
+ml/runs/bin/balance-lab-blanks -hero starter -opponent starter -foe greedy -players greedy \
+  -hero-deck steady_guard:3,try_again:2,strong_swing:2,take_stock:2,second_wind:1,trailblaze:3 -seats both -battles 1000 -out nudge-to-3.json
+# the sweeps (plans and runner in ml/runs/blanks): python3 sweep.py plan-greedy.json, …
+python3 ml/scripts/card_exchange_report.py ml/runs/blanks/greedy                                   # exchange rates
+python3 ml/scripts/card_exchange_report.py ml/runs/blanks/greedy-budget --rates=ml/runs/blanks/greedy  # decks priced both ways
+python3 ml/scripts/card_exchange_report.py ml/runs/blanks/greedy-brine --metric=health              # minions: health left
+```
+
 ## AI value network (2026-10-21)
 
 The first pass of [`ai-value-network-plan.md`](ai-value-network-plan.md) (phases A0–A4; brief: [`ai-value-network-handoff.md`](ai-value-network-handoff.md)). All runs are on an M3 Max (16 cores) shared with other work. Results files and binaries live under the server's ignored `ml/runs/`.
