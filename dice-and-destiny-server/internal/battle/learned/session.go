@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"slices"
 	"sort"
 	"sync"
 	"time"
@@ -204,7 +205,7 @@ func (s *Session) resetLoadout(battleID string, seed uint64, humanSeat string, r
 	if character == "" {
 		character = "blade_warden"
 	}
-	if character != "blade_warden" && character != "venom" && character != "curse" && character != "adventurer" && character != "starter" {
+	if !slices.Contains(PlayableCharacters, character) {
 		return nil, fmt.Errorf("unknown playable character %q", character)
 	}
 	s.mu.Lock()

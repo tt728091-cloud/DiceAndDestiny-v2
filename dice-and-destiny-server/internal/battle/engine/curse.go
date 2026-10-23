@@ -225,8 +225,9 @@ func (e Engine) curseDefenseCompleted(b *state.Battle, lib content.BattleLibrary
 	}
 	if a := lib.Abilities[d.AbilityID]; a.ConfigurationVersion > 0 {
 		prevention := 0
-		for _, f := range defenseFaces(d) {
-			prevention += configuredPrevention(a.Resolution.Operations, f)
+		dieIDs := defenseDieIDs(b, d)
+		for i, f := range defenseFaces(d) {
+			prevention += configuredPrevention(lib, a.Resolution.Operations, dieIDs[i], f)
 		}
 
 		prevented := prevention > 0 && s.BaseAmount > max(0, s.Prevention-prevention)

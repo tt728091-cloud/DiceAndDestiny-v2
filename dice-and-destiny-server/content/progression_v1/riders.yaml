@@ -1,0 +1,70 @@
+schema_version: 1
+# Riders are the side effects a board slot may carry on top of its damage
+# (see docs/game-design/dice-and-board-selection-plan.md). A tier's priced
+# value is its damage plus its rider at these rates, so the rider's worth comes
+# off the damage.
+#
+# Exchange rates: the damage one unit of each effect is worth. Pricing
+# (internal/battle/boardprice) reads them only from this file; never copy them
+# into code. Protect and energy were agreed on 2026-10-15 (2 Protect = 2
+# damage, 5 energy = 1 damage). Draw follows card-value-rules.md (1 card drawn
+# = 5 energy), and heal counts like prevention (one card back is one health
+# kept). The AI work will replace these with measured rates.
+rates:
+  status:
+    protect: 1.0   # per stack of the positive self-status
+  energy: 0.2      # per point gained
+  draw: 1.0        # per card drawn
+  heal: 1.0        # per removed card healed
+
+# jobs lists the slot jobs (board_templates.yaml) that may take the rider.
+# unlock: every entry is open in the first pass; later menus will be limited
+# the way gear is.
+riders:
+  - id: none
+    name: No rider
+    operations: []
+    jobs: [ladder, side_ladder, full_house, mirror, rainbow, flex, straight, apex, ultimate]
+    unlock: open
+  - id: protect_1
+    name: +1 Protect
+    operations:
+      - {type: apply_status, target: self, status_id: protect, stack_count: 1, application_timing: immediate}
+    jobs: [ladder, side_ladder, full_house, mirror, rainbow, flex, straight]
+    unlock: open
+  - id: protect_2
+    name: +2 Protect
+    operations:
+      - {type: apply_status, target: self, status_id: protect, stack_count: 2, application_timing: immediate}
+    jobs: [full_house, mirror, rainbow, flex, straight, apex, ultimate]
+    unlock: open
+  - id: energy_5
+    name: +5 energy
+    operations:
+      - {type: gain_resource, target: self, resource: energy, amount: 5}
+    jobs: [ladder, side_ladder, full_house, mirror, rainbow, flex, straight, apex]
+    unlock: open
+  - id: energy_10
+    name: +10 energy
+    operations:
+      - {type: gain_resource, target: self, resource: energy, amount: 10}
+    jobs: [flex, apex, ultimate]
+    unlock: open
+  - id: draw_1
+    name: Draw 1
+    operations:
+      - {type: draw_cards, target: self, amount: 1}
+    jobs: [rainbow, flex, straight, apex, ultimate]
+    unlock: open
+  - id: heal_1
+    name: Heal 1
+    operations:
+      - {type: heal_cards, target: self, amount: 1}
+    jobs: [full_house, mirror, rainbow, flex, straight, apex, ultimate]
+    unlock: open
+  - id: heal_2
+    name: Heal 2
+    operations:
+      - {type: heal_cards, target: self, amount: 2}
+    jobs: [flex, apex, ultimate]
+    unlock: open

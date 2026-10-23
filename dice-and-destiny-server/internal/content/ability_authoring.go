@@ -89,6 +89,10 @@ func SaveAuthoredAbility(root string, lib BattleLibrary, a *BattleAbilityDefinit
 	if board != nil {
 		switch character {
 		case "adventurer", "venom", "curse", "blade_warden", "starter":
+		case "custom_adventurer":
+			// Its board belongs to the player's sheet (the Board Builder),
+			// never to the shared authored catalog.
+			return saved, fmt.Errorf("the custom adventurer's board is built in the Board Builder")
 		default:
 			return saved, fmt.Errorf("unknown playable character")
 		}

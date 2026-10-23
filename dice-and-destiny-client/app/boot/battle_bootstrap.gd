@@ -76,6 +76,7 @@ func _build_mode_menu() -> void:
 		["Curse · cursed dice, Entombment, and misfortune", "curse"],
 		["Adventurer · swords, shields, and coins", "adventurer"],
 		["Starter · base General cards only", "starter"],
+		["Custom Adventurer · your die and priced board", "custom_adventurer"],
 	], "battle.setup.character")
 	_loadout_choice = _add_selection("LOADOUT", [["Sandbox · free deck editing", "sandbox"], ["Progression · XP purchases", "progression"]], "battle.setup.loadout")
 	var selected_mode: String = get_node("/root/LearnedBattleRuntime").selected_loadout_mode

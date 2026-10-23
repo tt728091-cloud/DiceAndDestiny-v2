@@ -1,0 +1,12 @@
+schema_version: 1
+id: forge_d6
+name: Forge Die
+die_type: d6
+side_count: 6
+faces:
+  - {number: 1, symbol: forge_anvil}
+  - {number: 2, symbol: forge_anvil}
+  - {number: 3, symbol: forge_tongs}
+  - {number: 4, symbol: forge_tongs}
+  - {number: 5, symbol: forge_rivet}
+  - {number: 6, symbol: forge_ingot}

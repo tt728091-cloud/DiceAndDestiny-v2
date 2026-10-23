@@ -9,6 +9,7 @@ import (
 	"path/filepath"
 	"sync"
 
+	"diceanddestiny/server/internal/battle/boardprice"
 	"diceanddestiny/server/internal/content"
 	"gopkg.in/yaml.v3"
 )
@@ -73,6 +74,18 @@ type Progress struct {
 	// value, and start the next battle in the removed pile.
 	Wounds     []Entry `json:"wounds,omitempty"`
 	WoundValue int     `json:"wound_value,omitempty"`
+
+	// Dice is the die this sheet rolls, five of it, replacing the
+	// combatant's dice_loadout (the custom adventurer's Board Builder).
+	// Empty keeps the combatant's own dice.
+	Dice string `json:"dice,omitempty"`
+	// GeneratedAbilities are the priced abilities the sheet's board uses,
+	// stored with the player and never in the authored catalog. Battles pin
+	// them in their catalog.
+	GeneratedAbilities map[string]content.BattleAbilityDefinition `json:"generated_abilities,omitempty"`
+	// BoardChoice is the Board Builder choice the generated abilities were
+	// priced from, so the builder reopens on it.
+	BoardChoice *boardprice.Choice `json:"board_choice,omitempty"`
 }
 type Purchase struct {
 	// Tree names the card tree for shared-card trades and their copies.
@@ -407,7 +420,10 @@ func validateProgress(p Progress, lib content.BattleLibrary) error {
 	if err := validateTreeTags(p.Wounds, lib.CardTrees); err != nil {
 		return err
 	}
-	return ValidateAbilities(p.Abilities, lib)
+	if err := ValidateAbilities(p.Abilities, lib); err != nil {
+		return err
+	}
+	return validateSheetDice(lib, p.Character, p.Dice, p.Abilities)
 }
 func writeProgress(filename string, p Progress) error { return writeJSON(filename, p) }
 func writeJSON(filename string, p any) error {
@@ -500,6 +516,13 @@ func cloneProgress(p Progress) Progress {
 	p.Deck = append([]Entry{}, p.Deck...)
 	p.Collection = append([]Entry(nil), p.Collection...)
 	p.Wounds = append([]Entry(nil), p.Wounds...)
+	p.GeneratedAbilities = maps.Clone(p.GeneratedAbilities)
+	if p.BoardChoice != nil {
+		choice := *p.BoardChoice
+		choice.Slots = append([]boardprice.SlotPick(nil), choice.Slots...)
+		choice.Defenses = append([]string(nil), choice.Defenses...)
+		p.BoardChoice = &choice
+	}
 	p.Abilities = content.AbilityBoard{Offensive: append([]string(nil), p.Abilities.Offensive...), Defensive: append([]string(nil), p.Abilities.Defensive...)}
 	return p
 }

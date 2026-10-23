@@ -53,6 +53,12 @@ type runtimeRequest struct {
 	Action     expedition.Action `json:"action,omitempty"`
 	Revision   int               `json:"revision,omitempty"`
 	Expedition bool              `json:"expedition,omitempty"`
+	// Board Builder: a board choice (die, template, slot picks, defenses),
+	// whether board_price returns the keep policy, and the damage target
+	// board_price previews (0: the menus' target).
+	Board         json.RawMessage `json:"board,omitempty"`
+	IncludePolicy bool            `json:"include_policy,omitempty"`
+	Target        float64         `json:"target,omitempty"`
 }
 
 var learnedRuntime struct {
@@ -75,7 +81,7 @@ func HandleRuntimeRequest(requestJSON string) string {
 		"ability_authoring", "validate_ability", "publish_ability", "assign_abilities",
 		"card_authoring", "validate_card", "publish_card", "character_catalogs",
 		"save_character_deck", "progression_catalogs", "progression_purchase", "save_economy_admin", "campaign_status", "campaign_loadout", "campaign_new", "campaign_delete", "campaign_purchase",
-		"expedition_status", "expedition_act", "expedition_deck_change":
+		"expedition_status", "expedition_act", "expedition_deck_change", "board_builder", "board_price", "board_save":
 		catalogRuntimeMu.Lock()
 		defer catalogRuntimeMu.Unlock()
 	}
@@ -109,6 +115,24 @@ func HandleRuntimeRequest(requestJSON string) string {
 	}
 	if request.Op == "expedition_deck_change" {
 		view, err := expeditionDeckChange(request.ContentRoot, request.LoadoutRoot, request.CampaignSave, request.Purchase)
+		if err != nil {
+			return runtimeError(err)
+		}
+		return runtimeSuccess(view)
+	}
+	if request.Op == "board_builder" || request.Op == "board_price" || request.Op == "board_save" {
+		choice, err := decodeBoardChoice(request.Board)
+		if err != nil {
+			return runtimeError(err)
+		}
+		var view map[string]any
+		if request.Op == "board_builder" {
+			view, err = boardBuilderView(request.ContentRoot, request.LoadoutRoot, choice.Die)
+		} else if request.Op == "board_save" {
+			view, err = boardSave(request.ContentRoot, request.LoadoutRoot, choice, request.Revision)
+		} else {
+			view, err = boardPriceView(request.ContentRoot, choice, request.IncludePolicy, request.Target)
+		}
 		if err != nil {
 			return runtimeError(err)
 		}

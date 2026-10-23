@@ -44,6 +44,9 @@ type BattleDieDefinition struct {
 	DieType       string          `yaml:"die_type" json:"die_type"`
 	SideCount     int             `yaml:"side_count" json:"side_count"`
 	Faces         []BattleDieFace `yaml:"faces" json:"faces"`
+	// Roles maps each symbol to its role (main, side, odd, odd_b, apex). The
+	// loader computes it from face counts (DieRoles); it is never authored.
+	Roles map[string]string `yaml:"-" json:"roles,omitempty"`
 }
 
 type BattleDieFace struct {
@@ -280,19 +283,22 @@ type BattleStatusDefinition struct {
 // BattleOperation is a closed, validated data language.  Fields are shared by
 // operation kinds so nested outcomes and ability modifiers remain declarative.
 type BattleOperation struct {
-	Special           *SharedSpecialEffect      `yaml:"special,omitempty" json:"special,omitempty"`
-	ExtraEnergy       int                       `yaml:"extra_energy,omitempty" json:"extra_energy,omitempty"`
-	BonusAmount       int                       `yaml:"bonus_amount,omitempty" json:"bonus_amount,omitempty"`
-	ID                string                    `yaml:"id,omitempty" json:"id,omitempty"`
-	Type              string                    `yaml:"type" json:"type"`
-	ApplicationTiming string                    `yaml:"application_timing,omitempty" json:"application_timing,omitempty"`
-	Target            string                    `yaml:"target,omitempty" json:"target,omitempty"`
-	Amount            any                       `yaml:"amount,omitempty" json:"amount,omitempty"`
-	Resource          string                    `yaml:"resource,omitempty" json:"resource,omitempty"`
-	StatusID          string                    `yaml:"status_id,omitempty" json:"status_id,omitempty"`
-	StackCount        int                       `yaml:"stack_count,omitempty" json:"stack_count,omitempty"`
-	Repeat            string                    `yaml:"repeat,omitempty" json:"repeat,omitempty"`
-	DiceID            string                    `yaml:"dice_id,omitempty" json:"dice_id,omitempty"`
+	Special           *SharedSpecialEffect `yaml:"special,omitempty" json:"special,omitempty"`
+	ExtraEnergy       int                  `yaml:"extra_energy,omitempty" json:"extra_energy,omitempty"`
+	BonusAmount       int                  `yaml:"bonus_amount,omitempty" json:"bonus_amount,omitempty"`
+	ID                string               `yaml:"id,omitempty" json:"id,omitempty"`
+	Type              string               `yaml:"type" json:"type"`
+	ApplicationTiming string               `yaml:"application_timing,omitempty" json:"application_timing,omitempty"`
+	Target            string               `yaml:"target,omitempty" json:"target,omitempty"`
+	Amount            any                  `yaml:"amount,omitempty" json:"amount,omitempty"`
+	Resource          string               `yaml:"resource,omitempty" json:"resource,omitempty"`
+	StatusID          string               `yaml:"status_id,omitempty" json:"status_id,omitempty"`
+	StackCount        int                  `yaml:"stack_count,omitempty" json:"stack_count,omitempty"`
+	Repeat            string               `yaml:"repeat,omitempty" json:"repeat,omitempty"`
+	DiceID            string               `yaml:"dice_id,omitempty" json:"dice_id,omitempty"`
+	// Dice "owner" rolls the roller's own combat die instead of a named one;
+	// its outcomes are then written by symbol role (BattleOutcome.Roles).
+	Dice              string                    `yaml:"dice,omitempty" json:"dice,omitempty"`
 	DiceCount         int                       `yaml:"dice_count,omitempty" json:"dice_count,omitempty"`
 	OnePerStatusStack bool                      `yaml:"one_per_status_stack,omitempty" json:"one_per_status_stack,omitempty"`
 	ReactionWindow    *ReactionWindowDefinition `yaml:"reaction_window,omitempty" json:"reaction_window,omitempty"`
@@ -307,10 +313,16 @@ type BattleOperation struct {
 }
 
 type BattleOutcome struct {
-	ID         string            `yaml:"id,omitempty" json:"id,omitempty"`
-	Faces      []int             `yaml:"faces" json:"faces"`
+	ID    string `yaml:"id,omitempty" json:"id,omitempty"`
+	Faces []int  `yaml:"faces" json:"faces"`
+	// Roles match faces by their symbol's role on the die that rolled (main,
+	// side, odd, odd_b, apex); used with dice: owner.
+	Roles      []string          `yaml:"roles,omitempty" json:"roles,omitempty"`
 	Operations []BattleOperation `yaml:"operations" json:"operations"`
 }
+
+// OwnerDice names the roller's own combat die in roll_dice.
+const OwnerDice = "owner"
 
 type AbilityModifier struct {
 	AddConditionalBonus *AbilityTier `yaml:"add_conditional_bonus,omitempty" json:"add_conditional_bonus,omitempty"`
@@ -472,6 +484,7 @@ func LoadBattleLibrary(root string) (BattleLibrary, error) {
 	if err := loadBattleItems(filepath.Join(root, "dice"), &lib.Dice); err != nil {
 		return BattleLibrary{}, err
 	}
+	annotateDieRoles(&lib)
 	if err := loadBattleItems(filepath.Join(root, "cards"), &lib.Cards); err != nil {
 		return BattleLibrary{}, err
 	}
@@ -873,7 +886,7 @@ func validateTier(tier AbilityTier, lib BattleLibrary) error {
 	return validateBattleOperations(tier.Operations, lib)
 }
 func validateBattleOperations(ops []BattleOperation, lib BattleLibrary) error {
-	supported := map[string]bool{"special_effect": true, "general_card": true, "curse_card": true, "curse_action": true, "provoke": true, "apply_incubation": true, "incubation_or_poison": true, "venom_card": true, "reroll_die": true, "noop": true, "deal_damage": true, "prevent_damage": true, "scale_damage": true, "apply_status": true, "remove_status": true, "remove_status_stack": true, "gain_resource": true, "draw_cards": true, "modify_die": true, "apply_ability_modifier": true, "adjust_max_rolls": true, "cancel_source": true, "roll_dice": true}
+	supported := map[string]bool{"special_effect": true, "general_card": true, "curse_card": true, "curse_action": true, "provoke": true, "apply_incubation": true, "incubation_or_poison": true, "venom_card": true, "reroll_die": true, "noop": true, "deal_damage": true, "prevent_damage": true, "scale_damage": true, "apply_status": true, "remove_status": true, "remove_status_stack": true, "gain_resource": true, "draw_cards": true, "heal_cards": true, "modify_die": true, "apply_ability_modifier": true, "adjust_max_rolls": true, "cancel_source": true, "roll_dice": true}
 	for _, op := range ops {
 		if !supported[op.Type] {
 			return fmt.Errorf("unsupported operation type %q", op.Type)
@@ -891,6 +904,9 @@ func validateBattleOperations(ops []BattleOperation, lib BattleLibrary) error {
 			if _, ok := lib.Dice[op.DiceID]; !ok {
 				return fmt.Errorf("operation references unknown dice %q", op.DiceID)
 			}
+		}
+		if op.Dice != "" && (op.Type != "roll_dice" || op.Dice != OwnerDice || op.DiceID != "") {
+			return fmt.Errorf("roll_dice names either dice_id or dice: owner")
 		}
 		if op.ApplicationTiming != "" && (op.Type != "apply_status" || op.ApplicationTiming != "immediate" || op.Target != "self" || lib.Statuses[op.StatusID].Polarity != "positive") {
 			return fmt.Errorf("immediate status application requires a positive self status")
@@ -913,6 +929,13 @@ func validateBattleOperations(ops []BattleOperation, lib BattleLibrary) error {
 		case "deal_damage", "prevent_damage", "draw_cards":
 			if err := validateOperationAmount(op.Amount, false); err != nil {
 				return fmt.Errorf("%s: %v", op.Type, err)
+			}
+		case "heal_cards":
+			if _, ok := op.Amount.(string); ok || op.Target != "self" {
+				return fmt.Errorf("heal_cards needs a fixed amount and targets self")
+			}
+			if err := validateOperationAmount(op.Amount, false); err != nil {
+				return fmt.Errorf("heal_cards: %v", err)
 			}
 		case "gain_resource":
 			if op.Resource != "energy" {
@@ -942,8 +965,7 @@ func validateBattleOperations(ops []BattleOperation, lib BattleLibrary) error {
 				return fmt.Errorf("scale_damage requires a non-negative fraction and floor rounding")
 			}
 		case "roll_dice":
-			die, ok := lib.Dice[op.DiceID]
-			if !ok {
+			if _, ok := lib.Dice[op.DiceID]; !ok && op.Dice != OwnerDice {
 				return fmt.Errorf("roll_dice references unknown dice %q", op.DiceID)
 			}
 			if (op.DiceCount < 1) == !op.OnePerStatusStack {
@@ -952,7 +974,9 @@ func validateBattleOperations(ops []BattleOperation, lib BattleLibrary) error {
 			if len(op.Outcomes) == 0 {
 				return fmt.Errorf("roll_dice requires outcomes")
 			}
-			_ = die
+			if err := validateRoleOutcomes(op); err != nil {
+				return err
+			}
 		}
 		if op.Modifier != nil && op.Modifier.AddConditionalBonus != nil {
 			bonus := *op.Modifier.AddConditionalBonus
@@ -971,6 +995,9 @@ func validateBattleOperations(ops []BattleOperation, lib BattleLibrary) error {
 		}
 		covered := map[int]bool{}
 		for _, outcome := range op.Outcomes {
+			if len(outcome.Roles) > 0 && op.Dice != OwnerDice {
+				return fmt.Errorf("outcome roles need roll_dice with dice: owner")
+			}
 			for _, face := range outcome.Faces {
 				if op.Type != "roll_dice" || face < 1 || face > lib.Dice[op.DiceID].SideCount {
 					return fmt.Errorf("operation outcome has invalid face %d", face)
@@ -984,8 +1011,38 @@ func validateBattleOperations(ops []BattleOperation, lib BattleLibrary) error {
 				return err
 			}
 		}
-		if op.Type == "roll_dice" && len(covered) != lib.Dice[op.DiceID].SideCount {
+		if op.Type == "roll_dice" && op.Dice != OwnerDice && len(covered) != lib.Dice[op.DiceID].SideCount {
 			return fmt.Errorf("roll_dice outcomes must cover every face of %q", op.DiceID)
+		}
+	}
+	return nil
+}
+
+// validateRoleOutcomes checks a roll of the owner's die: its outcomes name
+// roles only, each role once and every role, so it resolves on any die with
+// roles.
+func validateRoleOutcomes(op BattleOperation) error {
+	if op.Dice != OwnerDice {
+		return nil
+	}
+	covered := map[string]bool{}
+	for _, outcome := range op.Outcomes {
+		if len(outcome.Faces) > 0 || len(outcome.Roles) == 0 {
+			return fmt.Errorf("roll_dice with dice: owner writes outcomes by roles, not faces")
+		}
+		for _, role := range outcome.Roles {
+			if !IsDieRole(role) {
+				return fmt.Errorf("unknown die role %q", role)
+			}
+			if covered[role] {
+				return fmt.Errorf("operation outcomes overlap on role %q", role)
+			}
+			covered[role] = true
+		}
+	}
+	for _, role := range DieRoleNames {
+		if !covered[role] {
+			return fmt.Errorf("roll_dice with dice: owner must cover the %s role", role)
 		}
 	}
 	return nil

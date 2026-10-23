@@ -1,0 +1,25 @@
+schema_version: 1
+id: custom_adventurer
+name: Custom Adventurer
+class: custom_adventurer
+# The Starter's deck and resources. The player's sheet chooses the die and
+# the priced board in the Board Builder; this is the default: the standard die
+# and the Lean template at default picks.
+controller_defaults: {type: human}
+resources: {starting_hand_size: 4, starting_energy: 10, hand_limit: 6, energy_cap: 75}
+income: {cards: 1, energy: 5}
+decklist:
+  - {card_id: steady_guard, count: 3}
+  - {card_id: nudge, count: 2}
+  - {card_id: try_again, count: 2}
+  - {card_id: strong_swing, count: 2}
+  - {card_id: take_stock, count: 2}
+  - {card_id: second_wind, count: 1}
+dice_loadout:
+  - {dice_id: standard_d6, count: 5}
+ability_board:
+  offensive: [board_main3_main4_main5, board_main2_side3, board_main2_apex2, board_ss, board_ls, board_apex4, board_apex5]
+  defensive: [holdfast]
+starting_statuses: []
+starting_tokens: []
+roll_preferences: {status_effects: automatic, offensive: manual, ability_effects: manual}

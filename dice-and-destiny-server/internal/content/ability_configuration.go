@@ -232,7 +232,7 @@ func validateAbilityOperations(ops []BattleOperation, kind string, depth int) er
 			return fmt.Errorf("offensive abilities have no incoming proposal")
 		}
 		switch op.Type {
-		case "noop", "apply_status", "draw_cards", "gain_resource", "remove_status_stack", "special_effect", "apply_incubation", "incubation_or_poison":
+		case "noop", "apply_status", "draw_cards", "heal_cards", "gain_resource", "remove_status_stack", "special_effect", "apply_incubation", "incubation_or_poison":
 		case "deal_damage", "provoke":
 			if kind != "offensive" {
 				return fmt.Errorf("%s requires an offensive activation", op.Type)
