@@ -153,7 +153,8 @@ func boardBuilderView(contentRoot, loadoutRoot, dieID string) (map[string]any, e
 	for _, entry := range b.Menus.Families[die.Layout.Family].FlexCosts {
 		addCost(entry.Cost, true)
 	}
-	var templates, stats []map[string]any
+	var templates []map[string]any
+	var family []boardprice.Template
 	for _, t := range b.Menus.Templates {
 		var slots []map[string]any
 		for _, s := range t.Slots {
@@ -168,11 +169,29 @@ func boardBuilderView(contentRoot, loadoutRoot, dieID string) (map[string]any, e
 				addCost(s.Cost, false)
 			}
 		}
-		_, report, err := b.Price(b.Default(t.ID, die.ID))
+		family = append(family, t)
+	}
+	// Each template's staircase is priced once; price them side by side.
+	stats := make([]map[string]any, len(family))
+	errs := make([]error, len(family))
+	var wg sync.WaitGroup
+	for i, t := range family {
+		wg.Add(1)
+		go func(i int, t boardprice.Template) {
+			defer wg.Done()
+			_, report, err := b.Price(b.Default(t.ID, die.ID))
+			if err != nil {
+				errs[i] = fmt.Errorf("template %s: %w", t.ID, err)
+				return
+			}
+			stats[i] = map[string]any{"template": t.ID, "average": report.WholeAverage, "no_hit": report.WholeNoHit}
+		}(i, t)
+	}
+	wg.Wait()
+	for _, err := range errs {
 		if err != nil {
-			return nil, fmt.Errorf("template %s: %w", t.ID, err)
+			return nil, err
 		}
-		stats = append(stats, map[string]any{"template": t.ID, "average": report.WholeAverage, "no_hit": report.WholeNoHit})
 	}
 	return map[string]any{
 		"pricing": b.Menus.Pricing, "bands": b.Menus.Bands, "jobs": b.Menus.Jobs, "dice": dice, "riders": riders, "defenses": defenses, "templates": templates,
@@ -180,15 +199,24 @@ func boardBuilderView(contentRoot, loadoutRoot, dieID string) (map[string]any, e
 	}, nil
 }
 
-// boardPriceView prices a board for the preview. It only reads: the
-// authority resolves the picks against the menus and prices them; the client
-// never computes a price.
-func boardPriceView(contentRoot string, choice boardprice.Choice, includePolicy bool) (map[string]any, error) {
+// boardPriceView prices a board for the preview at a target on its
+// staircase (0: the menus' target), with the staircase the damage slider
+// steps through: each step's target, average, every tier's damage (report
+// order) and the tiers it raises. It only reads: the authority resolves the picks against the menus and prices
+// them; the client never computes a price.
+func boardPriceView(contentRoot string, choice boardprice.Choice, includePolicy bool, target float64) (map[string]any, error) {
 	b, err := boardBuilder(contentRoot)
 	if err != nil {
 		return nil, err
 	}
-	resolved, report, err := b.Price(choice)
+	if target == 0 {
+		target = b.Menus.Pricing.Target
+	}
+	resolved, report, err := b.PriceAt(choice, target)
+	if err != nil {
+		return nil, err
+	}
+	_, sc, err := b.Staircase(resolved)
 	if err != nil {
 		return nil, err
 	}
@@ -237,7 +265,16 @@ func boardPriceView(contentRoot string, choice boardprice.Choice, includePolicy 
 	if err != nil {
 		return nil, err
 	}
-	return map[string]any{"choice": resolved, "report": report, "slots": slots, "die_name": die.Name, "abilities": abilities, "ability_board": board}, nil
+	steps := make([]map[string]any, len(sc.Steps))
+	for k, step := range sc.Steps {
+		raised := make([]string, len(step.Raised))
+		for j, i := range step.Raised {
+			raised[j] = report.Tiers[i].Tier
+		}
+		steps[k] = map[string]any{"at": step.At, "average": step.Average, "no_hit": step.NoHit, "damage": step.Damage, "raised": raised}
+	}
+	staircase := map[string]any{"from": sc.From, "to": sc.To, "default_target": b.Menus.Pricing.Target, "target": target, "step": report.Step, "steps": steps}
+	return map[string]any{"choice": resolved, "report": report, "slots": slots, "die_name": die.Name, "abilities": abilities, "ability_board": board, "staircase": staircase}, nil
 }
 
 // boardSave confirms a board: the authority re-prices the choice, generates

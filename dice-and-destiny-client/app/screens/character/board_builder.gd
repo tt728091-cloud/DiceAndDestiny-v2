@@ -3,7 +3,10 @@ extends Control
 ## cost and rider for each slot. The authority prices every change
 ## (board_price) and the screen only shows its report; it never computes a
 ## price. Confirm writes the die and the priced board to the character sheet
-## through the authority (board_save).
+## through the authority (board_save). The damage-level slider previews the
+## board anywhere on its staircase: the authority's steps, each raising at
+## least one ability and lowering none; Confirm always saves the standard
+## level.
 signal closed
 const STYLE = preload("res://app/screens/character/character_style.gd")
 const STONE_DIE := preload("res://presentation/dice/stone_die.gd")
@@ -17,6 +20,12 @@ var menus: Dictionary = {}
 var choice: Dictionary = {}
 ## The last board_price result for `choice`.
 var priced: Dictionary = {}
+## The priced board's staircase (authority data): from, to, the standard
+## target, the previewed target, its step and every step's target, average,
+## damage and raised tiers.
+var staircase: Dictionary = {}
+## The damage target being previewed; 0 until the first price (the standard).
+var preview_target := 0.0
 var revision := 0
 var saved_choice: Dictionary = {}
 var _status: Label
@@ -34,6 +43,16 @@ var _keep_scroll: ScrollContainer
 var _keep_toggle: Button
 var _keep_roll := 1
 var _confirm: Button
+var _level_title: Label
+var _level_slider: HSlider
+var _level_ticks: Control
+var _level_raised: VBoxContainer
+var _level_prev: Button
+var _level_next: Button
+var _level_reset: Button
+var _level_note: Label
+## Set while the screen moves the slider itself, so it does not re-price.
+var _slider_guard := false
 var die_buttons := {}
 var template_buttons := {}
 ## Slot editors by slot id: {"cost": OptionButton, "rider": OptionButton,
@@ -82,6 +101,7 @@ func _build() -> void:
 	# Preview
 	var right := _column(columns, 380)
 	STYLE.heading(right, "Preview · priced by the authority")
+	_build_level(right)
 	_stats = HFlowContainer.new(); _stats.add_theme_constant_override("h_separation", 8); _stats.add_theme_constant_override("v_separation", 8); right.add_child(_stats)
 	_keep_toggle = _button(right, "Show keep table", _toggle_keep, "keep_table"); _keep_toggle.toggle_mode = true
 	_keep_toggle.tooltip_text = "The best keep after rolls 1 and 2 for every hand, from the authority's exact play."
@@ -92,6 +112,32 @@ func _build() -> void:
 	var footer := HBoxContainer.new(); footer.add_theme_constant_override("separation", 12); footer_panel.add_child(footer)
 	_status = STYLE.label(footer, "", 15, STYLE.MUTED); _status.size_flags_horizontal = Control.SIZE_EXPAND_FILL; _status.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	_confirm = STYLE.accent(_button(footer, "Confirm board", _confirm_board, "confirm")); _confirm.custom_minimum_size.x = 170
+
+## The damage-level slider: ◀ / ▶ step through the staircase, the ticks
+## mark every step (gold: the one shown; green: the standard level).
+func _build_level(parent: Node) -> void:
+	var box := STYLE.section(parent, 10)
+	var head := HBoxContainer.new(); head.add_theme_constant_override("separation", 6); box.add_child(head)
+	STYLE.chip(head, "Damage level", STYLE.GOLD, 12)
+	_level_title = STYLE.label(head, "", 13, STYLE.GOLD_BRIGHT); _level_title.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	var row := HBoxContainer.new(); row.add_theme_constant_override("separation", 6); box.add_child(row)
+	_level_prev = _button(row, "◀", func(): _step_level(-1), "level.previous")
+	_level_prev.tooltip_text = "Previous step"
+	var track := VBoxContainer.new(); track.size_flags_horizontal = Control.SIZE_EXPAND_FILL; track.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	track.add_theme_constant_override("separation", 0); row.add_child(track)
+	_level_slider = HSlider.new(); _level_slider.step = 0.0; _level_slider.custom_minimum_size.y = 22
+	_level_slider.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_level_slider.tooltip_text = "Average damage per turn the board is priced at. Each tick is a step where an ability deals one more."
+	_level_slider.value_changed.connect(_on_level_changed); track.add_child(_level_slider)
+	_register(_level_slider, "level.slider", "Damage level")
+	_level_ticks = Control.new(); _level_ticks.custom_minimum_size.y = 12; _level_ticks.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_level_ticks.draw.connect(_draw_ticks); _level_ticks.resized.connect(_level_ticks.queue_redraw); track.add_child(_level_ticks)
+	_level_next = _button(row, "▶", func(): _step_level(1), "level.next")
+	_level_next.tooltip_text = "Next step"
+	_level_raised = VBoxContainer.new(); _level_raised.add_theme_constant_override("separation", 2); box.add_child(_level_raised)
+	var foot := HBoxContainer.new(); foot.add_theme_constant_override("separation", 8); box.add_child(foot)
+	_level_note = STYLE.label(foot, "", 12, STYLE.DIM); _level_note.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_level_reset = _button(foot, "Standard level", _reset_level, "level.reset")
 
 func _column(parent: Node, width: float, expand: bool = false) -> VBoxContainer:
 	var panel := PanelContainer.new(); panel.add_theme_stylebox_override("panel", STYLE.box("101b25", "1f2e3a", 12, 10))
@@ -226,15 +272,18 @@ func _render_templates() -> void:
 func _price() -> void:
 	var runtime = _runtime()
 	if runtime == null: return
-	var response: Dictionary = runtime.board_price(choice, _keep_toggle.button_pressed)
+	var response: Dictionary = runtime.board_price(choice, _keep_toggle.button_pressed, preview_target)
 	if not response.get("ok", false):
 		_error("This board cannot be priced: " + str(response.get("error", "unknown error")))
 		_confirm.disabled = true
 		return
 	priced = response.result
 	choice = _copy(priced.choice)
+	staircase = priced.get("staircase", {})
+	preview_target = float(staircase.get("target", 0.0))
 	_confirm.disabled = false
 	_render_slots()
+	_render_level()
 	_render_preview()
 	if _keep_toggle.button_pressed: _render_keep()
 	_status.add_theme_color_override("font_color", STYLE.MUTED)
@@ -295,7 +344,8 @@ func _render_slots() -> void:
 		controls.next_rider = _button(rider_row, "▶", func(): _cycle(riders, i, "rider"), "slot.%s.next_rider" % id)
 		controls.next_rider.disabled = riders.disabled
 		var damage: Array[String] = []
-		for tier in _tiers(id): damage.append("%s → %d" % [_tier_label(slot, str(tier.tier)), int(tier.whole_damage)])
+		var raised := _raised()
+		for tier in _tiers(id): damage.append("%s → %d%s" % [_tier_label(slot, str(tier.tier)), int(tier.whole_damage), " ▲" if str(tier.tier) in raised else ""])
 		STYLE.label(box, "Damage: " + " · ".join(damage), 13, STYLE.OFFENSE.lightened(0.2))
 		slot_controls[id] = controls
 	_render_defenses()
@@ -335,8 +385,7 @@ func _render_defenses() -> void:
 func _render_preview() -> void:
 	_clear(_stats)
 	var report: Dictionary = priced.get("report", {})
-	var target := float(menus.get("pricing", {}).get("target", 0))
-	STYLE.stat(_stats, "%.2f" % float(report.get("whole_average", 0)), "avg damage / turn · target %.1f" % target, STYLE.GOLD_BRIGHT)
+	STYLE.stat(_stats, "%.2f" % float(report.get("whole_average", 0)), "avg damage / turn · target %.2f" % preview_target, STYLE.GOLD_BRIGHT)
 	STYLE.stat(_stats, "%.1f%%" % (float(report.get("whole_no_hit", 0)) * 100.0), "no hit", STYLE.LOSS)
 	STYLE.stat(_stats, "×%.2f" % float(report.get("damage_multiplier", 0)), "a sure hit is worth", STYLE.IVORY)
 	_clear(_abilities)
@@ -349,9 +398,11 @@ func _render_preview() -> void:
 		var head := HBoxContainer.new(); box.add_child(head)
 		var name := STYLE.label(head, str(ability.name), 17, STYLE.GOLD_BRIGHT); name.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		if str(slot.get("rider", "none")) != "none": STYLE.chip(head, _rider_name(str(slot.rider)), STYLE.DEFENSE, 11)
+		var raised := _raised()
 		for tier in _tiers(str(slot.get("slot", ""))):
 			var row := HBoxContainer.new(); row.add_theme_constant_override("separation", 6); box.add_child(row)
-			var what := STYLE.label(row, "%s: %d dmg" % [_tier_label(slot, str(tier.tier)), int(tier.whole_damage)], 13)
+			var up := str(tier.tier) in raised
+			var what := STYLE.label(row, "%s: %d dmg%s" % [_tier_label(slot, str(tier.tier)), int(tier.whole_damage), "  ▲" if up else ""], 13, STYLE.GOLD_BRIGHT if up else STYLE.IVORY)
 			what.autowrap_mode = TextServer.AUTOWRAP_OFF; what.custom_minimum_size.x = 140
 			var bar := ProgressBar.new(); bar.max_value = 0.3; bar.value = minf(0.3, float(tier.use_whole)); bar.show_percentage = false
 			bar.custom_minimum_size = Vector2(90, 12); bar.size_flags_horizontal = Control.SIZE_EXPAND_FILL; bar.size_flags_vertical = Control.SIZE_SHRINK_CENTER
@@ -361,6 +412,100 @@ func _render_preview() -> void:
 			share.autowrap_mode = TextServer.AUTOWRAP_OFF; share.custom_minimum_size.x = 42; share.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 		var rules := STYLE.label(box, str(ability.get("presentation", {}).get("rules_text", "")), 12, STYLE.MUTED)
 		rules.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+
+## The steps of the priced board's staircase and the one shown.
+func _steps() -> Array: return staircase.get("steps", [])
+func _step() -> int: return int(staircase.get("step", 0))
+
+## The tiers the shown step raises.
+func _raised() -> Array:
+	var steps := _steps()
+	return steps[_step()].get("raised", []) if _step() < steps.size() else []
+
+## The step in force at a target: the last one that starts at or below it.
+func _step_at(target: float) -> int:
+	var k := 0
+	for i in _steps().size():
+		if float(_steps()[i].at) <= target + 1e-9: k = i
+	return k
+
+func _on_level_changed(value: float) -> void:
+	if _slider_guard or staircase.is_empty(): return
+	preview_target = value
+	if _step_at(value) != _step(): _price()
+	else: _render_level_title()
+
+func _step_level(delta: int) -> void:
+	var steps := _steps()
+	if steps.is_empty(): return
+	var k := clampi(_step() + delta, 0, steps.size() - 1)
+	preview_target = float(steps[k].at)
+	_price()
+
+func _reset_level() -> void:
+	preview_target = float(staircase.get("default_target", 0.0))
+	_price()
+
+func _render_level_title() -> void:
+	var steps := _steps()
+	if steps.is_empty(): _level_title.text = ""; return
+	_level_title.text = "target %.2f · step %d of %d · avg %.2f" % [preview_target, _step() + 1, steps.size(), float(steps[_step()].average)]
+
+## The slider, its ticks and what the shown step raises over the one below
+## it (and what the next step will raise), from the authority's staircase.
+func _render_level() -> void:
+	var steps := _steps()
+	if steps.is_empty(): return
+	var k := _step()
+	_slider_guard = true
+	_level_slider.min_value = float(staircase.from); _level_slider.max_value = float(staircase.to); _level_slider.value = preview_target
+	_slider_guard = false
+	_render_level_title()
+	_level_prev.disabled = k <= 0; _level_next.disabled = k >= steps.size() - 1
+	var standard := float(staircase.get("default_target", 0.0))
+	_level_reset.disabled = _step_at(standard) == k and absf(preview_target - standard) < 1e-9
+	_clear(_level_raised)
+	if k == 0: STYLE.label(_level_raised, "The bottom step of the staircase.", 12, STYLE.MUTED)
+	else: STYLE.label(_level_raised, "This step: " + _changes(k) + " · %+.3f avg" % (float(steps[k].average) - float(steps[k - 1].average)), 12, STYLE.GOLD_BRIGHT)
+	if k + 1 < steps.size():
+		STYLE.label(_level_raised, "Next at %.3f: %s · %+.3f avg" % [float(steps[k + 1].at), _changes(k + 1), float(steps[k + 1].average) - float(steps[k].average)], 12, STYLE.MUTED)
+	_level_note.text = "The standard level: Confirm saves this board." if _step_at(standard) == k else "Preview only: Confirm saves the board at the standard %.1f." % standard
+	_level_ticks.queue_redraw()
+
+## A step's raises, "Cinder ×4 5 → 6", from its damage and the step below.
+func _changes(k: int) -> String:
+	var steps := _steps()
+	var tiers: Array = priced.get("report", {}).get("tiers", [])
+	var out: Array[String] = []
+	for tier in steps[k].get("raised", []):
+		for i in tiers.size():
+			if str(tiers[i].tier) != str(tier): continue
+			out.append("%s %d → %d" % [_tier_name(str(tier)), int(steps[k - 1].damage[i]), int(steps[k].damage[i])])
+	return ", ".join(out)
+
+## A tier's label from any slot of the priced board.
+func _tier_name(tier: String) -> String:
+	for slot in priced.get("slots", []):
+		for entry in slot.get("tiers", []):
+			if str(entry.tier) == tier: return str(entry.label)
+	return tier
+
+func _draw_ticks() -> void:
+	var steps := _steps()
+	if steps.is_empty(): return
+	var low := float(staircase.from); var high := float(staircase.to)
+	var icon := _level_slider.get_theme_icon("grabber")
+	var grab := float(icon.get_width()) if icon != null else 16.0
+	var span := maxf(1.0, _level_ticks.size.x - grab)
+	var x_of := func(v: float) -> float: return grab / 2.0 + span * (v - low) / maxf(0.001, high - low)
+	for i in steps.size():
+		var x: float = x_of.call(float(steps[i].at))
+		if i == _step(): continue
+		_level_ticks.draw_line(Vector2(x, 0), Vector2(x, 5), STYLE.MUTED, 1.0)
+	var standard: float = x_of.call(float(staircase.get("default_target", low)))
+	_level_ticks.draw_line(Vector2(standard, 0), Vector2(standard, 11), STYLE.GAIN, 2.0)
+	var shown: float = x_of.call(float(steps[_step()].at))
+	_level_ticks.draw_line(Vector2(shown, 0), Vector2(shown, 11), STYLE.GOLD_BRIGHT, 2.0)
 
 ## A tier in the die's symbol names, as the authority labels it.
 func _tier_label(slot: Dictionary, tier: String) -> String:

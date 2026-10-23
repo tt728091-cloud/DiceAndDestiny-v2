@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"math"
-	"sort"
 	"strings"
 	"sync"
 
@@ -33,18 +32,26 @@ type Options struct {
 	Alpha         float64
 	Rolls         int
 	Dice          int
-	Tolerance     float64
 	MinimumDamage int
 	// LadderStep is how much more damage each harder tier of one ability
 	// deals than the tier below it (0 in the reference script).
 	LadderStep int
-	Rates      Rates
+	// HalfBand: a damage this close to a half rounds whichever way lands the
+	// board's average nearer its target.
+	HalfBand float64
+	// From and To are the staircase's targets; Scan is how far apart the
+	// staircase is sampled before each change is pinned. Anchor is the
+	// standard level (the menus' target): its step is the board rounded
+	// closest to it, and no step above deals less than it (0: none).
+	From, To, Scan, Anchor float64
+	Rates                  Rates
 }
 
 // Options returns the menus' agreed pricing.
 func (m Menus) Options() Options {
 	p := m.Pricing
-	return Options{Target: p.Target, Alpha: p.Alpha, Rolls: p.Rolls, Dice: p.Dice, Tolerance: p.Tolerance, MinimumDamage: p.MinimumDamage, LadderStep: p.LadderStep, Rates: m.Rates}
+	return Options{Target: p.Target, Alpha: p.Alpha, Rolls: p.Rolls, Dice: p.Dice, MinimumDamage: p.MinimumDamage, LadderStep: p.LadderStep, HalfBand: p.HalfBand,
+		From: p.Staircase.From, To: p.Staircase.To, Scan: p.Staircase.Scan, Anchor: p.Target, Rates: m.Rates}
 }
 
 // TierReport is one tier's price.
@@ -71,7 +78,8 @@ type TierReport struct {
 	Floored bool `json:"floored,omitempty"`
 	// Stepped reports a tier the ladder step moved off its price.
 	Stepped bool `json:"stepped,omitempty"`
-	// WholeDamage is the rounded damage the generated ability deals.
+	// WholeDamage is the whole damage the generated ability deals: the
+	// staircase step's at the target.
 	WholeDamage int `json:"whole_damage"`
 	// UseWhole is the share of turns that end on this tier at whole damage.
 	UseWhole float64 `json:"use_whole"`
@@ -98,12 +106,8 @@ type Report struct {
 	// Drift is the share of turns that end on a different tier once
 	// damage is whole (against the stepped board when a ladder was spread).
 	Drift float64 `json:"drift"`
-	// Roundings is how many monotone roundings were played.
-	Roundings int `json:"roundings"`
-	// Monotone is false when no rounding keeps harder tiers paying at least
-	// as much as easier ones across the board and the best one that only
-	// keeps the ladder steps was used.
-	Monotone bool `json:"monotone"`
+	// Step is the index of the staircase step in force at the target.
+	Step int `json:"step"`
 	// Policy is the keep after each roll of the whole-damage board.
 	Policy KeepPolicy `json:"policy"`
 }
@@ -142,50 +146,23 @@ const cacheLimit = 512
 //     spread around its average (the closest stepped damages), and the
 //     multiplier solved again so the stepped board still averages the
 //     target;
-//  6. round by playing every floor/ceiling rounding that keeps the steps
-//     (and, where one exists, never pays a harder tier less than an easier
-//     one) and keeping the one within the tolerance whose use shares drift
-//     least, then play it again.
+//  6. take the whole damage from the board's staircase (PriceStaircase):
+//     the step in force at the target. Each step rounds every tier to its
+//     nearest whole damage, letting count ladders, tiers near a half and
+//     tiers that would break the order go either way so the board lands
+//     nearest its target, keeping the ladder steps and never paying a harder
+//     tier less than an easier one; and of those rises it keeps only the
+//     ones that last up to the top of the staircase, so no step ever lowers
+//     a tier.
 //
-// Riders are counted in every play. Reports are cached by board key.
+// Riders are counted in every play. Reports and staircases are cached by
+// board key.
 func Price(die Die, board Board, opts Options) (Report, error) {
 	if err := opts.check(); err != nil {
 		return Report{}, err
 	}
-	if len(die.Faces) != sides {
-		return Report{}, fmt.Errorf("die %q has no faces", die.ID)
-	}
-	var tiers []Tier
-	var reports []TierReport
-	var riders []float64
-	var ladders [][]int
-	seen := map[string]bool{}
-	for _, slot := range board.Slots {
-		if len(slot.Cost) == 0 {
-			return Report{}, fmt.Errorf("slot %s has no cost", slot.ID)
-		}
-		if err := slot.Cost.Reachable(die.Layout, opts.Dice); err != nil {
-			return Report{}, fmt.Errorf("slot %s: %w", slot.ID, err)
-		}
-		rider, err := opts.Rates.Value(slot.Rider)
-		if err != nil {
-			return Report{}, fmt.Errorf("slot %s: %w", slot.ID, err)
-		}
-		var ladder []int
-		for _, tier := range slot.Cost {
-			ladder = append(ladder, len(tiers))
-			if seen[tier.String()] {
-				return Report{}, fmt.Errorf("board repeats tier %s", tier)
-			}
-			seen[tier.String()] = true
-			tiers = append(tiers, tier)
-			riders = append(riders, rider)
-			reports = append(reports, TierReport{Slot: slot.ID, Tier: tier.String(), RiderValue: rider})
-		}
-		ladders = append(ladders, ladder)
-	}
-	if len(tiers) == 0 {
-		return Report{}, fmt.Errorf("board has no abilities")
+	if opts.Target < opts.From-1e-9 || opts.Target > opts.To+1e-9 {
+		return Report{}, fmt.Errorf("target %g is outside the staircase %g–%g", opts.Target, opts.From, opts.To)
 	}
 	key := boardKey(die, board, opts)
 	cacheMu.Lock()
@@ -194,44 +171,27 @@ func Price(die Die, board Board, opts Options) (Report, error) {
 		return cloneReport(cached), nil
 	}
 	cacheMu.Unlock()
-
-	s := newSolver(die, tiers, opts.Dice)
-	relative := make([]float64, len(tiers))
-	for i := range tiers {
-		reports[i].Chase = s.chase(i, len(tiers), opts.Rolls)
-		if reports[i].Chase <= 0 {
-			return Report{}, fmt.Errorf("%s can never be rolled", tiers[i])
-		}
-		relative[i] = math.Pow(1/reports[i].Chase, opts.Alpha)
-		reports[i].Relative = relative[i]
+	p, sc, err := staircaseFor(die, board, opts)
+	if err != nil {
+		return Report{}, err
 	}
-	for _, ladder := range ladders {
-		sort.SliceStable(ladder, func(a, b int) bool { return reports[ladder[a]].Chase > reports[ladder[b]].Chase })
-	}
-	sum, used, noHit, _ := s.play(relative, opts.Rolls, false)
-	multiplier := opts.Target / sum
-	for i := range tiers {
-		reports[i].UseExact = used[i]
-		reports[i].Value = relative[i] * multiplier
-	}
-	damageMultiplier, reference, referenceNoHit := s.stepped(relative, riders, ladders, multiplier, used, noHit, opts)
-	damage, floored, stepped := pricedDamage(relative, riders, ladders, damageMultiplier, opts)
-	for i := range tiers {
+	k := sc.At(opts.Target)
+	step := sc.Steps[k]
+	reports := append([]TierReport(nil), p.reports...)
+	multiplier := opts.Target / p.sum
+	damageMultiplier, reference, referenceNoHit := p.s.stepped(p.relative, p.riders, p.ladders, multiplier, p.used, p.noHit, opts)
+	damage, floored, stepped := pricedDamage(p.relative, p.riders, p.ladders, damageMultiplier, opts)
+	played := make([]float64, len(reports))
+	for i := range reports {
+		reports[i].Value = p.relative[i] * multiplier
 		reports[i].Damage, reports[i].Floored, reports[i].Stepped = damage[i], floored[i], stepped[i]
+		reports[i].WholeDamage, reports[i].UseWhole = step.Damage[i], step.Use[i]
+		played[i] = float64(step.Damage[i]) + p.riders[i]
 	}
-	whole, roundings, monotone := s.wholeNumbers(reports, damage, riders, ladders, reference, referenceNoHit, opts)
-	played := make([]float64, len(tiers))
-	for i := range tiers {
-		played[i] = float64(whole[i]) + riders[i]
-		reports[i].WholeDamage = whole[i]
-	}
-	wholeEV, wholeUsed, wholeNoHit, policy := s.play(played, opts.Rolls, true)
-	for i := range tiers {
-		reports[i].UseWhole = wholeUsed[i]
-	}
-	report := Report{Die: die.ID, Tiers: reports, Sum: sum, Multiplier: multiplier, DamageMultiplier: damageMultiplier, ExactAverage: opts.Target, ExactNoHit: noHit,
-		WholeAverage: wholeEV, WholeNoHit: wholeNoHit, Drift: drift(reference, referenceNoHit, wholeUsed, wholeNoHit), Roundings: roundings, Monotone: monotone,
-		Policy: s.keepPolicy(policy, played, opts.Rolls)}
+	_, _, _, policy := p.s.play(played, opts.Rolls, true)
+	report := Report{Die: die.ID, Tiers: reports, Sum: p.sum, Multiplier: multiplier, DamageMultiplier: damageMultiplier, ExactAverage: opts.Target, ExactNoHit: p.noHit,
+		WholeAverage: step.Average, WholeNoHit: step.NoHit, Drift: drift(reference, referenceNoHit, step.Use, step.NoHit), Step: k,
+		Policy: p.s.keepPolicy(policy, played, opts.Rolls)}
 	cacheMu.Lock()
 	if len(cache) >= cacheLimit {
 		cache = map[string]Report{}
@@ -242,7 +202,9 @@ func Price(die Die, board Board, opts Options) (Report, error) {
 }
 
 func (o Options) check() error {
-	if o.Target <= 0 || o.Alpha < 0 || o.Rolls < 1 || o.Rolls > 5 || o.Dice < 1 || o.Dice > 5 || o.Tolerance <= 0 || o.MinimumDamage < 1 || o.LadderStep < 0 {
+	if o.Target < 0 || o.Alpha < 0 || o.Rolls < 1 || o.Rolls > 5 || o.Dice < 1 || o.Dice > 5 || o.MinimumDamage < 1 || o.LadderStep < 0 ||
+		o.HalfBand < 0 || o.HalfBand >= 0.5 || o.From <= 0 || o.To <= o.From || o.Scan <= 0 || o.Scan > o.To-o.From ||
+		(o.Anchor != 0 && (o.Anchor < o.From || o.Anchor > o.To)) {
 		return fmt.Errorf("invalid pricing options %+v", o)
 	}
 	return nil
@@ -345,78 +307,6 @@ func (s *solver) stepped(relative, riders []float64, ladders [][]int, multiplier
 	return high, u, nh
 }
 
-// wholeNumbers plays every floor/ceiling rounding of the damage that keeps
-// each ladder's step (a harder tier of one ability deals at least the step
-// more than the tier below it) and no damage below the minimum. Where one
-// exists, a harder tier anywhere on the board also never pays less (damage
-// plus rider) than an easier one: easiest tier first. The rounding within
-// the tolerance of the target whose use shares drift least from the board
-// being rounded wins; without one, the rounding closest to the target. The
-// stepped damage always has a rounding that keeps the steps (every floor).
-func (s *solver) wholeNumbers(reports []TierReport, damage, riders []float64, ladders [][]int, used []float64, noHit float64, opts Options) ([]int, int, bool) {
-	order := make([]int, len(damage))
-	for i := range order {
-		order[i] = i
-	}
-	sort.SliceStable(order, func(a, b int) bool { return reports[order[a]].Chase > reports[order[b]].Chase })
-	// below[i] is the easier tier of i's ability, rounded before i.
-	below := make([]int, len(damage))
-	for i := range below {
-		below[i] = -1
-	}
-	for _, ladder := range ladders {
-		for k := 1; k < len(ladder); k++ {
-			below[ladder[k]] = ladder[k-1]
-		}
-	}
-	candidates := func(d float64) []int {
-		floor := int(math.Floor(d))
-		if d == math.Floor(d) {
-			return []int{floor}
-		}
-		return []int{floor, floor + 1}
-	}
-	var combos [][]int
-	var walk func(k int, previous float64, cur []int, monotone bool)
-	walk = func(k int, previous float64, cur []int, monotone bool) {
-		if k == len(order) {
-			combos = append(combos, append([]int(nil), cur...))
-			return
-		}
-		i := order[k]
-		for _, v := range candidates(damage[i]) {
-			if v < opts.MinimumDamage || (below[i] >= 0 && v < cur[below[i]]+opts.LadderStep) || (monotone && float64(v)+riders[i] < previous) {
-				continue
-			}
-			cur[i] = v
-			walk(k+1, math.Max(previous, float64(v)+riders[i]), cur, monotone)
-		}
-	}
-	walk(0, math.Inf(-1), make([]int, len(damage)), true)
-	monotone := len(combos) > 0
-	if !monotone {
-		walk(0, math.Inf(-1), make([]int, len(damage)), false)
-	}
-	var best []int
-	var bestKey [2]float64
-	for _, combo := range combos {
-		played := make([]float64, len(combo))
-		for i, v := range combo {
-			played[i] = float64(v) + riders[i]
-		}
-		ev, u, nh, _ := s.play(played, opts.Rolls, false)
-		near := math.Abs(ev-opts.Target) <= opts.Tolerance*opts.Target
-		key := [2]float64{1, math.Abs(ev - opts.Target)}
-		if near {
-			key = [2]float64{0, drift(used, noHit, u, nh)}
-		}
-		if best == nil || key[0] < bestKey[0] || (key[0] == bestKey[0] && key[1] < bestKey[1]) {
-			best, bestKey = combo, key
-		}
-	}
-	return best, len(combos), monotone
-}
-
 // drift is the share of turns that end on a different tier (total variation
 // distance, misses included).
 func drift(a []float64, aNone float64, b []float64, bNone float64) float64 {
@@ -497,7 +387,7 @@ func boardKey(die Die, board Board, opts Options) string {
 		fmt.Fprintf(&sb, "#%s=%s:%s", slot.ID, slot.Cost, ops)
 	}
 	rates, _ := json.Marshal(opts.Rates)
-	fmt.Fprintf(&sb, "@%g/%g/%d/%d/%g/%d/%d/%s", opts.Target, opts.Alpha, opts.Rolls, opts.Dice, opts.Tolerance, opts.MinimumDamage, opts.LadderStep, rates)
+	fmt.Fprintf(&sb, "@%g/%g/%d/%d/%d/%d/%g/%g/%g/%g/%g/%s", opts.Target, opts.Alpha, opts.Rolls, opts.Dice, opts.MinimumDamage, opts.LadderStep, opts.HalfBand, opts.From, opts.To, opts.Scan, opts.Anchor, rates)
 	sum := sha256.Sum256([]byte(sb.String()))
 	return fmt.Sprintf("%x", sum)
 }

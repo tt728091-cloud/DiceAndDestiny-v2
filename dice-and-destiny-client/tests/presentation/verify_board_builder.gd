@@ -1,7 +1,8 @@
 extends SceneTree
 ## Board Builder (Character Creation, Custom Adventurer): pick the 2-2-1-1 die
 ## and a template by pointer, change a rider and see the authority re-price,
-## open the keep table, confirm through the authority, and check that a
+## open the keep table, step the damage-level slider up the staircase and back
+## to the standard level, confirm through the authority, and check that a
 ## battle pins the die and the generated abilities with their full rules on
 ## the shared attack hover.
 const CREATION := preload("res://app/screens/character/character_creation.gd")
@@ -66,6 +67,27 @@ func _builder_round(runtime, width: int) -> void:
 	await _click(builder._keep_toggle)
 	_expect(builder._keep_scroll.visible and builder._keep.get_child_count() > 252, "keep table lists every hand: %d rows" % builder._keep.get_child_count())
 	await _click(builder._keep_toggle)
+	# The damage-level slider: step up the staircase by pointer; no ability
+	# loses damage, and the standard level comes back.
+	var steps: Array = builder.staircase.get("steps", [])
+	_expect(steps.size() > 100 and absf(builder.preview_target - 6.2) < 1e-6, "the staircase has %d steps and shows the standard 6.2" % steps.size())
+	var step0 := int(builder.staircase.step)
+	var damage0 := _damage(builder)
+	var average0 := float(builder.priced.report.whole_average)
+	await _click(builder._level_next)
+	_expect(int(builder.staircase.step) == step0 + 1, "▶ moves one step up: %d → %d" % [step0, int(builder.staircase.step)])
+	var damage1 := _damage(builder)
+	var raised: Array = builder.staircase.steps[int(builder.staircase.step)].raised
+	_expect(not raised.is_empty(), "the step raises an ability")
+	for tier in damage0:
+		_expect(int(damage1[tier]) >= int(damage0[tier]), "%s keeps its damage: %d → %d" % [tier, damage0[tier], damage1[tier]])
+		if tier in raised: _expect(int(damage1[tier]) > int(damage0[tier]), "%s deals more on the step" % tier)
+	_expect(float(builder.priced.report.whole_average) >= average0, "the average never falls")
+	_expect("→" in _text(builder._level_raised), "the step names what it raises")
+	await _click_at(builder._level_slider, 0.9)
+	_expect(builder.preview_target > 15.0 and float(builder.priced.report.whole_average) > 14.0, "pointer high on the slider prices the board higher: target %.2f, average %.2f" % [builder.preview_target, float(builder.priced.report.whole_average)])
+	await _click(builder._level_reset)
+	_expect(absf(builder.preview_target - 6.2) < 1e-6 and int(builder.staircase.step) == step0, "the standard level returns: target %.2f, step %d" % [builder.preview_target, int(builder.staircase.step)])
 	_expect(builder.size.x <= root.get_visible_rect().size.x + 1, "builder fits the viewport")
 	await _capture("board-builder-%d" % width)
 	# 4 · confirm through the authority.
@@ -120,6 +142,19 @@ func _hover_round(runtime) -> void:
 		_expect(not rules.is_empty() and rules in hint, "the hover shows the generated ability's full rules")
 		_expect("Anvil" in hint and "Selected:" in hint and "Offensive dice:" in hint, "the hover names the tier, the die's symbols and the revealed dice")
 	screen.queue_free(); canvas.queue_free(); await process_frame
+
+func _damage(builder) -> Dictionary:
+	var out := {}
+	for tier in builder.priced.report.tiers: out[str(tier.tier)] = int(tier.whole_damage)
+	return out
+
+func _click_at(control: Control, fraction: float) -> void:
+	var rect := control.get_global_rect()
+	var point := rect.position + Vector2(rect.size.x * fraction, rect.size.y / 2.0)
+	var move := InputEventMouseMotion.new(); move.position = point; root.push_input(move, true); await process_frame
+	for pressed in [true, false]:
+		var event := InputEventMouseButton.new(); event.position = point; event.button_index = MOUSE_BUTTON_LEFT; event.pressed = pressed; root.push_input(event, true); await process_frame
+	for frame in 3: await process_frame
 
 func _slot_damage(builder, slot: String) -> Array:
 	var out := []

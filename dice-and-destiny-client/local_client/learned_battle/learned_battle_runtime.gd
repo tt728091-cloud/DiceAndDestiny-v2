@@ -306,10 +306,14 @@ func board_builder(board: Dictionary = {}) -> Dictionary:
 	if _native_authority == null: return {"ok": false, "error": _initialization_error}
 	return _request({"op": "board_builder", "board": board, "loadout_root": WorkspacePaths.runtime_dir("user/character_loadouts"), "content_root": ProjectSettings.globalize_path("res://../dice-and-destiny-server/content")})
 
-## Read-only: prices a board choice; include_policy adds the keep table.
-func board_price(board: Dictionary, include_policy: bool = false) -> Dictionary:
+## Read-only: prices a board choice at a damage target on its staircase
+## (0: the standard target) and returns the staircase; include_policy adds
+## the keep table.
+func board_price(board: Dictionary, include_policy: bool = false, target: float = 0.0) -> Dictionary:
 	if _native_authority == null: return {"ok": false, "error": _initialization_error}
-	return _request({"op": "board_price", "board": board, "include_policy": include_policy, "content_root": ProjectSettings.globalize_path("res://../dice-and-destiny-server/content")})
+	var request := {"op": "board_price", "board": board, "include_policy": include_policy, "content_root": ProjectSettings.globalize_path("res://../dice-and-destiny-server/content")}
+	if target > 0.0: request.target = target
+	return _request(request)
 
 ## Confirms a board: the authority re-prices it and writes it to the sheet.
 func board_save(board: Dictionary, revision: int) -> Dictionary:

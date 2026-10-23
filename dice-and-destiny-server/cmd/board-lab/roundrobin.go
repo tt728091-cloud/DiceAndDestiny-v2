@@ -81,11 +81,15 @@ type roundRobin struct {
 	lab
 	healths  []int
 	defenses []string
+	target   float64 // average damage per turn the boards are priced at
 }
 
-func runRoundRobin(l lab, healths string, rounds, sample, battles int, seed int64, out, markdown string) {
+func runRoundRobin(l lab, healths string, target float64, rounds, sample, battles int, seed int64, out, markdown string) {
 	started := time.Now()
-	rr := roundRobin{lab: l, defenses: duelDefenses}
+	rr := roundRobin{lab: l, defenses: duelDefenses, target: target}
+	if rr.target <= 0 {
+		rr.target = l.builder.Menus.Options().Target
+	}
 	var err error
 	if rr.healths, err = parseRange(healths); err != nil {
 		fail(err)
@@ -107,13 +111,14 @@ func runRoundRobin(l lab, healths string, rounds, sample, battles int, seed int6
 		}
 	}
 	if out != "" {
-		if err := writeJSON(out, map[string]any{"healths": rr.healths, "defenses": rr.defenses, "fields": []rrField{now, ruled, tunedField}, "checks": checks}); err != nil {
+		if err := writeJSON(out, map[string]any{"target": rr.target, "healths": rr.healths, "defenses": rr.defenses, "fields": []rrField{now, ruled, tunedField}, "checks": checks}); err != nil {
 			fail(err)
 		}
 	}
 }
 
-// defaultBoards is every die × template at default picks, priced now.
+// defaultBoards is every die × template at default picks, priced now at the
+// round robin's target.
 func (rr roundRobin) defaultBoards() []rrBoard {
 	var boards []rrBoard
 	for _, tpl := range rr.builder.Menus.Templates {
@@ -130,7 +135,7 @@ func (rr roundRobin) defaultBoards() []rrBoard {
 				fail(err)
 			}
 			b := rrBoard{Label: tpl.Name + " · " + strings.TrimSuffix(die.Name, " Die"), Choice: choice, Family: die.Layout.Family, die: die, board: board}
-			if err := b.price(rr.builder.Menus.Options().Target, rr.builder); err != nil {
+			if err := b.price(rr.target, rr.builder); err != nil {
 				fail(fmt.Errorf("%s: %w", b.Label, err))
 			}
 			boards = append(boards, b)
@@ -139,7 +144,7 @@ func (rr roundRobin) defaultBoards() []rrBoard {
 	return boards
 }
 
-// price reprices a board at a damage target.
+// price reprices a board at a damage target on its staircase.
 func (b *rrBoard) price(target float64, builder *boardprice.Builder) error {
 	opts := builder.Menus.Options()
 	opts.Target = target
@@ -272,7 +277,7 @@ func (rr roundRobin) tune(start []rrBoard, rounds int, started time.Time) []rrBo
 // score move in steps, so the closest target tried wins).
 func (rr roundRobin) level(field []rrBoard, i int) rrBoard {
 	best, bestGap := field[i], math.Inf(1)
-	lo, hi := 3.0, 12.0
+	lo, hi := rr.builder.Menus.Options().From, rr.builder.Menus.Options().To
 	for step := 0; step < 18; step++ {
 		t := (lo + hi) / 2
 		b := field[i]
@@ -327,7 +332,7 @@ func (rr roundRobin) ruled(start []rrBoard) []rrBoard {
 		go func(i int) {
 			defer wg.Done()
 			best, bestGap := out[i], math.Inf(1)
-			lo, hi := 3.0, 12.0
+			lo, hi := rr.builder.Menus.Options().From, rr.builder.Menus.Options().To
 			for step := 0; step < 18; step++ {
 				t := (lo + hi) / 2
 				b := start[i]
@@ -402,7 +407,7 @@ func defenseName(d string) string {
 func (rr roundRobin) summarize(now, ruled, tuned rrField, checks []rrCheck, rounds, battles int) string {
 	var sb strings.Builder
 	fmt.Fprintf(&sb, "### Board round robin\n\n")
-	fmt.Fprintf(&sb, "`go run ./cmd/board-lab -roundrobin` · every default board against every other · blank decks (health only), no riders, the same defense on both sides · race model (both sides attack every round with the priced odds per tier, through the other's defense roll), each cell averaged over starting health %d–%d · score = wins + ½ draws.\n\n", rr.healths[0], rr.healths[len(rr.healths)-1])
+	fmt.Fprintf(&sb, "`go run ./cmd/board-lab -roundrobin` · every default board against every other, priced at %.2f damage per turn · blank decks (health only), no riders, the same defense on both sides · race model (both sides attack every round with the priced odds per tier, through the other's defense roll), each cell averaged over starting health %d–%d · score = wins + ½ draws.\n\n", rr.target, rr.healths[0], rr.healths[len(rr.healths)-1])
 	fmt.Fprintf(&sb, "Defenses: **no defense**; **Light Guard** (1 die: 1–2 prevent nothing, 3–4 prevent 1, 5–6 prevent 2; 1 on average); **Holdfast** (3 of your dice by role, 3.5 on average, up to 6, or 9 on a 3-1-1-1 die). A matchup below %.2f (the other side wins %.0f%% or more) counts as lopsided.\n\n", lopsided, (1-lopsided)*100)
 	if len(checks) > 0 {
 		var diffs []float64

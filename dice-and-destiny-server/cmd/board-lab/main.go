@@ -14,11 +14,13 @@
 // -pure plays the boards alone instead (pure.go): blank decks, one defense,
 // no riders, every default board against a reference board, beside the race
 // model's prediction. -roundrobin scores every default board against every
-// other that way under three defenses and tunes the field (roundrobin.go).
+// other that way under three defenses and tunes the field (roundrobin.go);
+// -sweep does it at targets across the pricing's staircase (sweep.go).
 //
 //	go run ./cmd/board-lab -battles 200 -random 300 -random-battles 40 -markdown /tmp/board-lab.md
 //	go run ./cmd/board-lab -pure -battles 2000 -health 15 -markdown /tmp/pure.md
 //	go run ./cmd/board-lab -roundrobin -battles 1000 -sample 16 -markdown /tmp/round-robin.md
+//	go run ./cmd/board-lab -sweep -out /tmp/sweep.json
 package main
 
 import (
@@ -88,6 +90,9 @@ func main() {
 	templates := flag.String("templates", "", "pure duel: only these templates (comma separated)")
 	roundrobin := flag.Bool("roundrobin", false, "round robin: every default board against every other with blank decks, under each duel defense, by the race model; then tune every board's target to level")
 	healths := flag.String("healths", "12-30", "round robin: the starting healths each cell is averaged over")
+	target := flag.Float64("target", 0, "round robin: average damage per turn to price every board at (0: the menus' target)")
+	sweep := flag.Bool("sweep", false, "sweep: price every default board at targets across its staircase and score the field against itself at each (race model, every duel defense); needs -out")
+	sweepStep := flag.Float64("sweep-step", 0.1, "sweep: how far apart the targets are")
 	tuneRounds := flag.Int("tune-rounds", 3, "round robin: tuning rounds")
 	sample := flag.Int("sample", 16, "round robin: pairings per defense played as real battles (-battles each) to check the model")
 	flag.Parse()
@@ -111,8 +116,12 @@ func main() {
 		runPure(l, *health, *reference, *defense, *battles, *templates, *out, *markdown)
 		return
 	}
+	if *sweep {
+		runSweep(l, *healths, *sweepStep, *out)
+		return
+	}
 	if *roundrobin {
-		runRoundRobin(l, *healths, *tuneRounds, *sample, *battles, *seed, *out, *markdown)
+		runRoundRobin(l, *healths, *target, *tuneRounds, *sample, *battles, *seed, *out, *markdown)
 		return
 	}
 	started := time.Now()

@@ -58,8 +58,38 @@ The method agreed for `board_balance.py`:
 2. Play the board exactly (every hand, every keep, 3 rolls) to get use shares.
 3. Multiply every payoff by target ÷ Σ(use × relative). The target is the
    Starter's level, 6.2 per turn.
-4. Round to whole damage, keeping harder ≥ easier, within 2% of the target.
+4. Round to whole damage on the board's staircase (agreed 2026-10-23, below).
    Play the rounded board again and report it.
+
+**Rounding and the damage staircase (2026-10-23).** Whole damage is the
+nearest, not "anything within 2% of the target that changes play least" (that
+rounding left Lean on the standard die at 6.10 with 5.94 and 5.86 paid as 5).
+Every board is priced over a staircase of targets, `staircase` in
+`board_templates.yaml` (5 to 20), which is the Board Builder's damage slider:
+
+- each tier rounds to its nearest whole damage; a value within `half_band`
+  (0.05) of a half goes whichever way lands the board nearer its target;
+- a count ladder (one ability's tiers of more of the same symbol, like
+  3/4/5 Sword) keeps at least 1 more per harder tier and may go up or down
+  so the board lands nearest its target. Straights round to nearest;
+- a harder ability may pay the same as an easier one, never less (less
+  makes it obsolete);
+- of those rises, only the ones that last up to 20 are kept: a tier's damage
+  on a step is the least it deals from there up, so no step ever lowers an
+  ability. This keeps every single-ability step (5 Cinder, then 4, then 3)
+  and drops the back-and-forth trades;
+- the standard level (`target`, 6.2) is anchored: its step is the board
+  rounded closest to 6.2, and no step above it deals less. Without the
+  anchor, holding back every ability that dips later left several boards
+  low at 6.2 (22 lopsided round-robin pairings instead of 10).
+
+A board's price at a target is the step in force there; the shipped default
+board is the 6.2 step. In the round robin the standard level has 10 lopsided
+pairings (26 with the old rounding) and 7.1 has 6 (12). Each default board has 140–185 steps from 5 to 20,
+about 95% of them raising one ability, and the step sizes differ (4 Kiln +1
+adds 0.01 to the average, 5 Cinder +1 adds 0.28). The intended XP use buys
+steps priced by the average damage they add. `go run ./cmd/board-lab -sweep`
+scores the field against itself at every target across the staircase.
 
 **Ladder step (added 2026-10-22).** Each harder tier of one ability deals at
 least 1 more damage than the tier below it (`ladder_step` in
@@ -69,7 +99,7 @@ Sword pays. The curve alone is too flat for that (the Starter's ladder prices
 around its average: the closest damages (least squares) that keep the step,
 never below the minimum damage. The multiplier is then solved again so the
 stepped board still averages the target, and only roundings that keep the
-step are played. Rounding drift is measured against the stepped board.
+step are kept.
 `board_balance.py` has no step; the Go parity test runs without it.
 
 **Riders.** A slot's priced value is damage plus its rider at the exchange
@@ -219,6 +249,11 @@ on the curve, every slot is used.
   - each template's average and no-hit rate.
 - Slot editor (cost and rider). Each change calls `board_price` for a live
   preview, with use bars and the keep table on demand.
+- Damage-level slider (added 2026-10-23): `board_price` takes a `target` and
+  returns the board's staircase. The slider runs 5–20 with a tick per step;
+  ◀ / ▶ step one at a time, and the preview shows the step's damage, the
+  abilities it raised (▲, "Cinder ×4 5 → 6") and what the next step raises.
+  It previews only: Confirm saves the standard 6.2 step.
 - Confirm writes the board through the authority. Pointer and headless
   checks through `./scripts/godot.sh`.
 

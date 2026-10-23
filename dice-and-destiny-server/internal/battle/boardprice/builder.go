@@ -211,12 +211,30 @@ func (b *Builder) Resolve(c Choice) (Choice, Die, Board, error) {
 
 // Price resolves and prices a choice at the menus' agreed pricing.
 func (b *Builder) Price(c Choice) (Choice, Report, error) {
+	return b.PriceAt(c, b.Menus.Pricing.Target)
+}
+
+// PriceAt resolves and prices a choice at a target on its staircase.
+func (b *Builder) PriceAt(c Choice, target float64) (Choice, Report, error) {
 	resolved, die, board, err := b.Resolve(c)
 	if err != nil {
 		return c, Report{}, err
 	}
-	report, err := Price(die, board, b.Menus.Options())
+	opts := b.Menus.Options()
+	opts.Target = target
+	report, err := Price(die, board, opts)
 	return resolved, report, err
+}
+
+// Staircase resolves a choice and prices its staircase: its whole damage at
+// every target from the pricing's From to To.
+func (b *Builder) Staircase(c Choice) (Choice, Staircase, error) {
+	resolved, die, board, err := b.Resolve(c)
+	if err != nil {
+		return c, Staircase{}, err
+	}
+	sc, err := PriceStaircase(die, board, b.Menus.Options())
+	return resolved, sc, err
 }
 
 // RandomBoard draws a seeded random board of a family (any family when

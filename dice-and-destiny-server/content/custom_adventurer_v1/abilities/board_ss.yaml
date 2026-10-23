@@ -8,7 +8,7 @@
   "name": "Short Run",
   "type": "offensive",
   "presentation": {
-    "rules_text": "Small straight: any four consecutive numbers (1-4, 2-5 or 3-6); the fifth die may be anything. Deal 5 damage. Misses without the required straight.",
+    "rules_text": "Small straight: any four consecutive numbers (1-4, 2-5 or 3-6); the fifth die may be anything. Deal 6 damage. Misses without the required straight.",
     "art_key": ""
   },
   "cost": {
@@ -38,7 +38,7 @@
           {
             "type": "deal_damage",
             "target": "selected_targets",
-            "amount": 5
+            "amount": 6
           }
         ]
       }

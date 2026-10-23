@@ -32,17 +32,26 @@
 //     around its average and the multiplier solved again so the board still
 //     averages the target (the reference script has no step; parity runs
 //     without it);
-//  6. rounded by playing every monotone floor/ceiling rounding that keeps
-//     the steps and keeping the one within 2% of the target whose use
-//     shares drift least.
+//  6. whole damage comes from the board's staircase (PriceStaircase): its
+//     damage at every target from staircase.from to staircase.to (5–20). At
+//     each target every tier rounds to its nearest whole damage; a count
+//     ladder's tiers (3/4/5 Sword), tiers within half_band of a half and
+//     tiers that would let an easier ability pay more than a harder one may
+//     go either way, and the rounding that keeps the ladder steps, never
+//     pays a harder tier less than an easier one (the same is allowed) and
+//     lands the board's average closest to the target wins. Of those rises
+//     only the ones that last to the top are kept: a tier's damage on a step
+//     is the least it deals from there up, so no step ever lowers a tier.
+//     A price at a target is the step in force there.
 //
 // Qualification is the engine's own (engine.QualifiedAbilityTier). Reports
-// are cached by board key.
+// and staircases are cached by board key.
 //
 // # Interface for the AI work (keep stable)
 //
 //   - Price(die, board, options) (Report, error): Options carry the target,
-//     alpha and rates (Menus.Options gives the agreed ones). The Report gives
+//     alpha and rates (Menus.Options gives the agreed ones); the target must
+//     lie on the staircase (Options.From–To). The Report gives
 //     per tier: chase, relative, use (exact and whole), value, rider value,
 //     damage and whole damage; and Σ, the multiplier (and the stepped
 //     board's damage multiplier), the averages and the no-hit rates, plus

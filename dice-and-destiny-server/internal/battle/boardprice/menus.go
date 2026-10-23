@@ -37,11 +37,22 @@ type PricingConfig struct {
 	Alpha         float64 `yaml:"alpha" json:"alpha"`
 	Rolls         int     `yaml:"rolls" json:"rolls"`
 	Dice          int     `yaml:"dice" json:"dice"`
-	Tolerance     float64 `yaml:"tolerance" json:"tolerance"`
 	MinimumDamage int     `yaml:"minimum_damage" json:"minimum_damage"`
 	// LadderStep is how much more damage each harder tier of one ability
 	// deals than the tier below it.
 	LadderStep int `yaml:"ladder_step" json:"ladder_step"`
+	// HalfBand: a damage this close to a half rounds whichever way lands the
+	// board nearer its target.
+	HalfBand  float64         `yaml:"half_band" json:"half_band"`
+	Staircase StaircaseConfig `yaml:"staircase" json:"staircase"`
+}
+
+// StaircaseConfig is the range of targets every board is priced over (the
+// Board Builder's damage slider) and how finely it is scanned.
+type StaircaseConfig struct {
+	From float64 `yaml:"from" json:"from"`
+	To   float64 `yaml:"to" json:"to"`
+	Scan float64 `yaml:"scan" json:"scan"`
 }
 
 // Band is a difficulty band of chase odds: Min inclusive, Max exclusive.
@@ -178,7 +189,9 @@ func decodeStrict(path string, v any) error {
 
 func (m Menus) validate(lib content.BattleLibrary) error {
 	p := m.Pricing
-	if p.Target <= 0 || p.Target > 100 || p.Alpha < 0 || p.Alpha > 2 || p.Rolls < 1 || p.Rolls > 5 || p.Dice != content.LoadoutDiceCount || p.Tolerance <= 0 || p.Tolerance >= 1 || p.MinimumDamage < 1 || p.LadderStep < 0 || p.LadderStep > 10 {
+	st := p.Staircase
+	if p.Target <= 0 || p.Target > 100 || p.Alpha < 0 || p.Alpha > 2 || p.Rolls < 1 || p.Rolls > 5 || p.Dice != content.LoadoutDiceCount || p.MinimumDamage < 1 || p.LadderStep < 0 || p.LadderStep > 10 ||
+		p.HalfBand < 0 || p.HalfBand >= 0.5 || st.From <= 0 || st.To <= st.From || st.To > 100 || p.Target < st.From || p.Target > st.To || st.Scan <= 0 || st.Scan > (st.To-st.From)/10 {
 		return fmt.Errorf("board pricing values are out of range")
 	}
 	for id, band := range m.Bands {

@@ -10,6 +10,10 @@ import (
 	"testing"
 )
 
+// wholeWithin is how far a board's whole-damage average may sit from its
+// target: whole damage moves in steps, and the staircase never lowers a tier.
+const wholeWithin = 0.03
+
 func testBuilder(t testing.TB) *Builder {
 	t.Helper()
 	b, err := NewBuilder(contentRoot(), testCatalog(t))
@@ -37,8 +41,8 @@ func TestShippedTemplatesPriceInsideTarget(t *testing.T) {
 			if len(choice.Slots) != len(tpl.Slots) || len(choice.Defenses) != tpl.Defenses {
 				t.Fatalf("%s on %s: default choice %+v", tpl.ID, die.ID, choice)
 			}
-			if !report.Monotone || math.Abs(report.WholeAverage-target) > b.Menus.Pricing.Tolerance*target {
-				t.Fatalf("%s on %s averages %.3f (monotone %v); want within %.0f%% of %.1f", tpl.ID, die.ID, report.WholeAverage, report.Monotone, b.Menus.Pricing.Tolerance*100, target)
+			if math.Abs(report.WholeAverage-target) > wholeWithin*target {
+				t.Fatalf("%s on %s averages %.3f; want within %.0f%% of %.1f", tpl.ID, die.ID, report.WholeAverage, wholeWithin*100, target)
 			}
 			checkLadders(t, tpl.ID+" on "+die.ID, report, b.Menus.Pricing.LadderStep)
 			for i := 1; i < len(report.Tiers); i++ {
@@ -87,7 +91,7 @@ func checkLadders(t *testing.T, name string, report Report, step int) {
 // its family, and the board still prices inside the target.
 func TestLaddersStepWithEveryRider(t *testing.T) {
 	b := testBuilder(t)
-	target, tolerance := b.Menus.Pricing.Target, b.Menus.Pricing.Tolerance
+	target, tolerance := b.Menus.Pricing.Target, wholeWithin
 	priced := 0
 	for _, tpl := range b.Menus.Templates {
 		for _, entry := range b.Menus.Dice {
@@ -163,8 +167,8 @@ func TestLadderStepSeparatesTheStarterLadder(t *testing.T) {
 		t.Fatal(err)
 	}
 	checkLadders(t, "starter", report, opts.LadderStep)
-	if math.Abs(report.WholeAverage-want.target) > opts.Tolerance*want.target || !report.Monotone {
-		t.Fatalf("stepped Starter board averages %.3f (monotone %v)", report.WholeAverage, report.Monotone)
+	if math.Abs(report.WholeAverage-want.target) > wholeWithin*want.target {
+		t.Fatalf("stepped Starter board averages %.3f", report.WholeAverage)
 	}
 	if report.Tiers[1].UseWhole <= want.wholeUsed[1] {
 		t.Fatalf("4 Sword is used on %.1f%% of turns, no more than the unstepped %.1f%%", report.Tiers[1].UseWhole*100, want.wholeUsed[1]*100)
@@ -217,7 +221,7 @@ func TestRiderLowersDamage(t *testing.T) {
 		}
 	}
 	// The rider is counted in play: the board still averages its target.
-	if math.Abs(guarded.WholeAverage-b.Menus.Pricing.Target) > b.Menus.Pricing.Tolerance*b.Menus.Pricing.Target {
+	if math.Abs(guarded.WholeAverage-b.Menus.Pricing.Target) > wholeWithin*b.Menus.Pricing.Target {
 		t.Fatalf("board with a rider averages %.3f", guarded.WholeAverage)
 	}
 }

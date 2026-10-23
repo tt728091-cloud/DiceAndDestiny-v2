@@ -5,6 +5,8 @@ import (
 	"os"
 	"path/filepath"
 	"reflect"
+	"slices"
+	"sort"
 	"strings"
 	"testing"
 
@@ -203,5 +205,66 @@ func TestBoardRepriceAfterRiderChange(t *testing.T) {
 	amount, _ := ops[0].Amount.(float64) // JSON-decoded from the sheet
 	if int(amount) != after || len(ops) != 2 || ops[1].StatusID != "protect" {
 		t.Fatalf("catalog copy after re-pricing: %+v", ops)
+	}
+}
+
+// board_price returns the board's staircase for the damage slider and
+// previews any step: the report at a target is the step in force there,
+// with abilities generated from its damage. No step lowers an ability.
+func TestBoardPriceStaircase(t *testing.T) {
+	contentRoot := filepath.Join(testServerRoot(t), "content")
+	board := map[string]any{"die": "hearth_d6", "template": "lean"}
+	reply := boardRuntimeCall(t, map[string]any{"op": "board_price", "content_root": contentRoot, "board": board})
+	if reply["ok"] != true {
+		t.Fatalf("board_price: %v", reply["error"])
+	}
+	stairs := reply["result"].(map[string]any)["staircase"].(map[string]any)
+	steps := stairs["steps"].([]any)
+	if stairs["from"] != 5.0 || stairs["to"] != 20.0 || stairs["default_target"] != 6.2 || stairs["target"] != 6.2 || len(steps) < 100 {
+		t.Fatalf("staircase %v–%v, default %v, target %v, %d steps", stairs["from"], stairs["to"], stairs["default_target"], stairs["target"], len(steps))
+	}
+	at := steps[60].(map[string]any)
+	reply = boardRuntimeCall(t, map[string]any{"op": "board_price", "content_root": contentRoot, "board": board, "target": at["at"]})
+	if reply["ok"] != true {
+		t.Fatalf("board_price at %v: %v", at["at"], reply["error"])
+	}
+	result := reply["result"].(map[string]any)
+	report := result["report"].(map[string]any)
+	if report["step"] != 60.0 || report["whole_average"] != at["average"] || result["staircase"].(map[string]any)["step"] != 60.0 {
+		t.Fatalf("at %v the report is step %v averaging %v; want step 60 averaging %v", at["at"], report["step"], report["whole_average"], at["average"])
+	}
+	raised := at["raised"].([]any)
+	if len(raised) == 0 {
+		t.Fatal("step 60 raises nothing")
+	}
+	before, after := steps[59].(map[string]any)["damage"].([]any), at["damage"].([]any)
+	for i, tier := range report["tiers"].([]any) {
+		tr := tier.(map[string]any)
+		up := after[i].(float64) > before[i].(float64)
+		if after[i] != tr["whole_damage"] || after[i].(float64) < before[i].(float64) || up != slices.Contains(raised, tr["tier"]) {
+			t.Fatalf("step 60 %s: %v → %v (report %v, raised %v)", tr["tier"], before[i], after[i], tr["whole_damage"], raised)
+		}
+	}
+	// The generated abilities deal the step's damage, tier for tier.
+	var want, dealt []float64
+	for _, tier := range report["tiers"].([]any) {
+		want = append(want, tier.(map[string]any)["whole_damage"].(float64))
+	}
+	for _, a := range result["abilities"].([]any) {
+		for _, tier := range a.(map[string]any)["qualification"].(map[string]any)["activation_tiers"].([]any) {
+			for _, op := range tier.(map[string]any)["operations"].([]any) {
+				if o := op.(map[string]any); o["type"] == "deal_damage" {
+					dealt = append(dealt, o["amount"].(float64))
+				}
+			}
+		}
+	}
+	sort.Float64s(want)
+	sort.Float64s(dealt)
+	if !reflect.DeepEqual(want, dealt) {
+		t.Fatalf("abilities deal %v; the step deals %v", dealt, want)
+	}
+	if reply := boardRuntimeCall(t, map[string]any{"op": "board_price", "content_root": contentRoot, "board": board, "target": 25.0}); reply["ok"] == true {
+		t.Fatal("priced a target above the staircase")
 	}
 }

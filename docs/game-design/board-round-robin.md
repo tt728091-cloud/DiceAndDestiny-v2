@@ -4,6 +4,15 @@ Results of `go run ./cmd/board-lab -roundrobin` (2026-10-22). Every default boar
 
 **How it is scored.** Each cell uses the race model, the exact chance of winning when both sides attack every round with the board's priced odds per tier and the other side's defense roll comes off. It is averaged over starting health 12–30, because a single deck size can favour boards whose hits happen to divide it evenly. In the pure duels the model matched real battles within their noise. Here 48 sampled pairings were played again as real battles (table at the end). A board's **overall** score is its mean against the other 22 boards over all three defenses. A matchup is **lopsided** when one side wins 60% or more.
 
+> **Rounding changed on 2026-10-23.** The tables below use the old rounding
+> (any whole numbers within 2% of the target, the least change in play). The
+> pricing now rounds to nearest on a damage staircase (see "Rounding and the
+> damage staircase" in `dice-and-board-selection-plan.md`). Rerunning
+> `-roundrobin` with it: priced at 6.2, overall 0.465–0.537 and 10 lopsided
+> pairings (all Holdfast, won by the Spellbook boards and Combo on the Hearth
+> Die); at 7.1, 0.458–0.537 and 6. `-sweep` scores the field at every target
+> from 5 to 20.
+
 ## Findings
 
 - **Priced now:** overall scores run 0.442–0.556, and 26 of the 759 pairings (board pairs × defenses) are lopsided.

@@ -53,10 +53,12 @@ type runtimeRequest struct {
 	Action     expedition.Action `json:"action,omitempty"`
 	Revision   int               `json:"revision,omitempty"`
 	Expedition bool              `json:"expedition,omitempty"`
-	// Board Builder: a board choice (die, template, slot picks, defenses)
-	// and whether board_price returns the keep policy.
+	// Board Builder: a board choice (die, template, slot picks, defenses),
+	// whether board_price returns the keep policy, and the damage target
+	// board_price previews (0: the menus' target).
 	Board         json.RawMessage `json:"board,omitempty"`
 	IncludePolicy bool            `json:"include_policy,omitempty"`
+	Target        float64         `json:"target,omitempty"`
 }
 
 var learnedRuntime struct {
@@ -129,7 +131,7 @@ func HandleRuntimeRequest(requestJSON string) string {
 		} else if request.Op == "board_save" {
 			view, err = boardSave(request.ContentRoot, request.LoadoutRoot, choice, request.Revision)
 		} else {
-			view, err = boardPriceView(request.ContentRoot, choice, request.IncludePolicy)
+			view, err = boardPriceView(request.ContentRoot, choice, request.IncludePolicy, request.Target)
 		}
 		if err != nil {
 			return runtimeError(err)

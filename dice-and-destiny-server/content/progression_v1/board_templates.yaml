@@ -22,9 +22,13 @@ pricing:
   alpha: 0.2         # relative payoff = (1 / chase odds) ^ alpha
   rolls: 3           # roll attempts per offensive turn
   dice: 5            # dice rolled
-  tolerance: 0.02    # whole damage stays within 2% of the target
   minimum_damage: 1  # no attack deals 0, whatever its rider
   ladder_step: 1     # each harder tier of one ability deals at least 1 more
+  half_band: 0.05    # a damage this close to a half rounds whichever way lands the board nearer its target
+  # Every board is priced over a staircase of targets (the Board Builder's
+  # damage slider): each step rounds to the nearest whole damage and no step
+  # ever lowers an ability. scan is how finely the targets are sampled.
+  staircase: {from: 5, to: 20, scan: 0.005}
 
 # Difficulty bands by chase odds: min inclusive, max exclusive.
 bands:

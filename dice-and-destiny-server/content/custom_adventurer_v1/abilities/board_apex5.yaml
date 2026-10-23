@@ -8,7 +8,7 @@
   "name": "Gold Coin ×5",
   "type": "offensive",
   "presentation": {
-    "rules_text": "5 Gold Coin: deal 12 damage. Gold Coin is on face 6. Misses with fewer than 5 Gold Coin.",
+    "rules_text": "5 Gold Coin: deal 13 damage. Gold Coin is on face 6. Misses with fewer than 5 Gold Coin.",
     "art_key": ""
   },
   "cost": {
@@ -39,7 +39,7 @@
           {
             "type": "deal_damage",
             "target": "selected_targets",
-            "amount": 12
+            "amount": 13
           }
         ]
       }
