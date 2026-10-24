@@ -216,10 +216,10 @@ Worst to best: discard/before (the base), discard/any time, pile/before, pile/an
 | Prevent 2 | 7 | **Hold Fast 23** | Firm Stance 24 | Hunker Down 25 | Stalwart 26 |
 | Prevent 3 | 9 | **Shield Wall 31** | Brace 32 | Dig In 33 | Bulwark 34 |
 | Prevent 4 | 11 | **Fortress 39** | Rampart 40 | Entrench 41 | Citadel 42 |
-
-Steady Guard itself now costs **3** energy (re-costed 2026-10-23, §6); the rest of its family keeps the costs above.
 | Save a chosen card | 5 | Snatch 16 | Pull Clear 17 | Steady Hands 18 | Triage 19 |
 | Choose prevent 2, or 4 for 4 more | 7 | Double Up 42 | Shore Up 43 | Buttress 44 | Reinforce 45 |
+
+Steady Guard itself now costs **3** energy (re-costed 2026-10-23, §6); the rest of its tree keeps the costs above.
 
 - **Save to hand:** Bandage (before) 20, Field Dressing (any time) 21.
 - **How the families are priced:**
