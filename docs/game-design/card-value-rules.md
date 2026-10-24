@@ -123,7 +123,7 @@ The map has its own unit values (agreed 2026-10-17), because energy is scarcer t
 | Card | Energy | Effect | Pays | Gets | Net | XP |
 |---|---|---|---|---|---|---|
 | Second Wind | 10 | Gain 15 energy | 2U | 3U | +1U | 15 |
-| Take Stock | **3** † | Draw 2 | 0.6U | 2U | +1.4U | 15 |
+| Take Stock | **3** † | Draw 2 | 0.6U | 2U | +1.4U | **13** † |
 | Steady Guard | **3** † | Prevent 1 | 0.6U | 2U | +1.4U | 15 |
 | Strong Swing | **9** † | +2 damage before the roll | 1.8U | about 3U (1.24 lands, the rest still mills) | +1.2U | **16** † |
 | Nudge | **8** † | ±1 on one die (1–5) | 1.6U | 2.4U | +0.8U | **18** † |
@@ -140,7 +140,8 @@ The map has its own unit values (agreed 2026-10-17), because energy is scarcer t
 - **Trees move with their base, one tree at a time, as each is reviewed.** Done so far, both on 2026-10-23:
   - Nudge: +1 energy and +3 XP for the whole tree, Fate and Destiny included;
   - Strong Swing: −1 energy and +1 XP;
-  - Steady Guard: −2 energy, XP unchanged. The other trees' upgrades keep their old costs until reviewed.
+  - Steady Guard: −2 energy, XP unchanged;
+  - Take Stock: −2 energy and −2 XP, free cards staying free. The other trees' upgrades keep their old costs until reviewed.
 - **Single points of energy do matter.** They change a card's value most where they decide what fits in the starting 10 or a round's 5 (for example Nudge 7 + Try Again 3, or Nudge 8 + Try Again 2). The earlier note that energy below 5 is wasted came from a test player that didn't play those cards well.
 - **Nudge** was at 7 before as a deliberate test of finer energy costs.
 
@@ -179,6 +180,8 @@ Second Wind ─┬─ Even Breath ─┬─ Easy Breath ──┐
 
 Reviewed 2026-10-16. The free line (Glance, Quick Study, Close Study) is priced with the up-front bonus from section 3 against the equal-net card on the 5-energy line.
 
+**Moved with its base on 2026-10-23.** Take Stock went to 3 energy and 13 XP, its measured value (in-game AI, about ±4 XP). Every card in the tree followed: −2 energy and −2 XP, with the free cards staying free. The paid line is now 3 energy and Overthink 5; each free card is still +1 XP over the paid card that nets the same.
+
 ```
 Take Stock ─┬─ Plenty ── Hoard
             ├─ Glance ── Quick Study ── Close Study
@@ -187,18 +190,18 @@ Take Stock ─┬─ Plenty ── Hoard
 
 | Card | Change | Energy | Effect value | Net | Up-front | XP |
 |---|---|---|---|---|---|---|
-| Take Stock | base | **3** (re-costed, §6) | draw 2 = 2U | +1.80U | — | **15** |
-| Plenty | draw 3 | 5 | draw 3 = 3U | +2.00U | — | **20** |
-| Hoard † | draw 4 | 5 | draw 4 = 4U | +3.00U | — | **25** |
-| Glance | free, draw 1, once per round | 0 | draw 1 = 1U | +1.00U | +1 vs Take Stock | **16** |
-| Quick Study | free, draw 2, once per round | 0 | draw 2 = 2U | +2.00U | +1 vs Plenty | **21** |
-| Close Study † | free, draw 3, once per round | 0 | draw 3 = 3U | +3.00U | +1 vs Hoard | **26** |
-| Overthink † | costs 7 | 7 | draw 2 = 2U | +0.60U | — | **13** |
+| Take Stock | base | 3 | draw 2 = 2U | +1.40U | — | **13** |
+| Plenty | draw 3 | 3 | draw 3 = 3U | +2.40U | — | **18** |
+| Hoard † | draw 4 | 3 | draw 4 = 4U | +3.40U | — | **23** |
+| Glance | free, draw 1, once per round | 0 | draw 1 = 1U | +1.00U | +1 vs Take Stock | **14** |
+| Quick Study | free, draw 2, once per round | 0 | draw 2 = 2U | +2.00U | +1 vs Plenty | **19** |
+| Close Study † | free, draw 3, once per round | 0 | draw 3 = 3U | +3.00U | +1 vs Hoard | **24** |
+| Overthink † | costs 5 | 5 | draw 2 = 2U | +1.00U | — | **11** |
 
 - Each card's map effect draws the same number as its battle effect.
-- "Once per round" on the free cards is worth about 0 (you rarely hold two copies); it stops a hand of free draw cards from chaining.
+- "Once per round" on the free cards is worth about 0 (you rarely hold two copies); it stops a hand of free draw cards from chaining. **Not in the card data yet** (found 2026-10-23): the published free cards have no per-round limit, and their text doesn't mention one.
 - † **Hoard, Close Study:** playtest watch. With a hand limit of 6 (discard down at the end of the round) and 10 + 5 energy a round, the last card of a big draw is often discarded unplayed. If they feel weak, count the 4th (or 3rd free) draw as about 0.5U.
-- † **Overthink:** Downgrade: Take Stock for 2 more energy (1.4U), same timing. 5 × 2.6 = 13 exactly. Energy that isn't a multiple of 5 is priced at its exact share of a unit.
+- † **Overthink:** Downgrade: Take Stock for 2 more energy, same timing. At 7 energy it was 5 × 2.6 = 13 by the formula. Since 2026-10-23 it moves with the measured base: 5 energy, 11 XP.
 
 ### Steady Guard (prevention)
 
