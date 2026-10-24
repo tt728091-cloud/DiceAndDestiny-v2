@@ -8,7 +8,12 @@ const CARD_TIMING = preload("res://presentation/cards/card_timing.gd")
 var _comparison: PanelContainer
 const GOLD := STYLE.GOLD
 const MUTED := STYLE.MUTED
-const ROSTER := ["adventurer", "venom", "curse", "blade_warden", "starter"]
+const ROSTER := ["adventurer", "venom", "curse", "blade_warden", "starter", "custom_adventurer"]
+## Only the Custom Adventurer chooses its die and builds a priced board.
+const BOARD_BUILDER_TAB := 7
+const BOARD_BUILDER_CHARACTER := "custom_adventurer"
+## Characters without their own portrait wear the Blade Warden's.
+const BORROWED_PORTRAIT := ["adventurer", "starter", "custom_adventurer"]
 var initial_character := "adventurer"
 var loadout_mode := "sandbox"
 var _catalog_mode := "sandbox"
@@ -195,21 +200,22 @@ func _build() -> void:
 	_portrait_note = _label(stage, "Every card is a point of health.", 13, MUTED); _portrait_note.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	var middle := _panel(columns); middle.get_parent().size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_summary = VBoxContainer.new(); _summary.add_theme_constant_override("separation", 8); middle.add_child(_summary)
-	_tabs = TabBar.new(); _tabs.add_tab("Abilities"); _tabs.add_tab("Deck & Library"); _tabs.add_tab("Dice"); _tabs.add_tab("Card Creation"); _tabs.add_tab("Ability Creation"); _tabs.add_tab("Card Trees"); _tabs.add_tab("Quests"); _tabs.current_tab = 1
+	_tabs = TabBar.new(); _tabs.add_tab("Abilities"); _tabs.add_tab("Deck & Library"); _tabs.add_tab("Dice"); _tabs.add_tab("Card Creation"); _tabs.add_tab("Ability Creation"); _tabs.add_tab("Card Trees"); _tabs.add_tab("Quests"); _tabs.add_tab("Board Builder"); _tabs.current_tab = 1
 	_tabs.clip_tabs = false
 	var launch := STYLE.launch_icon()
-	for index in [3, 4, 5, 6]:
+	for index in [3, 4, 5, 6, BOARD_BUILDER_TAB]:
 		_tabs.set_tab_icon(index, launch)
-		_tabs.set_tab_tooltip(index, ["Opens the card workshop to design and publish cards.", "Opens the ability workshop to design abilities and boards.", "Opens card trees: upgrade and downgrade paths for cards.", "Opens the read-only quest graphs: every quest's stages and outcome branches."][index - 3])
+		_tabs.set_tab_tooltip(index, ["Opens the card workshop to design and publish cards.", "Opens the ability workshop to design abilities and boards.", "Opens card trees: upgrade and downgrade paths for cards.", "Opens the read-only quest graphs: every quest's stages and outcome branches.", "Opens the Board Builder: choose the Custom Adventurer's die and a priced ability board."][index - 3])
 	_tabs.set_tab_tooltip(0, "Your equipped offensive and defensive abilities.")
 	_tabs.set_tab_tooltip(1, "Build your deck from the card library.")
 	_tabs.set_tab_tooltip(2, "The dice you roll.")
 	middle.add_child(_tabs)
 	_tabs.tab_changed.connect(func(tab):
-		if tab in [3, 4, 5, 6]:
+		if tab in [3, 4, 5, 6, BOARD_BUILDER_TAB]:
 			_tabs.set_block_signals(true); _tabs.current_tab = _last_character_tab; _tabs.set_block_signals(false)
 			# The quest graphs are read-only and change nothing here, so they open over unsaved edits.
 			if tab == 6: _open_quest_graphs()
+			elif tab == BOARD_BUILDER_TAB: _guard_unsaved(_open_board_builder)
 			else: _guard_unsaved(_open_card_workshop if tab == 3 else (_open_ability_workshop if tab == 4 else _open_card_trees))
 		else: _last_character_tab = tab; _populate())
 	_tab_hint = _label(middle, "", 14, MUTED)
@@ -275,7 +281,7 @@ func _build() -> void:
 	_comparison = UpgradeComparison.new(); add_child(_comparison)
 
 func _roster_icon(id: String) -> Texture2D:
-	var tex := STYLE.texture("res://assets/battle/fighters/%s.png" % ("blade_warden" if id in ["adventurer", "starter"] else id))
+	var tex := STYLE.texture("res://assets/battle/fighters/%s.png" % ("blade_warden" if id in BORROWED_PORTRAIT else id))
 	if tex == null: return null
 	var image := tex.get_image()
 	if image == null: return null
@@ -372,8 +378,9 @@ func select_character(id: String) -> void:
 	for key in _roster_buttons:
 		_roster_buttons[key].set_pressed_no_signal(key == id)
 		_roster_buttons[key].text = catalogs[key].combatants[key].name
-	_portrait.texture = load("res://assets/battle/fighters/%s.png" % ("blade_warden" if id in ["adventurer", "starter"] else id))
+	_portrait.texture = load("res://assets/battle/fighters/%s.png" % ("blade_warden" if id in BORROWED_PORTRAIT else id))
 	_portrait_name.text = str(catalogs[id].combatants[id].name)
+	_tabs.set_tab_disabled(BOARD_BUILDER_TAB, id != BOARD_BUILDER_CHARACTER)
 	_refresh_summary()
 	_error.visible = catalogs[id].has("loadout_error")
 	if _error.visible: _error.text = "Saved deck could not be loaded: " + str(catalogs[id].loadout_error) + ". Apply a valid deck to repair it."
@@ -736,7 +743,7 @@ func _append_item_rules(parent: VBoxContainer, kind: String, id: String) -> void
 
 func _unhandled_key_input(event: InputEvent) -> void:
 	# Full-screen workspaces own Escape while they are open.
-	for workspace in ["CardCreationWorkspace", "AbilityCreationWorkspace", "CardTreeWorkspace", "AdminPlayerSheet"]:
+	for workspace in ["CardCreationWorkspace", "AbilityCreationWorkspace", "CardTreeWorkspace", "AdminPlayerSheet", "BoardBuilderWorkspace"]:
 		if find_child(workspace, false, false) != null: return
 	if event.is_action_pressed("ui_cancel") and _admin_overlay.visible:
 		_close_admin(); get_viewport().set_input_as_handled(); return
@@ -1531,6 +1538,11 @@ func _card_play_windows(definition: Dictionary) -> Array[String]:
 func _open_ability_workshop() -> void:
 	var workshop := preload("res://app/screens/character/ability_authoring.gd").new()
 	workshop.name = "AbilityCreationWorkspace"; add_child(workshop); workshop.closed.connect(reload_catalogs)
+
+func _open_board_builder() -> void:
+	if character_id != BOARD_BUILDER_CHARACTER: return
+	var builder := preload("res://app/screens/character/board_builder.gd").new()
+	add_child(builder); builder.closed.connect(reload_catalogs)
 
 func _open_quest_graphs() -> void:
 	var viewer := preload("res://app/screens/quests/quest_graph_viewer.gd").new()

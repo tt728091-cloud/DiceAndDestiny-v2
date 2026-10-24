@@ -113,7 +113,7 @@ func (e Engine) executeSharedSpecial(b *state.Battle, lib content.BattleLibrary,
 }
 
 // Pure preview: never execute effects a second time to check a hook condition.
-func configuredPrevention(ops []content.BattleOperation, face int) int {
+func configuredPrevention(lib content.BattleLibrary, ops []content.BattleOperation, dieID string, face int) int {
 	n := 0
 	for _, op := range ops {
 		if op.Type == "prevent_damage" {
@@ -122,8 +122,8 @@ func configuredPrevention(ops []content.BattleOperation, face int) int {
 		}
 		if op.Type == "roll_dice" {
 			for _, o := range op.Outcomes {
-				if containsInt(o.Faces, face) {
-					n += configuredPrevention(o.Operations, face)
+				if outcomeMatches(lib, dieID, o, face) {
+					n += configuredPrevention(lib, o.Operations, dieID, face)
 				}
 			}
 		}

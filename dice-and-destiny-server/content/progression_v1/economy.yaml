@@ -21,7 +21,7 @@ characters:
 # Pool assignments; omitted items are General. Admin overrides persist separately.
 access:
   types: {general: General, venom: Venom, curse: Curse, blade_warden: Blade Warden}
-  character_types: {adventurer: general, venom: venom, curse: curse, blade_warden: blade_warden, starter: general}
+  character_types: {adventurer: general, venom: venom, curse: curse, blade_warden: blade_warden, starter: general, custom_adventurer: general}
   card_types:
     alchemists_gamble: venom
     accelerant: venom

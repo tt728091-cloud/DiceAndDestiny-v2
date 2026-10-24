@@ -304,7 +304,7 @@ func (e Engine) finalizeTriggerBatch(battle *state.Battle, library content.Battl
 			}
 			op := trigger.Operations[roll.OperationIndex]
 			for _, outcome := range op.Outcomes {
-				if !containsInt(outcome.Faces, roll.Die.Face) {
+				if !outcomeMatches(library, roll.Die.DieID, outcome, roll.Die.Face) {
 					continue
 				}
 				actor := battle.Actors[roll.ActorID]
@@ -754,8 +754,9 @@ func (e Engine) finalizeDefenses(battle *state.Battle, library content.BattleLib
 		ctx := effectContext{SourceActorID: actorID, SourceContentID: ability.ID, SourceContentType: "ability", ProposalIDs: []string{selection.SourceID}, TargetActorIDs: []string{actorID}, RolledFace: selection.RolledFace}
 		var result effectResult
 		var err error
-		for _, face := range defenseFaces(selection) {
-			ctx.RolledFace = face
+		dieIDs := defenseDieIDs(battle, selection)
+		for i, face := range defenseFaces(selection) {
+			ctx.RolledFace, ctx.RolledDieID = face, dieIDs[i]
 			part, executeErr := e.executeResolvedEffects(battle, library, ctx, ability.Resolution.Operations)
 			if executeErr != nil {
 				err = executeErr
@@ -1960,7 +1961,7 @@ func (e Engine) handleBlindReactionCommand(battle *state.Battle, library content
 				continue
 			}
 			for _, outcome := range op.Outcomes {
-				if !containsInt(outcome.Faces, pending.Face) {
+				if !outcomeMatches(library, pending.DieID, outcome, pending.Face) {
 					continue
 				}
 				ctx := effectContext{SourceActorID: pending.ActorID, SourceContentID: definition.ID, SourceContentType: "status", TargetActorIDs: []string{pending.ActorID}, SelectedStatusID: definition.ID, RolledFace: pending.Face}

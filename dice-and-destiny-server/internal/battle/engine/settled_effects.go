@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"strconv"
 
+	"diceanddestiny/server/internal/battle/operation"
 	"diceanddestiny/server/internal/battle/state"
 	"diceanddestiny/server/internal/content"
 )
@@ -12,19 +13,21 @@ import (
 // effectContext describes activation-specific inputs. Cards, abilities, and
 // statuses all feed the same operation language through this context.
 type effectContext struct {
-	SourceActorID       string
-	SourceContentID     string
-	SourceContentType   string
-	TargetActorIDs      []string
-	ProposalIDs         []string
-	SelectedAbilityID   string
-	SelectedStatusID    string
-	StatusInstanceID    string
-	TriggerID           string
-	StatusStacks        int
-	SelectedDieActorID  string
-	SelectedDieIndex    int
-	RolledFace          int
+	SourceActorID      string
+	SourceContentID    string
+	SourceContentType  string
+	TargetActorIDs     []string
+	ProposalIDs        []string
+	SelectedAbilityID  string
+	SelectedStatusID   string
+	StatusInstanceID   string
+	TriggerID          string
+	StatusStacks       int
+	SelectedDieActorID string
+	SelectedDieIndex   int
+	RolledFace         int
+	// RolledDieID is the die that rolled RolledFace, for role outcomes.
+	RolledDieID         string
 	DeferReactableRoll  bool
 	DeferRollResolution bool
 	DeferHumanRoll      bool
@@ -40,13 +43,15 @@ type effectResult struct {
 	ImmediateStatusApplications []state.SettledStatusApplication
 	ResourceDeltas              map[string]int
 	DrawCounts                  map[string]int
-	MaxRollDeltas               map[string]int
-	AbilityModifiers            []effectAbilityModifier
-	DieChanges                  []effectDieChange
-	Preventions                 []effectPrevention
-	Scales                      []effectScale
-	CanceledActors              []string
-	Reactable                   bool
+	// HealCounts are removed cards each actor returns to discard.
+	HealCounts       map[string]int
+	MaxRollDeltas    map[string]int
+	AbilityModifiers []effectAbilityModifier
+	DieChanges       []effectDieChange
+	Preventions      []effectPrevention
+	Scales           []effectScale
+	CanceledActors   []string
+	Reactable        bool
 }
 
 type effectAbilityModifier struct {
@@ -86,6 +91,7 @@ func (r *effectResult) merge(other effectResult) {
 	r.ImmediateStatusApplications = append(r.ImmediateStatusApplications, other.ImmediateStatusApplications...)
 	mergeIntMap(&r.ResourceDeltas, other.ResourceDeltas)
 	mergeIntMap(&r.DrawCounts, other.DrawCounts)
+	mergeIntMap(&r.HealCounts, other.HealCounts)
 	mergeIntMap(&r.MaxRollDeltas, other.MaxRollDeltas)
 }
 
@@ -139,8 +145,12 @@ func (e Engine) executeResolvedEffects(battle *state.Battle, library content.Bat
 			continue
 		}
 		matched := false
+		dieID := ctx.RolledDieID
+		if dieID == "" {
+			dieID = ownerDieID(battle, ctx.SourceActorID)
+		}
 		for _, outcome := range op.Outcomes {
-			if !containsInt(outcome.Faces, ctx.RolledFace) {
+			if !outcomeMatches(library, dieID, outcome, ctx.RolledFace) {
 				continue
 			}
 			matched = true
@@ -238,6 +248,15 @@ func (e Engine) executeEffect(battle *state.Battle, library content.BattleLibrar
 		for _, targetID := range targets {
 			result.DrawCounts[targetID] += amount
 		}
+	case "heal_cards":
+		amount, err := operationAmount(op, ctx.RolledFace)
+		if err != nil {
+			return result, err
+		}
+		result.HealCounts = map[string]int{}
+		for _, targetID := range targets {
+			result.HealCounts[targetID] += amount
+		}
 	case "adjust_max_rolls":
 		amount, err := operationAmount(op, ctx.RolledFace)
 		if err != nil {
@@ -289,7 +308,7 @@ func (e Engine) executeEffect(battle *state.Battle, library content.BattleLibrar
 		result.CanceledActors = append(result.CanceledActors, targets...)
 	case "roll_dice":
 		die, ok := library.Dice[op.DiceID]
-		if !ok || die.SideCount < 1 || len(die.Faces) != die.SideCount {
+		if op.Dice != content.OwnerDice && (!ok || die.SideCount < 1 || len(die.Faces) != die.SideCount) {
 			return result, fmt.Errorf("invalid dice %q", op.DiceID)
 		}
 		count := op.DiceCount
@@ -305,6 +324,13 @@ func (e Engine) executeEffect(battle *state.Battle, library content.BattleLibrar
 		}
 		rollKey := fmt.Sprintf("%s:%s:%d", ctx.SourceContentID, op.ID, battle.Settled.Sequence)
 		for _, rollActorID := range rollActors {
+			if op.Dice == content.OwnerDice {
+				// Each roller rolls their own combat die.
+				die, ok = library.Dice[ownerDieID(battle, rollActorID)]
+				if !ok || die.SideCount < 1 || len(die.Faces) != die.SideCount {
+					return result, fmt.Errorf("%s has no combat die to roll", rollActorID)
+				}
+			}
 			for rollIndex := 0; rollIndex < count; rollIndex++ {
 				roll := state.SettledEffectRoll{
 					ActorID: rollActorID, SourceContentType: ctx.SourceContentType,
@@ -334,8 +360,9 @@ func (e Engine) executeEffect(battle *state.Battle, library content.BattleLibrar
 				}
 				childContext := ctx
 				childContext.RolledFace = face.Number
+				childContext.RolledDieID = roll.Die.DieID
 				for _, outcome := range op.Outcomes {
-					if !containsInt(outcome.Faces, face.Number) {
+					if !outcomeMatches(library, roll.Die.DieID, outcome, face.Number) {
 						continue
 					}
 					children, err := e.executeEffects(battle, library, childContext, outcome.Operations)
@@ -397,6 +424,9 @@ func (e Engine) applyEffectMutations(battle *state.Battle, library content.Battl
 				return err
 			}
 		}
+	}
+	for actorID, count := range result.HealCounts {
+		healRemovedCards(battle, actorID, count)
 	}
 	for actorID, delta := range result.MaxRollDeltas {
 		runtime := battle.Settled.Actors[actorID]
@@ -540,4 +570,20 @@ func consolidateEffectDamage(damage []state.SettledDamageSource, applications []
 		}
 	}
 	return result
+}
+
+// healRemovedCards returns up to count of an actor's removed cards to the
+// discard pile, most recently removed first. Each healed card leaves the wound
+// that removed it; with no removed cards the heal does nothing.
+func healRemovedCards(battle *state.Battle, actorID string, count int) {
+	for n := 0; n < count; n++ {
+		actor := battle.Actors[actorID]
+		if len(actor.Cards.Removed) == 0 {
+			return
+		}
+		card := actor.Cards.Removed[len(actor.Cards.Removed)-1]
+		moveCard(&actor.Cards, card, operation.ZoneRemoved, operation.ZoneDiscard)
+		battle.Actors[actorID] = actor
+		battle.HealWoundCard(actorID, card)
+	}
 }
