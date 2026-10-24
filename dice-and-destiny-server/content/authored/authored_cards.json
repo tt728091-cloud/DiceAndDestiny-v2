@@ -10761,7 +10761,7 @@
               ]
             },
             "cost": {
-              "energy": 5
+              "energy": 4
             },
             "play": {
               "source_zones": [
@@ -10837,7 +10837,7 @@
               ]
             },
             "cost": {
-              "energy": 3
+              "energy": 2
             },
             "play": {
               "source_zones": [
@@ -10910,7 +10910,7 @@
               ]
             },
             "cost": {
-              "energy": 5
+              "energy": 4
             },
             "play": {
               "source_zones": [
@@ -10983,7 +10983,7 @@
               ]
             },
             "cost": {
-              "energy": 7
+              "energy": 6
             },
             "play": {
               "source_zones": [
@@ -11625,7 +11625,7 @@
     "triage"
   ],
   "version": 1,
-  "revision": 115,
+  "revision": 116,
   "cards": {
     "blood_price": {
       "program": {
@@ -20594,7 +20594,7 @@
         ]
       },
       "cost": {
-        "energy": 5
+        "energy": 4
       },
       "play": {
         "source_zones": [
@@ -20661,7 +20661,7 @@
         ]
       },
       "cost": {
-        "energy": 7
+        "energy": 6
       },
       "play": {
         "source_zones": [
@@ -20726,7 +20726,7 @@
         ]
       },
       "cost": {
-        "energy": 5
+        "energy": 4
       },
       "play": {
         "source_zones": [
@@ -20796,7 +20796,7 @@
         ]
       },
       "cost": {
-        "energy": 3
+        "energy": 2
       },
       "play": {
         "source_zones": [

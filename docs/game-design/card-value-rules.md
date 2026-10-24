@@ -137,12 +137,15 @@ The map has its own unit values (agreed 2026-10-17), because energy is scarcer t
 
 † **Re-costed 2026-10-23.** The costs are the user's spread from 2 to 10 (Try Again 2, Take Stock 3, Steady Guard 3, Nudge 8, Strong Swing 9, Second Wind 10). They replace a first re-cost (1, 1, 10, 0) that tuned each card's energy alone toward 15 XP and left the costs bunched at 0–1 and 10. Each card's XP is to be set from its value in blank cards (pure health, 10 XP each) at these costs (balance-lab.md, "Energy costs of the Starter's base cards", "Re-costed base cards" and "Spread costs").
 - **The unit formula disagrees:** at these costs its Net column no longer gives the XP shown. The measured values override the formula for these four, and their XP is under review.
-- **Trees move with their base, one tree at a time, as each is reviewed.** Done so far, both on 2026-10-23:
+- **Trees move with their base, one tree at a time, as each is reviewed.** Done, all on 2026-10-23:
   - Nudge: +1 energy and +3 XP for the whole tree, Fate and Destiny included;
   - Strong Swing: −1 energy and +1 XP;
   - Steady Guard: −2 energy, XP unchanged;
   - Take Stock: −2 energy and −2 XP, free cards staying free;
-  - Second Wind: −2 XP (Shallow Breath 11), energy unchanged. The other trees' upgrades keep their old costs until reviewed.
+  - Second Wind: −2 XP (Shallow Breath 11), energy unchanged;
+  - Try Again: −1 energy, XP unchanged.
+
+  All six Starter base trees are done. The other trees' upgrades keep their old costs until reviewed.
 - **Single points of energy do matter.** They change a card's value most where they decide what fits in the starting 10 or a round's 5 (for example Nudge 7 + Try Again 3, or Nudge 8 + Try Again 2). The earlier note that energy below 5 is wasted came from a test player that didn't play those cards well.
 - **Nudge** was at 7 before as a deliberate test of finer energy costs.
 
@@ -303,19 +306,21 @@ Reviewed 2026-10-16. Prices are set by hand, the user's call. The measurements a
 
 ### Try Again (rerolls)
 
+**Moved with its base on 2026-10-23.** Try Again went to 2 energy, and its measured value (12–13 XP) keeps it at 13. Every card in the tree followed with −1 energy, XP unchanged (the user's call).
+
 Reviewed 2026-10-16. The tree is no longer free. The measurement scores rerolls low (one reroll adds 0.36 damage, 0.7U, because the test player already has 3 rolls with the best holds, and it counts expected damage only). Like Nudge, the prices are set by hand. Rerolls cost less energy than Nudge: a random change, not a sure one.
 
 | Card | Energy | Effect | Measured | XP |
 |---|---|---|---|---|
-| Scrap Toss | 3 | reroll a die showing 1–3 | 0.26 dmg | **12** |
-| Try Again | **2** (re-costed, §6) | reroll 1 of your dice, base | 0.36 dmg | **13** |
-| Double Toss | 5 | reroll up to 2 of your dice | 0.45 dmg | **15** |
-| Full Parry | 5 | reroll any of your defensive dice | 0.69 prevented | **16** |
-| One More Roll | 7 | +1 offensive roll attempt this Offense (4 instead of 3), any time | not measured | **17** |
+| Scrap Toss | 2 | reroll a die showing 1–3 | 0.26 dmg | **12** |
+| Try Again | 2 | reroll 1 of your dice, base | 0.36 dmg | **13** |
+| Double Toss | 4 | reroll up to 2 of your dice | 0.45 dmg | **15** |
+| Full Parry | 4 | reroll any of your defensive dice | 0.69 prevented | **16** |
+| One More Roll | 6 | +1 offensive roll attempt this Offense (4 instead of 3), any time | not measured | **17** |
 
 - **Edges:** Try Again → Scrap Toss, Try Again → Double Toss → One More Roll, and Try Again → Full Parry.
 - **One More Roll** uses the new `extra_roll` card effect. It raises this Offense's roll count, even after the last roll, and the count resets to 3 at the next round's Ongoing Effects. The roll counter shows it.
-- **3 energy** is an experiment like Nudge's 7. Energy arrives in 5s, so within a round a 3 can play like a 5, but the leftover carries over.
+- **2 energy since 2026-10-23** (it was 3): Try Again 2 + Nudge 8 fits the starting 10 energy, which measured well.
 - **Removed (2026-10-16):** Lucky Toss, Charmed Throw and Quick Toss ("keep the higher" is a downgrade on this board), Weary Toss (a twin of Scrap Toss), Fresh Roll (it used a normal roll attempt, so it did nothing), Parry, Twin Parry and Heavy Parry.
 
 ### Disrupt (enemy dice)
