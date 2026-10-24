@@ -86,11 +86,14 @@ func TestTotalXPNeverDropsAndIsReported(t *testing.T) {
 			}
 			return save
 		}
-		bought := change(loadout.Purchase{Kind: "buy_card", ID: "nudge", ExpectedCost: 15})
+		// Card prices are the published cards' (balance work moves them), so
+		// the expected costs are read, not hard-coded.
+		price := func(card string) int { return f.x.economy.Price(campaignCharacter, card) }
+		bought := change(loadout.Purchase{Kind: "buy_card", ID: "nudge", ExpectedCost: price("nudge")})
 		x.check(bought, total, "buying a card")
 		upgraded := change(loadout.Purchase{Kind: "upgrade_ability", ID: "adventurer_guard", ExpectedCost: 38})
 		x.check(upgraded, total, "upgrading an ability")
-		sold := change(loadout.Purchase{Kind: "sell_card", ID: "try_again", ExpectedCost: 13})
+		sold := change(loadout.Purchase{Kind: "sell_card", ID: "try_again", ExpectedCost: price("try_again")})
 		x.check(sold, total, "selling a card")
 		x.check(f.save(t), total, "reloading the save")
 	})
@@ -141,9 +144,10 @@ func TestTotalXPNeverDropsAndIsReported(t *testing.T) {
 			}
 			return next
 		}
-		x.check(buy(loadout.Purchase{Kind: "buy_card", ID: "nudge", ExpectedCost: 15}), total, "buying a card")
+		price := func(card string) int { return c.economy.Price(campaignCharacter, card) }
+		x.check(buy(loadout.Purchase{Kind: "buy_card", ID: "nudge", ExpectedCost: price("nudge")}), total, "buying a card")
 		x.check(buy(loadout.Purchase{Kind: "upgrade_ability", ID: "adventurer_guard", ExpectedCost: 38}), total, "upgrading an ability")
-		x.check(buy(loadout.Purchase{Kind: "sell_card", ID: "try_again", ExpectedCost: 13}), total, "selling a card")
+		x.check(buy(loadout.Purchase{Kind: "sell_card", ID: "try_again", ExpectedCost: price("try_again")}), total, "selling a card")
 		x.check(readSave(t, contentRoot, root, save.ID), total, "reloading the save")
 	})
 }
