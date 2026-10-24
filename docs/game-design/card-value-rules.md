@@ -125,7 +125,7 @@ The map has its own unit values (agreed 2026-10-17), because energy is scarcer t
 | Second Wind | 10 | Gain 15 energy | 2U | 3U | +1U | 15 |
 | Take Stock | **3** † | Draw 2 | 0.6U | 2U | +1.4U | 15 |
 | Steady Guard | **3** † | Prevent 1 | 0.6U | 2U | +1.4U | 15 |
-| Strong Swing | **9** † | +2 damage before the roll | 1.8U | about 3U (1.24 lands, the rest still mills) | +1.2U | 15 |
+| Strong Swing | **9** † | +2 damage before the roll | 1.8U | about 3U (1.24 lands, the rest still mills) | +1.2U | **16** † |
 | Nudge | **8** † | ±1 on one die (1–5) | 1.6U | 2.4U | +0.8U | **18** † |
 | Try Again | **2** † | Reroll 1 die | 0.4U | 0.7U (measured; set by hand) | +0.3U | 13 |
 | Disrupt | 10 | Reroll 1 enemy die | 2U | 3U | +1U | 15 |
@@ -137,7 +137,9 @@ The map has its own unit values (agreed 2026-10-17), because energy is scarcer t
 
 † **Re-costed 2026-10-23.** The costs are the user's spread from 2 to 10 (Try Again 2, Take Stock 3, Steady Guard 3, Nudge 8, Strong Swing 9, Second Wind 10). They replace a first re-cost (1, 1, 10, 0) that tuned each card's energy alone toward 15 XP and left the costs bunched at 0–1 and 10. Each card's XP is to be set from its value in blank cards (pure health, 10 XP each) at these costs (balance-lab.md, "Energy costs of the Starter's base cards", "Re-costed base cards" and "Spread costs").
 - **The unit formula disagrees:** at these costs its Net column no longer gives the XP shown. The measured values override the formula for these four, and their XP is under review.
-- **Trees move with their base, one tree at a time, as each is reviewed.** Done so far: Nudge on 2026-10-23, +1 energy and +3 XP for the whole tree, Fate and Destiny included. The other trees' upgrades keep their old costs until reviewed.
+- **Trees move with their base, one tree at a time, as each is reviewed.** Done so far, both on 2026-10-23:
+  - Nudge: +1 energy and +3 XP for the whole tree, Fate and Destiny included;
+  - Strong Swing: −1 energy and +1 XP. The other trees' upgrades keep their old costs until reviewed.
 - **Single points of energy do matter.** They change a card's value most where they decide what fits in the starting 10 or a round's 5 (for example Nudge 7 + Try Again 3, or Nudge 8 + Try Again 2). The earlier note that energy below 5 is wasted came from a test player that didn't play those cards well.
 - **Nudge** was at 7 before as a deliberate test of finer energy costs.
 
@@ -237,6 +239,8 @@ Steady Guard itself now costs **3** energy (re-costed 2026-10-23, §6); the rest
 
 Reviewed 2026-10-16. The user set the anchor: +2 for 10 energy, played before the roll, is 15 XP. "Kept until it lands" is a little better than "after the roll". The steps:
 
+**Moved with its base on 2026-10-23.** Strong Swing went to 9 energy and 16 XP, its measured value (balance-lab.md, "Spread costs"). Every card in the tree followed: −1 energy and +1 XP. The steps below are unchanged.
+
 - **Each extra point of damage:** 2 more energy, +2U − 0.4U = +1.6U, or **+8 XP** (the same steps as the block ladder).
 - **After the roll, on an ability that qualifies:** **+4 XP**.
 - **Kept until it lands** (a miss doesn't use it up): **+5 XP**.
@@ -245,12 +249,10 @@ Both switches remove the miss waste of a bonus played before the roll, so they a
 
 | Damage | Energy | Before the roll | After the roll | Kept until it lands |
 |---|---|---|---|---|
-| +2 | 10 | **Strong Swing 15** | Opportunist 19 | Waiting Blade 20 |
-| +3 | 12 | **Mighty Blow 23** | Clean Cut 27 | Patient Blow 28 |
-| +4 | 14 | **Crushing Blow 31** | Sure Strike 35 | Bide 36 |
-| +5 | 16 | **Devastate 39** | Killing Stroke 43 | Long Wait 44 |
-
-Strong Swing itself now costs **9** energy (re-costed 2026-10-23, §6); the rest of its tree keeps the costs above.
+| +2 | 9 | **Strong Swing 16** | Opportunist 20 | Waiting Blade 21 |
+| +3 | 11 | **Mighty Blow 24** | Clean Cut 28 | Patient Blow 29 |
+| +4 | 13 | **Crushing Blow 32** | Sure Strike 36 | Bide 37 |
+| +5 | 15 | **Devastate 40** | Killing Stroke 44 | Long Wait 45 |
 
 - **Edges:** the backbone runs Strong Swing → Mighty Blow → Crushing Blow → Devastate. Each backbone card → its after-the-roll and kept-until-it-lands versions.
 - **Removed (2026-10-16):**
