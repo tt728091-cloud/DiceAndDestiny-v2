@@ -179,7 +179,7 @@ Run test 1 against the minions with `"foe": "script"`, and analyse with `--metri
 
 ## Current state (2026-10-23)
 
-These changes are on the branch `ai-value-network`, not yet merged into `main`.
+Merged into `main` on 2026-10-23.
 
 **The six Starter base cards are re-costed and re-priced, and each whole tree moved with its base after the user reviewed it** (card-value-rules.md §6–7):
 
