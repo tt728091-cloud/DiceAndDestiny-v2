@@ -3,7 +3,8 @@
 // and shifts every non-base card's energy by -energy (free cards stay free,
 // and no cost drops below 0). A shared card's energy changes everywhere it
 // is lent; its XP in this tree is copied to every other tree lending it, so
-// a shared card costs the same in each.
+// a shared card costs the same in each. -set-xp overrides single cards' XP
+// after the shift.
 //
 // The tree is published the way the card editor publishes it: previewed for
 // every character, validated against a loadout root (copy your saves there
@@ -20,6 +21,8 @@ import (
 	"os"
 	"path/filepath"
 	"sort"
+	"strconv"
+	"strings"
 
 	"diceanddestiny/server/internal/battle/learned"
 	"diceanddestiny/server/internal/battle/loadout"
@@ -34,6 +37,7 @@ func main() {
 	treeID := flag.String("tree", "", "card tree ID, e.g. nudge_paths")
 	baseXP := flag.Int("base-xp", 0, "the base card's new XP; every node moves by the same amount (0 keeps XP)")
 	energy := flag.Int("energy", 0, "energy shift for every card except the base")
+	setXP := flag.String("set-xp", "", "exceptions after the shift: card name or node ID = XP, comma-separated (e.g. \"Shallow Breath=11\")")
 	dryRun := flag.Bool("dry-run", false, "validate and print the changes without saving")
 	flag.Parse()
 	if *treeID == "" || *loadoutRoot == "" {
@@ -55,6 +59,17 @@ func main() {
 	if *baseXP > 0 {
 		dXP = *baseXP - base.Value()
 	}
+	exceptions := map[string]int{}
+	if *setXP != "" {
+		for _, part := range strings.Split(*setXP, ",") {
+			name, value, ok := strings.Cut(part, "=")
+			xp, err := strconv.Atoi(strings.TrimSpace(value))
+			if !ok || err != nil {
+				fail(fmt.Errorf("-set-xp %q: want name=XP", part))
+			}
+			exceptions[strings.TrimSpace(name)] = xp
+		}
+	}
 	shared := map[string]int{} // shared card -> its new XP in this tree
 	fmt.Printf("%-24s %-28s %13s %13s\n", "node", "card", "energy", "XP")
 	tree.Nodes = append([]content.CardTreeNode(nil), tree.Nodes...)
@@ -65,10 +80,19 @@ func main() {
 			n.Card.Cost.Energy = max(0, oldEnergy+*energy)
 		}
 		n.XP = oldXP + dXP
+		for _, key := range []string{n.ID, n.Card.Name} {
+			if xp, ok := exceptions[key]; ok {
+				n.XP = xp
+				delete(exceptions, key)
+			}
+		}
 		if n.Shared {
 			shared[n.Card.ID] = n.XP
 		}
 		fmt.Printf("%-24s %-28s %5d → %-5d %5d → %-5d%s\n", n.ID, n.Card.Name, oldEnergy, n.Card.Cost.Energy, oldXP, n.XP, map[bool]string{true: "  (shared)"}[n.Shared])
+	}
+	if len(exceptions) > 0 {
+		fail(fmt.Errorf("-set-xp names no card in %s: %v", *treeID, exceptions))
 	}
 	if err := publish(*contentRoot, *loadoutRoot, &saved, tree, *dryRun); err != nil {
 		fail(err)

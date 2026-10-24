@@ -116,13 +116,13 @@ The map has its own unit values (agreed 2026-10-17), because energy is scarcer t
 - **Moving cards:** map net = Move − energy. The 1 Move any card gives is the same for every map card, so it is left out. Trailblaze (Move 4 for 5 energy) = 2U − 1U = **+1U, 15 XP**.
 - **Site and camp cards:** here the card you play could have been 1 Influence (1U), and energy buys Influence too, so these are priced against that. Silver Tongue (2 Influence, free) = 2U − 1U = **+1U, 15 XP**. A 5-energy version would give exactly what the card and the energy already buy.
 - **Information and stealth cards** (sight, scouting, marks, Hide, Sneak) have no unit. Each tree's base is pinned at 15 by agreement and its upgrades are judged as steps from it.
-- **Surge check:** Surge (free +15 energy, 25 XP) is 3U on the map, but spent on moving it buys 3 Move. Trailblaze nets 3 Move too (Move 4 for 5 energy that could have bought 1). They tie for moving; Trailblaze is 10 XP cheaper and Surge also works in battle. Accepted (user, 2026-10-17).
+- **Surge check:** Surge (free +15 energy, 23 XP since 2026-10-23) is 3U on the map, but spent on moving it buys 3 Move. Trailblaze nets 3 Move too (Move 4 for 5 energy that could have bought 1). They tie for moving; Trailblaze is 8 XP cheaper and Surge also works in battle. Accepted (user, 2026-10-17).
 
 ## 6. The base cards
 
 | Card | Energy | Effect | Pays | Gets | Net | XP |
 |---|---|---|---|---|---|---|
-| Second Wind | 10 | Gain 15 energy | 2U | 3U | +1U | 15 |
+| Second Wind | 10 | Gain 15 energy | 2U | 3U | +1U | **13** † |
 | Take Stock | **3** † | Draw 2 | 0.6U | 2U | +1.4U | **13** † |
 | Steady Guard | **3** † | Prevent 1 | 0.6U | 2U | +1.4U | 15 |
 | Strong Swing | **9** † | +2 damage before the roll | 1.8U | about 3U (1.24 lands, the rest still mills) | +1.2U | **16** † |
@@ -141,7 +141,8 @@ The map has its own unit values (agreed 2026-10-17), because energy is scarcer t
   - Nudge: +1 energy and +3 XP for the whole tree, Fate and Destiny included;
   - Strong Swing: −1 energy and +1 XP;
   - Steady Guard: −2 energy, XP unchanged;
-  - Take Stock: −2 energy and −2 XP, free cards staying free. The other trees' upgrades keep their old costs until reviewed.
+  - Take Stock: −2 energy and −2 XP, free cards staying free;
+  - Second Wind: −2 XP (Shallow Breath 11), energy unchanged. The other trees' upgrades keep their old costs until reviewed.
 - **Single points of energy do matter.** They change a card's value most where they decide what fits in the starting 10 or a round's 5 (for example Nudge 7 + Try Again 3, or Nudge 8 + Try Again 2). The earlier note that energy below 5 is wasted came from a test player that didn't play those cards well.
 - **Nudge** was at 7 before as a deliberate test of finer energy costs.
 
@@ -153,6 +154,11 @@ The map has its own unit values (agreed 2026-10-17), because energy is scarcer t
 
 Reviewed 2026-10-16. The up-front column is the bonus from section 3, counted only against the equal-net card named.
 
+**Re-priced with its base on 2026-10-23.** Second Wind kept 10 energy (gain 15) at its measured 13 XP. Every card in the tree followed with −2 XP, except Shallow Breath at 11 (the user's call); energy is unchanged.
+- **Battle measurement is lower for the upper cards** (balance-lab.md, "Energy costs"). Only the net gain counted in battle: pay 0 gain 5 and pay 5 gain 10 played exactly like Second Wind, net +2 like a blank, and net +8 or +10 only about 13 XP.
+- **Why the tree keeps its steps:** they also count map value, where energy buys Move and Influence.
+- **Missing cards:** Focus and Deep Focus below are not in the published tree.
+
 ```
 Second Wind ─┬─ Even Breath ─┬─ Easy Breath ──┐
              │               └─ Swift Breath ─┴─ Calm Breath ── Surge ──┐
@@ -162,18 +168,18 @@ Second Wind ─┬─ Even Breath ─┬─ Easy Breath ──┐
 
 | Card | Change | Energy | Effect value | Net | Up-front | XP |
 |---|---|---|---|---|---|---|
-| Second Wind | base | 10 | +15 energy = 3U | +1.00U | — | **15** |
-| Even Breath | pay 5, gain 10 | 5 | +10 energy = 2U | +1.00U | +1 vs Second Wind | **16** |
-| Easy Breath | pay 0, gain 5 | 0 | +5 energy = 1U | +1.00U | +2 vs Second Wind | **17** |
-| Swift Breath | pay 5, gain 15 | 5 | +15 energy = 3U | +2.00U | — | **20** |
-| Calm Breath | pay 0, gain 10 | 0 | +10 energy = 2U | +2.00U | +1 vs Swift Breath | **21** |
-| Surge † | pay 0, gain 15 | 0 | +15 energy = 3U | +3.00U | — | **25** |
+| Second Wind | base | 10 | +15 energy = 3U | +1.00U | — | **13** |
+| Even Breath | pay 5, gain 10 | 5 | +10 energy = 2U | +1.00U | +1 vs Second Wind | **14** |
+| Easy Breath | pay 0, gain 5 | 0 | +5 energy = 1U | +1.00U | +2 vs Second Wind | **15** |
+| Swift Breath | pay 5, gain 15 | 5 | +15 energy = 3U | +2.00U | — | **18** |
+| Calm Breath | pay 0, gain 10 | 0 | +10 energy = 2U | +2.00U | +1 vs Swift Breath | **19** |
+| Surge † | pay 0, gain 15 | 0 | +15 energy = 3U | +3.00U | — | **23** |
 | Focus | costs 5; choose draw 2 or +10 energy | 5 | best option 2U, +0.5 choice | +1.50U | — | **18** |
 | Deep Focus | free; choose draw 3 or +15 energy | 0 | best option 3U, +0.5 choice | +3.50U | — | **28** |
-| Shallow Breath † | gains 12 instead of 15 | 10 | +12 energy = 2.4U | +0.40U | — | **12** |
+| Shallow Breath † | gains 12 instead of 15 | 10 | +12 energy = 2.4U | +0.40U | — | **11** |
 
 - Each energy card's map effect gains the same amount as its battle effect.
-- † **Surge:** On the map, +15 energy buys 3 Move, which ties Trailblaze's net for moving; Trailblaze is 10 XP cheaper and Surge also works in battle. Settled with the map units (§5).
+- † **Surge:** On the map, +15 energy buys 3 Move, which ties Trailblaze's net for moving; Trailblaze is 8 XP cheaper and Surge also works in battle. Settled with the map units (§5).
 - † **Shallow Breath:** Downgrade: same cost, smaller gain, less XP.
 
 ### Take Stock (draw)
