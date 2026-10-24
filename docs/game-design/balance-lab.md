@@ -562,6 +562,67 @@ python3 ml/scripts/card_exchange_report.py ml/runs/blanks/greedy-new
 python3 ml/scripts/card_exchange_report.py ml/runs/blanks/greedy-new-costs --costs=ml/runs/blanks/greedy-new --now=nudge:10,try_again:0,take_stock:1,steady_guard:1
 ```
 
+## Spread costs (2026-10-23)
+
+**The re-cost above bunched the costs at 0–1 and 10.** It tuned each card's energy alone toward 15 XP. The user then set a spread from 2 to 10 and asked for the XP that matches each card at it:
+
+| Card | Energy |
+|---|---|
+| Try Again | 2 |
+| Take Stock | 3 |
+| Steady Guard | 3 |
+| Nudge | 8 |
+| Strong Swing | 9 |
+| Second Wind | 10 (gains 15) |
+
+Published cards, revision 109; both sides use them.
+
+**Setup:**
+- **Greedy:** 2,000 battles per variant, for the cards it plays.
+- **In-game AI:** Steady Guard and Take Stock, since greedy plays neither at 3.
+- **The yardstick:** XP is 10 per blank card, the value of a card's own health.
+
+**The XP that matches each card at these costs** (Starter mirror; blanks per copy; 10 XP per blank):
+
+| Card | Energy | Blanks per copy | XP that matches | XP now | vs the Warlord (greedy) |
+|---|---|---|---|---|---|
+| Nudge | 8 | 1.77 (greedy) | **18** | 15 | 1.54, 15 XP |
+| Strong Swing | 9 | 1.64 (greedy) | **16** | 15 | 1.39, 14 XP |
+| Steady Guard | 3 | 1.50 ±0.29 (in-game AI) | **15** | 15 | — |
+| Take Stock | 3 | 1.31 ±0.39 (in-game AI) | **13** | 15 | — |
+| Second Wind | 10, gains 15 | 1.32 (greedy) | **13** | 15 | 1.00, 10 XP |
+| Try Again | 2 | 1.25 (greedy) | **12–13** | 13 | 1.17, 12 XP |
+
+- **Prices from 12 to 18 XP** match these costs in the mirror.
+- **The estimates made before the run were close:** Try Again 12, Take Stock 11–12, Steady Guard 14, Nudge 17–18, Strong Swing 17, Second Wind 13–14.
+- **Battles are as long as with the original costs** (3.64 rounds, greedy). The in-game AI plays every card:
+
+  | Card | Plays per battle (in-game AI) |
+  |---|---|
+  | Steady Guard | 1.45 |
+  | Strong Swing | 0.90 |
+  | Nudge | 0.87 |
+  | Try Again | 0.58 |
+  | Second Wind | 0.48 |
+  | Take Stock | 0.35 |
+- **Against the Warlord every card is worth less,** Second Wind not even a blank's worth, so Expedition prices would sit lower.
+- **The suggested XP is not applied.**
+
+**Checking the prices** (greedy; swaps from the standard deck, paired battle by battle):
+
+| Swap | XP now says | Measured prices predict | Scored (95%) |
+|---|---|---|---|
+| 2 Nudges → 2 Try Agains + 1 blank | +6 XP | even | −0.002 ±0.018 |
+| 2 Strong Swings → 2 Try Agains + 1 blank | +6 XP | +0.015 | +0.012 ±0.017 |
+| 2 Nudges → 2 Second Winds | even | −0.063 | −0.099 ±0.015 |
+| 2 Try Agains → 2 more Nudges | +4 XP | +0.073 | +0.028 ±0.016 |
+| 2 Strong Swings → 2 more Nudges | even | +0.018 | −0.021 ±0.015 |
+| 2 Nudges → 2 Second Winds + 1 blank | +10 XP | +0.007 | −0.029 ±0.018 |
+
+- **The clean swaps land on the measured prices.**
+- **Today's prices miss.** They call 2 Nudges for 2 Second Winds even, and it loses 0.10.
+- **Swaps that pile up one card** (4 Nudges, 3 Second Winds) come in 0.03–0.04 under the prediction, the small variety effect found before.
+
 ## AI value network (2026-10-21)
 
 The first pass of [`ai-value-network-plan.md`](ai-value-network-plan.md) (phases A0–A4; brief: [`ai-value-network-handoff.md`](ai-value-network-handoff.md)). All runs are on an M3 Max (16 cores) shared with other work. Results files and binaries live under the server's ignored `ml/runs/`.
