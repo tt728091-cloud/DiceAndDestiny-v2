@@ -181,22 +181,29 @@ Run test 1 against the minions with `"foe": "script"`, and analyse with `--metri
 
 These changes are on the branch `ai-value-network`, not yet merged into `main`.
 
-| Card | Energy | Measured, mirror (blanks per copy) | XP that matches | XP now |
+**The six Starter base cards are re-costed and re-priced, and each whole tree moved with its base after the user reviewed it** (card-value-rules.md §6–7):
+
+| Card | Energy | Measured, mirror (blanks per copy) | XP | How its tree moved |
 |---|---|---|---|---|
-| Nudge | 8 | 1.77 | 18 | 15 |
-| Strong Swing | 9 | 1.64 | 16 | 15 |
-| Steady Guard | 3 | 1.50 (in-game AI) | 15 | 15 |
-| Take Stock | 3 | 1.31 (in-game AI) | 13 | 15 |
-| Second Wind | 10, gains 15 | 1.32 | 13 | 15 |
-| Try Again | 2 | 1.25 | 12–13 | 13 |
+| Nudge | 8 | 1.77 | 18 | +1 energy, +3 XP (Fate and Destiny too, also in Disrupt's tree) |
+| Strong Swing | 9 | 1.64 | 16 | −1 energy, +1 XP |
+| Steady Guard | 3 | 1.50 (in-game AI) | 15 | −2 energy, XP unchanged |
+| Take Stock | 3 | 1.31 (in-game AI) | 13 | −2 energy, −2 XP (free cards stay free) |
+| Second Wind | 10, gains 15 | 1.32 | 13 | −2 XP (Shallow Breath 11), energy unchanged |
+| Try Again | 2 | 1.25 | 13 | −1 energy, XP unchanged |
 
-Against the Warlord: Nudge 15, Strong Swing 14, Try Again 12 and Second Wind 10 XP.
+Against the Warlord: Nudge 15, Strong Swing 14, Try Again 12, Second Wind 10 XP.
 
-**Open decisions:**
-- **XP prices:** the table's XP is not applied.
-- **Tree upgrades:** the 48 upgrades of the re-costed bases (Take Stock, Steady Guard, Nudge, Try Again) and Strong Swing's tree keep their old costs. The project rule says upgrades shift with their base.
-- **The unit formula** in card-value-rules.md (5 energy = 1 draw = half a health) no longer matches the measured values. Decide whether measurement replaces it.
-- **Mirror or minions:** the measured prices are from the Starter mirror, with minion fights valued lower. Decide which the prices should follow.
+**How a tree is moved:** `go run ./cmd/card-tree-shift -tree <tree> -base-xp <XP> -energy <shift> [-set-xp "Card=XP"] -loadout-root <copy of the saves> [-dry-run]`.
+- **What it does:** publishes the way the card editor does. It checks the tree, checks the saves still load, and bumps the revision. Free cards stay free, and shared cards keep the same XP in every tree.
+- **Before running it:** copy the saves (`dice-and-destiny-client/.godot/runtime/workspace/client/user/character_loadouts` of the checkout you play in) to a scratch folder and point `-loadout-root` there.
+
+**Open:**
+- **Upgrades never measured:** only the bases were measured; the upgrades moved by the same steps. Measuring them (test 1 or 2 on decks using them) would confirm the hand-set steps.
+- **Second Wind's upper cards:** in battle only the net gain counted. Pay 0 gain 5 and pay 5 gain 10 played like Second Wind, and net +10 was only about 13 XP. Their prices keep the hand-set steps, which also count map value; that map value isn't measured.
+- **Free draw limit:** the free Take Stock cards (Glance, Quick Study, Close Study) lack the "once per round" limit the pricing rules describe.
+- **The unit formula:** in card-value-rules.md (5 energy = 1 draw = half a health) it no longer matches the measured base cards. Decide whether measurement replaces it.
+- **Mirror or minions:** prices follow the Starter mirror, and minion fights value effects lower. Decide which the prices should follow.
 - **Other characters:** Curse, Venom, Blade Warden and the Adventurer have not been measured card by card.
 
 **Results:** balance-lab.md, sections "Cards on top of the board", "Cards against blank cards", "Energy costs of the Starter's base cards", "Re-costed base cards" and "Spread costs".
@@ -210,4 +217,5 @@ Against the Warlord: Nudge 15, Strong Swing 14, Try Again 12 and Second Wind 10 
 | `ml/scripts/card_exchange_report.py` | Blanks per copy and XP (test 1); cost variants (`--costs`, `--now`); price checks (`--rates`); health left (`--metric=health`). |
 | `ml/scripts/card_cost_variants.py` | Scratch published cards with cost variants under new IDs. |
 | `ml/scripts/card_value_report.py` | Deck on top of the board: damage before and after defense, prevention, paired differences. |
+| `cmd/card-tree-shift` | Moves a whole card tree with its base (energy and XP), publishing and validating like the card editor. |
 | `docs/game-design/dice-throne-reference/analysis/board_balance.py` | A board's exact average per turn and ability use. |
