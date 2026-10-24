@@ -161,6 +161,7 @@ Use `./scripts/godot.sh` for every additional Godot test.
 - On the Expedition map the units differ: 2 Move = 1 unit, 5 energy = 1 unit, 1 Influence = 1 unit, and a card is priced on the better of its battle net and its map net (`card-value-rules.md` §5).
 - Price a tree's variants relative to its pinned base. When a base's energy or effect changes, its upgrades shift with it, except that free (Swift) nodes stay free.
 - Keep the doc's tables in step with any change to the published trees.
+- To measure cards in real battles, or after changing a card's energy, effect or XP, the energy economy, the AI or the opponents, follow `docs/game-design/balancing-playbook.md`: what triggers a balancing pass, which test answers which question, the commands, and the current measured prices.
 
 ## Authored content storage
 

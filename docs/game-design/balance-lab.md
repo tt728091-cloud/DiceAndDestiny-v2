@@ -4,6 +4,8 @@ The balance lab plays real authority battles between a hero and an opponent with
 
 Code: `dice-and-destiny-server/internal/battle/lookahead/` and the `cmd/balance-lab` command.
 
+This file is the lab notebook: each run's setup and results, in order. For when to run a balancing pass and how, start with [balancing-playbook.md](balancing-playbook.md).
+
 ## Players
 
 | Player | How it decides |
