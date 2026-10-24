@@ -139,7 +139,8 @@ The map has its own unit values (agreed 2026-10-17), because energy is scarcer t
 - **The unit formula disagrees:** at these costs its Net column no longer gives the XP shown. The measured values override the formula for these four, and their XP is under review.
 - **Trees move with their base, one tree at a time, as each is reviewed.** Done so far, both on 2026-10-23:
   - Nudge: +1 energy and +3 XP for the whole tree, Fate and Destiny included;
-  - Strong Swing: −1 energy and +1 XP. The other trees' upgrades keep their old costs until reviewed.
+  - Strong Swing: −1 energy and +1 XP;
+  - Steady Guard: −2 energy, XP unchanged. The other trees' upgrades keep their old costs until reviewed.
 - **Single points of energy do matter.** They change a card's value most where they decide what fits in the starting 10 or a round's 5 (for example Nudge 7 + Try Again 3, or Nudge 8 + Try Again 2). The earlier note that energy below 5 is wasted came from a test player that didn't play those cards well.
 - **Nudge** was at 7 before as a deliberate test of finer energy costs.
 
@@ -212,14 +213,14 @@ Worst to best: discard/before (the base), discard/any time, pile/before, pile/an
 
 | Family | Energy | Discard, before | Discard, any time | Pile, before | Pile, any time |
 |---|---|---|---|---|---|
-| Prevent 1 | 5 | **Steady Guard 15** | Watchful Guard 16 | Cover 17 | Shelter 18 |
-| Prevent 2 | 7 | **Hold Fast 23** | Firm Stance 24 | Hunker Down 25 | Stalwart 26 |
-| Prevent 3 | 9 | **Shield Wall 31** | Brace 32 | Dig In 33 | Bulwark 34 |
-| Prevent 4 | 11 | **Fortress 39** | Rampart 40 | Entrench 41 | Citadel 42 |
-| Save a chosen card | 5 | Snatch 16 | Pull Clear 17 | Steady Hands 18 | Triage 19 |
-| Choose prevent 2, or 4 for 4 more | 7 | Double Up 42 | Shore Up 43 | Buttress 44 | Reinforce 45 |
+| Prevent 1 | 3 | **Steady Guard 15** | Watchful Guard 16 | Cover 17 | Shelter 18 |
+| Prevent 2 | 5 | **Hold Fast 23** | Firm Stance 24 | Hunker Down 25 | Stalwart 26 |
+| Prevent 3 | 7 | **Shield Wall 31** | Brace 32 | Dig In 33 | Bulwark 34 |
+| Prevent 4 | 9 | **Fortress 39** | Rampart 40 | Entrench 41 | Citadel 42 |
+| Save a chosen card | 3 | Snatch 16 | Pull Clear 17 | Steady Hands 18 | Triage 19 |
+| Choose prevent 2, or 4 for 4 more | 5 | Double Up 42 | Shore Up 43 | Buttress 44 | Reinforce 45 |
 
-Steady Guard itself now costs **3** energy (re-costed 2026-10-23, §6); the rest of its tree keeps the costs above.
+**Moved with its base on 2026-10-23.** Steady Guard went to 3 energy, where it measured exactly its price (1.50 blank cards, 15 XP). Every card in the tree followed: −2 energy, XP unchanged. A choice card's prevent 4 option still costs 4 more, so 9 in total, the same as the prevent 4 blocks.
 
 - **Save to hand:** Bandage (before) 20, Field Dressing (any time) 21.
 - **How the families are priced:**

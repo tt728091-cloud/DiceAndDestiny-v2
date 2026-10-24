@@ -6776,7 +6776,7 @@
               ]
             },
             "cost": {
-              "energy": 7
+              "energy": 5
             },
             "play": {
               "source_zones": [
@@ -6852,7 +6852,7 @@
               ]
             },
             "cost": {
-              "energy": 5
+              "energy": 3
             },
             "play": {
               "source_zones": [
@@ -6928,7 +6928,7 @@
               ]
             },
             "cost": {
-              "energy": 7
+              "energy": 5
             },
             "play": {
               "source_zones": [
@@ -7004,7 +7004,7 @@
               ]
             },
             "cost": {
-              "energy": 9
+              "energy": 7
             },
             "play": {
               "source_zones": [
@@ -7080,7 +7080,7 @@
               ]
             },
             "cost": {
-              "energy": 9
+              "energy": 7
             },
             "play": {
               "source_zones": [
@@ -7192,7 +7192,7 @@
               ]
             },
             "cost": {
-              "energy": 7
+              "energy": 5
             },
             "play": {
               "source_zones": [
@@ -7266,7 +7266,7 @@
               ]
             },
             "cost": {
-              "energy": 5
+              "energy": 3
             },
             "play": {
               "source_zones": [
@@ -7340,7 +7340,7 @@
               ]
             },
             "cost": {
-              "energy": 5
+              "energy": 3
             },
             "play": {
               "source_zones": [
@@ -7416,7 +7416,7 @@
               ]
             },
             "cost": {
-              "energy": 11
+              "energy": 9
             },
             "play": {
               "source_zones": [
@@ -7492,7 +7492,7 @@
               ]
             },
             "cost": {
-              "energy": 5
+              "energy": 3
             },
             "play": {
               "source_zones": [
@@ -7567,7 +7567,7 @@
               ]
             },
             "cost": {
-              "energy": 5
+              "energy": 3
             },
             "play": {
               "source_zones": [
@@ -7642,7 +7642,7 @@
               ]
             },
             "cost": {
-              "energy": 7
+              "energy": 5
             },
             "play": {
               "source_zones": [
@@ -7717,7 +7717,7 @@
               ]
             },
             "cost": {
-              "energy": 7
+              "energy": 5
             },
             "play": {
               "source_zones": [
@@ -7792,7 +7792,7 @@
               ]
             },
             "cost": {
-              "energy": 9
+              "energy": 7
             },
             "play": {
               "source_zones": [
@@ -7867,7 +7867,7 @@
               ]
             },
             "cost": {
-              "energy": 9
+              "energy": 7
             },
             "play": {
               "source_zones": [
@@ -7942,7 +7942,7 @@
               ]
             },
             "cost": {
-              "energy": 11
+              "energy": 9
             },
             "play": {
               "source_zones": [
@@ -8017,7 +8017,7 @@
               ]
             },
             "cost": {
-              "energy": 11
+              "energy": 9
             },
             "play": {
               "source_zones": [
@@ -8093,7 +8093,7 @@
               ]
             },
             "cost": {
-              "energy": 11
+              "energy": 9
             },
             "play": {
               "source_zones": [
@@ -8166,7 +8166,7 @@
               ]
             },
             "cost": {
-              "energy": 5
+              "energy": 3
             },
             "play": {
               "source_zones": [
@@ -8240,7 +8240,7 @@
               ]
             },
             "cost": {
-              "energy": 5
+              "energy": 3
             },
             "play": {
               "source_zones": [
@@ -8313,7 +8313,7 @@
               ]
             },
             "cost": {
-              "energy": 5
+              "energy": 3
             },
             "play": {
               "source_zones": [
@@ -8386,7 +8386,7 @@
               ]
             },
             "cost": {
-              "energy": 5
+              "energy": 3
             },
             "play": {
               "source_zones": [
@@ -8497,7 +8497,7 @@
               ]
             },
             "cost": {
-              "energy": 7
+              "energy": 5
             },
             "play": {
               "source_zones": [
@@ -8609,7 +8609,7 @@
               ]
             },
             "cost": {
-              "energy": 7
+              "energy": 5
             },
             "play": {
               "source_zones": [
@@ -8720,7 +8720,7 @@
               ]
             },
             "cost": {
-              "energy": 7
+              "energy": 5
             },
             "play": {
               "source_zones": [
@@ -11625,7 +11625,7 @@
     "triage"
   ],
   "version": 1,
-  "revision": 112,
+  "revision": 113,
   "cards": {
     "blood_price": {
       "program": {
@@ -17203,7 +17203,7 @@
         ]
       },
       "cost": {
-        "energy": 7
+        "energy": 5
       },
       "play": {
         "source_zones": [
@@ -17271,7 +17271,7 @@
         ]
       },
       "cost": {
-        "energy": 5
+        "energy": 3
       },
       "play": {
         "source_zones": [
@@ -17341,7 +17341,7 @@
         ]
       },
       "cost": {
-        "energy": 11
+        "energy": 9
       },
       "play": {
         "source_zones": [
@@ -17411,7 +17411,7 @@
         ]
       },
       "cost": {
-        "energy": 5
+        "energy": 3
       },
       "play": {
         "source_zones": [
@@ -17480,7 +17480,7 @@
         ]
       },
       "cost": {
-        "energy": 5
+        "energy": 3
       },
       "play": {
         "source_zones": [
@@ -17549,7 +17549,7 @@
         ]
       },
       "cost": {
-        "energy": 7
+        "energy": 5
       },
       "play": {
         "source_zones": [
@@ -17618,7 +17618,7 @@
         ]
       },
       "cost": {
-        "energy": 7
+        "energy": 5
       },
       "play": {
         "source_zones": [
@@ -17687,7 +17687,7 @@
         ]
       },
       "cost": {
-        "energy": 9
+        "energy": 7
       },
       "play": {
         "source_zones": [
@@ -17756,7 +17756,7 @@
         ]
       },
       "cost": {
-        "energy": 9
+        "energy": 7
       },
       "play": {
         "source_zones": [
@@ -17826,7 +17826,7 @@
         ]
       },
       "cost": {
-        "energy": 5
+        "energy": 3
       },
       "play": {
         "source_zones": [
@@ -17895,7 +17895,7 @@
         ]
       },
       "cost": {
-        "energy": 11
+        "energy": 9
       },
       "play": {
         "source_zones": [
@@ -17964,7 +17964,7 @@
         ]
       },
       "cost": {
-        "energy": 11
+        "energy": 9
       },
       "play": {
         "source_zones": [
@@ -18034,7 +18034,7 @@
         ]
       },
       "cost": {
-        "energy": 11
+        "energy": 9
       },
       "play": {
         "source_zones": [
@@ -18101,7 +18101,7 @@
         ]
       },
       "cost": {
-        "energy": 5
+        "energy": 3
       },
       "play": {
         "source_zones": [
@@ -18169,7 +18169,7 @@
         ]
       },
       "cost": {
-        "energy": 5
+        "energy": 3
       },
       "play": {
         "source_zones": [
@@ -18236,7 +18236,7 @@
         ]
       },
       "cost": {
-        "energy": 5
+        "energy": 3
       },
       "play": {
         "source_zones": [
@@ -18303,7 +18303,7 @@
         ]
       },
       "cost": {
-        "energy": 5
+        "energy": 3
       },
       "play": {
         "source_zones": [
@@ -18373,7 +18373,7 @@
         ]
       },
       "cost": {
-        "energy": 7
+        "energy": 5
       },
       "play": {
         "source_zones": [
@@ -18478,7 +18478,7 @@
         ]
       },
       "cost": {
-        "energy": 7
+        "energy": 5
       },
       "play": {
         "source_zones": [
@@ -18584,7 +18584,7 @@
         ]
       },
       "cost": {
-        "energy": 7
+        "energy": 5
       },
       "play": {
         "source_zones": [
@@ -18689,7 +18689,7 @@
         ]
       },
       "cost": {
-        "energy": 7
+        "energy": 5
       },
       "play": {
         "source_zones": [
@@ -18759,7 +18759,7 @@
         ]
       },
       "cost": {
-        "energy": 9
+        "energy": 7
       },
       "play": {
         "source_zones": [
@@ -18829,7 +18829,7 @@
         ]
       },
       "cost": {
-        "energy": 9
+        "energy": 7
       },
       "play": {
         "source_zones": [
@@ -18935,7 +18935,7 @@
         ]
       },
       "cost": {
-        "energy": 7
+        "energy": 5
       },
       "play": {
         "source_zones": [
@@ -19003,7 +19003,7 @@
         ]
       },
       "cost": {
-        "energy": 5
+        "energy": 3
       },
       "play": {
         "source_zones": [
