@@ -126,7 +126,7 @@ The map has its own unit values (agreed 2026-10-17), because energy is scarcer t
 | Take Stock | **3** † | Draw 2 | 0.6U | 2U | +1.4U | 15 |
 | Steady Guard | **3** † | Prevent 1 | 0.6U | 2U | +1.4U | 15 |
 | Strong Swing | **9** † | +2 damage before the roll | 1.8U | about 3U (1.24 lands, the rest still mills) | +1.2U | 15 |
-| Nudge | **8** † | ±1 on one die (1–5) | 1.6U | 2.4U | +0.8U | 15 |
+| Nudge | **8** † | ±1 on one die (1–5) | 1.6U | 2.4U | +0.8U | **18** † |
 | Try Again | **2** † | Reroll 1 die | 0.4U | 0.7U (measured; set by hand) | +0.3U | 13 |
 | Disrupt | 10 | Reroll 1 enemy die | 2U | 3U | +1U | 15 |
 | Reclaim | 5 | A chosen card from discard to hand | 1U | 1.5U | +0.5U | 13 |
@@ -137,7 +137,7 @@ The map has its own unit values (agreed 2026-10-17), because energy is scarcer t
 
 † **Re-costed 2026-10-23.** The costs are the user's spread from 2 to 10 (Try Again 2, Take Stock 3, Steady Guard 3, Nudge 8, Strong Swing 9, Second Wind 10). They replace a first re-cost (1, 1, 10, 0) that tuned each card's energy alone toward 15 XP and left the costs bunched at 0–1 and 10. Each card's XP is to be set from its value in blank cards (pure health, 10 XP each) at these costs (balance-lab.md, "Energy costs of the Starter's base cards", "Re-costed base cards" and "Spread costs").
 - **The unit formula disagrees:** at these costs its Net column no longer gives the XP shown. The measured values override the formula for these four, and their XP is under review.
-- **Only the base cards moved:** their tree upgrades keep their old costs until that's decided.
+- **Trees move with their base, one tree at a time, as each is reviewed.** Done so far: Nudge on 2026-10-23, +1 energy and +3 XP for the whole tree, Fate and Destiny included. The other trees' upgrades keep their old costs until reviewed.
 - **Single points of energy do matter.** They change a card's value most where they decide what fits in the starting 10 or a round's 5 (for example Nudge 7 + Try Again 3, or Nudge 8 + Try Again 2). The earlier note that energy below 5 is wasted came from a test player that didn't play those cards well.
 - **Nudge** was at 7 before as a deliberate test of finer energy costs.
 
@@ -265,18 +265,20 @@ Strong Swing itself now costs **9** energy (re-costed 2026-10-23, §6); the rest
 
 Reviewed 2026-10-16. Prices are set by hand, the user's call. The measurements are kept for reference: Starter board, extra damage per offense.
 
+**Moved with its base on 2026-10-23.** Nudge went to 8 energy and 18 XP, its measured value (balance-lab.md, "Spread costs"). Every card in the tree followed: +1 energy and +3 XP, Fate and Destiny included (the user's review).
+
 | Card | Energy | Effect | Measured | XP |
 |---|---|---|---|---|
-| Lift | 7 | +1 only (1–5) | 0.73 dmg | **12** |
-| Press Down | 7 | −1 only (1–5) | 0.84 dmg | **13** |
-| Nudge | **8** (re-costed, §6) | ±1 on one die (1–5), base | 1.18 dmg | **15** |
-| Reach | 7 | ±1, can reach 6 | 1.34 dmg | **17** |
-| Weighted † | 7 | set one die to 6 | 0.87 dmg | **20** |
-| Mimic † | 7 | copy another die's face | 1.03 dmg | **22** |
-| Precision | 12 | set one die to any face | 1.89 dmg | **23** |
-| Fate (shared) | 15 | set any participant's die, also as a reaction | about 2.6 dmg | **26** |
-| Mastery | 12 | set 2 dice to any face | 3.14 dmg | **31** |
-| Destiny (shared) | 15 | set 2 of any participant's dice | about 3.5 dmg | **34** |
+| Lift | 8 | +1 only (1–5) | 0.73 dmg | **15** |
+| Press Down | 8 | −1 only (1–5) | 0.84 dmg | **16** |
+| Nudge | 8 | ±1 on one die (1–5), base | 1.18 dmg | **18** |
+| Reach | 8 | ±1, can reach 6 | 1.34 dmg | **20** |
+| Weighted † | 8 | set one die to 6 | 0.87 dmg | **23** |
+| Mimic † | 8 | copy another die's face | 1.03 dmg | **25** |
+| Precision | 13 | set one die to any face | 1.89 dmg | **26** |
+| Fate (shared) | 16 | set any participant's die, also as a reaction | about 2.6 dmg | **29** |
+| Mastery | 13 | set 2 dice to any face | 3.14 dmg | **34** |
+| Destiny (shared) | 16 | set 2 of any participant's dice | about 3.5 dmg | **37** |
 
 - **Edges:**
   - Nudge → Reach → Weighted → Precision.
@@ -284,7 +286,7 @@ Reviewed 2026-10-16. Prices are set by hand, the user's call. The measurements a
   - Nudge → Press Down → Lift.
   - Precision → Mastery and Fate, and both → Destiny.
 - † **Weighted, Mimic:** playtest watch. The user judged that the Starter board measurement undervalues a sure 6 and copying a face (they complete straights and sets), so they are priced well above it. Precision, Fate and Mastery were raised to keep the paths climbing.
-- **Fate and Destiny** are shared with Disrupt: one definition (15 energy) and, by the user's rule, the same XP in both trees.
+- **Fate and Destiny** are shared with Disrupt: one definition (16 energy) and, by the user's rule, the same XP in both trees.
 - **Removed (2026-10-16):** Clumsy Touch, Overturn, Two Fingers, Far Reach, Flick (free), Long Fingers and Echo.
 
 ### Try Again (rerolls)
@@ -313,12 +315,12 @@ Reviewed 2026-10-16. These cards change an enemy's attack dice after they are re
 | Disrupt | 10 | reroll 1 enemy die, base | 1.48 dmg avoided | **15** |
 | Jostle | 10 | ±1 on an enemy die | 2.11 dmg avoided | **21** |
 | Tamper | 15 | set an enemy die to any face | 2.38 dmg avoided | **25** |
-| Fate (shared) | 15 | set any participant's die, after your roll or as a reaction | about 2.6 | **26** |
-| Destiny (shared) | 15 | set 2 of any participant's dice | about 3.5 | **34** |
+| Fate (shared) | 16 | set any participant's die, after your roll or as a reaction | about 2.6 | **29** |
+| Destiny (shared) | 16 | set 2 of any participant's dice | about 3.5 | **37** |
 
 - **Edges:** Disrupt → Jostle → Tamper → Fate → Destiny.
 - **Tamper** is set by hand above Jostle, like Precision in Nudge: it does more, for 5 more energy.
-- **Shared cards cost the same XP in every tree** (the user's rule, 2026-10-16). Fate and Destiny are 26 and 34 in both Disrupt and Nudge.
+- **Shared cards cost the same XP in every tree** (the user's rule, 2026-10-16). Fate and Destiny are 29 and 37 in both Disrupt and Nudge, at 16 energy (moved with Nudge's tree, 2026-10-23).
 - **Removed (2026-10-16):** Stumble, Scatter, Shove, Jolt (free) and Blunt (worse than a blank card).
 
 ### Reclaim (recovery)
