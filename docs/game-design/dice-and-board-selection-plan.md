@@ -253,7 +253,9 @@ on the curve, every slot is used.
   returns the board's staircase. The slider runs 5–20 with a tick per step;
   ◀ / ▶ step one at a time, and the preview shows the step's damage, the
   abilities it raised (▲, "Cinder ×4 5 → 6") and what the next step raises.
-  It previews only: Confirm saves the standard 6.2 step.
+  It previewed only at first (Confirm saved the standard 6.2 step). Since
+  2026-10-24 the level is part of the board and costs XP: see
+  [`board-xp.md`](board-xp.md). The slider runs from the standard level up.
 - Confirm writes the board through the authority. Pointer and headless
   checks through `./scripts/godot.sh`.
 
@@ -283,6 +285,11 @@ moved them here from `balance-lab.md`).
   stored in the campaign save.
 - Rebuild rules, if any, follow the run design. Wounds, XP and deck rules
   are unchanged.
+- **Partly built 2026-10-24** ([`board-xp.md`](board-xp.md)): the Custom
+  Adventurer can start a campaign or expedition from the Board Builder's die,
+  template and slot picks at the standard level and default defense, stored in
+  the save, and buys damage levels and defenses for XP in Prepare (at a site or
+  camp on the map). Rebuilding the die, template or picks mid-run is not built.
 
 ## First pass (built 2026-10-21, B1–B7)
 

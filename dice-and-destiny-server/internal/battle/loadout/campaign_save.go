@@ -97,7 +97,7 @@ func readCampaignSave(root, id string, e Economy, catalogs map[string]content.Ba
 	// Repricing cards keeps the sheet's total XP and moves the difference
 	// into (or out of) the XP left to spend.
 	before, _ := json.Marshal(s.Sheet)
-	if err = reconcileBudget(&s.Sheet, campaignEconomy(e)); err != nil {
+	if err = reconcileBudget(&s.Sheet, campaignEconomy(e), lib); err != nil {
 		return s, fmt.Errorf("campaign save %q: %w", s.Name, err)
 	}
 	if after, _ := json.Marshal(s.Sheet); string(before) != string(after) {
@@ -193,8 +193,11 @@ func ListCampaignSaves(root string, e Economy, catalogs map[string]content.Battl
 }
 
 // startingSheet copies a character's starting sheet: its template deck and its
-// published (or configured) ability board, plus the campaign's bonus XP.
-func startingSheet(root, character string, bonusXP int, e Economy, lib content.BattleLibrary) (Progress, error) {
+// published (or configured) ability board, plus the campaign's bonus XP. It
+// may start from a priced board instead (its die, board and generated
+// abilities: the custom adventurer's Board Builder board, or the character's
+// campaign.yaml board); the board's value is part of the starting kit.
+func startingSheet(root, character string, bonusXP int, e Economy, lib content.BattleLibrary, start []SheetBoard) (Progress, error) {
 	c, ok := lib.Combatants[character]
 	if !ok {
 		return Progress{}, fmt.Errorf("unknown character %q", character)
@@ -214,12 +217,17 @@ func startingSheet(root, character string, bonusXP int, e Economy, lib content.B
 		p.Abilities = board
 		p.AuthoredAbilityRevision = authored.BoardRevisions[character]
 	}
-	p.Abilities = content.AbilityBoard{Offensive: append([]string(nil), p.Abilities.Offensive...), Defensive: append([]string(nil), p.Abilities.Defensive...)}
+	if len(start) > 0 {
+		if character != CustomAdventurer && start[0].Choice == nil {
+			return p, fmt.Errorf("%s's starting board has no board choice", character)
+		}
+		putBoard(&p, start[0])
+	}
+	p.Abilities = content.AbilityBoard{Offensive: append([]string(nil), p.Abilities.Offensive...), Defensive: append([]string{}, p.Abilities.Defensive...)}
 	if err = validateProgress(p, lib); err != nil {
 		return p, err
 	}
-	initializeBudget(&p, campaignEconomy(e))
-	return p, nil
+	return p, initializeBudget(&p, campaignEconomy(e), lib)
 }
 
 func newCampaignSaveID(root, character string) string {
@@ -235,8 +243,9 @@ func newCampaignSaveID(root, character string) string {
 }
 
 // NewCampaignSave starts a campaign: a new named save holding a copy of the
-// character's starting sheet and the campaign's bonus XP.
-func NewCampaignSave(root, character, name string, c Campaign, e Economy, catalogs map[string]content.BattleLibrary) (CampaignSave, error) {
+// character's starting sheet and the campaign's bonus XP. start is the custom
+// adventurer's starting board, when it builds one.
+func NewCampaignSave(root, character, name string, c Campaign, e Economy, catalogs map[string]content.BattleLibrary, start ...SheetBoard) (CampaignSave, error) {
 	progressMu.Lock()
 	defer progressMu.Unlock()
 	name = strings.TrimSpace(name)
@@ -250,7 +259,7 @@ func NewCampaignSave(root, character, name string, c Campaign, e Economy, catalo
 	if err != nil {
 		return CampaignSave{}, err
 	}
-	sheet, err := startingSheet(root, character, c.BonusXP, e, catalogs[character])
+	sheet, err := startingSheet(root, character, c.BonusXP, e, catalogs[character], start)
 	if err != nil {
 		return CampaignSave{}, err
 	}

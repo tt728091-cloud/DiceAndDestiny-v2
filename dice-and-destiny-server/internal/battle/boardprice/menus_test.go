@@ -38,14 +38,14 @@ func testMenus(t testing.TB) Menus {
 
 func TestShippedMenusLoad(t *testing.T) {
 	m := testMenus(t)
-	if len(m.Dice) != 5 || len(m.Defenses) != 2 || len(m.Templates) != 13 {
+	if len(m.Dice) != 5 || len(m.Defenses) != 7 || len(m.Templates) != 14 {
 		t.Fatalf("menus: %d dice, %d defenses, %d templates", len(m.Dice), len(m.Defenses), len(m.Templates))
 	}
 	perFamily := map[string]int{}
 	for _, tpl := range m.Templates {
 		perFamily[tpl.Family]++
 	}
-	if perFamily["321"] != 6 || perFamily["3111"] != 3 || perFamily["2211"] != 4 {
+	if perFamily["321"] != 7 || perFamily["3111"] != 3 || perFamily["2211"] != 4 {
 		t.Fatalf("templates per family %v", perFamily)
 	}
 	want := map[string]float64{"none": 0, "protect_1": 1, "protect_2": 2, "energy_5": 1, "energy_10": 2, "draw_1": 1, "heal_1": 1, "heal_2": 2}

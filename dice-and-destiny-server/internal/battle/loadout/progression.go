@@ -38,12 +38,15 @@ type Economy struct {
 	StartingXP        int                            `yaml:"starting_xp"`
 	DefaultCardPrice  int                            `yaml:"default_card_price"`
 	Characters        map[string]CharacterEconomy    `yaml:"characters"`
+	// BoardXP prices the custom adventurer's board: its damage level and
+	// defenses (see board_xp.go).
+	BoardXP boardprice.XPRates `yaml:"board_xp"`
 }
 
 // Progress is a character sheet and its XP ledger.
 //
 // Budget is the sheet's total XP: everything the hero has, spent and unspent
-// (XP + DeckValue + CollectionValue + WoundValue + UpgradeSpent). On a
+// (XP + DeckValue + CollectionValue + WoundValue + UpgradeSpent + BoardValue). On a
 // campaign or expedition sheet it is the canonical total XP that later phases
 // read (the omen meter, the Rising): spending and refunds move XP inside it,
 // only rewards raise it, repricing on read keeps it, and a write that would
@@ -86,6 +89,13 @@ type Progress struct {
 	// BoardChoice is the Board Builder choice the generated abilities were
 	// priced from, so the builder reopens on it.
 	BoardChoice *boardprice.Choice `json:"board_choice,omitempty"`
+	// BoardLevelXP is the XP the board's damage level holds, priced by the
+	// authority from the board's staircase when the board is saved.
+	BoardLevelXP int `json:"board_level_xp,omitempty"`
+	// BoardValue is the XP the custom adventurer's board holds: BoardLevelXP
+	// plus each defense's price at the sheet's total XP (block prices grow
+	// with it). Nil on sheets saved before boards held XP.
+	BoardValue *int `json:"board_value,omitempty"`
 }
 type Purchase struct {
 	// Tree names the card tree for shared-card trades and their copies.
@@ -134,6 +144,9 @@ func LoadEconomy(root string, catalogs map[string]content.BattleLibrary) (Econom
 	}
 	if e.Version != 1 || e.StartingXP < 0 || e.StartingXP > 1000000 || e.DefaultCardPrice < 1 || e.DefaultCardPrice > 1000000 {
 		return e, fmt.Errorf("invalid progression economy values")
+	}
+	if err = e.BoardXP.Validate(); err != nil {
+		return e, err
 	}
 	for id, c := range e.Characters {
 		lib, ok := catalogs[id]
@@ -196,7 +209,8 @@ func LoadEconomy(root string, catalogs map[string]content.BattleLibrary) (Econom
 func ValidateAbilities(board content.AbilityBoard, lib content.BattleLibrary) error {
 	seen := map[string]bool{}
 	for kind, ids := range map[string][]string{"offensive": board.Offensive, "defensive": board.Defensive} {
-		if len(ids) == 0 || len(ids) > 20 {
+		// A board may go without a defense (the Board Builder's "none").
+		if (kind == "offensive" && len(ids) == 0) || len(ids) > 20 {
 			return fmt.Errorf("ability board needs 1–20 %s abilities", kind)
 		}
 		for _, id := range ids {
@@ -300,6 +314,12 @@ func progressPath(root, character string) (string, error) {
 	return path(filepath.Join(root, "progression"), character)
 }
 func readProgress(root, character string, e Economy, lib content.BattleLibrary) (Progress, error) {
+	return readProgressWriting(root, character, e, lib, true)
+}
+
+// readProgressWriting reads a sheet; create is false for read-only views,
+// which see a new character's starting sheet without writing it.
+func readProgressWriting(root, character string, e Economy, lib content.BattleLibrary, create bool) (Progress, error) {
 	authored, authoredErr := content.ReadAuthoredAbilities(root)
 	if authoredErr != nil {
 		return Progress{}, authoredErr
@@ -339,9 +359,14 @@ func readProgress(root, character string, e Economy, lib content.BattleLibrary) 
 		if err = validateProgress(p, lib); err != nil {
 			return p, err
 		}
-		initializeBudget(&p, e)
-		if err = reconcileBudget(&p, e); err != nil {
+		if err = initializeBudget(&p, e, lib); err != nil {
 			return p, err
+		}
+		if err = reconcileBudget(&p, e, lib); err != nil {
+			return p, err
+		}
+		if !create {
+			return p, nil
 		}
 		err = writeProgress(filename, p)
 		return p, err
@@ -371,9 +396,11 @@ func readProgress(root, character string, e Economy, lib content.BattleLibrary) 
 				p.UpgradeSpent += legacyAbilitySpend(id, e.Characters[character].AbilityUpgrades, map[string]bool{})
 			}
 		}
-		initializeBudget(&p, e)
+		if err = initializeBudget(&p, e, lib); err != nil {
+			return p, err
+		}
 	}
-	if err = reconcileBudget(&p, e); err != nil {
+	if err = reconcileBudget(&p, e, lib); err != nil {
 		return p, err
 	}
 	if err = migrateSharedDeck(root, &p, e, lib); err != nil {
@@ -420,10 +447,19 @@ func validateProgress(p Progress, lib content.BattleLibrary) error {
 	if err := validateTreeTags(p.Wounds, lib.CardTrees); err != nil {
 		return err
 	}
+	if HoldsBoard(p) && (p.Dice != "" || len(p.GeneratedAbilities) > 0) {
+		// The sheet's own die and generated abilities (a campaign sheet's
+		// board may differ from the editors' sheet).
+		board, err := ApplySheetBoard(lib, p.Character, SheetBoard{Dice: p.Dice, Abilities: p.Abilities, Generated: p.GeneratedAbilities, Choice: p.BoardChoice})
+		if err != nil {
+			return err
+		}
+		lib = board
+	}
 	if err := ValidateAbilities(p.Abilities, lib); err != nil {
 		return err
 	}
-	return validateSheetDice(lib, p.Character, p.Dice, p.Abilities)
+	return validateSheetDice(lib, p.Character, HoldsBoard(p), p.Dice, p.Abilities)
 }
 func writeProgress(filename string, p Progress) error { return writeJSON(filename, p) }
 func writeJSON(filename string, p any) error {
@@ -462,6 +498,19 @@ func ReadProgress(root, character string, e Economy, lib content.BattleLibrary) 
 		return Progress{}, err
 	}
 	return readProgress(root, character, e, lib)
+}
+
+// PeekProgress reads a sheet like ReadProgress, but a character without one
+// gets its starting sheet in memory: nothing is written.
+func PeekProgress(root, character string, e Economy, lib content.BattleLibrary) (Progress, error) {
+	progressMu.Lock()
+	defer progressMu.Unlock()
+	var err error
+	e, _, err = effectiveEconomy(root, e)
+	if err != nil {
+		return Progress{}, err
+	}
+	return readProgressWriting(root, character, e, lib, false)
 }
 func Buy(root, character string, e Economy, lib content.BattleLibrary, request Purchase) (Progress, error) {
 	progressMu.Lock()
@@ -759,7 +808,7 @@ func settlePurchase(p Progress, character string, e Economy, lib content.BattleL
 	p.DeckValue = deckValue(p.Deck, character, e)
 	p.CollectionValue = deckValue(p.Collection, character, e)
 	p.WoundValue = deckValue(p.Wounds, character, e)
-	p.UpgradeSpent = *p.Budget - p.XP - p.DeckValue - p.CollectionValue - p.WoundValue
+	p.UpgradeSpent = *p.Budget - p.XP - p.DeckValue - p.CollectionValue - p.WoundValue - sheetBoardValue(p)
 	p.Revision++
 	if err := validateProgress(p, lib); err != nil {
 		return p, err
@@ -869,9 +918,11 @@ func ValidateCatalogUpdate(root string, e Economy, catalogs map[string]content.B
 			return fmt.Errorf("%s saved deck: %w", character, err)
 		}
 		if p.Budget == nil {
-			initializeBudget(&p, e)
+			if err = initializeBudget(&p, e, lib); err != nil {
+				return err
+			}
 		}
-		if err = reconcileBudget(&p, e); err != nil {
+		if err = reconcileBudget(&p, e, lib); err != nil {
 			return err
 		}
 	}

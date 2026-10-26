@@ -58,7 +58,10 @@ type Config struct {
 
 type ResetRequest struct {
 	SeatAbilityBoards map[string]content.AbilityBoard `json:"seat_ability_boards,omitempty"`
-	SeatDecklists     map[string][]loadout.Entry      `json:"seat_decklists,omitempty"`
+	// CustomBoard is the custom adventurer's die, board and generated
+	// abilities for this battle (a campaign or expedition save's own).
+	CustomBoard   *loadout.SheetBoard        `json:"custom_board,omitempty"`
+	SeatDecklists map[string][]loadout.Entry `json:"seat_decklists,omitempty"`
 	// SeatWounds are decklist copies that start in the removed pile.
 	SeatWounds map[string][]loadout.Entry `json:"seat_wounds,omitempty"`
 	// SeatPresets start seats from preset piles, energy and statuses (the
@@ -80,6 +83,7 @@ type ActionRecord struct {
 
 type ReplayRecord struct {
 	SeatAbilityBoards map[string]content.AbilityBoard `json:"seat_ability_boards,omitempty"`
+	CustomBoard       *loadout.SheetBoard             `json:"custom_board,omitempty"`
 	SeatDecklists     map[string][]loadout.Entry      `json:"seat_decklists,omitempty"`
 	SeatWounds        map[string][]loadout.Entry      `json:"seat_wounds,omitempty"`
 	SeatPresets       map[string]battle.PresetPiles   `json:"seat_presets,omitempty"`
@@ -272,6 +276,7 @@ func (e *Environment) Reset(request ResetRequest) (Transition, error) {
 	environmentSchema, observationSchema, actionSchema := e.SchemaVersions()
 	e.replay = ReplayRecord{
 		SeatAbilityBoards: cloneAbilityBoards(request.SeatAbilityBoards),
+		CustomBoard:       request.CustomBoard,
 		SeatDecklists:     cloneDecklists(request.SeatDecklists),
 		SeatWounds:        cloneDecklists(request.SeatWounds),
 		SeatPresets:       clonePresets(request.SeatPresets),
@@ -636,6 +641,7 @@ func (e *Environment) Replay(record ReplayRecord) (Transition, error) {
 		SeatWounds:        cloneDecklists(record.SeatWounds),
 		SeatPresets:       clonePresets(record.SeatPresets),
 		SeatAbilityBoards: cloneAbilityBoards(record.SeatAbilityBoards),
+		CustomBoard:       record.CustomBoard,
 		Seed:              record.Seed, BattleID: record.BattleID, UnifiedDefense: record.UnifiedDefense,
 		SeatModels: record.SeatModels, SeatDefinitions: record.SeatDefinitions, SeatTeams: record.SeatTeams,
 	})
@@ -859,12 +865,13 @@ func cloneAbilityBoards(source map[string]content.AbilityBoard) map[string]conte
 }
 
 func (e *Environment) loadoutAssembler(request ResetRequest) battle.ParticipantAssembler {
-	if len(request.SeatDecklists) == 0 && len(request.SeatAbilityBoards) == 0 && e.config.AuthoredCardsRoot == "" {
+	if len(request.SeatDecklists) == 0 && len(request.SeatAbilityBoards) == 0 && e.config.AuthoredCardsRoot == "" && request.CustomBoard == nil {
 		return e.assembler
 	}
 	assembler := battle.NewCachedFileParticipantAssembler(e.config.ContentRoot, e.config.RunStateRoot)
 	assembler.IncludeCharacterPools = true
 	assembler.AuthoredCardsRoot = e.config.AuthoredCardsRoot
+	assembler.CustomBoard = request.CustomBoard
 	return assembler
 }
 

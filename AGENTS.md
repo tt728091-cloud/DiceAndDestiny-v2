@@ -155,6 +155,13 @@ Use `./scripts/godot.sh` for every additional Godot test.
 - **Map cards** resolve in `expedition/map_cards.go`. Effects that outlast the play are visible map statuses or marks; map-only statuses (modifiers that only the map reads) never enter a battle. Energy can pay for Influence at the configured rate.
 - **Tests to keep green:** `go test ./internal/battle/expedition/ ./internal/battle/learned/` (rules, ops, the bridge, the seeded full-region runs with save/reload checks) and `./scripts/godot.sh --headless --script res://tests/presentation/verify_expedition_map.gd` plus `verify_expedition_statuses.gd` (pointer). Seeds used by the region tests are fixed; if a rule or the proxy changes their outcome, find new seeds with the env-gated probes rather than weakening the assertions.
 
+## Ability board XP
+
+- The Custom Adventurer's damage level and defenses cost XP; so do the Starter's and Adventurer's in campaigns and expeditions (their board is set in `campaign.yaml` `boards`). See `docs/game-design/board-xp.md`. Rates live in `content/progression_v1/economy.yaml` `board_xp`: 40 XP per point of average damage a level adds over the standard step, 40 XP per point of a flat defense's average prevention, and blocks (faces that prevent a whole attack) cost block chance × 0.5 × (total XP + 200). Never hard-code them; the authority prices every change and the client only shows it.
+- The board's XP is part of the sheet's total (`BoardValue`, `BoardLevelXP`): a starting board is part of the kit (added to the total, like the deck), a change moves XP but never the total, and block prices are recomputed from the total on every read and after rewards.
+- Campaign and expedition saves hold their own die, board and generated abilities; their battles pin the save's board (`ResetRequest.CustomBoard`, with `SheetBoard.Character` naming whose board it is), never the editors' sheet. In campaigns only the level and defenses change; an expedition board change is a deck change (site or camp, the visit's Influence).
+- A save from before boards keeps its authored abilities until its first board change, which moves it onto its board as part of its kit (`loadout.AdoptBoard`). That move never changes the XP to spend.
+
 ## Card pricing
 
 - Price every General card, new or changed, with `docs/game-design/card-value-rules.md`. In those rules, 1 unit is 5 energy, 1 card drawn or 1 Move, and 1 health is 2 units. XP = 5 × (2 + net units), half points up, with a floor of 10, plus 1 XP for each 5 energy a card costs less than an equal-net card in its tree. A base card nets +1 unit and costs 15 XP.

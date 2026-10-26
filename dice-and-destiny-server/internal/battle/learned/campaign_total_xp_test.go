@@ -4,6 +4,7 @@ import (
 	"path/filepath"
 	"testing"
 
+	"diceanddestiny/server/internal/battle/boardprice"
 	"diceanddestiny/server/internal/battle/expedition"
 	"diceanddestiny/server/internal/battle/loadout"
 )
@@ -25,7 +26,11 @@ func (x *totalXP) check(save loadout.CampaignSave, want int, what string) {
 	if got != want {
 		x.t.Fatalf("%s: total XP %d, want %d", what, got, want)
 	}
-	if p := save.Sheet; p.XP+p.DeckValue+p.CollectionValue+p.WoundValue+p.UpgradeSpent != got {
+	board := 0
+	if save.Sheet.BoardValue != nil {
+		board = *save.Sheet.BoardValue
+	}
+	if p := save.Sheet; p.XP+p.DeckValue+p.CollectionValue+p.WoundValue+p.UpgradeSpent+board != got {
 		x.t.Fatalf("%s: the ledger does not add up to the total: %+v", what, p)
 	}
 	if reported := x.reported(); reported != got {
@@ -146,7 +151,21 @@ func TestTotalXPNeverDropsAndIsReported(t *testing.T) {
 		}
 		price := func(card string) int { return c.economy.Price(campaignCharacter, card) }
 		x.check(buy(loadout.Purchase{Kind: "buy_card", ID: "nudge", ExpectedCost: price("nudge")}), total, "buying a card")
-		x.check(buy(loadout.Purchase{Kind: "upgrade_ability", ID: "adventurer_guard", ExpectedCost: 38}), total, "upgrading an ability")
+		// The board's defense upgrade (Holdfast → Holdfast+) moves XP onto
+		// the board, never the total.
+		view, err := campaignBoardView(contentRoot, root, save.ID, boardprice.Choice{})
+		if err != nil {
+			t.Fatal(err)
+		}
+		choice := view["choice"].(boardprice.Choice)
+		choice.Defenses = []string{"holdfast_plus"}
+		if view, err = campaignBoardView(contentRoot, root, save.ID, choice); err != nil {
+			t.Fatal(err)
+		}
+		if _, err = campaignBoardChange(contentRoot, root, save.ID, view["choice"].(boardprice.Choice), view["revision"].(int), view["xp"].(map[string]any)["cost"].(int)); err != nil {
+			t.Fatal(err)
+		}
+		x.check(readSave(t, contentRoot, root, save.ID), total, "upgrading the board's defense")
 		x.check(buy(loadout.Purchase{Kind: "sell_card", ID: "try_again", ExpectedCost: price("try_again")}), total, "selling a card")
 		x.check(readSave(t, contentRoot, root, save.ID), total, "reloading the save")
 	})

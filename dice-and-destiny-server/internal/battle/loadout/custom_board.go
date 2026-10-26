@@ -14,17 +14,23 @@ import (
 
 // CustomAdventurer is the character whose sheet chooses its die and holds its
 // own priced ability board (the Board Builder). Other characters keep their
-// authored dice and boards.
+// authored dice and boards, except in campaign saves that hold a priced board
+// (campaign.yaml boards).
 const CustomAdventurer = "custom_adventurer"
 
 // SheetBoard is what a battle pins from a sheet: the die, the board and the
 // generated abilities the board uses.
 type SheetBoard struct {
+	// Character is the sheet's character (the custom adventurer when empty).
+	Character string                                     `json:"character,omitempty"`
 	Dice      string                                     `json:"dice,omitempty"`
 	Abilities content.AbilityBoard                       `json:"ability_board"`
 	Generated map[string]content.BattleAbilityDefinition `json:"generated_abilities,omitempty"`
 	// Choice is the Board Builder choice behind the board, when it has one.
 	Choice *boardprice.Choice `json:"board_choice,omitempty"`
+	// LevelXP is the XP the board's damage level holds (the authority prices
+	// it from the board's staircase).
+	LevelXP int `json:"board_level_xp,omitempty"`
 }
 
 // ReadSheetBoard reads the die and board from a character's saved sheet
@@ -76,7 +82,8 @@ func ApplySheetBoard(lib content.BattleLibrary, character string, sheet SheetBoa
 	if !ok {
 		return lib, fmt.Errorf("unknown character %q", character)
 	}
-	if character != CustomAdventurer && (sheet.Dice != "" || len(sheet.Generated) > 0) {
+	priced := character == CustomAdventurer || sheet.Choice != nil
+	if !priced && (sheet.Dice != "" || len(sheet.Generated) > 0) {
 		return lib, fmt.Errorf("%s does not choose its die or board", character)
 	}
 	out := lib
@@ -106,20 +113,20 @@ func ApplySheetBoard(lib content.BattleLibrary, character string, sheet SheetBoa
 	if err := ValidateAbilities(combatant.AbilityBoard, out); err != nil {
 		return lib, err
 	}
-	if err := validateSheetDice(out, character, sheet.Dice, combatant.AbilityBoard); err != nil {
+	if err := validateSheetDice(out, character, priced, sheet.Dice, combatant.AbilityBoard); err != nil {
 		return lib, err
 	}
 	return out, nil
 }
 
-// validateSheetDice checks a sheet's die choice: only the custom adventurer
-// chooses one, it must be a catalog die with roles, and every offensive
-// ability on the board must be able to qualify on five of it.
-func validateSheetDice(lib content.BattleLibrary, character, dice string, board content.AbilityBoard) error {
+// validateSheetDice checks a sheet's die choice: only a priced board chooses
+// one, it must be a catalog die with roles, and every offensive ability on
+// the board must be able to qualify on five of it.
+func validateSheetDice(lib content.BattleLibrary, character string, priced bool, dice string, board content.AbilityBoard) error {
 	if dice == "" {
 		return nil
 	}
-	if character != CustomAdventurer {
+	if !priced {
 		return fmt.Errorf("%s does not choose its die", character)
 	}
 	die, ok := lib.Dice[dice]
@@ -142,7 +149,9 @@ func validateSheetDice(lib content.BattleLibrary, character, dice string, board 
 // a sheet, after validating them against the catalog: the die must have
 // roles, every ability must exist (or be generated) and qualify on the die,
 // and the board must pass the character's access rules. Abilities the new
-// board no longer uses are dropped from the sheet.
+// board no longer uses are dropped from the sheet. The board's XP (its level
+// and defenses) is charged or refunded; a board the XP left can't pay for is
+// refused.
 func SaveSheetBoard(root, character string, e Economy, lib content.BattleLibrary, sheet SheetBoard, revision int) (Progress, error) {
 	progressMu.Lock()
 	defer progressMu.Unlock()
@@ -157,28 +166,10 @@ func SaveSheetBoard(root, character string, e Economy, lib content.BattleLibrary
 	if revision != p.Revision {
 		return p, fmt.Errorf("sheet changed; refresh before saving the board")
 	}
-	used := map[string]content.BattleAbilityDefinition{}
-	for _, id := range sheet.Abilities.Offensive {
-		if ability, ok := sheet.Generated[id]; ok {
-			used[id] = ability
-		}
-	}
-	sheet.Generated = used
-	if _, err := ApplySheetBoard(lib, character, sheet); err != nil {
+	next, _, err := applyBoardChange(p, e, lib, sheet)
+	if err != nil {
 		return p, err
 	}
-	if err := e.Access.ValidateBoard(character, sheet.Abilities); err != nil {
-		return p, err
-	}
-	next := cloneProgress(p)
-	next.Dice = sheet.Dice
-	next.Abilities = content.AbilityBoard{Offensive: slices.Clone(sheet.Abilities.Offensive), Defensive: slices.Clone(sheet.Abilities.Defensive)}
-	next.GeneratedAbilities = nil
-	if len(used) > 0 {
-		next.GeneratedAbilities = used
-	}
-	next.BoardChoice = sheet.Choice
-	next.Revision++
 	filename, _ := progressPath(root, character)
 	if err := writeProgress(filename, next); err != nil {
 		return p, err

@@ -55,11 +55,18 @@ dice:
   - {id: forge_d6, unlock: open}      # 2-2-1-1
   - {id: loom_d6, unlock: open}       # 2-1-2-1
 
-# Role-based defenses, each priced to Guard's expected prevention on the
-# standard die (3.5 per roll) on every die.
+# Role-based defenses. The first entries are a template's defaults; every
+# defense slot may also be left empty ("none"). Each costs XP (economy.yaml
+# board_xp): flat ones by their average prevention per roll on the chosen die,
+# blocks (faces that prevent all damage) by their block chance and total XP.
 defenses:
-  - {ability: holdfast, unlock: open}
-  - {ability: holdfast_plus, unlock: open}
+  - {ability: holdfast, unlock: open}       # 3 dice, 3.5 per roll
+  - {ability: holdfast_plus, unlock: open}  # Holdfast, saved cards stay put
+  - {ability: light_guard, unlock: open}    # 1 die, 7/6 per roll
+  - {ability: firm_guard, unlock: open}     # 2 dice, 7/3 per roll
+  - {ability: bastion, unlock: open}        # 4 dice, 14/3 per roll
+  - {ability: clean_deflect, unlock: open}  # 1 die, face 6 blocks: 1 in 6
+  - {ability: twin_deflect, unlock: open}   # 2 dice, any face 6 blocks: 11 in 36
 
 # The costs a flex slot may take, per family. A slot takes those inside its
 # difficulty band(s) on the chosen die.
@@ -128,10 +135,26 @@ families:
 
 # Templates per family. Core slots are fixed apart from their rider (rider:
 # true lets the player pick one); flex slots take any cost of their family
-# menu inside their band(s). cost is the default pick. defenses is how many
-# defenses the board carries.
+# menu inside their band(s). cost is the default pick and default_rider the
+# default rider (none when omitted). defenses is how many defenses the board
+# carries.
 templates:
   # {3,2,1}: 3-2-1 and 2-3-1 dice
+  # The Starter's and Adventurer's board in campaigns (campaign.yaml boards):
+  # the shapes of Strike, Guarded Strike (+2 Protect), Measured Strike (+5
+  # energy), the straights and Decisive Blow, priced like every other board.
+  - id: starter
+    name: Starter
+    family: "321"
+    defenses: 1
+    unlock: open
+    slots:
+      - {id: strike, job: ladder, cost: main3/main4/main5, rider: true}
+      - {id: guarded_strike, job: flex, bands: [medium], cost: main2+side3, default_rider: protect_2}
+      - {id: measured_strike, job: flex, bands: [medium], cost: main2+apex2, default_rider: energy_5}
+      - {id: small_straight, job: straight, cost: SS, rider: true}
+      - {id: large_straight, job: straight, cost: LS, rider: true}
+      - {id: decisive_blow, job: apex, cost: apex4, rider: true}
   - id: lean
     name: Lean
     family: "321"

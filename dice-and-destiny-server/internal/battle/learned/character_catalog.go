@@ -3,6 +3,7 @@ package learned
 import (
 	"fmt"
 	"path/filepath"
+	"slices"
 
 	"diceanddestiny/server/internal/battle"
 	"diceanddestiny/server/internal/battle/loadout"
@@ -11,6 +12,11 @@ import (
 
 // PlayableCharacters are the characters a player can pick, in roster order.
 var PlayableCharacters = []string{"adventurer", "venom", "curse", "blade_warden", "starter", loadout.CustomAdventurer}
+
+// boardPackCharacters load the custom adventurer's pack (the board dice and
+// menu defenses): the characters whose campaign saves may hold a priced
+// board (campaign.yaml boards, checked when the campaign loads).
+var boardPackCharacters = []string{"adventurer", "starter", loadout.CustomAdventurer}
 
 // CharacterCatalogs reads definitions without creating/resetting a battle,
 // initializing a policy, drawing cards, or writing any player state.
@@ -37,7 +43,7 @@ func characterCatalog(root, id string, authoredRoots ...string) (content.BattleL
 		return lib, err
 	}
 	packs := []string{"venom_v1", "curse_v1", "adventurer_v1", "general_v1", "minions_v1"}
-	if id == loadout.CustomAdventurer {
+	if slices.Contains(boardPackCharacters, id) {
 		packs = append(packs, battle.CustomAdventurerPack)
 	}
 	for _, pack := range packs {

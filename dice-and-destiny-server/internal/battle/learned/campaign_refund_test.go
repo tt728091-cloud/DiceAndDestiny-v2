@@ -1,12 +1,14 @@
 package learned
 
 import (
+	"encoding/json"
 	"path/filepath"
 	"reflect"
 	"slices"
 	"sort"
 	"testing"
 
+	"diceanddestiny/server/internal/battle/boardprice"
 	"diceanddestiny/server/internal/battle/expedition"
 	"diceanddestiny/server/internal/battle/loadout"
 	"diceanddestiny/server/internal/content"
@@ -128,6 +130,16 @@ func TestCampaignXPSpendsRoundTripExactly(t *testing.T) {
 				return loadout.BuyCampaign(root, save.ID, x.economy, x.catalogs, r)
 			}}
 			roundTripEverything(s, lib, x.economy.Characters[character].AbilityUpgrades)
+			roundTripBoard(t, contentRoot, root, save.ID, character)
+			if character != loadout.CustomAdventurer {
+				// An older save on its authored abilities: the Guard → Guard+
+				// path round-trips too.
+				old := startAuthoredCampaign(t, contentRoot, root, character, "Old refunds")
+				s := &refundSheet{t: t, save: old, apply: func(r loadout.Purchase) (loadout.CampaignSave, error) {
+					return loadout.BuyCampaign(root, old.ID, x.economy, x.catalogs, r)
+				}}
+				roundTripEverything(s, lib, x.economy.Characters[character].AbilityUpgrades)
+			}
 		})
 		t.Run(character+"/expedition", func(t *testing.T) {
 			save, err := newExpeditionCampaign(contentRoot, root, character, "Refunds", "", 5)
@@ -157,6 +169,8 @@ func TestCampaignXPSpendsRoundTripExactly(t *testing.T) {
 			// The first change spends the fee and opens the deck; do() checks it
 			// still moved XP by exactly its price.
 			roundTripEverything(s, lib, x.economy.Characters[character].AbilityUpgrades)
+			roundTripBoard(t, contentRoot, root, save.ID, character)
+			s.save = readSave(t, contentRoot, root, save.ID)
 			if s.save.Expedition.Turn.DeckOpen != "camp" || s.save.Expedition.Turn.Influence != 0 {
 				t.Fatalf("the camp fee was paid once: open %q, influence left %d", s.save.Expedition.Turn.DeckOpen, s.save.Expedition.Turn.Influence)
 			}
@@ -271,7 +285,7 @@ func roundTripEverything(s *refundSheet, lib content.BattleLibrary, abilityPaths
 		s.expect(before, "ability "+id)
 		abilities++
 	}
-	if abilities == 0 {
+	if abilities == 0 && len(abilityPaths) > 0 && !loadout.HoldsBoard(s.save.Sheet) {
 		t.Fatal("no ability upgrade path was tried")
 	}
 
@@ -280,4 +294,68 @@ func roundTripEverything(s *refundSheet, lib content.BattleLibrary, abilityPaths
 		t.Fatalf("the round trips changed the cards owned: %v, was %v", s.owned(), owned)
 	}
 	t.Logf("%d transactions, %d batched trades, %d ability chains round-tripped exactly", s.done, batches, abilities)
+}
+
+// roundTripBoard raises the custom adventurer's damage level step by step and
+// swaps its defense through every menu defense, then undoes it all: each
+// change moves XP by exactly its shown cost, and XP, Budget and UpgradeSpent
+// end as they began.
+func roundTripBoard(t *testing.T, contentRoot, root, saveID, character string) {
+	t.Helper()
+	if !loadout.HoldsBoard(readSave(t, contentRoot, root, saveID).Sheet) {
+		return
+	}
+	ledger := func() xpLedger {
+		p := readSave(t, contentRoot, root, saveID).Sheet
+		return xpLedger{p.XP, *p.Budget, p.UpgradeSpent}
+	}
+	start := ledger()
+	change := func(choice map[string]any) {
+		t.Helper()
+		raw, _ := json.Marshal(choice)
+		c, err := decodeBoardChoice(raw)
+		if err != nil {
+			t.Fatal(err)
+		}
+		view, err := campaignBoardView(contentRoot, root, saveID, c)
+		if err != nil {
+			t.Fatal(err)
+		}
+		xp := view["xp"].(map[string]any)
+		before := ledger()
+		if _, err = campaignBoardChange(contentRoot, root, saveID, view["choice"].(boardprice.Choice), view["revision"].(int), xp["cost"].(int)); err != nil {
+			t.Fatalf("board %v: %v", choice, err)
+		}
+		if got := ledger(); got.XP != before.XP-xp["cost"].(int) || got.Budget != before.Budget || got.UpgradeSpent != before.UpgradeSpent {
+			t.Fatalf("board %v moved the ledger %+v → %+v, cost %v", choice, before, got, xp["cost"])
+		}
+	}
+	view, err := campaignBoardView(contentRoot, root, saveID, boardprice.Choice{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	saved := view["choice"].(boardprice.Choice)
+	steps := view["staircase"].(map[string]any)["steps"].([]map[string]any)
+	lowest := view["staircase"].(map[string]any)["lowest"].(int)
+	base := map[string]any{"die": saved.Die, "template": saved.Template, "slots": saved.Slots}
+	with := func(extra map[string]any) map[string]any {
+		m := map[string]any{}
+		for k, v := range base {
+			m[k] = v
+		}
+		for k, v := range extra {
+			m[k] = v
+		}
+		return m
+	}
+	for k := lowest + 1; k <= lowest+3; k++ {
+		change(with(map[string]any{"level": steps[k]["at"]}))
+	}
+	for _, d := range []string{"none", "light_guard", "firm_guard", "clean_deflect", "twin_deflect", "holdfast_plus"} {
+		change(with(map[string]any{"level": steps[lowest+3]["at"], "defenses": []string{d}}))
+	}
+	change(with(map[string]any{"defenses": saved.Defenses}))
+	if got := ledger(); got != start {
+		t.Fatalf("the board round trip ended at %+v, began at %+v", got, start)
+	}
 }

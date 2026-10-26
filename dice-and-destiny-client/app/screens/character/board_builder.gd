@@ -3,10 +3,11 @@ extends Control
 ## cost and rider for each slot. The authority prices every change
 ## (board_price) and the screen only shows its report; it never computes a
 ## price. Confirm writes the die and the priced board to the character sheet
-## through the authority (board_save). The damage-level slider previews the
-## board anywhere on its staircase: the authority's steps, each raising at
-## least one ability and lowering none; Confirm always saves the standard
-## level.
+## through the authority (board_save). The damage-level slider moves the
+## board along its staircase: the authority's steps, each raising at least one
+## ability and lowering none. The level and the defenses cost XP (40 per point
+## of average damage or prevention; blocks a share of total XP), priced by
+## the authority; Confirm saves the level and charges or refunds the XP.
 signal closed
 const STYLE = preload("res://app/screens/character/character_style.gd")
 const STONE_DIE := preload("res://presentation/dice/stone_die.gd")
@@ -24,7 +25,7 @@ var priced: Dictionary = {}
 ## target, the previewed target, its step and every step's target, average,
 ## damage and raised tiers.
 var staircase: Dictionary = {}
-## The damage target being previewed; 0 until the first price (the standard).
+## The damage level shown (the choice's level; the standard until priced).
 var preview_target := 0.0
 var revision := 0
 var saved_choice: Dictionary = {}
@@ -58,6 +59,8 @@ var template_buttons := {}
 ## Slot editors by slot id: {"cost": OptionButton, "rider": OptionButton,
 ## "next_rider": Button, "next_cost": Button}.
 var slot_controls := {}
+## Each defense slot's "next defense" button (pointer-friendly cycling).
+var defense_buttons: Array[Button] = []
 
 func _ready() -> void:
 	name = "BoardBuilderWorkspace"
@@ -78,7 +81,7 @@ func _build() -> void:
 	var titles := VBoxContainer.new(); titles.size_flags_horizontal = Control.SIZE_EXPAND_FILL; titles.add_theme_constant_override("separation", 0); header.add_child(titles)
 	STYLE.label(titles, "CHARACTER CREATION  /  BOARD BUILDER", 12, STYLE.GOLD)
 	STYLE.label(titles, "Custom Adventurer · Board Builder", 28)
-	STYLE.label(titles, "Choose a die, a board template and each slot's cost and rider. The authority prices every board so harder abilities pay more and every board averages the same per turn.", 14, STYLE.MUTED)
+	STYLE.label(titles, "Choose a die, a board template and each slot's cost and rider. The authority prices every board so harder abilities pay more and every board averages the same per turn. Raising the damage level and the defense cost XP.", 14, STYLE.MUTED)
 	_button(header, "Back to characters", func(): closed.emit(); queue_free(), "back").size_flags_vertical = Control.SIZE_SHRINK_END
 	var columns := HBoxContainer.new(); columns.add_theme_constant_override("separation", 12); columns.size_flags_vertical = Control.SIZE_EXPAND_FILL; body.add_child(columns)
 	# 1 · Die
@@ -216,14 +219,20 @@ func select_die(id: String) -> void:
 	if id == str(choice.get("die", "")): return
 	var same_family := _family(id) == _family(str(choice.get("die", "")))
 	if same_family: choice.die = id
-	else: choice = {"die": id, "template": _first_template(_family(id))}
+	else: choice = _keep_level({"die": id, "template": _first_template(_family(id))})
 	_load(id)
 
 func select_template(id: String) -> void:
 	if id == str(choice.get("template", "")): return
-	choice = {"die": choice.die, "template": id}
+	choice = _keep_level({"die": choice.die, "template": id})
 	_render_templates()
 	_price()
+
+## A new build keeps the damage level and the defenses picked so far.
+func _keep_level(next: Dictionary) -> Dictionary:
+	if choice.has("level"): next.level = choice.level
+	if choice.has("defenses"): next.defenses = choice.defenses
+	return next
 
 func _render_dice() -> void:
 	_clear(_dice_row); die_buttons.clear()
@@ -272,8 +281,10 @@ func _render_templates() -> void:
 func _price() -> void:
 	var runtime = _runtime()
 	if runtime == null: return
-	var response: Dictionary = runtime.board_price(choice, _keep_toggle.button_pressed, preview_target)
+	var response: Dictionary = runtime.board_price(choice, _keep_toggle.button_pressed, 0.0)
 	if not response.get("ok", false):
+		if choice.has("defenses") and int(_template(str(choice.get("template", ""))).get("defenses", 1)) != choice.defenses.size():
+			choice.erase("defenses"); _price(); return
 		_error("This board cannot be priced: " + str(response.get("error", "unknown error")))
 		_confirm.disabled = true
 		return
@@ -281,13 +292,20 @@ func _price() -> void:
 	choice = _copy(priced.choice)
 	staircase = priced.get("staircase", {})
 	preview_target = float(staircase.get("target", 0.0))
-	_confirm.disabled = false
+	var xp: Dictionary = priced.get("xp", {})
+	_confirm.disabled = not xp.is_empty() and not bool(xp.get("affordable", true))
 	_render_slots()
 	_render_level()
 	_render_preview()
 	if _keep_toggle.button_pressed: _render_keep()
 	_status.add_theme_color_override("font_color", STYLE.MUTED)
 	_status.text = "Priced by the authority." + (" Unsaved changes." if not _same(choice, saved_choice) else " This is the board on your sheet.")
+	if not xp.is_empty():
+		var cost := int(xp.get("cost", 0))
+		_status.text += "  Saving %s · %d XP left." % [("costs %d XP" % cost) if cost > 0 else (("refunds %d XP" % -cost) if cost < 0 else "costs no XP"), int(xp.get("left", 0))]
+		if not bool(xp.get("affordable", true)):
+			_status.add_theme_color_override("font_color", STYLE.LOSS)
+			_status.text = "Not enough XP: " + str(xp.get("reason", ""))
 
 func _same(a: Dictionary, b: Dictionary) -> bool:
 	return JSON.stringify(a) == JSON.stringify(b)
@@ -367,20 +385,69 @@ func _set_pick(index: int, field: String, value: String) -> void:
 	choice.slots = slots
 	_price()
 
+## A defense's XP price on this board's die at the sheet's total XP (from
+## board_price), with what it does on average.
+func _defense_price(ability: String) -> Dictionary:
+	for d in priced.get("xp", {}).get("defenses", []):
+		if str(d.ability) == ability: return d
+	return {}
+
+## A defense's option text in a slot: what it does, and what picking it
+## changes against the saved board's defense there (the authority's
+## numbers): "yours", "costs 46 XP" or "47 XP back", with its own price.
+func _defense_text(name: String, ability: String, slot: int) -> String:
+	var price := _defense_price(ability)
+	if price.is_empty(): return name
+	var what := ("blocks %.0f%% of attacks" % (float(price.block) * 100.0)) if bool(price.blocks) else ("prevents %.2f / roll" % float(price.prevention))
+	var changes: Array = price.get("change", [])
+	return "%s · %s · %s" % [name, what, _change_text(ability == _saved_defense(slot), int(changes[slot]) if slot < changes.size() else int(price.xp), int(price.xp))]
+
+func _saved_defense(slot: int) -> String:
+	var saved: Array = priced.get("xp", {}).get("saved_defenses", [])
+	return str(saved[slot]) if slot < saved.size() else "none"
+
+func _change_text(yours: bool, change: int, price: int) -> String:
+	var held := " (%d XP)" % price if price > 0 else ""
+	if yours: return "yours" + held
+	if change > 0: return "costs %d XP%s" % [change, held]
+	if change < 0: return "%d XP back%s" % [-change, held]
+	return "no XP change" + held
+
 func _render_defenses() -> void:
-	_clear(_defenses)
+	_clear(_defenses); defense_buttons.clear()
 	var chosen: Array = choice.get("defenses", [])
 	for i in chosen.size():
-		var options := OptionButton.new(); options.fit_to_longest_item = false; _defenses.add_child(options)
+		var row := HBoxContainer.new(); row.add_theme_constant_override("separation", 6); _defenses.add_child(row)
+		var options := OptionButton.new(); options.fit_to_longest_item = false; options.size_flags_horizontal = Control.SIZE_EXPAND_FILL; row.add_child(options)
+		var none_changes: Array = priced.get("xp", {}).get("none_change", [])
+		options.add_item("No defense · " + _change_text(_saved_defense(i) == "none", int(none_changes[i]) if i < none_changes.size() else 0, 0)); options.set_item_metadata(0, "none")
+		options.set_item_tooltip(0, "Leave this slot empty: take every attack's damage, and keep the XP.")
+		if str(chosen[i]) == "none": options.select(0)
 		for d in menus.get("defenses", []):
-			options.add_item(str(d.name)); options.set_item_metadata(options.item_count - 1, str(d.ability))
+			options.add_item(_defense_text(str(d.name), str(d.ability), i)); options.set_item_metadata(options.item_count - 1, str(d.ability))
 			options.set_item_tooltip(options.item_count - 1, str(d.rules_text))
+			options.set_item_disabled(options.item_count - 1, str(d.ability) in chosen and str(d.ability) != str(chosen[i]))
 			if str(d.ability) == str(chosen[i]): options.select(options.item_count - 1)
 		options.item_selected.connect(func(index):
 			choice.defenses[i] = str(options.get_item_metadata(index)); _price())
 		_register(options, "defense.%d" % i, "Defense %d" % (i + 1))
+		var next := _button(row, "▶", func(): _cycle_defense(options, i), "defense.%d.next" % i)
+		next.tooltip_text = "Next defense"
+		defense_buttons.append(next)
 		for d in menus.get("defenses", []):
 			if str(d.ability) == str(chosen[i]): STYLE.label(_defenses, str(d.rules_text), 12, STYLE.MUTED)
+	var rates: Dictionary = priced.get("xp", {}).get("rates", {})
+	if not rates.is_empty():
+		STYLE.label(_defenses, "Flat defenses cost %d XP per point of average prevention per roll. Blocks cost their block chance × %.0f%% of (total XP + %d), so they grow with the character." % [int(rates.prevention_point), float(rates.block.share) * 100.0, int(rates.block.offset)], 12, STYLE.DIM)
+
+func _cycle_defense(options: OptionButton, index: int) -> void:
+	var next := options.selected
+	for step in options.item_count:
+		next = (next + 1) % options.item_count
+		if not options.is_item_disabled(next): break
+	options.select(next)
+	choice.defenses[index] = str(options.get_item_metadata(next))
+	_price()
 
 func _render_preview() -> void:
 	_clear(_stats)
@@ -388,6 +455,11 @@ func _render_preview() -> void:
 	STYLE.stat(_stats, "%.2f" % float(report.get("whole_average", 0)), "avg damage / turn · target %.2f" % preview_target, STYLE.GOLD_BRIGHT)
 	STYLE.stat(_stats, "%.1f%%" % (float(report.get("whole_no_hit", 0)) * 100.0), "no hit", STYLE.LOSS)
 	STYLE.stat(_stats, "×%.2f" % float(report.get("damage_multiplier", 0)), "a sure hit is worth", STYLE.IVORY)
+	var xp: Dictionary = priced.get("xp", {})
+	if not xp.is_empty():
+		STYLE.stat(_stats, "%d XP" % int(xp.get("value", xp.get("held", 0))), "this board holds (level %d)" % int(xp.get("level_xp", 0)), STYLE.GOLD)
+		var cost := int(xp.get("cost", 0))
+		STYLE.stat(_stats, "%+d XP" % -cost, "on saving · %d of %d XP left" % [int(xp.get("left", 0)), int(xp.get("total", 0))], STYLE.GAIN if cost <= 0 else STYLE.AMBER)
 	_clear(_abilities)
 	var abilities: Array = priced.get("abilities", [])
 	for i in abilities.size():
@@ -410,8 +482,30 @@ func _render_preview() -> void:
 			row.add_child(bar)
 			var share := STYLE.label(row, "%.1f%%" % (float(tier.use_whole) * 100.0), 12, STYLE.MUTED)
 			share.autowrap_mode = TextServer.AUTOWRAP_OFF; share.custom_minimum_size.x = 42; share.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+			var raise := _raise_of(str(slot.get("slot", "")), str(tier.tier))
+			if not raise.is_empty():
+				var target := float(raise.at)
+				var others: Array = raise.get("also", [])
+				var plus := _button(row, "+ to %d · %d XP%s" % [int(raise.to), int(raise.get("xp", 0)), (" · +%d" % others.size()) if not others.is_empty() else ""], func(): _set_level(target), "raise.%s.%s" % [str(slot.get("slot", "")), str(tier.tier)])
+				plus.custom_minimum_size.y = 28; plus.add_theme_font_size_override("font_size", 12)
+				plus.tooltip_text = _raise_text(raise)
 		var rules := STYLE.label(box, str(ability.get("presentation", {}).get("rules_text", "")), 12, STYLE.MUTED)
 		rules.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+
+## The authority's cheapest climb that raises one tier (empty at the top).
+func _raise_of(slot_id: String, tier: String) -> Dictionary:
+	for raise in staircase.get("raises", []):
+		if raise is Dictionary and str(raise.slot) == slot_id and str(raise.tier) == tier: return raise
+	return {}
+
+## A tier raise's full story for its tooltip: the climb, its XP and the
+## other tiers it raises on the way.
+func _raise_text(raise: Dictionary) -> String:
+	var text := "%s %d → %d for %d XP: the level climbs to avg %.2f." % [_tier_name(str(raise.tier)), int(raise.from), int(raise.to), int(raise.get("xp", 0)), float(raise.average)]
+	var others: Array[String] = []
+	for o in raise.get("also", []): others.append("%s %d → %d" % [_tier_name(str(o.tier)), int(o.from), int(o.to)])
+	if not others.is_empty(): text += " It also raises " + ", ".join(others) + "."
+	return text
 
 ## The steps of the priced board's staircase and the one shown.
 func _steps() -> Array: return staircase.get("steps", [])
@@ -429,27 +523,40 @@ func _step_at(target: float) -> int:
 		if float(_steps()[i].at) <= target + 1e-9: k = i
 	return k
 
+## The lowest step a board may take: the standard level's.
+func _lowest() -> int: return int(staircase.get("lowest", 0))
+
+## A step's XP: what its damage level holds over the standard step.
+func _step_xp(k: int) -> int: return int(_steps()[k].get("xp", 0)) if k >= 0 and k < _steps().size() else 0
+
+## Moves the board to a damage level (the standard one is stored as none).
+func _set_level(target: float) -> void:
+	var standard := float(staircase.get("default_target", 0.0))
+	target = maxf(target, standard)
+	preview_target = target
+	if absf(target - standard) < 1e-9: choice.erase("level")
+	else: choice.level = target
+	_price()
+
 func _on_level_changed(value: float) -> void:
 	if _slider_guard or staircase.is_empty(): return
-	preview_target = value
-	if _step_at(value) != _step(): _price()
+	if _step_at(value) != _step(): _set_level(float(_steps()[maxi(_step_at(value), _lowest())].at))
 	else: _render_level_title()
 
 func _step_level(delta: int) -> void:
 	var steps := _steps()
 	if steps.is_empty(): return
-	var k := clampi(_step() + delta, 0, steps.size() - 1)
-	preview_target = float(steps[k].at)
-	_price()
+	var k := clampi(_step() + delta, _lowest(), steps.size() - 1)
+	_set_level(float(steps[k].at))
 
 func _reset_level() -> void:
-	preview_target = float(staircase.get("default_target", 0.0))
-	_price()
+	_set_level(float(staircase.get("default_target", 0.0)))
 
 func _render_level_title() -> void:
 	var steps := _steps()
 	if steps.is_empty(): _level_title.text = ""; return
-	_level_title.text = "target %.2f · step %d of %d · avg %.2f" % [preview_target, _step() + 1, steps.size(), float(steps[_step()].average)]
+	var k := _step()
+	_level_title.text = "step %d of %d · avg %.2f · %d XP" % [k - _lowest() + 1, steps.size() - _lowest(), float(steps[k].average), _step_xp(k)]
 
 ## The slider, its ticks and what the shown step raises over the one below
 ## it (and what the next step will raise), from the authority's staircase.
@@ -458,18 +565,21 @@ func _render_level() -> void:
 	if steps.is_empty(): return
 	var k := _step()
 	_slider_guard = true
-	_level_slider.min_value = float(staircase.from); _level_slider.max_value = float(staircase.to); _level_slider.value = preview_target
+	var standard := float(staircase.get("default_target", 0.0))
+	_level_slider.min_value = standard; _level_slider.max_value = float(staircase.to); _level_slider.value = preview_target
 	_slider_guard = false
 	_render_level_title()
-	_level_prev.disabled = k <= 0; _level_next.disabled = k >= steps.size() - 1
-	var standard := float(staircase.get("default_target", 0.0))
-	_level_reset.disabled = _step_at(standard) == k and absf(preview_target - standard) < 1e-9
+	_level_prev.disabled = k <= _lowest(); _level_next.disabled = k >= steps.size() - 1
+	_level_prev.tooltip_text = ("Previous step · refunds %d XP" % (_step_xp(k) - _step_xp(k - 1))) if k > _lowest() else "The standard level is the lowest."
+	_level_next.tooltip_text = ("Next step · %d XP" % (_step_xp(k + 1) - _step_xp(k))) if k + 1 < steps.size() else "The top of the staircase."
+	_level_reset.disabled = k == _lowest()
 	_clear(_level_raised)
-	if k == 0: STYLE.label(_level_raised, "The bottom step of the staircase.", 12, STYLE.MUTED)
-	else: STYLE.label(_level_raised, "This step: " + _changes(k) + " · %+.3f avg" % (float(steps[k].average) - float(steps[k - 1].average)), 12, STYLE.GOLD_BRIGHT)
+	if k == _lowest(): STYLE.label(_level_raised, "The standard level: the board as priced at %.1f, free." % standard, 12, STYLE.MUTED)
+	else: STYLE.label(_level_raised, "This step: " + _changes(k) + " · %+.3f avg · %d XP" % [float(steps[k].average) - float(steps[k - 1].average), _step_xp(k) - _step_xp(k - 1)], 12, STYLE.GOLD_BRIGHT)
 	if k + 1 < steps.size():
-		STYLE.label(_level_raised, "Next at %.3f: %s · %+.3f avg" % [float(steps[k + 1].at), _changes(k + 1), float(steps[k + 1].average) - float(steps[k].average)], 12, STYLE.MUTED)
-	_level_note.text = "The standard level: Confirm saves this board." if _step_at(standard) == k else "Preview only: Confirm saves the board at the standard %.1f." % standard
+		STYLE.label(_level_raised, "Next: %s · %+.3f avg · +%d XP" % [_changes(k + 1), float(steps[k + 1].average) - float(steps[k].average), _step_xp(k + 1) - _step_xp(k)], 12, STYLE.MUTED)
+	var rate := int(priced.get("xp", {}).get("rates", {}).get("damage_point", 40))
+	_level_note.text = "Each step costs %d XP per point of average damage it adds; going down refunds it. Confirm saves this level (%d XP over the standard)." % [rate, _step_xp(k)]
 	_level_ticks.queue_redraw()
 
 ## A step's raises, "Cinder ×4 5 → 6", from its damage and the step below.
@@ -493,14 +603,14 @@ func _tier_name(tier: String) -> String:
 func _draw_ticks() -> void:
 	var steps := _steps()
 	if steps.is_empty(): return
-	var low := float(staircase.from); var high := float(staircase.to)
+	var low := float(staircase.get("default_target", staircase.from)); var high := float(staircase.to)
 	var icon := _level_slider.get_theme_icon("grabber")
 	var grab := float(icon.get_width()) if icon != null else 16.0
 	var span := maxf(1.0, _level_ticks.size.x - grab)
 	var x_of := func(v: float) -> float: return grab / 2.0 + span * (v - low) / maxf(0.001, high - low)
 	for i in steps.size():
+		if i < _lowest() or i == _step(): continue
 		var x: float = x_of.call(float(steps[i].at))
-		if i == _step(): continue
 		_level_ticks.draw_line(Vector2(x, 0), Vector2(x, 5), STYLE.MUTED, 1.0)
 	var standard: float = x_of.call(float(staircase.get("default_target", low)))
 	_level_ticks.draw_line(Vector2(standard, 0), Vector2(standard, 11), STYLE.GAIN, 2.0)
@@ -548,5 +658,6 @@ func _confirm_board() -> void:
 	revision = int(response.result.revision)
 	saved_choice = _copy(response.result.board_choice)
 	choice = _copy(saved_choice)
+	_price()
 	_status.add_theme_color_override("font_color", STYLE.GAIN)
-	_status.text = "Saved to the Custom Adventurer's sheet: the %s and %d abilities." % [_die(str(choice.die)).get("name", "die"), response.result.ability_board.offensive.size()]
+	_status.text = "Saved to the Custom Adventurer's sheet: the %s and %d abilities · %d XP left." % [_die(str(choice.die)).get("name", "die"), response.result.ability_board.offensive.size(), int(response.result.get("xp", 0))]

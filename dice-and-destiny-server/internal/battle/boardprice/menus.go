@@ -101,13 +101,15 @@ type Template struct {
 
 // TemplateSlot is one ability on a template. Flex slots (Bands set) take a
 // cost from their family menu; core slots keep Cost and may take a rider
-// when Rider is set.
+// when Rider is set. DefaultRider is the rider an unpicked slot takes (none
+// when empty).
 type TemplateSlot struct {
-	ID    string   `yaml:"id" json:"id"`
-	Job   string   `yaml:"job" json:"job"`
-	Cost  string   `yaml:"cost" json:"cost"`
-	Bands []string `yaml:"bands,omitempty" json:"bands,omitempty"`
-	Rider bool     `yaml:"rider,omitempty" json:"rider,omitempty"`
+	ID           string   `yaml:"id" json:"id"`
+	Job          string   `yaml:"job" json:"job"`
+	Cost         string   `yaml:"cost" json:"cost"`
+	Bands        []string `yaml:"bands,omitempty" json:"bands,omitempty"`
+	Rider        bool     `yaml:"rider,omitempty" json:"rider,omitempty"`
+	DefaultRider string   `yaml:"default_rider,omitempty" json:"default_rider,omitempty"`
 }
 
 // Flex reports a slot whose cost the player picks.
@@ -343,6 +345,12 @@ func (m Menus) validate(lib content.BattleLibrary) error {
 			for _, layout := range familyDice[t.Family] {
 				if err := cost.Reachable(layout, p.Dice); err != nil {
 					return fmt.Errorf("template %s slot %s: %w", t.ID, s.ID, err)
+				}
+			}
+			if s.DefaultRider != "" {
+				rider, ok := m.Rider(s.DefaultRider)
+				if !ok || rider.Unlock != UnlockOpen || (s.DefaultRider != RiderNone && (!s.TakesRider() || !rider.RiderFits(s.Job))) {
+					return fmt.Errorf("template %s slot %s cannot take default rider %q", t.ID, s.ID, s.DefaultRider)
 				}
 			}
 		}

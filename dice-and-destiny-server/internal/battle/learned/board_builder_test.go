@@ -71,7 +71,7 @@ func TestBoardBuilderOp(t *testing.T) {
 		t.Fatalf("board_builder: %v", reply["error"])
 	}
 	result := reply["result"].(map[string]any)
-	if len(result["dice"].([]any)) != 5 || len(result["templates"].([]any)) != 13 || result["die"] != "grove_d6" {
+	if len(result["dice"].([]any)) != 5 || len(result["templates"].([]any)) != 14 || result["die"] != "grove_d6" {
 		t.Fatalf("menus: %d dice, %d templates, die %v", len(result["dice"].([]any)), len(result["templates"].([]any)), result["die"])
 	}
 	if stats := result["template_stats"].([]any); len(stats) != 3 {

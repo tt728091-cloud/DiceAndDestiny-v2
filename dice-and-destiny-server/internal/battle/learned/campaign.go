@@ -17,11 +17,13 @@ import (
 // authority records its result in the campaign save exactly once, when the
 // battle ends; the client never names the reward.
 type campaignBattle struct {
-	saveID    string
-	saveName  string
-	deck      []loadout.Entry
-	wounds    []loadout.Entry
-	board     content.AbilityBoard
+	saveID   string
+	saveName string
+	deck     []loadout.Entry
+	wounds   []loadout.Entry
+	board    content.AbilityBoard
+	// custom is the save's own die and priced board (custom adventurer).
+	custom    *loadout.SheetBoard
 	character string
 	encounter loadout.Encounter
 	index     int
@@ -112,8 +114,17 @@ func (s *Session) ResetCampaignEncounter(battleID string, seed uint64, saveID, e
 			index = i
 		}
 	}
-	battle := &campaignBattle{saveID: save.ID, saveName: save.Name, deck: save.Sheet.Deck, wounds: save.Sheet.Wounds, board: save.Sheet.Abilities, character: save.Character, encounter: encounter, index: index, total: len(campaign.Encounters)}
+	battle := &campaignBattle{saveID: save.ID, saveName: save.Name, deck: save.Sheet.Deck, wounds: save.Sheet.Wounds, board: save.Sheet.Abilities, custom: saveBoard(save), character: save.Character, encounter: encounter, index: index, total: len(campaign.Encounters)}
 	return s.resetLoadout(battleID, seed, "seat-a", false, save.Character, true, "campaign", battle, nil)
+}
+
+// saveBoard is a save's own die and priced board when it holds one.
+func saveBoard(save loadout.CampaignSave) *loadout.SheetBoard {
+	p := save.Sheet
+	if !loadout.HoldsBoard(p) || (p.Dice == "" && len(p.GeneratedAbilities) == 0) {
+		return nil
+	}
+	return &loadout.SheetBoard{Character: save.Character, Dice: p.Dice, Abilities: p.Abilities, Generated: p.GeneratedAbilities, Choice: p.BoardChoice, LevelXP: p.BoardLevelXP}
 }
 
 // recordCampaignBattle runs under s.mu once the battle is terminal or truncated.
@@ -226,7 +237,13 @@ func newCampaign(contentRoot, loadoutRoot, character, name string) (loadout.Camp
 	if err != nil {
 		return loadout.CampaignSave{}, err
 	}
-	return loadout.NewCampaignSave(loadoutRoot, character, name, c.campaign, c.economy, c.catalogs)
+	var start []loadout.SheetBoard
+	if board, ok, err := startBoard(contentRoot, loadoutRoot, c, character, nil); err != nil {
+		return loadout.CampaignSave{}, err
+	} else if ok {
+		start = append(start, board)
+	}
+	return loadout.NewCampaignSave(loadoutRoot, character, name, c.campaign, c.economy, c.catalogs, start...)
 }
 
 // campaignPurchase applies one Prepare transaction to one campaign save.
@@ -421,7 +438,13 @@ func newExpeditionCampaign(contentRoot, loadoutRoot, character, name, region str
 	if !ok {
 		return loadout.CampaignSave{}, fmt.Errorf("%s cannot start an expedition", character)
 	}
-	return loadout.NewExpeditionSave(loadoutRoot, character, name, region, seed, x.campaign, x.economy, x.catalogs, rules)
+	var start []loadout.SheetBoard
+	if board, ok, err := startBoard(contentRoot, loadoutRoot, x.campaignContext, character, nil); err != nil {
+		return loadout.CampaignSave{}, err
+	} else if ok {
+		start = append(start, board)
+	}
+	return loadout.NewExpeditionSave(loadoutRoot, character, name, region, seed, x.campaign, x.economy, x.catalogs, rules, start...)
 }
 
 // expeditionView is the viewer-safe status of an expedition save.
@@ -510,6 +533,7 @@ type expeditionBattle struct {
 	deck      []loadout.Entry
 	wounds    []loadout.Entry
 	board     content.AbilityBoard
+	custom    *loadout.SheetBoard
 	setup     expedition.BattleSetup
 	pending   expedition.PendingBattle
 	region    string
@@ -585,7 +609,7 @@ func (s *Session) ResetExpeditionBattle(saveID string) (map[string]any, error) {
 	if len(setup.Hand)+len(setup.Draw)+len(setup.Spent) == 0 {
 		return nil, fmt.Errorf("every card is wounded; the expedition cannot fight")
 	}
-	b := &expeditionBattle{saveID: save.ID, saveName: save.Name, character: save.Character, deck: save.Sheet.Deck, wounds: save.Sheet.Wounds, board: save.Sheet.Abilities, setup: setup, pending: *save.Expedition.PendingBattle, region: rules.Pack.Regions[save.Expedition.Region].Name, round: save.Expedition.Round(), night: save.Expedition.Night()}
+	b := &expeditionBattle{saveID: save.ID, saveName: save.Name, character: save.Character, deck: save.Sheet.Deck, wounds: save.Sheet.Wounds, board: save.Sheet.Abilities, custom: saveBoard(save), setup: setup, pending: *save.Expedition.PendingBattle, region: rules.Pack.Regions[save.Expedition.Region].Name, round: save.Expedition.Round(), night: save.Expedition.Night()}
 	return s.resetLoadout(setup.BattleID, setup.Seed, "seat-a", false, save.Character, true, "expedition", nil, b)
 }
 

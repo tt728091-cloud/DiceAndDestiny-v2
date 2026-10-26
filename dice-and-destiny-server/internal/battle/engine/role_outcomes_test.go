@@ -154,3 +154,34 @@ func TestHealCardsReturnsMostRecentlyRemovedCards(t *testing.T) {
 		t.Fatalf("over-heal: removed %v, discard %v, wounds %v", got.Removed, got.Discard, b.Wounds)
 	}
 }
+
+// The block defenses prevent a whole attack on the apex (face 6) of every
+// board die and nothing on any other face; the flat guards prevent 1, 2 or 4
+// Holdfast dice' worth.
+func TestBoardDefensesResolveByRoleOnEveryDie(t *testing.T) {
+	lib := roleDiceLibrary(t)
+	perRoll := map[string]float64{"light_guard": 7.0 / 6, "firm_guard": 7.0 / 3, "bastion": 14.0 / 3}
+	for _, die := range []string{"standard_d6", "hearth_d6", "grove_d6", "forge_d6", "loom_d6"} {
+		for _, id := range []string{"clean_deflect", "twin_deflect"} {
+			for face := 1; face <= 6; face++ {
+				want := 0
+				if face == 6 {
+					want = 100
+				}
+				if got := configuredPrevention(lib, lib.Abilities[id].Resolution.Operations, die, face); got != want {
+					t.Fatalf("%s on %s face %d prevents %d; want %d", id, die, face, got, want)
+				}
+			}
+		}
+		for id, want := range perRoll {
+			ops := lib.Abilities[id].Resolution.Operations
+			total := 0
+			for face := 1; face <= 6; face++ {
+				total += configuredPrevention(lib, ops, die, face)
+			}
+			if got := float64(total) / 6 * float64(ops[0].DiceCount); got != want {
+				t.Fatalf("%s on %s prevents %.3f per roll; want %.3f", id, die, got, want)
+			}
+		}
+	}
+}

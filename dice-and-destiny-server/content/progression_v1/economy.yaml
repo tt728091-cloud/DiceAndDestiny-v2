@@ -2,6 +2,18 @@ schema_version: 1
 # A new character's XP; campaign victories add more (see campaign.yaml).
 starting_xp: 150
 default_card_price: 10
+# The custom adventurer's board holds XP (docs/game-design/board-xp.md, from
+# docs/game-design/power-pricing-research.md): each point of average damage
+# per turn its damage level adds over the standard level, and each point of a
+# flat defense's average prevention per roll, costs the same. A block defense
+# (faces that prevent the whole attack) costs its block chance × share ×
+# (total XP + offset), so it grows with the character.
+board_xp:
+  damage_point: 40
+  prevention_point: 40
+  block: {share: 0.5, offset: 200}
+  defense_extra:
+    holdfast_plus: 38   # saved cards stay in their pile, as Guard → Guard+
 characters:
   adventurer:
     # Both editing modes use the character template and shared saved deck.

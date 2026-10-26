@@ -108,7 +108,7 @@ func boardBuilderView(contentRoot, loadoutRoot, dieID string) (map[string]any, e
 				choice = &resolved
 			}
 		}
-		sheet = map[string]any{"revision": progress.Revision, "dice": lib.Combatants[loadout.CustomAdventurer].DiceLoadout[0].DiceID, "ability_board": progress.Abilities, "choice": choice}
+		sheet = map[string]any{"revision": progress.Revision, "dice": lib.Combatants[loadout.CustomAdventurer].DiceLoadout[0].DiceID, "ability_board": progress.Abilities, "choice": choice, "xp": progress.XP, "xp_total": *progress.Budget}
 		if dieID == "" {
 			dieID = lib.Combatants[loadout.CustomAdventurer].DiceLoadout[0].DiceID
 		}
@@ -199,27 +199,39 @@ func boardBuilderView(contentRoot, loadoutRoot, dieID string) (map[string]any, e
 	}, nil
 }
 
-// boardPriceView prices a board for the preview at a target on its
-// staircase (0: the menus' target), with the staircase the damage slider
-// steps through: each step's target, average, every tier's damage (report
-// order) and the tiers it raises. It only reads: the authority resolves the picks against the menus and prices
-// them; the client never computes a price.
-func boardPriceView(contentRoot string, choice boardprice.Choice, includePolicy bool, target float64) (map[string]any, error) {
+// boardPriceView prices a board for the preview at a damage level on its
+// staircase (target, when set, previews that level; otherwise the choice's
+// own), with the staircase the damage slider steps through: each step's
+// target, average, every tier's damage (report order), the tiers it raises
+// and, with a loadout root, the XP its level holds on the custom
+// adventurer's sheet and what saving the board would cost. It only reads:
+// the authority resolves the picks against the menus and prices them; the
+// client never computes a price.
+func boardPriceView(contentRoot, loadoutRoot string, choice boardprice.Choice, includePolicy bool, target float64) (map[string]any, error) {
 	b, err := boardBuilder(contentRoot)
 	if err != nil {
 		return nil, err
 	}
-	if target == 0 {
-		target = b.Menus.Pricing.Target
+	if target != 0 {
+		choice.Level = target
 	}
-	resolved, report, err := b.PriceAt(choice, target)
+	var economy loadout.Economy
+	var lib content.BattleLibrary
+	if loadoutRoot != "" {
+		catalogs, err := CharacterCatalogs(contentRoot, loadoutRoot)
+		if err != nil {
+			return nil, err
+		}
+		if economy, err = loadout.LoadEconomy(contentRoot, catalogs); err != nil {
+			return nil, err
+		}
+		lib = catalogs[loadout.CustomAdventurer]
+	}
+	priced, err := priceSheetBoard(b, economy.BoardXP, choice)
 	if err != nil {
 		return nil, err
 	}
-	_, sc, err := b.Staircase(resolved)
-	if err != nil {
-		return nil, err
-	}
+	resolved, report := priced.choice, priced.report
 	if !includePolicy {
 		report.Policy = boardprice.KeepPolicy{}
 	}
@@ -261,38 +273,32 @@ func boardPriceView(contentRoot string, choice boardprice.Choice, includePolicy 
 		}
 		slots = append(slots, slot)
 	}
-	abilities, board, err := b.Generate(resolved, report)
-	if err != nil {
-		return nil, err
-	}
-	steps := make([]map[string]any, len(sc.Steps))
-	for k, step := range sc.Steps {
-		raised := make([]string, len(step.Raised))
-		for j, i := range step.Raised {
-			raised[j] = report.Tiers[i].Tier
+	out := map[string]any{"choice": resolved, "report": report, "slots": slots, "die_name": die.Name, "abilities": priced.abilities, "ability_board": priced.sheet.Abilities}
+	var stepXP []int
+	if loadoutRoot != "" {
+		progress, err := loadout.PeekProgress(loadoutRoot, loadout.CustomAdventurer, economy, lib)
+		if err != nil {
+			return nil, err
 		}
-		steps[k] = map[string]any{"at": step.At, "average": step.Average, "no_hit": step.NoHit, "damage": step.Damage, "raised": raised}
+		xp, steps, err := boardXPView(b, economy, lib, progress, priced)
+		if err != nil {
+			return nil, err
+		}
+		out["xp"], stepXP = xp, steps
 	}
-	staircase := map[string]any{"from": sc.From, "to": sc.To, "default_target": b.Menus.Pricing.Target, "target": target, "step": report.Step, "steps": steps}
-	return map[string]any{"choice": resolved, "report": report, "slots": slots, "die_name": die.Name, "abilities": abilities, "ability_board": board, "staircase": staircase}, nil
+	out["staircase"] = staircaseView(b, priced, stepXP)
+	return out, nil
 }
 
-// boardSave confirms a board: the authority re-prices the choice, generates
-// its abilities and writes the die, the board and the abilities to the
-// custom adventurer's sheet (never to the authored catalog).
+// boardSave confirms a board: the authority re-prices the choice at its
+// damage level, generates its abilities and writes the die, the board and
+// the abilities to the custom adventurer's sheet (never to the authored
+// catalog), charging or refunding the XP its level and defenses hold.
 func boardSave(contentRoot, loadoutRoot string, choice boardprice.Choice, revision int) (map[string]any, error) {
 	if loadoutRoot == "" {
 		return nil, fmt.Errorf("saving a board requires loadout storage")
 	}
 	b, err := boardBuilder(contentRoot)
-	if err != nil {
-		return nil, err
-	}
-	resolved, report, err := b.Price(choice)
-	if err != nil {
-		return nil, err
-	}
-	abilities, board, err := b.Generate(resolved, report)
 	if err != nil {
 		return nil, err
 	}
@@ -304,13 +310,13 @@ func boardSave(contentRoot, loadoutRoot string, choice boardprice.Choice, revisi
 	if err != nil {
 		return nil, err
 	}
-	generated := map[string]content.BattleAbilityDefinition{}
-	for _, a := range abilities {
-		generated[a.ID] = a
-	}
-	progress, err := loadout.SaveSheetBoard(loadoutRoot, loadout.CustomAdventurer, economy, catalogs[loadout.CustomAdventurer], loadout.SheetBoard{Dice: resolved.Die, Abilities: board, Generated: generated, Choice: &resolved}, revision)
+	priced, err := priceSheetBoard(b, economy.BoardXP, choice)
 	if err != nil {
 		return nil, err
 	}
-	return map[string]any{"revision": progress.Revision, "dice": progress.Dice, "ability_board": progress.Abilities, "board_choice": progress.BoardChoice, "abilities": abilities, "whole_average": report.WholeAverage, "whole_no_hit": report.WholeNoHit}, nil
+	progress, err := loadout.SaveSheetBoard(loadoutRoot, loadout.CustomAdventurer, economy, catalogs[loadout.CustomAdventurer], priced.sheet, revision)
+	if err != nil {
+		return nil, err
+	}
+	return map[string]any{"revision": progress.Revision, "dice": progress.Dice, "ability_board": progress.Abilities, "board_choice": progress.BoardChoice, "abilities": priced.abilities, "whole_average": priced.report.WholeAverage, "whole_no_hit": priced.report.WholeNoHit, "xp": progress.XP, "xp_total": *progress.Budget, "board_value": progress.BoardValue}, nil
 }

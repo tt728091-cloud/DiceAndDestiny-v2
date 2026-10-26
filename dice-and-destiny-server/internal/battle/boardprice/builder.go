@@ -2,6 +2,7 @@ package boardprice
 
 import (
 	"fmt"
+	"math"
 	"math/rand"
 	"slices"
 	"sort"
@@ -10,13 +11,18 @@ import (
 	"diceanddestiny/server/internal/content"
 )
 
-// Choice is a player's board: a die, a template, a pick for each slot and the
-// defenses. It is what the sheet stores and what board_price prices.
+// Choice is a player's board: a die, a template, a pick for each slot, the
+// defenses and the damage level. It is what the sheet stores and what
+// board_price prices.
 type Choice struct {
 	Die      string     `json:"die"`
 	Template string     `json:"template"`
 	Slots    []SlotPick `json:"slots,omitempty"`
-	Defenses []string   `json:"defenses,omitempty"`
+	// Defenses fill the template's defense slots: menu defenses or NoDefense.
+	Defenses []string `json:"defenses,omitempty"`
+	// Level is the board's damage level: a target on its staircase, from the
+	// standard target up to the staircase's top. Zero is the standard level.
+	Level float64 `json:"level,omitempty"`
 }
 
 // SlotPick is the cost (flex slots) and rider chosen for one template slot.
@@ -116,8 +122,9 @@ func (b *Builder) Default(templateID, dieID string) Choice {
 // and template are on the menus and of one family; core slots keep their
 // cost; flex costs come from the family menu inside the slot's bands on this
 // die; riders exist and fit the slot's job; no tier repeats; and the board
-// carries the template's number of distinct menu defenses. It returns the
-// complete choice, the die and the board to price.
+// fills the template's defense slots with distinct menu defenses or none; and
+// the level is inside the staircase from the standard target up. It returns
+// the complete choice, the die and the board to price.
 func (b *Builder) Resolve(c Choice) (Choice, Die, Board, error) {
 	tpl, ok := b.Menus.Template(c.Template)
 	if !ok {
@@ -179,6 +186,9 @@ func (b *Builder) Resolve(c Choice) (Choice, Die, Board, error) {
 		}
 		riderID := pick.Rider
 		if riderID == "" {
+			riderID = slot.DefaultRider
+		}
+		if riderID == "" {
 			riderID = RiderNone
 		}
 		rider, ok := b.Menus.Rider(riderID)
@@ -201,17 +211,48 @@ func (b *Builder) Resolve(c Choice) (Choice, Die, Board, error) {
 		return c, Die{}, Board{}, fmt.Errorf("the %s template carries %d defense(s)", tpl.Name, tpl.Defenses)
 	}
 	for i, id := range defenses {
+		if id == NoDefense {
+			continue
+		}
 		if !b.Menus.OffersDefense(id) || slices.Contains(defenses[:i], id) {
 			return c, Die{}, Board{}, fmt.Errorf("defense %q is not on the menu or is picked twice", id)
 		}
 	}
 	out.Defenses = append([]string(nil), defenses...)
+	if c.Level != 0 {
+		p := b.Menus.Pricing
+		if c.Level < p.Target-1e-9 || c.Level > p.Staircase.To+1e-9 {
+			return c, Die{}, Board{}, fmt.Errorf("damage level %.3f is outside %.2f–%.2f", c.Level, p.Target, p.Staircase.To)
+		}
+		if math.Abs(c.Level-p.Target) > 1e-9 {
+			out.Level = c.Level
+		}
+	}
 	return out, die, board, nil
 }
 
-// Price resolves and prices a choice at the menus' agreed pricing.
+// LevelOf is the target a choice's damage level prices at.
+func (b *Builder) LevelOf(c Choice) float64 {
+	if c.Level == 0 {
+		return b.Menus.Pricing.Target
+	}
+	return c.Level
+}
+
+// BoardDefenses are a choice's defenses without the empty slots.
+func BoardDefenses(c Choice) []string {
+	out := []string{}
+	for _, id := range c.Defenses {
+		if id != NoDefense {
+			out = append(out, id)
+		}
+	}
+	return out
+}
+
+// Price resolves and prices a choice at its damage level.
 func (b *Builder) Price(c Choice) (Choice, Report, error) {
-	return b.PriceAt(c, b.Menus.Pricing.Target)
+	return b.PriceAt(c, b.LevelOf(c))
 }
 
 // PriceAt resolves and prices a choice at a target on its staircase.

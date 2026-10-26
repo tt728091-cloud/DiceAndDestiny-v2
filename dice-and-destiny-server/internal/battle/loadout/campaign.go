@@ -31,6 +31,19 @@ type Campaign struct {
 	// BonusXP is what a new campaign save starts with, on top of the starting sheet.
 	BonusXP    int         `yaml:"bonus_xp" json:"bonus_xp"`
 	Encounters []Encounter `yaml:"encounters" json:"encounters"`
+	// Boards are the priced ability boards characters' saves hold, by
+	// character (the custom adventurer starts from its Board Builder board).
+	Boards map[string]CampaignBoard `yaml:"boards" json:"boards,omitempty"`
+}
+
+// CampaignBoard is the priced ability board a character's campaign saves
+// hold (docs/game-design/board-xp.md): a menu die and template at their
+// default picks. Replaces maps the sheet's authored defenses to the menu
+// defenses that take their place when a save moves onto the board.
+type CampaignBoard struct {
+	Die      string            `yaml:"die" json:"die"`
+	Template string            `yaml:"template" json:"template"`
+	Replaces map[string]string `yaml:"replaces" json:"replaces,omitempty"`
 }
 
 // CampaignProgress is one character's place in the campaign, saved in the
@@ -83,6 +96,17 @@ func LoadCampaign(root string, catalogs map[string]content.BattleLibrary, access
 		// The campaign deals only in General cards and trees.
 		if pool(access.Characters, id) != "general" {
 			return c, fmt.Errorf("campaign character %q must have the General type", id)
+		}
+	}
+	for id, board := range c.Boards {
+		lib := catalogs[id]
+		if !slices.Contains(c.Characters, id) || id == CustomAdventurer || board.Die == "" || board.Template == "" {
+			return c, fmt.Errorf("invalid campaign board for %q", id)
+		}
+		for from, to := range board.Replaces {
+			if lib.Abilities[from].Type != "defensive" || lib.Abilities[to].Type != "defensive" {
+				return c, fmt.Errorf("campaign board for %s: %s → %s must replace a defense with a defense", id, from, to)
+			}
 		}
 	}
 	seen := map[string]bool{}
@@ -179,6 +203,10 @@ func RecordCampaignBattle(root, saveID string, e Economy, catalogs map[string]co
 		}
 		p.DeckValue = deckValue(p.Deck, save.Character, e)
 		p.WoundValue = deckValue(p.Wounds, save.Character, e)
+		// The higher total raises block defenses' prices.
+		if err = reconcileBudget(p, campaignEconomy(e), catalogs[save.Character]); err != nil {
+			return outcome, err
+		}
 	} else if result == "defeat" {
 		state.Defeats++
 	}

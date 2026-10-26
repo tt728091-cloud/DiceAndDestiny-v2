@@ -48,8 +48,9 @@ func TestShippedTemplatesPriceInsideTarget(t *testing.T) {
 			for i := 1; i < len(report.Tiers); i++ {
 				for j := 0; j < len(report.Tiers); j++ {
 					a, c := report.Tiers[i], report.Tiers[j]
-					if a.Chase < c.Chase && a.WholeDamage < c.WholeDamage {
-						t.Fatalf("%s on %s: harder %s pays %d, less than easier %s's %d", tpl.ID, die.ID, a.Tier, a.WholeDamage, c.Tier, c.WholeDamage)
+					// Pay is damage plus rider: a default rider takes its worth off the damage.
+					if a.Chase < c.Chase && float64(a.WholeDamage)+a.RiderValue < float64(c.WholeDamage)+c.RiderValue-1e-9 {
+						t.Fatalf("%s on %s: harder %s pays %d+%.1f, less than easier %s's %d+%.1f", tpl.ID, die.ID, a.Tier, a.WholeDamage, a.RiderValue, c.Tier, c.WholeDamage, c.RiderValue)
 					}
 				}
 			}

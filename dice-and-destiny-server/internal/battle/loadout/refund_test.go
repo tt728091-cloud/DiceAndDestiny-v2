@@ -36,7 +36,9 @@ func refundFixture(t *testing.T) (Progress, Economy, content.BattleLibrary) {
 		}
 	}
 	p := Progress{Version: 1, Revision: 1, Character: "hero", XP: 100, Deck: []Entry{{CardID: "legacy", Count: 2}, {CardID: "worn", Count: 1}}, Abilities: content.AbilityBoard{Offensive: []string{"strike"}, Defensive: []string{"guard"}}}
-	initializeBudget(&p, e)
+	if err := initializeBudget(&p, e, lib); err != nil {
+		t.Fatal(err)
+	}
 	if err := validateProgress(p, lib); err != nil {
 		t.Fatal(err)
 	}

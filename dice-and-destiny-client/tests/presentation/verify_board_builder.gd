@@ -1,8 +1,9 @@
 extends SceneTree
 ## Board Builder (Character Creation, Custom Adventurer): pick the 2-2-1-1 die
 ## and a template by pointer, change a rider and see the authority re-price,
-## open the keep table, step the damage-level slider up the staircase and back
-## to the standard level, confirm through the authority, and check that a
+## open the keep table, step the damage-level slider up the staircase (each
+## step's XP) and back to the standard level, cycle the defense (its XP),
+## confirm through the authority, and check that a
 ## battle pins the die and the generated abilities with their full rules on
 ## the shared attack hover.
 const CREATION := preload("res://app/screens/character/character_creation.gd")
@@ -84,10 +85,49 @@ func _builder_round(runtime, width: int) -> void:
 		if tier in raised: _expect(int(damage1[tier]) > int(damage0[tier]), "%s deals more on the step" % tier)
 	_expect(float(builder.priced.report.whole_average) >= average0, "the average never falls")
 	_expect("→" in _text(builder._level_raised), "the step names what it raises")
+	# The step costs XP: 40 per point of average damage it adds.
+	var xp: Dictionary = builder.priced.get("xp", {})
+	var step_xp := int(builder.staircase.steps[int(builder.staircase.step)].xp)
+	_expect(step_xp == roundi((float(builder.staircase.steps[int(builder.staircase.step)].average) - float(builder.staircase.steps[step0].average)) * 40.0), "the step's XP is 40 per point of average added: %d" % step_xp)
+	_expect(int(xp.get("cost", -1)) == step_xp and int(xp.get("left", 0)) == int(xp.get("available", 0)) - step_xp, "saving the step costs its XP: %s" % str(xp))
+	_expect("XP" in builder._level_title.text and "XP" in _text(builder._level_raised), "the level shows its XP")
 	await _click_at(builder._level_slider, 0.9)
 	_expect(builder.preview_target > 15.0 and float(builder.priced.report.whole_average) > 14.0, "pointer high on the slider prices the board higher: target %.2f, average %.2f" % [builder.preview_target, float(builder.priced.report.whole_average)])
+	_expect(builder._confirm.disabled and "Not enough XP" in builder._status.text, "a level the XP can't cover can't be confirmed: " + builder._status.text)
 	await _click(builder._level_reset)
 	_expect(absf(builder.preview_target - 6.2) < 1e-6 and int(builder.staircase.step) == step0, "the standard level returns: target %.2f, step %d" % [builder.preview_target, int(builder.staircase.step)])
+	await _click(builder._level_prev)
+	_expect(int(builder.staircase.step) == step0, "the standard level is the lowest")
+	# Raise one tier by pointer: the level climbs to the first step where it
+	# deals more, for that climb's XP.
+	var raise: Dictionary = {}
+	for r in builder.staircase.get("raises", []):
+		if r is Dictionary: raise = r; break
+	var raise_button: Button = _find_meta(builder, "board_control", "raise.%s.%s" % [str(raise.get("slot", "")), str(raise.get("tier", ""))])
+	_expect(raise_button != null and ("%d XP" % int(raise.get("xp", -1))) in raise_button.text, "a tier shows what one more point costs: %s" % (raise_button.text if raise_button != null else "missing"))
+	if raise_button != null:
+		await _scroll_to(raise_button)
+		await _click(raise_button)
+		_expect(int(builder.staircase.step) == int(raise.step) and int(builder.priced.xp.cost) == int(raise.xp), "the tier's raise climbs to its step for %d XP: step %s, cost %s" % [int(raise.xp), str(builder.staircase.step), str(builder.priced.xp.cost)])
+		await _click(builder._level_reset)
+	# Defenses: cycle by pointer to no defense (refunds Holdfast's 140 XP),
+	# then a Light Guard (47), then back to Holdfast.
+	_expect(builder.defense_buttons.size() == 1 and str(builder.choice.defenses[0]) == "holdfast", "one defense slot holds Holdfast")
+	for want in ["none", "light_guard", "holdfast"]:
+		for click in 9:
+			if str(builder.choice.defenses[0]) == want: break
+			await _scroll_to(builder.defense_buttons[0])
+			await _click(builder.defense_buttons[0])
+		_expect(str(builder.choice.defenses[0]) == want, "pointer cycles the defense to %s" % want)
+		var cost: int = {"none": -140, "light_guard": 47 - 140, "holdfast": 0}[want]
+		_expect(int(builder.priced.xp.cost) == cost, "%s on saving costs %d XP: %s" % [want, cost, str(builder.priced.xp.cost)])
+	var defense_text := str(builder._defenses.get_child(0).get_child(0).text)
+	_expect("yours (140 XP)" in defense_text, "the saved defense shows its XP price: " + defense_text)
+	var options: OptionButton = builder._defenses.get_child(0).get_child(0)
+	var light := ""
+	for item in options.item_count:
+		if str(options.get_item_metadata(item)) == "light_guard": light = options.get_item_text(item)
+	_expect("93 XP back" in light, "another defense shows the XP it changes against the saved one: " + light)
 	_expect(builder.size.x <= root.get_visible_rect().size.x + 1, "builder fits the viewport")
 	await _capture("board-builder-%d" % width)
 	# 4 · confirm through the authority.
@@ -143,6 +183,13 @@ func _hover_round(runtime) -> void:
 		_expect("Anvil" in hint and "Selected:" in hint and "Offensive dice:" in hint, "the hover names the tier, the die's symbols and the revealed dice")
 	screen.queue_free(); canvas.queue_free(); await process_frame
 
+## Scrolls a control's column so the pointer can reach it, as a player would.
+func _scroll_to(control: Control) -> void:
+	var node: Node = control
+	while node != null and not node is ScrollContainer: node = node.get_parent()
+	if node != null: node.ensure_control_visible(control)
+	for frame in 3: await process_frame
+
 func _damage(builder) -> Dictionary:
 	var out := {}
 	for tier in builder.priced.report.tiers: out[str(tier.tier)] = int(tier.whole_damage)
@@ -196,3 +243,11 @@ func _capture(filename: String) -> void:
 func _expect(ok: bool, message: String) -> void:
 	if ok: return
 	failed = true; push_error(message); print("FAIL: " + message)
+
+## The first control under a node whose meta key holds a value.
+func _find_meta(node: Node, key: String, value: String) -> Control:
+	for child in node.get_children():
+		if child is Control and str(child.get_meta(key, "")) == value: return child
+		var found := _find_meta(child, key, value)
+		if found != null: return found
+	return null

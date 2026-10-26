@@ -306,14 +306,29 @@ func board_builder(board: Dictionary = {}) -> Dictionary:
 	if _native_authority == null: return {"ok": false, "error": _initialization_error}
 	return _request({"op": "board_builder", "board": board, "loadout_root": WorkspacePaths.runtime_dir("user/character_loadouts"), "content_root": ProjectSettings.globalize_path("res://../dice-and-destiny-server/content")})
 
-## Read-only: prices a board choice at a damage target on its staircase
-## (0: the standard target) and returns the staircase; include_policy adds
+## Read-only: prices a board choice at its damage level (target, when set,
+## previews another) and returns the staircase and what the board's level and
+## defenses cost in XP on the custom adventurer's sheet; include_policy adds
 ## the keep table.
 func board_price(board: Dictionary, include_policy: bool = false, target: float = 0.0) -> Dictionary:
 	if _native_authority == null: return {"ok": false, "error": _initialization_error}
-	var request := {"op": "board_price", "board": board, "include_policy": include_policy, "content_root": ProjectSettings.globalize_path("res://../dice-and-destiny-server/content")}
+	var request := {"op": "board_price", "board": board, "include_policy": include_policy, "loadout_root": WorkspacePaths.runtime_dir("user/character_loadouts"), "content_root": ProjectSettings.globalize_path("res://../dice-and-destiny-server/content")}
 	if target > 0.0: request.target = target
 	return _request(request)
+
+## Read-only: a campaign or expedition save's board (custom adventurer)
+## priced at a choice's damage level and defenses (empty: the save's own),
+## with every step's and defense's XP.
+func campaign_board(save_id: String, board: Dictionary = {}) -> Dictionary:
+	if _native_authority == null: return {"ok": false, "error": _initialization_error}
+	return _request({"op": "campaign_board", "campaign_save": save_id, "board": board, "loadout_root": WorkspacePaths.runtime_dir("user/character_loadouts"), "content_root": ProjectSettings.globalize_path("res://../dice-and-destiny-server/content")})
+
+## Saves a campaign or expedition save's new damage level and defenses for
+## the XP shown (`cost`, negative for a refund); an expedition pays the
+## visit's Influence at a site or camp.
+func campaign_board_change(save_id: String, board: Dictionary, revision: int, cost: int) -> Dictionary:
+	if _native_authority == null: return {"ok": false, "error": _initialization_error}
+	return _request({"op": "campaign_board_change", "campaign_save": save_id, "board": board, "revision": revision, "expected_cost": cost, "loadout_root": WorkspacePaths.runtime_dir("user/character_loadouts"), "content_root": ProjectSettings.globalize_path("res://../dice-and-destiny-server/content")})
 
 ## Confirms a board: the authority re-prices it and writes it to the sheet.
 func board_save(board: Dictionary, revision: int) -> Dictionary:

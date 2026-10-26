@@ -218,6 +218,12 @@ func (s *Session) resetLoadout(battleID string, seed uint64, humanSeat string, r
 	}
 	var decks, wounds map[string][]loadout.Entry
 	var abilityBoards map[string]content.AbilityBoard
+	var customBoard *loadout.SheetBoard
+	if campaign != nil {
+		customBoard = campaign.custom
+	} else if expedition != nil {
+		customBoard = expedition.custom
+	}
 	if s.config.LoadoutRoot != "" {
 		catalogs, err := CharacterCatalogs(s.config.ContentRoot, s.config.LoadoutRoot)
 		if err != nil {
@@ -323,6 +329,7 @@ func (s *Session) resetLoadout(battleID string, seed uint64, humanSeat string, r
 		SeatWounds:        wounds,
 		SeatPresets:       presets,
 		SeatAbilityBoards: abilityBoards,
+		CustomBoard:       customBoard,
 		UnifiedDefense:    unified,
 		Seed:              seed,
 		BattleID:          battleID,

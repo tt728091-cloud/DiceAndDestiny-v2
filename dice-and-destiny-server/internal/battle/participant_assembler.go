@@ -25,6 +25,10 @@ type FileParticipantAssembler struct {
 	IncludeCharacterPools bool
 	ContentRoot           string
 	RunStateRoot          string
+	// CustomBoard, when set, is a priced board's die, board and
+	// generated abilities for this battle (a campaign or expedition save's
+	// own), in place of the editors' sheet under AuthoredCardsRoot.
+	CustomBoard *loadout.SheetBoard
 
 	cacheSettledContent bool
 	settledOnce         sync.Once
@@ -115,11 +119,12 @@ func (assembler *FileParticipantAssembler) AssembleParticipants(
 			}
 			break
 		}
-		// The custom adventurer's pack (the board dice and their symbols)
-		// joins only battles it fights in, never through character pools:
-		// other catalogs keep their symbol count.
+		// The custom adventurer's pack (the board dice, their symbols and
+		// the menu defenses) joins only battles it fights in or that pin a
+		// priced board, never through character pools: other catalogs keep
+		// their symbol count.
 		for _, requested := range participants {
-			if requested.DefinitionID != loadout.CustomAdventurer {
+			if requested.DefinitionID != loadout.CustomAdventurer && assembler.CustomBoard == nil {
 				continue
 			}
 			library = content.BattleLibrary{Symbols: maps.Clone(library.Symbols), Dice: maps.Clone(library.Dice), Cards: maps.Clone(library.Cards), Abilities: maps.Clone(library.Abilities), Statuses: maps.Clone(library.Statuses), Combatants: maps.Clone(library.Combatants)}
@@ -138,19 +143,39 @@ func (assembler *FileParticipantAssembler) AssembleParticipants(
 			if settledErr != nil {
 				return state.BattleSetup{}, settledErr
 			}
-			for _, requested := range participants {
-				if requested.DefinitionID == loadout.CustomAdventurer {
-					// Pin the sheet's chosen die and priced board in this
-					// battle's catalog.
-					if library, settledErr = loadout.OverlayCustomBoard(library, assembler.AuthoredCardsRoot); settledErr != nil {
-						return state.BattleSetup{}, settledErr
+			if assembler.CustomBoard == nil {
+				for _, requested := range participants {
+					if requested.DefinitionID == loadout.CustomAdventurer {
+						// Pin the sheet's chosen die and priced board in this
+						// battle's catalog.
+						if library, settledErr = loadout.OverlayCustomBoard(library, assembler.AuthoredCardsRoot); settledErr != nil {
+							return state.BattleSetup{}, settledErr
+						}
+						break
 					}
-					break
 				}
 			}
 			catalog, settledErr = json.Marshal(library)
 			if settledErr != nil {
 				return state.BattleSetup{}, settledErr
+			}
+		}
+		if assembler.CustomBoard != nil {
+			owner := assembler.CustomBoard.Character
+			if owner == "" {
+				owner = loadout.CustomAdventurer
+			}
+			for _, requested := range participants {
+				if requested.DefinitionID == owner {
+					// Pin the save's own die and priced board.
+					if library, settledErr = loadout.ApplySheetBoard(library, owner, *assembler.CustomBoard); settledErr != nil {
+						return state.BattleSetup{}, settledErr
+					}
+					if catalog, settledErr = json.Marshal(library); settledErr != nil {
+						return state.BattleSetup{}, settledErr
+					}
+					break
+				}
 			}
 		}
 		allSettled := true

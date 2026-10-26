@@ -59,6 +59,9 @@ type runtimeRequest struct {
 	Board         json.RawMessage `json:"board,omitempty"`
 	IncludePolicy bool            `json:"include_policy,omitempty"`
 	Target        float64         `json:"target,omitempty"`
+	// ExpectedCost is the XP a board change was shown to cost
+	// (campaign_board_change; negative: a refund).
+	ExpectedCost int `json:"expected_cost,omitempty"`
 }
 
 var learnedRuntime struct {
@@ -81,7 +84,7 @@ func HandleRuntimeRequest(requestJSON string) string {
 		"ability_authoring", "validate_ability", "publish_ability", "assign_abilities",
 		"card_authoring", "validate_card", "publish_card", "character_catalogs",
 		"save_character_deck", "progression_catalogs", "progression_purchase", "save_economy_admin", "campaign_status", "campaign_loadout", "campaign_new", "campaign_delete", "campaign_purchase",
-		"expedition_status", "expedition_act", "expedition_deck_change", "board_builder", "board_price", "board_save":
+		"expedition_status", "expedition_act", "expedition_deck_change", "board_builder", "board_price", "board_save", "campaign_board", "campaign_board_change":
 		catalogRuntimeMu.Lock()
 		defer catalogRuntimeMu.Unlock()
 	}
@@ -131,7 +134,23 @@ func HandleRuntimeRequest(requestJSON string) string {
 		} else if request.Op == "board_save" {
 			view, err = boardSave(request.ContentRoot, request.LoadoutRoot, choice, request.Revision)
 		} else {
-			view, err = boardPriceView(request.ContentRoot, choice, request.IncludePolicy, request.Target)
+			view, err = boardPriceView(request.ContentRoot, request.LoadoutRoot, choice, request.IncludePolicy, request.Target)
+		}
+		if err != nil {
+			return runtimeError(err)
+		}
+		return runtimeSuccess(view)
+	}
+	if request.Op == "campaign_board" || request.Op == "campaign_board_change" {
+		choice, err := decodeBoardChoice(request.Board)
+		if err != nil {
+			return runtimeError(err)
+		}
+		var view map[string]any
+		if request.Op == "campaign_board" {
+			view, err = campaignBoardView(request.ContentRoot, request.LoadoutRoot, request.CampaignSave, choice)
+		} else {
+			view, err = campaignBoardChange(request.ContentRoot, request.LoadoutRoot, request.CampaignSave, choice, request.Revision, request.ExpectedCost)
 		}
 		if err != nil {
 			return runtimeError(err)

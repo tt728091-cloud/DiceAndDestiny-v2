@@ -21,7 +21,7 @@ func AbilityID(cost Cost) string { return GeneratedPrefix + cost.Key() }
 // becomes tiers of one ability, and the player chooses among qualified
 // tiers), each tier dealing its whole damage plus the slot's rider. It also
 // returns the board: the generated abilities in template order and the
-// choice's defenses.
+// choice's defenses (empty slots left out).
 func (b *Builder) Generate(choice Choice, report Report) ([]content.BattleAbilityDefinition, content.AbilityBoard, error) {
 	resolved, die, board, err := b.Resolve(choice)
 	if err != nil {
@@ -49,7 +49,7 @@ func (b *Builder) Generate(choice Choice, report Report) ([]content.BattleAbilit
 		out = append(out, ability)
 		abilityBoard.Offensive = append(abilityBoard.Offensive, ability.ID)
 	}
-	abilityBoard.Defensive = append([]string(nil), resolved.Defenses...)
+	abilityBoard.Defensive = BoardDefenses(resolved)
 	return out, abilityBoard, nil
 }
 
