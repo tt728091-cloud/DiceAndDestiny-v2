@@ -1,0 +1,162 @@
+[
+ {
+  "name": "+400 Low dmg, no defense vs High dmg, no defense",
+  "template": "standard",
+  "die": "standard_d6",
+  "hero_target": 6.9,
+  "hero_health": 52,
+  "hero_defense": "none",
+  "rival_target": 12.0,
+  "rival_health": 31,
+  "rival_defense": "none",
+  "model_wld": [
+   0.06791936229769081,
+   0.794603401261797,
+   0.13747723644051224
+  ]
+ },
+ {
+  "name": "+400 Low dmg, no defense vs Low dmg, Holdfast",
+  "template": "standard",
+  "die": "standard_d6",
+  "hero_target": 6.9,
+  "hero_health": 52,
+  "hero_defense": "none",
+  "rival_target": 6.9,
+  "rival_health": 38,
+  "rival_defense": "holdfast",
+  "model_wld": [
+   0.0020813024093183563,
+   0.013252246513976152,
+   0.9846664510767055
+  ]
+ },
+ {
+  "name": "+400 Low dmg, no defense vs High dmg, Holdfast",
+  "template": "standard",
+  "die": "standard_d6",
+  "hero_target": 6.9,
+  "hero_health": 52,
+  "hero_defense": "none",
+  "rival_target": 12.0,
+  "rival_health": 17,
+  "rival_defense": "holdfast",
+  "model_wld": [
+   0.16453616095461077,
+   0.38004315118032705,
+   0.4554206878650622
+  ]
+ },
+ {
+  "name": "+400 High dmg, no defense vs Low dmg, Holdfast",
+  "template": "standard",
+  "die": "standard_d6",
+  "hero_target": 12.0,
+  "hero_health": 31,
+  "hero_defense": "none",
+  "rival_target": 6.9,
+  "rival_health": 38,
+  "rival_defense": "holdfast",
+  "model_wld": [
+   0.20210330697428244,
+   0.6660466643257665,
+   0.131850028699951
+  ]
+ },
+ {
+  "name": "+400 High dmg, no defense vs High dmg, Holdfast",
+  "template": "standard",
+  "die": "standard_d6",
+  "hero_target": 12.0,
+  "hero_health": 31,
+  "hero_defense": "none",
+  "rival_target": 12.0,
+  "rival_health": 17,
+  "rival_defense": "holdfast",
+  "model_wld": [
+   0.5973167651625703,
+   0.387736841522539,
+   0.014946393314890727
+  ]
+ },
+ {
+  "name": "+400 Low dmg, Holdfast vs High dmg, Holdfast",
+  "template": "standard",
+  "die": "standard_d6",
+  "hero_target": 6.9,
+  "hero_health": 38,
+  "hero_defense": "holdfast",
+  "rival_target": 12.0,
+  "rival_health": 17,
+  "rival_defense": "holdfast",
+  "model_wld": [
+   0.18430717217108902,
+   0.35132780733608066,
+   0.4643650204928303
+  ]
+ },
+ {
+  "name": "swap +355 Low dmg, no defense vs High dmg, no defense",
+  "template": "standard",
+  "die": "standard_d6",
+  "hero_target": 6.9,
+  "hero_health": 47,
+  "hero_defense": "none",
+  "rival_target": 12.0,
+  "rival_health": 27,
+  "rival_defense": "none",
+  "model_wld": [
+   0.21906596886109653,
+   0.6254981707299364,
+   0.15543586040896706
+  ]
+ },
+ {
+  "name": "swap +365 Low dmg, Holdfast vs High dmg, Holdfast",
+  "template": "standard",
+  "die": "standard_d6",
+  "hero_target": 6.9,
+  "hero_health": 34,
+  "hero_defense": "holdfast",
+  "rival_target": 12.0,
+  "rival_health": 14,
+  "rival_defense": "holdfast",
+  "model_wld": [
+   0.28824559062075233,
+   0.382449442239171,
+   0.3293049671400766
+  ]
+ },
+ {
+  "name": "swap +160 Low dmg, no defense vs Low dmg, Holdfast",
+  "template": "standard",
+  "die": "standard_d6",
+  "hero_target": 6.9,
+  "hero_health": 28,
+  "hero_defense": "none",
+  "rival_target": 6.9,
+  "rival_health": 14,
+  "rival_defense": "holdfast",
+  "model_wld": [
+   0.28239003310727445,
+   0.38844130657990855,
+   0.32916866031281705
+  ]
+ },
+ {
+  "name": "swap +545 High dmg, no defense vs High dmg, Holdfast",
+  "template": "standard",
+  "die": "standard_d6",
+  "hero_target": 12.0,
+  "hero_health": 46,
+  "hero_defense": "none",
+  "rival_target": 12.0,
+  "rival_health": 32,
+  "rival_defense": "holdfast",
+  "model_wld": [
+   0.15281882798633376,
+   0.6386993727885638,
+   0.20848179922510246
+  ]
+ }
+]

@@ -1,0 +1,189 @@
+[
+ {
+  "name": "off holdfast H15 +1dmg vs +5bl",
+  "template": "standard",
+  "die": "standard_d6",
+  "hero_target": 7.2,
+  "hero_health": 15,
+  "hero_defense": "holdfast",
+  "rival_target": 6.2,
+  "rival_health": 20,
+  "rival_defense": "holdfast"
+ },
+ {
+  "name": "off holdfast H15 +1dmg vs +6bl",
+  "template": "standard",
+  "die": "standard_d6",
+  "hero_target": 7.2,
+  "hero_health": 15,
+  "hero_defense": "holdfast",
+  "rival_target": 6.2,
+  "rival_health": 21,
+  "rival_defense": "holdfast"
+ },
+ {
+  "name": "off none H20 +1dmg vs +3bl",
+  "template": "standard",
+  "die": "standard_d6",
+  "hero_target": 7.2,
+  "hero_health": 20,
+  "hero_defense": "none",
+  "rival_target": 6.2,
+  "rival_health": 23,
+  "rival_defense": "none"
+ },
+ {
+  "name": "off none H20 +1dmg vs +4bl",
+  "template": "standard",
+  "die": "standard_d6",
+  "hero_target": 7.2,
+  "hero_health": 20,
+  "hero_defense": "none",
+  "rival_target": 6.2,
+  "rival_health": 24,
+  "rival_defense": "none"
+ },
+ {
+  "name": "off light H20 +1dmg vs +2bl",
+  "template": "standard",
+  "die": "standard_d6",
+  "hero_target": 7.2,
+  "hero_health": 20,
+  "hero_defense": "light",
+  "rival_target": 6.2,
+  "rival_health": 22,
+  "rival_defense": "light"
+ },
+ {
+  "name": "off light H20 +1dmg vs +3bl",
+  "template": "standard",
+  "die": "standard_d6",
+  "hero_target": 7.2,
+  "hero_health": 20,
+  "hero_defense": "light",
+  "rival_target": 6.2,
+  "rival_health": 23,
+  "rival_defense": "light"
+ },
+ {
+  "name": "off holdfast H30 T12 +1dmg vs +3bl",
+  "template": "standard",
+  "die": "standard_d6",
+  "hero_target": 13,
+  "hero_health": 30,
+  "hero_defense": "holdfast",
+  "rival_target": 12,
+  "rival_health": 33,
+  "rival_defense": "holdfast"
+ },
+ {
+  "name": "off holdfast H30 T12 +1dmg vs +4bl",
+  "template": "standard",
+  "die": "standard_d6",
+  "hero_target": 13,
+  "hero_health": 30,
+  "hero_defense": "holdfast",
+  "rival_target": 12,
+  "rival_health": 34,
+  "rival_defense": "holdfast"
+ },
+ {
+  "name": "def light->holdfast H15 vs +13bl",
+  "template": "standard",
+  "die": "standard_d6",
+  "hero_target": 6.2,
+  "hero_health": 15,
+  "hero_defense": "holdfast",
+  "rival_target": 6.2,
+  "rival_health": 28,
+  "rival_defense": "light"
+ },
+ {
+  "name": "def light->holdfast H15 vs +14bl",
+  "template": "standard",
+  "die": "standard_d6",
+  "hero_target": 6.2,
+  "hero_health": 15,
+  "hero_defense": "holdfast",
+  "rival_target": 6.2,
+  "rival_health": 29,
+  "rival_defense": "light"
+ },
+ {
+  "name": "def none->holdfast H15 vs +18bl",
+  "template": "standard",
+  "die": "standard_d6",
+  "hero_target": 6.2,
+  "hero_health": 15,
+  "hero_defense": "holdfast",
+  "rival_target": 6.2,
+  "rival_health": 33,
+  "rival_defense": "none"
+ },
+ {
+  "name": "def none->holdfast H15 vs +19bl",
+  "template": "standard",
+  "die": "standard_d6",
+  "hero_target": 6.2,
+  "hero_health": 15,
+  "hero_defense": "holdfast",
+  "rival_target": 6.2,
+  "rival_health": 34,
+  "rival_defense": "none"
+ },
+ {
+  "name": "def light->holdfast = +2.5 dmg H20",
+  "template": "standard",
+  "die": "standard_d6",
+  "hero_target": 8.7,
+  "hero_health": 20,
+  "hero_defense": "light",
+  "rival_target": 6.2,
+  "rival_health": 20,
+  "rival_defense": "holdfast"
+ },
+ {
+  "name": "def none->holdfast = +3.5 dmg H20",
+  "template": "standard",
+  "die": "standard_d6",
+  "hero_target": 9.7,
+  "hero_health": 20,
+  "hero_defense": "none",
+  "rival_target": 6.2,
+  "rival_health": 20,
+  "rival_defense": "holdfast"
+ },
+ {
+  "name": "lopsided holdfast H20 mirror vs +1bl",
+  "template": "standard",
+  "die": "standard_d6",
+  "hero_target": 6.2,
+  "hero_health": 20,
+  "hero_defense": "holdfast",
+  "rival_target": 6.2,
+  "rival_health": 21,
+  "rival_defense": "holdfast"
+ },
+ {
+  "name": "lopsided holdfast H20 mirror vs +2bl",
+  "template": "standard",
+  "die": "standard_d6",
+  "hero_target": 6.2,
+  "hero_health": 20,
+  "hero_defense": "holdfast",
+  "rival_target": 6.2,
+  "rival_health": 22,
+  "rival_defense": "holdfast"
+ },
+ {
+  "name": "short none H15 T12 +1dmg",
+  "template": "standard",
+  "die": "standard_d6",
+  "hero_target": 13,
+  "hero_health": 15,
+  "hero_defense": "none",
+  "rival_target": 12,
+  "rival_health": 15,
+  "rival_defense": "none"
+ }
+]

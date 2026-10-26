@@ -38,6 +38,17 @@ const (
 	// lightGuard rolls one die: 1–2 prevent nothing, 3–4 prevent 1 and
 	// 5–6 prevent 2 (-defense light).
 	lightGuard = "zz_light_guard"
+	// Hypothetical defenses for the pricing research (-exchange-check):
+	// light2 rolls two Light Guard dice (2 on average); heavy and bulwark
+	// roll three of your dice like Holdfast, but the apex face prevents 2
+	// (heavy, 4.5 on average) and also each side face 3 (bulwark, 5.5).
+	lightGuard2 = "zz_light_guard_2"
+	// halfGuard rolls one die: 1–3 prevent nothing, 4–6 prevent 1 (0.5 on average).
+	halfGuard = "zz_half_guard"
+	// blockGuard2 rolls two dice: any 6 prevents the whole attack (99).
+	blockGuard2 = "zz_block_guard_2"
+	heavyGuard  = "zz_heavy_guard"
+	bulwark     = "zz_bulwark"
 )
 
 // The duel defenses: none, light (Light Guard) and holdfast.
@@ -50,6 +61,16 @@ func defenseAbility(defense string) string {
 		return noDefense
 	case "light":
 		return lightGuard
+	case "light2":
+		return lightGuard2
+	case "half":
+		return halfGuard
+	case "block2":
+		return blockGuard2
+	case "heavy":
+		return heavyGuard
+	case "bulwark":
+		return bulwark
 	}
 	return defense
 }
@@ -63,8 +84,22 @@ func defenseOdds(defense string, die boardprice.Die) []float64 {
 		return []float64{1}
 	case "light":
 		return []float64{1.0 / 3, 1.0 / 3, 1.0 / 3}
-	case "holdfast", "holdfast_plus":
+	case "light2":
+		return []float64{1.0 / 9, 2.0 / 9, 3.0 / 9, 2.0 / 9, 1.0 / 9}
+	case "half":
+		return []float64{0.5, 0.5}
+	case "block2":
+		odds := make([]float64, 100)
+		odds[0], odds[99] = 25.0/36, 11.0/36
+		return odds
+	case "holdfast", "holdfast_plus", "heavy", "bulwark":
 		prevents := map[string]int{"main": 1, "odd": 1, "side": 2, "odd_b": 3, "apex": 0}
+		if defense == "heavy" {
+			prevents["apex"] = 2
+		}
+		if defense == "bulwark" {
+			prevents["apex"], prevents["side"] = 2, 3
+		}
 		dist := []float64{1}
 		for i := 0; i < 3; i++ {
 			next := make([]float64, len(dist)+3)
@@ -123,7 +158,38 @@ func (l lab) writeScratch(scratch string, maxHealth int, defense string, duelist
 	if err := writeNoDefense(filepath.Join(pack, "abilities", noDefense+".yaml"), lib.Abilities["holdfast"]); err != nil {
 		return err
 	}
-	if err := writeJSON(filepath.Join(pack, "abilities", lightGuard+".yaml"), lightGuardAbility()); err != nil {
+	if err := writeJSON(filepath.Join(pack, "abilities", lightGuard+".yaml"), lightGuardAbility(lightGuard, "Zz Light Guard", 1)); err != nil {
+		return err
+	}
+	if err := writeJSON(filepath.Join(pack, "abilities", lightGuard2+".yaml"), lightGuardAbility(lightGuard2, "Zz Double Light Guard", 2)); err != nil {
+		return err
+	}
+	half := lightGuardAbility(halfGuard, "Zz Half Guard", 1)
+	half["presentation"] = map[string]any{"rules_text": "Roll 1 die: 1–3 prevent nothing, 4–6 prevent 1."}
+	roll := half["resolution"].(map[string]any)["operations"].([]any)[0].(map[string]any)
+	roll["id"] = "half_guard_roll"
+	roll["outcomes"] = []any{
+		map[string]any{"faces": []int{1, 2, 3}, "operations": []any{map[string]any{"type": "gain_resource", "target": "self", "amount": 1, "resource": "energy"}}},
+		map[string]any{"faces": []int{4, 5, 6}, "operations": []any{map[string]any{"type": "prevent_damage", "target": "selected_proposal", "amount": 1}}},
+	}
+	if err := writeJSON(filepath.Join(pack, "abilities", halfGuard+".yaml"), half); err != nil {
+		return err
+	}
+	block := lightGuardAbility(blockGuard2, "Zz Block Guard", 2)
+	block["presentation"] = map[string]any{"rules_text": "Roll 2 dice: any 6 prevents all damage from the attack."}
+	broll := block["resolution"].(map[string]any)["operations"].([]any)[0].(map[string]any)
+	broll["id"] = "block_guard_roll"
+	broll["outcomes"] = []any{
+		map[string]any{"faces": []int{1, 2, 3, 4, 5}, "operations": []any{map[string]any{"type": "gain_resource", "target": "self", "amount": 1, "resource": "energy"}}},
+		map[string]any{"faces": []int{6}, "operations": []any{map[string]any{"type": "prevent_damage", "target": "selected_proposal", "amount": boardprice.BlockAmount}}},
+	}
+	if err := writeJSON(filepath.Join(pack, "abilities", blockGuard2+".yaml"), block); err != nil {
+		return err
+	}
+	if err := writeRoleDefense(filepath.Join(pack, "abilities", heavyGuard+".yaml"), lib.Abilities["holdfast"], heavyGuard, "Zz Heavy Guard", 2, 2); err != nil {
+		return err
+	}
+	if err := writeRoleDefense(filepath.Join(pack, "abilities", bulwark+".yaml"), lib.Abilities["holdfast"], bulwark, "Zz Bulwark Guard", 3, 2); err != nil {
 		return err
 	}
 	for _, d := range duelists {
@@ -245,14 +311,14 @@ func writeNoDefense(path string, holdfast content.BattleAbilityDefinition) error
 
 // lightGuardAbility is the weak defense: one die, 1–2 gain 1 energy (which
 // blank decks cannot spend), 3–4 prevent 1, 5–6 prevent 2.
-func lightGuardAbility() map[string]any {
+func lightGuardAbility(id, name string, dice int) map[string]any {
 	prevent := func(n int) []any {
 		return []any{map[string]any{"type": "prevent_damage", "target": "selected_proposal", "amount": n}}
 	}
 	return map[string]any{
 		"schema_version": 1,
-		"id":             lightGuard,
-		"name":           "Light Guard",
+		"id":             id,
+		"name":           name,
 		"type":           "defensive",
 		"presentation":   map[string]any{"rules_text": "Roll 1 die: 1–2 prevent nothing, 3–4 prevent 1, 5–6 prevent 2."},
 		"cost":           map[string]any{"energy": 0},
@@ -261,7 +327,7 @@ func lightGuardAbility() map[string]any {
 		"resolution": map[string]any{
 			"reaction_window": map[string]any{"opens": true, "pass_required": true},
 			"operations": []any{map[string]any{
-				"id": "light_guard_roll", "type": "roll_dice", "target": "self", "dice_id": "standard_d6", "dice_count": 1,
+				"id": "light_guard_roll", "type": "roll_dice", "target": "self", "dice_id": "standard_d6", "dice_count": dice,
 				"reaction_window": map[string]any{"opens": true, "pass_required": true},
 				"outcomes": []any{
 					map[string]any{"faces": []int{1, 2}, "operations": []any{map[string]any{"type": "gain_resource", "target": "self", "amount": 1, "resource": "energy"}}},
@@ -272,6 +338,37 @@ func lightGuardAbility() map[string]any {
 		},
 		"saved_card_destination": "discard",
 	}
+}
+
+// writeRoleDefense writes Holdfast with its outcomes replaced: main and odd
+// faces prevent 1, side faces `side`, the second odd 3 and apex `apex`.
+func writeRoleDefense(path string, holdfast content.BattleAbilityDefinition, id, name string, side, apex int) error {
+	raw, err := json.Marshal(holdfast)
+	if err != nil {
+		return err
+	}
+	var def map[string]any
+	if err := json.Unmarshal(raw, &def); err != nil {
+		return err
+	}
+	prevent := func(n int) []any {
+		return []any{map[string]any{"type": "prevent_damage", "target": "selected_proposal", "amount": n}}
+	}
+	def["id"], def["name"] = id, name
+	def["presentation"] = map[string]any{"rules_text": fmt.Sprintf("Roll 3 of your dice: main and odd symbols prevent 1, side %d, the second odd 3, apex %d.", side, apex)}
+	resolution, _ := def["resolution"].(map[string]any)
+	operations, _ := resolution["operations"].([]any)
+	if len(operations) != 1 {
+		return fmt.Errorf("holdfast: expected one roll, got %d operations", len(operations))
+	}
+	roll, _ := operations[0].(map[string]any)
+	roll["outcomes"] = []any{
+		map[string]any{"roles": []string{"main", "odd"}, "operations": prevent(1)},
+		map[string]any{"roles": []string{"side"}, "operations": prevent(side)},
+		map[string]any{"roles": []string{"odd_b"}, "operations": prevent(3)},
+		map[string]any{"roles": []string{"apex"}, "operations": prevent(apex)},
+	}
+	return writeJSON(path, def)
 }
 
 // damageOdds is a board's damage per offensive turn under the pricing's

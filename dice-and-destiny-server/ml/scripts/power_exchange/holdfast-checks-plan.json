@@ -1,0 +1,101 @@
+[
+ {
+  "name": "400|none|light",
+  "template": "standard",
+  "die": "standard_d6",
+  "hero_target": 9.2,
+  "hero_health": 28,
+  "hero_defense": "none",
+  "rival_target": 9.7,
+  "rival_health": 22,
+  "rival_defense": "light"
+ },
+ {
+  "name": "400|none|holdfast",
+  "template": "standard",
+  "die": "standard_d6",
+  "hero_target": 9.2,
+  "hero_health": 28,
+  "hero_defense": "none",
+  "rival_target": 6.2,
+  "rival_health": 26,
+  "rival_defense": "holdfast"
+ },
+ {
+  "name": "400|light|holdfast",
+  "template": "standard",
+  "die": "standard_d6",
+  "hero_target": 9.7,
+  "hero_health": 22,
+  "hero_defense": "light",
+  "rival_target": 6.2,
+  "rival_health": 26,
+  "rival_defense": "holdfast"
+ },
+ {
+  "name": "650|none|light",
+  "template": "standard",
+  "die": "standard_d6",
+  "hero_target": 12.7,
+  "hero_health": 39,
+  "hero_defense": "none",
+  "rival_target": 10.7,
+  "rival_health": 43,
+  "rival_defense": "light"
+ },
+ {
+  "name": "650|none|holdfast",
+  "template": "standard",
+  "die": "standard_d6",
+  "hero_target": 12.7,
+  "hero_health": 39,
+  "hero_defense": "none",
+  "rival_target": 9.7,
+  "rival_health": 37,
+  "rival_defense": "holdfast"
+ },
+ {
+  "name": "650|light|holdfast",
+  "template": "standard",
+  "die": "standard_d6",
+  "hero_target": 10.7,
+  "hero_health": 43,
+  "hero_defense": "light",
+  "rival_target": 9.7,
+  "rival_health": 37,
+  "rival_defense": "holdfast"
+ },
+ {
+  "name": "900|none|light",
+  "template": "standard",
+  "die": "standard_d6",
+  "hero_target": 15.2,
+  "hero_health": 54,
+  "hero_defense": "none",
+  "rival_target": 14.9,
+  "rival_health": 51,
+  "rival_defense": "light"
+ },
+ {
+  "name": "900|none|holdfast",
+  "template": "standard",
+  "die": "standard_d6",
+  "hero_target": 15.2,
+  "hero_health": 54,
+  "hero_defense": "none",
+  "rival_target": 12.7,
+  "rival_health": 50,
+  "rival_defense": "holdfast"
+ },
+ {
+  "name": "900|light|holdfast",
+  "template": "standard",
+  "die": "standard_d6",
+  "hero_target": 14.9,
+  "hero_health": 51,
+  "hero_defense": "light",
+  "rival_target": 12.7,
+  "rival_health": 50,
+  "rival_defense": "holdfast"
+ }
+]

@@ -95,6 +95,8 @@ func main() {
 	sweepStep := flag.Float64("sweep-step", 0.1, "sweep: how far apart the targets are")
 	tuneRounds := flag.Int("tune-rounds", 3, "round robin: tuning rounds")
 	sample := flag.Int("sample", 16, "round robin: pairings per defense played as real battles (-battles each) to check the model")
+	exchangeDump := flag.String("exchange-dump", "", "exchange research: write every default board's damage odds across the staircase and the duel defenses to this JSON path")
+	exchangeCheck := flag.String("exchange-check", "", "exchange research: play the points in this JSON plan as real blank-deck battles (-battles each)")
 	flag.Parse()
 
 	debug.SetGCPercent(400)
@@ -114,6 +116,14 @@ func main() {
 	l := lab{contentRoot: *contentRoot, builder: builder, workers: *workers, first: *first}
 	if *pure {
 		runPure(l, *health, *reference, *defense, *battles, *templates, *out, *markdown)
+		return
+	}
+	if *exchangeDump != "" {
+		runExchangeDump(l, *sweepStep, *exchangeDump)
+		return
+	}
+	if *exchangeCheck != "" {
+		runExchangeCheck(l, *exchangeCheck, *battles, *out)
 		return
 	}
 	if *sweep {
