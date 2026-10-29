@@ -113,7 +113,7 @@ func (s *Session) ResetCampaignEncounter(battleID string, seed uint64, saveID, e
 		}
 	}
 	battle := &campaignBattle{saveID: save.ID, saveName: save.Name, deck: save.Sheet.Deck, wounds: save.Sheet.Wounds, board: save.Sheet.Abilities, character: save.Character, encounter: encounter, index: index, total: len(campaign.Encounters)}
-	return s.resetLoadout(battleID, seed, "seat-a", false, save.Character, true, "campaign", battle, nil)
+	return s.resetLoadout(battleID, seed, "seat-a", false, save.Character, BattleRules{UnifiedDefense: true, SimultaneousPlay: true}, "campaign", battle, nil)
 }
 
 // recordCampaignBattle runs under s.mu once the battle is terminal or truncated.
@@ -586,7 +586,7 @@ func (s *Session) ResetExpeditionBattle(saveID string) (map[string]any, error) {
 		return nil, fmt.Errorf("every card is wounded; the expedition cannot fight")
 	}
 	b := &expeditionBattle{saveID: save.ID, saveName: save.Name, character: save.Character, deck: save.Sheet.Deck, wounds: save.Sheet.Wounds, board: save.Sheet.Abilities, setup: setup, pending: *save.Expedition.PendingBattle, region: rules.Pack.Regions[save.Expedition.Region].Name, round: save.Expedition.Round, night: save.Expedition.Night}
-	return s.resetLoadout(setup.BattleID, setup.Seed, "seat-a", false, save.Character, true, "expedition", nil, b)
+	return s.resetLoadout(setup.BattleID, setup.Seed, "seat-a", false, save.Character, BattleRules{UnifiedDefense: true, SimultaneousPlay: true}, "expedition", nil, b)
 }
 
 // recordExpeditionBattle runs under s.mu once the battle is terminal: it

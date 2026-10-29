@@ -342,6 +342,7 @@ func _start_next() -> void:
 	await get_tree().process_frame
 	var gateway: RefCounted = LEARNED_GATEWAY.new(_runtime(), "seat-a", LEARNED_RUNTIME.encounter_model_key(encounter), str(save.character))
 	gateway.unified_defense = true
+	gateway.simultaneous_play = true
 	gateway.loadout_mode = "campaign"
 	gateway.encounter_id = str(encounter.id)
 	gateway.campaign_save = save_id

@@ -19,6 +19,10 @@ var _draw_cards: Dictionary = {}
 var _draw_sources: Dictionary = {}
 var _hidden_hand_cards: Array[BattleCard] = []
 var _held_hand: Control
+## An opponent's card, or the viewer's own play resolving at a reveal: show
+## only its result. The changed number pulses and counts; no card, no caption.
+var quiet := false
+const QUIET_SECONDS := 1.1
 
 func _exit_tree() -> void:
 	for card in _hidden_hand_cards:
@@ -42,6 +46,8 @@ func configure(owner_screen: Control, changes: Array[Dictionary], poses: Diction
 	_battle_id = screen._view.battle_id
 	mouse_filter = Control.MOUSE_FILTER_IGNORE; z_index = 30
 	duration = maxf(0.5, TIMING.seconds("card_gain_seconds", 2.4)) * feedback.cards.size()
+	quiet = feedback.cards.all(func(played): return str(played.actor_id) != screen.viewer_actor_id or bool(played.get("revealed", false)))
+	if quiet: duration = QUIET_SECONDS
 	for played in feedback.cards:
 		var card := BattleCard.new(); card.name = "PlayedGainCard"
 		card.configure(str(played.instance_id), str(played.definition_id), _poses.has(str(played.instance_id)), false, true)
@@ -62,6 +68,7 @@ func configure(owner_screen: Control, changes: Array[Dictionary], poses: Diction
 		elif update.kind == "conversion": lines.append("Poison → Volatile Poison")
 		else: lines.append("+%d %s" % [int(data.after) - int(data.before), BattlePresentationCatalog.status(str(data.get("status_id", "incubation"))).name])
 	_label.text = " · ".join(lines)
+	_label.visible = not quiet
 	for update in updates:
 		if update.kind != "resource" or update.data.stat != "hand" or str(update.data.target_actor_id) != screen.viewer_actor_id: continue
 		for id in update.data.get("drawn_ids", []):
@@ -76,7 +83,7 @@ func configure(owner_screen: Control, changes: Array[Dictionary], poses: Diction
 func _waiting() -> bool:
 	# Cards shown from their own hand pose overlap freely. Pose-less cards (an
 	# opponent's burst) share one spot, so they still play one at a time.
-	if _poses.is_empty():
+	if _poses.is_empty() and not quiet:
 		for sibling in screen.get_children():
 			if sibling == self: break
 			if sibling.get_script() == get_script() and not sibling.is_queued_for_deletion() and sibling._poses.is_empty(): return true
@@ -106,6 +113,9 @@ func refresh() -> void:
 			if is_instance_valid(profile) and update.kind == "resource":
 				profile.show_resource_gain(update.data, 0.0)
 				if update.data.stat == "hand": _show_draw_counts(profile, update.data)
+		return
+	if quiet:
+		_refresh_quiet()
 		return
 	var inverse := get_global_transform_with_canvas().affine_inverse()
 	var card_index := mini(_cards.size() - 1, int(_elapsed / (duration / _cards.size())))
@@ -159,10 +169,38 @@ func refresh() -> void:
 	queue_redraw()
 	if _elapsed >= duration: queue_free()
 
-func _show_attack_bonus(data: Dictionary, progress: float) -> void:
+func _refresh_quiet() -> void:
+	for card in _cards: card.hide()
+	_label.hide()
+	var t := clampf(_elapsed / duration, 0, 1)
+	var progress := clampf((t - 0.1) / 0.45, 0, 1)
+	var pulse := sin(t * PI)
+	for update in updates:
+		if update.kind == "attack_bonus":
+			_show_attack_bonus(update.data, progress, pulse)
+			continue
+		var profile: ActorProfile = screen._actor_profiles.get(str(update.data.target_actor_id))
+		if not is_instance_valid(profile): continue
+		if update.kind == "resource":
+			profile.show_resource_gain(update.data, progress)
+			var value: Label = profile._stat_labels.get(str(update.data.stat))
+			if is_instance_valid(value): _pulse(value, pulse)
+		else: profile.show_status_transition(update, progress)
+	modulate.a = 1.0
+	if _elapsed >= duration: queue_free()
+
+## A short highlight on a number that just changed.
+static func _pulse(label: Control, pulse: float) -> void:
+	label.pivot_offset = label.size * 0.5
+	label.scale = Vector2.ONE * (1.0 + 0.35 * pulse)
+	label.self_modulate = Color.WHITE.lerp(Color("aaffcf"), pulse)
+
+func _show_attack_bonus(data: Dictionary, progress: float, pulse: float = 0.0) -> void:
 	var actor_id := str(data.target_actor_id)
 	var intent: Control = screen.ability_intent(actor_id, str(data.ability_id))
-	if is_instance_valid(intent): intent.damage.text = str(int(data.before) if progress <= 0 else int(data.after))
+	if is_instance_valid(intent):
+		intent.damage.text = str(roundi(lerpf(float(data.before), float(data.after), progress)) if quiet else int(data.before) if progress <= 0 else int(data.after))
+		if quiet: _pulse(intent.damage, pulse)
 	var tile: BattleAbilityTile = screen._selected_attack_tiles.get(actor_id)
 	if not is_instance_valid(tile) or tile.ability_id != str(data.ability_id): return
 	var attack: Dictionary = screen._selected_attack(actor_id)
@@ -174,7 +212,7 @@ func _show_attack_bonus(data: Dictionary, progress: float) -> void:
 	tile.modulate = Color.WHITE.lerp(Color("bfffea"), sin(progress * PI) * 0.65)
 
 func _draw() -> void:
-	if not _started or _cards.is_empty(): return
+	if not _started or _cards.is_empty() or quiet: return
 	var progress := _elapsed / duration
 	if progress < 0.20 or progress > 0.70: return
 	var card_index := mini(_cards.size() - 1, int(_elapsed / (duration / _cards.size())))

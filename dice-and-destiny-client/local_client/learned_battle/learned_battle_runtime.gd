@@ -142,7 +142,7 @@ func _selected_model_sha256() -> String:
 
 ## A non-empty `encounter` starts that encounter of the `campaign_save`, with
 ## the save's own deck and abilities; the authority records the result there.
-func start_battle(battle_id: String, human_seat: String, seed: int, rematch: bool = false, character: String = "blade_warden", unified_defense: bool = false, loadout_mode: String = "sandbox", encounter: String = "", campaign_save: String = "", expedition: bool = false) -> Dictionary:
+func start_battle(battle_id: String, human_seat: String, seed: int, rematch: bool = false, character: String = "blade_warden", unified_defense: bool = false, loadout_mode: String = "sandbox", encounter: String = "", campaign_save: String = "", expedition: bool = false, simultaneous_play: bool = false) -> Dictionary:
 	var initialized := ensure_initialized()
 	if initialized.get("ok") != true:
 		return {"accepted": false, "error": initialized.get("error", _initialization_error)}
@@ -156,6 +156,7 @@ func start_battle(battle_id: String, human_seat: String, seed: int, rematch: boo
 		"human_seat": human_seat,
 		"character": character,
 		"unified_defense": unified_defense,
+		"simultaneous_play": simultaneous_play,
 		"seed": seed,
 		"rematch": rematch,
 	})

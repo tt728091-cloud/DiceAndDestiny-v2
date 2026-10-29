@@ -143,6 +143,10 @@ func settledLegalActions(battle *state.Battle, library content.BattleLibrary, ac
 			actions = append(actions, legalCommand(battle.ID, actorID, command.TypePlanningPass, command.PlanningPassPayload{PendingInputID: pending.ID, Checkpoint: planningCheckpoint(pending)}))
 		}
 	case stageDefenseSelect:
+		if step := simultaneousStep(battle); step == state.SimultaneousDefenseBefore || step == state.SimultaneousDefenseAfter {
+			actions = append(actions, simultaneousDefenseActions(battle, library, actorID, pending)...)
+			break
+		}
 		runtime := battle.Settled.Actors[actorID]
 		for _, abilityID := range runtime.DefensiveAbilityIDs {
 			ability := library.Abilities[abilityID]
@@ -218,6 +222,9 @@ func planningCardActions(battle *state.Battle, library content.BattleLibrary, ac
 	runtime := battle.Settled.Actors[actorID]
 	var actions []command.Command
 	for _, instanceID := range mechanicCards(battle, actorID) {
+		if secretPending(battle, actorID, instanceID) {
+			continue
+		}
 		zone := programCardZone(battle, actorID, instanceID)
 		def := library.Cards[runtime.CardInstances[instanceID].DefinitionID]
 		if def.Mechanic == nil && zone != "hand" || def.Mechanic != nil && !mechanicPlayable(battle, actorID, instanceID, def) {
@@ -275,6 +282,9 @@ func reactionCardActions(battle *state.Battle, library content.BattleLibrary, ac
 	var actions []command.Command
 	for _, instanceID := range actor.Cards.Hand {
 		definition := library.Cards[runtime.CardInstances[instanceID].DefinitionID]
+		if secretPending(battle, actorID, instanceID) {
+			continue
+		}
 		if actor.Resources.EnergyPoints < definition.Cost.Energy || (!cardPlayableDuring(definition, battle, "reaction", actorID) && !(battle.Settled.Stage == stageVenomStatus && definition.Targeting.Selector == "one_negative_status_on_self")) {
 			continue
 		}

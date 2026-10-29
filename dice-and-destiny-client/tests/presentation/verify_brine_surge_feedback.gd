@@ -51,12 +51,27 @@ func _check_screen(before: Dictionary, revealed: Dictionary) -> void:
 	await create_timer(0.7).timeout
 	_expect(_notices(screen).is_empty(), "no premature card reveal during hidden planning")
 	screen._apply_model_result(result)
-	_expect(_notices(screen).is_empty() and not screen._card_gain_active(), "joint reveal has no Brine Surge animation or input hold")
+	# The enemy's card was played out of sight: the reveal counts its attack up
+	# quietly (no card, no caption) and never holds play.
+	var notices := _notices(screen)
+	_expect(notices.size() == 1 and notices[0].quiet and not screen._card_gain_active(), "joint reveal counts Brine Surge up quietly, without an input hold")
 	await process_frame
 	var panel = screen.ability_intent("goblin", "brine_lash")
 	_expect(is_instance_valid(panel), "revealed enemy attack is visible immediately")
 	if not is_instance_valid(panel): screen.queue_free(); return
-	_expect(panel.damage.text == "5", "first visible attack already includes Brine Surge")
+	var seen := {}
+	var peak := 1.0
+	var deadline := Time.get_ticks_msec() + 3000
+	while Time.get_ticks_msec() < deadline and not _notices(screen).is_empty():
+		var notice = _notices(screen)[0]
+		_expect(notice._cards.all(func(c): return not c.visible) and not notice._label.visible, "no card and no caption appear")
+		panel = screen.ability_intent("goblin", "brine_lash")
+		if is_instance_valid(panel):
+			seen[panel.damage.text] = true; peak = maxf(peak, panel.damage.scale.x)
+		await process_frame
+	_expect(seen.has("4") and seen.has("5") and peak > 1.15, "the attack number pulses and counts 4 → 5: %s, peak %.2f" % [seen.keys(), peak])
+	panel = screen.ability_intent("goblin", "brine_lash")
+	_expect(panel.damage.text == "5", "the attack ends on the Brine Surge total")
 	var hint: String = panel.intent.tooltip_text
 	_expect("Brine Lash" in hint and BattlePresentationCatalog.ability("brine_lash").text in hint, "full selected ability rules remain on hover")
 	_expect("Current attack: 5 damage" in hint and "+1 damage to this attack from playing Brine Surge." in hint, "hover explains the authoritative card contribution")

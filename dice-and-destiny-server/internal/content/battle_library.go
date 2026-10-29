@@ -246,6 +246,14 @@ type StatusModifiers struct {
 	// CampBandages is temporary bandages per stack the holder may use at camp
 	// (map only).
 	CampBandages int `yaml:"camp_bandages,omitempty" json:"camp_bandages,omitempty"`
+	// AutoPrevention prevents this much damage per stack on its own when the
+	// holder's incoming attacks are committed: each point is drawn at random
+	// from their remaining attack damage, and the stacks it uses are spent.
+	// Nothing plays it (Protect).
+	AutoPrevention int `yaml:"auto_prevention,omitempty" json:"auto_prevention,omitempty"`
+	// AutoPreventionDestination is where the cards it saves go: "discard"
+	// (the default) or "original" (their live pile).
+	AutoPreventionDestination string `yaml:"auto_prevention_destination,omitempty" json:"auto_prevention_destination,omitempty"`
 }
 
 // MapOnly reports modifiers that only the Expedition map reads: a status
@@ -583,7 +591,7 @@ func validateBattleLibrary(lib BattleLibrary) error {
 			return fmt.Errorf("%w: status %q lifecycle is contradictory", ErrInvalidContent, id)
 		}
 		if m := status.Modifiers; m != nil {
-			if m.DefenseDiceBonus < 0 || m.DefenseDiceBonus > 10 || m.FirstRollBonusDice < 0 || m.FirstRollBonusDice > 10 || m.AttackDamageBonus < 0 || m.AttackDamageBonus > 100 || m.HandSizeDelta < -10 || m.HandSizeDelta > 10 || m.CarriedMove < 0 || m.CarriedMove > 10 || m.HiddenSight < 0 || m.HiddenSight > 10 || m.CampBandages < 0 || m.CampBandages > 10 {
+			if m.DefenseDiceBonus < 0 || m.DefenseDiceBonus > 10 || m.FirstRollBonusDice < 0 || m.FirstRollBonusDice > 10 || m.AttackDamageBonus < 0 || m.AttackDamageBonus > 100 || m.HandSizeDelta < -10 || m.HandSizeDelta > 10 || m.CarriedMove < 0 || m.CarriedMove > 10 || m.HiddenSight < 0 || m.HiddenSight > 10 || m.CampBandages < 0 || m.CampBandages > 10 || m.AutoPrevention < 0 || m.AutoPrevention > 10 || m.AutoPreventionDestination != "" && m.AutoPreventionDestination != "discard" && m.AutoPreventionDestination != "original" {
 				return fmt.Errorf("%w: status %q has modifiers out of range", ErrInvalidContent, id)
 			}
 			if *m == (StatusModifiers{}) {

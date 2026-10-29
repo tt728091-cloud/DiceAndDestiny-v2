@@ -150,15 +150,18 @@ func _queue_attack_card_feedback(events: Array, snapshot: Dictionary) -> void:
 		for actor_id in event.get("data", {}).get("commitments", {}):
 			var reveal: Dictionary = event.data.commitments[actor_id]
 			for bonus in _array(reveal.get("damage_bonuses")):
+				# An opponent's attack cards were played out of sight: the reveal
+				# counts its attack up quietly (no card, no caption).
+				var opponent := str(actor_id) != "blade"
 				# Brine Surge is part of the joint attack reveal. Show its final
 				# total immediately; provenance lives in the intent's hover text.
-				if bonus.get("card_definition_id") == "brine_surge": continue
+				if bonus.get("card_definition_id") == "brine_surge" and not opponent: continue
 				# Preparation was already presented when the card was played.
 				# Revealing the attack uses its full authoritative total once.
 				var definition := BattlePresentationCatalog.definition("cards", str(bonus.get("card_definition_id", "")))
-				if _array(definition.get("operations")).any(func(operation): return operation.get("type") == "apply_ability_modifier" and operation.get("duration") == "offensive"): continue
+				if not opponent and _array(definition.get("operations")).any(func(operation): return operation.get("type") == "apply_ability_modifier" and operation.get("duration") == "offensive"): continue
 				var program: Dictionary = definition.get("program", {}) if definition.get("program") is Dictionary else {}
-				if _array(program.get("steps")).any(func(step): return step.get("effect") == "ability_bonus" and str(step.get("params", {}).get("duration", "offensive")) == "offensive"): continue
+				if not opponent and _array(program.get("steps")).any(func(step): return step.get("effect") == "ability_bonus" and str(step.get("params", {}).get("duration", "offensive")) == "offensive"): continue
 				var key := "%s:%s:%s:%s" % [snapshot.get("battle_id", ""), snapshot.get("round", 0), actor_id, bonus.card_instance_id]
 				if _shown_attack_cards.has(key): continue
 				_shown_attack_cards[key] = true
@@ -227,7 +230,7 @@ func _queue_card_gains(events: Array, before: Dictionary, after: Dictionary) -> 
 			if not card_id.is_empty() and not seen_cards.has(instance):
 				seen_cards[instance] = true
 				played.append(card_id)
-				card_events.append({"definition_id": card_id, "actor_id": str(event.get("actor_id", "")), "sequence": int(event.get("sequence", 0)), "instance_id": instance, "ability_id": str(event.get("data", {}).get("ability_id", ""))})
+				card_events.append({"definition_id": card_id, "actor_id": str(event.get("actor_id", "")), "sequence": int(event.get("sequence", 0)), "instance_id": instance, "ability_id": str(event.get("data", {}).get("ability_id", "")), "revealed": bool(event.get("data", {}).get("revealed", false))})
 				var owner := str(event.get("actor_id", ""))
 				paid_energy[owner] = int(paid_energy.get(owner, 0)) + int(event.get("energy_cost", BattlePresentationCatalog.card(card_id).cost))
 				played_count[owner] = int(played_count.get(owner, 0)) + 1
@@ -417,23 +420,37 @@ func _is_meaningful(event: Dictionary, automatic_segment: String = "") -> bool:
 	return MEANINGFUL.has(kind)
 
 func _effects_have_work(data: Dictionary) -> bool:
-	# A roll or resolved trigger still matters when it deals zero damage or has
-	# no net change. Otherwise compare every actor, including non-damage status
-	# expiry/conversion and resource changes that need no recorded roll step.
+	# Effects stop play only for what the panel shows: rolls, damage and Curse
+	# triggers. Statuses that merely expire (Protect, map conditions returning)
+	# update the status bar while play moves straight on to Income.
 	for step in _array(data.get("steps")):
 		var detail: Dictionary = step.get("data", {})
-		# The authority records a Count conversion for every actor each round,
-		# including actors with no Count and no conversion modifier at all.
-		if step.get("type") == "curse_resolved" and detail.get("kind") == "conversion" \
-				and int(detail.get("count_before", -1)) == 0 and int(detail.get("count_after", -1)) == 0 \
-				and int(detail.get("damage", -1)) == 0 and str(detail.get("mode", "")).is_empty():
-			continue
-		return true
+		match str(step.get("type", "")):
+			"proposal_batch_committed":
+				# Statuses removed or applied with no roll or damage (an expiry).
+				if not _array(detail.get("rolls")).is_empty() or not _array(detail.get("damage")).is_empty(): return true
+			"damage_committed":
+				if not _array(detail.get("sources")).is_empty() or not _array(detail.get("removals")).is_empty(): return true
+			"curse_resolved":
+				# The authority records a Count conversion for every actor each round,
+				# including actors with no Count and no conversion modifier at all.
+				if detail.get("kind") == "conversion" and int(detail.get("count_before", -1)) == 0 and int(detail.get("count_after", -1)) == 0 \
+						and int(detail.get("damage", -1)) == 0 and str(detail.get("mode", "")).is_empty():
+					continue
+				return true
+			_:
+				# Rolls, conversions and anything else the panel may show.
+				return true
 	var before = data.get("actors_before")
 	var after = data.get("actors_after")
 	# Only suppress a summary we can positively identify as empty.
 	if not before is Dictionary or not after is Dictionary: return true
-	return before != after
+	# Health lost or regained without a recorded step still deserves the panel.
+	for actor_id in after:
+		var was: Dictionary = before.get(actor_id, {}) if before.get(actor_id) is Dictionary else {}
+		var now: Dictionary = after[actor_id] if after[actor_id] is Dictionary else {}
+		if int(was.get("health", 0)) != int(now.get("health", 0)) or int(was.get("removed_count", 0)) != int(now.get("removed_count", 0)): return true
+	return false
 
 func _beat(event: Dictionary) -> Dictionary:
 	var kind := str(event.get("type", ""))
@@ -480,12 +497,14 @@ func _queue_curse_feedback(events: Array, actors: Dictionary, preparations: Arra
 	var instances := {}
 	var rolls := {}
 	var counts := {}
+	var revealed := {}
 	for event in events:
 		if event.get("type") in ["card_played", "card_program_choice"]:
 			var played := str(event.get("data", {}).get("card_definition_id", ""))
 			if not played.is_empty():
 				cards[played] = str(event.get("actor_id", ""))
 				instances[played] = str(event.get("data", {}).get("card_instance_id", ""))
+				if bool(event.get("data", {}).get("revealed", false)): revealed[played] = true
 			for change in event.get("data", {}).get("program_dice_changes", []) if event.get("data", {}).get("program_dice_changes") is Array else []:
 				changes.append({"kind": "offensive_reroll" if change.get("rolled", false) else "offensive_face_set", "actor_id": str(change.get("actor_id", "")), "index": int(change.get("index", 0)), "face_before": int(change.get("face_before", 0)), "face": int(change.get("face", 0)), "sequence": int(event.get("sequence", 0)), "starter_card": true})
 			if played in ["nudge", "try_again"] and not event.get("data", {}).get("program", false):
@@ -581,7 +600,10 @@ func _queue_curse_feedback(events: Array, actors: Dictionary, preparations: Arra
 		else:
 			if not attacks.has(attack): attacks[attack] = []
 			attacks[attack].append(change)
-	if not other.is_empty(): _curse_updates.append({"changes": other, "card_id": card_id, "card_instance_id": str(instances.get(card_id, "")), "source_actor_id": str(cards.get(card_id, "")), "title": title})
+	# An opponent's card, or the viewer's own play resolving at a reveal, shows
+	# only its result: no card and no caption.
+	var quiet := not card_id.is_empty() and (str(cards.get(card_id, "")) != "blade" or revealed.has(card_id))
+	if not other.is_empty(): _curse_updates.append({"changes": other, "card_id": card_id, "card_instance_id": str(instances.get(card_id, "")), "source_actor_id": str(cards.get(card_id, "")), "title": title, "quiet": quiet})
 	for defense in defenses:
 		_curse_updates.append({"changes": defenses[defense], "card_id": "", "title": title, "defense_inline": true, "defense_source_id": defense})
 	for attack in attacks:

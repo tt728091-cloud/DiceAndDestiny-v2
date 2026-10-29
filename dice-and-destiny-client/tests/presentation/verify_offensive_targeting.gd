@@ -41,9 +41,19 @@ func _run() -> void:
 			var targets := screen.find_children("OffensiveTarget_*", "Button", true, false)
 			_expect(targets.size() == count, "every eligible enemy has a target cue")
 			if not targets.is_empty():
-				var alpha: float = targets[0]._outline.border_color.a
+				# No box around the enemy: the names glow and a red aim line runs
+				# from the selected attack, snapping onto the enemy under the pointer.
+				_expect(targets.all(func(t): return t.get_theme_stylebox("normal") is StyleBoxEmpty and t.get_theme_stylebox("hover") is StyleBoxEmpty), "no box is drawn around the enemies")
+				var aim = screen._root.get_node_or_null("AttackAim")
+				_expect(is_instance_valid(aim) and aim.targets.size() == count, "the aim line is up for every eligible enemy")
+				var title: Label = screen._actor_profiles[targets[0].name.trim_prefix("OffensiveTarget_")].title
+				var glow: Color = title.get_theme_color("font_color")
 				await create_timer(0.3).timeout
-				_expect(absf(alpha - targets[0]._outline.border_color.a) > 0.03, "highlight visibly pulses")
+				_expect(not title.get_theme_color("font_color").is_equal_approx(glow), "eligible names glow")
+				var aimed_id: String = targets[-1].name.trim_prefix("OffensiveTarget_")
+				var motion := InputEventMouseMotion.new(); motion.position = targets[-1].get_global_rect().get_center(); canvas.push_input(motion, true)
+				for frame in 3: await process_frame
+				_expect(is_instance_valid(aim) and aim.hovered == aimed_id, "the line snaps onto the enemy under the pointer")
 				for target in targets:
 					_expect(Rect2(Vector2.ZERO, Vector2(canvas.size)).encloses(target.get_global_rect()), "portrait target fits viewport")
 			# Repeat the same ability to cancel, then enter target choice again.
@@ -62,6 +72,7 @@ func _run() -> void:
 			var target: Button = screen._enemy_buttons[chosen] if count == 4 else screen.find_child("OffensiveTarget_" + chosen, true, false)
 			if target != null: await _click(target)
 			_expect(fake.commands.size() == 1, "enemy click submits exactly once")
+			_expect(is_instance_valid(screen.get_node_or_null("AttackLockIn")), "a short strike locks the attack onto the enemy")
 			if fake.commands.size() == 1:
 				var command: Dictionary = JSON.parse_string(fake.commands[0])
 				_expect(command.payload.ability_id == "guarded_strike" and command.payload.target_ids == [chosen], "exact selected target and ability preserved")

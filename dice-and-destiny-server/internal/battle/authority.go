@@ -317,6 +317,9 @@ func (authority *Authority) startBattle(cmd command.Command) engine.Result {
 	}
 	if battleState.Settled != nil {
 		battleState.Settled.UnifiedDefense = payload.UnifiedDefense
+		// Simultaneous play builds on unified defense, and only pins when every
+		// participant's cards support secret plays.
+		battleState.Settled.SimultaneousPlay = payload.SimultaneousPlay && payload.UnifiedDefense && engine.SimultaneousPlayEligible(&battleState)
 	}
 	if payload.Seed != nil {
 		battleState.Random = state.RandomState{

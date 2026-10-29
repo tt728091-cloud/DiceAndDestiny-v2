@@ -257,20 +257,21 @@ func TestAdventurerProtectionAndSteadyGuard(t *testing.T) {
 	}
 	b = restored
 	choice := command.InteractionCommitmentData{ChoiceID: "spend_round_prevention", ProposalIDs: []string{"b"}}
-	if _, err := e.spendRoundPrevention(&b, lib, "player", choice); err != nil {
-		t.Fatal(err)
-	}
-	if got := settledSourceAmount(b.Settled.PendingDamage.Sources[1]); got != 1 {
-		t.Fatalf("protection result %d", got)
-	}
 	if _, err := e.spendRoundPrevention(&b, lib, "player", choice); err == nil {
-		t.Fatal("spent twice")
+		t.Fatal("Protect is never spent by hand")
 	}
 	if err := playProgramCard(e, &b, lib, "player", "steady_guard-0", func(c programChoice) bool { return c.Source == "a" }); err != nil {
 		t.Fatal(err)
 	}
 	if got := settledSourceAmount(b.Settled.PendingDamage.Sources[0]); got != 6 {
 		t.Fatalf("Steady Guard result %d", got)
+	}
+	// As the attacks land, Protect prevents 2 of the remaining 9 on its own.
+	if _, err := e.applyAutoPrevention(&b, lib); err != nil {
+		t.Fatal(err)
+	}
+	if got := settledSourceAmount(b.Settled.PendingDamage.Sources[0]) + settledSourceAmount(b.Settled.PendingDamage.Sources[1]); got != 7 {
+		t.Fatalf("protection result %d", got)
 	}
 	if stacks(&b, "player", "protect") != 0 {
 		t.Fatal("spent status remains on actor")

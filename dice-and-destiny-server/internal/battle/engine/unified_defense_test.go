@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"diceanddestiny/server/internal/battle/command"
+	"diceanddestiny/server/internal/battle/event"
 	"diceanddestiny/server/internal/battle/operation"
 	"diceanddestiny/server/internal/battle/segment"
 	"diceanddestiny/server/internal/battle/state"
@@ -53,6 +54,43 @@ func unifiedFixture(t *testing.T, amounts ...int) (state.Battle, content.BattleL
 	}
 	return b, lib, e
 }
+// Protect spreads its points at random over every incoming attack: two attacks
+// of 1 are both stopped; a single larger attack loses 2.
+func TestProtectCoversEveryIncomingAttack(t *testing.T) {
+	for _, tc := range []struct {
+		amounts []int
+		left    int
+	}{{[]int{1, 1}, 0}, {[]int{5}, 3}, {[]int{1, 3}, 2}} {
+		b, lib, e := unifiedFixture(t, tc.amounts...)
+		applyStatus(&b, lib, "player", "protect", 2)
+		if _, err := e.applyAutoPrevention(&b, lib); err != nil {
+			t.Fatal(err)
+		}
+		left := 0
+		for _, s := range b.Settled.PendingDamage.Sources {
+			left += settledSourceAmount(s)
+		}
+		reserved := 0
+		for _, r := range b.Settled.PendingDamage.Removals {
+			if r.Accepted && !r.Released {
+				reserved++
+			}
+		}
+		if left != tc.left || reserved != tc.left || stacks(&b, "player", "protect") != 0 {
+			t.Fatalf("%v with 2 Protect leaves %d damage and %d reserved cards (want %d)", tc.amounts, left, reserved, tc.left)
+		}
+	}
+	// Less damage than Protect spends only what it used.
+	b, lib, e := unifiedFixture(t, 1)
+	applyStatus(&b, lib, "player", "protect", 2)
+	if _, err := e.applyAutoPrevention(&b, lib); err != nil {
+		t.Fatal(err)
+	}
+	if stacks(&b, "player", "protect") != 1 {
+		t.Fatalf("1 damage spends 1 Protect: %d left", stacks(&b, "player", "protect"))
+	}
+}
+
 func activeReservations(b state.Battle, source string) []string {
 	var ids []string
 	for _, r := range b.Settled.PendingDamage.Removals {
@@ -260,22 +298,24 @@ func TestUnifiedDefenseReturnsToHubAndSteadyGuardIsLegalBeforeRoll(t *testing.T)
 func TestUnifiedQueuedStatusesAndProtect(t *testing.T) {
 	b, lib, e := unifiedFixture(t, 4)
 	applyStatus(&b, lib, "player", "protect", 2)
-	var protect command.Command
 	for _, a := range e.LegalActions(&b, "player") {
 		var p command.CommitInteractionPayload
 		_ = json.Unmarshal(a.Payload, &p)
 		if p.Commitment.ChoiceID == "spend_round_prevention" {
-			protect = a
+			t.Fatal("Protect is never spent by hand")
 		}
 	}
-	if protect.Type == "" {
-		t.Fatal("Protect unavailable before rolling")
-	}
-	if _, err := e.handleSettledCommand(&b, protect); err != nil {
+	// Protect acts on its own when the attack lands: 2 of the 4 damage.
+	removed := len(b.Actors["player"].Cards.Removed)
+	events, err := e.applyAutoPrevention(&b, lib)
+	if err != nil {
 		t.Fatal(err)
 	}
-	if stacks(&b, "player", "protect") != 0 || len(activeReservations(b, "a")) != 2 {
+	if stacks(&b, "player", "protect") != 0 || len(activeReservations(b, "a")) != 2 || len(b.Actors["player"].Cards.Removed) != removed {
 		t.Fatal("Protect failed to consume or save")
+	}
+	if len(events) != 1 || events[0].Type != event.TypeDamageModified || events[0].Data["automatic"] != true {
+		t.Fatalf("Protect publishes the change: %+v", events)
 	}
 	for _, r := range b.Settled.PendingDamage.Removals {
 		if r.Released && r.ReleasedDestination != operation.ZoneDiscard {

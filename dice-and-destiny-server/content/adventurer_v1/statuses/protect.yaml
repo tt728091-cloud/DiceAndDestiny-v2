@@ -3,10 +3,14 @@
   "id": "protect",
   "name": "Protect Status",
   "presentation": {
-    "rules_text": "Positive status. During damage reaction, spend all Protect to prevent that much damage from one incoming attack. Guarded Strike grants 2 Protect; cap 2. Unused Protect expires automatically during the next round\u2019s ongoing effects. Using it costs no energy. Saved damage cards go to discard and still count as health.",
+    "rules_text": "Positive status. When your incoming attacks land, each Protect prevents 1 damage on its own, at random across them; it needs no action and costs nothing. Guarded Strike grants 2 Protect; cap 2. Saved damage cards go to discard and still count as health. Unused Protect expires automatically during the next round\u2019s ongoing effects.",
     "glyph": "\u25c7"
   },
-  "activation_mode": "hybrid",
+  "activation_mode": "automatic",
+  "modifiers": {
+    "auto_prevention": 1,
+    "auto_prevention_destination": "discard"
+  },
   "polarity": "positive",
   "stacking": {
     "stack_limit": 2,

@@ -25,6 +25,7 @@ type runtimeRequest struct {
 	LoadoutRoot        string                `json:"loadout_root,omitempty"`
 	Decklist           []loadout.Entry       `json:"decklist,omitempty"`
 	UnifiedDefense     bool                  `json:"unified_defense"`
+	SimultaneousPlay   bool                  `json:"simultaneous_play,omitempty"`
 	OpponentDefinition string                `json:"opponent_definition,omitempty"`
 	OpponentCount      int                   `json:"opponent_count,omitempty"`
 	Op                 string                `json:"op"`
@@ -294,7 +295,7 @@ func HandleRuntimeRequest(requestJSON string) string {
 			value, err = learnedRuntime.session.ResetCampaignEncounter(request.BattleID, request.Seed, request.CampaignSave, request.Encounter)
 			break
 		}
-		value, err = learnedRuntime.session.ResetCharacterLoadout(request.BattleID, request.Seed, request.HumanSeat, request.Rematch, request.Character, request.UnifiedDefense, request.LoadoutMode)
+		value, err = learnedRuntime.session.ResetCharacterRules(request.BattleID, request.Seed, request.HumanSeat, request.Rematch, request.Character, BattleRules{UnifiedDefense: request.UnifiedDefense, SimultaneousPlay: request.SimultaneousPlay}, request.LoadoutMode)
 	case "submit_human":
 		value, err = learnedRuntime.session.SubmitHuman(request.CommandJSON)
 	case "advance_model":

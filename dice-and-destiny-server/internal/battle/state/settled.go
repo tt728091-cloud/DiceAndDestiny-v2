@@ -9,7 +9,11 @@ import (
 // immutable compiled catalog is pinned separately on Battle as JSON so engine
 // commands never need to reload files.
 type SettledRuntime struct {
-	UnifiedDefense     bool
+	UnifiedDefense bool
+	// SimultaneousPlay pins the simultaneous rule: secret Before plays, a
+	// lock-in per participant, one reveal, then simultaneous rolls.
+	SimultaneousPlay   bool                 `json:",omitempty"`
+	Simultaneous       *SettledSimultaneous `json:",omitempty"`
 	DefensePassed      map[string]bool
 	Curse              *CurseRuntime `json:",omitempty"`
 	ReactionReplanning bool
@@ -28,6 +32,108 @@ type SettledRuntime struct {
 	PendingBlind       *SettledBlindResolution
 	Sequence           int
 	Venom              *VenomRuntime `json:",omitempty"`
+}
+
+// Simultaneous steps. Before steps are secret: plays that touch statuses,
+// dice, damage or another participant queue until the reveal. Rolling keeps
+// self-only plays hidden until the abilities are revealed. Offense After and
+// Defense Before are one step: SimultaneousDefenseBefore, where each defense
+// rolls and resolves when chosen, privately.
+const (
+	SimultaneousOffenseBefore  = "offense_before"
+	SimultaneousOffenseRolling = "offense_rolling"
+	SimultaneousDefenseBefore  = "defense_before"
+	SimultaneousDefenseAfter   = "defense_after"
+)
+
+// SettledSimultaneous is the authority state of one simultaneous step.
+type SettledSimultaneous struct {
+	Step string `json:"step"`
+	// Locked lists participants who locked in for the current step.
+	Locked map[string]bool `json:"locked"`
+	// Rolling lists Offense participants who locked in by rolling.
+	Rolling map[string]bool `json:"rolling"`
+	// Queue holds every secret play of the current Before step, in play order.
+	Queue []SecretPlay `json:"queue,omitempty"`
+	// Public is what other participants see of each actor during a secret step.
+	Public map[string]SimultaneousPublic `json:"public,omitempty"`
+	// PublicDamage is the damage batch as Defense Before began: what others see
+	// of each participant's incoming attacks until the reveal.
+	PublicDamage *SettledDamageBatch `json:"public_damage,omitempty"`
+	// Revealed is the most recent reveal, kept for redraws after a reload.
+	Revealed []RevealedPlay `json:"revealed,omitempty"`
+	// SecretWounds are wounds recorded by secret plays (sacrifice costs).
+	SecretWounds []string `json:"secret_wounds,omitempty"`
+	Sequence     int      `json:"sequence,omitempty"`
+	// Resolving is set while the reveal applies queued effects.
+	Resolving bool `json:"resolving,omitempty"`
+}
+
+type SimultaneousPublic struct {
+	EnergyPoints     int                      `json:"energy_points"`
+	HandCount        int                      `json:"hand_count"`
+	DeckCount        int                      `json:"deck_count"`
+	DiscardCount     int                      `json:"discard_count"`
+	RemovedCount     int                      `json:"removed_count"`
+	Statuses         []StatusState            `json:"statuses,omitempty"`
+	AbilityModifiers []RuntimeAbilityModifier `json:"ability_modifiers,omitempty"`
+}
+
+// SecretPlay is one card played in a secret step. Immediate private effects
+// (draws, energy, own piles) already happened; Steps and Legacy are applied at
+// the reveal against the targets chosen when the card was played.
+type SecretPlay struct {
+	Sequence         int                 `json:"sequence"`
+	Step             string              `json:"step"`
+	ActorID          string              `json:"actor_id"`
+	CardID           string              `json:"card_instance_id"`
+	CardDefinitionID string              `json:"card_definition_id"`
+	Steps            []SecretProgramStep `json:"steps,omitempty"`
+	Legacy           *SecretLegacyPlay   `json:"legacy,omitempty"`
+	// ProtectSourceID spends the actor's Protect status on this attack.
+	ProtectSourceID string `json:"protect_source_id,omitempty"`
+	// Immediate plays resolved in full when played; the reveal only shows them.
+	Immediate bool     `json:"immediate,omitempty"`
+	Targets   []string `json:"targets,omitempty"`
+}
+
+type SecretProgramStep struct {
+	Step    json.RawMessage `json:"step"`
+	Targets []string        `json:"targets"`
+}
+
+type SecretLegacyPlay struct {
+	TargetIDs []string `json:"target_ids,omitempty"`
+	AbilityID string   `json:"ability_id,omitempty"`
+	DieIndex  int      `json:"die_index"`
+	StatusID  string   `json:"status_id,omitempty"`
+}
+
+// RevealedPlay is the public record of one secret play at its reveal.
+type RevealedPlay struct {
+	Sequence         int      `json:"sequence"`
+	Step             string   `json:"step"`
+	ActorID          string   `json:"actor_id"`
+	CardID           string   `json:"card_instance_id"`
+	CardDefinitionID string   `json:"card_definition_id"`
+	Targets          []string `json:"targets,omitempty"`
+	// Outcome is "resolved", or "no_effect" when every target was gone.
+	Outcome string `json:"outcome"`
+}
+
+func cloneSimultaneous(value *SettledSimultaneous) *SettledSimultaneous {
+	if value == nil {
+		return nil
+	}
+	data, err := json.Marshal(value)
+	if err != nil {
+		panic(err)
+	}
+	var result SettledSimultaneous
+	if err = json.Unmarshal(data, &result); err != nil {
+		panic(err)
+	}
+	return &result
 }
 
 type SettledPlanningPublicState struct {
@@ -155,6 +261,10 @@ type SettledDefense struct {
 	RolledFaces  []int       `json:"rolled_faces,omitempty"`
 	CatalystPaid bool        `json:"catalyst_paid,omitempty"`
 	Finalized    bool        `json:"finalized"`
+	// Prevented and EnergyGained record what a defense resolved during
+	// Defense Before did, so a later reroll of its dice re-resolves it.
+	Prevented    int `json:"prevented,omitempty"`
+	EnergyGained int `json:"energy_gained,omitempty"`
 }
 
 type SettledDamageBatch struct {
@@ -236,6 +346,7 @@ func cloneSettledRuntime(value *SettledRuntime) *SettledRuntime {
 	if value.Venom != nil {
 		cloned.Venom = CloneVenom(value.Venom)
 	}
+	cloned.Simultaneous = cloneSimultaneous(value.Simultaneous)
 	cloned.Actors = make(map[string]SettledActorRuntime, len(value.Actors))
 	for id, actor := range value.Actors {
 		cloned.Actors[id] = cloneSettledActor(actor)
@@ -306,6 +417,11 @@ func cloneSettledActor(value SettledActorRuntime) SettledActorRuntime {
 		c.Selected = copyStrings(c.Selected)
 		c.Drawn = copyStrings(c.Drawn)
 		c.Looked = copyStrings(c.Looked)
+		c.Deferred = append([]SecretProgramStep(nil), c.Deferred...)
+		for i := range c.Deferred {
+			c.Deferred[i].Step = append([]byte(nil), c.Deferred[i].Step...)
+			c.Deferred[i].Targets = copyStrings(c.Deferred[i].Targets)
+		}
 		value.CardExecution = &c
 	}
 	uses2 := map[string]int{}
@@ -372,6 +488,8 @@ type CardExecution struct {
 	// Looked lists the draw-pile cards this play looked at, top first.
 	Looked []string `json:",omitempty"`
 	Paid   bool
+	// Deferred holds steps a secret play queues for the reveal.
+	Deferred []SecretProgramStep `json:",omitempty"`
 }
 
 type ProgramDieFeedback struct {

@@ -29,8 +29,9 @@ func _run() -> void:
 		only_empty.queue_result({"events": result.events.slice(0, 2)})
 		_expect(not only_empty.has_beats() and only_empty.last_sequence() == 2, "empty-only results do not leave a wait or unacknowledged event")
 
-	# Idle persistent statuses alone do not create work; actual expiry, conversion,
-	# resource changes and even zero-damage rolls on any combatant still do.
+	# Effects stop play only for damage: health or cards lost (and rolls, below).
+	# Statuses that merely expire or change, and resources, update the HUD while
+	# play moves straight on to Income.
 	var idle := empty.duplicate(true)
 	idle.actors_before.enemy_4.statuses = [{"id": "curse", "stacks": 2}]
 	idle.actors_after.enemy_4.statuses = idle.actors_before.enemy_4.statuses.duplicate(true)
@@ -39,9 +40,10 @@ func _run() -> void:
 		for field in ["health", "energy", "deck_count", "hand_count", "discard_count", "removed_count", "statuses"]:
 			var changed := empty.duplicate(true)
 			changed.actors_after[actor_id][field] = [{"id": "poison", "stacks": 1}] if field == "statuses" else int(changed.actors_after[actor_id][field]) + 1
-			_expect_first(changed, "effects_resolved", "%s %s change remains visible" % [actor_id, field])
+			if field in ["health", "removed_count"]: _expect_first(changed, "effects_resolved", "%s %s change remains visible" % [actor_id, field])
+			else: _expect_first(changed, "income_summary", "%s %s change alone does not stop play" % [actor_id, field])
 	var expiry := idle.duplicate(true); expiry.actors_after.enemy_4.statuses = []
-	_expect_first(expiry, "effects_resolved", "status expiry without damage remains visible")
+	_expect_first(expiry, "income_summary", "status expiry without damage does not stop play")
 	var rolled := empty.duplicate(true)
 	rolled.steps = [{"type": "dice_rolled", "actor_id": "enemy_4", "data": {"damage": 0}}]
 	_expect_first(rolled, "effects_resolved", "zero-damage roll remains visible")

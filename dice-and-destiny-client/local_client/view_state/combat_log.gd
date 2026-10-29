@@ -102,6 +102,21 @@ func _event(event: Dictionary) -> void:
 			if data.get("status_id") == "grave_debt": _add("%s: Grave Debt consumed · %d less Energy this Income" % [_name(actor), int(data.get("energy_prevented", 0))])
 		"discard_reshuffled": _add("%s shuffled their discard into their deck" % _name(actor))
 		"ability_selected": _add("%s selected %s" % [_name(actor), _content("ability", str(data.get("ability_id", event.get("source_id", ""))))])
+		# Simultaneous play: only the player's own secret plays reach this log
+		# before the reveal; the reveal then lists everyone's.
+		"card_queued":
+			var queued_card := "Protect" if data.get("status_id") == "protect" else _content("card", str(data.get("card_definition_id", "")))
+			_add("%s played %s in secret · it resolves at the reveal" % [_name(actor), queued_card])
+		"defense_planned":
+			if data.get("skipped", false): _add("%s chose no defense for an attack (secret)" % _name(actor))
+			else: _add("%s chose %s (secret until the rolls)" % [_name(actor), _content("ability", str(data.get("ability_id", "")))])
+		"simultaneous_locked_in": _add("%s locked in" % _name(actor))
+		"secret_plays_revealed":
+			for play in _array(data.get("plays")):
+				var revealed_card := "Protect" if play.get("card_definition_id") == "protect" else _content("card", str(play.get("card_definition_id", "")))
+				var targets := PackedStringArray()
+				for target in _array(play.get("targets")): targets.append(str(target))
+				_add("Revealed: %s played %s%s%s" % [_name(str(play.get("actor_id", ""))), revealed_card, (" → " + ", ".join(targets)) if not targets.is_empty() else "", " · no effect" if play.get("outcome") == "no_effect" else ""])
 		"blind_resolved":
 			_add("%s: Blind rolled %d · %s · Blind consumed" % [_name(actor), int(data.get("face", 0)), "selected ability cancelled" if data.get("cancelled", false) else "attack remains"])
 		"defense_selected":

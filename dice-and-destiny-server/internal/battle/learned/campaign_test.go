@@ -6,6 +6,7 @@ import (
 	"os"
 	"path/filepath"
 	"reflect"
+	"strconv"
 	"strings"
 	"testing"
 
@@ -192,7 +193,15 @@ func TestCampaignAwardsVictoryXPAndAdvancesEncounters(t *testing.T) {
 	opponents := map[string]bool{}
 	victories, defeats := 0, 0
 	sawWoundedStart, sawMend := false, false
-	for seed := uint64(1); seed <= 200 && (victories < len(encounters)-1 || defeats == 0 || len(opponents) < len(encounters) || !sawWoundedStart); seed++ {
+	// Seeds from 1001 reach every encounter with the scripted player under
+	// simultaneous play with defenses that roll when chosen (1–200 did before
+	// simultaneous play, 201–400 before the immediate defense rolls).
+	firstSeed := uint64(1001)
+	// DICE_AND_DESTINY_CAMPAIGN_PROBE_START probes another 200-seed range.
+	if probe, err := strconv.ParseUint(os.Getenv("DICE_AND_DESTINY_CAMPAIGN_PROBE_START"), 10, 64); err == nil {
+		firstSeed = probe
+	}
+	for seed := firstSeed; seed < firstSeed+200 && (victories < len(encounters)-1 || defeats == 0 || len(opponents) < len(encounters) || !sawWoundedStart); seed++ {
 		before := readSave(t, contentRoot, loadoutRoot, save.ID).Sheet
 		next := c.campaign.NextEncounter(before)
 		s := session(next)

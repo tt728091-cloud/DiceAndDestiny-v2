@@ -177,13 +177,24 @@ func (s *Session) Reset(battleID string, seed uint64, humanSeat string, rematch 
 	return s.ResetCharacter(battleID, seed, humanSeat, rematch, "blade_warden")
 }
 
-func (s *Session) ResetCharacter(battleID string, seed uint64, humanSeat string, rematch bool, character string, unified ...bool) (map[string]any, error) {
-	return s.ResetCharacterLoadout(battleID, seed, humanSeat, rematch, character, len(unified) > 0 && unified[0], "sandbox")
+// BattleRules are the pinned rule flags a new battle starts with.
+type BattleRules struct {
+	UnifiedDefense   bool
+	SimultaneousPlay bool
+}
+
+// ResetCharacter starts a sandbox battle; rules are unified defense, then
+// simultaneous play.
+func (s *Session) ResetCharacter(battleID string, seed uint64, humanSeat string, rematch bool, character string, rules ...bool) (map[string]any, error) {
+	return s.ResetCharacterRules(battleID, seed, humanSeat, rematch, character, BattleRules{UnifiedDefense: len(rules) > 0 && rules[0], SimultaneousPlay: len(rules) > 1 && rules[1]}, "sandbox")
 }
 func (s *Session) ResetCharacterLoadout(battleID string, seed uint64, humanSeat string, rematch bool, character string, unified bool, mode string) (map[string]any, error) {
-	return s.resetLoadout(battleID, seed, humanSeat, rematch, character, unified, mode, nil, nil)
+	return s.ResetCharacterRules(battleID, seed, humanSeat, rematch, character, BattleRules{UnifiedDefense: unified}, mode)
 }
-func (s *Session) resetLoadout(battleID string, seed uint64, humanSeat string, rematch bool, character string, unified bool, mode string, campaign *campaignBattle, expedition *expeditionBattle) (map[string]any, error) {
+func (s *Session) ResetCharacterRules(battleID string, seed uint64, humanSeat string, rematch bool, character string, rules BattleRules, mode string) (map[string]any, error) {
+	return s.resetLoadout(battleID, seed, humanSeat, rematch, character, rules, mode, nil, nil)
+}
+func (s *Session) resetLoadout(battleID string, seed uint64, humanSeat string, rematch bool, character string, rules BattleRules, mode string, campaign *campaignBattle, expedition *expeditionBattle) (map[string]any, error) {
 	if mode != "" && mode != "sandbox" && mode != "progression" && !(mode == "campaign" && campaign != nil) && !(mode == "expedition" && expedition != nil) {
 		return nil, fmt.Errorf("invalid loadout mode")
 	}
@@ -301,7 +312,8 @@ func (s *Session) resetLoadout(battleID string, seed uint64, humanSeat string, r
 		SeatWounds:        wounds,
 		SeatPresets:       presets,
 		SeatAbilityBoards: abilityBoards,
-		UnifiedDefense:    unified,
+		UnifiedDefense:    rules.UnifiedDefense,
+		SimultaneousPlay:  rules.SimultaneousPlay,
 		Seed:              seed,
 		BattleID:          battleID,
 		SeatDefinitions:   definitions, SeatModels: models, SeatTeams: teams,

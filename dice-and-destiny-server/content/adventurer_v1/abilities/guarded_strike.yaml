@@ -4,7 +4,7 @@
   "name": "Guarded Strike",
   "type": "offensive",
   "presentation": {
-    "rules_text": "2 Swords + 3 Shields: deal 5 damage and gain 2 Protect (positive status) before defense. During damage reaction, spend all Protect to prevent that much damage from one incoming attack. Unused Protect expires during the next round\u2019s ongoing effects. Faces 1-3 are Swords; 4-5 are Shields. Misses without the required symbols."
+    "rules_text": "2 Swords + 3 Shields: deal 5 damage and gain 2 Protect (positive status) before defense. When your incoming attacks land, each Protect prevents 1 damage on its own, at random across them. Unused Protect expires during the next round\u2019s ongoing effects. Faces 1-3 are Swords; 4-5 are Shields. Misses without the required symbols."
   },
   "cost": {
     "energy": 0

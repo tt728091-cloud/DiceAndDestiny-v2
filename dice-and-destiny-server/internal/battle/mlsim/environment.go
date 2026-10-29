@@ -63,13 +63,14 @@ type ResetRequest struct {
 	SeatWounds map[string][]loadout.Entry `json:"seat_wounds,omitempty"`
 	// SeatPresets start seats from preset piles, energy and statuses (the
 	// Expedition bridge).
-	SeatPresets     map[string]battle.PresetPiles `json:"seat_presets,omitempty"`
-	UnifiedDefense  bool                          `json:"unified_defense,omitempty"`
-	SeatTeams       map[string]string             `json:"seat_teams,omitempty"`
-	Seed            uint64                        `json:"seed"`
-	BattleID        string                        `json:"battle_id,omitempty"`
-	SeatModels      map[string]string             `json:"seat_models,omitempty"`
-	SeatDefinitions map[string]string             `json:"seat_definitions,omitempty"`
+	SeatPresets      map[string]battle.PresetPiles `json:"seat_presets,omitempty"`
+	UnifiedDefense   bool                          `json:"unified_defense,omitempty"`
+	SimultaneousPlay bool                          `json:"simultaneous_play,omitempty"`
+	SeatTeams        map[string]string             `json:"seat_teams,omitempty"`
+	Seed             uint64                        `json:"seed"`
+	BattleID         string                        `json:"battle_id,omitempty"`
+	SeatModels       map[string]string             `json:"seat_models,omitempty"`
+	SeatDefinitions  map[string]string             `json:"seat_definitions,omitempty"`
 }
 
 type ActionRecord struct {
@@ -84,6 +85,7 @@ type ReplayRecord struct {
 	SeatWounds        map[string][]loadout.Entry      `json:"seat_wounds,omitempty"`
 	SeatPresets       map[string]battle.PresetPiles   `json:"seat_presets,omitempty"`
 	UnifiedDefense    bool                            `json:"unified_defense,omitempty"`
+	SimultaneousPlay  bool                            `json:"simultaneous_play,omitempty"`
 	SeatTeams         map[string]string               `json:"seat_teams,omitempty"`
 	EnvironmentSchema string                          `json:"environment_schema"`
 	ObservationSchema string                          `json:"observation_schema"`
@@ -266,6 +268,7 @@ func (e *Environment) Reset(request ResetRequest) (Transition, error) {
 		SeatWounds:        cloneDecklists(request.SeatWounds),
 		SeatPresets:       clonePresets(request.SeatPresets),
 		UnifiedDefense:    request.UnifiedDefense,
+		SimultaneousPlay:  request.SimultaneousPlay,
 		EnvironmentSchema: environmentSchema,
 		ObservationSchema: observationSchema,
 		ActionSchema:      actionSchema,
@@ -286,9 +289,10 @@ func (e *Environment) Reset(request ResetRequest) (Transition, error) {
 		seats = append(seats, command.ParticipantDescriptor{InstanceID: id, DefinitionID: request.SeatDefinitions[id], TeamID: request.SeatTeams[id]})
 	}
 	payload, err := json.Marshal(command.StartBattlePayload{
-		UnifiedDefense: request.UnifiedDefense,
-		Seats:          seats,
-		Seed:           &request.Seed,
+		UnifiedDefense:   request.UnifiedDefense,
+		SimultaneousPlay: request.SimultaneousPlay,
+		Seats:            seats,
+		Seed:             &request.Seed,
 	})
 	if err != nil {
 		return Transition{}, err
@@ -539,7 +543,7 @@ func (e *Environment) Replay(record ReplayRecord) (Transition, error) {
 		SeatWounds:        cloneDecklists(record.SeatWounds),
 		SeatPresets:       clonePresets(record.SeatPresets),
 		SeatAbilityBoards: cloneAbilityBoards(record.SeatAbilityBoards),
-		Seed:              record.Seed, BattleID: record.BattleID, UnifiedDefense: record.UnifiedDefense,
+		Seed:              record.Seed, BattleID: record.BattleID, UnifiedDefense: record.UnifiedDefense, SimultaneousPlay: record.SimultaneousPlay,
 		SeatModels: record.SeatModels, SeatDefinitions: record.SeatDefinitions, SeatTeams: record.SeatTeams,
 	})
 	if err != nil {

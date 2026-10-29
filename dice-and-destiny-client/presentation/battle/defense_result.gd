@@ -93,11 +93,18 @@ func highlight_card_target(description: String) -> Button:
 func _process(_delta: float) -> void:
 	if is_instance_valid(damage): _update()
 
+## Overridden by presenters that play a shorter roll (simultaneous Defense).
+func _roll_seconds() -> float:
+	return TIMING.roll_seconds()
+
+func _effects_seconds() -> float:
+	return TIMING.effects_seconds()
+
 func _update() -> void:
 	var elapsed := maxf(0, (Time.get_ticks_msec() - started_ms) / 1000.0)
 	var roll_elapsed := maxf(0, (Time.get_ticks_msec() - int(data.get("roll_started_ms", started_ms))) / 1000.0)
-	var rolling := roll_elapsed < TIMING.roll_seconds() or bool(data.get("awaiting_roll", false))
-	var effects := 0.0 if data.get("effects_pending", false) else maxf(0.0, elapsed - TIMING.roll_seconds()) / TIMING.effects_seconds()
+	var rolling := roll_elapsed < _roll_seconds() or bool(data.get("awaiting_roll", false))
+	var effects := 0.0 if data.get("effects_pending", false) else maxf(0.0, elapsed - _roll_seconds()) / _effects_seconds()
 	# Tumble on a free-running clock: a roll scheduled after the phase
 	# transition must not sit frozen on one face until its start time.
 	var spin := Time.get_ticks_msec() / 1000.0

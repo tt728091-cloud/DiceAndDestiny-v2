@@ -3,7 +3,79 @@
 Baseline: `de0ed80` on `codex/battle-ui-and-gameplay-update`.
 Experiment: `codex/unified-defense-experiment`.
 
-## Player flow
+## Simultaneous play (new battles)
+
+New battles from the menu, campaigns and expeditions also pin `simultaneous_play`
+(`Settled.SimultaneousPlay`, requested with `simultaneous_play` at start and kept
+only with `unified_defense`). Its full design is `simultaneous-play-plan.md`.
+Everything below about card ownership, reservations, prevention and the single
+commit still applies; the order of play changes:
+
+- **Offense.** Every participant plays Before cards in secret, then locks in by
+  pressing Roll (or skips their offense). Once everyone has locked in, the
+  secret plays are revealed and resolve together (seat order, then play order),
+  then everyone's first roll happens. While rolling, cards may only affect
+  their owner (own dice, draws, energy, own statuses and ability bonuses) and
+  stay hidden from the others. Once every ability is locked in, the abilities
+  are revealed and the attacks are set; play does not stop here.
+- **Between the attacks and the defenses (Offense After = Defense Before).**
+  One step, opened for every participant at once. Each incoming attack shows
+  the cards it threatens from the start. You can:
+  - play After-offense, any-time and opt-in reaction cards (such as Disrupt)
+    and Before-defense cards, with any target — except your own attack, which
+    is final once you lock your ability in (no Nudge or Try Again on it);
+  - choose a defense for an attack (one defense can cover all remaining
+    attacks when its usage limit allows; an attack can be left undefended).
+    **It rolls and resolves the moment you choose it** — damage prevented,
+    energy gained — and you can choose the next one while its dice are still
+    rolling. Its dice then rest above the attack's badge, where cards that
+    reroll defense dice (Second Guard, Full Parry) target them; the defense
+    re-resolves by the difference.
+
+  Prevention cards on your own incoming attack (Steady Guard) also resolve
+  at once. A Before-defense card plays on an attack only until that attack
+  has its defense (rolled, or none); any-time cards play throughout. Protect needs no action: when the attacks are committed it
+  prevents 1 damage per stack at random across your remaining incoming attack
+  damage (`auto_prevention`), sends the saved cards to discard and is spent. All of this is visible to you only; the others see it at
+  the reveal. Plays that touch anyone else (statuses, enemy dice, another
+  participant's damage) wait in hand until the reveal, as before. There is no
+  roll or lock-in button: you lock in with **Pass**, or automatically once
+  nothing is left to choose and your dice have landed. AI-controlled enemies
+  choose their defenses when the step opens, before any hidden play exists;
+  theirs roll at the reveal.
+
+  Once everyone has locked in, the reveal resolves the queued plays (seat
+  order, then play order). A play that changed an attack's dice, ability
+  bonuses or the attacker's statuses (a Disrupt on an enemy's dice, a
+  Dispel on Lieutenant's Favor) re-scores that attack at once: the same
+  ability at the tier its dice now reach, or a miss — never a different
+  ability. Its reserved cards follow the new amount (freed cards stay where
+  they are); a defense already rolled against it keeps what it prevented.
+  This Offense's bonuses are spent then. Abilities with their own rolls or
+  special effects keep their score. Then the AI defenses roll and resolve,
+  and every defended attack's statuses land.
+- **Defense After.** Opens for everyone once the reveal is done: After and
+  any-time cards resolve when played and are visible (an After Salve can
+  remove the poison before it ticks); they no longer change the attacks. It
+  completes on its own when nothing is playable. Then the remaining damage
+  and the undefended attacks' statuses commit once. A Dispel played before
+  the reveal on someone's Fortified does not take back a die they already
+  rolled.
+- **Privacy.** During a secret step the others see each participant as the
+  step began: energy, pile counts, statuses, ability bonuses and, in Defense,
+  their incoming attacks and threatened cards (`SettledSimultaneous.PublicDamage`),
+  plus a "locked in" marker. Secret card plays, draws, defense rolls and
+  prevention are never in their events, snapshot or legal actions. Your own
+  cards still waiting for the reveal stay dimmed in hand (no on-screen text
+  lists them). One
+  `secret_plays_revealed` event lists every play at the reveal; the combat log
+  shows it, with no on-screen pop-up.
+- **Which battles.** The rule needs every participant's cards to support
+  secret plays: card programs and cards that only touch their owner. Battles
+  with Venom or Curse mechanic cards, or an enemy-targeting legacy card such as
+  Alchemist's Gamble, keep the unified flow below.
+
+## Player flow (unified defense without simultaneous play)
 
 Effects → Income → Offensive → Defense → next round.
 
@@ -58,8 +130,9 @@ work still run. The engine does not open a second Damage segment.
   `original` (default) or `discard`. Steady Guard/Guard explicitly use discard
   and Bulwark/Guard+ use original. A played prevention card still
   goes to discard, even if it saves itself; protecting another source does not
-  clear that card's own outstanding reservation. Protect retains its explicit
-  saved-to-discard status rule. Discard counts as health and never reshuffles.
+  clear that card's own outstanding reservation. Protect sends the cards it
+  saves to discard (`auto_prevention_destination`) and acts on its own at the
+  final commit. Discard counts as health and never reshuffles.
 - Repainting, reopening a save, or reconciling unchanged damage never rerolls
   existing reservations. Saved proposals remain released.
 - Damage beyond available health has no duplicate card reservation. If later
@@ -72,7 +145,8 @@ work still run. The engine does not open a second Damage segment.
 ## Compatibility and testing
 
 The experiment is a persisted battle rule passed through native startup and ML
-simulation/replay. New battles from the menu enable it. Older saved battles and
+simulation/replay. New battles from the menu enable it, together with
+`simultaneous_play` where every participant's cards support it. Older saved battles and
 recorded fixtures keep the old flow. Starting a new battle is required to try it;
 opening an old save deliberately does not migrate its in-progress checkpoint.
 
@@ -85,7 +159,14 @@ cd ..
 ./scripts/godot.sh --headless --script res://tests/presentation/verify_unified_defense.gd
 ./scripts/godot.sh --headless --script res://tests/presentation/verify_steady_guard_targeting.gd
 DICE_AND_DESTINY_UNIFIED_LAYOUT=1 ./scripts/godot.sh --headless --script res://tests/presentation/verify_damage_card_layout.gd
+./scripts/godot.sh --headless --script res://tests/presentation/verify_simultaneous_play.gd
 ```
+
+`internal/battle/engine/simultaneous_play_test.go` covers the simultaneous rule
+with two external participants (secret plays, lock-ins, reveal order, self-only
+rolling, the After steps, Fortified and Lieutenant's Favor timing, the single
+commit, AI choices from public information, per-viewer privacy and save/reload);
+`internal/battle/learned/simultaneous_play_test.go` plays complete encounters.
 
 The unified tests cover separate sources, reverse restoration priority, card and
 Protect destinations, stable saves, excess damage, blocked attack statuses,

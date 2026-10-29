@@ -1,12 +1,15 @@
 class_name BattleCommandBuilder
 extends RefCounted
 
-static func start_battle(battle_id: String, actor_id: String = "blade", unified_defense: bool = false) -> String:
-	return _json(battle_id, actor_id, "start_battle", {
+static func start_battle(battle_id: String, actor_id: String = "blade", unified_defense: bool = false, simultaneous_play: bool = false) -> String:
+	var payload := {
 		"unified_defense": unified_defense,
 		"player": {"instance_id": "blade", "definition_id": "blade_warden"},
 		"enemies": [{"instance_id": "goblin", "definition_id": "venom_goblin"}],
-	})
+	}
+	# Requested only by new battles; the authority pins it when the cards allow.
+	if simultaneous_play: payload["simultaneous_play"] = true
+	return _json(battle_id, actor_id, "start_battle", payload)
 
 static func open_battle(battle_id: String, actor_id: String = "blade") -> String:
 	return _json(battle_id, actor_id, "open_battle", {})

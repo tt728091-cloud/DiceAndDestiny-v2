@@ -19,6 +19,31 @@ var _card_target_hint := ""
 var target_heading: Button
 var incoming_row: Button
 
+## Simultaneous Defense: each defense rolls at its own spot on the open floor,
+## shows what it does, then its dice shrink into a row above the attack's
+## badge, where they stay and cards can target them.
+const QUICK_ROLL := 0.75
+const QUICK_EFFECTS := 0.85
+const QUICK_FLY := 0.45
+const RESTING_SCALE := 0.46
+
+static func quick_total_ms() -> int:
+	return ceili((QUICK_ROLL + QUICK_EFFECTS + QUICK_FLY) * 1000.0)
+
+func quick_roll() -> bool:
+	return bool(data.get("quick_roll", false))
+
+func _roll_seconds() -> float:
+	return QUICK_ROLL if quick_roll() else super._roll_seconds()
+
+func _effects_seconds() -> float:
+	return QUICK_EFFECTS if quick_roll() else super._effects_seconds()
+
+## A stable spot on the open floor for this attack's roll.
+func _roll_spot() -> Vector2:
+	var h := absi(hash(str(data.source_id)))
+	return Vector2(560 + h % 600, 360 + (h / 600) % 190)
+
 func attach_to_battlefield(owner_screen: Control, attack_source: Dictionary) -> void:
 	screen = owner_screen; source = attack_source; attacker_id = str(source.get("source_actor_id", ""))
 	slot = screen._attack_intents.size()
@@ -117,6 +142,12 @@ func attach_to_battlefield(owner_screen: Control, attack_source: Dictionary) -> 
 		# Configure wrapping before sizing: an unwrapped benefit can otherwise
 		# impose its full sentence width, which Containers retain after it wraps.
 		cell.size = cell.custom_minimum_size
+	if quick_roll():
+		# Dice inside roll_area never receive the pointer; the resting dice
+		# must be clickable, so they sit on the board itself.
+		for cell in roll_cells:
+			cell.reparent(screen._root, false); cell.z_index = 12
+		_attach_die_targets()
 	# Fixed benefits and Curse follow-ups originate at the same landing area.
 	effect_origin.reparent(roll_area, false); effect_origin.show()
 	effect_origin.text = str(data.ability_name) if not bool(data.get("selection_only", false)) else ""
@@ -126,6 +157,98 @@ func attach_to_battlefield(owner_screen: Control, attack_source: Dictionary) -> 
 		if origin == effect_origin: continue
 		origin.reparent(roll_area, false); origin.show(); INK.hud_lettering(origin)
 	_update()
+
+## An enemy's defense rolls in place on its station above its name and health,
+## on the same quick clock.
+func _update_enemy_station(inverse: Transform2D) -> void:
+	var actor := str(data.actor_id)
+	roll_area.visible = not bool(data.get("selection_only", false)) and not dice_controls.is_empty() and screen.defense_station_source(actor) == str(data.source_id)
+	var defender: Control = screen._actor_profiles.get(actor)
+	if not is_instance_valid(defender): return
+	var defender_rect: Rect2 = inverse * defender.get_global_rect()
+	var dock: Control = screen.dice_dock(actor)
+	var bottom := (inverse * dock.get_global_rect()).position.y if is_instance_valid(dock) and dock.visible else defender_rect.position.y
+	var width := maxf(104, roll_cells.size() * 108 - 4)
+	var landing := Vector2(defender_rect.get_center().x - width * 0.5, bottom - 112)
+	for i in roll_cells.size():
+		var cell := roll_cells[i]
+		cell.visible = roll_area.visible
+		cell.scale = Vector2.ONE
+		cell.custom_minimum_size = Vector2(104, 104); cell.size = cell.custom_minimum_size
+		cell.position = landing + Vector2(i * 108, 0)
+		dice_controls[i].show()
+	effect_origin.size = Vector2(220, 28)
+	effect_origin.position = landing + Vector2((width - effect_origin.size.x) * 0.5, -32)
+	effect_origin.modulate.a = 1.0
+	for i in gain_origins.size():
+		var origin: Label = gain_origins[i]
+		if origin not in benefit_labels and origin != effect_origin: origin.position = landing + Vector2(0, -60 + i * 25)
+
+## Cards that change defense dice target the resting dice beside the badge.
+func _attach_die_targets() -> void:
+	for i in dice_controls.size():
+		var action: Dictionary = screen._defensive_die_action(str(data.source_id), i)
+		if action.is_empty(): continue
+		var die := dice_controls[i]
+		die.disabled = false; die.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+		die.set_meta("defensive_die_target", true)
+		die.set_meta("inspection_id", "battle.defense_die_target.%s.%d" % [data.source_id, i])
+		die.pressed.connect(func(): screen._commit_defensive_die(action))
+		var ring := Panel.new(); ring.name = "DieTargetHighlight"; ring.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		var style := StyleBoxFlat.new(); style.bg_color = Color("ad71e530"); style.border_color = Color("dfadff"); style.set_border_width_all(4); style.set_corner_radius_all(8)
+		ring.add_theme_stylebox_override("panel", style)
+		die.add_child(ring); ring.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+
+func _update_quick_roll(inverse: Transform2D) -> void:
+	if str(data.actor_id) != screen.viewer_actor_id:
+		_update_enemy_station(inverse)
+		return
+	var elapsed := maxf(0, (Time.get_ticks_msec() - started_ms) / 1000.0)
+	roll_area.visible = not bool(data.get("selection_only", false)) and not dice_controls.is_empty()
+	var fly := clampf((elapsed - QUICK_ROLL - QUICK_EFFECTS) / QUICK_FLY, 0, 1)
+	fly = fly * fly * (3.0 - 2.0 * fly)
+	var spot := _roll_spot()
+	var badge: Rect2 = inverse * attack_damage_rect()
+	var player_die: bool = str(data.actor_id) == screen.viewer_actor_id
+	var cell_size := Vector2(56, 94) if player_die else Vector2(104, 104)
+	var die_size: Vector2 = BattleDiceTray.HUD_DIE_SIZE if player_die else Vector2(64, 64)
+	var small_scale := RESTING_SCALE if player_die else RESTING_SCALE * 56.0 / 64.0
+	var small := die_size * small_scale
+	var row_width := dice_controls.size() * (small.x + 4) - 4
+	# Rest centred just above the badge, kept on the board.
+	var rest := Vector2(clampf(badge.get_center().x - row_width * 0.5, 16, 1904 - row_width), maxf(6.0, badge.position.y - small.y - 6))
+	var centred := (cell_size.x - die_size.x) * 0.5
+	for i in roll_cells.size():
+		var cell := roll_cells[i]
+		cell.visible = roll_area.visible
+		cell.custom_minimum_size = cell_size; cell.size = cell_size
+		var start := spot + Vector2(i * (cell_size.x + 6), 0)
+		var finish := rest + Vector2(i * (small.x + 4) - centred * small_scale, 0)
+		var scale := lerpf(1.0, small_scale, fly)
+		cell.scale = Vector2(scale, scale)
+		cell.position = start.lerp(finish, fly)
+		dice_controls[i].show()
+		benefit_labels[i].modulate.a *= 1.0 - clampf(fly * 2.0, 0, 1)
+	effect_origin.size = Vector2(220, 22)
+	effect_origin.position = spot + Vector2(0, cell_size.y + 6)
+	effect_origin.modulate.a = (1.0 if elapsed >= QUICK_ROLL * 0.5 else 0.0) * (1.0 - fly)
+	for i in gain_origins.size():
+		var origin: Label = gain_origins[i]
+		if origin in benefit_labels or origin == effect_origin: continue
+		origin.position = spot + Vector2(0, cell_size.y + 30 + i * 25)
+		origin.modulate.a *= 1.0 - fly
+
+## An opponent's card (or a revealed play) changed this attack: its number
+## pulses and counts to the new value, with no card or caption.
+func _apply_number_pulse() -> void:
+	var pulse: Dictionary = screen._number_pulses.get(str(data.source_id), {})
+	if pulse.is_empty() or pulse.get("battle_id") != screen._view.battle_id: return
+	var t := clampf((Time.get_ticks_msec() - int(pulse.started_ms)) / 1100.0, 0, 1)
+	if t >= 1.0:
+		damage.scale = Vector2.ONE; damage.self_modulate = Color.WHITE
+		return
+	damage.text = str(roundi(lerpf(float(pulse.before), float(pulse.after), clampf((t - 0.1) / 0.45, 0, 1))))
+	preload("res://presentation/battle/card_gain_notice.gd")._pulse(damage, sin(t * PI))
 
 ## The recipient's pending-loss heading replaces the player's duplicate badge.
 ## Keep this presenter alive for its defense clocks, rules and effect anchors.
@@ -183,6 +306,7 @@ func _ability_tooltip() -> String:
 func _update() -> void:
 	super._update()
 	if not is_instance_valid(screen) or not is_instance_valid(intent): return
+	_apply_number_pulse()
 	if _tooltip_damage != damage.text:
 		_tooltip_damage = damage.text
 		intent.tooltip_text = _ability_tooltip()
@@ -266,8 +390,12 @@ func _update() -> void:
 	if not bool(data.get("reveal_cards", false)):
 		position = Vector2(570 + (slot % 2) * 460, 500 + (slot / 2) * 145)
 		size = Vector2(440, maxf(1, _body.get_combined_minimum_size().y))
+	if quick_roll():
+		_update_quick_roll(inverse)
+		if is_instance_valid(incoming_row): screen._layout_incoming_attack_list()
+		return
 	var roll_elapsed := maxf(0, (Time.get_ticks_msec() - int(data.get("roll_started_ms", started_ms))) / 1000.0)
-	var t := clampf(roll_elapsed / TIMING.roll_seconds(), 0, 1)
+	var t := clampf(roll_elapsed / _roll_seconds(), 0, 1)
 	if bool(data.get("awaiting_roll", false)): t = fmod(t, 0.9)
 	for i in roll_cells.size():
 		var cell := roll_cells[i]
@@ -305,7 +433,7 @@ func _draw() -> void:
 	super._draw()
 	if not is_instance_valid(intent) or not dice_controls.is_empty() or int(data.get("prevented", 0)) <= 0 or data.get("effects_pending", false) or data.get("damage_pending", false): return
 	var elapsed := (Time.get_ticks_msec() - started_ms) / 1000.0
-	var effects := maxf(0, elapsed - TIMING.roll_seconds()) / TIMING.effects_seconds()
+	var effects := maxf(0, elapsed - _roll_seconds()) / _effects_seconds()
 	var t := clampf((effects - 0.2) / 0.45, 0, 1)
 	if t <= 0 or t >= 1: return
 	var inverse := get_global_transform_with_canvas().affine_inverse()

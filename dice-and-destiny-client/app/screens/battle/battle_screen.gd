@@ -153,6 +153,11 @@ var _center_scroll: ScrollContainer
 var _action_footer: BoxContainer
 var _content_scroll_key := ""
 var _defense_animation_times: Dictionary = {}
+## Simultaneous Defense: when each defense roll was first shown (quick rolls).
+var _quick_roll_clocks: Dictionary = {}
+## Attack numbers changed by an opponent's card or a revealed play: they pulse
+## and count, with no card or caption (source id → clock and values).
+var _number_pulses: Dictionary = {}
 var _defense_shared_round := ""
 var _defense_shared_start := 0
 var _defense_shared_first_wave := ""
@@ -212,7 +217,9 @@ func _defense_before_finalization(result: Dictionary) -> BattleViewState:
 	if _held_defense_view != null or _history_review or _history_replay or _view.stage != "defense_reaction" or (not _unified_defense() and not _defense_has_deferred_curse()): return null
 	var finalized := false
 	var snapshot: Dictionary = result.get("snapshot", {})
-	for selection in _view.defense_selections.values():
+	var held_selections: Array = _view.defense_selections.values()
+	if _simultaneous_play(): held_selections.append_array(_as_dictionary(_view.raw_snapshot.get("defense_plans", {})).values())
+	for selection in held_selections:
 		var source_id := str(selection.get("source_id", ""))
 		var final: Dictionary = snapshot.get("defense_history", {}).get(source_id, snapshot.get("defense_selections", {}).get(selection.get("actor_id", ""), {}))
 		if final.get("finalized", false) and final.get("source_id") == source_id: finalized = true
@@ -352,6 +359,9 @@ func _auto_pass_if_only_action() -> void:
 	# opponent passes and the authority finishes defense/damage in one command.
 	# Show the defense first, then allow subsequent handoffs without replaying it.
 	if _pass_hands_off_priority() and _view.stage != "defense_reaction" and not _continuous_damage_response(): review_ms = 0
+	# Simultaneous Defense with nothing left to choose moves on as soon as the
+	# dice have landed (_sole_pass_action waits for them): no extra review.
+	if _simultaneous_step() in ["defense_before", "defense_after"]: review_ms = 0
 	if review_ms > 0:
 		var now := Time.get_ticks_msec()
 		if key != _auto_pass_preview_input:
@@ -384,6 +394,13 @@ func _defense_review_key() -> String:
 		var faces: Array[int] = []
 		for face in roll.get("rolled_faces", [roll.get("face", 0)]): faces.append(int(face))
 		rolls.append([str(actor_id), str(roll.get("ability_id", "")), str(roll.get("source_id", "")), faces, bool(roll.get("catalyst_paid", false))])
+	# Simultaneous Defense rolls every chosen defense at once, one per attack.
+	if _simultaneous_play() and _view.stage == "defense_reaction":
+		var plans: Dictionary = _as_dictionary(_view.raw_snapshot.get("defense_plans", {}))
+		var plan_ids := plans.keys(); plan_ids.sort()
+		for plan_id in plan_ids:
+			var plan: Dictionary = plans[plan_id]
+			rolls.append([str(plan.get("actor_id", "")), str(plan.get("ability_id", "")), str(plan_id), plan.get("rolled_faces", []), false])
 	return "%s:%d:%s" % [_view.battle_id, _view.round_number, JSON.stringify(rolls)]
 
 func _sole_pass_action() -> Dictionary:
@@ -403,10 +420,13 @@ func _sole_pass_action() -> Dictionary:
 	# cards remain usable during review; an active card target pauses completion.
 	if _automatic_defense_completion():
 		candidates = candidates.filter(func(item): return item.get("type") == "planning_pass")
+	# Simultaneous Defense: with no defense or card left to choose, lock in
+	# once every defense roll on screen has finished.
+	if _simultaneous_step() in ["defense_before", "defense_after"] and Time.get_ticks_msec() < _quick_rolls_finished_at(): return {}
 	if candidates.size() != 1: return {}
 	var action: Dictionary = candidates[0]
 	var command_type := str(action.get("type", ""))
-	if command_type not in ["pass", "planning_pass"] or not _view.allowed(command_type): return {}
+	if command_type not in ["pass", "planning_pass", "roll_dice"] or not _view.allowed(command_type): return {}
 	if str(action.get("actor_id", "")) != viewer_actor_id: return {}
 	var pending := _pending()
 	var input_id := str(pending.get("id", ""))
@@ -459,6 +479,8 @@ func _exit_tree() -> void:
 
 func _card_gain_active() -> bool:
 	for child in get_children():
+		# A quiet result (an opponent's card, a reveal) never holds play.
+		if child.get_script() == CARD_GAIN_NOTICE and child.quiet: continue
 		if child.get_script() in [CARD_GAIN_NOTICE, CURSE_NOTICE] and not child.is_queued_for_deletion(): return true
 	return false
 
@@ -525,6 +547,7 @@ func _apply_model_result(result: Dictionary) -> void:
 	_selected_indices.clear()
 	_director.queue_result(result, _director.last_sequence(), previous_actors)
 	_present_finalized_defense(defense_before)
+	_start_revealed_roll(result)
 	# The opponent's offensive planning (roll, keep, reroll, ability, cards) is
 	# private: nothing the player sees changes until the reveal. Rebuilding the
 	# whole board after each of those steps froze the screen ~250 ms per step
@@ -544,6 +567,7 @@ func _model_planning_step_private(result: Dictionary) -> bool:
 	return bool(result.get("learned_policy", {}).get("model_turn", false)) \
 		and _view.segment == "offensive" and _view.stage == "planning" \
 		and not _director.has_beats() and _held_defense_view == null \
+		and not _result_has_event(result, "secret_plays_revealed") and not _result_has_viewer_roll(result) \
 		and _error_message.is_empty() and not _model_error and not _history_review and not _history_replay
 
 func _render(force: bool = false) -> void:
@@ -1198,6 +1222,9 @@ func _show_skipped_offense_hint() -> void:
 	_player_profile_dock.add_child(explanation)
 
 func _offensive_roll_hint() -> String:
+	if _simultaneous_waiting(): return "Locked in. Your dice roll when everyone has locked in and the secret plays are revealed."
+	if _simultaneous_step() == "offense_before" and _view.allowed("planning_roll"): return "Roll locks you in. Your Before cards stay secret; once everyone has locked in they resolve together, then everyone's dice roll."
+	if _simultaneous_step() == "offense_rolling": return "Keep and reroll, then choose an ability. Cards now affect only you; the others see them when abilities are revealed."
 	if _view.stage == "offensive_reaction": return "Offensive planning has ended. Your next offensive roll is next round."
 	if _view.stage != "planning": return "Finish the current response before resuming offensive planning."
 	if _model_thinking or not _view.allowed("planning_roll"): return "Waiting for the current decision to finish."
@@ -1310,7 +1337,12 @@ func _build_defensive() -> void:
 		else:
 			_build_incoming_selection()
 			if not _selected_source.is_empty() and not _defense_source_chosen(_selected_source):
-				_build_ability_row("DEFENSIVE ABILITIES", _as_array(_view.actor(viewer_actor_id).get("defensive_abilities", [])), viewer_actor_id)
+				# Only the defenses still usable against this attack; spent or
+				# unaffordable ones are left out rather than greyed.
+				var usable := _as_array(_view.actor(viewer_actor_id).get("defensive_abilities", [])).filter(func(id): return not _defense_actions(str(id)).is_empty())
+				if usable.is_empty(): _build_no_defense_note()
+				else: _build_ability_row("DEFENSIVE ABILITIES", usable, viewer_actor_id)
+				_build_skip_source_button()
 		_build_damage()
 		return
 	if _view.stage == "defense_roll":
@@ -1327,6 +1359,23 @@ func _build_defensive() -> void:
 
 # These are authority-authored previews, deliberately separate from legal commands.
 # Merely inspecting an incoming intent never submits a pass.
+# Simultaneous Defense: an attack can be left undefended before locking in.
+func _build_no_defense_note() -> void:
+	var note := Label.new(); note.name = "NoDefenseLeft"; note.text = "No defenses left for this attack"
+	note.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER; note.add_theme_font_size_override("font_size", 16)
+	CINEMATIC.hud_lettering(note)
+	_ability_dock.add_child(note)
+
+func _build_skip_source_button() -> void:
+	var skip := _skip_source_action(_selected_source)
+	if skip.is_empty(): return
+	var button := TOOLTIP_BUTTON.new(); button.text = "No defense for this attack"
+	button.tooltip_text = "Leave this attack undefended. Its damage and statuses commit at the end of Defense."
+	button.disabled = _submitting or _history_review or _director.has_beats()
+	button.pressed.connect(func(): _send(JSON.stringify(skip)))
+	_ability_dock.add_child(button)
+	_inspect(button, "battle.defense.skip_source", button.tooltip_text)
+
 func _early_defense_available() -> bool:
 	return _view.stage == "offensive_reaction" and _view.allowed("pass") and not _view.defense_previews.is_empty() and _queued_defense.is_empty() and not _model_thinking and not _history_review
 
@@ -1399,14 +1448,20 @@ func _build_incoming_selection() -> void:
 		var data := _compact_defense_data(target, _status_counts(), source)
 		var handled := _source_handled(str(source.get("id", ""))) or (_unified_defense() and int(source.get("final_amount", 0)) == 0)
 		var start := Time.get_ticks_msec()
-		if handled:
+		if handled and _simultaneous_play() and not _as_array(data.get("dice", [])).is_empty():
+			# The defense rolled when it was chosen: a quick roll, then its dice
+			# rest beside the attack's badge.
+			data["note"] = ""; data["read_only"] = true; data["quick_roll"] = true
+			start = _quick_roll_clock(str(source.get("id", "")), data.dice)
+			data["roll_started_ms"] = start
+		elif handled:
 			data["note"] = "Defense complete"; data["read_only"] = true
 			start -= ceili((DEFENSE_TIMING.total_seconds() + 1.0) * 1000.0)
 		else:
 			var planned: Dictionary = _view.raw_snapshot.get("defense_plans", {}).get(str(source.get("id", "")), {})
 			var prompt: String = "Queued: " + BattlePresentationCatalog.ability(str(planned.get("ability_id", ""))).name if not planned.is_empty() else "Needs defense" if _multiple_enemies() else "Select this attack to defend"
 			data.merge({"selection_only": true, "dice": [], "gains": [], "prevented": 0, "after": data.before, "ability_name": "", "note": prompt if target == viewer_actor_id else "Opponent defending", "read_only": target != viewer_actor_id or _defense_source_chosen(str(source.id)) or _submitting or _history_review}, true)
-		if _unified_defense(): data["note"] = ""
+		if _unified_defense(): data["note"] = _simultaneous_defense_note(source, target) if _simultaneous_step() == "defense_before" and not handled else ""
 		if _view.stage == "offensive_reaction": data["read_only"] = not _early_source_available(str(source.id))
 		var panel = DEFENSE_RESULT.new(); sides[target].add_child(panel); panel.configure(data, start, true); _source_flow(panel, source)
 		panel.source_selected.connect(func(id: String): _select_attack_intent(id))
@@ -1454,7 +1509,8 @@ func _build_compact_defense_results() -> void:
 		var data := _compact_defense_data(actor_id, counts, source)
 		if data.is_empty(): continue
 		data["awaiting_roll"] = _view.stage == "defense_roll" and not _source_handled(str(source.id)) and not _history_review and not _history_replay
-		var queued: bool = _view.raw_snapshot.get("defense_plans", {}).has(str(source.id))
+		# Simultaneous plans are this review's rolls, not later queued defenses.
+		var queued: bool = _view.raw_snapshot.get("defense_plans", {}).has(str(source.id)) and not _simultaneous_play()
 		data["effects_pending"] = queued or (_held_defense_view == null and _defense_has_deferred_curse())
 		# Unified reservations are released only on finalization. Animate their
 		# authoritative release and the damage amount together in one presenter.
@@ -2221,6 +2277,9 @@ func _build_hand(income_drawn_ids: Array = []) -> void:
 		var card := BattleCard.new()
 		var legal := _card_legal(str(entry.definition_id)) or hand_limit
 		card.configure(str(entry.instance_id), str(entry.definition_id), legal and not _submitting and not _director.has_beats())
+		if _secret_pending(str(entry.instance_id)):
+			card.modulate = Color(1, 1, 1, 0.55)
+			card.tooltip_text = "Pending — played in secret; it resolves at the reveal.\n\n" + card.tooltip_text
 		_hand_dock.add_card(card)
 		_lock_button_until(card, _interaction_deadline(false))
 		card.toggle_mode = hand_limit or card_targeting
@@ -2840,7 +2899,7 @@ func _add_action(parent: Container, text: String, command: String, callback: Cal
 	if parent == _action_footer: _compact_action_button(button)
 	_inspect(button, "battle.command.%s" % command, "Submit the authority command %s" % command)
 	_lock_button_until(button, _interaction_deadline(command == "pass" or (_unified_defense() and command == "planning_pass")))
-	if (command == "pass" and not _unified_defense()) or (_unified_defense() and command == "planning_pass"):
+	if (command == "pass" and not _unified_defense()) or (_unified_defense() and command == "planning_pass") or (command == "roll_dice" and _simultaneous_step() == "defense_before"):
 		_auto_pass_button = button
 		_style_auto_pass_button(_auto_pass_highlight_ms >= 0)
 
@@ -2860,7 +2919,7 @@ func _compact_action_button(button: Button) -> void:
 	for key in ["font_color", "font_hover_color", "font_pressed_color", "font_hover_pressed_color", "font_disabled_color", "font_focus_color"]:
 		button.add_theme_color_override(key, Color.TRANSPARENT)
 	var caption := Label.new(); caption.name = "CompactCaption"
-	caption.text = str(button.get_meta("compact_caption", "Skip" if "Skip" in button.text else "Next" if "Continue" in button.text else "Pass"))
+	caption.text = str(button.get_meta("compact_caption", "Skip" if "Skip" in button.text else "Next" if "Continue" in button.text else "Roll" if button.text == "Roll Defenses" else "Lock" if button.text == "Lock In" else "Pass"))
 	caption.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER; caption.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	caption.add_theme_font_size_override("font_size", 17 if _view.segment == "defensive" else 15)
 	caption.add_theme_font_override("font", CINEMATIC.roll_control_font())
@@ -2870,6 +2929,8 @@ func _compact_action_button(button: Button) -> void:
 	button.add_child(caption); caption.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	# Pass and Skip already explain themselves in the visible caption.
 	button.tooltip_text = "" if caption.text in ["Skip", "Pass"] else button.text
+	if button.text == "Roll Defenses": button.tooltip_text = "Lock in your defense choices and secret cards. Every defense rolls once everyone has locked in."
+	elif button.text == "Lock In": button.tooltip_text = "Lock in without a defense. You can still play After-defense cards once every roll is final."
 
 func _pass_planning() -> void:
 	if _submitting or _history_review or not _view.allowed("planning_pass"): return
@@ -2931,7 +2992,10 @@ func _ability_choice_options(ability_id: String, enabled: bool) -> Array[Diction
 		var targets: Array = payload.get("target_ids", [])
 		var target_variants := {}
 		for candidate in actions: target_variants[JSON.stringify(candidate.get("payload", {}).get("target_ids", []))] = true
-		if target_variants.size() > 1:
+		if target_variants.size() > 1 and _simultaneous_step() == "defense_before" and _view.segment == "defensive":
+			# One defense can cover every remaining attack at once.
+			label = "All %d attacks" % targets.size() if targets.size() > 1 else "This attack"
+		elif target_variants.size() > 1:
 			var names: Array[String] = []
 			for target in targets: names.append(_actor_display_name(str(target)))
 			label += "\n" + ", ".join(names)
@@ -2981,6 +3045,12 @@ func _choose_offensive_target(id: String) -> void:
 	var actions := _offensive_target_actions()
 	if not actions.has(id): return
 	_focused_enemy = id
+	# Lock the attack onto its target with a short strike, then submit at once.
+	var aim = _root.get_node_or_null("AttackAim")
+	if is_instance_valid(aim):
+		var strike := preload("res://presentation/battle/attack_lock_in.gd").new()
+		strike.configure(self, aim.origin(), aim.name_rect(id))
+		add_child(strike)
 	_send(JSON.stringify(actions[id]))
 
 func _cancel_offensive_targeting() -> void:
@@ -3008,6 +3078,9 @@ func _build_offensive_targets() -> void:
 		target.z_index = 15
 		_enemy_buttons[id].tooltip_text = target.tooltip_text
 		_inspect(target, "battle.offensive_target." + str(id), target.tooltip_text)
+	var aim := preload("res://presentation/battle/attack_aim.gd").new()
+	aim.configure(self, str(_pending_attack.payload.ability_id), actions.keys())
+	_root.add_child(aim)
 	var cancel := TOOLTIP_BUTTON.new()
 	cancel.text = "Choose an enemy · Cancel"
 	cancel.pressed.connect(_cancel_offensive_targeting)
@@ -4255,6 +4328,62 @@ func _unified_defense() -> bool:
 func _continuous_damage_response() -> bool:
 	return _view.stage in ["damage_reaction", "status_damage_reaction"] or (_unified_defense() and _view.stage == "defense_selection")
 
+# Simultaneous play: secret Before plays, a lock-in for every participant, one
+# reveal, then rolls. The authority publishes the step and who has locked in.
+func _simultaneous_play() -> bool:
+	return bool(_view.raw_snapshot.get("simultaneous_play", false))
+
+func _simultaneous_step() -> String:
+	return str(_view.raw_snapshot.get("simultaneous_step", ""))
+
+## The viewer locked in for a secret step and waits for the others.
+func _simultaneous_waiting() -> bool:
+	return _simultaneous_step() in ["offense_before", "offense_rolling", "defense_before"] and viewer_actor_id in _as_array(_view.raw_snapshot.get("locked_in", [])) and _pending().is_empty()
+
+## The viewer's own secret plays this step, waiting for (or hidden until) the reveal.
+func _secret_plays() -> Array:
+	return _as_array(_view.raw_snapshot.get("secret_plays", []))
+
+func _secret_pending(instance_id: String) -> bool:
+	for play in _secret_plays():
+		if str(play.get("card_instance_id", "")) == instance_id and str(play.get("outcome", "")) == "pending": return true
+	return false
+
+func _result_has_event(result: Dictionary, kind: String) -> bool:
+	for battle_event in result.get("events", []):
+		if battle_event is Dictionary and battle_event.get("type") == kind: return true
+	return false
+
+## The viewer's first roll happens at the reveal, inside an opponent's step.
+func _start_revealed_roll(result: Dictionary) -> void:
+	if not _simultaneous_play(): return
+	for battle_event in result.get("events", []):
+		if battle_event is Dictionary and battle_event.get("type") == "dice_rolled" and str(battle_event.get("actor_id", "")) == "blade" and str(battle_event.get("pool", "")) == "offensive" and int(battle_event.get("rolls_used", 0)) == 1:
+			_start_player_roll(range(_view.rolled_dice("blade").size()))
+			return
+
+func _result_has_viewer_roll(result: Dictionary) -> bool:
+	for battle_event in result.get("events", []):
+		if battle_event is Dictionary and battle_event.get("type") == "dice_rolled" and str(battle_event.get("actor_id", "")) == "blade" and not _as_array(battle_event.get("dice", [])).is_empty(): return true
+	return false
+
+func _simultaneous_defense_note(source: Dictionary, target: String) -> String:
+	if target != viewer_actor_id: return "Defending in secret"
+	var plan: Dictionary = _as_dictionary(_view.raw_snapshot.get("defense_plans", {}).get(str(source.get("id", "")), {}))
+	if plan.is_empty(): return "Choose a defense"
+	if str(plan.get("ability_id", "")).is_empty(): return "No defense"
+	return "Defense: " + BattlePresentationCatalog.ability(str(plan.ability_id)).name
+
+func _skip_source_action(source_id: String) -> Dictionary:
+	for action in _view.legal_actions:
+		if action.get("type") == "planning_pass" and str(action.get("payload", {}).get("source_id", "")) == source_id: return action
+	return {}
+
+func _lock_in_action() -> Dictionary:
+	for action in _view.legal_actions:
+		if action.get("type") == "roll_dice": return action
+	return {}
+
 func _damage_batch_key() -> String:
 	return _view.battle_id + ":" + str(_view.settled_damage.get("id", "%s:%d" % [_view.stage, _view.round_number]))
 
@@ -4271,6 +4400,12 @@ func _capture_damage_feedback(result: Dictionary, previous_damage: Dictionary, h
 		var before := int(data.get("damage_before", 0))
 		var after := int(data.get("damage_after", 0))
 		var actor_id := str(emitted.get("actor_id", ""))
+		# An opponent's card, the viewer's own play resolving at a reveal, or
+		# Protect acting on its own shows only its result: the attack's number
+		# pulses and counts.
+		if (actor_id != viewer_actor_id and not card_id.is_empty()) or bool(data.get("revealed", false)) or bool(data.get("automatic", false)):
+			_number_pulses[str(data.get("source_id", ""))] = {"battle_id": _view.battle_id, "started_ms": Time.get_ticks_msec(), "before": before, "after": after}
+			continue
 		var card_name := str(BattlePresentationCatalog.ability(str(data.ability_id)).name) if data.has("ability_id") and card_id.is_empty() else str(BattlePresentationCatalog.card(card_id).name)
 		if data.has("status_id") and card_id.is_empty(): card_name = BattlePresentationCatalog.status(str(data.status_id)).name
 		var text := "%s used %s · damage %d → %d" % [_actor_display_name(actor_id), card_name, before, after]
@@ -4940,6 +5075,8 @@ func _program_plain_start(instance_id: String) -> Dictionary:
 func _program_target_mode(entries: Array) -> String:
 	for kind in ["source", "offensive_die", "ability"]:
 		if entries.any(func(entry): return entry.choice.get("kind") == kind): return kind
+	# Simultaneous Defense: rolled defense dice rest beside their attack's badge.
+	if _simultaneous_play() and entries.all(func(entry): return entry.choice.get("kind") == "defensive_die" and not str(entry.choice.get("source", "")).is_empty()) and not entries.is_empty(): return "defensive_die"
 	return "list"
 
 func _apply_program_target_mode(entries: Array) -> void:
@@ -4947,6 +5084,34 @@ func _apply_program_target_mode(entries: Array) -> void:
 		"source": _selected_card["source_targeting"] = true
 		"offensive_die": _selected_card["die_targeting"] = true
 		"ability": _selected_card["ability_targeting"] = true
+		"defensive_die": _selected_card["defensive_die_targeting"] = true
+
+## The program action that targets one resting defense die, if the selected
+## card can target it.
+func _defensive_die_action(source_id: String, index: int) -> Dictionary:
+	if not _selected_card.get("defensive_die_targeting", false) or _submitting or _history_review or _model_thinking: return {}
+	for entry in _program_targets(str(_selected_card.get("instance_id", ""))):
+		if str(entry.choice.get("kind", "")) == "defensive_die" and str(entry.choice.get("source", "")) == source_id and int(entry.choice.get("die", -1)) == index: return entry.action
+	return {}
+
+func _commit_defensive_die(action: Dictionary) -> void:
+	if _submitting or _model_thinking or _history_review: return
+	_selected_card.clear()
+	_send(JSON.stringify(action))
+
+func _quick_roll_clock(source_id: String, dice: Array) -> int:
+	var faces := dice.map(func(die): return int(die.get("face", 0)))
+	var key := "%s:%d:%s:%s" % [_view.battle_id, _view.round_number, source_id, JSON.stringify(faces)]
+	if not _quick_roll_clocks.has(key): _quick_roll_clocks[key] = Time.get_ticks_msec()
+	return int(_quick_roll_clocks[key])
+
+## When every quick defense roll shown this round has finished flying home.
+func _quick_rolls_finished_at() -> int:
+	var prefix := "%s:%d:" % [_view.battle_id, _view.round_number]
+	var latest := 0
+	for key in _quick_roll_clocks:
+		if str(key).begins_with(prefix): latest = maxi(latest, int(_quick_roll_clocks[key]) + DEFENSE_RESULT.quick_total_ms())
+	return latest
 
 func _begin_program_targeting(card: BattleCard, entries: Array) -> void:
 	_error_message = ""; _selected_source = ""

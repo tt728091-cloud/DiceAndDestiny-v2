@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 	"reflect"
 	"sort"
+	"strconv"
 	"strings"
 	"testing"
 
@@ -121,7 +122,14 @@ func pileDefinitions(b state.Battle, seat string, ids []string) []string {
 func TestExpeditionBattleBridgeBothWays(t *testing.T) {
 	victories, defeats := 0, 0
 	sawDiscardFirst := false
-	for seed := uint64(1); seed <= 60 && (victories == 0 || defeats == 0 || !sawDiscardFirst); seed++ {
+	// Seeds from 81 cover a victory, a defeat and discard-first damage with the
+	// scripted player once your own attack is final after lock-in (1–60 did
+	// before). DICE_AND_DESTINY_BRIDGE_PROBE_START probes another 60-seed range.
+	firstSeed := uint64(81)
+	if probe, err := strconv.ParseUint(os.Getenv("DICE_AND_DESTINY_BRIDGE_PROBE_START"), 10, 64); err == nil {
+		firstSeed = probe
+	}
+	for seed := firstSeed; seed < firstSeed+60 && (victories == 0 || defeats == 0 || !sawDiscardFirst); seed++ {
 		f := newExpeditionFixture(t, seed, fmt.Sprintf("Bridge %d", seed))
 		before := f.walkToChallenge(t)
 		pb := before.Expedition.PendingBattle

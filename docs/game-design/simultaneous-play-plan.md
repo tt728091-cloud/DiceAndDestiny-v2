@@ -1,6 +1,6 @@
 # Simultaneous play: secret plays, lock-in and reveal
 
-Status: **planned, not started** (written 2026-10-18 from a design review with the user). Read this whole page before changing code. Confirm the open questions in §8 with the user first.
+Status: **first pass implemented** (2026-10-18), revised after the first playtest (2026-10-28, §10), for playtesting. The open questions in §8 were answered with the user; see §10 for the decisions and what the code does. Written 2026-10-18 from a design review with the user.
 
 ## 1. Why
 
@@ -182,3 +182,49 @@ These are the findings of the review, with code references.
   - Script tests never write to `content/authored/`.
   - Commit or push only when the user asks, after showing the diff.
   - No Dice Throne names.
+
+## 10. Decisions and implementation (2026-10-18)
+
+Answers to §8, confirmed with the user:
+
+1. **Offense After** has two parts. While rolling (from Reveal 1 until your ability is locked in) cards may affect only you. Once every ability is locked in and revealed, the After step lets After and any-time cards (and the opt-in reaction cards) affect anyone, enemy dice included.
+2. **Defense choices**: a defense (or none) for every incoming attack before locking in; one defense may cover all remaining attacks when its usage limit allows. Choices are final once made. Everyone's defenses roll together after the reveal.
+3. **Self-only Before effects**: draws, energy, deck looks and own-pile moves resolve at once, privately; status changes (Salve on yourself too), ability bonuses, dice, prevention and anything on another participant queue with targets chosen when played. The card waits in hand, pending.
+4. **Reveal order**: seat order (sorted participant IDs; the human is first in every current mode), then play order. A play whose targets are all gone does nothing.
+5. **After plays** resolve when played and are visible. Pass stays final.
+6. **Lock-in visibility**: only a "locked in" marker and the step-start state.
+
+Two decisions from the code review:
+
+- The rule only pins when every participant's cards support it (card programs and cards that only touch their owner). Venom and Curse mechanic cards and enemy-targeting legacy cards (Alchemist's Gamble) keep the unified flow; converting them is separate work.
+- Enemies in learned-session battles (menu minion and trained Blade Warden battles, campaigns, expeditions) are external seats driven by policies through the same legal actions, so they take part exactly like a human. Classic AI-controlled enemies plan their offense at entry (as before) and choose their defenses at Defense entry, before any hidden play exists (the battle's random numbers share one cursor, so a later choice could be shifted by a hidden draw).
+
+Code: `engine/simultaneous.go` (steps, queue, reveal, Defense flow), hooks in `settled_engine.go`, `card_program.go` and `legal_actions.go`; `state.SettledSimultaneous`; per-viewer hiding in `snapshot.go` (`simultaneous_step`, `locked_in`, `secret_plays`, `revealed_plays`) and `event.ForViewer` (`secret_actor_id`). Client: the battle screen's pending strip, Roll Defenses / Lock In, per-attack defense choices with "All N attacks" and "No defense for this attack". Card windows, timing tags and `Play: …` text are unchanged.
+
+### Revision (2026-10-28)
+
+After the first playtest the user set the segment model: Offense Before, Offense After = Defense Before, Defense After, with Offense any time covering Before, the rolls and After (and Defense any time covering Before and After). Offense After and Defense Before both mean "after the attacks are revealed, before a defense is chosen", so they are one step:
+
+- The separate visible Offense After step is gone. Once every ability is revealed the attacks are set and the `defense_before` step opens for everyone. It accepts After-offense, any-time and opt-in reaction cards (Disrupt and other enemy-dice cards) next to Before-defense cards and defense choices, all in secret.
+- At the reveal, a play that changed an attack's dice, ability bonuses or the attacker's statuses re-scores that attack before any defense rolls: the same ability at the tier the dice now reach, or a miss, never a different ability. Its reserved cards follow the new amount. This Offense's bonuses (next-use and this-Offense preparations) are spent at the reveal instead of when the abilities are revealed. Abilities with their own rolls or special effects keep their score. Extra-roll cards are not playable in the step.
+- The REVEAL pop-up is removed; the combat log still lists the reveal.
+
+### Revision 2 (2026-10-28): Defense without waiting
+
+From the same playtest:
+
+- Each attack's threatened cards show as soon as the step opens, before any defense is chosen (the separate Offense After stop had hidden them).
+- Before-defense prevention (Steady Guard) is playable from the start and resolves at once on your own incoming attack, visible to you only.
+- Choosing a defense for an attack rolls and resolves it immediately; there is no Roll Defenses / Lock In button and no review stop. Several defenses can be chosen in quick succession and their rolls play at the same time; the screen never locks. A short roll at a spot on the battlefield shows what the defense does, then its dice shrink into a small row above the attack's badge, where defense-reroll cards (Second Guard, Full Parry) target them and the defense re-resolves by the difference.
+- Pass locks in; with nothing left to choose the step completes on its own once the dice have landed.
+- Others see your incoming attacks as the step began until the reveal. The defended attacks' statuses land at the reveal (once the attacks are final), before Defense After.
+
+### Revision 3 (2026-10-28): quieter feedback and automatic Protect
+
+- No pop-up or on-screen text narrates plays: the REVEAL banner, the "Secret until the reveal" strip and the "Locked in — waiting" line are gone; cards still waiting for the reveal stay dimmed in hand.
+- An opponent's card effect, the viewer's own play resolving at a reveal, and automatic Protect show only their result: the changed number (an attack's damage, energy, a status count) pulses and counts, with no card and no caption. An opponent's attack cards played out of sight (Brine Surge) count the attack up at the reveal.
+- Your own attack is final once you lock your ability in: in the step between the attacks and the defenses no card of yours changes its dice or bonuses (Try Again, Nudge), so they never hold Defense up. Other participants' dice cards (Disrupt) still can.
+- Protect is no longer spent by hand. Statuses with the `auto_prevention` modifier act on their own when the holder's attacks are committed: each stack prevents 1 damage, drawn at random from the remaining incoming attack damage (two attacks of 1 are both stopped), saved cards go to discard, and the stacks used are spent. A later upgrade could author `auto_prevention_destination: original`.
+
+Seeds that changed outcome with the new flow and were re-probed (assertions unchanged): the region victory seed (8 → 15, `TestFullRegionSeededPlayThroughs`), the campaign test's seed range (1–200 → 201–400, then from 1001 once defenses roll when chosen), the Godot map test's victory seed (8 → 9), and the expedition bridge test's start seed (1 → 81, once your own attack became final after lock-in).
+

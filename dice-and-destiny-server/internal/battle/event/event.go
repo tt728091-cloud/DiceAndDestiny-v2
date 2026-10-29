@@ -37,6 +37,12 @@ const (
 	TypeStatusChanged           Type = "status_changed"
 	TypeEnemyPlanned            Type = "enemy_planned"
 	TypeDefenseSelected         Type = "defense_selected"
+	// Simultaneous play: a participant locked in, a secret card waits for the
+	// reveal, a defense was chosen in secret, and the reveal of every play.
+	TypeSimultaneousLockedIn Type = "simultaneous_locked_in"
+	TypeCardQueued           Type = "card_queued"
+	TypeDefensePlanned       Type = "defense_planned"
+	TypeSecretPlaysRevealed  Type = "secret_plays_revealed"
 )
 
 // Event describes an authority-approved battle fact that already happened.
@@ -84,7 +90,10 @@ type Event struct {
 	DamageCards    []state.ProposedCardRemoval   `json:"damage_cards,omitempty"`
 	BattleResult   state.BattleStatus            `json:"battle_result,omitempty"`
 	PrivateActorID string                        `json:"private_actor_id,omitempty"`
-	Data           map[string]any                `json:"data,omitempty"`
+	// SecretActorID marks an event of a secret simultaneous play; other
+	// viewers never receive it.
+	SecretActorID string         `json:"secret_actor_id,omitempty"`
+	Data          map[string]any `json:"data,omitempty"`
 }
 
 func NewBattleCompleted(result state.BattleStatus) Event {
@@ -324,9 +333,12 @@ func intPtr(value int) *int {
 // Raw events remain authoritative facts; this helper hides card IDs that are
 // not visible to the requested viewer.
 func ForViewer(events []Event, viewerActorID string) []Event {
-	filtered := make([]Event, len(events))
-	for i, event := range events {
-		filtered[i] = eventForViewer(event, viewerActorID)
+	filtered := make([]Event, 0, len(events))
+	for _, event := range events {
+		if event.SecretActorID != "" && event.SecretActorID != viewerActorID {
+			continue
+		}
+		filtered = append(filtered, eventForViewer(event, viewerActorID))
 	}
 	return filtered
 }

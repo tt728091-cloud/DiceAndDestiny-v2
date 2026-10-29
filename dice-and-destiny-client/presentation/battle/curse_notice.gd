@@ -58,7 +58,7 @@ func configure(owner_screen: Control, data: Dictionary, poses: Dictionary = {}) 
 	# A played card can only be shown at its captured hand pose. Missing poses
 	# (hidden enemy hands, replays, delayed status triggers) never spawn a copy
 	# at a fixed screen coordinate.
-	if not str(data.card_id).is_empty() and not _card_pose.is_empty():
+	if not str(data.card_id).is_empty() and not _card_pose.is_empty() and not bool(data.get("quiet", false)):
 		_card = BattleCard.new()
 		_card.configure(str(data.get("card_instance_id", "")), str(data.card_id), true, false, false)
 		_card.mouse_filter = Control.MOUSE_FILTER_IGNORE; add_child(_card)
@@ -72,6 +72,8 @@ func configure(owner_screen: Control, data: Dictionary, poses: Dictionary = {}) 
 	_label.add_theme_color_override("font_color", Color("efdbff"))
 	_label.add_theme_stylebox_override("normal", THEME.panel(Color("201526f5"), Color("c38ce5"), 6))
 	add_child(_label)
+	# Quiet feedback shows only the dice changing, never a caption.
+	if bool(data.get("quiet", false)): _label.self_modulate.a = 0.0
 	_roll = Label.new(); _roll.name = "CurseRollPreview"; _roll.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_roll.size = Vector2(70, 76); _roll.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_roll.vertical_alignment = VERTICAL_ALIGNMENT_CENTER; _roll.add_theme_font_size_override("font_size", 24)

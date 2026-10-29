@@ -3,6 +3,7 @@ package snapshot
 import (
 	"encoding/json"
 	"fmt"
+	"sort"
 
 	"diceanddestiny/server/internal/battle/segment"
 	"diceanddestiny/server/internal/battle/state"
@@ -12,39 +13,46 @@ import (
 // Battle is the read-only view returned after events have been applied.
 // It is safe for presentation or future network clients to render from.
 type Battle struct {
-	Wounds               []state.Wound                   `json:"wounds,omitempty"`
-	BlindCheck           map[string]any                  `json:"blind_check,omitempty"`
-	CurseChoice          *state.CurseWork                `json:"curse_choice,omitempty"`
-	CursePreparations    []state.CursePreparation        `json:"curse_preparations,omitempty"`
-	OffensiveReselection bool                            `json:"offensive_reselection,omitempty"`
-	PassHandsOffPriority bool                            `json:"pass_hands_off_priority,omitempty"`
-	PresentationStage    string                          `json:"presentation_stage,omitempty"`
-	VenomWork            *state.VenomWork                `json:"venom_work,omitempty"`
-	BattleID             string                          `json:"battle_id"`
-	Status               state.BattleStatus              `json:"status,omitempty"`
-	WinnerActorID        string                          `json:"winner_actor_id,omitempty"`
-	Segment              segment.Segment                 `json:"segment"`
-	Round                int                             `json:"round"`
-	ViewerActorID        string                          `json:"viewer_actor_id,omitempty"`
-	Flow                 *SegmentFlow                    `json:"flow,omitempty"`
-	Resolution           *Resolution                     `json:"resolution,omitempty"`
-	Damage               *DamageResolution               `json:"damage,omitempty"`
-	Actors               map[string]Actor                `json:"actors,omitempty"`
-	OffensiveProposals   []state.PlanningProposal        `json:"offensive_proposals,omitempty"`
-	DefensiveProposals   []state.PlanningProposal        `json:"defensive_proposals,omitempty"`
-	Origin               *state.BattleOrigin             `json:"origin,omitempty"`
-	CompletedRounds      int                             `json:"completed_rounds,omitempty"`
-	Stage                string                          `json:"stage,omitempty"`
-	PriorityActorID      string                          `json:"priority_actor_id,omitempty"`
-	ReactionPriority     []string                        `json:"reaction_priority,omitempty"`
-	UnifiedDefense       bool                            `json:"unified_defense,omitempty"`
-	SettledSources       []state.SettledDamageSource     `json:"damage_sources,omitempty"`
-	DefenseHistory       map[string]state.SettledDefense `json:"defense_history,omitempty"`
-	DefensePlans         map[string]state.SettledDefense `json:"defense_plans,omitempty"`
-	SettledDefenses      map[string]state.SettledDefense `json:"defense_selections,omitempty"`
-	SettledEffectRolls   []state.SettledEffectRoll       `json:"effect_rolls,omitempty"`
-	SettledDamage        *state.SettledDamageBatch       `json:"settled_damage,omitempty"`
-	ContentCatalog       *ContentCatalog                 `json:"content_catalog,omitempty"`
+	Wounds               []state.Wound            `json:"wounds,omitempty"`
+	BlindCheck           map[string]any           `json:"blind_check,omitempty"`
+	CurseChoice          *state.CurseWork         `json:"curse_choice,omitempty"`
+	CursePreparations    []state.CursePreparation `json:"curse_preparations,omitempty"`
+	OffensiveReselection bool                     `json:"offensive_reselection,omitempty"`
+	PassHandsOffPriority bool                     `json:"pass_hands_off_priority,omitempty"`
+	PresentationStage    string                   `json:"presentation_stage,omitempty"`
+	VenomWork            *state.VenomWork         `json:"venom_work,omitempty"`
+	BattleID             string                   `json:"battle_id"`
+	Status               state.BattleStatus       `json:"status,omitempty"`
+	WinnerActorID        string                   `json:"winner_actor_id,omitempty"`
+	Segment              segment.Segment          `json:"segment"`
+	Round                int                      `json:"round"`
+	ViewerActorID        string                   `json:"viewer_actor_id,omitempty"`
+	Flow                 *SegmentFlow             `json:"flow,omitempty"`
+	Resolution           *Resolution              `json:"resolution,omitempty"`
+	Damage               *DamageResolution        `json:"damage,omitempty"`
+	Actors               map[string]Actor         `json:"actors,omitempty"`
+	OffensiveProposals   []state.PlanningProposal `json:"offensive_proposals,omitempty"`
+	DefensiveProposals   []state.PlanningProposal `json:"defensive_proposals,omitempty"`
+	Origin               *state.BattleOrigin      `json:"origin,omitempty"`
+	CompletedRounds      int                      `json:"completed_rounds,omitempty"`
+	Stage                string                   `json:"stage,omitempty"`
+	PriorityActorID      string                   `json:"priority_actor_id,omitempty"`
+	ReactionPriority     []string                 `json:"reaction_priority,omitempty"`
+	UnifiedDefense       bool                     `json:"unified_defense,omitempty"`
+	// Simultaneous play: the pinned rule, the current step, who has locked
+	// in, the viewer's own secret plays and the most recent reveal.
+	SimultaneousPlay   bool                            `json:"simultaneous_play,omitempty"`
+	SimultaneousStep   string                          `json:"simultaneous_step,omitempty"`
+	LockedIn           []string                        `json:"locked_in,omitempty"`
+	SecretPlays        []state.RevealedPlay            `json:"secret_plays,omitempty"`
+	RevealedPlays      []state.RevealedPlay            `json:"revealed_plays,omitempty"`
+	SettledSources     []state.SettledDamageSource     `json:"damage_sources,omitempty"`
+	DefenseHistory     map[string]state.SettledDefense `json:"defense_history,omitempty"`
+	DefensePlans       map[string]state.SettledDefense `json:"defense_plans,omitempty"`
+	SettledDefenses    map[string]state.SettledDefense `json:"defense_selections,omitempty"`
+	SettledEffectRolls []state.SettledEffectRoll       `json:"effect_rolls,omitempty"`
+	SettledDamage      *state.SettledDamageBatch       `json:"settled_damage,omitempty"`
+	ContentCatalog     *ContentCatalog                 `json:"content_catalog,omitempty"`
 }
 
 // ContentCatalog publishes the same pinned immutable definitions used by the
@@ -295,6 +303,25 @@ func fromBattleForViewer(battle state.Battle, viewerActorID string, includeConte
 					snapshotActor.AbilityModifiers = append([]state.RuntimeAbilityModifier(nil), public.AbilityModifiers...)
 				}
 			}
+			// Secret simultaneous steps: other participants see the state the
+			// step started with, until the reveal.
+			if id != viewerActorID {
+				if public, ok := simultaneousPublic(battle, id); ok {
+					snapshotActor.EnergyPoints = public.EnergyPoints
+					snapshotActor.HandCount = public.HandCount
+					snapshotActor.DeckCount = public.DeckCount
+					snapshotActor.DiscardCount = public.DiscardCount
+					snapshotActor.RemovedCount = public.RemovedCount
+					snapshotActor.Statuses = copyStatuses(public.Statuses)
+					snapshotActor.AbilityModifiers = append([]state.RuntimeAbilityModifier(nil), public.AbilityModifiers...)
+					// Only a secret sacrifice changes health; it shows at the reveal.
+					if snapshotActor.HealthCardCount != nil {
+						health := *snapshotActor.HealthCardCount + len(cards.Removed) - public.RemovedCount
+						snapshotActor.CurrentHealth = health
+						snapshotActor.HealthCardCount = &health
+					}
+				}
+			}
 			if id == viewerActorID {
 				snapshotActor.CardUses = map[string]int{}
 				for key, value := range runtime.CardUses {
@@ -397,6 +424,41 @@ func fromBattleForViewer(battle state.Battle, viewerActorID string, includeConte
 	// Committed losses are public during combat for the wound health-bar hover.
 	// Pending reservations and prevented cards never enter this ledger.
 	result.Wounds = state.CloneWounds(battle.Wounds)
+	if secret := secretWoundIDs(battle); len(secret) > 0 {
+		kept := result.Wounds[:0]
+		for _, wound := range result.Wounds {
+			if !secret[wound.ID] || wound.TargetActorID == viewerActorID {
+				kept = append(kept, wound)
+			}
+		}
+		result.Wounds = kept
+	}
+	if battle.Settled != nil && battle.Settled.SimultaneousPlay {
+		result.SimultaneousPlay = true
+		if sim := battle.Settled.Simultaneous; sim != nil {
+			result.SimultaneousStep = sim.Step
+			result.LockedIn = []string{}
+			for id, locked := range sim.Locked {
+				if locked {
+					result.LockedIn = append(result.LockedIn, id)
+				}
+			}
+			sort.Strings(result.LockedIn)
+			result.SecretPlays = []state.RevealedPlay{}
+			for _, play := range sim.Queue {
+				if play.ActorID == viewerActorID {
+					// "pending" waits in hand for the reveal; "secret" already
+					// resolved privately (draws, energy) and is only hidden.
+					outcome := "pending"
+					if play.Immediate {
+						outcome = "secret"
+					}
+					result.SecretPlays = append(result.SecretPlays, state.RevealedPlay{Sequence: play.Sequence, Step: play.Step, ActorID: play.ActorID, CardID: play.CardID, CardDefinitionID: play.CardDefinitionID, Targets: append([]string(nil), play.Targets...), Outcome: outcome})
+				}
+			}
+			result.RevealedPlays = append([]state.RevealedPlay{}, sim.Revealed...)
+		}
+	}
 	if battle.Settled != nil && battle.Settled.PendingBlind != nil {
 		p := battle.Settled.PendingBlind
 		result.BlindCheck = map[string]any{"actor_id": p.ActorID, "status_id": p.StatusID, "die_id": p.DieID, "face": p.Face, "ability_id": battle.Settled.Actors[p.ActorID].SelectedAbilityID}
@@ -442,18 +504,32 @@ func fromBattleForViewer(battle state.Battle, viewerActorID string, includeConte
 			}
 		}
 		result.DefensePlans = map[string]state.SettledDefense{}
+		// Simultaneous Defense Before: plans, defenses and prevention are the
+		// viewer's own; everyone else's incoming attacks show as the step began
+		// until the reveal.
+		var publicDamage *state.SettledDamageBatch
+		if battle.Settled.SimultaneousPlay && battle.Settled.Simultaneous != nil && battle.Settled.Simultaneous.Step == state.SimultaneousDefenseBefore {
+			publicDamage = battle.Settled.Simultaneous.PublicDamage
+			if publicDamage == nil {
+				publicDamage = &state.SettledDamageBatch{}
+			}
+		}
 		for id, plan := range battle.Settled.DefensePlans {
 			if plan.ActorID == viewerActorID {
+				plan.RolledFaces = append([]int(nil), plan.RolledFaces...)
 				result.DefensePlans[id] = plan
 			}
 		}
 		result.DefenseHistory = make(map[string]state.SettledDefense, len(battle.Settled.DefenseHistory))
 		for id, defense := range battle.Settled.DefenseHistory {
+			if publicDamage != nil && defense.ActorID != viewerActorID {
+				continue
+			}
 			defense.RolledFaces = append([]int(nil), defense.RolledFaces...)
 			result.DefenseHistory[id] = defense
 		}
 		result.UnifiedDefense = battle.Settled.UnifiedDefense
-		result.SettledSources = append([]state.SettledDamageSource(nil), battle.Settled.OffensiveSources...)
+		result.SettledSources = viewerSources(battle.Settled.OffensiveSources, publicDamage, viewerActorID)
 		if battle.Segment.Current == segment.Defensive && (battle.Settled.Stage == "defense_reaction" || result.PresentationStage == "defense_reaction") {
 			result.SettledDefenses = make(map[string]state.SettledDefense, len(battle.Settled.DefenseSelections))
 			for actorID, defense := range battle.Settled.DefenseSelections {
@@ -466,8 +542,31 @@ func fromBattleForViewer(battle state.Battle, viewerActorID string, includeConte
 		}
 		if battle.Settled.PendingDamage != nil {
 			damage := *battle.Settled.PendingDamage
-			damage.Sources = append([]state.SettledDamageSource(nil), battle.Settled.PendingDamage.Sources...)
-			damage.Removals = append([]state.ProposedCardRemoval(nil), battle.Settled.PendingDamage.Removals...)
+			damage.Sources = viewerSources(battle.Settled.PendingDamage.Sources, publicDamage, viewerActorID)
+			damage.Removals = nil
+			for _, r := range battle.Settled.PendingDamage.Removals {
+				if publicDamage == nil || r.TargetActorID == viewerActorID {
+					damage.Removals = append(damage.Removals, r)
+				}
+			}
+			if publicDamage != nil {
+				damage.Overage = map[string]int{}
+				for id, n := range battle.Settled.PendingDamage.Overage {
+					if id == viewerActorID {
+						damage.Overage[id] = n
+					}
+				}
+				for id, n := range publicDamage.Overage {
+					if id != viewerActorID {
+						damage.Overage[id] = n
+					}
+				}
+				for _, r := range publicDamage.Removals {
+					if r.TargetActorID != viewerActorID {
+						damage.Removals = append(damage.Removals, r)
+					}
+				}
+			}
 			result.SettledDamage = &damage
 		}
 		// Provoke can interrupt Offensive or Defensive with the same status-roll
@@ -490,6 +589,54 @@ func fromBattleForViewer(battle state.Battle, viewerActorID string, includeConte
 		}
 	}
 	return result
+}
+
+// viewerSources shows the viewer's own incoming attacks as they are and the
+// others' as Defense Before began (public), when public is set.
+func viewerSources(sources []state.SettledDamageSource, public *state.SettledDamageBatch, viewerActorID string) []state.SettledDamageSource {
+	out := append([]state.SettledDamageSource(nil), sources...)
+	if public == nil {
+		return out
+	}
+	for i, source := range out {
+		if source.TargetActorID == viewerActorID {
+			continue
+		}
+		for _, p := range public.Sources {
+			if p.ID == source.ID {
+				out[i] = p
+				break
+			}
+		}
+	}
+	return out
+}
+
+// simultaneousPublic is an actor's step-start state during a secret
+// simultaneous step.
+func simultaneousPublic(battle state.Battle, actorID string) (state.SimultaneousPublic, bool) {
+	if battle.Settled == nil || !battle.Settled.SimultaneousPlay || battle.Settled.Simultaneous == nil {
+		return state.SimultaneousPublic{}, false
+	}
+	sim := battle.Settled.Simultaneous
+	switch sim.Step {
+	case state.SimultaneousOffenseBefore, state.SimultaneousOffenseRolling, state.SimultaneousDefenseBefore:
+	default:
+		return state.SimultaneousPublic{}, false
+	}
+	public, ok := sim.Public[actorID]
+	return public, ok
+}
+
+func secretWoundIDs(battle state.Battle) map[string]bool {
+	if battle.Settled == nil || battle.Settled.Simultaneous == nil || len(battle.Settled.Simultaneous.SecretWounds) == 0 {
+		return nil
+	}
+	ids := map[string]bool{}
+	for _, id := range battle.Settled.Simultaneous.SecretWounds {
+		ids[id] = true
+	}
+	return ids
 }
 
 func rolledSymbolCounts(dice []state.RolledDie) map[string]int {

@@ -1245,6 +1245,7 @@ func _start_fight() -> void:
 	await get_tree().process_frame
 	var gateway: RefCounted = LEARNED_GATEWAY.new(_runtime(), "seat-a", "minion:%s:%d" % [str(pending.opponent), int(pending.opponent_count)], str(status.get("character", "starter")))
 	gateway.unified_defense = true
+	gateway.simultaneous_play = true
 	gateway.loadout_mode = "expedition"
 	gateway.campaign_save = save_id
 	gateway.expedition = true

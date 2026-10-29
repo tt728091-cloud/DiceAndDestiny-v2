@@ -82,7 +82,7 @@ func TestProtectDiscardsOnlyActualSavedCardsAfterOverage(t *testing.T) {
 	}
 	b.Settled.PendingDamage = batch
 	openSettledWindow(&b, "damage", stageDamageReact, "damage_response", []command.Type{command.TypeCommitInteraction, command.TypePass})
-	if _, err := e.spendRoundPrevention(&b, lib, "player", command.InteractionCommitmentData{ChoiceID: "spend_round_prevention", ProposalIDs: []string{"hit"}}); err != nil {
+	if _, err := e.applyAutoPrevention(&b, lib); err != nil {
 		t.Fatal(err)
 	}
 	a = b.Actors["player"]

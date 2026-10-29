@@ -76,6 +76,13 @@ func programSetQueue(x *state.CardExecution, s []content.CardStep) {
 // whether the actor has rolled a defense this segment. Skipped attacks record
 // no ability and do not count as a roll.
 func programWindowOpen(b *state.Battle, actor string, windows []string) bool {
+	if open, ok := simultaneousWindowOpen(b, windows); ok {
+		// Before-defense cards close once every attack on you has its defense.
+		if open && simultaneousBeforeDefenseOnly(b, windows) {
+			return len(unplannedDefenseSources(b, actor)) > 0
+		}
+		return open
+	}
 	w := programWindow(b)
 	if content.ProgramContains(windows, w) {
 		return true
@@ -131,6 +138,9 @@ func programCards(b *state.Battle, lib content.BattleLibrary, actor string) []st
 		for _, id := range zoneCards(b.Actors[actor].Cards, z) {
 			d := lib.Cards[rt.CardInstances[id].DefinitionID]
 			p := d.Program
+			if secretPending(b, actor, id) {
+				continue
+			}
 			if p == nil || !content.ProgramContains(d.Play.SourceZones, string(z)) || !programWindowOpen(b, actor, p.Windows) || b.Actors[actor].Resources.EnergyPoints < d.Cost.Energy {
 				continue
 			}
@@ -273,6 +283,10 @@ func programCandidates(b *state.Battle, lib content.BattleLibrary, actor, card s
 		if s.Target.Owner == "self" && a != actor || s.Target.Owner == "enemy" && !containsString(otherActorIDs(b, actor), a) || b.Actors[a].DefeatState == state.ActorDefeated {
 			continue
 		}
+		// After your first roll, cards may affect only yourself.
+		if simultaneousStep(b) == state.SimultaneousOffenseRolling && a != actor {
+			continue
+		}
 		rt := b.Settled.Actors[a]
 		name := lib.Combatants[b.Actors[a].DefinitionID].Name
 		if name == "" {
@@ -281,10 +295,19 @@ func programCandidates(b *state.Battle, lib content.BattleLibrary, actor, card s
 		base := programChoice{Verb: "target", Actor: a, Label: name, Kind: kind}
 		switch kind {
 		case "actor":
+			// Extra rolls are spent once the attacks are set.
+			if s.Effect == "extra_roll" && simultaneousStep(b) == state.SimultaneousDefenseBefore {
+				continue
+			}
 			out = append(out, base)
 		case "ability":
 			for _, id := range rt.OffensiveAbilityIDs {
 				if s.Target.Qualified && !containsString(rt.QualifiedAbilityIDs, id) {
+					continue
+				}
+				// Between the attacks and the defenses, only another participant's
+				// set attack; your own is final once you lock it in.
+				if simultaneousStep(b) == state.SimultaneousDefenseBefore && (a == actor || !attackPending(b, a) || id != rt.SelectedAbilityID) {
 					continue
 				}
 				c := base
@@ -294,7 +317,33 @@ func programCandidates(b *state.Battle, lib content.BattleLibrary, actor, card s
 			}
 		case "offensive_die", "defensive_die":
 			dice := rt.FinalDice
-			if kind == "offensive_die" && (rt.RollsUsed == 0 || (a != actor && b.Settled.Stage != stageOffensiveReact)) {
+			if kind == "offensive_die" && simultaneousStep(b) == state.SimultaneousDefenseBefore {
+				// Between the attacks and the defenses, another participant's set
+				// attack dice; your own are final once you lock your ability in.
+				if a == actor || !attackPending(b, a) {
+					continue
+				}
+			} else if kind == "offensive_die" && (rt.RollsUsed == 0 || (a != actor && b.Settled.Stage != stageOffensiveReact)) {
+				continue
+			}
+			if kind == "defensive_die" && simultaneousStep(b) == state.SimultaneousDefenseBefore {
+				// The dice of each defense already rolled this step, beside its attack.
+				for _, source := range b.Settled.OffensiveSources {
+					d, ok := b.Settled.DefenseHistory[source.ID]
+					if !ok || d.ActorID != a || d.AbilityID == "" || !rerollableDefense(lib.Abilities[d.AbilityID]) {
+						continue
+					}
+					for i, die := range d.RolledDice {
+						if len(s.Target.Faces) > 0 && !containsInt(s.Target.Faces, die.Face) {
+							continue
+						}
+						c := base
+						c.Die = i
+						c.Source = source.ID
+						c.Label = fmt.Sprintf("%s · %s die %d (%d)", name, lib.Abilities[d.AbilityID].Name, i+1, die.Face)
+						out = append(out, c)
+					}
+				}
 				continue
 			}
 			if kind == "defensive_die" {
@@ -364,7 +413,7 @@ func programCandidates(b *state.Battle, lib content.BattleLibrary, actor, card s
 			}
 		case "source":
 			for _, src := range reactionDamageSources(b) {
-				if src.TargetActorID != a || settledSourceAmount(src) <= 0 {
+				if src.TargetActorID != a || settledSourceAmount(src) <= 0 || beforeDefenseClosed(b, lib, actor, card, src.ID) {
 					continue
 				}
 				c := base
@@ -379,6 +428,9 @@ func programCandidates(b *state.Battle, lib content.BattleLibrary, actor, card s
 						continue
 					}
 					for _, source := range r.DamageProposalIDs {
+						if beforeDefenseClosed(b, lib, actor, card, source) {
+							continue
+						}
 						c := base
 						c.Card = r.CardID
 						c.Source = source
@@ -617,21 +669,18 @@ func (e Engine) handleProgramCommand(b *state.Battle, lib content.BattleLibrary,
 	}
 	rt = b.Settled.Actors[actor]
 	done := len(programQueue(x)) == 0
+	// A secret play whose effects wait for the reveal stays in hand, pending.
+	queued := done && simultaneousBefore(b) && len(x.Deferred) > 0
 	if done {
-		a := b.Actors[actor]
-		zone := programCardZone(b, actor, id)
-		if x.Paid && zone != "" && zone != operation.ZoneRemoved {
-			moveCard(&a.Cards, id, zone, operation.CardZone(def.Play.Destination))
-			b.Actors[actor] = a
+		if simultaneousBefore(b) {
+			queueSecretProgramPlay(b, actor, id, def.ID, x)
 		}
-		if batch := b.Settled.PendingDamage; batch != nil {
-			for i := range batch.Removals {
-				r := &batch.Removals[i]
-				if r.TargetActorID == actor && r.CardID == id && r.Released {
-					damage.RetainPreventedCard(b, r)
-				}
-			}
+		if x.Paid && !queued {
+			finishProgramCard(b, actor, id, def)
+		} else if !queued {
+			retainPlayedPreventionCard(b, actor, id)
 		}
+		rt = b.Settled.Actors[actor]
 		rt.CardExecution = nil
 	} else {
 		rt.CardExecution = x
@@ -639,14 +688,18 @@ func (e Engine) handleProgramCommand(b *state.Battle, lib content.BattleLibrary,
 	b.Settled.Actors[actor] = rt
 	refreshPlanningPublicCounts(b)
 	// A completed card is a played response: reaction windows with a priority
-	// order hand priority on, as for any other reaction card.
-	reaction := b.Settled.Stage == stageOffensiveReact || b.Settled.Stage == stageDefenseReact || b.Settled.Stage == stageDamageReact
+	// order hand priority on, as for any other reaction card. Simultaneous
+	// windows have no priority: passing stays final for every participant.
+	reaction := (b.Settled.Stage == stageOffensiveReact || b.Settled.Stage == stageDefenseReact || b.Settled.Stage == stageDamageReact) && !simultaneousWindow(b)
 	if !done || !reaction || !advanceSettledReactionPriority(b, actor, true) {
 		rotateSettledPending(b, actor)
 	}
 	kind := event.Type("card_program_choice")
 	if done {
 		kind = event.TypeCardPlayed
+	}
+	if queued {
+		kind = event.TypeCardQueued
 	}
 	data := map[string]any{"card_instance_id": id, "card_definition_id": def.ID, "program": true, "complete": done, "program_dice_changes": x.Feedback}
 	// Ability bonuses name their target so presentation can follow it.
@@ -680,6 +733,9 @@ func (e Engine) handleProgramCommand(b *state.Battle, lib content.BattleLibrary,
 			b.Settled.Sequence++
 			woundID := fmt.Sprintf("card-removal-%d", b.Settled.Sequence)
 			b.Wounds = append(b.Wounds, state.Wound{ID: woundID, BatchID: woundID, Round: b.Segment.Round, Segment: b.Segment.Current, SourceActorID: actor, SourceContentID: def.ID, TargetActorID: actorID, Cards: cards})
+			if simultaneousSecret(b) {
+				b.Settled.Simultaneous.SecretWounds = append(b.Settled.Simultaneous.SecretWounds, woundID)
+			}
 		}
 		if len(cards) > 0 && a.CurrentHealth() == 0 && a.DefeatState != state.ActorDefeated {
 			defeated = true
@@ -702,6 +758,16 @@ func (e Engine) applyProgramStep(b *state.Battle, lib content.BattleLibrary, act
 		if err := payProgramCard(b, actor, id, x); err != nil {
 			return err
 		}
+	}
+	// A secret play records this step and its chosen targets for the reveal.
+	if simultaneousDefers(b, actor, s, targets) {
+		raw, _ := json.Marshal(s)
+		keys := make([]string, 0, len(targets))
+		for _, t := range targets {
+			keys = append(keys, t.key())
+		}
+		x.Deferred = append(x.Deferred, state.SecretProgramStep{Step: raw, Targets: keys})
+		return nil
 	}
 	for _, t := range targets {
 		faceBefore := 0
@@ -803,6 +869,41 @@ func (e Engine) applyProgramStep(b *state.Battle, lib content.BattleLibrary, act
 			f := programRerollFace(s, old, dice[t.Die].Face)
 			result.DieChanges = []effectDieChange{{ActorID: t.Actor, Index: t.Die, Face: f}}
 		case "reroll_defense":
+			if d, ok := b.Settled.DefenseHistory[t.Source]; ok && t.Source != "" && simultaneousStep(b) == state.SimultaneousDefenseBefore {
+				// A defense resolved this step: reroll its die and re-resolve it.
+				old := d.RolledDice[t.Die]
+				nd, err := e.ownedRoll(b, lib, t.Actor, old.Index, "defense_dice", true)
+				if err != nil {
+					return err
+				}
+				if programRerollFace(s, old.Face, nd.Face) == old.Face {
+					nd = old
+				}
+				d.RolledDice = append([]state.RolledDie(nil), d.RolledDice...)
+				d.RolledFaces = append([]int(nil), d.RolledFaces...)
+				d.RolledDice[t.Die] = nd
+				d.RolledFaces[t.Die] = nd.Face
+				d.RolledFace = d.RolledFaces[0]
+				if err := e.reresolveDefense(b, lib, d); err != nil {
+					return err
+				}
+				break
+			}
+			if plan, ok := b.Settled.DefensePlans[t.Source]; ok && t.Source != "" && simultaneousPlay(b) {
+				old := plan.RolledDice[t.Die]
+				d, err := e.ownedRoll(b, lib, t.Actor, old.Index, "defense_dice", true)
+				if err != nil {
+					return err
+				}
+				if programRerollFace(s, old.Face, d.Face) == old.Face {
+					d = old
+				}
+				plan.RolledDice[t.Die] = d
+				plan.RolledFaces[t.Die] = d.Face
+				plan.RolledFace = plan.RolledFaces[0]
+				b.Settled.DefensePlans[t.Source] = plan
+				break
+			}
 			sel := b.Settled.DefenseSelections[t.Actor]
 			old := sel.RolledDice[t.Die]
 			d, err := e.ownedRoll(b, lib, t.Actor, old.Index, "defense_dice", true)
@@ -1020,4 +1121,14 @@ func clearCompletedProgramBonuses(b *state.Battle) {
 			}
 		}
 	}
+}
+
+// beforeDefenseClosed reports an attack a Before-defense card can no longer
+// reach: its defense has already been chosen (rolled, or none).
+func beforeDefenseClosed(b *state.Battle, lib content.BattleLibrary, actor, card, sourceID string) bool {
+	if card == "" || simultaneousStep(b) != state.SimultaneousDefenseBefore {
+		return false
+	}
+	p := lib.Cards[b.Settled.Actors[actor].CardInstances[card].DefinitionID].Program
+	return p != nil && simultaneousBeforeDefenseOnly(b, p.Windows) && defenseChosen(b, sourceID)
 }

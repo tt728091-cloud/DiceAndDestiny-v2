@@ -661,12 +661,14 @@ func (d *regionDriver) reloadCheck(save loadout.CampaignSave) {
 }
 
 // The seeds were found with TestProbeWarlordOdds (EXPEDITION_PROBE=1): with
-// the competent proxy, seed 8 catches the Warlord on the road in round 1 and
-// wins; seed 5 never reaches him and loses the forced deadline fight. Both
+// the competent proxy, seed 15 catches the Warlord on the road in round 1 and
+// wins; seed 5 never reaches him and loses the forced deadline fight. (Seed 8
+// won before simultaneous play; with secret plays and simultaneous rolls it
+// now ends in a draw.) Both
 // play real battles through the session; every map action is checked for
 // save/reload equivalence.
 const (
-	regionVictorySeed = 8
+	regionVictorySeed = 15
 	regionDefeatSeed  = 5
 )
 

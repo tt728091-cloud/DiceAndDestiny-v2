@@ -11,8 +11,9 @@ const EXPEDITION_SCRIPT := "res://app/screens/map/expedition_screen.gd"
 const PREPARE_SCRIPT := "res://app/screens/campaign/campaign_prepare.gd"
 const VIEW_STATE := preload("res://local_client/view_state/battle_view_state.gd")
 ## A seed whose Warlord stands on the east slot in round 1 and loses to the
-## proxy when caught there (found with EXPEDITION_SEED_PROBE=1-60).
-const VICTORY_SEED := 8
+## proxy when caught there (found with EXPEDITION_SEED_PROBE=1-40; seed 8 did
+## before simultaneous play).
+const VICTORY_SEED := 9
 
 var runtime
 var map: Control

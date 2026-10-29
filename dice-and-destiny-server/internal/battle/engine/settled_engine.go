@@ -453,6 +453,9 @@ func (e Engine) progressSettledOffensive(battle *state.Battle, library content.B
 				battle.Settled.Actors[actorID] = runtime
 			}
 		}
+		if simultaneousPlay(battle) {
+			return e.openOffenseBefore(battle, library)
+		}
 		external := externalSettledActorIDs(battle)
 		openSettledWindowForActors(battle, "offensive-planning", stageOffensivePlan, "planning", []command.Type{command.TypePlanningCards, command.TypePlanningRoll, command.TypePlanningKeep, command.TypePlanningReroll, command.TypePlanningAbility, command.TypePlanningTargets, command.TypePlanningPass}, external, true)
 		events := make([]event.Event, 0, len(external))
@@ -554,6 +557,10 @@ func (e Engine) progressSettledDefensive(battle *state.Battle, library content.B
 			}
 			battle.Settled.PendingDamage = batch
 			battle.Settled.OffensiveSources = append([]state.SettledDamageSource(nil), batch.Sources...)
+			if simultaneousPlay(battle) {
+				events, err := e.openDefenseBefore(battle, library)
+				return append([]event.Event{damageRevealEvent(battle, batch)}, events...), err
+			}
 			events, err := e.unifiedDefenseHub(battle, library)
 			return append([]event.Event{damageRevealEvent(battle, batch)}, events...), err
 		}
@@ -744,55 +751,14 @@ func (e Engine) finalizeDefenses(battle *state.Battle, library content.BattleLib
 		if !exists {
 			continue
 		}
-		ability := library.Abilities[selection.AbilityID]
-		if sourceBySettledID(battle, selection.SourceID) == nil {
-			continue
-		}
-		ctx := effectContext{SourceActorID: actorID, SourceContentID: ability.ID, SourceContentType: "ability", ProposalIDs: []string{selection.SourceID}, TargetActorIDs: []string{actorID}, RolledFace: selection.RolledFace}
-		var result effectResult
-		var err error
-		for _, face := range defenseFaces(selection) {
-			ctx.RolledFace = face
-			part, executeErr := e.executeResolvedEffects(battle, library, ctx, ability.Resolution.Operations)
-			if executeErr != nil {
-				err = executeErr
-				break
-			}
-			result.merge(part)
-		}
+		resolved, next, err := e.resolveDefenseSelection(battle, library, selection)
 		if err != nil {
 			return nil, err
 		}
-		if ability.Resolution.EnergyGainLimit > 0 && result.ResourceDeltas != nil {
-			result.ResourceDeltas[actorID] = min(result.ResourceDeltas[actorID], ability.Resolution.EnergyGainLimit)
+		if resolved.Finalized {
+			battle.Settled.DefenseSelections[actorID] = resolved
 		}
-		before := settledSourceAmount(*sourceBySettledID(battle, selection.SourceID))
-		if source := batchSourceByID(battle.Settled.PendingDamage, selection.SourceID); source != nil {
-			before = settledSourceAmount(*source)
-		}
-		result.SavedCardDestination = ability.SavedCardDestination
-		if err := e.applyEffectMutations(battle, library, "", result); err != nil {
-			return nil, err
-		}
-		if unifiedDefense(battle) {
-			if source := batchSourceByID(battle.Settled.PendingDamage, selection.SourceID); source != nil && before != settledSourceAmount(*source) {
-				events = append(events, settledEvent(event.TypeDamageModified, battle, actorID, map[string]any{"source_id": source.ID, "ability_id": ability.ID, "damage_before": before, "damage_after": settledSourceAmount(*source), "target_actor_id": source.TargetActorID}))
-			}
-		}
-		after := settledSourceAmount(*sourceBySettledID(battle, selection.SourceID))
-		if source := batchSourceByID(battle.Settled.PendingDamage, selection.SourceID); source != nil {
-			after = settledSourceAmount(*source)
-		}
-		if err := e.curseDefenseCompleted(battle, library, selection, before > after); err != nil {
-			return nil, err
-		}
-		selection.Finalized = true
-		battle.Settled.DefenseHistory[selection.SourceID] = selection
-		battle.Settled.DefenseSelections[actorID] = selection
-		if unifiedDefense(battle) {
-			applyDefendedAttackStatuses(battle, library, selection.SourceID)
-		}
-		events = append(events, settledEvent(event.TypeDefenseSelected, battle, actorID, map[string]any{"ability_id": selection.AbilityID, "source_id": selection.SourceID, "rolled_face": selection.RolledFace, "rolled_faces": defenseFaces(selection)}))
+		events = append(events, next...)
 	}
 	for _, actorID := range sortedSettledActorIDs(battle) {
 		if battle.Actors[actorID].Controller == state.ControllerAI {
@@ -814,6 +780,73 @@ func (e Engine) finalizeDefenses(battle *state.Battle, library content.BattleLib
 	battle.Settled.Stage = "complete"
 	advanced, _ := e.advanceSettledSegment(battle)
 	return append(events, advanced...), nil
+}
+
+// resolveDefenseSelection applies one rolled (or roll-free) defense to its
+// attack, records it in the history and lands the defended attack's statuses.
+// A selection whose attack is gone is returned unchanged (not Finalized).
+func (e Engine) resolveDefenseSelection(battle *state.Battle, library content.BattleLibrary, selection state.SettledDefense) (state.SettledDefense, []event.Event, error) {
+	actorID := selection.ActorID
+	ability := library.Abilities[selection.AbilityID]
+	if sourceBySettledID(battle, selection.SourceID) == nil {
+		return selection, nil, nil
+	}
+	var events []event.Event
+	result, err := e.defenseResult(battle, library, selection)
+	if err != nil {
+		return selection, nil, err
+	}
+	before := settledSourceAmount(*sourceBySettledID(battle, selection.SourceID))
+	if source := batchSourceByID(battle.Settled.PendingDamage, selection.SourceID); source != nil {
+		before = settledSourceAmount(*source)
+	}
+	result.SavedCardDestination = ability.SavedCardDestination
+	if err := e.applyEffectMutations(battle, library, "", result); err != nil {
+		return selection, nil, err
+	}
+	if unifiedDefense(battle) {
+		if source := batchSourceByID(battle.Settled.PendingDamage, selection.SourceID); source != nil && before != settledSourceAmount(*source) {
+			events = append(events, settledEvent(event.TypeDamageModified, battle, actorID, map[string]any{"source_id": source.ID, "ability_id": ability.ID, "damage_before": before, "damage_after": settledSourceAmount(*source), "target_actor_id": source.TargetActorID}))
+		}
+	}
+	after := settledSourceAmount(*sourceBySettledID(battle, selection.SourceID))
+	if source := batchSourceByID(battle.Settled.PendingDamage, selection.SourceID); source != nil {
+		after = settledSourceAmount(*source)
+	}
+	if err := e.curseDefenseCompleted(battle, library, selection, before > after); err != nil {
+		return selection, nil, err
+	}
+	selection.Finalized = true
+	if battle.Settled.DefenseHistory == nil {
+		battle.Settled.DefenseHistory = map[string]state.SettledDefense{}
+	}
+	battle.Settled.DefenseHistory[selection.SourceID] = selection
+	// Under simultaneous play the attack can still change until the reveal,
+	// which lands its statuses (finalizeSimultaneousDefenses).
+	if unifiedDefense(battle) && simultaneousStep(battle) != state.SimultaneousDefenseBefore {
+		applyDefendedAttackStatuses(battle, library, selection.SourceID)
+	}
+	events = append(events, settledEvent(event.TypeDefenseSelected, battle, actorID, map[string]any{"ability_id": selection.AbilityID, "source_id": selection.SourceID, "rolled_face": selection.RolledFace, "rolled_faces": defenseFaces(selection)}))
+	return selection, events, nil
+}
+
+// defenseResult is what a rolled defense does with its current dice.
+func (e Engine) defenseResult(battle *state.Battle, library content.BattleLibrary, selection state.SettledDefense) (effectResult, error) {
+	ability := library.Abilities[selection.AbilityID]
+	ctx := effectContext{SourceActorID: selection.ActorID, SourceContentID: ability.ID, SourceContentType: "ability", ProposalIDs: []string{selection.SourceID}, TargetActorIDs: []string{selection.ActorID}, RolledFace: selection.RolledFace}
+	var result effectResult
+	for _, face := range defenseFaces(selection) {
+		ctx.RolledFace = face
+		part, err := e.executeResolvedEffects(battle, library, ctx, ability.Resolution.Operations)
+		if err != nil {
+			return effectResult{}, err
+		}
+		result.merge(part)
+	}
+	if ability.Resolution.EnergyGainLimit > 0 && result.ResourceDeltas != nil {
+		result.ResourceDeltas[selection.ActorID] = min(result.ResourceDeltas[selection.ActorID], ability.Resolution.EnergyGainLimit)
+	}
+	return result, nil
 }
 
 func (e Engine) progressSettledDamage(battle *state.Battle, library content.BattleLibrary) ([]event.Event, error) {
@@ -958,6 +991,17 @@ func (e Engine) finishDamageBatch(battle *state.Battle, library content.BattleLi
 	if batch == nil {
 		return e.advanceSettledSegment(battle)
 	}
+	// Statuses such as Protect act on their own as the attacks land.
+	protected, err := e.applyAutoPrevention(battle, library)
+	if err != nil {
+		return nil, err
+	}
+	committed, err := e.commitDamageBatch(battle, library)
+	return append(protected, committed...), err
+}
+
+func (e Engine) commitDamageBatch(battle *state.Battle, library content.BattleLibrary) ([]event.Event, error) {
+	batch := battle.Settled.PendingDamage
 	// A revealed card can be played as a reaction, moving it from hand to
 	// discard. The removal still targets that card, but must follow its live
 	// zone. Otherwise moveCard silently does nothing and damage is not paid.
@@ -1071,6 +1115,7 @@ func (e Engine) finishDamageBatch(battle *state.Battle, library content.BattleLi
 }
 
 func (e Engine) advanceSettledSegment(battle *state.Battle) ([]event.Event, error) {
+	endSimultaneousStep(battle)
 	cancelDefeatedOffense(battle)
 	if battle.Settled.Venom != nil && battle.Settled.Venom.Active == nil {
 		if battle.Segment.Current == segment.OngoingEffects {
@@ -1105,9 +1150,12 @@ func (e Engine) advanceSettledSegment(battle *state.Battle) ([]event.Event, erro
 	}
 	expireMechanicStatuses(battle)
 	// Attack sources now contain their final bonuses. Clear temporary preparations
-	// on Offensive Exit, whether their ability was selected or not.
+	// on Offensive Exit, whether their ability was selected or not. Simultaneous
+	// play keeps them until the attacks are final (settleAttacks).
 	if battle.Segment.Current == segment.Offensive {
-		expireOffensiveModifiers(battle)
+		if !simultaneousPlay(battle) {
+			expireOffensiveModifiers(battle)
+		}
 		if library, err := settledLibrary(battle); err == nil {
 			expireFirstRollBonuses(battle, library)
 		}
@@ -1191,7 +1239,15 @@ func (e Engine) handleSettledCommand(battle *state.Battle, cmd command.Command) 
 	if err := validateSettledPending(cmd, pending); err != nil {
 		return nil, err
 	}
+	// Events of a secret step stay with their actor unless the command
+	// reached the step's reveal.
 	var events []event.Event
+	secretStep, secret := simultaneousStep(battle), simultaneousSecret(battle)
+	defer func() {
+		if secret && simultaneousStep(battle) == secretStep {
+			markSecretEvents(events, cmd.ActorID)
+		}
+	}()
 	cardID, _ := programPayload(cmd)
 	// A one-card hand-limit discard has the same shape as a card play; no card
 	// is played while discarding down, so it always belongs to the discard.
@@ -1338,33 +1394,17 @@ func (e Engine) handleOffensivePlanningCommand(battle *state.Battle, library con
 		if runtime.RollsUsed != 0 {
 			return nil, errors.New("initial roll already used")
 		}
-		dice, err := e.rollCombatDice(battle, library, actorID, nil)
+		// Simultaneous play: Roll locks the Before step in; the dice roll at
+		// the reveal, once every participant has locked in.
+		if simultaneousStep(battle) == state.SimultaneousOffenseBefore {
+			return e.lockOffenseBefore(battle, library, actorID, true)
+		}
+		rolled, err := e.firstOffensiveRoll(battle, library, actorID)
 		if err != nil {
 			return nil, err
 		}
-		runtime = battle.Settled.Actors[actorID]
-		runtime.RollsUsed = 1
-		// An Ambush rolls bonus dice on the first roll; the actor then chooses
-		// a loadout-sized set to keep, and the status is used up.
-		if bonus := statusModifierTotal(battle, library, actorID, func(m *content.StatusModifiers) int { return m.FirstRollBonusDice }); bonus > 0 {
-			extra, err := e.rollBonusDice(battle, library, actorID, len(dice), bonus)
-			if err != nil {
-				return nil, err
-			}
-			runtime.AmbushChoose = len(dice)
-			dice = append(dice, extra...)
-			removeStatusesWith(battle, library, actorID, func(m *content.StatusModifiers) int { return m.FirstRollBonusDice })
-		}
-		runtime.FinalDice = dice
-		runtime.RollHistory = append(runtime.RollHistory, state.RollBatch{Number: 1, RolledIndices: allDieIndices(len(dice)), Dice: cloneDice(dice)})
-		if runtime.AmbushChoose > 0 {
-			runtime.QualifiedAbilityIDs = nil
-		} else {
-			runtime.QualifiedAbilityIDs = qualifiedAbilities(library, runtime.OffensiveAbilityIDs, dice, runtime.AbilityModifiers)
-		}
-		battle.Settled.Actors[actorID] = runtime
 		rotateSettledPending(battle, actorID)
-		return []event.Event{diceEvent(battle, actorID, runtime, allDieIndices(len(dice)))}, nil
+		return []event.Event{rolled}, nil
 	case command.TypePlanningKeep:
 		var payload command.PlanningKeepPayload
 		if err := command.DecodePayload(cmd, &payload); err != nil {
@@ -1507,10 +1547,43 @@ func (e Engine) handleOffensivePlanningCommand(battle *state.Battle, library con
 		runtime.SelectedAbilityID = ""
 		runtime.SelectedTargetIDs = nil
 		battle.Settled.Actors[actorID] = runtime
+		if simultaneousStep(battle) == state.SimultaneousOffenseBefore {
+			return e.lockOffenseBefore(battle, library, actorID, false)
+		}
 		return e.finalizeOffensivePlanning(battle, library, actorID)
 	default:
 		return nil, unsupportedCommand()
 	}
+}
+
+// firstOffensiveRoll rolls an actor's whole loadout as their first roll.
+func (e Engine) firstOffensiveRoll(battle *state.Battle, library content.BattleLibrary, actorID string) (event.Event, error) {
+	dice, err := e.rollCombatDice(battle, library, actorID, nil)
+	if err != nil {
+		return event.Event{}, err
+	}
+	runtime := battle.Settled.Actors[actorID]
+	runtime.RollsUsed = 1
+	// An Ambush rolls bonus dice on the first roll; the actor then chooses
+	// a loadout-sized set to keep, and the status is used up.
+	if bonus := statusModifierTotal(battle, library, actorID, func(m *content.StatusModifiers) int { return m.FirstRollBonusDice }); bonus > 0 {
+		extra, err := e.rollBonusDice(battle, library, actorID, len(dice), bonus)
+		if err != nil {
+			return event.Event{}, err
+		}
+		runtime.AmbushChoose = len(dice)
+		dice = append(dice, extra...)
+		removeStatusesWith(battle, library, actorID, func(m *content.StatusModifiers) int { return m.FirstRollBonusDice })
+	}
+	runtime.FinalDice = dice
+	runtime.RollHistory = append(runtime.RollHistory, state.RollBatch{Number: 1, RolledIndices: allDieIndices(len(dice)), Dice: cloneDice(dice)})
+	if runtime.AmbushChoose > 0 {
+		runtime.QualifiedAbilityIDs = nil
+	} else {
+		runtime.QualifiedAbilityIDs = qualifiedAbilities(library, runtime.OffensiveAbilityIDs, dice, runtime.AbilityModifiers)
+	}
+	battle.Settled.Actors[actorID] = runtime
+	return diceEvent(battle, actorID, runtime, allDieIndices(len(dice))), nil
 }
 
 func (e Engine) finalizeOffensivePlanning(battle *state.Battle, library content.BattleLibrary, actorID string) ([]event.Event, error) {
@@ -1521,10 +1594,19 @@ func (e Engine) finalizeOffensivePlanning(battle *state.Battle, library content.
 	runtime.PlanningCommitted = true
 	battle.Settled.Actors[actorID] = runtime
 	closeSettledInputForActor(battle, actorID, state.ActorLockedIn)
+	if simultaneousPlay(battle) && battle.Settled.Simultaneous != nil {
+		battle.Settled.Simultaneous.Locked[actorID] = true
+	}
 	for _, requiredActorID := range battle.Settled.Window.RequiredActorIDs {
 		if !battle.Settled.Actors[requiredActorID].PlanningCommitted {
+			if simultaneousPlay(battle) {
+				return []event.Event{lockedInEvent(battle, actorID)}, nil
+			}
 			return nil, nil
 		}
+	}
+	if simultaneousPlay(battle) {
+		return e.revealOffense(battle, library)
 	}
 	closeSettledWindow(battle)
 	battle.Settled.ReactionReplanning = false
@@ -1599,8 +1681,13 @@ func (e Engine) handleOffensiveReactionCommand(battle *state.Battle, library con
 	}
 	runtime := battle.Settled.Actors[adjust.ActorID]
 	valid := runtime.QualifiedAbilityIDs
-	advanceSettledReactionPriority(battle, cmd.ActorID, true)
-	e.reopenOffensiveAfterDiceChange(battle, adjust.ActorID)
+	if simultaneousPlay(battle) {
+		// Nobody re-chooses: the authority already re-checked the selection.
+		rotateSettledPending(battle, cmd.ActorID)
+	} else {
+		advanceSettledReactionPriority(battle, cmd.ActorID, true)
+		e.reopenOffensiveAfterDiceChange(battle, adjust.ActorID)
+	}
 	return []event.Event{
 		settledEvent(event.TypeCardPlayed, battle, cmd.ActorID, map[string]any{"card_instance_id": payload.Commitment.CardIDs[0], "card_definition_id": cardDefinitionID, "actor_id": adjust.ActorID, "die_index": adjust.DieIndex, "face": adjust.Face, "old_ability": old, "new_ability": runtime.SelectedAbilityID, "valid_abilities": valid}),
 		offensiveRevealEvent(battle, library),
@@ -1692,7 +1779,11 @@ func (e Engine) finalizeOffensiveSources(battle *state.Battle, library content.B
 		if err != nil {
 			return nil, err
 		}
-		consumeProgramBonuses(battle, actorID, ability.ID)
+		// Under simultaneous play the attack can still be re-scored until the
+		// defense rolls; its bonuses are spent then (settleAttacks).
+		if !simultaneousPlay(battle) {
+			consumeProgramBonuses(battle, actorID, ability.ID)
+		}
 		immediate := result
 		immediate.Damage = nil
 		immediate.StatusApplications = nil
@@ -2164,6 +2255,14 @@ func (e Engine) handleDamageReactionCommand(battle *state.Battle, library conten
 }
 
 func (e Engine) handleDefenseSelectionCommand(battle *state.Battle, library content.BattleLibrary, cmd command.Command) ([]event.Event, error) {
+	if unifiedDefense(battle) {
+		switch simultaneousStep(battle) {
+		case state.SimultaneousDefenseBefore:
+			return e.handleDefenseBefore(battle, library, cmd)
+		case state.SimultaneousDefenseAfter:
+			return e.handleDefenseAfter(battle, library, cmd)
+		}
+	}
 	if unifiedDefense(battle) {
 		if cmd.Type == command.TypeCommitInteraction {
 			return e.handleUnifiedCard(battle, library, cmd)
@@ -2731,6 +2830,27 @@ func (e Engine) playSettledCard(battle *state.Battle, library content.BattleLibr
 	if abilityID == "" && definition.Targeting.Selector == "one_owned_offensive_ability" && len(targetIDs) > 0 {
 		abilityID = targetIDs[0]
 	}
+	if secretPending(battle, actorID, instanceID) {
+		return errors.New("card is waiting for the reveal")
+	}
+	if simultaneousBefore(battle) && definition.Mechanic == nil {
+		if settledCardDefers(definition) {
+			spendEnergy(battle, actorID, definition.Cost.Energy)
+			queueSecretLegacyPlay(battle, library, actorID, instanceID, definition, targetIDs, abilityID, dieIndex, statusID)
+			return nil
+		}
+		if err := e.resolveSettledCard(battle, library, actorID, instanceID, definition, targetIDs, abilityID, dieIndex, statusID, true); err != nil {
+			return err
+		}
+		queueSecretImmediatePlay(battle, actorID, instanceID, definition.ID, nil)
+		return nil
+	}
+	return e.resolveSettledCard(battle, library, actorID, instanceID, definition, targetIDs, abilityID, dieIndex, statusID, true)
+}
+
+// resolveSettledCard applies a validated card's effects, pays for it (unless
+// a secret play already paid) and moves it to its play destination.
+func (e Engine) resolveSettledCard(battle *state.Battle, library content.BattleLibrary, actorID, instanceID string, definition content.BattleCardDefinition, targetIDs []string, abilityID string, dieIndex int, statusID string, pay bool) error {
 	dieActorID := actorID
 	if definition.Targeting.Selector == "selected_die" && len(targetIDs) > 0 {
 		dieActorID = targetIDs[0]
@@ -2754,7 +2874,9 @@ func (e Engine) playSettledCard(battle *state.Battle, library content.BattleLibr
 	if definition.Mechanic != nil {
 		payMechanic(battle, actorID, instanceID, definition)
 	} else {
-		spendEnergy(battle, actorID, definition.Cost.Energy)
+		if pay {
+			spendEnergy(battle, actorID, definition.Cost.Energy)
+		}
 		actor := battle.Actors[actorID]
 		moveCard(&actor.Cards, instanceID, operation.ZoneHand, operation.CardZone(definition.Play.Destination))
 		battle.Actors[actorID] = actor

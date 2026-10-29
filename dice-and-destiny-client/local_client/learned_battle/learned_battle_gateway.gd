@@ -7,6 +7,9 @@ var model_key := "accepted-v1"
 var seed := 0
 var character := "blade_warden"
 var unified_defense := false
+## Requests the simultaneous rule (secret Before plays, lock-in, one reveal).
+## The authority pins it only when every participant's cards support it.
+var simultaneous_play := false
 var loadout_mode := "sandbox"
 ## Set for campaign battles; the encounter's opponent is the model key.
 var encounter_id := ""
@@ -29,7 +32,7 @@ func start_battle(battle_id: String, selected_seed: int, rematch: bool = false) 
 	if not _configuration_error.is_empty():
 		return {"accepted": false, "error": _configuration_error}
 	seed = selected_seed
-	return _runtime.start_battle(battle_id, human_seat, seed, rematch, character, unified_defense, loadout_mode, encounter_id, campaign_save, expedition)
+	return _runtime.start_battle(battle_id, human_seat, seed, rematch, character, unified_defense, loadout_mode, encounter_id, campaign_save, expedition, simultaneous_play)
 
 func submit(command_json: String) -> Dictionary:
 	return _runtime.submit_human(command_json)
