@@ -342,6 +342,14 @@ static func symbol_id_for_die_face(die_id: String, face: int) -> String:
 		if entry is Dictionary and int(entry.get("number", 0)) == face: return str(entry.get("symbol", ""))
 	return ""
 
+## The role (main, side, odd, odd_b, apex) the authority gives a face's symbol
+## on this die; empty for dice without roles.
+static func role_for_die_face(die_id: String, face: int) -> String:
+	var die := definition("dice", die_id)
+	var roles = die.get("roles", {})
+	if not roles is Dictionary: return ""
+	return str(roles.get(symbol_id_for_die_face(die_id, face), ""))
+
 static func symbol_name_for_die_face(die_id: String, face: int) -> String:
 	var die := definition("dice", die_id)
 	for entry in _array(die.get("faces", [])):

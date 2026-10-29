@@ -450,6 +450,8 @@ func _boards() -> void:
 	var intro := _section(_fields, "Character boards")
 	_label(intro, "Choose a character, then its complete ability board. Assignments affect future battles in both editor modes.", 14).add_theme_color_override("font_color", STYLE.MUTED)
 	_character = OptionButton.new(); intro.add_child(_character)
+	# The custom adventurer's board is built in the Board Builder and lives on
+	# the player's sheet, so the shared catalog never publishes it.
 	for id in ["adventurer", "venom", "curse", "blade_warden", "starter"]: _character.add_item(id.replace("_", " ").capitalize()); _character.set_item_metadata(_character.item_count - 1, id)
 	var list := VBoxContainer.new(); list.add_theme_constant_override("separation", 10); _fields.add_child(list)
 	_character.item_selected.connect(func(_i): _board_list(list))

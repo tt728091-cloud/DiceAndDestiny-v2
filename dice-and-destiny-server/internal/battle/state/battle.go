@@ -488,7 +488,9 @@ func (battle Battle) Clone() Battle {
 		cloned.PendingOperations[i] = cloneFinalizedOperation(battle.PendingOperations[i])
 	}
 	cloned.Content = cloneContentCatalog(battle.Content)
-	cloned.SettledCatalog = append([]byte(nil), battle.SettledCatalog...)
+	// The pinned catalog is immutable after setup (only read, never written
+	// in place), so clones share its bytes instead of copying them per command.
+	cloned.SettledCatalog = battle.SettledCatalog
 	cloned.Settled = cloneSettledRuntime(battle.Settled)
 	cloned.Flow = cloneFlowState(battle.Flow)
 	return cloned

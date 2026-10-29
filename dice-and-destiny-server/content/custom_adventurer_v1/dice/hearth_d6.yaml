@@ -1,0 +1,12 @@
+schema_version: 1
+id: hearth_d6
+name: Hearth Die
+die_type: d6
+side_count: 6
+faces:
+  - {number: 1, symbol: hearth_spark}
+  - {number: 2, symbol: hearth_spark}
+  - {number: 3, symbol: hearth_cinder}
+  - {number: 4, symbol: hearth_cinder}
+  - {number: 5, symbol: hearth_cinder}
+  - {number: 6, symbol: hearth_kiln}

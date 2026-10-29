@@ -304,7 +304,7 @@ func (e Engine) finalizeTriggerBatch(battle *state.Battle, library content.Battl
 			}
 			op := trigger.Operations[roll.OperationIndex]
 			for _, outcome := range op.Outcomes {
-				if !containsInt(outcome.Faces, roll.Die.Face) {
+				if !outcomeMatches(library, roll.Die.DieID, outcome, roll.Die.Face) {
 					continue
 				}
 				actor := battle.Actors[roll.ActorID]
@@ -332,6 +332,9 @@ func (e Engine) finalizeTriggerBatch(battle *state.Battle, library content.Battl
 	}
 	for _, removal := range batch.RemoveStacks {
 		removeStatus(battle, removal.ActorID, removal.StatusID, removal.Stacks)
+		if removal.ForBattle {
+			keepStatusRemoved(battle, removal.ActorID, removal.StatusID)
+		}
 	}
 	for _, instanceID := range batch.StatusInstanceIDs {
 		actorID, statusID := findStatusInstance(battle, instanceID)
@@ -835,8 +838,9 @@ func (e Engine) defenseResult(battle *state.Battle, library content.BattleLibrar
 	ability := library.Abilities[selection.AbilityID]
 	ctx := effectContext{SourceActorID: selection.ActorID, SourceContentID: ability.ID, SourceContentType: "ability", ProposalIDs: []string{selection.SourceID}, TargetActorIDs: []string{selection.ActorID}, RolledFace: selection.RolledFace}
 	var result effectResult
-	for _, face := range defenseFaces(selection) {
-		ctx.RolledFace = face
+	dieIDs := defenseDieIDs(battle, selection)
+	for i, face := range defenseFaces(selection) {
+		ctx.RolledFace, ctx.RolledDieID = face, dieIDs[i]
 		part, err := e.executeResolvedEffects(battle, library, ctx, ability.Resolution.Operations)
 		if err != nil {
 			return effectResult{}, err
@@ -2048,7 +2052,7 @@ func (e Engine) handleBlindReactionCommand(battle *state.Battle, library content
 				continue
 			}
 			for _, outcome := range op.Outcomes {
-				if !containsInt(outcome.Faces, pending.Face) {
+				if !outcomeMatches(library, pending.DieID, outcome, pending.Face) {
 					continue
 				}
 				ctx := effectContext{SourceActorID: pending.ActorID, SourceContentID: definition.ID, SourceContentType: "status", TargetActorIDs: []string{pending.ActorID}, SelectedStatusID: definition.ID, RolledFace: pending.Face}
@@ -3171,6 +3175,17 @@ func restoreRoundStatuses(battle *state.Battle, library content.BattleLibrary) {
 			}
 		}
 	}
+}
+
+// keepStatusRemoved lowers a restore-each-round status's restore target to
+// its current stacks, so a removal for the battle is never topped back up.
+func keepStatusRemoved(battle *state.Battle, actorID, statusID string) {
+	runtime := battle.Settled.Actors[actorID]
+	if _, ok := runtime.RestoreStatuses[statusID]; !ok {
+		return
+	}
+	runtime.RestoreStatuses[statusID] = min(runtime.RestoreStatuses[statusID], statusStackCount(battle.Actors[actorID].Statuses, statusID))
+	battle.Settled.Actors[actorID] = runtime
 }
 
 func applyStatus(battle *state.Battle, library content.BattleLibrary, actorID, statusID string, stacks int) {

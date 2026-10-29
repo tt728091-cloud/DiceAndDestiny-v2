@@ -2,6 +2,9 @@ schema_version: 1
 id: salt_marches
 name: The Salt Marches
 description: A drowned coast. The Drowned Regent marches on Greywharf; stop him before the fourth night ends.
+# The month of the region's first round (always its Day half): the Salt
+# Marches run from late summer into autumn.
+calendar_start: {month: late_summer}
 start_tile: meadow_crossing
 countryside_tiles: [reed_shallows, cairn_hills, saltreed_fen, stillwater, brinehold_march]
 core_tiles: [greywharf_strand, drowned_reach]

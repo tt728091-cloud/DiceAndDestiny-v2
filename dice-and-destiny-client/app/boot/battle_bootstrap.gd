@@ -76,6 +76,7 @@ func _build_mode_menu() -> void:
 		["Curse · cursed dice, Entombment, and misfortune", "curse"],
 		["Adventurer · swords, shields, and coins", "adventurer"],
 		["Starter · base General cards only", "starter"],
+		["Custom Adventurer · your die and priced board", "custom_adventurer"],
 	], "battle.setup.character")
 	_loadout_choice = _add_selection("LOADOUT", [["Sandbox · free deck editing", "sandbox"], ["Progression · XP purchases", "progression"]], "battle.setup.loadout")
 	var selected_mode: String = get_node("/root/LearnedBattleRuntime").selected_loadout_mode
@@ -88,6 +89,7 @@ func _build_mode_menu() -> void:
 		["Brine Mask · minion · keeps every 3", "brine-mask"],
 		["Bell Diver · minion · keeps every 5 and 6", "bell-diver"],
 		["Ribbon Eel · minion · keeps every even die", "ribbon-eel"],
+		["Look-ahead AI · mirror of your character and deck", "lookahead-mirror"],
 		["Blade Warden · Global Champion CP193", "global-champion"],
 		["Prior Champion CP38 · winner-health", "prior-global-cp38"],
 		["Prior Champion CP480 · 2.4M steps", "prior-global-cp480"],
@@ -129,6 +131,7 @@ func _update_opponent_description() -> void:
 		"brine-mask": _message.text = "Brine Mask: 16 health, one attack, one defense. Keeps every 3 across up to three rolls. Brine Surge adds 1 attack damage for 5 energy."
 		"bell-diver": _message.text = "Bell Diver: 18 health, one attack, one defense. Keeps every 5 and 6 across up to three rolls; 3, 4 or 5 Tolls deal 4, 5 or 8 damage, fewer misses. Brass Helm blocks 2–3. Its cards are blank."
 		"ribbon-eel": _message.text = "Ribbon Eel: 15 health, one attack, one defense. Keeps every even die across up to three rolls; 3, 4 or 5 Snares deal 3, 5 or 7 damage, fewer misses. Slip the Current blocks 1, 2 or 4. Its cards are blank."
+		"lookahead-mirror": _message.text = "The balance lab's look-ahead player, playing your character with your exact deck and abilities. It cannot see your hand, your private planning or future rolls; it decides by playing each option forward many times. Trade Seat A and Seat B to compare."
 		_: _message.text = "Play against the selected trained Blade Warden. Rematch keeps your character and opponent."
 
 func _add_selection(caption: String, choices: Array, control_id: String) -> OptionButton:
@@ -195,7 +198,7 @@ func _start_classic() -> void:
 
 func _start_learned(human_seat: String, model_key: String) -> void:
 	_set_buttons_disabled(true)
-	_message.text = "Preparing the minion encounter…" if LEARNED_RUNTIME.MINIONS.has(model_key) else "Loading the selected frozen learned policy…"
+	_message.text = "Preparing the minion encounter…" if LEARNED_RUNTIME.MINIONS.has(model_key) else "Preparing the look-ahead opponent…" if model_key == LEARNED_RUNTIME.MODEL_LOOKAHEAD else "Loading the selected frozen learned policy…"
 	await get_tree().process_frame
 	var runtime := get_node_or_null("/root/LearnedBattleRuntime")
 	if runtime == null:

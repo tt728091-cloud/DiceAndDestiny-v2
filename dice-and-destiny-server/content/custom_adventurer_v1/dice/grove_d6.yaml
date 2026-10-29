@@ -1,0 +1,12 @@
+schema_version: 1
+id: grove_d6
+name: Grove Die
+die_type: d6
+side_count: 6
+faces:
+  - {number: 1, symbol: grove_bramble}
+  - {number: 2, symbol: grove_bramble}
+  - {number: 3, symbol: grove_bramble}
+  - {number: 4, symbol: grove_root}
+  - {number: 5, symbol: grove_bloom}
+  - {number: 6, symbol: grove_acorn}

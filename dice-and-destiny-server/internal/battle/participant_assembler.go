@@ -10,6 +10,7 @@ import (
 	"strings"
 	"sync"
 
+	"diceanddestiny/server/internal/battle/loadout"
 	"diceanddestiny/server/internal/battle/operation"
 	"diceanddestiny/server/internal/battle/participant"
 	"diceanddestiny/server/internal/battle/segment"
@@ -24,6 +25,10 @@ type FileParticipantAssembler struct {
 	IncludeCharacterPools bool
 	ContentRoot           string
 	RunStateRoot          string
+	// CustomBoard, when set, is a priced board's die, board and
+	// generated abilities for this battle (a campaign or expedition save's
+	// own), in place of the editors' sheet under AuthoredCardsRoot.
+	CustomBoard *loadout.SheetBoard
 
 	cacheSettledContent bool
 	settledOnce         sync.Once
@@ -69,7 +74,7 @@ func (assembler *FileParticipantAssembler) AssembleParticipants(
 		// Minion definitions are an opt-in pack. Keep the frozen learned
 		// opponents' vocabulary byte-for-byte unchanged in existing matchups.
 		for _, requested := range participants {
-			if requested.DefinitionID == "curse" || requested.DefinitionID == "adventurer" || requested.DefinitionID == "starter" {
+			if requested.DefinitionID == "curse" || adventurerPack(requested.DefinitionID) {
 				continue
 			}
 			if _, ok := library.Combatants[requested.DefinitionID]; ok {
@@ -100,11 +105,30 @@ func (assembler *FileParticipantAssembler) AssembleParticipants(
 			break
 		}
 		for _, requested := range participants {
-			if requested.DefinitionID != "adventurer" && requested.DefinitionID != "starter" && !assembler.IncludeCharacterPools {
+			if !adventurerPack(requested.DefinitionID) && !assembler.IncludeCharacterPools {
 				continue
 			}
 			library = content.BattleLibrary{Symbols: maps.Clone(library.Symbols), Dice: maps.Clone(library.Dice), Cards: maps.Clone(library.Cards), Abilities: maps.Clone(library.Abilities), Statuses: maps.Clone(library.Statuses), Combatants: maps.Clone(library.Combatants)}
 			library, settledErr = content.LoadBattleExtension(library, filepath.Join(assembler.ContentRoot, "adventurer_v1"))
+			if settledErr != nil {
+				return state.BattleSetup{}, settledErr
+			}
+			catalog, settledErr = json.Marshal(library)
+			if settledErr != nil {
+				return state.BattleSetup{}, settledErr
+			}
+			break
+		}
+		// The custom adventurer's pack (the board dice, their symbols and
+		// the menu defenses) joins only battles it fights in or that pin a
+		// priced board, never through character pools: other catalogs keep
+		// their symbol count.
+		for _, requested := range participants {
+			if requested.DefinitionID != loadout.CustomAdventurer && assembler.CustomBoard == nil {
+				continue
+			}
+			library = content.BattleLibrary{Symbols: maps.Clone(library.Symbols), Dice: maps.Clone(library.Dice), Cards: maps.Clone(library.Cards), Abilities: maps.Clone(library.Abilities), Statuses: maps.Clone(library.Statuses), Combatants: maps.Clone(library.Combatants)}
+			library, settledErr = content.LoadBattleExtension(library, filepath.Join(assembler.ContentRoot, CustomAdventurerPack))
 			if settledErr != nil {
 				return state.BattleSetup{}, settledErr
 			}
@@ -119,9 +143,39 @@ func (assembler *FileParticipantAssembler) AssembleParticipants(
 			if settledErr != nil {
 				return state.BattleSetup{}, settledErr
 			}
+			if assembler.CustomBoard == nil {
+				for _, requested := range participants {
+					if requested.DefinitionID == loadout.CustomAdventurer {
+						// Pin the sheet's chosen die and priced board in this
+						// battle's catalog.
+						if library, settledErr = loadout.OverlayCustomBoard(library, assembler.AuthoredCardsRoot); settledErr != nil {
+							return state.BattleSetup{}, settledErr
+						}
+						break
+					}
+				}
+			}
 			catalog, settledErr = json.Marshal(library)
 			if settledErr != nil {
 				return state.BattleSetup{}, settledErr
+			}
+		}
+		if assembler.CustomBoard != nil {
+			owner := assembler.CustomBoard.Character
+			if owner == "" {
+				owner = loadout.CustomAdventurer
+			}
+			for _, requested := range participants {
+				if requested.DefinitionID == owner {
+					// Pin the save's own die and priced board.
+					if library, settledErr = loadout.ApplySheetBoard(library, owner, *assembler.CustomBoard); settledErr != nil {
+						return state.BattleSetup{}, settledErr
+					}
+					if catalog, settledErr = json.Marshal(library); settledErr != nil {
+						return state.BattleSetup{}, settledErr
+					}
+					break
+				}
 			}
 		}
 		allSettled := true
@@ -183,6 +237,15 @@ func (assembler *FileParticipantAssembler) AssembleParticipants(
 		}
 	}
 	return combined, nil
+}
+
+// CustomAdventurerPack holds the custom adventurer, its default board and the
+// dice the Board Builder offers.
+const CustomAdventurerPack = "custom_adventurer_v1"
+
+// adventurerPack reports characters whose decks use the adventurer pack.
+func adventurerPack(definitionID string) bool {
+	return definitionID == "adventurer" || definitionID == "starter" || definitionID == loadout.CustomAdventurer
 }
 
 func (assembler *FileParticipantAssembler) loadSettledContent(

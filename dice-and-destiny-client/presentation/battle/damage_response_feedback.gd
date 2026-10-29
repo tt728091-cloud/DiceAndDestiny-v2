@@ -34,6 +34,10 @@ func configure(data: Dictionary, screen: Control) -> void:
 	_original_count = int(data.get("original_count", data.get("saved", []).size() + data.get("pending", []).size()))
 	_source_id = str(data.get("source_id", ""))
 	_ability_feedback = str(data.get("card_id", "")).is_empty()
+	# Quiet (an opponent's card, a revealed play, Protect acting on its own):
+	# only the result shows, like an ability's reduction; no card, no caption.
+	var quiet := bool(data.get("quiet", false))
+	if quiet: _ability_feedback = true
 	_started = int(data.started_ms)
 	_defense_timing = bool(data.get("defense_timing", false))
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -42,7 +46,7 @@ func configure(data: Dictionary, screen: Control) -> void:
 	_played = BattleCard.new(); add_child(_played)
 	_played.configure(str(data.instance_id), str(data.card_id), _hand_play, false, not _hand_play)
 	_played.size = CARD_SIZE
-	if str(data.card_id).is_empty(): _played.hide()
+	if str(data.card_id).is_empty() or quiet: _played.hide()
 	_played.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_played.focus_mode = Control.FOCUS_NONE
 	_played.position = Vector2(280, 490) if str(data.get("actor_id", "")) == screen.viewer_actor_id else Vector2(1510, 490)

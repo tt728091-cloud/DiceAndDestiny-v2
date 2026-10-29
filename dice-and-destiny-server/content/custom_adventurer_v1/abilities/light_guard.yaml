@@ -1,0 +1,37 @@
+schema_version: 1
+id: light_guard
+name: "Light Guard"
+type: defensive
+presentation:
+  rules_text: "Once per defensive segment, choose one incoming attack and roll 1 of your own dice. Outcomes follow each symbol's role on your die: each main symbol prevents 1 damage; each side symbol prevents 2; each odd symbol prevents 1, and the second odd symbol of a 3-1-1-1 die prevents 3. If any apex symbol (face 6) is rolled, gain 5 energy total; apex symbols prevent no damage. On every die this prevents 7/6 (about 1.17) damage per roll on average. Saved cards go to discard and still count as health."
+cost: {energy: 0}
+usage: {maximum_per_segment: 1}
+selection:
+  requires_incoming_proposal: true
+  allowed_proposal_types: [damage_source]
+  target_count: 1
+resolution:
+  energy_gain_limit: 5
+  reaction_window: {opens: true, pass_required: true}
+  operations:
+    - type: roll_dice
+      id: light_guard_roll
+      target: self
+      dice: owner
+      dice_count: 1
+      reaction_window: {opens: true, pass_required: true}
+      outcomes:
+        - roles: [main, odd]
+          operations:
+            - {type: prevent_damage, target: selected_proposal, amount: 1}
+        - roles: [side]
+          operations:
+            - {type: prevent_damage, target: selected_proposal, amount: 2}
+        - roles: [odd_b]
+          operations:
+            - {type: prevent_damage, target: selected_proposal, amount: 3}
+        - roles: [apex]
+          operations:
+            - {type: gain_resource, target: self, amount: 5, resource: energy}
+saved_card_destination: discard
+configuration_version: 1

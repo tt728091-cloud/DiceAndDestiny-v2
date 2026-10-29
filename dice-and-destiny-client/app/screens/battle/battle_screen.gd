@@ -322,9 +322,9 @@ func _process(_delta: float) -> void:
 		return
 	var elapsed := Time.get_ticks_msec() - _model_started_ms
 	if _model_thread.is_alive():
-		if elapsed > MODEL_TIMEOUT_MS and not _model_timeout_warning:
+		if elapsed > _model_timeout_ms() and not _model_timeout_warning:
 			_model_timeout_warning = true
-			_error_message = "Learned-policy inference exceeded %d ms. No fallback action will be submitted." % MODEL_TIMEOUT_MS
+			_error_message = "Learned-policy inference exceeded %d ms. No fallback action will be submitted." % _model_timeout_ms()
 			_render()
 		return
 	var result = _model_thread.wait_to_finish()
@@ -950,6 +950,7 @@ func _build_incoming_attack_list() -> void:
 		var group := VBoxContainer.new(); group.add_theme_constant_override("separation", 4); body.add_child(group)
 		var row := preload("res://presentation/battle/incoming_attack_row.gd").new()
 		group.add_child(row); row.configure(presenter)
+		_inspect(row, str(row.get_meta("inspection_id")), "Incoming attack: select it to choose a defense")
 		_incoming_attack_rows[id] = row; presenter.incoming_row = row
 		row.set_meta("source_order", _incoming_attack_rows.size())
 		if id == active and row.defense_rank() < 2: focus_row = row
@@ -1084,9 +1085,9 @@ func _build_header(parent: VBoxContainer) -> void:
 		var policy_schema := str(_view.learned_policy.get("observation_schema", ""))
 		var policy_label := "NEW V2" if policy_schema == "dice-and-destiny-observation-v2" else "OLD V1"
 		policy_badge.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-		policy_badge.text = str(_minion_summary().get("badge", "")) if _is_single_ability_opponent() else "LEARNED BATTLE · %s · HUMAN %s" % [policy_label, learned_human_seat.to_upper()]
+		policy_badge.text = str(_minion_summary().get("badge", "")) if _is_single_ability_opponent() else "LOOK-AHEAD MIRROR · HUMAN %s" % learned_human_seat.to_upper() if _is_lookahead_opponent() else "LEARNED BATTLE · %s · HUMAN %s" % [policy_label, learned_human_seat.to_upper()]
 		policy_badge.add_theme_color_override("font_color", Color("9de0ff"))
-		policy_badge.tooltip_text = str(_minion_summary().get("rules", "")) if _is_single_ability_opponent() else "Frozen policy %s · no training or fallback" % str(_view.learned_policy.get("model_id", "unknown"))
+		policy_badge.tooltip_text = str(_minion_summary().get("rules", "")) if _is_single_ability_opponent() else "Look-ahead player · plays your character and deck · simulates each choice; nothing trained" if _is_lookahead_opponent() else "Frozen policy %s · no training or fallback" % str(_view.learned_policy.get("model_id", "unknown"))
 		if _view.campaign.has("expedition"):
 			var x: Dictionary = _view.campaign.get("expedition", {})
 			policy_badge.text = "EXPEDITION · %s %d · %s" % ["NIGHT" if x.get("night", false) else "DAY", (int(x.get("round", 1)) + 1) / 2, str(x.get("name", "")).to_upper()]
@@ -1238,7 +1239,7 @@ func _build_enemy_column(_parent: HBoxContainer) -> void:
 	if learned_battle_mode or _multiple_enemies():
 		profile.title.text = _actor_display_name(_focused_enemy).trim_prefix("Learned ")
 	if learned_battle_mode:
-		profile.title.tooltip_text = "%s · one attack · one defense" % str(_minion_summary().get("keeps", "")) if _is_single_ability_opponent() else "Learned Policy"
+		profile.title.tooltip_text = "%s · one attack · one defense" % str(_minion_summary().get("keeps", "")) if _is_single_ability_opponent() else "Look-ahead player" if _is_lookahead_opponent() else "Learned Policy"
 	var income := _income_actor_data(_focused_enemy)
 	if not income.is_empty(): profile.prepare_income(income)
 	else:
@@ -1361,6 +1362,7 @@ func _build_defensive() -> void:
 # Merely inspecting an incoming intent never submits a pass.
 # Simultaneous Defense: an attack can be left undefended before locking in.
 func _build_no_defense_note() -> void:
+	_ability_dock.set_meta("defense_source", _selected_source)
 	var note := Label.new(); note.name = "NoDefenseLeft"; note.text = "No defenses left for this attack"
 	note.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER; note.add_theme_font_size_override("font_size", 16)
 	CINEMATIC.hud_lettering(note)
@@ -1609,17 +1611,17 @@ func _compact_defense_data(actor_id: String, counts: Dictionary, shown_source: D
 	var dice: Array = []; var gains: Array = []
 	var energy_gained := 0
 	var energy_limit := int(_view.content_definition("abilities", ability_id).get("resolution", {}).get("energy_gain_limit", 0))
-	var die_id := "standard_d6"
-	for op in operations:
-		if op.get("type") == "roll_dice": die_id = str(op.get("dice_id", die_id))
+	# The die the summary draws: the one the defense rolled (the defender's own die).
+	var die_id := _defense_die_for(actor_id, ability_id, selection, 0)
 	# Fixed defenses resolve once without a rolled face.
 	if faces.is_empty() and not operations.any(func(op): return op.get("type") == "roll_dice"):
 		faces = [0]
-	for face in faces:
+	for face_index in faces.size():
+		var face = faces[face_index]
 		var benefits: Array[String] = []
 		var die_prevented := 0
 		var gain_start := gains.size()
-		for op in _resolved_operations(operations, int(face)):
+		for op in _resolved_operations(operations, int(face), _defense_die_for(actor_id, ability_id, selection, face_index)):
 			match str(op.get("type", "")):
 				"prevent_damage":
 					var amount := _configured_amount(op.get("amount", 0), int(face)); prevented += amount; die_prevented += amount; pending = maxi(0, pending - amount); benefits.append("Prevent %d" % amount)
@@ -1794,9 +1796,7 @@ func _build_defense_panel(parent: VBoxContainer, actor_id: String, revealed: boo
 	parent.add_child(dice_row)
 	var die := TOOLTIP_BUTTON.new(); die.custom_minimum_size = Vector2(120, 105); die.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 	_style_defense_die(die)
-	var defense_die_id := str(_view.content_definition("abilities", ability_id).get("resolution", {}).get("roll", {}).get("dice_id", "standard_d6"))
-	for op in _view.content_definition("abilities", ability_id).get("resolution", {}).get("operations", []):
-		if op.get("type") == "roll_dice": defense_die_id = str(op.get("dice_id", defense_die_id))
+	var defense_die_id := _defense_die_for(actor_id, ability_id, selection, 0)
 	if face > 0:
 		var die_data := _as_dictionary(roll.get("die", {})); var die_id := str(die_data.get("die_id", defense_die_id))
 		die.text = "%s\n%d" % [BattlePresentationCatalog.symbol_for_die_face(die_id, face), face]
@@ -1827,7 +1827,7 @@ func _build_defense_panel(parent: VBoxContainer, actor_id: String, revealed: boo
 		extra.add_theme_font_size_override("font_size", 26)
 		dice_row.add_child(extra)
 		_inspect(extra, "battle.defense_die.%s.%d" % [actor_id, extra_index], "Second defense die")
-	var preview := _defense_preview(ability_id, base, face)
+	var preview := _defense_preview(ability_id, base, face, str(_as_dictionary(roll.get("die", {})).get("die_id", defense_die_id)))
 	var result_data := _compact_defense_data(actor_id, _status_counts(), source)
 	if not result_data.is_empty(): preview = {"rolled": true, "prevented": result_data.prevented, "pending": result_data.after}
 	var chosen := Label.new(); chosen.text = "%s · %d block" % [ability.name, int(preview.get("prevented", 0))] if bool(preview.get("rolled", false)) else ability.name; chosen.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER; parent.add_child(chosen)
@@ -2245,7 +2245,7 @@ func _effect_roll_outcome(roll: Dictionary) -> String:
 		if not trigger is Dictionary or (not trigger_id.is_empty() and str(trigger.get("id", "")) != trigger_id): continue
 		for operation in _as_array(trigger.get("operations", [])):
 			if operation is Dictionary and str(operation.get("type", "")) == "roll_dice" and (operation_id.is_empty() or str(operation.get("id", "")) == operation_id):
-				resolved.append_array(_resolved_operations([operation], face))
+				resolved.append_array(_resolved_operations([operation], face, str(_as_dictionary(roll.get("die", {})).get("die_id", ""))))
 	var descriptions: Array[String] = []
 	for operation in resolved:
 		if not operation is Dictionary: continue
@@ -2484,7 +2484,7 @@ func _capture_reaction_card_feedback(sent: Dictionary, previous_actors: Dictiona
 func _build_reaction_card_feedback() -> void:
 	if not _reaction_feedback_active() or _history_review or _history_replay: return
 	if _damage_feedback.get("battle_id") == _view.battle_id and _damage_feedback.get("started_ms") == _reaction_card_feedback.get("started_ms"): return
-	if not _reaction_card_feedback.get("changes", []).is_empty():
+	if not _reaction_card_feedback.get("changes", []).is_empty() and not _reaction_card_feedback.get("quiet", false):
 		var flight := preload("res://presentation/battle/attack_card_flight.gd").new()
 		_root.add_child(flight); flight.configure(self, _reaction_card_feedback)
 
@@ -3876,12 +3876,12 @@ func _card_legal(definition: String) -> bool:
 
 	return not _submitting and not _history_review and _view.card_playable_now(definition)
 
-func _defense_preview(ability_id: String, base: int, rolled_face: int) -> Dictionary:
+func _defense_preview(ability_id: String, base: int, rolled_face: int, die_id: String = "") -> Dictionary:
 	var ability := _view.content_definition("abilities", ability_id)
 	var resolution := _as_dictionary(ability.get("resolution", {}))
 	var pending := base
 	var prevented := 0
-	for operation in _resolved_operations(_as_array(resolution.get("operations", [])), rolled_face):
+	for operation in _resolved_operations(_as_array(resolution.get("operations", [])), rolled_face, die_id):
 		if not operation is Dictionary: continue
 		match str(operation.get("type", "")):
 			"prevent_damage":
@@ -3892,26 +3892,45 @@ func _defense_preview(ability_id: String, base: int, rolled_face: int) -> Dictio
 				pending = floori(float(pending * int(operation.get("numerator", 1))) / float(denominator))
 	return {"pending": pending, "prevented": prevented, "rolled": _contains_roll_operation(_as_array(resolution.get("operations", [])))}
 
+## The die a defense rolled for its index-th face: the rolled die itself when
+## the authority published it, else the defender's own die for dice: owner,
+## else the die the roll names.
+func _defense_die_for(actor_id: String, ability_id: String, selection: Dictionary, index: int) -> String:
+	var rolled := _as_array(selection.get("rolled_dice", []))
+	if index < rolled.size() and rolled[index] is Dictionary and not str(rolled[index].get("die_id", "")).is_empty(): return str(rolled[index].die_id)
+	var resolution := _as_dictionary(_view.content_definition("abilities", ability_id).get("resolution", {}))
+	var die_id := str(_as_dictionary(resolution.get("roll", {})).get("dice_id", "standard_d6"))
+	for op in _as_array(resolution.get("operations", [])):
+		if not op is Dictionary or op.get("type") != "roll_dice": continue
+		if str(op.get("dice", "")) != "owner": return str(op.get("dice_id", die_id))
+		var loadout := _as_array(_view.actor(actor_id).get("dice_loadout", []))
+		if not loadout.is_empty() and loadout[0] is Dictionary: return str(loadout[0].get("dice_id", die_id))
+	return die_id
+
 func _contains_roll_operation(operations: Array) -> bool:
 	for operation in operations:
 		if operation is Dictionary and str(operation.get("type", "")) == "roll_dice": return true
 	return false
 
-func _resolved_operations(operations: Array, rolled_face: int) -> Array:
+## die_id is the die that rolled the face; role outcomes (dice: owner) match
+## by the role the authority published for that die's symbol.
+func _resolved_operations(operations: Array, rolled_face: int, die_id: String = "") -> Array:
 	var result: Array = []
 	for operation in operations:
 		if not operation is Dictionary: continue
 		if str(operation.get("type", "")) != "roll_dice":
 			result.append(operation); continue
 		for outcome in _as_array(operation.get("outcomes", [])):
-			if outcome is Dictionary and _outcome_contains_face(outcome, rolled_face):
-				result.append_array(_resolved_operations(_as_array(outcome.get("operations", [])), rolled_face))
+			if outcome is Dictionary and _outcome_contains_face(outcome, rolled_face, die_id):
+				result.append_array(_resolved_operations(_as_array(outcome.get("operations", [])), rolled_face, die_id))
 	return result
 
-func _outcome_contains_face(outcome: Dictionary, rolled_face: int) -> bool:
+func _outcome_contains_face(outcome: Dictionary, rolled_face: int, die_id: String = "") -> bool:
 	for configured_face in _as_array(outcome.get("faces", [])):
 		if int(configured_face) == rolled_face: return true
-	return false
+	var roles := _as_array(outcome.get("roles", []))
+	if roles.is_empty() or die_id.is_empty(): return false
+	return BattlePresentationCatalog.role_for_die_face(die_id, rolled_face) in roles
 
 func _configured_amount(value, rolled_face: int) -> int:
 	return rolled_face if value is String and value == "rolled_face" else int(value)
@@ -3938,6 +3957,14 @@ func _segment_name(id: String) -> String:
 func _is_single_ability_opponent() -> bool:
 	return _view.learned_policy.get("controller_kind", "") == "single_ability"
 
+## The look-ahead opponent simulates the battle before each choice and may
+## think for several seconds; frozen policies answer within MODEL_TIMEOUT_MS.
+func _is_lookahead_opponent() -> bool:
+	return _view.learned_policy.get("controller_kind", "") == "lookahead"
+
+func _model_timeout_ms() -> int:
+	return preload("res://local_client/learned_battle/learned_battle_runtime.gd").LOOKAHEAD_TIMEOUT_MS if _is_lookahead_opponent() else MODEL_TIMEOUT_MS
+
 func _minion_summary() -> Dictionary:
 	return preload("res://local_client/learned_battle/learned_battle_runtime.gd").minion_summary(str(_view.learned_policy.get("model_id", "")))
 
@@ -3951,6 +3978,7 @@ func _actor_display_name(actor_id: String) -> String:
 		if definition_id.is_empty():
 			definition_id = "blade_warden" if actor_id == "blade" or (actor_id == _focused_enemy and learned_battle_mode) else "venom_goblin" if actor_id == _focused_enemy else actor_id
 		display_name = definition_id.replace("_", " ").capitalize()
+	if actor_id == _focused_enemy and learned_battle_mode and _is_lookahead_opponent(): return "Look-ahead " + display_name
 	if actor_id == _focused_enemy and learned_battle_mode and not _is_single_ability_opponent(): return "Learned " + display_name
 	if _multiple_enemies() and actor_id in _enemy_ids():
 		var siblings: Array = _enemy_ids().filter(func(id): return _view.actor(id).get("definition_id") == actor.get("definition_id"))
@@ -4402,14 +4430,13 @@ func _capture_damage_feedback(result: Dictionary, previous_damage: Dictionary, h
 		var actor_id := str(emitted.get("actor_id", ""))
 		# An opponent's card, the viewer's own play resolving at a reveal, or
 		# Protect acting on its own shows only its result: the attack's number
-		# pulses and counts.
-		if (actor_id != viewer_actor_id and not card_id.is_empty()) or bool(data.get("revealed", false)) or bool(data.get("automatic", false)):
-			_number_pulses[str(data.get("source_id", ""))] = {"battle_id": _view.battle_id, "started_ms": Time.get_ticks_msec(), "before": before, "after": after}
-			continue
+		# pulses and counts and saved cards fly home; no card, no caption.
+		var quiet := (actor_id != viewer_actor_id and not card_id.is_empty()) or bool(data.get("revealed", false)) or bool(data.get("automatic", false))
+		if quiet: _number_pulses[str(data.get("source_id", ""))] = {"battle_id": _view.battle_id, "started_ms": Time.get_ticks_msec(), "before": before, "after": after}
 		var card_name := str(BattlePresentationCatalog.ability(str(data.ability_id)).name) if data.has("ability_id") and card_id.is_empty() else str(BattlePresentationCatalog.card(card_id).name)
 		if data.has("status_id") and card_id.is_empty(): card_name = BattlePresentationCatalog.status(str(data.status_id)).name
 		var text := "%s used %s · damage %d → %d" % [_actor_display_name(actor_id), card_name, before, after]
-		_damage_feedback = {"battle_id": _view.battle_id, "source_id": str(data.get("source_id", "")), "card_id": card_id, "instance_id": str(data.get("card_instance_id", "")), "started_ms": Time.get_ticks_msec(), "text": text, "before": before, "after": after, "actor_id": actor_id, "saved": [], "pending": []}
+		_damage_feedback = {"battle_id": _view.battle_id, "source_id": str(data.get("source_id", "")), "card_id": card_id, "instance_id": str(data.get("card_instance_id", "")), "started_ms": Time.get_ticks_msec(), "text": text, "before": before, "after": after, "actor_id": actor_id, "saved": [], "pending": [], "quiet": quiet}
 		_damage_feedback["hand_pose"] = _gain_card_poses.get(str(data.get("card_instance_id", "")), {}).duplicate(true)
 		var still_pending := {}
 		var released_destinations := {}
@@ -4436,7 +4463,7 @@ func _capture_damage_feedback(result: Dictionary, previous_damage: Dictionary, h
 		if not _damage_feedback.saved.is_empty():
 			text = "%s · %d cards saved" % [card_name, _damage_feedback.saved.size()]
 			_damage_feedback.text = text
-		_reaction_card_feedback = {"battle_id": _view.battle_id, "source_id": str(data.get("source_id", "")), "expires_ms": Time.get_ticks_msec() + 2600, "text": text, "actor_id": actor_id, "card_id": card_id, "instance_id": str(data.get("card_instance_id", "")), "started_ms": _damage_feedback.started_ms, "changes": [{"source_id": str(data.get("source_id", "")), "before": before, "after": after}]}
+		_reaction_card_feedback = {"battle_id": _view.battle_id, "source_id": str(data.get("source_id", "")), "expires_ms": Time.get_ticks_msec() + 2600, "text": text, "actor_id": actor_id, "card_id": card_id, "instance_id": str(data.get("card_instance_id", "")), "started_ms": _damage_feedback.started_ms, "changes": [{"source_id": str(data.get("source_id", "")), "before": before, "after": after}], "quiet": quiet}
 
 		if hold_defense and data.has("ability_id"): _defense_damage_feedbacks.append(_damage_feedback.duplicate(true))
 

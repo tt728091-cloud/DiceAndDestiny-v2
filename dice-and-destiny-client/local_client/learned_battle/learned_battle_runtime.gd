@@ -22,6 +22,10 @@ const MODEL_BRINE_MASK := "brine-mask"
 const MODEL_BRINE_PAIR := "brine-mask-pair"
 const MODEL_BELL_DIVER := "bell-diver"
 const MODEL_RIBBON_EEL := "ribbon-eel"
+## The balance lab's look-ahead player as a mirror opponent: it plays your
+## character with your deck and abilities, deciding by simulating the battle.
+const MODEL_LOOKAHEAD := "lookahead-mirror"
+const LOOKAHEAD_TIMEOUT_MS := 30000
 ## Scripted single-ability minions: content definition plus the summary shown in
 ## the setup menu and the battle badge. The server reads behavior from content.
 const MINIONS := {
@@ -56,7 +60,7 @@ func _ready() -> void:
 func select_model(model_key: String) -> Dictionary:
 	if model_key.begins_with(MODEL_MINION_PREFIX) and _minion_opponent(model_key).is_empty():
 		return {"ok": false, "error": "Invalid minion opponent selection: %s" % model_key}
-	if not model_key.begins_with(MODEL_MINION_PREFIX) and model_key not in [MODEL_ACCEPTED_V1, MODEL_DECISION_V2, MODEL_OPTIMIZED_V3, MODEL_GLOBAL_CHAMPION, MODEL_PRIOR_GLOBAL_CP38, MODEL_PRIOR_GLOBAL_CP480] and not MINIONS.has(model_key):
+	if not model_key.begins_with(MODEL_MINION_PREFIX) and model_key not in [MODEL_ACCEPTED_V1, MODEL_DECISION_V2, MODEL_OPTIMIZED_V3, MODEL_GLOBAL_CHAMPION, MODEL_PRIOR_GLOBAL_CP38, MODEL_PRIOR_GLOBAL_CP480, MODEL_LOOKAHEAD] and not MINIONS.has(model_key):
 		return {"ok": false, "error": "Unknown learned model selection: %s" % model_key}
 	_selected_model_key = model_key
 	_initialized = _initialized_model_key == model_key
@@ -90,18 +94,20 @@ func ensure_initialized() -> Dictionary:
 	if _native_authority == null:
 		return {"ok": false, "error": _initialization_error}
 	var minion := _minion_opponent(_selected_model_key)
+	var lookahead := _selected_model_key == MODEL_LOOKAHEAD
 	var result := _request({
 		"op": "initialize",
 		"loadout_root": WorkspacePaths.runtime_dir("user/character_loadouts"),
 		"replace_session": not _initialized_model_key.is_empty() and _initialized_model_key != _selected_model_key,
-		"model_path": "" if not minion.is_empty() else ProjectSettings.globalize_path(_selected_model_path()),
+		"model_path": "" if not minion.is_empty() or lookahead else ProjectSettings.globalize_path(_selected_model_path()),
 		"opponent_count": int(minion.get("count", 1)),
 		"opponent_definition": str(minion.get("definition", "")),
+		"opponent_policy": "lookahead" if lookahead else "",
 		"model_sha256": _selected_model_sha256(),
 		"content_root": ProjectSettings.globalize_path("res://../dice-and-destiny-server/content"),
 		"run_state_root": ProjectSettings.globalize_path("res://../dice-and-destiny-server/save/run_players"),
 		"diagnostics_path": WorkspacePaths.persistent_file("phase3/learned-battles.jsonl"),
-		"timeout_ms": INFERENCE_TIMEOUT_MS,
+		"timeout_ms": LOOKAHEAD_TIMEOUT_MS if lookahead else INFERENCE_TIMEOUT_MS,
 	})
 	_initialized = result.get("ok") == true
 	if _initialized:
@@ -235,6 +241,13 @@ func expedition_deck_change(save_id: String, kind: String, id: String, revision:
 	if _native_authority == null: return {"ok": false, "error": _initialization_error}
 	return _request({"op": "expedition_deck_change", "campaign_save": save_id, "purchase": {"kind": kind, "id": id, "revision": revision, "expected_cost": cost, "target_id": target_id, "tree": tree, "count": count}, "loadout_root": WorkspacePaths.runtime_dir("user/character_loadouts"), "content_root": ProjectSettings.globalize_path("res://../dice-and-destiny-server/content")})
 
+## Read-only: the quest catalog described for the admin graph viewer (sets,
+## quests, stage and end nodes, labelled outcome edges, engine badges). It
+## reads only content; nothing in it drives a rule.
+func quest_catalog() -> Dictionary:
+	if _native_authority == null: return {"ok": false, "error": _initialization_error}
+	return _request({"op": "quest_catalog", "content_root": ProjectSettings.globalize_path("res://../dice-and-destiny-server/content")})
+
 ## Permanently deletes one campaign save.
 func campaign_delete(save_id: String) -> Dictionary:
 	if _native_authority == null: return {"ok": false, "error": _initialization_error}
@@ -286,3 +299,39 @@ func ability_authoring(op: String = "ability_authoring", ability: Dictionary = {
 
 func card_trees(op: String = "card_trees", tree: Dictionary = {}, revision: int = 0, character: String = "adventurer", token: String = "") -> Dictionary:
 	return _request({"op": op, "card_tree": tree, "catalog_revision": revision, "character": character, "admin_token": token, "loadout_root": WorkspacePaths.runtime_dir("user/character_loadouts"), "content_root": ProjectSettings.globalize_path("res://../dice-and-destiny-server/content")})
+
+## Board Builder (custom adventurer). The authority prices every board; the
+## client only shows its report.
+## Read-only menus, the die's faces, roles and cost odds, and the sheet's board.
+func board_builder(board: Dictionary = {}) -> Dictionary:
+	if _native_authority == null: return {"ok": false, "error": _initialization_error}
+	return _request({"op": "board_builder", "board": board, "loadout_root": WorkspacePaths.runtime_dir("user/character_loadouts"), "content_root": ProjectSettings.globalize_path("res://../dice-and-destiny-server/content")})
+
+## Read-only: prices a board choice at its damage level (target, when set,
+## previews another) and returns the staircase and what the board's level and
+## defenses cost in XP on the custom adventurer's sheet; include_policy adds
+## the keep table.
+func board_price(board: Dictionary, include_policy: bool = false, target: float = 0.0) -> Dictionary:
+	if _native_authority == null: return {"ok": false, "error": _initialization_error}
+	var request := {"op": "board_price", "board": board, "include_policy": include_policy, "loadout_root": WorkspacePaths.runtime_dir("user/character_loadouts"), "content_root": ProjectSettings.globalize_path("res://../dice-and-destiny-server/content")}
+	if target > 0.0: request.target = target
+	return _request(request)
+
+## Read-only: a campaign or expedition save's board (custom adventurer)
+## priced at a choice's damage level and defenses (empty: the save's own),
+## with every step's and defense's XP.
+func campaign_board(save_id: String, board: Dictionary = {}) -> Dictionary:
+	if _native_authority == null: return {"ok": false, "error": _initialization_error}
+	return _request({"op": "campaign_board", "campaign_save": save_id, "board": board, "loadout_root": WorkspacePaths.runtime_dir("user/character_loadouts"), "content_root": ProjectSettings.globalize_path("res://../dice-and-destiny-server/content")})
+
+## Saves a campaign or expedition save's new damage level and defenses for
+## the XP shown (`cost`, negative for a refund); an expedition pays the
+## visit's Influence at a site or camp.
+func campaign_board_change(save_id: String, board: Dictionary, revision: int, cost: int) -> Dictionary:
+	if _native_authority == null: return {"ok": false, "error": _initialization_error}
+	return _request({"op": "campaign_board_change", "campaign_save": save_id, "board": board, "revision": revision, "expected_cost": cost, "loadout_root": WorkspacePaths.runtime_dir("user/character_loadouts"), "content_root": ProjectSettings.globalize_path("res://../dice-and-destiny-server/content")})
+
+## Confirms a board: the authority re-prices it and writes it to the sheet.
+func board_save(board: Dictionary, revision: int) -> Dictionary:
+	if _native_authority == null: return {"ok": false, "error": _initialization_error}
+	return _request({"op": "board_save", "board": board, "revision": revision, "loadout_root": WorkspacePaths.runtime_dir("user/character_loadouts"), "content_root": ProjectSettings.globalize_path("res://../dice-and-destiny-server/content")})

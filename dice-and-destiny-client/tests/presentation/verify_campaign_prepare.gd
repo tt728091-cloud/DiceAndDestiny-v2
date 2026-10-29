@@ -1,7 +1,8 @@
 extends "res://tests/presentation/verify_campaign.gd"
 ## The campaign's Prepare screen through pointer input: select a deck card, see
 ## its tree, upgrade and trade a copy down in place, preview a tree card, buy a
-## base, sell, store and re-add a copy, and upgrade an ability. Then a save
+## base, sell, store and re-add a copy, and upgrade the defense on the
+## ability board (Holdfast → Holdfast+, as Guard → Guard+). Then a save
 ## holding a wounded copy: it is frozen, and only live copies trade.
 
 const PREPARE_SCRIPT := "res://app/screens/campaign/campaign_prepare.gd"
@@ -24,7 +25,7 @@ func _run() -> void:
 	if prepare == null: _finish(); return
 	_expect(prepare.save_id == campaign.save_id and prepare.character_id == "starter" and prepare._title.text == "Prepare · Prepare test", "Prepare is about the campaign save")
 	_expect(prepare._health.text == "12" and prepare._xp.text == "150", "Prepare shows health and XP")
-	_expect(_prepare_control(prepare, "prepare.card.steady_guard") != null and _prepare_control(prepare, "prepare.ability.adventurer_guard") != null, "the deck and abilities are listed")
+	_expect(_prepare_control(prepare, "prepare.card.steady_guard") != null and _prepare_control(prepare, "prepare.board") != null and _prepare_control(prepare, "prepare.ability.holdfast") != null, "the deck, ability board and abilities are listed")
 	_expect(_prepare_control(prepare, "prepare.card.tip_it") == null, "only the character's own cards are listed")
 	var guard_row := _prepare_control(prepare, "prepare.card.steady_guard")
 	_expect("15 XP × 3" in _text(guard_row) and "45 XP" in _text(guard_row), "each deck row shows XP per card × copies and the total")
@@ -112,19 +113,25 @@ func _run() -> void:
 	_expect(prepare._deck_count("try_again") == 0 and prepare._deck_count(again_target) == 2 and prepare._xp.text == str(xp) and prepare._health.text == "12", "both copies upgrade in one trade")
 	_expect(prepare._message.text.contains("×2"), "the batch is confirmed in words")
 
-	# Abilities: upgrade Guard, then sell the tier back.
-	await _tap(_prepare_control(prepare, "prepare.ability.adventurer_guard"))
+	# Abilities: Holdfast shows its rules; the board upgrades it to
+	# Holdfast+ for 38 XP, then sells it back.
+	await _tap(_prepare_control(prepare, "prepare.ability.holdfast"))
 	for frame in 4: await process_frame
-	_expect(not prepare._canvas.visible and "NEXT TIER" in _text(prepare._center_content), "an ability shows its rules and next tier")
-	await _tap(_prepare_control(prepare, "prepare.upgrade_ability.adventurer_guard"))
+	_expect(not prepare._canvas.visible and "Holdfast" in prepare._center_title.text and "roll 3" in _text(prepare._center_content), "an ability shows its rules")
+	await _tap(_prepare_control(prepare, "prepare.board"))
+	for frame in 4: await process_frame
+	await _tap(_prepare_control(prepare, "prepare.board.defense.0.holdfast_plus"))
+	_expect(int(prepare.board_view.xp.cost) == 38, "Holdfast+ costs Holdfast's price plus 38 XP: %s" % str(prepare.board_view.xp.cost))
+	await _tap(_prepare_control(prepare, "prepare.board.apply"))
 	for frame in 4: await process_frame
 	xp -= 38
-	_expect(prepare._xp.text == str(xp) and prepare.selection.id == "adventurer_guard_plus", "upgrading an ability spends XP and selects the new tier")
+	_expect(prepare._xp.text == str(xp) and _prepare_control(prepare, "prepare.ability.holdfast_plus") != null, "upgrading the defense spends 38 XP")
 	await _capture(prepare, "prepare-ability")
-	await _tap(_prepare_control(prepare, "prepare.downgrade_ability.adventurer_guard_plus"))
+	await _tap(_prepare_control(prepare, "prepare.board.defense.0.holdfast"))
+	await _tap(_prepare_control(prepare, "prepare.board.apply"))
 	for frame in 4: await process_frame
 	xp += 38
-	_expect(prepare._xp.text == str(xp) and prepare.selection.id == "adventurer_guard", "selling an ability tier back refunds it")
+	_expect(prepare._xp.text == str(xp) and _prepare_control(prepare, "prepare.ability.holdfast") != null, "selling the defense back refunds it")
 
 	# Unaffordable trades are disabled with a reason.
 	for width in [1024, 1280, 1920]:

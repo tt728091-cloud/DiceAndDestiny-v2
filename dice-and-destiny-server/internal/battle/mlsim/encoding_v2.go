@@ -436,6 +436,13 @@ func v2RequirementProgress(requirement content.BattleRequirement, dice []state.R
 	return minFloat32(current/target, 1)
 }
 
+// V2OperationSummary folds operations into the v2 effect summary: damage/20,
+// prevention/20, status stacks/10, resources/10, dice rolled/10, modifiers,
+// and every amount/20; roll outcomes count by their share of the faces.
+func V2OperationSummary(operations []content.BattleOperation) []float32 {
+	return v2OperationSummary(operations)
+}
+
 func v2OperationSummary(operations []content.BattleOperation) []float32 {
 	result := make([]float32, 7)
 	for _, operation := range operations {

@@ -72,8 +72,9 @@ func checkStateMatchesSheet(save CampaignSave) error {
 }
 
 // NewExpeditionSave starts an expedition campaign: a named save with a copy
-// of the starting sheet, the bonus XP, and a freshly generated region.
-func NewExpeditionSave(root, character, name, regionID string, seed uint64, c Campaign, e Economy, catalogs map[string]content.BattleLibrary, rules expedition.Rules) (CampaignSave, error) {
+// of the starting sheet, the bonus XP, and a freshly generated region. start
+// is the custom adventurer's starting board, when it builds one.
+func NewExpeditionSave(root, character, name, regionID string, seed uint64, c Campaign, e Economy, catalogs map[string]content.BattleLibrary, rules expedition.Rules, start ...SheetBoard) (CampaignSave, error) {
 	progressMu.Lock()
 	defer progressMu.Unlock()
 	name = strings.TrimSpace(name)
@@ -88,7 +89,7 @@ func NewExpeditionSave(root, character, name, regionID string, seed uint64, c Ca
 		return CampaignSave{}, err
 	}
 	lib := catalogs[character]
-	sheet, err := startingSheet(root, character, c.BonusXP, e, lib)
+	sheet, err := startingSheet(root, character, c.BonusXP, e, lib, start)
 	if err != nil {
 		return CampaignSave{}, err
 	}
@@ -155,6 +156,10 @@ func creditXP(p *Progress, xp int) {
 
 func finishExpeditionWrite(root string, save *CampaignSave, e Economy, lib content.BattleLibrary) error {
 	syncSheetFromState(save, e)
+	// Earned XP raises the total, and block defenses' prices with it.
+	if err := reconcileBudget(&save.Sheet, campaignEconomy(e), lib); err != nil {
+		return err
+	}
 	save.Sheet.Revision++
 	if err := validateProgress(save.Sheet, lib); err != nil {
 		return err

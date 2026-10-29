@@ -16,8 +16,7 @@ import (
 )
 
 func TestCommittedDamageMetricsUseFinalAuthorityBatch(t *testing.T) {
-	environment := &Environment{}
-	environment.recordCommittedDamage([]event.Event{{
+	committed := event.Event{
 		Type: event.TypeDamageCommitted,
 		Data: map[string]any{
 			"sources": []state.SettledDamageSource{
@@ -33,17 +32,33 @@ func TestCommittedDamageMetricsUseFinalAuthorityBatch(t *testing.T) {
 				{TargetActorID: "seat-a", Accepted: true},
 			},
 		},
-	}})
-
-	if got := environment.metrics.DamageBySeat.SeatB; got != (DamageMetrics{
-		RawAttack: 6, RawBleed: 1, RawTotal: 7, ResolvedTotal: 3, ActualTotal: 3,
-	}) {
-		t.Fatalf("seat-b damage metrics = %#v", got)
 	}
-	if got := environment.metrics.DamageBySeat.SeatA; got != (DamageMetrics{
-		RawPoison: 1, RawTotal: 1, ResolvedTotal: 1, ActualTotal: 1,
-	}) {
-		t.Fatalf("seat-a damage metrics = %#v", got)
+	// Automatic progression freezes its events through JSON, which turns the
+	// typed lists into decoded JSON; both forms count the same.
+	raw, err := json.Marshal(committed)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var frozen event.Event
+	if err := json.Unmarshal(raw, &frozen); err != nil {
+		t.Fatal(err)
+	}
+	if _, typed := frozen.Data["sources"].([]state.SettledDamageSource); typed {
+		t.Fatal("the frozen event kept typed sources")
+	}
+	for name, e := range map[string]event.Event{"typed": committed, "frozen": frozen} {
+		environment := &Environment{}
+		environment.recordCommittedDamage([]event.Event{e})
+		if got := environment.metrics.DamageBySeat.SeatB; got != (DamageMetrics{
+			RawAttack: 6, RawBleed: 1, RawTotal: 7, ResolvedTotal: 3, ActualTotal: 3,
+		}) {
+			t.Fatalf("%s: seat-b damage metrics = %#v", name, got)
+		}
+		if got := environment.metrics.DamageBySeat.SeatA; got != (DamageMetrics{
+			RawPoison: 1, RawTotal: 1, ResolvedTotal: 1, ActualTotal: 1,
+		}) {
+			t.Fatalf("%s: seat-a damage metrics = %#v", name, got)
+		}
 	}
 }
 

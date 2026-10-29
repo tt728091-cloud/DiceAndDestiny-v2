@@ -1,0 +1,3291 @@
+[
+ {
+  "hero": "Pale Lady",
+  "layout": "3-2-1",
+  "symbols": {
+   "A": "Slash",
+   "B": "Crescent",
+   "C": "Full Moon"
+  },
+  "abilities": [
+   {
+    "kind": "Offensive",
+    "name": "Scratch",
+    "pattern": "A3 / A4 / A5",
+    "form": "Pale Lady",
+    "raw": "[slash] ×3 / [slash] ×4 / [slash] ×5",
+    "p_min_tier": 0.9839
+   },
+   {
+    "kind": "Offensive",
+    "name": "The Cure",
+    "pattern": "B3+C1",
+    "form": "Pale Lady",
+    "raw": "[crescent] ×3 + [full moon] ×1",
+    "p_min_tier": 0.6013
+   },
+   {
+    "kind": "Offensive",
+    "name": "The Hunt",
+    "pattern": "A2+C2",
+    "form": "Pale Lady",
+    "raw": "[slash] ×2 + [full moon] ×2",
+    "p_min_tier": 0.5758
+   },
+   {
+    "kind": "Offensive",
+    "name": "Conflicted",
+    "pattern": "SS / LS",
+    "form": "Pale Lady",
+    "raw": "Small Straight / Large Straight",
+    "p_min_tier": 0.6154
+   },
+   {
+    "kind": "Offensive",
+    "name": "Ensnare",
+    "pattern": "C4",
+    "form": "Pale Lady",
+    "raw": "[full moon] ×4",
+    "p_min_tier": 0.1044
+   },
+   {
+    "kind": "Offensive",
+    "name": "Full Moon",
+    "pattern": "B4",
+    "form": "Pale Lady",
+    "raw": "[crescent] ×4",
+    "p_min_tier": 0.5359
+   },
+   {
+    "kind": "Defensive",
+    "name": "Refresh",
+    "pattern": "DEF 4d",
+    "form": "Pale Lady",
+    "raw": "Defense Roll 4 [dice]"
+   },
+   {
+    "kind": "Ultimate",
+    "name": "Unleash the Beast!",
+    "pattern": "C5",
+    "form": "Pale Lady",
+    "raw": "[full moon] ×5",
+    "p_min_tier": 0.0133
+   },
+   {
+    "kind": "Offensive",
+    "name": "Shred",
+    "pattern": "A3 / A4 / A5",
+    "form": "Werewolf",
+    "raw": "[slash] ×3 / [slash] ×4 / [slash] ×5",
+    "p_min_tier": 0.9839
+   },
+   {
+    "kind": "Offensive",
+    "name": "Rip and Tear",
+    "pattern": "B3+C1",
+    "form": "Werewolf",
+    "raw": "[crescent] ×3 + [full moon] ×1",
+    "p_min_tier": 0.6013
+   },
+   {
+    "kind": "Offensive",
+    "name": "The Hunter",
+    "pattern": "A2+C2",
+    "form": "Werewolf",
+    "raw": "[slash] ×2 + [full moon] ×2",
+    "p_min_tier": 0.5758
+   },
+   {
+    "kind": "Offensive",
+    "name": "Sunder",
+    "pattern": "SS / LS",
+    "form": "Werewolf",
+    "raw": "Small Straight / Large Straight",
+    "p_min_tier": 0.6154
+   },
+   {
+    "kind": "Offensive",
+    "name": "Jaws of the Wolf",
+    "pattern": "C4",
+    "form": "Werewolf",
+    "raw": "[full moon] ×4",
+    "p_min_tier": 0.1044
+   },
+   {
+    "kind": "Offensive",
+    "name": "Full Moon Blitz",
+    "pattern": "B4",
+    "form": "Werewolf",
+    "raw": "[crescent] ×4",
+    "p_min_tier": 0.5359
+   },
+   {
+    "kind": "Defensive",
+    "name": "Backslash",
+    "pattern": "DEF 4d",
+    "form": "Werewolf",
+    "raw": "Defense Roll 4 [dice]"
+   },
+   {
+    "kind": "Ultimate",
+    "name": "Unleash the Beast!",
+    "pattern": "C5",
+    "form": "Werewolf",
+    "raw": "[full moon] ×5",
+    "p_min_tier": 0.0133
+   }
+  ]
+ },
+ {
+  "hero": "Raveness",
+  "layout": "3-2-1",
+  "symbols": {
+   "A": "Talon",
+   "B": "Wing",
+   "C": "Raven Eye"
+  },
+  "abilities": [
+   {
+    "kind": "Offensive",
+    "name": "Peck",
+    "pattern": "A3 / A4 / A5",
+    "form": "All Forms",
+    "raw": "[talon] ×3 / [talon] ×4 / [talon] ×5",
+    "p_min_tier": 0.9839
+   },
+   {
+    "kind": "Offensive",
+    "name": "Fowl Friend",
+    "pattern": "B4",
+    "form": "All Forms",
+    "raw": "[wing] ×4",
+    "p_min_tier": 0.5359
+   },
+   {
+    "kind": "Offensive",
+    "name": "Craven",
+    "pattern": "SS",
+    "form": "All Forms",
+    "raw": "Small Straight",
+    "p_min_tier": 0.6154
+   },
+   {
+    "kind": "Offensive",
+    "name": "Chamber",
+    "pattern": "C4",
+    "form": "All Forms",
+    "raw": "[raven eye] ×4",
+    "p_min_tier": 0.1044
+   },
+   {
+    "kind": "Offensive",
+    "name": "Murder of Crows",
+    "pattern": "A2+B3",
+    "form": "All Forms",
+    "raw": "[talon] ×2 + [wing] ×3",
+    "p_min_tier": 0.5571
+   },
+   {
+    "kind": "Offensive",
+    "name": "Raven Sight",
+    "pattern": "A2+C2",
+    "form": "All Forms",
+    "raw": "[talon] ×2 + [raven eye] ×2",
+    "p_min_tier": 0.5758
+   },
+   {
+    "kind": "Offensive",
+    "name": "Beguile",
+    "pattern": "LS",
+    "form": "All Forms",
+    "raw": "Large Straight",
+    "p_min_tier": 0.2611
+   },
+   {
+    "kind": "Defensive",
+    "name": "Nothing More",
+    "pattern": "DEF 5d",
+    "form": "All Forms",
+    "raw": "Defense Roll 5 [dice]"
+   },
+   {
+    "kind": "Ultimate",
+    "name": "Fantastic Terrors!",
+    "pattern": "C5",
+    "form": "All Forms",
+    "raw": "[raven eye] ×5",
+    "p_min_tier": 0.0133
+   }
+  ]
+ },
+ {
+  "hero": "Alchemist",
+  "layout": "3-2-1",
+  "symbols": {
+   "A": "Solution",
+   "B": "Composition",
+   "C": "Crucible"
+  },
+  "abilities": [
+   {
+    "kind": "Offensive",
+    "name": "Transmute",
+    "pattern": "A3+B2",
+    "form": "All Forms",
+    "raw": "[solution] ×3 + [composition] ×2",
+    "p_min_tier": 0.6564
+   },
+   {
+    "kind": "Offensive",
+    "name": "Hermetics",
+    "pattern": "B3",
+    "form": "All Forms",
+    "raw": "[composition] ×3",
+    "p_min_tier": 0.8418
+   },
+   {
+    "kind": "Offensive",
+    "name": "Potion Overload",
+    "pattern": "A1+C3",
+    "form": "All Forms",
+    "raw": "[solution] ×1 + [crucible] ×3",
+    "p_min_tier": 0.3101
+   },
+   {
+    "kind": "Offensive",
+    "name": "Diffusion",
+    "pattern": "SS / LS",
+    "form": "All Forms",
+    "raw": "Small Straight / Large Straight",
+    "p_min_tier": 0.6154
+   },
+   {
+    "kind": "Offensive",
+    "name": "Catalyst",
+    "pattern": "C4",
+    "form": "All Forms",
+    "raw": "[crucible] ×4",
+    "p_min_tier": 0.1044
+   },
+   {
+    "kind": "Offensive",
+    "name": "Chain Reaction",
+    "pattern": "A4+C1",
+    "form": "All Forms",
+    "raw": "[solution] ×4 + [crucible] ×1",
+    "p_min_tier": 0.5068
+   },
+   {
+    "kind": "Defensive",
+    "name": "Passivation",
+    "pattern": "DEF 5d",
+    "form": "All Forms",
+    "raw": "Defense Roll 5 [dice]"
+   },
+   {
+    "kind": "Ultimate",
+    "name": "Chemical Trip!",
+    "pattern": "C5",
+    "form": "All Forms",
+    "raw": "[crucible] ×5",
+    "p_min_tier": 0.0133
+   }
+  ]
+ },
+ {
+  "hero": "Headless Horseman",
+  "layout": "3-2-1",
+  "symbols": {
+   "A": "Axe",
+   "B": "Horseshoe",
+   "C": "Scare"
+  },
+  "abilities": [
+   {
+    "kind": "Offensive",
+    "name": "Cleave",
+    "pattern": "A3 / A4 / A5",
+    "form": "All Forms",
+    "raw": "[axe] ×3 / [axe] ×4 / [axe] ×5",
+    "p_min_tier": 0.9839
+   },
+   {
+    "kind": "Offensive",
+    "name": "Reap",
+    "pattern": "B3+C1",
+    "form": "All Forms",
+    "raw": "[horseshoe] ×3 + [scare] ×1",
+    "p_min_tier": 0.6013
+   },
+   {
+    "kind": "Offensive",
+    "name": "Ride Down",
+    "pattern": "A3+B2",
+    "form": "All Forms",
+    "raw": "[axe] ×3 + [horseshoe] ×2",
+    "p_min_tier": 0.6564
+   },
+   {
+    "kind": "Offensive",
+    "name": "Sow Despair",
+    "pattern": "SS / LS",
+    "form": "All Forms",
+    "raw": "Small Straight / Large Straight",
+    "p_min_tier": 0.6154
+   },
+   {
+    "kind": "Offensive",
+    "name": "Horrify",
+    "pattern": "C4",
+    "form": "All Forms",
+    "raw": "[scare] ×4",
+    "p_min_tier": 0.1044
+   },
+   {
+    "kind": "Offensive",
+    "name": "Spectral Assault",
+    "pattern": "A3+C2",
+    "form": "All Forms",
+    "raw": "[axe] ×3 + [scare] ×2",
+    "p_min_tier": 0.3488
+   },
+   {
+    "kind": "Defensive",
+    "name": "Hallowed Reckoning",
+    "pattern": "DEF 1–5d",
+    "form": "All Forms",
+    "raw": "Defense Roll 1–5 [dice]"
+   },
+   {
+    "kind": "Ultimate",
+    "name": "Dreadful Charge!",
+    "pattern": "C5",
+    "form": "All Forms",
+    "raw": "[scare] ×5",
+    "p_min_tier": 0.0133
+   }
+  ]
+ },
+ {
+  "hero": "Necromancer",
+  "layout": "3-2-1",
+  "symbols": {
+   "A": "Scythe",
+   "B": "Bones",
+   "C": "Soul"
+  },
+  "abilities": [
+   {
+    "kind": "Offensive",
+    "name": "Shear",
+    "pattern": "A3 / A4 / A5",
+    "form": "All Forms",
+    "raw": "[scythe] ×3 / [scythe] ×4 / [scythe] ×5",
+    "p_min_tier": 0.9839
+   },
+   {
+    "kind": "Offensive",
+    "name": "Reanimate",
+    "pattern": "B3 / B5",
+    "form": "All Forms",
+    "raw": "[bones] ×3 / [bones] ×5",
+    "p_min_tier": 0.8418
+   },
+   {
+    "kind": "Offensive",
+    "name": "Blight",
+    "pattern": "SS / LS",
+    "form": "All Forms",
+    "raw": "Small Straight / Large Straight",
+    "p_min_tier": 0.6154
+   },
+   {
+    "kind": "Offensive",
+    "name": "Black Shroud",
+    "pattern": "C4",
+    "form": "All Forms",
+    "raw": "[soul] ×4",
+    "p_min_tier": 0.1044
+   },
+   {
+    "kind": "Offensive",
+    "name": "Harvest",
+    "pattern": "A3+C1",
+    "form": "All Forms",
+    "raw": "[scythe] ×3 + [soul] ×1",
+    "p_min_tier": 0.8023
+   },
+   {
+    "kind": "Offensive",
+    "name": "Corpse Explosion",
+    "pattern": "A1+B1+C2",
+    "form": "All Forms",
+    "raw": "[scythe] ×1 + [bones] ×1 + [soul] ×2",
+    "p_min_tier": 0.577
+   },
+   {
+    "kind": "Offensive",
+    "name": "Deadman's Party",
+    "pattern": "B3+C2",
+    "form": "All Forms",
+    "raw": "[bones] ×3 + [soul] ×2",
+    "p_min_tier": 0.2134
+   },
+   {
+    "kind": "Defensive",
+    "name": "Resist Death",
+    "pattern": "DEF 4d",
+    "form": "All Forms",
+    "raw": "Defense Roll 4 [dice]"
+   },
+   {
+    "kind": "Ultimate",
+    "name": "Necro-Dancer!",
+    "pattern": "C5",
+    "form": "All Forms",
+    "raw": "[soul] ×5",
+    "p_min_tier": 0.0133
+   }
+  ]
+ },
+ {
+  "hero": "Cursed Pirate",
+  "layout": "3-2-1",
+  "symbols": {
+   "A": "Cutlass",
+   "B": "Booty",
+   "C": "Skull"
+  },
+  "abilities": [
+   {
+    "kind": "Offensive",
+    "name": "Cutlass Strike",
+    "pattern": "A3 / A4 / A5",
+    "form": "Pirate (Front)",
+    "raw": "[cutlass] ×3 / [cutlass] ×4 / [cutlass] ×5",
+    "p_min_tier": 0.9839
+   },
+   {
+    "kind": "Offensive",
+    "name": "X Marks the Spot",
+    "pattern": "B3",
+    "form": "Pirate (Front)",
+    "raw": "[booty] ×3",
+    "p_min_tier": 0.8418
+   },
+   {
+    "kind": "Offensive",
+    "name": "Walk the Plank",
+    "pattern": "A1+B2+C1",
+    "form": "Pirate (Front)",
+    "raw": "[cutlass] ×1 + [booty] ×2 + [skull] ×1",
+    "p_min_tier": 0.7748
+   },
+   {
+    "kind": "Offensive",
+    "name": "Light the Fuse",
+    "pattern": "SS / LS",
+    "form": "Pirate (Front)",
+    "raw": "Small Straight / Large Straight",
+    "p_min_tier": 0.6154
+   },
+   {
+    "kind": "Offensive",
+    "name": "Black Spot",
+    "pattern": "C4",
+    "form": "Pirate (Front)",
+    "raw": "[skull] ×4",
+    "p_min_tier": 0.1044
+   },
+   {
+    "kind": "Offensive",
+    "name": "Shiver Me Timbers",
+    "pattern": "A1+C3",
+    "form": "Pirate (Front)",
+    "raw": "[cutlass] ×1 + [skull] ×3",
+    "p_min_tier": 0.3101
+   },
+   {
+    "kind": "Defensive",
+    "name": "Ahoy Matey",
+    "pattern": "DEF 4d",
+    "form": "Pirate (Front)",
+    "raw": "Defense Roll 4 [dice]"
+   },
+   {
+    "kind": "Ultimate",
+    "name": "Pirate's Touch!",
+    "pattern": "C5",
+    "form": "Pirate (Front)",
+    "raw": "[skull] ×5",
+    "p_min_tier": 0.0133
+   },
+   {
+    "kind": "Offensive",
+    "name": "Soul Cutlass",
+    "pattern": "A3 / A4 / A5",
+    "form": "Cursed Pirate (Back)",
+    "raw": "[cutlass] ×3 / [cutlass] ×4 / [cutlass] ×5",
+    "p_min_tier": 0.9839
+   },
+   {
+    "kind": "Offensive",
+    "name": "Dread Mark",
+    "pattern": "B3",
+    "form": "Cursed Pirate (Back)",
+    "raw": "[booty] ×3",
+    "p_min_tier": 0.8418
+   },
+   {
+    "kind": "Offensive",
+    "name": "Abyssal Walk",
+    "pattern": "A1+B2+C1",
+    "form": "Cursed Pirate (Back)",
+    "raw": "[cutlass] ×1 + [booty] ×2 + [skull] ×1",
+    "p_min_tier": 0.7748
+   },
+   {
+    "kind": "Offensive",
+    "name": "Thar She Blows",
+    "pattern": "SS / LS",
+    "form": "Cursed Pirate (Back)",
+    "raw": "Small Straight / Large Straight",
+    "p_min_tier": 0.6154
+   },
+   {
+    "kind": "Offensive",
+    "name": "Black Soul",
+    "pattern": "C4",
+    "form": "Cursed Pirate (Back)",
+    "raw": "[skull] ×4",
+    "p_min_tier": 0.1044
+   },
+   {
+    "kind": "Offensive",
+    "name": "The Shivering",
+    "pattern": "A1+C3",
+    "form": "Cursed Pirate (Back)",
+    "raw": "[cutlass] ×1 + [skull] ×3",
+    "p_min_tier": 0.3101
+   },
+   {
+    "kind": "Defensive",
+    "name": "Avast Ye",
+    "pattern": "DEF 5d",
+    "form": "Cursed Pirate (Back)",
+    "raw": "Defense Roll 5 [dice]"
+   },
+   {
+    "kind": "Ultimate",
+    "name": "Cursed Touch!",
+    "pattern": "C5",
+    "form": "Cursed Pirate (Back)",
+    "raw": "[skull] ×5",
+    "p_min_tier": 0.0133
+   }
+  ]
+ },
+ {
+  "hero": "Gunslinger",
+  "layout": "3-2-1",
+  "symbols": {
+   "A": "Bullet",
+   "B": "Dash",
+   "C": "Bullseye"
+  },
+  "abilities": [
+   {
+    "kind": "Offensive",
+    "name": "Revolver",
+    "pattern": "A3 / A4 / A5",
+    "form": "All Forms",
+    "raw": "[bullet] ×3 / [bullet] ×4 / [bullet] ×5",
+    "p_min_tier": 0.9839
+   },
+   {
+    "kind": "Offensive",
+    "name": "Bounty Hunter",
+    "pattern": "A2+C2",
+    "form": "All Forms",
+    "raw": "[bullet] ×2 + [bullseye] ×2",
+    "p_min_tier": 0.5758
+   },
+   {
+    "kind": "Offensive",
+    "name": "Take Cover",
+    "pattern": "A2+B3",
+    "form": "All Forms",
+    "raw": "[bullet] ×2 + [dash] ×3",
+    "p_min_tier": 0.5571
+   },
+   {
+    "kind": "Offensive",
+    "name": "Showdown",
+    "pattern": "SS",
+    "form": "All Forms",
+    "raw": "Small Straight",
+    "p_min_tier": 0.6154
+   },
+   {
+    "kind": "Offensive",
+    "name": "Deadeye",
+    "pattern": "C4",
+    "form": "All Forms",
+    "raw": "[bullseye] ×4",
+    "p_min_tier": 0.1044
+   },
+   {
+    "kind": "Offensive",
+    "name": "Fan the Hammer",
+    "pattern": "LS",
+    "form": "All Forms",
+    "raw": "Large Straight",
+    "p_min_tier": 0.2611
+   },
+   {
+    "kind": "Defensive",
+    "name": "Duel",
+    "pattern": "DEF 1d",
+    "form": "All Forms",
+    "raw": "Defense Roll 1 [die]"
+   },
+   {
+    "kind": "Ultimate",
+    "name": "Fill 'Em With Lead!",
+    "pattern": "C5",
+    "form": "All Forms",
+    "raw": "[bullseye] ×5",
+    "p_min_tier": 0.0133
+   }
+  ]
+ },
+ {
+  "hero": "Artificer",
+  "layout": "3-2-1",
+  "symbols": {
+   "A": "Wrench",
+   "B": "Gear",
+   "C": "Bolt"
+  },
+  "abilities": [
+   {
+    "kind": "Offensive",
+    "name": "Spanner Strike",
+    "pattern": "A3 / A4 / A5",
+    "form": "All Forms",
+    "raw": "[wrench] ×3 / [wrench] ×4 / [wrench] ×5",
+    "p_min_tier": 0.9839
+   },
+   {
+    "kind": "Offensive",
+    "name": "Schematics",
+    "pattern": "B3+C1",
+    "form": "All Forms",
+    "raw": "[gear] ×3 + [bolt] ×1",
+    "p_min_tier": 0.6013
+   },
+   {
+    "kind": "Offensive",
+    "name": "Eureka",
+    "pattern": "A2+B3",
+    "form": "All Forms",
+    "raw": "[wrench] ×2 + [gear] ×3",
+    "p_min_tier": 0.5571
+   },
+   {
+    "kind": "Offensive",
+    "name": "Jolt",
+    "pattern": "SS",
+    "form": "All Forms",
+    "raw": "Small Straight",
+    "p_min_tier": 0.6154
+   },
+   {
+    "kind": "Offensive",
+    "name": "Overclock",
+    "pattern": "C4",
+    "form": "All Forms",
+    "raw": "[bolt] ×4",
+    "p_min_tier": 0.1044
+   },
+   {
+    "kind": "Offensive",
+    "name": "Zapppp!",
+    "pattern": "LS",
+    "form": "All Forms",
+    "raw": "Large Straight",
+    "p_min_tier": 0.2611
+   },
+   {
+    "kind": "Defensive",
+    "name": "Ratchet Up",
+    "pattern": "DEF 4d",
+    "form": "All Forms",
+    "raw": "Defense Roll 4 [dice]"
+   },
+   {
+    "kind": "Ultimate",
+    "name": "Maximum Power!",
+    "pattern": "C5",
+    "form": "All Forms",
+    "raw": "[bolt] ×5",
+    "p_min_tier": 0.0133
+   }
+  ]
+ },
+ {
+  "hero": "Tactician",
+  "layout": "3-2-1",
+  "symbols": {
+   "A": "Saber",
+   "B": "Flag",
+   "C": "Medal"
+  },
+  "abilities": [
+   {
+    "kind": "Offensive",
+    "name": "Saber Strike",
+    "pattern": "A3 / A4 / A5",
+    "form": "All Forms",
+    "raw": "[saber] ×3 / [saber] ×4 / [saber] ×5",
+    "p_min_tier": 0.9839
+   },
+   {
+    "kind": "Offensive",
+    "name": "Carpet Bomb",
+    "pattern": "A2+C2",
+    "form": "All Forms",
+    "raw": "[saber] ×2 + [medal] ×2",
+    "p_min_tier": 0.5758
+   },
+   {
+    "kind": "Offensive",
+    "name": "Profiteer",
+    "pattern": "A1+B3",
+    "form": "All Forms",
+    "raw": "[flag] ×3 + [saber] ×1",
+    "p_min_tier": 0.7859
+   },
+   {
+    "kind": "Offensive",
+    "name": "Strategic Approach",
+    "pattern": "A3+C2",
+    "form": "All Forms",
+    "raw": "[saber] ×3 + [medal] ×2",
+    "p_min_tier": 0.3488
+   },
+   {
+    "kind": "Offensive",
+    "name": "Flank",
+    "pattern": "SS",
+    "form": "All Forms",
+    "raw": "Small Straight",
+    "p_min_tier": 0.6154
+   },
+   {
+    "kind": "Offensive",
+    "name": "Maneuver",
+    "pattern": "C4",
+    "form": "All Forms",
+    "raw": "[medal] ×4",
+    "p_min_tier": 0.1044
+   },
+   {
+    "kind": "Offensive",
+    "name": "Exploit",
+    "pattern": "LS",
+    "form": "All Forms",
+    "raw": "Large Straight",
+    "p_min_tier": 0.2611
+   },
+   {
+    "kind": "Defensive",
+    "name": "Countermeasures",
+    "pattern": "DEF 4d",
+    "form": "All Forms",
+    "raw": "Defense Roll 4 [dice]"
+   },
+   {
+    "kind": "Ultimate",
+    "name": "Higher Ground!",
+    "pattern": "C5",
+    "form": "All Forms",
+    "raw": "[medal] ×5",
+    "p_min_tier": 0.0133
+   }
+  ]
+ },
+ {
+  "hero": "Samurai",
+  "layout": "3-2-1",
+  "symbols": {
+   "A": "Katana",
+   "B": "Kabuto",
+   "C": "Rising Sun"
+  },
+  "abilities": [
+   {
+    "kind": "Offensive",
+    "name": "Katana Slice",
+    "pattern": "A3 / A4 / A5",
+    "form": "All Forms",
+    "raw": "[katana] ×3 / [katana] ×4 / [katana] ×5",
+    "p_min_tier": 0.9839
+   },
+   {
+    "kind": "Offensive",
+    "name": "Wakizashi",
+    "pattern": "A2+C2",
+    "form": "All Forms",
+    "raw": "[katana] ×2 + [rising sun] ×2",
+    "p_min_tier": 0.5758
+   },
+   {
+    "kind": "Offensive",
+    "name": "Solemnity",
+    "pattern": "A2+B3",
+    "form": "All Forms",
+    "raw": "[katana] ×2 + [kabuto] ×3",
+    "p_min_tier": 0.5571
+   },
+   {
+    "kind": "Offensive",
+    "name": "Budō",
+    "pattern": "SS",
+    "form": "All Forms",
+    "raw": "Small Straight",
+    "p_min_tier": 0.6154
+   },
+   {
+    "kind": "Offensive",
+    "name": "Hagakure",
+    "pattern": "C4",
+    "form": "All Forms",
+    "raw": "[rising sun] ×4",
+    "p_min_tier": 0.1044
+   },
+   {
+    "kind": "Offensive",
+    "name": "Masamune",
+    "pattern": "LS",
+    "form": "All Forms",
+    "raw": "Large Straight",
+    "p_min_tier": 0.2611
+   },
+   {
+    "kind": "Defensive",
+    "name": "Stand Tall",
+    "pattern": "DEF 3d",
+    "form": "All Forms",
+    "raw": "Defense Roll 3 [dice]"
+   },
+   {
+    "kind": "Ultimate",
+    "name": "Shogun!",
+    "pattern": "C5",
+    "form": "All Forms",
+    "raw": "[rising sun] ×5",
+    "p_min_tier": 0.0133
+   }
+  ]
+ },
+ {
+  "hero": "Seraph",
+  "layout": "3-1-1-1",
+  "symbols": {
+   "A": "Blade",
+   "B": "Wings",
+   "C": "Cross",
+   "D": "Angelic Pendant"
+  },
+  "abilities": [
+   {
+    "kind": "Offensive",
+    "name": "Holy Blade",
+    "pattern": "A3 / A4 / A5",
+    "form": "All Forms",
+    "raw": "[blade] ×3 / [blade] ×4 / [blade] ×5",
+    "p_min_tier": 0.9839
+   },
+   {
+    "kind": "Offensive",
+    "name": "Glorious",
+    "pattern": "A3+B1",
+    "form": "All Forms",
+    "raw": "[blade] ×3 + [wings]",
+    "p_min_tier": 0.8023
+   },
+   {
+    "kind": "Offensive",
+    "name": "Purify",
+    "pattern": "C2+D1",
+    "form": "All Forms",
+    "raw": "[cross] ×2 + [angelic pendant]",
+    "p_min_tier": 0.5432
+   },
+   {
+    "kind": "Offensive",
+    "name": "Holy Smite",
+    "pattern": "A1+B1+C1+D1",
+    "form": "All Forms",
+    "raw": "[blade] + [wings] + [cross] + [angelic pendant]",
+    "p_min_tier": 0.6067
+   },
+   {
+    "kind": "Offensive",
+    "name": "Triumphant",
+    "pattern": "SS",
+    "form": "All Forms",
+    "raw": "Small Straight",
+    "p_min_tier": 0.6154
+   },
+   {
+    "kind": "Offensive",
+    "name": "Highest Power",
+    "pattern": "D4",
+    "form": "All Forms",
+    "raw": "[angelic pendant] ×4",
+    "p_min_tier": 0.1044
+   },
+   {
+    "kind": "Offensive",
+    "name": "Archangel's Will",
+    "pattern": "LS",
+    "form": "All Forms",
+    "raw": "Large Straight",
+    "p_min_tier": 0.2611
+   },
+   {
+    "kind": "Defensive",
+    "name": "Angelic Mantle",
+    "pattern": "DEF 1d",
+    "form": "All Forms",
+    "raw": "Defense Roll 1 [die]"
+   },
+   {
+    "kind": "Ultimate",
+    "name": "Split the Heavens!",
+    "pattern": "D5",
+    "form": "All Forms",
+    "raw": "[angelic pendant] ×5",
+    "p_min_tier": 0.0133
+   }
+  ]
+ },
+ {
+  "hero": "Vampire Lord",
+  "layout": "3-2-1",
+  "symbols": {
+   "A": "Claw",
+   "B": "Gaze",
+   "C": "Droplet"
+  },
+  "abilities": [
+   {
+    "kind": "Offensive",
+    "name": "Gouge",
+    "pattern": "A3 / A4 / A5",
+    "form": "All Forms",
+    "raw": "[claw] ×3 / [claw] ×4 / [claw] ×5",
+    "p_min_tier": 0.9839
+   },
+   {
+    "kind": "Offensive",
+    "name": "Glamour",
+    "pattern": "B3",
+    "form": "All Forms",
+    "raw": "[gaze] ×3",
+    "p_min_tier": 0.8418
+   },
+   {
+    "kind": "Offensive",
+    "name": "Sanguimancy",
+    "pattern": "B3+C1",
+    "form": "All Forms",
+    "raw": "[gaze] ×3 + [droplet]",
+    "p_min_tier": 0.6013
+   },
+   {
+    "kind": "Offensive",
+    "name": "Rend",
+    "pattern": "A3+C2",
+    "form": "All Forms",
+    "raw": "[claw] ×3 + [droplet] ×2",
+    "p_min_tier": 0.3488
+   },
+   {
+    "kind": "Offensive",
+    "name": "Possess",
+    "pattern": "SS",
+    "form": "All Forms",
+    "raw": "Small Straight",
+    "p_min_tier": 0.6154
+   },
+   {
+    "kind": "Offensive",
+    "name": "Blood Thirst",
+    "pattern": "C4",
+    "form": "All Forms",
+    "raw": "[droplet] ×4",
+    "p_min_tier": 0.1044
+   },
+   {
+    "kind": "Offensive",
+    "name": "Blood Magic",
+    "pattern": "LS",
+    "form": "All Forms",
+    "raw": "Large Straight",
+    "p_min_tier": 0.2611
+   },
+   {
+    "kind": "Defensive",
+    "name": "Immortal Flesh",
+    "pattern": "DEF 3d",
+    "form": "All Forms",
+    "raw": "Defense Roll 3 [dice]"
+   },
+   {
+    "kind": "Ultimate",
+    "name": "Exsanguinate!",
+    "pattern": "C5",
+    "form": "All Forms",
+    "raw": "[droplet] ×5",
+    "p_min_tier": 0.0133
+   }
+  ]
+ },
+ {
+  "hero": "Huntress",
+  "layout": "2-2-1-1",
+  "symbols": {
+   "A": "Spear",
+   "B": "Claw",
+   "C": "Bonded Soul",
+   "D": "Saber Tooth"
+  },
+  "abilities": [
+   {
+    "kind": "Offensive",
+    "name": "Animalistic",
+    "pattern": "A3 / A4 / A5",
+    "form": "All Forms",
+    "raw": "[spear] ×3 / [spear] ×4 / [spear] ×5",
+    "p_min_tier": 0.8418
+   },
+   {
+    "kind": "Offensive",
+    "name": "Savage",
+    "pattern": "B3+D1",
+    "form": "All Forms",
+    "raw": "[claw] ×3 + [saber tooth]",
+    "p_min_tier": 0.6013
+   },
+   {
+    "kind": "Offensive",
+    "name": "Resuscitate",
+    "pattern": "C2",
+    "form": "All Forms",
+    "raw": "[bonded soul] ×2",
+    "p_min_tier": 0.6988
+   },
+   {
+    "kind": "Offensive",
+    "name": "Feral Instincts",
+    "pattern": "A3+C1",
+    "form": "All Forms",
+    "raw": "[spear] ×3 + [bonded soul]",
+    "p_min_tier": 0.6013
+   },
+   {
+    "kind": "Offensive",
+    "name": "Onslaught",
+    "pattern": "SS / LS",
+    "form": "All Forms",
+    "raw": "Small Straight / Large Straight",
+    "p_min_tier": 0.6154
+   },
+   {
+    "kind": "Offensive",
+    "name": "Feral",
+    "pattern": "D4",
+    "form": "All Forms",
+    "raw": "[saber tooth] ×4",
+    "p_min_tier": 0.1044
+   },
+   {
+    "kind": "Offensive",
+    "name": "Predatory Advance",
+    "pattern": "A2+B2+C1",
+    "form": "All Forms",
+    "raw": "[spear] ×2 + [claw] ×2 + [bonded soul]",
+    "p_min_tier": 0.4257
+   },
+   {
+    "kind": "Defensive",
+    "name": "Maternal Bond",
+    "pattern": "DEF 3d",
+    "form": "All Forms",
+    "raw": "Defense Roll 3 [dice]"
+   },
+   {
+    "kind": "Ultimate",
+    "name": "Jungle Fury!",
+    "pattern": "D5",
+    "form": "All Forms",
+    "raw": "[saber tooth] ×5",
+    "p_min_tier": 0.0133
+   }
+  ]
+ },
+ {
+  "hero": "Wolverine",
+  "layout": "3-2-1",
+  "symbols": {
+   "A": "Claw",
+   "B": "Adamantium",
+   "C": "Mask"
+  },
+  "abilities": [
+   {
+    "kind": "Offensive",
+    "name": "Adamantium Claws",
+    "pattern": "A3 / A4 / A5",
+    "form": "All Forms",
+    "raw": "[claw] ×3 / [claw] ×4 / [claw] ×5",
+    "p_min_tier": 0.9839
+   },
+   {
+    "kind": "Offensive",
+    "name": "Healing Factor",
+    "pattern": "B3+C1",
+    "form": "All Forms",
+    "raw": "[adamantium] ×3 + [mask]",
+    "p_min_tier": 0.6013
+   },
+   {
+    "kind": "Offensive",
+    "name": "Regenerate",
+    "pattern": "A2+C2",
+    "form": "All Forms",
+    "raw": "[claw] ×2 + [mask] ×2",
+    "p_min_tier": 0.5758
+   },
+   {
+    "kind": "Offensive",
+    "name": "Hunter",
+    "pattern": "A2+B3",
+    "form": "All Forms",
+    "raw": "[claw] ×2 + [adamantium] ×3",
+    "p_min_tier": 0.5571
+   },
+   {
+    "kind": "Offensive",
+    "name": "Barrage",
+    "pattern": "SS / LS",
+    "form": "All Forms",
+    "raw": "Small Straight / Large Straight",
+    "p_min_tier": 0.6154
+   },
+   {
+    "kind": "Offensive",
+    "name": "Power Level Nine",
+    "pattern": "C4",
+    "form": "All Forms",
+    "raw": "[mask] ×4",
+    "p_min_tier": 0.1044
+   },
+   {
+    "kind": "Offensive",
+    "name": "Severe Threat",
+    "pattern": "A3+C2",
+    "form": "All Forms",
+    "raw": "[claw] ×3 + [mask] ×2",
+    "p_min_tier": 0.3488
+   },
+   {
+    "kind": "Defensive",
+    "name": "Vengeance",
+    "pattern": "DEF 3d",
+    "form": "All Forms",
+    "raw": "Defense Roll 3 [dice]"
+   },
+   {
+    "kind": "Ultimate",
+    "name": "Berserker Rage!",
+    "pattern": "C5",
+    "form": "All Forms",
+    "raw": "[mask] ×5",
+    "p_min_tier": 0.0133
+   }
+  ]
+ },
+ {
+  "hero": "Storm",
+  "layout": "3-2-1",
+  "symbols": {
+   "A": "Wind",
+   "B": "Rain",
+   "C": "Cyclone"
+  },
+  "abilities": [
+   {
+    "kind": "Offensive",
+    "name": "Lightning Field",
+    "pattern": "A3 / A4 / A5",
+    "form": "All Forms",
+    "raw": "[wind] ×3 / [wind] ×4 / [wind] ×5",
+    "p_min_tier": 0.9839
+   },
+   {
+    "kind": "Offensive",
+    "name": "Light It Up",
+    "pattern": "A1+B2+C1",
+    "form": "All Forms",
+    "raw": "[wind] + [rain] ×2 + [cyclone]",
+    "p_min_tier": 0.7748
+   },
+   {
+    "kind": "Offensive",
+    "name": "Thunderstorm",
+    "pattern": "A2+B3",
+    "form": "All Forms",
+    "raw": "[wind] ×2 + [rain] ×3",
+    "p_min_tier": 0.5571
+   },
+   {
+    "kind": "Offensive",
+    "name": "Opposites Attract",
+    "pattern": "A3+C2",
+    "form": "All Forms",
+    "raw": "[wind] ×3 + [cyclone] ×2",
+    "p_min_tier": 0.3488
+   },
+   {
+    "kind": "Offensive",
+    "name": "Gust",
+    "pattern": "SS / LS",
+    "form": "All Forms",
+    "raw": "Small Straight / Large Straight",
+    "p_min_tier": 0.6154
+   },
+   {
+    "kind": "Offensive",
+    "name": "Blizzard",
+    "pattern": "C4",
+    "form": "All Forms",
+    "raw": "[cyclone] ×4",
+    "p_min_tier": 0.1044
+   },
+   {
+    "kind": "Offensive",
+    "name": "Maelstrom",
+    "pattern": "XLS",
+    "form": "All Forms",
+    "raw": "Largest Straight",
+    "p_min_tier": 0.0
+   },
+   {
+    "kind": "Defensive",
+    "name": "Tempestuous",
+    "pattern": "DEF 5d",
+    "form": "All Forms",
+    "raw": "Defense Roll 5 [dice]"
+   },
+   {
+    "kind": "Ultimate",
+    "name": "Tempest!",
+    "pattern": "C5",
+    "form": "All Forms",
+    "raw": "[cyclone] ×5",
+    "p_min_tier": 0.0133
+   }
+  ]
+ },
+ {
+  "hero": "Psylocke",
+  "layout": "2-2-1-1",
+  "symbols": {
+   "A": "Blade",
+   "B": "Psi",
+   "C": "Mind",
+   "D": "Starlight"
+  },
+  "abilities": [
+   {
+    "kind": "Offensive",
+    "name": "Lunge",
+    "pattern": "A3 / A4 / A5",
+    "form": "All Forms",
+    "raw": "[blade] ×3 / [blade] ×4 / [blade] ×5",
+    "p_min_tier": 0.8418
+   },
+   {
+    "kind": "Offensive",
+    "name": "Devise",
+    "pattern": "A1+B1+C1+D1",
+    "form": "All Forms",
+    "raw": "[blade] + [psi] + [mind] + [starlight]",
+    "p_min_tier": 0.6521
+   },
+   {
+    "kind": "Offensive",
+    "name": "Parry",
+    "pattern": "A2+B2+D1",
+    "form": "All Forms",
+    "raw": "[blade] ×2 + [psi] ×2 + [starlight]",
+    "p_min_tier": 0.4257
+   },
+   {
+    "kind": "Offensive",
+    "name": "Stealth",
+    "pattern": "SS / LS",
+    "form": "All Forms",
+    "raw": "Small Straight / Large Straight",
+    "p_min_tier": 0.6154
+   },
+   {
+    "kind": "Offensive",
+    "name": "Paralysis",
+    "pattern": "A2+C2",
+    "form": "All Forms",
+    "raw": "[blade] ×2 + [mind] ×2",
+    "p_min_tier": 0.4679
+   },
+   {
+    "kind": "Offensive",
+    "name": "Blade Dance",
+    "pattern": "D4",
+    "form": "All Forms",
+    "raw": "[starlight] ×4",
+    "p_min_tier": 0.1044
+   },
+   {
+    "kind": "Defensive",
+    "name": "Clandestine",
+    "pattern": "DEF 3d",
+    "form": "All Forms",
+    "raw": "Defense Roll 3 [dice]"
+   },
+   {
+    "kind": "Ultimate",
+    "name": "Otherworlder!",
+    "pattern": "D5",
+    "form": "All Forms",
+    "raw": "[starlight] ×5",
+    "p_min_tier": 0.0133
+   }
+  ]
+ },
+ {
+  "hero": "Iceman",
+  "layout": "3-2-1",
+  "symbols": {
+   "A": "Ice",
+   "B": "Slide",
+   "C": "Frost"
+  },
+  "abilities": [
+   {
+    "kind": "Offensive",
+    "name": "Frostbite",
+    "pattern": "A3 / A4 / A5",
+    "form": "All Forms",
+    "raw": "[ice] ×3 / [ice] ×4 / [ice] ×5",
+    "p_min_tier": 0.9839
+   },
+   {
+    "kind": "Offensive",
+    "name": "Ice to Meet You",
+    "pattern": "B4",
+    "form": "All Forms",
+    "raw": "[slide] ×4",
+    "p_min_tier": 0.5359
+   },
+   {
+    "kind": "Offensive",
+    "name": "Everybody Chill",
+    "pattern": "A1+C3",
+    "form": "All Forms",
+    "raw": "[ice] + [frost] ×3",
+    "p_min_tier": 0.3101
+   },
+   {
+    "kind": "Offensive",
+    "name": "Cold Treat",
+    "pattern": "A2+B3",
+    "form": "All Forms",
+    "raw": "[ice] ×2 + [slide] ×3",
+    "p_min_tier": 0.5571
+   },
+   {
+    "kind": "Offensive",
+    "name": "Thawsome",
+    "pattern": "SS",
+    "form": "All Forms",
+    "raw": "Small Straight",
+    "p_min_tier": 0.6154
+   },
+   {
+    "kind": "Offensive",
+    "name": "Hail the King",
+    "pattern": "C4",
+    "form": "All Forms",
+    "raw": "[frost] ×4",
+    "p_min_tier": 0.1044
+   },
+   {
+    "kind": "Offensive",
+    "name": "Hoarfrost",
+    "pattern": "LS",
+    "form": "All Forms",
+    "raw": "Large Straight",
+    "p_min_tier": 0.2611
+   },
+   {
+    "kind": "Defensive",
+    "name": "Rime",
+    "pattern": "DEF 3d",
+    "form": "All Forms",
+    "raw": "Defense Roll 3 [dice]"
+   },
+   {
+    "kind": "Ultimate",
+    "name": "Ice Storm!",
+    "pattern": "C5",
+    "form": "All Forms",
+    "raw": "[frost] ×5",
+    "p_min_tier": 0.0133
+   }
+  ]
+ },
+ {
+  "hero": "Cyclops",
+  "layout": "3-2-1",
+  "symbols": {
+   "A": "Fist",
+   "B": "Pouch",
+   "C": "Blast"
+  },
+  "abilities": [
+   {
+    "kind": "Offensive",
+    "name": "Hand to Hand",
+    "pattern": "A3 / A4 / A5",
+    "form": "All Forms",
+    "raw": "[fist] ×3 / [fist] ×4 / [fist] ×5",
+    "p_min_tier": 0.9839
+   },
+   {
+    "kind": "Offensive",
+    "name": "Target Acquired",
+    "pattern": "A4+C1",
+    "form": "All Forms",
+    "raw": "[fist] ×4 + [blast]",
+    "p_min_tier": 0.5068
+   },
+   {
+    "kind": "Offensive",
+    "name": "Teamwork",
+    "pattern": "A1+B3",
+    "form": "All Forms",
+    "raw": "[fist] + [pouch] ×3",
+    "p_min_tier": 0.7859
+   },
+   {
+    "kind": "Offensive",
+    "name": "Never Back Down",
+    "pattern": "A3+C2",
+    "form": "All Forms",
+    "raw": "[fist] ×3 + [blast] ×2",
+    "p_min_tier": 0.3488
+   },
+   {
+    "kind": "Offensive",
+    "name": "Regroup",
+    "pattern": "SS",
+    "form": "All Forms",
+    "raw": "Small Straight",
+    "p_min_tier": 0.6154
+   },
+   {
+    "kind": "Offensive",
+    "name": "Strafe",
+    "pattern": "C4",
+    "form": "All Forms",
+    "raw": "[blast] ×4",
+    "p_min_tier": 0.1044
+   },
+   {
+    "kind": "Offensive",
+    "name": "Assault",
+    "pattern": "LS",
+    "form": "All Forms",
+    "raw": "Large Straight",
+    "p_min_tier": 0.2611
+   },
+   {
+    "kind": "Defensive",
+    "name": "Recourse",
+    "pattern": "DEF 3d",
+    "form": "All Forms",
+    "raw": "Defense Roll 3 [dice]"
+   },
+   {
+    "kind": "Ultimate",
+    "name": "Optic Blast!",
+    "pattern": "C5",
+    "form": "All Forms",
+    "raw": "[blast] ×5",
+    "p_min_tier": 0.0133
+   }
+  ]
+ },
+ {
+  "hero": "Rogue",
+  "layout": "3-2-1",
+  "symbols": {
+   "A": "Touch",
+   "B": "Soar",
+   "C": "Ion"
+  },
+  "abilities": [
+   {
+    "kind": "Offensive",
+    "name": "Brawl",
+    "pattern": "A3 / A4 / A5",
+    "form": "All Forms",
+    "raw": "[touch] ×3 / [touch] ×4 / [touch] ×5",
+    "p_min_tier": 0.9839
+   },
+   {
+    "kind": "Offensive",
+    "name": "Sass",
+    "pattern": "A2+C2",
+    "form": "All Forms",
+    "raw": "[touch] ×2 + [ion] ×2",
+    "p_min_tier": 0.5758
+   },
+   {
+    "kind": "Offensive",
+    "name": "Absorption",
+    "pattern": "SS / LS",
+    "form": "All Forms",
+    "raw": "Small Straight / Large Straight",
+    "p_min_tier": 0.6154
+   },
+   {
+    "kind": "Offensive",
+    "name": "Influential",
+    "pattern": "C4",
+    "form": "All Forms",
+    "raw": "[ion] ×4",
+    "p_min_tier": 0.1044
+   },
+   {
+    "kind": "Offensive",
+    "name": "Leach",
+    "pattern": "A1+B3",
+    "form": "All Forms",
+    "raw": "[touch] ×1 + [soar] ×3",
+    "p_min_tier": 0.7859
+   },
+   {
+    "kind": "Offensive",
+    "name": "Skybound",
+    "pattern": "B2+C2",
+    "form": "All Forms",
+    "raw": "[soar] ×2 + [ion] ×2",
+    "p_min_tier": 0.4679
+   },
+   {
+    "kind": "Defensive",
+    "name": "Duplicate",
+    "pattern": "DEF 4d",
+    "form": "All Forms",
+    "raw": "Defense Roll 4 [dice]"
+   },
+   {
+    "kind": "Ultimate",
+    "name": "High Altitude!",
+    "pattern": "C5",
+    "form": "All Forms",
+    "raw": "[ion] ×5",
+    "p_min_tier": 0.0133
+   }
+  ]
+ },
+ {
+  "hero": "Gambit",
+  "layout": "3-1-1-1",
+  "symbols": {
+   "A": "Staff",
+   "B": "Heart / Diamond",
+   "C": "Spade / Club",
+   "D": "Super Charge"
+  },
+  "abilities": [
+   {
+    "kind": "Offensive",
+    "name": "Bo Staff",
+    "pattern": "A3 / A4 / A5",
+    "form": "All Forms",
+    "raw": "[staff] ×3 / [staff] ×4 / [staff] ×5",
+    "p_min_tier": 0.9839
+   },
+   {
+    "kind": "Offensive",
+    "name": "Poker Face",
+    "pattern": "A1+B2",
+    "form": "All Forms",
+    "raw": "[staff] ×1 + [heart/diamond] ×2",
+    "p_min_tier": 0.6747
+   },
+   {
+    "kind": "Offensive",
+    "name": "Card Shark",
+    "pattern": "SS / LS",
+    "form": "All Forms",
+    "raw": "Small Straight / Large Straight",
+    "p_min_tier": 0.6154
+   },
+   {
+    "kind": "Offensive",
+    "name": "Ragin’ Cajun",
+    "pattern": "D4",
+    "form": "All Forms",
+    "raw": "[super charge] ×4",
+    "p_min_tier": 0.1044
+   },
+   {
+    "kind": "Offensive",
+    "name": "Bojutsu",
+    "pattern": "A2+C2",
+    "form": "All Forms",
+    "raw": "[staff] ×2 + [spade/club] ×2",
+    "p_min_tier": 0.5758
+   },
+   {
+    "kind": "Offensive",
+    "name": "Sleight of Hand",
+    "pattern": "A2+B1+D1",
+    "form": "All Forms",
+    "raw": "[staff] ×2 + [heart/diamond] ×1 + [super charge] ×1",
+    "p_min_tier": 0.7131
+   },
+   {
+    "kind": "Defensive",
+    "name": "Creole Crusader",
+    "pattern": "DEF 3d",
+    "form": "All Forms",
+    "raw": "Defense Roll 3 [dice]"
+   },
+   {
+    "kind": "Ultimate",
+    "name": "Le Diable Blanc!",
+    "pattern": "D5",
+    "form": "All Forms",
+    "raw": "[super charge] ×5",
+    "p_min_tier": 0.0133
+   }
+  ]
+ },
+ {
+  "hero": "Jean Grey",
+  "layout": "3-2-1",
+  "symbols": {
+   "A": "Astral",
+   "B": "Control",
+   "C": "Phoenix"
+  },
+  "abilities": [
+   {
+    "kind": "Offensive",
+    "name": "Mind Attack",
+    "pattern": "A3 / A4 / A5",
+    "form": "All Forms",
+    "raw": "[astral] ×3 / [astral] ×4 / [astral] ×5",
+    "p_min_tier": 0.9839
+   },
+   {
+    "kind": "Offensive",
+    "name": "Psychic Multiplier",
+    "pattern": "B3",
+    "form": "All Forms",
+    "raw": "[control] ×3",
+    "p_min_tier": 0.8418
+   },
+   {
+    "kind": "Offensive",
+    "name": "Astral Combat",
+    "pattern": "SS / LS",
+    "form": "All Forms",
+    "raw": "Small Straight / Large Straight",
+    "p_min_tier": 0.6154
+   },
+   {
+    "kind": "Offensive",
+    "name": "Firebird",
+    "pattern": "C4",
+    "form": "All Forms",
+    "raw": "[phoenix] ×4",
+    "p_min_tier": 0.1044
+   },
+   {
+    "kind": "Offensive",
+    "name": "Occlusion",
+    "pattern": "A1+B2+C1",
+    "form": "All Forms",
+    "raw": "[astral] ×1 + [control] ×2 + [phoenix] ×1",
+    "p_min_tier": 0.7748
+   },
+   {
+    "kind": "Offensive",
+    "name": "Telekinetic Blast",
+    "pattern": "A3+C2",
+    "form": "All Forms",
+    "raw": "[astral] ×3 + [phoenix] ×2",
+    "p_min_tier": 0.3488
+   },
+   {
+    "kind": "Defensive",
+    "name": "Psionic Shield",
+    "pattern": "DEF 2d",
+    "form": "All Forms",
+    "raw": "Defense Roll 2 [dice]; if Dark Phoenix, roll 4 instead"
+   },
+   {
+    "kind": "Ultimate",
+    "name": "One True Phoenix!",
+    "pattern": "C5",
+    "form": "All Forms",
+    "raw": "[phoenix] ×5",
+    "p_min_tier": 0.0133
+   }
+  ]
+ },
+ {
+  "hero": "Miles Morales: Spider-Man",
+  "layout": "3-2-1",
+  "symbols": {
+   "A": "Thwip",
+   "B": "Web",
+   "C": "Spider"
+  },
+  "abilities": [
+   {
+    "kind": "Offensive",
+    "name": "Punch",
+    "pattern": "A3 / A4 / A5",
+    "form": "All Forms",
+    "raw": "[thwip] ×3 / [thwip] ×4 / [thwip] ×5",
+    "p_min_tier": 0.9839
+   },
+   {
+    "kind": "Offensive",
+    "name": "C-C-C-Combo",
+    "pattern": "A2+C2",
+    "form": "All Forms",
+    "raw": "[thwip] ×2 + [spider] ×2",
+    "p_min_tier": 0.5758
+   },
+   {
+    "kind": "Offensive",
+    "name": "Ensnare",
+    "pattern": "SS / LS",
+    "form": "All Forms",
+    "raw": "Small Straight / Large Straight",
+    "p_min_tier": 0.6154
+   },
+   {
+    "kind": "Offensive",
+    "name": "Venom Punch",
+    "pattern": "C4",
+    "form": "All Forms",
+    "raw": "[spider] ×4",
+    "p_min_tier": 0.1044
+   },
+   {
+    "kind": "Offensive",
+    "name": "Wall Crawler",
+    "pattern": "A2+B3",
+    "form": "All Forms",
+    "raw": "[thwip] ×2 + [web] ×3",
+    "p_min_tier": 0.5571
+   },
+   {
+    "kind": "Offensive",
+    "name": "Spider Reflexes",
+    "pattern": "A1+B2+C1",
+    "form": "All Forms",
+    "raw": "[thwip] ×1 + [web] ×2 + [spider] ×1",
+    "p_min_tier": 0.7748
+   },
+   {
+    "kind": "Defensive",
+    "name": "Counterpunch",
+    "pattern": "DEF 3d",
+    "form": "All Forms",
+    "raw": "Defense Roll 3 [dice]"
+   },
+   {
+    "kind": "Defensive",
+    "name": "Spider-Sense",
+    "pattern": "DEF 2d",
+    "form": "All Forms",
+    "raw": "Defense Roll 2 [dice]"
+   },
+   {
+    "kind": "Ultimate",
+    "name": "Venom Shockwave!",
+    "pattern": "C5",
+    "form": "All Forms",
+    "raw": "[spider] ×5",
+    "p_min_tier": 0.0133
+   }
+  ]
+ },
+ {
+  "hero": "Scarlet Witch",
+  "layout": "3-1-1-1",
+  "symbols": {
+   "A": "Warp",
+   "B": "Chaos",
+   "C": "Spell",
+   "D": "Crown"
+  },
+  "abilities": [
+   {
+    "kind": "Offensive",
+    "name": "Hex Bolt",
+    "pattern": "A3 / A4 / A5",
+    "form": "All Forms",
+    "raw": "[warp] ×3 / [warp] ×4 / [warp] ×5",
+    "p_min_tier": 0.9839
+   },
+   {
+    "kind": "Offensive",
+    "name": "Darkhold",
+    "pattern": "C2",
+    "form": "All Forms",
+    "raw": "[spell] ×2",
+    "p_min_tier": 0.6988
+   },
+   {
+    "kind": "Offensive",
+    "name": "Spellcraft",
+    "pattern": "SS / LS",
+    "form": "All Forms",
+    "raw": "Small Straight / Large Straight",
+    "p_min_tier": 0.6154
+   },
+   {
+    "kind": "Offensive",
+    "name": "Pure Chaos",
+    "pattern": "D4",
+    "form": "All Forms",
+    "raw": "[crown] ×4",
+    "p_min_tier": 0.1044
+   },
+   {
+    "kind": "Offensive",
+    "name": "Jinx",
+    "pattern": "A2+B2",
+    "form": "All Forms",
+    "raw": "[warp] ×2 + [chaos] ×2",
+    "p_min_tier": 0.5758
+   },
+   {
+    "kind": "Offensive",
+    "name": "Mind Blast",
+    "pattern": "A1+B1+C1+D1",
+    "form": "All Forms",
+    "raw": "[warp] + [chaos] + [spell] + [crown]",
+    "p_min_tier": 0.6067
+   },
+   {
+    "kind": "Offensive",
+    "name": "Bewitch",
+    "pattern": "A1+D3",
+    "form": "All Forms",
+    "raw": "[warp] + [crown] ×3",
+    "p_min_tier": 0.3101
+   },
+   {
+    "kind": "Defensive",
+    "name": "Double Trouble",
+    "pattern": "DEF 5d",
+    "form": "All Forms",
+    "raw": "Defense Roll 5 [dice]"
+   },
+   {
+    "kind": "Ultimate",
+    "name": "Sealed Your Fate!",
+    "pattern": "D5",
+    "form": "All Forms",
+    "raw": "[crown] ×5",
+    "p_min_tier": 0.0133
+   }
+  ]
+ },
+ {
+  "hero": "Thor",
+  "layout": "3-2-1",
+  "symbols": {
+   "A": "Hammer",
+   "B": "Worthy",
+   "C": "Thunder"
+  },
+  "abilities": [
+   {
+    "kind": "Offensive",
+    "name": "Hammered",
+    "pattern": "A3 / A4 / A5",
+    "form": "All Forms",
+    "raw": "[Hammer] ×3 / [Hammer] ×4 / [Hammer] ×5",
+    "p_min_tier": 0.9839
+   },
+   {
+    "kind": "Offensive",
+    "name": "Mighty Summon",
+    "pattern": "A1+B1+C1",
+    "form": "All Forms",
+    "raw": "[Hammer] + [Worthy] + [Thunder]",
+    "p_min_tier": 0.8963
+   },
+   {
+    "kind": "Offensive",
+    "name": "Lightning Rod",
+    "pattern": "SS",
+    "form": "All Forms",
+    "raw": "Small Straight",
+    "p_min_tier": 0.6154
+   },
+   {
+    "kind": "Offensive",
+    "name": "Bottled Lightning",
+    "pattern": "C4",
+    "form": "All Forms",
+    "raw": "[Thunder] ×4",
+    "p_min_tier": 0.1044
+   },
+   {
+    "kind": "Offensive",
+    "name": "Odinforce",
+    "pattern": "A2+B3",
+    "form": "All Forms",
+    "raw": "[Hammer] ×2 + [Worthy] ×3",
+    "p_min_tier": 0.5571
+   },
+   {
+    "kind": "Offensive",
+    "name": "Chain Lightning",
+    "pattern": "A3+C2",
+    "form": "All Forms",
+    "raw": "[Hammer] ×3 + [Thunder] ×2",
+    "p_min_tier": 0.3488
+   },
+   {
+    "kind": "Offensive",
+    "name": "Thunder Bolt",
+    "pattern": "LS",
+    "form": "All Forms",
+    "raw": "Large Straight",
+    "p_min_tier": 0.2611
+   },
+   {
+    "kind": "Defensive",
+    "name": "Thunder Wheel",
+    "pattern": "DEF 3d",
+    "form": "All Forms",
+    "raw": "Defense Roll 3 dice"
+   },
+   {
+    "kind": "Ultimate",
+    "name": "For Asgard!",
+    "pattern": "C5",
+    "form": "All Forms",
+    "raw": "[Thunder] ×5",
+    "p_min_tier": 0.0133
+   }
+  ]
+ },
+ {
+  "hero": "Loki",
+  "layout": "2-2-1-1",
+  "symbols": {
+   "A": "Scepter",
+   "B": "Illusion",
+   "C": "Lies",
+   "D": "Mischief"
+  },
+  "abilities": [
+   {
+    "kind": "Offensive",
+    "name": "Mockery",
+    "pattern": "A3 / A4 / A5",
+    "form": "All Forms",
+    "raw": "3/4/5 Scepter",
+    "p_min_tier": 0.8418
+   },
+   {
+    "kind": "Offensive",
+    "name": "Antics",
+    "pattern": "C2",
+    "form": "All Forms",
+    "raw": "2 Lies",
+    "p_min_tier": 0.6988
+   },
+   {
+    "kind": "Offensive",
+    "name": "Confuddle",
+    "pattern": "A2+B2",
+    "form": "All Forms",
+    "raw": "2 Scepter + 2 Illusion",
+    "p_min_tier": 0.7898
+   },
+   {
+    "kind": "Offensive",
+    "name": "Vilify",
+    "pattern": "A1+B1+C1+D1",
+    "form": "All Forms",
+    "raw": "Scepter + Illusion + Lies + Mischief",
+    "p_min_tier": 0.6521
+   },
+   {
+    "kind": "Offensive",
+    "name": "Vex",
+    "pattern": "SS",
+    "form": "All Forms",
+    "raw": "Small Straight",
+    "p_min_tier": 0.6154
+   },
+   {
+    "kind": "Offensive",
+    "name": "Double Take",
+    "pattern": "D4",
+    "form": "All Forms",
+    "raw": "4 Mischief",
+    "p_min_tier": 0.1044
+   },
+   {
+    "kind": "Offensive",
+    "name": "Kneel to Me",
+    "pattern": "LS",
+    "form": "All Forms",
+    "raw": "Large Straight",
+    "p_min_tier": 0.2611
+   },
+   {
+    "kind": "Defensive",
+    "name": "Tip the Scale",
+    "pattern": "DEF 1d",
+    "form": "All Forms",
+    "raw": "Defense Roll 1"
+   },
+   {
+    "kind": "Ultimate",
+    "name": "Glorious Purpose",
+    "pattern": "D5",
+    "form": "All Forms",
+    "raw": "5 Mischief",
+    "p_min_tier": 0.0133
+   }
+  ]
+ },
+ {
+  "hero": "Doctor Strange",
+  "layout": "2-2-1-1",
+  "symbols": {
+   "A": "Mandala",
+   "B": "Tome",
+   "C": "Mantle",
+   "D": "Amulet"
+  },
+  "abilities": [
+   {
+    "kind": "Offensive",
+    "name": "Augury",
+    "pattern": "B2+D2",
+    "form": "All Forms",
+    "raw": "[tome] ×2 + [amulet] ×2",
+    "p_min_tier": 0.4679
+   },
+   {
+    "kind": "Offensive",
+    "name": "Universal Awareness",
+    "pattern": "B4",
+    "form": "All Forms",
+    "raw": "[tome] ×4",
+    "p_min_tier": 0.5359
+   },
+   {
+    "kind": "Offensive",
+    "name": "Mystic Bolts",
+    "pattern": "SS / LS",
+    "form": "All Forms",
+    "raw": "Small Straight / Large Straight",
+    "p_min_tier": 0.6154
+   },
+   {
+    "kind": "Offensive",
+    "name": "Wand of Watoomb",
+    "pattern": "D4",
+    "form": "All Forms",
+    "raw": "[amulet] ×4",
+    "p_min_tier": 0.1044
+   },
+   {
+    "kind": "Offensive",
+    "name": "Astral Incursion",
+    "pattern": "A1+B1+C1+D1",
+    "form": "All Forms",
+    "raw": "[mandala] ×1 + [tome] ×1 + [mantle] ×1 + [amulet] ×1",
+    "p_min_tier": 0.6521
+   },
+   {
+    "kind": "Offensive",
+    "name": "Binding",
+    "pattern": "A2+C2",
+    "form": "All Forms",
+    "raw": "[mandala] ×2 + [mantle] ×2",
+    "p_min_tier": 0.4679
+   },
+   {
+    "kind": "Defensive",
+    "name": "Cloak of Levitation",
+    "pattern": "DEF 2d",
+    "form": "All Forms",
+    "raw": "Defense Roll 2 [dice]"
+   },
+   {
+    "kind": "Ultimate",
+    "name": "All-Seeing Eye!",
+    "pattern": "D5",
+    "form": "All Forms",
+    "raw": "[amulet] ×5",
+    "p_min_tier": 0.0133
+   }
+  ]
+ },
+ {
+  "hero": "Black Widow",
+  "layout": "2-3-1",
+  "symbols": {
+   "A": "Espionage",
+   "B": "Batons",
+   "C": "Widow"
+  },
+  "abilities": [
+   {
+    "kind": "Offensive",
+    "name": "Baton Strike",
+    "pattern": "B3 / B4 / B5",
+    "form": "All Forms",
+    "raw": "[batons] ×3 / [batons] ×4 / [batons] ×5",
+    "p_min_tier": 0.9839
+   },
+   {
+    "kind": "Offensive",
+    "name": "Infiltrate",
+    "pattern": "A2+B1+C1",
+    "form": "All Forms",
+    "raw": "[espionage] ×2 + [batons] ×1 + [widow] ×1",
+    "p_min_tier": 0.7748
+   },
+   {
+    "kind": "Offensive",
+    "name": "Widow's Gauntlets",
+    "pattern": "A3+B2",
+    "form": "All Forms",
+    "raw": "[espionage] ×3 + [batons] ×2",
+    "p_min_tier": 0.5571
+   },
+   {
+    "kind": "Offensive",
+    "name": "Hacked",
+    "pattern": "SS",
+    "form": "All Forms",
+    "raw": "Small Straight",
+    "p_min_tier": 0.6154
+   },
+   {
+    "kind": "Offensive",
+    "name": "Grapple",
+    "pattern": "C4",
+    "form": "All Forms",
+    "raw": "[widow] ×4",
+    "p_min_tier": 0.1044
+   },
+   {
+    "kind": "Offensive",
+    "name": "Vengeance",
+    "pattern": "LS",
+    "form": "All Forms",
+    "raw": "Large Straight",
+    "p_min_tier": 0.2611
+   },
+   {
+    "kind": "Defensive",
+    "name": "Sabotage",
+    "pattern": "DEF 3d",
+    "form": "All Forms",
+    "raw": "Defense Roll 3 [dice]"
+   },
+   {
+    "kind": "Ultimate",
+    "name": "Widow's Bite!",
+    "pattern": "C5",
+    "form": "All Forms",
+    "raw": "[widow] ×5",
+    "p_min_tier": 0.0133
+   }
+  ]
+ },
+ {
+  "hero": "Treant",
+  "layout": "3-2-1",
+  "symbols": {
+   "A": "Branch",
+   "B": "Leaf",
+   "C": "Spirit"
+  },
+  "abilities": [
+   {
+    "kind": "Offensive",
+    "name": "Splinter",
+    "pattern": "A3 / A4 / A5",
+    "form": "All Forms",
+    "raw": "[branch] ×3 / [branch] ×4 / [branch] ×5",
+    "p_min_tier": 0.9839
+   },
+   {
+    "kind": "Offensive",
+    "name": "Tend",
+    "pattern": "B2+C2",
+    "form": "All Forms",
+    "raw": "[leaf] ×2 + [spirit] ×2",
+    "p_min_tier": 0.4679
+   },
+   {
+    "kind": "Offensive",
+    "name": "Overgrowth",
+    "pattern": "A2+B3",
+    "form": "All Forms",
+    "raw": "[branch] ×2 + [leaf] ×3",
+    "p_min_tier": 0.5571
+   },
+   {
+    "kind": "Offensive",
+    "name": "Vengeful Vines",
+    "pattern": "SS",
+    "form": "All Forms",
+    "raw": "Small Straight",
+    "p_min_tier": 0.6154
+   },
+   {
+    "kind": "Offensive",
+    "name": "Nature's Grasp",
+    "pattern": "C4",
+    "form": "All Forms",
+    "raw": "[spirit] ×4",
+    "p_min_tier": 0.1044
+   },
+   {
+    "kind": "Offensive",
+    "name": "Call of the Wild",
+    "pattern": "LS",
+    "form": "All Forms",
+    "raw": "Large Straight",
+    "p_min_tier": 0.2611
+   },
+   {
+    "kind": "Defensive",
+    "name": "Rooted",
+    "pattern": "DEF 3d",
+    "form": "All Forms",
+    "raw": "Defense Roll 3 [dice]"
+   },
+   {
+    "kind": "Ultimate",
+    "name": "Wake the Forest!",
+    "pattern": "C5",
+    "form": "All Forms",
+    "raw": "[spirit] ×5",
+    "p_min_tier": 0.0133
+   }
+  ]
+ },
+ {
+  "hero": "Ninja",
+  "layout": "3-2-1",
+  "symbols": {
+   "A": "Ninjatō",
+   "B": "Shuriken",
+   "C": "Mask"
+  },
+  "abilities": [
+   {
+    "kind": "Offensive",
+    "name": "Slash",
+    "pattern": "A3 / A4 / A5",
+    "form": "All Forms",
+    "raw": "[ninjatō] ×3 / [ninjatō] ×4 / [ninjatō] ×5",
+    "p_min_tier": 0.9839
+   },
+   {
+    "kind": "Offensive",
+    "name": "Walk the Line",
+    "pattern": "B4",
+    "form": "All Forms",
+    "raw": "[shuriken] ×4",
+    "p_min_tier": 0.5359
+   },
+   {
+    "kind": "Offensive",
+    "name": "Death Blossom",
+    "pattern": "A3+B2",
+    "form": "All Forms",
+    "raw": "[ninjatō] ×3 + [shuriken] ×2",
+    "p_min_tier": 0.6564
+   },
+   {
+    "kind": "Offensive",
+    "name": "Smoke Screen",
+    "pattern": "A1+B2+C1",
+    "form": "All Forms",
+    "raw": "[ninjatō] ×1 + [shuriken] ×2 + [mask] ×1",
+    "p_min_tier": 0.7748
+   },
+   {
+    "kind": "Offensive",
+    "name": "Poison Blade",
+    "pattern": "SS",
+    "form": "All Forms",
+    "raw": "Small Straight",
+    "p_min_tier": 0.6154
+   },
+   {
+    "kind": "Offensive",
+    "name": "Shadewalk",
+    "pattern": "C4",
+    "form": "All Forms",
+    "raw": "[mask] ×4",
+    "p_min_tier": 0.1044
+   },
+   {
+    "kind": "Offensive",
+    "name": "Shadow Fang",
+    "pattern": "LS",
+    "form": "All Forms",
+    "raw": "Large Straight",
+    "p_min_tier": 0.2611
+   },
+   {
+    "kind": "Defensive",
+    "name": "Shade Shift",
+    "pattern": "DEF 3d",
+    "form": "All Forms",
+    "raw": "Defense Roll 3 [dice]"
+   },
+   {
+    "kind": "Ultimate",
+    "name": "Assassinate!",
+    "pattern": "C5",
+    "form": "All Forms",
+    "raw": "[mask] ×5",
+    "p_min_tier": 0.0133
+   }
+  ]
+ },
+ {
+  "hero": "Moon Elf",
+  "layout": "3-2-1",
+  "symbols": {
+   "A": "Arrow",
+   "B": "Foot",
+   "C": "Moon"
+  },
+  "abilities": [
+   {
+    "kind": "Offensive",
+    "name": "Longbow",
+    "pattern": "A3 / A4 / A5",
+    "form": "All Forms",
+    "raw": "[arrow] ×3 / [arrow] ×4 / [arrow] ×5",
+    "p_min_tier": 0.9839
+   },
+   {
+    "kind": "Offensive",
+    "name": "Demising Shot",
+    "pattern": "A3+C2",
+    "form": "All Forms",
+    "raw": "[arrow] ×3 + [moon] ×2",
+    "p_min_tier": 0.3488
+   },
+   {
+    "kind": "Offensive",
+    "name": "Covered Shot",
+    "pattern": "A2+B3",
+    "form": "All Forms",
+    "raw": "[arrow] ×2 + [foot] ×3",
+    "p_min_tier": 0.5571
+   },
+   {
+    "kind": "Offensive",
+    "name": "Exploding Arrow",
+    "pattern": "A1+C3",
+    "form": "All Forms",
+    "raw": "[arrow] ×1 + [moon] ×3",
+    "p_min_tier": 0.3101
+   },
+   {
+    "kind": "Offensive",
+    "name": "Entangling Shot",
+    "pattern": "SS",
+    "form": "All Forms",
+    "raw": "Small Straight",
+    "p_min_tier": 0.6154
+   },
+   {
+    "kind": "Offensive",
+    "name": "Eclipse",
+    "pattern": "C4",
+    "form": "All Forms",
+    "raw": "[moon] ×4",
+    "p_min_tier": 0.1044
+   },
+   {
+    "kind": "Offensive",
+    "name": "Blinding Shot",
+    "pattern": "LS",
+    "form": "All Forms",
+    "raw": "Large Straight",
+    "p_min_tier": 0.2611
+   },
+   {
+    "kind": "Defensive",
+    "name": "Missed Me",
+    "pattern": "DEF 5d",
+    "form": "All Forms",
+    "raw": "Defense Roll 5 [dice]"
+   },
+   {
+    "kind": "Ultimate",
+    "name": "Lunar Eclipse!",
+    "pattern": "C5",
+    "form": "All Forms",
+    "raw": "[moon] ×5",
+    "p_min_tier": 0.0133
+   }
+  ]
+ },
+ {
+  "hero": "Barbarian",
+  "layout": "3-2-1",
+  "symbols": {
+   "A": "Sword",
+   "B": "Life",
+   "C": "Pow"
+  },
+  "abilities": [
+   {
+    "kind": "Offensive",
+    "name": "Smack",
+    "pattern": "A3 / A4 / A5",
+    "form": "All Forms",
+    "raw": "[sword] ×3 / [sword] ×4 / [sword] ×5",
+    "p_min_tier": 0.9839
+   },
+   {
+    "kind": "Offensive",
+    "name": "Sturdy Blow",
+    "pattern": "A2+C2",
+    "form": "All Forms",
+    "raw": "[sword] ×2 + [pow] ×2",
+    "p_min_tier": 0.5758
+   },
+   {
+    "kind": "Offensive",
+    "name": "Fortitude",
+    "pattern": "B3 / B4 / B5",
+    "form": "All Forms",
+    "raw": "[life] ×3 / [life] ×4 / [life] ×5",
+    "p_min_tier": 0.8418
+   },
+   {
+    "kind": "Offensive",
+    "name": "Overpower",
+    "pattern": "A3+C2",
+    "form": "All Forms",
+    "raw": "[sword] ×3 + [pow] ×2",
+    "p_min_tier": 0.3488
+   },
+   {
+    "kind": "Offensive",
+    "name": "Mighty Blow",
+    "pattern": "SS",
+    "form": "All Forms",
+    "raw": "Small Straight",
+    "p_min_tier": 0.6154
+   },
+   {
+    "kind": "Offensive",
+    "name": "Crit Bash",
+    "pattern": "C4",
+    "form": "All Forms",
+    "raw": "[pow] ×4",
+    "p_min_tier": 0.1044
+   },
+   {
+    "kind": "Offensive",
+    "name": "Reckless",
+    "pattern": "LS",
+    "form": "All Forms",
+    "raw": "Large Straight",
+    "p_min_tier": 0.2611
+   },
+   {
+    "kind": "Defensive",
+    "name": "Thick Skin",
+    "pattern": "DEF 3d",
+    "form": "All Forms",
+    "raw": "Defense Roll 3 [dice]"
+   },
+   {
+    "kind": "Ultimate",
+    "name": "Rage!",
+    "pattern": "C5",
+    "form": "All Forms",
+    "raw": "[pow] ×5",
+    "p_min_tier": 0.0133
+   }
+  ]
+ },
+ {
+  "hero": "Pyromancer",
+  "layout": "3-1-1-1",
+  "symbols": {
+   "A": "Flame",
+   "B": "Blaze",
+   "C": "Fiery Soul",
+   "D": "Meteor"
+  },
+  "abilities": [
+   {
+    "kind": "Offensive",
+    "name": "Fireball",
+    "pattern": "A3 / A4 / A5",
+    "form": "All Forms",
+    "raw": "[flame] ×3 / [flame] ×4 / [flame] ×5",
+    "p_min_tier": 0.9839
+   },
+   {
+    "kind": "Offensive",
+    "name": "Burning Soul",
+    "pattern": "C2",
+    "form": "All Forms",
+    "raw": "[fiery soul] ×2",
+    "p_min_tier": 0.6988
+   },
+   {
+    "kind": "Offensive",
+    "name": "Pyroblast",
+    "pattern": "A3+D1",
+    "form": "All Forms",
+    "raw": "[flame] ×3 + [meteor] ×1",
+    "p_min_tier": 0.8023
+   },
+   {
+    "kind": "Offensive",
+    "name": "Combustion",
+    "pattern": "A1+B1+C1+D1",
+    "form": "All Forms",
+    "raw": "[flame] ×1 + [blaze] ×1 + [fiery soul] ×1 + [meteor] ×1",
+    "p_min_tier": 0.6067
+   },
+   {
+    "kind": "Offensive",
+    "name": "Hot Streak",
+    "pattern": "SS",
+    "form": "All Forms",
+    "raw": "Small Straight",
+    "p_min_tier": 0.6154
+   },
+   {
+    "kind": "Offensive",
+    "name": "Meteorite",
+    "pattern": "D4",
+    "form": "All Forms",
+    "raw": "[meteor] ×4",
+    "p_min_tier": 0.1044
+   },
+   {
+    "kind": "Offensive",
+    "name": "Ignite",
+    "pattern": "LS",
+    "form": "All Forms",
+    "raw": "Large Straight",
+    "p_min_tier": 0.2611
+   },
+   {
+    "kind": "Defensive",
+    "name": "Molten Armor",
+    "pattern": "DEF 5d",
+    "form": "All Forms",
+    "raw": "Defense Roll 5 [dice]"
+   },
+   {
+    "kind": "Ultimate",
+    "name": "Scorch the Earth!",
+    "pattern": "D5",
+    "form": "All Forms",
+    "raw": "[meteor] ×5",
+    "p_min_tier": 0.0133
+   }
+  ]
+ },
+ {
+  "hero": "Shadow Thief",
+  "layout": "2-2-1-1",
+  "symbols": {
+   "A": "Dagger",
+   "B": "Bag",
+   "C": "Card",
+   "D": "Shadow"
+  },
+  "abilities": [
+   {
+    "kind": "Offensive",
+    "name": "Dagger Strike",
+    "pattern": "A3 / A4 / A5",
+    "form": "All Forms",
+    "raw": "[dagger] ×3 / [dagger] ×4 / [dagger] ×5",
+    "p_min_tier": 0.8418
+   },
+   {
+    "kind": "Offensive",
+    "name": "Shifty Strike",
+    "pattern": "SS",
+    "form": "All Forms",
+    "raw": "Small Straight",
+    "p_min_tier": 0.6154
+   },
+   {
+    "kind": "Offensive",
+    "name": "Pickpocket",
+    "pattern": "B2 / B3 / B4",
+    "form": "All Forms",
+    "raw": "[bag] ×2 / [bag] ×3 / [bag] ×4",
+    "p_min_tier": 0.9706
+   },
+   {
+    "kind": "Offensive",
+    "name": "Insidious Strike",
+    "pattern": "LS",
+    "form": "All Forms",
+    "raw": "Large Straight",
+    "p_min_tier": 0.2611
+   },
+   {
+    "kind": "Offensive",
+    "name": "Shadow Dance",
+    "pattern": "D3",
+    "form": "All Forms",
+    "raw": "[shadow] ×3",
+    "p_min_tier": 0.3548
+   },
+   {
+    "kind": "Defensive",
+    "name": "Shadow Defense",
+    "pattern": "DEF 4d",
+    "form": "All Forms",
+    "raw": "Defense Roll 4 [dice]"
+   },
+   {
+    "kind": "Offensive",
+    "name": "Carducopia",
+    "pattern": "C2",
+    "form": "All Forms",
+    "raw": "[card] ×2",
+    "p_min_tier": 0.6988
+   },
+   {
+    "kind": "Defensive",
+    "name": "Counter Strike",
+    "pattern": "DEF 5d",
+    "form": "All Forms",
+    "raw": "Defense Roll 5 [dice]"
+   },
+   {
+    "kind": "Ultimate",
+    "name": "Shadows Shank!",
+    "pattern": "D5",
+    "form": "All Forms",
+    "raw": "[shadow] ×5",
+    "p_min_tier": 0.0133
+   }
+  ]
+ },
+ {
+  "hero": "Captain Marvel",
+  "layout": "3-2-1",
+  "symbols": {
+   "A": "Photon",
+   "B": "Ascend",
+   "C": "Hala Star"
+  },
+  "abilities": [
+   {
+    "kind": "Offensive",
+    "name": "Photon Punch",
+    "pattern": "A3 / A4 / A5",
+    "form": "All Forms",
+    "raw": "[photon] ×3 / [photon] ×4 / [photon] ×5",
+    "p_min_tier": 0.9839
+   },
+   {
+    "kind": "Offensive",
+    "name": "Inner Light",
+    "pattern": "A2+C2",
+    "form": "All Forms",
+    "raw": "[photon] ×2 + [hala star] ×2",
+    "p_min_tier": 0.5758
+   },
+   {
+    "kind": "Offensive",
+    "name": "Barrel Roll",
+    "pattern": "A1+B3",
+    "form": "All Forms",
+    "raw": "[photon] ×1 + [ascend] ×3",
+    "p_min_tier": 0.7859
+   },
+   {
+    "kind": "Offensive",
+    "name": "Aurora Wave",
+    "pattern": "A2+B1+C2",
+    "form": "All Forms",
+    "raw": "[photon] ×2 + [ascend] ×1 + [hala star] ×2",
+    "p_min_tier": 0.3962
+   },
+   {
+    "kind": "Offensive",
+    "name": "Photonic",
+    "pattern": "SS",
+    "form": "All Forms",
+    "raw": "Small Straight",
+    "p_min_tier": 0.6154
+   },
+   {
+    "kind": "Offensive",
+    "name": "Supernova",
+    "pattern": "C4",
+    "form": "All Forms",
+    "raw": "[hala star] ×4",
+    "p_min_tier": 0.1044
+   },
+   {
+    "kind": "Offensive",
+    "name": "Light Torpedo",
+    "pattern": "LS",
+    "form": "All Forms",
+    "raw": "Large Straight",
+    "p_min_tier": 0.2611
+   },
+   {
+    "kind": "Defensive",
+    "name": "Energy Refraction",
+    "pattern": "DEF 4d",
+    "form": "All Forms",
+    "raw": "Defense Roll 4 [dice]"
+   },
+   {
+    "kind": "Ultimate",
+    "name": "Binary Blast!",
+    "pattern": "C5",
+    "form": "All Forms",
+    "raw": "[hala star] ×5",
+    "p_min_tier": 0.0133
+   }
+  ]
+ },
+ {
+  "hero": "Black Panther",
+  "layout": "3-2-1",
+  "symbols": {
+   "A": "Slash",
+   "B": "Vibranium",
+   "C": "Panther"
+  },
+  "abilities": [
+   {
+    "kind": "Offensive",
+    "name": "Vibranium Claws",
+    "pattern": "A3 / A4 / A5",
+    "form": "All Forms",
+    "raw": "[slash] ×3 / [slash] ×4 / [slash] ×5",
+    "p_min_tier": 0.9839
+   },
+   {
+    "kind": "Offensive",
+    "name": "Stealth Strike",
+    "pattern": "A2+C2",
+    "form": "All Forms",
+    "raw": "[slash] ×2 + [panther] ×2",
+    "p_min_tier": 0.5758
+   },
+   {
+    "kind": "Offensive",
+    "name": "Heart-Shaped Herb",
+    "pattern": "B3",
+    "form": "All Forms",
+    "raw": "[vibranium] ×3",
+    "p_min_tier": 0.8418
+   },
+   {
+    "kind": "Offensive",
+    "name": "Meteoric Punch",
+    "pattern": "SS / LS",
+    "form": "All Forms",
+    "raw": "Small Straight / Large Straight",
+    "p_min_tier": 0.6154
+   },
+   {
+    "kind": "Offensive",
+    "name": "Ancestral Power",
+    "pattern": "C4",
+    "form": "All Forms",
+    "raw": "[panther] ×4",
+    "p_min_tier": 0.1044
+   },
+   {
+    "kind": "Offensive",
+    "name": "Triple Threat",
+    "pattern": "A2+B2+C1",
+    "form": "All Forms",
+    "raw": "[slash] ×2 + [vibranium] ×2 + [panther] ×1",
+    "p_min_tier": 0.5664
+   },
+   {
+    "kind": "Defensive",
+    "name": "Bashenga's Honor",
+    "pattern": "DEF 3d",
+    "form": "All Forms",
+    "raw": "Defense Roll 3 [dice]"
+   },
+   {
+    "kind": "Ultimate",
+    "name": "Wakanda Forever!",
+    "pattern": "C5",
+    "form": "All Forms",
+    "raw": "[panther] ×5",
+    "p_min_tier": 0.0133
+   }
+  ]
+ },
+ {
+  "hero": "Deadpool",
+  "layout": "3-1-1-1",
+  "symbols": {
+   "A": "Pew",
+   "B": "Knife",
+   "C": "Joke",
+   "D": "Mask"
+  },
+  "abilities": [
+   {
+    "kind": "Offensive",
+    "name": "Finger Guns",
+    "pattern": "A4 / A5",
+    "form": "All Forms",
+    "raw": "[pew] ×4 / [pew] ×5",
+    "p_min_tier": 0.8793
+   },
+   {
+    "kind": "Offensive",
+    "name": "Donut Hole",
+    "pattern": "C3",
+    "form": "All Forms",
+    "raw": "[joke] ×3",
+    "p_min_tier": 0.3548
+   },
+   {
+    "kind": "Offensive",
+    "name": "Knife Fight",
+    "pattern": "A2+B2",
+    "form": "All Forms",
+    "raw": "[pew] ×2 + [knife] ×2",
+    "p_min_tier": 0.5758
+   },
+   {
+    "kind": "Offensive",
+    "name": "Besmirched",
+    "pattern": "A1+B1+C1+D1",
+    "form": "All Forms",
+    "raw": "[pew] ×1 + [knife] ×1 + [joke] ×1 + [mask] ×1",
+    "p_min_tier": 0.6067
+   },
+   {
+    "kind": "Offensive",
+    "name": "Taco Truck",
+    "pattern": "SS",
+    "form": "All Forms",
+    "raw": "Small Straight",
+    "p_min_tier": 0.6154
+   },
+   {
+    "kind": "Offensive",
+    "name": "Merc With a Mouth",
+    "pattern": "D4",
+    "form": "All Forms",
+    "raw": "[mask] ×4",
+    "p_min_tier": 0.1044
+   },
+   {
+    "kind": "Offensive",
+    "name": "Fiesta",
+    "pattern": "LS",
+    "form": "All Forms",
+    "raw": "Large Straight",
+    "p_min_tier": 0.2611
+   },
+   {
+    "kind": "Defensive",
+    "name": "Mutant Healing",
+    "pattern": "DEF 4d",
+    "form": "All Forms",
+    "raw": "Defense Roll 4 [dice]"
+   },
+   {
+    "kind": "Ultimate",
+    "name": "Fourth Wall!",
+    "pattern": "D5",
+    "form": "All Forms",
+    "raw": "[mask] ×5",
+    "p_min_tier": 0.0133
+   }
+  ]
+ },
+ {
+  "hero": "Krampus",
+  "layout": "3-1-1-1",
+  "symbols": {
+   "A": "Switch",
+   "B": "Jingle",
+   "C": "Present",
+   "D": "Horns"
+  },
+  "abilities": [
+   {
+    "kind": "Offensive",
+    "name": "Swat",
+    "pattern": "A3 / A4 / A5",
+    "form": "All Forms",
+    "raw": "[switch] ×3 / [switch] ×4 / [switch] ×5",
+    "p_min_tier": 0.9839
+   },
+   {
+    "kind": "Offensive",
+    "name": "Scavenge",
+    "pattern": "C3",
+    "form": "All Forms",
+    "raw": "[present] ×3",
+    "p_min_tier": 0.3548
+   },
+   {
+    "kind": "Offensive",
+    "name": "Bad Tidings",
+    "pattern": "A1+B1+C1+D1",
+    "form": "All Forms",
+    "raw": "[switch] ×1 + [jingle] ×1 + [present] ×1 + [horns] ×1",
+    "p_min_tier": 0.6067
+   },
+   {
+    "kind": "Offensive",
+    "name": "Rotter",
+    "pattern": "A2+B2",
+    "form": "All Forms",
+    "raw": "[switch] ×2 + [jingle] ×2",
+    "p_min_tier": 0.5758
+   },
+   {
+    "kind": "Offensive",
+    "name": "Misbehaving",
+    "pattern": "SS",
+    "form": "All Forms",
+    "raw": "Small Straight",
+    "p_min_tier": 0.6154
+   },
+   {
+    "kind": "Offensive",
+    "name": "Spoils",
+    "pattern": "D4",
+    "form": "All Forms",
+    "raw": "[horns] ×4",
+    "p_min_tier": 0.1044
+   },
+   {
+    "kind": "Offensive",
+    "name": "Rejection",
+    "pattern": "LS",
+    "form": "All Forms",
+    "raw": "Large Straight",
+    "p_min_tier": 0.2611
+   },
+   {
+    "kind": "Defensive",
+    "name": "Deviled Eggs",
+    "pattern": "DEF 3d",
+    "form": "All Forms",
+    "raw": "Defense Roll 3 [dice]"
+   },
+   {
+    "kind": "Ultimate",
+    "name": "Discomfort and Pain",
+    "pattern": "D5",
+    "form": "All Forms",
+    "raw": "[horns] ×5",
+    "p_min_tier": 0.0133
+   }
+  ]
+ },
+ {
+  "hero": "Santa",
+  "layout": "3-2-1",
+  "symbols": {
+   "A": "Axe",
+   "B": "Bell",
+   "C": "Star"
+  },
+  "abilities": [
+   {
+    "kind": "Offensive",
+    "name": "Trim Your Tree",
+    "pattern": "A3 / A4 / A5",
+    "form": "All Forms",
+    "raw": "[axe] ×3 / [axe] ×4 / [axe] ×5",
+    "p_min_tier": 0.9839
+   },
+   {
+    "kind": "Offensive",
+    "name": "Festivities",
+    "pattern": "A3+C2",
+    "form": "All Forms",
+    "raw": "[axe] ×3 + [star] ×2",
+    "p_min_tier": 0.3488
+   },
+   {
+    "kind": "Offensive",
+    "name": "Fireside Chat",
+    "pattern": "B4",
+    "form": "All Forms",
+    "raw": "[bell] ×4",
+    "p_min_tier": 0.5359
+   },
+   {
+    "kind": "Offensive",
+    "name": "Naughty or Nice",
+    "pattern": "A2+B2+C1",
+    "form": "All Forms",
+    "raw": "[axe] ×2 + [bell] ×2 + [star] ×1",
+    "p_min_tier": 0.5664
+   },
+   {
+    "kind": "Offensive",
+    "name": "Rosey Cheeks",
+    "pattern": "SS",
+    "form": "All Forms",
+    "raw": "Small Straight",
+    "p_min_tier": 0.6154
+   },
+   {
+    "kind": "Offensive",
+    "name": "Holly Jolly",
+    "pattern": "C4",
+    "form": "All Forms",
+    "raw": "[star] ×4",
+    "p_min_tier": 0.1044
+   },
+   {
+    "kind": "Offensive",
+    "name": "Reindeer Games",
+    "pattern": "LS",
+    "form": "All Forms",
+    "raw": "Large Straight",
+    "p_min_tier": 0.2611
+   },
+   {
+    "kind": "Defensive",
+    "name": "Egg Noggin' It",
+    "pattern": "DEF 4d",
+    "form": "All Forms",
+    "raw": "Defense Roll 4 [dice]"
+   },
+   {
+    "kind": "Ultimate",
+    "name": "Comfort and Joy!",
+    "pattern": "C5",
+    "form": "All Forms",
+    "raw": "[star] ×5",
+    "p_min_tier": 0.0133
+   }
+  ]
+ },
+ {
+  "hero": "Paladin",
+  "layout": "2-2-1-1",
+  "symbols": {
+   "A": "Sword",
+   "B": "Helmet",
+   "C": "Life",
+   "D": "Prayer"
+  },
+  "abilities": [
+   {
+    "kind": "Offensive",
+    "name": "Retaliate",
+    "pattern": "B3+D1",
+    "form": "All Forms",
+    "raw": "[helmet] ×3 + [prayer] ×1",
+    "p_min_tier": 0.6013
+   },
+   {
+    "kind": "Offensive",
+    "name": "Righteous Combat",
+    "pattern": "A3+B2",
+    "form": "All Forms",
+    "raw": "[sword] ×3 + [helmet] ×2",
+    "p_min_tier": 0.4185
+   },
+   {
+    "kind": "Offensive",
+    "name": "Mighty Prayer",
+    "pattern": "A3+D1",
+    "form": "All Forms",
+    "raw": "[sword] ×3 + [prayer] ×1",
+    "p_min_tier": 0.6013
+   },
+   {
+    "kind": "Offensive",
+    "name": "Holy Attack",
+    "pattern": "SS / LS",
+    "form": "All Forms",
+    "raw": "Small Straight / Large Straight",
+    "p_min_tier": 0.6154
+   },
+   {
+    "kind": "Offensive",
+    "name": "Righteous Prayer",
+    "pattern": "D4",
+    "form": "All Forms",
+    "raw": "[prayer] ×4",
+    "p_min_tier": 0.1044
+   },
+   {
+    "kind": "Offensive",
+    "name": "Holy Light",
+    "pattern": "C2",
+    "form": "All Forms",
+    "raw": "[life] ×2",
+    "p_min_tier": 0.6988
+   },
+   {
+    "kind": "Defensive",
+    "name": "Divine Defense",
+    "pattern": "DEF 3d",
+    "form": "All Forms",
+    "raw": "Defense Roll 3 [dice]"
+   },
+   {
+    "kind": "Ultimate",
+    "name": "Resolute Faith!",
+    "pattern": "D5",
+    "form": "All Forms",
+    "raw": "[prayer] ×5",
+    "p_min_tier": 0.0133
+   }
+  ]
+ },
+ {
+  "hero": "Monk",
+  "layout": "2-1-2-1",
+  "symbols": {
+   "A": "Fist",
+   "B": "Palm",
+   "C": "Zen",
+   "D": "Lotus"
+  },
+  "abilities": [
+   {
+    "kind": "Offensive",
+    "name": "Fist Strike",
+    "pattern": "A3 / A4 / A5",
+    "form": "All Forms",
+    "raw": "[fist] ×3 / [fist] ×4 / [fist] ×5",
+    "p_min_tier": 0.8418
+   },
+   {
+    "kind": "Offensive",
+    "name": "Meditate",
+    "pattern": "C3",
+    "form": "All Forms",
+    "raw": "[zen] ×3",
+    "p_min_tier": 0.8418
+   },
+   {
+    "kind": "Offensive",
+    "name": "Combo Strike",
+    "pattern": "A3+B1",
+    "form": "All Forms",
+    "raw": "[fist] ×3 + [palm] ×1",
+    "p_min_tier": 0.6013
+   },
+   {
+    "kind": "Offensive",
+    "name": "Tempest Rush",
+    "pattern": "B3",
+    "form": "All Forms",
+    "raw": "[palm] ×3",
+    "p_min_tier": 0.3548
+   },
+   {
+    "kind": "Offensive",
+    "name": "Fist of Harmony",
+    "pattern": "SS",
+    "form": "All Forms",
+    "raw": "Small Straight",
+    "p_min_tier": 0.6154
+   },
+   {
+    "kind": "Offensive",
+    "name": "Lotus Strike",
+    "pattern": "D4",
+    "form": "All Forms",
+    "raw": "[lotus] ×4",
+    "p_min_tier": 0.1044
+   },
+   {
+    "kind": "Offensive",
+    "name": "Fist of Tranquility",
+    "pattern": "LS",
+    "form": "All Forms",
+    "raw": "Large Straight",
+    "p_min_tier": 0.2611
+   },
+   {
+    "kind": "Defensive",
+    "name": "Serenity",
+    "pattern": "DEF 4d",
+    "form": "All Forms",
+    "raw": "Defense Roll 4 [dice]"
+   },
+   {
+    "kind": "Ultimate",
+    "name": "Transcendence!",
+    "pattern": "D5",
+    "form": "All Forms",
+    "raw": "[lotus] ×5",
+    "p_min_tier": 0.0133
+   }
+  ]
+ }
+]

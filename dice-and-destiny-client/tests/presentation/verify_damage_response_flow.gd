@@ -48,7 +48,7 @@ func _run() -> void:
 		screen._capture_damage_feedback(result, previous)
 		screen._render()
 		for frame in 4: await process_frame
-		_check_saved_animation(screen)
+		_check_saved_animation(screen, true)
 		var started: int = screen._damage_feedback.started_ms
 		screen._capture_damage_feedback(result, previous)
 		_expect(screen._damage_feedback.started_ms == started, "repeated event does not restart saving animation")
@@ -94,10 +94,12 @@ func _feedback(screen):
 		if node.get_script() == preload("res://presentation/battle/damage_response_feedback.gd"): return node
 	return null
 
-func _check_saved_animation(screen) -> void:
+func _check_saved_animation(screen, enemy_card: bool = false) -> void:
 	var feedback = _feedback(screen)
 	_expect(feedback != null, "saved-card animation exists")
 	if feedback == null: return
+	# An enemy's card shows only its result: no card and no caption.
+	if enemy_card: _expect(not feedback._played.visible and not feedback._caption.visible, "the enemy's card and caption stay hidden")
 	feedback.set_process(false)
 	var original: Dictionary = screen._view.actors.duplicate(true)
 	feedback.present_progress(0.25)

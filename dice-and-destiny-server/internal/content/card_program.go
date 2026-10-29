@@ -108,7 +108,7 @@ func CardCapabilities() map[string]CardEffectSpec {
 		"reroll":             {"Reroll offensive dice", "offensive_die", map[string]CardParameter{"result": choice("replace", "replace", "higher", "lower"), "consume_roll": {Type: "boolean", Default: false}}, offense},
 		"extra_roll":         {"Gain offensive roll attempts", "actor", map[string]CardParameter{"amount": number(1, 1, 3)}, []string{"offensive_before_roll", "offensive_planning", "offensive_after_roll"}},
 		"reroll_defense":     {"Reroll defensive dice", "defensive_die", map[string]CardParameter{"result": choice("replace", "replace", "higher", "lower")}, []string{"defense_reaction"}},
-		"remove_status":      {"Remove statuses", "status", map[string]CardParameter{"stacks": number(0, 0, 100)}, all},
+		"remove_status":      {"Remove statuses", "status", map[string]CardParameter{"stacks": number(0, 0, 100), "for_battle": {Type: "boolean", Default: false}}, all},
 		"apply_status":       {"Apply status", "actor", map[string]CardParameter{"status_id": {Type: "status", Default: ""}, "stacks": number(1, 1, 100)}, all},
 		"ability_bonus":      {"Add an ability bonus", "ability", map[string]CardParameter{"damage": number(2, 0, 100), "status_id": {Type: "status_optional", Default: ""}, "stacks": number(1, 1, 100), "duration": choice("offensive", "offensive", "round", "next_use", "rounds", "battle"), "rounds": number(1, 1, 100), "stack_limit": number(1, 1, 100), "stacking": choice("stack", "stack", "replace", "refresh"), "preparation_status": {Type: "status_optional", Default: ""}}, []string{"offensive_before_roll", "offensive_planning", "offensive_after_roll"}},
 		"choice":             {"Choose an option", "none", map[string]CardParameter{}, all},
@@ -628,6 +628,9 @@ func CardProgramRulesWithStatuses(p *CardProgram, statuses map[string]BattleStat
 					count = "all stacks"
 				}
 				text = "Remove " + count + " from " + target("statuses") + "."
+				if ProgramBool(s, "for_battle") {
+					text += " What is removed stays gone for the rest of the battle, even from a status that returns each round."
+				}
 			case "apply_status":
 				text = fmt.Sprintf("Apply %d %s to %s.", ProgramInt(s, "stacks"), statusName(ProgramString(s, "status_id"), statuses), target("characters"))
 			case "ability_bonus":

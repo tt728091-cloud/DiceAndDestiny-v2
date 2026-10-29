@@ -1,0 +1,17 @@
+# want: config key "statuses.ambush" is not a number
+schema_version: 1
+id: config_not_a_number
+name: A fixture
+set: fixture
+kind: side
+status: scenario
+hook: {verb: scenario_start, region: salt_marches}
+trigger: [{verb: scenario_start}]
+start: one
+stages:
+  - id: one
+    objective: {verb: defeat_group, group: brine_lone}
+    timer: {type: urgent, rounds: {config: statuses.ambush}, from: quest_start}
+    outcomes:
+      - {outcome: success, next: end}
+      - {outcome: failure, next: end}

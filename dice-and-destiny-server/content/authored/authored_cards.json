@@ -1551,6 +1551,89 @@
           "x": 320,
           "y": -1260,
           "xp": 41
+        },
+        {
+          "id": "node_11",
+          "card": {
+            "access_type": "general",
+            "program": {
+              "version": 1,
+              "windows": [
+                "defense_after_roll",
+                "damage_reaction"
+              ],
+              "roll_requirement": "any",
+              "uses_per_round": 0,
+              "uses_per_battle": 0,
+              "steps": [
+                {
+                  "effect": "remove_status",
+                  "target": {
+                    "owner": "enemy",
+                    "mode": "one",
+                    "count": 1,
+                    "selection": "choose",
+                    "polarity": "positive",
+                    "status_ids": [
+                      "fortified",
+                      "conqueror"
+                    ]
+                  },
+                  "params": {
+                    "for_battle": true,
+                    "stacks": 0
+                  }
+                }
+              ]
+            },
+            "economy": {
+              "buy": 30,
+              "sell": 30,
+              "copy_limit": 20,
+              "upgrades": null
+            },
+            "schema_version": 1,
+            "id": "dispel_paths_variant_node_11",
+            "name": "Siege Dispel",
+            "type": "action",
+            "presentation": {
+              "illustration_path": "res://assets/battle/cards/antidote.png",
+              "effect_summary": "Clear 1 enemy Fortified or Conqueror for the battle",
+              "rules_text": "Remove all stacks from one of an enemy's buffs (positive statuses) matching Fortified, Conqueror. What is removed stays gone for the rest of the battle, even from a status that returns each round.\nPlay: Defense, after your first defense roll.",
+              "art_key": "",
+              "timing": [
+                {
+                  "segment": "defense",
+                  "when": "after"
+                }
+              ],
+              "target": "Enemy"
+            },
+            "cost": {
+              "energy": 9
+            },
+            "play": {
+              "source_zones": [
+                "hand"
+              ],
+              "destination": "discard",
+              "playable_during": []
+            },
+            "targeting": {
+              "selector": "card_program",
+              "minimum": 1,
+              "maximum": 1
+            },
+            "reaction_window": {
+              "opens": false,
+              "pass_required": false
+            },
+            "operations": []
+          },
+          "x": -320,
+          "y": -720,
+          "pinned": true,
+          "xp": 30
         }
       ],
       "edges": [
@@ -1621,6 +1704,13 @@
           "id": "edge_10",
           "from": "node_3",
           "to": "node_10",
+          "reversible": true,
+          "requirements": []
+        },
+        {
+          "id": "edge_11",
+          "from": "node_5",
+          "to": "node_11",
           "reversible": true,
           "requirements": []
         }
@@ -1919,7 +2009,7 @@
               ]
             },
             "cost": {
-              "energy": 15
+              "energy": 16
             },
             "play": {
               "source_zones": [
@@ -1941,7 +2031,7 @@
           },
           "x": 320,
           "y": -1440,
-          "xp": 26,
+          "xp": 29,
           "shared": true
         },
         {
@@ -2002,7 +2092,7 @@
               ]
             },
             "cost": {
-              "energy": 15
+              "energy": 16
             },
             "play": {
               "source_zones": [
@@ -2024,7 +2114,7 @@
           },
           "x": 320,
           "y": -1800,
-          "xp": 34,
+          "xp": 37,
           "shared": true
         }
       ],
@@ -3300,8 +3390,8 @@
               ]
             },
             "economy": {
-              "buy": 15,
-              "sell": 15,
+              "buy": 18,
+              "sell": 18,
               "copy_limit": 20,
               "upgrades": null
             },
@@ -3322,7 +3412,7 @@
               ]
             },
             "cost": {
-              "energy": 7
+              "energy": 8
             },
             "play": {
               "source_zones": [
@@ -3344,7 +3434,7 @@
           },
           "x": 0,
           "y": 0,
-          "xp": 15
+          "xp": 18
         },
         {
           "id": "node_1",
@@ -3379,8 +3469,8 @@
               ]
             },
             "economy": {
-              "buy": 17,
-              "sell": 17,
+              "buy": 20,
+              "sell": 20,
               "copy_limit": 20,
               "upgrades": null
             },
@@ -3401,7 +3491,7 @@
               ]
             },
             "cost": {
-              "energy": 7
+              "energy": 8
             },
             "play": {
               "source_zones": [
@@ -3423,7 +3513,7 @@
           },
           "x": -160,
           "y": -360,
-          "xp": 17
+          "xp": 20
         },
         {
           "id": "node_6",
@@ -3454,8 +3544,8 @@
               ]
             },
             "economy": {
-              "buy": 20,
-              "sell": 20,
+              "buy": 23,
+              "sell": 23,
               "copy_limit": 20,
               "upgrades": null
             },
@@ -3476,7 +3566,7 @@
               ]
             },
             "cost": {
-              "energy": 7
+              "energy": 8
             },
             "play": {
               "source_zones": [
@@ -3498,7 +3588,7 @@
           },
           "x": -480,
           "y": -720,
-          "xp": 20
+          "xp": 23
         },
         {
           "id": "node_7",
@@ -3534,8 +3624,8 @@
               ]
             },
             "economy": {
-              "buy": 23,
-              "sell": 23,
+              "buy": 26,
+              "sell": 26,
               "copy_limit": 20,
               "upgrades": null
             },
@@ -3556,7 +3646,7 @@
               ]
             },
             "cost": {
-              "energy": 12
+              "energy": 13
             },
             "play": {
               "source_zones": [
@@ -3578,7 +3668,7 @@
           },
           "x": -320,
           "y": -1080,
-          "xp": 23
+          "xp": 26
         },
         {
           "id": "node_8",
@@ -3612,8 +3702,8 @@
               ]
             },
             "economy": {
-              "buy": 13,
-              "sell": 13,
+              "buy": 16,
+              "sell": 16,
               "copy_limit": 20,
               "upgrades": null
             },
@@ -3634,7 +3724,7 @@
               ]
             },
             "cost": {
-              "energy": 7
+              "energy": 8
             },
             "play": {
               "source_zones": [
@@ -3656,7 +3746,7 @@
           },
           "x": -160,
           "y": 360,
-          "xp": 13
+          "xp": 16
         },
         {
           "id": "node_9",
@@ -3690,8 +3780,8 @@
               ]
             },
             "economy": {
-              "buy": 12,
-              "sell": 12,
+              "buy": 15,
+              "sell": 15,
               "copy_limit": 20,
               "upgrades": null
             },
@@ -3712,7 +3802,7 @@
               ]
             },
             "cost": {
-              "energy": 7
+              "energy": 8
             },
             "play": {
               "source_zones": [
@@ -3734,7 +3824,7 @@
           },
           "x": -160,
           "y": 720,
-          "xp": 12
+          "xp": 15
         },
         {
           "id": "node_11",
@@ -3761,8 +3851,8 @@
               ]
             },
             "economy": {
-              "buy": 22,
-              "sell": 22,
+              "buy": 25,
+              "sell": 25,
               "copy_limit": 20,
               "upgrades": null
             },
@@ -3783,7 +3873,7 @@
               ]
             },
             "cost": {
-              "energy": 7
+              "energy": 8
             },
             "play": {
               "source_zones": [
@@ -3805,7 +3895,7 @@
           },
           "x": 640,
           "y": -360,
-          "xp": 22
+          "xp": 25
         },
         {
           "id": "node_14",
@@ -3841,8 +3931,8 @@
               ]
             },
             "economy": {
-              "buy": 31,
-              "sell": 31,
+              "buy": 34,
+              "sell": 34,
               "copy_limit": 20,
               "upgrades": null
             },
@@ -3863,7 +3953,7 @@
               ]
             },
             "cost": {
-              "energy": 12
+              "energy": 13
             },
             "play": {
               "source_zones": [
@@ -3885,7 +3975,7 @@
           },
           "x": -320,
           "y": -1440,
-          "xp": 31
+          "xp": 34
         },
         {
           "id": "node_15",
@@ -3945,7 +4035,7 @@
               ]
             },
             "cost": {
-              "energy": 15
+              "energy": 16
             },
             "play": {
               "source_zones": [
@@ -3967,7 +4057,7 @@
           },
           "x": -640,
           "y": -1440,
-          "xp": 26,
+          "xp": 29,
           "shared": true
         },
         {
@@ -4028,7 +4118,7 @@
               ]
             },
             "cost": {
-              "energy": 15
+              "energy": 16
             },
             "play": {
               "source_zones": [
@@ -4050,7 +4140,7 @@
           },
           "x": -480,
           "y": -1800,
-          "xp": 34,
+          "xp": 37,
           "shared": true
         }
       ],
@@ -5947,8 +6037,8 @@
               ]
             },
             "economy": {
-              "buy": 15,
-              "sell": 15,
+              "buy": 13,
+              "sell": 13,
               "copy_limit": 20,
               "upgrades": []
             },
@@ -5995,7 +6085,7 @@
           },
           "x": 0,
           "y": 0,
-          "xp": 15
+          "xp": 13
         },
         {
           "id": "node_1",
@@ -6031,8 +6121,8 @@
               ]
             },
             "economy": {
-              "buy": 25,
-              "sell": 25,
+              "buy": 23,
+              "sell": 23,
               "copy_limit": 20,
               "upgrades": []
             },
@@ -6079,7 +6169,7 @@
           },
           "x": -80,
           "y": -1600,
-          "xp": 25
+          "xp": 23
         },
         {
           "id": "node_4",
@@ -6115,8 +6205,8 @@
               ]
             },
             "economy": {
-              "buy": 12,
-              "sell": 12,
+              "buy": 11,
+              "sell": 11,
               "copy_limit": 20,
               "upgrades": null
             },
@@ -6163,7 +6253,7 @@
           },
           "x": 0,
           "y": 320,
-          "xp": 12
+          "xp": 11
         },
         {
           "id": "node_5",
@@ -6199,8 +6289,8 @@
               ]
             },
             "economy": {
-              "buy": 20,
-              "sell": 20,
+              "buy": 18,
+              "sell": 18,
               "copy_limit": 20,
               "upgrades": []
             },
@@ -6247,7 +6337,7 @@
           },
           "x": -160,
           "y": -960,
-          "xp": 20
+          "xp": 18
         },
         {
           "id": "node_6",
@@ -6283,8 +6373,8 @@
               ]
             },
             "economy": {
-              "buy": 16,
-              "sell": 16,
+              "buy": 14,
+              "sell": 14,
               "copy_limit": 20,
               "upgrades": []
             },
@@ -6331,7 +6421,7 @@
           },
           "x": 0,
           "y": -320,
-          "xp": 16
+          "xp": 14
         },
         {
           "id": "node_7",
@@ -6367,8 +6457,8 @@
               ]
             },
             "economy": {
-              "buy": 17,
-              "sell": 17,
+              "buy": 15,
+              "sell": 15,
               "copy_limit": 20,
               "upgrades": []
             },
@@ -6415,7 +6505,7 @@
           },
           "x": 80,
           "y": -640,
-          "xp": 17
+          "xp": 15
         },
         {
           "id": "node_8",
@@ -6451,8 +6541,8 @@
               ]
             },
             "economy": {
-              "buy": 21,
-              "sell": 21,
+              "buy": 19,
+              "sell": 19,
               "copy_limit": 20,
               "upgrades": []
             },
@@ -6499,7 +6589,7 @@
           },
           "x": -80,
           "y": -1280,
-          "xp": 21
+          "xp": 19
         }
       ],
       "edges": [
@@ -6610,7 +6700,7 @@
               ]
             },
             "cost": {
-              "energy": 5
+              "energy": 3
             },
             "play": {
               "source_zones": [
@@ -6686,7 +6776,7 @@
               ]
             },
             "cost": {
-              "energy": 7
+              "energy": 5
             },
             "play": {
               "source_zones": [
@@ -6762,7 +6852,7 @@
               ]
             },
             "cost": {
-              "energy": 5
+              "energy": 3
             },
             "play": {
               "source_zones": [
@@ -6838,7 +6928,7 @@
               ]
             },
             "cost": {
-              "energy": 7
+              "energy": 5
             },
             "play": {
               "source_zones": [
@@ -6914,7 +7004,7 @@
               ]
             },
             "cost": {
-              "energy": 9
+              "energy": 7
             },
             "play": {
               "source_zones": [
@@ -6990,7 +7080,7 @@
               ]
             },
             "cost": {
-              "energy": 9
+              "energy": 7
             },
             "play": {
               "source_zones": [
@@ -7102,7 +7192,7 @@
               ]
             },
             "cost": {
-              "energy": 7
+              "energy": 5
             },
             "play": {
               "source_zones": [
@@ -7176,7 +7266,7 @@
               ]
             },
             "cost": {
-              "energy": 5
+              "energy": 3
             },
             "play": {
               "source_zones": [
@@ -7250,7 +7340,7 @@
               ]
             },
             "cost": {
-              "energy": 5
+              "energy": 3
             },
             "play": {
               "source_zones": [
@@ -7326,7 +7416,7 @@
               ]
             },
             "cost": {
-              "energy": 11
+              "energy": 9
             },
             "play": {
               "source_zones": [
@@ -7402,7 +7492,7 @@
               ]
             },
             "cost": {
-              "energy": 5
+              "energy": 3
             },
             "play": {
               "source_zones": [
@@ -7477,7 +7567,7 @@
               ]
             },
             "cost": {
-              "energy": 5
+              "energy": 3
             },
             "play": {
               "source_zones": [
@@ -7552,7 +7642,7 @@
               ]
             },
             "cost": {
-              "energy": 7
+              "energy": 5
             },
             "play": {
               "source_zones": [
@@ -7627,7 +7717,7 @@
               ]
             },
             "cost": {
-              "energy": 7
+              "energy": 5
             },
             "play": {
               "source_zones": [
@@ -7702,7 +7792,7 @@
               ]
             },
             "cost": {
-              "energy": 9
+              "energy": 7
             },
             "play": {
               "source_zones": [
@@ -7777,7 +7867,7 @@
               ]
             },
             "cost": {
-              "energy": 9
+              "energy": 7
             },
             "play": {
               "source_zones": [
@@ -7852,7 +7942,7 @@
               ]
             },
             "cost": {
-              "energy": 11
+              "energy": 9
             },
             "play": {
               "source_zones": [
@@ -7927,7 +8017,7 @@
               ]
             },
             "cost": {
-              "energy": 11
+              "energy": 9
             },
             "play": {
               "source_zones": [
@@ -8003,7 +8093,7 @@
               ]
             },
             "cost": {
-              "energy": 11
+              "energy": 9
             },
             "play": {
               "source_zones": [
@@ -8076,7 +8166,7 @@
               ]
             },
             "cost": {
-              "energy": 5
+              "energy": 3
             },
             "play": {
               "source_zones": [
@@ -8150,7 +8240,7 @@
               ]
             },
             "cost": {
-              "energy": 5
+              "energy": 3
             },
             "play": {
               "source_zones": [
@@ -8223,7 +8313,7 @@
               ]
             },
             "cost": {
-              "energy": 5
+              "energy": 3
             },
             "play": {
               "source_zones": [
@@ -8296,7 +8386,7 @@
               ]
             },
             "cost": {
-              "energy": 5
+              "energy": 3
             },
             "play": {
               "source_zones": [
@@ -8407,7 +8497,7 @@
               ]
             },
             "cost": {
-              "energy": 7
+              "energy": 5
             },
             "play": {
               "source_zones": [
@@ -8519,7 +8609,7 @@
               ]
             },
             "cost": {
-              "energy": 7
+              "energy": 5
             },
             "play": {
               "source_zones": [
@@ -8630,7 +8720,7 @@
               ]
             },
             "cost": {
-              "energy": 7
+              "energy": 5
             },
             "play": {
               "source_zones": [
@@ -8920,8 +9010,8 @@
               ]
             },
             "economy": {
-              "buy": 15,
-              "sell": 15,
+              "buy": 16,
+              "sell": 16,
               "copy_limit": 20,
               "upgrades": null
             },
@@ -8942,7 +9032,7 @@
               ]
             },
             "cost": {
-              "energy": 10
+              "energy": 9
             },
             "play": {
               "source_zones": [
@@ -8964,7 +9054,7 @@
           },
           "x": 0,
           "y": 0,
-          "xp": 15
+          "xp": 16
         },
         {
           "id": "node_1",
@@ -8998,8 +9088,8 @@
               ]
             },
             "economy": {
-              "buy": 23,
-              "sell": 23,
+              "buy": 24,
+              "sell": 24,
               "copy_limit": 20,
               "upgrades": null
             },
@@ -9020,7 +9110,7 @@
               ]
             },
             "cost": {
-              "energy": 12
+              "energy": 11
             },
             "play": {
               "source_zones": [
@@ -9042,7 +9132,7 @@
           },
           "x": -640,
           "y": -360,
-          "xp": 23
+          "xp": 24
         },
         {
           "id": "node_2",
@@ -9077,8 +9167,8 @@
               ]
             },
             "economy": {
-              "buy": 19,
-              "sell": 19,
+              "buy": 20,
+              "sell": 20,
               "copy_limit": 20,
               "upgrades": null
             },
@@ -9099,7 +9189,7 @@
               ]
             },
             "cost": {
-              "energy": 10
+              "energy": 9
             },
             "play": {
               "source_zones": [
@@ -9121,7 +9211,7 @@
           },
           "x": -320,
           "y": -360,
-          "xp": 19
+          "xp": 20
         },
         {
           "id": "node_3",
@@ -9156,8 +9246,8 @@
               ]
             },
             "economy": {
-              "buy": 27,
-              "sell": 27,
+              "buy": 28,
+              "sell": 28,
               "copy_limit": 20,
               "upgrades": null
             },
@@ -9178,7 +9268,7 @@
               ]
             },
             "cost": {
-              "energy": 12
+              "energy": 11
             },
             "play": {
               "source_zones": [
@@ -9200,7 +9290,7 @@
           },
           "x": -480,
           "y": -720,
-          "xp": 27
+          "xp": 28
         },
         {
           "id": "node_7",
@@ -9234,8 +9324,8 @@
               ]
             },
             "economy": {
-              "buy": 20,
-              "sell": 20,
+              "buy": 21,
+              "sell": 21,
               "copy_limit": 20,
               "upgrades": null
             },
@@ -9256,7 +9346,7 @@
               ]
             },
             "cost": {
-              "energy": 10
+              "energy": 9
             },
             "play": {
               "source_zones": [
@@ -9278,7 +9368,7 @@
           },
           "x": 320,
           "y": -360,
-          "xp": 20
+          "xp": 21
         },
         {
           "id": "node_11",
@@ -9312,8 +9402,8 @@
               ]
             },
             "economy": {
-              "buy": 28,
-              "sell": 28,
+              "buy": 29,
+              "sell": 29,
               "copy_limit": 20,
               "upgrades": null
             },
@@ -9334,7 +9424,7 @@
               ]
             },
             "cost": {
-              "energy": 12
+              "energy": 11
             },
             "play": {
               "source_zones": [
@@ -9356,7 +9446,7 @@
           },
           "x": 320,
           "y": -360,
-          "xp": 28
+          "xp": 29
         },
         {
           "id": "node_12",
@@ -9390,8 +9480,8 @@
               ]
             },
             "economy": {
-              "buy": 31,
-              "sell": 31,
+              "buy": 32,
+              "sell": 32,
               "copy_limit": 20,
               "upgrades": null
             },
@@ -9412,7 +9502,7 @@
               ]
             },
             "cost": {
-              "energy": 14
+              "energy": 13
             },
             "play": {
               "source_zones": [
@@ -9434,7 +9524,7 @@
           },
           "x": -640,
           "y": -360,
-          "xp": 31
+          "xp": 32
         },
         {
           "id": "node_13",
@@ -9469,8 +9559,8 @@
               ]
             },
             "economy": {
-              "buy": 35,
-              "sell": 35,
+              "buy": 36,
+              "sell": 36,
               "copy_limit": 20,
               "upgrades": null
             },
@@ -9491,7 +9581,7 @@
               ]
             },
             "cost": {
-              "energy": 14
+              "energy": 13
             },
             "play": {
               "source_zones": [
@@ -9513,7 +9603,7 @@
           },
           "x": -480,
           "y": -720,
-          "xp": 35
+          "xp": 36
         },
         {
           "id": "node_14",
@@ -9547,8 +9637,8 @@
               ]
             },
             "economy": {
-              "buy": 36,
-              "sell": 36,
+              "buy": 37,
+              "sell": 37,
               "copy_limit": 20,
               "upgrades": null
             },
@@ -9569,7 +9659,7 @@
               ]
             },
             "cost": {
-              "energy": 14
+              "energy": 13
             },
             "play": {
               "source_zones": [
@@ -9591,7 +9681,7 @@
           },
           "x": 320,
           "y": -360,
-          "xp": 36
+          "xp": 37
         },
         {
           "id": "node_15",
@@ -9625,8 +9715,8 @@
               ]
             },
             "economy": {
-              "buy": 39,
-              "sell": 39,
+              "buy": 40,
+              "sell": 40,
               "copy_limit": 20,
               "upgrades": null
             },
@@ -9647,7 +9737,7 @@
               ]
             },
             "cost": {
-              "energy": 16
+              "energy": 15
             },
             "play": {
               "source_zones": [
@@ -9669,7 +9759,7 @@
           },
           "x": -640,
           "y": -360,
-          "xp": 39
+          "xp": 40
         },
         {
           "id": "node_16",
@@ -9704,8 +9794,8 @@
               ]
             },
             "economy": {
-              "buy": 43,
-              "sell": 43,
+              "buy": 44,
+              "sell": 44,
               "copy_limit": 20,
               "upgrades": null
             },
@@ -9726,7 +9816,7 @@
               ]
             },
             "cost": {
-              "energy": 16
+              "energy": 15
             },
             "play": {
               "source_zones": [
@@ -9748,7 +9838,7 @@
           },
           "x": -480,
           "y": -720,
-          "xp": 43
+          "xp": 44
         },
         {
           "id": "node_17",
@@ -9782,8 +9872,8 @@
               ]
             },
             "economy": {
-              "buy": 44,
-              "sell": 44,
+              "buy": 45,
+              "sell": 45,
               "copy_limit": 20,
               "upgrades": null
             },
@@ -9804,7 +9894,7 @@
               ]
             },
             "cost": {
-              "energy": 16
+              "energy": 15
             },
             "play": {
               "source_zones": [
@@ -9826,7 +9916,7 @@
           },
           "x": 320,
           "y": -360,
-          "xp": 44
+          "xp": 45
         }
       ],
       "edges": [
@@ -9948,8 +10038,8 @@
               ]
             },
             "economy": {
-              "buy": 15,
-              "sell": 15,
+              "buy": 13,
+              "sell": 13,
               "copy_limit": 20,
               "upgrades": null
             },
@@ -9974,7 +10064,7 @@
               ]
             },
             "cost": {
-              "energy": 5
+              "energy": 3
             },
             "play": {
               "source_zones": [
@@ -9996,7 +10086,7 @@
           },
           "x": 0,
           "y": 0,
-          "xp": 15
+          "xp": 13
         },
         {
           "id": "node_1",
@@ -10032,8 +10122,8 @@
               ]
             },
             "economy": {
-              "buy": 20,
-              "sell": 20,
+              "buy": 18,
+              "sell": 18,
               "copy_limit": 20,
               "upgrades": null
             },
@@ -10058,7 +10148,7 @@
               ]
             },
             "cost": {
-              "energy": 5
+              "energy": 3
             },
             "play": {
               "source_zones": [
@@ -10080,7 +10170,7 @@
           },
           "x": -160,
           "y": -640,
-          "xp": 20
+          "xp": 18
         },
         {
           "id": "node_2",
@@ -10116,8 +10206,8 @@
               ]
             },
             "economy": {
-              "buy": 25,
-              "sell": 25,
+              "buy": 23,
+              "sell": 23,
               "copy_limit": 20,
               "upgrades": null
             },
@@ -10142,7 +10232,7 @@
               ]
             },
             "cost": {
-              "energy": 5
+              "energy": 3
             },
             "play": {
               "source_zones": [
@@ -10164,7 +10254,7 @@
           },
           "x": -160,
           "y": -1280,
-          "xp": 25
+          "xp": 23
         },
         {
           "id": "node_3",
@@ -10200,8 +10290,8 @@
               ]
             },
             "economy": {
-              "buy": 21,
-              "sell": 21,
+              "buy": 19,
+              "sell": 19,
               "copy_limit": 20,
               "upgrades": []
             },
@@ -10248,7 +10338,7 @@
           },
           "x": 160,
           "y": -960,
-          "xp": 21
+          "xp": 19
         },
         {
           "id": "node_4",
@@ -10284,8 +10374,8 @@
               ]
             },
             "economy": {
-              "buy": 13,
-              "sell": 13,
+              "buy": 11,
+              "sell": 11,
               "copy_limit": 20,
               "upgrades": null
             },
@@ -10310,7 +10400,7 @@
               ]
             },
             "cost": {
-              "energy": 7
+              "energy": 5
             },
             "play": {
               "source_zones": [
@@ -10332,7 +10422,7 @@
           },
           "x": 0,
           "y": 320,
-          "xp": 13
+          "xp": 11
         },
         {
           "id": "node_5",
@@ -10368,8 +10458,8 @@
               ]
             },
             "economy": {
-              "buy": 16,
-              "sell": 16,
+              "buy": 14,
+              "sell": 14,
               "copy_limit": 20,
               "upgrades": []
             },
@@ -10416,7 +10506,7 @@
           },
           "x": 160,
           "y": -320,
-          "xp": 16
+          "xp": 14
         },
         {
           "id": "node_6",
@@ -10452,8 +10542,8 @@
               ]
             },
             "economy": {
-              "buy": 26,
-              "sell": 26,
+              "buy": 24,
+              "sell": 24,
               "copy_limit": 20,
               "upgrades": []
             },
@@ -10500,7 +10590,7 @@
           },
           "x": 160,
           "y": -1600,
-          "xp": 26
+          "xp": 24
         }
       ],
       "edges": [
@@ -10600,7 +10690,7 @@
               ]
             },
             "cost": {
-              "energy": 3
+              "energy": 2
             },
             "play": {
               "source_zones": [
@@ -10671,7 +10761,7 @@
               ]
             },
             "cost": {
-              "energy": 5
+              "energy": 4
             },
             "play": {
               "source_zones": [
@@ -10747,7 +10837,7 @@
               ]
             },
             "cost": {
-              "energy": 3
+              "energy": 2
             },
             "play": {
               "source_zones": [
@@ -10820,7 +10910,7 @@
               ]
             },
             "cost": {
-              "energy": 5
+              "energy": 4
             },
             "play": {
               "source_zones": [
@@ -10893,7 +10983,7 @@
               ]
             },
             "cost": {
-              "energy": 7
+              "energy": 6
             },
             "play": {
               "source_zones": [
@@ -11535,7 +11625,7 @@
     "triage"
   ],
   "version": 1,
-  "revision": 106,
+  "revision": 116,
   "cards": {
     "blood_price": {
       "program": {
@@ -12404,7 +12494,7 @@
         ]
       },
       "cost": {
-        "energy": 15
+        "energy": 16
       },
       "play": {
         "source_zones": [
@@ -12623,6 +12713,82 @@
       },
       "cost": {
         "energy": 11
+      },
+      "play": {
+        "source_zones": [
+          "hand"
+        ],
+        "destination": "discard",
+        "playable_during": []
+      },
+      "targeting": {
+        "selector": "card_program",
+        "minimum": 1,
+        "maximum": 1
+      },
+      "reaction_window": {
+        "opens": false,
+        "pass_required": false
+      },
+      "operations": []
+    },
+    "dispel_paths_variant_node_11": {
+      "access_type": "general",
+      "program": {
+        "version": 1,
+        "windows": [
+          "defense_after_roll",
+          "damage_reaction"
+        ],
+        "roll_requirement": "any",
+        "uses_per_round": 0,
+        "uses_per_battle": 0,
+        "steps": [
+          {
+            "effect": "remove_status",
+            "target": {
+              "owner": "enemy",
+              "mode": "one",
+              "count": 1,
+              "selection": "choose",
+              "polarity": "positive",
+              "status_ids": [
+                "fortified",
+                "conqueror"
+              ]
+            },
+            "params": {
+              "for_battle": true,
+              "stacks": 0
+            }
+          }
+        ]
+      },
+      "economy": {
+        "buy": 30,
+        "sell": 30,
+        "copy_limit": 20,
+        "upgrades": null
+      },
+      "schema_version": 1,
+      "id": "dispel_paths_variant_node_11",
+      "name": "Siege Dispel",
+      "type": "action",
+      "presentation": {
+        "illustration_path": "res://assets/battle/cards/antidote.png",
+        "effect_summary": "Clear 1 enemy Fortified or Conqueror for the battle",
+        "rules_text": "Remove all stacks from one of an enemy's buffs (positive statuses) matching Fortified, Conqueror. What is removed stays gone for the rest of the battle, even from a status that returns each round.\nPlay: Defense, after your first defense roll.",
+        "art_key": "",
+        "timing": [
+          {
+            "segment": "defense",
+            "when": "after"
+          }
+        ],
+        "target": "Enemy"
+      },
+      "cost": {
+        "energy": 9
       },
       "play": {
         "source_zones": [
@@ -13280,7 +13446,7 @@
         ]
       },
       "cost": {
-        "energy": 15
+        "energy": 16
       },
       "play": {
         "source_zones": [
@@ -14287,8 +14453,8 @@
         ]
       },
       "economy": {
-        "buy": 15,
-        "sell": 15,
+        "buy": 18,
+        "sell": 18,
         "copy_limit": 20,
         "upgrades": null
       },
@@ -14309,7 +14475,7 @@
         ]
       },
       "cost": {
-        "energy": 7
+        "energy": 8
       },
       "play": {
         "source_zones": [
@@ -14360,8 +14526,8 @@
         ]
       },
       "economy": {
-        "buy": 17,
-        "sell": 17,
+        "buy": 20,
+        "sell": 20,
         "copy_limit": 20,
         "upgrades": null
       },
@@ -14382,7 +14548,7 @@
         ]
       },
       "cost": {
-        "energy": 7
+        "energy": 8
       },
       "play": {
         "source_zones": [
@@ -14425,8 +14591,8 @@
         ]
       },
       "economy": {
-        "buy": 22,
-        "sell": 22,
+        "buy": 25,
+        "sell": 25,
         "copy_limit": 20,
         "upgrades": null
       },
@@ -14447,7 +14613,7 @@
         ]
       },
       "cost": {
-        "energy": 7
+        "energy": 8
       },
       "play": {
         "source_zones": [
@@ -14499,8 +14665,8 @@
         ]
       },
       "economy": {
-        "buy": 31,
-        "sell": 31,
+        "buy": 34,
+        "sell": 34,
         "copy_limit": 20,
         "upgrades": null
       },
@@ -14521,7 +14687,7 @@
         ]
       },
       "cost": {
-        "energy": 12
+        "energy": 13
       },
       "play": {
         "source_zones": [
@@ -14568,8 +14734,8 @@
         ]
       },
       "economy": {
-        "buy": 20,
-        "sell": 20,
+        "buy": 23,
+        "sell": 23,
         "copy_limit": 20,
         "upgrades": null
       },
@@ -14590,7 +14756,7 @@
         ]
       },
       "cost": {
-        "energy": 7
+        "energy": 8
       },
       "play": {
         "source_zones": [
@@ -14642,8 +14808,8 @@
         ]
       },
       "economy": {
-        "buy": 23,
-        "sell": 23,
+        "buy": 26,
+        "sell": 26,
         "copy_limit": 20,
         "upgrades": null
       },
@@ -14664,7 +14830,7 @@
         ]
       },
       "cost": {
-        "energy": 12
+        "energy": 13
       },
       "play": {
         "source_zones": [
@@ -14714,8 +14880,8 @@
         ]
       },
       "economy": {
-        "buy": 13,
-        "sell": 13,
+        "buy": 16,
+        "sell": 16,
         "copy_limit": 20,
         "upgrades": null
       },
@@ -14736,7 +14902,7 @@
         ]
       },
       "cost": {
-        "energy": 7
+        "energy": 8
       },
       "play": {
         "source_zones": [
@@ -14786,8 +14952,8 @@
         ]
       },
       "economy": {
-        "buy": 12,
-        "sell": 12,
+        "buy": 15,
+        "sell": 15,
         "copy_limit": 20,
         "upgrades": null
       },
@@ -14808,7 +14974,7 @@
         ]
       },
       "cost": {
-        "energy": 7
+        "energy": 8
       },
       "play": {
         "source_zones": [
@@ -16315,8 +16481,8 @@
         ]
       },
       "economy": {
-        "buy": 15,
-        "sell": 15,
+        "buy": 13,
+        "sell": 13,
         "copy_limit": 20,
         "upgrades": []
       },
@@ -16393,8 +16559,8 @@
         ]
       },
       "economy": {
-        "buy": 25,
-        "sell": 25,
+        "buy": 23,
+        "sell": 23,
         "copy_limit": 20,
         "upgrades": []
       },
@@ -16471,8 +16637,8 @@
         ]
       },
       "economy": {
-        "buy": 12,
-        "sell": 12,
+        "buy": 11,
+        "sell": 11,
         "copy_limit": 20,
         "upgrades": null
       },
@@ -16549,8 +16715,8 @@
         ]
       },
       "economy": {
-        "buy": 20,
-        "sell": 20,
+        "buy": 18,
+        "sell": 18,
         "copy_limit": 20,
         "upgrades": []
       },
@@ -16627,8 +16793,8 @@
         ]
       },
       "economy": {
-        "buy": 16,
-        "sell": 16,
+        "buy": 14,
+        "sell": 14,
         "copy_limit": 20,
         "upgrades": []
       },
@@ -16705,8 +16871,8 @@
         ]
       },
       "economy": {
-        "buy": 17,
-        "sell": 17,
+        "buy": 15,
+        "sell": 15,
         "copy_limit": 20,
         "upgrades": []
       },
@@ -16783,8 +16949,8 @@
         ]
       },
       "economy": {
-        "buy": 21,
-        "sell": 21,
+        "buy": 19,
+        "sell": 19,
         "copy_limit": 20,
         "upgrades": []
       },
@@ -16967,7 +17133,7 @@
         ]
       },
       "cost": {
-        "energy": 5
+        "energy": 3
       },
       "play": {
         "source_zones": [
@@ -17037,7 +17203,7 @@
         ]
       },
       "cost": {
-        "energy": 7
+        "energy": 5
       },
       "play": {
         "source_zones": [
@@ -17105,7 +17271,7 @@
         ]
       },
       "cost": {
-        "energy": 5
+        "energy": 3
       },
       "play": {
         "source_zones": [
@@ -17175,7 +17341,7 @@
         ]
       },
       "cost": {
-        "energy": 11
+        "energy": 9
       },
       "play": {
         "source_zones": [
@@ -17245,7 +17411,7 @@
         ]
       },
       "cost": {
-        "energy": 5
+        "energy": 3
       },
       "play": {
         "source_zones": [
@@ -17314,7 +17480,7 @@
         ]
       },
       "cost": {
-        "energy": 5
+        "energy": 3
       },
       "play": {
         "source_zones": [
@@ -17383,7 +17549,7 @@
         ]
       },
       "cost": {
-        "energy": 7
+        "energy": 5
       },
       "play": {
         "source_zones": [
@@ -17452,7 +17618,7 @@
         ]
       },
       "cost": {
-        "energy": 7
+        "energy": 5
       },
       "play": {
         "source_zones": [
@@ -17521,7 +17687,7 @@
         ]
       },
       "cost": {
-        "energy": 9
+        "energy": 7
       },
       "play": {
         "source_zones": [
@@ -17590,7 +17756,7 @@
         ]
       },
       "cost": {
-        "energy": 9
+        "energy": 7
       },
       "play": {
         "source_zones": [
@@ -17660,7 +17826,7 @@
         ]
       },
       "cost": {
-        "energy": 5
+        "energy": 3
       },
       "play": {
         "source_zones": [
@@ -17729,7 +17895,7 @@
         ]
       },
       "cost": {
-        "energy": 11
+        "energy": 9
       },
       "play": {
         "source_zones": [
@@ -17798,7 +17964,7 @@
         ]
       },
       "cost": {
-        "energy": 11
+        "energy": 9
       },
       "play": {
         "source_zones": [
@@ -17868,7 +18034,7 @@
         ]
       },
       "cost": {
-        "energy": 11
+        "energy": 9
       },
       "play": {
         "source_zones": [
@@ -17935,7 +18101,7 @@
         ]
       },
       "cost": {
-        "energy": 5
+        "energy": 3
       },
       "play": {
         "source_zones": [
@@ -18003,7 +18169,7 @@
         ]
       },
       "cost": {
-        "energy": 5
+        "energy": 3
       },
       "play": {
         "source_zones": [
@@ -18070,7 +18236,7 @@
         ]
       },
       "cost": {
-        "energy": 5
+        "energy": 3
       },
       "play": {
         "source_zones": [
@@ -18137,7 +18303,7 @@
         ]
       },
       "cost": {
-        "energy": 5
+        "energy": 3
       },
       "play": {
         "source_zones": [
@@ -18207,7 +18373,7 @@
         ]
       },
       "cost": {
-        "energy": 7
+        "energy": 5
       },
       "play": {
         "source_zones": [
@@ -18312,7 +18478,7 @@
         ]
       },
       "cost": {
-        "energy": 7
+        "energy": 5
       },
       "play": {
         "source_zones": [
@@ -18418,7 +18584,7 @@
         ]
       },
       "cost": {
-        "energy": 7
+        "energy": 5
       },
       "play": {
         "source_zones": [
@@ -18523,7 +18689,7 @@
         ]
       },
       "cost": {
-        "energy": 7
+        "energy": 5
       },
       "play": {
         "source_zones": [
@@ -18593,7 +18759,7 @@
         ]
       },
       "cost": {
-        "energy": 9
+        "energy": 7
       },
       "play": {
         "source_zones": [
@@ -18663,7 +18829,7 @@
         ]
       },
       "cost": {
-        "energy": 9
+        "energy": 7
       },
       "play": {
         "source_zones": [
@@ -18769,7 +18935,7 @@
         ]
       },
       "cost": {
-        "energy": 7
+        "energy": 5
       },
       "play": {
         "source_zones": [
@@ -18837,7 +19003,7 @@
         ]
       },
       "cost": {
-        "energy": 5
+        "energy": 3
       },
       "play": {
         "source_zones": [
@@ -18888,8 +19054,8 @@
         ]
       },
       "economy": {
-        "buy": 15,
-        "sell": 15,
+        "buy": 16,
+        "sell": 16,
         "copy_limit": 20,
         "upgrades": null
       },
@@ -18910,7 +19076,7 @@
         ]
       },
       "cost": {
-        "energy": 10
+        "energy": 9
       },
       "play": {
         "source_zones": [
@@ -18960,8 +19126,8 @@
         ]
       },
       "economy": {
-        "buy": 23,
-        "sell": 23,
+        "buy": 24,
+        "sell": 24,
         "copy_limit": 20,
         "upgrades": null
       },
@@ -18982,7 +19148,7 @@
         ]
       },
       "cost": {
-        "energy": 12
+        "energy": 11
       },
       "play": {
         "source_zones": [
@@ -19032,8 +19198,8 @@
         ]
       },
       "economy": {
-        "buy": 28,
-        "sell": 28,
+        "buy": 29,
+        "sell": 29,
         "copy_limit": 20,
         "upgrades": null
       },
@@ -19054,7 +19220,7 @@
         ]
       },
       "cost": {
-        "energy": 12
+        "energy": 11
       },
       "play": {
         "source_zones": [
@@ -19104,8 +19270,8 @@
         ]
       },
       "economy": {
-        "buy": 31,
-        "sell": 31,
+        "buy": 32,
+        "sell": 32,
         "copy_limit": 20,
         "upgrades": null
       },
@@ -19126,7 +19292,7 @@
         ]
       },
       "cost": {
-        "energy": 14
+        "energy": 13
       },
       "play": {
         "source_zones": [
@@ -19177,8 +19343,8 @@
         ]
       },
       "economy": {
-        "buy": 35,
-        "sell": 35,
+        "buy": 36,
+        "sell": 36,
         "copy_limit": 20,
         "upgrades": null
       },
@@ -19199,7 +19365,7 @@
         ]
       },
       "cost": {
-        "energy": 14
+        "energy": 13
       },
       "play": {
         "source_zones": [
@@ -19249,8 +19415,8 @@
         ]
       },
       "economy": {
-        "buy": 36,
-        "sell": 36,
+        "buy": 37,
+        "sell": 37,
         "copy_limit": 20,
         "upgrades": null
       },
@@ -19271,7 +19437,7 @@
         ]
       },
       "cost": {
-        "energy": 14
+        "energy": 13
       },
       "play": {
         "source_zones": [
@@ -19321,8 +19487,8 @@
         ]
       },
       "economy": {
-        "buy": 39,
-        "sell": 39,
+        "buy": 40,
+        "sell": 40,
         "copy_limit": 20,
         "upgrades": null
       },
@@ -19343,7 +19509,7 @@
         ]
       },
       "cost": {
-        "energy": 16
+        "energy": 15
       },
       "play": {
         "source_zones": [
@@ -19394,8 +19560,8 @@
         ]
       },
       "economy": {
-        "buy": 43,
-        "sell": 43,
+        "buy": 44,
+        "sell": 44,
         "copy_limit": 20,
         "upgrades": null
       },
@@ -19416,7 +19582,7 @@
         ]
       },
       "cost": {
-        "energy": 16
+        "energy": 15
       },
       "play": {
         "source_zones": [
@@ -19466,8 +19632,8 @@
         ]
       },
       "economy": {
-        "buy": 44,
-        "sell": 44,
+        "buy": 45,
+        "sell": 45,
         "copy_limit": 20,
         "upgrades": null
       },
@@ -19488,7 +19654,7 @@
         ]
       },
       "cost": {
-        "energy": 16
+        "energy": 15
       },
       "play": {
         "source_zones": [
@@ -19539,8 +19705,8 @@
         ]
       },
       "economy": {
-        "buy": 19,
-        "sell": 19,
+        "buy": 20,
+        "sell": 20,
         "copy_limit": 20,
         "upgrades": null
       },
@@ -19561,7 +19727,7 @@
         ]
       },
       "cost": {
-        "energy": 10
+        "energy": 9
       },
       "play": {
         "source_zones": [
@@ -19612,8 +19778,8 @@
         ]
       },
       "economy": {
-        "buy": 27,
-        "sell": 27,
+        "buy": 28,
+        "sell": 28,
         "copy_limit": 20,
         "upgrades": null
       },
@@ -19634,7 +19800,7 @@
         ]
       },
       "cost": {
-        "energy": 12
+        "energy": 11
       },
       "play": {
         "source_zones": [
@@ -19684,8 +19850,8 @@
         ]
       },
       "economy": {
-        "buy": 20,
-        "sell": 20,
+        "buy": 21,
+        "sell": 21,
         "copy_limit": 20,
         "upgrades": null
       },
@@ -19706,7 +19872,7 @@
         ]
       },
       "cost": {
-        "energy": 10
+        "energy": 9
       },
       "play": {
         "source_zones": [
@@ -19758,8 +19924,8 @@
         ]
       },
       "economy": {
-        "buy": 15,
-        "sell": 15,
+        "buy": 13,
+        "sell": 13,
         "copy_limit": 20,
         "upgrades": null
       },
@@ -19784,7 +19950,7 @@
         ]
       },
       "cost": {
-        "energy": 5
+        "energy": 3
       },
       "play": {
         "source_zones": [
@@ -19836,8 +20002,8 @@
         ]
       },
       "economy": {
-        "buy": 20,
-        "sell": 20,
+        "buy": 18,
+        "sell": 18,
         "copy_limit": 20,
         "upgrades": null
       },
@@ -19862,7 +20028,7 @@
         ]
       },
       "cost": {
-        "energy": 5
+        "energy": 3
       },
       "play": {
         "source_zones": [
@@ -19914,8 +20080,8 @@
         ]
       },
       "economy": {
-        "buy": 25,
-        "sell": 25,
+        "buy": 23,
+        "sell": 23,
         "copy_limit": 20,
         "upgrades": null
       },
@@ -19940,7 +20106,7 @@
         ]
       },
       "cost": {
-        "energy": 5
+        "energy": 3
       },
       "play": {
         "source_zones": [
@@ -19992,8 +20158,8 @@
         ]
       },
       "economy": {
-        "buy": 21,
-        "sell": 21,
+        "buy": 19,
+        "sell": 19,
         "copy_limit": 20,
         "upgrades": []
       },
@@ -20070,8 +20236,8 @@
         ]
       },
       "economy": {
-        "buy": 13,
-        "sell": 13,
+        "buy": 11,
+        "sell": 11,
         "copy_limit": 20,
         "upgrades": null
       },
@@ -20096,7 +20262,7 @@
         ]
       },
       "cost": {
-        "energy": 7
+        "energy": 5
       },
       "play": {
         "source_zones": [
@@ -20148,8 +20314,8 @@
         ]
       },
       "economy": {
-        "buy": 16,
-        "sell": 16,
+        "buy": 14,
+        "sell": 14,
         "copy_limit": 20,
         "upgrades": []
       },
@@ -20226,8 +20392,8 @@
         ]
       },
       "economy": {
-        "buy": 26,
-        "sell": 26,
+        "buy": 24,
+        "sell": 24,
         "copy_limit": 20,
         "upgrades": []
       },
@@ -20361,7 +20527,7 @@
         ]
       },
       "cost": {
-        "energy": 3
+        "energy": 2
       },
       "play": {
         "source_zones": [
@@ -20428,7 +20594,7 @@
         ]
       },
       "cost": {
-        "energy": 5
+        "energy": 4
       },
       "play": {
         "source_zones": [
@@ -20495,7 +20661,7 @@
         ]
       },
       "cost": {
-        "energy": 7
+        "energy": 6
       },
       "play": {
         "source_zones": [
@@ -20560,7 +20726,7 @@
         ]
       },
       "cost": {
-        "energy": 5
+        "energy": 4
       },
       "play": {
         "source_zones": [
@@ -20630,7 +20796,7 @@
         ]
       },
       "cost": {
-        "energy": 3
+        "energy": 2
       },
       "play": {
         "source_zones": [

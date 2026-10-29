@@ -1,0 +1,15 @@
+# want: site "hollow_ford" is held by no one
+schema_version: 1
+id: site_held_by_no_one
+name: A fixture
+set: fixture
+kind: side
+status: scenario
+hook: {verb: scenario_start, region: salt_marches}
+trigger: [{verb: scenario_start}]
+start: one
+stages:
+  - id: one
+    objective: {verb: liberate_site, site: hollow_ford}
+    outcomes:
+      - {outcome: success, next: end}

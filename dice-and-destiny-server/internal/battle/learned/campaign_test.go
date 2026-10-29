@@ -82,6 +82,22 @@ func startCampaign(t *testing.T, contentRoot, loadoutRoot, character, name strin
 	return save
 }
 
+// startAuthoredCampaign starts a save the way campaigns did before priced
+// boards: the character's authored abilities (Guard, with its Guard+
+// upgrade path), as older saves still hold until their first board change.
+func startAuthoredCampaign(t *testing.T, contentRoot, loadoutRoot, character, name string) loadout.CampaignSave {
+	t.Helper()
+	c, err := loadCampaignContext(contentRoot, loadoutRoot)
+	if err != nil {
+		t.Fatal(err)
+	}
+	save, err := loadout.NewCampaignSave(loadoutRoot, character, name, c.campaign, c.economy, c.catalogs)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return save
+}
+
 func readSave(t *testing.T, contentRoot, loadoutRoot, id string) loadout.CampaignSave {
 	t.Helper()
 	c, err := loadCampaignContext(contentRoot, loadoutRoot)
@@ -193,10 +209,11 @@ func TestCampaignAwardsVictoryXPAndAdvancesEncounters(t *testing.T) {
 	opponents := map[string]bool{}
 	victories, defeats := 0, 0
 	sawWoundedStart, sawMend := false, false
-	// Seeds from 1001 reach every encounter with the scripted player under
-	// simultaneous play with defenses that roll when chosen (1–200 did before
-	// simultaneous play, 201–400 before the immediate defense rolls).
-	firstSeed := uint64(1001)
+	// Seeds from 1401 reach every encounter with the scripted player under
+	// simultaneous play, defenses that roll when chosen and the Starter's
+	// priced board (1–200 did before simultaneous play, 201–400 and then 1001
+	// along the way).
+	firstSeed := uint64(1401)
 	// DICE_AND_DESTINY_CAMPAIGN_PROBE_START probes another 200-seed range.
 	if probe, err := strconv.ParseUint(os.Getenv("DICE_AND_DESTINY_CAMPAIGN_PROBE_START"), 10, 64); err == nil {
 		firstSeed = probe
@@ -406,7 +423,7 @@ func TestCampaignSavesAreIndependentCopies(t *testing.T) {
 	if saves := status["saves"].([]map[string]any); len(saves) != 3 || saves[0]["name"] != "First" || saves[2]["character"] != "adventurer" {
 		t.Fatalf("campaign status lists the saves wrongly: %v", saves)
 	}
-	if sheets := status["sheets"].([]map[string]any); len(sheets) != 2 || sheets[0]["id"] != campaignCharacter {
+	if sheets := status["sheets"].([]map[string]any); len(sheets) != 3 || sheets[0]["id"] != campaignCharacter || sheets[2]["id"] != loadout.CustomAdventurer {
 		t.Fatalf("campaign status lists the starting sheets wrongly: %v", sheets)
 	}
 	if err = loadout.DeleteCampaignSave(root, b.ID); err != nil {
@@ -472,7 +489,7 @@ func TestCampaignProgressMigratesIntoASave(t *testing.T) {
 func TestCampaignLoadoutOffersMatchPurchases(t *testing.T) {
 	contentRoot := filepath.Join(testServerRoot(t), "content")
 	root := campaignLoadoutRoot(t)
-	save := startCampaign(t, contentRoot, root, campaignCharacter, "Offers")
+	save := startAuthoredCampaign(t, contentRoot, root, campaignCharacter, "Offers")
 	// Spend most XP so some offers are refused for cost.
 	revision, xp := save.Sheet.Revision, save.Sheet.XP
 	for _, id := range []string{"dispel", "salve", "reclaim", "disrupt", "blood_price", "take_stock", "nudge", "try_again"} {
@@ -564,7 +581,7 @@ func copyDir(t *testing.T, from, to string) {
 func TestCampaignBatchTreeTrades(t *testing.T) {
 	contentRoot := filepath.Join(testServerRoot(t), "content")
 	root := campaignLoadoutRoot(t)
-	save := startCampaign(t, contentRoot, root, campaignCharacter, "Batch")
+	save := startAuthoredCampaign(t, contentRoot, root, campaignCharacter, "Batch")
 	upgradeOf := func(card string) map[string]any {
 		view, err := campaignLoadout(contentRoot, root, save.ID)
 		if err != nil {

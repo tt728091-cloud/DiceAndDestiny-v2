@@ -855,7 +855,7 @@ func (e Engine) applyProgramStep(b *state.Battle, lib content.BattleLibrary, act
 			result.Preventions = []effectPrevention{{ProposalID: t.Source, Amount: 1}}
 			result.SavedCardDestination = content.ProgramString(s, "destination")
 		case "remove_status":
-			result.StatusRemovals = []state.SettledStatusRemoval{{ActorID: t.Actor, StatusID: t.Status, Stacks: content.ProgramInt(s, "stacks")}}
+			result.StatusRemovals = []state.SettledStatusRemoval{{ActorID: t.Actor, StatusID: t.Status, Stacks: content.ProgramInt(s, "stacks"), ForBattle: content.ProgramBool(s, "for_battle")}}
 		case "apply_status":
 			result.StatusApplications = []state.SettledStatusApplication{{SourceActorID: actor, TargetActorID: t.Actor, StatusID: content.ProgramString(s, "status_id"), Stacks: content.ProgramInt(s, "stacks")}}
 		case "set_die", "adjust_die", "flip_die", "copy_die":

@@ -8,7 +8,25 @@ schema_version: 1
 # card trees, never the Venom or Curse pools.
 # Starting character sheets a new campaign can copy. Each campaign save is the
 # player's own copy; the original sheet never changes. The first is the default.
-characters: [starter, adventurer]
+# The custom adventurer starts from its Board Builder board (die, template and
+# slot picks) at the standard damage level and default defense, then buys
+# damage levels and defenses with XP (docs/game-design/board-xp.md).
+characters: [starter, adventurer, custom_adventurer]
+# Priced ability boards for the other characters: their saves hold this board
+# (a menu die and board_templates.yaml template at default picks, standard
+# level) and buy damage levels and defenses with XP like the custom
+# adventurer. A save started before boards keeps its authored abilities until
+# its first board change, which moves it onto this board as part of its kit;
+# replaces maps its authored defenses to the menu defenses that take over.
+boards:
+  starter:
+    die: standard_d6
+    template: starter
+    replaces: {adventurer_guard: holdfast, adventurer_guard_plus: holdfast_plus}
+  adventurer:
+    die: standard_d6
+    template: starter
+    replaces: {adventurer_guard: holdfast, adventurer_guard_plus: holdfast_plus}
 # A new campaign starts with its sheet's deck and abilities plus this much XP.
 bonus_xp: 150
 encounters:

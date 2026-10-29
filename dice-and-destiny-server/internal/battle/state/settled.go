@@ -308,6 +308,9 @@ type SettledStatusRemoval struct {
 	ActorID  string `json:"actor_id"`
 	StatusID string `json:"status_id"`
 	Stacks   int    `json:"stacks"`
+	// ForBattle keeps the removed stacks of a restore-each-round status from
+	// coming back at later Ongoing Effects.
+	ForBattle bool `json:"for_battle,omitempty"`
 }
 
 type SettledBlindResolution struct {

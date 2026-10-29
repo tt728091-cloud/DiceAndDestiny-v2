@@ -111,3 +111,13 @@ func replaceOnce(old, new string) func(string) string {
 		return strings.Replace(s, old, new, 1)
 	}
 }
+
+// setNight forces Day or Night while keeping the round, as tests did when
+// Night was a stored flag: the clock and the region start move together by
+// one half, so only the Day/Night of the clock changes.
+func setNight(s *State, night bool) {
+	if s.Night() != night {
+		s.Clock.Half++
+		s.RegionStart++
+	}
+}

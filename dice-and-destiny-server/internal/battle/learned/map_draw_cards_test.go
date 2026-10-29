@@ -73,7 +73,7 @@ func TestEveryBattleDrawCardDrawsOnTheMap(t *testing.T) {
 	}
 }
 
-// Plenty (Take Stock's upgrade) plays on the map: it costs its printed 5
+// Plenty (Take Stock's upgrade) plays on the map: it costs its printed
 // energy and draws 3.
 func TestPlentyDrawsThreeOnTheMap(t *testing.T) {
 	root := filepath.Join("..", "..", "..", "content")
@@ -100,8 +100,10 @@ func TestPlentyDrawsThreeOnTheMap(t *testing.T) {
 	if _, err := s.Act(r, expedition.Action{Kind: "play_map_card", Card: plenty}); err != nil {
 		t.Fatalf("Plenty is playable on the map: %v", err)
 	}
-	if s.Energy != 5 || len(s.Hand) != 3 || len(s.Draw) != len(deck)-1-3 {
-		t.Fatalf("Plenty costs 5 energy and draws 3: energy %d hand %d draw %d", s.Energy, len(s.Hand), len(s.Draw))
+	// The printed cost is the published card's (balance work moves it).
+	cost := r.Cards[plenty].Cost.Energy
+	if cost <= 0 || s.Energy != 10-cost || len(s.Hand) != 3 || len(s.Draw) != len(deck)-1-3 {
+		t.Fatalf("Plenty costs its printed %d energy and draws 3: energy %d hand %d draw %d", cost, s.Energy, len(s.Hand), len(s.Draw))
 	}
 }
 

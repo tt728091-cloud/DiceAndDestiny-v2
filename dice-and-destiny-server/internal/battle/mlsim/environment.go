@@ -58,7 +58,10 @@ type Config struct {
 
 type ResetRequest struct {
 	SeatAbilityBoards map[string]content.AbilityBoard `json:"seat_ability_boards,omitempty"`
-	SeatDecklists     map[string][]loadout.Entry      `json:"seat_decklists,omitempty"`
+	// CustomBoard is the custom adventurer's die, board and generated
+	// abilities for this battle (a campaign or expedition save's own).
+	CustomBoard   *loadout.SheetBoard        `json:"custom_board,omitempty"`
+	SeatDecklists map[string][]loadout.Entry `json:"seat_decklists,omitempty"`
 	// SeatWounds are decklist copies that start in the removed pile.
 	SeatWounds map[string][]loadout.Entry `json:"seat_wounds,omitempty"`
 	// SeatPresets start seats from preset piles, energy and statuses (the
@@ -81,6 +84,7 @@ type ActionRecord struct {
 
 type ReplayRecord struct {
 	SeatAbilityBoards map[string]content.AbilityBoard `json:"seat_ability_boards,omitempty"`
+	CustomBoard       *loadout.SheetBoard             `json:"custom_board,omitempty"`
 	SeatDecklists     map[string][]loadout.Entry      `json:"seat_decklists,omitempty"`
 	SeatWounds        map[string][]loadout.Entry      `json:"seat_wounds,omitempty"`
 	SeatPresets       map[string]battle.PresetPiles   `json:"seat_presets,omitempty"`
@@ -127,6 +131,16 @@ type DamageMetrics struct {
 	RawTotal      int `json:"raw_total"`
 	ResolvedTotal int `json:"resolved_total"`
 	ActualTotal   int `json:"actual_total"`
+}
+
+// SourceDamage is the committed damage of one source (an ability, card or
+// status) against one seat over an episode.
+type SourceDamage struct {
+	Hits               int `json:"hits"`
+	Base               int `json:"base"`
+	Prevention         int `json:"prevention"`
+	ReactionPrevention int `json:"reaction_prevention"`
+	Final              int `json:"final"`
 }
 
 type DamageBySeatMetrics struct {
@@ -264,6 +278,7 @@ func (e *Environment) Reset(request ResetRequest) (Transition, error) {
 	environmentSchema, observationSchema, actionSchema := e.SchemaVersions()
 	e.replay = ReplayRecord{
 		SeatAbilityBoards: cloneAbilityBoards(request.SeatAbilityBoards),
+		CustomBoard:       request.CustomBoard,
 		SeatDecklists:     cloneDecklists(request.SeatDecklists),
 		SeatWounds:        cloneDecklists(request.SeatWounds),
 		SeatPresets:       clonePresets(request.SeatPresets),
@@ -429,7 +444,7 @@ func (e *Environment) recordCommittedDamage(events []event.Event) {
 		if battleEvent.Type != event.TypeDamageCommitted || battleEvent.Data == nil {
 			continue
 		}
-		sources, ok := battleEvent.Data["sources"].([]state.SettledDamageSource)
+		sources, ok := committedList[state.SettledDamageSource](battleEvent.Data, "sources")
 		if !ok {
 			continue
 		}
@@ -449,7 +464,7 @@ func (e *Environment) recordCommittedDamage(events []event.Event) {
 			metrics.RawTotal += source.BaseAmount
 			metrics.ResolvedTotal += source.FinalAmount
 		}
-		removals, ok := battleEvent.Data["removals"].([]state.ProposedCardRemoval)
+		removals, ok := committedList[state.ProposedCardRemoval](battleEvent.Data, "removals")
 		if !ok {
 			continue
 		}
@@ -464,6 +479,72 @@ func (e *Environment) recordCommittedDamage(events []event.Event) {
 			metrics.ActualTotal++
 		}
 	}
+}
+
+// committedList reads one list of a damage_committed event. Events from
+// automatic progression are frozen through JSON, so their lists arrive as
+// decoded JSON instead of typed slices.
+func committedList[T any](data map[string]any, key string) ([]T, bool) {
+	switch v := data[key].(type) {
+	case []T:
+		return v, true
+	case nil:
+		return nil, false
+	default:
+		raw, err := json.Marshal(v)
+		if err != nil {
+			return nil, false
+		}
+		var out []T
+		if json.Unmarshal(raw, &out) != nil {
+			return nil, false
+		}
+		return out, true
+	}
+}
+
+// CommittedDamage reads the episode's committed damage by target seat and
+// source content (an ability, card or status ID) from the authority's
+// persisted event stream. It holds every commit, while training-mode step
+// results carry no events.
+func (e *Environment) CommittedDamage() (map[string]map[string]SourceDamage, error) {
+	if e.authority == nil || e.replay.BattleID == "" {
+		return nil, errors.New("environment has not been reset")
+	}
+	raw, err := e.authority.InspectBattleEventsJSON(e.replay.BattleID)
+	if err != nil {
+		return nil, err
+	}
+	var events []struct {
+		Type event.Type `json:"type"`
+		Data struct {
+			Sources []state.SettledDamageSource `json:"sources"`
+		} `json:"data"`
+	}
+	if err := json.Unmarshal(raw, &events); err != nil {
+		return nil, err
+	}
+	out := map[string]map[string]SourceDamage{}
+	for _, ev := range events {
+		if ev.Type != event.TypeDamageCommitted {
+			continue
+		}
+		for _, source := range ev.Data.Sources {
+			bySource := out[source.TargetActorID]
+			if bySource == nil {
+				bySource = map[string]SourceDamage{}
+				out[source.TargetActorID] = bySource
+			}
+			d := bySource[source.SourceContentID]
+			d.Hits++
+			d.Base += source.BaseAmount
+			d.Prevention += source.Prevention
+			d.ReactionPrevention += source.ReactionPrevention
+			d.Final += source.FinalAmount
+			bySource[source.SourceContentID] = d
+		}
+	}
+	return out, nil
 }
 
 func (e *Environment) damageMetricsForSeat(seatID string) *DamageMetrics {
@@ -533,6 +614,27 @@ func (e *Environment) Current() Transition {
 	return e.current
 }
 
+// PreferActor hands the current decision to seatID when that seat also has
+// legal commands. Simultaneous private windows (offensive planning) accept
+// either seat first; a look-ahead player plans first so a copy of the battle
+// never contains the other seat's private planning.
+func (e *Environment) PreferActor(seatID string) (Transition, bool, error) {
+	if e.current.Terminal || e.current.TruncationReason != "" || e.current.ActorID == seatID {
+		return e.current, false, nil
+	}
+	view, err := e.Observe(seatID)
+	if err != nil {
+		return e.current, false, err
+	}
+	if len(view.LegalActions) == 0 {
+		return e.current, false, nil
+	}
+	e.legalActions = append([]command.Command(nil), view.LegalActions...)
+	e.current = Transition{ActorID: seatID, Result: e.compactResult(view), Metrics: e.metrics}
+	transition, err := e.transportTransition(e.current)
+	return transition, true, err
+}
+
 func (e *Environment) Metrics() EpisodeMetrics {
 	return e.metrics
 }
@@ -543,6 +645,7 @@ func (e *Environment) Replay(record ReplayRecord) (Transition, error) {
 		SeatWounds:        cloneDecklists(record.SeatWounds),
 		SeatPresets:       clonePresets(record.SeatPresets),
 		SeatAbilityBoards: cloneAbilityBoards(record.SeatAbilityBoards),
+		CustomBoard:       record.CustomBoard,
 		Seed:              record.Seed, BattleID: record.BattleID, UnifiedDefense: record.UnifiedDefense, SimultaneousPlay: record.SimultaneousPlay,
 		SeatModels: record.SeatModels, SeatDefinitions: record.SeatDefinitions, SeatTeams: record.SeatTeams,
 	})
@@ -766,12 +869,13 @@ func cloneAbilityBoards(source map[string]content.AbilityBoard) map[string]conte
 }
 
 func (e *Environment) loadoutAssembler(request ResetRequest) battle.ParticipantAssembler {
-	if len(request.SeatDecklists) == 0 && len(request.SeatAbilityBoards) == 0 && e.config.AuthoredCardsRoot == "" {
+	if len(request.SeatDecklists) == 0 && len(request.SeatAbilityBoards) == 0 && e.config.AuthoredCardsRoot == "" && request.CustomBoard == nil {
 		return e.assembler
 	}
 	assembler := battle.NewCachedFileParticipantAssembler(e.config.ContentRoot, e.config.RunStateRoot)
 	assembler.IncludeCharacterPools = true
 	assembler.AuthoredCardsRoot = e.config.AuthoredCardsRoot
+	assembler.CustomBoard = request.CustomBoard
 	return assembler
 }
 

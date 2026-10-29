@@ -175,7 +175,7 @@ func TestProgressionRuntimeAndConfig(t *testing.T) {
 	if err := json.Unmarshal([]byte(HandleRuntimeRequest(string(request))), &reply); err != nil || reply["ok"] != true {
 		t.Fatalf("runtime: %v %v", reply, err)
 	}
-	if len(reply["result"].(map[string]any)) != 5 {
+	if len(reply["result"].(map[string]any)) != len(PlayableCharacters) {
 		t.Fatal("missing progression characters")
 	}
 	// Price and upgrade adjustments are consumed directly from configuration.
@@ -183,7 +183,7 @@ func TestProgressionRuntimeAndConfig(t *testing.T) {
 	configRoot := t.TempDir()
 	os.MkdirAll(filepath.Join(configRoot, "progression_v1"), 0700)
 	filename := filepath.Join(configRoot, "progression_v1", "economy.yaml")
-	os.WriteFile(filename, []byte("schema_version: 1\nstarting_xp: 77\ndefault_card_price: 4\ncharacters:\n  adventurer:\n    card_upgrades:\n      steady_guard: {to: emergency_ward, xp: 2}\n"), 0600)
+	os.WriteFile(filename, []byte("schema_version: 1\nstarting_xp: 77\ndefault_card_price: 4\nboard_xp: {damage_point: 40, prevention_point: 40, block: {share: 0.5, offset: 200}}\ncharacters:\n  adventurer:\n    card_upgrades:\n      steady_guard: {to: emergency_ward, xp: 2}\n"), 0600)
 	e, err := loadout.LoadEconomy(configRoot, catalogs)
 	if err != nil {
 		t.Fatal(err)

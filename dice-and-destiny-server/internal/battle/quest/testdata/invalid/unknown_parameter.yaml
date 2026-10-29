@@ -1,0 +1,15 @@
+# want: defeat_group has no parameter "count"
+schema_version: 1
+id: unknown_parameter
+name: A fixture
+set: fixture
+kind: side
+status: scenario
+hook: {verb: scenario_start, region: salt_marches}
+trigger: [{verb: scenario_start}]
+start: one
+stages:
+  - id: one
+    objective: {verb: defeat_group, group: brine_lone, count: 2}
+    outcomes:
+      - {outcome: success, next: end}

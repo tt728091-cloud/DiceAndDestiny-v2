@@ -1,0 +1,866 @@
+[
+ {
+  "name": "flat|400|0|1",
+  "template": "standard",
+  "die": "standard_d6",
+  "hero_target": 6.9,
+  "hero_health": 37,
+  "hero_defense": "none",
+  "rival_target": 6.9,
+  "rival_health": 23,
+  "rival_defense": "holdfast",
+  "model_wld": [
+   0.0569,
+   0.2191,
+   0.724
+  ]
+ },
+ {
+  "name": "flat|400|0|2",
+  "template": "standard",
+  "die": "standard_d6",
+  "hero_target": 6.9,
+  "hero_health": 37,
+  "hero_defense": "none",
+  "rival_target": 12.0,
+  "rival_health": 16,
+  "rival_defense": "none",
+  "model_wld": [
+   0.5801,
+   0.4058,
+   0.0142
+  ]
+ },
+ {
+  "name": "flat|400|0|3",
+  "template": "standard",
+  "die": "standard_d6",
+  "hero_target": 6.9,
+  "hero_health": 37,
+  "hero_defense": "none",
+  "rival_target": 12.0,
+  "rival_health": 2,
+  "rival_defense": "holdfast",
+  "model_wld": [
+   0.9983,
+   0.0016,
+   0.0001
+  ]
+ },
+ {
+  "name": "flat|400|1|2",
+  "template": "standard",
+  "die": "standard_d6",
+  "hero_target": 6.9,
+  "hero_health": 23,
+  "hero_defense": "holdfast",
+  "rival_target": 12.0,
+  "rival_health": 16,
+  "rival_defense": "none",
+  "model_wld": [
+   0.1937,
+   0.7669,
+   0.0395
+  ]
+ },
+ {
+  "name": "flat|400|1|3",
+  "template": "standard",
+  "die": "standard_d6",
+  "hero_target": 6.9,
+  "hero_health": 23,
+  "hero_defense": "holdfast",
+  "rival_target": 12.0,
+  "rival_health": 2,
+  "rival_defense": "holdfast",
+  "model_wld": [
+   0.9951,
+   0.0047,
+   0.0002
+  ]
+ },
+ {
+  "name": "flat|400|2|3",
+  "template": "standard",
+  "die": "standard_d6",
+  "hero_target": 12.0,
+  "hero_health": 16,
+  "hero_defense": "none",
+  "rival_target": 12.0,
+  "rival_health": 2,
+  "rival_defense": "holdfast",
+  "model_wld": [
+   0.9739,
+   0.0258,
+   0.0002
+  ]
+ },
+ {
+  "name": "flat|650|0|1",
+  "template": "standard",
+  "die": "standard_d6",
+  "hero_target": 6.9,
+  "hero_health": 62,
+  "hero_defense": "none",
+  "rival_target": 6.9,
+  "rival_health": 48,
+  "rival_defense": "holdfast",
+  "model_wld": [
+   0.0003,
+   0.0021,
+   0.9976
+  ]
+ },
+ {
+  "name": "flat|650|0|2",
+  "template": "standard",
+  "die": "standard_d6",
+  "hero_target": 6.9,
+  "hero_health": 62,
+  "hero_defense": "none",
+  "rival_target": 12.0,
+  "rival_health": 41,
+  "rival_defense": "none",
+  "model_wld": [
+   0.0371,
+   0.4669,
+   0.496
+  ]
+ },
+ {
+  "name": "flat|650|0|3",
+  "template": "standard",
+  "die": "standard_d6",
+  "hero_target": 6.9,
+  "hero_health": 62,
+  "hero_defense": "none",
+  "rival_target": 12.0,
+  "rival_health": 27,
+  "rival_defense": "holdfast",
+  "model_wld": [
+   0.0057,
+   0.0384,
+   0.9559
+  ]
+ },
+ {
+  "name": "flat|650|1|2",
+  "template": "standard",
+  "die": "standard_d6",
+  "hero_target": 6.9,
+  "hero_health": 48,
+  "hero_defense": "holdfast",
+  "rival_target": 12.0,
+  "rival_health": 41,
+  "rival_defense": "none",
+  "model_wld": [
+   0.1678,
+   0.5255,
+   0.3067
+  ]
+ },
+ {
+  "name": "flat|650|1|3",
+  "template": "standard",
+  "die": "standard_d6",
+  "hero_target": 6.9,
+  "hero_health": 48,
+  "hero_defense": "holdfast",
+  "rival_target": 12.0,
+  "rival_health": 27,
+  "rival_defense": "holdfast",
+  "model_wld": [
+   0.0176,
+   0.0756,
+   0.9068
+  ]
+ },
+ {
+  "name": "flat|650|2|3",
+  "template": "standard",
+  "die": "standard_d6",
+  "hero_target": 12.0,
+  "hero_health": 41,
+  "hero_defense": "none",
+  "rival_target": 12.0,
+  "rival_health": 27,
+  "rival_defense": "holdfast",
+  "model_wld": [
+   0.3926,
+   0.5545,
+   0.0529
+  ]
+ },
+ {
+  "name": "flat|900|0|1",
+  "template": "standard",
+  "die": "standard_d6",
+  "hero_target": 6.9,
+  "hero_health": 87,
+  "hero_defense": "none",
+  "rival_target": 6.9,
+  "rival_health": 73,
+  "rival_defense": "holdfast",
+  "model_wld": [
+   0.0,
+   0.0,
+   1.0
+  ]
+ },
+ {
+  "name": "flat|900|0|2",
+  "template": "standard",
+  "die": "standard_d6",
+  "hero_target": 6.9,
+  "hero_health": 87,
+  "hero_defense": "none",
+  "rival_target": 12.0,
+  "rival_health": 66,
+  "rival_defense": "none",
+  "model_wld": [
+   0.0004,
+   0.0073,
+   0.9923
+  ]
+ },
+ {
+  "name": "flat|900|0|3",
+  "template": "standard",
+  "die": "standard_d6",
+  "hero_target": 6.9,
+  "hero_health": 87,
+  "hero_defense": "none",
+  "rival_target": 12.0,
+  "rival_health": 52,
+  "rival_defense": "holdfast",
+  "model_wld": [
+   0.0,
+   0.0,
+   1.0
+  ]
+ },
+ {
+  "name": "flat|900|1|2",
+  "template": "standard",
+  "die": "standard_d6",
+  "hero_target": 6.9,
+  "hero_health": 73,
+  "hero_defense": "holdfast",
+  "rival_target": 12.0,
+  "rival_health": 66,
+  "rival_defense": "none",
+  "model_wld": [
+   0.0405,
+   0.2143,
+   0.7452
+  ]
+ },
+ {
+  "name": "flat|900|1|3",
+  "template": "standard",
+  "die": "standard_d6",
+  "hero_target": 6.9,
+  "hero_health": 73,
+  "hero_defense": "holdfast",
+  "rival_target": 12.0,
+  "rival_health": 52,
+  "rival_defense": "holdfast",
+  "model_wld": [
+   0.0,
+   0.0002,
+   0.9997
+  ]
+ },
+ {
+  "name": "flat|900|2|3",
+  "template": "standard",
+  "die": "standard_d6",
+  "hero_target": 12.0,
+  "hero_health": 66,
+  "hero_defense": "none",
+  "rival_target": 12.0,
+  "rival_health": 52,
+  "rival_defense": "holdfast",
+  "model_wld": [
+   0.0564,
+   0.4232,
+   0.5204
+  ]
+ },
+ {
+  "name": "pct|400|0|1",
+  "template": "standard",
+  "die": "standard_d6",
+  "hero_target": 6.9,
+  "hero_health": 33,
+  "hero_defense": "none",
+  "rival_target": 6.9,
+  "rival_health": 20,
+  "rival_defense": "holdfast",
+  "model_wld": [
+   0.051,
+   0.2182,
+   0.7308
+  ]
+ },
+ {
+  "name": "pct|400|0|2",
+  "template": "standard",
+  "die": "standard_d6",
+  "hero_target": 6.9,
+  "hero_health": 33,
+  "hero_defense": "none",
+  "rival_target": 12.0,
+  "rival_health": 16,
+  "rival_defense": "none",
+  "model_wld": [
+   0.1023,
+   0.87,
+   0.0278
+  ]
+ },
+ {
+  "name": "pct|400|0|3",
+  "template": "standard",
+  "die": "standard_d6",
+  "hero_target": 6.9,
+  "hero_health": 33,
+  "hero_defense": "none",
+  "rival_target": 12.0,
+  "rival_health": 9,
+  "rival_defense": "holdfast",
+  "model_wld": [
+   0.2347,
+   0.5383,
+   0.2269
+  ]
+ },
+ {
+  "name": "pct|400|1|2",
+  "template": "standard",
+  "die": "standard_d6",
+  "hero_target": 6.9,
+  "hero_health": 20,
+  "hero_defense": "holdfast",
+  "rival_target": 12.0,
+  "rival_health": 16,
+  "rival_defense": "none",
+  "model_wld": [
+   0.0735,
+   0.7504,
+   0.176
+  ]
+ },
+ {
+  "name": "pct|400|1|3",
+  "template": "standard",
+  "die": "standard_d6",
+  "hero_target": 6.9,
+  "hero_health": 20,
+  "hero_defense": "holdfast",
+  "rival_target": 12.0,
+  "rival_health": 9,
+  "rival_defense": "holdfast",
+  "model_wld": [
+   0.1903,
+   0.4881,
+   0.3216
+  ]
+ },
+ {
+  "name": "pct|400|2|3",
+  "template": "standard",
+  "die": "standard_d6",
+  "hero_target": 12.0,
+  "hero_health": 16,
+  "hero_defense": "none",
+  "rival_target": 12.0,
+  "rival_health": 9,
+  "rival_defense": "holdfast",
+  "model_wld": [
+   0.503,
+   0.4794,
+   0.0175
+  ]
+ },
+ {
+  "name": "pct|650|0|1",
+  "template": "standard",
+  "die": "standard_d6",
+  "hero_target": 6.9,
+  "hero_health": 54,
+  "hero_defense": "none",
+  "rival_target": 6.9,
+  "rival_health": 32,
+  "rival_defense": "holdfast",
+  "model_wld": [
+   0.0583,
+   0.1561,
+   0.7856
+  ]
+ },
+ {
+  "name": "pct|650|0|2",
+  "template": "standard",
+  "die": "standard_d6",
+  "hero_target": 6.9,
+  "hero_health": 54,
+  "hero_defense": "none",
+  "rival_target": 12.0,
+  "rival_health": 26,
+  "rival_defense": "none",
+  "model_wld": [
+   0.8913,
+   0.1034,
+   0.0053
+  ]
+ },
+ {
+  "name": "pct|650|0|3",
+  "template": "standard",
+  "die": "standard_d6",
+  "hero_target": 6.9,
+  "hero_health": 54,
+  "hero_defense": "none",
+  "rival_target": 12.0,
+  "rival_health": 15,
+  "rival_defense": "holdfast",
+  "model_wld": [
+   0.3951,
+   0.3945,
+   0.2104
+  ]
+ },
+ {
+  "name": "pct|650|1|2",
+  "template": "standard",
+  "die": "standard_d6",
+  "hero_target": 6.9,
+  "hero_health": 32,
+  "hero_defense": "holdfast",
+  "rival_target": 12.0,
+  "rival_health": 26,
+  "rival_defense": "none",
+  "model_wld": [
+   0.2252,
+   0.6776,
+   0.0972
+  ]
+ },
+ {
+  "name": "pct|650|1|3",
+  "template": "standard",
+  "die": "standard_d6",
+  "hero_target": 6.9,
+  "hero_health": 32,
+  "hero_defense": "holdfast",
+  "rival_target": 12.0,
+  "rival_health": 15,
+  "rival_defense": "holdfast",
+  "model_wld": [
+   0.13,
+   0.3412,
+   0.5288
+  ]
+ },
+ {
+  "name": "pct|650|2|3",
+  "template": "standard",
+  "die": "standard_d6",
+  "hero_target": 12.0,
+  "hero_health": 26,
+  "hero_defense": "none",
+  "rival_target": 12.0,
+  "rival_health": 15,
+  "rival_defense": "holdfast",
+  "model_wld": [
+   0.6787,
+   0.2871,
+   0.0342
+  ]
+ },
+ {
+  "name": "pct|900|0|1",
+  "template": "standard",
+  "die": "standard_d6",
+  "hero_target": 6.9,
+  "hero_health": 75,
+  "hero_defense": "none",
+  "rival_target": 6.9,
+  "rival_health": 45,
+  "rival_defense": "holdfast",
+  "model_wld": [
+   0.0382,
+   0.0929,
+   0.8689
+  ]
+ },
+ {
+  "name": "pct|900|0|2",
+  "template": "standard",
+  "die": "standard_d6",
+  "hero_target": 6.9,
+  "hero_health": 75,
+  "hero_defense": "none",
+  "rival_target": 12.0,
+  "rival_health": 36,
+  "rival_defense": "none",
+  "model_wld": [
+   0.8021,
+   0.1855,
+   0.0124
+  ]
+ },
+ {
+  "name": "pct|900|0|3",
+  "template": "standard",
+  "die": "standard_d6",
+  "hero_target": 6.9,
+  "hero_health": 75,
+  "hero_defense": "none",
+  "rival_target": 12.0,
+  "rival_health": 21,
+  "rival_defense": "holdfast",
+  "model_wld": [
+   0.4321,
+   0.3173,
+   0.2506
+  ]
+ },
+ {
+  "name": "pct|900|1|2",
+  "template": "standard",
+  "die": "standard_d6",
+  "hero_target": 6.9,
+  "hero_health": 45,
+  "hero_defense": "holdfast",
+  "rival_target": 12.0,
+  "rival_health": 36,
+  "rival_defense": "none",
+  "model_wld": [
+   0.2496,
+   0.4941,
+   0.2563
+  ]
+ },
+ {
+  "name": "pct|900|1|3",
+  "template": "standard",
+  "die": "standard_d6",
+  "hero_target": 6.9,
+  "hero_health": 45,
+  "hero_defense": "holdfast",
+  "rival_target": 12.0,
+  "rival_health": 21,
+  "rival_defense": "holdfast",
+  "model_wld": [
+   0.1342,
+   0.2777,
+   0.5881
+  ]
+ },
+ {
+  "name": "pct|900|2|3",
+  "template": "standard",
+  "die": "standard_d6",
+  "hero_target": 12.0,
+  "hero_health": 36,
+  "hero_defense": "none",
+  "rival_target": 12.0,
+  "rival_health": 21,
+  "rival_defense": "holdfast",
+  "model_wld": [
+   0.4194,
+   0.5357,
+   0.0449
+  ]
+ },
+ {
+  "name": "pctlight|400|0|1",
+  "template": "standard",
+  "die": "standard_d6",
+  "hero_target": 6.9,
+  "hero_health": 35,
+  "hero_defense": "none",
+  "rival_target": 6.9,
+  "rival_health": 31,
+  "rival_defense": "light",
+  "model_wld": [
+   0.1813,
+   0.445,
+   0.3737
+  ]
+ },
+ {
+  "name": "pctlight|400|0|2",
+  "template": "standard",
+  "die": "standard_d6",
+  "hero_target": 6.9,
+  "hero_health": 35,
+  "hero_defense": "none",
+  "rival_target": 12.0,
+  "rival_health": 19,
+  "rival_defense": "none",
+  "model_wld": [
+   0.2244,
+   0.7278,
+   0.0478
+  ]
+ },
+ {
+  "name": "pctlight|400|0|3",
+  "template": "standard",
+  "die": "standard_d6",
+  "hero_target": 6.9,
+  "hero_health": 35,
+  "hero_defense": "none",
+  "rival_target": 12.0,
+  "rival_health": 17,
+  "rival_defense": "light",
+  "model_wld": [
+   0.1795,
+   0.6169,
+   0.2036
+  ]
+ },
+ {
+  "name": "pctlight|400|1|2",
+  "template": "standard",
+  "die": "standard_d6",
+  "hero_target": 6.9,
+  "hero_health": 31,
+  "hero_defense": "light",
+  "rival_target": 12.0,
+  "rival_health": 19,
+  "rival_defense": "none",
+  "model_wld": [
+   0.1641,
+   0.7845,
+   0.0514
+  ]
+ },
+ {
+  "name": "pctlight|400|1|3",
+  "template": "standard",
+  "die": "standard_d6",
+  "hero_target": 6.9,
+  "hero_health": 31,
+  "hero_defense": "light",
+  "rival_target": 12.0,
+  "rival_health": 17,
+  "rival_defense": "light",
+  "model_wld": [
+   0.1318,
+   0.6486,
+   0.2197
+  ]
+ },
+ {
+  "name": "pctlight|400|2|3",
+  "template": "standard",
+  "die": "standard_d6",
+  "hero_target": 12.0,
+  "hero_health": 19,
+  "hero_defense": "none",
+  "rival_target": 12.0,
+  "rival_health": 17,
+  "rival_defense": "light",
+  "model_wld": [
+   0.0235,
+   0.9509,
+   0.0256
+  ]
+ },
+ {
+  "name": "pctlight|650|0|1",
+  "template": "standard",
+  "die": "standard_d6",
+  "hero_target": 6.9,
+  "hero_health": 57,
+  "hero_defense": "none",
+  "rival_target": 6.9,
+  "rival_health": 51,
+  "rival_defense": "light",
+  "model_wld": [
+   0.1512,
+   0.4569,
+   0.3919
+  ]
+ },
+ {
+  "name": "pctlight|650|0|2",
+  "template": "standard",
+  "die": "standard_d6",
+  "hero_target": 6.9,
+  "hero_health": 57,
+  "hero_defense": "none",
+  "rival_target": 12.0,
+  "rival_health": 32,
+  "rival_defense": "none",
+  "model_wld": [
+   0.1277,
+   0.8054,
+   0.0669
+  ]
+ },
+ {
+  "name": "pctlight|650|0|3",
+  "template": "standard",
+  "die": "standard_d6",
+  "hero_target": 6.9,
+  "hero_health": 57,
+  "hero_defense": "none",
+  "rival_target": 12.0,
+  "rival_health": 28,
+  "rival_defense": "light",
+  "model_wld": [
+   0.1371,
+   0.6666,
+   0.1962
+  ]
+ },
+ {
+  "name": "pctlight|650|1|2",
+  "template": "standard",
+  "die": "standard_d6",
+  "hero_target": 6.9,
+  "hero_health": 51,
+  "hero_defense": "light",
+  "rival_target": 12.0,
+  "rival_health": 32,
+  "rival_defense": "none",
+  "model_wld": [
+   0.1195,
+   0.7972,
+   0.0833
+  ]
+ },
+ {
+  "name": "pctlight|650|1|3",
+  "template": "standard",
+  "die": "standard_d6",
+  "hero_target": 6.9,
+  "hero_health": 51,
+  "hero_defense": "light",
+  "rival_target": 12.0,
+  "rival_health": 28,
+  "rival_defense": "light",
+  "model_wld": [
+   0.1299,
+   0.6594,
+   0.2108
+  ]
+ },
+ {
+  "name": "pctlight|650|2|3",
+  "template": "standard",
+  "die": "standard_d6",
+  "hero_target": 12.0,
+  "hero_health": 32,
+  "hero_defense": "none",
+  "rival_target": 12.0,
+  "rival_health": 28,
+  "rival_defense": "light",
+  "model_wld": [
+   0.054,
+   0.9009,
+   0.0451
+  ]
+ },
+ {
+  "name": "pctlight|900|0|1",
+  "template": "standard",
+  "die": "standard_d6",
+  "hero_target": 6.9,
+  "hero_health": 79,
+  "hero_defense": "none",
+  "rival_target": 6.9,
+  "rival_health": 70,
+  "rival_defense": "light",
+  "model_wld": [
+   0.1597,
+   0.4212,
+   0.4191
+  ]
+ },
+ {
+  "name": "pctlight|900|0|2",
+  "template": "standard",
+  "die": "standard_d6",
+  "hero_target": 6.9,
+  "hero_health": 79,
+  "hero_defense": "none",
+  "rival_target": 12.0,
+  "rival_health": 44,
+  "rival_defense": "none",
+  "model_wld": [
+   0.1994,
+   0.7188,
+   0.0818
+  ]
+ },
+ {
+  "name": "pctlight|900|0|3",
+  "template": "standard",
+  "die": "standard_d6",
+  "hero_target": 6.9,
+  "hero_health": 79,
+  "hero_defense": "none",
+  "rival_target": 12.0,
+  "rival_health": 39,
+  "rival_defense": "light",
+  "model_wld": [
+   0.1997,
+   0.6089,
+   0.1914
+  ]
+ },
+ {
+  "name": "pctlight|900|1|2",
+  "template": "standard",
+  "die": "standard_d6",
+  "hero_target": 6.9,
+  "hero_health": 70,
+  "hero_defense": "light",
+  "rival_target": 12.0,
+  "rival_health": 44,
+  "rival_defense": "none",
+  "model_wld": [
+   0.1616,
+   0.6258,
+   0.2126
+  ]
+ },
+ {
+  "name": "pctlight|900|1|3",
+  "template": "standard",
+  "die": "standard_d6",
+  "hero_target": 6.9,
+  "hero_health": 70,
+  "hero_defense": "light",
+  "rival_target": 12.0,
+  "rival_health": 39,
+  "rival_defense": "light",
+  "model_wld": [
+   0.163,
+   0.5341,
+   0.3028
+  ]
+ },
+ {
+  "name": "pctlight|900|2|3",
+  "template": "standard",
+  "die": "standard_d6",
+  "hero_target": 12.0,
+  "hero_health": 44,
+  "hero_defense": "none",
+  "rival_target": 12.0,
+  "rival_health": 39,
+  "rival_defense": "light",
+  "model_wld": [
+   0.0861,
+   0.847,
+   0.0669
+  ]
+ }
+]

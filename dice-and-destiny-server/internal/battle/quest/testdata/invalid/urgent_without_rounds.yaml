@@ -1,0 +1,17 @@
+# want: an urgent timer needs rounds
+schema_version: 1
+id: urgent_without_rounds
+name: A fixture
+set: fixture
+kind: side
+status: scenario
+hook: {verb: scenario_start, region: salt_marches}
+trigger: [{verb: scenario_start}]
+start: one
+stages:
+  - id: one
+    objective: {verb: defeat_group, group: brine_lone}
+    timer: {type: urgent, from: stage_start}
+    outcomes:
+      - {outcome: success, next: end}
+      - {outcome: failure, next: end}

@@ -27,7 +27,7 @@ func (s *State) ambushAllowed(r Rules, kind string, habit string, target Hex) bo
 	}
 	// Enemies see as the player does, less any Hidden stacks; High Ground
 	// counts as attacking from cover.
-	unseen := Distance(s.Turn.StartHex, target) > max(0, r.Config.SightRange(s.Night)-s.hiddenSight(r)) || s.Turn.HighGround
+	unseen := Distance(s.Turn.StartHex, target) > max(0, r.Config.SightRange(s.Night())-s.hiddenSight(r)) || s.Turn.HighGround
 	if _, th, ok := s.tileAt(r.Pack, s.Player); ok {
 		if r.Config.Terrain[th.Terrain].Cover {
 			unseen = true
@@ -43,9 +43,9 @@ func (s *State) ambushAllowed(r Rules, kind string, habit string, target Hex) bo
 	case "unwary":
 		return true
 	case "sleeper":
-		return s.Night
+		return s.Night()
 	case "night_hunter":
-		return !s.Night
+		return !s.Night()
 	}
 	return false
 }
@@ -71,7 +71,7 @@ func (s *State) startBattle(r Rules, start battleStart) {
 	}
 	pb.Seed = s.next()
 	// Battle ids allow letters, digits, dots, dashes and underscores only.
-	pb.ID = fmt.Sprintf("expedition-%s-r%d-t%d-n%d-%s", s.Region, s.Round, s.Turn.Number, s.RNGPosition, strings.Map(func(c rune) rune {
+	pb.ID = fmt.Sprintf("expedition-%s-r%d-t%d-n%d-%s", s.Region, s.Round(), s.Turn.Number, s.RNGPosition, strings.Map(func(c rune) rune {
 		if c >= 'a' && c <= 'z' || c >= 'A' && c <= 'Z' || c >= '0' && c <= '9' || c == '_' || c == '-' {
 			return c
 		}
@@ -283,6 +283,7 @@ func (s *State) woundsAfterBattle(pb *PendingBattle, end BattleEnd, name string)
 // forces a rest; losing to the Warlord ends the run. It returns the XP the
 // campaign sheet must credit and the mended wounds on a region win.
 func (s *State) ResolveBattle(r Rules, end BattleEnd) (Rewards, *BattleReport, error) {
+	s.migrateClock(r)
 	pb := s.PendingBattle
 	if pb == nil {
 		return Rewards{}, nil, errors.New("no battle is pending")
@@ -306,7 +307,7 @@ func (s *State) ResolveBattle(r Rules, end BattleEnd) (Rewards, *BattleReport, e
 			s.Warlord.Defeated = true
 			s.Result = "victory"
 			s.Phase = PhaseVictory
-			unused := max(0, s.rounds(r)-s.Round)
+			unused := max(0, s.rounds(r)-s.Round())
 			if pb.Kind == "deadline" {
 				unused = 0
 			}
@@ -332,7 +333,7 @@ func (s *State) ResolveBattle(r Rules, end BattleEnd) (Rewards, *BattleReport, e
 				case "ruins", "grotto":
 					st.Cleared = true
 					loot := sdef.Loot.Day
-					if s.Night {
+					if s.Night() {
 						loot = sdef.Loot.Night
 					}
 					report.Loot = s.rangeIn(loot)

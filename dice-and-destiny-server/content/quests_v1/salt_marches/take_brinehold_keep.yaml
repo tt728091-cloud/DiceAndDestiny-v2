@@ -1,0 +1,24 @@
+schema_version: 1
+id: take_brinehold_keep
+name: Take Brinehold Keep
+set: salt_marches
+kind: side
+status: scenario
+region: salt_marches
+hook: {verb: scenario_start, region: salt_marches}
+trigger:
+  - {verb: scenario_start, region: salt_marches}
+start: storm
+stages:
+  - id: storm
+    objective: {verb: defeat_group, group: eel_warden, at: brinehold_keep}
+    outcomes:
+      - outcome: success
+        text: "The keep's Lieutenant is beaten, and with him one of the Warlord's favours."
+        consequences:
+          - {verb: remove_enemy_status, group: drowned_regent, status: {config: statuses.lieutenant}, stacks: 1}
+          - {verb: site_state, site: brinehold_keep, state: freed}
+        next: end
+      - outcome: abandoned
+        when: {verb: quest_outcome, quest: stop_the_drowned_regent}
+        next: end

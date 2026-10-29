@@ -46,7 +46,10 @@ func New(r Rules, regionID string, seed uint64, deck, wounds []string, baseEnerg
 	if len(deck) == 0 {
 		return nil, fmt.Errorf("the expedition deck is empty")
 	}
-	s := &State{Version: 1, Region: regionID, Seed: seed, Round: 1, Phase: PhaseTurn, CoreDeal: map[string]string{}, Seen: map[string]bool{}, Inventory: map[string]int{}, Statuses: []StatusStack{}, Groups: []GroupState{}, Sites: []SiteState{}, Hand: []string{}, Spent: []string{}, BaseEnergy: baseEnergy, Energy: baseEnergy, Log: []string{}, Placed: []PlacedTile{}}
+	s := &State{Version: 1, Region: regionID, Seed: seed, Phase: PhaseTurn, CoreDeal: map[string]string{}, Seen: map[string]bool{}, Inventory: map[string]int{}, Statuses: []StatusStack{}, Groups: []GroupState{}, Sites: []SiteState{}, Hand: []string{}, Spent: []string{}, BaseEnergy: baseEnergy, Energy: baseEnergy, Log: []string{}, Placed: []PlacedTile{}}
+	// World time starts on the Day half of the region's calendar_start month.
+	s.RegionStart = regionStart(cfg, region)
+	s.Clock = WorldClock{Half: s.RegionStart}
 	// Wounds carried in from before the expedition arrive as one grouping.
 	s.addWound(wounds, "earlier wounds", 0)
 	s.Draw = append([]string{}, deck...)
@@ -89,7 +92,7 @@ func New(r Rules, regionID string, seed uint64, deck, wounds []string, baseEnerg
 	s.Turn = TurnState{Number: 1, StartHex: s.Player}
 	s.drawUpTo(r)
 	s.refreshSight(r)
-	s.log("Day 1 begins at %s.", pack.Tiles[region.StartTile].Name)
+	s.log("%s: the expedition begins at %s.", s.Clock.Label(cfg.Calendar), pack.Tiles[region.StartTile].Name)
 	return s, nil
 }
 
@@ -169,8 +172,8 @@ func (s *State) drawCards(n int) int {
 
 // sightRange is how far the player sees now, with gear and card bonuses.
 func (s *State) sightRange(r Rules) int {
-	reach := r.Config.SightRange(s.Night) + s.Turn.SightBonus
-	if s.Night {
+	reach := r.Config.SightRange(s.Night()) + s.Turn.SightBonus
+	if s.Night() {
 		for _, id := range sortedKeys(s.Inventory) {
 			if g, ok := r.Pack.Gear[id]; ok && g.Effect == "night_sight" && s.Inventory[id] > 0 {
 				reach += g.Amount

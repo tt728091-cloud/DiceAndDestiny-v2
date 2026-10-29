@@ -302,3 +302,39 @@ func TestLieutenantsFavorAddsDamagePerStack(t *testing.T) {
 		}
 	}
 }
+
+// Map conditions come back at the next Ongoing Effects after an ordinary
+// removal; a removal for the battle (Siege Dispel) keeps them gone.
+func TestMapConditionsReturnUnlessRemovedForBattle(t *testing.T) {
+	e := NewEngine()
+	b, lib := expeditionStatusFixture(t, nil, []state.StatusState{{InstanceID: "f", DefinitionID: "fortified", Stacks: 1}, {InstanceID: "c", DefinitionID: "conqueror", Stacks: 1}})
+	recordRestoredStatuses(&b, lib)
+	if err := e.applyEffectMutations(&b, lib, "", effectResult{StatusRemovals: []state.SettledStatusRemoval{
+		{ActorID: "enemy", StatusID: "fortified", ForBattle: true},
+		{ActorID: "enemy", StatusID: "conqueror"},
+	}}); err != nil {
+		t.Fatal(err)
+	}
+	if stacks(&b, "enemy", "fortified") != 0 || stacks(&b, "enemy", "conqueror") != 0 {
+		t.Fatal("both removals apply this round")
+	}
+	for round := 0; round < 2; round++ {
+		restoreRoundStatuses(&b, lib)
+		if stacks(&b, "enemy", "fortified") != 0 || stacks(&b, "enemy", "conqueror") != 1 {
+			t.Fatalf("round %d: fortified %d (removed for the battle), conqueror %d (returns)", round, stacks(&b, "enemy", "fortified"), stacks(&b, "enemy", "conqueror"))
+		}
+	}
+	// The removal survives a save: it lives in the actor's runtime.
+	data, err := json.Marshal(b)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var loaded state.Battle
+	if err = json.Unmarshal(data, &loaded); err != nil {
+		t.Fatal(err)
+	}
+	restoreRoundStatuses(&loaded, lib)
+	if stacks(&loaded, "enemy", "fortified") != 0 {
+		t.Fatal("reload restored Fortified")
+	}
+}

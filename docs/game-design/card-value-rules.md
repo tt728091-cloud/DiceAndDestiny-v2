@@ -116,18 +116,18 @@ The map has its own unit values (agreed 2026-10-17), because energy is scarcer t
 - **Moving cards:** map net = Move − energy. The 1 Move any card gives is the same for every map card, so it is left out. Trailblaze (Move 4 for 5 energy) = 2U − 1U = **+1U, 15 XP**.
 - **Site and camp cards:** here the card you play could have been 1 Influence (1U), and energy buys Influence too, so these are priced against that. Silver Tongue (2 Influence, free) = 2U − 1U = **+1U, 15 XP**. A 5-energy version would give exactly what the card and the energy already buy.
 - **Information and stealth cards** (sight, scouting, marks, Hide, Sneak) have no unit. Each tree's base is pinned at 15 by agreement and its upgrades are judged as steps from it.
-- **Surge check:** Surge (free +15 energy, 25 XP) is 3U on the map, but spent on moving it buys 3 Move. Trailblaze nets 3 Move too (Move 4 for 5 energy that could have bought 1). They tie for moving; Trailblaze is 10 XP cheaper and Surge also works in battle. Accepted (user, 2026-10-17).
+- **Surge check:** Surge (free +15 energy, 23 XP since 2026-10-23) is 3U on the map, but spent on moving it buys 3 Move. Trailblaze nets 3 Move too (Move 4 for 5 energy that could have bought 1). They tie for moving; Trailblaze is 8 XP cheaper and Surge also works in battle. Accepted (user, 2026-10-17).
 
 ## 6. The base cards
 
 | Card | Energy | Effect | Pays | Gets | Net | XP |
 |---|---|---|---|---|---|---|
-| Second Wind | 10 | Gain 15 energy | 2U | 3U | +1U | 15 |
-| Take Stock | 5 | Draw 2 | 1U | 2U | +1U | 15 |
-| Steady Guard | 5 | Prevent 1 | 1U | 2U | +1U | 15 |
-| Strong Swing | 10 | +2 damage before the roll | 2U | about 3U (1.24 lands, the rest still mills) | +1U | 15 |
-| Nudge | 7 | ±1 on one die (1–5) | 1.4U | 2.4U | +1U | 15 |
-| Try Again | 3 | Reroll 1 die | 0.6U | 0.7U (measured; set by hand) | +0.1U | 13 |
+| Second Wind | 10 | Gain 15 energy | 2U | 3U | +1U | **13** † |
+| Take Stock | **3** † | Draw 2 | 0.6U | 2U | +1.4U | **13** † |
+| Steady Guard | **3** † | Prevent 1 | 0.6U | 2U | +1.4U | 15 |
+| Strong Swing | **9** † | +2 damage before the roll | 1.8U | about 3U (1.24 lands, the rest still mills) | +1.2U | **16** † |
+| Nudge | **8** † | ±1 on one die (1–5) | 1.6U | 2.4U | +0.8U | **18** † |
+| Try Again | **2** † | Reroll 1 die | 0.4U | 0.7U (measured; set by hand) | +0.3U | 13 |
 | Disrupt | 10 | Reroll 1 enemy die | 2U | 3U | +1U | 15 |
 | Reclaim | 5 | A chosen card from discard to hand | 1U | 1.5U | +0.5U | 13 |
 | Salve | 5 | Remove 1 debuff stack, before the roll | 1U | 2U (assumed) | +1U | 15 |
@@ -135,7 +135,19 @@ The map has its own unit values (agreed 2026-10-17), because energy is scarcer t
 | Blood Price | 0 | Sacrifice 1 from hand, then draw 4 or gain 20 energy | 3U | 4U | +1U | 15 |
 | Trailblaze | 0 | Map: 3 Move | 1U | 3U | +2U map, 0 battle | 15 (open) |
 
-**Nudge at 7 energy is deliberate.** Energy currently arrives in 5s (start 10, +5 per round, every other cost a multiple of 5), so 7 tends to play like 10. Keep it as a test of finer energy costs while balancing adds strain on the energy pool.
+† **Re-costed 2026-10-23.** The costs are the user's spread from 2 to 10 (Try Again 2, Take Stock 3, Steady Guard 3, Nudge 8, Strong Swing 9, Second Wind 10). They replace a first re-cost (1, 1, 10, 0) that tuned each card's energy alone toward 15 XP and left the costs bunched at 0–1 and 10. Each card's XP is to be set from its value in blank cards (pure health, 10 XP each) at these costs (balance-lab.md, "Energy costs of the Starter's base cards", "Re-costed base cards" and "Spread costs").
+- **The unit formula disagrees:** at these costs its Net column no longer gives the XP shown. The measured values override the formula for these four, and their XP is under review.
+- **Trees move with their base, one tree at a time, as each is reviewed.** Done, all on 2026-10-23:
+  - Nudge: +1 energy and +3 XP for the whole tree, Fate and Destiny included;
+  - Strong Swing: −1 energy and +1 XP;
+  - Steady Guard: −2 energy, XP unchanged;
+  - Take Stock: −2 energy and −2 XP, free cards staying free;
+  - Second Wind: −2 XP (Shallow Breath 11), energy unchanged;
+  - Try Again: −1 energy, XP unchanged.
+
+  All six Starter base trees are done. The other trees' upgrades keep their old costs until reviewed.
+- **Single points of energy do matter.** They change a card's value most where they decide what fits in the starting 10 or a round's 5 (for example Nudge 7 + Try Again 3, or Nudge 8 + Try Again 2). The earlier note that energy below 5 is wasted came from a test player that didn't play those cards well.
+- **Nudge** was at 7 before as a deliberate test of finer energy costs.
 
 ## 7. Every tree
 
@@ -144,6 +156,11 @@ The map has its own unit values (agreed 2026-10-17), because energy is scarcer t
 ### Second Wind (energy)
 
 Reviewed 2026-10-16. The up-front column is the bonus from section 3, counted only against the equal-net card named.
+
+**Re-priced with its base on 2026-10-23.** Second Wind kept 10 energy (gain 15) at its measured 13 XP. Every card in the tree followed with −2 XP, except Shallow Breath at 11 (the user's call); energy is unchanged.
+- **Battle measurement is lower for the upper cards** (balance-lab.md, "Energy costs"). Only the net gain counted in battle: pay 0 gain 5 and pay 5 gain 10 played exactly like Second Wind, net +2 like a blank, and net +8 or +10 only about 13 XP.
+- **Why the tree keeps its steps:** they also count map value, where energy buys Move and Influence.
+- **Missing cards:** Focus and Deep Focus below are not in the published tree.
 
 ```
 Second Wind ─┬─ Even Breath ─┬─ Easy Breath ──┐
@@ -154,23 +171,25 @@ Second Wind ─┬─ Even Breath ─┬─ Easy Breath ──┐
 
 | Card | Change | Energy | Effect value | Net | Up-front | XP |
 |---|---|---|---|---|---|---|
-| Second Wind | base | 10 | +15 energy = 3U | +1.00U | — | **15** |
-| Even Breath | pay 5, gain 10 | 5 | +10 energy = 2U | +1.00U | +1 vs Second Wind | **16** |
-| Easy Breath | pay 0, gain 5 | 0 | +5 energy = 1U | +1.00U | +2 vs Second Wind | **17** |
-| Swift Breath | pay 5, gain 15 | 5 | +15 energy = 3U | +2.00U | — | **20** |
-| Calm Breath | pay 0, gain 10 | 0 | +10 energy = 2U | +2.00U | +1 vs Swift Breath | **21** |
-| Surge † | pay 0, gain 15 | 0 | +15 energy = 3U | +3.00U | — | **25** |
+| Second Wind | base | 10 | +15 energy = 3U | +1.00U | — | **13** |
+| Even Breath | pay 5, gain 10 | 5 | +10 energy = 2U | +1.00U | +1 vs Second Wind | **14** |
+| Easy Breath | pay 0, gain 5 | 0 | +5 energy = 1U | +1.00U | +2 vs Second Wind | **15** |
+| Swift Breath | pay 5, gain 15 | 5 | +15 energy = 3U | +2.00U | — | **18** |
+| Calm Breath | pay 0, gain 10 | 0 | +10 energy = 2U | +2.00U | +1 vs Swift Breath | **19** |
+| Surge † | pay 0, gain 15 | 0 | +15 energy = 3U | +3.00U | — | **23** |
 | Focus | costs 5; choose draw 2 or +10 energy | 5 | best option 2U, +0.5 choice | +1.50U | — | **18** |
 | Deep Focus | free; choose draw 3 or +15 energy | 0 | best option 3U, +0.5 choice | +3.50U | — | **28** |
-| Shallow Breath † | gains 12 instead of 15 | 10 | +12 energy = 2.4U | +0.40U | — | **12** |
+| Shallow Breath † | gains 12 instead of 15 | 10 | +12 energy = 2.4U | +0.40U | — | **11** |
 
 - Each energy card's map effect gains the same amount as its battle effect.
-- † **Surge:** On the map, +15 energy buys 3 Move, which ties Trailblaze's net for moving; Trailblaze is 10 XP cheaper and Surge also works in battle. Settled with the map units (§5).
+- † **Surge:** On the map, +15 energy buys 3 Move, which ties Trailblaze's net for moving; Trailblaze is 8 XP cheaper and Surge also works in battle. Settled with the map units (§5).
 - † **Shallow Breath:** Downgrade: same cost, smaller gain, less XP.
 
 ### Take Stock (draw)
 
 Reviewed 2026-10-16. The free line (Glance, Quick Study, Close Study) is priced with the up-front bonus from section 3 against the equal-net card on the 5-energy line.
+
+**Moved with its base on 2026-10-23.** Take Stock went to 3 energy and 13 XP, its measured value (in-game AI, about ±4 XP). Every card in the tree followed: −2 energy and −2 XP, with the free cards staying free. The paid line is now 3 energy and Overthink 5; each free card is still +1 XP over the paid card that nets the same.
 
 ```
 Take Stock ─┬─ Plenty ── Hoard
@@ -180,18 +199,18 @@ Take Stock ─┬─ Plenty ── Hoard
 
 | Card | Change | Energy | Effect value | Net | Up-front | XP |
 |---|---|---|---|---|---|---|
-| Take Stock | base | 5 | draw 2 = 2U | +1.00U | — | **15** |
-| Plenty | draw 3 | 5 | draw 3 = 3U | +2.00U | — | **20** |
-| Hoard † | draw 4 | 5 | draw 4 = 4U | +3.00U | — | **25** |
-| Glance | free, draw 1, once per round | 0 | draw 1 = 1U | +1.00U | +1 vs Take Stock | **16** |
-| Quick Study | free, draw 2, once per round | 0 | draw 2 = 2U | +2.00U | +1 vs Plenty | **21** |
-| Close Study † | free, draw 3, once per round | 0 | draw 3 = 3U | +3.00U | +1 vs Hoard | **26** |
-| Overthink † | costs 7 | 7 | draw 2 = 2U | +0.60U | — | **13** |
+| Take Stock | base | 3 | draw 2 = 2U | +1.40U | — | **13** |
+| Plenty | draw 3 | 3 | draw 3 = 3U | +2.40U | — | **18** |
+| Hoard † | draw 4 | 3 | draw 4 = 4U | +3.40U | — | **23** |
+| Glance | free, draw 1, once per round | 0 | draw 1 = 1U | +1.00U | +1 vs Take Stock | **14** |
+| Quick Study | free, draw 2, once per round | 0 | draw 2 = 2U | +2.00U | +1 vs Plenty | **19** |
+| Close Study † | free, draw 3, once per round | 0 | draw 3 = 3U | +3.00U | +1 vs Hoard | **24** |
+| Overthink † | costs 5 | 5 | draw 2 = 2U | +1.00U | — | **11** |
 
 - Each card's map effect draws the same number as its battle effect.
-- "Once per round" on the free cards is worth about 0 (you rarely hold two copies); it stops a hand of free draw cards from chaining.
+- "Once per round" on the free cards is worth about 0 (you rarely hold two copies); it stops a hand of free draw cards from chaining. **Not in the card data yet** (found 2026-10-23): the published free cards have no per-round limit, and their text doesn't mention one.
 - † **Hoard, Close Study:** playtest watch. With a hand limit of 6 (discard down at the end of the round) and 10 + 5 energy a round, the last card of a big draw is often discarded unplayed. If they feel weak, count the 4th (or 3rd free) draw as about 0.5U.
-- † **Overthink:** Downgrade: Take Stock for 2 more energy (1.4U), same timing. 5 × 2.6 = 13 exactly. Energy that isn't a multiple of 5 is priced at its exact share of a unit.
+- † **Overthink:** Downgrade: Take Stock for 2 more energy, same timing. At 7 energy it was 5 × 2.6 = 13 by the formula. Since 2026-10-23 it moves with the measured base: 5 energy, 11 XP.
 
 ### Steady Guard (prevention)
 
@@ -206,12 +225,14 @@ Worst to best: discard/before (the base), discard/any time, pile/before, pile/an
 
 | Family | Energy | Discard, before | Discard, any time | Pile, before | Pile, any time |
 |---|---|---|---|---|---|
-| Prevent 1 | 5 | **Steady Guard 15** | Watchful Guard 16 | Cover 17 | Shelter 18 |
-| Prevent 2 | 7 | **Hold Fast 23** | Firm Stance 24 | Hunker Down 25 | Stalwart 26 |
-| Prevent 3 | 9 | **Shield Wall 31** | Brace 32 | Dig In 33 | Bulwark 34 |
-| Prevent 4 | 11 | **Fortress 39** | Rampart 40 | Entrench 41 | Citadel 42 |
-| Save a chosen card | 5 | Snatch 16 | Pull Clear 17 | Steady Hands 18 | Triage 19 |
-| Choose prevent 2, or 4 for 4 more | 7 | Double Up 42 | Shore Up 43 | Buttress 44 | Reinforce 45 |
+| Prevent 1 | 3 | **Steady Guard 15** | Watchful Guard 16 | Cover 17 | Shelter 18 |
+| Prevent 2 | 5 | **Hold Fast 23** | Firm Stance 24 | Hunker Down 25 | Stalwart 26 |
+| Prevent 3 | 7 | **Shield Wall 31** | Brace 32 | Dig In 33 | Bulwark 34 |
+| Prevent 4 | 9 | **Fortress 39** | Rampart 40 | Entrench 41 | Citadel 42 |
+| Save a chosen card | 3 | Snatch 16 | Pull Clear 17 | Steady Hands 18 | Triage 19 |
+| Choose prevent 2, or 4 for 4 more | 5 | Double Up 42 | Shore Up 43 | Buttress 44 | Reinforce 45 |
+
+**Moved with its base on 2026-10-23.** Steady Guard went to 3 energy, where it measured exactly its price (1.50 blank cards, 15 XP). Every card in the tree followed: −2 energy, XP unchanged. A choice card's prevent 4 option still costs 4 more, so 9 in total, the same as the prevent 4 blocks.
 
 - **Save to hand:** Bandage (before) 20, Field Dressing (any time) 21.
 - **How the families are priced:**
@@ -231,6 +252,8 @@ Worst to best: discard/before (the base), discard/any time, pile/before, pile/an
 
 Reviewed 2026-10-16. The user set the anchor: +2 for 10 energy, played before the roll, is 15 XP. "Kept until it lands" is a little better than "after the roll". The steps:
 
+**Moved with its base on 2026-10-23.** Strong Swing went to 9 energy and 16 XP, its measured value (balance-lab.md, "Spread costs"). Every card in the tree followed: −1 energy and +1 XP. The steps below are unchanged.
+
 - **Each extra point of damage:** 2 more energy, +2U − 0.4U = +1.6U, or **+8 XP** (the same steps as the block ladder).
 - **After the roll, on an ability that qualifies:** **+4 XP**.
 - **Kept until it lands** (a miss doesn't use it up): **+5 XP**.
@@ -239,10 +262,10 @@ Both switches remove the miss waste of a bonus played before the roll, so they a
 
 | Damage | Energy | Before the roll | After the roll | Kept until it lands |
 |---|---|---|---|---|
-| +2 | 10 | **Strong Swing 15** | Opportunist 19 | Waiting Blade 20 |
-| +3 | 12 | **Mighty Blow 23** | Clean Cut 27 | Patient Blow 28 |
-| +4 | 14 | **Crushing Blow 31** | Sure Strike 35 | Bide 36 |
-| +5 | 16 | **Devastate 39** | Killing Stroke 43 | Long Wait 44 |
+| +2 | 9 | **Strong Swing 16** | Opportunist 20 | Waiting Blade 21 |
+| +3 | 11 | **Mighty Blow 24** | Clean Cut 28 | Patient Blow 29 |
+| +4 | 13 | **Crushing Blow 32** | Sure Strike 36 | Bide 37 |
+| +5 | 15 | **Devastate 40** | Killing Stroke 44 | Long Wait 45 |
 
 - **Edges:** the backbone runs Strong Swing → Mighty Blow → Crushing Blow → Devastate. Each backbone card → its after-the-roll and kept-until-it-lands versions.
 - **Removed (2026-10-16):**
@@ -257,18 +280,20 @@ Both switches remove the miss waste of a bonus played before the roll, so they a
 
 Reviewed 2026-10-16. Prices are set by hand, the user's call. The measurements are kept for reference: Starter board, extra damage per offense.
 
+**Moved with its base on 2026-10-23.** Nudge went to 8 energy and 18 XP, its measured value (balance-lab.md, "Spread costs"). Every card in the tree followed: +1 energy and +3 XP, Fate and Destiny included (the user's review).
+
 | Card | Energy | Effect | Measured | XP |
 |---|---|---|---|---|
-| Lift | 7 | +1 only (1–5) | 0.73 dmg | **12** |
-| Press Down | 7 | −1 only (1–5) | 0.84 dmg | **13** |
-| Nudge | 7 | ±1 on one die (1–5), base | 1.18 dmg | **15** |
-| Reach | 7 | ±1, can reach 6 | 1.34 dmg | **17** |
-| Weighted † | 7 | set one die to 6 | 0.87 dmg | **20** |
-| Mimic † | 7 | copy another die's face | 1.03 dmg | **22** |
-| Precision | 12 | set one die to any face | 1.89 dmg | **23** |
-| Fate (shared) | 15 | set any participant's die, also as a reaction | about 2.6 dmg | **26** |
-| Mastery | 12 | set 2 dice to any face | 3.14 dmg | **31** |
-| Destiny (shared) | 15 | set 2 of any participant's dice | about 3.5 dmg | **34** |
+| Lift | 8 | +1 only (1–5) | 0.73 dmg | **15** |
+| Press Down | 8 | −1 only (1–5) | 0.84 dmg | **16** |
+| Nudge | 8 | ±1 on one die (1–5), base | 1.18 dmg | **18** |
+| Reach | 8 | ±1, can reach 6 | 1.34 dmg | **20** |
+| Weighted † | 8 | set one die to 6 | 0.87 dmg | **23** |
+| Mimic † | 8 | copy another die's face | 1.03 dmg | **25** |
+| Precision | 13 | set one die to any face | 1.89 dmg | **26** |
+| Fate (shared) | 16 | set any participant's die, also as a reaction | about 2.6 dmg | **29** |
+| Mastery | 13 | set 2 dice to any face | 3.14 dmg | **34** |
+| Destiny (shared) | 16 | set 2 of any participant's dice | about 3.5 dmg | **37** |
 
 - **Edges:**
   - Nudge → Reach → Weighted → Precision.
@@ -276,24 +301,26 @@ Reviewed 2026-10-16. Prices are set by hand, the user's call. The measurements a
   - Nudge → Press Down → Lift.
   - Precision → Mastery and Fate, and both → Destiny.
 - † **Weighted, Mimic:** playtest watch. The user judged that the Starter board measurement undervalues a sure 6 and copying a face (they complete straights and sets), so they are priced well above it. Precision, Fate and Mastery were raised to keep the paths climbing.
-- **Fate and Destiny** are shared with Disrupt: one definition (15 energy) and, by the user's rule, the same XP in both trees.
+- **Fate and Destiny** are shared with Disrupt: one definition (16 energy) and, by the user's rule, the same XP in both trees.
 - **Removed (2026-10-16):** Clumsy Touch, Overturn, Two Fingers, Far Reach, Flick (free), Long Fingers and Echo.
 
 ### Try Again (rerolls)
+
+**Moved with its base on 2026-10-23.** Try Again went to 2 energy, and its measured value (12–13 XP) keeps it at 13. Every card in the tree followed with −1 energy, XP unchanged (the user's call).
 
 Reviewed 2026-10-16. The tree is no longer free. The measurement scores rerolls low (one reroll adds 0.36 damage, 0.7U, because the test player already has 3 rolls with the best holds, and it counts expected damage only). Like Nudge, the prices are set by hand. Rerolls cost less energy than Nudge: a random change, not a sure one.
 
 | Card | Energy | Effect | Measured | XP |
 |---|---|---|---|---|
-| Scrap Toss | 3 | reroll a die showing 1–3 | 0.26 dmg | **12** |
-| Try Again | 3 | reroll 1 of your dice, base | 0.36 dmg | **13** |
-| Double Toss | 5 | reroll up to 2 of your dice | 0.45 dmg | **15** |
-| Full Parry | 5 | reroll any of your defensive dice | 0.69 prevented | **16** |
-| One More Roll | 7 | +1 offensive roll attempt this Offense (4 instead of 3), any time | not measured | **17** |
+| Scrap Toss | 2 | reroll a die showing 1–3 | 0.26 dmg | **12** |
+| Try Again | 2 | reroll 1 of your dice, base | 0.36 dmg | **13** |
+| Double Toss | 4 | reroll up to 2 of your dice | 0.45 dmg | **15** |
+| Full Parry | 4 | reroll any of your defensive dice | 0.69 prevented | **16** |
+| One More Roll | 6 | +1 offensive roll attempt this Offense (4 instead of 3), any time | not measured | **17** |
 
 - **Edges:** Try Again → Scrap Toss, Try Again → Double Toss → One More Roll, and Try Again → Full Parry.
 - **One More Roll** uses the new `extra_roll` card effect. It raises this Offense's roll count, even after the last roll, and the count resets to 3 at the next round's Ongoing Effects. The roll counter shows it.
-- **3 energy** is an experiment like Nudge's 7. Energy arrives in 5s, so within a round a 3 can play like a 5, but the leftover carries over.
+- **2 energy since 2026-10-23** (it was 3): Try Again 2 + Nudge 8 fits the starting 10 energy, which measured well.
 - **Removed (2026-10-16):** Lucky Toss, Charmed Throw and Quick Toss ("keep the higher" is a downgrade on this board), Weary Toss (a twin of Scrap Toss), Fresh Roll (it used a normal roll attempt, so it did nothing), Parry, Twin Parry and Heavy Parry.
 
 ### Disrupt (enemy dice)
@@ -305,12 +332,12 @@ Reviewed 2026-10-16. These cards change an enemy's attack dice after they are re
 | Disrupt | 10 | reroll 1 enemy die, base | 1.48 dmg avoided | **15** |
 | Jostle | 10 | ±1 on an enemy die | 2.11 dmg avoided | **21** |
 | Tamper | 15 | set an enemy die to any face | 2.38 dmg avoided | **25** |
-| Fate (shared) | 15 | set any participant's die, after your roll or as a reaction | about 2.6 | **26** |
-| Destiny (shared) | 15 | set 2 of any participant's dice | about 3.5 | **34** |
+| Fate (shared) | 16 | set any participant's die, after your roll or as a reaction | about 2.6 | **29** |
+| Destiny (shared) | 16 | set 2 of any participant's dice | about 3.5 | **37** |
 
 - **Edges:** Disrupt → Jostle → Tamper → Fate → Destiny.
 - **Tamper** is set by hand above Jostle, like Precision in Nudge: it does more, for 5 more energy.
-- **Shared cards cost the same XP in every tree** (the user's rule, 2026-10-16). Fate and Destiny are 26 and 34 in both Disrupt and Nudge.
+- **Shared cards cost the same XP in every tree** (the user's rule, 2026-10-16). Fate and Destiny are 29 and 37 in both Disrupt and Nudge, at 16 energy (moved with Nudge's tree, 2026-10-23).
 - **Removed (2026-10-16):** Stumble, Scatter, Shove, Jolt (free) and Blunt (worse than a blank card).
 
 ### Reclaim (recovery)
@@ -362,7 +389,7 @@ Reviewed 2026-10-17. Each tree is a 2 × 4 grid. The rows are sizes on the preve
 - **Map conditions come back each round.** Fortified, Conqueror, Lieutenant's Favor and the Lieutenant marker are `restore_each_round` statuses: at every round's Ongoing Effects they return to their battle-start stacks, so a removal lasts for the rest of that round. Lieutenant's Favor adds its damage when the Warlord's attack is finalized, so dispelling it in Defense does not change that attack.
 - **No status is immune to removal** today; the `dispel_immune` flag stays available for later.
 - **Removed (2026-10-17):** Crude Remedy and Labored Rite (the base column covers them), and Poultice, Disenchant and the old Panacea and Nullify ("1 or 2 stacks from up to 2 statuses"); the names Panacea and Nullify moved to the clear-2 cards.
-- **Later idea:** a Siege Dispel-style card made for Fortified.
+- **Siege Dispel** (added 2026-10-18), 9 energy, **30 XP**, an upgrade from Shatter: after your defense roll, clear one enemy's Fortified or Conqueror **for the rest of the battle**. The status doesn't come back at Ongoing Effects (the `for_battle` switch on Remove statuses). It can't help this round's defense, so it pays off from the next round on: narrower than Shatter, but lasting. The price is a placeholder (about Shatter's) until battles on the map are measured.
 
 ### The map trees (reviewed 2026-10-17)
 

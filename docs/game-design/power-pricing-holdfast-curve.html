@@ -1,0 +1,105 @@
+<!doctype html>
+<html><head><meta charset="utf-8">
+<style>
+/* standalone theme (T3 injects its own) */
+:root{--background:#0b0b0b;--foreground:#ededed;--muted:#1c1c1c;--muted-foreground:#9a9a9a;--card:#141414;--secondary:#242424;--border:#2e2e2e;--popover:#161616;--popover-foreground:#ededed;--radius:10px;--font-sans:-apple-system,system-ui,sans-serif;--chart-1:#3987e5;--chart-2:#d95926;--chart-3:#199e70;--chart-4:#c98500} html{background:var(--background);color:var(--foreground)} body{padding:24px;max-width:900px;margin:0 auto}
+
+body { margin: 0; }
+.wrap { font-family: var(--font-sans); color: var(--foreground); font-size: 14px; line-height: 1.45; }
+h2 { font-size: 16px; margin: 26px 0 4px; font-weight: 600; }
+p.sub { color: var(--muted-foreground); margin: 0 0 10px; font-size: 13px; }
+.tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 10px; }
+.tile { border: 1px solid var(--border); border-radius: var(--radius); padding: 12px 14px; }
+.tile .k { color: var(--muted-foreground); font-size: 12px; }
+.tile .big { font-size: 24px; font-weight: 700; margin: 2px 0; }
+.tile .s { color: var(--muted-foreground); font-size: 12px; }
+.legend { display: flex; gap: 14px; flex-wrap: wrap; font-size: 12px; color: var(--muted-foreground); margin: 4px 0 6px; }
+.sw { display: inline-block; width: 10px; height: 10px; border-radius: 3px; margin-right: 6px; vertical-align: -1px; }
+.chart { position: relative; }
+.tip { position: absolute; pointer-events: none; background: var(--popover); color: var(--popover-foreground); border: 1px solid var(--border); border-radius: 8px; padding: 8px 10px; font-size: 12px; line-height: 1.5; display: none; z-index: 5; white-space: nowrap; box-shadow: 0 4px 16px rgba(0,0,0,.25); }
+table.t { border-collapse: collapse; font-size: 12.5px; width: 100%; }
+table.t td, table.t th { padding: 5px 7px; border-bottom: 1px solid var(--border); text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums; }
+table.t th { color: var(--muted-foreground); font-weight: 500; }
+table.t td:first-child, table.t th:first-child, table.t td.l { text-align: left; }
+.bad { font-weight: 700; }
+</style></head>
+<body><div class="wrap" id="app"></div>
+<script>
+const D = {"curve":[[300,130,43.3,43.3,8.4,21,6.2,17],[350,133,37.9,37.9,9.7,21,6.2,21],[400,141,35.3,36.1,9.7,26,6.4,25],[450,141,31.4,34.6,10.0,29,7.2,27],[500,143,28.5,32.7,11.7,27,7.8,29],[550,141,25.7,28.8,11.2,35,7.7,35],[600,143,23.9,29.9,12.3,35,9.2,33],[650,141,21.8,27.2,12.4,40,9.5,38],[700,143,20.4,25.3,13.3,41,9.6,42],[750,143,19.0,24.7,13.6,45,10.5,43],[800,141,17.6,23.3,14.4,47,11.0,46],[850,140,16.5,22.9,16.0,45,12.1,47],[900,140,15.5,21.6,15.5,52,12.5,50],[950,140,14.7,21.1,17.6,49,13.4,52],[1000,140,14.0,20.2,17.6,54,13.9,55],[1100,137,12.5,19.1,18.3,62,15.7,58],[1200,141,11.7,18.9,19.0,69,17.5,60],[1300,145,11.1,16.4,19.6,76,16.7,73],[1400,161,11.5,17.3,19.7,86,18.0,76],[1500,181,12.0,18.8,19.0,99,19.6,78]],"worth":[[6.18,126.8],[6.91,101.1],[7.91,78.3],[8.94,63.4],[9.95,53.4],[10.95,46.3],[12.0,40.6],[12.88,36.8],[13.88,33.3],[14.87,30.4],[15.81,28.2],[16.81,26.1],[17.79,24.3],[18.91,22.6],[19.91,21.2]],"eq":[[400,{"none":[0.506,9.1,28],"light":[0.47,9.3,24],"holdfast":[0.524,6.2,26]},{"none":[9.1,28],"light":[9.66,22],"holdfast":[6.18,26]}],[650,{"none":[0.49,12.7,39],"light":[0.471,10.9,42],"holdfast":[0.539,9.7,37]},{"none":[12.67,39],"light":[10.67,43],"holdfast":[9.66,37]}],[900,{"none":[0.5,15.5,52],"light":[0.496,14.8,51],"holdfast":[0.504,13.0,49]},{"none":[15.08,54],"light":[14.8,51],"holdfast":[12.67,50]}]],"checks":[["400|none|light",0.522,0.522,256,1578,166],["400|none|holdfast",0.486,0.479,389,1140,471],["400|light|holdfast",0.5,0.492,532,903,565],["650|none|light",0.47,0.47,81,1720,199],["650|none|holdfast",0.49,0.485,483,976,541],["650|light|holdfast",0.399,0.392,340,888,772],["900|none|light",0.49,0.49,116,1729,155],["900|none|holdfast",0.528,0.521,409,1265,326],["900|light|holdfast",0.5,0.511,330,1386,284]]};
+const NAME = { none: 'No defense', light: 'Light Guard', holdfast: 'Holdfast' };
+const NS = 'http://www.w3.org/2000/svg';
+function el(tag, attrs, parent) { const e = document.createElementNS(NS, tag); for (const k in attrs) e.setAttribute(k, attrs[k]); if (parent) parent.appendChild(e); return e; }
+function lineChart(id, o) {
+  const box = document.getElementById(id), svg = box.querySelector('svg'), tip = box.querySelector('.tip');
+  const W = svg.clientWidth || 700, H = o.h || 260, L = 46, R = 12, T = 10, B = 28;
+  svg.setAttribute('viewBox', `0 0 ${W} ${H}`); svg.innerHTML = '';
+  const x = v => L + (v - o.x0) / (o.x1 - o.x0) * (W - L - R), y = v => T + (o.y1 - v) / (o.y1 - o.y0) * (H - T - B);
+  if (o.band) el('rect', { x: L, y: y(o.band[1]), width: W - L - R, height: y(o.band[0]) - y(o.band[1]), fill: 'var(--foreground)', 'fill-opacity': 0.06 }, svg);
+  if (o.shadeX) el('rect', { x: x(o.shadeX[0]), y: T, width: x(o.shadeX[1]) - x(o.shadeX[0]), height: H - T - B, fill: 'var(--foreground)', 'fill-opacity': 0.05 }, svg);
+  for (const v of o.yt) {
+    el('line', { x1: L, x2: W - R, y1: y(v), y2: y(v), stroke: 'var(--border)' }, svg);
+    el('text', { x: L - 6, y: y(v) + 4, 'text-anchor': 'end', 'font-size': 11, fill: 'var(--muted-foreground)' }, svg).textContent = o.yf(v);
+  }
+  for (const v of o.xt) el('text', { x: x(v), y: H - 8, 'text-anchor': 'middle', 'font-size': 11, fill: 'var(--muted-foreground)' }, svg).textContent = o.xf ? o.xf(v) : v;
+  if (o.ref != null) el('line', { x1: L, x2: W - R, y1: y(o.ref), y2: y(o.ref), stroke: 'var(--muted-foreground)', 'stroke-dasharray': '4 4' }, svg);
+  o.series.forEach(s => {
+    el('path', { d: s.pts.map((p, i) => (i ? 'L' : 'M') + x(p[0]).toFixed(1) + ' ' + y(p[1]).toFixed(1)).join(''), fill: 'none', stroke: s.color, 'stroke-width': 2, 'stroke-linejoin': 'round' }, svg);
+    s.pts.forEach(p => el('circle', { cx: x(p[0]), cy: y(p[1]), r: 3, fill: s.color, stroke: 'var(--background)', 'stroke-width': 1.5 }, svg));
+  });
+  const cross = el('line', { y1: T, y2: H - B, stroke: 'var(--foreground)', opacity: 0 }, svg);
+  svg.addEventListener('mousemove', e => {
+    const bb = svg.getBoundingClientRect(), px = (e.clientX - bb.left) * W / bb.width, v = o.x0 + (px - L) / (W - L - R) * (o.x1 - o.x0);
+    const xs = o.series[0].pts.map(p => p[0]); let k = 0; xs.forEach((c, n) => { if (Math.abs(c - v) < Math.abs(xs[k] - v)) k = n; });
+    cross.setAttribute('x1', x(xs[k])); cross.setAttribute('x2', x(xs[k])); cross.setAttribute('opacity', 0.35);
+    tip.innerHTML = o.tip(k); tip.style.display = 'block';
+    let lx = e.clientX - bb.left + 14; if (lx + 260 > bb.width) lx = e.clientX - bb.left - 270;
+    tip.style.left = lx + 'px'; tip.style.top = '8px';
+  });
+  svg.addEventListener('mouseleave', () => { tip.style.display = 'none'; cross.setAttribute('opacity', 0); });
+}
+function render() {
+  const C = D.curve, mid = C.filter(r => r[0] >= 400 && r[0] <= 1300);
+  let h = '';
+  h += '<div class="tiles">' +
+    `<div class="tile"><div class="k">Holdfast's fair price, 400–1,300 XP</div><div class="big">${Math.min(...mid.map(r => r[1]))}–${Math.max(...mid.map(r => r[1]))} XP</div><div class="s">3.5 average prevention × 40 XP a point = 140</div></div>` +
+    `<div class="tile"><div class="k">Worth in blank cards</div><div class="big">≈ 14 cards</div><div class="s">the same at every level</div></div>` +
+    `<div class="tile"><div class="k">As a share of total XP</div><div class="big">35% → 11%</div><div class="s">from 400 to 1,300 XP: it reads as a discount, but the XP price stays put</div></div>` +
+    `<div class="tile"><div class="k">At that price, real battles</div><div class="big">48–52%</div><div class="s">Holdfast against no defense at 400 / 650 / 900 XP</div></div></div>`;
+  h += `<h2>Holdfast's fair price, by total XP</h2><p class="sub">At each total XP a no-defense character and a Holdfast character each pick their damage (board 40 XP per point above 6.2) and fill the rest with blank cards (10 XP each, no starting deck). The fair price is the XP that makes the Holdfast character win half the time. Dashed: 140 XP. Shaded: 1,400–1,500, where the damage slider's cap of 20 stops the no-defense character buying more damage.</p>`;
+  h += '<div class="legend"><span><span class="sw" style="background:var(--chart-1)"></span>fair price of Holdfast (XP)</span></div><div class="chart" id="c1"><svg width="100%" height="260"></svg><div class="tip"></div></div>';
+  h += `<h2>The same price as a share of your XP</h2><p class="sub">Because the price stays at about 140 XP while total XP grows, its share keeps falling. Charging a percentage would need a share that shrinks with XP; a flat 140 does it automatically.</p>`;
+  h += '<div class="legend"><span><span class="sw" style="background:var(--chart-2)"></span>share of total XP</span><span><span class="sw" style="background:var(--chart-3)"></span>share of the XP left after the board</span></div><div class="chart" id="c2"><svg width="100%" height="240"></svg><div class="tip"></div></div>';
+  h += `<h2>What Holdfast does to your deck, by how hard the opponent hits</h2><p class="sub">How much longer a deck lasts with Holdfast: the opponent's damage per round divided by what gets through Holdfast, minus one. It depends only on the opponent's damage — not on yours. Against 7-damage hits it doubles your deck; against 12, +41%; against 18, +24%. In cards it is that share of your deck, so it grows with your deck size.</p>`;
+  h += '<div class="legend"><span><span class="sw" style="background:var(--chart-4)"></span>extra staying power from Holdfast</span></div><div class="chart" id="c3"><svg width="100%" height="240"></svg><div class="tip"></div></div>';
+  h += `<h2>Why the price stays flat: the damage each character picks</h2><p class="sub">The Holdfast character plays about 3 points less damage than the no-defense one (its 3.5 prevention) with about the same number of cards. As XP grows, opponents hit harder (Holdfast's share falls) but decks grow (each share is more cards). The two cancel, leaving about 14 cards.</p>`;
+  h += '<div class="legend"><span><span class="sw" style="background:var(--chart-1)"></span>no defense: damage</span><span><span class="sw" style="background:var(--chart-2)"></span>Holdfast: damage</span></div><div class="chart" id="c4"><svg width="100%" height="240"></svg><div class="tip"></div></div>';
+  h += `<h2>Three characters at these prices</h2><p class="sub">No defense, Light Guard (40 XP) and Holdfast (140 XP), board 40 XP a point. Each character's score when all three play their best split, and the build each plays most. Then every pairing of those builds: race model and 2,000 real battles (±2.2 points). Bold: outside 40–60.</p>`;
+  h += '<table class="t"><tr><th>XP</th><th>Character</th><th>Score vs the field</th><th>Average damage / cards played</th><th>Most-played build</th></tr>';
+  D.eq.forEach(([X, v, t]) => ['none', 'light', 'holdfast'].forEach((d, i) => {
+    h += `<tr><td>${i ? '' : X}</td><td class="l">${NAME[d]}</td><td>${(100 * v[d][0]).toFixed(1)}%</td><td>${v[d][1]} / ${v[d][2]}</td><td>${t[d][0].toFixed(2)} dmg, ${t[d][1]} cards</td></tr>`;
+  }));
+  h += '</table><div style="height:14px"></div><table class="t"><tr><th>XP</th><th>Matchup (most-played builds)</th><th>Model</th><th>Real battles</th><th>Win / draw / loss</th></tr>';
+  D.checks.forEach(([n, m, s, w, dr, l]) => {
+    const [X, a, b] = n.split('|'), N = w + dr + l, bad = s < 0.4 || s > 0.6;
+    h += `<tr><td>${X}</td><td class="l">${NAME[a]} vs ${NAME[b]}</td><td>${(100 * m).toFixed(0)}%</td><td class="${bad ? 'bad' : ''}">${(100 * s).toFixed(1)}%</td><td>${Math.round(100 * w / N)} / ${Math.round(100 * dr / N)} / ${Math.round(100 * l / N)}</td></tr>`;
+  });
+  h += '</table>';
+  document.getElementById('app').innerHTML = h;
+  lineChart('c1', { x0: 300, x1: 1500, y0: 0, y1: 250, yt: [0, 50, 100, 150, 200, 250], yf: v => v, xt: [300, 500, 700, 900, 1100, 1300, 1500], ref: 140, shadeX: [1350, 1500],
+    series: [{ color: 'var(--chart-1)', pts: C.map(r => [r[0], r[1]]) }],
+    tip: k => `<b>${C[k][0]} XP</b><br>fair Holdfast price: ${C[k][1]} XP (≈ ${Math.round(C[k][1] / 10)} cards)<br>no defense plays ${C[k][4]} dmg / ${C[k][5]} cards<br>Holdfast plays ${C[k][6]} dmg / ${C[k][7]} cards` });
+  lineChart('c2', { x0: 300, x1: 1500, y0: 0, y1: 50, yt: [0, 10, 20, 30, 40, 50], yf: v => v + '%', xt: [300, 500, 700, 900, 1100, 1300, 1500], shadeX: [1350, 1500],
+    series: [{ color: 'var(--chart-2)', pts: C.map(r => [r[0], r[2]]) }, { color: 'var(--chart-3)', pts: C.map(r => [r[0], r[3]]) }],
+    tip: k => `<b>${C[k][0]} XP</b><br><span class="sw" style="background:var(--chart-2)"></span>${C[k][2]}% of total XP<br><span class="sw" style="background:var(--chart-3)"></span>${C[k][3]}% of the XP left after the board` });
+  const Wd = D.worth;
+  lineChart('c3', { x0: 6, x1: 20, y0: 0, y1: 140, yt: [0, 20, 40, 60, 80, 100, 120, 140], yf: v => '+' + v + '%', xt: [6, 8, 10, 12, 14, 16, 18, 20], xf: v => v + ' dmg',
+    series: [{ color: 'var(--chart-4)', pts: Wd.map(r => [r[0], r[1]]) }],
+    tip: k => `<b>opponent hits for ${Wd[k][0]}</b><br>Holdfast: +${Wd[k][1]}% staying power<br>with 20 cards: ≈ ${Math.round(20 * Wd[k][1] / 100)} cards · with 50: ≈ ${Math.round(50 * Wd[k][1] / 100)}` });
+  lineChart('c4', { x0: 300, x1: 1500, y0: 5, y1: 21, yt: [5, 9, 13, 17, 21], yf: v => v, xt: [300, 500, 700, 900, 1100, 1300, 1500], shadeX: [1350, 1500],
+    series: [{ color: 'var(--chart-1)', pts: C.map(r => [r[0], r[4]]) }, { color: 'var(--chart-2)', pts: C.map(r => [r[0], r[6]]) }],
+    tip: k => `<b>${C[k][0]} XP</b><br><span class="sw" style="background:var(--chart-1)"></span>no defense: ${C[k][4]} dmg, ${C[k][5]} cards<br><span class="sw" style="background:var(--chart-2)"></span>Holdfast: ${C[k][6]} dmg, ${C[k][7]} cards` });
+}
+render();
+let lastW = window.innerWidth;
+window.addEventListener('resize', () => { if (window.innerWidth !== lastW) { lastW = window.innerWidth; render(); } });
+</script></body></html>

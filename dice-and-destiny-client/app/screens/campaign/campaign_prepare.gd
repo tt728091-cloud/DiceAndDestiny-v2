@@ -4,6 +4,11 @@ extends Control
 ## a copy up or down, buy another or sell one; "Add a new card" buys card-tree
 ## bases. Every offer arrives pre-checked by the authority (campaign_loadout)
 ## and every trade goes through it. Character Creation stays the admin editor.
+## The Custom Adventurer also has its ability board here: step its damage
+## level up or down and pick its defense, each priced in XP by the authority
+## (campaign_board), and apply the change (campaign_board_change). In an
+## expedition that counts as a deck change: at a site or camp, paying the
+## visit's Influence once.
 
 signal closed
 
@@ -29,8 +34,12 @@ var data: Dictionary = {}
 var catalog: Dictionary = {}
 ## The card authoring catalog, for "what changes" summaries.
 var authoring: Dictionary = {}
-## {"kind": "card" | "stored" | "ability" | "add", "id": ..., "tree": copy tree}
+## {"kind": "card" | "stored" | "ability" | "add" | "board", "id": ..., "tree": copy tree}
 var selection: Dictionary = {}
+## The Custom Adventurer's board (campaign_board): the save's board priced at
+## `board_choice`, the level and defenses being considered.
+var board_view: Dictionary = {}
+var board_choice: Dictionary = {}
 ## A tree card previewed by clicking it in the canvas.
 var focus_node := ""
 
@@ -134,8 +143,22 @@ func reload() -> bool:
 	var wounds := int(data.get("max_health", data.health)) - int(data.health)
 	_health.text = str(int(data.health)) if wounds == 0 else "%d/%d" % [int(data.health), int(data.max_health)]
 	_xp.text = str(int(data.xp))
+	board_view = {}; board_choice = {}
+	_load_board({}, true)
 	if not _selection_valid(): selection = _default_selection()
 	_render()
+	return true
+
+## Prices the save's board at a level and defenses (empty: the saved board).
+## quiet: a character without a priced board shows none, without an error.
+func _load_board(choice: Dictionary, quiet := false) -> bool:
+	var response: Dictionary = _runtime().campaign_board(save_id, choice)
+	if response.get("ok") != true:
+		var why := str(response.get("error", "unknown error"))
+		if not (quiet and "does not build its board" in why): _error("The ability board could not be priced: %s" % why)
+		return false
+	board_view = response.result
+	board_choice = board_view.choice.duplicate(true)
 	return true
 
 func _selection_valid() -> bool:
@@ -143,6 +166,7 @@ func _selection_valid() -> bool:
 		"card": return not _entry("deck", str(selection.id), str(selection.get("tree", ""))).is_empty()
 		"stored": return not _entry("collection", str(selection.id), str(selection.get("tree", ""))).is_empty()
 		"ability": return data.abilities.any(func(a): return a.id == selection.id)
+		"board": return not board_view.is_empty()
 		"add": return true
 	return false
 
@@ -164,6 +188,7 @@ func _render() -> void:
 	match str(selection.kind):
 		"card", "stored": _render_card()
 		"ability": _render_ability()
+		"board": _render_board()
 		_: _render_add()
 
 func _render_list() -> void:
@@ -182,6 +207,12 @@ func _render_list() -> void:
 		STYLE.heading(_list, "Stored · not in your deck")
 		for entry in _sorted(data.collection): _list_row(entry, "stored")
 	STYLE.heading(_list, "Abilities")
+	if not board_view.is_empty():
+		var saved := _saved_board()
+		var row := _row_button(_list, "Ability board · %s\nLevel avg %.2f  ·  %s" % [str(board_view.template_name), float(saved.average), _defense_names(saved.defenses)], null, "prepare.board")
+		row.button_pressed = selection.get("kind") == "board"
+		row.pressed.connect(func(): _select({"kind": "board"}))
+		_row_xp(row, int(board_view.xp.held), 1)
 	for ability in data.abilities:
 		var definition: Dictionary = catalog.get("abilities", {}).get(str(ability.id), {})
 		var row := _row_button(_list, "%s\n%s%s" % [definition.get("name", ability.id), str(ability.type).capitalize(), "  ·  upgrade available" if ability.get("upgrade", {}).get("available", false) else ""], null, "prepare.ability." + str(ability.id))
@@ -351,6 +382,180 @@ func _render_ability() -> void:
 		_offer_button(box, ability.downgrade, "Downgrade · +%d XP" % int(ability.downgrade.cost), "prepare.downgrade_ability." + id, STYLE.AMBER)
 	if not ability.has("upgrade") and not ability.has("downgrade"):
 		STYLE.label(_details, "No upgrades for this ability yet.", 14, STYLE.MUTED)
+
+# Ability board (Custom Adventurer) -------------------------------------------
+## The saved board: its level's step, average and defenses.
+func _saved_board() -> Dictionary:
+	var saved: Dictionary = board_view.get("saved", {})
+	var level := float(saved.get("level", board_view.staircase.default_target))
+	var k := _step_at(level)
+	return {"step": k, "average": float(board_view.staircase.steps[k].average), "defenses": saved.get("defenses", [])}
+
+func _step_at(target: float) -> int:
+	var k := 0
+	var steps: Array = board_view.get("staircase", {}).get("steps", [])
+	for i in steps.size():
+		if float(steps[i].at) <= target + 1e-9: k = i
+	return k
+
+func _defense_names(ids: Array) -> String:
+	var names: Array[String] = []
+	for id in ids:
+		if str(id) == "none": continue
+		names.append(_defense_entry(str(id)).get("name", str(id)))
+	return "no defense" if names.is_empty() else ", ".join(names)
+
+func _defense_entry(id: String) -> Dictionary:
+	for d in board_view.get("xp", {}).get("defenses", []):
+		if str(d.ability) == id: return d
+	return {}
+
+## The shown step of the board being considered.
+func _board_step() -> int: return int(board_view.staircase.step)
+
+func _render_board() -> void:
+	var sc: Dictionary = board_view.staircase
+	var steps: Array = sc.steps
+	var k := _board_step(); var lowest := int(sc.lowest)
+	var xp: Dictionary = board_view.xp
+	var rate := int(xp.get("rates", {}).get("damage_point", 40))
+	_center_title.text = "Ability board · %s · %s" % [str(board_view.die_name), str(board_view.template_name)]
+	_center_hint.text = "Step the damage level up for %d XP per point of average damage it adds, or back down for a refund, and pick your defense. The authority prices every change." % rate
+	if bool(board_view.get("moving", false)):
+		var moving := STYLE.section(_center_content); STYLE.heading(moving, "Moving onto the priced board")
+		var note := STYLE.label(moving, "You still fight with your original abilities. Your first change here moves them onto this board, the same shapes with priced damage, and your defense becomes the menu defense shown below. The board is part of your kit, so moving doesn't cost XP: you pay only for the change itself.", 14, STYLE.AMBER)
+		note.name = "BoardMoving"
+	# Damage level.
+	var level := STYLE.section(_center_content); STYLE.heading(level, "Damage level")
+	var row := HBoxContainer.new(); row.add_theme_constant_override("separation", 8); level.add_child(row)
+	var down := _button(row, "◀", func(): _board_level(k - 1), "prepare.board.level_down"); down.disabled = k <= lowest
+	down.custom_minimum_size = Vector2(56, 44)
+	var info := STYLE.label(row, "Step %d of %d · avg %.2f per turn · %d XP over the standard" % [k - lowest + 1, steps.size() - lowest, float(steps[k].average), int(steps[k].get("xp", 0))], 16, STYLE.GOLD_BRIGHT)
+	info.size_flags_horizontal = Control.SIZE_EXPAND_FILL; info.name = "BoardLevel"
+	var up := _button(row, "▶", func(): _board_level(k + 1), "prepare.board.level_up"); up.disabled = k + 1 >= steps.size()
+	up.custom_minimum_size = Vector2(56, 44)
+	if k + 1 < steps.size():
+		STYLE.label(level, "Next step: %s · %+.3f avg · +%d XP" % [_board_changes(k + 1), float(steps[k + 1].average) - float(steps[k].average), int(steps[k + 1].get("xp", 0)) - int(steps[k].get("xp", 0))], 13, STYLE.MUTED)
+	if k > lowest:
+		STYLE.label(level, "This step: %s · %d XP" % [_board_changes(k), int(steps[k].get("xp", 0)) - int(steps[k - 1].get("xp", 0))], 13, STYLE.GOLD)
+	# The abilities at this step.
+	var abilities := STYLE.section(_center_content); STYLE.heading(abilities, "Abilities at this level")
+	STYLE.label(abilities, "Raise one tier: the level climbs to the first step where it deals more, and the board rises with it.", 12, STYLE.MUTED)
+	var saved_step := int(_saved_board().step)
+	var raises: Array = sc.get("raises", [])
+	for i in board_view.tiers.size():
+		var tier: Dictionary = board_view.tiers[i]
+		var now := int(steps[k].damage[i]); var was := int(steps[saved_step].damage[i])
+		var text := "%s → %d damage" % [str(tier.label), now]
+		if now != was: text += "  (now %d)" % was
+		var line := HBoxContainer.new(); line.add_theme_constant_override("separation", 8); abilities.add_child(line)
+		var what := STYLE.label(line, text, 14, STYLE.GOLD_BRIGHT if now != was else STYLE.IVORY)
+		what.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		var raise = raises[i] if i < raises.size() else null
+		if raise is Dictionary:
+			var to_step := int(raise.step)
+			var others: Array = raise.get("also", [])
+			var plus := _button(line, "Raise to %d · %d XP%s" % [int(raise.to), int(raise.get("xp", 0)), (" · +%d more" % others.size()) if not others.is_empty() else ""], func(): _board_level(to_step), "prepare.board.raise.%d" % i)
+			plus.tooltip_text = _raise_text(raise, board_view.tiers)
+		else:
+			STYLE.label(line, "at the top", 12, STYLE.DIM)
+	# Defenses: one list per slot.
+	var chosen: Array = board_choice.get("defenses", [])
+	for slot in chosen.size():
+		var box := STYLE.section(_center_content); STYLE.heading(box, "Defense" if chosen.size() == 1 else "Defense %d" % (slot + 1))
+		var saved_defenses: Array = xp.get("saved_defenses", [])
+		var saved_here := str(saved_defenses[slot]) if slot < saved_defenses.size() else "none"
+		var none_change := int(xp.get("none_change", [])[slot]) if slot < xp.get("none_change", []).size() else 0
+		var none := _button(box, "No defense · %s" % _defense_change("none" == saved_here, none_change, 0), func(): _board_defense(slot, "none"), "prepare.board.defense.%d.none" % slot)
+		none.toggle_mode = true; none.set_pressed_no_signal(str(chosen[slot]) == "none")
+		for d in xp.get("defenses", []):
+			var id := str(d.ability)
+			var what := ("blocks %.0f%% of attacks" % (float(d.block) * 100.0)) if bool(d.blocks) else ("prevents %.2f per roll" % float(d.prevention))
+			var change := int(d.get("change", [])[slot]) if slot < d.get("change", []).size() else int(d.xp)
+			var b := _button(box, "%s · %s · %s" % [str(d.name), what, _defense_change(id == saved_here, change, int(d.xp))], func(): _board_defense(slot, id), "prepare.board.defense.%d.%s" % [slot, id])
+			b.toggle_mode = true; b.set_pressed_no_signal(str(chosen[slot]) == id)
+			b.disabled = id in chosen and str(chosen[slot]) != id
+			b.tooltip_text = str(catalog.get("abilities", {}).get(id, {}).get("presentation", {}).get("rules_text", ""))
+		var rates: Dictionary = xp.get("rates", {})
+		if not rates.is_empty():
+			STYLE.label(box, "Flat defenses cost %d XP per point of average prevention. Blocks cost their block chance × %.0f%% of (total XP + %d): they grow as you earn XP." % [int(rates.prevention_point), float(rates.block.share) * 100.0, int(rates.block.offset)], 12, STYLE.DIM)
+	# Details: the change and its price.
+	STYLE.label(_details, "Ability board", 22, STYLE.GOLD_BRIGHT)
+	STYLE.label(_details, "Your board holds %d XP now (damage level and defense). %d XP of %d total is left to spend." % [int(xp.held), int(xp.available), int(xp.total)], 15, STYLE.MUTED)
+	var cost := int(xp.cost)
+	var changed := cost != 0 or JSON.stringify(board_choice) != JSON.stringify(board_view.saved)
+	var box := STYLE.section(_details); STYLE.heading(box, "This change")
+	STYLE.label(box, "Level avg %.2f → %.2f · %s → %s" % [float(_saved_board().average), float(steps[k].average), _defense_names(board_view.saved.get("defenses", [])), _defense_names(chosen)], 14, STYLE.IVORY)
+	var label := ("Apply · %d XP" % cost) if cost > 0 else (("Apply · +%d XP back" % -cost) if cost < 0 else "Apply · no XP")
+	if expedition and not expedition_open: label += " · opens the deck (%d Influence)" % expedition_cost
+	var apply := STYLE.accent(_button(box, label, _apply_board, "prepare.board.apply"), STYLE.GOLD if cost >= 0 else STYLE.AMBER)
+	apply.name = "ApplyBoard"
+	apply.disabled = not changed or not bool(xp.get("affordable", true))
+	if not bool(xp.get("affordable", true)): STYLE.label(box, _reason(str(xp.get("reason", "not enough XP"))), 13, STYLE.LOSS)
+	elif not changed: STYLE.label(box, "This is your board. Step the level or pick a defense to change it.", 13, STYLE.MUTED)
+	else: STYLE.label(box, "%d XP left after it." % int(xp.left), 13, STYLE.MUTED)
+	if changed: _button(box, "Undo · back to your board", func(): _load_board({}); _render(), "prepare.board.reset")
+
+## What picking a defense changes against the saved board's defense in its
+## slot (the authority's numbers): "yours", "costs 46 XP" or "47 XP back",
+## with the defense's own price.
+func _defense_change(yours: bool, change: int, price: int) -> String:
+	var held := " (%d XP)" % price if price > 0 else ""
+	if yours: return "yours" + held
+	if change > 0: return "costs %d XP%s" % [change, held]
+	if change < 0: return "%d XP back%s" % [-change, held]
+	return "no XP change" + held
+
+## A tier raise's full story for its tooltip: the climb, its XP and the
+## other tiers it raises on the way.
+func _raise_text(raise: Dictionary, tiers: Array) -> String:
+	var label := func(id: String) -> String:
+		for t in tiers:
+			if str(t.tier) == id: return str(t.label)
+		return id
+	var text := "%s %d → %d for %d XP: the level climbs to avg %.2f." % [label.call(str(raise.tier)), int(raise.from), int(raise.to), int(raise.get("xp", 0)), float(raise.average)]
+	var others: Array[String] = []
+	for o in raise.get("also", []): others.append("%s %d → %d" % [label.call(str(o.tier)), int(o.from), int(o.to)])
+	if not others.is_empty(): text += " It also raises " + ", ".join(others) + "."
+	return text
+
+## A step's raises, "Cinder ×4 5 → 6".
+func _board_changes(k: int) -> String:
+	var steps: Array = board_view.staircase.steps
+	var out: Array[String] = []
+	for tier in steps[k].get("raised", []):
+		for i in board_view.tiers.size():
+			if str(board_view.tiers[i].tier) == str(tier):
+				out.append("%s %d → %d" % [str(board_view.tiers[i].label), int(steps[k - 1].damage[i]), int(steps[k].damage[i])])
+	return ", ".join(out)
+
+func _board_level(k: int) -> void:
+	var sc: Dictionary = board_view.staircase
+	k = clampi(k, int(sc.lowest), sc.steps.size() - 1)
+	var next := board_choice.duplicate(true)
+	if k == int(sc.lowest): next.erase("level")
+	else: next.level = float(sc.steps[k].at)
+	if _load_board(next): _render()
+
+func _board_defense(slot: int, id: String) -> void:
+	var next := board_choice.duplicate(true)
+	next.defenses[slot] = id
+	if _load_board(next): _render()
+
+func _apply_board() -> void:
+	var cost := int(board_view.xp.cost)
+	var response: Dictionary = _runtime().campaign_board_change(save_id, board_choice, int(board_view.revision), cost)
+	if response.get("ok") != true:
+		_error("Not completed: %s" % str(response.get("error", "unknown error"))); reload(); return
+	var view: Dictionary = response.result.get("view", {})
+	if expedition and not view.is_empty():
+		expedition_influence = int(view.get("turn", {}).get("influence", expedition_influence))
+		var visit = view.get("camp") if str(view.get("phase", "")) == "camp" else view.get("site_here")
+		if visit is Dictionary: expedition_open = bool(visit.get("deck_open", expedition_open))
+	selection = {"kind": "board"}
+	reload()
+	_message.text = "Ability board changed · %s" % (("−%d XP" % cost) if cost > 0 else (("+%d XP" % -cost) if cost < 0 else "no XP"))
+	_message.add_theme_color_override("font_color", STYLE.GAIN)
 
 func _ability_rules(parent: Node, id: String, caption: String) -> void:
 	var definition: Dictionary = catalog.get("abilities", {}).get(id, {})

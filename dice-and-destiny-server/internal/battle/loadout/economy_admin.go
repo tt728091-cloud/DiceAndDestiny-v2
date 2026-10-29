@@ -29,12 +29,23 @@ func deckValue(deck []Entry, character string, e Economy) int {
 	}
 	return value
 }
-func initializeBudget(p *Progress, e Economy) {
+func initializeBudget(p *Progress, e Economy, lib content.BattleLibrary) error {
 	p.DeckValue = deckValue(p.Deck, p.Character, e)
 	p.CollectionValue = deckValue(p.Collection, p.Character, e)
 	p.WoundValue = deckValue(p.Wounds, p.Character, e)
 	budget := p.XP + p.DeckValue + p.CollectionValue + p.WoundValue + p.UpgradeSpent
+	// A starting board is part of the kit, like the deck: its value is added
+	// to the total, not taken from the XP to spend.
+	value, err := boardValueWithin(*p, e, lib, budget)
+	if err != nil {
+		return err
+	}
+	if HoldsBoard(*p) {
+		p.BoardValue = &value
+	}
+	budget += value
 	p.Budget = &budget
+	return nil
 }
 func legacyAbilitySpend(id string, paths map[string]Upgrade, seen map[string]bool) int {
 	if seen[id] {
@@ -48,20 +59,38 @@ func legacyAbilitySpend(id string, paths map[string]Upgrade, seen map[string]boo
 	}
 	return 0
 }
-func reconcileBudget(p *Progress, e Economy) error {
+func reconcileBudget(p *Progress, e Economy, lib content.BattleLibrary) error {
 	budget := *p.Budget
+	migrated := false
+	if p.Character == CustomAdventurer && p.BoardValue == nil {
+		// Sheets saved before boards held XP: the board they already have is
+		// added to the total, so the XP to spend stays the same.
+		value, err := boardValueWithin(*p, e, lib, budget)
+		if err != nil {
+			return err
+		}
+		budget += value
+		migrated = true
+	}
 	if override, ok := e.Budgets[p.Character]; ok {
 		budget = override + p.FreeDeckBudget + p.EarnedXP - e.BudgetAllocations[p.Character]
 	}
 	value := deckValue(p.Deck, p.Character, e)
 	collectionValue := deckValue(p.Collection, p.Character, e)
 	woundValue := deckValue(p.Wounds, p.Character, e)
-	available := budget - value - collectionValue - woundValue - p.UpgradeSpent
-	if available < 0 {
-		return fmt.Errorf("%s needs a budget of at least %d XP (proposed %d XP); raise its budget or sell cards first", p.Character, value+collectionValue+woundValue+p.UpgradeSpent, budget)
+	board, err := boardValue(*p, e, lib, budget)
+	if err != nil {
+		return err
 	}
-	if budget != *p.Budget || value != p.DeckValue || collectionValue != p.CollectionValue || woundValue != p.WoundValue || e.AdminRevision != p.AdminRevision {
+	available := budget - value - collectionValue - woundValue - p.UpgradeSpent - board
+	if available < 0 {
+		return fmt.Errorf("%s needs a budget of at least %d XP (proposed %d XP); raise its budget or sell cards first", p.Character, value+collectionValue+woundValue+p.UpgradeSpent+board, budget)
+	}
+	if migrated || budget != *p.Budget || value != p.DeckValue || collectionValue != p.CollectionValue || woundValue != p.WoundValue || board != sheetBoardValue(*p) || e.AdminRevision != p.AdminRevision {
 		p.Revision++
+	}
+	if HoldsBoard(*p) {
+		p.BoardValue = &board
 	}
 	p.Budget = &budget
 	p.DeckValue = value
@@ -182,7 +211,7 @@ func SaveAdmin(root string, base Economy, catalogs map[string]content.BattleLibr
 	next.BudgetAllocations = proposed.BudgetAllocations
 	next.AdminRevision = proposed.Revision
 	for _, p := range all {
-		if err := reconcileBudget(&p, next); err != nil {
+		if err := reconcileBudget(&p, next, catalogs[p.Character]); err != nil {
 			return err
 		}
 	}

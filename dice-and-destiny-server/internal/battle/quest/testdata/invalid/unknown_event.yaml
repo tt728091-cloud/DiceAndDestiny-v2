@@ -1,0 +1,15 @@
+# want: unknown event "sunken_bell"
+schema_version: 1
+id: unknown_event
+name: A fixture
+set: fixture
+kind: side
+status: scenario
+hook: {verb: event, event: sunken_bell}
+trigger: [{verb: scenario_start}]
+start: one
+stages:
+  - id: one
+    objective: {verb: defeat_group, group: brine_lone}
+    outcomes:
+      - {outcome: success, next: end}

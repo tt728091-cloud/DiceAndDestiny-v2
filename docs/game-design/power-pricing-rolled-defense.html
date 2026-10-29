@@ -1,0 +1,270 @@
+<!doctype html>
+<html><head><meta charset="utf-8">
+<style>
+/* standalone theme (T3 injects its own) */
+:root{--background:#0b0b0b;--foreground:#ededed;--muted:#1c1c1c;--muted-foreground:#9a9a9a;--card:#141414;--secondary:#242424;--border:#2e2e2e;--popover:#161616;--popover-foreground:#ededed;--radius:10px;--font-sans:-apple-system,system-ui,sans-serif;--chart-1:#3987e5;--chart-2:#d95926;--chart-3:#199e70;--chart-4:#c98500} html{background:var(--background);color:var(--foreground)} body{padding:24px;max-width:900px;margin:0 auto}
+
+:root { --win: #3987e5; --lose: #e66767; }
+body { margin: 0; }
+.wrap { font-family: var(--font-sans); color: var(--foreground); font-size: 14px; line-height: 1.45; }
+h2 { font-size: 16px; margin: 26px 0 4px; font-weight: 600; }
+p.sub { color: var(--muted-foreground); margin: 0 0 12px; font-size: 13px; }
+.controls { display: flex; flex-wrap: wrap; gap: 8px 10px; margin: 4px 0 14px; }
+.seg { display: inline-flex; border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; }
+.seg button { font: inherit; font-size: 13px; background: transparent; color: var(--muted-foreground); border: 0; padding: 6px 11px; cursor: pointer; border-right: 1px solid var(--border); }
+.seg button:last-child { border-right: 0; }
+.seg button.on { background: var(--secondary); color: var(--foreground); font-weight: 600; }
+.cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 10px; }
+.card { border: 1px solid var(--border); border-radius: var(--radius); padding: 12px 14px; cursor: pointer; background: transparent; text-align: left; font: inherit; color: inherit; }
+.card.on { border-color: var(--foreground); background: var(--card); }
+.card .k { color: var(--muted-foreground); font-size: 12px; }
+.card .big { font-size: 22px; font-weight: 700; margin: 2px 0; }
+.card .s { color: var(--muted-foreground); font-size: 12px; }
+table { border-collapse: separate; border-spacing: 3px; }
+table.builds { border-collapse: collapse; width: 100%; font-size: 13px; }
+table.builds th, table.builds td { text-align: right; padding: 5px 8px; border-bottom: 1px solid var(--border); white-space: nowrap; }
+table.builds th:first-child, table.builds td:first-child { text-align: left; }
+table.builds th { color: var(--muted-foreground); font-weight: 500; }
+.sw { display: inline-block; width: 10px; height: 10px; border-radius: 3px; margin-right: 6px; vertical-align: -1px; }
+.matrix td.cell { width: 104px; height: 54px; text-align: center; border-radius: 6px; font-variant-numeric: tabular-nums; position: relative; }
+.matrix td.cell .v { font-size: 16px; }
+.matrix td.cell .w { font-size: 11px; color: var(--muted-foreground); }
+.matrix td.cell.lop { outline: 2px solid var(--foreground); outline-offset: -2px; font-weight: 700; }
+.matrix td.cell.self { background: transparent; border: 1px dashed var(--border); }
+.matrix th { font-weight: 500; font-size: 12px; color: var(--muted-foreground); padding: 2px 6px; }
+.matrix th.row { text-align: right; white-space: nowrap; }
+.legend { display: flex; gap: 14px; flex-wrap: wrap; font-size: 12px; color: var(--muted-foreground); margin: 6px 0 10px; }
+.chart { position: relative; }
+.tip { position: absolute; pointer-events: none; background: var(--popover); color: var(--popover-foreground); border: 1px solid var(--border); border-radius: 8px; padding: 8px 10px; font-size: 12px; line-height: 1.5; display: none; z-index: 5; white-space: nowrap; box-shadow: 0 4px 16px rgba(0,0,0,.25); }
+.mult { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 10px; }
+.mult .panel { border: 1px solid var(--border); border-radius: var(--radius); padding: 10px 12px; cursor: pointer; }
+.mult .panel.on { border-color: var(--foreground); }
+.mult .t { font-size: 12px; font-weight: 600; }
+.mult .s { font-size: 11px; color: var(--muted-foreground); }
+table.checks { border-collapse: collapse; font-size: 12px; width: 100%; }
+table.checks td, table.checks th { padding: 4px 6px; border-bottom: 1px solid var(--border); text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums; }
+table.checks th { color: var(--muted-foreground); font-weight: 500; }
+table.checks td:first-child, table.checks th:first-child { text-align: left; }
+.note { color: var(--muted-foreground); font-size: 12px; }
+</style></head>
+<body><div class="wrap" id="app"></div>
+<script>
+const RAW = {"levels":[400,650,900,1200,1500],"curve":[300,320,340,360,380,400,420,440,460,480,500,520,540,560,580,600,620,640,660,680,700,720,740,760,780,800,820,840,860,880,900,920,940,960,980,1000,1020,1040,1060,1080,1100,1120,1140,1160,1180,1200,1220,1240,1260,1280,1300,1320,1340,1360,1380,1400,1420,1440,1460,1480,1500],"pairs":["main"],"schemes":{"block2":{"label":"Recommended: roll 2 dice, any 6 blocks the attack; high 9","defense":"block2","data":{"main":{"t":{"400":{"b":[[6.91,36,41,0],[6.91,25,41,106],[8.94,28,123,0],[8.94,20,123,82]],"m":[[null,[432,231,336,5.21],[248,492,259,4.02],[411,254,335,4.02]],[[336,231,432,5.21],null,[308,254,438,4.02],[367,230,403,4.02]],[[259,492,248,4.05],[438,254,308,4.05],null,[268,295,437,3.13]],[[335,254,411,4.17],[403,230,367,4.17],[437,295,268,3.22],null]]},"650":{"b":[[6.91,58,66,0],[6.91,41,66,173],[8.94,45,199,0],[8.94,32,199,133]],"m":[[null,[440,183,377,8.4],[110,769,121,6.48],[395,220,385,6.48]],[[377,183,440,8.55],null,[381,220,399,6.6],[413,172,415,6.6]],[[121,769,110,6.52],[399,220,381,6.52],null,[350,250,401,5.03]],[[385,220,395,6.67],[415,172,413,6.67],[401,250,350,5.15],null]]},"900":{"b":[[6.91,81,92,0],[6.91,57,92,239],[8.94,62,276,0],[8.94,44,276,185]],"m":[[null,[391,163,446,11.73],[322,467,211,9.06],[370,186,445,9.06]],[[446,163,391,11.89],null,[467,188,345,9.18],[431,138,431,9.18]],[[211,467,322,8.98],[345,188,467,8.98],null,[400,204,396,6.93]],[[445,186,370,9.18],[431,138,431,9.18],[396,204,400,7.08],null]]},"1200":{"b":[[6.91,108,123,0],[6.91,76,123,319],[8.94,83,368,0],[8.94,59,368,246]],"m":[[null,[422,141,437,15.64],[315,442,244,12.07],[388,163,449,12.07]],[[437,141,422,15.85],null,[457,163,380,12.23],[435,120,444,12.23]],[[244,442,315,12.02],[380,163,457,12.02],null,[390,184,426,9.28]],[[449,163,388,12.3],[444,120,435,12.3],[426,184,390,9.5],null]]},"1500":{"b":[[6.91,135,153,0],[6.91,95,153,399],[8.94,104,460,0],[8.94,73,460,308]],"m":[[null,[420,128,453,19.55],[311,420,269,15.09],[419,145,436,15.09]],[[453,128,420,19.81],null,[454,146,401,15.29],[453,107,439,15.29]],[[269,420,311,15.06],[401,146,454,15.06],null,[408,161,430,11.63]],[[436,145,419,15.22],[439,107,453,15.22],[430,161,408,11.75],null]]}},"c":[[469,538,528,463,482,527,578,545,466,474,491,538,531,530,494,471,510,512,500,500,497,519,494,483,495,512,512,502,500,486,497,494,492,495,502,511,496,473,491,497,507,496,477,488,480,499,494,483,501,498,511,524,476,492,493,514,492,482,491,479,498],[504,469,471,537,524,456,494,526,552,539,505,481,478,476,554,534,504,488,501,515,497,518,516,513,511,524,500,498,487,527,530,509,502,501,503,504,490,521,515,501,516,504,508,505,518,514,500,501,524,516,513,507,525,520,508,500,525,517,516,525,517],[515,506,519,490,451,495,490,476,476,461,509,524,546,546,474,473,457,478,514,516,550,505,489,482,465,451,504,513,517,483,462,499,501,503,483,463,495,492,484,503,478,495,487,467,476,469,504,509,494,503,484,465,495,481,498,488,486,508,492,497,481],[513,487,481,510,542,522,439,453,506,526,494,456,446,449,478,522,529,523,485,469,456,458,501,523,529,513,484,487,496,504,512,499,505,501,512,522,519,514,509,499,499,505,527,540,526,517,502,507,481,482,492,503,503,507,501,498,497,493,501,499,504]],"lo":[380,382,403,402,379,415,363,404,432,410,467,436,420,423,437,444,420,436,478,443,416,447,464,460,446,436,455,471,481,443,439,479,484,480,459,452,480,462,466,476,458,475,448,437,455,461,492,477,468,479,470,436,462,471,484,475,470,474,477,467,474],"hi":[620,618,597,598,621,585,637,596,568,590,533,564,580,577,563,556,580,564,522,557,584,553,536,540,554,564,545,529,519,557,561,521,516,520,541,548,520,538,534,524,542,525,552,563,545,539,508,523,532,521,530,564,538,529,516,525,530,526,523,533,526],"sh":null}},"lo":6.905254636933651,"hi":8.944905589515248,"share":0.29600000000000004,"kind":"block","keep":{"low":0.897866961608989,"high":0.6931319663415249,"defense":0.704}},"block1b":{"label":"Roll 1 die, 5\u20136 blocks; high 9","defense":"block1b","data":{"main":{"t":{"400":{"b":[[6.91,36,41,0],[6.91,24,41,116],[8.94,28,123,0],[8.94,19,123,90]],"m":[[null,[390,226,384,5.21],[248,492,259,4.02],[405,251,344,4.02]],[[384,226,390,5.21],null,[337,251,412,4.02],[386,222,393,4.02]],[[259,492,248,4.05],[412,251,337,4.05],null,[342,259,399,3.13]],[[344,251,405,4.13],[393,222,386,4.13],[399,259,342,3.19],null]]},"650":{"b":[[6.91,58,66,0],[6.91,40,66,189],[8.94,45,199,0],[8.94,31,199,146]],"m":[[null,[416,180,405,8.4],[110,769,121,6.48],[350,212,438,6.48]],[[405,180,416,8.69],null,[435,212,353,6.71],[421,158,421,6.71]],[[121,769,110,6.52],[353,212,435,6.52],null,[311,238,451,5.03]],[[438,212,350,6.73],[421,158,421,6.73],[451,238,311,5.2],null]]},"900":{"b":[[6.91,81,92,0],[6.91,55,92,261],[8.94,62,276,0],[8.94,42,276,201]],"m":[[null,[418,152,430,11.73],[322,467,211,9.06],[423,167,410,9.06]],[[430,152,418,11.95],null,[464,172,364,9.22],[463,126,411,9.22]],[[211,467,322,8.98],[364,172,464,8.98],null,[400,200,400,6.93]],[[410,167,423,9.12],[411,126,463,9.12],[400,200,400,7.04],null]]},"1200":{"b":[[6.91,108,123,0],[6.91,73,123,348],[8.94,83,368,0],[8.94,56,368,269]],"m":[[null,[412,135,453,15.64],[315,442,244,12.07],[427,148,425,12.07]],[[453,135,412,15.86],null,[458,150,392,12.24],[461,110,429,12.24]],[[244,442,315,12.02],[392,150,458,12.02],null,[394,170,436,9.28]],[[425,148,427,12.16],[429,110,461,12.16],[436,170,394,9.39],null]]},"1500":{"b":[[6.91,135,153,0],[6.91,91,153,435],[8.94,104,460,0],[8.94,70,460,336]],"m":[[null,[426,119,455,19.55],[311,420,269,15.09],[431,134,435,15.09]],[[455,119,426,19.77],null,[456,135,410,15.26],[460,99,441,15.26]],[[269,420,311,15.06],[410,135,456,15.06],null,[435,153,412,11.63]],[[435,134,431,15.21],[441,99,460,15.21],[412,153,435,11.74],null]]}},"c":[[514,545,504,457,462,509,559,539,468,460,472,509,511,528,526,490,494,485,495,507,484,511,489,476,488,503,498,489,499,516,519,496,476,479,491,517,511,488,487,472,500,500,496,496,492,505,495,483,488,485,502,520,484,484,476,492,483,474,487,492,501],[501,450,503,543,548,485,469,480,507,530,525,509,494,476,490,498,532,517,501,500,511,502,505,501,499,526,513,514,500,491,527,515,520,510,518,510,492,500,507,528,517,497,503,532,526,523,508,508,525,518,515,507,499,524,519,516,515,519,516,517,516],[535,515,508,499,472,505,487,477,472,445,486,501,534,552,516,507,449,453,485,492,532,517,508,496,465,433,492,498,508,497,465,503,505,511,485,460,487,491,479,487,474,500,513,485,492,470,492,493,476,496,486,473,507,473,480,466,473,494,484,505,489],[450,491,485,502,518,500,484,503,553,565,518,481,460,444,468,504,526,545,519,501,473,469,498,527,547,538,496,499,494,496,489,485,498,500,506,512,510,522,527,512,509,503,488,487,489,501,506,516,510,501,497,500,510,518,525,527,529,513,514,487,494]],"lo":[416,390,418,425,402,462,406,434,424,381,449,465,427,393,452,471,415,403,468,480,449,456,469,452,429,430,471,449,467,478,445,459,464,474,474,445,449,457,462,451,455,493,482,452,465,464,485,474,465,468,470,436,481,458,462,452,450,462,472,481,477],"hi":[584,610,582,575,598,538,594,566,576,619,551,535,573,607,548,529,585,597,532,520,551,544,531,548,571,570,529,551,533,522,555,541,536,526,526,555,551,543,538,549,545,507,518,548,535,536,515,526,535,532,530,564,519,542,538,548,550,538,528,519,523],"sh":null}},"lo":6.905254636933651,"hi":8.944905589515248,"share":0.32299999999999995,"kind":"block","keep":{"low":0.897866961608989,"high":0.6931319663415249,"defense":0.677}},"block3":{"label":"Roll 3 dice, any 6 blocks (Holdfast strength); high 9","defense":"block3","data":{"main":{"t":{"400":{"b":[[6.91,36,41,0],[6.91,21,41,151],[8.94,28,123,0],[8.94,16,123,117]],"m":[[null,[462,172,366,5.21],[248,492,259,4.02],[309,222,469,4.02]],[[366,172,462,5.26],null,[476,223,301,4.06],[423,169,408,4.06]],[[259,492,248,4.05],[301,223,476,4.05],null,[501,215,284,3.13]],[[469,222,309,4.0],[408,169,423,4.0],[284,215,501,3.09],null]]},"650":{"b":[[6.91,58,66,0],[6.91,34,66,246],[8.94,45,199,0],[8.94,26,199,190]],"m":[[null,[466,146,389,8.4],[110,769,121,6.48],[477,166,357,6.48]],[[389,146,466,8.51],null,[366,166,468,6.57],[440,136,424,6.57]],[[121,769,110,6.52],[468,166,366,6.52],null,[465,181,355,5.03]],[[357,166,477,6.51],[424,136,440,6.51],[355,181,465,5.02],null]]},"900":{"b":[[6.91,81,92,0],[6.91,47,92,340],[8.94,62,276,0],[8.94,36,276,263]],"m":[[null,[459,128,413,11.73],[322,467,211,9.06],[418,144,438,9.06]],[[413,128,459,11.76],null,[471,146,382,9.08],[459,107,434,9.08]],[[211,467,322,8.98],[382,146,471,8.98],null,[429,159,412,6.93]],[[438,144,418,9.01],[434,107,459,9.01],[412,159,429,6.95],null]]},"1200":{"b":[[6.91,108,123,0],[6.91,62,123,454],[8.94,83,368,0],[8.94,48,368,350]],"m":[[null,[478,110,412,15.64],[315,442,244,12.07],[474,123,403,12.07]],[[412,110,478,15.52],null,[415,125,460,11.98],[454,94,451,11.98]],[[244,442,315,12.02],[460,125,415,12.02],null,[413,145,442,9.28]],[[403,123,474,12.01],[451,94,454,12.01],[442,145,413,9.27],null]]},"1500":{"b":[[6.91,135,153,0],[6.91,78,153,567],[8.94,104,460,0],[8.94,60,460,438]],"m":[[null,[455,100,445,19.55],[311,420,269,15.09],[466,114,420,15.09]],[[445,100,455,19.52],null,[434,114,452,15.07],[463,85,452,15.07]],[[269,420,311,15.06],[452,114,434,15.06],null,[460,129,411,11.63]],[[420,114,466,15.01],[452,85,463,15.01],[411,129,460,11.59],null]]}},"c":[[478,554,541,540,491,488,504,502,495,532,540,547,490,488,480,482,530,531,538,531,501,506,487,486,507,532,516,496,489,516,523,507,492,490,505,529,524,506,505,504,513,504,498,516,524,535,514,491,493,499,515,533,498,504,505,515,499,491,503,503,516],[529,479,471,537,540,516,514,514,506,482,463,470,490,527,531,510,480,465,464,483,486,485,494,508,504,501,496,506,500,514,511,498,503,500,503,498,480,483,489,504,505,494,494,486,481,482,478,488,513,510,503,499,498,501,508,507,508,499,499,498,497],[505,508,514,480,456,509,520,515,536,490,494,474,484,495,483,516,515,526,553,526,526,484,473,477,481,479,526,528,520,504,470,490,489,500,496,481,511,515,498,514,493,509,504,485,508,491,512,511,486,506,496,485,517,494,508,484,482,502,492,514,504],[488,460,474,442,513,488,461,469,462,495,504,509,536,490,505,492,475,478,445,460,487,526,545,528,509,488,463,470,491,467,496,505,516,510,496,492,484,495,508,477,489,492,504,513,487,493,496,510,508,486,485,483,487,500,478,494,510,508,506,485,482]],"lo":[370,365,414,402,373,391,382,438,430,449,407,410,456,456,433,457,459,448,410,445,460,454,427,450,478,436,447,451,469,456,445,476,470,471,476,452,456,477,474,439,458,481,482,454,462,464,468,482,471,469,469,436,482,486,466,475,473,479,489,475,475],"hi":[630,635,586,598,627,609,618,562,570,551,593,590,544,544,567,543,541,552,590,555,540,546,573,550,522,564,553,549,531,544,555,524,530,529,524,548,544,523,526,561,542,519,518,546,538,536,532,518,529,531,531,564,518,514,534,525,527,521,511,525,525],"sh":null}},"lo":6.905254636933651,"hi":8.944905589515248,"share":0.42100000000000004,"kind":"block","keep":{"low":0.897866961608989,"high":0.6931319663415249,"defense":0.579}},"holdfast":{"label":"Holdfast at its best price; high 8","defense":"holdfast","data":{"main":{"t":{"400":{"b":[[6.91,36,41,0],[6.91,19,41,172],[7.91,31,87,0],[7.91,16,87,150]],"m":[[null,[264,352,385,5.21],[69,867,64,4.55],[272,420,308,4.55]],[[385,352,264,5.53],null,[142,460,398,4.28],[227,323,450,4.28]],[[64,867,69,4.49],[398,460,142,4.49],null,[302,509,189,3.92]],[[308,420,272,4.66],[450,323,227,4.66],[189,509,302,3.6],null]]},"650":{"b":[[6.91,58,66,0],[6.91,30,66,280],[7.91,51,141,0],[7.91,26,141,244]],"m":[[null,[289,298,413,8.4],[160,657,183,7.33],[318,318,364,7.33]],[[413,298,289,8.74],null,[112,286,602,6.76],[186,236,578,6.76]],[[183,657,160,7.39],[602,286,112,7.39],null,[598,305,97,6.44]],[[364,318,318,7.57],[578,236,186,7.57],[97,305,598,5.86],null]]},"900":{"b":[[6.91,81,92,0],[6.91,42,92,388],[7.91,71,195,0],[7.91,37,195,338]],"m":[[null,[259,246,494,11.73],[242,498,261,10.24],[262,259,480,10.24]],[[494,246,259,12.23],null,[129,243,628,9.46],[150,175,675,9.46]],[[261,498,242,10.28],[628,243,129,10.28],null,[530,302,167,8.97]],[[480,259,262,10.78],[675,175,150,10.78],[167,302,530,8.33],null]]},"1200":{"b":[[6.91,108,123,0],[6.91,56,123,517],[7.91,94,260,0],[7.91,49,260,451]],"m":[[null,[263,211,527,15.64],[221,577,202,13.65],[254,227,519,13.65]],[[527,211,263,16.31],null,[130,216,654,12.61],[142,144,714,12.61]],[[202,577,221,13.61],[654,216,130,13.61],null,[595,253,152,11.88]],[[519,227,254,14.27],[714,144,142,14.27],[152,253,595,11.04],null]]},"1500":{"b":[[6.91,135,153,0],[6.91,70,153,646],[7.91,118,325,0],[7.91,61,325,564]],"m":[[null,[259,185,556,19.55],[286,412,301,17.06],[266,199,535,17.06]],[[556,185,259,20.39],null,[118,176,706,15.77],[133,122,745,15.77]],[[301,412,286,17.09],[706,176,118,17.09],null,[680,198,122,14.91]],[[535,199,266,17.77],[745,122,133,17.77],[122,198,680,13.74],null]]}},"c":[[471,476,456,421,470,475,444,472,450,462,471,447,428,455,439,438,454,440,428,407,412,485,423,421,426,436,479,422,421,422,421,453,406,412,411,431,413,407,422,423,434,417,414,415,434,415,406,387,408,415,401,421,382,413,417,411,393,389,416,406,403],[436,426,439,463,453,440,461,488,383,348,393,412,422,375,388,431,407,407,399,422,413,426,420,365,370,354,377,381,386,379,368,387,393,398,392,391,379,414,360,348,347,346,377,368,367,361,360,373,374,377,374,378,378,340,345,340,352,345,360,354,350],[600,592,580,551,603,561,586,533,616,606,595,622,618,634,589,601,638,638,639,593,588,578,649,665,622,630,628,674,642,632,647,647,678,645,646,612,638,646,671,676,647,662,669,679,647,658,668,658,688,660,665,632,667,710,684,687,676,691,683,690,693],[492,506,526,565,474,524,509,507,551,584,541,519,532,537,585,531,501,514,534,578,587,510,508,548,581,580,517,523,551,566,564,513,523,544,551,566,570,534,547,553,572,575,540,537,552,566,567,582,530,548,559,570,573,537,554,562,580,575,541,549,554]],"lo":[307,323,315,336,309,372,306,314,280,258,326,287,296,272,276,330,268,279,291,281,270,320,262,249,241,232,270,247,255,246,237,265,232,259,250,242,233,256,225,217,210,203,237,229,222,214,207,200,216,225,218,211,204,190,197,191,185,179,207,200,194],"hi":[693,677,685,664,691,628,694,686,720,742,674,713,704,728,724,670,732,721,709,719,730,680,738,751,759,768,730,753,745,754,763,735,768,741,750,758,767,744,775,783,790,797,763,771,778,786,793,800,784,775,782,789,796,810,803,809,815,821,793,800,806],"sh":null}},"lo":6.905254636933651,"hi":7.913732724568873,"share":0.48,"kind":"small","keep":{"low":0.897866961608989,"high":0.7834482431724741,"defense":0.52}}}}, RAWC = [["block2",400,0,1,548,542,845,479,676],["block2",400,0,2,494,486,480,984,536],["block2",400,0,3,538,536,815,514,671],["block2",400,1,2,435,427,613,483,904],["block2",400,1,3,482,486,738,466,796],["block2",400,2,3,415,412,538,574,888],["block2",650,0,1,531,536,891,363,746],["block2",650,0,2,494,494,194,1590,216],["block2",650,0,3,505,501,777,450,773],["block2",650,1,2,491,487,745,457,798],["block2",650,1,3,499,496,833,317,850],["block2",650,2,3,474,468,680,510,810],["block2",900,0,1,472,466,761,341,898],["block2",900,0,2,555,556,634,958,408],["block2",900,0,3,463,454,731,356,913],["block2",900,1,2,561,553,921,371,708],["block2",900,1,3,500,498,855,283,862],["block2",900,2,3,502,509,816,405,779],["holdfast",400,0,1,439,423,508,677,815],["holdfast",400,0,2,502,508,140,1752,108],["holdfast",400,0,3,482,480,538,842,620],["holdfast",400,1,2,372,369,273,930,797],["holdfast",400,1,3,389,408,476,680,844],["holdfast",400,2,3,556,557,628,972,400],["holdfast",650,0,1,438,437,577,593,830],["holdfast",650,0,2,489,495,330,1320,350],["holdfast",650,0,3,477,472,630,630,740],["holdfast",650,1,2,255,261,228,589,1183],["holdfast",650,1,3,304,317,408,451,1141],["holdfast",650,2,3,751,756,1206,612,182],["holdfast",900,0,1,382,369,502,471,1027],["holdfast",900,0,2,491,486,438,1068,494],["holdfast",900,0,3,391,376,512,481,1007],["holdfast",900,1,2,251,249,263,471,1266],["holdfast",900,1,3,237,241,318,328,1354],["holdfast",900,2,3,681,679,1055,606,339]], GRID = [["Block: 1 die, a 6 (17%)",8.94,93,33,43,16],["Block: 1 die, a 6 (17%)",9.95,83,31,41,17],["Block: 1 die, a 6 (17%)",10.95,70,26,32,17],["Block: 1 die, a 6 (17%)",12.0,63,31,35,16],["Block: 1 die, a 6 (17%)",13.05,44,25,32,15],["Block: 1 die, a 6 (17%)",13.88,45,27,37,17],["Block: 2 dice, any 6 (31%)",8.94,100,40,42,30],["Block: 2 dice, any 6 (31%)",9.95,94,38,39,30],["Block: 2 dice, any 6 (31%)",10.95,89,34,40,30],["Block: 2 dice, any 6 (31%)",12.0,84,26,26,30],["Block: 2 dice, any 6 (31%)",13.05,72,25,38,30],["Block: 2 dice, any 6 (31%)",13.88,70,26,29,30],["Block: 1 die, 5\u20136 (33%)",8.94,95,38,44,32],["Block: 1 die, 5\u20136 (33%)",9.95,92,37,41,33],["Block: 1 die, 5\u20136 (33%)",10.95,89,37,42,32],["Block: 1 die, 5\u20136 (33%)",12.0,87,25,31,32],["Block: 1 die, 5\u20136 (33%)",13.05,77,23,42,32],["Block: 1 die, 5\u20136 (33%)",13.88,78,25,25,32],["Block: 3 dice, any 6 (42%)",8.94,95,36,39,42],["Block: 3 dice, any 6 (42%)",9.95,88,34,38,43],["Block: 3 dice, any 6 (42%)",10.95,86,33,34,42],["Block: 3 dice, any 6 (42%)",12.0,84,34,38,42],["Block: 3 dice, any 6 (42%)",13.05,70,25,30,40],["Block: 3 dice, any 6 (42%)",13.88,69,28,31,41],["Small: 1 on a 4\u20136 (0.5)",7.91,95,39,41,7],["Small: 1 on a 4\u20136 (0.5)",8.94,77,36,41,6],["Small: 1 on a 4\u20136 (0.5)",9.95,61,35,39,6],["Small: 1 on a 4\u20136 (0.5)",12.0,48,32,40,7],["Small: Light Guard (1.0)",7.91,54,36,41,13],["Small: Light Guard (1.0)",8.94,9,30,33,14],["Small: Light Guard (1.0)",9.95,8,26,31,13],["Small: Light Guard (1.0)",12.0,5,24,36,13],["Small: 2 Light Guard dice (2.0)",7.91,4,29,37,27],["Small: 2 Light Guard dice (2.0)",8.94,1,16,27,28],["Small: 2 Light Guard dice (2.0)",9.95,0,13,24,25],["Small: 2 Light Guard dice (2.0)",12.0,0,9,19,25],["Small: Holdfast (3.5)",7.91,0,18,24,48],["Small: Holdfast (3.5)",8.94,0,6,13,46],["Small: Holdfast (3.5)",9.95,0,3,7,42],["Small: Holdfast (3.5)",12.0,0,1,5,44]];
+const DATA = { levels: RAW.levels, curve: RAW.curve, pairs: RAW.pairs, schemes: {} };
+for (const k in RAW.schemes) {
+  const s = RAW.schemes[k], o = { label: s.label, defense: s.defense, data: {} };
+  for (const p in s.data) {
+    const d = s.data[p], tables = {}, f = v => v < 0 ? null : v / 1000;
+    for (const X in d.t) tables[X] = { builds: d.t[X].b.map(b => ({ damage: b[0], cards: b[1], oxp: b[2], dxp: b[3] })),
+      matrix: d.t[X].m.map(r => r.map(c => c ? { w: c[0] / 1000, d: c[1] / 1000, l: c[2] / 1000, rounds: c[3] } : null)) };
+    o.data[p] = { tables, curve: d.c.map(c => c.map(f)), low: d.lo.map(f), high: d.hi.map(f), shares: d.sh };
+  }
+  DATA.schemes[k] = o;
+}
+const CHECKS = RAWC.map(c => ({ scheme: c[0], X: c[1], i: c[2], j: c[3], model: c[4] / 1000, score: c[5] / 1000, w: c[6], d: c[7], l: c[8], n: c[6] + c[7] + c[8] }));
+const LEVELS = DATA.levels, CURVE = DATA.curve;
+const ASKED = [400, 650, 900];
+const COLORS = ['var(--chart-1)', 'var(--chart-2)', 'var(--chart-3)', 'var(--chart-4)'];
+const DEFNAME = { block2: 'block (2 dice)', block1b: 'block (5–6)', block3: 'block (3 dice)', holdfast: 'Holdfast', none: 'no defense' };
+const SCHEME_TEXT = {
+  flat: 'Cards 10 XP each. The board costs 40 XP per point of average damage above 6.2; Holdfast costs 140 XP (40 per point of average prevention). Cards = (total XP − board − defense) ÷ 10.',
+  pct: 'Percentage of total XP. The board keeps a share of your XP for cards and the defense keeps a share of what is left, both fitted to the equal-rounds equation for this damage pair; every remaining 10 XP is a card.',
+  pctlight: 'The same percentage pricing with Light Guard (prevents 0/1/2, average 1) as the defense instead of Holdfast.',
+  ward: 'Exact solution: the defense prevents 37% of every hit. Cards = total XP ÷ 10 × (6.2 ÷ damage) × 0.63. Model only: the engine cannot prevent a percentage of a hit yet, so there are no real battles for it.',
+};
+let S = { scheme: 'block2', pair: 'main', level: 400 };
+
+const pct = v => (v * 100).toFixed(0);
+function schemeText(k) {
+  const s = RAW.schemes[k], kp = s.keep, lo = s.lo.toFixed(2), hi = s.hi.toFixed(2);
+  const DT = { block2: 'Defense: roll 2 dice; any 6 prevents all damage from the attack (blocks 31% of attacks)',
+    block1b: 'Defense: roll 1 die; a 5 or 6 prevents all damage from the attack (blocks 33%)',
+    block3: 'Defense: roll 3 dice; any 6 prevents all damage from the attack (blocks 42%)',
+    holdfast: 'Defense: Holdfast as it is (3 dice, prevents 0–6, 3.5 on average), at the price that fits best. Even at its best price it cannot keep these matchups inside 40–60' };
+  return `Low damage ${lo}, high ${hi}. Prices are percentages of total XP: the board costs (1 − 6.2 ÷ damage): ${(100 * (1 - kp.low)).toFixed(1)}% at ${lo}, ${(100 * (1 - kp.high)).toFixed(1)}% at ${hi}. ${DT[k]}; it costs ${(100 * (1 - kp.defense)).toFixed(1)}% of the XP left after the board. Every remaining 10 XP is a blank card (rounded to the nearest card). Playable in the engine today.`;
+}
+const score = c => c.w + c.d / 2;
+function names(scheme, pair) {
+  const sc = RAW.schemes[scheme], lo = sc.lo.toFixed(1), hi = sc.hi.toFixed(1);
+  const d = DEFNAME[sc.defense] || sc.defense;
+  return [`Low ${lo} · no defense`, `Low ${lo} · ${d}`, `High ${hi} · no defense`, `High ${hi} · ${d}`];
+}
+function cellColor(s) {
+  const t = Math.max(-1, Math.min(1, (s - 0.5) / 0.3));
+  const col = t >= 0 ? 'var(--win)' : 'var(--lose)';
+  return `color-mix(in oklab, ${col} ${Math.round(Math.abs(t) * 70)}%, var(--secondary))`;
+}
+function lopsided(scheme, pair, levels) {
+  let n = 0, tot = 0, lo = 1, hi = 0;
+  for (const X of levels) {
+    const m = DATA.schemes[scheme].data[pair].tables[X].matrix;
+    for (let i = 0; i < 4; i++) for (let j = i + 1; j < 4; j++) {
+      const c = m[i][j]; if (!c) continue;
+      const s = score(c); tot++; if (s < 0.4 || s > 0.6) n++;
+      lo = Math.min(lo, s, 1 - s); hi = Math.max(hi, s, 1 - s);
+    }
+  }
+  return { n, tot, lo, hi };
+}
+function seg(label, opts, key) {
+  return `<div class="seg" role="group" aria-label="${label}">` + opts.map(([v, t]) =>
+    `<button data-k="${key}" data-v="${v}" class="${String(S[key]) === String(v) ? 'on' : ''}">${t}</button>`).join('') + '</div>';
+}
+function render() {
+  const app = document.getElementById('app');
+  const sch = DATA.schemes[S.scheme], D = sch.data[S.pair], T = D.tables[S.level], N = names(S.scheme, S.pair);
+  let h = '';
+  h += '<div class="controls">' +
+    seg('Pricing', Object.keys(DATA.schemes).map(k => [k, DATA.schemes[k].label]), 'scheme') +
+    seg('Total XP', LEVELS.map(x => [x, x + ' XP']), 'level') + '</div>';
+  h += `<p class="sub">${schemeText(S.scheme)}</p>`;
+  // summary cards
+  h += '<div class="cards">';
+  for (const k of Object.keys(DATA.schemes)) {
+    const a = lopsided(k, S.pair, ASKED), all = lopsided(k, S.pair, LEVELS);
+    h += `<button class="card ${k === S.scheme ? 'on' : ''}" data-k="scheme" data-v="${k}">
+      <div class="k">${DATA.schemes[k].label}</div>
+      <div class="big">${a.n} lopsided</div>
+      <div class="s">of ${a.tot} pairings at 400 / 650 / 900 XP<br>all five levels: ${all.n} of ${all.tot}<br>pairings range ${pct(a.lo)}–${pct(a.hi)}%</div></button>`;
+  }
+  h += '</div>';
+  // builds
+  h += `<h2>The four builds at ${S.level} XP</h2><p class="sub">Damage and defense chosen, every XP left over in blank cards (10 XP each). No starting deck: with nothing bought, ${S.level} XP is ${S.level / 10} cards.</p>`;
+  h += '<table class="builds"><tr><th>Build</th><th>Average damage</th><th>Board XP</th><th>Defense XP</th><th>Cards</th><th>Card XP</th><th>Total</th></tr>';
+  T.builds.forEach((b, i) => {
+    h += `<tr><td><span class="sw" style="background:${COLORS[i]}"></span>${N[i]}</td><td>${b.damage.toFixed(2)}</td><td>${Math.round(b.oxp)}</td><td>${Math.round(b.dxp)}</td><td>${b.cards}</td><td>${b.cards * 10}</td><td>${Math.round(b.oxp + b.dxp + b.cards * 10)}</td></tr>`;
+  });
+  h += '</table>';
+  if (D.shares) {
+    const f = D.shares.f, g = D.shares.g, ks = Object.keys(f);
+    h += `<p class="note">Fitted shares: ${ks.map(o => `${o} damage costs ${(100 * (1 - f[o])).toFixed(1)}% of total XP`).join(', ')}; ${DEFNAME[sch.defense]} costs ${(100 * (1 - g[sch.defense])).toFixed(1)}% of the XP left after the board.</p>`;
+  }
+  // matrix
+  h += `<h2>Every matchup at ${S.level} XP</h2><p class="sub">Row build's chance to beat the column build (wins + ½ draws), exact card counts, race model. Small line: win / draw / loss %. Outlined: lopsided (below 40% or above 60%). Hover for the rounds each side needs${(S.scheme === 'block2' || S.scheme === 'holdfast') && ASKED.includes(S.level) ? ' and the real-battle result' : ''}.</p>`;
+  h += '<div class="legend"><span><span class="sw" style="background:var(--lose)"></span>row loses more</span><span><span class="sw" style="background:var(--secondary)"></span>50%</span><span><span class="sw" style="background:var(--win)"></span>row wins more</span></div>';
+  h += '<div class="chart" id="mx"><table class="matrix"><tr><th></th>' + N.map((n, j) => `<th>${j + 1}</th>`).join('') + '<th>Mean</th></tr>';
+  for (let i = 0; i < 4; i++) {
+    h += `<tr><th class="row"><span class="sw" style="background:${COLORS[i]}"></span>${i + 1} ${N[i]}</th>`;
+    const vals = [];
+    for (let j = 0; j < 4; j++) {
+      const c = T.matrix[i][j];
+      if (i === j) { h += '<td class="cell self"></td>'; continue; }
+      if (!c) { h += '<td class="cell self note">—</td>'; continue; }
+      const s = score(c); vals.push(s);
+      h += `<td class="cell ${s < 0.4 || s > 0.6 ? 'lop' : ''}" style="background:${cellColor(s)}" data-i="${i}" data-j="${j}"><div class="v">${pct(s)}</div><div class="w">${pct(c.w)}/${pct(c.d)}/${pct(c.l)}</div></td>`;
+    }
+    h += `<th>${vals.length ? (100 * vals.reduce((a, b) => a + b, 0) / vals.length).toFixed(1) : '—'}</th></tr>`;
+  }
+  h += '</table><div class="tip" id="mxtip"></div></div>';
+  // mean chart
+  h += `<h2>Mean score against the other three, by total XP</h2><p class="sub">Each build's average chance to beat the other three at every total XP from 300 to 1,500 (every 20 XP), exact card counts. Scale 30–70%. Shaded: 45–55%. Dashed: the levels you asked for (400, 650, 900). Hover to read the values.</p>`;
+  h += '<div class="legend">' + N.map((n, i) => `<span><span class="sw" style="background:${COLORS[i]}"></span>${n}</span>`).join('') + '</div>';
+  h += '<div class="chart" id="mc"><svg id="msvg" width="100%" height="300"></svg><div class="tip" id="mctip"></div></div>';
+  // range small multiples
+  h += `<h2>Worst and best matchup, by total XP</h2><p class="sub">The band runs from the most lopsided loss to the most lopsided win among the six pairings at each XP, for every configuration. Shaded: 40–60%, the not-lopsided zone. Click a panel to select it.</p>`;
+  h += '<div class="mult">' + Object.keys(DATA.schemes).map(k => `<div class="panel ${k === S.scheme ? 'on' : ''}" data-k="scheme" data-v="${k}"><div class="t">${DATA.schemes[k].label}</div><svg class="band" data-s="${k}" width="100%" height="110"></svg><div class="s" id="bs-${k}"></div></div>`).join('') + '</div>';
+  // real battles
+  h += `<h2>Every rolled defense searched</h2><p class="sub">Low damage 7 against each high damage, every defense a roll with flat amounts on its faces. Block defenses prevent the whole attack on some faces; small ones prevent a few points on every face, like Holdfast. Each defense at its best-fitting price (a percentage of the XP left after the board). Each cell: the share of XP levels from 400 to 1,500 (every 10 XP) where all six matchups land inside 40–60; underneath, the worst matchup at any level. Hover for 400 / 650 / 900 and the price.</p>`;
+  const highs = [...new Set(GRID.map(g => g[1]))].sort((a, b) => a - b), rowsG = [...new Set(GRID.map(g => g[0]))];
+  h += '<div class="chart" id="gr"><table class="matrix"><tr><th class="row">defense ↓ · high damage →</th>' + highs.map(x => `<th>${x.toFixed(2)}</th>`).join('') + '</tr>';
+  for (const r of rowsG) {
+    h += `<tr><th class="row">${r}</th>`;
+    for (const x of highs) {
+      const g = GRID.find(q => q[0] === r && q[1] === x);
+      if (!g) { h += '<td class="cell self note">—</td>'; continue; }
+      const t = Math.max(-1, Math.min(1, (g[2] - 70) / 30));
+      h += `<td class="cell gcell" title="400 / 650 / 900 XP: ${g[4]}–${100 - g[4]}% · defense costs ${g[5]}% of the XP left" style="background:${cellColor(0.5 + 0.3 * t)}"><div class="v">${g[2]}%</div><div class="w">worst ${g[3]}–${100 - g[3]}</div></td>`;
+    }
+    h += '</tr>';
+  }
+  h += '</table></div>';
+  const ck = CHECKS.filter(c => c.scheme === S.scheme);
+  h += `<h2>Real battles</h2>`;
+  if (!CHECKS.length) h += '<p class="sub">Real-battle checks are still running.</p>';
+  else if (!ck.length) h += '<p class="sub">Not run for this defense; select the recommended block defense or Holdfast for real battles. The race model has matched real battles at every checked matchup so far (average gap under 1 point).</p>';
+  else {
+    const gaps = CHECKS.map(c => Math.abs(c.model - c.score));
+    h += `<p class="sub">Every pairing of the four builds at 400, 650 and 900 XP: ${CHECKS.length} matchups, 2,000 battles each (good to ±2.2 points), greedy players, blank decks. Gap from the model: average ${(100 * gaps.reduce((a, b) => a + b, 0) / gaps.length).toFixed(1)} points, largest ${(100 * Math.max(...gaps)).toFixed(1)}. This scheme:</p>`;
+    const NN = names(S.scheme, 'main');
+    h += '<table class="checks"><tr><th>XP</th><th>Matchup</th><th>Model</th><th>Battles</th><th>Win / draw / loss</th></tr>' + ck.map(c =>
+      `<tr><td>${c.X}</td><td style="text-align:left">${N[c.i]} vs ${N[c.j]}</td><td>${pct(c.model)}%</td><td>${(100 * c.score).toFixed(1)}%</td><td>${pct(c.w / c.n)} / ${pct(c.d / c.n)} / ${pct(c.l / c.n)}</td></tr>`).join('') + '</table>';
+  }
+  app.innerHTML = h;
+  app.querySelectorAll('[data-k]').forEach(el => el.addEventListener('click', () => {
+    const k = el.dataset.k, v = el.dataset.v; S[k] = (k === 'level') ? +v : v; render();
+  }));
+  matrixHover(T, N);
+  drawMean(D, N);
+  Object.keys(DATA.schemes).forEach(k => drawBand(k));
+}
+function matrixHover(T, N) {
+  const box = document.getElementById('mx'), tip = document.getElementById('mxtip');
+  box.querySelectorAll('td.cell[data-i]').forEach(td => {
+    td.addEventListener('mousemove', e => {
+      const i = +td.dataset.i, j = +td.dataset.j, c = T.matrix[i][j], r = T.matrix[j][i];
+      let t = `<b>${N[i]}</b> vs <b>${N[j]}</b><br>score ${(100 * score(c)).toFixed(1)}% · win ${pct(c.w)}% · draw ${pct(c.d)}% · loss ${pct(c.l)}%<br>rounds for ${j + 1} to defeat ${i + 1}: ${c.rounds} · for ${i + 1} to defeat ${j + 1}: ${r.rounds}`;
+      const ch = CHECKS.find(x => x.scheme === S.scheme && x.X === S.level && ((x.i === i && x.j === j) || (x.i === j && x.j === i)));
+      if (ch) {
+        const flip = ch.i !== i, sc = flip ? 1 - ch.score : ch.score, w = flip ? ch.l : ch.w, l = flip ? ch.w : ch.l;
+        t += `<br>real battles: ${(100 * sc).toFixed(1)}% · ${pct(w / ch.n)} / ${pct(ch.d / ch.n)} / ${pct(l / ch.n)}`;
+      }
+      tip.innerHTML = t; tip.style.display = 'block';
+      const bb = box.getBoundingClientRect();
+      let x = e.clientX - bb.left + 12; if (x + 300 > bb.width) x = e.clientX - bb.left - 310;
+      tip.style.left = Math.max(0, x) + 'px'; tip.style.top = (e.clientY - bb.top + 12) + 'px';
+    });
+    td.addEventListener('mouseleave', () => tip.style.display = 'none');
+  });
+}
+const NS = 'http://www.w3.org/2000/svg';
+function el(tag, attrs, parent) { const e = document.createElementNS(NS, tag); for (const k in attrs) e.setAttribute(k, attrs[k]); if (parent) parent.appendChild(e); return e; }
+function drawMean(D, N) {
+  const svg = document.getElementById('msvg'), W = svg.clientWidth || 700, H = 300, L = 40, R = 10, Tp = 8, B = 26;
+  svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
+  const x = v => L + (v - 300) / 1200 * (W - L - R), y = v => Tp + (0.7 - Math.max(0.3, Math.min(0.7, v))) / 0.4 * (H - Tp - B);
+  el('rect', { x: L, y: y(0.55), width: W - L - R, height: y(0.45) - y(0.55), fill: 'var(--foreground)', 'fill-opacity': 0.06 }, svg);
+  for (let v = 0.3; v <= 0.7001; v += 0.1) {
+    el('line', { x1: L, x2: W - R, y1: y(v), y2: y(v), stroke: 'var(--border)', 'stroke-width': 1 }, svg);
+    el('text', { x: L - 6, y: y(v) + 4, 'text-anchor': 'end', 'font-size': 11, fill: 'var(--muted-foreground)' }, svg).textContent = Math.round(v * 100) + '%';
+  }
+  for (let v = 300; v <= 1500; v += 200) el('text', { x: x(v), y: H - 8, 'text-anchor': 'middle', 'font-size': 11, fill: 'var(--muted-foreground)' }, svg).textContent = v;
+  ASKED.forEach(v => el('line', { x1: x(v), x2: x(v), y1: Tp, y2: H - B, stroke: 'var(--muted-foreground)', 'stroke-dasharray': '3 4', 'stroke-width': 1 }, svg));
+  D.curve.forEach((c, i) => {
+    let d = '', pen = false;
+    c.forEach((v, k) => { if (v == null) { pen = false; return; } d += (pen ? 'L' : 'M') + x(CURVE[k]).toFixed(1) + ' ' + y(v).toFixed(1); pen = true; });
+    el('path', { d, fill: 'none', stroke: COLORS[i], 'stroke-width': 2, 'stroke-linejoin': 'round' }, svg);
+  });
+  const cross = el('line', { y1: Tp, y2: H - B, stroke: 'var(--foreground)', 'stroke-width': 1, opacity: 0 }, svg);
+  const tip = document.getElementById('mctip'), box = document.getElementById('mc');
+  svg.addEventListener('mousemove', e => {
+    const bb = svg.getBoundingClientRect(), px = (e.clientX - bb.left) * W / bb.width;
+    const v = 300 + (px - L) / (W - L - R) * 1200;
+    let k = 0; CURVE.forEach((c, n) => { if (Math.abs(c - v) < Math.abs(CURVE[k] - v)) k = n; });
+    cross.setAttribute('x1', x(CURVE[k])); cross.setAttribute('x2', x(CURVE[k])); cross.setAttribute('opacity', 0.4);
+    tip.innerHTML = `<b>${CURVE[k]} XP</b><br>` + N.map((n, i) => `<span class="sw" style="background:${COLORS[i]}"></span>${n}: ${D.curve[i][k] == null ? '—' : (100 * D.curve[i][k]).toFixed(1) + '%'}`).join('<br>') +
+      `<br><span style="color:var(--muted-foreground)">matchups ${D.low[k] == null ? '—' : pct(D.low[k]) + '–' + pct(D.high[k]) + '%'}</span>`;
+    tip.style.display = 'block';
+    let lx = e.clientX - bb.left + 14; if (lx + 230 > bb.width) lx = e.clientX - bb.left - 240;
+    tip.style.left = lx + 'px'; tip.style.top = '10px';
+  });
+  svg.addEventListener('mouseleave', () => { tip.style.display = 'none'; cross.setAttribute('opacity', 0); });
+}
+function drawBand(k) {
+  const svg = document.querySelector(`svg.band[data-s="${k}"]`); if (!svg) return;
+  const D = DATA.schemes[k].data[S.pair], W = svg.clientWidth || 170, H = 110, L = 4, R = 4, Tp = 4, B = 4;
+  svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
+  const x = v => L + (v - 300) / 1200 * (W - L - R), y = v => Tp + (1 - v) * (H - Tp - B);
+  el('rect', { x: L, y: y(0.6), width: W - L - R, height: y(0.4) - y(0.6), fill: 'var(--foreground)', 'fill-opacity': 0.07 }, svg);
+  el('line', { x1: L, x2: W - R, y1: y(0.5), y2: y(0.5), stroke: 'var(--border)' }, svg);
+  let top = '', bot = '';
+  const idx = D.low.map((v, i) => v == null ? -1 : i).filter(i => i >= 0);
+  idx.forEach((i, n) => { top += (n ? 'L' : 'M') + x(CURVE[i]).toFixed(1) + ' ' + y(D.high[i]).toFixed(1); });
+  idx.slice().reverse().forEach(i => { bot += 'L' + x(CURVE[i]).toFixed(1) + ' ' + y(D.low[i]).toFixed(1); });
+  el('path', { d: top + bot + 'Z', fill: 'var(--chart-1)', 'fill-opacity': 0.35, stroke: 'var(--chart-1)', 'stroke-width': 1 }, svg);
+  const inside = idx.filter(i => D.low[i] >= 0.4 && D.high[i] <= 0.6).length;
+  const lo = Math.min(...idx.map(i => D.low[i]));
+  document.getElementById('bs-' + k).textContent = `not lopsided at ${Math.round(100 * inside / idx.length)}% of XP levels · worst ${pct(lo)}–${pct(1 - lo)}%`;
+}
+render();
+window.addEventListener('resize', () => render());
+</script></body></html>

@@ -24,6 +24,7 @@ func LoadBattleExtension(lib BattleLibrary, root string) (BattleLibrary, error) 
 	if err := loadBattleItems(filepath.Join(root, "dice"), &lib.Dice); err != nil {
 		return lib, err
 	}
+	annotateDieRoles(&lib)
 	if err := loadBattleItems(filepath.Join(root, "statuses"), &lib.Statuses); err != nil {
 		return lib, err
 	}

@@ -1,0 +1,15 @@
+# A valid quest the invalid fixtures load beside (and refer to).
+schema_version: 1
+id: base_quest
+name: A fixture
+set: fixture
+kind: side
+status: scenario
+hook: {verb: scenario_start, region: salt_marches}
+trigger: [{verb: scenario_start}]
+start: one
+stages:
+  - id: one
+    objective: {verb: defeat_group, group: brine_lone}
+    outcomes:
+      - {outcome: success, next: end}

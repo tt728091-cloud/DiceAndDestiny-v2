@@ -138,13 +138,17 @@ func faceStep(s CardStep, statuses map[string]BattleStatusDefinition) string {
 	case "remove_status":
 		singular, pluralNoun := statusNouns(t, statuses)
 		stacks := ProgramInt(s, "stacks")
+		suffix := ""
+		if ProgramBool(s, "for_battle") {
+			suffix = " for the battle"
+		}
 		if stacks == 0 {
-			return "Clear " + faceTarget(t, singular, pluralNoun)
+			return "Clear " + faceTarget(t, singular, pluralNoun) + suffix
 		}
 		if faceSingle(t) {
-			return fmt.Sprintf("Remove %d %s %s", stacks, faceOwner(t)+singular, plural(stacks, "stack", "stacks"))
+			return fmt.Sprintf("Remove %d %s %s", stacks, faceOwner(t)+singular, plural(stacks, "stack", "stacks")) + suffix
 		}
-		return fmt.Sprintf("Remove %s from %s", counted(stacks, "stack", "stacks"), faceTarget(t, singular, pluralNoun))
+		return fmt.Sprintf("Remove %s from %s", counted(stacks, "stack", "stacks"), faceTarget(t, singular, pluralNoun)) + suffix
 	case "apply_status":
 		name := statusName(ProgramString(s, "status_id"), statuses)
 		if t.Owner == "self" {

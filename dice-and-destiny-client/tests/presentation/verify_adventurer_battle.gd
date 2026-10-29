@@ -46,7 +46,8 @@ func _run() -> void:
 	var saw_damage := false
 	while Time.get_ticks_msec() < deadline and not screen._view.is_complete():
 		if screen._model_error or not screen._error_message.is_empty(): break
-		for panel in screen._defense_result_panels:
+		# Simultaneous play draws a revealed enemy defense on its attack presenter.
+		for panel in screen._defense_result_panels + screen._attack_intents.values().filter(func(p): return p.quick_roll()):
 			if not saw_defense and panel.data.get("actor_id") == "goblin" and panel.data.get("ability_name") == "Salt Veil" and not panel.data.get("awaiting_roll", false) and not panel.data.dice.is_empty():
 				_expect(panel.data.dice.size() == 1 and panel.dice_controls.size() == 1, "Salt Veil displays one defense die")
 				var face := int(panel.data.dice[0].face)

@@ -59,6 +59,32 @@ func _glyphs_and_textures() -> void:
 	_expect(CHART.habitat_for("fight", "marsh", "", true, false) == "ash_caldera" and CHART.habitat_for("fight", "marsh", "", false, false) == "peat_bog" and CHART.habitat_for("event", "plains", "grotto", false, true) == "mushroom_cavern", "paintings follow terrain, site and night")
 	_expect(CHART.habitat_texture("peat_bog") != null, "a habitat painting loads")
 
+## Hovering the cartouche with the pointer shows the calendar in the chart's
+## hover box: the month, the season and year, Day or Night with today's sight
+## and terrain costs, and the season's rules and effects, inside the viewport.
+func _calendar_hover(map: Control, label: String) -> void:
+	var cartouche: Control = map._cartouche
+	var area: Rect2 = map._map_area.get_global_rect()
+	_expect(cartouche != null and cartouche.get_global_rect().has_area() and area.encloses(cartouche.get_global_rect()), "the cartouche's hover area lies on the chart at %s (%s)" % [label, cartouche.get_global_rect() if cartouche != null else Rect2()])
+	if cartouche == null: return
+	var motion := InputEventMouseMotion.new(); motion.position = cartouche.get_global_rect().get_center(); root.push_input(motion, true)
+	for frame in 4: await process_frame
+	var clock: Dictionary = map.view.get("clock", {})
+	var lines: Array = map.map_model.get("cartouche_lines", [])
+	var text := "\n".join(lines)
+	_expect(map.map_model.get("cartouche_hover", false) and lines.size() >= 5, "hovering the cartouche shows the calendar at %s: %s" % [label, lines])
+	_expect(str(lines[0]) == "Late Summer · Day" if not lines.is_empty() else false, "the calendar names the month and Day/Night (%s)" % [lines])
+	_expect("Summer · Year 1" in text and "Day · sight %d" % int(map.view.turn.sight) in text and "Day Move: Plains 1" in text, "the calendar shows the season, the year, today's sight and terrain: %s" % text)
+	_expect(not str(clock.get("season_rules", "")).is_empty() and str(clock.get("season_rules", "")) in text and "Seasonal effects: none yet" in text, "the calendar shows the season's rules and its (empty) effects: %s" % text)
+	var box: Rect2 = map._marks.hover_box
+	var global_box := Rect2(map._marks.get_global_position() + box.position, box.size)
+	_expect(box.has_area() and Rect2(Vector2.ZERO, map._marks.size).encloses(box) and root.get_visible_rect().encloses(global_box), "the calendar's hover box stays inside the chart and the viewport at %s (%s)" % [label, global_box])
+	_expect(absf(global_box.position.y - cartouche.get_global_rect().end.y - 6.0) < 1.0 and absf(global_box.position.x - cartouche.get_global_rect().position.x) < 1.0, "the calendar hangs under the cartouche at %s (%s under %s)" % [label, global_box, cartouche.get_global_rect()])
+	await _capture(map, "expedition-calendar-" + label)
+	motion = InputEventMouseMotion.new(); motion.position = map._hud_scroll.get_global_rect().get_center(); root.push_input(motion, true)
+	for frame in 4: await process_frame
+	_expect(not map.map_model.get("cartouche_hover", false) and not map._marks.hover_box.has_area(), "leaving the cartouche hides the calendar at %s" % label)
+
 func _screen_checks(size: Vector2i) -> void:
 	root.size = size
 	for frame in 3: await process_frame
@@ -75,7 +101,7 @@ func _screen_checks(size: Vector2i) -> void:
 	var map_rect: Rect2 = map._map_area.get_global_rect()
 	_expect(map_rect.position.y <= 24.0, "the map reaches the top of the window at %s (y %.0f)" % [label, map_rect.position.y])
 	_expect(map._sheet.sheet_rect.encloses(Rect2(Vector2.ZERO, map._map_area.size).grow(-map._sheet.EDGE)), "the parchment fills the map area at %s (%s in %s)" % [label, map._sheet.sheet_rect, map._map_area.size])
-	_expect(map.chart_day_label() == "Day · 1/4", "the cartouche day line is Day · 1/4 (%s)" % map.chart_day_label())
+	_expect(map.chart_day_label() == "Late Summer · Day · 1/4", "the cartouche day line is Late Summer · Day · 1/4 (%s)" % map.chart_day_label())
 	var all_saves := _control(map, "expedition.all_campaigns"); var back := _control(map, "expedition.back")
 	var ledger_rect: Rect2 = map._hud_scroll.get_parent().get_global_rect()
 	_expect(all_saves != null and back != null and ledger_rect.encloses(all_saves.get_global_rect()) and ledger_rect.encloses(back.get_global_rect()), "Campaigns and Menu sit at the top of the ledger at %s" % label)
@@ -103,6 +129,7 @@ func _screen_checks(size: Vector2i) -> void:
 	_expect(map.map_model.hexes.size() == 7 and map.map_model.slots.size() == 8 and map.map_model.sight.size() == 7, "the map model holds the start tile, the slots and the sight set")
 	_expect(map._marks.mouse_filter == Control.MOUSE_FILTER_IGNORE and map._lines.mouse_filter == Control.MOUSE_FILTER_IGNORE and map._sheet.mouse_filter == Control.MOUSE_FILTER_IGNORE, "the chart layers never take the mouse")
 	_expect(not map._marks.is_processing(), "the marks layer idles while nothing is selected or hovered")
+	await _calendar_hover(map, label)
 	# Ledger and footer inside the viewport; End turn and Make camp pinned.
 	var viewport := root.get_visible_rect()
 	var ledger: Control = map._hud_scroll.get_parent()

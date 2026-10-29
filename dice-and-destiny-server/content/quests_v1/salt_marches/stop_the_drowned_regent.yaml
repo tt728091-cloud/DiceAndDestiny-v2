@@ -1,0 +1,60 @@
+schema_version: 1
+id: stop_the_drowned_regent
+name: Stop the Drowned Regent
+set: salt_marches
+kind: main
+status: scenario
+region: salt_marches
+# The hook's text is the region's description.
+hook: {verb: scenario_start, region: salt_marches}
+trigger:
+  - {verb: scenario_start, region: salt_marches}
+start: stop_him
+stages:
+  - id: stop_him
+    title: Stop him before the last night ends
+    objective: {verb: defeat_group, group: drowned_regent}
+    # Run Him Down (extend_time) can add a round to this deadline.
+    timer: {type: urgent, rounds: {config: rounds_per_region}, from: quest_start}
+    outcomes:
+      - outcome: success
+        label: Caught early
+        text: "The Regent falls before his time runs out."
+        consequences:
+          - {verb: config_reward, key: warlord.early_reward.xp_per_round, reward: xp, per: unused_round}
+          - {verb: config_reward, key: warlord.early_reward.extra_relic_choices, reward: relic_choice, per: early}
+          - {verb: mend_wounds, amount: all}
+          - {verb: win_region, region: salt_marches}
+          - {verb: open_world}
+        next: end
+      - outcome: failure
+        label: Lost to him
+        when: {verb: lose_battle, group: drowned_regent}
+        text: "Losing to the Warlord ends the run."
+        consequences:
+          - {verb: end_run}
+        next: end
+      - outcome: failure
+        label: Time runs out
+        when: {verb: timer_expired}
+        text: "The last round is over: the Warlord comes for you."
+        next: deadline
+  - id: deadline
+    title: The deadline fight
+    text: "The Warlord comes to you, in the open: no Ambush, every buff he still has."
+    objective: {verb: defeat_group, group: drowned_regent}
+    outcomes:
+      - outcome: success
+        label: Beaten at the deadline
+        text: "The Regent falls; no round was left unused."
+        consequences:
+          - {verb: mend_wounds, amount: all}
+          - {verb: win_region, region: salt_marches}
+          - {verb: open_world}
+        next: end
+      - outcome: failure
+        label: Lost the deadline fight
+        when: {verb: lose_battle, group: drowned_regent}
+        consequences:
+          - {verb: end_run}
+        next: end

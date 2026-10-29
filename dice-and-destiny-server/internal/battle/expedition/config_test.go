@@ -121,3 +121,64 @@ func TestConfigValuesDriveTerrainAndSight(t *testing.T) {
 		t.Fatal("sight follows the config")
 	}
 }
+
+func TestLoadConfigReadsTheCalendar(t *testing.T) {
+	cfg, _, _ := loadShipped(t)
+	cal := cfg.Calendar
+	if len(cal.Months) != 12 || len(cal.Seasons) != 4 || cal.HalvesPerYear() != 24 {
+		t.Fatalf("the shipped calendar has 12 months and four seasons: %d months, %d seasons", len(cal.Months), len(cal.Seasons))
+	}
+	perSeason := map[string]int{}
+	for _, m := range cal.Months {
+		perSeason[m.Season]++
+	}
+	for _, s := range cal.Seasons {
+		if perSeason[s.ID] != 3 {
+			t.Fatalf("season %s has %d months, not three", s.ID, perSeason[s.ID])
+		}
+		if len(s.Effects) != 0 || !strings.Contains(s.RulesText, "No seasonal map effects yet") {
+			t.Fatalf("season %s promises no effects yet: %+v", s.ID, s)
+		}
+	}
+	if cal.Months[0].ID != "early_spring" || cal.Months[0].Name != "Early Spring" {
+		t.Fatalf("the year opens in early spring, not %+v", cal.Months[0])
+	}
+	if i, ok := cal.MonthIndex("late_summer"); !ok || i != 5 || cal.Months[i].Name != "Late Summer" {
+		t.Fatalf("Late Summer is month 6, not index %d (%v)", i, ok)
+	}
+}
+
+func TestLoadConfigRejectsBadCalendars(t *testing.T) {
+	lib := testLibrary(t, contentRoot(t))
+	noMonths := func(s string) string {
+		i := strings.Index(s, "  months:\n")
+		if i < 0 {
+			return s
+		}
+		return s[:i] + "  months: []\n"
+	}
+	cases := []struct {
+		name string
+		edit func(string) string
+		want string
+	}{
+		{"unknown season on a month", replaceOnce("{id: late_summer,  name: Late Summer,  season: summer}", "{id: late_summer,  name: Late Summer,  season: sumer}"), `calendar month "late_summer" names unknown season "sumer"`},
+		{"duplicate month id", replaceOnce("{id: mid_spring,   name: Midspring", "{id: early_spring,   name: Midspring"), `calendar month "early_spring" needs a unique snake_case id`},
+		{"duplicate season id", replaceOnce("{id: winter, name: Winter", "{id: autumn, name: Winter"), `calendar season "autumn" needs a unique snake_case id`},
+		{"empty month list", noMonths, "calendar.months needs at least one month"},
+		{"seasonal effects", replaceOnce("No seasonal map effects yet.\", effects: []}\n  months:", "No seasonal map effects yet.\", effects: [{terrain: snow}]}\n  months:"), "seasonal effects arrive in Phase 4"},
+		{"season without a month", replaceOnce("  months:\n", "    - {id: monsoon, name: Monsoon, rules_text: \"Rain.\", effects: []}\n  months:\n"), `calendar season "monsoon" has no month`},
+		{"nameless month", replaceOnce("name: Midwinter,", "name: \"\","), `calendar month "mid_winter" needs a name`},
+		{"unknown key under calendar", replaceOnce("calendar:\n", "calendar:\n  leap_months: 1\n"), "field leap_months not found"},
+	}
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			root := scratchContent(t)
+			rewrite(t, filepath.Join(root, "progression_v1", "expedition.yaml"), c.edit)
+			_, err := LoadConfig(root, lib)
+			if err == nil || !strings.Contains(err.Error(), c.want) {
+				t.Fatalf("expected an error containing %q, got %v", c.want, err)
+			}
+		})
+	}
+}

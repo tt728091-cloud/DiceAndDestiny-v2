@@ -1,0 +1,12 @@
+schema_version: 1
+id: loom_d6
+name: Loom Die
+die_type: d6
+side_count: 6
+faces:
+  - {number: 1, symbol: loom_thread}
+  - {number: 2, symbol: loom_thread}
+  - {number: 3, symbol: loom_needle}
+  - {number: 4, symbol: loom_spindle}
+  - {number: 5, symbol: loom_spindle}
+  - {number: 6, symbol: loom_knot}

@@ -103,6 +103,7 @@ func _handle_request(peer: StreamPeerTCP, request: Dictionary) -> void:
 		["GET", "/errors"]: _send(peer, 200, {"errors": _errors})
 		["GET", "/screenshot"]: _screenshot_response(peer)
 		["POST", "/wait"]: _wait_response(peer, _json_body(request.body))
+		["POST", "/pointer"]: _pointer_response(peer, _json_body(request.body))
 		["POST", "/battle/new"]:
 			var activated := _activate("battle.complete.play_again")
 			_send(peer, 200 if activated.ok else 409, activated)
@@ -174,6 +175,29 @@ func _activate(control_id: String, body: Dictionary = {}) -> Dictionary:
 		control.toggled.emit(control.button_pressed)
 	control.pressed.emit()
 	return {"ok": true, "control_id": control_id}
+
+## Moves the game's pointer to a viewport position ({"x", "y"}, the same
+## coordinates as the control bounds) and, with "click", presses and releases
+## the left button there. The events go through Input like the system mouse's,
+## so hover, tabs and drawn controls react as they do to a player, without
+## moving the system cursor.
+func _pointer_response(peer: StreamPeerTCP, body: Dictionary) -> void:
+	if not body.has("x") or not body.has("y"):
+		_send(peer, 400, {"ok": false, "error": "a pointer needs {\"x\": …, \"y\": …} in viewport pixels"})
+		return
+	var at := Vector2(float(body.x), float(body.y))
+	var motion := InputEventMouseMotion.new(); motion.position = at; motion.global_position = at
+	Input.parse_input_event(motion)
+	var click := bool(body.get("click", false))
+	if click:
+		for pressed in [true, false]:
+			await get_tree().process_frame
+			var button := InputEventMouseButton.new(); button.position = at; button.global_position = at
+			button.button_index = MOUSE_BUTTON_LEFT; button.pressed = pressed
+			button.button_mask = MOUSE_BUTTON_MASK_LEFT if pressed else 0
+			Input.parse_input_event(button)
+	for frame in 3: await get_tree().process_frame
+	_send(peer, 200, {"ok": true, "x": at.x, "y": at.y, "click": click})
 
 func _screenshot_response(peer: StreamPeerTCP) -> void:
 	# An occluded or napping window is not drawn by the main loop: force a

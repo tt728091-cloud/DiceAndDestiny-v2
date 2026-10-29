@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"slices"
 	"sort"
 	"sync"
 	"time"
@@ -15,6 +16,7 @@ import (
 	"diceanddestiny/server/internal/battle/engine"
 	"diceanddestiny/server/internal/battle/loadout"
 	"diceanddestiny/server/internal/battle/mlsim"
+	"diceanddestiny/server/internal/battle/state"
 	"diceanddestiny/server/internal/content"
 )
 
@@ -27,6 +29,9 @@ type SessionConfig struct {
 	LoadoutRoot        string
 	OpponentDefinition string
 	OpponentCount      int
+	// OpponentPolicy "lookahead" makes the opponent the balance lab's
+	// look-ahead player, playing the human's own character, deck and board.
+	OpponentPolicy string
 
 	ContentRoot         string
 	RunStateRoot        string
@@ -57,6 +62,7 @@ type BattleTelemetry struct {
 	BattleID           string           `json:"battle_id"`
 	HumanSeat          string           `json:"human_seat"`
 	ModelSeat          string           `json:"model_seat"`
+	Character          string           `json:"character,omitempty"`
 	Commands           []DecisionRecord `json:"commands"`
 	HumanDecisions     int              `json:"human_decisions"`
 	ModelDecisions     int              `json:"model_decisions"`
@@ -103,8 +109,11 @@ func NewSession(config SessionConfig) (*Session, error) {
 	if config.OpponentCount < 0 || config.OpponentCount > 2 || (config.OpponentCount > 1 && config.OpponentDefinition == "") {
 		return nil, fmt.Errorf("opponent count must be one or two scripted minions")
 	}
-	if config.ContentRoot == "" || (config.ModelPath == "" && config.OpponentDefinition == "") {
-		return nil, fmt.Errorf("content root and a learned-policy path or single-ability opponent are required")
+	if config.OpponentPolicy != "" && config.OpponentPolicy != OpponentPolicyLookahead {
+		return nil, fmt.Errorf("unknown opponent policy %q", config.OpponentPolicy)
+	}
+	if config.ContentRoot == "" || (config.ModelPath == "" && config.OpponentDefinition == "" && config.OpponentPolicy == "") {
+		return nil, fmt.Errorf("content root and a learned-policy path, single-ability opponent or look-ahead opponent are required")
 	}
 	if config.InferenceTimeout <= 0 {
 		config.InferenceTimeout = 2 * time.Second
@@ -114,7 +123,9 @@ func NewSession(config SessionConfig) (*Session, error) {
 	}
 	var policy sessionPolicy
 	var err error
-	if config.OpponentDefinition != "" {
+	if config.OpponentPolicy == OpponentPolicyLookahead {
+		policy, err = newLookaheadPolicy()
+	} else if config.OpponentDefinition != "" {
 		policy, err = loadSingleAbilityPolicy(config.ContentRoot, config.OpponentDefinition)
 	} else {
 		policy, err = loadSessionPolicy(config.ModelPath, config.ModelSHA256)
@@ -123,7 +134,7 @@ func NewSession(config SessionConfig) (*Session, error) {
 		return nil, err
 	}
 	environment, err := mlsim.New(mlsim.Config{
-		IncludeContentCatalog: config.OpponentDefinition != "",
+		IncludeContentCatalog: config.OpponentDefinition != "" || config.OpponentPolicy != "",
 		ContentRoot:           config.ContentRoot,
 		AuthoredCardsRoot:     config.LoadoutRoot,
 		RunStateRoot:          config.RunStateRoot,
@@ -205,7 +216,7 @@ func (s *Session) resetLoadout(battleID string, seed uint64, humanSeat string, r
 	if character == "" {
 		character = "blade_warden"
 	}
-	if character != "blade_warden" && character != "venom" && character != "curse" && character != "adventurer" && character != "starter" {
+	if !slices.Contains(PlayableCharacters, character) {
 		return nil, fmt.Errorf("unknown playable character %q", character)
 	}
 	s.mu.Lock()
@@ -218,6 +229,12 @@ func (s *Session) resetLoadout(battleID string, seed uint64, humanSeat string, r
 	}
 	var decks, wounds map[string][]loadout.Entry
 	var abilityBoards map[string]content.AbilityBoard
+	var customBoard *loadout.SheetBoard
+	if campaign != nil {
+		customBoard = campaign.custom
+	} else if expedition != nil {
+		customBoard = expedition.custom
+	}
 	if s.config.LoadoutRoot != "" {
 		catalogs, err := CharacterCatalogs(s.config.ContentRoot, s.config.LoadoutRoot)
 		if err != nil {
@@ -294,6 +311,17 @@ func (s *Session) resetLoadout(battleID string, seed uint64, humanSeat string, r
 	if s.config.OpponentDefinition != "" {
 		opponent = s.config.OpponentDefinition
 	}
+	if s.config.OpponentPolicy == OpponentPolicyLookahead {
+		// A mirror: the look-ahead player fights with the human's own
+		// character, deck and ability board.
+		opponent = character
+		if deck, ok := decks[s.humanSeat]; ok {
+			decks[s.modelSeat] = append([]loadout.Entry(nil), deck...)
+		}
+		if board, ok := abilityBoards[s.humanSeat]; ok {
+			abilityBoards[s.modelSeat] = board
+		}
+	}
 	definitions := map[string]string{s.humanSeat: character, s.modelSeat: opponent}
 	models := map[string]string{s.humanSeat: "human-godot-ui", s.modelSeat: s.policy.Metadata().ModelID}
 	var teams map[string]string
@@ -312,6 +340,7 @@ func (s *Session) resetLoadout(battleID string, seed uint64, humanSeat string, r
 		SeatWounds:        wounds,
 		SeatPresets:       presets,
 		SeatAbilityBoards: abilityBoards,
+		CustomBoard:       customBoard,
 		UnifiedDefense:    rules.UnifiedDefense,
 		SimultaneousPlay:  rules.SimultaneousPlay,
 		Seed:              seed,
@@ -323,6 +352,9 @@ func (s *Session) resetLoadout(battleID string, seed uint64, humanSeat string, r
 		return nil, err
 	}
 	s.current = transition
+	if err := s.letLookaheadPlanFirst(); err != nil {
+		return nil, err
+	}
 	s.decisionSequence = 0
 	s.campaign = campaign
 	s.expedition = expedition
@@ -342,6 +374,7 @@ func (s *Session) resetLoadout(battleID string, seed uint64, humanSeat string, r
 		BattleID:           transition.Metrics.BattleID,
 		HumanSeat:          s.humanSeat,
 		ModelSeat:          s.modelSeat,
+		Character:          character,
 		Commands:           []DecisionRecord{},
 		InferenceLatencyMS: []float64{},
 		Errors:             []string{},
@@ -399,6 +432,9 @@ func (s *Session) SubmitHuman(commandJSON string) (map[string]any, error) {
 		return nil, err
 	}
 	s.current = transition
+	if err := s.letLookaheadPlanFirst(); err != nil {
+		return nil, err
+	}
 	s.telemetry.HumanDecisions++
 	s.appendDecision("human", index, action, 0)
 	s.updateTerminalTelemetry()
@@ -417,7 +453,17 @@ func (s *Session) AdvanceModel() (map[string]any, error) {
 	if !s.isModelSeat(s.current.ActorID) {
 		return nil, fmt.Errorf("learned policy does not own the current decision")
 	}
-	selected, latency, err := s.policy.Select(s.current)
+	var selected int
+	var latency time.Duration
+	var err error
+	if p, ok := s.policy.(statePolicy); ok {
+		var full state.Battle
+		if full, err = s.environment.InspectBattle(); err == nil {
+			selected, latency, err = p.SelectWithState(s.current, full)
+		}
+	} else {
+		selected, latency, err = s.policy.Select(s.current)
+	}
 	if err != nil {
 		s.telemetry.Errors = append(s.telemetry.Errors, err.Error())
 		s.lifetime.Errors++
@@ -460,6 +506,9 @@ func (s *Session) AdvanceModel() (map[string]any, error) {
 		return nil, err
 	}
 	s.current = transition
+	if err := s.letLookaheadPlanFirst(); err != nil {
+		return nil, err
+	}
 	s.telemetry.ModelDecisions++
 	s.telemetry.InferenceLatencyMS = append(s.telemetry.InferenceLatencyMS, milliseconds(latency))
 	s.appendDecision("learned_policy", selected, action, milliseconds(latency))
@@ -706,10 +755,26 @@ func cloneTelemetry(source BattleTelemetry) BattleTelemetry {
 }
 
 func modelLoadCount(policy sessionPolicy) int {
-	if _, ok := policy.(*singleAbilityPolicy); ok {
+	switch policy.(type) {
+	case *singleAbilityPolicy, *lookaheadPolicy:
 		return 0
 	}
 	return 1
+}
+
+// letLookaheadPlanFirst gives a look-ahead opponent the first move in
+// offensive planning, which both seats make privately and at the same time.
+// Its copies of the battle then never contain the human's private planning.
+func (s *Session) letLookaheadPlanFirst() error {
+	if s.config.OpponentPolicy != OpponentPolicyLookahead || s.current.ActorID != s.humanSeat || s.current.Result.Snapshot == nil || s.current.Result.Snapshot.Stage != "planning" {
+		return nil
+	}
+	transition, _, err := s.environment.PreferActor(s.modelSeat)
+	if err != nil {
+		return err
+	}
+	s.current = transition
+	return nil
 }
 
 func (s *Session) isModelSeat(id string) bool {

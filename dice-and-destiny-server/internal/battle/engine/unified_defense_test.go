@@ -54,6 +54,7 @@ func unifiedFixture(t *testing.T, amounts ...int) (state.Battle, content.BattleL
 	}
 	return b, lib, e
 }
+
 // Protect spreads its points at random over every incoming attack: two attacks
 // of 1 are both stopped; a single larger attack loses 2.
 func TestProtectCoversEveryIncomingAttack(t *testing.T) {

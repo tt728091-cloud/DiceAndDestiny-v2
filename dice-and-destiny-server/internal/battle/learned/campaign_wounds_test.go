@@ -60,7 +60,7 @@ func woundInSave(s *loadout.CampaignSave, ids ...string) {
 		s.Sheet.Wounds = append(s.Sheet.Wounds, loadout.Entry{CardID: id, Count: 1})
 	}
 	st.WoundSeq++
-	st.Wounds = append(st.Wounds, expedition.Wound{ID: fmt.Sprintf("w%d", st.WoundSeq), Cards: append([]string{}, ids...), Size: len(ids), Source: "a test hit", Round: st.Round, Turn: st.Turn.Number})
+	st.Wounds = append(st.Wounds, expedition.Wound{ID: fmt.Sprintf("w%d", st.WoundSeq), Cards: append([]string{}, ids...), Size: len(ids), Source: "a test hit", Round: st.Round(), Turn: st.Turn.Number})
 }
 
 // Wounded copies are frozen in both campaign modes (Phase 0, task 0.4): with

@@ -1,0 +1,16 @@
+# want: field reward not found
+schema_version: 1
+id: unknown_field
+name: A fixture
+set: fixture
+kind: side
+status: scenario
+reward: 5
+hook: {verb: scenario_start, region: salt_marches}
+trigger: [{verb: scenario_start}]
+start: one
+stages:
+  - id: one
+    objective: {verb: defeat_group, group: brine_lone}
+    outcomes:
+      - {outcome: success, next: end}
