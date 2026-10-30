@@ -40,6 +40,8 @@ var floaters: Array = []
 ## Creatures fading as they fall: id -> 0..1
 var falling: Dictionary = {}
 var clickable_creatures: Dictionary = {}
+## A label over the grid during a replay ("Round 3 · 3 of 11").
+var banner := ""
 
 var tokens: Dictionary = {}
 var _square_marks: Dictionary = {}
@@ -237,12 +239,20 @@ func _draw() -> void:
 		var color: Color = TEAM_COLORS.get(team, Color.GRAY); color.a = 0.55
 		draw_arc(square_center(ghosts[id]), _cell * 0.36, 0, TAU, 32, color, 3)
 		draw_string(get_theme_default_font(), square_center(ghosts[id]) + Vector2(-_cell * 0.36, _cell * 0.08), str(creatures.get(id, {}).get("label", "?")), HORIZONTAL_ALIGNMENT_CENTER, _cell * 0.72, int(_cell * 0.24), Color(1, 1, 1, 0.6))
+	if not banner.is_empty():
+		var font := get_theme_default_font()
+		var size := int(clampf(_cell * 0.42, 18, 34))
+		var width := font.get_string_size(banner, HORIZONTAL_ALIGNMENT_LEFT, -1, size).x + 28
+		var plate := Rect2(Vector2(grid_rect().get_center().x - width * 0.5, grid_rect().position.y + 8), Vector2(width, size + 16))
+		draw_rect(plate, Color(0.05, 0.04, 0.03, 0.85))
+		draw_rect(plate, Color("a68b51"), false, 2)
+		draw_string(font, plate.position + Vector2(14, size + 4), banner, HORIZONTAL_ALIGNMENT_LEFT, -1, size, Color("ffe4a1"))
 	var now := Time.get_ticks_msec()
 	for floater in floaters:
 		var age := (now - int(floater.born_ms)) / 1000.0
 		if age < 0 or age > 1.6: continue
 		var width := _cell * 4.0
-		var at := square_center(floater.position) + Vector2(-width * 0.5, -_cell * 0.55 - age * _cell * 0.4)
+		var at := square_center(floater.position) + Vector2(-width * 0.5, -_cell * 0.55 - age * _cell * 0.4 - int(floater.get("lift", 0)) * _cell * 0.36)
 		var color: Color = floater.color; color.a = clampf(1.6 - age, 0, 1)
 		var font := get_theme_default_font()
 		draw_string_outline(font, at, str(floater.text), HORIZONTAL_ALIGNMENT_CENTER, width, int(_cell * 0.26), 5, Color(0, 0, 0, color.a))

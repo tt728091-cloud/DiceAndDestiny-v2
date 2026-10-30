@@ -621,7 +621,11 @@ func (e Engine) resolveMovement(b *state.Battle, library content.BattleLibrary) 
 	for id, plan := range rt.Plans {
 		public[id] = plan
 	}
-	rt.Movement = &state.TacticsMovement{Round: b.Segment.Round, Start: start, Result: result, Plans: public, Budgets: budgets, Running: running, Seed: uint64(seed), Attacks: append([]state.TacticsAttack(nil), rt.Attacks...)}
+	// The previous round joins the history before this one replaces it.
+	if rt.Movement != nil {
+		rt.History = append(rt.History, *rt.Movement)
+	}
+	rt.Movement = &state.TacticsMovement{Round: b.Segment.Round, Start: start, Result: result, Plans: public, Budgets: budgets, Running: running, Seed: uint64(seed), Attacks: append([]state.TacticsAttack(nil), rt.Attacks...), HealthBefore: tacticsHealth(b)}
 	rt.Plans = nil
 	events := []event.Event{settledEvent(event.TypeTacticsMovementResolved, b, "", map[string]any{
 		"round": b.Segment.Round, "timeline": result.Timeline, "start": start, "final": result.Final, "budgets": budgets, "running": running, "attacks": rt.Attacks,
@@ -845,6 +849,15 @@ func DisabledDefenses(b *state.Battle, actor string) map[string]string {
 // recordTacticsHits keeps each connected attack's committed result in the
 // round's movement record, for the playback: damage taken, cards removed,
 // the defense used and whether it was lethal.
+// tacticsHealth is every creature's current health.
+func tacticsHealth(b *state.Battle) map[string]int {
+	out := map[string]int{}
+	for id, actor := range b.Actors {
+		out[id] = actor.CurrentHealth()
+	}
+	return out
+}
+
 func recordTacticsHits(b *state.Battle, batch *state.SettledDamageBatch) {
 	if !tacticsBattle(b) || batch == nil {
 		return
@@ -873,4 +886,5 @@ func recordTacticsHits(b *state.Battle, batch *state.SettledDamageBatch) {
 		hit.Lethal = b.Actors[source.TargetActorID].DefeatState != state.ActorNotDefeated
 		rt.Movement.Hits = append(rt.Movement.Hits, hit)
 	}
+	rt.Movement.HealthAfter = tacticsHealth(b)
 }

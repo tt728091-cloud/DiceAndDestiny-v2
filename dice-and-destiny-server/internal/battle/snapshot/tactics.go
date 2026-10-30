@@ -84,6 +84,10 @@ type TacticsMovementView struct {
 	Contact  map[string]tactics.Frac       `json:"contact,omitempty"`
 	Attacks  []state.TacticsAttack         `json:"attacks,omitempty"`
 	Hits     []state.TacticsHitResult      `json:"hits,omitempty"`
+	// Health is public: each creature's health when the movement resolved
+	// and after the round's damage committed.
+	HealthBefore map[string]int `json:"health_before,omitempty"`
+	HealthAfter  map[string]int `json:"health_after,omitempty"`
 }
 
 type TacticsPublicPlan struct {
@@ -100,6 +104,40 @@ type TacticsPublicPlan struct {
 type TacticsPlayedCard struct {
 	CardDefinitionID string `json:"card_definition_id"`
 	Terrain          string `json:"terrain,omitempty"`
+}
+
+// movementView is a resolved round as one viewer may see it: other
+// participants' discarded cards show only as a count.
+func movementView(battle state.Battle, m state.TacticsMovement, viewer string) *TacticsMovementView {
+	mv := &TacticsMovementView{Round: m.Round, Start: m.Start, Final: m.Result.Final, Paths: m.Result.Paths, Timeline: m.Result.Timeline, Budgets: m.Budgets, Running: m.Running, Contact: m.Result.Contact, Plans: map[string]TacticsPublicPlan{}, Attacks: m.Attacks, Hits: m.Hits, HealthBefore: m.HealthBefore, HealthAfter: m.HealthAfter}
+	for id, plan := range m.Plans {
+		public := TacticsPublicPlan{Intention: plan.Intention, CardCount: len(plan.Cards), Energy: plan.Energy, Sprint: plan.Sprint, Charge: plan.Charge, Budget: plan.Budget}
+		if id == viewer {
+			public.Cards = append([]string(nil), plan.Cards...)
+		}
+		for _, played := range plan.MapCards {
+			public.MapCards = append(public.MapCards, TacticsPlayedCard{CardDefinitionID: battle.Settled.Actors[id].CardInstances[played.CardID].DefinitionID, Terrain: played.Terrain})
+		}
+		mv.Plans[id] = public
+	}
+	return mv
+}
+
+// TacticsHistory is every resolved round of a tactics battle, oldest first,
+// as the viewer may see it, for replaying the whole battle.
+func TacticsHistory(battle state.Battle, viewer string) []TacticsMovementView {
+	out := []TacticsMovementView{}
+	if battle.Settled == nil || battle.Settled.TacticsRuntime == nil {
+		return out
+	}
+	rt := battle.Settled.TacticsRuntime
+	for _, m := range rt.History {
+		out = append(out, *movementView(battle, m, viewer))
+	}
+	if rt.Movement != nil {
+		out = append(out, *movementView(battle, *rt.Movement, viewer))
+	}
+	return out
 }
 
 // tacticsCatalogs caches decoded pinned catalogs by their bytes' hash; the
@@ -187,18 +225,7 @@ func tacticsView(battle state.Battle, viewer string) *TacticsView {
 		}
 	}
 	if m := rt.Movement; m != nil {
-		mv := &TacticsMovementView{Round: m.Round, Start: m.Start, Final: m.Result.Final, Paths: m.Result.Paths, Timeline: m.Result.Timeline, Budgets: m.Budgets, Running: m.Running, Contact: m.Result.Contact, Plans: map[string]TacticsPublicPlan{}, Attacks: m.Attacks, Hits: m.Hits}
-		for id, plan := range m.Plans {
-			public := TacticsPublicPlan{Intention: plan.Intention, CardCount: len(plan.Cards), Energy: plan.Energy, Sprint: plan.Sprint, Charge: plan.Charge, Budget: plan.Budget}
-			if id == viewer {
-				public.Cards = append([]string(nil), plan.Cards...)
-			}
-			for _, played := range plan.MapCards {
-				public.MapCards = append(public.MapCards, TacticsPlayedCard{CardDefinitionID: battle.Settled.Actors[id].CardInstances[played.CardID].DefinitionID, Terrain: played.Terrain})
-			}
-			mv.Plans[id] = public
-		}
-		view.Movement = mv
+		view.Movement = movementView(battle, *m, viewer)
 	}
 	if catalog != nil {
 		limited := false

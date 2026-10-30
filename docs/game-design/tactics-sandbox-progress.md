@@ -13,6 +13,7 @@ Implementation log for `tactics-sandbox-plan.md` (the plan is the source of trut
 | M4 · Client | done |
 | M5 · Verify and document | done |
 | M6 · On the battle screen (user feedback) | done |
+| M7 · Replay the whole battle (user request) | done |
 
 ## M0 · Content pack and schema
 
@@ -154,6 +155,15 @@ After M5 the user asked for the sandbox to keep everything from the battle scree
 Tests: `TestTacticsOpsAliasTheHeroForTheBattleScreen`; the pointer test is rewritten for the battle screen: the battle's HUD (scenery, roll dock with Sprint, the ability rail, the fanned hand lowered and raised by hover at the battle's card size, your stats, the enemy's stats at the upper right, the utilities); Sprint's confirmation; every intention by clicking; a card's Move tag and commitment; energy; lock in; the defense view with paths and ghosts; the playback, Timeline and Replay; targets in range on the grid; Running with only Evade (Guard's hover gives the reason); dragging and zooming the grid; leaving and resuming; won and lost endings; a seeded Fireball aimed on lit squares; a Steady Guard choosing between two attack badges; and 1–4 enemies at 1280 × 720 and 1920 × 1080 with tokens, labels, names, stacked enemy stats, popups and hovers inside the viewport (161 checks).
 
 Verified after M6: `go test` for `tactics`, `snapshot`, `engine`, `tacticsbattle` and `learned` passes; Godot `verify_battle_authority.gd`, `verify_tactics_sandbox.gd`, `verify_simultaneous_play.gd`, `verify_adventurer_battle.gd`, `verify_brine_mask.gd`, `verify_brine_pair.gd`, `verify_drowned_oracle_minions.gd` and `verify_expedition_statuses.gd` pass (the battle screen's own flows are unchanged outside `tactics_mode`). Live checks in the running game: Open Field, Pillar Hall and Swamp Crossing with one and four enemies — the movement step, square and token clicks, card commitments, Lock, a dodged Tide Crown, Magic Missile aimed on the grid, the defense view with an attack's threatened cards under its badge and threat ribbons in the hand, the Timeline, map cards and Know the Land's terrain chooser, and resuming. Screenshots 13–17 in `tactics-sandbox-playtest/`.
+
+## M7 · Replay the whole battle (user request)
+
+- **The authority keeps every round.** When a round's movement resolves, the previous round joins `TacticsRuntime.History` (oldest first) and the new one becomes `Movement`. Each round also records every creature's health when its movement resolved (`health_before`) and after its damage committed (`health_after`). It is battle state, so it survives saving and resuming. Battles started before this change keep only the rounds resolved since.
+- **`tactics_history`** (`tacticsbattle.History`, served by `learned/runtime.go`) returns every resolved round as the hero may see it, built by the same viewer-safe view as the last round (`snapshot.TacticsHistory`): other participants' discarded cards stay a count, and the hero seat is aliased like the other ops.
+- **The battle screen** replays the battle so far round by round: each round's start squares, health bars from its recorded health (dropping as each hit lands), its area attacks, strikes with their defense results and falls, with creatures that fell earlier off the grid and a "Round 3 · 3 of 11" banner on the grid. The end-of-battle panel steps aside during any replay, and **Stop replay** ends it at once. It is offered as **Replay whole battle** at the end and **Replay battle so far** in the Timeline utility; speed cycles 1×, 2×, 4×, ½×. The final round now plays automatically before the end panel returns, and a creature killed in the replayed round is shown moving until it falls (the one-round replay used to hide it). Hit texts that land together stack instead of covering each other. With one enemy the end panel now reads "You 0/12 · Ribbon Eel 11/15" rather than the classic battle's "Blade · Goblin".
+- The HUD (your stats, enemy stats, hand) keeps showing the battle as it stands during a replay; only the grid replays.
+
+Tests: `TestRunnerPlaysASandboxBattleToTheEnd` checks the history holds every round in order with health before and after, and that the last round shows the loser at 0; `TestTacticsOpsAliasTheHeroForTheBattleScreen` covers the new op. The pointer test plays a won and a lost battle to the end and replays each whole: the round count matches the authority's history, the end panel steps aside with Stop replay and the banner, every round plays in order, the end comes back, and Stop ends a replay at once (181 checks). `go test ./...`, `verify_battle_authority.gd` and `verify_simultaneous_play.gd` pass.
 
 ## Defaults to confirm (plan §13)
 

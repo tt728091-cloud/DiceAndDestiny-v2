@@ -39,6 +39,9 @@ type TacticsRuntime struct {
 	// Movement is the last resolved movement, public from its reveal until
 	// the next one.
 	Movement *TacticsMovement `json:"movement,omitempty"`
+	// History holds every earlier resolved round, oldest first, so a
+	// battle can be replayed whole; Movement is the latest.
+	History []TacticsMovement `json:"history,omitempty"`
 }
 
 // TacticsCreature is a combatant's grid profile.
@@ -126,6 +129,10 @@ type TacticsMovement struct {
 	// are filled in when the round's damage commits (for the playback).
 	Attacks []TacticsAttack    `json:"attacks,omitempty"`
 	Hits    []TacticsHitResult `json:"hits,omitempty"`
+	// HealthBefore is each creature's health when the movement resolved;
+	// HealthAfter its health once the round's damage committed.
+	HealthBefore map[string]int `json:"health_before,omitempty"`
+	HealthAfter  map[string]int `json:"health_after,omitempty"`
 }
 
 // TacticsHitResult is one connected attack's committed result on one creature.

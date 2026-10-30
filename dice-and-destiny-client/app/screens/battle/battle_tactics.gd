@@ -507,52 +507,146 @@ func hide_popup() -> void:
 
 # --- Playback ---------------------------------------------------------------
 
+## The rounds still to play in a replay, how many it has in all (0 for the
+## automatic one-round playback), and who fell in its earlier rounds.
+var _queue: Array = []
+var _rounds_total := 0
+var _fallen: Dictionary = {}
+var _stop_button: Button
+
 func _maybe_start_playback() -> void:
 	var movement = tv().get("movement")
 	if not movement is Dictionary: return
 	var finished: bool = screen._view.is_complete()
 	if int(movement.round) != played_round and (screen._view.round_number > int(movement.round) or finished):
 		played_round = int(movement.round)
-		start_playback(movement)
+		if finished: _begin([movement])
+		else: start_playback(movement)
 
-## Replays the last resolved round on the open grid (the Timeline closes).
-func replay() -> void:
+func _close_utilities() -> void:
 	screen._open_utility = ""
 	for key in screen._utility_panels: screen._utility_panels[key].visible = false
 	var bar = screen._root.get_node_or_null("BattleUtilities") if is_instance_valid(screen._root) else null
 	if bar != null:
 		for button in bar.get_children(): button.set_pressed_no_signal(false)
+
+## Replays the last resolved round on the open grid (the Timeline closes).
+func replay() -> void:
+	_close_utilities()
 	var movement = tv().get("movement")
-	if movement is Dictionary: start_playback(movement)
+	if movement is Dictionary: _begin([movement])
+
+## Replays the whole battle so far, round by round, from the authority's
+## record of every resolved round.
+func replay_battle() -> void:
+	_close_utilities()
+	var rounds: Array = []
+	if screen.gateway != null and screen.gateway.has_method("history"):
+		var result: Dictionary = screen.gateway.history()
+		if result.get("rounds") is Array: rounds = result.rounds
+	if rounds.is_empty() and tv().get("movement") is Dictionary: rounds = [tv().movement]
+	_begin(rounds)
+
+func _begin(rounds: Array) -> void:
+	if rounds.is_empty(): return
+	_queue = rounds.duplicate()
+	_rounds_total = rounds.size()
+	_fallen = {}
+	var first: Dictionary = _queue.pop_front()
+	# Before the first replayed round, only those already down stay hidden.
+	for id in tv().get("creatures", {}):
+		if str(actor(id).get("defeat_state", "")) == "defeated" and not _falls_in(rounds, id): _fallen[id] = true
+	start_playback(first)
+
+func _falls_in(rounds: Array, id: String) -> bool:
+	for movement in rounds:
+		for hit in movement.get("hits", []):
+			if str(hit.target) == id and hit.get("lethal", false): return true
+	return false
 
 func start_playback(movement: Dictionary) -> void:
-	playback = {"movement": movement, "started": Time.get_ticks_msec(), "struck": {}}
-	if is_instance_valid(board): board.floaters = []; board.falling = {}
+	playback = {"movement": movement, "started": Time.get_ticks_msec(), "struck": {}, "hp": {}}
+	var before = movement.get("health_before")
+	if before is Dictionary:
+		for id in before: playback.hp[str(id)] = int(before[id])
+	if not is_instance_valid(board): return
+	board.floaters = []; board.falling = {}
+	if _rounds_total > 0:
+		# A replayed round shows only its own attacks.
+		board.badges = []; board.highlights = {}; board.clickable_creatures = {}
+		board.refresh(Callable(screen, "_inspect"))
+
+## Stops a replay and shows the battle as it stands.
+func stop_replay() -> void:
+	_queue = []
+	playback = {}
+	_finish_replay()
+
+func _finish_replay() -> void:
+	var was_replay := _rounds_total > 0
+	_rounds_total = 0; _fallen = {}
+	if is_instance_valid(_stop_button): _stop_button.queue_free()
+	if is_instance_valid(board): board.floaters = []; board.falling = {}; board.banner = ""
+	if was_replay: screen._render(true)
+	else: render_board()
 
 func cycle_speed() -> void:
-	speed = {1.0: 2.0, 2.0: 0.5, 0.5: 1.0}.get(speed, 1.0)
+	speed = {1.0: 2.0, 2.0: 4.0, 4.0: 0.5, 0.5: 1.0}.get(speed, 1.0)
 	if is_instance_valid(_speed_button): _speed_button.text = "Speed %s×" % ("½" if speed == 0.5 else str(int(speed)))
 
-## Called every frame: one playback shows the round's movement, strikes,
-## defense results and falls together (plan §9.4).
+## A replay keeps the grid clear: the end-of-battle panel steps aside and a
+## Stop control sits under the round banner.
+func _replay_frame() -> void:
+	if _rounds_total == 0: return
+	if is_instance_valid(screen._center_scroll): screen._center_scroll.visible = false
+	if not is_instance_valid(_stop_button) and is_instance_valid(screen._root):
+		_stop_button = TOOLTIP_BUTTON.new(); _stop_button.name = "StopReplay"; _stop_button.text = "Stop replay"
+		_stop_button.add_theme_font_size_override("font_size", 18); _stop_button.z_index = 55
+		_stop_button.set_meta("battle_utility", true)
+		_stop_button.pressed.connect(stop_replay)
+		screen._root.add_child(_stop_button)
+		_stop_button.reset_size(); _stop_button.position = Vector2(960 - _stop_button.size.x * 0.5, 74)
+		screen._inspect(_stop_button, "battle.tactics.stop_replay", "Stop the replay")
+
+## Called every frame: a round plays its movement, strikes, defense results
+## and falls together (plan §9.4); a replay plays its rounds one after another.
 func process() -> void:
 	if is_instance_valid(screen._root): layout_enemy_docks()
 	if playback.is_empty() or not is_instance_valid(board): return
+	_replay_frame()
 	var movement: Dictionary = playback.movement
 	var elapsed := (Time.get_ticks_msec() - int(playback.started)) / 1000.0 * speed
 	var t := clampf(elapsed / PLAYBACK_SECONDS, 0.0, 1.0)
+	var lethal := {}
+	for hit in movement.get("hits", []):
+		if hit.get("lethal", false): lethal[str(hit.target)] = true
+	# The round as it was: its start squares, health and areas; those who
+	# fell earlier stay off the grid, those who fall now are still on it.
+	for id in board.creatures:
+		var data: Dictionary = board.creatures[id]
+		if movement.get("start", {}).has(id): data["square"] = square(movement.start[id])
+		data["defeated"] = _fallen.has(id) if _rounds_total > 0 else (data.get("defeated", false) and not lethal.has(id))
+		if playback.hp.has(id): data["hp"] = int(playback.hp[id])
+		data["running"] = id in movement.get("running", [])
 	for id in movement.get("paths", {}):
 		if board.creatures.has(id): board.creatures[id]["square"] = _position_at(movement.paths[id], t)
-	board.ghosts = {}
+	board.ghosts = {}; board.paths = []
+	board.areas = []
+	for attack in movement.get("attacks", []):
+		if str(attack.get("delivery", "")) == "area": board.areas.append({"squares": attack.area.map(func(q): return Vector2i(int(q.x), int(q.y))), "color": Color(0.9, 0.35, 0.15, 0.34 if str(attack.get("outcome", "")) == "hit" else 0.18)})
+	board.banner = ("Round %d · %d of %d" % [int(movement.round), _rounds_total - _queue.size(), _rounds_total]) if _rounds_total > 1 else "Round %d" % int(movement.round)
 	for hit in movement.get("hits", []): _strike(movement, hit, t)
 	if t >= 1.0:
-		for hit in movement.get("hits", []):
-			if hit.get("lethal", false): board.falling[str(hit.target)] = clampf((elapsed - PLAYBACK_SECONDS) / 0.8, 0, 1)
+		for id in lethal: board.falling[id] = clampf((elapsed - PLAYBACK_SECONDS) / 0.8, 0, 1)
 	board.place_tokens(); board.queue_redraw()
-	if elapsed > PLAYBACK_SECONDS + 2.0:
+	var tail := 1.2 if not _queue.is_empty() else 2.0
+	if elapsed > PLAYBACK_SECONDS + tail:
+		for id in lethal: _fallen[id] = true
+		if not _queue.is_empty():
+			start_playback(_queue.pop_front())
+			return
 		playback = {}
-		board.floaters = []; board.falling = {}
-		render_board()
+		_finish_replay()
 
 func _position_at(path: Array, t: float) -> Vector2:
 	var at := square(path[0].square)
@@ -564,7 +658,8 @@ func _position_at(path: Array, t: float) -> Vector2:
 	return at
 
 ## A hit lands at its moment: direct at t = 0, a charge at contact, an area
-## attack when movement ends. Its defense result shows with it.
+## attack when movement ends. Its defense result shows with it, and the
+## target's health drops by what got through.
 func _strike(movement: Dictionary, hit: Dictionary, t: float) -> void:
 	var key := str(hit.source_id)
 	if playback.struck.has(key): return
@@ -575,10 +670,15 @@ func _strike(movement: Dictionary, hit: Dictionary, t: float) -> void:
 		elif str(attack.delivery) == "charge" and attack.get("contact_at") is Dictionary: at = frac(attack.contact_at)
 	if t < at: return
 	playback.struck[key] = true
-	var where: Vector2 = board.creatures.get(str(hit.target), {}).get("square", Vector2.ZERO)
+	var target := str(hit.target)
+	if playback.hp.has(target): playback.hp[target] = maxi(0, int(playback.hp[target]) - int(hit.final))
+	var where: Vector2 = board.creatures.get(target, {}).get("square", Vector2.ZERO)
 	var text := "−%d" % int(hit.final)
 	if int(hit.base) > int(hit.final): text += " (%s %d)" % [ability_name(str(hit.get("defense", ""))) if not str(hit.get("defense", "")).is_empty() else "saved", int(hit.base) - int(hit.final)]
-	board.floaters.append({"position": where, "text": "%s %s" % [ability_name(str(hit.ability_id)), text], "color": Color("ffb36b"), "born_ms": Time.get_ticks_msec()})
+	# Texts that land together stack upwards instead of covering each other.
+	var now := Time.get_ticks_msec()
+	var lift: int = board.floaters.filter(func(f): return now - int(f.born_ms) < 1600).size()
+	board.floaters.append({"position": where, "text": "%s %s" % [ability_name(str(hit.ability_id)), text], "color": Color("ffb36b"), "born_ms": now, "lift": lift})
 
 # --- Utilities --------------------------------------------------------------
 
@@ -590,6 +690,8 @@ func build_timeline_panel(content: VBoxContainer) -> void:
 	_speed_button.set_meta("battle_utility", true); screen._inspect(_speed_button, "battle.tactics.speed", "Playback speed")
 	var again := TOOLTIP_BUTTON.new(); again.text = "Replay round"; again.tooltip_text = "Play the last resolved round again: movement, strikes, defenses and falls."
 	again.pressed.connect(replay); again.set_meta("battle_utility", true); row.add_child(again); screen._inspect(again, "battle.tactics.replay", again.tooltip_text)
+	var whole := TOOLTIP_BUTTON.new(); whole.text = "Replay battle so far"; whole.tooltip_text = "Play every resolved round again, one after another, from the first."
+	whole.pressed.connect(replay_battle); whole.set_meta("battle_utility", true); row.add_child(whole); screen._inspect(whole, "battle.tactics.replay_all", whole.tooltip_text)
 	_timeline_text = RichTextLabel.new(); _timeline_text.fit_content = true; _timeline_text.selection_enabled = true; _timeline_text.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_timeline_text.text = timeline_text(); content.add_child(_timeline_text)
 	screen._inspect(_timeline_text, "battle.tactics.timeline", "Movement timeline")
@@ -618,9 +720,10 @@ func timeline_text() -> String:
 		lines.append("hit %s → %s: %d of %d" % [label(str(hit.attacker)), label(str(hit.target)), int(hit.final), int(hit.base)])
 	return "\n".join(lines)
 
-## A finished sandbox battle: Replay the last round, a new battle or the menu.
+## A finished sandbox battle: replay it whole or its last round, a new
+## battle or the menu.
 func add_completion_buttons(parent: Container) -> void:
-	for entry in [["Replay last round", "battle.complete.tactics_replay", replay], ["New sandbox battle", "battle.complete.tactics_new", _to_setup], ["Main menu", "battle.complete.tactics_menu", _to_menu]]:
+	for entry in [["Replay whole battle", "battle.complete.tactics_replay_all", replay_battle], ["Replay last round", "battle.complete.tactics_replay", replay], ["New sandbox battle", "battle.complete.tactics_new", _to_setup], ["Main menu", "battle.complete.tactics_menu", _to_menu]]:
 		var button := TOOLTIP_BUTTON.new(); button.text = str(entry[0]); button.pressed.connect(entry[2]); parent.add_child(button)
 		screen._inspect(button, str(entry[1]), button.text)
 
@@ -645,4 +748,4 @@ func inspection() -> Dictionary:
 		creatures[id] = {"at": "%d,%d" % [int(tv().creatures[id].position.x), int(tv().creatures[id].position.y)], "hp": "%d/%d" % [int(a.get("current_health", 0)), int(a.get("max_health", 0))], "energy": int(a.get("energy_points", 0)), "hand": int(a.get("hand_count", 0)), "statuses": a.get("statuses", []).map(func(st): return "%s×%d" % [st.definition_id, int(st.stacks)])}
 	return {"arena": str(tv().get("arena", {}).get("id", "")), "step": "movement" if in_movement() else screen._simultaneous_step(), "creatures": creatures, "plan": plan_text(),
 		"aim": aim, "aim_squares": aim_actions().map(func(a): return [int(_payload(a).target_square.x), int(_payload(a).target_square.y)]),
-		"offensive_targets": screen._offensive_target_actions().keys(), "playing_back": not playback.is_empty(), "pan": [pan.x, pan.y], "zoom": zoom, "view": tv()}
+		"offensive_targets": screen._offensive_target_actions().keys(), "playing_back": not playback.is_empty(), "replay_round": int(playback.get("movement", {}).get("round", 0)) if not playback.is_empty() else 0, "replay_total": _rounds_total, "banner": board.banner if is_instance_valid(board) else "", "pan": [pan.x, pan.y], "zoom": zoom, "view": tv()}

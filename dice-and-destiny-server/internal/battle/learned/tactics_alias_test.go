@@ -58,6 +58,13 @@ func TestTacticsOpsAliasTheHeroForTheBattleScreen(t *testing.T) {
 		i := strings.Index(string(raw), `"hero"`)
 		t.Fatalf("a submitted result still names the hero seat: …%s…", string(raw)[max(0, i-300):min(len(raw), i+100)])
 	}
+	history := call("tactics_history", "", nil)
+	if _, ok := history["rounds"].([]any); !ok {
+		t.Fatalf("tactics_history returned no rounds: %v", history)
+	}
+	if raw, _ := json.Marshal(history); strings.Contains(string(raw), `"hero"`) {
+		t.Fatal("the history still names the hero seat")
+	}
 }
 
 func keys(m map[string]any) []string {

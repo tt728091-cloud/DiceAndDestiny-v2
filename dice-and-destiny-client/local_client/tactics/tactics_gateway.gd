@@ -27,6 +27,11 @@ func open(id: String) -> Dictionary:
 	battle_id = id
 	return _runtime.tactics_request("tactics_open", {"battle_id": id})
 
+## Every resolved round of the battle, oldest first, as the hero may see it
+## (movement, attacks, hits, health), for replaying the whole battle.
+func history() -> Dictionary:
+	return _runtime.tactics_request("tactics_history", {"battle_id": battle_id})
+
 ## Takes a command as the battle screen sends it (JSON text) or a legal
 ## action dictionary.
 func submit(command) -> Dictionary:

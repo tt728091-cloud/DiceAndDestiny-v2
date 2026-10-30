@@ -488,7 +488,12 @@ func _win_and_lose() -> void:
 		await _frames(6)
 		_expect(screen._view.is_complete() and screen._view.battle_result == outcome, "a %s ends on the battle screen" % outcome)
 		_expect(TacticsGateway.active_store().load_active().is_empty(), "a finished battle clears the resume pointer")
-		_expect(_find(screen, "battle.complete.tactics_replay") != null and _find(screen, "battle.complete.tactics_menu") != null, "the end offers Replay last round and Main menu")
+		# The last round plays first, with the end panel stepped aside.
+		var played := Time.get_ticks_msec() + 15000
+		while Time.get_ticks_msec() < played and not screen._tactics.playback.is_empty(): await process_frame
+		await _frames(4)
+		_expect(_find(screen, "battle.complete.tactics_replay_all") != null and _find(screen, "battle.complete.tactics_replay") != null and _find(screen, "battle.complete.tactics_menu") != null, "after the last round plays, the end offers Replay whole battle, Replay last round and Main menu")
+		await _whole_replay(screen, gateway)
 		_expect(await _press(screen, "battle.complete.tactics_new"), "New sandbox battle from the end")
 		await _frames(6)
 		var setup = null
@@ -498,6 +503,35 @@ func _win_and_lose() -> void:
 		if setup != null: setup.queue_free()
 		await _frames(2)
 	_expect(outcomes.has("victory") and outcomes.has("defeat"), "both a won and a lost battle were played: %s" % str(outcomes.keys()))
+
+## Replay whole battle plays every resolved round in order on a clear grid,
+## then the end of battle comes back; Stop ends it at once.
+func _whole_replay(screen, gateway: TacticsGateway) -> void:
+	var deadline := Time.get_ticks_msec() + 15000
+	while Time.get_ticks_msec() < deadline and not screen._tactics.playback.is_empty(): await process_frame
+	var rounds: Array = gateway.history().get("rounds", [])
+	_expect(rounds.size() == screen._view.round_number and rounds.size() > 1, "the authority kept every round of the battle (%d)" % rounds.size())
+	_expect(await _press(screen, "battle.complete.tactics_replay_all"), "Replay whole battle")
+	await _frames(3)
+	_expect(screen._tactics._rounds_total == rounds.size() and int(screen._tactics.playback.movement.round) == 1, "the replay starts from round 1 of %d" % rounds.size())
+	_expect(not screen._center_scroll.visible and _find(screen, "battle.tactics.stop_replay") != null, "the end panel steps aside and Stop replay shows")
+	_expect(screen._tactics.board.banner.begins_with("Round 1 · 1 of %d" % rounds.size()), "the grid shows the round: %s" % screen._tactics.board.banner)
+	screen._tactics.speed = 4.0
+	var seen: Array = []
+	deadline = Time.get_ticks_msec() + 4000 * rounds.size()
+	while Time.get_ticks_msec() < deadline and not screen._tactics.playback.is_empty():
+		var round := int(screen._tactics.playback.movement.round)
+		if seen.is_empty() or seen[-1] != round: seen.append(round)
+		await process_frame
+	_expect(seen == range(1, rounds.size() + 1), "every round played in order: %s" % [seen])
+	await _frames(4)
+	_expect(screen._tactics.playback.is_empty() and _find(screen, "battle.complete.tactics_new") != null and screen._center_scroll.visible, "the end of battle comes back after the replay")
+	_expect(await _press(screen, "battle.complete.tactics_replay_all"), "Replay whole battle again")
+	await _frames(3)
+	_expect(await _press(screen, "battle.tactics.stop_replay"), "Stop replay")
+	await _frames(4)
+	_expect(screen._tactics.playback.is_empty() and _find(screen, "battle.complete.tactics_new") != null, "Stop ends the replay and shows the end of battle")
+	screen._tactics.speed = 1.0
 
 ## A plain proxy through the authority's legal actions: roll, the first attack,
 ## pursue the nearest enemy, the first defense, then pass.
@@ -568,6 +602,9 @@ func _area_aim() -> void:
 	TacticsGateway.active_store().save_active(found.gateway.battle_id, ME)
 	var screen = await _open(found.gateway, found.view)
 	await _settle(screen)
+	# Opening mid-battle first plays back the previous round.
+	var played := Time.get_ticks_msec() + 15000
+	while Time.get_ticks_msec() < played and not screen._tactics.playback.is_empty(): await process_frame
 	_expect(await _press(screen, "battle.ability.%s.fireball" % ME), "Fireball is chosen on the ability rail")
 	await _settle(screen)
 	var squares: Array = screen._tactics.aim_actions()

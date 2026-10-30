@@ -23,6 +23,7 @@ import (
 	"diceanddestiny/server/internal/battle/event"
 	"diceanddestiny/server/internal/battle/loadout"
 	"diceanddestiny/server/internal/battle/repository"
+	"diceanddestiny/server/internal/battle/snapshot"
 	"diceanddestiny/server/internal/battle/state"
 	"diceanddestiny/server/internal/battle/tactics"
 	"diceanddestiny/server/internal/content"
@@ -316,6 +317,33 @@ func Open(roots Roots, battleID string) (map[string]any, error) {
 		return nil, err
 	}
 	return r.present(driven)
+}
+
+// History returns every resolved round of a sandbox battle as the hero may
+// see it (movement, attacks, hits and health), oldest first, so the client
+// can replay the whole battle.
+func History(roots Roots, battleID string) (map[string]any, error) {
+	mu.Lock()
+	defer mu.Unlock()
+	r, err := reopen(roots, battleID)
+	if err != nil {
+		return nil, err
+	}
+	stored, err := r.authority.InspectBattleState(battleID)
+	if err != nil {
+		return nil, fmt.Errorf("sandbox battle %s: %w", battleID, err)
+	}
+	raw, err := json.Marshal(map[string]any{"battle_id": battleID, "rounds": snapshot.TacticsHistory(stored, HeroSeat)})
+	if err != nil {
+		return nil, err
+	}
+	decoder := json.NewDecoder(bytes.NewReader(raw))
+	decoder.UseNumber()
+	var out map[string]any
+	if err := decoder.Decode(&out); err != nil {
+		return nil, err
+	}
+	return out, nil
 }
 
 func reopen(roots Roots, battleID string) (*runner, error) {

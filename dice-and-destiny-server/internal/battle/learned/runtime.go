@@ -412,6 +412,8 @@ func handleTactics(request runtimeRequest) string {
 		value, err = tacticsbattle.Start(roots, request.BattleID, setup)
 	case "tactics_open":
 		value, err = tacticsbattle.Open(roots, request.BattleID)
+	case "tactics_history":
+		value, err = tacticsbattle.History(roots, request.BattleID)
 	case "tactics_submit":
 		var commandJSON string
 		if commandJSON, err = unaliasTacticsCommand(request.CommandJSON); err == nil {

@@ -134,6 +134,28 @@ func TestRunnerPlaysASandboxBattleToTheEnd(t *testing.T) {
 	if fmt.Sprint(again["battle_result"]) != fmt.Sprint(end["battle_result"]) {
 		t.Fatal("the reopened battle differs")
 	}
+	// Every resolved round is kept, in order, with health before and after,
+	// so the whole battle can be replayed.
+	history, err := History(roots, "tactics-runner-test")
+	if err != nil {
+		t.Fatal(err)
+	}
+	rounds := history["rounds"].([]any)
+	last := end["snapshot"].(map[string]any)["round"]
+	if fmt.Sprint(len(rounds)) != fmt.Sprint(last) {
+		t.Fatalf("history holds %d rounds; the battle ended in round %v", len(rounds), last)
+	}
+	for i, value := range rounds {
+		round := value.(map[string]any)
+		if fmt.Sprint(round["round"]) != fmt.Sprint(i+1) || round["health_before"] == nil || round["paths"] == nil {
+			t.Fatalf("round %d of the history is incomplete: %v", i+1, round["round"])
+		}
+	}
+	final := rounds[len(rounds)-1].(map[string]any)["health_after"].(map[string]any)
+	loser := map[string]string{"victory": "enemy-1", "defeat": HeroSeat}[fmt.Sprint(end["battle_result"])]
+	if loser != "" && fmt.Sprint(final[loser]) != "0" {
+		t.Fatalf("the last round's health after does not show the %s: %v", end["battle_result"], final)
+	}
 }
 
 func TestSubmitAcceptsGodotFloats(t *testing.T) {

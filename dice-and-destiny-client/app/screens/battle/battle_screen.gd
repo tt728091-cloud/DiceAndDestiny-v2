@@ -2799,7 +2799,7 @@ func _build_completion() -> void:
 		final.text = "You %d/%d · %s %d/%d" % [int(_view.actor("blade").get("current_health", 0)), int(_view.actor("blade").get("max_health", 0)), _actor_display_name(_focused_enemy), int(_view.actor(_focused_enemy).get("current_health", 0)), int(_view.actor(_focused_enemy).get("max_health", 0))]
 	else:
 		final.text = "Blade %d/%d · Goblin %d/%d" % [int(_view.actor("blade").get("current_health", 0)), int(_view.actor("blade").get("max_health", 0)), int(_view.actor(_focused_enemy).get("current_health", 0)), int(_view.actor(_focused_enemy).get("max_health", 0))]
-	if _multiple_enemies():
+	if _multiple_enemies() or tactics_mode:
 		var health: Array[String] = ["You %d/%d" % [int(_view.actor("blade").get("current_health", 0)), int(_view.actor("blade").get("max_health", 0))]]
 		for id in _enemy_ids(): health.append("%s %d/%d" % [_actor_display_name(id), int(_view.actor(id).get("current_health", 0)), int(_view.actor(id).get("max_health", 0))])
 		final.text = " · ".join(health)
