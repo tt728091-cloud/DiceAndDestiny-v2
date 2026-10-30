@@ -179,6 +179,15 @@ Use `./scripts/godot.sh` for every additional Godot test.
 - Keep the doc's tables in step with any change to the published trees.
 - To measure cards in real battles, or after changing a card's energy, effect or XP, the energy economy, the AI or the opponents, follow `docs/game-design/balancing-playbook.md`: what triggers a balancing pass, which test answers which question, the commands, and the current measured prices.
 
+## Tactics Sandbox
+
+- The menu's **Tactics Sandbox (prototype)** plays a battle on a square grid with range, line of sight and secret simultaneous movement. The plan is the source of truth: `docs/game-design/tactics-sandbox-plan.md`; the implementation log, defaults to confirm and playtest findings are in `docs/game-design/tactics-sandbox-progress.md`.
+- **The authority owns every rule.** Grid, sight, pathing and the exact-time movement simulation live in the pure package `dice-and-destiny-server/internal/battle/tactics` (no engine imports); the engine integration in `engine/tactics.go`; the viewer-safe view in `snapshot/tactics.go`; the runner and the `tactics_catalog` / `tactics_start` / `tactics_open` / `tactics_submit` ops in `internal/battle/tacticsbattle`. The Godot screens (`app/screens/tactics/`) render the view and submit listed legal actions only; they never compute paths, costs, ranges, budgets or Move values.
+- **Numbers live in `content/tactics_v1/`** (`rules.yaml`, the arenas, the sandbox combatants and the pack's same-ID ability copies, applied only to tactics catalogs). Shipped content, catalogs and battles must not change. Rules the plan marks *default* stay configurable and overridable from the setup screen.
+- **Movement plans stay secret** until everyone locks in: never put another participant's intention, committed cards, energy, preview or area square in a viewer's snapshot, events or legal actions.
+- A tactics battle needs unified defense and simultaneous play pinned. The ML, learned, look-ahead and balance-lab players refuse it (`mlsim.ErrTacticsBattle`).
+- **Tests to keep green:** `go test ./internal/battle/tactics/ ./internal/battle/engine/ ./internal/battle/tacticsbattle/` and `./scripts/godot.sh --headless --script res://tests/presentation/verify_tactics_sandbox.gd`.
+
 ## Authored content storage
 
 - Published cards, card trees, abilities/boards, and admin card prices and pool types live in the tracked `dice-and-destiny-server/content/authored/` directory. The launcher points `DICE_AND_DESTINY_AUTHORED_ROOT` at it for normal runs; commit its changes to share them.

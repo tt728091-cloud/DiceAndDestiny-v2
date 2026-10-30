@@ -11,7 +11,7 @@ Implementation log for `tactics-sandbox-plan.md` (the plan is the source of trut
 | M2 · Authority | done |
 | M3 · Enemy behaviour | done |
 | M4 · Client | done |
-| M5 · Verify and document | — |
+| M5 · Verify and document | done |
 
 ## M0 · Content pack and schema
 
@@ -80,6 +80,64 @@ Tests: `policy_test.go` (pursuit and the one-card rule, flee / hold / move into 
 - Godot's JSON writes integers as floats (`1.0`); the runner rewrites whole numbers before parsing a hero command. The round's movement record now also keeps its attacks (with the revealed tier, for the hover contract) and, at the damage commit, each hit's base and final damage, cards removed, defense and whether it was lethal.
 
 Pointer test: `tests/presentation/verify_tactics_sandbox.gd` (about 25 s): the menu tab and setup; Sprint; every intention by clicking (square, creature → Pursue, creature → Flee, Hold); a card and 5 energy committed with the budget and Running warning; lock in; the revealed paths and ghosts during defense; the playback (tokens move, end on their final squares), Replay and the timeline; aiming an attack whose highlighted targets are exactly the legal ones; a round where the hero runs from a direct attack and only Evade is offered (Guard disabled with the reason); resuming a saved battle from the tab on the same squares; a won and a lost battle's end screens (played out through the authority, then clicked); and 1–4 enemies at 1280×720 and 1920×1080 with every token and badge, the Pursue/Flee popup at both screen edges and the hover text inside the viewport.
+
+## M5 · Verify, playtest and document
+
+### Playtests
+
+Eleven battles in the running game (`DICE_AND_DESTINY_INSPECTOR=1 ./scripts/godot.sh`), every arena with both heroes. "By hand" means I chose every action from the screen and clicked it; "autopilot" means a throwaway script drove the same screen controls (buttons through the inspector, board squares and creatures with pointer clicks) with simple play: roll, keep swords, coins or straights, take the best attack in reach, step out of an area attack, otherwise Hold, defend with the best defense. The autopilot plays no cards except hand-limit discards.
+
+| # | Arena | Hero | Enemies | Map cards | Played | Result |
+|---|---|---|---|---|---|---|
+| 1 | Doorway | Starter | Ribbon Eel, Brine Mask | — | by hand | defeat, round 11 (Eel dead, Mask 8/16) |
+| 2 | Pillar Hall | Adventurer | Drowned Regent, Bell Diver | — | by hand to round 9, then autopilot | defeat, round 11 (Regent 12/18, Diver 13/18) |
+| 3 | Open Field | Adventurer | Ribbon Eel, Brine Mask | — | by hand to round 4, then autopilot | draw, round 10 (Eel dead in round 4) |
+| 4 | Pillar Hall | Starter | Brine Mask, Ribbon Eel | — | autopilot | defeat, round 6 (Mask 13/16, Eel 8/15) |
+| 5 | Swamp Crossing | Starter | Ribbon Eel, Bell Diver | Forced March, Know the Land | by hand to round 8, then autopilot | defeat, round 12 (Eel dead in round 6, Diver 5/18) |
+| 6 | Doorway | Adventurer | Ribbon Eel, Bell Diver | — | autopilot | draw, round 13 |
+| 7 | Open Field | Starter | Ribbon Eel | — | autopilot | victory, round 6 (hero 4/12) |
+| 8 | Swamp Crossing | Adventurer | Drowned Regent | Know the Land, Forced March, Trailblaze | by hand to round 2, then autopilot | victory, round 11 (hero 2/15) |
+| 9 | Pillar Hall | Starter | Drowned Regent | — | autopilot | draw, round 10 |
+| 10 | Doorway | Starter | Brine Mask | — | autopilot | defeat, round 7 (Mask 2/16) |
+| 11 | Pillar Hall | Adventurer | Drowned Regent, Bell Diver | — | autopilot | defeat, round 10 (Regent dead, Diver 18/18) |
+
+Screenshots: `tactics-sandbox-playtest/` (setup; the Ribbon Eel plugging the Doorway; a dodge plan against Tide Crown; the debug timeline; the per-card Move tags; Forced March and Know the Land across the swamp; a Charge taking the square the Bell Diver paid to enter; the incoming-attack panel; stacked badges; the end screen).
+
+What worked as intended:
+
+- **Choke points and cover.** In the Doorway the Ribbon Eel plugged the gap and blocked the Brine Mask's line of sight for four rounds; Pillar Hall pillars broke sight and permissive corners let shots past a single pillar.
+- **Dodging area attacks.** Leaving Tide Crown's 3 × 3 cost a card or 5–10 energy and Running (Guard lost), and was usually worth it; standing in swamp made the same dodge cost twice as much.
+- **Charge.** It closes and strikes in one action, and since it does not run, Guard stays. It was the hero's main damage in both wins.
+- **Map cards.** Forced March crossed four swamp squares at cost 1 each (arrival t = 2/5); Know the Land asked for a terrain and made swamp cost 1; the printed 5 energy was paid; the sprint bonus counted the map card (Move 7 = base 2 + map 4 + sprint 1).
+- **Simultaneous reveal.** Secret plans, the movement preview, contested squares and the timeline all read correctly; I never saw an enemy react to a plan it could not have seen.
+
+### Findings for the user
+
+1. **Two enemies beat the hero.** The heroes have 12 health (more with map cards) against 15–18 per enemy, and the enemies' defenses absorb a lot. Of seven one-against-two battles I lost five and drew two; one against one went two wins, one draw, one loss. The setup screen decides the difficulty, so this is a note rather than a bug.
+2. **Draws are common.** Three of eleven battles ended with both sides at 0 in the same final commit. That follows from simultaneous damage; I did not compare the rate with normal battles.
+3. **Energy piles up.** The hero finished battles with 50–74 unspent energy. Moving makes you run (losing Guard), so Hold is usually right and energy-for-Move is rarely worth buying. Lower energy income or a softer Running would change that.
+4. **Running follows the plan, not the walk.** The Bell Diver discarded a card to step into a square my Charge reached first. It never moved, yet it ran and could not Guard. This is the plan's rule (a budget above base speed runs), but it felt harsh. Running could instead require actually moving more than base speed.
+5. **Speed-1 melee enemies stall at swamp.** Swamp costs 2 and a speed-1 enemy only spends a card when that card brings it into range this round, so the Bell Diver waited at the swamp's edge for five rounds while I shot it. Options: let the AI spend a card whenever its base speed cannot enter the next square, or carry unspent Move between rounds.
+6. **Only area attacks can be dodged.** Direct attacks always land, so moving away from melee or a ranged attacker never helps your defense; Hold and Guard is nearly always right against them. Movement mostly matters against Tide Crown and Fireball and for getting into range.
+7. **Hand-limit discards most rounds.** Income draws a card a round and holding commits none, so the hero discarded to the hand limit almost every round. The choice is to waste those cards or spend them on Move and lose Guard (Running).
+8. **The defense view keeps tokens where they started** (default 5). A faint ghost marks the final square; I misread a Brine Mask's position once because its solid token was still on its old square. A stronger ghost, or showing the final square solid with a faded trail, would be clearer.
+9. **Small UI notes, not changed:** Know the Land also offers "Make Floor cost 1", which does nothing on these arenas; a card chooser lists "Play Strong Swing" next to the per-ability options (the shared program flow).
+
+### Fixes made while playtesting
+
+- **Per-card Move during movement** (plan §9.3, missed in M4): every hand card shows "+1 Move" (a map card: "Play +4 · discard +1 Move"; more while sprinting). The authority prices it in the viewer's own view (`snapshot.tactics.hand_move`, `tactics.CardMove` / `MapCardMove`); another viewer never sees it.
+- **Badges no longer overlap.** They stack per drawn square and side, an area aimed at your square hangs below your token with the other attacks on you, and any badge that would still touch another (one below you and one above the creature diagonally below you) steps away.
+- **Incoming attacks** read "7 damage → 4 left" after a defense instead of the remaining damage alone next to "prevented 3".
+- The end panel is compact and sits high, so **Replay last round** plays on a visible board; playback floaters are wider and stay inside the board.
+- Inspector ids for hand-limit discards and card-choice options; the inspection state also reports the arena, kept dice, legal aim squares and creatures, and the view.
+
+Tests added: hand Move values in `TestSprintMapCardsEnergyAndSpentCommitments` and `TestCardMoveValues`; the pointer test checks the "+2 Move" tag while sprinting and that six badges on three neighbouring creatures never overlap (it fails on the old stacking).
+
+### Verification (final run)
+
+- `go test ./...` passes.
+- Godot: `verify_battle_authority.gd`, `verify_tactics_sandbox.gd`, `verify_simultaneous_play.gd`, `verify_expedition_statuses.gd`, `verify_brine_mask.gd`, `verify_adventurer_battle.gd` and `verify_character_creation.gd` pass (earlier in the work also `verify_brine_pair.gd` and `verify_drowned_oracle_minions.gd`).
+- Two Godot scripts fail **on `main` too**, with the same assertions (checked in a clean checkout of the plan's base commit): `verify_expedition_map.gd` ("Take Stock offers its map play at its printed 5 energy", which shows 3) and `tests/phase3/verify_learned_battle.gd` ("character selector is missing"). This branch does not touch either area.
 
 ## Defaults to confirm (plan §13)
 
