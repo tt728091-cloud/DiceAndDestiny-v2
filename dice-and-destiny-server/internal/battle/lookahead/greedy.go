@@ -99,6 +99,9 @@ func (p *GreedyPolicy) Name() string {
 }
 
 func (p *GreedyPolicy) Choose(d *Decision) (int, error) {
+	if err := refuseTactics(d); err != nil {
+		return 0, err
+	}
 	options := Useful(d.Battle, d.Seat, d.Actions)
 	if len(options) == 1 {
 		return options[0], nil

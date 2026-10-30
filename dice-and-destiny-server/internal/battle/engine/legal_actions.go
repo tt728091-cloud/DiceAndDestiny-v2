@@ -44,6 +44,8 @@ func settledLegalActions(battle *state.Battle, library content.BattleLibrary, ac
 	switch window.Stage {
 	case stageCurseChoice:
 		return curseCardActions(battle, library, actorID, pending)
+	case stageMovement:
+		return movementActions(battle, library, actorID, pending)
 	case stageOffensivePlan:
 		runtime := battle.Settled.Actors[actorID]
 		if runtime.AmbushChoose > 0 {
@@ -103,7 +105,8 @@ func settledLegalActions(battle *state.Battle, library content.BattleLibrary, ac
 				if ability.Usage.MaximumPerSegment > 0 && runtime.UsedAbilities[abilityID] >= ability.Usage.MaximumPerSegment {
 					continue
 				}
-				for _, targets := range actorTargetChoices(battle, actorID, ability.Targeting) {
+				for _, option := range offensiveTargetChoices(battle, library, actorID, abilityID) {
+					targets, square := option.targets, option.square
 					tiers := []string{""}
 					if chooseAbilityTier(ability) {
 						tiers = nil
@@ -127,16 +130,16 @@ func settledLegalActions(battle *state.Battle, library content.BattleLibrary, ac
 								choices = [][]string{nil}
 							}
 						}
-						for _, choice := range choices {
-							actions = append(actions, legalCommand(battle.ID, actorID, command.TypePlanningAbility, command.PlanningAbilityPayload{PendingInputID: pending.ID, Checkpoint: planningCheckpoint(pending), AbilityID: abilityID, TierID: tierID, ToxinChoices: choice, TargetIDs: targets}))
+						for _, toxins := range choices {
+							actions = append(actions, legalCommand(battle.ID, actorID, command.TypePlanningAbility, command.PlanningAbilityPayload{PendingInputID: pending.ID, Checkpoint: planningCheckpoint(pending), AbilityID: abilityID, TierID: tierID, ToxinChoices: toxins, TargetIDs: targets, TargetSquare: square}))
 						}
 					}
 				}
 			}
 		}
 		if containsCommand(window.AllowedCommands, command.TypePlanningTargets) && runtime.SelectedAbilityID != "" {
-			for _, targets := range actorTargetChoices(battle, actorID, library.Abilities[runtime.SelectedAbilityID].Targeting) {
-				actions = append(actions, legalCommand(battle.ID, actorID, command.TypePlanningTargets, command.PlanningTargetsPayload{PendingInputID: pending.ID, Checkpoint: planningCheckpoint(pending), TargetIDs: targets}))
+			for _, option := range offensiveTargetChoices(battle, library, actorID, runtime.SelectedAbilityID) {
+				actions = append(actions, legalCommand(battle.ID, actorID, command.TypePlanningTargets, command.PlanningTargetsPayload{PendingInputID: pending.ID, Checkpoint: planningCheckpoint(pending), TargetIDs: option.targets, TargetSquare: option.square}))
 			}
 		}
 		if containsCommand(window.AllowedCommands, command.TypePlanningPass) {

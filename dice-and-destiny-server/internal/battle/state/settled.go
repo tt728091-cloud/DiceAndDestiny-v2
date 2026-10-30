@@ -12,8 +12,12 @@ type SettledRuntime struct {
 	UnifiedDefense bool
 	// SimultaneousPlay pins the simultaneous rule: secret Before plays, a
 	// lock-in per participant, one reveal, then simultaneous rolls.
-	SimultaneousPlay   bool                 `json:",omitempty"`
-	Simultaneous       *SettledSimultaneous `json:",omitempty"`
+	SimultaneousPlay bool                 `json:",omitempty"`
+	Simultaneous     *SettledSimultaneous `json:",omitempty"`
+	// Tactics pins the Tactics Sandbox grid rule (only with unified defense
+	// and simultaneous play); TacticsRuntime is its grid state.
+	Tactics            bool            `json:",omitempty"`
+	TacticsRuntime     *TacticsRuntime `json:",omitempty"`
 	DefensePassed      map[string]bool
 	Curse              *CurseRuntime `json:",omitempty"`
 	ReactionReplanning bool
@@ -350,6 +354,7 @@ func cloneSettledRuntime(value *SettledRuntime) *SettledRuntime {
 		cloned.Venom = CloneVenom(value.Venom)
 	}
 	cloned.Simultaneous = cloneSimultaneous(value.Simultaneous)
+	cloned.TacticsRuntime = CloneTactics(value.TacticsRuntime)
 	cloned.Actors = make(map[string]SettledActorRuntime, len(value.Actors))
 	for id, actor := range value.Actors {
 		cloned.Actors[id] = cloneSettledActor(actor)

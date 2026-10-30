@@ -43,6 +43,12 @@ const (
 	TypeCardQueued           Type = "card_queued"
 	TypeDefensePlanned       Type = "defense_planned"
 	TypeSecretPlaysRevealed  Type = "secret_plays_revealed"
+	// Tactics battles: the round's attacks with their delivery, a movement
+	// plan changed or locked in (secret to its owner), and the resolved
+	// movement with its timeline and which attacks connected.
+	TypeTacticsAttacksRevealed  Type = "tactics_attacks_revealed"
+	TypeTacticsMovementPlanned  Type = "tactics_movement_planned"
+	TypeTacticsMovementResolved Type = "tactics_movement_resolved"
 )
 
 // Event describes an authority-approved battle fact that already happened.

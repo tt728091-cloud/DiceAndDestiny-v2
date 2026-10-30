@@ -8,7 +8,7 @@ Implementation log for `tactics-sandbox-plan.md` (the plan is the source of trut
 |---|---|
 | M0 · Read and scaffold | done |
 | M1 · `internal/battle/tactics` (pure) | done |
-| M2 · Authority | — |
+| M2 · Authority | done |
 | M3 · Enemy behaviour | — |
 | M4 · Client | — |
 | M5 · Verify and document | — |
@@ -42,6 +42,20 @@ How the simulation works (`tactics.Simulate`):
 
 Tests (`go test ./internal/battle/tactics/`): §11 items 1–7, 10 (rules side) and 14 at the pure level, plus `TestRandomRoundsKeepEveryInvariant`, which resolves 3,000 random arenas and plans (both diagonal rules, corner cutting on and off, terrain modifiers) and checks that opponents never hold a square at the same time, allies never end together, every step is a legal neighbour paid at exactly its cost and rate, nothing passes t = 1 or the budget, and the result is deterministic.
 
+## M2 · Authority
+
+The engine integration lives in `engine/tactics.go` with small hooks in the existing flow; state in `state/tactics.go` (`Settled.Tactics` + `Settled.TacticsRuntime`); the viewer-safe view in `snapshot/tactics.go` (`snapshot.tactics`).
+
+- **Pinning.** `start_battle` takes an optional `tactics` setup (arena, rules with overrides already applied, every seat's start square). The authority refuses it unless unified defense and simultaneous play are both pinned, and only a tactics battle may have five seats (a hero and four enemies). The arena, the rules and every creature's speed and role are pinned in the battle.
+- **Offense.** At Offensive entry every creature's square is recorded as the round's start. Legal actions offer only targets in range and in line of sight from those squares: creatures for direct attacks, creatures within reach + 1 for a Charge, squares for an area attack (`target_square` in the ability payload; a wall square is never a target). Skipping the offense (Pass in Offense Before) records a Sprint. An area attack's square stays private to its owner until the offense reveal, like every other planning choice.
+- **Movement step.** After the offense reveal the attacks are recorded with their delivery and a new secret simultaneous step, `movement`, opens for everyone at once. A plan is one command, `tactics_movement_plan`: intention (move to a square, pursue or flee a creature, hold), the exact cards discarded for Move, map Move cards played for their amount (with the terrain for a choose-terrain card), and energy; `lock_in` locks it in, otherwise it replaces the draft. The authority validates every plan, prices it (budget, Running) and keeps a preview path assuming everyone else holds; legal actions offer the current plan locked in and every plan one change away (another intention, a card or map card in or out, another energy amount). A fixed Charge (`charge_allows_extra_move: false`) is locked in automatically. Plans, their events and their legal actions are visible only to their owner; the others see a lock-in marker.
+- **Resolution.** When everyone is locked in: committed cards go to discard (played map cards to their play destination), energy is spent, one battle random draw seeds the round's tiebreaks, `tactics.Simulate` resolves the movement, plans that ran get Running, and attacks connect: direct always, area against every opponent of the caster standing in its area at t = 1, a charge if the charger touched its target. The attacker's targets become the creatures hit, so an area attack makes one damage source per creature, each with its own reservations and defense. An attack that misses does nothing (`tacticsMissed`). The resolution (timeline, start and final squares, budgets, Running, the revealed plans with other participants' discarded cards shown as a count) is public. Then the usual Defense opens.
+- **Running.** Read by its `on_the_move_defenses_only` modifier, never by ID: only `on_the_move` defenses are offered or accepted; `snapshot.tactics.disabled_defenses` lists the others with the reason. Running expires at the next round's Ongoing Effects (a trigger in its content file, like Protect).
+- **Refusals.** `mlsim` (environment and both encoders), the learned v1/v2/v3 policies, the session's scripted minions, the look-ahead opponent and every balance-lab player return `mlsim.ErrTacticsBattle` for a tactics battle.
+- **Runner and ops** (`internal/battle/tacticsbattle`, dispatched from `learned/runtime.go`): `tactics_catalog` (heroes, enemies, arenas, rules, published map Move cards), `tactics_start`, `tactics_open` (resume) and `tactics_submit`. Battles are stored with the workspace's battle root (`<battles>/tactics/`) beside a small file holding the setup and each enemy seat's pinned scripted behaviour. After every hero command the runner lets each enemy answer from its own viewer-safe view and legal actions until only the hero has a decision. A per-request write-behind cache keeps the checkpoint in memory and writes it once, so a hero command with four enemies answering takes well under a second (it was over two seconds when every enemy view reloaded the checkpoint from disk).
+
+Tests: `engine/tactics_test.go` (legality, connections, one source per creature hit, charge contact, Sprint, map cards with ignore/choose terrain, energy, spent commitments, Hold and Charge limits, Running and the on-the-move filter and expiry, viewer safety, save/reload during movement and defense, determinism, the rule needing the other two), `battle/tactics_authority_test.go`, the refusal tests in `mlsim`, `learned` and `lookahead`, and `tacticsbattle/runner_test.go` (catalog; a whole battle through the ops, then resume).
+
 ## Defaults to confirm (plan §13)
 
 All live in `content/tactics_v1/rules.yaml` or the combatant files and can be overridden per battle from the setup screen.
@@ -63,3 +77,9 @@ Small gaps the plan does not settle; each is the most natural reading and is lis
 - **Alternating diagonals** apply to every grid distance (range, flee distance) and to movement cost (every second diagonal step costs double, times the terrain cost), not only to movement.
 - **Corner cutting** is about walls (impassable terrain) only; creatures never stop a diagonal step past them.
 - **Charge already adjacent** at the start of movement connects at t = 0.
+- **Hold never runs**, even while sprinting: a Hold plan commits nothing and does not move, so it has no Move budget.
+- **Area targets** must be a square you could see: in range, in line of sight, and not a wall. The caster may aim at its own square; it is never hit by its own area attack.
+- **An attack that does not connect** (dodged, out of reach) has no effect at all; any energy it cost stays spent.
+- **Defeated creatures** leave the grid: they no longer block movement or line of sight.
+- **Map Move cards** may be played for their amount (paying their printed energy cost) or discarded like any card for +1 Move. Their map-only extra energy cost (`energy_cost`) is not charged in battle.
+- **Running** has negative polarity, so a status-removal card could remove it; no sandbox deck holds one today.

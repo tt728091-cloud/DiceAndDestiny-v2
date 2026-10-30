@@ -138,6 +138,9 @@ func encodeDecisionV2(transition Transition) (EncodedDecision, error) {
 // EncodeDecisionV2ForRuntime exposes the exact mechanics-aware feature vector
 // used by the transport so an exported native policy cannot drift from Python.
 func EncodeDecisionV2ForRuntime(transition Transition) ([]float32, []bool, error) {
+	if err := RefuseTactics(transition); err != nil {
+		return nil, nil, err
+	}
 	encoded, err := encodeDecisionV2(transition)
 	if err != nil {
 		return nil, nil, err

@@ -164,6 +164,9 @@ func (s *SearchPolicy) workers() ([]*searchWorker, error) {
 }
 
 func (s *SearchPolicy) Choose(d *Decision) (int, error) {
+	if err := refuseTactics(d); err != nil {
+		return 0, err
+	}
 	started := time.Now()
 	var deadline time.Time
 	if s.Think > 0 {

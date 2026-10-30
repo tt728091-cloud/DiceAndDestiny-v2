@@ -6,6 +6,7 @@ import (
 	"runtime"
 	"time"
 
+	"diceanddestiny/server/internal/battle/engine"
 	"diceanddestiny/server/internal/battle/lookahead"
 	"diceanddestiny/server/internal/battle/mlsim"
 	"diceanddestiny/server/internal/battle/state"
@@ -95,6 +96,9 @@ func (p *lookaheadPolicy) Select(mlsim.Transition) (int, time.Duration, error) {
 }
 
 func (p *lookaheadPolicy) SelectWithState(t mlsim.Transition, b state.Battle) (int, time.Duration, error) {
+	if engine.TacticsBattle(&b) {
+		return 0, 0, mlsim.ErrTacticsBattle
+	}
 	started := time.Now()
 	d := &lookahead.Decision{Sim: p.sim, Battle: &b, Seat: t.ActorID, Actions: t.Result.LegalActions, Rand: p.rng}
 	index, err := p.search.Choose(d)

@@ -4,11 +4,13 @@ import (
 	"diceanddestiny/server/internal/content"
 	"encoding/json"
 	"fmt"
+	"strings"
 	"sync"
 	"time"
 
 	"diceanddestiny/server/internal/battle/expedition"
 	"diceanddestiny/server/internal/battle/loadout"
+	"diceanddestiny/server/internal/battle/tacticsbattle"
 )
 
 type runtimeRequest struct {
@@ -63,6 +65,10 @@ type runtimeRequest struct {
 	// ExpectedCost is the XP a board change was shown to cost
 	// (campaign_board_change; negative: a refund).
 	ExpectedCost int `json:"expected_cost,omitempty"`
+	// Tactics Sandbox: the setup screen's choice (tactics_start) and where
+	// sandbox battles are stored (empty: the launcher's battle root).
+	Tactics    json.RawMessage `json:"tactics,omitempty"`
+	BattleRoot string          `json:"battle_root,omitempty"`
 }
 
 var learnedRuntime struct {
@@ -88,6 +94,9 @@ func HandleRuntimeRequest(requestJSON string) string {
 		"expedition_status", "expedition_act", "expedition_deck_change", "board_builder", "board_price", "board_save", "campaign_board", "campaign_board_change":
 		catalogRuntimeMu.Lock()
 		defer catalogRuntimeMu.Unlock()
+	}
+	if strings.HasPrefix(request.Op, "tactics_") {
+		return handleTactics(request)
 	}
 	if request.Op == "campaign_new" {
 		if request.Mode == loadout.ModeExpedition {
@@ -378,5 +387,38 @@ func runtimeSuccess(value any) string {
 
 func runtimeError(err error) string {
 	encoded, _ := json.Marshal(map[string]any{"accepted": false, "ok": false, "error": err.Error()})
+	return string(encoded)
+}
+
+// handleTactics serves the Tactics Sandbox ops: the setup catalog, starting,
+// reopening and playing a sandbox battle. They never touch the learned
+// session; enemies are scripted (internal/battle/tacticsbattle).
+func handleTactics(request runtimeRequest) string {
+	roots := tacticsbattle.Roots{ContentRoot: request.ContentRoot, LoadoutRoot: request.LoadoutRoot, BattleRoot: request.BattleRoot}
+	var value map[string]any
+	var err error
+	switch request.Op {
+	case "tactics_catalog":
+		value, err = tacticsbattle.Catalog(roots)
+		if err == nil {
+			return runtimeSuccess(value)
+		}
+	case "tactics_start":
+		var setup tacticsbattle.Setup
+		if err = json.Unmarshal(request.Tactics, &setup); err != nil {
+			return runtimeError(fmt.Errorf("decode tactics setup: %w", err))
+		}
+		value, err = tacticsbattle.Start(roots, request.BattleID, setup)
+	case "tactics_open":
+		value, err = tacticsbattle.Open(roots, request.BattleID)
+	case "tactics_submit":
+		value, err = tacticsbattle.Submit(roots, request.BattleID, request.CommandJSON)
+	default:
+		err = fmt.Errorf("unknown tactics operation %q", request.Op)
+	}
+	if err != nil {
+		return runtimeError(err)
+	}
+	encoded, _ := json.Marshal(value)
 	return string(encoded)
 }

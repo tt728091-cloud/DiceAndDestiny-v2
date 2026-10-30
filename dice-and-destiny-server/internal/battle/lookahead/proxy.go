@@ -21,6 +21,9 @@ type ProxyPolicy struct{}
 func (ProxyPolicy) Name() string { return "proxy" }
 
 func (ProxyPolicy) Choose(d *Decision) (int, error) {
+	if err := refuseTactics(d); err != nil {
+		return 0, err
+	}
 	lib, err := library(d.Battle)
 	if err != nil {
 		return 0, err

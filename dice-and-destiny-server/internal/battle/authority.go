@@ -321,6 +321,16 @@ func (authority *Authority) startBattle(cmd command.Command) engine.Result {
 		// participant's cards support secret plays.
 		battleState.Settled.SimultaneousPlay = payload.SimultaneousPlay && payload.UnifiedDefense && engine.SimultaneousPlayEligible(&battleState)
 	}
+	if payload.Tactics != nil {
+		// The tactics grid builds on unified defense and simultaneous play;
+		// without both pinned the battle is refused.
+		if battleState.Settled == nil || !battleState.Settled.UnifiedDefense || !battleState.Settled.SimultaneousPlay {
+			return authorityRejected("the tactics ruleset needs unified defense and simultaneous play")
+		}
+		if err := engine.InitTactics(&battleState, *payload.Tactics); err != nil {
+			return authorityRejected(err.Error())
+		}
+	}
 	if payload.Seed != nil {
 		battleState.Random = state.RandomState{
 			Mode:      state.RandomModeReproducible,
@@ -362,8 +372,13 @@ func validateStartBattle(
 		if payload.Player.InstanceID != "" || payload.Player.DefinitionID != "" || len(payload.Enemies) != 0 {
 			return nil, errors.New("external seats cannot be combined with player or enemies")
 		}
-		if len(payload.Seats) < 2 || len(payload.Seats) > 4 {
-			return nil, errors.New("external battle requires two to four seats")
+		maxSeats := 4
+		if payload.Tactics != nil {
+			// A tactics sandbox battle: one hero and up to four enemies.
+			maxSeats = 5
+		}
+		if len(payload.Seats) < 2 || len(payload.Seats) > maxSeats {
+			return nil, fmt.Errorf("external battle requires two to %d seats", maxSeats)
 		}
 		participants := make([]Participant, 0, len(payload.Seats))
 		seen := make(map[string]struct{}, len(payload.Seats))

@@ -5,6 +5,8 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+
+	"diceanddestiny/server/internal/battle/tactics"
 )
 
 type Type string
@@ -23,20 +25,22 @@ const (
 	TypePlanningTargets   Type = "planning_select_targets"
 	TypePlanningPass      Type = "planning_pass"
 	TypePlanningLockIn    Type = "planning_lock_in"
-	TypeListScenarios     Type = "list_scenarios"
-	TypeValidateScenario  Type = "validate_scenario"
-	TypeStartScenario     Type = "start_scenario"
-	TypeOpenBattle        Type = "open_battle"
-	TypeListSnapshots     Type = "list_dev_snapshots"
-	TypeSaveSnapshot      Type = "save_dev_snapshot"
-	TypeLoadSnapshot      Type = "load_dev_snapshot"
-	TypeListHistory       Type = "list_dev_history"
-	TypeMarkHistory       Type = "mark_dev_history"
-	TypeJumpHistory       Type = "jump_dev_history"
-	TypeCommitHistory     Type = "commit_dev_history"
-	TypeReturnHistory     Type = "return_dev_history_latest"
-	TypeReplayHistory     Type = "replay_dev_history_action"
-	TypeDivergeHistory    Type = "replace_dev_history_future"
+	// TypeMovementPlan updates or locks in a tactics movement plan.
+	TypeMovementPlan     Type = "tactics_movement_plan"
+	TypeListScenarios    Type = "list_scenarios"
+	TypeValidateScenario Type = "validate_scenario"
+	TypeStartScenario    Type = "start_scenario"
+	TypeOpenBattle       Type = "open_battle"
+	TypeListSnapshots    Type = "list_dev_snapshots"
+	TypeSaveSnapshot     Type = "save_dev_snapshot"
+	TypeLoadSnapshot     Type = "load_dev_snapshot"
+	TypeListHistory      Type = "list_dev_history"
+	TypeMarkHistory      Type = "mark_dev_history"
+	TypeJumpHistory      Type = "jump_dev_history"
+	TypeCommitHistory    Type = "commit_dev_history"
+	TypeReturnHistory    Type = "return_dev_history_latest"
+	TypeReplayHistory    Type = "replay_dev_history_action"
+	TypeDivergeHistory   Type = "replace_dev_history_future"
 )
 
 var (
@@ -79,6 +83,37 @@ type StartBattlePayload struct {
 	Enemies          []ParticipantDescriptor `json:"enemies"`
 	Seats            []ParticipantDescriptor `json:"seats,omitempty"`
 	Seed             *uint64                 `json:"seed,omitempty"`
+	// Tactics pins the Tactics Sandbox grid: accepted only together with
+	// unified defense and simultaneous play.
+	Tactics *TacticsSetup `json:"tactics,omitempty"`
+}
+
+// TacticsSetup is a tactics battle's arena, its rules (with any setup
+// overrides already applied) and every seat's start square.
+type TacticsSetup struct {
+	Arena     tactics.Arena             `json:"arena"`
+	Rules     tactics.Rules             `json:"rules"`
+	Placement map[string]tactics.Square `json:"placement"`
+}
+
+// MovementPlanPayload is a whole tactics movement plan: the intention and the
+// exact cards, map Move cards and energy it commits. LockIn locks it in;
+// otherwise it replaces the participant's draft.
+type MovementPlanPayload struct {
+	PendingInputID string             `json:"pending_input_id"`
+	Checkpoint     PlanningCheckpoint `json:"checkpoint"`
+	Intention      tactics.Intention  `json:"intention"`
+	CardIDs        []string           `json:"card_ids,omitempty"`
+	MapCards       []MovementMapCard  `json:"map_cards,omitempty"`
+	Energy         int                `json:"energy,omitempty"`
+	LockIn         bool               `json:"lock_in,omitempty"`
+}
+
+// MovementMapCard is a map Move card played for its amount; Terrain names
+// the terrain a choose_terrain card makes cost 1.
+type MovementMapCard struct {
+	CardID  string `json:"card_id"`
+	Terrain string `json:"terrain,omitempty"`
 }
 
 type OpenBattlePayload struct{}
@@ -169,12 +204,16 @@ type PlanningAbilityPayload struct {
 	Checkpoint     PlanningCheckpoint `json:"checkpoint"`
 	AbilityID      string             `json:"ability_id"`
 	TargetIDs      []string           `json:"target_ids,omitempty"`
+	// TargetSquare is a tactics area ability's target square.
+	TargetSquare *tactics.Square `json:"target_square,omitempty"`
 }
 
 type PlanningTargetsPayload struct {
 	PendingInputID string             `json:"pending_input_id"`
 	Checkpoint     PlanningCheckpoint `json:"checkpoint"`
 	TargetIDs      []string           `json:"target_ids"`
+	// TargetSquare is a tactics area ability's target square.
+	TargetSquare *tactics.Square `json:"target_square,omitempty"`
 }
 
 type PlanningPassPayload struct {

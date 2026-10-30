@@ -32,6 +32,15 @@ func (d *Decision) View() engine.Result {
 	return *d.view
 }
 
+// refuseTactics keeps every look-ahead, search and baseline player out of
+// Tactics Sandbox battles, which they do not model.
+func refuseTactics(d *Decision) error {
+	if d != nil && engine.TacticsBattle(d.Battle) {
+		return mlsim.ErrTacticsBattle
+	}
+	return nil
+}
+
 // Policy picks the index of one listed command.
 type Policy interface {
 	Name() string
@@ -45,6 +54,9 @@ type RandomPolicy struct{}
 func (RandomPolicy) Name() string { return "random" }
 
 func (RandomPolicy) Choose(d *Decision) (int, error) {
+	if err := refuseTactics(d); err != nil {
+		return 0, err
+	}
 	useful := Useful(d.Battle, d.Seat, d.Actions)
 	return useful[d.Rand.Intn(len(useful))], nil
 }
@@ -64,6 +76,9 @@ type Scripted struct {
 func (p Scripted) Name() string { return p.Label }
 
 func (p Scripted) Choose(d *Decision) (int, error) {
+	if err := refuseTactics(d); err != nil {
+		return 0, err
+	}
 	index, _, err := p.Policy.Select(mlsim.Transition{ActorID: d.Seat, Result: d.View()})
 	return index, err
 }

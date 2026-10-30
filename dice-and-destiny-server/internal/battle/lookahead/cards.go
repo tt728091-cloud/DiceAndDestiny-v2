@@ -23,6 +23,9 @@ type CardFilter struct {
 func (f *CardFilter) Name() string { return f.Label }
 
 func (f *CardFilter) Choose(d *Decision) (int, error) {
+	if err := refuseTactics(d); err != nil {
+		return 0, err
+	}
 	if w := d.Battle.Settled.Window; w != nil && w.Stage == "discard_to_hand_limit" {
 		return f.Inner.Choose(d)
 	}

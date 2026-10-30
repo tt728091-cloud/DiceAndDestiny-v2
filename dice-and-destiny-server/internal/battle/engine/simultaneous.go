@@ -41,7 +41,7 @@ func simultaneousStep(b *state.Battle) string {
 // simultaneousSecret reports a step whose plays other participants can't see.
 func simultaneousSecret(b *state.Battle) bool {
 	switch simultaneousStep(b) {
-	case state.SimultaneousOffenseBefore, state.SimultaneousOffenseRolling, state.SimultaneousDefenseBefore:
+	case state.SimultaneousOffenseBefore, state.SimultaneousOffenseRolling, state.SimultaneousDefenseBefore, state.SimultaneousMovement:
 		return true
 	}
 	return false
@@ -731,6 +731,7 @@ func (e Engine) lockOffenseBefore(b *state.Battle, library content.BattleLibrary
 	if rolling {
 		sim.Rolling[actor] = true
 	} else {
+		markSprint(b, actor)
 		if !reserveOffensiveCost(b, library, actor) {
 			return nil, errors.New("insufficient energy for selected ability")
 		}
@@ -786,6 +787,10 @@ func (e Engine) revealOffense(b *state.Battle, library content.BattleLibrary) ([
 	b.Settled.ReactionReplanning = false
 	endSimultaneousStep(b)
 	events := []event.Event{offensiveRevealEvent(b, library)}
+	if tacticsBattle(b) {
+		next, err := e.openMovement(b, library)
+		return append(events, next...), err
+	}
 	next, err := e.finalizeOffensiveSources(b, library)
 	return append(events, next...), err
 }
@@ -851,6 +856,9 @@ func (e Engine) planAIDefenses(b *state.Battle, library content.BattleLibrary) e
 				if abilityOnlyDefense(ability) && library.Abilities[source.SourceContentID].Type != "offensive" {
 					continue
 				}
+				if !defenseAllowedNow(b, library, actorID, ability) {
+					continue
+				}
 				spendEnergy(b, actorID, ability.Cost.Energy)
 				rt := b.Settled.Actors[actorID]
 				rt.UsedAbilities[abilityID]++
@@ -908,6 +916,9 @@ func simultaneousDefenseActions(b *state.Battle, library content.BattleLibrary, 
 		defendable := map[string]bool{}
 		for _, abilityID := range b.Settled.Actors[actor].DefensiveAbilityIDs {
 			ability := library.Abilities[abilityID]
+			if !defenseAllowedNow(b, library, actor, ability) {
+				continue
+			}
 			var eligible []string
 			for _, source := range unplanned {
 				if abilityOnlyDefense(ability) && library.Abilities[source.SourceContentID].Type != "offensive" {
@@ -1011,6 +1022,9 @@ func (e Engine) planSimultaneousDefense(b *state.Battle, library content.BattleL
 		return nil, errors.New("select one legal defense and its incoming attacks")
 	}
 	ability := library.Abilities[payload.AbilityID]
+	if !defenseAllowedNow(b, library, actor, ability) {
+		return nil, errors.New("you ran this round: only on-the-move defenses")
+	}
 	seen := map[string]bool{}
 	for _, id := range payload.TargetIDs {
 		source := sourceBySettledID(b, id)

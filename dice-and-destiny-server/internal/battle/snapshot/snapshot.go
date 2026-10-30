@@ -53,6 +53,8 @@ type Battle struct {
 	SettledEffectRolls []state.SettledEffectRoll       `json:"effect_rolls,omitempty"`
 	SettledDamage      *state.SettledDamageBatch       `json:"settled_damage,omitempty"`
 	ContentCatalog     *ContentCatalog                 `json:"content_catalog,omitempty"`
+	// Tactics is a tactics battle's grid as this viewer may see it.
+	Tactics *TacticsView `json:"tactics,omitempty"`
 }
 
 // ContentCatalog publishes the same pinned immutable definitions used by the
@@ -483,6 +485,7 @@ func fromBattleForViewer(battle state.Battle, viewerActorID string, includeConte
 	if includeContentCatalog {
 		result.ContentCatalog = settledContentCatalog(battle)
 	}
+	result.Tactics = tacticsView(battle, viewerActorID)
 	if battle.Settled != nil {
 		result.CompletedRounds = battle.Settled.CompletedRounds
 		result.Stage = battle.Settled.Stage

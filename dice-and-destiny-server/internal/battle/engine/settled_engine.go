@@ -409,6 +409,9 @@ func (e Engine) progressSettledOffensive(battle *state.Battle, library content.B
 		battle.Settled.OffensiveSources = nil
 		battle.Settled.DefenseHistory = nil
 		battle.Settled.PlanningPublic = make(map[string]state.SettledPlanningPublicState, len(battle.Actors))
+		if tacticsBattle(battle) {
+			beginTacticsRound(battle)
+		}
 		// Generic Offensive-entry triggers (Entangle) resolve before planning.
 		if err := e.cursedEntangleEntry(battle, library); err != nil {
 			return nil, err
@@ -1267,6 +1270,8 @@ func (e Engine) handleSettledCommand(battle *state.Battle, cmd command.Command) 
 			events, err = e.handleVenomStatus(battle, library, cmd)
 		case stageOffensivePlan:
 			events, err = e.handleOffensivePlanningCommand(battle, library, cmd)
+		case stageMovement:
+			events, err = e.handleMovementCommand(battle, library, cmd)
 		case stageOffensiveReact:
 			events, err = e.handleOffensiveReactionCommand(battle, library, cmd)
 		case stageOngoingReact:
@@ -1501,6 +1506,13 @@ func (e Engine) handleOffensivePlanningCommand(battle *state.Battle, library con
 		if ability.Usage.MaximumPerSegment > 0 && runtime.UsedAbilities[payload.AbilityID] >= ability.Usage.MaximumPerSegment {
 			return nil, fmt.Errorf("ability %q has reached its segment usage limit", payload.AbilityID)
 		}
+		if tacticsBattle(battle) {
+			if err := validateTacticsTarget(battle, library, actorID, payload.AbilityID, payload.TargetIDs, payload.TargetSquare); err != nil {
+				return nil, err
+			}
+		} else if payload.TargetSquare != nil {
+			return nil, errors.New("only tactics battles target squares")
+		}
 		if len(payload.TargetIDs) > 0 {
 			if err := validateActorTargeting(battle, actorID, ability.Targeting, payload.TargetIDs); err != nil {
 				return nil, err
@@ -1528,6 +1540,12 @@ func (e Engine) handleOffensivePlanningCommand(battle *state.Battle, library con
 		runtime.SelectedToxins = append([]string(nil), payload.ToxinChoices...)
 		runtime.SelectedTargetIDs = append([]string(nil), payload.TargetIDs...)
 		battle.Settled.Actors[actorID] = runtime
+		if tacticsBattle(battle) {
+			setTacticsSquare(battle, actorID, payload.TargetSquare)
+			if payload.TargetSquare != nil {
+				return e.finalizeOffensivePlanning(battle, library, actorID)
+			}
+		}
 		if len(payload.TargetIDs) > 0 {
 			return e.finalizeOffensivePlanning(battle, library, actorID)
 		}
@@ -1540,6 +1558,19 @@ func (e Engine) handleOffensivePlanningCommand(battle *state.Battle, library con
 		}
 		if runtime.SelectedAbilityID == "" {
 			return nil, errors.New("select an ability before its targets")
+		}
+		if tacticsBattle(battle) {
+			if err := validateTacticsTarget(battle, library, actorID, runtime.SelectedAbilityID, payload.TargetIDs, payload.TargetSquare); err != nil {
+				return nil, err
+			}
+			if payload.TargetSquare != nil {
+				setTacticsSquare(battle, actorID, payload.TargetSquare)
+				runtime.SelectedTargetIDs = nil
+				battle.Settled.Actors[actorID] = runtime
+				return e.finalizeOffensivePlanning(battle, library, actorID)
+			}
+		} else if payload.TargetSquare != nil {
+			return nil, errors.New("only tactics battles target squares")
 		}
 		if err := validateActorTargeting(battle, actorID, library.Abilities[runtime.SelectedAbilityID].Targeting, payload.TargetIDs); err != nil {
 			return nil, err
@@ -1767,6 +1798,11 @@ func (e Engine) finalizeOffensiveSources(battle *state.Battle, library content.B
 		ability := library.Abilities[runtime.SelectedAbilityID]
 		ops, ok := resolvedOffensiveOperations(battle, library, actorID)
 		if !ok {
+			continue
+		}
+		// A tactics attack that did not connect (dodged, out of reach) does
+		// nothing; its energy stays spent.
+		if tacticsMissed(battle, actorID) {
 			continue
 		}
 		if !reserveOffensiveCost(battle, library, actorID) {
@@ -2527,6 +2563,13 @@ func validateSettledPending(cmd command.Command, pending state.PendingInput) err
 		planning = &p.Checkpoint
 	case command.TypePlanningPass:
 		var p command.PlanningPassPayload
+		if err := command.DecodePayload(cmd, &p); err != nil {
+			return err
+		}
+		id = p.PendingInputID
+		planning = &p.Checkpoint
+	case command.TypeMovementPlan:
+		var p command.MovementPlanPayload
 		if err := command.DecodePayload(cmd, &p); err != nil {
 			return err
 		}

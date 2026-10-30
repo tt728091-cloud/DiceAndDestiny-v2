@@ -125,6 +125,9 @@ func (e *V3RuntimeEncoder) Layout() V3Layout {
 }
 
 func (e *V3RuntimeEncoder) Encode(transition Transition) ([]float32, []bool, error) {
+	if err := RefuseTactics(transition); err != nil {
+		return nil, nil, err
+	}
 	if e == nil || e.manifest == nil {
 		return nil, nil, fmt.Errorf("observation v3 runtime encoder is not loaded")
 	}

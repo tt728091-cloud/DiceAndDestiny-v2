@@ -684,6 +684,9 @@ func (e *Environment) Replay(record ReplayRecord) (Transition, error) {
 }
 
 func (e *Environment) selectNext(last engine.Result, preferredActor string) (Transition, error) {
+	if err := RefuseTactics(Transition{Result: last}); err != nil {
+		return Transition{}, err
+	}
 	if last.Status == engine.ProgressBattleComplete || (last.Snapshot != nil && state.IsTerminalBattleStatus(last.Snapshot.Status)) {
 		return e.finish(last, ""), nil
 	}

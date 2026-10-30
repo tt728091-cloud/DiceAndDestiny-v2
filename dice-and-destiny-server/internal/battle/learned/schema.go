@@ -44,6 +44,9 @@ type EncodedDecision struct {
 // is the acting seat's viewer-safe transition and the complete authority action
 // candidates already attached to that transition.
 func EncodeDecision(transition mlsim.Transition) (EncodedDecision, error) {
+	if err := mlsim.RefuseTactics(transition); err != nil {
+		return EncodedDecision{}, err
+	}
 	encoded, err := json.Marshal(transition)
 	if err != nil {
 		return EncodedDecision{}, fmt.Errorf("marshal viewer transition: %w", err)

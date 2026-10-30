@@ -51,6 +51,9 @@ func (p *singleAbilityPolicy) Metadata() PolicyMetadata {
 }
 
 func (p *singleAbilityPolicy) Select(t mlsim.Transition) (int, time.Duration, error) {
+	if err := mlsim.RefuseTactics(t); err != nil {
+		return 0, 0, err
+	}
 	own := t.Result.Snapshot.Actors[t.ActorID]
 	actions := t.Result.LegalActions
 	config := p.definition.SingleAbilityPolicy
