@@ -12,6 +12,7 @@ Implementation log for `tactics-sandbox-plan.md` (the plan is the source of trut
 | M3 · Enemy behaviour | done |
 | M4 · Client | done |
 | M5 · Verify and document | done |
+| M6 · On the battle screen (user feedback) | done |
 
 ## M0 · Content pack and schema
 
@@ -70,7 +71,7 @@ Tests: `policy_test.go` (pursuit and the one-card rule, flee / hold / move into 
 
 ## M4 · Client
 
-`app/screens/tactics/` and `local_client/tactics/tactics_gateway.gd`; the main menu's **Tactics Sandbox (prototype)** button (`battle.setup.tactics`).
+`app/screens/tactics/` and `local_client/tactics/tactics_gateway.gd`; the main menu's **Tactics Sandbox (prototype)** button (`battle.setup.tactics`). *M6 replaced the standalone battle screen described below with the battle screen itself; see M6.*
 
 - **Setup** (`tactics_setup.gd`): hero (with its attacks' deliveries), published map Move cards to add, four enemy slots (1–4, any mix), the arena with a preview of its starts, rule overrides (the numbers, the diagonal rule and the switches, plus a free JSON field for anything else) and the seed (blank: random). Everything offered comes from `tactics_catalog`. **Resume sandbox battle** uses the sandbox's own pointer, `active_tactics_battle.json`, never the normal battle's.
 - **Board** (`tactics_board.gd`): a top-down 2D grid with terrain colours from the rules, one clickable button per square (hover: coordinates, terrain, cost), creature tokens (team colour, initials, health bar, a `»` while Running; hover: health, energy, speed, last and planned Move, every attack's delivery text and every status with its rules), area squares, dashed preview paths, revealed paths with ghosts, and attack badges anchored to their target (attacks on you hang below your token) whose hover is the shared attack tooltip plus the delivery and whether it connected.
@@ -139,6 +140,20 @@ Tests added: hand Move values in `TestSprintMapCardsEnergyAndSpentCommitments` a
 - `go test ./...` passes.
 - Godot: `verify_battle_authority.gd`, `verify_tactics_sandbox.gd`, `verify_simultaneous_play.gd`, `verify_expedition_statuses.gd`, `verify_brine_mask.gd`, `verify_adventurer_battle.gd` and `verify_character_creation.gd` pass (earlier in the work also `verify_brine_pair.gd` and `verify_drowned_oracle_minions.gd`).
 - Two Godot scripts fail **on `main` too**, with the same assertions (checked in a clean checkout of the plan's base commit): `verify_expedition_map.gd` ("Take Stock offers its map play at its printed 5 energy", which shows 3) and `tests/phase3/verify_learned_battle.gd` ("character selector is missing"). This branch does not touch either area.
+
+## M6 · On the battle screen (user feedback)
+
+After M5 the user asked for the sandbox to keep everything from the battle screen — the player's stats, the dice and buttons in their places, the cards at their size, lowered and raised on hover — with only the grid new in the middle, enemy stats shown at the upper right (there is no enemy picture), and a battle map that can be moved around. The standalone screen (`tactics_screen.gd`, `tactics_board.gd`) is gone; the sandbox now plays on `app/screens/battle/battle_screen.tscn` with `tactics_mode` set.
+
+- **Everything is the battle's own:** the round banner and the top utilities (Enemies, Log, Inspect, ⚙, plus Timeline), the dice tray with Roll and Skip (Sprint in Offense Before), the ability rail and inline tiers, the fanned hand, your stats at the lower right, the Defense dock with Incoming Attacks and Pass, attack intents with the cards they threaten, the damage stacks, defense cards aimed through attack badges, hand-limit discards, wound review and the end of battle.
+- **The grid** (`presentation/battle/tactics_battlefield.gd`) takes the place of the scenery's fighters, over the same backdrop. Each token is its creature's fighter: attack intents hang above it, offensive targets sit on it and the aim line reaches it. Drag the grid to move it, scroll to zoom; both survive the screen's rebuilds. Only the grid takes the pointer, so the HUD behaves as in battle.
+- **Enemy stats** (the battle's stat block: name, energy, health, piles, statuses) stack at the upper right in seat order. Clicking a name, or the enemy's token, focuses that enemy and shows its dice beside its stats, as clicking a name does in battle. The cards your attack threatens hang beneath the target's stats; the next enemy's stats move down to make room.
+- **Tactics-only parts** (`app/screens/battle/battle_tactics.gd`, called from small hooks in the battle screen): the movement plan in the ability rail (intention, Move breakdown, Running warning, preview; Hold, −5✦, +5✦) with **Lock** where Roll sits; each card's Move on the card during movement; area attacks aimed on lit squares (Choose a square · Cancel); the Pursue/Flee and terrain choosers; the reach of each attack and Running's reason in the ability hovers; a missed attack (dodged, out of reach) shown only on the grid, with no intent or incoming attack; the playback after the commit; the **Timeline** utility (speed, Replay round, debug timeline); Settings → Leave to the main menu (the battle stays saved); at the end, Replay last round, New sandbox battle and Main menu.
+- **Seat alias:** the `tactics_*` ops present the hero seat under the battle screen's human alias (`blade`), as learned battles do, and map commands back (`learned/runtime.go`). The runner and its tests keep the `hero` seat.
+
+Tests: `TestTacticsOpsAliasTheHeroForTheBattleScreen`; the pointer test is rewritten for the battle screen: the battle's HUD (scenery, roll dock with Sprint, the ability rail, the fanned hand lowered and raised by hover at the battle's card size, your stats, the enemy's stats at the upper right, the utilities); Sprint's confirmation; every intention by clicking; a card's Move tag and commitment; energy; lock in; the defense view with paths and ghosts; the playback, Timeline and Replay; targets in range on the grid; Running with only Evade (Guard's hover gives the reason); dragging and zooming the grid; leaving and resuming; won and lost endings; a seeded Fireball aimed on lit squares; a Steady Guard choosing between two attack badges; and 1–4 enemies at 1280 × 720 and 1920 × 1080 with tokens, labels, names, stacked enemy stats, popups and hovers inside the viewport (161 checks).
+
+Verified after M6: `go test` for `tactics`, `snapshot`, `engine`, `tacticsbattle` and `learned` passes; Godot `verify_battle_authority.gd`, `verify_tactics_sandbox.gd`, `verify_simultaneous_play.gd`, `verify_adventurer_battle.gd`, `verify_brine_mask.gd`, `verify_brine_pair.gd`, `verify_drowned_oracle_minions.gd` and `verify_expedition_statuses.gd` pass (the battle screen's own flows are unchanged outside `tactics_mode`). Live checks in the running game: Open Field, Pillar Hall and Swamp Crossing with one and four enemies — the movement step, square and token clicks, card commitments, Lock, a dodged Tide Crown, Magic Missile aimed on the grid, the defense view with an attack's threatened cards under its badge and threat ribbons in the hand, the Timeline, map cards and Know the Land's terrain chooser, and resuming. Screenshots 13–17 in `tactics-sandbox-playtest/`.
 
 ## Defaults to confirm (plan §13)
 

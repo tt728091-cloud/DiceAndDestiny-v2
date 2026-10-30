@@ -29,6 +29,11 @@ var history_context: Dictionary = {}
 var learned_battle_mode := false
 var learned_human_seat := "seat-a"
 var learned_seed := 0
+## Tactics Sandbox: the grid takes the scenery's place; everything else is this
+## battle screen (see BattleTactics).
+var tactics_mode := false
+var _tactics
+const BATTLE_TACTICS := preload("res://app/screens/battle/battle_tactics.gd")
 
 var _focused_enemy := "goblin"
 var _pending_attack: Dictionary = {}
@@ -181,6 +186,7 @@ func _ready() -> void:
 	resized.connect(_layout_cinematic_root)
 	gateway = BattleGateway.new() if gateway == null else gateway
 	active_store = ActiveBattleStore.new() if active_store == null else active_store
+	if tactics_mode: _tactics = BATTLE_TACTICS.new(self)
 	if not _view.apply_result(initial_result):
 		_build_error_only(str(initial_result.get("error", "Battle snapshot is missing or unsafe.")))
 		return
@@ -292,6 +298,7 @@ func _finish_defense_outcome() -> void:
 var _queued_defense: Dictionary = {}
 
 func _process(_delta: float) -> void:
+	if _tactics != null: _tactics.process()
 	if _player_dice_effect_until > 0 and Time.get_ticks_msec() >= _player_dice_effect_until:
 		_player_dice_effect_until = 0
 		_layout_left_controls()
@@ -634,6 +641,7 @@ func _render(force: bool = false) -> void:
 	var scenery := SCENERY.new(); scenery.name = "BattleScenery"
 	_root.add_child(scenery); scenery.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	scenery.display(_battlefield_visual(), _view.actors)
+	var fighters: Control = _tactics.build_battlefield(_root) if tactics_mode else scenery
 	_battle_frame("PlayerControlsFrame", Rect2(24, 704, 418, 360))
 	_player_profile_dock = _profile_dock("PlayerProfile", 368)
 	_player_profile_dock.position.x = 1514
@@ -669,12 +677,14 @@ func _render(force: bool = false) -> void:
 	_build_non_damage_intents()
 	_build_enemy_column(null)
 	_build_other_enemy_profiles()
-	_attach_actor_profiles(scenery)
+	_attach_actor_profiles(fighters)
+	if tactics_mode: _tactics.layout_enemy_docks()
 	for dock in _enemy_dice_docks.values(): dock.place()
 	# Model results can rebuild the board after the presenters have processed
 	# for this frame. Resolve their new anchors before capture/fade or drawing.
 	for panel in _attack_intents.values(): panel._update()
 	_build_enemy_selector(scenery)
+	if tactics_mode: _tactics.render_board()
 	_show_pending_damage_statuses()
 	_build_mark_targeting()
 	_build_incoming_attack_list()
@@ -1027,6 +1037,7 @@ func _build_cinematic_utilities() -> void:
 	_root.add_child(utilities); _place_cinematic(utilities, Rect2(1514, 18, 368, 48))
 	var entries := [["enemy", "Enemies"], ["log", "Log"], ["inspect", "Inspect"], ["settings", "⚙"]]
 	if _history_tools_enabled(): entries.append(["history", "History"])
+	if tactics_mode: entries.insert(2, ["timeline", "Timeline"])
 	for entry in entries:
 		var id := str(entry[0])
 		var button := TOOLTIP_BUTTON.new(); button.text = str(entry[1]); button.custom_minimum_size.y = 48; button.size_flags_horizontal = Control.SIZE_EXPAND_FILL; button.add_theme_font_size_override("font_size", 16); button.toggle_mode = true; button.button_pressed = _open_utility == id
@@ -1062,6 +1073,9 @@ func _build_cinematic_utilities() -> void:
 	_hand_visibility_toggle.tooltip_text = "Keep your cards raised when the cursor leaves the hand. Turn off to automatically hide the hand until you hover over it. Saved for future battles."
 	_hand_visibility_toggle.toggled.connect(_set_keep_hand_visible)
 	_utility_contents.settings.add_child(_hand_visibility_toggle)
+	if tactics_mode:
+		_tactics.build_timeline_panel(_utility_contents.timeline)
+		_tactics.add_settings(_utility_contents.settings)
 	_inspect(_hand_visibility_toggle, "battle.keep_hand_visible", _hand_visibility_toggle.tooltip_text)
 	var hint := Label.new(); hint.text = "Hover cards, abilities, dice, or status counters for their details.\nClick an enemy name to show or hide its dice.\nVenom symbols: ✧ Fang · ⚗ Gland · ◉ Coil\nKept dice glow gold. Hover the hand to raise it, or enable Keep hand visible.\nDefense and damage results keep their existing review timing."; hint.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART; _utility_contents.settings.add_child(hint)
 	var details := Label.new(); details.text = "Battle %s\nRound %d · %s\n%s\n\nCard and ability descriptions use this battle’s active rules, including upgrades." % [_view.battle_id, _view.round_number, _segment_name(_view.segment), _view.stage.replace("_", " ").capitalize()]; details.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART; _utility_contents.inspect.add_child(details)
@@ -1236,7 +1250,7 @@ func _build_enemy_column(_parent: HBoxContainer) -> void:
 	var column := _enemy_profile_dock
 	var profile := ActorProfile.new(); column.add_child(profile); profile.display(_focused_enemy, _profile_actor(_focused_enemy), false); _actor_profiles[_focused_enemy] = profile
 	_show_curse_preparations(column, _focused_enemy)
-	if learned_battle_mode or _multiple_enemies():
+	if learned_battle_mode or _multiple_enemies() or tactics_mode:
 		profile.title.text = _actor_display_name(_focused_enemy).trim_prefix("Learned ")
 	if learned_battle_mode:
 		profile.title.tooltip_text = "%s · one attack · one defense" % str(_minion_summary().get("keeps", "")) if _is_single_ability_opponent() else "Look-ahead player" if _is_lookahead_opponent() else "Learned Policy"
@@ -1291,6 +1305,7 @@ func _build_center() -> void:
 	var pass_row := _action_footer
 	var planning_pass_label := ("Pass All Remaining" if _multiple_enemies() else "Pass Defense") if _view.segment == "defensive" else "Skip Offensive Ability"
 	if _unified_defense(): planning_pass_label = "Pass"
+	if tactics_mode and _simultaneous_step() == "offense_before": planning_pass_label = "Sprint (skip attack)"
 	if not _automatic_defense_completion():
 		_add_action(pass_row, planning_pass_label, "planning_pass", _pass_planning)
 	var pass_label := "Continue" if _defense_final_review() else "Continue Without Playing a Card" if _view.stage == "status_roll_reaction" else "Pass / Acknowledge"
@@ -1319,6 +1334,9 @@ func _retry_model_decision() -> void:
 func _build_offensive() -> void:
 	_build_reaction_notice()
 	_build_ability_row("ENEMY ABILITIES", _view.actor(_focused_enemy).get("offensive_abilities", []), _focused_enemy)
+	if tactics_mode and _tactics.in_movement():
+		_tactics.build_movement_panel()
+		return
 	var public_plan := _enemy_plan_text()
 	if not public_plan.is_empty():
 		var plan := Label.new(); plan.text = public_plan; plan.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER; plan.add_theme_color_override("font_color", Color("ef9a55")); _center.add_child(plan)
@@ -1326,6 +1344,7 @@ func _build_offensive() -> void:
 		_build_ability_row("DEFENSE ABILITIES", _view.actor("blade").get("defensive_abilities", []), "blade")
 	else:
 		_build_ability_row(_actor_display_name("blade").to_upper() + " ABILITIES", _view.actor("blade").get("offensive_abilities", []), "blade")
+	if tactics_mode: _tactics.add_aim_controls()
 	if _selected_card_selector() == "selected_die":
 		if _view.stage == "offensive_reaction": _build_enemy_die_targets()
 		elif _view.stage == "blind_reaction":
@@ -2276,7 +2295,9 @@ func _build_hand(income_drawn_ids: Array = []) -> void:
 	for entry in _view.hand_cards():
 		var card := BattleCard.new()
 		var legal := _card_legal(str(entry.definition_id)) or hand_limit
+		if tactics_mode and _tactics.in_movement(): legal = _tactics.card_usable(str(entry.instance_id))
 		card.configure(str(entry.instance_id), str(entry.definition_id), legal and not _submitting and not _director.has_beats())
+		if tactics_mode: _tactics.decorate_card(card, str(entry.instance_id))
 		if _secret_pending(str(entry.instance_id)):
 			card.modulate = Color(1, 1, 1, 0.55)
 			card.tooltip_text = "Pending — played in secret; it resolves at the reveal.\n\n" + card.tooltip_text
@@ -2366,6 +2387,7 @@ func _build_ability_row(caption: String, abilities: Array, actor_id: String) -> 
 		if _selected_card_selector() == "one_owned_offensive_ability": can_select = actor_id == "blade" and _view.stage == "planning" and not _history_review and not _card_ability_action(str(ability_id)).is_empty()
 		tile.configure(str(ability_id), str(ability_id) in qualified, selected == str(ability_id), can_select, actor)
 		tile.cinematic_compact()
+		if tactics_mode and actor_id == "blade": _tactics.annotate_ability_tile(tile, str(ability_id), choosing_defense, str(ability_id) in qualified, can_select)
 		var attack := _selected_attack(actor_id)
 		if str(ability_id) == str(attack.get("ability_id", "")) and _offense_selected_for_display() and actor_id == "blade":
 			tile.show_selected_attack(str(attack.text))
@@ -2529,6 +2551,7 @@ func _selected_offensive_preview(actor_id: String, ability_id: String) -> Dictio
 	return outcome
 
 func _selected_attack(actor_id: String) -> Dictionary:
+	if tactics_mode and _tactics.attack_missed(actor_id): return {}
 	if _view.segment not in ["offensive", "defensive", "damage_resolution"] or (_view.stage == "planning" and str(_view.actor(actor_id).get("selected_ability", "")).is_empty()): return {}
 	var reveal := _view.offensive_reveal(actor_id)
 	var id := str(reveal.get("ability_id", _view.actor(actor_id).get("selected_ability", "")))
@@ -2783,6 +2806,10 @@ func _build_completion() -> void:
 	final.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER; _center.add_child(final)
 	var review := TOOLTIP_BUTTON.new(); review.name = "ReviewBattle"; review.text = "Review · Wounds"; review.pressed.connect(_open_wound_review); _center.add_child(review)
 	_inspect(review, "battle.complete.review", "Review each wound and the cards lost after prevention")
+	if tactics_mode:
+		_tactics.add_completion_buttons(_center)
+		var tactics_spacer := Control.new(); tactics_spacer.size_flags_vertical = Control.SIZE_EXPAND_FILL; _center.add_child(tactics_spacer)
+		return
 	if not _view.campaign.is_empty():
 		_build_campaign_completion()
 		var campaign_spacer := Control.new(); campaign_spacer.size_flags_vertical = Control.SIZE_EXPAND_FILL; _center.add_child(campaign_spacer)
@@ -2919,7 +2946,7 @@ func _compact_action_button(button: Button) -> void:
 	for key in ["font_color", "font_hover_color", "font_pressed_color", "font_hover_pressed_color", "font_disabled_color", "font_focus_color"]:
 		button.add_theme_color_override(key, Color.TRANSPARENT)
 	var caption := Label.new(); caption.name = "CompactCaption"
-	caption.text = str(button.get_meta("compact_caption", "Skip" if "Skip" in button.text else "Next" if "Continue" in button.text else "Roll" if button.text == "Roll Defenses" else "Lock" if button.text == "Lock In" else "Pass"))
+	caption.text = str(button.get_meta("compact_caption", "Sprint" if button.text.begins_with("Sprint") else "Skip" if "Skip" in button.text else "Next" if "Continue" in button.text else "Roll" if button.text == "Roll Defenses" else "Lock" if button.text == "Lock In" else "Pass"))
 	caption.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER; caption.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	caption.add_theme_font_size_override("font_size", 17 if _view.segment == "defensive" else 15)
 	caption.add_theme_font_override("font", CINEMATIC.roll_control_font())
@@ -2930,6 +2957,7 @@ func _compact_action_button(button: Button) -> void:
 	# Pass and Skip already explain themselves in the visible caption.
 	button.tooltip_text = "" if caption.text in ["Skip", "Pass"] else button.text
 	if button.text == "Roll Defenses": button.tooltip_text = "Lock in your defense choices and secret cards. Every defense rolls once everyone has locked in."
+	elif button.text.begins_with("Sprint") and tactics_mode: button.tooltip_text = _tactics.sprint_tooltip()
 	elif button.text == "Lock In": button.tooltip_text = "Lock in without a defense. You can still play After-defense cards once every roll is final."
 
 func _pass_planning() -> void:
@@ -2943,6 +2971,10 @@ func _pass_planning() -> void:
 	dialog.title = "Skip without rolling?"
 	dialog.dialog_text = "You have not rolled your offensive dice.\nSkipping gives up your offensive ability for this round.\nYou can still defend, but cannot roll offensive dice until next round."
 	dialog.get_ok_button().text = "Skip Offensive Ability"
+	if tactics_mode:
+		dialog.title = "Sprint this round?"
+		dialog.dialog_text = _tactics.sprint_tooltip() + "\nYou can still defend."
+		dialog.get_ok_button().text = "Sprint"
 	dialog.get_cancel_button().text = "Keep Planning"
 	add_child(dialog)
 	dialog.confirmed.connect(func():
@@ -2959,6 +2991,7 @@ func _ability_actions(ability_id: String) -> Array:
 		if action.get("type") != "planning_select_ability" or action.get("payload", {}).get("ability_id") != ability_id or not _action_in_focus(action): continue
 		if _view.segment == "defensive" and _selected_source not in action.get("payload", {}).get("target_ids", []): continue
 		actions.append(action)
+	if tactics_mode and _view.segment == "offensive": return _tactics.group_actions(actions)
 	return actions
 
 func _ability_choice_options(ability_id: String, enabled: bool) -> Array[Dictionary]:
@@ -3013,6 +3046,7 @@ func _select_ability_action(action: Dictionary) -> void:
 		_selected_card.clear()
 		_continue_queued_defense()
 		return
+	if tactics_mode and _tactics.begin_square_aim(action): return
 	if _begin_offensive_targeting(action): return
 	_send(JSON.stringify(action))
 
@@ -3061,6 +3095,9 @@ func _unhandled_key_input(event: InputEvent) -> void:
 	if event.is_action_pressed("ui_cancel") and not _pending_attack.is_empty():
 		_cancel_offensive_targeting()
 		get_viewport().set_input_as_handled()
+	elif event.is_action_pressed("ui_cancel") and tactics_mode and not _tactics.aim.is_empty():
+		_tactics.aim = {}; _render(true)
+		get_viewport().set_input_as_handled()
 
 func _build_offensive_targets() -> void:
 	var actions := _offensive_target_actions()
@@ -3104,6 +3141,7 @@ func _on_ability_pressed(ability_id: String) -> void:
 	# Multi-option abilities are selected exclusively through their inline row.
 
 func _on_card_pressed(card: BattleCard) -> void:
+	if tactics_mode and not (_history_review or _submitting or _director.has_beats()) and _tactics.on_card(card): return
 	if not _pending_attack.is_empty(): _cancel_offensive_targeting()
 	if not _queued_defense.is_empty() and _view.stage == "offensive_reaction": return
 	if _history_review or _submitting or _model_thinking or _director.has_beats(): return
@@ -3341,6 +3379,7 @@ func _send(command_json: String, history_confirmed: bool = false) -> void:
 	if sent_type in ["planning_roll", "planning_reroll"] and _offensive_roll_animating(): return
 	if _player_roll_active() and not _command_plays_card(sent): return
 	_pending_attack.clear()
+	if _tactics != null: _tactics.aim = {}; _tactics.hide_popup()
 	_reset_auto_pass_preview()
 	var label := _history_label_for_command(sent)
 	var action := _history_command_action(sent)
@@ -3433,7 +3472,7 @@ func _return_to_mode_menu() -> void:
 	get_tree().change_scene_to_file("res://app/boot/battle_bootstrap.tscn")
 
 func _snapshot_tools_enabled() -> bool:
-	if learned_battle_mode: return false
+	if learned_battle_mode or tactics_mode: return false
 	return (
 		OS.is_debug_build()
 		and OS.get_environment("DICE_AND_DESTINY_ENABLE_SNAPSHOTS") == "1"
@@ -3441,7 +3480,7 @@ func _snapshot_tools_enabled() -> bool:
 	)
 
 func _history_tools_enabled() -> bool:
-	if learned_battle_mode: return false
+	if learned_battle_mode or tactics_mode: return false
 	return (
 		OS.is_debug_build()
 		and OS.get_environment("DICE_AND_DESTINY_ENABLE_HISTORY") == "1"
@@ -4139,6 +4178,7 @@ func inspection_state() -> Dictionary:
 		"history_follow_latest": _history_follow_latest,
 		"history_divergence_pending": _history_pending_divergence,
 		"authority_transcript": _transcript_panel.inspection_state() if is_instance_valid(_transcript_panel) else {"enabled": false, "open": false},
+		"tactics": _tactics.inspection() if tactics_mode and _tactics != null else {},
 		"error": _error_message,
 	}
 
@@ -4558,7 +4598,14 @@ func _profile_dock(id: String, width: float) -> VBoxContainer:
 	var dock := preload("res://presentation/battle/fighter_profile_dock.gd").new()
 	dock.name = id; _root.add_child(dock); dock.size = Vector2(width, 0)
 	if id != "PlayerProfile": dock.max_bottom = PLAYER_ZONE_TOP - 12
+	if tactics_mode and id != "PlayerProfile":
+		# The grid's tokens are the fighters; the stats stay at the upper right.
+		dock.pinned = true; dock.set_meta("dice_beside", true)
+		dock.resized.connect(_layout_tactics_docks)
 	return dock
+
+func _layout_tactics_docks() -> void:
+	if _tactics != null: _tactics.layout_enemy_docks()
 
 func _enemy_hud_width() -> float:
 	return 330.0 if _enemy_ids().size() <= 4 else 210.0
@@ -4654,7 +4701,7 @@ func _source_in_focus(source: Dictionary) -> bool:
 	return source.get("target_actor_id") == _focused_enemy
 
 func _action_in_focus(action: Dictionary) -> bool:
-	if not _multiple_enemies() or _view.segment != "offensive": return true
+	if not _multiple_enemies() or _view.segment != "offensive" or tactics_mode: return true
 	var payload: Dictionary = action.get("payload", {})
 	var commitment: Dictionary = payload.get("commitment", {})
 	var targets: Array = payload.get("target_ids", commitment.get("target_ids", commitment.get("proposal_ids", [])))
@@ -4674,6 +4721,9 @@ func _display_actor_id(id: String) -> String:
 func _battlefield_visual() -> BattleEncounterVisual:
 	var original: BattleEncounterVisual = encounter_visual if encounter_visual != null else preload("res://content/battle_visuals/library.tres").default_encounter
 	var layout: BattleEncounterVisual = original.duplicate(true)
+	if tactics_mode:
+		layout.fighters = []
+		return layout
 	var template := BattleFighterPlacement.new()
 	for authored in layout.fighters:
 		if authored.actor_id != "blade":
@@ -5073,6 +5123,7 @@ func _sync_program_card_selection() -> void:
 # Program choices name authority seats inside their JSON, which the gateway's
 # alias pass does not rewrite; map them with the battle's own seat record.
 func _program_actor_id(id: String) -> String:
+	if tactics_mode and id == "hero": return viewer_actor_id
 	var policy: Dictionary = _view.learned_policy if _view.learned_policy is Dictionary else {}
 	if id == str(policy.get("human_seat", "")): return viewer_actor_id
 	if id == str(policy.get("model_seat", "")) and _view.actors.has("goblin"): return "goblin"

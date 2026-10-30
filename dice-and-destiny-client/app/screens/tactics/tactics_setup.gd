@@ -4,7 +4,7 @@ extends Control
 ## overrides and the seed. Everything offered comes from the authority's
 ## tactics_catalog; Start creates the battle through tactics_start.
 
-const SCREEN := preload("res://app/screens/tactics/tactics_screen.gd")
+const BATTLE_SCREEN := preload("res://app/screens/battle/battle_screen.tscn")
 const BOOTSTRAP := preload("res://app/boot/battle_bootstrap.tscn")
 const NONE := "—"
 
@@ -213,7 +213,7 @@ func _start_battle() -> void:
 		_start.disabled = false
 		_message.text = "The sandbox battle could not start: %s" % str(result.get("error", ""))
 		return
-	store.save_active(id, "hero")
+	store.save_active(id, "blade")
 	_open_screen(result)
 
 func _resume_battle() -> void:
@@ -226,9 +226,15 @@ func _resume_battle() -> void:
 		return
 	_open_screen(result)
 
+## The sandbox battle plays on the battle screen, with the grid in the
+## battlefield's place (BattleTactics).
 func _open_screen(result: Dictionary) -> void:
-	var screen = SCREEN.new()
-	screen.gateway = gateway; screen.store = store; screen.initial_result = result
+	var screen = BATTLE_SCREEN.instantiate()
+	screen.initial_result = result
+	screen.viewer_actor_id = "blade"
+	screen.gateway = gateway
+	screen.active_store = store
+	screen.tactics_mode = true
 	get_tree().root.add_child(screen)
 	queue_free()
 

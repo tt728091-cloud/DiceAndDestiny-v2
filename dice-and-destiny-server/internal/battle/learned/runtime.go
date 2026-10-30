@@ -1,6 +1,7 @@
 package learned
 
 import (
+	"bytes"
 	"diceanddestiny/server/internal/content"
 	"encoding/json"
 	"fmt"
@@ -412,13 +413,30 @@ func handleTactics(request runtimeRequest) string {
 	case "tactics_open":
 		value, err = tacticsbattle.Open(roots, request.BattleID)
 	case "tactics_submit":
-		value, err = tacticsbattle.Submit(roots, request.BattleID, request.CommandJSON)
+		var commandJSON string
+		if commandJSON, err = unaliasTacticsCommand(request.CommandJSON); err == nil {
+			value, err = tacticsbattle.Submit(roots, request.BattleID, commandJSON)
+		}
 	default:
 		err = fmt.Errorf("unknown tactics operation %q", request.Op)
 	}
 	if err != nil {
 		return runtimeError(err)
 	}
-	encoded, _ := json.Marshal(value)
+	// The battle screen knows its human as HumanAlias, as in learned battles.
+	encoded, _ := json.Marshal(aliasMap(value, map[string]string{tacticsbattle.HeroSeat: HumanAlias}))
 	return string(encoded)
+}
+
+// unaliasTacticsCommand maps the battle screen's HumanAlias back to the
+// sandbox's hero seat.
+func unaliasTacticsCommand(commandJSON string) (string, error) {
+	decoder := json.NewDecoder(bytes.NewBufferString(commandJSON))
+	decoder.UseNumber()
+	var value map[string]any
+	if err := decoder.Decode(&value); err != nil {
+		return "", fmt.Errorf("decode sandbox command: %w", err)
+	}
+	encoded, err := json.Marshal(aliasMap(value, map[string]string{HumanAlias: tacticsbattle.HeroSeat}))
+	return string(encoded), err
 }

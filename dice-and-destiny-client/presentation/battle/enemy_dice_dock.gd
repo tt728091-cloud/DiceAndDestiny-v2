@@ -22,3 +22,5 @@ func place() -> void:
 	visible = expanded or targeting or Time.get_ticks_msec() < _effect_until
 	size = get_combined_minimum_size()
 	position = Vector2(profile_dock.position.x + (profile_dock.size.x - size.x) * 0.5, profile_dock.position.y - size.y - 8)
+	# Stats stacked in a column (Tactics Sandbox) show their dice beside them.
+	if profile_dock.get_meta("dice_beside", false): position = Vector2(profile_dock.position.x - size.x - 8, profile_dock.position.y)

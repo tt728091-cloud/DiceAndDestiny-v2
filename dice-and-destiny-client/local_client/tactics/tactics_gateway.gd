@@ -27,5 +27,8 @@ func open(id: String) -> Dictionary:
 	battle_id = id
 	return _runtime.tactics_request("tactics_open", {"battle_id": id})
 
-func submit(action: Dictionary) -> Dictionary:
-	return _runtime.tactics_request("tactics_submit", {"battle_id": battle_id, "command_json": JSON.stringify(action)})
+## Takes a command as the battle screen sends it (JSON text) or a legal
+## action dictionary.
+func submit(command) -> Dictionary:
+	var command_json: String = command if command is String else JSON.stringify(command)
+	return _runtime.tactics_request("tactics_submit", {"battle_id": battle_id, "command_json": command_json})

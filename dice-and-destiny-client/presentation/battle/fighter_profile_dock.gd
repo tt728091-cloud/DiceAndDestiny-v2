@@ -7,6 +7,9 @@ var fixed_bottom := -1.0:
 		fixed_bottom = value
 		_anchor_fixed()
 var max_bottom := -1.0
+## A pinned dock keeps the position it is given (Tactics Sandbox: enemy stats
+## at the upper right) while its fighter still anchors attack intents.
+var pinned := false
 var ground_anchor := Vector2(0.5, 1.0)
 var attachment_offset := Vector2(0, 10)
 func _ready() -> void:
@@ -36,7 +39,9 @@ func _process(_delta: float) -> void:
 		size.y = get_combined_minimum_size().y
 		_anchor_fixed()
 		return
-	if not is_instance_valid(fighter): return
+	if not is_instance_valid(fighter) or pinned:
+		if pinned: size.y = get_combined_minimum_size().y
+		return
 	var ground := fighter.get_global_transform_with_canvas() * (fighter.size * ground_anchor)
 	var point: Vector2 = get_parent().get_global_transform_with_canvas().affine_inverse() * ground
 	position = point + attachment_offset - Vector2(size.x * 0.5, 0)
