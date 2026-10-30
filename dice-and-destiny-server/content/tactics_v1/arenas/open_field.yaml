@@ -1,0 +1,22 @@
+schema_version: 1
+id: open_field
+name: Open Field
+order: 1
+description: "All floor: pure speed, range and positioning."
+legend: {".": floor, "#": wall, "~": swamp}
+grid:
+  - "............"
+  - "............"
+  - "............"
+  - "............"
+  - "............"
+  - "............"
+  - "............"
+  - "............"
+  - "............"
+player_start: {x: 1, y: 4}
+enemy_starts:
+  - {x: 9, y: 4}
+  - {x: 10, y: 2}
+  - {x: 10, y: 6}
+  - {x: 8, y: 1}

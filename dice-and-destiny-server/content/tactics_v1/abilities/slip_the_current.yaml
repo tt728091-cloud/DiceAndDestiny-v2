@@ -1,0 +1,32 @@
+# Tactics Sandbox copy of minions_v1/abilities/slip_the_current.yaml, tagged
+# on the move. Only tactics battles load it (pack.yaml).
+schema_version: 1
+id: slip_the_current
+name: Slip the Current
+type: defensive
+presentation:
+  rules_text: "On the move: usable whether or not Ribbon Eel ran this round. Roll 1D6. 1–3 prevent 1 damage; 4–5 prevent 2 damage; 6 slips free and prevents 4 damage. Saved cards go to the discard pile."
+cost: {energy: 0}
+usage: {maximum_per_segment: 1}
+selection:
+  requires_incoming_proposal: true
+  allowed_proposal_types: [damage_source]
+  target_count: 1
+resolution:
+  reaction_window: {opens: true, pass_required: true}
+  operations:
+    - id: slip_the_current_roll
+      type: roll_dice
+      target: self
+      dice_id: standard_d6
+      dice_count: 1
+      reaction_window: {opens: true, pass_required: true}
+      outcomes:
+        - faces: [1, 2, 3]
+          operations: [{type: prevent_damage, target: selected_proposal, amount: 1}]
+        - faces: [4, 5]
+          operations: [{type: prevent_damage, target: selected_proposal, amount: 2}]
+        - faces: [6]
+          operations: [{type: prevent_damage, target: selected_proposal, amount: 4}]
+saved_card_destination: discard
+on_the_move: true

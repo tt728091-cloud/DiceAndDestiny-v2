@@ -1,0 +1,13 @@
+# Tactics Sandbox content pack (docs/game-design/tactics-sandbox-plan.md §7).
+# Only tactics battles load this pack, on top of battle_v1, minions_v1,
+# adventurer_v1 and the published (authored) cards. Shipping battles and their
+# catalogs never see it.
+schema_version: 1
+# Copies of shipped abilities with tactics changes (range, area, on the move).
+# In a tactics battle each replaces the shipped definition with the same ID;
+# the shipped files stay untouched.
+ability_copies: [brine_lash, tide_crown, slip_the_current]
+# Sandbox characters the setup screen offers, in order.
+heroes: [starter_movement, adventurer_movement]
+# Sandbox enemies the setup screen offers, in order.
+enemies: [tactics_ribbon_eel, tactics_bell_diver, tactics_brine_mask, tactics_drowned_regent]

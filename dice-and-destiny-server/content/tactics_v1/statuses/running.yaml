@@ -1,0 +1,20 @@
+# Tactics Sandbox: applied at the movement reveal to every plan that ran.
+schema_version: 1
+id: running
+name: Running
+presentation:
+  rules_text: "Ran this round: only on-the-move defenses. You run when your Move this round is more than your base speed; a Sprint always runs and a Charge does not. Until it expires your normal defenses are disabled; on-the-move defenses (Evade, Slip the Current) and prevention cards still work. Expires at the end of the round (the next round's Ongoing Effects)."
+  glyph: "»"
+activation_mode: automatic
+modifiers: {on_the_move_defenses_only: true}
+polarity: negative
+stacking: {stack_limit: 1, overflow_policy: reject_additional_stacks}
+lifecycle: {persistent: false, consume_on_trigger_checkpoint: false, consume_on_play: false, remove_after_resolution: false, remove_on_duration_zero: false}
+triggers:
+  - id: running_expiry
+    segment: ongoing_effects
+    phase: entry
+    stage: collect_statuses
+    priority: -1000
+    operations:
+      - {type: remove_status, target: self, status_id: running}

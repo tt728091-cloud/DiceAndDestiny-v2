@@ -1,0 +1,22 @@
+schema_version: 1
+id: swamp_crossing
+name: Swamp Crossing
+order: 4
+description: "A band of swamp across the middle: test map cards that ignore or choose terrain."
+legend: {".": floor, "#": wall, "~": swamp}
+grid:
+  - "....~~~~...."
+  - "....~~~~...."
+  - "....~~~~...."
+  - "....~~~~...."
+  - "....~~~~...."
+  - "....~~~~...."
+  - "....~~~~...."
+  - "....~~~~...."
+  - "....~~~~...."
+player_start: {x: 1, y: 4}
+enemy_starts:
+  - {x: 10, y: 4}
+  - {x: 10, y: 2}
+  - {x: 10, y: 6}
+  - {x: 9, y: 1}

@@ -1,0 +1,36 @@
+# Tactics Sandbox: a new attack on Starter/Adventurer Movement.
+schema_version: 1
+id: charge
+name: Charge
+type: offensive
+presentation:
+  rules_text: "Choose a qualified tier: 3 Swords: 3 damage; 4 Swords: 4 damage; 5 Swords: 5 damage. Faces 1, 2, and 3 are Swords. Charge 4: target one creature within 5 squares (charge 4 + 1) that you can see. In movement you pursue it with exactly 4 Move, adding no cards or energy, and the charge hits the moment you are adjacent to it. If it outruns you or you are blocked, the charge misses. Charging is not running. Misses with fewer than 3 Swords."
+cost: {energy: 0}
+usage: {maximum_per_segment: 1}
+targeting: {selector: one_enemy, minimum: 1, maximum: 1}
+qualification:
+  choose_tier: true
+  activation_tiers:
+    - id: 5_swords
+      requirements:
+        all:
+          - {type: symbol_count, symbol_id: sword, minimum: 5}
+      operations:
+        - {type: deal_damage, target: selected_targets, amount: 5}
+    - id: 4_swords
+      requirements:
+        all:
+          - {type: symbol_count, symbol_id: sword, minimum: 4}
+      operations:
+        - {type: deal_damage, target: selected_targets, amount: 4}
+    - id: 3_swords
+      requirements:
+        all:
+          - {type: symbol_count, symbol_id: sword, minimum: 3}
+      operations:
+        - {type: deal_damage, target: selected_targets, amount: 3}
+delivery:
+  type: direct
+  range: 1
+  line_of_sight: true
+  charge: {range: 4}

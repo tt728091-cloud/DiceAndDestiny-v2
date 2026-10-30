@@ -1,0 +1,19 @@
+# Tactics Sandbox copy of minions_v1/combatants/drowned_oracle_brine_mask.yaml:
+# Brine Lash is ranged; Brine Slap is its weaker backup melee.
+schema_version: 1
+id: tactics_brine_mask
+name: Brine Mask
+class: minion
+controller_defaults: {type: external}
+resources: {starting_hand_size: 1, starting_energy: 0, hand_limit: 3, energy_cap: 75}
+income: {cards: 1, energy: 5}
+decklist:
+  - {card_id: brine_surge, count: 16}
+dice_loadout:
+  - {dice_id: brine_d6, count: 5}
+ability_board:
+  offensive: [brine_lash, brine_slap]
+  defensive: [salt_veil]
+roll_preferences: {status_effects: automatic, offensive: automatic, ability_effects: automatic}
+single_ability_policy: {target_face: 3, card_id: brine_surge}
+tactics: {base_speed: 1, role: ranged, label: ranged}

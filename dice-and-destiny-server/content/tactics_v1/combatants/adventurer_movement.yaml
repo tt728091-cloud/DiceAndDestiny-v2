@@ -1,0 +1,25 @@
+# Tactics Sandbox copy of adventurer_v1/combatants/adventurer.yaml. Same deck,
+# dice and damage; Magic Missile and Fireball replace the straights, Charge and
+# Evade are new. Sandbox only: never campaign- or expedition-eligible.
+schema_version: 1
+id: adventurer_movement
+name: Adventurer Movement
+class: adventurer
+controller_defaults: {type: human}
+resources: {starting_hand_size: 4, starting_energy: 10, hand_limit: 6, energy_cap: 75}
+income: {cards: 1, energy: 5}
+decklist:
+  - {card_id: steady_guard, count: 3}
+  - {card_id: nudge, count: 2}
+  - {card_id: try_again, count: 2}
+  - {card_id: strong_swing, count: 2}
+  - {card_id: take_stock, count: 2}
+  - {card_id: second_wind, count: 1}
+dice_loadout:
+  - {dice_id: standard_d6, count: 5}
+ability_board:
+  offensive: [adventurer_strike, guarded_strike, measured_strike, magic_missile, fireball, decisive_blow, charge]
+  defensive: [adventurer_guard, adventurer_guard_plus, evade]
+starting_statuses: []
+starting_tokens: []
+roll_preferences: {status_effects: automatic, offensive: manual, ability_effects: manual}

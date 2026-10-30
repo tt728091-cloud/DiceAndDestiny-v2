@@ -193,6 +193,81 @@ type BattleAbilityDefinition struct {
 	Qualification        *AbilityQualification `yaml:"qualification,omitempty" json:"qualification,omitempty"`
 	Selection            *DefenseSelection     `yaml:"selection,omitempty" json:"selection,omitempty"`
 	Resolution           *DefenseResolution    `yaml:"resolution,omitempty" json:"resolution,omitempty"`
+	// Delivery is how an offensive ability reaches its target in a tactics
+	// battle: range, line of sight, an area or a charge. OnTheMove marks a
+	// defense usable after running. Both are ignored outside the tactics
+	// ruleset (docs/game-design/tactics-sandbox-plan.md).
+	Delivery  *AbilityDelivery `yaml:"delivery,omitempty" json:"delivery,omitempty"`
+	OnTheMove bool             `yaml:"on_the_move,omitempty" json:"on_the_move,omitempty"`
+}
+
+// Delivery types of a tactics ability.
+const (
+	DeliveryTypeDirect = "direct"
+	DeliveryTypeArea   = "area"
+)
+
+// AbilityDelivery is an offensive ability's reach on the tactics grid.
+// Direct abilities target a creature in range (and in line of sight when
+// required); area abilities target a square; a charge is a direct ability
+// that targets a creature within its charge reach and connects on contact.
+type AbilityDelivery struct {
+	Type        string          `yaml:"type" json:"type"`
+	Range       int             `yaml:"range" json:"range"`
+	LineOfSight bool            `yaml:"line_of_sight" json:"line_of_sight"`
+	Area        *DeliveryArea   `yaml:"area,omitempty" json:"area,omitempty"`
+	Charge      *DeliveryCharge `yaml:"charge,omitempty" json:"charge,omitempty"`
+}
+
+// DeliveryArea is an area ability's shape around its target square. A square
+// of radius 1 is 3×3.
+type DeliveryArea struct {
+	Shape  string `yaml:"shape" json:"shape"`
+	Radius int    `yaml:"radius" json:"radius"`
+}
+
+// DeliveryCharge makes a direct ability a Charge with this built-in reach.
+type DeliveryCharge struct {
+	Range int `yaml:"range" json:"range"`
+}
+
+// ValidateAbilityDelivery checks a delivery block strictly: area needs an
+// area shape, a charge needs a direct delivery, and ranges are at least 1.
+func ValidateAbilityDelivery(abilityType string, d *AbilityDelivery, onTheMove bool) error {
+	if onTheMove && abilityType != "defensive" {
+		return fmt.Errorf("on_the_move applies only to defensive abilities")
+	}
+	if d == nil {
+		return nil
+	}
+	if abilityType != "offensive" {
+		return fmt.Errorf("delivery applies only to offensive abilities")
+	}
+	if d.Range < 1 || d.Range > 100 {
+		return fmt.Errorf("delivery range must be 1–100")
+	}
+	switch d.Type {
+	case DeliveryTypeDirect:
+		if d.Area != nil {
+			return fmt.Errorf("a direct delivery cannot have an area")
+		}
+		if d.Charge != nil && (d.Charge.Range < 1 || d.Charge.Range > 100) {
+			return fmt.Errorf("charge range must be 1–100")
+		}
+	case DeliveryTypeArea:
+		if d.Area == nil {
+			return fmt.Errorf("an area delivery needs an area")
+		}
+		if d.Area.Shape != "square" || d.Area.Radius < 1 || d.Area.Radius > 20 {
+			return fmt.Errorf("an area is a square of radius 1–20")
+		}
+		if d.Charge != nil {
+			return fmt.Errorf("a charge needs a direct delivery")
+		}
+	default:
+		return fmt.Errorf("delivery type must be direct or area")
+	}
+	return nil
 }
 
 type StatusStacking struct {
@@ -257,6 +332,9 @@ type StatusModifiers struct {
 	// AutoPreventionDestination is where the cards it saves go: "discard"
 	// (the default) or "original" (their live pile).
 	AutoPreventionDestination string `yaml:"auto_prevention_destination,omitempty" json:"auto_prevention_destination,omitempty"`
+	// OnTheMoveDefensesOnly limits the holder to defenses tagged on_the_move
+	// (tactics battles: Running).
+	OnTheMoveDefensesOnly bool `yaml:"on_the_move_defenses_only,omitempty" json:"on_the_move_defenses_only,omitempty"`
 }
 
 // MapOnly reports modifiers that only the Expedition map reads: a status
@@ -464,6 +542,24 @@ type CombatantDefinition struct {
 	StartingTokens      []StartingToken          `yaml:"starting_tokens" json:"starting_tokens"`
 	RollPreferences     CombatantRollPreferences `yaml:"roll_preferences" json:"roll_preferences"`
 	AI                  *CombatantAI             `yaml:"ai,omitempty" json:"ai,omitempty"`
+	// Tactics is a sandbox combatant's speed and behaviour on the tactics
+	// grid; only tactics battles read it.
+	Tactics *CombatantTactics `yaml:"tactics,omitempty" json:"tactics,omitempty"`
+}
+
+// Tactics roles drive the scripted enemy behaviour on the grid.
+const (
+	TacticsRoleMelee  = "melee"
+	TacticsRoleRanged = "ranged"
+	TacticsRoleArea   = "area"
+)
+
+// CombatantTactics is a tactics combatant's base speed (free Move per round)
+// and role. A short label describes the role in menus ("melee pursuer").
+type CombatantTactics struct {
+	BaseSpeed int    `yaml:"base_speed" json:"base_speed"`
+	Role      string `yaml:"role" json:"role"`
+	Label     string `yaml:"label,omitempty" json:"label,omitempty"`
 }
 
 var stableID = regexp.MustCompile(`^[a-z][a-z0-9]*(?:_[a-z0-9]+)*$`)
@@ -702,6 +798,9 @@ func validateBattleLibrary(lib BattleLibrary) error {
 		if err := reserveContentName(contentNames, "ability", id, ability.Name); err != nil {
 			return err
 		}
+		if err := ValidateAbilityDelivery(ability.Type, ability.Delivery, ability.OnTheMove); err != nil {
+			return fmt.Errorf("%w: ability %q: %v", ErrInvalidContent, id, err)
+		}
 		if err := validateTargeting(ability.Targeting); err != nil {
 			return fmt.Errorf("%w: ability %q: %v", ErrInvalidContent, id, err)
 		}
@@ -779,8 +878,18 @@ func validateBattleLibrary(lib BattleLibrary) error {
 				return fmt.Errorf("%w: combatant %q has invalid status %q", ErrInvalidContent, id, s.DefinitionID)
 			}
 		}
+		if t := combatant.Tactics; t != nil {
+			if t.BaseSpeed < 1 || t.BaseSpeed > 20 || (t.Role != TacticsRoleMelee && t.Role != TacticsRoleRanged && t.Role != TacticsRoleArea) {
+				return fmt.Errorf("%w: combatant %q tactics needs base_speed 1–20 and role melee, ranged or area", ErrInvalidContent, id)
+			}
+		}
 		if policy := combatant.SingleAbilityPolicy; policy != nil {
-			if combatant.ControllerDefaults.Type != "external" || len(combatant.AbilityBoard.Offensive) != 1 || len(combatant.AbilityBoard.Defensive) != 1 {
+			// A tactics enemy may add a backup melee attack on the same dice.
+			attacks := 1
+			if combatant.Tactics != nil {
+				attacks = 2
+			}
+			if combatant.ControllerDefaults.Type != "external" || len(combatant.AbilityBoard.Offensive) < 1 || len(combatant.AbilityBoard.Offensive) > attacks || len(combatant.AbilityBoard.Defensive) != 1 {
 				return fmt.Errorf("single ability combatant %q requires external control and exactly one attack and defense", id)
 			}
 			if len(policy.KeptFaces()) == 0 {

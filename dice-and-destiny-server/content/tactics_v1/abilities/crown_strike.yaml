@@ -1,0 +1,23 @@
+# Tactics Sandbox: the Drowned Regent's weaker backup melee on the same dice
+# (Tide Crown's tiers −2 damage, minimum 1).
+schema_version: 1
+id: crown_strike
+name: Crown Strike
+type: offensive
+presentation:
+  rules_text: "Backup melee. Keep every 4, 5 and 6 (Toll) and reroll the other dice up to twice. 3 Tolls deal 2 damage, 4 Tolls deal 4, and all 5 Tolls deal 6 to an adjacent creature (melee, range 1). Fewer than 3 Tolls is a miss."
+cost: {energy: 0}
+usage: {maximum_per_segment: 1}
+targeting: {selector: one_enemy, minimum: 1, maximum: 1}
+qualification:
+  activation_tiers:
+    - id: crown_5
+      requirements: {all: [{type: symbol_count, symbol_id: toll, minimum: 5}]}
+      operations: [{type: deal_damage, target: selected_targets, amount: 6}]
+    - id: crown_4
+      requirements: {all: [{type: symbol_count, symbol_id: toll, minimum: 4}]}
+      operations: [{type: deal_damage, target: selected_targets, amount: 4}]
+    - id: crown_3
+      requirements: {all: [{type: symbol_count, symbol_id: toll, minimum: 3}]}
+      operations: [{type: deal_damage, target: selected_targets, amount: 2}]
+delivery: {type: direct, range: 1, line_of_sight: true}

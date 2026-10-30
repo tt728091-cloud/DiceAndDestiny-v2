@@ -1,0 +1,28 @@
+# Tactics Sandbox: Brine Mask's weaker backup melee on the same dice.
+schema_version: 1
+id: brine_slap
+name: Brine Slap
+type: offensive
+presentation:
+  rules_text: "Backup melee. Keep every 3 and reroll the other dice up to twice. Deal 1 damage per Brine (3) to an adjacent creature (melee, range 1). No Brine means a miss."
+cost: {energy: 0}
+usage: {maximum_per_segment: 1}
+targeting: {selector: one_enemy, minimum: 1, maximum: 1}
+qualification:
+  activation_tiers:
+    - id: brine_5
+      requirements: {all: [{type: symbol_count, symbol_id: brine, minimum: 5}]}
+      operations: [{type: deal_damage, target: selected_targets, amount: 5}]
+    - id: brine_4
+      requirements: {all: [{type: symbol_count, symbol_id: brine, minimum: 4}]}
+      operations: [{type: deal_damage, target: selected_targets, amount: 4}]
+    - id: brine_3
+      requirements: {all: [{type: symbol_count, symbol_id: brine, minimum: 3}]}
+      operations: [{type: deal_damage, target: selected_targets, amount: 3}]
+    - id: brine_2
+      requirements: {all: [{type: symbol_count, symbol_id: brine, minimum: 2}]}
+      operations: [{type: deal_damage, target: selected_targets, amount: 2}]
+    - id: brine_1
+      requirements: {all: [{type: symbol_count, symbol_id: brine, minimum: 1}]}
+      operations: [{type: deal_damage, target: selected_targets, amount: 1}]
+delivery: {type: direct, range: 1, line_of_sight: true}

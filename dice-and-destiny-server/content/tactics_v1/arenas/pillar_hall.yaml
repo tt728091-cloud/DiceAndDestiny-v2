@@ -1,0 +1,22 @@
+schema_version: 1
+id: pillar_hall
+name: Pillar Hall
+order: 3
+description: "Scattered pillars: line of sight and charging around obstacles."
+legend: {".": floor, "#": wall, "~": swamp}
+grid:
+  - "............"
+  - "..#....#...."
+  - "......#....."
+  - "...#......#."
+  - "............"
+  - ".....#..#..."
+  - "..#........."
+  - "........#..."
+  - "....#......."
+player_start: {x: 1, y: 4}
+enemy_starts:
+  - {x: 10, y: 4}
+  - {x: 10, y: 1}
+  - {x: 10, y: 7}
+  - {x: 8, y: 3}

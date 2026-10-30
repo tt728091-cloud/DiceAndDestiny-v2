@@ -1,0 +1,34 @@
+# Tactics Sandbox: an on-the-move defense for Starter/Adventurer Movement.
+schema_version: 1
+id: evade
+name: Evade
+type: defensive
+presentation:
+  rules_text: "On the move: usable whether or not you ran this round. Once per defensive segment, choose one incoming attack and roll 2 dice. Each 4 or 5 prevents 1 damage; each 6 prevents 2 damage; 1-3 prevent nothing. Saved cards go to discard and still count as health."
+cost: {energy: 0}
+usage: {maximum_per_segment: 1}
+selection:
+  requires_incoming_proposal: true
+  allowed_proposal_types: [damage_source]
+  target_count: 1
+resolution:
+  reaction_window: {opens: true, pass_required: true}
+  operations:
+    - type: roll_dice
+      id: evade_roll
+      target: self
+      dice_id: standard_d6
+      dice_count: 2
+      reaction_window: {opens: true, pass_required: true}
+      outcomes:
+        - faces: [1, 2, 3]
+          operations:
+            - {type: noop}
+        - faces: [4, 5]
+          operations:
+            - {type: prevent_damage, target: selected_proposal, amount: 1}
+        - faces: [6]
+          operations:
+            - {type: prevent_damage, target: selected_proposal, amount: 2}
+saved_card_destination: discard
+on_the_move: true

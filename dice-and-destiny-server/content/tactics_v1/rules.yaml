@@ -1,0 +1,59 @@
+# Tactics Sandbox rules (docs/game-design/tactics-sandbox-plan.md).
+# A tactics battle pins these numbers (with any setup-screen overrides) when it
+# starts; editing this file never changes a running battle. Values marked
+# "default" in the plan are playtest defaults for the user to confirm.
+schema_version: 1
+
+# Move: free Move per round, +card_move per card discarded, +1 per
+# energy_per_move energy spent, and a map Move card's amount × the multiplier
+# (default 1) when it is played for its energy cost.
+base_speed: 1
+card_move: 1
+energy_per_move: 5
+map_card_move_multiplier: 1
+
+# Sprint (skipping offense): base speed × sprint_base_multiplier, and
+# +sprint_card_bonus extra Move per committed card, map cards included.
+sprint_base_multiplier: 2
+sprint_card_bonus: 1
+
+# Grid. chebyshev: every diagonal step counts 1 (default); alternating: 1, 2,
+# 1, 2… (the 5-10-5 variant). corner_cutting false (default): a diagonal step
+# may not pass a wall on either side.
+diagonal_rule: chebyshev
+corner_cutting: false
+
+# Line of sight runs square centre to square centre over every square the
+# line touches; walls block, and creatures other than the attacker and the
+# target block when los_blocked_by_creatures (default true). A line through a
+# corner is blocked only when both squares at that corner block.
+los_blocked_by_creatures: true
+
+# Area attacks hit only the caster's opponents (default false).
+area_hits_allies: false
+
+# A Charge is not running (default false) and cannot add cards or energy to
+# its Move (default false).
+charge_counts_as_running: false
+charge_allows_extra_move: false
+
+# Two opponents entering the same square at the same moment: the first rule
+# that separates them decides. Must end with random (the battle's seed).
+tiebreak_order: [squares_moved, move_rate, paid_move, random]
+
+# The visible status a plan that runs receives at the movement reveal.
+running_status: running
+
+# An offensive ability with no delivery block: direct melee.
+default_delivery: {type: direct, range: 1, line_of_sight: true}
+
+terrain:
+  floor: {name: Floor, cost: 1, passable: true, blocks_line_of_sight: false, color: "#3a4150", description: "Open ground. Costs 1 Move."}
+  swamp: {name: Swamp, cost: 2, passable: true, blocks_line_of_sight: false, color: "#2f5a4a", description: "Sucking mud. Costs 2 Move."}
+  wall: {name: Wall, cost: 0, passable: false, blocks_line_of_sight: true, color: "#15181f", description: "Impassable. Blocks line of sight."}
+
+ai:
+  # Cards an enemy may commit to movement in one round (default 1), only when
+  # that brings it into range for the next round; it never commits its last
+  # card in hand.
+  max_cards_per_round: 1

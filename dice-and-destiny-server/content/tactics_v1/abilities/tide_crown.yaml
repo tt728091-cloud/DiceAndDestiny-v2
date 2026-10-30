@@ -1,0 +1,27 @@
+# Tactics Sandbox copy of minions_v1/abilities/tide_crown.yaml: the same dice
+# and damage, now an area attack. Only tactics battles load it (pack.yaml).
+schema_version: 1
+id: tide_crown
+name: Tide Crown
+type: offensive
+presentation:
+  rules_text: "Keep every 4, 5 and 6 (Toll) and reroll the other dice up to twice. 3 Tolls deal 4 damage, 4 Tolls deal 6, and all 5 Tolls deal 8. Area 3×3, range 5, line of sight: aims at a square within 5 squares that it can see when it locks in, and when movement ends hits every enemy standing in the 3×3 area around it; each one defends separately. Leaving the area dodges it. Fewer than 3 Tolls is a miss."
+cost: {energy: 0}
+usage: {maximum_per_segment: 1}
+targeting: {selector: one_enemy, minimum: 1, maximum: 1}
+qualification:
+  activation_tiers:
+    - id: crown_5
+      requirements: {all: [{type: symbol_count, symbol_id: toll, minimum: 5}]}
+      operations: [{type: deal_damage, target: selected_targets, amount: 8}]
+    - id: crown_4
+      requirements: {all: [{type: symbol_count, symbol_id: toll, minimum: 4}]}
+      operations: [{type: deal_damage, target: selected_targets, amount: 6}]
+    - id: crown_3
+      requirements: {all: [{type: symbol_count, symbol_id: toll, minimum: 3}]}
+      operations: [{type: deal_damage, target: selected_targets, amount: 4}]
+delivery:
+  type: area
+  range: 5
+  line_of_sight: true
+  area: {shape: square, radius: 1}
