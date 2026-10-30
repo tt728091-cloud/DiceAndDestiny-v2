@@ -135,3 +135,10 @@ func TestRunnerPlaysASandboxBattleToTheEnd(t *testing.T) {
 		t.Fatal("the reopened battle differs")
 	}
 }
+
+func TestSubmitAcceptsGodotFloats(t *testing.T) {
+	got, err := integralNumbers(`{"a": 1.0, "b": [2.0, 2.5], "c": {"d": 0.0}}`)
+	if err != nil || got != `{"a":1,"b":[2,2.5],"c":{"d":0}}` {
+		t.Fatalf("integralNumbers = %s %v", got, err)
+	}
+}

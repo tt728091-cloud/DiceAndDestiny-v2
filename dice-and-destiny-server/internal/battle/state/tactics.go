@@ -60,6 +60,7 @@ const (
 type TacticsAttack struct {
 	Attacker    string           `json:"attacker"`
 	AbilityID   string           `json:"ability_id"`
+	TierID      string           `json:"tier_id,omitempty"`
 	Delivery    string           `json:"delivery"`
 	Range       int              `json:"range"`
 	LineOfSight bool             `json:"line_of_sight"`
@@ -121,6 +122,23 @@ type TacticsMovement struct {
 	Budgets map[string]tactics.MoveBudget `json:"budgets"`
 	Running []string                      `json:"running,omitempty"`
 	Seed    uint64                        `json:"seed"`
+	// Attacks are the round's attacks with whether each connected; Hits
+	// are filled in when the round's damage commits (for the playback).
+	Attacks []TacticsAttack    `json:"attacks,omitempty"`
+	Hits    []TacticsHitResult `json:"hits,omitempty"`
+}
+
+// TacticsHitResult is one connected attack's committed result on one creature.
+type TacticsHitResult struct {
+	SourceID  string `json:"source_id"`
+	Attacker  string `json:"attacker"`
+	AbilityID string `json:"ability_id"`
+	Target    string `json:"target"`
+	Base      int    `json:"base"`
+	Final     int    `json:"final"`
+	Removed   int    `json:"removed"`
+	Defense   string `json:"defense,omitempty"`
+	Lethal    bool   `json:"lethal,omitempty"`
 }
 
 // CloneTactics deep-copies the tactics runtime.

@@ -111,6 +111,14 @@ func _build_mode_menu() -> void:
 		action.reparent(actions); action.custom_minimum_size.y = 54; action.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		_menu_actions.append(action)
 	actions.move_child(campaign, 0)
+	# Tactics Sandbox: a separate prototype tab with its own resume pointer.
+	var tactics := Button.new(); tactics.text = "Tactics Sandbox (prototype)"; tactics.custom_minimum_size.y = 44
+	tactics.add_theme_font_size_override("font_size", 17)
+	tactics.tooltip_text = "A top-down square grid: range, line of sight and simultaneous movement paid with your deck. A prototype in its own tab; it never changes normal battles."
+	tactics.pressed.connect(_open_tactics)
+	content.add_child(tactics); _menu_actions.append(tactics)
+	var inspector_node = get_node_or_null("/root/GameInspector")
+	if inspector_node != null: inspector_node.register_control("battle.setup.tactics", tactics, "Tactics Sandbox (prototype)")
 	_message = Label.new()
 	_model_choice.item_selected.connect(func(_index: int): _update_opponent_description())
 	_update_opponent_description()
@@ -263,6 +271,10 @@ func _open_character_creation() -> void:
 	screen.closed.connect(func(): show(); _loadout_choice.select(1 if get_node("/root/LearnedBattleRuntime").selected_loadout_mode == "progression" else 0); _refresh_character_loadouts(); _character_choice.grab_focus())
 	get_tree().root.add_child(screen)
 	hide()
+
+func _open_tactics() -> void:
+	get_tree().root.add_child(preload("res://app/screens/tactics/tactics_setup.gd").new())
+	queue_free()
 
 func _open_campaign() -> void:
 	get_tree().root.add_child(preload("res://app/screens/campaign/campaign_screen.gd").new())

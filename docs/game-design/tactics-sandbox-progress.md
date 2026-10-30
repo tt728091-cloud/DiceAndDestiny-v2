@@ -10,7 +10,7 @@ Implementation log for `tactics-sandbox-plan.md` (the plan is the source of trut
 | M1 · `internal/battle/tactics` (pure) | done |
 | M2 · Authority | done |
 | M3 · Enemy behaviour | done |
-| M4 · Client | — |
+| M4 · Client | done |
 | M5 · Verify and document | — |
 
 ## M0 · Content pack and schema
@@ -67,6 +67,19 @@ Tests: `engine/tactics_test.go` (legality, connections, one source per creature 
 Tests: `policy_test.go` (pursuit and the one-card rule, flee / hold / move into range and sight, range before backup melee, area aim, defense or pass) and `battles_test.go`, which plays 20 whole battles through the runner — every arena, both heroes, each enemy alone and in mixes up to all four — with a simple scripted hero: no refused command, no stuck decision, the slowest hero command about 80 ms.
 
 **Finding (for the user):** in those 20 battles enemies used Brine Lash 49 times and Tide Crown 29 times but their backup melee (Brine Slap, Crown Strike) never. A ranged or area attack also reaches adjacent squares, and the backup melee qualifies on exactly the same dice, so "prefer range, then melee" never reaches the melee. See "Questions for the user".
+
+## M4 · Client
+
+`app/screens/tactics/` and `local_client/tactics/tactics_gateway.gd`; the main menu's **Tactics Sandbox (prototype)** button (`battle.setup.tactics`).
+
+- **Setup** (`tactics_setup.gd`): hero (with its attacks' deliveries), published map Move cards to add, four enemy slots (1–4, any mix), the arena with a preview of its starts, rule overrides (the numbers, the diagonal rule and the switches, plus a free JSON field for anything else) and the seed (blank: random). Everything offered comes from `tactics_catalog`. **Resume sandbox battle** uses the sandbox's own pointer, `active_tactics_battle.json`, never the normal battle's.
+- **Board** (`tactics_board.gd`): a top-down 2D grid with terrain colours from the rules, one clickable button per square (hover: coordinates, terrain, cost), creature tokens (team colour, initials, health bar, a `»` while Running; hover: health, energy, speed, last and planned Move, every attack's delivery text and every status with its rules), area squares, dashed preview paths, revealed paths with ghosts, and attack badges anchored to their target (attacks on you hang below your token) whose hover is the shared attack tooltip plus the delivery and whether it connected.
+- **Screen** (`tactics_screen.gd`): renders the authority's result and submits only listed legal actions. Offense: Roll (lock in) / Sprint (skip attack), dice keep-and-reroll with the shared dice tray, ability tiles (disabled with "no target in range and line of sight" when that is why), a tier chooser, then aiming: legal creatures and squares are highlighted on the board and a click submits. Movement: click a square (Move to), click a creature (Pursue / Flee popup), Hold, click hand cards to commit them (a map Move card plays for its amount; shift-click discards it for +1; Know the Land asks for the terrain), ±5 energy, the authority's budget breakdown with the Running warning and the preview's end square and arrival time, Lock in. Defense: each incoming attack with its threatened cards, its legal defenses, disabled defenses with the reason, and No defense; prevention and other cards play from the hand (cards whose choices need a pick open a chooser). The main Pass completes on its own when it is the only action left.
+- **Playback**: when a round's damage has committed, the round plays back along the resolved timeline (tokens move in time order, direct hits at t = 0, charge hits at contact, area hits at t = 1, each with its damage and what the defense saved, lethal hits fall at their final square), with a speed control and **Replay round**. During defense the tokens stay on their starting squares with each creature's revealed path and a ghost at its final square.
+- **Debug timeline**: a toggle lists the resolved movement: each budget, every step with its time as a fraction and a percentage, waits with reasons, tiebreaks with the deciding rule, charge contacts, stops, and each attack's outcome and hits.
+- Godot's JSON writes integers as floats (`1.0`); the runner rewrites whole numbers before parsing a hero command. The round's movement record now also keeps its attacks (with the revealed tier, for the hover contract) and, at the damage commit, each hit's base and final damage, cards removed, defense and whether it was lethal.
+
+Pointer test: `tests/presentation/verify_tactics_sandbox.gd` (about 25 s): the menu tab and setup; Sprint; every intention by clicking (square, creature → Pursue, creature → Flee, Hold); a card and 5 energy committed with the budget and Running warning; lock in; the revealed paths and ghosts during defense; the playback (tokens move, end on their final squares), Replay and the timeline; aiming an attack whose highlighted targets are exactly the legal ones; a round where the hero runs from a direct attack and only Evade is offered (Guard disabled with the reason); resuming a saved battle from the tab on the same squares; a won and a lost battle's end screens (played out through the authority, then clicked); and 1–4 enemies at 1280×720 and 1920×1080 with every token and badge, the Pursue/Flee popup at both screen edges and the hover text inside the viewport.
 
 ## Defaults to confirm (plan §13)
 

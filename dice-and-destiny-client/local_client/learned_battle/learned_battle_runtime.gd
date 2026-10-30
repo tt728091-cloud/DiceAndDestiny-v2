@@ -191,6 +191,15 @@ func observe() -> Dictionary:
 func initialization_error() -> String:
 	return _initialization_error
 
+## Tactics Sandbox ops (tactics_catalog, tactics_start, tactics_open,
+## tactics_submit). They never touch the learned battle session; the
+## authority stores sandbox battles in this workspace's battle root.
+func tactics_request(op: String, extra: Dictionary = {}) -> Dictionary:
+	if _native_authority == null: return {"ok": false, "accepted": false, "error": _initialization_error}
+	var payload := {"op": op, "loadout_root": WorkspacePaths.runtime_dir("user/character_loadouts"), "content_root": ProjectSettings.globalize_path("res://../dice-and-destiny-server/content")}
+	payload.merge(extra, true)
+	return _request(payload)
+
 func _request(payload: Dictionary) -> Dictionary:
 	var raw := str(_native_authority.learned_battle_request(JSON.stringify(payload)))
 	var parsed = JSON.parse_string(raw)

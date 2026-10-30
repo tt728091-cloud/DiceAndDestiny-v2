@@ -120,7 +120,7 @@ func Catalog(roots Roots) (map[string]any, error) {
 		}
 		return entry
 	}
-	var heroes, enemies, arenas, mapCards []map[string]any
+	heroes, enemies, arenas, mapCards := []map[string]any{}, []map[string]any{}, []map[string]any{}, []map[string]any{}
 	for _, id := range l.manifest.Heroes {
 		heroes = append(heroes, describe(id))
 	}
@@ -339,7 +339,11 @@ func Submit(roots Roots, battleID, commandJSON string) (map[string]any, error) {
 	if err != nil {
 		return nil, err
 	}
-	cmd, err := command.ParseJSON(commandJSON)
+	normalized, err := integralNumbers(commandJSON)
+	if err != nil {
+		return nil, err
+	}
+	cmd, err := command.ParseJSON(normalized)
 	if err != nil {
 		return nil, err
 	}
@@ -488,6 +492,37 @@ func (r *runner) load(roots Roots) error {
 		return fmt.Errorf("sandbox battle %s is not stored here: %w", r.battleID, err)
 	}
 	return json.Unmarshal(raw, &r.stored)
+}
+
+// integralNumbers rewrites whole numbers written as floats (Godot's JSON
+// writes 1 as 1.0) as integers, so they decode into integer fields.
+func integralNumbers(raw string) (string, error) {
+	decoder := json.NewDecoder(strings.NewReader(raw))
+	decoder.UseNumber()
+	var value any
+	if err := decoder.Decode(&value); err != nil {
+		return "", fmt.Errorf("decode command: %w", err)
+	}
+	var walk func(any) any
+	walk = func(v any) any {
+		switch typed := v.(type) {
+		case map[string]any:
+			for k, inner := range typed {
+				typed[k] = walk(inner)
+			}
+		case []any:
+			for i, inner := range typed {
+				typed[i] = walk(inner)
+			}
+		case json.Number:
+			if f, err := typed.Float64(); err == nil && f == float64(int64(f)) {
+				return int64(f)
+			}
+		}
+		return v
+	}
+	out, err := json.Marshal(walk(value))
+	return string(out), err
 }
 
 func contains(values []string, target string) bool {

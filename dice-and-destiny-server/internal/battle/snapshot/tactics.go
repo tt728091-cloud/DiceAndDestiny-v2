@@ -72,6 +72,8 @@ type TacticsMovementView struct {
 	Running  []string                      `json:"running,omitempty"`
 	Plans    map[string]TacticsPublicPlan  `json:"plans"`
 	Contact  map[string]tactics.Frac       `json:"contact,omitempty"`
+	Attacks  []state.TacticsAttack         `json:"attacks,omitempty"`
+	Hits     []state.TacticsHitResult      `json:"hits,omitempty"`
 }
 
 type TacticsPublicPlan struct {
@@ -164,7 +166,7 @@ func tacticsView(battle state.Battle, viewer string) *TacticsView {
 		view.Plan = &p
 	}
 	if m := rt.Movement; m != nil {
-		mv := &TacticsMovementView{Round: m.Round, Start: m.Start, Final: m.Result.Final, Paths: m.Result.Paths, Timeline: m.Result.Timeline, Budgets: m.Budgets, Running: m.Running, Contact: m.Result.Contact, Plans: map[string]TacticsPublicPlan{}}
+		mv := &TacticsMovementView{Round: m.Round, Start: m.Start, Final: m.Result.Final, Paths: m.Result.Paths, Timeline: m.Result.Timeline, Budgets: m.Budgets, Running: m.Running, Contact: m.Result.Contact, Plans: map[string]TacticsPublicPlan{}, Attacks: m.Attacks, Hits: m.Hits}
 		for id, plan := range m.Plans {
 			public := TacticsPublicPlan{Intention: plan.Intention, CardCount: len(plan.Cards), Energy: plan.Energy, Sprint: plan.Sprint, Charge: plan.Charge, Budget: plan.Budget}
 			if id == viewer {

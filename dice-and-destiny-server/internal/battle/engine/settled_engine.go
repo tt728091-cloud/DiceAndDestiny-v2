@@ -1062,6 +1062,7 @@ func (e Engine) commitDamageBatch(battle *state.Battle, library content.BattleLi
 	}
 	battle.RecordDamageWounds(batch.ID, batch.Sources, batch.Removals)
 	batch.Committed = true
+	recordTacticsHits(battle, batch)
 	events = append(events, settledEvent(event.TypeDamageCommitted, battle, "", map[string]any{"batch_id": batch.ID, "sources": batch.Sources, "removals": batch.Removals, "overage": batch.Overage, "status_applications": batch.Applications}))
 	if battle.Settled.Venom != nil {
 		commitMoltRewards(battle, library, batch)

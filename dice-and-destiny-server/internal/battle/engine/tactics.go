@@ -333,7 +333,7 @@ func (e Engine) revealedAttacks(b *state.Battle, library content.BattleLibrary) 
 			continue
 		}
 		d := AbilityDelivery(b, library, run.SelectedAbilityID)
-		attack := state.TacticsAttack{Attacker: id, AbilityID: run.SelectedAbilityID, Delivery: state.DeliveryDirect, Range: d.Range, LineOfSight: d.LineOfSight}
+		attack := state.TacticsAttack{Attacker: id, AbilityID: run.SelectedAbilityID, TierID: run.SelectedTierID, Delivery: state.DeliveryDirect, Range: d.Range, LineOfSight: d.LineOfSight}
 		switch {
 		case d.Type == content.DeliveryTypeArea:
 			square, ok := rt.Squares[id]
@@ -621,7 +621,7 @@ func (e Engine) resolveMovement(b *state.Battle, library content.BattleLibrary) 
 	for id, plan := range rt.Plans {
 		public[id] = plan
 	}
-	rt.Movement = &state.TacticsMovement{Round: b.Segment.Round, Start: start, Result: result, Plans: public, Budgets: budgets, Running: running, Seed: uint64(seed)}
+	rt.Movement = &state.TacticsMovement{Round: b.Segment.Round, Start: start, Result: result, Plans: public, Budgets: budgets, Running: running, Seed: uint64(seed), Attacks: append([]state.TacticsAttack(nil), rt.Attacks...)}
 	rt.Plans = nil
 	events := []event.Event{settledEvent(event.TypeTacticsMovementResolved, b, "", map[string]any{
 		"round": b.Segment.Round, "timeline": result.Timeline, "start": start, "final": result.Final, "budgets": budgets, "running": running, "attacks": rt.Attacks,
@@ -840,4 +840,37 @@ func DisabledDefenses(b *state.Battle, actor string) map[string]string {
 		}
 	}
 	return out
+}
+
+// recordTacticsHits keeps each connected attack's committed result in the
+// round's movement record, for the playback: damage taken, cards removed,
+// the defense used and whether it was lethal.
+func recordTacticsHits(b *state.Battle, batch *state.SettledDamageBatch) {
+	if !tacticsBattle(b) || batch == nil {
+		return
+	}
+	rt := b.Settled.TacticsRuntime
+	if rt.Movement == nil || rt.Movement.Round != b.Segment.Round {
+		return
+	}
+	attackers := map[string]bool{}
+	for _, attack := range rt.Movement.Attacks {
+		attackers[attack.Attacker] = true
+	}
+	for _, source := range batch.Sources {
+		if !attackers[source.SourceActorID] {
+			continue
+		}
+		hit := state.TacticsHitResult{SourceID: source.ID, Attacker: source.SourceActorID, AbilityID: source.SourceContentID, Target: source.TargetActorID, Base: source.BaseAmount, Final: settledSourceAmount(source)}
+		for _, removal := range batch.Removals {
+			if containsString(removal.DamageProposalIDs, source.ID) && removal.Accepted && !removal.Released {
+				hit.Removed++
+			}
+		}
+		if defense, ok := b.Settled.DefenseHistory[source.ID]; ok {
+			hit.Defense = defense.AbilityID
+		}
+		hit.Lethal = b.Actors[source.TargetActorID].DefeatState != state.ActorNotDefeated
+		rt.Movement.Hits = append(rt.Movement.Hits, hit)
+	}
 }

@@ -692,6 +692,14 @@ func TestRunningAllowsOnlyOnTheMoveDefensesAndExpires(t *testing.T) {
 	if got := b.Settled.TacticsRuntime.RoundStart["hero"]; got != (tactics.Square{X: 1, Y: 6}) {
 		t.Fatalf("the next round starts where movement ended: %v", got)
 	}
+	// The round's record keeps each hit's committed result for the playback.
+	hits := map[string]state.TacticsHitResult{}
+	for _, hit := range b.Settled.TacticsRuntime.Movement.Hits {
+		hits[hit.Target] = hit
+	}
+	if hits["hero"].Defense != "evade" || hits["hero"].Base != 3 || hits["eel"].Base != 4 || hits["eel"].Final != 4 || len(b.Settled.TacticsRuntime.Movement.Attacks) != 2 {
+		t.Fatalf("hits = %+v", b.Settled.TacticsRuntime.Movement.Hits)
+	}
 }
 
 // finishRound passes every remaining choice until the next Offense.
