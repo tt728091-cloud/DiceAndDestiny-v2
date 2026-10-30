@@ -9,7 +9,7 @@ Implementation log for `tactics-sandbox-plan.md` (the plan is the source of trut
 | M0 · Read and scaffold | done |
 | M1 · `internal/battle/tactics` (pure) | done |
 | M2 · Authority | done |
-| M3 · Enemy behaviour | — |
+| M3 · Enemy behaviour | done |
 | M4 · Client | — |
 | M5 · Verify and document | — |
 
@@ -56,6 +56,18 @@ The engine integration lives in `engine/tactics.go` with small hooks in the exis
 
 Tests: `engine/tactics_test.go` (legality, connections, one source per creature hit, charge contact, Sprint, map cards with ignore/choose terrain, energy, spent commitments, Hold and Charge limits, Running and the on-the-move filter and expiry, viewer safety, save/reload during movement and defense, determinism, the rule needing the other two), `battle/tactics_authority_test.go`, the refusal tests in `mlsim`, `learned` and `lookahead`, and `tacticsbattle/runner_test.go` (catalog; a whole battle through the ops, then resume).
 
+## M3 · Enemy behaviour
+
+`tacticsbattle/policy.go` (`scriptedPolicy`), reading only the enemy seat's own viewer-safe view and legal actions, with each seat's scripted settings pinned at start:
+
+- **Offense:** the shipped single-ability roll policy (lock in by rolling, keep the target faces, reroll the rest while rolls remain, play the configured card — Brine Surge — once a round on the attack it will use). A ranged or area enemy takes its ranged/area attack when it has a legal target (an area attack only at the player's current square), then its backup melee; otherwise no attack. Enemies never sprint.
+- **Movement:** melee enemies Pursue the nearest opponent (the player). Ranged and area enemies Flee when adjacent, Move to the nearest square in range and line of sight when out of range or sight (cheapest in Move, then nearest in a straight line), otherwise Hold. An enemy commits the fewest cards, up to `ai.max_cards_per_round`, that bring it into range by the end of the round if everyone else held (checked with the same preview the player sees), and never its last card in hand. No energy.
+- **Defense:** its defense on each incoming attack while it is legal (Running leaves only on-the-move defenses: the sandbox Ribbon Eel keeps Slip the Current), otherwise the main Pass.
+
+Tests: `policy_test.go` (pursuit and the one-card rule, flee / hold / move into range and sight, range before backup melee, area aim, defense or pass) and `battles_test.go`, which plays 20 whole battles through the runner — every arena, both heroes, each enemy alone and in mixes up to all four — with a simple scripted hero: no refused command, no stuck decision, the slowest hero command about 80 ms.
+
+**Finding (for the user):** in those 20 battles enemies used Brine Lash 49 times and Tide Crown 29 times but their backup melee (Brine Slap, Crown Strike) never. A ranged or area attack also reaches adjacent squares, and the backup melee qualifies on exactly the same dice, so "prefer range, then melee" never reaches the melee. See "Questions for the user".
+
 ## Defaults to confirm (plan §13)
 
 All live in `content/tactics_v1/rules.yaml` or the combatant files and can be overridden per battle from the setup screen.
@@ -80,6 +92,11 @@ Small gaps the plan does not settle; each is the most natural reading and is lis
 - **Hold never runs**, even while sprinting: a Hold plan commits nothing and does not move, so it has no Move budget.
 - **Area targets** must be a square you could see: in range, in line of sight, and not a wall. The caster may aim at its own square; it is never hit by its own area attack.
 - **An attack that does not connect** (dodged, out of reach) has no effect at all; any energy it cost stays spent.
+- **Last card:** an enemy "never commits its last card" read as its last card in hand.
 - **Defeated creatures** leave the grid: they no longer block movement or line of sight.
 - **Map Move cards** may be played for their amount (paying their printed energy cost) or discarded like any card for +1 Move. Their map-only extra energy cost (`energy_cost`) is not charged in battle.
 - **Running** has negative polarity, so a status-removal card could remove it; no sandbox deck holds one today.
+
+## Questions for the user
+
+1. **Backup melee is never used.** Ranged and area attacks also reach adjacent squares and the backup melee qualifies on the same dice, so the §8 preference never picks it. Options: a minimum range for ranged/area attacks (e.g. 2), or the AI preferring its backup melee when adjacent, or dropping the backup melee.
