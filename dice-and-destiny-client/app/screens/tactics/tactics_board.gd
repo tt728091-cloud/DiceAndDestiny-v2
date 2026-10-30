@@ -5,6 +5,7 @@ extends Control
 
 signal square_clicked(square: Vector2i)
 signal creature_clicked(id: String)
+signal badge_clicked(id: String)
 
 const TOOLTIP_BUTTON := preload("res://presentation/battle/tooltip_button.gd")
 const TEAM_COLORS := {"heroes": Color("4fa3ff"), "monsters": Color("e0533f")}
@@ -123,6 +124,10 @@ func _sync_badges() -> void:
 		var style := StyleBoxFlat.new(); style.bg_color = data.get("color", Color("7a1f17")); style.set_corner_radius_all(6); style.content_margin_left = 5; style.content_margin_right = 5
 		for name in ["normal", "hover", "pressed", "disabled"]: badge.add_theme_stylebox_override(name, style)
 		badge.add_theme_color_override("font_color", Color("fff6e0"))
+		if data.get("highlight", false):
+			style.border_color = Color("ffd75e"); style.set_border_width_all(3)
+			var id := str(data.get("id", ""))
+			badge.pressed.connect(func(): badge_clicked.emit(id))
 		# Badges stack per drawn square and side, whatever they anchor to.
 		var target := str(data.get("target", ""))
 		var square: Vector2 = creatures[target].get("square", Vector2.ZERO) if creatures.has(target) else Vector2(data.get("square", Vector2i.ZERO))

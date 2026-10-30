@@ -38,6 +38,8 @@ var _timeline_text: RichTextLabel
 var _end: PanelContainer
 var _speed_button: Button
 var _aiming: Dictionary = {}
+## A defense-step card waiting for its attack: {card, by_source: source id -> action}.
+var _card_target: Dictionary = {}
 var _kept: Array = []
 var _played_round := 0
 var _playback: Dictionary = {}
@@ -78,7 +80,7 @@ func _build() -> void:
 	_button(top, "Menu", "tactics.menu", _to_menu, "Back to the main menu. The battle stays saved; resume it from the Tactics Sandbox tab.")
 	var middle := HBoxContainer.new(); middle.size_flags_vertical = Control.SIZE_EXPAND_FILL; middle.add_theme_constant_override("separation", 6); root.add_child(middle)
 	_board = BOARD.new(); _board.size_flags_horizontal = Control.SIZE_EXPAND_FILL; _board.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	_board.square_clicked.connect(_on_square); _board.creature_clicked.connect(_on_creature)
+	_board.square_clicked.connect(_on_square); _board.creature_clicked.connect(_on_creature); _board.badge_clicked.connect(_on_badge)
 	middle.add_child(_board)
 	var right := VBoxContainer.new(); right.custom_minimum_size.x = 360; right.add_theme_constant_override("separation", 4); middle.add_child(right)
 	_roster = VBoxContainer.new(); _roster.size_flags_horizontal = Control.SIZE_EXPAND_FILL; _roster.add_theme_constant_override("separation", 0); right.add_child(_roster)
@@ -169,6 +171,7 @@ func _apply(result: Dictionary) -> void:
 	_actions = result.get("legal_actions", []) if result.get("legal_actions") is Array else []
 	if _snap.get("content_catalog") is Dictionary: BattlePresentationCatalog.configure(_snap.content_catalog)
 	_aiming = {}
+	_card_target = {}
 	_hide_popup()
 	for event in result.get("events", []): _log_event(event)
 	_render()
@@ -291,6 +294,15 @@ func _attack_badge(attack: Dictionary) -> Dictionary:
 	var delivery: Dictionary = _tv.get("creatures", {}).get(attacker, {}).get("deliveries", {}).get(ability, {})
 	tooltip = "%s\nAttacker: %s · %s\n%s" % [tooltip, _name(attacker), str(delivery.get("text", "")), _outcome_text(attack)]
 	var badge := {"id": "%s.%s" % [attacker, ability], "text": text, "tooltip": tooltip, "color": color}
+	# An attack on you lists the cards it threatens beneath it, and is the
+	# target a defense-step card picks.
+	for source in _snap.get("damage_sources", []):
+		if str(source.source_actor_id) != attacker or str(source.source_content_id) != ability or str(source.target_actor_id) != VIEWER: continue
+		badge["source_id"] = str(source.id)
+		var threatened := _threatened(str(source.id))
+		for i in range(0, threatened.size(), 3):
+			badge.text += ("\nThreatens: " if i == 0 else ",\n") + ", ".join(threatened.slice(i, i + 3))
+		if _card_target.get("by_source", {}).has(str(source.id)): badge["highlight"] = true
 	if str(attack.delivery) == "area":
 		badge["square"] = Vector2i(int(attack.square.x), int(attack.square.y))
 		var mine: Dictionary = _tv.get("creatures", {}).get(VIEWER, {})
@@ -371,6 +383,13 @@ func _render_side() -> void:
 		defenses.text = "Defenses: " + ", ".join(me.defensive_abilities.map(func(id): return _ability_name(str(id)) + (" (on the move)" if BattlePresentationCatalog.definition("abilities", str(id)).get("on_the_move", false) else "")))
 		_side.add_child(defenses)
 
+func _threatened(source_id: String) -> Array[String]:
+	var names: Array[String] = []
+	for removal in _snap.get("settled_damage", {}).get("removals", []):
+		if source_id in removal.get("damage_proposal_ids", []) and not removal.get("released", false):
+			names.append(str(BattlePresentationCatalog.card(str(removal.get("card_definition_id", ""))).name))
+	return names
+
 func _render_incoming() -> void:
 	var heading := Label.new(); heading.text = "Incoming attacks"; heading.add_theme_color_override("font_color", Color("9fb3c8")); _side.add_child(heading)
 	var any := false
@@ -386,10 +405,7 @@ func _render_incoming() -> void:
 		if remaining != base: title.text += " → %d left" % remaining
 		title.tooltip_text = BattlePresentationCatalog.attack_ability_tooltip(str(source.source_content_id), _actor(str(source.source_actor_id)), {"ability_id": source.source_content_id}, [])
 		box.add_child(title)
-		var threatened: Array[String] = []
-		for removal in _snap.get("settled_damage", {}).get("removals", []):
-			if str(source.id) in removal.get("damage_proposal_ids", []) and not removal.get("released", false):
-				threatened.append(str(BattlePresentationCatalog.card(str(removal.get("card_definition_id", ""))).name))
+		var threatened := _threatened(str(source.id))
 		if not threatened.is_empty():
 			var cards := Label.new(); cards.text = "Threatens: " + ", ".join(threatened); cards.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART; cards.add_theme_color_override("font_color", Color("ffb9a0")); box.add_child(cards)
 		var defense = _snap.get("defense_history", {}).get(str(source.id))
@@ -474,6 +490,10 @@ func _render_controls() -> void:
 			_button(_controls, "Discard " + ", ".join(names), "tactics.discard.%d" % _controls.get_child_count(), _submit.bind(action))
 		return
 	var step := _step()
+	if not _card_target.is_empty():
+		_budget.text = "%s: click a highlighted attack." % BattlePresentationCatalog.card(str(_actor(VIEWER).card_instances[_card_target.card].definition_id)).name
+		_button(_controls, "Cancel", "tactics.card_target.cancel", func(): _card_target = {}; _render())
+		return
 	if step == "movement":
 		_render_movement_controls()
 		return
@@ -646,7 +666,21 @@ func _on_card(id: String, discard_only: bool = false) -> void:
 		if _card_of(action) != id: continue
 		var choice := _choice(action)
 		if choice.is_empty() or str(choice.get("verb", "")) == "start": starts.append(action)
+	# A program card offers a plain start plus one start per pre-chosen target
+	# (an attack, an ability); with targets on offer, the targets are the choice.
+	var targeted: Array = starts.filter(func(a): return _choice(a).keys().any(func(k): return not k in ["verb", "label", "die"]))
+	if not targeted.is_empty(): starts = targeted
 	if starts.size() == 1: _submit(starts[0]); return
+	var by_source := {}
+	for action in starts:
+		var source := str(_choice(action).get("source", ""))
+		var proposals: Array = _payload(action).get("commitment", {}).get("proposal_ids", [])
+		if source.is_empty() and proposals.size() == 1: source = str(proposals[0])
+		if not source.is_empty(): by_source[source] = action
+	if starts.size() > 1 and by_source.size() == starts.size():
+		_card_target = {"card": id, "by_source": by_source}
+		_render()
+		return
 	if starts.size() > 1:
 		var options: Array = []
 		for action in starts: options.append({"text": _action_label(action), "id": "tactics.card_option.%d" % options.size(), "call": _submit.bind(action)})
@@ -658,8 +692,22 @@ func _action_label(action: Dictionary) -> String:
 	var payload := _payload(action)
 	if not str(payload.get("ability_id", "")).is_empty(): return "On " + _ability_name(str(payload.ability_id))
 	var proposals: Array = payload.get("commitment", {}).get("proposal_ids", [])
-	if not proposals.is_empty(): return "On attack " + str(proposals[0])
+	if not proposals.is_empty(): return "On " + _source_name(str(proposals[0]))
 	return "Play"
+
+func _source_name(source_id: String) -> String:
+	for source in _snap.get("damage_sources", []):
+		if str(source.id) == source_id: return "%s's %s" % [_name(str(source.source_actor_id)), _ability_name(str(source.source_content_id))]
+	return "an attack"
+
+func _on_badge(badge_id: String) -> void:
+	if _card_target.is_empty(): return
+	for badge in _board.badges:
+		if str(badge.get("id", "")) == badge_id and _card_target.by_source.has(str(badge.get("source_id", ""))):
+			var action: Dictionary = _card_target.by_source[str(badge.source_id)]
+			_card_target = {}
+			_submit(action)
+			return
 
 ## While a card's choices are open, its options are the only legal actions.
 func _program_choices() -> bool:

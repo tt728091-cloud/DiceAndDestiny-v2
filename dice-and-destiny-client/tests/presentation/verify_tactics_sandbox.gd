@@ -33,6 +33,7 @@ func _run() -> void:
 		await _resume(screen)
 	await _win_and_lose()
 	await _badges_do_not_overlap()
+	await _card_picks_its_attack()
 	await _layout(Vector2i(1280, 720))
 	await _layout(Vector2i(1920, 1080))
 	print("TACTICS SANDBOX: " + ("FAILED" if failed else "PASSED")); quit(1 if failed else 0)
@@ -425,6 +426,67 @@ func _proxy_choice(view: Dictionary, actions: Array) -> Dictionary:
 		if str(action.payload.get("source_id", "")).is_empty(): return action
 	if by_type.has("commit_interaction") and str(view.snapshot.get("stage", "")) == "discard_to_hand_limit": return by_type.commit_interaction[0]
 	return actions[0]
+
+# --- A defense card with two attacks to choose from targets their badges ---------------
+
+## The card's start actions, one per incoming attack it can be played on.
+func _card_sources(view: Dictionary, card: String) -> Dictionary:
+	var by_source := {}
+	var starts := 0
+	for action in view.get("legal_actions", []):
+		var payload: Dictionary = action.get("payload", {})
+		var commitment: Dictionary = payload.get("commitment", {}) if payload.get("commitment") is Dictionary else {}
+		var ids: Array = payload.get("card_ids", []) if action.type == "planning_commit_cards" else commitment.get("card_ids", [])
+		var choice = JSON.parse_string(str(commitment.get("choice_id", ""))) if str(commitment.get("choice_id", "")).begins_with("{") else {}
+		if ids != [card] or not choice is Dictionary or str(choice.get("verb", "start")) != "start" or str(choice.get("source", "")).is_empty(): continue
+		starts += 1
+		by_source[str(choice.source)] = action
+	return by_source if starts > 1 and by_source.size() == starts else {}
+
+func _card_picks_its_attack() -> void:
+	var found := {}
+	for attempt in 12:
+		var gateway := TacticsGateway.new(runtime)
+		var view := gateway.start("tactics-card-target-%d" % attempt, {"hero": "starter_movement", "enemies": ["tactics_brine_mask", "tactics_drowned_regent"], "arena": "open_field", "seed": 900 + attempt})
+		for i in 600:
+			if view.get("accepted") != true or not str(view.get("battle_result", "")).is_empty() or view.get("legal_actions", []).is_empty(): break
+			if str(view.snapshot.get("simultaneous_step", "")) == "defense_before":
+				for card in view.snapshot.actors.hero.get("hand", []):
+					if not _card_sources(view, str(card)).is_empty(): found = {"gateway": gateway, "view": view, "card": str(card)}; break
+			if not found.is_empty(): break
+			view = gateway.submit(_proxy_choice(view, view.legal_actions))
+		if not found.is_empty(): break
+	_expect(not found.is_empty(), "a defense step offered a card on two incoming attacks")
+	if found.is_empty(): return
+	var store := TacticsGateway.active_store(); store.save_active(found.gateway.battle_id, "hero")
+	var screen = SCREEN.new(); screen.gateway = found.gateway; screen.store = store; screen.initial_result = found.view
+	root.add_child(screen)
+	await _frames(8)
+	var sources := _card_sources(found.view, found.card)
+	var on_me: Array = screen._board.badges.filter(func(b): return sources.has(str(b.get("source_id", ""))))
+	_expect(on_me.size() == sources.size() and on_me.all(func(b): return "Threatens:" in str(b.text) or screen._threatened(str(b.source_id)).is_empty()), "each attack on the hero lists its threatened cards beneath its badge")
+	await _click(_find(screen, "tactics.card.%s" % found.card))
+	await _frames(4)
+	var lit: Array = screen._board.badges.filter(func(b): return b.get("highlight", false))
+	_expect(lit.size() == sources.size(), "clicking the card highlights each attack it can be played on (%d)" % lit.size())
+	_expect(await _press(screen, "tactics.card_target.cancel"), "the card can be cancelled before choosing an attack")
+	_expect(screen._board.badges.filter(func(b): return b.get("highlight", false)).is_empty() and found.card in screen._actor("hero").hand, "cancelling spends nothing")
+	await _click(_find(screen, "tactics.card.%s" % found.card))
+	await _frames(4)
+	var lit_now: Array = screen._board.badges.filter(func(b): return b.get("highlight", false))
+	var chosen: Dictionary = lit_now[0]
+	var other: Dictionary = lit_now[1]
+	var remaining := func(source_id: String) -> int:
+		for source in screen._snap.get("damage_sources", []):
+			if str(source.id) == source_id: return int(source.get("final_amount", 0))
+		return -1
+	var before := {chosen.source_id: remaining.call(str(chosen.source_id)), other.source_id: remaining.call(str(other.source_id))}
+	await _click(_find(screen, "tactics.board.badge.%s" % chosen.id))
+	await _frames(6)
+	_expect(not found.card in screen._actor("hero").hand, "clicking a highlighted badge plays the card")
+	_expect(remaining.call(str(chosen.source_id)) < int(before[chosen.source_id]) and remaining.call(str(other.source_id)) == int(before[other.source_id]), "the card prevented damage on the attack whose badge was clicked, not the other: %s" % before)
+	screen.queue_free()
+	await _frames(2)
 
 # --- Badges on neighbours: an area on you, a direct attack on you, your attacks on them ---
 

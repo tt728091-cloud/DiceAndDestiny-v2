@@ -101,7 +101,7 @@ Eleven battles in the running game (`DICE_AND_DESTINY_INSPECTOR=1 ./scripts/godo
 | 10 | Doorway | Starter | Brine Mask | — | autopilot | defeat, round 7 (Mask 2/16) |
 | 11 | Pillar Hall | Adventurer | Drowned Regent, Bell Diver | — | autopilot | defeat, round 10 (Regent dead, Diver 18/18) |
 
-Screenshots: `tactics-sandbox-playtest/` (setup; the Ribbon Eel plugging the Doorway; a dodge plan against Tide Crown; the debug timeline; the per-card Move tags; Forced March and Know the Land across the swamp; a Charge taking the square the Bell Diver paid to enter; the incoming-attack panel; stacked badges; the end screen).
+Screenshots: `tactics-sandbox-playtest/` (setup; the Ribbon Eel plugging the Doorway; a dodge plan against Tide Crown; the debug timeline; the per-card Move tags; Forced March and Know the Land across the swamp; a Charge taking the square the Bell Diver paid to enter; the incoming-attack panel; stacked badges; the end screen; a Steady Guard choosing between two attack badges).
 
 What worked as intended:
 
@@ -121,17 +121,18 @@ What worked as intended:
 6. **Only area attacks can be dodged.** Direct attacks always land, so moving away from melee or a ranged attacker never helps your defense; Hold and Guard is nearly always right against them. Movement mostly matters against Tide Crown and Fireball and for getting into range.
 7. **Hand-limit discards most rounds.** Income draws a card a round and holding commits none, so the hero discarded to the hand limit almost every round. The choice is to waste those cards or spend them on Move and lose Guard (Running).
 8. **The defense view keeps tokens where they started** (default 5). A faint ghost marks the final square; I misread a Brine Mask's position once because its solid token was still on its old square. A stronger ghost, or showing the final square solid with a faded trail, would be clearer.
-9. **Small UI notes, not changed:** Know the Land also offers "Make Floor cost 1", which does nothing on these arenas; a card chooser lists "Play Strong Swing" next to the per-ability options (the shared program flow).
+9. **Small UI note, not changed:** Know the Land also offers "Make Floor cost 1", which does nothing on these arenas.
 
 ### Fixes made while playtesting
 
 - **Per-card Move during movement** (plan §9.3, missed in M4): every hand card shows "+1 Move" (a map card: "Play +4 · discard +1 Move"; more while sprinting). The authority prices it in the viewer's own view (`snapshot.tactics.hand_move`, `tactics.CardMove` / `MapCardMove`); another viewer never sees it.
 - **Badges no longer overlap.** They stack per drawn square and side, an area aimed at your square hangs below your token with the other attacks on you, and any badge that would still touch another (one below you and one above the creature diagonally below you) steps away.
+- **Defense cards target attack badges** (`AGENTS.md`, card targeting): an attack on you lists its threatened cards beneath its badge; a card that can be played on exactly one attack plays at once; with several, each eligible badge lights up and is the card's only target (Cancel spends nothing). Program cards offer a plain start beside their pre-targeted starts; when targets are on offer only the targets are shown, so the ability chooser no longer lists "Play Strong Swing" beside the abilities. The fallback chooser names attacks ("On Brine Mask's Brine Lash") instead of their ids.
 - **Incoming attacks** read "7 damage → 4 left" after a defense instead of the remaining damage alone next to "prevented 3".
 - The end panel is compact and sits high, so **Replay last round** plays on a visible board; playback floaters are wider and stay inside the board.
 - Inspector ids for hand-limit discards and card-choice options; the inspection state also reports the arena, kept dice, legal aim squares and creatures, and the view.
 
-Tests added: hand Move values in `TestSprintMapCardsEnergyAndSpentCommitments` and `TestCardMoveValues`; the pointer test checks the "+2 Move" tag while sprinting and that six badges on three neighbouring creatures never overlap (it fails on the old stacking).
+Tests added: hand Move values in `TestSprintMapCardsEnergyAndSpentCommitments` and `TestCardMoveValues`; the pointer test checks the "+2 Move" tag while sprinting, that six badges on three neighbouring creatures never overlap (it fails on the old stacking), and a seeded defense with two attacks on the hero: threatened lists under both badges, a Steady Guard click lighting both badges, Cancel spending nothing, and a badge click preventing damage on that attack only.
 
 ### Verification (final run)
 
