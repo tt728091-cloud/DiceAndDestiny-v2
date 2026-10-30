@@ -437,21 +437,23 @@ func _badges_do_not_overlap() -> void:
 	board.set_arena({"terrain": rows, "colors": {}, "names": {}, "costs": {}})
 	var creature := func(square: Vector2, team: String, label: String) -> Dictionary:
 		return {"square": square, "team": team, "label": label, "name": label, "viewer": team == "heroes", "defeated": false, "running": false, "hp": 10, "max_hp": 10, "tooltip": ""}
-	board.creatures = {"hero": creature.call(Vector2(1, 1), "heroes", "AM"), "enemy-1": creature.call(Vector2(2, 1), "monsters", "DR1")}
+	board.creatures = {"hero": creature.call(Vector2(1, 1), "heroes", "AM"), "enemy-1": creature.call(Vector2(2, 1), "monsters", "DR1"), "enemy-2": creature.call(Vector2(2, 2), "monsters", "BD2")}
 	board.badges = [
 		{"id": "enemy-1.tide_crown", "text": "DR1 Tide Crown", "square": Vector2i(1, 1), "below": true},
 		{"id": "enemy-1.crown_strike", "text": "DR1 Crown Strike", "target": "hero", "below": true},
 		{"id": "hero.magic_missile", "text": "AM Magic Missile", "target": "enemy-1"},
 		{"id": "hero.fireball", "text": "AM Fireball", "square": Vector2i(2, 1)},
+		{"id": "hero.charge", "text": "AM Charge", "target": "enemy-2"},
+		{"id": "enemy-2.sunken_toll", "text": "BD2 Sunken Toll", "target": "hero", "below": true},
 	]
 	board.refresh()
 	await _frames(4)
 	var rects: Array = board._badge_buttons.map(func(b): return b.get_global_rect())
-	var clear := rects.size() == 4
+	var clear := rects.size() == 6
 	for i in rects.size():
 		for j in range(i + 1, rects.size()):
 			if rects[i].intersects(rects[j]): clear = false; print("    overlap: %s %s" % [rects[i], rects[j]])
-	_expect(clear, "badges on neighbouring creatures (an area on you, a direct attack on you, two of yours on them) never overlap")
+	_expect(clear, "badges on neighbouring creatures (an area and two attacks on you, three of yours on them, one diagonally below) never overlap")
 	board.queue_free()
 	await _frames(2)
 

@@ -133,6 +133,7 @@ func _sync_badges() -> void:
 		if inspector != null and data.has("id"): inspector.register_control("tactics.board.badge.%s" % data.id, badge, badge.text)
 
 func _place_badges() -> void:
+	var placed: Array[Rect2] = []
 	for badge in _badge_buttons:
 		var data: Dictionary = badge.get_meta("anchor")
 		var square: Vector2
@@ -146,7 +147,18 @@ func _place_badges() -> void:
 		var below := bool(data.get("below", false))
 		var at := square_position(square) + Vector2(_cell * 0.5 - badge.size.x * 0.5, -badge.size.y * 0.6 - stack * (badge.size.y + 2))
 		if below: at = square_position(square) + Vector2(_cell * 0.5 - badge.size.x * 0.5, _cell * 0.95 + stack * (badge.size.y + 2))
-		badge.position = at.clamp(Vector2.ZERO, size - badge.size)
+		at = at.clamp(Vector2.ZERO, size - badge.size)
+		# Neighbours' badges can still meet (a badge below you and one above the
+		# creature diagonally below): step away from any already placed.
+		var step: float = (badge.size.y + 2) * (1.0 if below else -1.0)
+		for attempt in 12:
+			var rect := Rect2(at, badge.size)
+			if not placed.any(func(other: Rect2): return other.intersects(rect)): break
+			var next: Vector2 = at + Vector2(0, step)
+			if next.y < 0 or next.y + badge.size.y > size.y: step = -step; next = at + Vector2(0, step)
+			at = next.clamp(Vector2.ZERO, size - badge.size)
+		placed.append(Rect2(at, badge.size))
+		badge.position = at
 		badge.move_to_front()
 
 func _draw() -> void:
