@@ -361,6 +361,10 @@ func _update() -> void:
 		if beside_head and first_x - row_left >= 16: intent.position.x = first_x - beside_left
 		else: intent.position.x = first_x + beside
 		intent.position.x = clampf(intent.position.x, 16, 1904 - intent.size.x)
+	# Tactics Sandbox: on the grid the badge sits beside its attacker where
+	# neither it nor its threatened cards cover a creature.
+	if screen.get("tactics_mode") and attacker_id != screen.viewer_actor_id:
+		intent.position = screen._tactics.intent_spot(self, rect)
 	intent_row.position = Vector2(12, 8); intent_row.size = intent.size - Vector2(24, 16)
 	if str(data.source_id) == screen._selected_source: screen._layout_defense_choices()
 	if is_instance_valid(fighter_target):

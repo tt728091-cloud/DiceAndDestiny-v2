@@ -627,6 +627,31 @@ func _area_aim() -> void:
 	screen.queue_free()
 	await _frames(2)
 
+## Every enemy attack badge and the cards hanging under it cover no creature,
+## no ghost and no other badge (in the grid's coordinates).
+func _badges_clear(screen) -> String:
+	var board = screen._tactics.board
+	var to_board: Transform2D = board.get_global_transform_with_canvas().affine_inverse()
+	var cell: float = board.cell_size()
+	var creatures: Array = []
+	for id in board.creatures:
+		var data: Dictionary = board.creatures[id]
+		if data.get("defeated", false): continue
+		creatures.append(Rect2(board.square_position(data.square), Vector2(cell, cell)).grow(-3))
+	for id in board.ghosts: creatures.append(Rect2(board.square_position(board.ghosts[id]), Vector2(cell, cell)).grow(-3))
+	var placed: Array = []
+	for id in screen._attack_intents:
+		var panel = screen._attack_intents[id]
+		if not is_instance_valid(panel.intent) or not panel.intent.is_visible_in_tree(): continue
+		var parts: Array = [to_board * panel.intent.get_global_rect()]
+		var cards = screen._damage_stack_docks.get("attack:" + str(id))
+		if is_instance_valid(cards) and cards.is_visible_in_tree(): parts.append(to_board * cards.get_global_rect())
+		for part in parts:
+			for other in creatures + placed:
+				if other.intersects(part.grow(-1)): return "%s at %s covers %s" % [id, part, other]
+		placed.append_array(parts)
+	return ""
+
 # --- A defense card with two attacks to choose from targets their badges ---------------
 
 ## The card's start actions, one per incoming attack it can be played on.
@@ -660,6 +685,9 @@ func _card_picks_its_attack() -> void:
 	await _settle(screen)
 	var sources := _card_sources(found.view, found.card)
 	_expect(sources.keys().all(func(id): return screen._attack_intents.has(id)), "both incoming attacks have their badge on the grid")
+	await _frames(4)
+	var clash := _badges_clear(screen)
+	_expect(clash.is_empty(), "each attack badge and its threatened cards sit beside the attacker, covering no creature or other badge %s" % clash)
 	await _click_hand(screen, found.card)
 	await _frames(4)
 	_expect(screen._selected_card.get("source_targeting", false), "clicking the card makes the attack badges its targets")
@@ -699,6 +727,8 @@ func _layout(size: Vector2i) -> void:
 				inside = false
 				print("    outside: %s %s" % [id, control.get_global_rect()])
 		_expect(inside, "%d enemies at %dx%d: every token, label and enemy name is inside the viewport" % [mixes[i].size(), size.x, size.y])
+		var clash := _badges_clear(screen)
+		_expect(clash.is_empty(), "%d enemies at %dx%d: attack badges cover no creature or other badge %s" % [mixes[i].size(), size.x, size.y, clash])
 		var docks: Array = screen._enemy_ids().map(func(id): return screen._actor_profiles[id].get_parent().get_global_rect())
 		var apart := true
 		for a in docks.size():

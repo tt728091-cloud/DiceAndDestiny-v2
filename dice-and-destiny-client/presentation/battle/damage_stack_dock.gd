@@ -81,7 +81,9 @@ func _follow_attack() -> void:
 	var top := rect.end.y + 4
 	var bottom := 682.0
 	var profile: Control = screen._actor_profiles.get(str(attack.attacker_id))
-	if is_instance_valid(profile): bottom = (inverse * profile.get_global_rect()).position.y - 8
+	# The Tactics Sandbox's enemy stats sit at the upper right, not under
+	# their fighter, so only the battlefield's bottom limits the list.
+	if is_instance_valid(profile) and not screen.get("tactics_mode"): bottom = (inverse * profile.get_global_rect()).position.y - 8
 	var dice: Control = screen.dice_dock(str(attack.attacker_id))
 	if is_instance_valid(dice) and dice.visible: bottom = minf(bottom, (inverse * dice.get_global_rect()).position.y - 8)
 	# Leave room for this enemy's later badges and their folded rows.

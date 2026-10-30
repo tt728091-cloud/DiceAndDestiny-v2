@@ -210,6 +210,61 @@ func layout_enemy_docks() -> void:
 		var dice = screen._enemy_dice_docks.get(id)
 		if is_instance_valid(dice): dice.place()
 
+## Where an enemy's attack badge goes on the grid: beside its attacker, on
+## the first spot where the badge and the threatened cards hanging under it
+## cover no creature, ghost or other badge, inside the battlefield and clear
+## of the enemy stats. Badges are placed in a fixed order each frame, so they
+## never trade places.
+const BADGE_AREA := Rect2(16, 84, 1530, 598)
+## source id -> the badge's last footprint; a badge avoids only those that
+## come before it (by source id), so placement settles at once.
+var _badge_spots: Dictionary = {}
+
+func intent_spot(panel, rect: Rect2) -> Vector2:
+	var me := str(panel.data.source_id)
+	var size: Vector2 = panel.intent.size
+	var footprint := size
+	var cards = screen._damage_stack_docks.get("attack:" + str(panel.data.source_id))
+	if is_instance_valid(cards) and cards.visible:
+		if cards.is_compact(): footprint = Vector2(size.x + 4 + cards.size.x, maxf(size.y, cards.size.y))
+		else: footprint = Vector2(maxf(size.x, cards.size.x), size.y + 4 + cards.size.y)
+	var blockers: Array[Rect2] = []
+	for id in _badge_spots:
+		if str(id) < me and screen._attack_intents.has(id): blockers.append(_badge_spots[id])
+	if is_instance_valid(board):
+		var cell: float = board.cell_size()
+		for id in board.creatures:
+			var data: Dictionary = board.creatures[id]
+			if data.get("defeated", false) and not board.falling.has(id): continue
+			blockers.append(Rect2(board.square_position(data.square), Vector2(cell, cell)).grow(-2))
+		for id in board.ghosts:
+			blockers.append(Rect2(board.square_position(board.ghosts[id]), Vector2(cell, cell)).grow(-2))
+	var c := rect.get_center()
+	var gap := 6.0
+	var spots: Array[Vector2] = []
+	for ring in [1.0, 2.2]:
+		var reach: float = (float(ring) - 1.0) * rect.size.x
+		spots.append(Vector2(c.x - size.x * 0.5, rect.position.y - reach - footprint.y - gap))
+		spots.append(Vector2(rect.end.x + reach + gap, c.y - size.y * 0.5))
+		spots.append(Vector2(rect.position.x - reach - footprint.x - gap, c.y - size.y * 0.5))
+		spots.append(Vector2(c.x - size.x * 0.5, rect.end.y + reach + gap))
+		spots.append(Vector2(rect.end.x + reach + gap, rect.position.y - reach - footprint.y - gap))
+		spots.append(Vector2(rect.position.x - reach - footprint.x - gap, rect.position.y - reach - footprint.y - gap))
+		spots.append(Vector2(rect.end.x + reach + gap, rect.end.y + reach + gap))
+		spots.append(Vector2(rect.position.x - reach - footprint.x - gap, rect.end.y + reach + gap))
+	var chosen := Vector2.INF
+	for at in spots:
+		var area := Rect2(at, footprint)
+		if not BADGE_AREA.encloses(area): continue
+		if blockers.any(func(other: Rect2): return other.intersects(area)): continue
+		chosen = at
+		break
+	if chosen == Vector2.INF:
+		# Nowhere is clear: above the attacker, kept on the battlefield.
+		chosen = Vector2(clampf(spots[0].x, BADGE_AREA.position.x, BADGE_AREA.end.x - footprint.x), clampf(spots[0].y, BADGE_AREA.position.y, BADGE_AREA.end.y - footprint.y))
+	_badge_spots[me] = Rect2(chosen, footprint)
+	return chosen.round()
+
 ## An attack the movement dodged or left out of reach has no effect at all;
 ## the battle screen shows no intent or incoming attack for it.
 func attack_missed(actor_id: String) -> bool:
