@@ -11,6 +11,7 @@ extends SceneTree
 const BOOTSTRAP := preload("res://app/boot/battle_bootstrap.tscn")
 const SETUP := preload("res://app/screens/tactics/tactics_setup.gd")
 const SCREEN := preload("res://app/screens/tactics/tactics_screen.gd")
+const BOARD := preload("res://app/screens/tactics/tactics_board.gd")
 const SEED := 11
 var failed := false
 var runtime: Node
@@ -31,6 +32,7 @@ func _run() -> void:
 		screen = _current_screen()
 		await _resume(screen)
 	await _win_and_lose()
+	await _badges_do_not_overlap()
 	await _layout(Vector2i(1280, 720))
 	await _layout(Vector2i(1920, 1080))
 	print("TACTICS SANDBOX: " + ("FAILED" if failed else "PASSED")); quit(1 if failed else 0)
@@ -118,6 +120,12 @@ func _select(option: OptionButton, id: String) -> void:
 	for i in option.item_count:
 		if str(option.get_item_metadata(i)) == id: option.select(i); option.item_selected.emit(i)
 
+func _card_tag(card: Control) -> String:
+	if card == null: return ""
+	for child in card.get_children():
+		if child is Label and "Move" in child.text: return child.text
+	return ""
+
 # --- Sprint and every intention ------------------------------------------------------
 
 func _sprint_and_intentions(screen) -> void:
@@ -140,6 +148,7 @@ func _sprint_and_intentions(screen) -> void:
 	_expect(_plan(screen).intention.kind == "hold", "the plan holds")
 	await _click(_find(screen, "tactics.board.square.4.4"))
 	var card: String = str(screen._actor("hero").hand[0])
+	_expect(_card_tag(_find(screen, "tactics.card.%s" % card)) == "+2 Move", "a hand card shows the Move it adds while sprinting (+2)")
 	await _click(_find(screen, "tactics.card.%s" % card))
 	_expect(card in _plan(screen).get("cards", []), "clicking a hand card commits it")
 	_expect(await _press(screen, "tactics.energy.more"), "+5 energy is offered")
@@ -416,6 +425,35 @@ func _proxy_choice(view: Dictionary, actions: Array) -> Dictionary:
 		if str(action.payload.get("source_id", "")).is_empty(): return action
 	if by_type.has("commit_interaction") and str(view.snapshot.get("stage", "")) == "discard_to_hand_limit": return by_type.commit_interaction[0]
 	return actions[0]
+
+# --- Badges on neighbours: an area on you, a direct attack on you, your attacks on them ---
+
+func _badges_do_not_overlap() -> void:
+	var board = BOARD.new(); board.size = Vector2(760, 570); root.add_child(board)
+	var row := []
+	for x in 12: row.append("floor")
+	var rows := []
+	for y in 9: rows.append(row)
+	board.set_arena({"terrain": rows, "colors": {}, "names": {}, "costs": {}})
+	var creature := func(square: Vector2, team: String, label: String) -> Dictionary:
+		return {"square": square, "team": team, "label": label, "name": label, "viewer": team == "heroes", "defeated": false, "running": false, "hp": 10, "max_hp": 10, "tooltip": ""}
+	board.creatures = {"hero": creature.call(Vector2(1, 1), "heroes", "AM"), "enemy-1": creature.call(Vector2(2, 1), "monsters", "DR1")}
+	board.badges = [
+		{"id": "enemy-1.tide_crown", "text": "DR1 Tide Crown", "square": Vector2i(1, 1), "below": true},
+		{"id": "enemy-1.crown_strike", "text": "DR1 Crown Strike", "target": "hero", "below": true},
+		{"id": "hero.magic_missile", "text": "AM Magic Missile", "target": "enemy-1"},
+		{"id": "hero.fireball", "text": "AM Fireball", "square": Vector2i(2, 1)},
+	]
+	board.refresh()
+	await _frames(4)
+	var rects: Array = board._badge_buttons.map(func(b): return b.get_global_rect())
+	var clear := rects.size() == 4
+	for i in rects.size():
+		for j in range(i + 1, rects.size()):
+			if rects[i].intersects(rects[j]): clear = false; print("    overlap: %s %s" % [rects[i], rects[j]])
+	_expect(clear, "badges on neighbouring creatures (an area on you, a direct attack on you, two of yours on them) never overlap")
+	board.queue_free()
+	await _frames(2)
 
 # --- Layout: 1–4 enemies, popups and tooltips inside the viewport ------------------------------
 

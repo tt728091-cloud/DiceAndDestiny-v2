@@ -26,11 +26,21 @@ type TacticsView struct {
 	OwnSquare *tactics.Square `json:"own_square,omitempty"`
 	// Plan is the viewer's own movement plan (draft or locked) with its Move
 	// budget and preview path.
-	Plan     *state.TacticsPlan   `json:"plan,omitempty"`
-	LockedIn []string             `json:"locked_in,omitempty"`
-	Movement *TacticsMovementView `json:"movement,omitempty"`
+	Plan *state.TacticsPlan `json:"plan,omitempty"`
+	// HandMove is, during the movement step, what each card in the viewer's
+	// own hand would add to their plan's Move.
+	HandMove map[string]TacticsCardMove `json:"hand_move,omitempty"`
+	LockedIn []string                   `json:"locked_in,omitempty"`
+	Movement *TacticsMovementView       `json:"movement,omitempty"`
 	// DisabledDefenses are the viewer's defenses unavailable now, with why.
 	DisabledDefenses map[string]string `json:"disabled_defenses,omitempty"`
+}
+
+// TacticsCardMove is one hand card's Move: discarded, and (for a map Move
+// card) played for its amount.
+type TacticsCardMove struct {
+	Discard int `json:"discard"`
+	Map     int `json:"map,omitempty"`
 }
 
 type TacticsArenaView struct {
@@ -164,6 +174,17 @@ func tacticsView(battle state.Battle, viewer string) *TacticsView {
 	if plan, ok := rt.Plans[viewer]; ok {
 		p := plan
 		view.Plan = &p
+		if view.Step == state.SimultaneousMovement && catalog != nil && !plan.Locked && (plan.Charge == "" || rt.Rules.ChargeAllowsExtraMove) {
+			view.HandMove = map[string]TacticsCardMove{}
+			run := battle.Settled.Actors[viewer]
+			for _, card := range battle.Actors[viewer].Cards.Hand {
+				move := TacticsCardMove{Discard: tactics.CardMove(rt.Rules, plan.Sprint)}
+				if effect := catalog.Cards[run.CardInstances[card].DefinitionID].MapEffect; effect != nil && effect.Kind == "move" {
+					move.Map = tactics.MapCardMove(rt.Rules, effect.Amount, plan.Sprint)
+				}
+				view.HandMove[card] = move
+			}
+		}
 	}
 	if m := rt.Movement; m != nil {
 		mv := &TacticsMovementView{Round: m.Round, Start: m.Start, Final: m.Result.Final, Paths: m.Result.Paths, Timeline: m.Result.Timeline, Budgets: m.Budgets, Running: m.Running, Contact: m.Result.Contact, Plans: map[string]TacticsPublicPlan{}, Attacks: m.Attacks, Hits: m.Hits}

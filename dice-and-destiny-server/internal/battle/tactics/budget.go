@@ -79,3 +79,23 @@ func ComputeBudget(r Rules, in BudgetInput) (MoveBudget, error) {
 	}
 	return b, nil
 }
+
+// CardMove is what one more card discarded for Move adds to a plan:
+// card_move, plus sprint_card_bonus while sprinting.
+func CardMove(r Rules, sprint bool) int {
+	if sprint {
+		return r.CardMove + r.SprintCardBonus
+	}
+	return r.CardMove
+}
+
+// MapCardMove is what a map Move card played for its amount adds to a plan:
+// the amount × map_card_move_multiplier, plus sprint_card_bonus while
+// sprinting.
+func MapCardMove(r Rules, amount int, sprint bool) int {
+	move := amount * r.MapCardMoveMultiplier
+	if sprint {
+		move += r.SprintCardBonus
+	}
+	return move
+}

@@ -51,3 +51,13 @@ func TestMoveBudgets(t *testing.T) {
 		t.Errorf("tuned sprint = %+v", b)
 	}
 }
+
+func TestCardMoveValues(t *testing.T) {
+	r := Rules{CardMove: 1, MapCardMoveMultiplier: 2, SprintCardBonus: 1}
+	if CardMove(r, false) != 1 || CardMove(r, true) != 2 {
+		t.Fatalf("card Move = %d / %d", CardMove(r, false), CardMove(r, true))
+	}
+	if MapCardMove(r, 4, false) != 8 || MapCardMove(r, 4, true) != 9 {
+		t.Fatalf("map card Move = %d / %d", MapCardMove(r, 4, false), MapCardMove(r, 4, true))
+	}
+}

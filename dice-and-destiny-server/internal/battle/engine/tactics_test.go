@@ -11,6 +11,7 @@ import (
 	"diceanddestiny/server/internal/battle/command"
 	"diceanddestiny/server/internal/battle/event"
 	"diceanddestiny/server/internal/battle/segment"
+	"diceanddestiny/server/internal/battle/snapshot"
 	"diceanddestiny/server/internal/battle/state"
 	"diceanddestiny/server/internal/battle/tactics"
 	"diceanddestiny/server/internal/content"
@@ -542,6 +543,15 @@ func TestSprintMapCardsEnergyAndSpentCommitments(t *testing.T) {
 	plan(t, e, &b, "hero", movePlan{intent: toSquare(11, 0), cards: []string{nudge, again}}, false)
 	if got := b.Settled.TacticsRuntime.Plans["hero"].Budget; got.Total != 6 || !got.Running {
 		t.Fatalf("sprint with two cards = %+v", got)
+	}
+	// Each hand card shows its Move in the owner's view: +1 discarded, a map
+	// card's amount played, and +1 more of each while sprinting.
+	hand := e.ResultForViewer(&b, "hero", ProgressionResult{}).Snapshot.Tactics.HandMove
+	if hand[nudge] != (snapshot.TacticsCardMove{Discard: 2}) || hand[march] != (snapshot.TacticsCardMove{Discard: 2, Map: 5}) || len(hand) != 5 {
+		t.Fatalf("hand Move while sprinting = %+v", hand)
+	}
+	if foe := e.ResultForViewer(&b, "foe", ProgressionResult{}).Snapshot.Tactics.HandMove; foe[nudge].Discard != 0 {
+		t.Fatalf("another viewer sees the hero's hand Move: %+v", foe)
 	}
 	// A map card adds its amount (+1 sprint bonus) and pays its energy.
 	plan(t, e, &b, "hero", movePlan{intent: toSquare(11, 0), maps: []command.MovementMapCard{{CardID: march}}}, false)

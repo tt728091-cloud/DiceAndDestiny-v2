@@ -123,7 +123,10 @@ func _sync_badges() -> void:
 		var style := StyleBoxFlat.new(); style.bg_color = data.get("color", Color("7a1f17")); style.set_corner_radius_all(6); style.content_margin_left = 5; style.content_margin_right = 5
 		for name in ["normal", "hover", "pressed", "disabled"]: badge.add_theme_stylebox_override(name, style)
 		badge.add_theme_color_override("font_color", Color("fff6e0"))
-		var anchor := str(data.get("target", "")) if not str(data.get("target", "")).is_empty() else str(data.get("square", Vector2i.ZERO))
+		# Badges stack per drawn square and side, whatever they anchor to.
+		var target := str(data.get("target", ""))
+		var square: Vector2 = creatures[target].get("square", Vector2.ZERO) if creatures.has(target) else Vector2(data.get("square", Vector2i.ZERO))
+		var anchor := "%s|%s" % [Vector2i(square.round()), bool(data.get("below", false))]
 		badge.set_meta("anchor", data); badge.set_meta("stack", int(per_anchor.get(anchor, 0)))
 		per_anchor[anchor] = int(per_anchor.get(anchor, 0)) + 1
 		add_child(badge); _badge_buttons.append(badge)
@@ -182,9 +185,13 @@ func _draw() -> void:
 	for floater in floaters:
 		var age := (now - int(floater.born_ms)) / 1000.0
 		if age < 0 or age > 1.6: continue
-		var at := square_center(floater.position) + Vector2(-_cell * 0.5, -_cell * 0.5 - age * _cell * 0.4)
+		var width := _cell * 4.0
+		var at := square_center(floater.position) + Vector2(-width * 0.5, -_cell * 0.55 - age * _cell * 0.4)
+		at.x = clampf(at.x, 0.0, size.x - width)
 		var color: Color = floater.color; color.a = clampf(1.6 - age, 0, 1)
-		draw_string(get_theme_default_font(), at, str(floater.text), HORIZONTAL_ALIGNMENT_CENTER, _cell, int(_cell * 0.32), color)
+		var font := get_theme_default_font()
+		draw_string_outline(font, at, str(floater.text), HORIZONTAL_ALIGNMENT_CENTER, width, int(_cell * 0.26), 5, Color(0, 0, 0, color.a))
+		draw_string(font, at, str(floater.text), HORIZONTAL_ALIGNMENT_CENTER, width, int(_cell * 0.26), color)
 
 ## A creature's round token: team colour, a short label, health and Running.
 class Token extends "res://presentation/battle/tooltip_button.gd":

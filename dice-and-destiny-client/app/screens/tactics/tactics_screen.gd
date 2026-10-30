@@ -291,7 +291,10 @@ func _attack_badge(attack: Dictionary) -> Dictionary:
 	var delivery: Dictionary = _tv.get("creatures", {}).get(attacker, {}).get("deliveries", {}).get(ability, {})
 	tooltip = "%s\nAttacker: %s · %s\n%s" % [tooltip, _name(attacker), str(delivery.get("text", "")), _outcome_text(attack)]
 	var badge := {"id": "%s.%s" % [attacker, ability], "text": text, "tooltip": tooltip, "color": color}
-	if str(attack.delivery) == "area": badge["square"] = Vector2i(int(attack.square.x), int(attack.square.y))
+	if str(attack.delivery) == "area":
+		badge["square"] = Vector2i(int(attack.square.x), int(attack.square.y))
+		var mine: Dictionary = _tv.get("creatures", {}).get(VIEWER, {})
+		badge["below"] = mine.has("position") and Vector2(badge.square) == _square(mine.position)
 	else:
 		badge["target"] = str(attack.get("target", ""))
 		badge["below"] = badge.target == VIEWER
@@ -377,7 +380,10 @@ func _render_incoming() -> void:
 		any = true
 		var box := VBoxContainer.new(); _side.add_child(box)
 		var title := TOOLTIP_LABEL.new(); title.mouse_filter = Control.MOUSE_FILTER_PASS; title.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-		title.text = "%s · %s · %d damage" % [_name(str(source.source_actor_id)), _ability_name(str(source.source_content_id)), int(source.get("final_amount", 0))]
+		var base := int(source.get("base_amount", source.get("final_amount", 0)))
+		var remaining := int(source.get("final_amount", 0))
+		title.text = "%s · %s · %d damage" % [_name(str(source.source_actor_id)), _ability_name(str(source.source_content_id)), base]
+		if remaining != base: title.text += " → %d left" % remaining
 		title.tooltip_text = BattlePresentationCatalog.attack_ability_tooltip(str(source.source_content_id), _actor(str(source.source_actor_id)), {"ability_id": source.source_content_id}, [])
 		box.add_child(title)
 		var threatened: Array[String] = []
@@ -425,12 +431,29 @@ func _render_hand() -> void:
 		var usable := _card_usable(str(id))
 		card.configure(str(id), definition, usable, false, true)
 		card.custom_minimum_size = Vector2(118, 140)
+		_tag_card_move(card, str(id))
 		if str(id) in committed or str(id) in played:
 			card.modulate = Color("ffe08a")
 			card.tooltip_text = ("Played for its map Move.\n" if str(id) in played else "Discarded for +Move.\n") + card.tooltip_text
 		card.pressed.connect(func(): _on_card(str(id), Input.is_key_pressed(KEY_SHIFT)))
 		_register("tactics.card.%s" % id, card, BattlePresentationCatalog.card(definition).name)
 	_piles.text = "Hand %d · Deck %d · Discard %d · Removed %d · Energy %d" % [int(me.get("hand_count", 0)), int(me.get("deck_count", 0)), int(me.get("discard_count", 0)), int(me.get("removed_count", 0)), int(me.get("energy_points", 0))]
+
+## During movement, a card shows the Move the authority says it adds: +1
+## discarded, a map card's amount played (more while sprinting).
+func _tag_card_move(card: Control, id: String) -> void:
+	var hand_move: Dictionary = _tv.get("hand_move", {}) if _tv.get("hand_move") is Dictionary else {}
+	if not hand_move.has(id): return
+	var move: Dictionary = hand_move[id]
+	var tag := Label.new(); tag.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	tag.text = "Play +%d · discard +%d Move" % [int(move.map), int(move.discard)] if int(move.get("map", 0)) > 0 else "+%d Move" % int(move.get("discard", 0))
+	tag.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER; tag.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	tag.add_theme_font_size_override("font_size", 13); tag.add_theme_color_override("font_color", Color("ffe08a"))
+	tag.add_theme_constant_override("outline_size", 4); tag.add_theme_color_override("font_outline_color", Color.BLACK)
+	var back := StyleBoxFlat.new(); back.bg_color = Color(0, 0, 0, 0.7); back.set_corner_radius_all(4)
+	tag.add_theme_stylebox_override("normal", back)
+	tag.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_WIDE); tag.offset_top = -40; tag.offset_bottom = -4; tag.offset_left = 4; tag.offset_right = -4
+	card.add_child(tag)
 
 func _card_usable(id: String) -> bool:
 	if _step() == "movement": return not _plans_toggling(id, false).is_empty() or not _plans_toggling(id, true).is_empty()
@@ -448,7 +471,7 @@ func _render_controls() -> void:
 		_budget.text = "Discard down to your hand limit: choose the cards."
 		for action in _of_type("commit_interaction"):
 			var names: Array = _payload(action).get("commitment", {}).get("card_ids", []).map(func(id): return str(BattlePresentationCatalog.card(str(_actor(VIEWER).card_instances[id].definition_id)).name))
-			_button(_controls, "Discard " + ", ".join(names), "", _submit.bind(action))
+			_button(_controls, "Discard " + ", ".join(names), "tactics.discard.%d" % _controls.get_child_count(), _submit.bind(action))
 		return
 	var step := _step()
 	if step == "movement":
@@ -626,7 +649,7 @@ func _on_card(id: String, discard_only: bool = false) -> void:
 	if starts.size() == 1: _submit(starts[0]); return
 	if starts.size() > 1:
 		var options: Array = []
-		for action in starts: options.append({"text": _action_label(action), "id": "", "call": _submit.bind(action)})
+		for action in starts: options.append({"text": _action_label(action), "id": "tactics.card_option.%d" % options.size(), "call": _submit.bind(action)})
 		_show_popup(str(BattlePresentationCatalog.card(str(_actor(VIEWER).card_instances[id].definition_id)).name), options)
 
 func _action_label(action: Dictionary) -> String:
@@ -801,14 +824,15 @@ func _show_end(outcome: String) -> void:
 	var box := VBoxContainer.new(); box.add_theme_constant_override("separation", 8); _end.add_child(box)
 	var title := Label.new(); title.text = {"victory": "VICTORY", "defeat": "DEFEAT", "draw": "DRAW"}.get(outcome, outcome.to_upper()); title.add_theme_font_size_override("font_size", 48); title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	title.add_theme_color_override("font_color", {"victory": Color("f5c963"), "defeat": Color("ff8a78")}.get(outcome, Color.WHITE)); box.add_child(title)
-	var summary := Label.new(); summary.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER; summary.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	var summary := Label.new(); summary.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	summary.text = "After %d rounds on %s." % [int(_snap.get("round", 0)), str(_tv.get("arena", {}).get("name", ""))]; box.add_child(summary)
 	_register("tactics.end.result", title, title.text)
 	_button(box, "Replay last round", "tactics.end.replay", _replay)
 	_button(box, "New sandbox battle", "tactics.end.new", _to_setup)
 	_button(box, "Main menu", "tactics.end.menu", _to_menu)
 	_end.reset_size()
-	_end.position = (size - _end.get_combined_minimum_size()) * 0.5
+	# Kept small and high so Replay last round plays on a visible board.
+	_end.position = Vector2((size.x - _end.get_combined_minimum_size().x) * 0.5, 60)
 
 func _to_setup() -> void:
 	get_tree().root.add_child(preload("res://app/screens/tactics/tactics_setup.gd").new())
@@ -829,5 +853,5 @@ func inspection_state() -> Dictionary:
 	var attacks: Array = []
 	for attack in _tv.get("attacks", []): attacks.append("%s %s → %s %s" % [attack.attacker, attack.ability_id, str(attack.get("target", attack.get("square", ""))), str(attack.get("outcome", ""))])
 	var plan = _tv.get("plan")
-	return {"ready": true, "battle_id": str(_snap.get("battle_id", "")), "round": int(_snap.get("round", 0)), "segment": str(_snap.get("segment", "")), "stage": str(_snap.get("stage", "")), "step": _step(), "legal_actions": _actions.size(), "battle_result": str(_result.get("battle_result", "")), "playing_back": not _playback.is_empty(), "aiming": _aiming, "error": _error.text,
+	return {"ready": true, "battle_id": str(_snap.get("battle_id", "")), "arena": str(_tv.get("arena", {}).get("id", "")) if _tv.get("arena") is Dictionary else "", "kept": _kept, "view": _tv, "aim_squares": _board.highlights.keys().map(func(q): return [q.x, q.y]), "aim_creatures": _board.clickable_creatures.keys(), "round": int(_snap.get("round", 0)), "segment": str(_snap.get("segment", "")), "stage": str(_snap.get("stage", "")), "step": _step(), "legal_actions": _actions.size(), "battle_result": str(_result.get("battle_result", "")), "playing_back": not _playback.is_empty(), "aiming": _aiming, "error": _error.text,
 		"creatures": creatures, "dice": dice, "attacks": attacks, "plan": _budget.text if plan is Dictionary else "", "hand": _actor(VIEWER).get("hand", []).map(func(id): return "%s=%s" % [id, str(_actor(VIEWER).card_instances[id].definition_id)])}
