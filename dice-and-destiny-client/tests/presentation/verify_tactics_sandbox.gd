@@ -576,8 +576,10 @@ func _proxy_choice(view: Dictionary, actions: Array) -> Dictionary:
 
 # --- An area attack aims at a square ------------------------------------------------
 
+## Fireball is legal and can be centred on an enemy's own square.
 func _fireball_ready(view: Dictionary) -> bool:
-	return view.get("legal_actions", []).any(func(a): return a.type == "planning_select_ability" and str(a.payload.get("ability_id", "")) == "fireball")
+	var enemy: Dictionary = view.snapshot.tactics.creatures.get("enemy-1", {})
+	return enemy.has("position") and view.get("legal_actions", []).any(func(a): return a.type == "planning_select_ability" and str(a.payload.get("ability_id", "")) == "fireball" and a.payload.get("target_square") is Dictionary and int(a.payload.target_square.x) == int(enemy.position.x) and int(a.payload.target_square.y) == int(enemy.position.y))
 
 ## Plays a seeded battle through the authority until Fireball is legal, then
 ## aims it on the battle screen: the legal squares light up and a click on one
@@ -597,7 +599,7 @@ func _area_aim() -> void:
 			var skip: Array = view.legal_actions.filter(func(a): return a.type == "planning_pass" and str(view.snapshot.get("simultaneous_step", "")) == "offense_rolling")
 			view = gateway.submit(skip[0] if not skip.is_empty() else _proxy_choice(view, view.legal_actions))
 		if not found.is_empty(): break
-	_expect(not found.is_empty(), "a seeded battle reaches a legal Fireball")
+	_expect(not found.is_empty(), "a seeded battle reaches a Fireball that can be centred on the enemy")
 	if found.is_empty(): return
 	TacticsGateway.active_store().save_active(found.gateway.battle_id, ME)
 	var screen = await _open(found.gateway, found.view)
@@ -611,13 +613,16 @@ func _area_aim() -> void:
 	_expect(not squares.is_empty() and screen._tactics.board.highlights.size() == squares.size(), "the grid lights exactly Fireball's legal squares (%d)" % squares.size())
 	_expect(_find(screen, "battle.tactics.cancel_aim") != null, "the rail offers Choose a square · Cancel")
 	if squares.is_empty(): screen.queue_free(); return
-	var target = squares[squares.size() / 2].payload.target_square
-	await _square(screen, int(target.x), int(target.y))
+	# The enemy's token stands on a lit square: clicking it aims Fireball
+	# there rather than opening the enemy's stats.
+	var target = _tv(screen).creatures["enemy-1"].position
+	_expect(screen._tactics.board.highlights.has(Vector2i(int(target.x), int(target.y))), "the enemy's own square is lit")
+	await _click(_find(screen, "battle.tactics.creature.enemy-1"))
 	await _settle(screen)
 	var aimed := false
 	for attack in _tv(screen).get("attacks", []):
 		if str(attack.attacker) == ME and str(attack.ability_id) == "fireball" and attack.get("square") is Dictionary and int(attack.square.x) == int(target.x) and int(attack.square.y) == int(target.y): aimed = true
-	_expect(aimed, "clicking a lit square aims Fireball there")
+	_expect(aimed, "clicking the enemy on a lit square centres Fireball on it")
 	_expect(not screen._tactics.board.areas.is_empty(), "its 3 × 3 area is drawn on the grid")
 	screen.queue_free()
 	await _frames(2)

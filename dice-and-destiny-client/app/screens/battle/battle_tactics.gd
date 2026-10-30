@@ -238,6 +238,12 @@ func on_square(at: Vector2i) -> void:
 
 func on_creature(id: String) -> void:
 	if screen._submitting or screen._director.has_beats(): return
+	# Aiming an area attack: a creature's token stands on its square, so a
+	# click on it aims at that square (an enemy can be the centre).
+	if not aim.is_empty():
+		var creature = tv().get("creatures", {}).get(id)
+		if creature is Dictionary: on_square(Vector2i(int(creature.position.x), int(creature.position.y)))
+		return
 	if in_movement() and id != viewer():
 		var options: Array = []
 		for kind in ["pursue", "flee"]:
